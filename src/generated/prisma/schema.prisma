@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── USUARIOS ─────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  lastName  String
+  role      Role     @default(STUDENT)
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  teacherCourses          Course[]         @relation("TeacherCourses")
+  enrollments             Enrollment[]
+  gradebookEntries        GradeEntry[]
+  selfEvaluations         SelfEvaluation[]
+  peerEvaluationsGiven    PeerEvaluation[] @relation("EvaluatorUser")
+  peerEvaluationsReceived PeerEvaluation[] @relation("EvaluatedUser")
+
+  @@map("users")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  DEPARTMENT_HEAD
+  TEACHER
+  TEACHER_ASSISTANT
+  STUDENT
+  PARENT
+  GUEST
+}
+
+// ─── CURSOS ────────────────────────────────────────────────
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  code        String   @unique
+  isActive    Boolean  @default(true)
+  teacherId   String
+  teacher     User     @relation("TeacherCourses", fields: [teacherId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  enrollments        Enrollment[]
+  classes            Class[]
+  gradebookStructure GradebookStructure?
+  periods            Period[]
+
+  @@map("courses")
+}
+
+// ─── PERÍODOS ACADÉMICOS ───────────────────────────────────
+model Period {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  gradeEntries GradeEntry[]
+
+  @@map("periods")
+}
+
+// ─── MATRÍCULAS ────────────────────────────────────────────
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+// ─── CLASES ────────────────────────────────────────────────
+model Class {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  code        String      @unique
+  status      ClassStatus @default(DRAFT)
+  courseId    String
+  course      Course      @relation(fields: [courseId], references: [id])
+  slides      Slide[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("classes")
+}
+
+enum ClassStatus {
+  DRAFT
+  PUBLISHED
+  LIVE
+  ARCHIVED
+}
+
+// ─── SLIDES ────────────────────────────────────────────────
+model Slide {
+  id        String    @id @default(cuid())
+  order     Int
+  type      SlideType
+  title     String
+  content   Json?
+  classId   String
+  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@map("slides")
+}
+
+enum SlideType {
+  COVER
+  CONTENT
+  ACTIVITY
+  VIDEO
+  IMAGE
+}
+
+// ─── SISTEMA DE CALIFICACIÓN ───────────────────────────────
+model GradebookStructure {
+  id       String   @id @default(cuid())
+  courseId String   @unique
+  course   Course   @relation(fields: [courseId], references: [id])
+  aspects  Aspect[]
+
+  @@map("gradebook_structures")
+}
+
+model Aspect {
+  id          String             @id @default(cuid())
+  name        String
+  weight      Float
+  structureId String
+  structure   GradebookStructure @relation(fields: [structureId], references: [id])
+  indicators  Indicator[]
+
+  @@map("aspects")
+}
+
+model Indicator {
+  id         String     @id @default(cuid())
+  name       String
+  weight     Float
+  aspectId   String
+  aspect     Aspect     @relation(fields: [aspectId], references: [id])
+  activities Activity[]
+
+  @@map("indicators")
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  name         String
+  weight       Float
+  maxScore     Float        @default(5.0)
+  indicatorId  String
+  indicator    Indicator    @relation(fields: [indicatorId], references: [id])
+  gradeEntries GradeEntry[]
+
+  @@map("activities")
+}
+
+// ─── NOTAS ─────────────────────────────────────────────────
+model GradeEntry {
+  id         String   @id @default(cuid())
+  score      Float
+  feedback   String?
+  userId     String
+  activityId String
+  periodId   String
+  user       User     @relation(fields: [userId], references: [id])
+  activity   Activity @relation(fields: [activityId], references: [id])
+  period     Period   @relation(fields: [periodId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, activityId, periodId])
+  @@map("grade_entries")
+}
+
+// ─── AUTOEVALUACIÓN ────────────────────────────────────────
+model SelfEvaluation {
+  id        String   @id @default(cuid())
+  score     Float
+  feedback  String?
+  userId    String
+  courseId  String
+  periodId  String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId, periodId])
+  @@map("self_evaluations")
+}
+
+// ─── COEVALUACIÓN ──────────────────────────────────────────
+model PeerEvaluation {
+  id          String   @id @default(cuid())
+  score       Float
+  feedback    String?
+  evaluatorId String
+  evaluatedId String
+  courseId    String
+  periodId    String
+  evaluator   User     @relation("EvaluatorUser", fields: [evaluatorId], references: [id])
+  evaluated   User     @relation("EvaluatedUser", fields: [evaluatedId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([evaluatorId, evaluatedId, courseId, periodId])
+  @@map("peer_evaluations")
+}
