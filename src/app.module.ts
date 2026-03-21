@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     }),
     AuthModule,
     PrismaModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
