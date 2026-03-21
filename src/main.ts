@@ -1,24 +1,30 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: config.get<string>('FRONTEND_URL') || 'http://localhost:3001',
     credentials: true,
   });
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 Lumina Backend corriendo en puerto ${process.env.PORT ?? 3000}`);
+  await app.listen(config.get<number>('PORT'));
+  console.log(
+    `🚀 Lumina Backend corriendo en puerto ${config.get<number>('PORT')}`,
+  );
 }
 
-bootstrap();
+void bootstrap();

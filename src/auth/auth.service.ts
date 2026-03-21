@@ -1,9 +1,22 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+
+function isPrismaUniqueConstraintError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code?: unknown }).code === 'P2002'
+  );
+}
 
 @Injectable()
 export class AuthService {
@@ -27,23 +40,39 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 12);
 
     // Crear usuario
-    const user = await this.prisma.user.create({
-      data: {
-        name: dto.name,
-        lastName: dto.lastName,
-        email: dto.email,
-        password: hashedPassword,
-        role: dto.role ?? 'STUDENT',
-      },
-      select: {
-        id: true,
-        name: true,
-        lastName: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+    type CreatedUser = {
+      id: string;
+      name: string;
+      lastName: string;
+      email: string;
+      role: string;
+      createdAt: Date;
+    };
+    let user!: CreatedUser;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          name: dto.name,
+          lastName: dto.lastName,
+          email: dto.email,
+          password: hashedPassword,
+          role: dto.role ?? 'STUDENT',
+        },
+        select: {
+          id: true,
+          name: true,
+          lastName: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      });
+    } catch (err: unknown) {
+      if (isPrismaUniqueConstraintError(err)) {
+        throw new ConflictException('El correo ya está registrado');
+      }
+      throw err;
+    }
 
     // Generar token
     const token = this.generateToken(user.id, user.email, user.role);
@@ -98,11 +127,11 @@ export class AuthService {
         createdAt: true,
       },
     });
-  
+
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
-  
+
     return user;
   }
 
