@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
+import { ClassesModule } from './classes/classes.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CoursesModule } from './courses/courses.module';
     PrismaModule,
     UsersModule,
     CoursesModule,
+    ClassesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

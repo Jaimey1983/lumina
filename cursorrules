@@ -1,0 +1,833 @@
+# 🎓 LUMINA — Plataforma Educativa Interactiva
+# Archivo de contexto para Cursor AI
+# Última actualización: 23/03/2026
+
+---
+
+## 👤 ROL
+
+Eres el programador líder y arquitecto senior del proyecto Lumina. Tu rol es:
+- Guiar al desarrollador (Jaime) paso a paso
+- Escribir código production-ready en NestJS + TypeScript
+- Anticipar errores antes de que ocurran
+- Mantener consistencia con la arquitectura definida
+- Explicar cada decisión técnica de forma clara
+
+---
+
+## 📋 DESCRIPCIÓN DEL PROYECTO
+
+**Nombre:** Lumina — Plataforma Educativa Interactiva  
+**Versión:** 2.0.0  
+**Descripción:** Sistema web modular para la creación, gestión y ejecución de clases interactivas tipo Nearpod con funcionalidades LMS avanzadas y sistema de calificación por indicadores de desempeño con pesos configurables.  
+**Inspiración:** Nearpod + Genially + eXeLearning + Wordwall
+
+---
+
+## 🔧 STACK TECNOLÓGICO
+
+| Capa | Tecnología | Versión |
+|---|---|---|
+| Backend | NestJS + TypeScript | 11.x |
+| Base de datos | PostgreSQL | 18.3 (local) / 16 (Docker) |
+| ORM | Prisma | 7.5.0 |
+| Caché | Redis | 7 (Docker) |
+| Tiempo real | Socket.IO | - |
+| Autenticación | JWT + Passport | - |
+| Contenido interactivo | H5P | - |
+| Infraestructura | Docker | 29.2.1 |
+| Frontend (futuro) | Next.js + React + TypeScript | - |
+| Editor de texto | Tiptap | - |
+| Canvas | Fabric.js | - |
+| IA | OpenAI API | - |
+| Gestor de paquetes | pnpm | 10.32.1 |
+
+---
+
+## 💻 ENTORNO DE DESARROLLO
+
+- **OS:** Windows 11
+- **IDE:** Cursor + VS Code
+- **Node.js:** v22.20.0
+- **NestJS CLI:** 11.0.16
+- **Docker:** 29.2.1
+- **pnpm:** 10.32.1
+- **PostgreSQL:** 18.3 (instalado local) + 16 (Docker)
+- **Ruta del proyecto:** `C:\Users\Jaime\proyectos\lumina-backend`
+
+---
+
+## 🚀 COMANDOS DE INICIO (ejecutar al inicio de cada sesión)
+
+```bash
+# 1. Levantar base de datos y Redis
+docker compose up -d
+
+# 2. Arrancar el servidor en modo desarrollo
+pnpm run start:dev
+```
+
+---
+
+## 🗄️ BASE DE DATOS
+
+**Conexión:** `postgresql://lumina:lumina1234@localhost:5432/lumina`  
+**Usuario:** lumina  
+**Contraseña:** lumina1234  
+**Base de datos:** lumina  
+**Puerto:** 5432
+
+### Configuración especial Prisma 7
+
+Prisma 7 usa `prisma.config.ts` en lugar de `schema.prisma` para la conexión:
+
+```typescript
+// prisma.config.ts
+import path from 'path';
+import { defineConfig } from 'prisma/config';
+import 'dotenv/config';
+
+export default defineConfig({
+  schema: path.join('prisma', 'schema.prisma'),
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
+});
+```
+
+### Schema Prisma completo (13 modelos)
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── USUARIOS ─────────────────────────────────────────────
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  name        String
+  lastName    String
+  role        Role     @default(STUDENT)
+  avatar      String?
+  institution String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacherCourses          Course[]         @relation("TeacherCourses")
+  enrollments             Enrollment[]
+  gradebookEntries        GradeEntry[]
+  selfEvaluations         SelfEvaluation[]
+  peerEvaluationsGiven    PeerEvaluation[] @relation("EvaluatorUser")
+  peerEvaluationsReceived PeerEvaluation[] @relation("EvaluatedUser")
+
+  @@map("users")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  DEPARTMENT_HEAD
+  TEACHER
+  TEACHER_ASSISTANT
+  STUDENT
+  PARENT
+  GUEST
+}
+
+// ─── CURSOS ────────────────────────────────────────────────
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  code        String   @unique
+  isActive    Boolean  @default(true)
+  teacherId   String
+  teacher     User     @relation("TeacherCourses", fields: [teacherId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments        Enrollment[]
+  classes            Class[]
+  gradebookStructure GradebookStructure?
+  periods            Period[]
+
+  @@map("courses")
+}
+
+// ─── PERÍODOS ACADÉMICOS ───────────────────────────────────
+model Period {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  gradeEntries GradeEntry[]
+
+  @@map("periods")
+}
+
+// ─── MATRÍCULAS ────────────────────────────────────────────
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+// ─── CLASES ────────────────────────────────────────────────
+model Class {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  code        String      @unique
+  status      ClassStatus @default(DRAFT)
+  courseId    String
+  course      Course      @relation(fields: [courseId], references: [id])
+  slides      Slide[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("classes")
+}
+
+enum ClassStatus {
+  DRAFT
+  PUBLISHED
+  LIVE
+  ARCHIVED
+}
+
+// ─── SLIDES ────────────────────────────────────────────────
+model Slide {
+  id        String    @id @default(cuid())
+  order     Int
+  type      SlideType
+  title     String
+  content   Json?
+  classId   String
+  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@map("slides")
+}
+
+enum SlideType {
+  COVER
+  CONTENT
+  ACTIVITY
+  VIDEO
+  IMAGE
+}
+
+// ─── SISTEMA DE CALIFICACIÓN ───────────────────────────────
+model GradebookStructure {
+  id       String   @id @default(cuid())
+  courseId String   @unique
+  course   Course   @relation(fields: [courseId], references: [id])
+  aspects  Aspect[]
+
+  @@map("gradebook_structures")
+}
+
+model Aspect {
+  id          String             @id @default(cuid())
+  name        String
+  weight      Float
+  structureId String
+  structure   GradebookStructure @relation(fields: [structureId], references: [id])
+  indicators  Indicator[]
+
+  @@map("aspects")
+}
+
+model Indicator {
+  id         String     @id @default(cuid())
+  name       String
+  weight     Float
+  aspectId   String
+  aspect     Aspect     @relation(fields: [aspectId], references: [id])
+  activities Activity[]
+
+  @@map("indicators")
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  name         String
+  weight       Float
+  maxScore     Float        @default(5.0)
+  indicatorId  String
+  indicator    Indicator    @relation(fields: [indicatorId], references: [id])
+  gradeEntries GradeEntry[]
+
+  @@map("activities")
+}
+
+// ─── NOTAS ─────────────────────────────────────────────────
+model GradeEntry {
+  id         String   @id @default(cuid())
+  score      Float
+  feedback   String?
+  userId     String
+  activityId String
+  periodId   String
+  user       User     @relation(fields: [userId], references: [id])
+  activity   Activity @relation(fields: [activityId], references: [id])
+  period     Period   @relation(fields: [periodId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, activityId, periodId])
+  @@map("grade_entries")
+}
+
+// ─── AUTOEVALUACIÓN ────────────────────────────────────────
+model SelfEvaluation {
+  id        String   @id @default(cuid())
+  score     Float
+  feedback  String?
+  userId    String
+  courseId  String
+  periodId  String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId, periodId])
+  @@map("self_evaluations")
+}
+
+// ─── COEVALUACIÓN ──────────────────────────────────────────
+model PeerEvaluation {
+  id          String   @id @default(cuid())
+  score       Float
+  feedback    String?
+  evaluatorId String
+  evaluatedId String
+  courseId    String
+  periodId    String
+  evaluator   User     @relation("EvaluatorUser", fields: [evaluatorId], references: [id])
+  evaluated   User     @relation("EvaluatedUser", fields: [evaluatedId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([evaluatorId, evaluatedId, courseId, periodId])
+  @@map("peer_evaluations")
+}
+```
+
+---
+
+## 📦 VARIABLES DE ENTORNO (.env)
+
+```env
+PORT=3000
+NODE_ENV=development
+DATABASE_URL="postgresql://lumina:lumina1234@localhost:5432/lumina"
+REDIS_HOST=localhost
+REDIS_PORT=6379
+JWT_SECRET=lumina_super_secret_key_2025_cambiar_en_produccion
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=http://localhost:3001
+```
+
+---
+
+## 🏗️ ARQUITECTURA DE MÓDULOS
+
+### Módulos completados ✅
+
+#### 1. PrismaModule (Global)
+- **Ruta:** `src/prisma/`
+- **Descripción:** Cliente de Prisma compartido globalmente
+- **Nota importante:** Usa `require()` con ruta absoluta via `process.cwd()` para resolver problemas de rutas en dist/
+
+```typescript
+// src/prisma/prisma.service.ts — patrón clave
+const { PrismaClient } = require(
+  path.join(process.cwd(), 'prisma/generated/prisma')
+);
+```
+
+#### 2. AuthModule ✅
+- **Ruta:** `src/auth/`
+- **Endpoints:**
+  - `POST /auth/register` — registro de usuarios
+  - `POST /auth/login` — login con JWT (rate limited: 10 req/min)
+  - `GET /auth/me` — perfil del usuario autenticado
+- **Archivos:**
+  - `auth.controller.ts`, `auth.service.ts`, `jwt.strategy.ts`
+  - `jwt-auth.guard.ts`, `roles.guard.ts`, `roles.decorator.ts`
+  - `dto/register.dto.ts`, `dto/login.dto.ts`
+- **Características:**
+  - ConfigModule + JWT con `ConfigService.getOrThrow`
+  - Rate limiting con `@nestjs/throttler` (10 req/min en login)
+  - DTOs estrictos con normalización de email y trim
+  - Manejo de error P2002 de Prisma
+  - Tests unitarios reales
+
+#### 3. UsersModule ✅
+- **Ruta:** `src/users/`
+- **Endpoints:**
+  - `GET /users` — listar usuarios (ADMIN/SUPERADMIN), con paginación
+  - `GET /users/:id` — obtener usuario (ADMIN/SUPERADMIN/TEACHER)
+  - `PATCH /users/:id` — actualizar usuario (solo ADMIN puede cambiar roles)
+  - `DELETE /users/:id` — desactivar usuario (soft delete: `isActive: false`)
+- **Archivos:** `users.controller.ts`, `users.service.ts`, `dto/update-user.dto.ts`
+
+#### 4. CoursesModule ✅
+- **Ruta:** `src/courses/`
+- **Endpoints:**
+  - `POST /courses` — crear curso (TEACHER/ADMIN)
+  - `GET /courses` — listar cursos (filtrado por rol)
+  - `GET /courses/:id` — obtener curso con detalles
+  - `PATCH /courses/:id` — actualizar curso
+  - `DELETE /courses/:id` — desactivar curso (soft delete)
+  - `POST /courses/:id/enroll` — matricular estudiante
+  - `GET /courses/:id/students` — listar estudiantes
+- **Archivos:** `courses.controller.ts`, `courses.service.ts`, `dto/create-course.dto.ts`, `dto/update-course.dto.ts`, `dto/enroll-student.dto.ts`
+- **Lógica de visibilidad:**
+  - ADMIN → todos los cursos
+  - TEACHER → solo sus cursos (`teacherId = req.user.id`)
+  - STUDENT → solo cursos donde tiene `Enrollment`
+
+### Módulos pendientes 🔲
+
+#### 5. ClassesModule ✅
+- **Ruta:** `src/classes/`
+- **Endpoints:**
+  - `POST /classes` — crear clase (body: `{ title, description?, courseId }`)
+  - `GET /classes?courseId=` — listar clases del curso (excluye ARCHIVED)
+  - `GET /classes/:id` — obtener clase con slides ordenados por `order`
+  - `PATCH /classes/:id` — actualizar título/descripción
+  - `DELETE /classes/:id` — soft delete (`status: ARCHIVED`)
+  - `POST /classes/:id/publish` — cambiar status a PUBLISHED
+  - `POST /classes/:id/slides` — agregar slide (auto-incrementa `order`)
+  - `PATCH /classes/:id/slides/:slideId` — actualizar slide
+  - `DELETE /classes/:id/slides/:slideId` — eliminar slide + reordenar restantes
+- **Archivos:**
+  - `classes.controller.ts`, `classes.service.ts`, `classes.module.ts`
+  - `dto/create-class.dto.ts`, `dto/update-class.dto.ts`
+  - `dto/create-slide.dto.ts`, `dto/update-slide.dto.ts`
+- **Características:**
+  - Código único de clase generado con `nanoid(8)`
+  - ADMIN ve todas las clases, TEACHER solo las suyas, STUDENT solo si está matriculado
+  - `content` de Slide es `Json` libre — se castea con `as any` para Prisma 7
+  - Relación en `create` usa `class: { connect: { id } }` en lugar de `classId` directo
+
+#### 6. ActivitiesModule 🔲 ← PRÓXIMO
+- Gestión de `Activity` vinculadas a `Indicator`
+- CRUD de actividades con pesos (`weight`) y nota máxima (`maxScore`)
+
+#### 7. PerformanceIndicatorsModule 🔲
+- Gestión de `GradebookStructure` → `Aspect` → `Indicator`
+- Validar que los pesos de `Aspect` sumen 100% dentro de una estructura
+- Validar que los pesos de `Indicator` sumen 100% dentro de un `Aspect`
+
+#### 8. GradebookModule 🔲
+- Registro de notas (`GradeEntry`) por usuario/actividad/período
+- Consulta del libro de calificaciones completo de un curso
+
+#### 9. GradeCalculationModule 🔲
+- Cálculo de la nota final según la fórmula ponderada multinivel (ver sección de calificación)
+- Cálculo por período y por curso
+
+#### 10. SelfEvaluationModule 🔲
+- CRUD de `SelfEvaluation` (una por estudiante/curso/período)
+
+#### 11. PeerEvaluationModule 🔲
+- CRUD de `PeerEvaluation`
+- Restricción: un estudiante no puede evaluarse a sí mismo (`evaluatorId !== evaluatedId`)
+
+#### 12. LiveSessionsModule 🔲
+- Socket.IO: unirse a una clase en vivo, sincronizar slides, recibir actividades en tiempo real
+
+#### 13. GamificationModule 🔲
+#### 14. AnalyticsModule 🔲
+#### 15. AIFeaturesModule 🔲
+#### 16. NotificationsModule 🔲
+
+---
+
+## 🔩 MÓDULO RAÍZ — app.module.ts
+
+```typescript
+// Imports ya registrados en AppModule (NO duplicar):
+// - ConfigModule.forRoot({ isGlobal: true })
+// - ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])
+// - PrismaModule (global)
+// - AuthModule
+// - UsersModule
+// - CoursesModule
+```
+
+Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
+
+---
+
+## 👥 ROLES DEL SISTEMA
+
+```typescript
+enum Role {
+  SUPERADMIN
+  ADMIN
+  DEPARTMENT_HEAD
+  TEACHER
+  TEACHER_ASSISTANT
+  STUDENT
+  PARENT
+  GUEST
+}
+```
+
+---
+
+## 📊 SISTEMA DE CALIFICACIÓN
+
+### Fórmula final
+
+```
+Nota Final = (Proceso × 70%) + (Convivencia × 20%) + (Autoevaluación × 5%) + (Coevaluación × 5%)
+```
+
+### Estructura jerárquica en DB
+
+```
+GradebookStructure (1 por curso)
+  └── Aspect[]           ← Ej: "Proceso" (weight=0.70), "Convivencia" (weight=0.20)
+        └── Indicator[]  ← Ej: "Responsabilidad" (weight=0.33)
+              └── Activity[] ← Ej: "Taller 1" (weight=0.20, maxScore=5.0)
+                    └── GradeEntry[] ← score del estudiante (por período)
+```
+
+### Cálculo multinivel
+
+```
+nota_actividad   = GradeEntry.score / Activity.maxScore × 5.0
+nota_indicador   = Σ (nota_actividad × Activity.weight)
+nota_aspecto     = Σ (nota_indicador × Indicator.weight)
+nota_proceso     = nota_aspecto  [para el Aspect "Proceso"]
+nota_autoeval    = SelfEvaluation.score
+nota_coevaluacion = promedio(PeerEvaluation.score donde evaluatedId = estudiante)
+nota_final       = (nota_proceso × 0.70) + (nota_convivencia × 0.20)
+                 + (nota_autoeval × 0.05) + (nota_coevaluacion × 0.05)
+```
+
+### Restricciones de validación
+- Suma de `Aspect.weight` en una `GradebookStructure` debe ser 1.0 (100%)
+- Suma de `Indicator.weight` en un `Aspect` debe ser 1.0 (100%)
+- Suma de `Activity.weight` en un `Indicator` debe ser 1.0 (100%)
+- Escala de notas: 0.0 a 5.0 (sistema colombiano)
+
+---
+
+## 🗺️ GLOSARIO DE DOMINIO
+
+| Término | Modelo Prisma | Descripción |
+|---|---|---|
+| **Curso** | `Course` | Asignatura dictada por un TEACHER. Tiene matrícula de estudiantes. |
+| **Período** | `Period` | Corte académico dentro de un curso (ej: "Período 1", "Primer bimestre"). |
+| **Clase** | `Class` | Presentación interactiva tipo Nearpod. Pertenece a un curso. |
+| **Slide** | `Slide` | Diapositiva dentro de una clase. Tiene un tipo y contenido JSON libre. |
+| **Estructura de calificación** | `GradebookStructure` | Configuración de cómo se calcula la nota de un curso. Una por curso. |
+| **Aspecto** | `Aspect` | Dimensión de evaluación (ej: Proceso, Convivencia). Tiene un peso relativo. |
+| **Indicador** | `Indicator` | Sub-categoría dentro de un aspecto (ej: Responsabilidad, Participación). |
+| **Actividad** | `Activity` | Tarea/evaluación calificable. Pertenece a un indicador. |
+| **Entrada de nota** | `GradeEntry` | Nota de un estudiante en una actividad para un período. |
+| **Matrícula** | `Enrollment` | Relación estudiante ↔ curso. |
+| **Autoevaluación** | `SelfEvaluation` | Nota que el estudiante se asigna a sí mismo por período. |
+| **Coevaluación** | `PeerEvaluation` | Nota que un estudiante asigna a otro compañero. |
+
+---
+
+## 🏛️ PATRÓN DE MÓDULO DE REFERENCIA
+
+Todo módulo nuevo debe seguir exactamente este patrón (basado en CoursesModule):
+
+### Estructura de archivos
+```
+src/nombre-modulo/
+├── nombre-modulo.module.ts
+├── nombre-modulo.controller.ts
+├── nombre-modulo.service.ts
+└── dto/
+    ├── create-nombre.dto.ts
+    └── update-nombre.dto.ts
+```
+
+### Patrón del Service
+
+```typescript
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class NombreService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.model.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true /* nunca password */ },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.model.count({ where: { isActive: true } }),
+    ]);
+    return {
+      data: items,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findOne(id: string) {
+    const item = await this.prisma.model.findUnique({
+      where: { id },
+      select: { id: true, name: true },
+    });
+    if (!item) throw new NotFoundException(`Recurso ${id} no encontrado`);
+    return item;
+  }
+
+  async remove(id: string) {
+    await this.findOne(id); // lanza NotFoundException si no existe
+    return this.prisma.model.update({
+      where: { id },
+      data: { isActive: false }, // soft delete — NUNCA usar delete()
+    });
+  }
+}
+```
+
+### Patrón del Controller
+
+```typescript
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+
+@Controller('nombre')
+@UseGuards(JwtAuthGuard)
+export class NombreController {
+  constructor(private readonly service: NombreService) {}
+
+  @Get()
+  findAll(@Query('page') page = '1', @Query('limit') limit = '10') {
+    return this.service.findAll(+page, +limit);
+  }
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles('TEACHER', 'ADMIN')
+  create(@Body() dto: CreateNombreDto, @Request() req) {
+    return this.service.create(dto, req.user.id);
+  }
+}
+```
+
+### Patrón del DTO
+
+```typescript
+import { IsString, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+export class CreateNombreDto {
+  @IsString()
+  @Transform(({ value }) => value?.trim())
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+```
+
+---
+
+## 🔐 PATRONES DE SEGURIDAD ESTABLECIDOS
+
+```typescript
+// Proteger ruta con JWT
+@UseGuards(JwtAuthGuard)
+
+// Proteger ruta con JWT + Rol
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'TEACHER')
+
+// Rate limiting en endpoints sensibles
+@UseGuards(ThrottlerGuard)
+```
+
+---
+
+## 📐 CONVENCIONES DE CÓDIGO
+
+- **DTOs:** siempre con `class-validator` + `class-transformer`
+- **Servicios:** manejar errores con excepciones de NestJS (`NotFoundException`, `ConflictException`, `ForbiddenException`)
+- **Soft delete:** NUNCA usar `prisma.model.delete()`. Siempre `update({ data: { isActive: false } })`
+- **Paginación:** siempre incluir `meta: { total, page, limit, totalPages }`
+- **Selects de Prisma:** siempre usar `select` explícito, NUNCA devolver el campo `password`
+- **Imports:** usar rutas relativas, nunca absolutas en `src/`
+- **Errores de Prisma:** capturar `P2002` (unique constraint) con `ConflictException`
+- **IDs:** son `cuid()` — siempre `String`, nunca `Number`
+
+---
+
+## 🐛 ERRORES CONOCIDOS Y SOLUCIONES
+
+### 1. Prisma 7 — Cannot find module
+**Problema:** NestJS compila a `dist/src/` y las rutas relativas al cliente de Prisma se rompen.  
+**Solución:** Usar ruta absoluta con `process.cwd()`:
+```typescript
+const { PrismaClient } = require(
+  path.join(process.cwd(), 'prisma/generated/prisma')
+);
+```
+
+### 2. JWT_SECRET undefined al arrancar
+**Problema:** `JwtStrategy requires a secret or key` al montar AppModule.  
+**Solución:** Usar `ConfigModule.forRoot({ isGlobal: true })` y `ConfigService.getOrThrow('JWT_SECRET')`.
+
+### 3. pnpm no reconocido en PowerShell
+**Problema:** `pnpm no se reconoce como comando interno`.  
+**Solución:** `npm install -g pnpm` y reiniciar terminal.
+
+### 4. PostgreSQL PATH no reconocido
+**Problema:** `psql no se reconoce como comando interno`.  
+**Solución:** `setx PATH "%PATH%;C:\Program Files\PostgreSQL\18\bin"` y reiniciar terminal.
+
+### 5. Docker Desktop no inicia
+**Problema:** `unable to get image` o `dockerDesktopLinuxEngine not found`.  
+**Solución:** Abrir Docker Desktop manualmente. Si falla, ejecutar `wsl --update` como administrador.
+
+### 6. PowerShell bloquea scripts
+**Problema:** `No se puede cargar el archivo pnpm.ps1 porque la ejecución de scripts está deshabilitada`.  
+**Solución:** `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
+### 7. Campo no existe en Prisma
+**Problema:** `Unknown field X for select statement on model Y`.  
+**Solución:** Verificar el schema. Agregar el campo y ejecutar `npx prisma migrate dev`.
+
+### 8. tsconfig moduleResolution nodenext
+**Problema:** Conflictos de tipos con `@types/pg` usando `nodenext`.  
+**Solución:** Cambiar a `"module": "commonjs"` y `"moduleResolution": "node"` en tsconfig.json.
+
+---
+
+## 📁 ESTRUCTURA DEL PROYECTO
+
+```
+lumina-backend/
+├── .env
+├── .gitignore
+├── docker-compose.yml            # PostgreSQL 16 + Redis 7
+├── nest-cli.json
+├── package.json
+├── prisma.config.ts              # Config de Prisma 7
+├── tsconfig.json
+├── prisma/
+│   ├── schema.prisma             # 13 modelos definidos
+│   ├── migrations/
+│   └── generated/prisma/         # Cliente generado (gitignored)
+└── src/
+    ├── main.ts                   # Bootstrap + ValidationPipe + CORS
+    ├── app.module.ts             # ConfigModule + ThrottlerModule + todos los módulos
+    ├── prisma/
+    │   ├── prisma.module.ts      # Global
+    │   └── prisma.service.ts
+    ├── auth/
+    │   ├── auth.module.ts
+    │   ├── auth.controller.ts
+    │   ├── auth.service.ts
+    │   ├── jwt.strategy.ts
+    │   ├── jwt-auth.guard.ts
+    │   ├── roles.guard.ts
+    │   ├── roles.decorator.ts
+    │   └── dto/
+    │       ├── register.dto.ts
+    │       └── login.dto.ts
+    ├── users/
+    │   ├── users.module.ts
+    │   ├── users.controller.ts
+    │   ├── users.service.ts
+    │   └── dto/
+    │       └── update-user.dto.ts
+    └── courses/
+        ├── courses.module.ts
+        ├── courses.controller.ts
+        ├── courses.service.ts
+        └── dto/
+            ├── create-course.dto.ts
+            ├── update-course.dto.ts
+            └── enroll-student.dto.ts
+```
+
+---
+
+## 🗺️ FASES DE DESARROLLO
+
+### Fase 1 — MVP Core (en progreso)
+- [x] Auth
+- [x] Users
+- [x] Courses
+- [x] Classes
+- [ ] Performance Indicators
+- [ ] Gradebook Structure
+- [ ] Grade Calculation
+
+### Fase 2 — Funcionalidades interactivas
+- [ ] Activities (H5P)
+- [ ] Live Sessions (Socket.IO)
+- [ ] Gamification
+- [ ] Class Editor
+- [ ] Messaging
+
+### Fase 3 — Analytics y reportes
+- [ ] Analytics
+- [ ] Gradebook Reports
+- [ ] Performance Tracking
+
+### Fase 4 — Funcionalidades avanzadas
+- [ ] AI Features (OpenAI)
+- [ ] Collaboration
+- [ ] Forums
+- [ ] Integrations
+- [ ] Mobile Responsive
+
+---
+
+## 👤 USUARIOS DE PRUEBA
+
+| Email | Password | Rol |
+|---|---|---|
+| jaime@lumina.edu.co | lumina1234 | TEACHER |
+| admin@lumina.edu.co | admin1234 | ADMIN |
+
+---
+
+## 📝 NOTAS IMPORTANTES
+
+1. **Prisma 7** es significativamente diferente a versiones anteriores. La conexión va en `prisma.config.ts`, no en `schema.prisma`.
+2. **pnpm** es el gestor de paquetes del proyecto. Nunca usar npm o yarn.
+3. **Docker** debe estar corriendo antes de iniciar el servidor.
+4. Los warnings de `LF will be replaced by CRLF` en Git son normales en Windows, no son errores.
+5. El campo `institution` se agregó al modelo User en la migración `20260321163847_add_institution_to_user`.
+6. Cursor realizó mejoras de seguridad al módulo auth: ConfigModule, rate limiting, DTOs estrictos y tests.
