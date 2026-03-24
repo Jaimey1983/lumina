@@ -21,10 +21,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(config.get<number>('PORT'));
-  console.log(
-    `🚀 Lumina Backend corriendo en puerto ${config.get<number>('PORT')}`,
-  );
+  const port = config.getOrThrow<number>('PORT');
+  await app.listen(port);
+  console.log(`🚀 Lumina Backend corriendo en puerto ${port}`);
 }
 
 void bootstrap();

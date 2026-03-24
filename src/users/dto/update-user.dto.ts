@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsEnum, IsBoolean, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { Role } from '../../../src/auth/dto/register.dto';
+import { Role } from '../../auth/dto/register.dto';
 
 export class UpdateUserDto {
   @IsString()

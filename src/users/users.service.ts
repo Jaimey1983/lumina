@@ -68,7 +68,7 @@ export class UsersService {
   // ─── ACTUALIZAR USUARIO ───────────────────────────────
   async update(id: string, dto: UpdateUserDto, requestingUser: { id: string; role: Role }) {
     // Solo ADMIN puede cambiar roles o activar/desactivar usuarios
-    if ((dto.role || dto.isActive !== undefined) && requestingUser.role !== Role.ADMIN) {
+    if ((dto.role || dto.isActive !== undefined) && requestingUser.role !== Role.ADMIN && requestingUser.role !== Role.SUPERADMIN) {
       throw new ForbiddenException('No tienes permisos para realizar esta acción');
     }
 

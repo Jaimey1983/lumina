@@ -1,6 +1,7 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
 # Última actualización: 23/03/2026
+# Revisión de código y correcciones documentadas: 24/03/2026 (ver sección al final del archivo)
 
 ---
 
@@ -674,6 +675,8 @@ export class CreateNombreDto {
 
 // Rate limiting en endpoints sensibles
 @UseGuards(ThrottlerGuard)
+
+// ThrottlerModule.forRoot (app.module): en @nestjs/throttler v5+, ttl va en MILISEGUNDOS (ej. 60_000 = 60 s)
 ```
 
 ---
@@ -701,6 +704,8 @@ const { PrismaClient } = require(
   path.join(process.cwd(), 'prisma/generated/prisma')
 );
 ```
+
+**Nota (24/03/2026):** En este repo el anidamiento en `dist/src/` solía deberse a compilar también `prisma.config.ts` en la raíz junto con `src/` (ver **§9** más abajo). Tras excluir `prisma.config.ts` en `tsconfig.build.json`, el build de Nest emite `dist/main.js` y el árbol plano bajo `dist/`; el servicio usa `import { PrismaClient } from '@prisma/client'` y no hace falta el `require` con `process.cwd()` para el arranque normal. Conserva el snippet anterior si reaparece `Cannot find module` por rutas custom al cliente generado, monorepos o configuraciones distintas.
 
 ### 2. JWT_SECRET undefined al arrancar
 **Problema:** `JwtStrategy requires a secret or key` al montar AppModule.  
@@ -730,6 +735,26 @@ const { PrismaClient } = require(
 **Problema:** Conflictos de tipos con `@types/pg` usando `nodenext`.  
 **Solución:** Cambiar a `"module": "commonjs"` y `"moduleResolution": "node"` en tsconfig.json.
 
+### 9. Build anidado en `dist/src/` y `start:prod` no encuentra `main.js`
+**Problema:** Al compilar, TypeScript emitía `dist/src/main.js` en lugar de `dist/main.js`. El script `start:prod` (`node dist/main`) fallaba. Causa: `prisma.config.ts` en la raíz del repo se incluía en el build junto con `src/`, y el compilador preservaba la jerarquía de carpetas (`dist/` + `dist/src/`).  
+**Solución:** Excluir `prisma.config.ts` del build de Nest en `tsconfig.build.json`: en el array `exclude`, añadir `"prisma.config.ts"`. Tras el cambio, la salida queda en `dist/main.js`, `dist/app.module.js`, etc. (sin carpeta `dist/src/` para el código de aplicación).
+
+### 10. ThrottlerModule: `ttl` en milisegundos (@nestjs/throttler v5+)
+**Problema:** Con `ttl: 60` el límite era de 60 milisegundos, no 60 segundos; el rate limiting era prácticamente inexistente.  
+**Solución:** Usar `ttl` en ms, p. ej. `60_000` para un minuto. Mantener `limit` según la política deseada (p. ej. 10 peticiones por ventana).
+
+### 11. Import de DTO con ruta `../../../src/auth/...` desde `src/users/dto/`
+**Problema:** Import como `'../../../src/auth/dto/register.dto'` sale del árbol `src/` y solo cuadraba con el build anidado en `dist/src/`. Con la salida plana en `dist/`, el `require` en runtime podía resolverse mal.  
+**Solución:** Usar rutas relativas dentro de `src/`, p. ej. `'../../auth/dto/register.dto'` desde `src/users/dto/update-user.dto.ts`.
+
+### 12. `PORT` con `ConfigService.get` en `main.ts`
+**Problema:** `config.get<number>('PORT')` puede tiparse como `number | undefined`; es frágil frente a cambios de validación.  
+**Solución:** Usar `config.getOrThrow<number>('PORT')` (alineado con JWT y demás) y reutilizar la variable para `listen` y el `console.log`.
+
+### 13. `users.service`: solo `ADMIN` podía cambiar rol / `isActive`
+**Problema:** La condición comprobaba solo `Role.ADMIN`; un usuario `SUPERADMIN` quedaba bloqueado al actualizar `role` o `isActive`.  
+**Solución:** Permitir también `Role.SUPERADMIN` en esa misma comprobación de permisos.
+
 ---
 
 ## 📁 ESTRUCTURA DEL PROYECTO
@@ -741,8 +766,9 @@ lumina-backend/
 ├── docker-compose.yml            # PostgreSQL 16 + Redis 7
 ├── nest-cli.json
 ├── package.json
-├── prisma.config.ts              # Config de Prisma 7
+├── prisma.config.ts              # Config de Prisma 7 (excluido del build Nest; ver §9)
 ├── tsconfig.json
+├── tsconfig.build.json           # exclude: incluye prisma.config.ts para salida en dist/
 ├── prisma/
 │   ├── schema.prisma             # 13 modelos definidos
 │   ├── migrations/
@@ -831,3 +857,26 @@ lumina-backend/
 4. Los warnings de `LF will be replaced by CRLF` en Git son normales en Windows, no son errores.
 5. El campo `institution` se agregó al modelo User en la migración `20260321163847_add_institution_to_user`.
 6. Cursor realizó mejoras de seguridad al módulo auth: ConfigModule, rate limiting, DTOs estrictos y tests.
+7. **24/03/2026:** `tsconfig.build.json` excluye `prisma.config.ts` para que `nest build` genere `dist/main.js` y `pnpm run start:prod` funcione.
+8. **24/03/2026:** En `app.module.ts`, `ThrottlerModule`: `ttl` en milisegundos (`60_000` = 60 s), no segundos literales pequeños.
+9. **24/03/2026:** `src/users/dto/update-user.dto.ts` importa `Role` desde `../../auth/dto/register.dto` (nunca `../../../src/...`).
+10. **24/03/2026:** `src/main.ts` usa `getOrThrow('PORT')` para el puerto de escucha.
+11. **24/03/2026:** `src/users/users.service.ts` permite a `SUPERADMIN` además de `ADMIN` cambiar `role` e `isActive` en `update`.
+
+---
+
+## 📌 REVISIÓN 24/03/2026 — Cambios realizados en el código (referencia para Cursor)
+
+Resumen de la revisión solicitada al asistente: errores detectados y correcciones ya aplicadas en el repositorio. No sustituye el resto de este archivo; amplía el contexto.
+
+| Área | Qué estaba mal | Qué se hizo |
+|------|----------------|-------------|
+| **Build / producción** | La compilación dejaba el JS en `dist/src/…`; `package.json` script `start:prod` ejecuta `node dist/main`, que no existía en la ruta esperada. | En `tsconfig.build.json`, `exclude` incluye `"prisma.config.ts"` para que solo se compile el árbol bajo `src/` (salida plana bajo `dist/`). |
+| **Rate limiting** | `@nestjs/throttler` v5+: `ttl` está en **ms**. `ttl: 60` ≈ 60 ms, no 1 minuto. | En `app.module.ts`, `ttl: 60_000` (ej. 10 peticiones por minuto con `limit: 10`). |
+| **Imports** | `update-user.dto.ts` usaba `'../../../src/auth/dto/register.dto'`, dependiente del layout erróneo de `dist/`. | Import corregido a `'../../auth/dto/register.dto'`. |
+| **Bootstrap** | `config.get('PORT')` podía ser `undefined` a nivel de tipos. | `const port = config.getOrThrow<number>('PORT')`; `listen(port)` y log con la misma variable. |
+| **Autorización** | En `update`, solo `ADMIN` podía tocar `role` / `isActive`. | Se añadió `SUPERADMIN` a la condición de permiso. |
+
+**Archivos tocados en esa revisión:** `tsconfig.build.json`, `src/app.module.ts`, `src/main.ts`, `src/users/dto/update-user.dto.ts`, `src/users/users.service.ts`.
+
+**Comprobación recomendada tras cambios similares:** `pnpm run build` y verificar que exista `dist/main.js`; revisar que `ThrottlerModule` use `ttl` en milisegundos según la versión del paquete.

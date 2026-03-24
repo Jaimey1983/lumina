@@ -28,7 +28,7 @@ import { ClassesModule } from './classes/classes.module';
       throttlers: [
         {
           limit: 10,
-          ttl: 60,
+          ttl: 60_000,
         },
       ],
     }),
