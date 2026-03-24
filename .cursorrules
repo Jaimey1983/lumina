@@ -434,10 +434,19 @@ const { PrismaClient } = require(
 - Gestión de `Activity` vinculadas a `Indicator`
 - CRUD de actividades con pesos (`weight`) y nota máxima (`maxScore`)
 
-#### 7. PerformanceIndicatorsModule 🔲
-- Gestión de `GradebookStructure` → `Aspect` → `Indicator`
-- Validar que los pesos de `Aspect` sumen 100% dentro de una estructura
-- Validar que los pesos de `Indicator` sumen 100% dentro de un `Aspect`
+#### 7. PerformanceIndicatorsModule ✅
+- **Ruta:** `src/performance-indicators/`
+- **Prefijo HTTP:** `courses/:courseId/gradebook`
+- **Endpoints:**
+  - `POST .../gradebook` — crear `GradebookStructure` vacía para el curso (TEACHER dueño / ADMIN / SUPERADMIN); `409` si ya existe
+  - `GET .../gradebook` — árbol `aspects` → `indicators` + `meta` (`aspectsWeightSum`, `aspectsWeightsValid`, `indicatorsByAspect[]`); matriculados y docentes con acceso al curso pueden leer
+  - `POST .../gradebook/aspects` — crear aspecto (`name`, `weight` 0–1); rechaza si la suma de pesos de aspectos supera 1.0
+  - `PATCH .../gradebook/aspects/:aspectId` — actualizar nombre/peso con la misma regla de suma
+  - `DELETE .../gradebook/aspects/:aspectId` — elimina indicadores sin actividades; `409` si hay `Activity` bajo algún indicador
+  - `POST .../gradebook/aspects/:aspectId/indicators` — crear indicador; suma de pesos por aspecto ≤ 1.0
+  - `PATCH .../gradebook/indicators/:indicatorId` — actualizar indicador (misma regla de suma)
+  - `DELETE .../gradebook/indicators/:indicatorId` — `409` si el indicador tiene actividades
+- **Validación:** suma de pesos no puede exceder 1.0 por nivel (tolerancia `1e-5`); en `GET`, `meta` indica si las sumas cerraron en 1.0 (estructura “completa” por nivel)
 
 #### 8. GradebookModule 🔲
 - Registro de notas (`GradeEntry`) por usuario/actividad/período
@@ -474,6 +483,8 @@ const { PrismaClient } = require(
 // - AuthModule
 // - UsersModule
 // - CoursesModule
+// - ClassesModule
+// - PerformanceIndicatorsModule
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -796,14 +807,25 @@ lumina-backend/
     │   ├── users.service.ts
     │   └── dto/
     │       └── update-user.dto.ts
-    └── courses/
-        ├── courses.module.ts
-        ├── courses.controller.ts
-        ├── courses.service.ts
+    ├── courses/
+    │   ├── courses.module.ts
+    │   ├── courses.controller.ts
+    │   ├── courses.service.ts
+    │   └── dto/
+    │       ├── create-course.dto.ts
+    │       ├── update-course.dto.ts
+    │       └── enroll-student.dto.ts
+    ├── classes/
+    │   └── (classes.controller, classes.service, dto/*)
+    └── performance-indicators/
+        ├── performance-indicators.module.ts
+        ├── performance-indicators.controller.ts
+        ├── performance-indicators.service.ts
         └── dto/
-            ├── create-course.dto.ts
-            ├── update-course.dto.ts
-            └── enroll-student.dto.ts
+            ├── create-aspect.dto.ts
+            ├── update-aspect.dto.ts
+            ├── create-indicator.dto.ts
+            └── update-indicator.dto.ts
 ```
 
 ---
@@ -815,8 +837,8 @@ lumina-backend/
 - [x] Users
 - [x] Courses
 - [x] Classes
-- [ ] Performance Indicators
-- [ ] Gradebook Structure
+- [x] Performance Indicators (`PerformanceIndicatorsModule`)
+- [x] Gradebook Structure (`GradebookStructure` → `Aspect` → `Indicator` vía API gradebook)
 - [ ] Grade Calculation
 
 ### Fase 2 — Funcionalidades interactivas

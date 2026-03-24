@@ -9,6 +9,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { ClassesModule } from './classes/classes.module';
+import { PerformanceIndicatorsModule } from './performance-indicators/performance-indicators.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ClassesModule } from './classes/classes.module';
     UsersModule,
     CoursesModule,
     ClassesModule,
+    PerformanceIndicatorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
