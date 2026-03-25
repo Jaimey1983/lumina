@@ -1,7 +1,7 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 23/03/2026
-# Revisión de código y correcciones documentadas: 24/03/2026 (ver sección al final del archivo)
+# Última actualización: 25/03/2026
+# Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
 
@@ -448,15 +448,15 @@ const { PrismaClient } = require(
 - **Endpoints:**
   - `POST .../gradebook` — crear `GradebookStructure` vacía para el curso (TEACHER dueño / ADMIN / SUPERADMIN); `409` si ya existe
   - `GET .../gradebook` — **estructura** (árbol `aspects` → `indicators` + `meta`); no confundir con el libro de notas: ese es `GET .../grades?periodId=` (`GradebookModule`)
-  - `POST .../gradebook/aspects` — crear aspecto (`name`, `weight` 0–1); rechaza si la suma de pesos de **aspectos** supera **0.90** (`BadRequestException`: el **0.10** restante está reservado para autoevaluación y coevaluación)
-  - `PATCH .../gradebook/aspects/:aspectId` — actualizar nombre/peso con la misma regla (**≤ 0.90** en total)
+  - `POST .../gradebook/aspects` — crear aspecto (`name`, `weight` 0–1); rechaza si la suma de pesos de aspectos supera 1.0
+  - `PATCH .../gradebook/aspects/:aspectId` — actualizar nombre/peso con la misma regla de suma
   - `DELETE .../gradebook/aspects/:aspectId` — elimina indicadores sin actividades; `409` si hay `Activity` bajo algún indicador
   - `POST .../gradebook/aspects/:aspectId/indicators` — crear indicador; suma de pesos por aspecto ≤ 1.0
   - `PATCH .../gradebook/indicators/:indicatorId` — actualizar indicador (misma regla de suma)
   - `DELETE .../gradebook/indicators/:indicatorId` — `409` si el indicador tiene actividades
-- **Validación:** suma de pesos de **aspectos** ≤ **0.90** (`1e-5`); suma de **indicadores** por aspecto y de **actividades** por indicador siguen ≤ **1.0** (`1e-5`). En `GET .../gradebook`, `meta` incluye sumas y flags de cierre (alinear mentalmente aspectos con el objetivo **0.90**, no 1.0)
+- **Validación:** suma de pesos no puede exceder 1.0 por nivel (tolerancia `1e-5`); en `GET`, `meta` indica si las sumas cerraron en 1.0 (estructura “completa” por nivel)
 
-#### 8. GradebookModule ✅
+#### 8. GradebookModule ✅ ← PRÓXIMO: GradeCalculationModule (§9)
 - **Ruta:** `src/gradebook/`
 - **Prefijo HTTP:** `courses/:courseId` (comparte prefijo con `ActivitiesModule`; rutas sin colisión)
 - **Períodos (`Period`):**
@@ -471,22 +471,46 @@ const { PrismaClient } = require(
   - `GET .../grades?periodId=` — matriz: `activities` (planas con `aspectName` / `indicatorName`), `rows[]` con `user` y `cells[]` (`entry` o `null`); docente/admin ven todos los matriculados; **STUDENT** solo su fila
 - **Requisito:** debe existir `GradebookStructure` del curso; si no, `404` en `GET .../grades`
 
-#### 9. GradeCalculationModule ✅
+#### 9. GradeCalculationModule ✅ — completado 25/03/2026
 - **Ruta:** `src/grade-calculation/`
-- **Prefijo:** `courses/:courseId`
+- **Prefijo HTTP:** `courses/:courseId`
 - **Endpoints:**
-  - `GET .../grade-calculation?periodId=` — resumen compacto (`getSummary`)
-  - `GET .../grade-calculation/full?periodId=` — desglose completo de todos los matriculados
-  - `GET .../grade-calculation/students/:userId?periodId=` — desglose individual; TEACHER/ADMIN/SUPERADMIN cualquier `userId`; STUDENT solo el propio
-- **Regla en código:** en `calculateForStudent`, tras cargar el curso con `gradebookStructure`, se exige `sum(aspect.weight) === 0.90` (±`1e-5`); si no, `BadRequestException` con mensaje que incluye la suma observada
-- **Roles:** lectura de agregados solo privilegiados; estudiante solo su propia ruta de cálculo
+  - `GET .../grade-calculation?periodId=` — resumen compacto de todos los estudiantes (nota final + isComplete)
+  - `GET .../grade-calculation/full?periodId=` — desglose multinivel completo de todos los estudiantes
+  - `GET .../grade-calculation/students/:userId?periodId=` — desglose individual; STUDENT solo ve la suya
+- **Permisos:** TEACHER/ADMIN/SUPERADMIN ven todos; STUDENT solo su propia nota
+- **Lógica clave:**
+  - Una sola query a `GradeEntry` para todos los activities del curso (sin N+1)
+  - Cálculo parcial si faltan entradas: devuelve lo disponible con `isComplete: false`
+  - Valida que suma de `Aspect.weight` sea exactamente 0.90 antes de calcular
+  - Redondeo a 2 decimales en todos los valores
+- **Archivos:** `grade-calculation.module.ts`, `grade-calculation.service.ts`, `grade-calculation.controller.ts`, `dto/calculate-grade.dto.ts`
 
-#### 10. SelfEvaluationModule 🔲
-- CRUD de `SelfEvaluation` (una por estudiante/curso/período)
+#### 10. SelfEvaluationModule ✅ — completado 25/03/2026
+- **Ruta:** `src/self-evaluation/`
+- **Prefijo HTTP:** `courses/:courseId/self-evaluations`
+- **Regla de dominio:** el docente pregunta la nota al estudiante y él mismo la ingresa — el estudiante nunca escribe
+- **Endpoints:**
+  - `POST .../self-evaluations` — docente registra la autoevaluación (`userId`, `periodId`, `score` 0–5, `feedback?`)
+  - `GET .../self-evaluations?periodId=` — lista todas del curso en el período (TEACHER/ADMIN/SUPERADMIN)
+  - `GET .../self-evaluations/students/:userId?periodId=` — ver una; STUDENT solo la suya
+  - `PATCH .../self-evaluations/students/:userId?periodId=` — actualizar (solo docente)
+  - `DELETE .../self-evaluations/students/:userId?periodId=` — eliminar (solo docente)
+- **Restricciones:** unique por `(userId, courseId, periodId)`; estudiante debe estar matriculado; período debe pertenecer al curso
+- **Archivos:** `self-evaluation.module.ts`, `self-evaluation.service.ts`, `self-evaluation.controller.ts`, `dto/create-self-evaluation.dto.ts`, `dto/update-self-evaluation.dto.ts`
 
-#### 11. PeerEvaluationModule 🔲
-- CRUD de `PeerEvaluation`
-- Restricción: un estudiante no puede evaluarse a sí mismo (`evaluatorId !== evaluatedId`)
+#### 11. PeerEvaluationModule ✅ — completado 25/03/2026
+- **Ruta:** `src/peer-evaluation/`
+- **Prefijo HTTP:** `courses/:courseId/peer-evaluations`
+- **Regla de dominio:** el docente pregunta al grupo y él mismo ingresa las notas — el estudiante nunca escribe
+- **Endpoints:**
+  - `POST .../peer-evaluations` — docente registra (`evaluatorId`, `evaluatedId`, `periodId`, `score` 0–5, `feedback?`)
+  - `GET .../peer-evaluations?periodId=` — lista todas del curso (TEACHER/ADMIN/SUPERADMIN)
+  - `GET .../peer-evaluations/students/:evaluatedId?periodId=` — coevaluaciones recibidas + promedio; STUDENT solo las suyas
+  - `PATCH .../peer-evaluations/:id` — actualizar (solo docente)
+  - `DELETE .../peer-evaluations/:id` — eliminar (solo docente)
+- **Restricciones:** `evaluatorId !== evaluatedId`; ambos deben estar matriculados; unique por `(evaluatorId, evaluatedId, courseId, periodId)`
+- **Archivos:** `peer-evaluation.module.ts`, `peer-evaluation.service.ts`, `peer-evaluation.controller.ts`, `dto/create-peer-evaluation.dto.ts`, `dto/update-peer-evaluation.dto.ts`
 
 #### 12. LiveSessionsModule 🔲
 - Socket.IO: unirse a una clase en vivo, sincronizar slides, recibir actividades en tiempo real
@@ -503,7 +527,7 @@ const { PrismaClient } = require(
 ```typescript
 // Imports ya registrados en AppModule (NO duplicar):
 // - ConfigModule.forRoot({ isGlobal: true })
-// - ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])
+// - ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }])  ← ttl en ms
 // - PrismaModule (global)
 // - AuthModule
 // - UsersModule
@@ -512,9 +536,9 @@ const { PrismaClient } = require(
 // - PerformanceIndicatorsModule
 // - ActivitiesModule
 // - GradebookModule
-// - GradeCalculationModule
-// - SelfEvaluationModule
-// - PeerEvaluationModule
+// - GradeCalculationModule   ← Fase 1 completa 25/03/2026
+// - SelfEvaluationModule     ← Fase 1 completa 25/03/2026
+// - PeerEvaluationModule     ← Fase 1 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -540,45 +564,73 @@ enum Role {
 
 ## 📊 SISTEMA DE CALIFICACIÓN
 
+### Regla de dominio fundamental
+**El docente es siempre quien ingresa las notas en la plataforma**, sin excepción. Esto aplica a:
+- Notas de actividades (`GradeEntry`) — el docente las registra tras evaluar al estudiante
+- Autoevaluación (`SelfEvaluation`) — el docente pregunta al estudiante y él mismo la ingresa
+- Coevaluación (`PeerEvaluation`) — el docente pregunta al grupo y él mismo las ingresa
+
+El estudiante **nunca escribe notas**. Solo tiene acceso de lectura (`GET`) sobre sus propios registros.
+
 ### Fórmula final
 
 ```
-Nota Final = (Proceso × 70%) + (Convivencia × 20%) + (Autoevaluación × 5%) + (Coevaluación × 5%)
+Nota Final = (Aspectos × 90%) + (Autoevaluación × 5%) + (Coevaluación × 5%)
 ```
 
-Los pesos **Proceso + Convivencia** (u otros aspectos docentes) deben sumar **0.90** en la estructura; el **0.10** restante del cierre al 100% corresponde a los **5% + 5%** de autoevaluación y coevaluación en la fórmula.
+Donde el 90% de Aspectos se distribuye internamente según la configuración del docente. Ejemplo típico:
+```
+Proceso     = weight 0.70  → 70% de la nota
+Convivencia = weight 0.20  → 20% de la nota
+─────────────────────────────────────────────
+Subtotal Aspectos          = 0.90 (90%)
+Autoevaluación             = 0.05 (5%)
+Coevaluación               = 0.05 (5%)
+─────────────────────────────────────────────
+Total                      = 1.00 → máximo 5.0
+```
+
+### Restricción crítica de pesos
+- Suma de `Aspect.weight` en una `GradebookStructure` **debe ser exactamente 0.90** (no 1.0)
+- Los 0.10 restantes están reservados para SelfEvaluation (0.05) y PeerEvaluation (0.05)
+- Si la suma de aspectos supera 0.90 la nota final puede superar 5.0 — **no permitido**
+- `PerformanceIndicatorsModule` valida este límite al crear/editar aspectos (tolerancia `1e-5`)
+- `GradeCalculationModule` valida que la suma sea exactamente 0.90 antes de calcular y lanza error descriptivo si no
 
 ### Estructura jerárquica en DB
 
 ```
 GradebookStructure (1 por curso)
-  └── Aspect[]           ← Pesos de aspectos deben sumar 0.90 (ej. Proceso 0.70 + Convivencia 0.20)
-        └── Indicator[]  ← Ej: "Responsabilidad" (weight=0.33); suman 1.0 por aspecto
-              └── Activity[] ← Ej: "Taller 1" (weight=0.20, maxScore=5.0); suman 1.0 por indicador
-                    └── GradeEntry[] ← score del estudiante (por período); la ingresa el docente
+  └── Aspect[]           ← Ej: "Proceso" (weight=0.70), "Convivencia" (weight=0.20)
+        └── Indicator[]  ← Ej: "Responsabilidad" (weight=0.33)
+              └── Activity[] ← Ej: "Taller 1" (weight=0.20, maxScore=5.0)
+                    └── GradeEntry[] ← score del estudiante (por período) — ingresado por el docente
 ```
 
 ### Cálculo multinivel
 
 ```
-nota_actividad   = GradeEntry.score / Activity.maxScore × 5.0
-nota_indicador   = Σ (nota_actividad × Activity.weight)
-nota_aspecto     = Σ (nota_indicador × Indicator.weight)
-nota_proceso     = nota_aspecto  [para el Aspect "Proceso"]
-nota_autoeval    = SelfEvaluation.score
-nota_coevaluacion = promedio(PeerEvaluation.score donde evaluatedId = estudiante)
-nota_final       = (nota_proceso × 0.70) + (nota_convivencia × 0.20)
-                 + (nota_autoeval × 0.05) + (nota_coevaluacion × 0.05)
+nota_actividad    = GradeEntry.score / Activity.maxScore × 5.0
+nota_indicador    = Σ (nota_actividad × Activity.weight)
+nota_aspecto      = Σ (nota_indicador × Indicator.weight)
+processScore      = Σ (nota_aspecto × Aspect.weight)   ← ya incluye todos los aspectos ponderados
+nota_autoeval     = SelfEvaluation.score               ← ingresada por el docente
+nota_coevaluacion = promedio(PeerEvaluation.score donde evaluatedId = estudiante) ← ingresada por el docente
+nota_final        = processScore + (nota_autoeval × 0.05) + (nota_coevaluacion × 0.05)
 ```
 
-### Restricciones de validación
-- Suma de `Aspect.weight` en una `GradebookStructure`: **máximo 0.90** al crear/editar aspectos (`PerformanceIndicatorsService`); para ejecutar `GradeCalculationService.calculateForStudent` debe ser **exactamente 0.90** (±`1e-5`). El **0.10** restante del “100%” pedagógico corresponde a autoevaluación (5%) y coevaluación (5%) en la fórmula global — ver arriba.
-- Suma de `Indicator.weight` en un `Aspect` debe ser 1.0 (100% dentro del aspecto)
-- Suma de `Activity.weight` en un `Indicator` debe ser 1.0 (100% dentro del indicador)
-- Escala de notas: 0.0 a 5.0 (sistema colombiano)
+### Comportamiento con datos incompletos
+- Si faltan `GradeEntry` en algunas actividades, el cálculo es parcial — devuelve lo que hay
+- `isComplete: false` en la respuesta indica que faltan entradas
+- `SelfEvaluation` y `PeerEvaluation` son opcionales para el cálculo parcial — si no existen, su componente es 0
+- Nunca lanza error por datos faltantes — solo por estructura mal configurada (aspectos ≠ 0.90)
 
-### Regla de dominio — quién registra notas
-- El **docente** (y roles administrativos con permiso) es quien **ingresa todas las notas**, incluidas las que el modelo representa como autoevaluación y coevaluación. El rol **STUDENT** **no** tiene permisos de **escritura** en ningún módulo de calificación (estructura, actividades, libro, entradas, ni APIs mutadoras de evaluación); solo lectura donde el código lo permita explícitamente.
+### Restricciones de validación
+- Suma de `Aspect.weight` en una `GradebookStructure`: exactamente **0.90** (reservando 0.10 para self/peer)
+- Suma de `Indicator.weight` en un `Aspect`: exactamente 1.0 (100%)
+- Suma de `Activity.weight` en un `Indicator`: exactamente 1.0 (100%)
+- Escala de notas: 0.0 a 5.0 (sistema colombiano)
+- `PeerEvaluation`: `evaluatorId !== evaluatedId` — nadie se coevalúa a sí mismo
 
 ---
 
@@ -596,8 +648,8 @@ nota_final       = (nota_proceso × 0.70) + (nota_convivencia × 0.20)
 | **Actividad** | `Activity` | Tarea/evaluación calificable. Pertenece a un indicador. |
 | **Entrada de nota** | `GradeEntry` | Nota de un estudiante en una actividad para un período. |
 | **Matrícula** | `Enrollment` | Relación estudiante ↔ curso. |
-| **Autoevaluación** | `SelfEvaluation` | Valor por período en el modelo; en Lumina lo **registra el docente** (no el estudiante). |
-| **Coevaluación** | `PeerEvaluation` | Valor en el modelo; en Lumina lo **registra el docente** (no el estudiante como escritor). |
+| **Autoevaluación** | `SelfEvaluation` | Nota que el estudiante se asigna a sí mismo por período. |
+| **Coevaluación** | `PeerEvaluation` | Nota que un estudiante asigna a otro compañero. |
 
 ---
 
@@ -868,22 +920,42 @@ lumina-backend/
     │   └── dto/
     │       ├── create-activity.dto.ts
     │       └── update-activity.dto.ts
-    └── gradebook/
-        ├── gradebook.module.ts
-        ├── gradebook.controller.ts
-        ├── gradebook.service.ts
+    ├── gradebook/
+    │   ├── gradebook.module.ts
+    │   ├── gradebook.controller.ts
+    │   ├── gradebook.service.ts
+    │   └── dto/
+    │       ├── create-period.dto.ts
+    │       ├── update-period.dto.ts
+    │       ├── create-grade-entry.dto.ts
+    │       └── update-grade-entry.dto.ts
+    ├── grade-calculation/
+    │   ├── grade-calculation.module.ts
+    │   ├── grade-calculation.controller.ts
+    │   ├── grade-calculation.service.ts
+    │   └── dto/
+    │       └── calculate-grade.dto.ts
+    ├── self-evaluation/
+    │   ├── self-evaluation.module.ts
+    │   ├── self-evaluation.controller.ts
+    │   ├── self-evaluation.service.ts
+    │   └── dto/
+    │       ├── create-self-evaluation.dto.ts
+    │       └── update-self-evaluation.dto.ts
+    └── peer-evaluation/
+        ├── peer-evaluation.module.ts
+        ├── peer-evaluation.controller.ts
+        ├── peer-evaluation.service.ts
         └── dto/
-            ├── create-period.dto.ts
-            ├── update-period.dto.ts
-            ├── create-grade-entry.dto.ts
-            └── update-grade-entry.dto.ts
+            ├── create-peer-evaluation.dto.ts
+            └── update-peer-evaluation.dto.ts
 ```
 
 ---
 
 ## 🗺️ FASES DE DESARROLLO
 
-### Fase 1 — MVP Core (en progreso)
+### Fase 1 — MVP Core ✅ COMPLETA (25/03/2026)
 - [x] Auth
 - [x] Users
 - [x] Courses
@@ -892,7 +964,9 @@ lumina-backend/
 - [x] Gradebook Structure (`GradebookStructure` → `Aspect` → `Indicator` vía API gradebook)
 - [x] Activities calificables (`Activity` bajo `Indicator`, `ActivitiesModule`)
 - [x] Períodos y notas (`Period`, `GradeEntry`, `GradebookModule`; libro `GET .../grades?periodId=`)
-- [x] Grade Calculation (`GradeCalculationModule`; validación suma aspectos = 0.90 antes de calcular)
+- [x] Grade Calculation (`GradeCalculationModule`) — fórmula multinivel, cálculo parcial, resumen por curso
+- [x] Self Evaluation (`SelfEvaluationModule`) — el docente ingresa la nota que el estudiante se asigna
+- [x] Peer Evaluation (`PeerEvaluationModule`) — el docente ingresa las notas que los estudiantes se asignan entre sí
 
 ### Fase 2 — Funcionalidades interactivas
 - [ ] Activities (H5P)
@@ -937,8 +1011,8 @@ lumina-backend/
 9. **24/03/2026:** `src/users/dto/update-user.dto.ts` importa `Role` desde `../../auth/dto/register.dto` (nunca `../../../src/...`).
 10. **24/03/2026:** `src/main.ts` usa `getOrThrow('PORT')` para el puerto de escucha.
 11. **24/03/2026:** `src/users/users.service.ts` permite a `SUPERADMIN` además de `ADMIN` cambiar `role` e `isActive` en `update`.
-12. **Pesos de aspectos 0.90:** la suma de `Aspect.weight` no puede superar **0.90** al crear/editar aspectos (`performance-indicators.service.ts`); `grade-calculation.service.ts` exige suma **exactamente 0.90** antes de calcular. El **0.10** restante en el diseño pedagógico corresponde a autoevaluación y coevaluación en la fórmula final.
-13. **Calificación — escritura:** solo docente (y roles admin con permiso) escribe notas y datos de evaluación; **STUDENT** no tiene escritura en módulos de calificación.
+12. **25/03/2026:** Suma de `Aspect.weight` debe ser **0.90** (no 1.0) — los 0.10 restantes son fijos para SelfEval (0.05) y PeerEval (0.05). Validar en `PerformanceIndicatorsModule` y `GradeCalculationModule`.
+13. **25/03/2026:** El docente es **siempre** quien ingresa las notas — incluyendo autoevaluación y coevaluación. El estudiante solo tiene acceso de lectura (`GET`) a sus propios registros. Nunca dar permisos de escritura al rol `STUDENT` en ningún módulo de calificación.
 
 ---
 
@@ -957,3 +1031,49 @@ Resumen de la revisión solicitada al asistente: errores detectados y correccion
 **Archivos tocados en esa revisión:** `tsconfig.build.json`, `src/app.module.ts`, `src/main.ts`, `src/users/dto/update-user.dto.ts`, `src/users/users.service.ts`.
 
 **Comprobación recomendada tras cambios similares:** `pnpm run build` y verificar que exista `dist/main.js`; revisar que `ThrottlerModule` use `ttl` en milisegundos según la versión del paquete.
+
+---
+
+## 📌 REVISIÓN 25/03/2026 — Fase 1 completada
+
+### Módulos nuevos agregados
+
+| Módulo | Ruta | Endpoints |
+|--------|------|-----------|
+| `GradeCalculationModule` | `src/grade-calculation/` | `GET .../grade-calculation`, `GET .../grade-calculation/full`, `GET .../grade-calculation/students/:userId` |
+| `SelfEvaluationModule` | `src/self-evaluation/` | `POST/GET/PATCH/DELETE .../self-evaluations` y `.../self-evaluations/students/:userId` |
+| `PeerEvaluationModule` | `src/peer-evaluation/` | `POST/GET .../peer-evaluations`, `GET .../peer-evaluations/students/:evaluatedId`, `PATCH/DELETE .../peer-evaluations/:id` |
+
+### Decisiones de dominio confirmadas
+
+| Decisión | Detalle |
+|----------|---------|
+| **Quién ingresa notas** | Siempre el docente — incluyendo autoevaluación y coevaluación. El estudiante nunca escribe. |
+| **Peso máximo de aspectos** | 0.90 (no 1.0). SelfEval (0.05) + PeerEval (0.05) = 0.10 reservado. Total siempre = 1.0 → máx 5.0 |
+| **Cálculo parcial** | `GradeCalculationModule` calcula con lo disponible y devuelve `isComplete: false` si faltan entradas |
+| **Restricción peer** | `evaluatorId !== evaluatedId` — nadie se coevalúa a sí mismo, aunque sea el docente quien lo ingrese |
+
+### Correcciones aplicadas y verificadas en pruebas (25/03/2026)
+
+| Archivo | Cambio aplicado | Verificado |
+|---------|-----------------|-----------|
+| `src/performance-indicators/performance-indicators.service.ts` | Límite de suma de aspectos cambiado de `1.0` a `0.90` | ✅ Devuelve 400 al intentar superar 0.90 |
+| `src/grade-calculation/grade-calculation.service.ts` | Validación explícita suma aspectos = 0.90 antes de calcular | ✅ Cálculo multinivel y nota final correctos |
+
+### Commit de cierre Fase 1
+
+```
+[main 5a4f769] feat: complete Phase 1 - GradeCalculation, SelfEvaluation, PeerEvaluation modules
+17 files changed, 1193 insertions(+), 49 deletions(-)
+```
+
+### Resultados de pruebas en Postman (25/03/2026)
+
+| Prueba | Resultado |
+|--------|-----------|
+| Login + JWT | ✅ |
+| Validación suma aspectos > 0.90 devuelve 400 | ✅ |
+| Cálculo multinivel parcial con `isComplete: false` | ✅ |
+| Autoevaluación ingresada por docente | ✅ |
+| Coevaluación rechaza evaluador no matriculado | ✅ |
+| Nota final con autoevaluación: 3.15 + (4.0 × 0.05) = 3.35 | ✅ |
