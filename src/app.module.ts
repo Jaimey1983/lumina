@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { ClassesModule } from './classes/classes.module';
 import { PerformanceIndicatorsModule } from './performance-indicators/performance-indicators.module';
+import { ActivitiesModule } from './activities/activities.module';
+import { GradebookModule } from './gradebook/gradebook.module';
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import { PerformanceIndicatorsModule } from './performance-indicators/performanc
     CoursesModule,
     ClassesModule,
     PerformanceIndicatorsModule,
+    ActivitiesModule,
+    GradebookModule,
   ],
   controllers: [AppController],
   providers: [AppService],

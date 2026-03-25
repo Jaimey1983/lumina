@@ -430,16 +430,24 @@ const { PrismaClient } = require(
   - `content` de Slide es `Json` libre — se castea con `as any` para Prisma 7
   - Relación en `create` usa `class: { connect: { id } }` en lugar de `classId` directo
 
-#### 6. ActivitiesModule 🔲 ← PRÓXIMO
-- Gestión de `Activity` vinculadas a `Indicator`
-- CRUD de actividades con pesos (`weight`) y nota máxima (`maxScore`)
+#### 6. ActivitiesModule ✅
+- **Ruta:** `src/activities/`
+- **Prefijo HTTP:** `courses/:courseId` (subrutas `indicators/.../activities` y `activities/...`)
+- **Endpoints:**
+  - `POST .../indicators/:indicatorId/activities` — crear actividad (`name`, `weight` 0–1, `maxScore` opcional, default 5.0); suma de pesos por indicador ≤ 1.0
+  - `GET .../indicators/:indicatorId/activities` — listar actividades del indicador + `meta.weightSum` y `meta.weightsValid`
+  - `GET .../activities/:activityId` — detalle (incluye `_count.gradeEntries`); lectura para quien tenga acceso al curso
+  - `PATCH .../activities/:activityId` — actualizar nombre, peso o `maxScore` (misma regla de suma de pesos)
+  - `DELETE .../activities/:activityId` — eliminar solo si no hay `GradeEntry`; si hay notas, `409`
+- **Permisos:** mutaciones = docente dueño del curso, ADMIN, SUPERADMIN; lectura = igual que otros módulos del curso (matriculados incluidos)
+- **DTOs:** `create-activity.dto.ts`, `update-activity.dto.ts` (`maxScore` entre 0.1 y 100 para flexibilidad; escala pedagógica 0–5 documentada en dominio)
 
 #### 7. PerformanceIndicatorsModule ✅
 - **Ruta:** `src/performance-indicators/`
 - **Prefijo HTTP:** `courses/:courseId/gradebook`
 - **Endpoints:**
   - `POST .../gradebook` — crear `GradebookStructure` vacía para el curso (TEACHER dueño / ADMIN / SUPERADMIN); `409` si ya existe
-  - `GET .../gradebook` — árbol `aspects` → `indicators` + `meta` (`aspectsWeightSum`, `aspectsWeightsValid`, `indicatorsByAspect[]`); matriculados y docentes con acceso al curso pueden leer
+  - `GET .../gradebook` — **estructura** (árbol `aspects` → `indicators` + `meta`); no confundir con el libro de notas: ese es `GET .../grades?periodId=` (`GradebookModule`)
   - `POST .../gradebook/aspects` — crear aspecto (`name`, `weight` 0–1); rechaza si la suma de pesos de aspectos supera 1.0
   - `PATCH .../gradebook/aspects/:aspectId` — actualizar nombre/peso con la misma regla de suma
   - `DELETE .../gradebook/aspects/:aspectId` — elimina indicadores sin actividades; `409` si hay `Activity` bajo algún indicador
@@ -448,11 +456,22 @@ const { PrismaClient } = require(
   - `DELETE .../gradebook/indicators/:indicatorId` — `409` si el indicador tiene actividades
 - **Validación:** suma de pesos no puede exceder 1.0 por nivel (tolerancia `1e-5`); en `GET`, `meta` indica si las sumas cerraron en 1.0 (estructura “completa” por nivel)
 
-#### 8. GradebookModule 🔲
-- Registro de notas (`GradeEntry`) por usuario/actividad/período
-- Consulta del libro de calificaciones completo de un curso
+#### 8. GradebookModule ✅ ← PRÓXIMO: GradeCalculationModule (§9)
+- **Ruta:** `src/gradebook/`
+- **Prefijo HTTP:** `courses/:courseId` (comparte prefijo con `ActivitiesModule`; rutas sin colisión)
+- **Períodos (`Period`):**
+  - `POST .../periods` — crear (`name`, `startDate`, `endDate` ISO, `isActive` opcional)
+  - `GET .../periods` — listar del curso (incluye `_count.gradeEntries`)
+  - `PATCH .../periods/:periodId` — actualizar
+  - `DELETE .../periods/:periodId` — desactivar (`isActive: false`), conserva histórico de notas
+- **Calificaciones (`GradeEntry`):**
+  - `POST .../grade-entries` — upsert por (`userId`, `activityId`, `periodId`); exige estudiante matriculado, período y actividad del curso; `score` ≤ `Activity.maxScore`
+  - `PATCH .../grade-entries/:entryId` — actualizar `score` y/o `feedback`
+- **Libro por período:**
+  - `GET .../grades?periodId=` — matriz: `activities` (planas con `aspectName` / `indicatorName`), `rows[]` con `user` y `cells[]` (`entry` o `null`); docente/admin ven todos los matriculados; **STUDENT** solo su fila
+- **Requisito:** debe existir `GradebookStructure` del curso; si no, `404` en `GET .../grades`
 
-#### 9. GradeCalculationModule 🔲
+#### 9. GradeCalculationModule 🔲 ← PRÓXIMO
 - Cálculo de la nota final según la fórmula ponderada multinivel (ver sección de calificación)
 - Cálculo por período y por curso
 
@@ -485,6 +504,8 @@ const { PrismaClient } = require(
 // - CoursesModule
 // - ClassesModule
 // - PerformanceIndicatorsModule
+// - ActivitiesModule
+// - GradebookModule
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -817,15 +838,31 @@ lumina-backend/
     │       └── enroll-student.dto.ts
     ├── classes/
     │   └── (classes.controller, classes.service, dto/*)
-    └── performance-indicators/
-        ├── performance-indicators.module.ts
-        ├── performance-indicators.controller.ts
-        ├── performance-indicators.service.ts
+    ├── performance-indicators/
+    │   ├── performance-indicators.module.ts
+    │   ├── performance-indicators.controller.ts
+    │   ├── performance-indicators.service.ts
+    │   └── dto/
+    │       ├── create-aspect.dto.ts
+    │       ├── update-aspect.dto.ts
+    │       ├── create-indicator.dto.ts
+    │       └── update-indicator.dto.ts
+    ├── activities/
+    │   ├── activities.module.ts
+    │   ├── activities.controller.ts
+    │   ├── activities.service.ts
+    │   └── dto/
+    │       ├── create-activity.dto.ts
+    │       └── update-activity.dto.ts
+    └── gradebook/
+        ├── gradebook.module.ts
+        ├── gradebook.controller.ts
+        ├── gradebook.service.ts
         └── dto/
-            ├── create-aspect.dto.ts
-            ├── update-aspect.dto.ts
-            ├── create-indicator.dto.ts
-            └── update-indicator.dto.ts
+            ├── create-period.dto.ts
+            ├── update-period.dto.ts
+            ├── create-grade-entry.dto.ts
+            └── update-grade-entry.dto.ts
 ```
 
 ---
@@ -839,6 +876,8 @@ lumina-backend/
 - [x] Classes
 - [x] Performance Indicators (`PerformanceIndicatorsModule`)
 - [x] Gradebook Structure (`GradebookStructure` → `Aspect` → `Indicator` vía API gradebook)
+- [x] Activities calificables (`Activity` bajo `Indicator`, `ActivitiesModule`)
+- [x] Períodos y notas (`Period`, `GradeEntry`, `GradebookModule`; libro `GET .../grades?periodId=`)
 - [ ] Grade Calculation
 
 ### Fase 2 — Funcionalidades interactivas

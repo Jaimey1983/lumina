@@ -1,0 +1,324 @@
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateActivityDto } from './dto/create-activity.dto';
+import { UpdateActivityDto } from './dto/update-activity.dto';
+
+const WEIGHT_EPS = 1e-5;
+
+@Injectable()
+export class ActivitiesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(
+    courseId: string,
+    indicatorId: string,
+    dto: CreateActivityDto,
+    userId: string,
+    role: string,
+  ) {
+    await this.assertCourseExists(courseId);
+    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.verifyCourseAccess(courseId, userId, role);
+    await this.assertIndicatorBelongsToCourse(indicatorId, courseId);
+
+    const currentSum = await this.sumActivityWeightsForIndicator(indicatorId);
+    const nextSum = currentSum + dto.weight;
+    if (nextSum > 1 + WEIGHT_EPS) {
+      throw new BadRequestException(
+        `La suma de pesos de actividades en este indicador no puede superar 1.0 (quedaría: ${nextSum.toFixed(4)})`,
+      );
+    }
+
+    return this.prisma.activity.create({
+      data: {
+        name: dto.name,
+        weight: dto.weight,
+        maxScore: dto.maxScore ?? 5.0,
+        indicatorId,
+      },
+      select: {
+        id: true,
+        name: true,
+        weight: true,
+        maxScore: true,
+        indicatorId: true,
+      },
+    });
+  }
+
+  async findAllByIndicator(
+    courseId: string,
+    indicatorId: string,
+    userId: string,
+    role: string,
+  ) {
+    await this.assertCourseExists(courseId);
+    await this.verifyCourseAccess(courseId, userId, role);
+    await this.assertIndicatorBelongsToCourse(indicatorId, courseId);
+
+    const activities = await this.prisma.activity.findMany({
+      where: { indicatorId },
+      select: {
+        id: true,
+        name: true,
+        weight: true,
+        maxScore: true,
+        indicatorId: true,
+        _count: { select: { gradeEntries: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    const sum = this.sumWeights(activities.map((a) => a.weight));
+    return {
+      data: activities,
+      meta: {
+        weightSum: sum,
+        weightsValid:
+          activities.length === 0 || Math.abs(sum - 1) <= WEIGHT_EPS,
+      },
+    };
+  }
+
+  async findOne(
+    courseId: string,
+    activityId: string,
+    userId: string,
+    role: string,
+  ) {
+    await this.assertCourseExists(courseId);
+    await this.verifyCourseAccess(courseId, userId, role);
+
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      select: {
+        id: true,
+        name: true,
+        weight: true,
+        maxScore: true,
+        indicatorId: true,
+        indicator: {
+          select: {
+            id: true,
+            name: true,
+            aspect: {
+              select: {
+                id: true,
+                name: true,
+                structure: { select: { courseId: true } },
+              },
+            },
+          },
+        },
+        _count: { select: { gradeEntries: true } },
+      },
+    });
+
+    if (
+      !activity ||
+      activity.indicator.aspect.structure.courseId !== courseId
+    ) {
+      throw new NotFoundException('Actividad no encontrada en este curso');
+    }
+
+    return activity;
+  }
+
+  async update(
+    courseId: string,
+    activityId: string,
+    dto: UpdateActivityDto,
+    userId: string,
+    role: string,
+  ) {
+    await this.assertCanManageGradebook(courseId, userId, role);
+
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      select: {
+        id: true,
+        indicatorId: true,
+        weight: true,
+        name: true,
+        maxScore: true,
+        indicator: {
+          select: {
+            aspect: {
+              select: { structure: { select: { courseId: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    if (
+      !activity ||
+      activity.indicator.aspect.structure.courseId !== courseId
+    ) {
+      throw new NotFoundException('Actividad no encontrada en este curso');
+    }
+
+    const newWeight = dto.weight ?? activity.weight;
+    const othersSum = await this.prisma.activity.aggregate({
+      where: { indicatorId: activity.indicatorId, id: { not: activityId } },
+      _sum: { weight: true },
+    });
+    const nextSum = (othersSum._sum.weight ?? 0) + newWeight;
+    if (nextSum > 1 + WEIGHT_EPS) {
+      throw new BadRequestException(
+        `La suma de pesos de actividades no puede superar 1.0 (quedaría: ${nextSum.toFixed(4)})`,
+      );
+    }
+
+    return this.prisma.activity.update({
+      where: { id: activityId },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.weight !== undefined && { weight: dto.weight }),
+        ...(dto.maxScore !== undefined && { maxScore: dto.maxScore }),
+      },
+      select: {
+        id: true,
+        name: true,
+        weight: true,
+        maxScore: true,
+        indicatorId: true,
+      },
+    });
+  }
+
+  async remove(
+    courseId: string,
+    activityId: string,
+    userId: string,
+    role: string,
+  ) {
+    await this.assertCanManageGradebook(courseId, userId, role);
+
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      select: {
+        id: true,
+        indicator: {
+          select: {
+            aspect: {
+              select: { structure: { select: { courseId: true } } },
+            },
+          },
+        },
+        _count: { select: { gradeEntries: true } },
+      },
+    });
+
+    if (
+      !activity ||
+      activity.indicator.aspect.structure.courseId !== courseId
+    ) {
+      throw new NotFoundException('Actividad no encontrada en este curso');
+    }
+
+    if (activity._count.gradeEntries > 0) {
+      throw new ConflictException(
+        'No se puede eliminar la actividad: ya tiene calificaciones registradas',
+      );
+    }
+
+    await this.prisma.activity.delete({ where: { id: activityId } });
+    return { message: 'Actividad eliminada correctamente' };
+  }
+
+  private sumWeights(weights: number[]): number {
+    return weights.reduce((a, b) => a + b, 0);
+  }
+
+  private async sumActivityWeightsForIndicator(indicatorId: string) {
+    const agg = await this.prisma.activity.aggregate({
+      where: { indicatorId },
+      _sum: { weight: true },
+    });
+    return agg._sum.weight ?? 0;
+  }
+
+  private async assertCourseExists(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true },
+    });
+    if (!course) throw new NotFoundException('Curso no encontrado');
+  }
+
+  private async verifyCourseAccess(
+    courseId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') return;
+
+    if (userRole === 'TEACHER') {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { teacherId: true },
+      });
+      if (!course || course.teacherId !== userId) {
+        throw new ForbiddenException('No tienes acceso a este curso');
+      }
+      return;
+    }
+
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    });
+    if (!enrollment) {
+      throw new ForbiddenException('No estás matriculado en este curso');
+    }
+  }
+
+  private async assertCanManageGradebook(
+    courseId: string,
+    userId: string,
+    role: string,
+  ) {
+    if (role === 'ADMIN' || role === 'SUPERADMIN') return;
+
+    if (role === 'TEACHER') {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { teacherId: true },
+      });
+      if (!course || course.teacherId !== userId) {
+        throw new ForbiddenException(
+          'No tienes permiso para gestionar actividades de calificación en este curso',
+        );
+      }
+      return;
+    }
+
+    throw new ForbiddenException(
+      'No tienes permiso para gestionar actividades de calificación',
+    );
+  }
+
+  private async assertIndicatorBelongsToCourse(
+    indicatorId: string,
+    courseId: string,
+  ) {
+    const indicator = await this.prisma.indicator.findUnique({
+      where: { id: indicatorId },
+      select: {
+        id: true,
+        aspect: {
+          select: { structure: { select: { courseId: true } } },
+        },
+      },
+    });
+    if (!indicator || indicator.aspect.structure.courseId !== courseId) {
+      throw new NotFoundException('Indicador no encontrado en este curso');
+    }
+  }
+}
