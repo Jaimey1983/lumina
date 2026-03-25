@@ -118,9 +118,9 @@ export class PerformanceIndicatorsService {
 
     const currentSum = await this.sumAspectWeightsForStructure(structure.id);
     const nextSum = currentSum + dto.weight;
-    if (nextSum > 1 + WEIGHT_EPS) {
+    if (nextSum > 0.90 + WEIGHT_EPS) {
       throw new BadRequestException(
-        `La suma de pesos de aspectos no puede superar 1.0 (actual tras agregar: ${nextSum.toFixed(4)})`,
+        'La suma de pesos de los aspectos no puede superar 0.90 (el 0.10 restante está reservado para autoevaluación y coevaluación)',
       );
     }
 
@@ -162,9 +162,9 @@ export class PerformanceIndicatorsService {
       _sum: { weight: true },
     });
     const nextSum = (othersSum._sum.weight ?? 0) + newWeight;
-    if (nextSum > 1 + WEIGHT_EPS) {
+    if (nextSum > 0.90 + WEIGHT_EPS) {
       throw new BadRequestException(
-        `La suma de pesos de aspectos no puede superar 1.0 (quedaría: ${nextSum.toFixed(4)})`,
+        'La suma de pesos de los aspectos no puede superar 0.90 (el 0.10 restante está reservado para autoevaluación y coevaluación)',
       );
     }
 

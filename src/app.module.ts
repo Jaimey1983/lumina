@@ -1,50 +1,40 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import * as Joi from 'joi';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { PrismaModule } from './prisma/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { ClassesModule } from './classes/classes.module';
 import { PerformanceIndicatorsModule } from './performance-indicators/performance-indicators.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { GradebookModule } from './gradebook/gradebook.module';
+import { GradeCalculationModule } from './grade-calculation/grade-calculation.module';
+import { SelfEvaluationModule } from './self-evaluation/self-evaluation.module';
+import { PeerEvaluationModule } from './peer-evaluation/peer-evaluation.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validationSchema: Joi.object({
-        NODE_ENV: Joi.string()
-          .valid('development', 'test', 'production')
-          .default('development'),
-        PORT: Joi.number().integer().min(1).max(65535).default(3000),
-        FRONTEND_URL: Joi.string().uri().optional(),
-        JWT_SECRET: Joi.string().min(16).required(),
-        DATABASE_URL: Joi.string().min(1).required(),
-      }),
-    }),
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          limit: 10,
-          ttl: 60_000,
-        },
-      ],
-    }),
-    AuthModule,
+    // Config global — disponible en todos los módulos sin reimportar
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    // Rate limiting — ttl en MILISEGUNDOS (v5+): 60_000 = 60 segundos
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }]),
+
+    // Infraestructura
     PrismaModule,
+
+    // ── Fase 1 MVP Core — COMPLETA ────────────────────────────────────────
+    AuthModule,
     UsersModule,
     CoursesModule,
     ClassesModule,
     PerformanceIndicatorsModule,
     ActivitiesModule,
     GradebookModule,
+    GradeCalculationModule,
+    SelfEvaluationModule,
+    PeerEvaluationModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
