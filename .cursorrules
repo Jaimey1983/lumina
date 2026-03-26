@@ -601,9 +601,26 @@ const { PrismaClient } = require(
 - **Relaciones nuevas en Course:** `studentPoints StudentPoints[]`, `badges Badge[]`
 - **Archivos:** `gamification.module.ts`, `gamification.service.ts`, `gamification.controller.ts`, `dto/assign-points.dto.ts`, `dto/create-badge.dto.ts`, `dto/update-badge.dto.ts`, `dto/assign-badge.dto.ts`
 
-#### 15. AnalyticsModule 🔲
-#### 16. AIFeaturesModule 🔲
-#### 17. NotificationsModule 🔲
+#### 15. ClassEditorModule ✅ — completado 25/03/2026 (Fase 2)
+- **Ruta:** `src/class-editor/`
+- **Prefijo HTTP:** `classes/:classId/editor`
+- **Descripción:** Operaciones avanzadas de edición sobre clases y slides. No crea modelos nuevos — opera directamente sobre `Class` y `Slide` existentes.
+- **Endpoints:**
+  - `PATCH .../editor/slides/reorder` — reordenar slides; body `{ slides: [{id, order},...] }`; valida que todos los IDs pertenecen a la clase; transacción atómica
+  - `PATCH .../editor/slides/bulk` — bulk update de `title` y/o `content` de múltiples slides en una transacción; valida ownership de todos los IDs
+  - `PATCH .../editor/slides/:slideId/type` — cambiar `type` (SlideType enum) de una slide
+  - `POST  .../editor/slides/:slideId/duplicate` — duplicar slide al final de la clase; título con sufijo `" (copia)"`
+  - `POST  .../editor/duplicate` — duplicar clase completa (nuevo `code` con `nanoid(8)`, status `DRAFT`, todas las slides copiadas en orden)
+  - `GET   .../editor/preview` — clase completa con slides ordenadas; solo lectura
+- **Orden de rutas en controller:** `slides/reorder` y `slides/bulk` (literales) registrados antes de `slides/:slideId/*` (params) para evitar conflicto de matching
+- **Permisos:** mutaciones = docente titular del curso, ADMIN, SUPERADMIN; preview (`GET`) = todos los matriculados (`verifyCourseReadAccess`)
+- **Scope de autorización:** `'classEditor'` (agregado a `CourseManageScope`)
+- **Transacciones:** `reorderSlides` y `bulkUpdateSlides` usan `prisma.$transaction([...])` para atomicidad
+- **Archivos:** `class-editor.module.ts`, `class-editor.service.ts`, `class-editor.controller.ts`, `dto/reorder-slides.dto.ts`, `dto/change-slide-type.dto.ts`, `dto/bulk-update-slides.dto.ts`
+
+#### 16. AnalyticsModule 🔲
+#### 17. AIFeaturesModule 🔲
+#### 18. NotificationsModule 🔲
 
 ---
 
@@ -627,6 +644,7 @@ const { PrismaClient } = require(
 // - LiveSessionsModule
 // - H5pActivitiesModule      ← Fase 2 completa 25/03/2026
 // - GamificationModule       ← Fase 2 completa 25/03/2026
+// - ClassEditorModule        ← Fase 2 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1059,6 +1077,7 @@ lumina-backend/
 ### Fase 2 — Funcionalidades interactivas
 - [x] Activities H5P (`H5pActivitiesModule`) — completado 25/03/2026
 - [x] Gamification (`GamificationModule`) — puntos + badges — completado 25/03/2026
+- [x] Class Editor (`ClassEditorModule`) — reorder, duplicar, bulk update, preview — completado 25/03/2026
 - [ ] Live Sessions (Socket.IO)
 - [ ] Class Editor
 - [ ] Messaging

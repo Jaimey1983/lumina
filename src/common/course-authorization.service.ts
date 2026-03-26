@@ -14,7 +14,8 @@ export type CourseManageScope =
   | 'peerEvaluations'
   | 'liveSessions'
   | 'h5pActivities'
-  | 'gamification';
+  | 'gamification'
+  | 'classEditor';
 
 const MANAGE_SCOPE_MESSAGES: Record<
   CourseManageScope,
@@ -61,6 +62,11 @@ const MANAGE_SCOPE_MESSAGES: Record<
     wrongCourse:
       'No tienes permiso para gestionar la gamificación en este curso',
     notStaff: 'No tienes permiso para gestionar la gamificación',
+  },
+  classEditor: {
+    wrongCourse:
+      'No tienes permiso para editar clases en este curso',
+    notStaff: 'No tienes permiso para editar clases',
   },
 };
 
