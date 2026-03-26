@@ -13,6 +13,6 @@ export class StudentHistoryController {
     @Param('userId') userId: string,
     @Request() req: any,
   ) {
-    return this.performanceService.getCrossCourseHistory(userId, req.user.userId, req.user.role);
+    return this.performanceService.getCrossCourseHistory(userId, req.user.id, req.user.role);
   }
 }

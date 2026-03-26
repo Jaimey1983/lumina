@@ -15,7 +15,7 @@ export class PerformanceTrackingController {
     @Param('courseId') courseId: string,
     @Request() req: any,
   ) {
-    return this.performanceService.getRanking(courseId, req.user.userId, req.user.role);
+    return this.performanceService.getRanking(courseId, req.user.id, req.user.role);
   }
 
   /** GET /courses/:courseId/performance/at-risk — solo staff */
@@ -24,7 +24,7 @@ export class PerformanceTrackingController {
     @Param('courseId') courseId: string,
     @Request() req: any,
   ) {
-    return this.performanceService.getAtRisk(courseId, req.user.userId, req.user.role);
+    return this.performanceService.getAtRisk(courseId, req.user.id, req.user.role);
   }
 
   /** GET /courses/:courseId/performance/evolution/:userId */
@@ -34,7 +34,7 @@ export class PerformanceTrackingController {
     @Param('userId') userId: string,
     @Request() req: any,
   ) {
-    return this.performanceService.getEvolution(courseId, userId, req.user.userId, req.user.role);
+    return this.performanceService.getEvolution(courseId, userId, req.user.id, req.user.role);
   }
 
   /** GET /courses/:courseId/performance/comparison/:userId */
@@ -44,7 +44,7 @@ export class PerformanceTrackingController {
     @Param('userId') userId: string,
     @Request() req: any,
   ) {
-    return this.performanceService.getComparison(courseId, userId, req.user.userId, req.user.role);
+    return this.performanceService.getComparison(courseId, userId, req.user.id, req.user.role);
   }
 
   /** GET /courses/:courseId/performance/breakdown/:userId?periodId= */
@@ -55,6 +55,6 @@ export class PerformanceTrackingController {
     @Query('periodId') periodId: string | undefined,
     @Request() req: any,
   ) {
-    return this.performanceService.getBreakdown(courseId, userId, req.user.userId, req.user.role, periodId);
+    return this.performanceService.getBreakdown(courseId, userId, req.user.id, req.user.role, periodId);
   }
 }

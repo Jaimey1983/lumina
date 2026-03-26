@@ -728,7 +728,7 @@ const { PrismaClient } = require(
 // - MessagingModule          ← Fase 2 completa 25/03/2026
 // - AnalyticsModule               ← Fase 3 completa 25/03/2026
 // - GradebookReportsModule        ← Fase 3 completa 25/03/2026
-// - PerformanceTrackingModule     ← Fase 3 completa 25/03/2026
+// - PerformanceTrackingModule     ← Fase 3 completa 25/03/2026 (dos controllers: PerformanceTrackingController + StudentHistoryController)
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1165,12 +1165,10 @@ lumina-backend/
 - [x] Class Editor (`ClassEditorModule`) — reorder, duplicar, bulk update, preview — completado 25/03/2026
 - [x] Messaging (`MessagingModule`) — canal, DMs, hilos, lectura, soft delete — completado 25/03/2026
 
-### Fase 3 — Analytics y reportes
+### Fase 3 — Analytics y reportes ✅ COMPLETA (25/03/2026)
 - [x] Analytics (`AnalyticsModule`) — resumen, progreso, ranking actividades, engagement, export — completado 25/03/2026
 - [x] Gradebook Reports (`GradebookReportsModule`) — matriz, distribución, pendientes, export — completado 25/03/2026
 - [x] Performance Tracking (`PerformanceTrackingModule`) — evolución, comparativa, ranking, at-risk, breakdown, historial cruzado — completado 25/03/2026
-
-### Fase 3 — Analytics y reportes ✅ COMPLETA (25/03/2026)
 
 ### Fase 4 — Funcionalidades avanzadas
 - [ ] AI Features (OpenAI)

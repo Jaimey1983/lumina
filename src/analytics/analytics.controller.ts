@@ -22,7 +22,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getCourseSummary(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -37,7 +37,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getAllStudentsProgress(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -53,7 +53,7 @@ export class AnalyticsController {
     return this.analyticsService.getStudentProgress(
       courseId,
       targetUserId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -67,7 +67,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getActivitiesRanking(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -80,7 +80,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getLiveSessionsStats(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
     );
   }
@@ -92,7 +92,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getEngagement(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
     );
   }
@@ -105,7 +105,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.exportCourse(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );

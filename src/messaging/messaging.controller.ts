@@ -31,7 +31,7 @@ export class MessagingController {
   ) {
     return this.messagingService.sendDirectMessage(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       dto,
     );
@@ -48,7 +48,7 @@ export class MessagingController {
     return this.messagingService.listDirectMessages(
       courseId,
       otherUserId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       Number(page),
       Number(limit),
@@ -65,7 +65,7 @@ export class MessagingController {
   ) {
     return this.messagingService.sendMessage(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       dto,
     );
@@ -80,7 +80,7 @@ export class MessagingController {
   ) {
     return this.messagingService.listMessages(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       Number(page),
       Number(limit),
@@ -96,7 +96,7 @@ export class MessagingController {
     return this.messagingService.getMessage(
       courseId,
       messageId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
     );
   }
@@ -111,7 +111,7 @@ export class MessagingController {
     return this.messagingService.markAsRead(
       courseId,
       messageId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
     );
   }
@@ -126,7 +126,7 @@ export class MessagingController {
     return this.messagingService.deleteMessage(
       courseId,
       messageId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
     );
   }

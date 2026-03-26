@@ -25,7 +25,7 @@ export class GradebookReportsController {
   ) {
     return this.reportsService.getMatrix(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -39,7 +39,7 @@ export class GradebookReportsController {
   ) {
     return this.reportsService.getFinalGrades(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -53,7 +53,7 @@ export class GradebookReportsController {
   ) {
     return this.reportsService.getDistribution(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -67,7 +67,7 @@ export class GradebookReportsController {
   ) {
     return this.reportsService.getPending(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -81,7 +81,7 @@ export class GradebookReportsController {
   ) {
     return this.reportsService.exportReport(
       courseId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );
@@ -98,7 +98,7 @@ export class GradebookReportsController {
     return this.reportsService.getStudentBreakdown(
       courseId,
       targetUserId,
-      req.user.userId,
+      req.user.id,
       req.user.role,
       periodId,
     );

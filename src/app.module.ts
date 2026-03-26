@@ -47,11 +47,13 @@ import { PerformanceTrackingModule } from './performance-tracking/performance-tr
     PeerEvaluationModule,
     LiveSessionsModule,
 
-    // ── Fase 2 — H5P Activities + Gamification + Class Editor ────────────
+    // ── Fase 2 — Funcionalidades interactivas — COMPLETA ─────────────────
     H5pActivitiesModule,
     GamificationModule,
     ClassEditorModule,
     MessagingModule,
+
+    // ── Fase 3 — Analytics y reportes — COMPLETA ─────────────────────────
     AnalyticsModule,
     GradebookReportsModule,
     PerformanceTrackingModule,
