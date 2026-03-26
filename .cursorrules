@@ -96,7 +96,7 @@ export default defineConfig({
 });
 ```
 
-### Schema Prisma completo (13 modelos)
+### Schema Prisma completo (16 modelos — actualizado 25/03/2026)
 
 ```prisma
 generator client {
@@ -329,6 +329,48 @@ model PeerEvaluation {
   @@unique([evaluatorId, evaluatedId, courseId, periodId])
   @@map("peer_evaluations")
 }
+
+// ─── GAMIFICACIÓN ─────────────────────────────────────────
+model StudentPoints {
+  id        String   @id @default(cuid())
+  points    Int      @default(0)
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId])
+  @@map("student_points")
+}
+
+model Badge {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  isActive    Boolean        @default(true)
+  courseId    String
+  course      Course         @relation(fields: [courseId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  assignments StudentBadge[]
+
+  @@map("badges")
+}
+
+model StudentBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  user      User     @relation(fields: [userId], references: [id])
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("student_badges")
+}
 ```
 
 ---
@@ -532,7 +574,33 @@ const { PrismaClient } = require(
 - **Scope de autorización:** `'h5pActivities'` (agregado a `CourseManageScope` en `course-authorization.service.ts`)
 - **Archivos:** `h5p-activities.module.ts`, `h5p-activities.service.ts`, `h5p-activities.controller.ts`, `dto/create-h5p-activity.dto.ts`, `dto/update-h5p-activity.dto.ts`
 
-#### 14. GamificationModule 🔲
+#### 14. GamificationModule ✅ — completado 25/03/2026 (Fase 2)
+- **Ruta:** `src/gamification/`
+- **Prefijo HTTP:** `courses/:courseId/gamification`
+- **Descripción:** Sistema de puntos e insignias (badges) por curso. Los docentes asignan puntos y badges a estudiantes matriculados; los estudiantes ven sus propios datos o el leaderboard global.
+- **Modelos Prisma nuevos (migración `20260326_gamification`):**
+  - `StudentPoints` — puntos acumulados por estudiante en un curso; unique `(userId, courseId)`; upsert pattern
+  - `Badge` — definición de insignia para un curso; soft delete (`isActive`)
+  - `StudentBadge` — asignación badge ↔ estudiante; unique `(userId, badgeId)`; eliminación física al revocar
+- **Endpoints — Puntos:**
+  - `POST .../gamification/points` — upsert de puntos (`userId`, `points` entero ≥ 0); reemplaza el total actual
+  - `GET .../gamification/leaderboard` — ranking de todos los estudiantes con puntos, ordenado desc; visible para todos los matriculados
+  - `GET .../gamification/students/:userId/points` — puntos de un estudiante; STUDENT solo ve los suyos
+- **Endpoints — Badges:**
+  - `POST .../gamification/badges` — crear insignia (`name`, `description?`, `icon?`)
+  - `GET .../gamification/badges` — listar insignias activas + `_count.assignments`
+  - `GET .../gamification/badges/:badgeId` — detalle de insignia
+  - `PATCH .../gamification/badges/:badgeId` — actualizar nombre / descripción / icono
+  - `DELETE .../gamification/badges/:badgeId` — soft delete (`isActive: false`)
+  - `POST .../gamification/badges/:badgeId/assign` — asignar badge a estudiante (`userId`); `409` si ya tiene
+  - `DELETE .../gamification/badges/:badgeId/students/:userId` — revocar badge (elimina StudentBadge)
+  - `GET .../gamification/students/:userId/badges` — badges ganados por estudiante; STUDENT solo ve los suyos
+- **Permisos:** mutaciones = docente titular, ADMIN, SUPERADMIN; lectura leaderboard/badges = todos los matriculados; puntos y badges propios = STUDENT; datos de otros = solo TEACHER/ADMIN/SUPERADMIN
+- **Scope de autorización:** `'gamification'` (agregado a `CourseManageScope`)
+- **Relaciones nuevas en User:** `studentPoints StudentPoints[]`, `studentBadges StudentBadge[]`
+- **Relaciones nuevas en Course:** `studentPoints StudentPoints[]`, `badges Badge[]`
+- **Archivos:** `gamification.module.ts`, `gamification.service.ts`, `gamification.controller.ts`, `dto/assign-points.dto.ts`, `dto/create-badge.dto.ts`, `dto/update-badge.dto.ts`, `dto/assign-badge.dto.ts`
+
 #### 15. AnalyticsModule 🔲
 #### 16. AIFeaturesModule 🔲
 #### 17. NotificationsModule 🔲
@@ -558,6 +626,7 @@ const { PrismaClient } = require(
 // - PeerEvaluationModule     ← Fase 1 completa 25/03/2026
 // - LiveSessionsModule
 // - H5pActivitiesModule      ← Fase 2 completa 25/03/2026
+// - GamificationModule       ← Fase 2 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -988,9 +1057,9 @@ lumina-backend/
 - [x] Peer Evaluation (`PeerEvaluationModule`) — el docente ingresa las notas que los estudiantes se asignan entre sí
 
 ### Fase 2 — Funcionalidades interactivas
-- [ ] Activities (H5P)
+- [x] Activities H5P (`H5pActivitiesModule`) — completado 25/03/2026
+- [x] Gamification (`GamificationModule`) — puntos + badges — completado 25/03/2026
 - [ ] Live Sessions (Socket.IO)
-- [ ] Gamification
 - [ ] Class Editor
 - [ ] Messaging
 

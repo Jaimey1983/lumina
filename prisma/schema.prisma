@@ -27,6 +27,8 @@ model User {
   selfEvaluations   SelfEvaluation[]
   peerEvaluationsGiven    PeerEvaluation[] @relation("EvaluatorUser")
   peerEvaluationsReceived PeerEvaluation[] @relation("EvaluatedUser")
+  studentPoints     StudentPoints[]
+  studentBadges     StudentBadge[]
 
   @@map("users")
 }
@@ -59,6 +61,8 @@ model Course {
   classes             Class[]
   gradebookStructure  GradebookStructure?
   periods             Period[]
+  studentPoints       StudentPoints[]
+  badges              Badge[]
 
   @@map("courses")
 }
@@ -229,4 +233,46 @@ model PeerEvaluation {
 
   @@unique([evaluatorId, evaluatedId, courseId, periodId])
   @@map("peer_evaluations")
+}
+
+// ─── GAMIFICACIÓN ─────────────────────────────────────────
+model StudentPoints {
+  id        String   @id @default(cuid())
+  points    Int      @default(0)
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId])
+  @@map("student_points")
+}
+
+model Badge {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  isActive    Boolean        @default(true)
+  courseId    String
+  course      Course         @relation(fields: [courseId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  assignments StudentBadge[]
+
+  @@map("badges")
+}
+
+model StudentBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  user      User     @relation(fields: [userId], references: [id])
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("student_badges")
 }

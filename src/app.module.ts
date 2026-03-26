@@ -15,6 +15,7 @@ import { SelfEvaluationModule } from './self-evaluation/self-evaluation.module';
 import { PeerEvaluationModule } from './peer-evaluation/peer-evaluation.module';
 import { LiveSessionsModule } from './live-sessions/live-sessions.module';
 import { H5pActivitiesModule } from './h5p-activities/h5p-activities.module';
+import { GamificationModule } from './gamification/gamification.module';
 
 @Module({
   imports: [
@@ -41,8 +42,9 @@ import { H5pActivitiesModule } from './h5p-activities/h5p-activities.module';
     PeerEvaluationModule,
     LiveSessionsModule,
 
-    // ── Fase 2 — H5P Activities ───────────────────────────────────────────
+    // ── Fase 2 — H5P Activities + Gamification ───────────────────────────
     H5pActivitiesModule,
+    GamificationModule,
   ],
 })
 export class AppModule {}

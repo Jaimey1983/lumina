@@ -13,7 +13,8 @@ export type CourseManageScope =
   | 'selfEvaluations'
   | 'peerEvaluations'
   | 'liveSessions'
-  | 'h5pActivities';
+  | 'h5pActivities'
+  | 'gamification';
 
 const MANAGE_SCOPE_MESSAGES: Record<
   CourseManageScope,
@@ -55,6 +56,11 @@ const MANAGE_SCOPE_MESSAGES: Record<
     wrongCourse:
       'No tienes permiso para gestionar actividades H5P en este curso',
     notStaff: 'No tienes permiso para gestionar actividades H5P',
+  },
+  gamification: {
+    wrongCourse:
+      'No tienes permiso para gestionar la gamificación en este curso',
+    notStaff: 'No tienes permiso para gestionar la gamificación',
   },
 };
 
