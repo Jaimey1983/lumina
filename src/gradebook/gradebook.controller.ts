@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -67,6 +69,7 @@ export class GradebookController {
   }
 
   @Delete('periods/:periodId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   removePeriod(
     @Param('courseId') courseId: string,

@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -123,6 +125,7 @@ export class PeerEvaluationController {
   // DELETE /courses/:courseId/peer-evaluations/:id
   // Eliminar una coevaluación — solo docente
   @Delete(':id')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   remove(

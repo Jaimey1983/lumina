@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -88,6 +90,7 @@ export class H5pActivitiesController {
   }
 
   @Delete(':slideId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   remove(
     @Param('courseId') courseId: string,

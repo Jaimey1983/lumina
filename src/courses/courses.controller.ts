@@ -1,6 +1,8 @@
 import {
     Controller,
     Get,
+    HttpCode,
+    HttpStatus,
     Post,
     Patch,
     Delete,
@@ -59,6 +61,7 @@ import {
   
     // DELETE /courses/:id
     @Delete(':id')
+    @HttpCode(HttpStatus.OK)
     @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
     remove(@Param('id') id: string, @Request() req) {
       return this.coursesService.remove(id, req.user.id, req.user.role);

@@ -1,6 +1,8 @@
 import {
     Controller,
     Get,
+    HttpCode,
+    HttpStatus,
     Patch,
     Delete,
     Param,
@@ -49,6 +51,7 @@ import {
   
     // DELETE /users/:id (solo ADMIN)
     @Delete(':id')
+    @HttpCode(HttpStatus.OK)
     @Roles('ADMIN', 'SUPERADMIN')
     remove(@Param('id') id: string) {
       return this.usersService.remove(id);

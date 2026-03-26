@@ -1,6 +1,8 @@
 import {
     Controller,
     Get,
+    HttpCode,
+    HttpStatus,
     Post,
     Patch,
     Delete,
@@ -58,6 +60,7 @@ import {
     }
   
     @Delete(':id')
+    @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
     remove(@Param('id') id: string, @Request() req) {
@@ -90,6 +93,7 @@ import {
     }
   
     @Delete(':id/slides/:slideId')
+    @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
     removeSlide(

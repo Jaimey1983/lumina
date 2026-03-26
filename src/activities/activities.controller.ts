@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -84,6 +86,7 @@ export class ActivitiesController {
   }
 
   @Delete('activities/:activityId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   remove(
     @Param('courseId') courseId: string,

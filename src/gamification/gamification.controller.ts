@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -154,6 +156,7 @@ export class GamificationController {
    * Soft-delete de insignia (isActive: false).
    */
   @Delete('badges/:badgeId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   removeBadge(
     @Param('courseId') courseId: string,
@@ -196,6 +199,7 @@ export class GamificationController {
    * Revocar insignia de un estudiante.
    */
   @Delete('badges/:badgeId/students/:userId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   revokeBadge(
     @Param('courseId') courseId: string,

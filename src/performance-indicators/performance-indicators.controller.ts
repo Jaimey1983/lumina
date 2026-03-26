@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -77,6 +79,7 @@ export class PerformanceIndicatorsController {
   }
 
   @Delete('aspects/:aspectId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   deleteAspect(
     @Param('courseId') courseId: string,
@@ -126,6 +129,7 @@ export class PerformanceIndicatorsController {
   }
 
   @Delete('indicators/:indicatorId')
+  @HttpCode(HttpStatus.OK)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   deleteIndicator(
     @Param('courseId') courseId: string,

@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Patch,
   Delete,
@@ -127,6 +129,7 @@ export class SelfEvaluationController {
   // DELETE /courses/:courseId/self-evaluations/students/:userId?periodId=xxx
   // Solo docente puede eliminar
   @Delete('students/:userId')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   remove(
