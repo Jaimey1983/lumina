@@ -1,11 +1,11 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 
@@ -13,7 +13,10 @@ const WEIGHT_EPS = 1e-5;
 
 @Injectable()
 export class ActivitiesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseAuth: CourseAuthorizationService,
+  ) {}
 
   async create(
     courseId: string,
@@ -22,9 +25,14 @@ export class ActivitiesService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGradebook(courseId, userId, role);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'activities',
+    );
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
     await this.assertIndicatorBelongsToCourse(indicatorId, courseId);
 
     const currentSum = await this.sumActivityWeightsForIndicator(indicatorId);
@@ -58,8 +66,8 @@ export class ActivitiesService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
     await this.assertIndicatorBelongsToCourse(indicatorId, courseId);
 
     const activities = await this.prisma.activity.findMany({
@@ -92,8 +100,8 @@ export class ActivitiesService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -137,7 +145,12 @@ export class ActivitiesService {
     userId: string,
     role: string,
   ) {
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'activities',
+    );
 
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -199,7 +212,12 @@ export class ActivitiesService {
     userId: string,
     role: string,
   ) {
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'activities',
+    );
 
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -243,65 +261,6 @@ export class ActivitiesService {
       _sum: { weight: true },
     });
     return agg._sum.weight ?? 0;
-  }
-
-  private async assertCourseExists(courseId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      select: { id: true },
-    });
-    if (!course) throw new NotFoundException('Curso no encontrado');
-  }
-
-  private async verifyCourseAccess(
-    courseId: string,
-    userId: string,
-    userRole: string,
-  ) {
-    if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') return;
-
-    if (userRole === 'TEACHER') {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { teacherId: true },
-      });
-      if (!course || course.teacherId !== userId) {
-        throw new ForbiddenException('No tienes acceso a este curso');
-      }
-      return;
-    }
-
-    const enrollment = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    });
-    if (!enrollment) {
-      throw new ForbiddenException('No estás matriculado en este curso');
-    }
-  }
-
-  private async assertCanManageGradebook(
-    courseId: string,
-    userId: string,
-    role: string,
-  ) {
-    if (role === 'ADMIN' || role === 'SUPERADMIN') return;
-
-    if (role === 'TEACHER') {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { teacherId: true },
-      });
-      if (!course || course.teacherId !== userId) {
-        throw new ForbiddenException(
-          'No tienes permiso para gestionar actividades de calificación en este curso',
-        );
-      }
-      return;
-    }
-
-    throw new ForbiddenException(
-      'No tienes permiso para gestionar actividades de calificación',
-    );
   }
 
   private async assertIndicatorBelongsToCourse(

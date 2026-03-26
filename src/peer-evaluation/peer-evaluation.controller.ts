@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PeerEvaluationService } from './peer-evaluation.service';
 import { CreatePeerEvaluationDto } from './dto/create-peer-evaluation.dto';
@@ -31,8 +32,14 @@ export class PeerEvaluationController {
   create(
     @Param('courseId') courseId: string,
     @Body() dto: CreatePeerEvaluationDto,
+    @Request() req,
   ) {
-    return this.peerEvaluationService.create(courseId, dto);
+    return this.peerEvaluationService.create(
+      courseId,
+      dto,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // GET /courses/:courseId/peer-evaluations?periodId=xxx
@@ -43,8 +50,19 @@ export class PeerEvaluationController {
   findAll(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
+    @Request() req,
   ) {
-    return this.peerEvaluationService.findAll(courseId, periodId);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+    return this.peerEvaluationService.findAll(
+      courseId,
+      periodId.trim(),
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // GET /courses/:courseId/peer-evaluations/students/:evaluatedId?periodId=xxx
@@ -67,10 +85,18 @@ export class PeerEvaluationController {
       );
     }
 
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+
     return this.peerEvaluationService.findByEvaluated(
       courseId,
-      periodId,
+      periodId.trim(),
       evaluatedId,
+      requester.id,
+      requester.role,
     );
   }
 
@@ -83,8 +109,15 @@ export class PeerEvaluationController {
     @Param('courseId') courseId: string,
     @Param('id') id: string,
     @Body() dto: UpdatePeerEvaluationDto,
+    @Request() req,
   ) {
-    return this.peerEvaluationService.update(id, courseId, dto);
+    return this.peerEvaluationService.update(
+      id,
+      courseId,
+      dto,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // DELETE /courses/:courseId/peer-evaluations/:id
@@ -95,7 +128,13 @@ export class PeerEvaluationController {
   remove(
     @Param('courseId') courseId: string,
     @Param('id') id: string,
+    @Request() req,
   ) {
-    return this.peerEvaluationService.remove(id, courseId);
+    return this.peerEvaluationService.remove(
+      id,
+      courseId,
+      req.user.id,
+      req.user.role,
+    );
   }
 }

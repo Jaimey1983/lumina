@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
@@ -31,8 +32,14 @@ export class SelfEvaluationController {
   create(
     @Param('courseId') courseId: string,
     @Body() dto: CreateSelfEvaluationDto,
+    @Request() req,
   ) {
-    return this.selfEvaluationService.create(courseId, dto);
+    return this.selfEvaluationService.create(
+      courseId,
+      dto,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // GET /courses/:courseId/self-evaluations?periodId=xxx
@@ -43,8 +50,19 @@ export class SelfEvaluationController {
   findAll(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
+    @Request() req,
   ) {
-    return this.selfEvaluationService.findAll(courseId, periodId);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+    return this.selfEvaluationService.findAll(
+      courseId,
+      periodId.trim(),
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // GET /courses/:courseId/self-evaluations/students/:userId?periodId=xxx
@@ -64,7 +82,19 @@ export class SelfEvaluationController {
       throw new ForbiddenException('Solo puedes consultar tu propia autoevaluación');
     }
 
-    return this.selfEvaluationService.findOne(courseId, periodId, userId);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+
+    return this.selfEvaluationService.findOne(
+      courseId,
+      periodId.trim(),
+      userId,
+      requester.id,
+      requester.role,
+    );
   }
 
   // PATCH /courses/:courseId/self-evaluations/students/:userId?periodId=xxx
@@ -77,8 +107,21 @@ export class SelfEvaluationController {
     @Param('userId') userId: string,
     @Query('periodId') periodId: string,
     @Body() dto: UpdateSelfEvaluationDto,
+    @Request() req,
   ) {
-    return this.selfEvaluationService.update(courseId, periodId, userId, dto);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+    return this.selfEvaluationService.update(
+      courseId,
+      periodId.trim(),
+      userId,
+      dto,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // DELETE /courses/:courseId/self-evaluations/students/:userId?periodId=xxx
@@ -90,7 +133,19 @@ export class SelfEvaluationController {
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
     @Query('periodId') periodId: string,
+    @Request() req,
   ) {
-    return this.selfEvaluationService.remove(courseId, periodId, userId);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+    return this.selfEvaluationService.remove(
+      courseId,
+      periodId.trim(),
+      userId,
+      req.user.id,
+      req.user.role,
+    );
   }
 }

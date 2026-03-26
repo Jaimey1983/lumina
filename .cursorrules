@@ -1077,3 +1077,154 @@ Resumen de la revisión solicitada al asistente: errores detectados y correccion
 | Autoevaluación ingresada por docente | ✅ |
 | Coevaluación rechaza evaluador no matriculado | ✅ |
 | Nota final con autoevaluación: 3.15 + (4.0 × 0.05) = 3.35 | ✅ |
+
+
+---
+
+## 📌 REVISIÓN 25/03/2026 — Refactor autorización, LiveSessions y tipado Prisma
+
+### 1. `CourseAuthorizationService` (nuevo servicio global)
+
+**Archivo:** `src/common/course-authorization.service.ts`  
+**Módulo:** `src/common/common.module.ts` — decorado con `@Global()`, exporta el servicio.  
+**Registro:** `CommonModule` importado en `app.module.ts` junto a `PrismaModule`.
+
+Centraliza toda la lógica de acceso a cursos que antes se duplicaba (~40 líneas) en 6 módulos:
+
+| Método | Descripción |
+|--------|-------------|
+| `assertCourseExists(courseId)` | Lanza 404 si el curso no existe |
+| `verifyCourseReadAccess(courseId, userId, role)` | ADMIN/SUPERADMIN pasan siempre; TEACHER solo si es titular; STUDENT solo si está matriculado |
+| `assertStaffCanManageCourse(courseId, userId, role, scope)` | Para mutaciones; `scope`: `'grades' \| 'gradebook' \| 'activities' \| 'selfEvaluations' \| 'peerEvaluations' \| 'liveSessions'` |
+| `isStaffForCourse(courseId, userId, role)` | Retorna `boolean` sin lanzar excepción (usado en LiveSessions para distinguir host) |
+
+**Servicios refactorizados** (eliminaron métodos privados equivalentes):
+- `gradebook.service.ts` → scope `'grades'`
+- `performance-indicators.service.ts` → scope `'gradebook'`
+- `activities.service.ts` → scope `'activities'`
+- `grade-calculation.service.ts` → solo `verifyCourseReadAccess`
+- `self-evaluation.service.ts` → scope `'selfEvaluations'`
+- `peer-evaluation.service.ts` → scope `'peerEvaluations'`
+- `classes.service.ts` → solo `verifyCourseReadAccess`
+
+---
+
+### 2. Fix de tests (4 suites que fallaban)
+
+| Spec | Fix aplicado |
+|------|-------------|
+| `courses.service.spec.ts` | `PrismaService` con `useValue` (mock de `course` y `enrollment`) |
+| `users.service.spec.ts` | Mock de `user` |
+| `courses.controller.spec.ts` | `CoursesService` con `useValue: {}` |
+| `users.controller.spec.ts` | `UsersService` con `useValue: {}` |
+
+Resultado: **8 suites passed**, `pnpm run build` OK.
+
+---
+
+### 3. `LiveSessionsModule` — Fase 2 (implementado)
+
+**Archivos:** `src/live-sessions/`  
+**Namespace Socket.IO:** `/live`  
+**Dependencias instaladas:** `@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io`
+
+#### Eventos
+
+| Evento (cliente → servidor) | Rol | Efecto |
+|-----------------------------|-----|--------|
+| `session:start` `{ classId }` | Anfitrión | PUBLISHED → LIVE; limpia estado de slides; broadcast `session:started`. Si ya era LIVE, solo entra a la sala sin borrar estado. |
+| `session:end` `{ classId }` | Anfitrión | LIVE → PUBLISHED; borra estado; broadcast `session:ended`; expulsa a todos de la sala. |
+| `join` `{ classId }` | Cualquiera con acceso | Entra en sala; ack `{ ok, classId, room, currentSlide, isHost }` |
+| `slide:state` `{ classId }` | Igual que join | ack `{ ok, currentSlide }` sin hacer join |
+| `slide:sync` `{ classId, slideId }` | Anfitrión + LIVE | Guarda estado en memoria; emite `slide:current` a los demás |
+| `leave` `{ classId }` | — | Sale de la sala |
+
+#### Reglas de negocio
+- Estado de diapositiva **en memoria** por `classId` (`slideId`, `order`, `updatedBy`, `updatedAt`). En múltiples réplicas se necesitaría Redis.
+- Anfitrión puede hacer `join`/`session:start` con clase **PUBLISHED** o **LIVE**.
+- Participantes solo pueden `join` cuando la clase está **LIVE**.
+- `slide:sync` solo permitido con clase **LIVE**.
+- Conexión: `auth: { token: '<jwt>' }` o header `Authorization: Bearer <jwt>`.
+- CORS del gateway usa `FRONTEND_URL` (igual que `main.ts`).
+
+#### Flujo recomendado (frontend)
+1. Docente: conectar con JWT → `session:start` → `slide:sync` al cambiar diapositiva.
+2. Estudiantes: esperar evento `session:started` (o polling HTTP) → `join` → usar `currentSlide` del ack.
+3. Docente al terminar: `session:end`.
+
+---
+
+### 4. Tipado limpio de Prisma (sin `as unknown as PrismaClient`)
+
+**Problema:** Con Prisma 7 + `PrismaPg` adapter, `PrismaService` no solapaba bien con el tipo generado `PrismaClient`, causando 6 errores de inferencia en el IDE.
+
+**Solución aplicada:**
+
+`src/prisma/prisma.module.ts` registra el mismo singleton dos veces:
+```typescript
+providers: [
+  PrismaService,
+  { provide: PrismaClient, useExisting: PrismaService },
+],
+exports: [PrismaService, PrismaClient],
+```
+
+En servicios donde el IDE se queje de delegates no tipados, inyectar `PrismaClient` en lugar de `PrismaService`:
+```typescript
+constructor(private readonly prisma: PrismaClient) {}
+```
+
+La instancia es la misma en runtime. `PrismaService` sigue siendo válido en el resto de servicios — no hace falta migrar todo de golpe.
+
+**Aplicado en:** `src/live-sessions/live-sessions.service.ts`
+
+---
+
+### 5. Estructura del proyecto actualizada
+```
+src/
+├── common/
+│   ├── common.module.ts              # @Global(), exporta CourseAuthorizationService
+│   └── course-authorization.service.ts
+└── live-sessions/
+    ├── live-sessions.module.ts       # importa AuthModule (JWT)
+    ├── live-sessions.gateway.ts      # namespace /live
+    ├── live-sessions.service.ts      # lógica + estado en memoria
+    └── dto/
+        ├── join-live.dto.ts
+        └── slide-sync.dto.ts
+```
+
+---
+
+### 6. Fase 2 — Estado actualizado
+
+- [x] Live Sessions (Socket.IO) — `LiveSessionsModule` implementado y registrado en `app.module.ts`
+- [ ] Activities (H5P)
+- [ ] Gamification
+- [ ] Class Editor
+- [ ] Messaging
+
+---
+
+### 7. Commit de cierre de esta sesión
+```
+feat: CourseAuthorizationService, LiveSessionsModule completo, fix Prisma typing; docs .cursorrules
+```
+
+**Archivos en el commit:**
+- `src/common/` (nuevo)
+- `src/live-sessions/` (nuevo)
+- `src/prisma/prisma.module.ts`, `prisma.service.ts`
+- `src/activities/activities.service.ts`
+- `src/app.module.ts`
+- `src/classes/classes.service.ts`
+- `src/grade-calculation/grade-calculation.controller.ts`, `grade-calculation.service.ts`
+- `src/gradebook/gradebook.service.ts`
+- `src/peer-evaluation/peer-evaluation.controller.ts`, `peer-evaluation.service.ts`
+- `src/performance-indicators/performance-indicators.service.ts`
+- `src/self-evaluation/self-evaluation.service.ts`
+- `src/courses/courses.controller.spec.ts`, `courses.service.spec.ts`
+- `src/users/users.controller.spec.ts`, `users.service.spec.ts`
+- `package.json`, `pnpm-lock.yaml`
+- `.cursorrules`

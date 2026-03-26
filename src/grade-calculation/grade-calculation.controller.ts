@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { GradeCalculationService } from './grade-calculation.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -25,8 +26,19 @@ export class GradeCalculationController {
   getSummary(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
+    @Request() req,
   ) {
-    return this.gradeCalculationService.getSummary(courseId, periodId);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+    return this.gradeCalculationService.getSummary(
+      courseId,
+      periodId.trim(),
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // GET /courses/:courseId/grade-calculation/full?periodId=xxx
@@ -37,8 +49,19 @@ export class GradeCalculationController {
   calculateForCourse(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
+    @Request() req,
   ) {
-    return this.gradeCalculationService.calculateForCourse(courseId, periodId);
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+    return this.gradeCalculationService.calculateForCourse(
+      courseId,
+      periodId.trim(),
+      req.user.id,
+      req.user.role,
+    );
   }
 
   // GET /courses/:courseId/grade-calculation/students/:userId?periodId=xxx
@@ -64,10 +87,18 @@ export class GradeCalculationController {
       );
     }
 
+    if (!periodId?.trim()) {
+      throw new BadRequestException(
+        'Query periodId es obligatorio (ej. ?periodId=...)',
+      );
+    }
+
     return this.gradeCalculationService.calculateForStudent(
       courseId,
-      periodId,
+      periodId.trim(),
       userId,
+      requester.id,
+      requester.role,
     );
   }
 }

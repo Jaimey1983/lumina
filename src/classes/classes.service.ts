@@ -4,6 +4,7 @@ import {
     ForbiddenException,
   } from '@nestjs/common';
   import { PrismaService } from '../prisma/prisma.service';
+  import { CourseAuthorizationService } from '../common/course-authorization.service';
   import { CreateClassDto } from './dto/create-class.dto';
   import { UpdateClassDto } from './dto/update-class.dto';
   import { CreateSlideDto } from './dto/create-slide.dto';
@@ -12,7 +13,10 @@ import {
   
   @Injectable()
   export class ClassesService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+      private readonly prisma: PrismaService,
+      private readonly courseAuth: CourseAuthorizationService,
+    ) {}
   
     // ─── CLASES ────────────────────────────────────────────
   
@@ -48,7 +52,7 @@ import {
   
     async findAllByCourse(courseId: string, userId: string, userRole: string) {
       // Verificar acceso al curso
-      await this.verifyCourseAccess(courseId, userId, userRole);
+      await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
   
       return this.prisma.class.findMany({
         where: {
@@ -94,7 +98,11 @@ import {
         },
       });
       if (!cls) throw new NotFoundException('Clase no encontrada');
-      await this.verifyCourseAccess(cls.courseId, userId, userRole);
+      await this.courseAuth.verifyCourseReadAccess(
+        cls.courseId,
+        userId,
+        userRole,
+      );
       return cls;
     }
   
@@ -240,24 +248,4 @@ import {
       }
     }
   
-    private async verifyCourseAccess(courseId: string, userId: string, userRole: string) {
-      if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') return;
-  
-      if (userRole === 'TEACHER') {
-        const course = await this.prisma.course.findUnique({
-          where: { id: courseId },
-          select: { teacherId: true },
-        });
-        if (!course || course.teacherId !== userId) {
-          throw new ForbiddenException('No tienes acceso a este curso');
-        }
-        return;
-      }
-  
-      // STUDENT: verificar matrícula
-      const enrollment = await this.prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId, courseId } },
-      });
-      if (!enrollment) throw new ForbiddenException('No estás matriculado en este curso');
-    }
   }

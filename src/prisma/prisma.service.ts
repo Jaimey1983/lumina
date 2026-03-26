@@ -3,6 +3,11 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { PrismaClient } from '@prisma/client';
 
+/**
+ * Implementación única del cliente Prisma (adapter pg).
+ * Para tipado completo de delegates en servicios, inyecta `PrismaClient` vía
+ * `PrismaModule` (`useExisting: PrismaService`).
+ */
 @Injectable()
 export class PrismaService
   extends PrismaClient

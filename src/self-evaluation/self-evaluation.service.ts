@@ -5,15 +5,32 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 
 @Injectable()
 export class SelfEvaluationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseAuth: CourseAuthorizationService,
+  ) {}
 
   // ── Crear autoevaluación (docente la registra) ─────────────────────────────
-  async create(courseId: string, dto: CreateSelfEvaluationDto) {
+  async create(
+    courseId: string,
+    dto: CreateSelfEvaluationDto,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'selfEvaluations',
+    );
+
     // 1. Verificar que el estudiante está matriculado en el curso
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { userId_courseId: { userId: dto.userId, courseId } },
@@ -56,8 +73,8 @@ export class SelfEvaluationService {
           user: { select: { id: true, name: true, lastName: true } },
         },
       });
-    } catch (e) {
-      if (e?.code === 'P2002') {
+    } catch (e: unknown) {
+      if ((e as { code?: string }).code === 'P2002') {
         throw new ConflictException(
           'Ya existe una autoevaluación para este estudiante en este período. Use PATCH para actualizarla.',
         );
@@ -67,7 +84,20 @@ export class SelfEvaluationService {
   }
 
   // ── Listar autoevaluaciones de un curso por período ────────────────────────
-  async findAll(courseId: string, periodId: string) {
+  async findAll(
+    courseId: string,
+    periodId: string,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'selfEvaluations',
+    );
+
     const entries = await this.prisma.selfEvaluation.findMany({
       where: { courseId, periodId },
       select: {
@@ -87,7 +117,20 @@ export class SelfEvaluationService {
   }
 
   // ── Ver autoevaluación de un estudiante específico ─────────────────────────
-  async findOne(courseId: string, periodId: string, userId: string) {
+  async findOne(
+    courseId: string,
+    periodId: string,
+    userId: string,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
+
     const entry = await this.prisma.selfEvaluation.findUnique({
       where: { userId_courseId_periodId: { userId, courseId, periodId } },
       select: {
@@ -114,9 +157,17 @@ export class SelfEvaluationService {
     periodId: string,
     userId: string,
     dto: UpdateSelfEvaluationDto,
+    requesterId: string,
+    requesterRole: string,
   ) {
-    // Verificar que existe
-    await this.findOne(courseId, periodId, userId);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'selfEvaluations',
+    );
+    await this.findOne(courseId, periodId, userId, requesterId, requesterRole);
 
     return this.prisma.selfEvaluation.update({
       where: { userId_courseId_periodId: { userId, courseId, periodId } },
@@ -136,8 +187,21 @@ export class SelfEvaluationService {
 
   // ── Eliminar autoevaluación ────────────────────────────────────────────────
   // SelfEvaluation no tiene isActive — se elimina físicamente si no hay nota final calculada
-  async remove(courseId: string, periodId: string, userId: string) {
-    await this.findOne(courseId, periodId, userId);
+  async remove(
+    courseId: string,
+    periodId: string,
+    userId: string,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'selfEvaluations',
+    );
+    await this.findOne(courseId, periodId, userId, requesterId, requesterRole);
 
     await this.prisma.selfEvaluation.delete({
       where: { userId_courseId_periodId: { userId, courseId, periodId } },

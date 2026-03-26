@@ -1,11 +1,11 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateAspectDto } from './dto/create-aspect.dto';
 import { UpdateAspectDto } from './dto/update-aspect.dto';
 import { CreateIndicatorDto } from './dto/create-indicator.dto';
@@ -15,11 +15,19 @@ const WEIGHT_EPS = 1e-5;
 
 @Injectable()
 export class PerformanceIndicatorsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseAuth: CourseAuthorizationService,
+  ) {}
 
   async createStructure(courseId: string, userId: string, role: string) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     const existing = await this.prisma.gradebookStructure.findUnique({
       where: { courseId },
@@ -53,8 +61,8 @@ export class PerformanceIndicatorsService {
   }
 
   async getStructure(courseId: string, userId: string, role: string) {
-    await this.assertCourseExists(courseId);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
     const structure = await this.prisma.gradebookStructure.findUnique({
       where: { courseId },
@@ -83,9 +91,10 @@ export class PerformanceIndicatorsService {
     }
 
     const aspectSum = this.sumWeights(structure.aspects.map((a) => a.weight));
+    // Dominio: aspectos suman 0.90; 0.10 reservado para autoevaluación + coevaluación
     const aspectsWeightsValid =
       structure.aspects.length === 0 ||
-      Math.abs(aspectSum - 1) <= WEIGHT_EPS;
+      Math.abs(aspectSum - 0.9) <= WEIGHT_EPS;
 
     const indicatorsByAspect = structure.aspects.map((a) => {
       const indSum = this.sumWeights(a.indicators.map((i) => i.weight));
@@ -114,7 +123,12 @@ export class PerformanceIndicatorsService {
     role: string,
   ) {
     const structure = await this.requireStructure(courseId, userId, role);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     const currentSum = await this.sumAspectWeightsForStructure(structure.id);
     const nextSum = currentSum + dto.weight;
@@ -147,7 +161,12 @@ export class PerformanceIndicatorsService {
     role: string,
   ) {
     const structure = await this.requireStructure(courseId, userId, role);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
     await this.assertAspectBelongsToStructure(aspectId, structure.id);
 
     const aspect = await this.prisma.aspect.findUnique({
@@ -185,7 +204,12 @@ export class PerformanceIndicatorsService {
     role: string,
   ) {
     const structure = await this.requireStructure(courseId, userId, role);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
     await this.assertAspectBelongsToStructure(aspectId, structure.id);
 
     await this.prisma.$transaction(async (tx) => {
@@ -218,7 +242,12 @@ export class PerformanceIndicatorsService {
     role: string,
   ) {
     const structure = await this.requireStructure(courseId, userId, role);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
     await this.assertAspectBelongsToStructure(aspectId, structure.id);
 
     const currentSum = await this.sumIndicatorWeightsForAspect(aspectId);
@@ -252,7 +281,12 @@ export class PerformanceIndicatorsService {
     role: string,
   ) {
     const structure = await this.requireStructure(courseId, userId, role);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     const indicator = await this.prisma.indicator.findUnique({
       where: { id: indicatorId },
@@ -302,7 +336,12 @@ export class PerformanceIndicatorsService {
     role: string,
   ) {
     await this.requireStructure(courseId, userId, role);
-    await this.assertCanManageGradebook(courseId, userId, role);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     const indicator = await this.prisma.indicator.findUnique({
       where: { id: indicatorId },
@@ -350,72 +389,13 @@ export class PerformanceIndicatorsService {
     return agg._sum.weight ?? 0;
   }
 
-  private async assertCourseExists(courseId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      select: { id: true },
-    });
-    if (!course) throw new NotFoundException('Curso no encontrado');
-  }
-
-  private async verifyCourseAccess(
-    courseId: string,
-    userId: string,
-    userRole: string,
-  ) {
-    if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') return;
-
-    if (userRole === 'TEACHER') {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { teacherId: true },
-      });
-      if (!course || course.teacherId !== userId) {
-        throw new ForbiddenException('No tienes acceso a este curso');
-      }
-      return;
-    }
-
-    const enrollment = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    });
-    if (!enrollment) {
-      throw new ForbiddenException('No estás matriculado en este curso');
-    }
-  }
-
-  private async assertCanManageGradebook(
-    courseId: string,
-    userId: string,
-    role: string,
-  ) {
-    if (role === 'ADMIN' || role === 'SUPERADMIN') return;
-
-    if (role === 'TEACHER') {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { teacherId: true },
-      });
-      if (!course || course.teacherId !== userId) {
-        throw new ForbiddenException(
-          'No tienes permiso para editar la estructura de calificación de este curso',
-        );
-      }
-      return;
-    }
-
-    throw new ForbiddenException(
-      'No tienes permiso para editar la estructura de calificación',
-    );
-  }
-
   private async requireStructure(
     courseId: string,
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
     const structure = await this.prisma.gradebookStructure.findUnique({
       where: { courseId },

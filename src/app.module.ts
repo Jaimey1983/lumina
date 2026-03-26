@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { CommonModule } from './common/common.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -12,6 +13,7 @@ import { GradebookModule } from './gradebook/gradebook.module';
 import { GradeCalculationModule } from './grade-calculation/grade-calculation.module';
 import { SelfEvaluationModule } from './self-evaluation/self-evaluation.module';
 import { PeerEvaluationModule } from './peer-evaluation/peer-evaluation.module';
+import { LiveSessionsModule } from './live-sessions/live-sessions.module';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { PeerEvaluationModule } from './peer-evaluation/peer-evaluation.module';
 
     // Infraestructura
     PrismaModule,
+    CommonModule,
 
     // ── Fase 1 MVP Core — COMPLETA ────────────────────────────────────────
     AuthModule,
@@ -35,6 +38,7 @@ import { PeerEvaluationModule } from './peer-evaluation/peer-evaluation.module';
     GradeCalculationModule,
     SelfEvaluationModule,
     PeerEvaluationModule,
+    LiveSessionsModule,
   ],
 })
 export class AppModule {}

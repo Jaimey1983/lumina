@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreatePeerEvaluationDto } from './dto/create-peer-evaluation.dto';
 import { UpdatePeerEvaluationDto } from './dto/update-peer-evaluation.dto';
 
@@ -12,10 +13,26 @@ const STUDENT_SELECT = { id: true, name: true, lastName: true };
 
 @Injectable()
 export class PeerEvaluationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseAuth: CourseAuthorizationService,
+  ) {}
 
   // ── Crear coevaluación (docente la registra) ───────────────────────────────
-  async create(courseId: string, dto: CreatePeerEvaluationDto) {
+  async create(
+    courseId: string,
+    dto: CreatePeerEvaluationDto,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'peerEvaluations',
+    );
+
     // 1. Restricción de dominio: nadie se coevalúa a sí mismo
     if (dto.evaluatorId === dto.evaluatedId) {
       throw new BadRequestException(
@@ -77,8 +94,8 @@ export class PeerEvaluationService {
           evaluated: { select: STUDENT_SELECT },
         },
       });
-    } catch (e) {
-      if (e?.code === 'P2002') {
+    } catch (e: unknown) {
+      if ((e as { code?: string }).code === 'P2002') {
         throw new ConflictException(
           'Ya existe una coevaluación de este evaluador para este estudiante en este período. Use PATCH para actualizarla.',
         );
@@ -88,7 +105,20 @@ export class PeerEvaluationService {
   }
 
   // ── Listar todas las coevaluaciones de un curso por período ───────────────
-  async findAll(courseId: string, periodId: string) {
+  async findAll(
+    courseId: string,
+    periodId: string,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'peerEvaluations',
+    );
+
     const entries = await this.prisma.peerEvaluation.findMany({
       where: { courseId, periodId },
       select: {
@@ -113,7 +143,16 @@ export class PeerEvaluationService {
     courseId: string,
     periodId: string,
     evaluatedId: string,
+    requesterId: string,
+    requesterRole: string,
   ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
+
     const entries = await this.prisma.peerEvaluation.findMany({
       where: { courseId, periodId, evaluatedId },
       select: {
@@ -168,7 +207,20 @@ export class PeerEvaluationService {
   }
 
   // ── Actualizar coevaluación ────────────────────────────────────────────────
-  async update(id: string, courseId: string, dto: UpdatePeerEvaluationDto) {
+  async update(
+    id: string,
+    courseId: string,
+    dto: UpdatePeerEvaluationDto,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'peerEvaluations',
+    );
     await this.findOne(id, courseId);
 
     return this.prisma.peerEvaluation.update({
@@ -189,7 +241,19 @@ export class PeerEvaluationService {
   }
 
   // ── Eliminar coevaluación ──────────────────────────────────────────────────
-  async remove(id: string, courseId: string) {
+  async remove(
+    id: string,
+    courseId: string,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'peerEvaluations',
+    );
     await this.findOne(id, courseId);
 
     await this.prisma.peerEvaluation.delete({ where: { id } });

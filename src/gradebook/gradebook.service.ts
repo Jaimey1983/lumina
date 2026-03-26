@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreatePeriodDto } from './dto/create-period.dto';
 import { UpdatePeriodDto } from './dto/update-period.dto';
 import { CreateGradeEntryDto } from './dto/create-grade-entry.dto';
@@ -14,7 +15,10 @@ const SCORE_EPS = 1e-6;
 
 @Injectable()
 export class GradebookService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseAuth: CourseAuthorizationService,
+  ) {}
 
   async createPeriod(
     courseId: string,
@@ -22,8 +26,13 @@ export class GradebookService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGrades(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'grades',
+    );
 
     const start = new Date(dto.startDate);
     const end = new Date(dto.endDate);
@@ -54,8 +63,8 @@ export class GradebookService {
   }
 
   async findPeriods(courseId: string, userId: string, role: string) {
-    await this.assertCourseExists(courseId);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
     return this.prisma.period.findMany({
       where: { courseId },
@@ -80,8 +89,13 @@ export class GradebookService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGrades(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'grades',
+    );
 
     const period = await this.prisma.period.findUnique({
       where: { id: periodId },
@@ -125,8 +139,13 @@ export class GradebookService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGrades(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'grades',
+    );
 
     const period = await this.prisma.period.findUnique({
       where: { id: periodId },
@@ -149,8 +168,13 @@ export class GradebookService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGrades(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'grades',
+    );
 
     await this.assertEnrollment(dto.userId, courseId);
     await this.assertPeriodInCourse(dto.periodId, courseId);
@@ -201,8 +225,13 @@ export class GradebookService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.assertCanManageGrades(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'grades',
+    );
 
     const entry = await this.prisma.gradeEntry.findUnique({
       where: { id: entryId },
@@ -264,8 +293,8 @@ export class GradebookService {
     userId: string,
     role: string,
   ) {
-    await this.assertCourseExists(courseId);
-    await this.verifyCourseAccess(courseId, userId, role);
+    await this.courseAuth.assertCourseExists(courseId);
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
     const period = await this.prisma.period.findUnique({
       where: { id: periodId },
@@ -484,64 +513,5 @@ export class GradebookService {
       );
     }
     return activity.maxScore;
-  }
-
-  private async assertCourseExists(courseId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      select: { id: true },
-    });
-    if (!course) throw new NotFoundException('Curso no encontrado');
-  }
-
-  private async verifyCourseAccess(
-    courseId: string,
-    userId: string,
-    userRole: string,
-  ) {
-    if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') return;
-
-    if (userRole === 'TEACHER') {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { teacherId: true },
-      });
-      if (!course || course.teacherId !== userId) {
-        throw new ForbiddenException('No tienes acceso a este curso');
-      }
-      return;
-    }
-
-    const enrollment = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    });
-    if (!enrollment) {
-      throw new ForbiddenException('No estás matriculado en este curso');
-    }
-  }
-
-  private async assertCanManageGrades(
-    courseId: string,
-    userId: string,
-    role: string,
-  ) {
-    if (role === 'ADMIN' || role === 'SUPERADMIN') return;
-
-    if (role === 'TEACHER') {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { teacherId: true },
-      });
-      if (!course || course.teacherId !== userId) {
-        throw new ForbiddenException(
-          'No tienes permiso para gestionar calificaciones en este curso',
-        );
-      }
-      return;
-    }
-
-    throw new ForbiddenException(
-      'No tienes permiso para gestionar calificaciones',
-    );
   }
 }
