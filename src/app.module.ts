@@ -14,6 +14,7 @@ import { GradeCalculationModule } from './grade-calculation/grade-calculation.mo
 import { SelfEvaluationModule } from './self-evaluation/self-evaluation.module';
 import { PeerEvaluationModule } from './peer-evaluation/peer-evaluation.module';
 import { LiveSessionsModule } from './live-sessions/live-sessions.module';
+import { H5pActivitiesModule } from './h5p-activities/h5p-activities.module';
 
 @Module({
   imports: [
@@ -39,6 +40,9 @@ import { LiveSessionsModule } from './live-sessions/live-sessions.module';
     SelfEvaluationModule,
     PeerEvaluationModule,
     LiveSessionsModule,
+
+    // ── Fase 2 — H5P Activities ───────────────────────────────────────────
+    H5pActivitiesModule,
   ],
 })
 export class AppModule {}

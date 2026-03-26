@@ -12,7 +12,8 @@ export type CourseManageScope =
   | 'activities'
   | 'selfEvaluations'
   | 'peerEvaluations'
-  | 'liveSessions';
+  | 'liveSessions'
+  | 'h5pActivities';
 
 const MANAGE_SCOPE_MESSAGES: Record<
   CourseManageScope,
@@ -49,6 +50,11 @@ const MANAGE_SCOPE_MESSAGES: Record<
     wrongCourse:
       'No tienes permiso para dirigir la sesión en vivo de este curso',
     notStaff: 'No tienes permiso para dirigir sesiones en vivo',
+  },
+  h5pActivities: {
+    wrongCourse:
+      'No tienes permiso para gestionar actividades H5P en este curso',
+    notStaff: 'No tienes permiso para gestionar actividades H5P',
   },
 };
 

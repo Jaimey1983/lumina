@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026
+# Última actualización: 25/03/2026 (Fase 2: H5pActivitiesModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -515,10 +515,27 @@ const { PrismaClient } = require(
 #### 12. LiveSessionsModule 🔲
 - Socket.IO: unirse a una clase en vivo, sincronizar slides, recibir actividades en tiempo real
 
-#### 13. GamificationModule 🔲
-#### 14. AnalyticsModule 🔲
-#### 15. AIFeaturesModule 🔲
-#### 16. NotificationsModule 🔲
+#### 13. H5pActivitiesModule ✅ — completado 25/03/2026 (Fase 2)
+- **Ruta:** `src/h5p-activities/`
+- **Prefijo HTTP:** `courses/:courseId/classes/:classId/h5p-activities`
+- **Descripción:** Gestiona actividades interactivas H5P embebidas en slides de tipo `ACTIVITY`. El contenido H5P se almacena como JSON en el campo `content` del modelo `Slide` con la estructura `{ h5pType, params }`.
+- **Tipos H5P soportados:** `Quiz`, `Flashcards`, `DragAndDrop`, `FillInTheBlanks`, `MultipleChoice`
+- **Endpoints:**
+  - `POST .../h5p-activities` — crear actividad H5P (genera un `Slide` de tipo `ACTIVITY` con content JSON); auto-incrementa `order`
+  - `GET .../h5p-activities` — listar todas las actividades H5P de la clase (slides `type = ACTIVITY`) ordenadas por `order`
+  - `GET .../h5p-activities/:slideId` — obtener actividad H5P por `slideId`
+  - `PATCH .../h5p-activities/:slideId` — actualizar `title`, `h5pType` y/o `params`; merge parcial del content
+  - `DELETE .../h5p-activities/:slideId` — eliminar slide H5P y reordenar los restantes
+- **Permisos:** mutaciones = docente titular del curso, ADMIN, SUPERADMIN; lectura = todos con acceso al curso (matriculados incluidos)
+- **Validación:** verifica que el curso exista, que la clase pertenezca al curso, y que el slide sea de tipo `ACTIVITY`; reordena slides al eliminar
+- **Almacenamiento:** no crea nuevo modelo en DB — reutiliza el modelo `Slide` con `type: 'ACTIVITY'` y `content: { h5pType: H5pType, params: Record<string, unknown> }`
+- **Scope de autorización:** `'h5pActivities'` (agregado a `CourseManageScope` en `course-authorization.service.ts`)
+- **Archivos:** `h5p-activities.module.ts`, `h5p-activities.service.ts`, `h5p-activities.controller.ts`, `dto/create-h5p-activity.dto.ts`, `dto/update-h5p-activity.dto.ts`
+
+#### 14. GamificationModule 🔲
+#### 15. AnalyticsModule 🔲
+#### 16. AIFeaturesModule 🔲
+#### 17. NotificationsModule 🔲
 
 ---
 
@@ -539,6 +556,8 @@ const { PrismaClient } = require(
 // - GradeCalculationModule   ← Fase 1 completa 25/03/2026
 // - SelfEvaluationModule     ← Fase 1 completa 25/03/2026
 // - PeerEvaluationModule     ← Fase 1 completa 25/03/2026
+// - LiveSessionsModule
+// - H5pActivitiesModule      ← Fase 2 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
