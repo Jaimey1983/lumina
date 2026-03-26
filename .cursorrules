@@ -1278,15 +1278,12 @@ lumina-backend/
 - [x] Gradebook Reports (`GradebookReportsModule`) — matriz, distribución, pendientes, export — completado 25/03/2026
 - [x] Performance Tracking (`PerformanceTrackingModule`) — evolución, comparativa, ranking, at-risk, breakdown, historial cruzado — completado 25/03/2026
 
-### Fase 4 — Funcionalidades avanzadas
+### Fase 4 — Funcionalidades avanzadas ✅ COMPLETA backend (25/03/2026) — Mobile Responsive pendiente (frontend)
 - [x] AI Features (`AiFeaturesModule`) — quiz generator, student feedback, class summary, content assistant, evaluate response — completado 25/03/2026
 - [x] Collaboration (`CollaborationModule`) — pizarras Fabric.js, notas Tiptap + historial, grupos de trabajo, actividades de grupo — completado 25/03/2026
 - [x] Forums (`ForumsModule`) — foros por curso, hilos, respuestas, pin/lock, soft delete — completado 25/03/2026
 - [x] Integrations (`IntegrationsModule`) — webhooks salientes, firma HMAC-SHA256, logs paginados, dispatch() exportado — completado 25/03/2026
-- [ ] Collaboration
-- [ ] Forums
-- [ ] Integrations
-- [ ] Mobile Responsive
+- [ ] Mobile Responsive (pendiente — tarea de frontend)
 
 ---
 
