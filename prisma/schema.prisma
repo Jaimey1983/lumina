@@ -69,6 +69,7 @@ model Course {
   badges              Badge[]
   messages            Message[]
   workGroups          WorkGroup[]
+  forums              Forum[]
 
   @@map("courses")
 }
@@ -320,6 +321,84 @@ model MessageRead {
 
   @@unique([messageId, userId])
   @@map("message_reads")
+}
+
+// ─── INTEGRACIONES / WEBHOOKS ─────────────────────────────
+
+model Webhook {
+  id        String       @id @default(cuid())
+  name      String
+  url       String
+  secret    String?      // HMAC-SHA256 signing secret opcional
+  events    String[]     // lista de eventos suscritos
+  isActive  Boolean      @default(true)
+  courseId  String?      // null = webhook global (solo ADMIN/SUPERADMIN)
+  createdById String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  logs      WebhookLog[]
+
+  @@map("webhooks")
+}
+
+model WebhookLog {
+  id         String   @id @default(cuid())
+  webhookId  String
+  event      String
+  payload    Json
+  statusCode Int?
+  response   String?
+  success    Boolean
+  sentAt     DateTime @default(now())
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_logs")
+}
+
+// ─── FOROS ────────────────────────────────────────────────
+
+model Forum {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean       @default(true)
+  courseId    String
+  course      Course        @relation(fields: [courseId], references: [id])
+  threads     ForumThread[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("forums")
+}
+
+model ForumThread {
+  id        String       @id @default(cuid())
+  title     String
+  body      String
+  isPinned  Boolean      @default(false)
+  isLocked  Boolean      @default(false)
+  isActive  Boolean      @default(true)
+  forumId   String
+  authorId  String
+  forum     Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  replies   ForumReply[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("forum_threads")
+}
+
+model ForumReply {
+  id        String      @id @default(cuid())
+  body      String
+  isActive  Boolean     @default(true)
+  threadId  String
+  authorId  String
+  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("forum_replies")
 }
 
 // ─── COLABORACIÓN ──────────────────────────────────────────

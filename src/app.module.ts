@@ -23,6 +23,8 @@ import { GradebookReportsModule } from './gradebook-reports/gradebook-reports.mo
 import { PerformanceTrackingModule } from './performance-tracking/performance-tracking.module';
 import { AiFeaturesModule } from './ai-features/ai-features.module';
 import { CollaborationModule } from './collaboration/collaboration.module';
+import { ForumsModule } from './forums/forums.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { CollaborationModule } from './collaboration/collaboration.module';
     // ── Fase 4 — Funcionalidades avanzadas ───────────────────────────────
     AiFeaturesModule,
     CollaborationModule,
+    ForumsModule,
+    IntegrationsModule,
   ],
 })
 export class AppModule {}

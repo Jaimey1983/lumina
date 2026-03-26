@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 4: CollaborationModule)
+# Última actualización: 25/03/2026 (Fase 4: IntegrationsModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -761,7 +761,50 @@ const { PrismaClient } = require(
   - `DELETE .../groups/:groupId/activities/:groupActivityId` — desasignar actividad
 - **Archivos:** `collaboration.module.ts`, `collaboration.service.ts`, `collaboration.controller.ts`, `class-collab.controller.ts`, DTOs: `create-whiteboard`, `update-whiteboard`, `create-note`, `update-note`, `create-group`, `add-member`, `assign-activity`
 
-#### 22. NotificationsModule 🔲
+#### 22. ForumsModule ✅ — completado 25/03/2026 (Fase 4)
+- **Ruta:** `src/forums/`
+- **Prefijo HTTP:** `courses/:courseId/forums`
+- **Descripción:** Sistema de foros de discusión por curso. Foros (categorías) → Hilos → Respuestas. Soft delete en todos los niveles.
+- **Modelos Prisma nuevos (3):** `Forum`, `ForumThread`, `ForumReply`
+- **Relación agregada:** `Course` → `forums Forum[]`
+- **Permisos:**
+  - Staff (TEACHER/ADMIN/SUPERADMIN/etc.): crear/editar/eliminar foros; pin/lock de hilos; eliminar cualquier hilo o respuesta
+  - Cualquier miembro del curso: crear hilos y respuestas; editar **solo sus propias** respuestas; eliminar sus propios hilos/respuestas
+  - Hilo cerrado (`isLocked: true`): solo staff puede responder
+- **Funcionalidades:**
+  - `POST/GET/PATCH/DELETE .../forums` — CRUD de categorías de foro (staff)
+  - `POST .../forums/:forumId/threads` — crear hilo (cualquier miembro)
+  - `GET .../forums/:forumId` — detalle del foro con lista de hilos (título, isPinned, isLocked, count de respuestas)
+  - `GET .../forums/:forumId/threads/:threadId` — hilo completo con todas sus respuestas activas
+  - `POST .../forums/:forumId/threads/:threadId/pin` — toggle pin (staff)
+  - `POST .../forums/:forumId/threads/:threadId/lock` — toggle lock (staff)
+  - `DELETE .../forums/:forumId/threads/:threadId` — eliminar hilo (autor o staff)
+  - `POST/PATCH/DELETE .../forums/:forumId/threads/:threadId/replies` — gestión de respuestas
+- **Archivos:** `forums.module.ts`, `forums.service.ts`, `forums.controller.ts`, DTOs: `create-forum`, `update-forum`, `create-thread`, `create-reply`, `update-reply`
+
+#### 23. IntegrationsModule ✅ — completado 25/03/2026 (Fase 4)
+- **Ruta:** `src/integrations/`
+- **Prefijo HTTP:** `integrations`
+- **Descripción:** Sistema de webhooks salientes. El staff configura URLs externas que reciben notificaciones HTTP POST firmadas (HMAC-SHA256) cuando ocurren eventos en la plataforma.
+- **Modelos Prisma nuevos (2):** `Webhook` (url, events[], secret?, courseId?, isActive), `WebhookLog` (statusCode, response, success, sentAt)
+- **Exporta `IntegrationsService`** — otros módulos pueden llamar `dispatch(event, data, courseId?)` para disparar webhooks sin acoplarse al módulo
+- **10 eventos soportados:** `student.enrolled`, `student.unenrolled`, `grade.submitted`, `grade.updated`, `session.started`, `session.ended`, `message.sent`, `forum.thread.created`, `forum.reply.created`, `badge.awarded`
+- **Firma HMAC-SHA256:** si el webhook tiene `secret`, cada POST incluye header `X-Lumina-Signature: sha256=<hex>`
+- **Webhooks globales vs por curso:** `courseId: null` = global (solo ADMIN/SUPERADMIN); `courseId: string` = scoped (staff del curso)
+- **Timeout de dispatch:** 10 segundos por webhook; fallos no rompen el flujo — se registran en `WebhookLog`
+- **Dispatch paralelo:** `Promise.allSettled` sobre todos los webhooks activos suscritos al evento
+- **Endpoints:**
+  - `GET /integrations/events` — lista eventos válidos + descripción (público para staff)
+  - `POST /integrations/webhooks` — crear webhook (body: name, url, events[], secret?, courseId?)
+  - `GET /integrations/webhooks?courseId=` — listar webhooks (global o filtrado por curso)
+  - `GET /integrations/webhooks/:webhookId` — detalle
+  - `PATCH /integrations/webhooks/:webhookId` — actualizar (name, url, secret, events, isActive)
+  - `DELETE /integrations/webhooks/:webhookId` — soft delete
+  - `POST /integrations/webhooks/:webhookId/test` — disparo manual con evento `webhook.test`
+  - `GET /integrations/webhooks/:webhookId/logs?page=&limit=` — historial paginado de envíos
+- **Archivos:** `integrations.module.ts`, `integrations.service.ts`, `integrations.controller.ts`, DTOs: `create-webhook`, `update-webhook`, `trigger-webhook`
+
+#### 24. NotificationsModule 🔲
 
 ---
 
@@ -792,6 +835,8 @@ const { PrismaClient } = require(
 // - PerformanceTrackingModule     ← Fase 3 completa 25/03/2026 (dos controllers: PerformanceTrackingController + StudentHistoryController)
 // - AiFeaturesModule              ← Fase 4 completa 25/03/2026 (dos controllers: AiFeaturesController + CourseAiController)
 // - CollaborationModule           ← Fase 4 completa 25/03/2026 (dos controllers: CollaborationController + ClassCollabController)
+// - ForumsModule                  ← Fase 4 completa 25/03/2026
+// - IntegrationsModule            ← Fase 4 completa 25/03/2026 (exporta IntegrationsService.dispatch)
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1236,6 +1281,8 @@ lumina-backend/
 ### Fase 4 — Funcionalidades avanzadas
 - [x] AI Features (`AiFeaturesModule`) — quiz generator, student feedback, class summary, content assistant, evaluate response — completado 25/03/2026
 - [x] Collaboration (`CollaborationModule`) — pizarras Fabric.js, notas Tiptap + historial, grupos de trabajo, actividades de grupo — completado 25/03/2026
+- [x] Forums (`ForumsModule`) — foros por curso, hilos, respuestas, pin/lock, soft delete — completado 25/03/2026
+- [x] Integrations (`IntegrationsModule`) — webhooks salientes, firma HMAC-SHA256, logs paginados, dispatch() exportado — completado 25/03/2026
 - [ ] Collaboration
 - [ ] Forums
 - [ ] Integrations
