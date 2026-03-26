@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 2: MessagingModule)
+# Última actualización: 25/03/2026 (Fase 3: AnalyticsModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -640,7 +640,26 @@ const { PrismaClient } = require(
 - **Relaciones nuevas en Course:** `messages Message[]`
 - **Archivos:** `messaging.module.ts`, `messaging.service.ts`, `messaging.controller.ts`, `dto/send-message.dto.ts`, `dto/send-direct-message.dto.ts`
 
-#### 17. AnalyticsModule 🔲
+#### 17. AnalyticsModule ✅ — completado 25/03/2026 (Fase 3)
+- **Ruta:** `src/analytics/`
+- **Prefijo HTTP:** `courses/:courseId/analytics`
+- **Descripción:** Métricas y estadísticas agregadas por curso y por estudiante. Todo se calcula en tiempo real desde los modelos existentes — sin modelos nuevos en DB.
+- **Query param común:** `periodId?` — filtra las métricas de notas por período académico
+- **Endpoints:**
+  - `GET .../analytics/summary?periodId=` — resumen del curso: `totalStudents`, `avgGrade`, `completionRate`, desglose de clases por estado
+  - `GET .../analytics/students?periodId=` — progreso de todos los estudiantes (staff); STUDENT recibe solo su fila
+  - `GET .../analytics/students/:userId?periodId=` — progreso individual: actividades completadas, nota promedio, tendencia (`up`/`down`/`stable`/`null`); STUDENT solo ve la suya
+  - `GET .../analytics/activities?periodId=` — ranking de actividades por avg score normalizado (desc); incluye `best` y `worst`
+  - `GET .../analytics/live-sessions` — conteo de clases por estado (`draft`, `published`, `live`, `archived`) + lista detallada; sin tracking por estudiante (requiere modelo de asistencia)
+  - `GET .../analytics/engagement` — por estudiante: `messagesSent`, `points`, `badgesEarned`; STUDENT solo ve el suyo
+  - `GET .../analytics/export?periodId=` — JSON completo: `course` + `summary` + `studentsProgress` + `activitiesRanking` + `engagement`; solo staff
+- **Permisos:** TEACHER/ADMIN/SUPERADMIN ven todos los datos; STUDENT solo ve sus propias métricas (en `students`, `students/:userId`, `engagement`); `export` exclusivo para staff
+- **Cálculo de tendencia:** compara promedio de primera mitad vs segunda mitad de GradeEntries (cronológicas); requiere ≥ 4 entradas; umbral ±0.1
+- **Completitud:** `completionRate = gradeEntriesCount / (totalStudents × totalActivities)` — solo aproximado si hay múltiples períodos sin `periodId`
+- **Live sessions:** no hay modelo de asistencia por estudiante; se exponen datos de nivel de clase como proxy; se incluye `note` en la respuesta indicando la limitación
+- **Sin modelos nuevos en DB** — opera sobre: `Enrollment`, `GradeEntry`, `Activity`, `Indicator`, `Aspect`, `GradebookStructure`, `Class`, `Message`, `StudentPoints`, `StudentBadge`, `Badge`
+- **Archivos:** `analytics.module.ts`, `analytics.service.ts`, `analytics.controller.ts`
+
 #### 18. AIFeaturesModule 🔲
 #### 19. NotificationsModule 🔲
 
@@ -668,6 +687,7 @@ const { PrismaClient } = require(
 // - GamificationModule       ← Fase 2 completa 25/03/2026
 // - ClassEditorModule        ← Fase 2 completa 25/03/2026
 // - MessagingModule          ← Fase 2 completa 25/03/2026
+// - AnalyticsModule          ← Fase 3 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1107,7 +1127,7 @@ lumina-backend/
 - [ ] Messaging
 
 ### Fase 3 — Analytics y reportes
-- [ ] Analytics
+- [x] Analytics (`AnalyticsModule`) — resumen, progreso, ranking actividades, engagement, export — completado 25/03/2026
 - [ ] Gradebook Reports
 - [ ] Performance Tracking
 

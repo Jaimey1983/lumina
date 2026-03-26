@@ -18,6 +18,7 @@ import { H5pActivitiesModule } from './h5p-activities/h5p-activities.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { ClassEditorModule } from './class-editor/class-editor.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { MessagingModule } from './messaging/messaging.module';
     GamificationModule,
     ClassEditorModule,
     MessagingModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
