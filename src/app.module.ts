@@ -19,6 +19,7 @@ import { GamificationModule } from './gamification/gamification.module';
 import { ClassEditorModule } from './class-editor/class-editor.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { GradebookReportsModule } from './gradebook-reports/gradebook-reports.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ClassEditorModule,
     MessagingModule,
     AnalyticsModule,
+    GradebookReportsModule,
   ],
 })
 export class AppModule {}

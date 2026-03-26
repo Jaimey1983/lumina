@@ -15,7 +15,8 @@ export type CourseManageScope =
   | 'liveSessions'
   | 'h5pActivities'
   | 'gamification'
-  | 'classEditor';
+  | 'classEditor'
+  | 'reports';
 
 const MANAGE_SCOPE_MESSAGES: Record<
   CourseManageScope,
@@ -67,6 +68,11 @@ const MANAGE_SCOPE_MESSAGES: Record<
     wrongCourse:
       'No tienes permiso para editar clases en este curso',
     notStaff: 'No tienes permiso para editar clases',
+  },
+  reports: {
+    wrongCourse:
+      'No tienes permiso para ver reportes de este curso',
+    notStaff: 'No tienes permiso para ver reportes de calificaciones',
   },
 };
 

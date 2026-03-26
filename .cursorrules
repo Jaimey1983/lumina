@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 3: AnalyticsModule)
+# Última actualización: 25/03/2026 (Fase 3: GradebookReportsModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -660,8 +660,27 @@ const { PrismaClient } = require(
 - **Sin modelos nuevos en DB** — opera sobre: `Enrollment`, `GradeEntry`, `Activity`, `Indicator`, `Aspect`, `GradebookStructure`, `Class`, `Message`, `StudentPoints`, `StudentBadge`, `Badge`
 - **Archivos:** `analytics.module.ts`, `analytics.service.ts`, `analytics.controller.ts`
 
-#### 18. AIFeaturesModule 🔲
-#### 19. NotificationsModule 🔲
+#### 18. GradebookReportsModule ✅ — completado 25/03/2026 (Fase 3)
+- **Ruta:** `src/gradebook-reports/`
+- **Prefijo HTTP:** `courses/:courseId/reports`
+- **Descripción:** Reportes detallados del libro de calificaciones por curso y período. Todos los endpoints son exclusivos para staff (docente/ADMIN/SUPERADMIN). Sin modelos nuevos — usa los existentes.
+- **Dependencia:** importa `GradeCalculationModule` para reutilizar `GradeCalculationService.calculateForStudent` y `getSummary` en el desglose individual y notas finales.
+- **Query param:** `periodId` — **obligatorio** en todos los endpoints; lanza 400 si no se proporciona.
+- **Scope de autorización:** `'reports'` (nuevo, agregado a `CourseManageScope` en `course-authorization.service.ts`)
+- **Endpoints:**
+  - `GET .../reports/matrix?periodId=` — matriz estudiantes × actividades: por cada fila (estudiante) → `cells[]` (score, normalizedScore, feedback por actividad), `selfEvaluation`, `peerEvaluation`, `processScore`, `finalGrade`, `isComplete`; eficiente: ~5 queries sin N+1
+  - `GET .../reports/students/:userId?periodId=` — desglose completo de un estudiante (delega a `GradeCalculationService.calculateForStudent`): árbol aspectos → indicadores → actividades con pesos y notas ponderadas
+  - `GET .../reports/final-grades?periodId=` — lista compacta de estudiantes con nota final + `isComplete`; delega a `GradeCalculationService.getSummary`
+  - `GET .../reports/distribution?periodId=` — distribución de notas en rangos `0–1`, `1–2`, `2–3`, `3–4`, `4–5` con count y lista de estudiantes; incluye `withoutGrade[]` y `average`
+  - `GET .../reports/pending?periodId=` — por estudiante: actividades sin GradeEntry, `completedCount`, `pendingCount`, `completionPct`; ordenado por más pendientes primero
+  - `GET .../reports/export?periodId=` — JSON completo en una sola llamada: `finalGrades` + `distribution` + `pending`; eficiente: llama `loadReportData` una sola vez y computa todo en memoria
+- **Permisos:** exclusivo staff — STUDENT no tiene acceso a ningún endpoint
+- **Orden de rutas en controller:** literales (`matrix`, `final-grades`, `distribution`, `pending`, `export`) antes del param (`students/:userId`)
+- **Eficiencia matriz/pending/export:** carga datos una vez con `loadReportData()` (~5 queries en paralelo con `Promise.all`): estructura del gradebook, enrollments, todos los GradeEntries del período, todos los SelfEvaluations del período, todos los PeerEvaluations del período. Computa nota final en memoria sin queries adicionales.
+- **Archivos:** `gradebook-reports.module.ts`, `gradebook-reports.service.ts`, `gradebook-reports.controller.ts`
+
+#### 19. AIFeaturesModule 🔲
+#### 20. NotificationsModule 🔲
 
 ---
 
@@ -688,6 +707,7 @@ const { PrismaClient } = require(
 // - ClassEditorModule        ← Fase 2 completa 25/03/2026
 // - MessagingModule          ← Fase 2 completa 25/03/2026
 // - AnalyticsModule          ← Fase 3 completa 25/03/2026
+// - GradebookReportsModule   ← Fase 3 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1117,18 +1137,16 @@ lumina-backend/
 - [x] Self Evaluation (`SelfEvaluationModule`) — el docente ingresa la nota que el estudiante se asigna
 - [x] Peer Evaluation (`PeerEvaluationModule`) — el docente ingresa las notas que los estudiantes se asignan entre sí
 
-### Fase 2 — Funcionalidades interactivas
+### Fase 2 — Funcionalidades interactivas ✅ COMPLETA (25/03/2026)
+- [x] Live Sessions (Socket.IO) (`LiveSessionsModule`) — completado 25/03/2026
 - [x] Activities H5P (`H5pActivitiesModule`) — completado 25/03/2026
 - [x] Gamification (`GamificationModule`) — puntos + badges — completado 25/03/2026
 - [x] Class Editor (`ClassEditorModule`) — reorder, duplicar, bulk update, preview — completado 25/03/2026
 - [x] Messaging (`MessagingModule`) — canal, DMs, hilos, lectura, soft delete — completado 25/03/2026
-- [ ] Live Sessions (Socket.IO)
-- [ ] Class Editor
-- [ ] Messaging
 
 ### Fase 3 — Analytics y reportes
 - [x] Analytics (`AnalyticsModule`) — resumen, progreso, ranking actividades, engagement, export — completado 25/03/2026
-- [ ] Gradebook Reports
+- [x] Gradebook Reports (`GradebookReportsModule`) — matriz, distribución, pendientes, export — completado 25/03/2026
 - [ ] Performance Tracking
 
 ### Fase 4 — Funcionalidades avanzadas
