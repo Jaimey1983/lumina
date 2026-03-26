@@ -4,7 +4,8 @@
       "Bash(pnpm run:*)",
       "Bash(echo \"BUILD_EXIT: $?\")",
       "Bash(npx prisma:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(find 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-backend - 3\\\\src' -name *.guard.ts)"
     ]
   }
 }

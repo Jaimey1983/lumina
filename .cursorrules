@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 2: H5pActivitiesModule)
+# Última actualización: 25/03/2026 (Fase 2: MessagingModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -618,9 +618,31 @@ const { PrismaClient } = require(
 - **Transacciones:** `reorderSlides` y `bulkUpdateSlides` usan `prisma.$transaction([...])` para atomicidad
 - **Archivos:** `class-editor.module.ts`, `class-editor.service.ts`, `class-editor.controller.ts`, `dto/reorder-slides.dto.ts`, `dto/change-slide-type.dto.ts`, `dto/bulk-update-slides.dto.ts`
 
-#### 16. AnalyticsModule 🔲
-#### 17. AIFeaturesModule 🔲
-#### 18. NotificationsModule 🔲
+#### 16. MessagingModule ✅ — completado 25/03/2026 (Fase 2)
+- **Ruta:** `src/messaging/`
+- **Prefijo HTTP:** `courses/:courseId/messages`
+- **Descripción:** Sistema de mensajería interna por curso entre docente y estudiantes. Soporta mensajes de canal (todos), hilos de respuestas y mensajes directos (DM) entre dos miembros del curso.
+- **Modelos Prisma nuevos (migración `20260326012942_messaging`):**
+  - `Message` — cuerpo (`body`), `isDeleted`, `courseId`, `senderId`, `recipientId?` (null = canal, set = DM), `parentId?` (null = top-level, set = reply); auto-relación `parent/replies`
+  - `MessageRead` — registro de lectura por usuario; unique `(messageId, userId)`
+- **Endpoints:**
+  - `POST .../messages` — enviar mensaje en el canal del curso (`body`, `parentId?`)
+  - `GET .../messages` — listar top-level mensajes de canal, paginado desc; sin DMs
+  - `GET .../messages/:messageId` — obtener mensaje con replies (no eliminados) y reads
+  - `POST .../messages/:messageId/read` — marcar como leído (no puede ser el autor)
+  - `DELETE .../messages/:messageId` — soft delete propio (`isDeleted: true`, `body: ''`); solo el autor
+  - `POST .../messages/direct` — enviar DM (`body`, `recipientId`, `parentId?`); valida que el destinatario sea miembro
+  - `GET .../messages/direct/:userId` — historial de DMs entre el usuario autenticado y `:userId`, paginado desc
+- **Orden de rutas en controller:** `direct` y `direct/:userId` (literales) registrados antes de `:messageId` (param) para evitar conflicto
+- **Permisos:** cualquier miembro del curso (matriculado o docente) puede enviar y leer; solo el autor puede eliminar su mensaje; el lector de un `read` no puede ser el autor
+- **Validación DM:** el destinatario debe ser estudiante matriculado o el docente titular del curso
+- **Relaciones nuevas en User:** `sentMessages Message[]`, `receivedMessages Message[]`, `messageReads MessageRead[]`
+- **Relaciones nuevas en Course:** `messages Message[]`
+- **Archivos:** `messaging.module.ts`, `messaging.service.ts`, `messaging.controller.ts`, `dto/send-message.dto.ts`, `dto/send-direct-message.dto.ts`
+
+#### 17. AnalyticsModule 🔲
+#### 18. AIFeaturesModule 🔲
+#### 19. NotificationsModule 🔲
 
 ---
 
@@ -645,6 +667,7 @@ const { PrismaClient } = require(
 // - H5pActivitiesModule      ← Fase 2 completa 25/03/2026
 // - GamificationModule       ← Fase 2 completa 25/03/2026
 // - ClassEditorModule        ← Fase 2 completa 25/03/2026
+// - MessagingModule          ← Fase 2 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1078,6 +1101,7 @@ lumina-backend/
 - [x] Activities H5P (`H5pActivitiesModule`) — completado 25/03/2026
 - [x] Gamification (`GamificationModule`) — puntos + badges — completado 25/03/2026
 - [x] Class Editor (`ClassEditorModule`) — reorder, duplicar, bulk update, preview — completado 25/03/2026
+- [x] Messaging (`MessagingModule`) — canal, DMs, hilos, lectura, soft delete — completado 25/03/2026
 - [ ] Live Sessions (Socket.IO)
 - [ ] Class Editor
 - [ ] Messaging
@@ -1307,10 +1331,10 @@ src/
 ### 6. Fase 2 — Estado actualizado
 
 - [x] Live Sessions (Socket.IO) — `LiveSessionsModule` implementado y registrado en `app.module.ts`
-- [ ] Activities (H5P)
-- [ ] Gamification
-- [ ] Class Editor
-- [ ] Messaging
+- [x] Activities (H5P) — `H5pActivitiesModule` completado 25/03/2026
+- [x] Gamification — `GamificationModule` completado 25/03/2026
+- [x] Class Editor — `ClassEditorModule` completado 25/03/2026
+- [x] Messaging — `MessagingModule` completado 25/03/2026
 
 ---
 

@@ -17,6 +17,7 @@ import { LiveSessionsModule } from './live-sessions/live-sessions.module';
 import { H5pActivitiesModule } from './h5p-activities/h5p-activities.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { ClassEditorModule } from './class-editor/class-editor.module';
+import { MessagingModule } from './messaging/messaging.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { ClassEditorModule } from './class-editor/class-editor.module';
     H5pActivitiesModule,
     GamificationModule,
     ClassEditorModule,
+    MessagingModule,
   ],
 })
 export class AppModule {}
