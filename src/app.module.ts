@@ -21,6 +21,7 @@ import { MessagingModule } from './messaging/messaging.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { GradebookReportsModule } from './gradebook-reports/gradebook-reports.module';
 import { PerformanceTrackingModule } from './performance-tracking/performance-tracking.module';
+import { AiFeaturesModule } from './ai-features/ai-features.module';
 
 @Module({
   imports: [
@@ -57,6 +58,9 @@ import { PerformanceTrackingModule } from './performance-tracking/performance-tr
     AnalyticsModule,
     GradebookReportsModule,
     PerformanceTrackingModule,
+
+    // ── Fase 4 — Funcionalidades avanzadas ───────────────────────────────
+    AiFeaturesModule,
   ],
 })
 export class AppModule {}

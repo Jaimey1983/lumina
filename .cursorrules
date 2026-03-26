@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 3: PerformanceTrackingModule)
+# Última actualización: 25/03/2026 (Fase 4: AiFeaturesModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -386,6 +386,7 @@ REDIS_PORT=6379
 JWT_SECRET=lumina_super_secret_key_2025_cambiar_en_produccion
 JWT_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:3001
+OPENAI_API_KEY=sk-...  # requerida para AiFeaturesModule (Fase 4)
 ```
 
 ---
@@ -699,7 +700,25 @@ const { PrismaClient } = require(
 - **Dos controladores en un módulo:** `PerformanceTrackingController` + `StudentHistoryController`
 - **Archivos:** `performance-tracking.module.ts`, `performance-tracking.service.ts`, `performance-tracking.controller.ts`, `student-history.controller.ts`
 
-#### 20. AIFeaturesModule 🔲
+#### 20. AiFeaturesModule ✅ — completado 25/03/2026 (Fase 4)
+- **Ruta:** `src/ai-features/`
+- **Prefijos HTTP:** `ai` (standalone) y `courses/:courseId/ai` (con contexto de curso)
+- **Descripción:** Integración con OpenAI API (gpt-4o-mini) para funcionalidades de IA educativa. Sin modelos nuevos en DB. Solo accesible por personal docente.
+- **Dependencias:** `openai@6.x` (pnpm add openai); `ConfigService` para `OPENAI_API_KEY`
+- **Variable de entorno:** `OPENAI_API_KEY` — si no está configurada, cada endpoint retorna `ServiceUnavailableException` con mensaje claro (no rompe la app)
+- **Manejo de errores:** todas las llamadas a OpenAI envueltas en try/catch → `ServiceUnavailableException`; respuestas JSON inválidas → `ServiceUnavailableException`
+- **Permisos:** solo `TEACHER`, `TEACHER_ASSISTANT`, `DEPARTMENT_HEAD`, `ADMIN`, `SUPERADMIN`; verificado en `assertStaff()` helper o via `courseAuth.assertStaffCanManageCourse`
+- **Dos controllers en un módulo:** `AiFeaturesController` + `CourseAiController`
+- **Endpoints standalone (`/ai`):**
+  - `POST /ai/quiz` — genera preguntas de quiz (MultipleChoice/TrueFalse/FillInTheBlanks) a partir de texto/tema; body: `{ text, count?, type? }`; devuelve `{ type, count, questions[] }`
+  - `POST /ai/content-assistant` — genera estructura completa de clase (title, description, objectives, slides[]) a partir de un tema; body: `{ topic, slideCount?, level? }`
+  - `POST /ai/evaluate-response` — evalúa y puntúa respuesta libre de estudiante; body: `{ question, studentResponse, rubric?, maxScore? }`; devuelve `{ score, percentage, qualitativeGrade, strengths[], weaknesses[], feedback, suggestedAnswer }`
+- **Endpoints con contexto de curso (`/courses/:courseId/ai`):**
+  - `POST .../ai/student-feedback` — retroalimentación personalizada basada en GradeEntries + SelfEval + PeerEval del período; body: `{ studentId, periodId }`; carga datos reales del DB antes de llamar a OpenAI
+  - `POST .../ai/class-summary` — resumen automático de clase a partir de sus slides; body: `{ classId }`; verifica que la clase pertenezca al curso; 400 si no hay slides
+- **Modelo OpenAI:** `gpt-4o-mini` con `temperature: 0.7`, `max_tokens: 2000`, `response_format: json_object`
+- **Archivos:** `ai-features.module.ts`, `ai-features.service.ts`, `ai-features.controller.ts`, `course-ai.controller.ts`, `dto/generate-quiz.dto.ts`, `dto/student-feedback.dto.ts`, `dto/class-summary.dto.ts`, `dto/content-assistant.dto.ts`, `dto/evaluate-response.dto.ts`
+
 #### 21. NotificationsModule 🔲
 
 ---
@@ -729,6 +748,7 @@ const { PrismaClient } = require(
 // - AnalyticsModule               ← Fase 3 completa 25/03/2026
 // - GradebookReportsModule        ← Fase 3 completa 25/03/2026
 // - PerformanceTrackingModule     ← Fase 3 completa 25/03/2026 (dos controllers: PerformanceTrackingController + StudentHistoryController)
+// - AiFeaturesModule              ← Fase 4 completa 25/03/2026 (dos controllers: AiFeaturesController + CourseAiController)
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1171,7 +1191,7 @@ lumina-backend/
 - [x] Performance Tracking (`PerformanceTrackingModule`) — evolución, comparativa, ranking, at-risk, breakdown, historial cruzado — completado 25/03/2026
 
 ### Fase 4 — Funcionalidades avanzadas
-- [ ] AI Features (OpenAI)
+- [x] AI Features (`AiFeaturesModule`) — quiz generator, student feedback, class summary, content assistant, evaluate response — completado 25/03/2026
 - [ ] Collaboration
 - [ ] Forums
 - [ ] Integrations
