@@ -20,6 +20,7 @@ import { ClassEditorModule } from './class-editor/class-editor.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { GradebookReportsModule } from './gradebook-reports/gradebook-reports.module';
+import { PerformanceTrackingModule } from './performance-tracking/performance-tracking.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { GradebookReportsModule } from './gradebook-reports/gradebook-reports.mo
     MessagingModule,
     AnalyticsModule,
     GradebookReportsModule,
+    PerformanceTrackingModule,
   ],
 })
 export class AppModule {}

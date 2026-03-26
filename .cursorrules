@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 3: GradebookReportsModule)
+# Última actualización: 25/03/2026 (Fase 3: PerformanceTrackingModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -679,8 +679,28 @@ const { PrismaClient } = require(
 - **Eficiencia matriz/pending/export:** carga datos una vez con `loadReportData()` (~5 queries en paralelo con `Promise.all`): estructura del gradebook, enrollments, todos los GradeEntries del período, todos los SelfEvaluations del período, todos los PeerEvaluations del período. Computa nota final en memoria sin queries adicionales.
 - **Archivos:** `gradebook-reports.module.ts`, `gradebook-reports.service.ts`, `gradebook-reports.controller.ts`
 
-#### 19. AIFeaturesModule 🔲
-#### 20. NotificationsModule 🔲
+#### 19. PerformanceTrackingModule ✅ — completado 25/03/2026 (Fase 3)
+- **Ruta:** `src/performance-tracking/`
+- **Prefijos HTTP:** `courses/:courseId/performance` y `students/:userId/performance`
+- **Descripción:** Seguimiento del desempeño académico temporal por estudiante y curso. Sin modelos nuevos — calcula todo desde los existentes.
+- **Dependencia:** importa `GradeCalculationModule` para reutilizar `GradeCalculationService.calculateForStudent` en el endpoint breakdown.
+- **Scope de autorización:** `'reports'` (reutiliza el mismo scope agregado en GradebookReports)
+- **Carga de datos eficiente:** `_loadData(courseId)` — ~6 queries en paralelo con `Promise.all`; construye `entryMap`, `selfEvalMap`, `peerEvalMap` como Maps anidados para O(1) lookup; `_computeGrade()` es función pura en memoria.
+- **Endpoints (controlador principal):**
+  - `GET .../performance/ranking` — staff only; ranking de todos los estudiantes por nota promedio sobre todos los períodos; incluye `gradePerPeriod[]` y `average`
+  - `GET .../performance/at-risk` — staff only; filtra por período activo; alerta si `finalGrade < 3.0` o `completionPct < 50%`; incluye `riskReasons[]`
+  - `GET .../performance/evolution/:userId` — evolución temporal de notas del estudiante por período; accesible por staff o el propio estudiante
+  - `GET .../performance/comparison/:userId` — nota del estudiante vs promedio del curso por período; accesible por staff o el propio estudiante
+  - `GET .../performance/breakdown/:userId?periodId=` — delega a `GradeCalculationService.calculateForStudent`; `periodId` obligatorio (400 si falta)
+- **Endpoint historial cruzado (segundo controlador):**
+  - `GET /students/:userId/performance/history` — historial completo del estudiante en todos sus cursos; solo ADMIN/SUPERADMIN o el propio usuario; usa `Promise.all` por curso
+- **Permisos:** staff ve todo; STUDENT solo ve sus propios datos; `getCrossCourseHistory` solo ADMIN/SUPERADMIN o self (no hay contexto de curso para verificar TEACHER)
+- **Orden de rutas en controller:** literales (`ranking`, `at-risk`) antes de rutas con param (`evolution/:userId`, `comparison/:userId`, `breakdown/:userId`)
+- **Dos controladores en un módulo:** `PerformanceTrackingController` + `StudentHistoryController`
+- **Archivos:** `performance-tracking.module.ts`, `performance-tracking.service.ts`, `performance-tracking.controller.ts`, `student-history.controller.ts`
+
+#### 20. AIFeaturesModule 🔲
+#### 21. NotificationsModule 🔲
 
 ---
 
@@ -706,8 +726,9 @@ const { PrismaClient } = require(
 // - GamificationModule       ← Fase 2 completa 25/03/2026
 // - ClassEditorModule        ← Fase 2 completa 25/03/2026
 // - MessagingModule          ← Fase 2 completa 25/03/2026
-// - AnalyticsModule          ← Fase 3 completa 25/03/2026
-// - GradebookReportsModule   ← Fase 3 completa 25/03/2026
+// - AnalyticsModule               ← Fase 3 completa 25/03/2026
+// - GradebookReportsModule        ← Fase 3 completa 25/03/2026
+// - PerformanceTrackingModule     ← Fase 3 completa 25/03/2026
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1147,7 +1168,9 @@ lumina-backend/
 ### Fase 3 — Analytics y reportes
 - [x] Analytics (`AnalyticsModule`) — resumen, progreso, ranking actividades, engagement, export — completado 25/03/2026
 - [x] Gradebook Reports (`GradebookReportsModule`) — matriz, distribución, pendientes, export — completado 25/03/2026
-- [ ] Performance Tracking
+- [x] Performance Tracking (`PerformanceTrackingModule`) — evolución, comparativa, ranking, at-risk, breakdown, historial cruzado — completado 25/03/2026
+
+### Fase 3 — Analytics y reportes ✅ COMPLETA (25/03/2026)
 
 ### Fase 4 — Funcionalidades avanzadas
 - [ ] AI Features (OpenAI)
