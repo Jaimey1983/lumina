@@ -1,6 +1,6 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 4: AiFeaturesModule)
+# Última actualización: 25/03/2026 (Fase 4: CollaborationModule)
 # Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
 
 ---
@@ -719,7 +719,49 @@ const { PrismaClient } = require(
 - **Modelo OpenAI:** `gpt-4o-mini` con `temperature: 0.7`, `max_tokens: 2000`, `response_format: json_object`
 - **Archivos:** `ai-features.module.ts`, `ai-features.service.ts`, `ai-features.controller.ts`, `course-ai.controller.ts`, `dto/generate-quiz.dto.ts`, `dto/student-feedback.dto.ts`, `dto/class-summary.dto.ts`, `dto/content-assistant.dto.ts`, `dto/evaluate-response.dto.ts`
 
-#### 21. NotificationsModule 🔲
+#### 21. CollaborationModule ✅ — completado 25/03/2026 (Fase 4)
+- **Ruta:** `src/collaboration/`
+- **Prefijos HTTP:** `courses/:courseId/collaboration` (grupos) y `courses/:courseId/classes/:classId/collaboration` (pizarras y notas)
+- **Descripción:** Funcionalidades de colaboración en tiempo real entre estudiantes: pizarras Fabric.js, notas Tiptap, grupos de trabajo y asignación de actividades a grupos.
+- **Modelos Prisma nuevos (6):** `WhiteboardSession`, `CollabNote`, `NoteVersion`, `WorkGroup`, `WorkGroupMember`, `GroupActivity`
+- **Relaciones agregadas a modelos existentes:** `Class` → `whiteboardSessions`, `collabNotes`; `Course` → `workGroups`; `User` → `workGroupMemberships`; `Activity` → `groupActivities`
+- **Dos controllers en un módulo:** `CollaborationController` + `ClassCollabController`
+- **Permisos:**
+  - Staff (TEACHER/ADMIN/SUPERADMIN/etc.): crear/eliminar pizarras, notas y grupos; gestionar miembros y actividades de grupo
+  - Cualquier miembro del curso: listar/leer pizarras y notas; **editar contenido** (PATCH) de pizarras y notas colaborativas
+  - `addMember` verifica que el usuario esté matriculado en el curso antes de agregar al grupo
+- **Soft delete:** pizarras (`isActive: false`), notas (`isActive: false`), grupos (`isActive: false`)
+- **Historial de versiones:** `PATCH .../notes/:noteId` guarda automáticamente snapshot del contenido anterior como `NoteVersion` antes de aplicar el cambio; solo cuando hay `content` nuevo y la nota ya tenía contenido
+- **Validaciones:**
+  - `addMember` — verifica matrícula; P2002 → ConflictException
+  - `assignActivity` — verifica que la actividad pertenece al curso (via `indicator.aspect.structure.courseId`)
+  - Clase verificada contra curso en cada operación de pizarra/nota
+- **Orden de rutas:** `notes/:noteId/history` registrado antes de `notes/:noteId` para evitar conflicto de params
+- **Endpoints (ClassCollabController — `courses/:courseId/classes/:classId/collaboration`):**
+  - `POST .../whiteboards` — crear sesión de pizarra (Fabric.js JSON)
+  - `GET .../whiteboards` — listar sesiones activas (sin content para listar)
+  - `GET .../whiteboards/:sessionId` — obtener con content completo
+  - `PATCH .../whiteboards/:sessionId` — actualizar name y/o content (cualquier miembro)
+  - `DELETE .../whiteboards/:sessionId` — soft delete (staff)
+  - `POST .../notes` — crear nota colaborativa (Tiptap JSON)
+  - `GET .../notes` — listar notas activas (sin content)
+  - `GET .../notes/:noteId/history` — historial de versiones con timestamp y authorId
+  - `GET .../notes/:noteId` — obtener con content completo
+  - `PATCH .../notes/:noteId` — editar (cualquier miembro); guarda versión automáticamente
+  - `DELETE .../notes/:noteId` — soft delete (staff)
+- **Endpoints (CollaborationController — `courses/:courseId/collaboration`):**
+  - `POST .../groups` — crear grupo (staff)
+  - `GET .../groups` — listar grupos activos con count de miembros y actividades
+  - `GET .../groups/:groupId` — detalle con miembros y actividades asignadas
+  - `DELETE .../groups/:groupId` — soft delete (staff)
+  - `POST .../groups/:groupId/members` — añadir miembro (verifica matrícula)
+  - `DELETE .../groups/:groupId/members/:memberId` — eliminar miembro
+  - `POST .../groups/:groupId/activities` — asignar actividad del curso al grupo
+  - `GET .../groups/:groupId/activities` — listar actividades asignadas
+  - `DELETE .../groups/:groupId/activities/:groupActivityId` — desasignar actividad
+- **Archivos:** `collaboration.module.ts`, `collaboration.service.ts`, `collaboration.controller.ts`, `class-collab.controller.ts`, DTOs: `create-whiteboard`, `update-whiteboard`, `create-note`, `update-note`, `create-group`, `add-member`, `assign-activity`
+
+#### 22. NotificationsModule 🔲
 
 ---
 
@@ -749,6 +791,7 @@ const { PrismaClient } = require(
 // - GradebookReportsModule        ← Fase 3 completa 25/03/2026
 // - PerformanceTrackingModule     ← Fase 3 completa 25/03/2026 (dos controllers: PerformanceTrackingController + StudentHistoryController)
 // - AiFeaturesModule              ← Fase 4 completa 25/03/2026 (dos controllers: AiFeaturesController + CourseAiController)
+// - CollaborationModule           ← Fase 4 completa 25/03/2026 (dos controllers: CollaborationController + ClassCollabController)
 ```
 
 Al agregar nuevos módulos, solo añadir el import en `app.module.ts` — no re-registrar ConfigModule ni ThrottlerModule.
@@ -1192,6 +1235,7 @@ lumina-backend/
 
 ### Fase 4 — Funcionalidades avanzadas
 - [x] AI Features (`AiFeaturesModule`) — quiz generator, student feedback, class summary, content assistant, evaluate response — completado 25/03/2026
+- [x] Collaboration (`CollaborationModule`) — pizarras Fabric.js, notas Tiptap + historial, grupos de trabajo, actividades de grupo — completado 25/03/2026
 - [ ] Collaboration
 - [ ] Forums
 - [ ] Integrations

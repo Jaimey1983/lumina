@@ -22,6 +22,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { GradebookReportsModule } from './gradebook-reports/gradebook-reports.module';
 import { PerformanceTrackingModule } from './performance-tracking/performance-tracking.module';
 import { AiFeaturesModule } from './ai-features/ai-features.module';
+import { CollaborationModule } from './collaboration/collaboration.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { AiFeaturesModule } from './ai-features/ai-features.module';
 
     // ── Fase 4 — Funcionalidades avanzadas ───────────────────────────────
     AiFeaturesModule,
+    CollaborationModule,
   ],
 })
 export class AppModule {}

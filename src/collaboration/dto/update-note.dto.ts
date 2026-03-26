@@ -1,0 +1,13 @@
+import { IsObject, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+export class UpdateNoteDto {
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value?.trim())
+  title?: string;
+
+  @IsOptional()
+  @IsObject()
+  content?: Record<string, any>;
+}

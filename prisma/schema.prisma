@@ -32,6 +32,7 @@ model User {
   sentMessages      Message[]       @relation("SentMessages")
   receivedMessages  Message[]       @relation("ReceivedMessages")
   messageReads      MessageRead[]
+  workGroupMemberships WorkGroupMember[]
 
   @@map("users")
 }
@@ -67,6 +68,7 @@ model Course {
   studentPoints       StudentPoints[]
   badges              Badge[]
   messages            Message[]
+  workGroups          WorkGroup[]
 
   @@map("courses")
 }
@@ -109,7 +111,9 @@ model Class {
   status      ClassStatus @default(DRAFT)
   courseId    String
   course      Course      @relation(fields: [courseId], references: [id])
-  slides      Slide[]
+  slides             Slide[]
+  whiteboardSessions WhiteboardSession[]
+  collabNotes        CollabNote[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -178,13 +182,14 @@ model Indicator {
 }
 
 model Activity {
-  id           String       @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
   weight       Float
-  maxScore     Float        @default(5.0)
+  maxScore     Float          @default(5.0)
   indicatorId  String
-  indicator    Indicator    @relation(fields: [indicatorId], references: [id])
+  indicator    Indicator      @relation(fields: [indicatorId], references: [id])
   gradeEntries GradeEntry[]
+  groupActivities GroupActivity[]
 
   @@map("activities")
 }
@@ -315,4 +320,85 @@ model MessageRead {
 
   @@unique([messageId, userId])
   @@map("message_reads")
+}
+
+// ─── COLABORACIÓN ──────────────────────────────────────────
+
+model WhiteboardSession {
+  id          String   @id @default(cuid())
+  name        String
+  content     Json?    // Estado canvas Fabric.js
+  isActive    Boolean  @default(true)
+  classId     String
+  createdById String
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("whiteboard_sessions")
+}
+
+model CollabNote {
+  id          String        @id @default(cuid())
+  title       String
+  content     Json?         // Documento Tiptap JSON
+  isActive    Boolean       @default(true)
+  classId     String
+  createdById String
+  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  versions    NoteVersion[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("collab_notes")
+}
+
+model NoteVersion {
+  id        String     @id @default(cuid())
+  content   Json       // Snapshot del contenido Tiptap
+  noteId    String
+  authorId  String
+  note      CollabNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@map("note_versions")
+}
+
+model WorkGroup {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean           @default(true)
+  courseId    String
+  course      Course            @relation(fields: [courseId], references: [id])
+  members     WorkGroupMember[]
+  activities  GroupActivity[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("work_groups")
+}
+
+model WorkGroupMember {
+  id       String    @id @default(cuid())
+  groupId  String
+  userId   String
+  group    WorkGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id])
+  joinedAt DateTime  @default(now())
+
+  @@unique([groupId, userId])
+  @@map("work_group_members")
+}
+
+model GroupActivity {
+  id         String    @id @default(cuid())
+  groupId    String
+  activityId String
+  group      WorkGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  activity   Activity  @relation(fields: [activityId], references: [id])
+  assignedAt DateTime  @default(now())
+
+  @@unique([groupId, activityId])
+  @@map("group_activities")
 }
