@@ -20,7 +20,7 @@ export class ActivitiesService {
 
   async create(
     courseId: string,
-    indicatorId: string,
+    performanceIndicatorId: string,
     dto: CreateActivityDto,
     userId: string,
     role: string,
@@ -33,9 +33,9 @@ export class ActivitiesService {
       'activities',
     );
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
-    await this.assertIndicatorBelongsToCourse(indicatorId, courseId);
+    await this.assertPIBelongsToCourse(performanceIndicatorId, courseId);
 
-    const currentSum = await this.sumActivityWeightsForIndicator(indicatorId);
+    const currentSum = await this.sumActivityWeightsForPI(performanceIndicatorId);
     const nextSum = currentSum + dto.weight;
     if (nextSum > 1 + WEIGHT_EPS) {
       throw new BadRequestException(
@@ -48,36 +48,36 @@ export class ActivitiesService {
         name: dto.name,
         weight: dto.weight,
         maxScore: dto.maxScore ?? 5.0,
-        indicatorId,
+        performanceIndicatorId,
       },
       select: {
         id: true,
         name: true,
         weight: true,
         maxScore: true,
-        indicatorId: true,
+        performanceIndicatorId: true,
       },
     });
   }
 
-  async findAllByIndicator(
+  async findAllByPI(
     courseId: string,
-    indicatorId: string,
+    performanceIndicatorId: string,
     userId: string,
     role: string,
   ) {
     await this.courseAuth.assertCourseExists(courseId);
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
-    await this.assertIndicatorBelongsToCourse(indicatorId, courseId);
+    await this.assertPIBelongsToCourse(performanceIndicatorId, courseId);
 
     const activities = await this.prisma.activity.findMany({
-      where: { indicatorId },
+      where: { performanceIndicatorId },
       select: {
         id: true,
         name: true,
         weight: true,
         maxScore: true,
-        indicatorId: true,
+        performanceIndicatorId: true,
         _count: { select: { gradeEntries: true } },
       },
       orderBy: { name: 'asc' },
@@ -110,16 +110,23 @@ export class ActivitiesService {
         name: true,
         weight: true,
         maxScore: true,
-        indicatorId: true,
-        indicator: {
+        performanceIndicatorId: true,
+        performanceIndicator: {
           select: {
             id: true,
-            name: true,
-            aspect: {
+            statement: true,
+            competenceType: true,
+            achievement: {
               select: {
                 id: true,
-                name: true,
-                structure: { select: { courseId: true } },
+                code: true,
+                aspect: {
+                  select: {
+                    id: true,
+                    name: true,
+                    structure: { select: { courseId: true } },
+                  },
+                },
               },
             },
           },
@@ -130,7 +137,7 @@ export class ActivitiesService {
 
     if (
       !activity ||
-      activity.indicator.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
     ) {
       throw new NotFoundException('Actividad no encontrada en este curso');
     }
@@ -156,14 +163,18 @@ export class ActivitiesService {
       where: { id: activityId },
       select: {
         id: true,
-        indicatorId: true,
+        performanceIndicatorId: true,
         weight: true,
         name: true,
         maxScore: true,
-        indicator: {
+        performanceIndicator: {
           select: {
-            aspect: {
-              select: { structure: { select: { courseId: true } } },
+            achievement: {
+              select: {
+                aspect: {
+                  select: { structure: { select: { courseId: true } } },
+                },
+              },
             },
           },
         },
@@ -172,14 +183,17 @@ export class ActivitiesService {
 
     if (
       !activity ||
-      activity.indicator.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
     ) {
       throw new NotFoundException('Actividad no encontrada en este curso');
     }
 
     const newWeight = dto.weight ?? activity.weight;
     const othersSum = await this.prisma.activity.aggregate({
-      where: { indicatorId: activity.indicatorId, id: { not: activityId } },
+      where: {
+        performanceIndicatorId: activity.performanceIndicatorId,
+        id: { not: activityId },
+      },
       _sum: { weight: true },
     });
     const nextSum = (othersSum._sum.weight ?? 0) + newWeight;
@@ -201,7 +215,7 @@ export class ActivitiesService {
         name: true,
         weight: true,
         maxScore: true,
-        indicatorId: true,
+        performanceIndicatorId: true,
       },
     });
   }
@@ -223,10 +237,14 @@ export class ActivitiesService {
       where: { id: activityId },
       select: {
         id: true,
-        indicator: {
+        performanceIndicator: {
           select: {
-            aspect: {
-              select: { structure: { select: { courseId: true } } },
+            achievement: {
+              select: {
+                aspect: {
+                  select: { structure: { select: { courseId: true } } },
+                },
+              },
             },
           },
         },
@@ -236,7 +254,7 @@ export class ActivitiesService {
 
     if (
       !activity ||
-      activity.indicator.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
     ) {
       throw new NotFoundException('Actividad no encontrada en este curso');
     }
@@ -255,29 +273,36 @@ export class ActivitiesService {
     return weights.reduce((a, b) => a + b, 0);
   }
 
-  private async sumActivityWeightsForIndicator(indicatorId: string) {
+  private async sumActivityWeightsForPI(performanceIndicatorId: string) {
     const agg = await this.prisma.activity.aggregate({
-      where: { indicatorId },
+      where: { performanceIndicatorId },
       _sum: { weight: true },
     });
     return agg._sum.weight ?? 0;
   }
 
-  private async assertIndicatorBelongsToCourse(
-    indicatorId: string,
+  private async assertPIBelongsToCourse(
+    performanceIndicatorId: string,
     courseId: string,
   ) {
-    const indicator = await this.prisma.indicator.findUnique({
-      where: { id: indicatorId },
+    const pi = await this.prisma.performanceIndicator.findUnique({
+      where: { id: performanceIndicatorId },
       select: {
         id: true,
-        aspect: {
-          select: { structure: { select: { courseId: true } } },
+        achievement: {
+          select: {
+            aspect: {
+              select: { structure: { select: { courseId: true } } },
+            },
+          },
         },
       },
     });
-    if (!indicator || indicator.aspect.structure.courseId !== courseId) {
-      throw new NotFoundException('Indicador no encontrado en este curso');
+    if (
+      !pi ||
+      pi.achievement.aspect.structure.courseId !== courseId
+    ) {
+      throw new NotFoundException('Indicador de logro no encontrado en este curso');
     }
   }
 }

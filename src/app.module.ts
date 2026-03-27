@@ -25,6 +25,7 @@ import { AiFeaturesModule } from './ai-features/ai-features.module';
 import { CollaborationModule } from './collaboration/collaboration.module';
 import { ForumsModule } from './forums/forums.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -67,6 +68,9 @@ import { IntegrationsModule } from './integrations/integrations.module';
     CollaborationModule,
     ForumsModule,
     IntegrationsModule,
+
+    // ── Fase 5 — Logros e Indicadores de Logro ───────────────────────────
+    AchievementsModule,
   ],
 })
 export class AppModule {}

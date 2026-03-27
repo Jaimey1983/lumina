@@ -13,6 +13,14 @@ import { UpdateGradeEntryDto } from './dto/update-grade-entry.dto';
 
 const SCORE_EPS = 1e-6;
 
+const CT_ABBREV: Record<string, string> = {
+  COGNITIVE: 'COG',
+  METHODOLOGICAL: 'MET',
+  INTERPERSONAL: 'INT',
+  INSTRUMENTAL: 'INS',
+  SUBJECT_SPECIFIC: 'SUB',
+};
+
 @Injectable()
 export class GradebookService {
   constructor(
@@ -241,10 +249,14 @@ export class GradebookService {
         activity: {
           select: {
             maxScore: true,
-            indicator: {
+            performanceIndicator: {
               select: {
-                aspect: {
-                  select: { structure: { select: { courseId: true } } },
+                achievement: {
+                  select: {
+                    aspect: {
+                      select: { structure: { select: { courseId: true } } },
+                    },
+                  },
                 },
               },
             },
@@ -255,7 +267,7 @@ export class GradebookService {
 
     if (
       !entry ||
-      entry.activity.indicator.aspect.structure.courseId !== courseId
+      entry.activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
     ) {
       throw new NotFoundException('Calificación no encontrada en este curso');
     }
@@ -320,22 +332,30 @@ export class GradebookService {
             id: true,
             name: true,
             weight: true,
-            indicators: {
+            achievements: {
               select: {
                 id: true,
-                name: true,
-                weight: true,
-                activities: {
+                code: true,
+                performanceIndicators: {
                   select: {
                     id: true,
-                    name: true,
+                    statement: true,
+                    competenceType: true,
                     weight: true,
-                    maxScore: true,
+                    activities: {
+                      select: {
+                        id: true,
+                        name: true,
+                        weight: true,
+                        maxScore: true,
+                      },
+                      orderBy: { name: 'asc' },
+                    },
                   },
-                  orderBy: { name: 'asc' },
+                  orderBy: { competenceType: 'asc' },
                 },
               },
-              orderBy: { name: 'asc' },
+              orderBy: { code: 'asc' },
             },
           },
           orderBy: { name: 'asc' },
@@ -428,13 +448,17 @@ export class GradebookService {
   private flattenActivities(structure: {
     aspects: Array<{
       name: string;
-      indicators: Array<{
-        name: string;
-        activities: Array<{
-          id: string;
-          name: string;
-          maxScore: number;
-          weight: number;
+      achievements: Array<{
+        code: string;
+        performanceIndicators: Array<{
+          statement: string;
+          competenceType: string;
+          activities: Array<{
+            id: string;
+            name: string;
+            maxScore: number;
+            weight: number;
+          }>;
         }>;
       }>;
     }>;
@@ -448,16 +472,19 @@ export class GradebookService {
       indicatorName: string;
     }> = [];
     for (const aspect of structure.aspects) {
-      for (const ind of aspect.indicators) {
-        for (const act of ind.activities) {
-          out.push({
-            id: act.id,
-            name: act.name,
-            maxScore: act.maxScore,
-            weight: act.weight,
-            aspectName: aspect.name,
-            indicatorName: ind.name,
-          });
+      for (const ach of aspect.achievements) {
+        for (const pi of ach.performanceIndicators) {
+          const piLabel = `${ach.code}-${CT_ABBREV[pi.competenceType] ?? pi.competenceType}`;
+          for (const act of pi.activities) {
+            out.push({
+              id: act.id,
+              name: act.name,
+              maxScore: act.maxScore,
+              weight: act.weight,
+              aspectName: aspect.name,
+              indicatorName: piLabel,
+            });
+          }
         }
       }
     }
@@ -495,10 +522,14 @@ export class GradebookService {
       where: { id: activityId },
       select: {
         maxScore: true,
-        indicator: {
+        performanceIndicator: {
           select: {
-            aspect: {
-              select: { structure: { select: { courseId: true } } },
+            achievement: {
+              select: {
+                aspect: {
+                  select: { structure: { select: { courseId: true } } },
+                },
+              },
             },
           },
         },
@@ -506,7 +537,7 @@ export class GradebookService {
     });
     if (
       !activity ||
-      activity.indicator.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
     ) {
       throw new BadRequestException(
         'La actividad no pertenece a la estructura de calificación de este curso',

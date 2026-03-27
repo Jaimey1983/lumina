@@ -153,10 +153,10 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
               name: true,
               maxScore: true,
               weight: true,
-              indicator: {
+              performanceIndicator: {
                 select: {
-                  name: true,
-                  aspect: { select: { name: true } },
+                  competenceType: true,
+                  achievement: { select: { code: true, aspect: { select: { name: true } } } },
                 },
               },
             },
@@ -181,7 +181,7 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
     // Construir resumen de desempeño
     const entryLines = entries.map((e) => {
       const pct = ((e.score / e.activity.maxScore) * 5).toFixed(2);
-      return `- ${e.activity.indicator.aspect.name} > ${e.activity.indicator.name} > ${e.activity.name}: ${e.score}/${e.activity.maxScore} (nota sobre 5: ${pct})${e.feedback ? ` — comentario: "${e.feedback}"` : ''}`;
+      return `- ${e.activity.performanceIndicator.achievement.aspect.name} > ${e.activity.performanceIndicator.achievement.code} > ${e.activity.name}: ${e.score}/${e.activity.maxScore} (nota sobre 5: ${pct})${e.feedback ? ` — comentario: "${e.feedback}"` : ''}`;
     });
 
     const peerAvg =

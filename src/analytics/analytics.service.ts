@@ -8,10 +8,20 @@ import { CourseAuthorizationService } from '../common/course-authorization.servi
 
 // ─── Helpers ──────────────────────────────────────────────
 
+const CT_ABBREV: Record<string, string> = {
+  COGNITIVE: 'COG',
+  METHODOLOGICAL: 'MET',
+  INTERPERSONAL: 'INT',
+  INSTRUMENTAL: 'INS',
+  SUBJECT_SPECIFIC: 'SUB',
+};
+
 const COURSE_ACTIVITY_WHERE = (courseId: string) => ({
-  indicator: {
-    aspect: {
-      structure: { courseId },
+  performanceIndicator: {
+    achievement: {
+      aspect: {
+        structure: { courseId },
+      },
     },
   },
 });
@@ -242,10 +252,10 @@ export class AnalyticsService {
         name: true,
         weight: true,
         maxScore: true,
-        indicator: {
+        performanceIndicator: {
           select: {
-            name: true,
-            aspect: { select: { name: true } },
+            competenceType: true,
+            achievement: { select: { code: true, aspect: { select: { name: true } } } },
           },
         },
         gradeEntries: {
@@ -262,11 +272,12 @@ export class AnalyticsService {
           scores.length > 0
             ? +(scores.reduce((s, x) => s + x, 0) / scores.length).toFixed(2)
             : null;
+        const piLabel = `${a.performanceIndicator.achievement.code}-${CT_ABBREV[a.performanceIndicator.competenceType] ?? a.performanceIndicator.competenceType}`;
         return {
           id: a.id,
           name: a.name,
-          indicatorName: a.indicator.name,
-          aspectName: a.indicator.aspect.name,
+          piLabel,
+          aspectName: a.performanceIndicator.achievement.aspect.name,
           weight: a.weight,
           maxScore: a.maxScore,
           totalSubmissions: scores.length,

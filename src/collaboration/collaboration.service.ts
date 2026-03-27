@@ -428,10 +428,10 @@ export class CollaborationService {
                 name: true,
                 weight: true,
                 maxScore: true,
-                indicator: {
+                performanceIndicator: {
                   select: {
-                    name: true,
-                    aspect: { select: { name: true } },
+                    competenceType: true,
+                    achievement: { select: { code: true, aspect: { select: { name: true } } } },
                   },
                 },
               },
@@ -550,7 +550,7 @@ export class CollaborationService {
     const activity = await this.prisma.activity.findFirst({
       where: {
         id: dto.activityId,
-        indicator: { aspect: { structure: { courseId } } },
+        performanceIndicator: { achievement: { aspect: { structure: { courseId } } } },
       },
       select: { id: true, name: true },
     });
@@ -598,10 +598,10 @@ export class CollaborationService {
             name: true,
             weight: true,
             maxScore: true,
-            indicator: {
+            performanceIndicator: {
               select: {
-                name: true,
-                aspect: { select: { name: true } },
+                competenceType: true,
+                achievement: { select: { code: true, aspect: { select: { name: true } } } },
               },
             },
           },

@@ -23,11 +23,14 @@ type AspectNode = {
   id: string;
   name: string;
   weight: number;
-  indicators: {
+  achievements: {
     id: string;
-    name: string;
-    weight: number;
-    activities: { id: string; name: string; weight: number; maxScore: number }[];
+    code: string;
+    performanceIndicators: {
+      id: string;
+      weight: number;
+      activities: { id: string; name: string; weight: number; maxScore: number }[];
+    }[];
   }[];
 };
 
@@ -99,13 +102,18 @@ export class PerformanceTrackingService {
               id: true,
               name: true,
               weight: true,
-              indicators: {
+              achievements: {
                 select: {
                   id: true,
-                  name: true,
-                  weight: true,
-                  activities: {
-                    select: { id: true, name: true, weight: true, maxScore: true },
+                  code: true,
+                  performanceIndicators: {
+                    select: {
+                      id: true,
+                      weight: true,
+                      activities: {
+                        select: { id: true, name: true, weight: true, maxScore: true },
+                      },
+                    },
                   },
                 },
               },
@@ -147,7 +155,11 @@ export class PerformanceTrackingService {
     }
 
     const allActivityIds = structure.aspects.flatMap((a) =>
-      a.indicators.flatMap((i) => i.activities.map((act) => act.id)),
+      a.achievements.flatMap((ach) =>
+        ach.performanceIndicators.flatMap((pi) =>
+          pi.activities.map((act) => act.id),
+        ),
+      ),
     );
     const allPeriodIds = periods.map((p) => p.id);
     const allUserIds = enrollments.map((e) => e.userId);
@@ -228,18 +240,20 @@ export class PerformanceTrackingService {
     if (validStructure) {
       for (const asp of structure.aspects) {
         let aspScore = 0;
-        for (const ind of asp.indicators) {
-          let indScore = 0;
-          for (const act of ind.activities) {
-            totalActivities++;
-            const score = periodEntries.get(act.id);
-            if (score !== undefined) {
-              completedActivities++;
-              hasAny = true;
-              indScore += (score / act.maxScore) * 5.0 * act.weight;
+        for (const ach of asp.achievements) {
+          for (const pi of ach.performanceIndicators) {
+            let piScore = 0;
+            for (const act of pi.activities) {
+              totalActivities++;
+              const score = periodEntries.get(act.id);
+              if (score !== undefined) {
+                completedActivities++;
+                hasAny = true;
+                piScore += (score / act.maxScore) * 5.0 * act.weight;
+              }
             }
+            aspScore += piScore * pi.weight;
           }
-          aspScore += indScore * ind.weight;
         }
         processScore += aspScore * asp.weight;
       }
@@ -626,17 +640,22 @@ export class PerformanceTrackingService {
                     id: true,
                     name: true,
                     weight: true,
-                    indicators: {
+                    achievements: {
                       select: {
                         id: true,
-                        name: true,
-                        weight: true,
-                        activities: {
+                        code: true,
+                        performanceIndicators: {
                           select: {
                             id: true,
-                            name: true,
                             weight: true,
-                            maxScore: true,
+                            activities: {
+                              select: {
+                                id: true,
+                                name: true,
+                                weight: true,
+                                maxScore: true,
+                              },
+                            },
                           },
                         },
                       },
@@ -668,8 +687,10 @@ export class PerformanceTrackingService {
               where: {
                 userId: targetUserId,
                 activity: {
-                  indicator: {
-                    aspect: { structure: { courseId: course.id } },
+                  performanceIndicator: {
+                    achievement: {
+                      aspect: { structure: { courseId: course.id } },
+                    },
                   },
                 },
               },
@@ -717,18 +738,20 @@ export class PerformanceTrackingService {
 
           for (const asp of structure.aspects) {
             let aspScore = 0;
-            for (const ind of asp.indicators) {
-              let indScore = 0;
-              for (const act of ind.activities) {
-                totalAct++;
-                const score = pEntries.get(act.id);
-                if (score !== undefined) {
-                  completedAct++;
-                  hasAny = true;
-                  indScore += (score / act.maxScore) * 5.0 * act.weight;
+            for (const ach of asp.achievements) {
+              for (const pi of ach.performanceIndicators) {
+                let piScore = 0;
+                for (const act of pi.activities) {
+                  totalAct++;
+                  const score = pEntries.get(act.id);
+                  if (score !== undefined) {
+                    completedAct++;
+                    hasAny = true;
+                    piScore += (score / act.maxScore) * 5.0 * act.weight;
+                  }
                 }
+                aspScore += piScore * pi.weight;
               }
-              aspScore += indScore * ind.weight;
             }
             processScore += aspScore * asp.weight;
           }

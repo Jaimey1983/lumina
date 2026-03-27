@@ -70,6 +70,7 @@ model Course {
   messages            Message[]
   workGroups          WorkGroup[]
   forums              Forum[]
+  achievements        Achievement[]
 
   @@map("courses")
 }
@@ -86,6 +87,7 @@ model Period {
   createdAt DateTime @default(now())
 
   gradeEntries GradeEntry[]
+  achievements Achievement[]
 
   @@map("periods")
 }
@@ -166,31 +168,74 @@ model Aspect {
   weight       Float
   structureId  String
   structure    GradebookStructure @relation(fields: [structureId], references: [id])
-  indicators   Indicator[]
+  achievements Achievement[]
 
   @@map("aspects")
 }
 
-model Indicator {
-  id         String      @id @default(cuid())
-  name       String
-  weight     Float
-  aspectId   String
-  aspect     Aspect      @relation(fields: [aspectId], references: [id])
-  activities Activity[]
+// ─── LOGROS E INDICADORES DE LOGRO ────────────────────────
 
-  @@map("indicators")
+enum AchievementScope {
+  SPECIFIC
+  SUBJECT
+  GENERAL
+}
+
+enum CompetenceType {
+  COGNITIVE
+  METHODOLOGICAL
+  INTERPERSONAL
+  INSTRUMENTAL
+  SUBJECT_SPECIFIC
+}
+
+enum CompetenceScope {
+  GENERAL
+  SPECIFIC
+}
+
+model Achievement {
+  id           String              @id @default(cuid())
+  code         String
+  statement    String
+  scope        AchievementScope    @default(SPECIFIC)
+  courseId     String
+  aspectId     String
+  periodId     String
+  aspect       Aspect              @relation(fields: [aspectId], references: [id])
+  course       Course              @relation(fields: [courseId], references: [id])
+  period       Period              @relation(fields: [periodId], references: [id])
+  performanceIndicators PerformanceIndicator[]
+  createdAt    DateTime            @default(now())
+
+  @@unique([code, courseId])
+  @@map("achievements")
+}
+
+model PerformanceIndicator {
+  id              String          @id @default(cuid())
+  statement       String
+  competenceType  CompetenceType
+  competenceScope CompetenceScope @default(GENERAL)
+  subject         String?
+  weight          Float
+  achievementId   String
+  achievement     Achievement     @relation(fields: [achievementId], references: [id])
+  activities      Activity[]
+  createdAt       DateTime        @default(now())
+
+  @@map("performance_indicators")
 }
 
 model Activity {
-  id           String         @id @default(cuid())
-  name         String
-  weight       Float
-  maxScore     Float          @default(5.0)
-  indicatorId  String
-  indicator    Indicator      @relation(fields: [indicatorId], references: [id])
-  gradeEntries GradeEntry[]
-  groupActivities GroupActivity[]
+  id                     String               @id @default(cuid())
+  name                   String
+  weight                 Float
+  maxScore               Float                @default(5.0)
+  performanceIndicatorId String
+  performanceIndicator   PerformanceIndicator @relation(fields: [performanceIndicatorId], references: [id])
+  gradeEntries           GradeEntry[]
+  groupActivities        GroupActivity[]
 
   @@map("activities")
 }

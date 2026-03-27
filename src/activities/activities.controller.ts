@@ -23,32 +23,32 @@ import { Roles } from '../auth/roles.decorator';
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
-  @Post('indicators/:indicatorId/activities')
+  @Post('performance-indicators/:piId/activities')
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   create(
     @Param('courseId') courseId: string,
-    @Param('indicatorId') indicatorId: string,
+    @Param('piId') piId: string,
     @Body() dto: CreateActivityDto,
     @Request() req,
   ) {
     return this.activitiesService.create(
       courseId,
-      indicatorId,
+      piId,
       dto,
       req.user.id,
       req.user.role,
     );
   }
 
-  @Get('indicators/:indicatorId/activities')
-  findAllByIndicator(
+  @Get('performance-indicators/:piId/activities')
+  findAllByPI(
     @Param('courseId') courseId: string,
-    @Param('indicatorId') indicatorId: string,
+    @Param('piId') piId: string,
     @Request() req,
   ) {
-    return this.activitiesService.findAllByIndicator(
+    return this.activitiesService.findAllByPI(
       courseId,
-      indicatorId,
+      piId,
       req.user.id,
       req.user.role,
     );

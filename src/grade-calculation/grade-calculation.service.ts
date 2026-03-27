@@ -8,6 +8,14 @@ import { CourseAuthorizationService } from '../common/course-authorization.servi
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
+const CT_ABBREV: Record<string, string> = {
+  COGNITIVE: 'COG',
+  METHODOLOGICAL: 'MET',
+  INTERPERSONAL: 'INT',
+  INSTRUMENTAL: 'INS',
+  SUBJECT_SPECIFIC: 'SUB',
+};
+
 interface ActivityResult {
   activityId: string;
   activityName: string;
@@ -18,13 +26,24 @@ interface ActivityResult {
   weightedScore: number | null;
 }
 
-interface IndicatorResult {
-  indicatorId: string;
-  indicatorName: string;
+interface PIResult {
+  piId: string;
+  piStatement: string;
+  piCode: string; // achievement.code + '-' + abbreviate(competenceType)
   weight: number;
-  score: number | null; // nota_indicador (sobre 5.0)
+  score: number | null;
   weightedScore: number | null;
   activities: ActivityResult[];
+  hasAllActivities: boolean;
+}
+
+interface AchievementResult {
+  achievementId: string;
+  achievementCode: string;
+  weight: number; // sum of PI weights
+  score: number | null;
+  weightedScore: number | null;
+  performanceIndicators: PIResult[];
   hasAllActivities: boolean;
 }
 
@@ -34,7 +53,7 @@ interface AspectResult {
   weight: number;
   score: number | null; // nota_aspecto (sobre 5.0)
   weightedScore: number | null;
-  indicators: IndicatorResult[];
+  achievements: AchievementResult[];
   hasAllActivities: boolean;
 }
 
@@ -64,15 +83,20 @@ type GradeCalcCourseLoaded = {
       id: string;
       name: string;
       weight: number;
-      indicators: Array<{
+      achievements: Array<{
         id: string;
-        name: string;
-        weight: number;
-        activities: Array<{
+        code: string;
+        performanceIndicators: Array<{
           id: string;
-          name: string;
+          statement: string;
+          competenceType: string;
           weight: number;
-          maxScore: number;
+          activities: Array<{
+            id: string;
+            name: string;
+            weight: number;
+            maxScore: number;
+          }>;
         }>;
       }>;
     }>;
@@ -221,17 +245,24 @@ export class GradeCalculationService {
                 id: true,
                 name: true,
                 weight: true,
-                indicators: {
+                achievements: {
                   select: {
                     id: true,
-                    name: true,
-                    weight: true,
-                    activities: {
+                    code: true,
+                    performanceIndicators: {
                       select: {
                         id: true,
-                        name: true,
+                        statement: true,
+                        competenceType: true,
                         weight: true,
-                        maxScore: true,
+                        activities: {
+                          select: {
+                            id: true,
+                            name: true,
+                            weight: true,
+                            maxScore: true,
+                          },
+                        },
                       },
                     },
                   },
@@ -298,7 +329,11 @@ export class GradeCalculationService {
     }
 
     const allActivityIds = structure.aspects.flatMap((a) =>
-      a.indicators.flatMap((i) => i.activities.map((act) => act.id)),
+      a.achievements.flatMap((ach) =>
+        ach.performanceIndicators.flatMap((pi) =>
+          pi.activities.map((act) => act.id),
+        ),
+      ),
     );
 
     const gradeEntries = await this.prisma.gradeEntry.findMany({
@@ -315,80 +350,112 @@ export class GradeCalculationService {
     );
 
     const aspectResults: AspectResult[] = structure.aspects.map((aspect) => {
-      const indicatorResults: IndicatorResult[] = aspect.indicators.map(
-        (indicator) => {
-          const activityResults: ActivityResult[] = indicator.activities.map(
-            (activity) => {
-              const rawScore = entryMap.has(activity.id)
-                ? entryMap.get(activity.id)!
-                : null;
+      const achievementResults: AchievementResult[] = aspect.achievements.map(
+        (achievement) => {
+          const piResults: PIResult[] = achievement.performanceIndicators.map(
+            (pi) => {
+              const activityResults: ActivityResult[] = pi.activities.map(
+                (activity) => {
+                  const rawScore = entryMap.has(activity.id)
+                    ? entryMap.get(activity.id)!
+                    : null;
 
-              const normalizedScore =
-                rawScore !== null
-                  ? (rawScore / activity.maxScore) * 5.0
+                  const normalizedScore =
+                    rawScore !== null
+                      ? (rawScore / activity.maxScore) * 5.0
+                      : null;
+
+                  const weightedScore =
+                    normalizedScore !== null
+                      ? normalizedScore * activity.weight
+                      : null;
+
+                  return {
+                    activityId: activity.id,
+                    activityName: activity.name,
+                    weight: activity.weight,
+                    maxScore: activity.maxScore,
+                    rawScore,
+                    normalizedScore: this.round(normalizedScore),
+                    weightedScore: this.round(weightedScore),
+                  };
+                },
+              );
+
+              const hasAllActivities = activityResults.every(
+                (a) => a.rawScore !== null,
+              );
+
+              const piScore = activityResults.every(
+                (a) => a.weightedScore !== null,
+              )
+                ? activityResults.reduce(
+                    (sum, a) => sum + (a.weightedScore ?? 0),
+                    0,
+                  )
+                : activityResults.some((a) => a.weightedScore !== null)
+                  ? activityResults.reduce(
+                      (sum, a) => sum + (a.weightedScore ?? 0),
+                      0,
+                    )
                   : null;
 
-              const weightedScore =
-                normalizedScore !== null
-                  ? normalizedScore * activity.weight
-                  : null;
+              const piWeightedScore =
+                piScore !== null ? piScore * pi.weight : null;
+
+              const piCode = `${achievement.code}-${CT_ABBREV[pi.competenceType] ?? pi.competenceType}`;
 
               return {
-                activityId: activity.id,
-                activityName: activity.name,
-                weight: activity.weight,
-                maxScore: activity.maxScore,
-                rawScore,
-                normalizedScore: this.round(normalizedScore),
-                weightedScore: this.round(weightedScore),
+                piId: pi.id,
+                piStatement: pi.statement,
+                piCode,
+                weight: pi.weight,
+                score: this.round(piScore),
+                weightedScore: this.round(piWeightedScore),
+                activities: activityResults,
+                hasAllActivities,
               };
             },
           );
 
-          const hasAllActivities = activityResults.every(
-            (a) => a.rawScore !== null,
+          const hasAllActivities = piResults.every((p) => p.hasAllActivities);
+          const achievementWeightedScore = piResults.some(
+            (p) => p.weightedScore !== null,
+          )
+            ? piResults.reduce((sum, p) => sum + (p.weightedScore ?? 0), 0)
+            : null;
+          const achievementWeight = piResults.reduce(
+            (sum, p) => sum + p.weight,
+            0,
           );
 
-          const indicatorScore = activityResults.every(
-            (a) => a.weightedScore !== null,
-          )
-            ? activityResults.reduce(
-                (sum, a) => sum + (a.weightedScore ?? 0),
-                0,
-              )
-            : activityResults.some((a) => a.weightedScore !== null)
-              ? activityResults.reduce(
-                  (sum, a) => sum + (a.weightedScore ?? 0),
-                  0,
-                )
-              : null;
-
-          const indicatorWeightedScore =
-            indicatorScore !== null
-              ? indicatorScore * indicator.weight
-              : null;
-
           return {
-            indicatorId: indicator.id,
-            indicatorName: indicator.name,
-            weight: indicator.weight,
-            score: this.round(indicatorScore),
-            weightedScore: this.round(indicatorWeightedScore),
-            activities: activityResults,
+            achievementId: achievement.id,
+            achievementCode: achievement.code,
+            weight: achievementWeight,
+            score: this.round(achievementWeightedScore),
+            weightedScore: this.round(achievementWeightedScore),
+            performanceIndicators: piResults,
             hasAllActivities,
           };
         },
       );
 
-      const hasAllActivities = indicatorResults.every(
-        (i) => i.hasAllActivities,
+      const hasAllActivities = achievementResults.every(
+        (a) => a.hasAllActivities,
       );
 
-      const aspectScore = indicatorResults.some(
-        (i) => i.weightedScore !== null,
+      // AspectScore = sum of all PI weightedScores across all achievements
+      const aspectScore = achievementResults.some((a) =>
+        a.performanceIndicators.some((p) => p.weightedScore !== null),
       )
-        ? indicatorResults.reduce(
-            (sum, i) => sum + (i.weightedScore ?? 0),
+        ? achievementResults.reduce(
+            (sum, a) =>
+              sum +
+              a.performanceIndicators.reduce(
+                (pSum, p) => pSum + (p.weightedScore ?? 0),
+                0,
+              ),
             0,
           )
         : null;
@@ -402,7 +469,7 @@ export class GradeCalculationService {
         weight: aspect.weight,
         score: this.round(aspectScore),
         weightedScore: this.round(aspectWeightedScore),
-        indicators: indicatorResults,
+        achievements: achievementResults,
         hasAllActivities,
       };
     });
@@ -465,5 +532,4 @@ export class GradeCalculationService {
       },
     };
   }
-
 }

@@ -14,9 +14,9 @@ export interface FlatActivity {
   name: string;
   weight: number;
   maxScore: number;
-  indicatorId: string;
-  indicatorName: string;
-  indicatorWeight: number;
+  piId: string;
+  piLabel: string;
+  piWeight: number;
   aspectId: string;
   aspectName: string;
   aspectWeight: number;
@@ -24,6 +24,14 @@ export interface FlatActivity {
 
 const SELF_EVAL_WEIGHT = 0.05;
 const PEER_EVAL_WEIGHT = 0.05;
+
+const CT_ABBREV: Record<string, string> = {
+  COGNITIVE: 'COG',
+  METHODOLOGICAL: 'MET',
+  INTERPERSONAL: 'INT',
+  INSTRUMENTAL: 'INS',
+  SUBJECT_SPECIFIC: 'SUB',
+};
 
 function round2(n: number | null): number | null {
   if (n === null) return null;
@@ -90,17 +98,24 @@ export class GradebookReportsService {
                 id: true,
                 name: true,
                 weight: true,
-                indicators: {
+                achievements: {
                   select: {
                     id: true,
-                    name: true,
-                    weight: true,
-                    activities: {
+                    code: true,
+                    performanceIndicators: {
                       select: {
                         id: true,
-                        name: true,
+                        statement: true,
+                        competenceType: true,
                         weight: true,
-                        maxScore: true,
+                        activities: {
+                          select: {
+                            id: true,
+                            name: true,
+                            weight: true,
+                            maxScore: true,
+                          },
+                        },
                       },
                     },
                   },
@@ -123,12 +138,14 @@ export class GradebookReportsService {
             },
           },
         }),
-        // Todas las notas del período para cualquier actividad del curso: se filtrarán en memoria
+        // Todas las notas del período para cualquier actividad del curso
         this.prisma.gradeEntry.findMany({
           where: {
             periodId,
             activity: {
-              indicator: { aspect: { structure: { courseId } } },
+              performanceIndicator: {
+                achievement: { aspect: { structure: { courseId } } },
+              },
             },
           },
           select: {
@@ -160,19 +177,22 @@ export class GradebookReportsService {
 
     // Aplanar actividades con jerarquía
     const flatActivities: FlatActivity[] = structure.aspects.flatMap((asp) =>
-      asp.indicators.flatMap((ind) =>
-        ind.activities.map((act) => ({
-          id: act.id,
-          name: act.name,
-          weight: act.weight,
-          maxScore: act.maxScore,
-          indicatorId: ind.id,
-          indicatorName: ind.name,
-          indicatorWeight: ind.weight,
-          aspectId: asp.id,
-          aspectName: asp.name,
-          aspectWeight: asp.weight,
-        })),
+      asp.achievements.flatMap((ach) =>
+        ach.performanceIndicators.flatMap((pi) => {
+          const piLabel = `${ach.code}-${CT_ABBREV[pi.competenceType] ?? pi.competenceType}`;
+          return pi.activities.map((act) => ({
+            id: act.id,
+            name: act.name,
+            weight: act.weight,
+            maxScore: act.maxScore,
+            piId: pi.id,
+            piLabel,
+            piWeight: pi.weight,
+            aspectId: asp.id,
+            aspectName: asp.name,
+            aspectWeight: asp.weight,
+          }));
+        }),
       ),
     );
 
@@ -246,19 +266,21 @@ export class GradebookReportsService {
       let ps = 0;
       for (const asp of structure.aspects) {
         let aspScore = 0;
-        for (const ind of asp.indicators) {
-          let indScore = 0;
-          for (const act of ind.activities) {
-            const entry = studentEntries.get(act.id);
-            if (!entry) {
-              allComplete = false;
-              continue;
+        for (const ach of asp.achievements) {
+          for (const pi of ach.performanceIndicators) {
+            let piScore = 0;
+            for (const act of pi.activities) {
+              const entry = studentEntries.get(act.id);
+              if (!entry) {
+                allComplete = false;
+                continue;
+              }
+              hasAnyActivity = true;
+              const norm = (entry.score / act.maxScore) * 5.0;
+              piScore += norm * act.weight;
             }
-            hasAnyActivity = true;
-            const norm = (entry.score / act.maxScore) * 5.0;
-            indScore += norm * act.weight;
+            aspScore += piScore * pi.weight;
           }
-          aspScore += indScore * ind.weight;
         }
         ps += aspScore * asp.weight;
       }
@@ -484,7 +506,7 @@ export class GradebookReportsService {
         pendingActivities: pendingActivities.map((a) => ({
           id: a.id,
           name: a.name,
-          indicatorName: a.indicatorName,
+          indicatorName: a.piLabel,
           aspectName: a.aspectName,
         })),
       };

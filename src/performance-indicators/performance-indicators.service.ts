@@ -8,8 +8,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateAspectDto } from './dto/create-aspect.dto';
 import { UpdateAspectDto } from './dto/update-aspect.dto';
-import { CreateIndicatorDto } from './dto/create-indicator.dto';
-import { UpdateIndicatorDto } from './dto/update-indicator.dto';
+import { CreatePerformanceIndicatorDto } from './dto/create-performance-indicator.dto';
+import { UpdatePerformanceIndicatorDto } from './dto/update-performance-indicator.dto';
 
 const WEIGHT_EPS = 1e-5;
 
@@ -49,9 +49,9 @@ export class PerformanceIndicatorsService {
             id: true,
             name: true,
             weight: true,
-            indicators: {
-              select: { id: true, name: true, weight: true },
-              orderBy: { name: 'asc' },
+            achievements: {
+              select: { id: true, code: true, statement: true, scope: true },
+              orderBy: { code: 'asc' },
             },
           },
           orderBy: { name: 'asc' },
@@ -74,9 +74,16 @@ export class PerformanceIndicatorsService {
             id: true,
             name: true,
             weight: true,
-            indicators: {
-              select: { id: true, name: true, weight: true },
-              orderBy: { name: 'asc' },
+            achievements: {
+              select: {
+                id: true,
+                code: true,
+                statement: true,
+                scope: true,
+                periodId: true,
+                _count: { select: { performanceIndicators: true } },
+              },
+              orderBy: { code: 'asc' },
             },
           },
           orderBy: { name: 'asc' },
@@ -91,27 +98,15 @@ export class PerformanceIndicatorsService {
     }
 
     const aspectSum = this.sumWeights(structure.aspects.map((a) => a.weight));
-    // Dominio: aspectos suman 0.90; 0.10 reservado para autoevaluación + coevaluación
     const aspectsWeightsValid =
       structure.aspects.length === 0 ||
       Math.abs(aspectSum - 0.9) <= WEIGHT_EPS;
-
-    const indicatorsByAspect = structure.aspects.map((a) => {
-      const indSum = this.sumWeights(a.indicators.map((i) => i.weight));
-      return {
-        aspectId: a.id,
-        sum: indSum,
-        valid:
-          a.indicators.length === 0 || Math.abs(indSum - 1) <= WEIGHT_EPS,
-      };
-    });
 
     return {
       ...structure,
       meta: {
         aspectsWeightSum: aspectSum,
         aspectsWeightsValid,
-        indicatorsByAspect,
       },
     };
   }
@@ -213,44 +208,52 @@ export class PerformanceIndicatorsService {
     await this.assertAspectBelongsToStructure(aspectId, structure.id);
 
     await this.prisma.$transaction(async (tx) => {
-      const indicators = await tx.indicator.findMany({
+      const achievements = await tx.achievement.findMany({
         where: { aspectId },
         select: { id: true },
       });
-      for (const ind of indicators) {
-        const actCount = await tx.activity.count({
-          where: { indicatorId: ind.id },
+      for (const ach of achievements) {
+        const pis = await tx.performanceIndicator.findMany({
+          where: { achievementId: ach.id },
+          select: { id: true },
         });
-        if (actCount > 0) {
-          throw new ConflictException(
-            'No se puede eliminar el aspecto: hay actividades calificables asociadas',
-          );
+        for (const pi of pis) {
+          const actCount = await tx.activity.count({
+            where: { performanceIndicatorId: pi.id },
+          });
+          if (actCount > 0) {
+            throw new ConflictException(
+              'No se puede eliminar el aspecto: hay actividades calificables asociadas',
+            );
+          }
         }
+        await tx.performanceIndicator.deleteMany({ where: { achievementId: ach.id } });
       }
-      await tx.indicator.deleteMany({ where: { aspectId } });
+      await tx.achievement.deleteMany({ where: { aspectId } });
       await tx.aspect.delete({ where: { id: aspectId } });
     });
 
     return { message: 'Aspecto eliminado correctamente' };
   }
 
-  async createIndicator(
-    courseId: string,
-    aspectId: string,
-    dto: CreateIndicatorDto,
+  // ── PerformanceIndicator CRUD ────────────────────────────────
+
+  async createPerformanceIndicator(
+    achievementId: string,
+    dto: CreatePerformanceIndicatorDto,
     userId: string,
     role: string,
   ) {
-    const structure = await this.requireStructure(courseId, userId, role);
+    const achievement = await this.requireAchievement(achievementId, userId, role);
     await this.courseAuth.assertStaffCanManageCourse(
-      courseId,
+      achievement.courseId,
       userId,
       role,
       'gradebook',
     );
-    await this.assertAspectBelongsToStructure(aspectId, structure.id);
 
-    const currentSum = await this.sumIndicatorWeightsForAspect(aspectId);
+    // Validate weight: sum of all PIs in the ASPECT must not exceed 1.0
+    const currentSum = await this.sumPIWeightsForAspect(achievement.aspectId);
     const nextSum = currentSum + dto.weight;
     if (nextSum > 1 + WEIGHT_EPS) {
       throw new BadRequestException(
@@ -258,106 +261,113 @@ export class PerformanceIndicatorsService {
       );
     }
 
-    return this.prisma.indicator.create({
+    return this.prisma.performanceIndicator.create({
       data: {
-        name: dto.name,
+        statement: dto.statement,
+        competenceType: dto.competenceType,
+        competenceScope: dto.competenceScope ?? 'GENERAL',
+        subject: dto.subject,
         weight: dto.weight,
-        aspectId,
+        achievementId,
       },
       select: {
         id: true,
-        name: true,
+        statement: true,
+        competenceType: true,
+        competenceScope: true,
+        subject: true,
         weight: true,
-        aspectId: true,
+        achievementId: true,
+        createdAt: true,
       },
     });
   }
 
-  async updateIndicator(
-    courseId: string,
-    indicatorId: string,
-    dto: UpdateIndicatorDto,
+  async updatePerformanceIndicator(
+    achievementId: string,
+    piId: string,
+    dto: UpdatePerformanceIndicatorDto,
     userId: string,
     role: string,
   ) {
-    const structure = await this.requireStructure(courseId, userId, role);
+    const achievement = await this.requireAchievement(achievementId, userId, role);
     await this.courseAuth.assertStaffCanManageCourse(
-      courseId,
+      achievement.courseId,
       userId,
       role,
       'gradebook',
     );
 
-    const indicator = await this.prisma.indicator.findUnique({
-      where: { id: indicatorId },
-      select: {
-        id: true,
-        aspectId: true,
-        weight: true,
-        name: true,
-        aspect: {
-          select: { structureId: true, structure: { select: { courseId: true } } },
+    const pi = await this.prisma.performanceIndicator.findUnique({
+      where: { id: piId },
+      select: { id: true, weight: true, achievementId: true },
+    });
+    if (!pi || pi.achievementId !== achievementId) {
+      throw new NotFoundException('Indicador de logro no encontrado');
+    }
+
+    if (dto.weight !== undefined) {
+      const newWeight = dto.weight;
+      const othersSum = await this.prisma.performanceIndicator.aggregate({
+        where: {
+          achievement: { aspectId: achievement.aspectId },
+          id: { not: piId },
         },
-      },
-    });
-    if (!indicator || indicator.aspect.structure.courseId !== courseId) {
-      throw new NotFoundException('Indicador no encontrado en este curso');
-    }
-    if (indicator.aspect.structureId !== structure.id) {
-      throw new NotFoundException('Indicador no encontrado en este curso');
-    }
-
-    const newWeight = dto.weight ?? indicator.weight;
-    const othersSum = await this.prisma.indicator.aggregate({
-      where: { aspectId: indicator.aspectId, id: { not: indicatorId } },
-      _sum: { weight: true },
-    });
-    const nextSum = (othersSum._sum.weight ?? 0) + newWeight;
-    if (nextSum > 1 + WEIGHT_EPS) {
-      throw new BadRequestException(
-        `La suma de pesos de indicadores no puede superar 1.0 (quedaría: ${nextSum.toFixed(4)})`,
-      );
+        _sum: { weight: true },
+      });
+      const nextSum = (othersSum._sum.weight ?? 0) + newWeight;
+      if (nextSum > 1 + WEIGHT_EPS) {
+        throw new BadRequestException(
+          `La suma de pesos de indicadores en este aspecto no puede superar 1.0 (quedaría: ${nextSum.toFixed(4)})`,
+        );
+      }
     }
 
-    return this.prisma.indicator.update({
-      where: { id: indicatorId },
+    return this.prisma.performanceIndicator.update({
+      where: { id: piId },
       data: {
-        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.statement !== undefined && { statement: dto.statement }),
+        ...(dto.competenceScope !== undefined && { competenceScope: dto.competenceScope }),
+        ...(dto.subject !== undefined && { subject: dto.subject }),
         ...(dto.weight !== undefined && { weight: dto.weight }),
       },
-      select: { id: true, name: true, weight: true, aspectId: true },
+      select: {
+        id: true,
+        statement: true,
+        competenceType: true,
+        competenceScope: true,
+        subject: true,
+        weight: true,
+        achievementId: true,
+        createdAt: true,
+      },
     });
   }
 
-  async deleteIndicator(
-    courseId: string,
-    indicatorId: string,
+  async deletePerformanceIndicator(
+    achievementId: string,
+    piId: string,
     userId: string,
     role: string,
   ) {
-    await this.requireStructure(courseId, userId, role);
+    const achievement = await this.requireAchievement(achievementId, userId, role);
     await this.courseAuth.assertStaffCanManageCourse(
-      courseId,
+      achievement.courseId,
       userId,
       role,
       'gradebook',
     );
 
-    const indicator = await this.prisma.indicator.findUnique({
-      where: { id: indicatorId },
-      select: {
-        id: true,
-        aspect: {
-          select: { structure: { select: { courseId: true, id: true } } },
-        },
-      },
+    const pi = await this.prisma.performanceIndicator.findUnique({
+      where: { id: piId },
+      select: { id: true, achievementId: true },
     });
-    if (!indicator || indicator.aspect.structure.courseId !== courseId) {
-      throw new NotFoundException('Indicador no encontrado en este curso');
+    if (!pi || pi.achievementId !== achievementId) {
+      throw new NotFoundException('Indicador de logro no encontrado');
     }
 
     const actCount = await this.prisma.activity.count({
-      where: { indicatorId },
+      where: { performanceIndicatorId: piId },
     });
     if (actCount > 0) {
       throw new ConflictException(
@@ -365,9 +375,11 @@ export class PerformanceIndicatorsService {
       );
     }
 
-    await this.prisma.indicator.delete({ where: { id: indicatorId } });
-    return { message: 'Indicador eliminado correctamente' };
+    await this.prisma.performanceIndicator.delete({ where: { id: piId } });
+    return { message: 'Indicador de logro eliminado correctamente' };
   }
+
+  // ── Helpers ──────────────────────────────────────────────────
 
   private sumWeights(weights: number[]): number {
     return weights.reduce((a, b) => a + b, 0);
@@ -381,9 +393,9 @@ export class PerformanceIndicatorsService {
     return agg._sum.weight ?? 0;
   }
 
-  private async sumIndicatorWeightsForAspect(aspectId: string) {
-    const agg = await this.prisma.indicator.aggregate({
-      where: { aspectId },
+  private async sumPIWeightsForAspect(aspectId: string) {
+    const agg = await this.prisma.performanceIndicator.aggregate({
+      where: { achievement: { aspectId } },
       _sum: { weight: true },
     });
     return agg._sum.weight ?? 0;
@@ -407,6 +419,20 @@ export class PerformanceIndicatorsService {
       );
     }
     return structure;
+  }
+
+  private async requireAchievement(
+    achievementId: string,
+    userId: string,
+    role: string,
+  ) {
+    const achievement = await this.prisma.achievement.findUnique({
+      where: { id: achievementId },
+      select: { id: true, courseId: true, aspectId: true },
+    });
+    if (!achievement) throw new NotFoundException('Logro no encontrado');
+    await this.courseAuth.verifyCourseReadAccess(achievement.courseId, userId, role);
+    return achievement;
   }
 
   private async assertAspectBelongsToStructure(
