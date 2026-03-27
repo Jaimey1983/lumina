@@ -70,8 +70,8 @@ export class GamificationService {
 
     return this.prisma.studentPoints.upsert({
       where: { userId_courseId: { userId: dto.userId, courseId } },
-      create: { userId: dto.userId, courseId, points: dto.points },
-      update: { points: dto.points },
+      create: { userId: dto.userId, courseId, points: dto.points, reason: dto.reason },
+      update: { points: dto.points, reason: dto.reason },
       select: {
         id: true,
         points: true,

@@ -1,7 +1,7 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 25/03/2026 (Fase 4: IntegrationsModule)
-# Revisión de código y correcciones documentadas: 24/03/2026 y 25/03/2026 (ver sección al final del archivo)
+# Última actualización: 26/03/2026 (Correcciones Postman: GamificationModule + MessagingModule)
+# Revisión de código y correcciones documentadas: 24/03/2026, 25/03/2026 y 26/03/2026 (ver sección al final del archivo)
 
 ---
 
@@ -580,11 +580,11 @@ const { PrismaClient } = require(
 - **Prefijo HTTP:** `courses/:courseId/gamification`
 - **Descripción:** Sistema de puntos e insignias (badges) por curso. Los docentes asignan puntos y badges a estudiantes matriculados; los estudiantes ven sus propios datos o el leaderboard global.
 - **Modelos Prisma nuevos (migración `20260326_gamification`):**
-  - `StudentPoints` — puntos acumulados por estudiante en un curso; unique `(userId, courseId)`; upsert pattern
+  - `StudentPoints` — puntos acumulados por estudiante en un curso; campos: `points`, `reason?`; unique `(userId, courseId)`; upsert pattern
   - `Badge` — definición de insignia para un curso; soft delete (`isActive`)
   - `StudentBadge` — asignación badge ↔ estudiante; unique `(userId, badgeId)`; eliminación física al revocar
 - **Endpoints — Puntos:**
-  - `POST .../gamification/points` — upsert de puntos (`userId`, `points` entero ≥ 0); reemplaza el total actual
+  - `POST .../gamification/points` — upsert de puntos (`userId`, `points` entero ≥ 0, `reason?` string opcional); reemplaza el total actual
   - `GET .../gamification/leaderboard` — ranking de todos los estudiantes con puntos, ordenado desc; visible para todos los matriculados
   - `GET .../gamification/students/:userId/points` — puntos de un estudiante; STUDENT solo ve los suyos
 - **Endpoints — Badges:**
@@ -624,15 +624,15 @@ const { PrismaClient } = require(
 - **Prefijo HTTP:** `courses/:courseId/messages`
 - **Descripción:** Sistema de mensajería interna por curso entre docente y estudiantes. Soporta mensajes de canal (todos), hilos de respuestas y mensajes directos (DM) entre dos miembros del curso.
 - **Modelos Prisma nuevos (migración `20260326012942_messaging`):**
-  - `Message` — cuerpo (`body`), `isDeleted`, `courseId`, `senderId`, `recipientId?` (null = canal, set = DM), `parentId?` (null = top-level, set = reply); auto-relación `parent/replies`
+  - `Message` — cuerpo (`content`), `isDeleted`, `courseId`, `senderId`, `recipientId?` (null = canal, set = DM), `parentId?` (null = top-level, set = reply); auto-relación `parent/replies`
   - `MessageRead` — registro de lectura por usuario; unique `(messageId, userId)`
 - **Endpoints:**
-  - `POST .../messages` — enviar mensaje en el canal del curso (`body`, `parentId?`)
+  - `POST .../messages` — enviar mensaje en el canal del curso (`content`, `parentId?`)
   - `GET .../messages` — listar top-level mensajes de canal, paginado desc; sin DMs
   - `GET .../messages/:messageId` — obtener mensaje con replies (no eliminados) y reads
   - `POST .../messages/:messageId/read` — marcar como leído (no puede ser el autor)
-  - `DELETE .../messages/:messageId` — soft delete propio (`isDeleted: true`, `body: ''`); solo el autor
-  - `POST .../messages/direct` — enviar DM (`body`, `recipientId`, `parentId?`); valida que el destinatario sea miembro
+  - `DELETE .../messages/:messageId` — soft delete propio (`isDeleted: true`, `content: ''`); solo el autor
+  - `POST .../messages/direct` — enviar DM (`content`, `recipientId`, `parentId?`); valida que el destinatario sea miembro
   - `GET .../messages/direct/:userId` — historial de DMs entre el usuario autenticado y `:userId`, paginado desc
 - **Orden de rutas en controller:** `direct` y `direct/:userId` (literales) registrados antes de `:messageId` (param) para evitar conflicto
 - **Permisos:** cualquier miembro del curso (matriculado o docente) puede enviar y leer; solo el autor puede eliminar su mensaje; el lector de un `read` no puede ser el autor
@@ -1526,3 +1526,45 @@ feat: CourseAuthorizationService, LiveSessionsModule completo, fix Prisma typing
 - `src/users/users.controller.spec.ts`, `users.service.spec.ts`
 - `package.json`, `pnpm-lock.yaml`
 - `.cursorrules`
+
+---
+
+## 📌 REVISIÓN 26/03/2026 — Correcciones detectadas en pruebas Postman
+
+### Cambios aplicados
+
+| Módulo | Área | Cambio |
+|--------|------|--------|
+| **GamificationModule** | `AssignPointsDto` | Agregado campo `reason?: string` con `@IsOptional()` y `@IsString()` |
+| **GamificationModule** | `StudentPoints` (schema) | Agregado campo `reason String?` |
+| **GamificationModule** | `gamification.service.ts` | `upsertPoints`: `create` y `update` incluyen `reason: dto.reason` |
+| **MessagingModule** | `SendMessageDto` / `SendDirectMessageDto` | Renombrado campo `body` → `content` para consistencia con el resto de la plataforma |
+| **MessagingModule** | `Message` (schema) | Renombrado campo `body` → `content` |
+| **MessagingModule** | `messaging.service.ts` | `MESSAGE_SELECT`, `sendMessage`, `sendDirectMessage`, `deleteMessage`: usan `content` en lugar de `body` |
+
+### Migración aplicada
+
+```
+20260326120000_rename_body_to_content_add_reason
+```
+
+SQL ejecutado (manual para preservar datos existentes en `messages`):
+```sql
+ALTER TABLE "messages" RENAME COLUMN "body" TO "content";
+ALTER TABLE "student_points" ADD COLUMN "reason" TEXT;
+```
+
+### Resultado
+
+- `pnpm run build` ✅
+- `pnpm test` ✅ (8 suites, 12 tests)
+
+### Archivos modificados
+
+- `src/gamification/dto/assign-points.dto.ts`
+- `src/gamification/gamification.service.ts`
+- `src/messaging/dto/send-message.dto.ts`
+- `src/messaging/dto/send-direct-message.dto.ts`
+- `src/messaging/messaging.service.ts`
+- `prisma/schema.prisma`
+- `prisma/migrations/20260326120000_rename_body_to_content_add_reason/migration.sql`

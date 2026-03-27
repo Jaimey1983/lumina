@@ -249,6 +249,7 @@ model PeerEvaluation {
 model StudentPoints {
   id        String   @id @default(cuid())
   points    Int      @default(0)
+  reason    String?
   userId    String
   courseId  String
   user      User     @relation(fields: [userId], references: [id])
@@ -290,7 +291,7 @@ model StudentBadge {
 // ─── MENSAJERÍA ────────────────────────────────────────────
 model Message {
   id          String    @id @default(cuid())
-  body        String
+  content     String
   isDeleted   Boolean   @default(false)
   courseId    String
   senderId    String

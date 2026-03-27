@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min } from 'class-validator';
+import { IsString, IsInt, Min, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AssignPointsDto {
@@ -9,4 +9,8 @@ export class AssignPointsDto {
   @IsInt()
   @Min(0)
   points: number;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }

@@ -10,7 +10,7 @@ import { SendDirectMessageDto } from './dto/send-direct-message.dto';
 
 const MESSAGE_SELECT = {
   id: true,
-  body: true,
+  content: true,
   isDeleted: true,
   courseId: true,
   senderId: true,
@@ -52,7 +52,7 @@ export class MessagingService {
 
     return this.prisma.message.create({
       data: {
-        body: dto.body,
+        content: dto.content,
         courseId,
         senderId: userId,
         parentId: dto.parentId ?? null,
@@ -169,7 +169,7 @@ export class MessagingService {
 
     return this.prisma.message.update({
       where: { id: messageId },
-      data: { isDeleted: true, body: '' },
+      data: { isDeleted: true, content: '' },
       select: { id: true, isDeleted: true },
     });
   }
@@ -220,7 +220,7 @@ export class MessagingService {
 
     return this.prisma.message.create({
       data: {
-        body: dto.body,
+        content: dto.content,
         courseId,
         senderId: userId,
         recipientId: dto.recipientId,
