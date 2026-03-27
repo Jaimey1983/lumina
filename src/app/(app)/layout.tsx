@@ -1,20 +1,22 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Layout11 } from '@/components/layout';
 import { ScreenLoader } from '@/components/screen-loader';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return <ScreenLoader />;
   }
 

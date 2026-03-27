@@ -1,5 +1,16 @@
-import { BellDot, Settings, Users, Clock, User, Bell, Keyboard, Gift, HelpCircle, LogOut, VolumeX, Download, ExternalLink, Sun, Moon } from "lucide-react";
-import { toAbsoluteUrl } from "@/lib/helpers";
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  BellDot,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  User,
+} from 'lucide-react';
+import { toAbsoluteUrl } from '@/lib/helpers';
 import {
   Avatar,
   AvatarFallback,
@@ -12,28 +23,39 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,  
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useTheme } from "next-themes";
+import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
+import { useAuth } from '@/hooks/use-auth';
+
+function initialsFromName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export function HeaderToolbar() {
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
+
+  const handleLogout = () => {
+    logout();
+    router.replace('/login');
+  };
+
+  const displayName = user?.name?.trim() || 'Usuario';
+  const displayEmail = user?.email ?? '';
+  const fallback = user ? initialsFromName(user.name) : '?';
 
   return (
     <nav className="flex items-center gap-2.5">
-      <Button variant="outline" className="hover:bg-background hover:text-foreground">
-        <Users />
-        <span>Add Team</span>
-      </Button>
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
           <BellDot className="opacity-100" />
@@ -45,107 +67,47 @@ export function HeaderToolbar() {
       <DropdownMenu>
         <DropdownMenuTrigger className="cursor-pointer">
           <Avatar className="size-7">
-            <AvatarImage  src={toAbsoluteUrl('/media/avatars/300-2.png')} alt="@reui" />
-            <AvatarFallback>CH</AvatarFallback>
+            <AvatarImage src={toAbsoluteUrl('/media/avatars/300-2.png')} alt="" />
+            <AvatarFallback>{fallback}</AvatarFallback>
             <AvatarIndicator className="-end-2 -top-2">
               <AvatarStatus variant="online" className="size-2.5" />
             </AvatarIndicator>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-64" side="bottom" align="end" sideOffset={11}>
-          {/* User Information Section */}
           <div className="flex items-center gap-3 p-3">
             <Avatar>
-              <AvatarImage  src={toAbsoluteUrl('/media/avatars/300-2.png')} alt="@reui" />
-              <AvatarFallback>S</AvatarFallback>
+              <AvatarImage src={toAbsoluteUrl('/media/avatars/300-2.png')} alt="" />
+              <AvatarFallback>{fallback}</AvatarFallback>
               <AvatarIndicator className="-end-1.5 -top-1.5">
                 <AvatarStatus variant="online" className="size-2.5" />
               </AvatarIndicator>
             </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-foreground">Sean</span>
-              <span className="text-xs text-muted-foreground">Online</span>
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-semibold text-foreground">{displayName}</span>
+              <span className="truncate text-xs text-muted-foreground">{displayEmail || '—'}</span>
             </div>
           </div>
-          
-          <DropdownMenuItem className="cursor-pointer py-1 rounded-md border border-border hover:bg-muted">
-            <Clock/>
-            <span>Set status</span>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Link href="/profile" className="flex items-center gap-2">
+              <User className="size-4" />
+              <span>Perfil</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
+            {theme === 'light' ? <Moon className="size-4" /> : <Sun className="size-4" />}
+            <span>{theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
 
-          {/* Notification and Settings Section */}
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <VolumeX/>
-              <span>Mute notifications</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-48">
-              <DropdownMenuItem>For 30 minutes</DropdownMenuItem>
-              <DropdownMenuItem>For 1 hour</DropdownMenuItem>
-              <DropdownMenuItem>For 4 hours</DropdownMenuItem>
-              <DropdownMenuItem>Until tomorrow</DropdownMenuItem>
-              <DropdownMenuItem>Until next week</DropdownMenuItem>
-              <DropdownMenuItem>Custom date and time</DropdownMenuItem>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-
-          <DropdownMenuItem>
-            <User/>
-            <span>Profile</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <Settings/>
-            <span>Settings</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <Bell/>
-            <span>Notification settings</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          {/* Theme Toggle */}
-          <DropdownMenuItem onClick={toggleTheme}>
-            {theme === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
-            <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          {/* Business-Focused Application Section */}
-          <DropdownMenuItem>
-            <Keyboard/>
-            <span>Keyboard shortcuts</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <Gift/>
-            <span>Referrals</span>
-            <Badge variant="info" appearance="light" className="ms-auto">New</Badge>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem >
-            <Download/>
-            <span>Download apps</span>
-            <ExternalLink className="size-3 ms-auto" />
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <HelpCircle/>
-            <span>Help</span>
-            <ExternalLink className="size-3 ms-auto" />
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          {/* Action Items */}
-          <DropdownMenuItem>
-            <LogOut/>
-            <span>Log out</span>
+          <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={handleLogout}>
+            <LogOut className="size-4" />
+            <span>Cerrar sesión</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
