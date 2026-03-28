@@ -241,7 +241,8 @@ Ejemplo representativo — `Button` tiene variantes: `primary`, `mono`, `destruc
 | `/dashboard` | `app/(app)/dashboard/` | Dashboard por rol (Admin/Teacher/Student) | Autenticado |
 | `/courses` | `app/(app)/courses/` | Lista de cursos | Autenticado |
 | `/courses/[id]` | `app/(app)/courses/[id]/` | Detalle de curso con estudiantes y clases | Autenticado |
-| `/classes` | `app/(app)/classes/` | Gestión de clases | Autenticado |
+| `/classes` | `app/(app)/classes/` | Lista de clases con selector de curso + CRUD | Autenticado |
+| `/classes/[id]` | `app/(app)/classes/[id]/` | Detalle de clase con slides y publicación | Autenticado |
 | `/gradebook` | `app/(app)/gradebook/` | Libro de calificaciones | Autenticado |
 | `/analytics` | `app/(app)/analytics/` | Analytics y métricas | Autenticado |
 | `/users` | `app/(app)/users/` | Gestión de usuarios | Autenticado (admin) |
@@ -296,6 +297,23 @@ interface Class { id: string; title: string; courseId: string; status: string; c
 // Lanza un useQuery por cada courseId en paralelo (useQueries)
 // Combina todos los resultados en un único array plano
 // queryKey: ['classes', courseId] por cada id
+```
+
+### `useClass(id)` — `use-class.ts`
+```typescript
+// GET /classes/:id → ClassDetail (incluye slides[])
+interface Slide { id: string; order: number; type: 'COVER'|'CONTENT'|'ACTIVITY'|'VIDEO'|'IMAGE'; title: string; content?: unknown; }
+interface ClassDetail { id: string; title: string; description?: string; courseId: string; status: string; createdAt: string; slides?: Slide[]; }
+// queryKey: ['classes', 'detail', id] — enabled solo si !!id
+```
+
+### Mutaciones de clases — `use-classes.ts`
+```typescript
+useCreateClass(courseId)      // POST /classes                  → invalida ['classes', courseId]
+useUpdateClass(classId, courseId) // PATCH /classes/:id         → invalida queries de lista y detalle
+useDeleteClass(courseId)      // DELETE /classes/:classId        → invalida ['classes', courseId]
+usePublishClass(courseId)     // POST /classes/:classId/publish  → invalida lista y detalle
+useCreateSlide(classId)       // POST /classes/:classId/slides   → invalida ['classes', 'detail', classId]
 ```
 
 ### `useCoursePeriods(courseId)` — `use-periods.ts`
@@ -381,6 +399,7 @@ Definido en `src/config/layout-11.config.tsx`:
 - Autenticación completa: login, logout, guard de rutas, persistencia de token
 - Dashboard adaptativo para los tres roles (Admin, Teacher, Student)
 - Lista y detalle de cursos con estudiantes asociados
+- Módulo completo de clases: lista con selector de curso, crear/editar/eliminar/publicar clases, detalle de clase con slides, modal agregar slide
 - Visualización de calificaciones del estudiante
 - Visualización de badges/puntos del estudiante
 - Analytics con métricas para el teacher (promedio de notas, mensajes recientes)
@@ -391,7 +410,6 @@ Definido en `src/config/layout-11.config.tsx`:
 
 ### Páginas pendientes de implementar (rutas creadas, sin contenido real)
 
-- `/classes` — la página existe pero el contenido interactivo no está desarrollado
 - `/gradebook` — la página existe pero el contenido interactivo no está desarrollado
 - `/analytics` — la página existe pero el contenido interactivo no está desarrollado
 - `/profile` — la página existe pero el contenido interactivo no está desarrollado

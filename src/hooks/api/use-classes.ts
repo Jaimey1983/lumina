@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
 export interface Class {
@@ -43,5 +43,92 @@ export function useClassesByCourses(courseIds: string[]) {
       isLoading: results.length > 0 && results.some((r) => r.isLoading),
       isError: results.some((r) => r.isError),
     }),
+  });
+}
+
+// ─── Mutations ────────────────────────────────────────────────────────────────
+
+export interface CreateClassInput {
+  title: string;
+  description?: string;
+  courseId: string;
+}
+
+export interface UpdateClassInput {
+  title?: string;
+  description?: string;
+}
+
+export function useCreateClass(courseId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateClassInput) => {
+      const { data } = await api.post<Class>('/classes', input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+    },
+  });
+}
+
+export function useUpdateClass(classId: string, courseId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UpdateClassInput) => {
+      const { data } = await api.patch<Class>(`/classes/${classId}`, input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
+
+export function useDeleteClass(courseId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (classId: string) => {
+      await api.delete(`/classes/${classId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+    },
+  });
+}
+
+export function usePublishClass(courseId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (classId: string) => {
+      const { data } = await api.post<Class>(`/classes/${classId}/publish`);
+      return data;
+    },
+    onSuccess: (_data, classId) => {
+      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
+
+// ─── Slide mutation ───────────────────────────────────────────────────────────
+
+export interface CreateSlideInput {
+  type: 'COVER' | 'CONTENT' | 'ACTIVITY' | 'VIDEO' | 'IMAGE';
+  title: string;
+  content?: unknown;
+}
+
+export function useCreateSlide(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateSlideInput) => {
+      const { data } = await api.post(`/classes/${classId}/slides`, input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
   });
 }
