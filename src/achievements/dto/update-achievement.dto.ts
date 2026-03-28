@@ -1,5 +1,12 @@
-import { IsString, MinLength, MaxLength, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 import { AchievementScope } from '@prisma/client';
 
 export class UpdateAchievementDto {
@@ -7,14 +14,14 @@ export class UpdateAchievementDto {
   @IsString()
   @MinLength(1)
   @MaxLength(30)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   code?: string;
 
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(500)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   statement?: string;
 
   @IsOptional()

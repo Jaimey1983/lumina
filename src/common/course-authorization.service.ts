@@ -30,14 +30,12 @@ const MANAGE_SCOPE_MESSAGES: Record<
   gradebook: {
     wrongCourse:
       'No tienes permiso para editar la estructura de calificación de este curso',
-    notStaff:
-      'No tienes permiso para editar la estructura de calificación',
+    notStaff: 'No tienes permiso para editar la estructura de calificación',
   },
   activities: {
     wrongCourse:
       'No tienes permiso para gestionar actividades de calificación en este curso',
-    notStaff:
-      'No tienes permiso para gestionar actividades de calificación',
+    notStaff: 'No tienes permiso para gestionar actividades de calificación',
   },
   selfEvaluations: {
     wrongCourse:
@@ -65,13 +63,11 @@ const MANAGE_SCOPE_MESSAGES: Record<
     notStaff: 'No tienes permiso para gestionar la gamificación',
   },
   classEditor: {
-    wrongCourse:
-      'No tienes permiso para editar clases en este curso',
+    wrongCourse: 'No tienes permiso para editar clases en este curso',
     notStaff: 'No tienes permiso para editar clases',
   },
   reports: {
-    wrongCourse:
-      'No tienes permiso para ver reportes de este curso',
+    wrongCourse: 'No tienes permiso para ver reportes de este curso',
     notStaff: 'No tienes permiso para ver reportes de calificaciones',
   },
 };

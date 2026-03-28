@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Role } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Role } from '../auth/dto/register.dto';
 
 @Injectable()
 export class UsersService {
@@ -66,10 +70,20 @@ export class UsersService {
   }
 
   // ─── ACTUALIZAR USUARIO ───────────────────────────────
-  async update(id: string, dto: UpdateUserDto, requestingUser: { id: string; role: Role }) {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    requestingUser: { id: string; role: Role },
+  ) {
     // Solo ADMIN puede cambiar roles o activar/desactivar usuarios
-    if ((dto.role || dto.isActive !== undefined) && requestingUser.role !== Role.ADMIN && requestingUser.role !== Role.SUPERADMIN) {
-      throw new ForbiddenException('No tienes permisos para realizar esta acción');
+    if (
+      (dto.role || dto.isActive !== undefined) &&
+      requestingUser.role !== Role.ADMIN &&
+      requestingUser.role !== Role.SUPERADMIN
+    ) {
+      throw new ForbiddenException(
+        'No tienes permisos para realizar esta acción',
+      );
     }
 
     // Verificar que el usuario existe

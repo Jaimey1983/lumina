@@ -8,9 +8,10 @@ import {
   Param,
   Patch,
   Post,
-  Request,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ForumsService } from './forums.service';
 import { CreateForumDto } from './dto/create-forum.dto';
@@ -30,23 +31,26 @@ export class ForumsController {
   createForum(
     @Param('courseId') courseId: string,
     @Body() dto: CreateForumDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.createForum(courseId, dto, req.user.id, req.user.role);
+    return this.forumsService.createForum(courseId, dto, user.id, user.role);
   }
 
   @Get()
-  listForums(@Param('courseId') courseId: string, @Request() req: any) {
-    return this.forumsService.listForums(courseId, req.user.id, req.user.role);
+  listForums(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.forumsService.listForums(courseId, user.id, user.role);
   }
 
   @Get(':forumId')
   getForum(
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.getForum(courseId, forumId, req.user.id, req.user.role);
+    return this.forumsService.getForum(courseId, forumId, user.id, user.role);
   }
 
   @Patch(':forumId')
@@ -54,9 +58,15 @@ export class ForumsController {
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
     @Body() dto: UpdateForumDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.updateForum(courseId, forumId, dto, req.user.id, req.user.role);
+    return this.forumsService.updateForum(
+      courseId,
+      forumId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete(':forumId')
@@ -64,9 +74,14 @@ export class ForumsController {
   deleteForum(
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.deleteForum(courseId, forumId, req.user.id, req.user.role);
+    return this.forumsService.deleteForum(
+      courseId,
+      forumId,
+      user.id,
+      user.role,
+    );
   }
 
   // ── Hilos — nota: rutas con sub-segmentos literales antes de /:threadId ──
@@ -76,9 +91,15 @@ export class ForumsController {
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
     @Body() dto: CreateThreadDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.createThread(courseId, forumId, dto, req.user.id, req.user.role);
+    return this.forumsService.createThread(
+      courseId,
+      forumId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Post(':forumId/threads/:threadId/pin')
@@ -87,9 +108,15 @@ export class ForumsController {
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
     @Param('threadId') threadId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.pinThread(courseId, forumId, threadId, req.user.id, req.user.role);
+    return this.forumsService.pinThread(
+      courseId,
+      forumId,
+      threadId,
+      user.id,
+      user.role,
+    );
   }
 
   @Post(':forumId/threads/:threadId/lock')
@@ -98,9 +125,15 @@ export class ForumsController {
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
     @Param('threadId') threadId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.lockThread(courseId, forumId, threadId, req.user.id, req.user.role);
+    return this.forumsService.lockThread(
+      courseId,
+      forumId,
+      threadId,
+      user.id,
+      user.role,
+    );
   }
 
   @Get(':forumId/threads/:threadId')
@@ -108,9 +141,15 @@ export class ForumsController {
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
     @Param('threadId') threadId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.getThread(courseId, forumId, threadId, req.user.id, req.user.role);
+    return this.forumsService.getThread(
+      courseId,
+      forumId,
+      threadId,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete(':forumId/threads/:threadId')
@@ -119,9 +158,15 @@ export class ForumsController {
     @Param('courseId') courseId: string,
     @Param('forumId') forumId: string,
     @Param('threadId') threadId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.deleteThread(courseId, forumId, threadId, req.user.id, req.user.role);
+    return this.forumsService.deleteThread(
+      courseId,
+      forumId,
+      threadId,
+      user.id,
+      user.role,
+    );
   }
 
   // ── Respuestas ─────────────────────────────────────────────────────────
@@ -132,9 +177,16 @@ export class ForumsController {
     @Param('forumId') forumId: string,
     @Param('threadId') threadId: string,
     @Body() dto: CreateReplyDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.createReply(courseId, forumId, threadId, dto, req.user.id, req.user.role);
+    return this.forumsService.createReply(
+      courseId,
+      forumId,
+      threadId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Patch(':forumId/threads/:threadId/replies/:replyId')
@@ -144,9 +196,17 @@ export class ForumsController {
     @Param('threadId') threadId: string,
     @Param('replyId') replyId: string,
     @Body() dto: UpdateReplyDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.updateReply(courseId, forumId, threadId, replyId, dto, req.user.id, req.user.role);
+    return this.forumsService.updateReply(
+      courseId,
+      forumId,
+      threadId,
+      replyId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete(':forumId/threads/:threadId/replies/:replyId')
@@ -156,8 +216,15 @@ export class ForumsController {
     @Param('forumId') forumId: string,
     @Param('threadId') threadId: string,
     @Param('replyId') replyId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.forumsService.deleteReply(courseId, forumId, threadId, replyId, req.user.id, req.user.role);
+    return this.forumsService.deleteReply(
+      courseId,
+      forumId,
+      threadId,
+      replyId,
+      user.id,
+      user.role,
+    );
   }
 }

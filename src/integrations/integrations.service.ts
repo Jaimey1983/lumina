@@ -16,7 +16,9 @@ const GLOBAL_ROLES = ['ADMIN', 'SUPERADMIN'];
 
 function assertGlobalAdmin(role: string) {
   if (!GLOBAL_ROLES.includes(role)) {
-    throw new ForbiddenException('Solo ADMIN y SUPERADMIN pueden gestionar webhooks globales');
+    throw new ForbiddenException(
+      'Solo ADMIN y SUPERADMIN pueden gestionar webhooks globales',
+    );
   }
 }
 
@@ -36,7 +38,9 @@ export class IntegrationsService {
   // ── Validación de eventos ──────────────────────────────────
 
   private validateEvents(events: string[]) {
-    const invalid = events.filter((e) => !(VALID_EVENTS as readonly string[]).includes(e));
+    const invalid = events.filter(
+      (e) => !(VALID_EVENTS as readonly string[]).includes(e),
+    );
     if (invalid.length) {
       throw new BadRequestException(
         `Eventos no válidos: ${invalid.join(', ')}. Válidos: ${VALID_EVENTS.join(', ')}`,
@@ -58,7 +62,8 @@ export class IntegrationsService {
       where: { id: webhookId },
       select: { id: true, courseId: true, isActive: true },
     });
-    if (!webhook || !webhook.isActive) throw new NotFoundException('Webhook no encontrado');
+    if (!webhook || !webhook.isActive)
+      throw new NotFoundException('Webhook no encontrado');
 
     if (webhook.courseId) {
       await this.courseAuth.assertStaffCanManageCourse(
@@ -81,7 +86,12 @@ export class IntegrationsService {
     this.validateEvents(dto.events);
 
     if (dto.courseId) {
-      await this.courseAuth.assertStaffCanManageCourse(dto.courseId, userId, userRole, 'grades');
+      await this.courseAuth.assertStaffCanManageCourse(
+        dto.courseId,
+        userId,
+        userRole,
+        'grades',
+      );
     } else {
       assertGlobalAdmin(userRole);
     }
@@ -111,7 +121,12 @@ export class IntegrationsService {
 
   async listWebhooks(userId: string, userRole: string, courseId?: string) {
     if (courseId) {
-      await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+      await this.courseAuth.assertStaffCanManageCourse(
+        courseId,
+        userId,
+        userRole,
+        'grades',
+      );
       return this.prisma.webhook.findMany({
         where: { courseId, isActive: true },
         select: {
@@ -246,7 +261,8 @@ export class IntegrationsService {
         };
 
         if (wh.secret) {
-          headers['X-Lumina-Signature'] = `sha256=${signPayload(wh.secret, payloadStr)}`;
+          headers['X-Lumina-Signature'] =
+            `sha256=${signPayload(wh.secret, payloadStr)}`;
         }
 
         let statusCode: number | null = null;
@@ -261,10 +277,10 @@ export class IntegrationsService {
             signal: AbortSignal.timeout(10_000), // 10 s timeout
           });
           statusCode = res.status;
-          responseText = await res.text().catch(() => null);
+          responseText = await res.text().catch((): null => null);
           success = res.ok;
-        } catch (err: any) {
-          responseText = err?.message ?? 'Error de red';
+        } catch (err: unknown) {
+          responseText = err instanceof Error ? err.message : 'Error de red';
           success = false;
         }
 
@@ -288,9 +304,17 @@ export class IntegrationsService {
 
   /** Dispara el webhook manualmente con un payload de prueba. */
   async testWebhook(webhookId: string, userId: string, userRole: string) {
-    const webhook = await this.assertCanManageWebhook(webhookId, userId, userRole);
+    const webhook = await this.assertCanManageWebhook(
+      webhookId,
+      userId,
+      userRole,
+    );
 
-    await this.dispatch('webhook.test', { triggeredBy: userId, webhookId }, webhook.courseId ?? undefined);
+    await this.dispatch(
+      'webhook.test',
+      { triggeredBy: userId, webhookId },
+      webhook.courseId ?? undefined,
+    );
     return { message: 'Evento de prueba enviado', webhookId };
   }
 

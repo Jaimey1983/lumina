@@ -208,7 +208,7 @@ export class GradebookReportsService {
       if (!activityIds.has(e.activityId)) continue;
       if (!entryMap.has(e.userId)) entryMap.set(e.userId, new Map());
       entryMap
-        .get(e.userId)!
+        .get(e.userId)
         .set(e.activityId, { score: e.score, feedback: e.feedback ?? null });
     }
 
@@ -224,7 +224,7 @@ export class GradebookReportsService {
     const peerEvalMap = new Map<string, number[]>();
     for (const p of peerEvals) {
       if (!peerEvalMap.has(p.evaluatedId)) peerEvalMap.set(p.evaluatedId, []);
-      peerEvalMap.get(p.evaluatedId)!.push(p.score);
+      peerEvalMap.get(p.evaluatedId).push(p.score);
     }
 
     return {
@@ -245,21 +245,23 @@ export class GradebookReportsService {
     structure: NonNullable<
       Awaited<ReturnType<typeof this.loadReportData>>['structure']
     >,
-    entryMap: Map<string, Map<string, { score: number; feedback: string | null }>>,
+    entryMap: Map<
+      string,
+      Map<string, { score: number; feedback: string | null }>
+    >,
     selfEvalMap: Map<string, { score: number; feedback: string | null }>,
     peerEvalMap: Map<string, number[]>,
   ) {
-    const studentEntries = entryMap.get(studentId) ?? new Map();
+    type EntryVal = { score: number; feedback: string | null };
+    const studentEntries: Map<string, EntryVal> =
+      entryMap.get(studentId) ?? new Map<string, EntryVal>();
 
     // Calcular processScore desde la jerarquía
     let processScore: number | null = null;
     let hasAnyActivity = false;
     let allComplete = true;
 
-    const aspectWeightSum = structure.aspects.reduce(
-      (s, a) => s + a.weight,
-      0,
-    );
+    const aspectWeightSum = structure.aspects.reduce((s, a) => s + a.weight, 0);
     const structureValid = Math.abs(aspectWeightSum - 0.9) <= 1e-5;
 
     if (structureValid) {
@@ -301,8 +303,7 @@ export class GradebookReportsService {
       if (peerEvalAvg !== null) finalGrade += peerEvalAvg * PEER_EVAL_WEIGHT;
     }
 
-    const isComplete =
-      allComplete && selfEval !== null && peerEvalAvg !== null;
+    const isComplete = allComplete && selfEval !== null && peerEvalAvg !== null;
 
     return {
       processScore: round2(processScore),
@@ -325,12 +326,21 @@ export class GradebookReportsService {
     const periodId = this.requirePeriod(periodIdRaw);
     const period = await this.assertPeriod(periodId, courseId);
 
-    const { course, structure, flatActivities, enrollments, entryMap, selfEvalMap, peerEvalMap } =
-      await this.loadReportData(courseId, periodId);
+    const {
+      course,
+      structure,
+      flatActivities,
+      enrollments,
+      entryMap,
+      selfEvalMap,
+      peerEvalMap,
+    } = await this.loadReportData(courseId, periodId);
 
+    type EntryVal = { score: number; feedback: string | null };
     const rows = enrollments.map((enrollment) => {
       const sid = enrollment.userId;
-      const studentEntries = entryMap.get(sid) ?? new Map();
+      const studentEntries: Map<string, EntryVal> =
+        entryMap.get(sid) ?? new Map<string, EntryVal>();
 
       const cells = flatActivities.map((act) => {
         const entry = studentEntries.get(act.id);
@@ -341,7 +351,12 @@ export class GradebookReportsService {
               normalizedScore: round2((entry.score / act.maxScore) * 5.0),
               feedback: entry.feedback,
             }
-          : { activityId: act.id, score: null, normalizedScore: null, feedback: null };
+          : {
+              activityId: act.id,
+              score: null,
+              normalizedScore: null,
+              feedback: null,
+            };
       });
 
       const selfEval = selfEvalMap.get(sid) ?? null;
@@ -480,12 +495,16 @@ export class GradebookReportsService {
     const periodId = this.requirePeriod(periodIdRaw);
     const period = await this.assertPeriod(periodId, courseId);
 
-    const { flatActivities, enrollments, entryMap } =
-      await this.loadReportData(courseId, periodId);
+    const { flatActivities, enrollments, entryMap } = await this.loadReportData(
+      courseId,
+      periodId,
+    );
 
     const students = enrollments.map((enrollment) => {
       const sid = enrollment.userId;
-      const studentEntries = entryMap.get(sid) ?? new Map();
+      const studentEntries =
+        entryMap.get(sid) ??
+        new Map<string, { score: number; feedback: string | null }>();
 
       const pendingActivities = flatActivities.filter(
         (act) => !studentEntries.has(act.id),
@@ -536,8 +555,15 @@ export class GradebookReportsService {
 
     // Cargar una vez y derivar todo
     const period = await this.assertPeriod(periodId, courseId);
-    const { course, structure, flatActivities, enrollments, entryMap, selfEvalMap, peerEvalMap } =
-      await this.loadReportData(courseId, periodId);
+    const {
+      course,
+      structure,
+      flatActivities,
+      enrollments,
+      entryMap,
+      selfEvalMap,
+      peerEvalMap,
+    } = await this.loadReportData(courseId, periodId);
 
     // Calcular notas finales por estudiante en memoria
     const studentGrades = enrollments.map((e) => {
@@ -574,15 +600,19 @@ export class GradebookReportsService {
 
     const gradesWithValue = studentGrades
       .filter((s) => s.finalGrade !== null)
-      .map((s) => s.finalGrade as number);
+      .map((s) => s.finalGrade);
     const average =
       gradesWithValue.length > 0
-        ? round2(gradesWithValue.reduce((s, g) => s + g, 0) / gradesWithValue.length)
+        ? round2(
+            gradesWithValue.reduce((s, g) => s + g, 0) / gradesWithValue.length,
+          )
         : null;
 
     // Pendientes
     const pending = enrollments.map((e) => {
-      const studentEntries = entryMap.get(e.userId) ?? new Map();
+      const studentEntries =
+        entryMap.get(e.userId) ??
+        new Map<string, { score: number; feedback: string | null }>();
       return {
         user: e.user,
         pendingCount: flatActivities.filter((a) => !studentEntries.has(a.id))

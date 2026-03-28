@@ -1,11 +1,19 @@
-import { IsString, MinLength, MaxLength, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export class CreateIndicatorDto {
   @IsString()
   @MinLength(1)
   @MaxLength(120)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   name: string;
 
   @Type(() => Number)

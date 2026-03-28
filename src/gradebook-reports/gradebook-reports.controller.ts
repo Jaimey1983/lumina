@@ -1,11 +1,6 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GradebookReportsService } from './gradebook-reports.service';
 
@@ -20,13 +15,13 @@ export class GradebookReportsController {
   @Get('matrix')
   getMatrix(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.reportsService.getMatrix(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -34,13 +29,13 @@ export class GradebookReportsController {
   @Get('final-grades')
   getFinalGrades(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.reportsService.getFinalGrades(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -48,13 +43,13 @@ export class GradebookReportsController {
   @Get('distribution')
   getDistribution(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.reportsService.getDistribution(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -62,13 +57,13 @@ export class GradebookReportsController {
   @Get('pending')
   getPending(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.reportsService.getPending(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -76,13 +71,13 @@ export class GradebookReportsController {
   @Get('export')
   exportReport(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.reportsService.exportReport(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -92,14 +87,14 @@ export class GradebookReportsController {
   getStudentBreakdown(
     @Param('courseId') courseId: string,
     @Param('userId') targetUserId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.reportsService.getStudentBreakdown(
       courseId,
       targetUserId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }

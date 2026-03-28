@@ -9,8 +9,9 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { H5pActivitiesService } from './h5p-activities.service';
 import { CreateH5pActivityDto } from './dto/create-h5p-activity.dto';
 import { UpdateH5pActivityDto } from './dto/update-h5p-activity.dto';
@@ -29,29 +30,18 @@ export class H5pActivitiesController {
     @Param('courseId') courseId: string,
     @Param('classId') classId: string,
     @Body() dto: CreateH5pActivityDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.h5pService.create(
-      courseId,
-      classId,
-      dto,
-      req.user.id,
-      req.user.role,
-    );
+    return this.h5pService.create(courseId, classId, dto, user.id, user.role);
   }
 
   @Get()
   findAll(
     @Param('courseId') courseId: string,
     @Param('classId') classId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.h5pService.findAll(
-      courseId,
-      classId,
-      req.user.id,
-      req.user.role,
-    );
+    return this.h5pService.findAll(courseId, classId, user.id, user.role);
   }
 
   @Get(':slideId')
@@ -59,14 +49,14 @@ export class H5pActivitiesController {
     @Param('courseId') courseId: string,
     @Param('classId') classId: string,
     @Param('slideId') slideId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.h5pService.findOne(
       courseId,
       classId,
       slideId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -77,15 +67,15 @@ export class H5pActivitiesController {
     @Param('classId') classId: string,
     @Param('slideId') slideId: string,
     @Body() dto: UpdateH5pActivityDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.h5pService.update(
       courseId,
       classId,
       slideId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -96,14 +86,14 @@ export class H5pActivitiesController {
     @Param('courseId') courseId: string,
     @Param('classId') classId: string,
     @Param('slideId') slideId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.h5pService.remove(
       courseId,
       classId,
       slideId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

@@ -9,8 +9,9 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { GamificationService } from './gamification.service';
 import { AssignPointsDto } from './dto/assign-points.dto';
 import { CreateBadgeDto } from './dto/create-badge.dto';
@@ -37,13 +38,13 @@ export class GamificationController {
   upsertPoints(
     @Param('courseId') courseId: string,
     @Body() dto: AssignPointsDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.upsertPoints(
       courseId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -52,11 +53,14 @@ export class GamificationController {
    * Ranking de estudiantes por puntos. Visible para todos los matriculados.
    */
   @Get('leaderboard')
-  getLeaderboard(@Param('courseId') courseId: string, @Request() req) {
+  getLeaderboard(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
     return this.gamificationService.getLeaderboard(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -68,13 +72,13 @@ export class GamificationController {
   getStudentPoints(
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.getStudentPoints(
       courseId,
       userId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -89,13 +93,13 @@ export class GamificationController {
   createBadge(
     @Param('courseId') courseId: string,
     @Body() dto: CreateBadgeDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.createBadge(
       courseId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -104,12 +108,11 @@ export class GamificationController {
    * Listar insignias activas del curso.
    */
   @Get('badges')
-  listBadges(@Param('courseId') courseId: string, @Request() req) {
-    return this.gamificationService.listBadges(
-      courseId,
-      req.user.id,
-      req.user.role,
-    );
+  listBadges(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.gamificationService.listBadges(courseId, user.id, user.role);
   }
 
   /**
@@ -120,13 +123,13 @@ export class GamificationController {
   getBadge(
     @Param('courseId') courseId: string,
     @Param('badgeId') badgeId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.getBadge(
       courseId,
       badgeId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -140,14 +143,14 @@ export class GamificationController {
     @Param('courseId') courseId: string,
     @Param('badgeId') badgeId: string,
     @Body() dto: UpdateBadgeDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.updateBadge(
       courseId,
       badgeId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -161,13 +164,13 @@ export class GamificationController {
   removeBadge(
     @Param('courseId') courseId: string,
     @Param('badgeId') badgeId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.removeBadge(
       courseId,
       badgeId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -183,14 +186,14 @@ export class GamificationController {
     @Param('courseId') courseId: string,
     @Param('badgeId') badgeId: string,
     @Body() dto: AssignBadgeDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.assignBadge(
       courseId,
       badgeId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -205,14 +208,14 @@ export class GamificationController {
     @Param('courseId') courseId: string,
     @Param('badgeId') badgeId: string,
     @Param('userId') userId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.revokeBadge(
       courseId,
       badgeId,
       userId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -224,13 +227,13 @@ export class GamificationController {
   getStudentBadges(
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gamificationService.getStudentBadges(
       courseId,
       userId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

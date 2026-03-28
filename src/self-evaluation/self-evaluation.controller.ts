@@ -10,10 +10,11 @@ import {
   Body,
   Query,
   UseGuards,
-  Request,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
@@ -34,14 +35,9 @@ export class SelfEvaluationController {
   create(
     @Param('courseId') courseId: string,
     @Body() dto: CreateSelfEvaluationDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.selfEvaluationService.create(
-      courseId,
-      dto,
-      req.user.id,
-      req.user.role,
-    );
+    return this.selfEvaluationService.create(courseId, dto, user.id, user.role);
   }
 
   // GET /courses/:courseId/self-evaluations?periodId=xxx
@@ -52,7 +48,7 @@ export class SelfEvaluationController {
   findAll(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -62,8 +58,8 @@ export class SelfEvaluationController {
     return this.selfEvaluationService.findAll(
       courseId,
       periodId.trim(),
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -74,14 +70,18 @@ export class SelfEvaluationController {
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    const requester = req.user;
-    const isPrivileged = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(requester.role);
+    const requester = user;
+    const isPrivileged = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(
+      requester.role,
+    );
     const isOwnRecord = requester.id === userId;
 
     if (!isPrivileged && !isOwnRecord) {
-      throw new ForbiddenException('Solo puedes consultar tu propia autoevaluación');
+      throw new ForbiddenException(
+        'Solo puedes consultar tu propia autoevaluación',
+      );
     }
 
     if (!periodId?.trim()) {
@@ -109,7 +109,7 @@ export class SelfEvaluationController {
     @Param('userId') userId: string,
     @Query('periodId') periodId: string,
     @Body() dto: UpdateSelfEvaluationDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -121,8 +121,8 @@ export class SelfEvaluationController {
       periodId.trim(),
       userId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -136,7 +136,7 @@ export class SelfEvaluationController {
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -147,8 +147,8 @@ export class SelfEvaluationController {
       courseId,
       periodId.trim(),
       userId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

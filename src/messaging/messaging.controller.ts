@@ -8,9 +8,10 @@ import {
   Param,
   Post,
   Query,
-  Request,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { MessagingService } from './messaging.service';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -26,13 +27,13 @@ export class MessagingController {
   @Post('direct')
   sendDirectMessage(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Body() dto: SendDirectMessageDto,
   ) {
     return this.messagingService.sendDirectMessage(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       dto,
     );
   }
@@ -41,15 +42,15 @@ export class MessagingController {
   listDirectMessages(
     @Param('courseId') courseId: string,
     @Param('userId') otherUserId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
   ) {
     return this.messagingService.listDirectMessages(
       courseId,
       otherUserId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       Number(page),
       Number(limit),
     );
@@ -60,28 +61,23 @@ export class MessagingController {
   @Post()
   sendMessage(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Body() dto: SendMessageDto,
   ) {
-    return this.messagingService.sendMessage(
-      courseId,
-      req.user.id,
-      req.user.role,
-      dto,
-    );
+    return this.messagingService.sendMessage(courseId, user.id, user.role, dto);
   }
 
   @Get()
   listMessages(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
   ) {
     return this.messagingService.listMessages(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       Number(page),
       Number(limit),
     );
@@ -91,13 +87,13 @@ export class MessagingController {
   getMessage(
     @Param('courseId') courseId: string,
     @Param('messageId') messageId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.messagingService.getMessage(
       courseId,
       messageId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -106,13 +102,13 @@ export class MessagingController {
   markAsRead(
     @Param('courseId') courseId: string,
     @Param('messageId') messageId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.messagingService.markAsRead(
       courseId,
       messageId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -121,13 +117,13 @@ export class MessagingController {
   deleteMessage(
     @Param('courseId') courseId: string,
     @Param('messageId') messageId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.messagingService.deleteMessage(
       courseId,
       messageId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

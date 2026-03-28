@@ -70,7 +70,12 @@ export class GamificationService {
 
     return this.prisma.studentPoints.upsert({
       where: { userId_courseId: { userId: dto.userId, courseId } },
-      create: { userId: dto.userId, courseId, points: dto.points, reason: dto.reason },
+      create: {
+        userId: dto.userId,
+        courseId,
+        points: dto.points,
+        reason: dto.reason,
+      },
       update: { points: dto.points, reason: dto.reason },
       select: {
         id: true,
@@ -91,7 +96,11 @@ export class GamificationService {
     requesterRole: string,
   ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.verifyCourseReadAccess(courseId, requesterId, requesterRole);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
 
     const entries = await this.prisma.studentPoints.findMany({
       where: { courseId },
@@ -122,7 +131,11 @@ export class GamificationService {
     requesterRole: string,
   ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.verifyCourseReadAccess(courseId, requesterId, requesterRole);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
 
     if (requesterRole === 'STUDENT' && userId !== requesterId) {
       throw new ForbiddenException('Solo puedes consultar tus propios puntos');
@@ -178,7 +191,11 @@ export class GamificationService {
     requesterRole: string,
   ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.verifyCourseReadAccess(courseId, requesterId, requesterRole);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
 
     const badges = await this.prisma.badge.findMany({
       where: { courseId, isActive: true },
@@ -203,7 +220,11 @@ export class GamificationService {
     requesterRole: string,
   ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.verifyCourseReadAccess(courseId, requesterId, requesterRole);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
 
     return this.assertBadgeInCourse(badgeId, courseId);
   }
@@ -337,7 +358,9 @@ export class GamificationService {
       where: { userId_badgeId: { userId, badgeId } },
     });
     if (!assignment) {
-      throw new NotFoundException('El estudiante no tiene esta insignia asignada');
+      throw new NotFoundException(
+        'El estudiante no tiene esta insignia asignada',
+      );
     }
 
     await this.prisma.studentBadge.delete({
@@ -355,7 +378,11 @@ export class GamificationService {
     requesterRole: string,
   ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.verifyCourseReadAccess(courseId, requesterId, requesterRole);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
 
     if (requesterRole === 'STUDENT' && userId !== requesterId) {
       throw new ForbiddenException('Solo puedes consultar tus propios logros');

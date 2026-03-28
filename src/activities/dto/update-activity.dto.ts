@@ -8,13 +8,14 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export class UpdateActivityDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   name?: string;
 
   @IsOptional()

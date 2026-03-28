@@ -46,7 +46,9 @@ export class MessagingService {
         select: { courseId: true, recipientId: true },
       });
       if (!parent || parent.courseId !== courseId) {
-        throw new NotFoundException('Mensaje padre no encontrado en este curso');
+        throw new NotFoundException(
+          'Mensaje padre no encontrado en este curso',
+        );
       }
     }
 
@@ -136,7 +138,9 @@ export class MessagingService {
     }
 
     if (message.senderId === userId) {
-      throw new ForbiddenException('No puedes marcar tu propio mensaje como leído');
+      throw new ForbiddenException(
+        'No puedes marcar tu propio mensaje como leído',
+      );
     }
 
     return this.prisma.messageRead.upsert({
@@ -214,7 +218,9 @@ export class MessagingService {
         select: { courseId: true },
       });
       if (!parent || parent.courseId !== courseId) {
-        throw new NotFoundException('Mensaje padre no encontrado en este curso');
+        throw new NotFoundException(
+          'Mensaje padre no encontrado en este curso',
+        );
       }
     }
 

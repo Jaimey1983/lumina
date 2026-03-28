@@ -7,6 +7,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 import { H5pType } from './create-h5p-activity.dto';
 
 export class UpdateH5pActivityDto {
@@ -14,7 +15,7 @@ export class UpdateH5pActivityDto {
   @IsString()
   @MinLength(1)
   @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   title?: string;
 
   @IsOptional()

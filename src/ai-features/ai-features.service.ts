@@ -17,11 +17,34 @@ import { EvaluateResponseDto } from './dto/evaluate-response.dto';
 
 // ─── Helpers ──────────────────────────────────────────────
 
-const STAFF_ROLES = ['ADMIN', 'SUPERADMIN', 'TEACHER', 'TEACHER_ASSISTANT', 'DEPARTMENT_HEAD'];
+const STAFF_ROLES = [
+  'ADMIN',
+  'SUPERADMIN',
+  'TEACHER',
+  'TEACHER_ASSISTANT',
+  'DEPARTMENT_HEAD',
+];
 
 function assertStaff(role: string) {
   if (!STAFF_ROLES.includes(role)) {
-    throw new ForbiddenException('Solo el personal docente puede usar las funciones de IA');
+    throw new ForbiddenException(
+      'Solo el personal docente puede usar las funciones de IA',
+    );
+  }
+}
+
+function openAiErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Error desconocido';
+}
+
+function parseOpenAiJsonObject(raw: string): Record<string, unknown> {
+  try {
+    const v = JSON.parse(raw) as unknown;
+    return v !== null && typeof v === 'object' && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
   }
 }
 
@@ -71,9 +94,10 @@ export class AiFeaturesService {
         max_tokens: 2000,
       });
       return response.choices[0]?.message?.content ?? '';
-    } catch (err: any) {
-      const msg = err?.message ?? 'Error desconocido';
-      throw new ServiceUnavailableException(`OpenAI no disponible: ${msg}`);
+    } catch (err: unknown) {
+      throw new ServiceUnavailableException(
+        `OpenAI no disponible: ${openAiErrorMessage(err)}`,
+      );
     }
   }
 
@@ -108,14 +132,18 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
 
     const raw = await this.callOpenAI(system, user, true);
     try {
-      const parsed = JSON.parse(raw);
+      const parsed = parseOpenAiJsonObject(raw);
+      const questions = parsed['questions'];
+      const qList = Array.isArray(questions) ? questions : [];
       return {
         type,
-        count: parsed.questions?.length ?? 0,
-        questions: parsed.questions ?? [],
+        count: qList.length,
+        questions: qList,
       };
     } catch {
-      throw new ServiceUnavailableException('OpenAI devolvió una respuesta inválida');
+      throw new ServiceUnavailableException(
+        'OpenAI devolvió una respuesta inválida',
+      );
     }
   }
 
@@ -127,53 +155,72 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     // Cargar datos del estudiante para el período
-    const [student, course, period, entries, selfEval, peerEvals] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: dto.studentId },
-        select: { id: true, name: true, lastName: true },
-      }),
-      this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { name: true },
-      }),
-      this.prisma.period.findUnique({
-        where: { id: dto.periodId },
-        select: { id: true, name: true },
-      }),
-      this.prisma.gradeEntry.findMany({
-        where: { userId: dto.studentId, periodId: dto.periodId },
-        select: {
-          score: true,
-          feedback: true,
-          activity: {
-            select: {
-              name: true,
-              maxScore: true,
-              weight: true,
-              performanceIndicator: {
-                select: {
-                  competenceType: true,
-                  achievement: { select: { code: true, aspect: { select: { name: true } } } },
+    const [student, course, period, entries, selfEval, peerEvals] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: dto.studentId },
+          select: { id: true, name: true, lastName: true },
+        }),
+        this.prisma.course.findUnique({
+          where: { id: courseId },
+          select: { name: true },
+        }),
+        this.prisma.period.findUnique({
+          where: { id: dto.periodId },
+          select: { id: true, name: true },
+        }),
+        this.prisma.gradeEntry.findMany({
+          where: { userId: dto.studentId, periodId: dto.periodId },
+          select: {
+            score: true,
+            feedback: true,
+            activity: {
+              select: {
+                name: true,
+                maxScore: true,
+                weight: true,
+                performanceIndicator: {
+                  select: {
+                    competenceType: true,
+                    achievement: {
+                      select: {
+                        code: true,
+                        aspect: { select: { name: true } },
+                      },
+                    },
+                  },
                 },
               },
             },
           },
-        },
-      }),
-      this.prisma.selfEvaluation.findUnique({
-        where: {
-          userId_courseId_periodId: { userId: dto.studentId, courseId, periodId: dto.periodId },
-        },
-        select: { score: true, feedback: true },
-      }),
-      this.prisma.peerEvaluation.findMany({
-        where: { evaluatedId: dto.studentId, courseId, periodId: dto.periodId },
-        select: { score: true, feedback: true },
-      }),
-    ]);
+        }),
+        this.prisma.selfEvaluation.findUnique({
+          where: {
+            userId_courseId_periodId: {
+              userId: dto.studentId,
+              courseId,
+              periodId: dto.periodId,
+            },
+          },
+          select: { score: true, feedback: true },
+        }),
+        this.prisma.peerEvaluation.findMany({
+          where: {
+            evaluatedId: dto.studentId,
+            courseId,
+            periodId: dto.periodId,
+          },
+          select: { score: true, feedback: true },
+        }),
+      ]);
 
     if (!student) throw new NotFoundException('Estudiante no encontrado');
     if (!period) throw new NotFoundException('Período no encontrado');
@@ -186,7 +233,9 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
 
     const peerAvg =
       peerEvals.length > 0
-        ? (peerEvals.reduce((s, p) => s + p.score, 0) / peerEvals.length).toFixed(2)
+        ? (
+            peerEvals.reduce((s, p) => s + p.score, 0) / peerEvals.length
+          ).toFixed(2)
         : 'sin datos';
 
     const summary = [
@@ -195,7 +244,9 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
       `Período: ${period.name}`,
       ``,
       `Calificaciones por actividad:`,
-      ...(entryLines.length ? entryLines : ['  (sin calificaciones registradas)']),
+      ...(entryLines.length
+        ? entryLines
+        : ['  (sin calificaciones registradas)']),
       ``,
       `Autoevaluación: ${selfEval ? `${selfEval.score}/5` : 'sin datos'}`,
       `Coevaluación (promedio): ${peerAvg}/5`,
@@ -223,17 +274,18 @@ Devuelve JSON con:
 }`;
 
     const raw = await this.callOpenAI(system, userMsg, true);
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        studentId: dto.studentId,
-        courseId,
-        periodId: dto.periodId,
-        feedback: parsed,
-      };
-    } catch {
-      throw new ServiceUnavailableException('OpenAI devolvió una respuesta inválida');
+    const feedback = parseOpenAiJsonObject(raw);
+    if (!Object.keys(feedback).length) {
+      throw new ServiceUnavailableException(
+        'OpenAI devolvió una respuesta inválida',
+      );
     }
+    return {
+      studentId: dto.studentId,
+      courseId,
+      periodId: dto.periodId,
+      feedback,
+    };
   }
 
   // ── 3. Resumen automático de clase (slides) ────────────────
@@ -244,7 +296,12 @@ Devuelve JSON con:
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'classEditor');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
 
     const cls = await this.prisma.class.findFirst({
       where: { id: dto.classId, courseId },
@@ -260,7 +317,8 @@ Devuelve JSON con:
     });
 
     if (!cls) throw new NotFoundException('Clase no encontrada en este curso');
-    if (!cls.slides.length) throw new BadRequestException('La clase no tiene slides para resumir');
+    if (!cls.slides.length)
+      throw new BadRequestException('La clase no tiene slides para resumir');
 
     const slidesText = cls.slides
       .map((s) => {
@@ -294,21 +352,22 @@ Devuelve JSON con:
 }`;
 
     const raw = await this.callOpenAI(system, userMsg, true);
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        classId: dto.classId,
-        courseId,
-        summary: parsed,
-      };
-    } catch {
-      throw new ServiceUnavailableException('OpenAI devolvió una respuesta inválida');
+    const summary = parseOpenAiJsonObject(raw);
+    if (!Object.keys(summary).length) {
+      throw new ServiceUnavailableException(
+        'OpenAI devolvió una respuesta inválida',
+      );
     }
+    return { classId: dto.classId, courseId, summary };
   }
 
   // ── 4. Asistente de contenido (estructura de clase) ────────
 
-  async contentAssistant(dto: ContentAssistantDto, userId: string, userRole: string) {
+  async contentAssistant(
+    dto: ContentAssistantDto,
+    userId: string,
+    userRole: string,
+  ) {
     assertStaff(userRole);
     const slideCount = dto.slideCount ?? 6;
     const level = dto.level ?? 'intermediate';
@@ -342,21 +401,22 @@ Devuelve JSON con:
 El primer slide debe ser de tipo COVER. Al menos uno debe ser ACTIVITY.`;
 
     const raw = await this.callOpenAI(system, userMsg, true);
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        topic: dto.topic,
-        level,
-        structure: parsed,
-      };
-    } catch {
-      throw new ServiceUnavailableException('OpenAI devolvió una respuesta inválida');
+    const structure = parseOpenAiJsonObject(raw);
+    if (!Object.keys(structure).length) {
+      throw new ServiceUnavailableException(
+        'OpenAI devolvió una respuesta inválida',
+      );
     }
+    return { topic: dto.topic, level, structure };
   }
 
   // ── 5. Evaluación de respuestas libres ─────────────────────
 
-  async evaluateResponse(dto: EvaluateResponseDto, userId: string, userRole: string) {
+  async evaluateResponse(
+    dto: EvaluateResponseDto,
+    userId: string,
+    userRole: string,
+  ) {
     assertStaff(userRole);
     const maxScore = dto.maxScore ?? 5;
 
@@ -383,15 +443,12 @@ Devuelve JSON con:
 Sé estricto pero justo. La puntuación debe reflejar objetivamente la calidad de la respuesta.`;
 
     const raw = await this.callOpenAI(system, userMsg, true);
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        question: dto.question,
-        maxScore,
-        evaluation: parsed,
-      };
-    } catch {
-      throw new ServiceUnavailableException('OpenAI devolvió una respuesta inválida');
+    const evaluation = parseOpenAiJsonObject(raw);
+    if (!Object.keys(evaluation).length) {
+      throw new ServiceUnavailableException(
+        'OpenAI devolvió una respuesta inválida',
+      );
     }
+    return { question: dto.question, maxScore, evaluation };
   }
 }

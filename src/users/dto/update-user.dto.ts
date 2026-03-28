@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsEnum, IsBoolean, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  MaxLength,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Role } from '../../auth/dto/register.dto';
 

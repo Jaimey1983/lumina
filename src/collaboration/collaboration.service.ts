@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,12 +13,13 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { AssignActivityDto } from './dto/assign-activity.dto';
 
-// ─── Helpers de autorización ──────────────────────────────
-
-const STAFF_ROLES = ['ADMIN', 'SUPERADMIN', 'TEACHER', 'TEACHER_ASSISTANT', 'DEPARTMENT_HEAD'];
-
-function isStaff(role: string) {
-  return STAFF_ROLES.includes(role);
+function isPrismaUniqueError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: unknown }).code === 'P2002'
+  );
 }
 
 // ─── Service ──────────────────────────────────────────────
@@ -52,7 +52,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'classEditor');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
     await this.assertClassBelongsToCourse(classId, courseId);
 
     return this.prisma.whiteboardSession.create({
@@ -112,7 +117,8 @@ export class CollaborationService {
     const session = await this.prisma.whiteboardSession.findFirst({
       where: { id: sessionId, classId, isActive: true },
     });
-    if (!session) throw new NotFoundException('Sesión de pizarra no encontrada');
+    if (!session)
+      throw new NotFoundException('Sesión de pizarra no encontrada');
     return session;
   }
 
@@ -132,7 +138,8 @@ export class CollaborationService {
       where: { id: sessionId, classId, isActive: true },
       select: { id: true },
     });
-    if (!session) throw new NotFoundException('Sesión de pizarra no encontrada');
+    if (!session)
+      throw new NotFoundException('Sesión de pizarra no encontrada');
 
     return this.prisma.whiteboardSession.update({
       where: { id: sessionId },
@@ -160,14 +167,20 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'classEditor');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
     await this.assertClassBelongsToCourse(classId, courseId);
 
     const session = await this.prisma.whiteboardSession.findFirst({
       where: { id: sessionId, classId, isActive: true },
       select: { id: true },
     });
-    if (!session) throw new NotFoundException('Sesión de pizarra no encontrada');
+    if (!session)
+      throw new NotFoundException('Sesión de pizarra no encontrada');
 
     await this.prisma.whiteboardSession.update({
       where: { id: sessionId },
@@ -187,7 +200,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'classEditor');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
     await this.assertClassBelongsToCourse(classId, courseId);
 
     return this.prisma.collabNote.create({
@@ -306,7 +324,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'classEditor');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
     await this.assertClassBelongsToCourse(classId, courseId);
 
     const note = await this.prisma.collabNote.findFirst({
@@ -360,7 +383,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     return this.prisma.workGroup.create({
       data: {
@@ -399,7 +427,12 @@ export class CollaborationService {
     });
   }
 
-  async getGroup(courseId: string, groupId: string, userId: string, userRole: string) {
+  async getGroup(
+    courseId: string,
+    groupId: string,
+    userId: string,
+    userRole: string,
+  ) {
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
     const group = await this.prisma.workGroup.findFirst({
@@ -415,7 +448,9 @@ export class CollaborationService {
           select: {
             id: true,
             joinedAt: true,
-            user: { select: { id: true, name: true, lastName: true, email: true } },
+            user: {
+              select: { id: true, name: true, lastName: true, email: true },
+            },
           },
         },
         activities: {
@@ -431,7 +466,12 @@ export class CollaborationService {
                 performanceIndicator: {
                   select: {
                     competenceType: true,
-                    achievement: { select: { code: true, aspect: { select: { name: true } } } },
+                    achievement: {
+                      select: {
+                        code: true,
+                        aspect: { select: { name: true } },
+                      },
+                    },
                   },
                 },
               },
@@ -445,8 +485,18 @@ export class CollaborationService {
     return group;
   }
 
-  async deleteGroup(courseId: string, groupId: string, userId: string, userRole: string) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+  async deleteGroup(
+    courseId: string,
+    groupId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const group = await this.prisma.workGroup.findFirst({
       where: { id: groupId, courseId, isActive: true },
@@ -470,7 +520,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const group = await this.prisma.workGroup.findFirst({
       where: { id: groupId, courseId, isActive: true },
@@ -484,7 +539,9 @@ export class CollaborationService {
       select: { userId: true },
     });
     if (!enrolled) {
-      throw new NotFoundException('El usuario no está matriculado en este curso');
+      throw new NotFoundException(
+        'El usuario no está matriculado en este curso',
+      );
     }
 
     try {
@@ -493,12 +550,16 @@ export class CollaborationService {
         select: {
           id: true,
           joinedAt: true,
-          user: { select: { id: true, name: true, lastName: true, email: true } },
+          user: {
+            select: { id: true, name: true, lastName: true, email: true },
+          },
         },
       });
-    } catch (err: any) {
-      if (err?.code === 'P2002') {
-        throw new ConflictException('El estudiante ya es miembro de este grupo');
+    } catch (err: unknown) {
+      if (isPrismaUniqueError(err)) {
+        throw new ConflictException(
+          'El estudiante ya es miembro de este grupo',
+        );
       }
       throw err;
     }
@@ -511,7 +572,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const group = await this.prisma.workGroup.findFirst({
       where: { id: groupId, courseId, isActive: true },
@@ -523,7 +589,8 @@ export class CollaborationService {
       where: { id: memberId, groupId },
       select: { id: true },
     });
-    if (!member) throw new NotFoundException('Miembro no encontrado en el grupo');
+    if (!member)
+      throw new NotFoundException('Miembro no encontrado en el grupo');
 
     await this.prisma.workGroupMember.delete({ where: { id: memberId } });
     return { message: 'Miembro eliminado del grupo' };
@@ -538,7 +605,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const group = await this.prisma.workGroup.findFirst({
       where: { id: groupId, courseId, isActive: true },
@@ -550,11 +622,14 @@ export class CollaborationService {
     const activity = await this.prisma.activity.findFirst({
       where: {
         id: dto.activityId,
-        performanceIndicator: { achievement: { aspect: { structure: { courseId } } } },
+        performanceIndicator: {
+          achievement: { aspect: { structure: { courseId } } },
+        },
       },
       select: { id: true, name: true },
     });
-    if (!activity) throw new NotFoundException('Actividad no encontrada en este curso');
+    if (!activity)
+      throw new NotFoundException('Actividad no encontrada en este curso');
 
     try {
       return await this.prisma.groupActivity.create({
@@ -562,12 +637,16 @@ export class CollaborationService {
         select: {
           id: true,
           assignedAt: true,
-          activity: { select: { id: true, name: true, weight: true, maxScore: true } },
+          activity: {
+            select: { id: true, name: true, weight: true, maxScore: true },
+          },
         },
       });
-    } catch (err: any) {
-      if (err?.code === 'P2002') {
-        throw new ConflictException('La actividad ya está asignada a este grupo');
+    } catch (err: unknown) {
+      if (isPrismaUniqueError(err)) {
+        throw new ConflictException(
+          'La actividad ya está asignada a este grupo',
+        );
       }
       throw err;
     }
@@ -601,7 +680,9 @@ export class CollaborationService {
             performanceIndicator: {
               select: {
                 competenceType: true,
-                achievement: { select: { code: true, aspect: { select: { name: true } } } },
+                achievement: {
+                  select: { code: true, aspect: { select: { name: true } } },
+                },
               },
             },
           },
@@ -618,7 +699,12 @@ export class CollaborationService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const group = await this.prisma.workGroup.findFirst({
       where: { id: groupId, courseId, isActive: true },
@@ -630,7 +716,8 @@ export class CollaborationService {
       where: { id: groupActivityId, groupId },
       select: { id: true },
     });
-    if (!ga) throw new NotFoundException('Actividad no encontrada en este grupo');
+    if (!ga)
+      throw new NotFoundException('Actividad no encontrada en este grupo');
 
     await this.prisma.groupActivity.delete({ where: { id: groupActivityId } });
     return { message: 'Actividad desasignada del grupo' };

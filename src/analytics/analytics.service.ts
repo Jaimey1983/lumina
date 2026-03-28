@@ -53,29 +53,25 @@ export class AnalyticsService {
   ) {
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
-    const [
-      totalStudents,
-      totalActivities,
-      gradeEntries,
-      classCounts,
-    ] = await Promise.all([
-      this.prisma.enrollment.count({ where: { courseId } }),
-      this.prisma.activity.count({
-        where: COURSE_ACTIVITY_WHERE(courseId),
-      }),
-      this.prisma.gradeEntry.findMany({
-        where: GRADE_ENTRY_WHERE(courseId, periodId),
-        select: {
-          score: true,
-          activity: { select: { maxScore: true } },
-        },
-      }),
-      this.prisma.class.groupBy({
-        by: ['status'],
-        where: { courseId },
-        _count: { id: true },
-      }),
-    ]);
+    const [totalStudents, totalActivities, gradeEntries, classCounts] =
+      await Promise.all([
+        this.prisma.enrollment.count({ where: { courseId } }),
+        this.prisma.activity.count({
+          where: COURSE_ACTIVITY_WHERE(courseId),
+        }),
+        this.prisma.gradeEntry.findMany({
+          where: GRADE_ENTRY_WHERE(courseId, periodId),
+          select: {
+            score: true,
+            activity: { select: { maxScore: true } },
+          },
+        }),
+        this.prisma.class.groupBy({
+          by: ['status'],
+          where: { courseId },
+          _count: { id: true },
+        }),
+      ]);
 
     const classCountMap = Object.fromEntries(
       classCounts.map((c) => [c.status, c._count.id]),
@@ -136,7 +132,10 @@ export class AnalyticsService {
 
     const enrollments = await this.prisma.enrollment.findMany({
       where: { courseId },
-      select: { userId: true, user: { select: { id: true, name: true, lastName: true, email: true } } },
+      select: {
+        userId: true,
+        user: { select: { id: true, name: true, lastName: true, email: true } },
+      },
     });
 
     const data = await Promise.all(
@@ -167,7 +166,8 @@ export class AnalyticsService {
       where: { userId_courseId: { userId: targetUserId, courseId } },
       select: { userId: true },
     });
-    if (!enrollment) throw new NotFoundException('Estudiante no matriculado en este curso');
+    if (!enrollment)
+      throw new NotFoundException('Estudiante no matriculado en este curso');
 
     return this._buildStudentProgress(courseId, targetUserId, periodId);
   }
@@ -183,7 +183,10 @@ export class AnalyticsService {
         select: { id: true, name: true, lastName: true, email: true },
       }),
       this.prisma.gradeEntry.findMany({
-        where: { userId: targetUserId, ...GRADE_ENTRY_WHERE(courseId, periodId) },
+        where: {
+          userId: targetUserId,
+          ...GRADE_ENTRY_WHERE(courseId, periodId),
+        },
         select: {
           score: true,
           createdAt: true,
@@ -219,9 +222,7 @@ export class AnalyticsService {
     }
 
     const completionRate =
-      totalActivities > 0
-        ? +(entries.length / totalActivities).toFixed(4)
-        : 0;
+      totalActivities > 0 ? +(entries.length / totalActivities).toFixed(4) : 0;
 
     return {
       user,
@@ -255,7 +256,9 @@ export class AnalyticsService {
         performanceIndicator: {
           select: {
             competenceType: true,
-            achievement: { select: { code: true, aspect: { select: { name: true } } } },
+            achievement: {
+              select: { code: true, aspect: { select: { name: true } } },
+            },
           },
         },
         gradeEntries: {
@@ -340,11 +343,7 @@ export class AnalyticsService {
 
   // ── 6. Engagement ─────────────────────────────────────────
 
-  async getEngagement(
-    courseId: string,
-    userId: string,
-    userRole: string,
-  ) {
+  async getEngagement(courseId: string, userId: string, userRole: string) {
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
     if (!isStaff(userRole)) {
@@ -406,7 +405,9 @@ export class AnalyticsService {
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
     if (!isStaff(userRole)) {
-      throw new ForbiddenException('Solo docentes y administradores pueden exportar el curso');
+      throw new ForbiddenException(
+        'Solo docentes y administradores pueden exportar el curso',
+      );
     }
 
     const course = await this.prisma.course.findUnique({
@@ -417,7 +418,9 @@ export class AnalyticsService {
         description: true,
         code: true,
         createdAt: true,
-        teacher: { select: { id: true, name: true, lastName: true, email: true } },
+        teacher: {
+          select: { id: true, name: true, lastName: true, email: true },
+        },
       },
     });
     if (!course) throw new NotFoundException('Curso no encontrado');

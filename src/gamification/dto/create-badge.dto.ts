@@ -1,22 +1,18 @@
-import {
-  IsString,
-  MinLength,
-  MaxLength,
-  IsOptional,
-} from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export class CreateBadgeDto {
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   name: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(300)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   description?: string;
 
   @IsOptional()

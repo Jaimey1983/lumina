@@ -24,7 +24,7 @@ function rethrowAsWs(e: unknown): never {
         ? r
         : Array.isArray((r as { message?: string[] }).message)
           ? (r as { message: string[] }).message[0]
-          : (r as { message?: string }).message ?? e.message;
+          : ((r as { message?: string }).message ?? e.message);
     throw new WsException(msg);
   }
   throw e;
@@ -77,7 +77,12 @@ export class LiveSessionsGateway implements OnGatewayConnection {
           startedBy: user.id,
         });
       }
-      return { ok: true as const, classId: body.classId, room, transitionedToLive };
+      return {
+        ok: true as const,
+        classId: body.classId,
+        room,
+        transitionedToLive,
+      };
     } catch (e) {
       rethrowAsWs(e);
     }
@@ -92,7 +97,10 @@ export class LiveSessionsGateway implements OnGatewayConnection {
     @MessageBody() body: JoinLiveDto,
   ) {
     try {
-      const { room } = await this.liveSessions.endLiveSession(client, body.classId);
+      const { room } = await this.liveSessions.endLiveSession(
+        client,
+        body.classId,
+      );
       this.server.to(room).emit('session:ended', { classId: body.classId });
       this.server.in(room).socketsLeave(room);
       return { ok: true as const, classId: body.classId };
@@ -108,7 +116,10 @@ export class LiveSessionsGateway implements OnGatewayConnection {
     @MessageBody() body: JoinLiveDto,
   ) {
     try {
-      const result = await this.liveSessions.joinLiveClass(client, body.classId);
+      const result = await this.liveSessions.joinLiveClass(
+        client,
+        body.classId,
+      );
       return {
         ok: true as const,
         classId: body.classId,

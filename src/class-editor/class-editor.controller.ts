@@ -6,8 +6,9 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { ClassEditorService } from './class-editor.service';
 import { ReorderSlidesDto } from './dto/reorder-slides.dto';
 import { ChangeSlideTypeDto } from './dto/change-slide-type.dto';
@@ -32,14 +33,9 @@ export class ClassEditorController {
   reorderSlides(
     @Param('classId') classId: string,
     @Body() dto: ReorderSlidesDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.editorService.reorderSlides(
-      classId,
-      dto,
-      req.user.id,
-      req.user.role,
-    );
+    return this.editorService.reorderSlides(classId, dto, user.id, user.role);
   }
 
   // ── Bulk update de slides ─────────────────────────────────
@@ -54,13 +50,13 @@ export class ClassEditorController {
   bulkUpdateSlides(
     @Param('classId') classId: string,
     @Body() dto: BulkUpdateSlidesDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.editorService.bulkUpdateSlides(
       classId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -76,14 +72,14 @@ export class ClassEditorController {
     @Param('classId') classId: string,
     @Param('slideId') slideId: string,
     @Body() dto: ChangeSlideTypeDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.editorService.changeSlideType(
       classId,
       slideId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -98,13 +94,13 @@ export class ClassEditorController {
   duplicateSlide(
     @Param('classId') classId: string,
     @Param('slideId') slideId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.editorService.duplicateSlide(
       classId,
       slideId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -116,12 +112,11 @@ export class ClassEditorController {
    */
   @Post('duplicate')
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
-  duplicateClass(@Param('classId') classId: string, @Request() req) {
-    return this.editorService.duplicateClass(
-      classId,
-      req.user.id,
-      req.user.role,
-    );
+  duplicateClass(
+    @Param('classId') classId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.editorService.duplicateClass(classId, user.id, user.role);
   }
 
   // ── Preview ───────────────────────────────────────────────
@@ -132,11 +127,10 @@ export class ClassEditorController {
    * Accesible para todos los matriculados en el curso.
    */
   @Get('preview')
-  previewClass(@Param('classId') classId: string, @Request() req) {
-    return this.editorService.previewClass(
-      classId,
-      req.user.id,
-      req.user.role,
-    );
+  previewClass(
+    @Param('classId') classId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.editorService.previewClass(classId, user.id, user.role);
   }
 }

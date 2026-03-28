@@ -14,17 +14,14 @@ import { UpdateReplyDto } from './dto/update-reply.dto';
 // ─── Helpers ──────────────────────────────────────────────
 
 function isStaff(role: string) {
-  return ['ADMIN', 'SUPERADMIN', 'TEACHER', 'TEACHER_ASSISTANT', 'DEPARTMENT_HEAD'].includes(role);
+  return [
+    'ADMIN',
+    'SUPERADMIN',
+    'TEACHER',
+    'TEACHER_ASSISTANT',
+    'DEPARTMENT_HEAD',
+  ].includes(role);
 }
-
-// ─── Select shapes reutilizables ──────────────────────────
-
-const AUTHOR_SELECT = {
-  id: true,
-  name: true,
-  lastName: true,
-  role: true,
-} as const;
 
 // ─── Service ──────────────────────────────────────────────
 
@@ -39,8 +36,18 @@ export class ForumsService {
   // FOROS (categorías)
   // ────────────────────────────────────────────────────────
 
-  async createForum(courseId: string, dto: CreateForumDto, userId: string, userRole: string) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+  async createForum(
+    courseId: string,
+    dto: CreateForumDto,
+    userId: string,
+    userRole: string,
+  ) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     return this.prisma.forum.create({
       data: { name: dto.name, description: dto.description, courseId },
@@ -75,7 +82,12 @@ export class ForumsService {
     });
   }
 
-  async getForum(courseId: string, forumId: string, userId: string, userRole: string) {
+  async getForum(
+    courseId: string,
+    forumId: string,
+    userId: string,
+    userRole: string,
+  ) {
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
     const forum = await this.prisma.forum.findFirst({
@@ -115,7 +127,12 @@ export class ForumsService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const forum = await this.prisma.forum.findFirst({
       where: { id: forumId, courseId, isActive: true },
@@ -127,7 +144,9 @@ export class ForumsService {
       where: { id: forumId },
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
       },
       select: {
         id: true,
@@ -140,8 +159,18 @@ export class ForumsService {
     });
   }
 
-  async deleteForum(courseId: string, forumId: string, userId: string, userRole: string) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+  async deleteForum(
+    courseId: string,
+    forumId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
 
     const forum = await this.prisma.forum.findFirst({
       where: { id: forumId, courseId, isActive: true },
@@ -149,7 +178,10 @@ export class ForumsService {
     });
     if (!forum) throw new NotFoundException('Foro no encontrado');
 
-    await this.prisma.forum.update({ where: { id: forumId }, data: { isActive: false } });
+    await this.prisma.forum.update({
+      where: { id: forumId },
+      data: { isActive: false },
+    });
     return { message: 'Foro eliminado' };
   }
 
@@ -247,7 +279,12 @@ export class ForumsService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
     await this.assertForumBelongsToCourse(forumId, courseId);
 
     const thread = await this.prisma.forumThread.findFirst({
@@ -270,7 +307,12 @@ export class ForumsService {
     userId: string,
     userRole: string,
   ) {
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, userRole, 'grades');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'grades',
+    );
     await this.assertForumBelongsToCourse(forumId, courseId);
 
     const thread = await this.prisma.forumThread.findFirst({
@@ -304,10 +346,15 @@ export class ForumsService {
 
     // Solo el autor o staff pueden eliminar
     if (thread.authorId !== userId && !isStaff(userRole)) {
-      throw new ForbiddenException('Solo el autor o un docente puede eliminar este hilo');
+      throw new ForbiddenException(
+        'Solo el autor o un docente puede eliminar este hilo',
+      );
     }
 
-    await this.prisma.forumThread.update({ where: { id: threadId }, data: { isActive: false } });
+    await this.prisma.forumThread.update({
+      where: { id: threadId },
+      data: { isActive: false },
+    });
     return { message: 'Hilo eliminado' };
   }
 
@@ -333,7 +380,9 @@ export class ForumsService {
     if (!thread) throw new NotFoundException('Hilo no encontrado');
 
     if (thread.isLocked && !isStaff(userRole)) {
-      throw new ForbiddenException('Este hilo está cerrado — solo el personal docente puede responder');
+      throw new ForbiddenException(
+        'Este hilo está cerrado — solo el personal docente puede responder',
+      );
     }
 
     return this.prisma.forumReply.create({
@@ -405,10 +454,15 @@ export class ForumsService {
 
     // Solo el autor o staff pueden eliminar
     if (reply.authorId !== userId && !isStaff(userRole)) {
-      throw new ForbiddenException('Solo el autor o un docente puede eliminar esta respuesta');
+      throw new ForbiddenException(
+        'Solo el autor o un docente puede eliminar esta respuesta',
+      );
     }
 
-    await this.prisma.forumReply.update({ where: { id: replyId }, data: { isActive: false } });
+    await this.prisma.forumReply.update({
+      where: { id: replyId },
+      data: { isActive: false },
+    });
     return { message: 'Respuesta eliminada' };
   }
 }

@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 import { SlideType } from './create-slide.dto';
 
 export class UpdateSlideDto {
@@ -9,7 +10,7 @@ export class UpdateSlideDto {
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   title?: string;
 
   @IsOptional()

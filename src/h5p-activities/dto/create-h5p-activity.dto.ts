@@ -6,6 +6,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export enum H5pType {
   Quiz = 'Quiz',
@@ -19,7 +20,7 @@ export class CreateH5pActivityDto {
   @IsString()
   @MinLength(1)
   @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   title: string;
 
   @IsEnum(H5pType)

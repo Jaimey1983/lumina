@@ -1,11 +1,15 @@
-import { Controller, Get, Param, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PerformanceTrackingService } from './performance-tracking.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('courses/:courseId/performance')
 export class PerformanceTrackingController {
-  constructor(private readonly performanceService: PerformanceTrackingService) {}
+  constructor(
+    private readonly performanceService: PerformanceTrackingService,
+  ) {}
 
   // Rutas literales ('ranking', 'at-risk') antes de rutas con param (':userId')
 
@@ -13,18 +17,18 @@ export class PerformanceTrackingController {
   @Get('ranking')
   getRanking(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.performanceService.getRanking(courseId, req.user.id, req.user.role);
+    return this.performanceService.getRanking(courseId, user.id, user.role);
   }
 
   /** GET /courses/:courseId/performance/at-risk — solo staff */
   @Get('at-risk')
   getAtRisk(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.performanceService.getAtRisk(courseId, req.user.id, req.user.role);
+    return this.performanceService.getAtRisk(courseId, user.id, user.role);
   }
 
   /** GET /courses/:courseId/performance/evolution/:userId */
@@ -32,9 +36,14 @@ export class PerformanceTrackingController {
   getEvolution(
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.performanceService.getEvolution(courseId, userId, req.user.id, req.user.role);
+    return this.performanceService.getEvolution(
+      courseId,
+      userId,
+      user.id,
+      user.role,
+    );
   }
 
   /** GET /courses/:courseId/performance/comparison/:userId */
@@ -42,9 +51,14 @@ export class PerformanceTrackingController {
   getComparison(
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.performanceService.getComparison(courseId, userId, req.user.id, req.user.role);
+    return this.performanceService.getComparison(
+      courseId,
+      userId,
+      user.id,
+      user.role,
+    );
   }
 
   /** GET /courses/:courseId/performance/breakdown/:userId?periodId= */
@@ -53,8 +67,14 @@ export class PerformanceTrackingController {
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
     @Query('periodId') periodId: string | undefined,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.performanceService.getBreakdown(courseId, userId, req.user.id, req.user.role, periodId);
+    return this.performanceService.getBreakdown(
+      courseId,
+      userId,
+      user.id,
+      user.role,
+      periodId,
+    );
   }
 }

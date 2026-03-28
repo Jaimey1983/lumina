@@ -45,9 +45,7 @@ export class GradebookService {
     const start = new Date(dto.startDate);
     const end = new Date(dto.endDate);
     if (start >= end) {
-      throw new BadRequestException(
-        'startDate debe ser anterior a endDate',
-      );
+      throw new BadRequestException('startDate debe ser anterior a endDate');
     }
 
     return this.prisma.period.create({
@@ -116,9 +114,7 @@ export class GradebookService {
     const start = dto.startDate ? new Date(dto.startDate) : period.startDate;
     const end = dto.endDate ? new Date(dto.endDate) : period.endDate;
     if (start >= end) {
-      throw new BadRequestException(
-        'startDate debe ser anterior a endDate',
-      );
+      throw new BadRequestException('startDate debe ser anterior a endDate');
     }
 
     return this.prisma.period.update({
@@ -186,7 +182,10 @@ export class GradebookService {
 
     await this.assertEnrollment(dto.userId, courseId);
     await this.assertPeriodInCourse(dto.periodId, courseId);
-    const maxScore = await this.assertActivityInCourse(dto.activityId, courseId);
+    const maxScore = await this.assertActivityInCourse(
+      dto.activityId,
+      courseId,
+    );
 
     if (dto.score > maxScore + SCORE_EPS) {
       throw new BadRequestException(
@@ -267,7 +266,8 @@ export class GradebookService {
 
     if (
       !entry ||
-      entry.activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
+      entry.activity.performanceIndicator.achievement.aspect.structure
+        .courseId !== courseId
     ) {
       throw new NotFoundException('Calificación no encontrada en este curso');
     }
@@ -537,7 +537,8 @@ export class GradebookService {
     });
     if (
       !activity ||
-      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !==
+        courseId
     ) {
       throw new BadRequestException(
         'La actividad no pertenece a la estructura de calificación de este curso',

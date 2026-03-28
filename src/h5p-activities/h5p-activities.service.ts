@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateH5pActivityDto } from './dto/create-h5p-activity.dto';
@@ -40,7 +41,7 @@ export class H5pActivitiesService {
       data: {
         type: 'ACTIVITY',
         title: dto.title,
-        content: content as any,
+        content: content as Prisma.InputJsonValue,
         order: nextOrder,
         class: { connect: { id: classId } },
       },
@@ -107,8 +108,14 @@ export class H5pActivitiesService {
       throw new NotFoundException('Actividad H5P no encontrada');
     }
 
-    const { classId: _cid, ...result } = slide;
-    return result;
+    return {
+      id: slide.id,
+      order: slide.order,
+      type: slide.type,
+      title: slide.title,
+      content: slide.content,
+      createdAt: slide.createdAt,
+    };
   }
 
   async update(
@@ -147,7 +154,7 @@ export class H5pActivitiesService {
       where: { id: slideId },
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
-        content: updatedContent as any,
+        content: updatedContent as Prisma.InputJsonValue,
       },
       select: {
         id: true,

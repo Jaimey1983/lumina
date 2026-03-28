@@ -7,9 +7,10 @@ import {
   HttpStatus,
   Param,
   Post,
-  Request,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CollaborationService } from './collaboration.service';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -31,23 +32,26 @@ export class CollaborationController {
   createGroup(
     @Param('courseId') courseId: string,
     @Body() dto: CreateGroupDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.createGroup(courseId, dto, req.user.id, req.user.role);
+    return this.collabService.createGroup(courseId, dto, user.id, user.role);
   }
 
   @Get('groups')
-  listGroups(@Param('courseId') courseId: string, @Request() req: any) {
-    return this.collabService.listGroups(courseId, req.user.id, req.user.role);
+  listGroups(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.collabService.listGroups(courseId, user.id, user.role);
   }
 
   @Get('groups/:groupId')
   getGroup(
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.getGroup(courseId, groupId, req.user.id, req.user.role);
+    return this.collabService.getGroup(courseId, groupId, user.id, user.role);
   }
 
   @Delete('groups/:groupId')
@@ -55,9 +59,14 @@ export class CollaborationController {
   deleteGroup(
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.deleteGroup(courseId, groupId, req.user.id, req.user.role);
+    return this.collabService.deleteGroup(
+      courseId,
+      groupId,
+      user.id,
+      user.role,
+    );
   }
 
   // ── Miembros de grupo ──────────────────────────────────────
@@ -67,9 +76,15 @@ export class CollaborationController {
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
     @Body() dto: AddMemberDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.addMember(courseId, groupId, dto, req.user.id, req.user.role);
+    return this.collabService.addMember(
+      courseId,
+      groupId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete('groups/:groupId/members/:memberId')
@@ -78,9 +93,15 @@ export class CollaborationController {
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
     @Param('memberId') memberId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.removeMember(courseId, groupId, memberId, req.user.id, req.user.role);
+    return this.collabService.removeMember(
+      courseId,
+      groupId,
+      memberId,
+      user.id,
+      user.role,
+    );
   }
 
   // ── Actividades de grupo ───────────────────────────────────
@@ -90,18 +111,29 @@ export class CollaborationController {
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
     @Body() dto: AssignActivityDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.assignActivity(courseId, groupId, dto, req.user.id, req.user.role);
+    return this.collabService.assignActivity(
+      courseId,
+      groupId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Get('groups/:groupId/activities')
   listGroupActivities(
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.collabService.listGroupActivities(courseId, groupId, req.user.id, req.user.role);
+    return this.collabService.listGroupActivities(
+      courseId,
+      groupId,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete('groups/:groupId/activities/:groupActivityId')
@@ -110,14 +142,14 @@ export class CollaborationController {
     @Param('courseId') courseId: string,
     @Param('groupId') groupId: string,
     @Param('groupActivityId') groupActivityId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.collabService.removeGroupActivity(
       courseId,
       groupId,
       groupActivityId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

@@ -8,10 +8,11 @@ import {
   Body,
   Query,
   UseGuards,
-  Request,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { AchievementsService } from './achievements.service';
 import { CreateAchievementDto } from './dto/create-achievement.dto';
 import { UpdateAchievementDto } from './dto/update-achievement.dto';
@@ -30,27 +31,37 @@ export class AchievementsController {
   create(
     @Param('courseId') courseId: string,
     @Body() dto: CreateAchievementDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.achievementsService.create(courseId, dto, req.user.id, req.user.role);
+    return this.achievementsService.create(courseId, dto, user.id, user.role);
   }
 
   @Get()
   findAll(
     @Param('courseId') courseId: string,
     @Query() query: QueryAchievementDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.achievementsService.findAll(courseId, query, req.user.id, req.user.role);
+    return this.achievementsService.findAll(
+      courseId,
+      query,
+      user.id,
+      user.role,
+    );
   }
 
   @Get(':achievementId')
   findOne(
     @Param('courseId') courseId: string,
     @Param('achievementId') achievementId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.achievementsService.findOne(courseId, achievementId, req.user.id, req.user.role);
+    return this.achievementsService.findOne(
+      courseId,
+      achievementId,
+      user.id,
+      user.role,
+    );
   }
 
   @Patch(':achievementId')
@@ -59,9 +70,15 @@ export class AchievementsController {
     @Param('courseId') courseId: string,
     @Param('achievementId') achievementId: string,
     @Body() dto: UpdateAchievementDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.achievementsService.update(courseId, achievementId, dto, req.user.id, req.user.role);
+    return this.achievementsService.update(
+      courseId,
+      achievementId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete(':achievementId')
@@ -70,8 +87,13 @@ export class AchievementsController {
   remove(
     @Param('courseId') courseId: string,
     @Param('achievementId') achievementId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.achievementsService.remove(courseId, achievementId, req.user.id, req.user.role);
+    return this.achievementsService.remove(
+      courseId,
+      achievementId,
+      user.id,
+      user.role,
+    );
   }
 }

@@ -1,4 +1,6 @@
-import { Body, Controller, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiFeaturesService } from './ai-features.service';
 import { StudentFeedbackDto } from './dto/student-feedback.dto';
@@ -22,9 +24,9 @@ export class CourseAiController {
   getStudentFeedback(
     @Param('courseId') courseId: string,
     @Body() dto: StudentFeedbackDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.aiService.getStudentFeedback(courseId, dto, req.user.id, req.user.role);
+    return this.aiService.getStudentFeedback(courseId, dto, user.id, user.role);
   }
 
   /**
@@ -36,8 +38,8 @@ export class CourseAiController {
   summarizeClass(
     @Param('courseId') courseId: string,
     @Body() dto: ClassSummaryDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.aiService.summarizeClass(courseId, dto, req.user.id, req.user.role);
+    return this.aiService.summarizeClass(courseId, dto, user.id, user.role);
   }
 }

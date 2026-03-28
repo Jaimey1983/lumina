@@ -35,7 +35,9 @@ export class ActivitiesService {
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
     await this.assertPIBelongsToCourse(performanceIndicatorId, courseId);
 
-    const currentSum = await this.sumActivityWeightsForPI(performanceIndicatorId);
+    const currentSum = await this.sumActivityWeightsForPI(
+      performanceIndicatorId,
+    );
     const nextSum = currentSum + dto.weight;
     if (nextSum > 1 + WEIGHT_EPS) {
       throw new BadRequestException(
@@ -137,7 +139,8 @@ export class ActivitiesService {
 
     if (
       !activity ||
-      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !==
+        courseId
     ) {
       throw new NotFoundException('Actividad no encontrada en este curso');
     }
@@ -183,7 +186,8 @@ export class ActivitiesService {
 
     if (
       !activity ||
-      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !==
+        courseId
     ) {
       throw new NotFoundException('Actividad no encontrada en este curso');
     }
@@ -254,7 +258,8 @@ export class ActivitiesService {
 
     if (
       !activity ||
-      activity.performanceIndicator.achievement.aspect.structure.courseId !== courseId
+      activity.performanceIndicator.achievement.aspect.structure.courseId !==
+        courseId
     ) {
       throw new NotFoundException('Actividad no encontrada en este curso');
     }
@@ -298,11 +303,10 @@ export class ActivitiesService {
         },
       },
     });
-    if (
-      !pi ||
-      pi.achievement.aspect.structure.courseId !== courseId
-    ) {
-      throw new NotFoundException('Indicador de logro no encontrado en este curso');
+    if (!pi || pi.achievement.aspect.structure.courseId !== courseId) {
+      throw new NotFoundException(
+        'Indicador de logro no encontrado en este curso',
+      );
     }
   }
 }

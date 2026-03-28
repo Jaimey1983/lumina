@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { nanoid } from 'nanoid';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { ReorderSlidesDto } from './dto/reorder-slides.dto';
@@ -117,7 +118,7 @@ export class ClassEditorService {
       data: {
         type: slide.type,
         title: `${slide.title} (copia)`,
-        content: slide.content as any,
+        content: slide.content as Prisma.InputJsonValue,
         order: nextOrder,
         class: { connect: { id: classId } },
       },
@@ -171,7 +172,7 @@ export class ClassEditorService {
           create: cls.slides.map((s) => ({
             type: s.type,
             title: s.title,
-            content: s.content as any,
+            content: s.content as Prisma.InputJsonValue,
             order: s.order,
           })),
         },
@@ -262,7 +263,9 @@ export class ClassEditorService {
           where: { id: s.id },
           data: {
             ...(s.title !== undefined && { title: s.title }),
-            ...(s.content !== undefined && { content: s.content as any }),
+            ...(s.content !== undefined && {
+              content: s.content as Prisma.InputJsonValue,
+            }),
           },
           select: SLIDE_SELECT,
         }),

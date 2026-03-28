@@ -9,7 +9,6 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -17,6 +16,8 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 
 @Controller('courses/:courseId')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,14 +30,14 @@ export class ActivitiesController {
     @Param('courseId') courseId: string,
     @Param('piId') piId: string,
     @Body() dto: CreateActivityDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.activitiesService.create(
       courseId,
       piId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -44,13 +45,13 @@ export class ActivitiesController {
   findAllByPI(
     @Param('courseId') courseId: string,
     @Param('piId') piId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.activitiesService.findAllByPI(
       courseId,
       piId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -58,13 +59,13 @@ export class ActivitiesController {
   findOne(
     @Param('courseId') courseId: string,
     @Param('activityId') activityId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.activitiesService.findOne(
       courseId,
       activityId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -74,14 +75,14 @@ export class ActivitiesController {
     @Param('courseId') courseId: string,
     @Param('activityId') activityId: string,
     @Body() dto: UpdateActivityDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.activitiesService.update(
       courseId,
       activityId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -91,13 +92,13 @@ export class ActivitiesController {
   remove(
     @Param('courseId') courseId: string,
     @Param('activityId') activityId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.activitiesService.remove(
       courseId,
       activityId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

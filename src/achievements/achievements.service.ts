@@ -8,7 +8,12 @@ import { CourseAuthorizationService } from '../common/course-authorization.servi
 import { CreateAchievementDto } from './dto/create-achievement.dto';
 import { UpdateAchievementDto } from './dto/update-achievement.dto';
 import { QueryAchievementDto } from './dto/query-achievement.dto';
-import { AchievementScope, CompetenceType, CompetenceScope } from '@prisma/client';
+import {
+  AchievementScope,
+  CompetenceType,
+  CompetenceScope,
+  Prisma,
+} from '@prisma/client';
 
 const COMPETENCE_TYPES_AUTO = [
   CompetenceType.COGNITIVE,
@@ -24,9 +29,19 @@ export class AchievementsService {
     private readonly courseAuth: CourseAuthorizationService,
   ) {}
 
-  async create(courseId: string, dto: CreateAchievementDto, userId: string, role: string) {
+  async create(
+    courseId: string,
+    dto: CreateAchievementDto,
+    userId: string,
+    role: string,
+  ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, role, 'gradebook');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     // Verify structure exists
     const structure = await this.prisma.gradebookStructure.findUnique({
@@ -34,13 +49,19 @@ export class AchievementsService {
       select: { id: true },
     });
     if (!structure) {
-      throw new NotFoundException('No existe estructura de calificación para este curso');
+      throw new NotFoundException(
+        'No existe estructura de calificación para este curso',
+      );
     }
 
     // Verify aspect belongs to this course
     const aspect = await this.prisma.aspect.findUnique({
       where: { id: dto.aspectId },
-      select: { id: true, structureId: true, structure: { select: { courseId: true } } },
+      select: {
+        id: true,
+        structureId: true,
+        structure: { select: { courseId: true } },
+      },
     });
     if (!aspect || aspect.structure.courseId !== courseId) {
       throw new NotFoundException('Aspecto no encontrado en este curso');
@@ -61,7 +82,9 @@ export class AchievementsService {
       select: { id: true },
     });
     if (existing) {
-      throw new ConflictException(`Ya existe un logro con el código "${dto.code}" en este curso`);
+      throw new ConflictException(
+        `Ya existe un logro con el código "${dto.code}" en este curso`,
+      );
     }
 
     // Generate PI statements via OpenAI if available
@@ -107,11 +130,16 @@ export class AchievementsService {
     return this.findOne(courseId, achievement.id, userId, role);
   }
 
-  async findAll(courseId: string, query: QueryAchievementDto, userId: string, role: string) {
+  async findAll(
+    courseId: string,
+    query: QueryAchievementDto,
+    userId: string,
+    role: string,
+  ) {
     await this.courseAuth.assertCourseExists(courseId);
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
-    const where: any = { courseId };
+    const where: Prisma.AchievementWhereInput = { courseId };
     if (query.aspectId) where.aspectId = query.aspectId;
     if (query.periodId) where.periodId = query.periodId;
     if (query.scope) where.scope = query.scope;
@@ -135,7 +163,12 @@ export class AchievementsService {
     });
   }
 
-  async findOne(courseId: string, achievementId: string, userId: string, role: string) {
+  async findOne(
+    courseId: string,
+    achievementId: string,
+    userId: string,
+    role: string,
+  ) {
     await this.courseAuth.assertCourseExists(courseId);
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, role);
 
@@ -183,9 +216,20 @@ export class AchievementsService {
     return achievement;
   }
 
-  async update(courseId: string, achievementId: string, dto: UpdateAchievementDto, userId: string, role: string) {
+  async update(
+    courseId: string,
+    achievementId: string,
+    dto: UpdateAchievementDto,
+    userId: string,
+    role: string,
+  ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, role, 'gradebook');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     const achievement = await this.prisma.achievement.findUnique({
       where: { id: achievementId },
@@ -201,7 +245,9 @@ export class AchievementsService {
         select: { id: true },
       });
       if (existing) {
-        throw new ConflictException(`Ya existe un logro con el código "${dto.code}" en este curso`);
+        throw new ConflictException(
+          `Ya existe un logro con el código "${dto.code}" en este curso`,
+        );
       }
     }
 
@@ -225,9 +271,19 @@ export class AchievementsService {
     });
   }
 
-  async remove(courseId: string, achievementId: string, userId: string, role: string) {
+  async remove(
+    courseId: string,
+    achievementId: string,
+    userId: string,
+    role: string,
+  ) {
     await this.courseAuth.assertCourseExists(courseId);
-    await this.courseAuth.assertStaffCanManageCourse(courseId, userId, role, 'gradebook');
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      role,
+      'gradebook',
+    );
 
     const achievement = await this.prisma.achievement.findUnique({
       where: { id: achievementId },
@@ -258,7 +314,9 @@ export class AchievementsService {
         select: { id: true },
       });
       for (const pi of pis) {
-        await tx.activity.deleteMany({ where: { performanceIndicatorId: pi.id } });
+        await tx.activity.deleteMany({
+          where: { performanceIndicatorId: pi.id },
+        });
       }
       await tx.performanceIndicator.deleteMany({ where: { achievementId } });
       await tx.achievement.delete({ where: { id: achievementId } });
@@ -267,41 +325,50 @@ export class AchievementsService {
     return { message: 'Logro eliminado correctamente' };
   }
 
-  private async generatePIStatements(achievementStatement: string): Promise<string[]> {
+  private async generatePIStatements(
+    achievementStatement: string,
+  ): Promise<string[]> {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return ['', '', '', ''];
     }
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'Eres un asistente pedagógico especializado en el sistema educativo colombiano. Genera indicadores de logro concisos (máximo 150 caracteres cada uno) basados en un enunciado de logro.',
+              },
+              {
+                role: 'user',
+                content: `Para el siguiente logro: "${achievementStatement}"\n\nGenera exactamente 4 indicadores de logro, uno para cada tipo de competencia. Responde SOLO con un JSON array de 4 strings en este orden: [cognitivo, metodológico, interpersonal, instrumental]. Sin explicaciones adicionales.`,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 500,
+          }),
         },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content:
-                'Eres un asistente pedagógico especializado en el sistema educativo colombiano. Genera indicadores de logro concisos (máximo 150 caracteres cada uno) basados en un enunciado de logro.',
-            },
-            {
-              role: 'user',
-              content: `Para el siguiente logro: "${achievementStatement}"\n\nGenera exactamente 4 indicadores de logro, uno para cada tipo de competencia. Responde SOLO con un JSON array de 4 strings en este orden: [cognitivo, metodológico, interpersonal, instrumental]. Sin explicaciones adicionales.`,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 500,
-        }),
-      });
+      );
       if (!response.ok) return ['', '', '', ''];
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
       const content = data.choices?.[0]?.message?.content ?? '[]';
-      const parsed = JSON.parse(content);
+      const parsed: unknown = JSON.parse(content);
       if (Array.isArray(parsed) && parsed.length === 4) {
-        return parsed.map((s) => (typeof s === 'string' ? s.slice(0, 150) : ''));
+        return parsed.map((s: unknown) =>
+          typeof s === 'string' ? s.slice(0, 150) : '',
+        );
       }
       return ['', '', '', ''];
     } catch {

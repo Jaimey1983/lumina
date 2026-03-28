@@ -8,6 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export class BulkSlideItem {
   @IsString()
@@ -16,7 +17,7 @@ export class BulkSlideItem {
   @IsOptional()
   @IsString()
   @MinLength(1)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   title?: string;
 
   @IsOptional()

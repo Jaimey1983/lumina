@@ -1,11 +1,6 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AnalyticsService } from './analytics.service';
 
@@ -17,13 +12,13 @@ export class AnalyticsController {
   @Get('summary')
   getCourseSummary(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.analyticsService.getCourseSummary(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -32,13 +27,13 @@ export class AnalyticsController {
   @Get('students')
   getAllStudentsProgress(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.analyticsService.getAllStudentsProgress(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -47,14 +42,14 @@ export class AnalyticsController {
   getStudentProgress(
     @Param('courseId') courseId: string,
     @Param('userId') targetUserId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.analyticsService.getStudentProgress(
       courseId,
       targetUserId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -62,13 +57,13 @@ export class AnalyticsController {
   @Get('activities')
   getActivitiesRanking(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.analyticsService.getActivitiesRanking(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }
@@ -76,37 +71,33 @@ export class AnalyticsController {
   @Get('live-sessions')
   getLiveSessionsStats(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.analyticsService.getLiveSessionsStats(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
   @Get('engagement')
   getEngagement(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.analyticsService.getEngagement(
-      courseId,
-      req.user.id,
-      req.user.role,
-    );
+    return this.analyticsService.getEngagement(courseId, user.id, user.role);
   }
 
   @Get('export')
   exportCourse(
     @Param('courseId') courseId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
     @Query('periodId') periodId?: string,
   ) {
     return this.analyticsService.exportCourse(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
       periodId,
     );
   }

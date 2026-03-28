@@ -58,7 +58,9 @@ export class LiveSessionsService {
   async authenticateConnection(client: Socket): Promise<void> {
     const token = this.extractBearerToken(client);
     if (!token) {
-      throw new UnauthorizedException('Token requerido (auth.token o Authorization)');
+      throw new UnauthorizedException(
+        'Token requerido (auth.token o Authorization)',
+      );
     }
 
     let sub: string;
@@ -150,7 +152,11 @@ export class LiveSessionsService {
   async joinLiveClass(
     client: Socket,
     classId: string,
-  ): Promise<{ room: string; currentSlide: LiveSlideState | null; isHost: boolean }> {
+  ): Promise<{
+    room: string;
+    currentSlide: LiveSlideState | null;
+    isHost: boolean;
+  }> {
     const user = this.getUser(client);
     const cls = await this.loadClassForLive(classId);
 
@@ -179,7 +185,9 @@ export class LiveSessionsService {
         );
       }
       if (cls.status !== 'PUBLISHED' && cls.status !== 'LIVE') {
-        throw new BadRequestException('Estado de clase no válido para sesión en vivo');
+        throw new BadRequestException(
+          'Estado de clase no válido para sesión en vivo',
+        );
       }
     }
 
@@ -213,7 +221,9 @@ export class LiveSessionsService {
     }
 
     if (cls.status !== 'PUBLISHED' && cls.status !== 'LIVE') {
-      throw new BadRequestException('No se puede iniciar sesión en vivo en este estado');
+      throw new BadRequestException(
+        'No se puede iniciar sesión en vivo en este estado',
+      );
     }
 
     let transitionedToLive = false;
@@ -234,7 +244,10 @@ export class LiveSessionsService {
   /**
    * Docente/admin: LIVE → PUBLISHED, borra estado en memoria.
    */
-  async endLiveSession(client: Socket, classId: string): Promise<{ room: string }> {
+  async endLiveSession(
+    client: Socket,
+    classId: string,
+  ): Promise<{ room: string }> {
     const user = this.getUser(client);
     const cls = await this.loadClassForLive(classId);
 
@@ -246,7 +259,9 @@ export class LiveSessionsService {
     );
 
     if (cls.status !== 'LIVE') {
-      throw new BadRequestException('No hay una sesión en vivo activa para esta clase');
+      throw new BadRequestException(
+        'No hay una sesión en vivo activa para esta clase',
+      );
     }
 
     await this.prisma.class.update({

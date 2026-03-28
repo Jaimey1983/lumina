@@ -10,10 +10,11 @@ import {
   Body,
   Query,
   UseGuards,
-  Request,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { PeerEvaluationService } from './peer-evaluation.service';
 import { CreatePeerEvaluationDto } from './dto/create-peer-evaluation.dto';
 import { UpdatePeerEvaluationDto } from './dto/update-peer-evaluation.dto';
@@ -34,14 +35,9 @@ export class PeerEvaluationController {
   create(
     @Param('courseId') courseId: string,
     @Body() dto: CreatePeerEvaluationDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.peerEvaluationService.create(
-      courseId,
-      dto,
-      req.user.id,
-      req.user.role,
-    );
+    return this.peerEvaluationService.create(courseId, dto, user.id, user.role);
   }
 
   // GET /courses/:courseId/peer-evaluations?periodId=xxx
@@ -52,7 +48,7 @@ export class PeerEvaluationController {
   findAll(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -62,8 +58,8 @@ export class PeerEvaluationController {
     return this.peerEvaluationService.findAll(
       courseId,
       periodId.trim(),
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -75,10 +71,12 @@ export class PeerEvaluationController {
     @Param('courseId') courseId: string,
     @Param('evaluatedId') evaluatedId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    const requester = req.user;
-    const isPrivileged = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(requester.role);
+    const requester = user;
+    const isPrivileged = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(
+      requester.role,
+    );
     const isOwnRecord = requester.id === evaluatedId;
 
     if (!isPrivileged && !isOwnRecord) {
@@ -111,14 +109,14 @@ export class PeerEvaluationController {
     @Param('courseId') courseId: string,
     @Param('id') id: string,
     @Body() dto: UpdatePeerEvaluationDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.peerEvaluationService.update(
       id,
       courseId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -131,13 +129,8 @@ export class PeerEvaluationController {
   remove(
     @Param('courseId') courseId: string,
     @Param('id') id: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.peerEvaluationService.remove(
-      id,
-      courseId,
-      req.user.id,
-      req.user.role,
-    );
+    return this.peerEvaluationService.remove(id, courseId, user.id, user.role);
   }
 }

@@ -1,9 +1,10 @@
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export class GenerateQuizDto {
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   text: string;
 
   @IsOptional()

@@ -29,7 +29,12 @@ type AspectNode = {
     performanceIndicators: {
       id: string;
       weight: number;
-      activities: { id: string; name: string; weight: number; maxScore: number }[];
+      activities: {
+        id: string;
+        name: string;
+        weight: number;
+        maxScore: number;
+      }[];
     }[];
   }[];
 };
@@ -74,10 +79,16 @@ export class PerformanceTrackingService {
     requesterId: string,
     requesterRole: string,
   ) {
-    await this.courseAuth.verifyCourseReadAccess(courseId, requesterId, requesterRole);
+    await this.courseAuth.verifyCourseReadAccess(
+      courseId,
+      requesterId,
+      requesterRole,
+    );
     const isStaff = ['ADMIN', 'SUPERADMIN', 'TEACHER'].includes(requesterRole);
     if (!isStaff && requesterId !== targetUserId) {
-      throw new ForbiddenException('Solo puedes ver tus propios datos de desempeño');
+      throw new ForbiddenException(
+        'Solo puedes ver tus propios datos de desempeño',
+      );
     }
     // Teacher: debe ser el docente titular del curso
     if (requesterRole === 'TEACHER') {
@@ -111,7 +122,12 @@ export class PerformanceTrackingService {
                       id: true,
                       weight: true,
                       activities: {
-                        select: { id: true, name: true, weight: true, maxScore: true },
+                        select: {
+                          id: true,
+                          name: true,
+                          weight: true,
+                          maxScore: true,
+                        },
                       },
                     },
                   },
@@ -195,26 +211,34 @@ export class PerformanceTrackingService {
     const entryMap = new Map<string, Map<string, Map<string, number>>>();
     for (const e of allEntries) {
       if (!entryMap.has(e.userId)) entryMap.set(e.userId, new Map());
-      const byPeriod = entryMap.get(e.userId)!;
+      const byPeriod = entryMap.get(e.userId);
       if (!byPeriod.has(e.periodId)) byPeriod.set(e.periodId, new Map());
-      byPeriod.get(e.periodId)!.set(e.activityId, e.score);
+      byPeriod.get(e.periodId).set(e.activityId, e.score);
     }
 
     const selfEvalMap = new Map<string, Map<string, number>>();
     for (const s of selfEvals) {
       if (!selfEvalMap.has(s.userId)) selfEvalMap.set(s.userId, new Map());
-      selfEvalMap.get(s.userId)!.set(s.periodId, s.score);
+      selfEvalMap.get(s.userId).set(s.periodId, s.score);
     }
 
     const peerEvalMap = new Map<string, Map<string, number[]>>();
     for (const p of peerEvals) {
-      if (!peerEvalMap.has(p.evaluatedId)) peerEvalMap.set(p.evaluatedId, new Map());
-      const byPeriod = peerEvalMap.get(p.evaluatedId)!;
+      if (!peerEvalMap.has(p.evaluatedId))
+        peerEvalMap.set(p.evaluatedId, new Map());
+      const byPeriod = peerEvalMap.get(p.evaluatedId);
       if (!byPeriod.has(p.periodId)) byPeriod.set(p.periodId, []);
-      byPeriod.get(p.periodId)!.push(p.score);
+      byPeriod.get(p.periodId).push(p.score);
     }
 
-    return { structure, periods, enrollments, entryMap, selfEvalMap, peerEvalMap };
+    return {
+      structure,
+      periods,
+      enrollments,
+      entryMap,
+      selfEvalMap,
+      peerEvalMap,
+    };
   }
 
   // ── Cálculo en memoria ────────────────────────────────────
@@ -230,7 +254,8 @@ export class PerformanceTrackingService {
     const aspectWeightSum = structure.aspects.reduce((s, a) => s + a.weight, 0);
     const validStructure = Math.abs(aspectWeightSum - 0.9) <= 1e-5;
 
-    const periodEntries = entryMap.get(studentId)?.get(periodId) ?? new Map<string, number>();
+    const periodEntries =
+      entryMap.get(studentId)?.get(periodId) ?? new Map<string, number>();
 
     let processScore = 0;
     let hasAny = false;
@@ -325,7 +350,7 @@ export class PerformanceTrackingService {
 
     const gradedPeriods = evolution
       .filter((e) => e.finalGrade !== null)
-      .map((e) => e.finalGrade as number);
+      .map((e) => e.finalGrade);
 
     let trend: 'up' | 'down' | 'stable' | null = null;
     if (gradedPeriods.length >= 2) {
@@ -335,7 +360,9 @@ export class PerformanceTrackingService {
 
     const avg =
       gradedPeriods.length > 0
-        ? round2(gradedPeriods.reduce((s, g) => s + g, 0) / gradedPeriods.length)
+        ? round2(
+            gradedPeriods.reduce((s, g) => s + g, 0) / gradedPeriods.length,
+          )
         : null;
 
     return { targetUserId, trend, overallAvg: avg, evolution };
@@ -350,8 +377,14 @@ export class PerformanceTrackingService {
     userRole: string,
   ) {
     await this._assertCanViewStudent(courseId, targetUserId, userId, userRole);
-    const { structure, periods, enrollments, entryMap, selfEvalMap, peerEvalMap } =
-      await this._loadData(courseId);
+    const {
+      structure,
+      periods,
+      enrollments,
+      entryMap,
+      selfEvalMap,
+      peerEvalMap,
+    } = await this._loadData(courseId);
 
     if (!structure) {
       throw new BadRequestException(
@@ -395,7 +428,7 @@ export class PerformanceTrackingService {
 
       const studentRank =
         studentGrade.finalGrade !== null
-          ? allGrades.filter((g) => g > studentGrade.finalGrade!).length + 1
+          ? allGrades.filter((g) => g > studentGrade.finalGrade).length + 1
           : null;
 
       return {
@@ -420,8 +453,14 @@ export class PerformanceTrackingService {
       userRole,
       'reports',
     );
-    const { structure, periods, enrollments, entryMap, selfEvalMap, peerEvalMap } =
-      await this._loadData(courseId);
+    const {
+      structure,
+      periods,
+      enrollments,
+      entryMap,
+      selfEvalMap,
+      peerEvalMap,
+    } = await this._loadData(courseId);
 
     if (!structure) {
       throw new BadRequestException(
@@ -444,7 +483,7 @@ export class PerformanceTrackingService {
 
       const withGrade = periodGrades
         .filter((p) => p.finalGrade !== null)
-        .map((p) => p.finalGrade as number);
+        .map((p) => p.finalGrade);
 
       const overallAvg =
         withGrade.length > 0
@@ -484,8 +523,14 @@ export class PerformanceTrackingService {
       userRole,
       'reports',
     );
-    const { structure, periods, enrollments, entryMap, selfEvalMap, peerEvalMap } =
-      await this._loadData(courseId);
+    const {
+      structure,
+      periods,
+      enrollments,
+      entryMap,
+      selfEvalMap,
+      peerEvalMap,
+    } = await this._loadData(courseId);
 
     const activePeriods = periods.filter((p) => p.isActive);
 
@@ -601,10 +646,11 @@ export class PerformanceTrackingService {
     requesterRole: string,
   ) {
     // Solo ADMIN/SUPERADMIN o el propio estudiante
-    const isAdmin =
-      requesterRole === 'ADMIN' || requesterRole === 'SUPERADMIN';
+    const isAdmin = requesterRole === 'ADMIN' || requesterRole === 'SUPERADMIN';
     if (!isAdmin && requesterId !== targetUserId) {
-      throw new ForbiddenException('Solo puedes ver tu propio historial académico');
+      throw new ForbiddenException(
+        'Solo puedes ver tu propio historial académico',
+      );
     }
 
     const enrollments = await this.prisma.enrollment.findMany({
@@ -717,17 +763,22 @@ export class PerformanceTrackingService {
         const peerMap = new Map<string, number[]>();
         for (const p of peerEvals) {
           if (!peerMap.has(p.periodId)) peerMap.set(p.periodId, []);
-          peerMap.get(p.periodId)!.push(p.score);
+          peerMap.get(p.periodId).push(p.score);
         }
         const entryMap = new Map<string, Map<string, number>>();
         for (const e of gradeEntries) {
           if (!entryMap.has(e.periodId)) entryMap.set(e.periodId, new Map());
-          entryMap.get(e.periodId)!.set(e.activityId, e.score);
+          entryMap.get(e.periodId).set(e.activityId, e.score);
         }
 
         const periodGrades = periods.map((period) => {
           if (!validStructure) {
-            return { period, finalGrade: null, isComplete: false, completionRate: 0 };
+            return {
+              period,
+              finalGrade: null,
+              isComplete: false,
+              completionRate: 0,
+            };
           }
 
           const pEntries = entryMap.get(period.id) ?? new Map<string, number>();

@@ -4,10 +4,11 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { GradeCalculationService } from './grade-calculation.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -16,7 +17,9 @@ import { Roles } from '../auth/roles.decorator';
 @Controller('courses/:courseId')
 @UseGuards(JwtAuthGuard)
 export class GradeCalculationController {
-  constructor(private readonly gradeCalculationService: GradeCalculationService) {}
+  constructor(
+    private readonly gradeCalculationService: GradeCalculationService,
+  ) {}
 
   // GET /courses/:courseId/grade-calculation?periodId=xxx
   // Resumen compacto de todos los estudiantes — TEACHER/ADMIN/SUPERADMIN
@@ -26,7 +29,7 @@ export class GradeCalculationController {
   getSummary(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -36,8 +39,8 @@ export class GradeCalculationController {
     return this.gradeCalculationService.getSummary(
       courseId,
       periodId.trim(),
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -49,7 +52,7 @@ export class GradeCalculationController {
   calculateForCourse(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -59,8 +62,8 @@ export class GradeCalculationController {
     return this.gradeCalculationService.calculateForCourse(
       courseId,
       periodId.trim(),
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -72,9 +75,9 @@ export class GradeCalculationController {
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    const requester = req.user;
+    const requester = user;
 
     const isPrivileged = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(
       requester.role,
@@ -82,9 +85,7 @@ export class GradeCalculationController {
     const isOwnGrade = requester.id === userId;
 
     if (!isPrivileged && !isOwnGrade) {
-      throw new ForbiddenException(
-        'Solo puedes consultar tu propia nota',
-      );
+      throw new ForbiddenException('Solo puedes consultar tu propia nota');
     }
 
     if (!periodId?.trim()) {

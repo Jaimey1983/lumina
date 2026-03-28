@@ -9,8 +9,9 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { PerformanceIndicatorsService } from './performance-indicators.service';
 import { CreateAspectDto } from './dto/create-aspect.dto';
 import { UpdateAspectDto } from './dto/update-aspect.dto';
@@ -30,20 +31,26 @@ export class PerformanceIndicatorsController {
   // ── Gradebook Structure ────────────────────────────────────
   @Post('courses/:courseId/gradebook')
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
-  createStructure(@Param('courseId') courseId: string, @Request() req) {
+  createStructure(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
     return this.performanceIndicatorsService.createStructure(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
   @Get('courses/:courseId/gradebook')
-  getStructure(@Param('courseId') courseId: string, @Request() req) {
+  getStructure(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
     return this.performanceIndicatorsService.getStructure(
       courseId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -53,13 +60,13 @@ export class PerformanceIndicatorsController {
   createAspect(
     @Param('courseId') courseId: string,
     @Body() dto: CreateAspectDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.performanceIndicatorsService.createAspect(
       courseId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -69,14 +76,14 @@ export class PerformanceIndicatorsController {
     @Param('courseId') courseId: string,
     @Param('aspectId') aspectId: string,
     @Body() dto: UpdateAspectDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.performanceIndicatorsService.updateAspect(
       courseId,
       aspectId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -86,13 +93,13 @@ export class PerformanceIndicatorsController {
   deleteAspect(
     @Param('courseId') courseId: string,
     @Param('aspectId') aspectId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.performanceIndicatorsService.deleteAspect(
       courseId,
       aspectId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -102,13 +109,13 @@ export class PerformanceIndicatorsController {
   createPI(
     @Param('achievementId') achievementId: string,
     @Body() dto: CreatePerformanceIndicatorDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.performanceIndicatorsService.createPerformanceIndicator(
       achievementId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -118,14 +125,14 @@ export class PerformanceIndicatorsController {
     @Param('achievementId') achievementId: string,
     @Param('indicatorId') indicatorId: string,
     @Body() dto: UpdatePerformanceIndicatorDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.performanceIndicatorsService.updatePerformanceIndicator(
       achievementId,
       indicatorId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -135,13 +142,13 @@ export class PerformanceIndicatorsController {
   deletePI(
     @Param('achievementId') achievementId: string,
     @Param('indicatorId') indicatorId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.performanceIndicatorsService.deletePerformanceIndicator(
       achievementId,
       indicatorId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

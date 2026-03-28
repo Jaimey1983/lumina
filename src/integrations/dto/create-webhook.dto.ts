@@ -1,5 +1,6 @@
 import { IsArray, IsOptional, IsString, IsUrl } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 // Eventos válidos del sistema
 export const VALID_EVENTS = [
@@ -19,7 +20,7 @@ export type WebhookEvent = (typeof VALID_EVENTS)[number];
 
 export class CreateWebhookDto {
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   name: string;
 
   @IsUrl()

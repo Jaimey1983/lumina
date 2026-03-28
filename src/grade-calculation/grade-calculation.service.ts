@@ -209,7 +209,7 @@ export class GradeCalculationService {
 
     const gradesWithValue = data
       .filter((d) => d.finalGrade !== null)
-      .map((d) => d.finalGrade as number);
+      .map((d) => d.finalGrade);
 
     const average =
       gradesWithValue.length > 0
@@ -357,7 +357,7 @@ export class GradeCalculationService {
               const activityResults: ActivityResult[] = pi.activities.map(
                 (activity) => {
                   const rawScore = entryMap.has(activity.id)
-                    ? entryMap.get(activity.id)!
+                    ? entryMap.get(activity.id)
                     : null;
 
                   const normalizedScore =

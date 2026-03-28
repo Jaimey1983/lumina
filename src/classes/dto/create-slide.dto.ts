@@ -1,12 +1,13 @@
-import { IsString, IsOptional, IsEnum, IsInt, Min, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export enum SlideType {
-  COVER     = 'COVER',
-  CONTENT   = 'CONTENT',
-  ACTIVITY  = 'ACTIVITY',
-  VIDEO     = 'VIDEO',
-  IMAGE     = 'IMAGE',
+  COVER = 'COVER',
+  CONTENT = 'CONTENT',
+  ACTIVITY = 'ACTIVITY',
+  VIDEO = 'VIDEO',
+  IMAGE = 'IMAGE',
 }
 
 export class CreateSlideDto {
@@ -14,7 +15,7 @@ export class CreateSlideDto {
   type: SlideType;
 
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   title: string;
 
   @IsOptional()

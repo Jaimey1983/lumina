@@ -1,13 +1,14 @@
 import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 
 export class EvaluateResponseDto {
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   question: string;
 
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  @Transform(trimIfString)
   studentResponse: string;
 
   @IsOptional()

@@ -1,12 +1,22 @@
-import { IsString, MinLength, MaxLength, IsEnum, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { trimIfString } from '../../common/trim-if-string';
 import { CompetenceType, CompetenceScope } from '@prisma/client';
 
 export class CreatePerformanceIndicatorDto {
   @IsString()
   @MinLength(1)
   @MaxLength(500)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimIfString)
   statement: string;
 
   @IsEnum(CompetenceType)

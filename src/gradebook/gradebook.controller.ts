@@ -10,9 +10,10 @@ import {
   Body,
   Query,
   UseGuards,
-  Request,
   BadRequestException,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { GradebookService } from './gradebook.service';
 import { CreatePeriodDto } from './dto/create-period.dto';
 import { UpdatePeriodDto } from './dto/update-period.dto';
@@ -32,23 +33,22 @@ export class GradebookController {
   createPeriod(
     @Param('courseId') courseId: string,
     @Body() dto: CreatePeriodDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gradebookService.createPeriod(
       courseId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
   @Get('periods')
-  findPeriods(@Param('courseId') courseId: string, @Request() req) {
-    return this.gradebookService.findPeriods(
-      courseId,
-      req.user.id,
-      req.user.role,
-    );
+  findPeriods(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.gradebookService.findPeriods(courseId, user.id, user.role);
   }
 
   @Patch('periods/:periodId')
@@ -57,14 +57,14 @@ export class GradebookController {
     @Param('courseId') courseId: string,
     @Param('periodId') periodId: string,
     @Body() dto: UpdatePeriodDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gradebookService.updatePeriod(
       courseId,
       periodId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -74,13 +74,13 @@ export class GradebookController {
   removePeriod(
     @Param('courseId') courseId: string,
     @Param('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gradebookService.removePeriod(
       courseId,
       periodId,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -89,13 +89,13 @@ export class GradebookController {
   upsertGradeEntry(
     @Param('courseId') courseId: string,
     @Body() dto: CreateGradeEntryDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gradebookService.upsertGradeEntry(
       courseId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -105,14 +105,14 @@ export class GradebookController {
     @Param('courseId') courseId: string,
     @Param('entryId') entryId: string,
     @Body() dto: UpdateGradeEntryDto,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     return this.gradebookService.updateGradeEntry(
       courseId,
       entryId,
       dto,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 
@@ -120,7 +120,7 @@ export class GradebookController {
   getGradesView(
     @Param('courseId') courseId: string,
     @Query('periodId') periodId: string,
-    @Request() req,
+    @CurrentUser() user: JwtAuthUser,
   ) {
     if (!periodId?.trim()) {
       throw new BadRequestException(
@@ -130,8 +130,8 @@ export class GradebookController {
     return this.gradebookService.getGradesView(
       courseId,
       periodId.trim(),
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
   }
 }

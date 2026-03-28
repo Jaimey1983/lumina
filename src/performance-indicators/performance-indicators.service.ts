@@ -99,8 +99,7 @@ export class PerformanceIndicatorsService {
 
     const aspectSum = this.sumWeights(structure.aspects.map((a) => a.weight));
     const aspectsWeightsValid =
-      structure.aspects.length === 0 ||
-      Math.abs(aspectSum - 0.9) <= WEIGHT_EPS;
+      structure.aspects.length === 0 || Math.abs(aspectSum - 0.9) <= WEIGHT_EPS;
 
     return {
       ...structure,
@@ -127,7 +126,7 @@ export class PerformanceIndicatorsService {
 
     const currentSum = await this.sumAspectWeightsForStructure(structure.id);
     const nextSum = currentSum + dto.weight;
-    if (nextSum > 0.90 + WEIGHT_EPS) {
+    if (nextSum > 0.9 + WEIGHT_EPS) {
       throw new BadRequestException(
         'La suma de pesos de los aspectos no puede superar 0.90 (el 0.10 restante está reservado para autoevaluación y coevaluación)',
       );
@@ -176,7 +175,7 @@ export class PerformanceIndicatorsService {
       _sum: { weight: true },
     });
     const nextSum = (othersSum._sum.weight ?? 0) + newWeight;
-    if (nextSum > 0.90 + WEIGHT_EPS) {
+    if (nextSum > 0.9 + WEIGHT_EPS) {
       throw new BadRequestException(
         'La suma de pesos de los aspectos no puede superar 0.90 (el 0.10 restante está reservado para autoevaluación y coevaluación)',
       );
@@ -227,7 +226,9 @@ export class PerformanceIndicatorsService {
             );
           }
         }
-        await tx.performanceIndicator.deleteMany({ where: { achievementId: ach.id } });
+        await tx.performanceIndicator.deleteMany({
+          where: { achievementId: ach.id },
+        });
       }
       await tx.achievement.deleteMany({ where: { aspectId } });
       await tx.aspect.delete({ where: { id: aspectId } });
@@ -244,7 +245,11 @@ export class PerformanceIndicatorsService {
     userId: string,
     role: string,
   ) {
-    const achievement = await this.requireAchievement(achievementId, userId, role);
+    const achievement = await this.requireAchievement(
+      achievementId,
+      userId,
+      role,
+    );
     await this.courseAuth.assertStaffCanManageCourse(
       achievement.courseId,
       userId,
@@ -290,7 +295,11 @@ export class PerformanceIndicatorsService {
     userId: string,
     role: string,
   ) {
-    const achievement = await this.requireAchievement(achievementId, userId, role);
+    const achievement = await this.requireAchievement(
+      achievementId,
+      userId,
+      role,
+    );
     await this.courseAuth.assertStaffCanManageCourse(
       achievement.courseId,
       userId,
@@ -327,7 +336,9 @@ export class PerformanceIndicatorsService {
       where: { id: piId },
       data: {
         ...(dto.statement !== undefined && { statement: dto.statement }),
-        ...(dto.competenceScope !== undefined && { competenceScope: dto.competenceScope }),
+        ...(dto.competenceScope !== undefined && {
+          competenceScope: dto.competenceScope,
+        }),
         ...(dto.subject !== undefined && { subject: dto.subject }),
         ...(dto.weight !== undefined && { weight: dto.weight }),
       },
@@ -350,7 +361,11 @@ export class PerformanceIndicatorsService {
     userId: string,
     role: string,
   ) {
-    const achievement = await this.requireAchievement(achievementId, userId, role);
+    const achievement = await this.requireAchievement(
+      achievementId,
+      userId,
+      role,
+    );
     await this.courseAuth.assertStaffCanManageCourse(
       achievement.courseId,
       userId,
@@ -431,7 +446,11 @@ export class PerformanceIndicatorsService {
       select: { id: true, courseId: true, aspectId: true },
     });
     if (!achievement) throw new NotFoundException('Logro no encontrado');
-    await this.courseAuth.verifyCourseReadAccess(achievement.courseId, userId, role);
+    await this.courseAuth.verifyCourseReadAccess(
+      achievement.courseId,
+      userId,
+      role,
+    );
     return achievement;
   }
 
