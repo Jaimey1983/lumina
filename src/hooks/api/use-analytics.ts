@@ -19,7 +19,7 @@ export function useAnalytics() {
     queryKey: ['analytics'],
     queryFn: async () => {
       const { data } = await api.get<Analytics>('/analytics');
-      return data;
+      return data ?? { avgGrade: 0, totalMessages: 0, recentMessages: [] };
     },
   });
 }

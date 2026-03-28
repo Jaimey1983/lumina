@@ -19,7 +19,7 @@ export function useMyBadges() {
     queryKey: ['badges', 'my'],
     queryFn: async () => {
       const { data } = await api.get<BadgesResponse>('/badges/my');
-      return data;
+      return data ?? { badges: [], totalPoints: 0 };
     },
   });
 }

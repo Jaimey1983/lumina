@@ -20,7 +20,7 @@ export function useMyGrades() {
     queryKey: ['grades', 'my'],
     queryFn: async () => {
       const { data: response } = await api.get<PaginatedResponse<Grade>>('/grades/my');
-      return response.data;
+      return response.data ?? [];
     },
   });
 }

@@ -5,8 +5,9 @@ export interface Course {
   id: string;
   name: string;
   code: string;
-  status: string;
-  enrollmentCount: number;
+  isActive: boolean;
+  teacherId: string;
+  createdAt: string;
 }
 
 interface PaginatedResponse<T> {
@@ -19,7 +20,7 @@ export function useCourses() {
     queryKey: ['courses'],
     queryFn: async () => {
       const { data: response } = await api.get<PaginatedResponse<Course>>('/courses');
-      return response.data;
+      return response.data ?? [];
     },
   });
 }

@@ -18,7 +18,7 @@ export function useUsers() {
     queryKey: ['users'],
     queryFn: async () => {
       const { data: response } = await api.get<PaginatedResponse<ApiUser>>('/users');
-      return response.data;
+      return response.data ?? [];
     },
   });
 }

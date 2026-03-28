@@ -4,7 +4,8 @@
       "Bash(winget upgrade:*)",
       "Bash(find /c/Users/Jaime/proyectos/lumina-frontend/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json -o -name .env* \\\\\\))",
       "Bash(find /c/Users/Jaime/proyectos/lumina-frontend -maxdepth 2 -name .env* -o -name tsconfig.json -o -name tailwind.config.js -o -name next.config.js)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(find \"C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\" -type f -name \"*\")"
     ]
   }
 }

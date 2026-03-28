@@ -20,7 +20,7 @@ import {
 
 import { useAuth } from '@/hooks/use-auth';
 import { useCourses, type Course } from '@/hooks/api/use-courses';
-import { useClasses } from '@/hooks/api/use-classes';
+import { useClassesByCourses } from '@/hooks/api/use-classes';
 import { useAnalytics } from '@/hooks/api/use-analytics';
 import { useUsers } from '@/hooks/api/use-users';
 import { useMyGrades } from '@/hooks/api/use-grades';
@@ -59,12 +59,8 @@ function formatDate(dateStr: string) {
   });
 }
 
-function isActive(status: string) {
-  return status === 'active' || status === 'ACTIVE';
-}
-
 function isPublished(status: string) {
-  return status === 'published' || status === 'PUBLISHED';
+  return status?.toLowerCase() === 'published';
 }
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -144,19 +140,23 @@ function CoursesTable({ courses }: { courses: Course[] }) {
         ),
       },
       {
-        accessorKey: 'enrollmentCount',
-        header: 'Estudiantes',
-        cell: ({ row }) => <span>{row.original.enrollmentCount}</span>,
+        accessorKey: 'createdAt',
+        header: 'Creado',
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-xs">
+            {new Date(row.original.createdAt).toLocaleDateString('es-ES')}
+          </span>
+        ),
       },
       {
-        accessorKey: 'status',
+        accessorKey: 'isActive',
         header: 'Estado',
         cell: ({ row }) => (
           <Badge
-            variant={isActive(row.original.status) ? 'success' : 'secondary'}
+            variant={row.original.isActive ? 'success' : 'secondary'}
             appearance="light"
           >
-            {isActive(row.original.status) ? 'Activo' : row.original.status}
+            {row.original.isActive ? 'Activo' : 'Inactivo'}
           </Badge>
         ),
       },
@@ -221,15 +221,16 @@ function CoursesTable({ courses }: { courses: Course[] }) {
 
 function TeacherDashboard({ user }: { user: AuthUser }) {
   const coursesQuery = useCourses();
-  const classesQuery = useClasses();
+  const courses = coursesQuery.data ?? [];
+
+  const classesQuery = useClassesByCourses(courses.map((c) => c.id));
   const analyticsQuery = useAnalytics();
 
-  const courses = coursesQuery.data ?? [];
   const classes = classesQuery.data ?? [];
   const messages = analyticsQuery.data?.recentMessages ?? [];
 
-  const totalStudents = useMemo(
-    () => courses.reduce((acc, c) => acc + (c.enrollmentCount ?? 0), 0),
+  const activeCourses = useMemo(
+    () => courses.filter((c) => c.isActive).length,
     [courses],
   );
 
@@ -267,13 +268,13 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Cursos activos"
-          value={courses.filter((c) => isActive(c.status)).length}
+          value={activeCourses}
           icon={BookOpen}
           loading={coursesQuery.isLoading}
         />
         <StatCard
-          title="Estudiantes matriculados"
-          value={totalStudents}
+          title="Cursos totales"
+          value={courses.length}
           icon={Users}
           loading={coursesQuery.isLoading}
         />
@@ -394,12 +395,12 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
 
 function AdminDashboard({ user }: { user: AuthUser }) {
   const coursesQuery = useCourses();
-  const classesQuery = useClasses();
   const usersQuery = useUsers();
 
   const courses = coursesQuery.data ?? [];
-  const classes = classesQuery.data ?? [];
   const users = usersQuery.data ?? [];
+
+  const activeCourses = courses.filter((c) => c.isActive).length;
 
   return (
     <div className="container py-6 space-y-6">
@@ -412,7 +413,6 @@ function AdminDashboard({ user }: { user: AuthUser }) {
 
       {coursesQuery.isError && <ErrorAlert message="No se pudieron cargar los cursos." />}
       {usersQuery.isError && <ErrorAlert message="No se pudieron cargar los usuarios." />}
-      {classesQuery.isError && <ErrorAlert message="No se pudieron cargar las clases." />}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -429,10 +429,10 @@ function AdminDashboard({ user }: { user: AuthUser }) {
           loading={coursesQuery.isLoading}
         />
         <StatCard
-          title="Total clases"
-          value={classes.length}
+          title="Cursos activos"
+          value={activeCourses}
           icon={LayoutGrid}
-          loading={classesQuery.isLoading}
+          loading={coursesQuery.isLoading}
         />
       </div>
 
