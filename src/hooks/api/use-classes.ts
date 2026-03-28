@@ -4,14 +4,25 @@ import { api } from '@/lib/api';
 export interface Class {
   id: string;
   title: string;
-  courseId: string;
+  description?: string | null;
+  code?: string;
+  courseId?: string;
   status: string;
   createdAt: string;
+  _count?: { slides: number };
 }
 
-interface PaginatedResponse<T> {
-  data: T[];
-  meta: { total: number; page: number; limit: number; totalPages: number };
+/**
+ * GET /classes devuelve un array plano (no paginado).
+ * Si el backend cambia a paginación, la función de normalización
+ * acepta ambos formatos.
+ */
+function normalizeClasses(data: unknown): Class[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown }).data)) {
+    return (data as { data: Class[] }).data;
+  }
+  return [];
 }
 
 export function useClasses(courseId?: string) {
@@ -19,10 +30,10 @@ export function useClasses(courseId?: string) {
     queryKey: courseId ? ['classes', courseId] : ['classes'],
     enabled: !!courseId,
     queryFn: async () => {
-      const { data: response } = await api.get<PaginatedResponse<Class>>('/classes', {
+      const { data } = await api.get<Class[]>('/classes', {
         params: { courseId },
       });
-      return response.data ?? [];
+      return normalizeClasses(data);
     },
   });
 }
@@ -32,10 +43,10 @@ export function useClassesByCourses(courseIds: string[]) {
     queries: courseIds.map((courseId) => ({
       queryKey: ['classes', courseId],
       queryFn: async () => {
-        const { data: response } = await api.get<PaginatedResponse<Class>>('/classes', {
+        const { data } = await api.get<Class[]>('/classes', {
           params: { courseId },
         });
-        return response.data ?? [];
+        return normalizeClasses(data);
       },
     })),
     combine: (results) => ({
@@ -105,7 +116,7 @@ export function usePublishClass(courseId: string) {
       const { data } = await api.post<Class>(`/classes/${classId}/publish`);
       return data;
     },
-    onSuccess: (_data, classId) => {
+    onSuccess: (_published, classId) => {
       queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
       queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
     },
