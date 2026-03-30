@@ -550,11 +550,14 @@ function GradesTab({ courseId }: { courseId: string }) {
     queryKey: ['grade-calculation', courseId, selectedPeriodId],
     enabled: !!selectedPeriodId,
     queryFn: async () => {
-      const { data } = await api.get<GradeEntry[]>(
+      const { data } = await api.get(
         `/courses/${courseId}/grade-calculation`,
         { params: { periodId: selectedPeriodId } },
       );
-      return data ?? [];
+      // Backend returns { data: [...], meta: {} } or plain array
+      if (Array.isArray(data)) return data as GradeEntry[];
+      const inner = (data as { data?: unknown })?.data;
+      return Array.isArray(inner) ? (inner as GradeEntry[]) : [];
     },
   });
 

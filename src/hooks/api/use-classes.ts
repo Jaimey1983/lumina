@@ -143,3 +143,16 @@ export function useCreateSlide(classId: string) {
     },
   });
 }
+
+export function useUpdateSlide(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ slideId, content }: { slideId: string; content: unknown }) => {
+      const { data } = await api.patch(`/classes/${classId}/slides/${slideId}`, { content });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}

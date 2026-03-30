@@ -1,10 +1,6 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   AlertCircle,
   ArrowLeft,
@@ -12,15 +8,15 @@ import {
   GraduationCap,
   Image,
   LayoutList,
+  Pencil,
   Play,
-  Plus,
   Send,
   Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClass } from '@/hooks/api/use-class';
-import { usePublishClass, useCreateSlide, type CreateSlideInput } from '@/hooks/api/use-classes';
+import { usePublishClass } from '@/hooks/api/use-classes';
 
 import {
   Card,
@@ -35,23 +31,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -96,139 +75,14 @@ const SLIDE_LABELS: Record<string, string> = {
   IMAGE: 'Imagen',
 };
 
-// ─── Add Slide Modal ──────────────────────────────────────────────────────────
-
-const SLIDE_TYPES = ['COVER', 'CONTENT', 'ACTIVITY', 'VIDEO', 'IMAGE'] as const;
-
-const slideSchema = z.object({
-  type: z.enum(['COVER', 'CONTENT', 'ACTIVITY', 'VIDEO', 'IMAGE']),
-  title: z.string().min(1, 'El título es obligatorio'),
-  content: z.string().optional(),
-});
-type SlideFormData = z.infer<typeof slideSchema>;
-
-function AddSlideModal({
-  classId,
-  open,
-  onOpenChange,
-}: {
-  classId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const createSlide = useCreateSlide(classId);
-
-  const form = useForm<SlideFormData>({
-    resolver: zodResolver(slideSchema),
-    defaultValues: { type: 'CONTENT', title: '', content: '' },
-  });
-
-  function onSubmit(data: SlideFormData) {
-    const input: CreateSlideInput = {
-      type: data.type,
-      title: data.title,
-      ...(data.content?.trim() ? { content: data.content } : {}),
-    };
-    createSlide.mutate(input, {
-      onSuccess: () => {
-        toast.success('Slide agregado');
-        form.reset({ type: 'CONTENT', title: '', content: '' });
-        onOpenChange(false);
-      },
-      onError: () => toast.error('Error al agregar el slide'),
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Agregar slide</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogBody className="space-y-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-8.5 w-full rounded-md border border-input bg-background px-3 text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground"
-                        {...field}
-                      >
-                        {SLIDE_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {SLIDE_LABELS[t]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Título del slide" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Contenido{' '}
-                      <span className="font-normal text-muted-foreground">(opcional, JSON)</span>
-                    </FormLabel>
-                    <FormControl>
-                      <textarea
-                        className="flex w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-[0.8125rem] font-mono shadow-xs placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-60 resize-none"
-                        placeholder='{"url": "..."}'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </DialogBody>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createSlide.isPending}>
-                {createSlide.isPending ? 'Agregando...' : 'Agregar slide'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ─── Slides List ──────────────────────────────────────────────────────────────
 
 function SlidesList({
   classId,
   slides,
-  onAddSlide,
 }: {
   classId: string;
   slides: NonNullable<ReturnType<typeof useClass>['data']>['slides'];
-  onAddSlide: () => void;
 }) {
   if (!slides || slides.length === 0) {
     return (
@@ -239,12 +93,14 @@ function SlidesList({
         <div>
           <p className="font-medium">No hay slides aún</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Agrega el primer slide a esta clase.
+            Usa el editor para crear y diseñar los slides de esta clase.
           </p>
         </div>
-        <Button size="sm" onClick={onAddSlide}>
-          <Plus className="size-4" />
-          Agregar slide
+        <Button size="sm" asChild>
+          <Link href={`/classes/${classId}/editor`}>
+            <Pencil className="size-4" />
+            Abrir editor
+          </Link>
         </Button>
       </div>
     );
@@ -282,7 +138,6 @@ function SlidesList({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function ClassDetailClient({ id }: { id: string }) {
-  const [slideModalOpen, setSlideModalOpen] = useState(false);
   const { data: cls, isLoading, isError } = useClass(id);
   const publishMutation = usePublishClass(cls?.courseId ?? '');
 
@@ -334,6 +189,14 @@ export function ClassDetailClient({ id }: { id: string }) {
             </>
           )}
         </div>
+        {!isLoading && (
+          <Button size="sm" asChild>
+            <Link href={`/classes/${id}/editor`}>
+              <Pencil className="size-4" />
+              Abrir editor
+            </Link>
+          </Button>
+        )}
         {isDraft && !isLoading && (
           <Button
             variant="outline"
@@ -393,16 +256,18 @@ export function ClassDetailClient({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      {/* Slides */}
+      {/* Slides — read-only list, managed from editor */}
       <Card>
         <CardHeader>
           <CardHeading>
             <CardTitle>Slides</CardTitle>
           </CardHeading>
           <CardToolbar>
-            <Button size="sm" onClick={() => setSlideModalOpen(true)}>
-              <Plus className="size-4" />
-              Agregar slide
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/classes/${id}/editor`}>
+                <Pencil className="size-4" />
+                Gestionar en editor
+              </Link>
             </Button>
           </CardToolbar>
         </CardHeader>
@@ -414,20 +279,10 @@ export function ClassDetailClient({ id }: { id: string }) {
               ))}
             </div>
           ) : (
-            <SlidesList
-              classId={id}
-              slides={cls?.slides}
-              onAddSlide={() => setSlideModalOpen(true)}
-            />
+            <SlidesList classId={id} slides={cls?.slides} />
           )}
         </CardContent>
       </Card>
-
-      <AddSlideModal
-        classId={id}
-        open={slideModalOpen}
-        onOpenChange={setSlideModalOpen}
-      />
     </div>
   );
 }

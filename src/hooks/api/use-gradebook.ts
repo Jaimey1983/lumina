@@ -49,11 +49,16 @@ export function useGradebook(courseId: string, periodId: string) {
     queryKey: ['gradebook', courseId, periodId],
     enabled: !!courseId && !!periodId,
     queryFn: async () => {
-      const { data } = await api.get<GradebookResponse>(
+      const { data } = await api.get(
         `/courses/${courseId}/grades`,
         { params: { periodId } },
       );
-      return data;
+      // Backend may wrap response in { data: GradebookResponse, meta: {} }
+      const payload = (data as { data?: unknown })?.data;
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        return payload as GradebookResponse;
+      }
+      return data as GradebookResponse;
     },
   });
 }

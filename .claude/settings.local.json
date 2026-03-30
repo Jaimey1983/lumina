@@ -7,7 +7,11 @@
       "Bash(pnpm run:*)",
       "Bash(find \"C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\" -type f -name \"*\")",
       "Bash(ls -la /c/Users/Jaime/proyectos/lumina/lumina-frontend/.env*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\(''''packageManager'''',''''''''\\)\\)\")",
+      "Bash(pnpm add:*)"
     ]
   }
 }

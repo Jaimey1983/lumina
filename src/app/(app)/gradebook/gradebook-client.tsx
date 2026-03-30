@@ -340,8 +340,8 @@ function GradeCalculationPanel({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.studentId} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
+          {rows.map((row, index) => (
+            <tr key={`grade-${row.studentId ?? 'unknown'}-${index}`} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
               <td className="px-4 py-3 font-medium">{row.studentName}</td>
               <td className="px-4 py-3 text-center font-semibold">
                 {row.finalGrade !== null ? row.finalGrade : '—'}
