@@ -154,7 +154,7 @@ function AchievementModal({
     resolver: zodResolver(achievementSchema),
     defaultValues: {
       code: achievement?.code ?? '',
-      statement: achievement?.statement ?? '',
+      statement: achievement?.statement ?? achievement?.name ?? '',
       periodId: achievement?.periodId ?? '',
       scope: achievement?.scope ?? 'SPECIFIC',
     },
@@ -673,10 +673,20 @@ function AchievementRow({
         ) : (
           <ChevronRight className="size-4 text-muted-foreground shrink-0 mt-0.5" />
         )}
-        <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5 w-10">
-          {achievement.code}
-        </span>
-        <p className="text-sm flex-1 leading-snug">{achievement.statement}</p>
+        {(() => {
+          const displayText = achievement.statement ?? achievement.name ?? '—';
+          const showCode = achievement.code && achievement.code !== displayText;
+          return (
+            <>
+              {showCode && (
+                <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">
+                  {achievement.code}
+                </span>
+              )}
+              <p className="text-sm flex-1 leading-snug">{displayText}</p>
+            </>
+          );
+        })()}
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           <Badge variant="secondary" appearance="light" size="sm">
             {SCOPE_LABEL[achievement.scope] ?? achievement.scope}

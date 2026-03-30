@@ -22,7 +22,9 @@ export interface PerformanceIndicator {
 export interface Achievement {
   id: string;
   code: string;
-  statement: string;
+  /** Backend may return 'statement' or 'name' as the display text */
+  statement?: string;
+  name?: string;
   periodId?: string | null;
   scope: 'SPECIFIC' | 'SUBJECT' | 'GENERAL';
   aspectId: string;
