@@ -14,6 +14,7 @@ import {
   Calendar,
   GraduationCap,
   LayoutGrid,
+  ListTree,
   Plus,
   Search,
   Users,
@@ -26,6 +27,7 @@ import { useClasses, type Class } from '@/hooks/api/use-classes';
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import { useUsers } from '@/hooks/api/use-users';
 import { api } from '@/lib/api';
+import { GradebookStructureTab } from './gradebook-structure-tab';
 
 import { Card, CardContent, CardHeader, CardHeading, CardTable, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -696,6 +698,10 @@ export function CourseDetailClient({ id }: { id: string }) {
             <GraduationCap />
             Calificaciones
           </TabsTrigger>
+          <TabsTrigger value="structure">
+            <ListTree />
+            Estructura
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">
@@ -709,6 +715,9 @@ export function CourseDetailClient({ id }: { id: string }) {
         </TabsContent>
         <TabsContent value="grades">
           <GradesTab courseId={id} />
+        </TabsContent>
+        <TabsContent value="structure">
+          <GradebookStructureTab courseId={id} />
         </TabsContent>
       </Tabs>
     </div>
