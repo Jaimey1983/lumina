@@ -146,7 +146,7 @@ export function WordRotate({
 
   useEffect(() => {
     if (!shouldStart) return;
-    setHasAnimated(true);
+    queueMicrotask(() => setHasAnimated(true));
     const interval = setInterval(() => {
       setShow(false);
       setTimeout(() => {

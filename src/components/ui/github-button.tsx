@@ -162,18 +162,20 @@ function GithubButton({
 
   // Reset animation state when targetStars changes
   useEffect(() => {
-    setHasAnimated(false);
-    setCurrentStars(initialStars);
+    queueMicrotask(() => {
+      setHasAnimated(false);
+      setCurrentStars(initialStars);
+    });
   }, [targetStars, initialStars]);
 
   // Auto-start animation or use in-view trigger
   useEffect(() => {
     if (useInViewTrigger) {
       if (isInView && !hasAnimated) {
-        startAnimation();
+        queueMicrotask(() => startAnimation());
       }
     } else if (autoAnimate && !hasAnimated) {
-      startAnimation();
+      queueMicrotask(() => startAnimation());
     }
   }, [autoAnimate, useInViewTrigger, isInView, hasAnimated, startAnimation]);
 

@@ -270,7 +270,7 @@ export function TextReveal({
 
   useEffect(() => {
     if (shouldAnimate && !hasAnimated) {
-      setHasAnimated(true);
+      queueMicrotask(() => setHasAnimated(true));
     }
   }, [shouldAnimate, hasAnimated]);
 

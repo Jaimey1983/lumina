@@ -7,12 +7,14 @@ export function useViewport(): UseViewport {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    setDimensions([window.innerHeight, window.innerWidth]);
-
     const handleResize = (): void => {
       setDimensions([window.innerHeight, window.innerWidth]);
     };
+
+    queueMicrotask(() => {
+      setIsClient(true);
+      setDimensions([window.innerHeight, window.innerWidth]);
+    });
 
     window.addEventListener('resize', handleResize);
 

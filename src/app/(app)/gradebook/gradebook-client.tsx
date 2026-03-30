@@ -372,34 +372,22 @@ function GradeCalculationPanel({
 export function GradebookClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
-  const [selectedCourseId, setSelectedCourseId] = useState('');
-  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const [coursePick, setCoursePick] = useState<string | null>(null);
+  const [periodPick, setPeriodPick] = useState<string | null>(null);
 
+  const selectedCourseId = coursePick ?? courses[0]?.id ?? '';
   const { data: periods = [], isLoading: periodsLoading } = useCoursePeriods(selectedCourseId);
+
+  const selectedPeriodId =
+    periodPick != null && periods.some((p) => p.id === periodPick)
+      ? periodPick
+      : (periods[0]?.id ?? '');
 
   const {
     data: gradebook,
     isLoading: gradebookLoading,
     isError: gradebookError,
   } = useGradebook(selectedCourseId, selectedPeriodId);
-
-  // Auto-select first course
-  useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
-
-  // Auto-select first period when periods load or course changes
-  useEffect(() => {
-    setSelectedPeriodId('');
-  }, [selectedCourseId]);
-
-  useEffect(() => {
-    if (!selectedPeriodId && periods.length > 0) {
-      setSelectedPeriodId(periods[0].id);
-    }
-  }, [periods, selectedPeriodId]);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -447,7 +435,7 @@ export function GradebookClient() {
             <select
               id="course-select"
               value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
+              onChange={(e) => setCoursePick(e.target.value)}
               className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground min-w-[14rem]"
             >
               <option value="" disabled>
@@ -476,7 +464,7 @@ export function GradebookClient() {
             <select
               id="period-select"
               value={selectedPeriodId}
-              onChange={(e) => setSelectedPeriodId(e.target.value)}
+              onChange={(e) => setPeriodPick(e.target.value)}
               className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground min-w-[11rem]"
             >
               <option value="" disabled>

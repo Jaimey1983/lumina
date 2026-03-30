@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
@@ -544,7 +544,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
   const updateSlide = useUpdateSlide(classId);
 
-  const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
+  const [slidePick, setSlidePick] = useState<string | null>(null);
   const [selectedProps, setSelectedProps] = useState<SelectedObjectProps | null>(null);
   const [showImageOverlay, setShowImageOverlay] = useState(false);
   const [showAddSlide, setShowAddSlide] = useState(false);
@@ -554,21 +554,24 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const apiRef = useRef<CanvasEditorAPI | null>(null);
   const selectedSlideIdRef = useRef<string | null>(null);
 
+  const slides = cls?.slides;
+  const sortedSlides = useMemo(() => {
+    if (!slides?.length) return [];
+    return [...slides].sort((a, b) => a.order - b.order);
+  }, [slides]);
+
+  const selectedSlideId = useMemo(() => {
+    if (sortedSlides.length === 0) return null;
+    if (slidePick && sortedSlides.some((s) => s.id === slidePick)) return slidePick;
+    return sortedSlides[0]!.id;
+  }, [sortedSlides, slidePick]);
+
   // Keep ref in sync
   useEffect(() => {
     selectedSlideIdRef.current = selectedSlideId;
   }, [selectedSlideId]);
 
-  // Select first slide once class loads
-  useEffect(() => {
-    if (cls?.slides?.length && !selectedSlideId) {
-      const sorted = [...cls.slides].sort((a, b) => a.order - b.order);
-      setSelectedSlideId(sorted[0].id);
-    }
-  }, [cls, selectedSlideId]);
-
   const selectedSlide = cls?.slides?.find((s) => s.id === selectedSlideId);
-  const sortedSlides = cls?.slides ? [...cls.slides].sort((a, b) => a.order - b.order) : [];
 
   // ── Save current slide ──────────────────────────────────────────────────────
   const handleSave = useCallback(
@@ -707,7 +710,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               return (
                 <button
                   key={slide.id}
-                  onClick={() => setSelectedSlideId(slide.id)}
+                  onClick={() => setSlidePick(slide.id)}
                   className={`w-full text-left rounded-md overflow-hidden border transition-all ${
                     isActive
                       ? 'border-primary ring-2 ring-primary/20'
@@ -786,7 +789,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         classId={classId}
         open={showAddSlide}
         onOpenChange={setShowAddSlide}
-        onCreated={(id) => setSelectedSlideId(id)}
+        onCreated={(id) => setSlidePick(id)}
       />
 
       {showPreview && sortedSlides.length > 0 && (

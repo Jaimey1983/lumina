@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { HTMLMotionProps, motion, useMotionValue, useSpring } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, seeded01 } from '@/lib/utils';
 
 type HoverBackgroundProps = HTMLMotionProps<'div'> & {
   objectCount?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
@@ -52,19 +52,19 @@ function HoverBackground({ className, objectCount = 12, children, colors = {}, .
   const animatedObjects = React.useMemo(
     () =>
       Array.from({ length: objectCount }, (_, i) => {
-        const shape = Math.random() > 0.5 ? 'circle' : 'square';
+        const shape = seeded01(i * 19 + 1) > 0.5 ? 'circle' : 'square';
         return {
           id: i,
-          x: Math.random() * 90 + 5, // 5-95% to avoid edges
-          y: Math.random() * 90 + 5,
-          size: Math.random() * 60 + 20, // 20-80px
+          x: seeded01(i * 19 + 2) * 90 + 5, // 5-95% to avoid edges
+          y: seeded01(i * 19 + 3) * 90 + 5,
+          size: seeded01(i * 19 + 4) * 60 + 20, // 20-80px
           color: objects[i % objects.length],
-          delay: Math.random() * 2,
+          delay: seeded01(i * 19 + 5) * 2,
           shape,
-          floatDirection: Math.random() > 0.5 ? 1 : -1,
-          breathDuration: Math.random() * 3 + 3, // 3-6 seconds
-          parallaxStrength: Math.random() * 0.5 + 0.3, // 0.3-0.8 for more varied parallax depth
-          baseRotation: Math.random() * 360, // Random starting rotation offset
+          floatDirection: seeded01(i * 19 + 6) > 0.5 ? 1 : -1,
+          breathDuration: seeded01(i * 19 + 7) * 3 + 3, // 3-6 seconds
+          parallaxStrength: seeded01(i * 19 + 8) * 0.5 + 0.3, // 0.3-0.8 for more varied parallax depth
+          baseRotation: seeded01(i * 19 + 9) * 360, // Random starting rotation offset
         };
       }),
     [objectCount, objects],
@@ -183,8 +183,8 @@ function HoverBackground({ className, objectCount = 12, children, colors = {}, .
               key={`particle-${i}`}
               className="absolute w-1 h-1 bg-white/60 rounded-full"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                left: `${seeded01(i * 23 + 11) * 100}%`,
+                top: `${seeded01(i * 23 + 12) * 100}%`,
               }}
               initial={{ opacity: 0, scale: 0 }}
               animate={{
@@ -194,7 +194,7 @@ function HoverBackground({ className, objectCount = 12, children, colors = {}, .
               }}
               transition={{
                 duration: 3,
-                delay: Math.random() * 2,
+                delay: seeded01(i * 23 + 13) * 2,
                 repeat: Infinity,
                 ease: 'easeOut',
               }}

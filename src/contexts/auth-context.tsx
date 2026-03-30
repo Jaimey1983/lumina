@@ -53,26 +53,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (!storedToken) {
-      setIsLoading(false);
-      return;
-    }
+    queueMicrotask(() => {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) {
+        setIsLoading(false);
+        return;
+      }
 
-    setToken(storedToken);
-    api
-      .get<unknown>('/auth/me', {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      })
-      .then(({ data }) => {
-        setUser(normalizeUser(data));
-      })
-      .catch(() => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-      })
-      .finally(() => setIsLoading(false));
+      setToken(storedToken);
+      api
+        .get<unknown>('/auth/me', {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        })
+        .then(({ data }) => {
+          setUser(normalizeUser(data));
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        })
+        .finally(() => setIsLoading(false));
+    });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

@@ -241,7 +241,7 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
       canvas.dispose();
       fabricRef.current = null;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Load slide content when it changes ─────────────────────────────────────
   useEffect(() => {

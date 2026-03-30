@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { HTMLMotionProps, motion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, seeded01 } from '@/lib/utils';
 
 type GridSize = '4:4' | '5:5' | '6:6' | '6:8' | '8:8' | '8:12' | '10:10' | '12:12' | '12:16' | '16:16';
 
@@ -66,8 +66,8 @@ function GridBackground({
   const animatedBeams = React.useMemo(
     () =>
       Array.from({ length: Math.min(count, 12) }, (_, i) => {
-        const direction = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-        const startPosition = Math.random() > 0.5 ? 'start' : 'end';
+        const direction = seeded01(i * 17 + 1) > 0.5 ? 'horizontal' : 'vertical';
+        const startPosition = seeded01(i * 17 + 2) > 0.5 ? 'start' : 'end';
 
         return {
           id: i,
@@ -78,10 +78,11 @@ function GridBackground({
           // For vertical beams: choose a column index (1 to cols-1) - exclude edges
           gridLine:
             direction === 'horizontal'
-              ? Math.floor(Math.random() * (rows - 1)) + 1
-              : Math.floor(Math.random() * (cols - 1)) + 1,
-          delay: Math.random() * 2,
-          duration: speed + Math.random() * 2,
+              ? Math.floor(seeded01(i * 17 + 3) * Math.max(rows - 1, 1)) + 1
+              : Math.floor(seeded01(i * 17 + 4) * Math.max(cols - 1, 1)) + 1,
+          delay: seeded01(i * 17 + 5) * 2,
+          duration: speed + seeded01(i * 17 + 6) * 2,
+          repeatDelay: seeded01(i * 17 + 7) * 3 + 2,
         };
       }),
     [count, beamColors, speed, cols, rows],
@@ -175,7 +176,7 @@ function GridBackground({
               duration: beam.duration,
               delay: beam.delay,
               repeat: Infinity,
-              repeatDelay: Math.random() * 3 + 2, // 2-5s pause between repeats
+              repeatDelay: beam.repeatDelay,
               ease: 'linear',
               times: [0, 0.1, 0.9, 1], // Quick fade in, maintain, quick fade out
             }}

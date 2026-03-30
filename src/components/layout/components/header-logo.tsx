@@ -19,9 +19,8 @@ export function HeaderLogo() {
   const { isMobile } = useLayout();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Close sheet when route changes
   useEffect(() => {
-    setIsSheetOpen(false);
+    queueMicrotask(() => setIsSheetOpen(false));
   }, [pathname]);
 
   return (

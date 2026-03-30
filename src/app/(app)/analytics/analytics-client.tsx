@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -490,29 +490,16 @@ function GradeDistributionSection({
 
 export function AnalyticsClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
-  const [selectedCourseId, setSelectedCourseId] = useState('');
-  const [distributionPeriodId, setDistributionPeriodId] = useState('');
+  const [coursePick, setCoursePick] = useState<string | null>(null);
+  const [distributionPeriodPick, setDistributionPeriodPick] = useState<string | null>(null);
 
+  const selectedCourseId = coursePick ?? courses[0]?.id ?? '';
   const { data: periods = [], isLoading: periodsLoading } = useCoursePeriods(selectedCourseId);
 
-  // Auto-select first course
-  useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
-
-  // Reset period when course changes
-  useEffect(() => {
-    setDistributionPeriodId('');
-  }, [selectedCourseId]);
-
-  // Auto-select first period for distribution chart
-  useEffect(() => {
-    if (!distributionPeriodId && periods.length > 0) {
-      setDistributionPeriodId(periods[0].id);
-    }
-  }, [periods, distributionPeriodId]);
+  const distributionPeriodId =
+    distributionPeriodPick != null && periods.some((p) => p.id === distributionPeriodPick)
+      ? distributionPeriodPick
+      : (periods[0]?.id ?? '');
 
   return (
     <div className="container py-6 space-y-6">
@@ -538,7 +525,7 @@ export function AnalyticsClient() {
             <select
               id="course-select"
               value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
+              onChange={(e) => setCoursePick(e.target.value)}
               className={`${SELECT_CLS} min-w-[14rem]`}
             >
               <option value="" disabled>Selecciona un curso</option>
@@ -580,7 +567,7 @@ export function AnalyticsClient() {
             periodId={distributionPeriodId}
             periods={periods}
             periodsLoading={periodsLoading}
-            onPeriodChange={setDistributionPeriodId}
+            onPeriodChange={setDistributionPeriodPick}
           />
         </div>
       )}

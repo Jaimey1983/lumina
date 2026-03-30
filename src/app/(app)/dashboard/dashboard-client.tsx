@@ -221,12 +221,12 @@ function CoursesTable({ courses }: { courses: Course[] }) {
 
 function TeacherDashboard({ user }: { user: AuthUser }) {
   const coursesQuery = useCourses();
-  const courses = coursesQuery.data ?? [];
+  const courses = useMemo(() => coursesQuery.data ?? [], [coursesQuery.data]);
 
   const classesQuery = useClassesByCourses(courses.map((c) => c.id));
   const analyticsQuery = useAnalytics();
 
-  const classes = classesQuery.data ?? [];
+  const classes = useMemo(() => classesQuery.data ?? [], [classesQuery.data]);
   const messages = analyticsQuery.data?.recentMessages ?? [];
 
   const activeCourses = useMemo(
@@ -474,8 +474,8 @@ function StudentDashboard({ user }: { user: AuthUser }) {
   const gradesQuery = useMyGrades();
   const badgesQuery = useMyBadges();
 
-  const courses = coursesQuery.data ?? [];
-  const grades = gradesQuery.data ?? [];
+  const courses = useMemo(() => coursesQuery.data ?? [], [coursesQuery.data]);
+  const grades = useMemo(() => gradesQuery.data ?? [], [gradesQuery.data]);
   const badgesData = badgesQuery.data;
 
   const recentGrades = useMemo(

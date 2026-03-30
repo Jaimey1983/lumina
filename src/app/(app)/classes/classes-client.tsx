@@ -433,7 +433,8 @@ function ClassesTable({
 export function ClassesClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
-  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [coursePick, setCoursePick] = useState<string | null>(null);
+  const selectedCourseId = coursePick ?? courses[0]?.id ?? '';
   const [formOpen, setFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; cls: Class | null }>({
@@ -446,13 +447,6 @@ export function ClassesClient() {
     isLoading: classesLoading,
     isError: classesError,
   } = useClasses(selectedCourseId);
-
-  // Auto-select first course when loaded
-  useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0].id);
-    }
-  }, [courses, selectedCourseId]);
 
   function handleEdit(cls: Class) {
     setEditingClass(cls);
@@ -501,7 +495,7 @@ export function ClassesClient() {
           <select
             id="course-select"
             value={selectedCourseId}
-            onChange={(e) => setSelectedCourseId(e.target.value)}
+            onChange={(e) => setCoursePick(e.target.value)}
             className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground min-w-[14rem]"
           >
             <option value="" disabled>
