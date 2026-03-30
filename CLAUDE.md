@@ -338,11 +338,52 @@ interface UserBadge { id: string; name: string; description: string; points: num
 // queryKey: ['badges', 'my']
 ```
 
-### `useUsers()` — `use-users.ts`
+### `useUsers()` / `useCreateUser()` / `useUpdateUser(userId)` / `useToggleUserStatus()` — `use-users.ts`
 ```typescript
-// GET /users → PaginatedResponse<ApiUser>
-interface ApiUser { id: string; name: string; email: string; role: string; }
+// GET /users → PaginatedResponse<ApiUser> | ApiUser[]
+interface ApiUser { id: string; name: string; lastName?: string; email: string; role: string; institution?: string; isActive?: boolean; createdAt?: string; }
 // queryKey: ['users']
+// useCreateUser → POST /auth/register — invalida ['users']
+// useUpdateUser(userId) → PATCH /users/:id — invalida ['users']
+// useToggleUserStatus → PATCH /users/:id { isActive } — invalida ['users']
+```
+
+### `useGradebook(courseId, periodId)` / `useCreateGradeEntry` / `useUpdateGradeEntry` — `use-gradebook.ts`
+```typescript
+// GET /courses/:courseId/grades?periodId= → GradebookResponse
+interface GradebookResponse { activities: GradebookActivity[]; students: GradebookStudent[]; entries: GradebookEntry[]; }
+// POST /courses/:courseId/grade-entries — invalida ['gradebook', courseId, periodId]
+// PATCH /courses/:courseId/grade-entries/:entryId — invalida ['gradebook', courseId, periodId]
+```
+
+### `useGradeCalculation(courseId, periodId)` — `use-grade-calculation.ts`
+```typescript
+// GET /courses/:courseId/grade-calculation?periodId= → GradeCalculationRow[]
+interface GradeCalculationRow { studentId: string; studentName: string; finalGrade: number | null; isComplete: boolean; }
+// queryKey: ['grade-calculation', courseId, periodId]
+```
+
+### `useCourseSummary` / `useStudentProgress` / `useActivityRanking` / `useStudentEngagement` / `useGradeDistribution` — `use-analytics-detail.ts`
+```typescript
+// GET /courses/:courseId/analytics/summary → CourseSummary
+// GET /courses/:courseId/analytics/students → StudentProgress[]
+// GET /courses/:courseId/analytics/activities → ActivityRanking[]
+// GET /courses/:courseId/analytics/engagement → StudentEngagement[]
+// GET /courses/:courseId/reports/distribution?periodId= → GradeDistributionItem[]
+// queryKey: ['analytics', courseId, 'summary|students|activities|engagement|distribution']
+```
+
+### `useAtRiskStudents(courseId)` — `use-performance.ts`
+```typescript
+// GET /courses/:courseId/performance/at-risk → AtRiskStudent[]
+interface AtRiskStudent { studentId: string; studentName: string; avgGrade: number|null; completionRate: number; reasons: string[]; }
+// queryKey: ['performance', courseId, 'at-risk']
+```
+
+### `useUpdateProfile(userId)` / `useChangePassword()` — `use-profile.ts`
+```typescript
+// PATCH /users/:id → perfil actualizado
+// PATCH /auth/change-password → cambio de contraseña
 ```
 
 ### `useAnalytics()` — `use-analytics.ts`
@@ -392,32 +433,26 @@ Definido en `src/config/layout-11.config.tsx`:
 
 ---
 
-## Estado actual y próximos pasos
+## Estado actual
 
 ### Implementado
 
-- Autenticación completa: login, logout, guard de rutas, persistencia de token
-- Dashboard adaptativo para los tres roles (Admin, Teacher, Student)
+- Autenticación completa: login, logout, guard de rutas, persistencia de token, `updateUser` en contexto
+- Dashboard adaptativo para los tres roles (ADMIN, TEACHER, STUDENT)
 - Lista y detalle de cursos con estudiantes asociados
 - Módulo completo de clases: lista con selector de curso, crear/editar/eliminar/publicar clases, detalle de clase con slides, modal agregar slide
-- Visualización de calificaciones del estudiante
-- Visualización de badges/puntos del estudiante
-- Analytics con métricas para el teacher (promedio de notas, mensajes recientes)
-- Gestión de usuarios (página de admin, datos vía API)
+- **Gradebook** (`/gradebook`): selector curso + período, tabla libro de notas con celdas clicables, modal ingresar/editar nota (RHF + Zod), panel de notas finales
+- **Analytics** (`/analytics`): resumen del curso (stat cards), progreso de estudiantes, ranking de actividades, engagement, estudiantes en riesgo, distribución de notas (Recharts)
+- **Perfil** (`/profile`): info personal con avatar/iniciales, modal editar perfil, cambio de contraseña, info de cuenta, estadísticas del docente
+- **Usuarios** (`/users`): tabla completa con búsqueda, modal crear (POST /auth/register), modal editar (PATCH /users/:id), activar/desactivar usuario — solo visible para ADMIN/SUPERADMIN
+- Mutaciones con `useMutation` en clases, gradebook, usuarios y perfil
 - Skeleton loaders y estados de error en todos los componentes de datos
 - Librería de 65+ componentes UI (tablas, formularios, modales, animaciones, etc.)
 - Sistema de temas claro/oscuro
-
-### Páginas pendientes de implementar (rutas creadas, sin contenido real)
-
-- `/gradebook` — la página existe pero el contenido interactivo no está desarrollado
-- `/analytics` — la página existe pero el contenido interactivo no está desarrollado
-- `/profile` — la página existe pero el contenido interactivo no está desarrollado
+- Roles en MAYÚSCULAS: `ADMIN`, `SUPERADMIN`, `TEACHER`, `STUDENT` (el backend retorna mayúsculas)
 
 ### Pendiente
 
-- Formularios de creación/edición (cursos, clases, usuarios) — actualmente solo se visualiza
-- Mutaciones con `useMutation` (POST, PUT, DELETE) — solo hay `useQuery` implementados
 - Paginación real en tablas (actualmente se cargan todos los registros sin paginar)
 - Manejo de expiración de token (redirección automática al expirar)
 - Internacionalización (las fechas están en inglés, algunos textos en español)

@@ -282,7 +282,7 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
           title="Clases publicadas"
           value={publishedClassesCount}
           icon={LayoutGrid}
-          loading={classesQuery.isLoading}
+          loading={coursesQuery.isLoading || classesQuery.isLoading}
         />
         <StatCard
           title="Promedio general"

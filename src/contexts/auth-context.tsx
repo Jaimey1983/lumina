@@ -6,8 +6,14 @@ import { api } from '@/lib/api';
 export interface AuthUser {
   id: string;
   name: string;
+  lastName?: string;
   email: string;
   role: string;
+  institution?: string;
+  avatar?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 function normalizeUser(data: unknown): AuthUser {
@@ -18,8 +24,14 @@ function normalizeUser(data: unknown): AuthUser {
   return {
     id: String(o.id ?? ''),
     name: String(o.name ?? ''),
+    lastName: o.lastName != null ? String(o.lastName) : undefined,
     email: String(o.email ?? ''),
     role: String(o.role ?? ''),
+    institution: o.institution != null ? String(o.institution) : undefined,
+    avatar: o.avatar != null ? String(o.avatar) : null,
+    isActive: o.isActive != null ? Boolean(o.isActive) : undefined,
+    createdAt: o.createdAt != null ? String(o.createdAt) : undefined,
+    lastLogin: o.lastLogin != null ? String(o.lastLogin) : undefined,
   };
 }
 
@@ -30,6 +42,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (partial: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -88,6 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((partial: Partial<AuthUser>) => {
+    setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -97,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}
