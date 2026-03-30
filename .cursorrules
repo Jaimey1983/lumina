@@ -54,7 +54,7 @@ Eres el programador líder y arquitecto senior del proyecto Lumina. Tu rol es:
 - **Docker:** 29.2.1
 - **pnpm:** 10.32.1
 - **PostgreSQL:** 18.3 (instalado local) + 16 (Docker)
-- **Ruta del proyecto:** `C:\Users\Jaime\proyectos\lumina-backend`
+- **Ruta del proyecto:** `C:\Users\Jaime\proyectos\lumina\lumina-backend`
 
 ---
 
