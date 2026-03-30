@@ -10,6 +10,7 @@ export interface MenuItem {
   childrenIndex?: number;
   heading?: string;
   children?: MenuConfig;
+  roles?: string[];
   disabled?: boolean;
   collapse?: boolean;
   collapseTitle?: string;

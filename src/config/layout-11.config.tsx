@@ -57,6 +57,7 @@ export const MENU_SIDEBAR: MenuConfig = [
         title: 'Usuarios',
         path: '/users',
         icon: Users,
+        roles: ['ADMIN', 'SUPERADMIN'],
       },
       {
         title: 'Perfil',

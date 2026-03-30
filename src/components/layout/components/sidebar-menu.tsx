@@ -9,9 +9,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 export function SidebarMenu() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const userRole = user?.role?.toUpperCase() ?? '';
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
@@ -35,18 +38,24 @@ export function SidebarMenu() {
         }}
       >
         {MENU_SIDEBAR.map((item, index) => {
+          const visibleChildren = item.children?.filter((child) =>
+            !child.roles || child.roles.includes(userRole),
+          );
+
+          if (!visibleChildren?.length) return null;
+
           return (
             <AccordionMenuGroup key={index}>
               <AccordionMenuLabel>
                 {item.title}
               </AccordionMenuLabel>
-              {item.children?.map((child, index) => {
+              {visibleChildren.map((child, index) => {
                 return (
                   <AccordionMenuItem key={index} value={child.path || '#'}>
                     <Link href={child.path || '#'}>
                       {child.icon && <child.icon />}
                       <span>{child.title}</span>
-                    </Link>          
+                    </Link>
                   </AccordionMenuItem>
                 )
               })}
