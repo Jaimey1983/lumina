@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"dir C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\src /b\")",
+      "Bash(cmd /c \"dir \\\\\"C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\\" /b\")",
+      "Bash(cmd /c \"dir \\\\\"C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\\" /b\")",
+      "Bash(powershell -Command \"Get-ChildItem 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\src'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\src\\\\components'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\styles'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\ui'' | Measure-Object | Select-Object Count\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\layouts'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\layouts\\\\layout-11'' -Recurse | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\package.json''\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\layouts\\\\layout-11\\\\components'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\hooks'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\lib'' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\config'' | Select-Object Name\")",
+      "Bash(pnpm --version)",
+      "Bash(pnpm create:*)",
+      "Bash(pnpm add:*)",
+      "Bash(powershell -Command \"Copy-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\ui'' -Destination ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\components\\\\ui'' -Recurse -Force; echo ''UI components copied''\")",
+      "Bash(powershell -Command \"Copy-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\layouts\\\\layout-11'' -Destination ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\components\\\\layout'' -Recurse -Force; echo ''Layout copied''\")",
+      "Bash(powershell -Command \"Copy-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\styles'' -Destination ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\styles'' -Recurse -Force; echo ''Styles copied''\")",
+      "Bash(powershell -Command \"Copy-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\hooks'' -Destination ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\hooks'' -Recurse -Force; echo ''Hooks copied''\")",
+      "Bash(powershell -Command \"New-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\lib'' -ItemType Directory -Force; Copy-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\lib\\\\*'' -Destination ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\lib'' -Recurse -Force; echo ''Lib copied''\")",
+      "Bash(powershell -Command \"New-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\config'' -ItemType Directory -Force; Copy-Item -Path ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\config\\\\types.ts'' -Destination ''C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\config\\\\types.ts'' -Force; echo ''Config types copied''\")",
+      "Bash(powershell -Command \"Copy-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\metronic-tailwind-react-starter-kit\\\\typescript\\\\nextjs\\\\components\\\\screen-loader.tsx' -Destination 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\components\\\\screen-loader.tsx' -Force; echo 'ScreenLoader copied'\")",
+      "Bash(powershell -Command \"Get-ChildItem 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\components\\\\layout' -Recurse | Select-Object Name\")",
+      "Bash(powershell -Command \"New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\dashboard' -ItemType Directory -Force; New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\courses\\\\[id]' -ItemType Directory -Force; New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\classes' -ItemType Directory -Force; New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\gradebook' -ItemType Directory -Force; New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\analytics' -ItemType Directory -Force; New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\users' -ItemType Directory -Force; New-Item -Path 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-frontend\\\\src\\\\app\\\\\\(app\\)\\\\profile' -ItemType Directory -Force; echo 'Directories created'\")",
+      "Bash(pnpm run:*)"
+    ]
+  }
+}
