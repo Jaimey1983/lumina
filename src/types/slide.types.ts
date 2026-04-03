@@ -286,9 +286,19 @@ export interface AudioBlock {
   bucle?: boolean;
 }
 
+/** Posición y tamaño del bloque de actividad en % del área del slide (modo libre). */
+export interface BlockMarco {
+  izquierdaPct: number;
+  arribaPct: number;
+  anchoPct: number;
+  altoPct: number;
+}
+
 export interface ActivityBlock {
   tipo: 'actividad';
   actividad: Activity;
+  /** Si existe, el bloque flota sobre el lienzo y no ocupa una celda del grid del layout. */
+  marco?: BlockMarco;
 }
 
 export interface CodeBlock {

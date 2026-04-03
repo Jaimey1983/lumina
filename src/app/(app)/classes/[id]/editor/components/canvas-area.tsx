@@ -15,6 +15,7 @@ export interface CanvasAreaProps {
   isLoading?: boolean;
   onBlockSelect?: (id: string) => void;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onRemoveBlock?: (blockId: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -30,6 +31,7 @@ export function CanvasArea({
   isLoading,
   onBlockSelect,
   onActivityChange,
+  onRemoveBlock,
 }: CanvasAreaProps) {
   return (
     <div
@@ -61,6 +63,7 @@ export function CanvasArea({
             modo="editor"
             onBlockSelect={onBlockSelect}
             onActivityChange={onActivityChange}
+            onRemoveBlock={onRemoveBlock}
             className="absolute inset-0 h-full w-full"
           />
         </div>

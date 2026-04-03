@@ -23,6 +23,17 @@ import { cn } from '@/lib/utils';
 
 import { ShortAnswerActivityEditor } from './activities/short-answer';
 
+function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
+  if (!block.marco) return block;
+  const { marco: _, ...rest } = block;
+  return rest as ActivityBlock;
+}
+
+function blockForActivityRender(block: Block): Block {
+  if (block.tipo !== 'actividad') return block;
+  return stripMarcoFromActivityBlock(block);
+}
+
 // ─── Activity placeholder labels ──────────────────────────────────────────────
 
 const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
@@ -105,6 +116,7 @@ function buildLayoutStyle(diseno?: Layout): CSSProperties {
       justifyItems: hAlign,
       padding,
       height: '100%',
+      minHeight: 0,
       boxSizing: 'border-box',
     };
   }
@@ -117,6 +129,7 @@ function buildLayoutStyle(diseno?: Layout): CSSProperties {
     gap,
     padding,
     height: '100%',
+    minHeight: 0,
     boxSizing: 'border-box',
   };
 }
@@ -314,13 +327,22 @@ function RenderDivider({ block }: { block: DividerBlock }) {
 function RenderActivity({
   block,
   blockId,
+  slideId,
   modo,
+  isSelected,
+  activityCanvasLayout,
   onActivityChange,
+  onRemoveBlock,
 }: {
   block: ActivityBlock;
   blockId: string;
+  slideId: string;
   modo: 'editor' | 'viewer';
+  isSelected: boolean;
+  /** Altura acotada en el lienzo cuando la actividad va sola y centrada. */
+  activityCanvasLayout?: boolean;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onRemoveBlock?: (blockId: string) => void;
 }) {
   const act = block.actividad;
 
@@ -328,8 +350,12 @@ function RenderActivity({
     if (modo === 'editor') {
       return (
         <ShortAnswerActivityEditor
+          editorSyncKey={`${slideId}-${blockId}`}
           activity={act}
+          canvasLayout={!!activityCanvasLayout}
+          isSelected={isSelected}
           onChange={(a) => onActivityChange?.(blockId, a)}
+          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
         />
       );
     }
@@ -367,20 +393,24 @@ function RenderActivity({
 
 interface RenderColumnsProps {
   block: ColumnsBlock;
+  slideId: string;
   modo: 'editor' | 'viewer';
   selectedId: string | null;
   onBlockClick: (id: string) => void;
   pathPrefix: string;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onRemoveBlock?: (blockId: string) => void;
 }
 
 function RenderColumns({
   block,
+  slideId,
   modo,
   selectedId,
   onBlockClick,
   pathPrefix,
   onActivityChange,
+  onRemoveBlock,
 }: RenderColumnsProps) {
   let gridCols = `repeat(${block.columnas.length}, 1fr)`;
   if (block.proporcion) {
@@ -411,6 +441,7 @@ function RenderColumns({
                 key={id}
                 block={innerBlock}
                 blockId={id}
+                slideId={slideId}
                 isSelected={selectedId === id}
                 modo={modo}
                 selectedId={selectedId}
@@ -418,6 +449,7 @@ function RenderColumns({
                 onBlockClick={onBlockClick}
                 pathPrefix={id}
                 onActivityChange={onActivityChange}
+                onRemoveBlock={onRemoveBlock}
               />
             );
           })}
@@ -432,6 +464,7 @@ function RenderColumns({
 interface BlockNodeProps {
   block: Block;
   blockId: string;
+  slideId: string;
   isSelected: boolean;
   modo: 'editor' | 'viewer';
   selectedId: string | null;
@@ -439,11 +472,15 @@ interface BlockNodeProps {
   onBlockClick: (id: string) => void;
   pathPrefix: string;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onRemoveBlock?: (blockId: string) => void;
+  /** Slide dedicado a actividad(es): el editor de respuesta corta usa layout de lienzo acotado. */
+  activityCanvasLayout?: boolean;
 }
 
 function BlockNode({
   block,
   blockId,
+  slideId,
   isSelected,
   modo,
   selectedId,
@@ -451,7 +488,12 @@ function BlockNode({
   onBlockClick,
   pathPrefix,
   onActivityChange,
+  onRemoveBlock,
+  activityCanvasLayout,
 }: BlockNodeProps) {
+  const activityBlockForRender: ActivityBlock | null =
+    block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
+
   function renderContent() {
     switch (block.tipo) {
       case 'texto':     return <RenderText block={block} />;
@@ -459,14 +501,18 @@ function BlockNode({
       case 'video':     return <RenderVideo block={block} />;
       case 'audio':     return <RenderAudio block={block} />;
       case 'actividad':
-        return (
+        return activityBlockForRender ? (
           <RenderActivity
-            block={block}
+            block={activityBlockForRender}
             blockId={blockId}
+            slideId={slideId}
             modo={modo}
+            isSelected={isSelected}
+            activityCanvasLayout={activityCanvasLayout}
             onActivityChange={onActivityChange}
+            onRemoveBlock={onRemoveBlock}
           />
-        );
+        ) : null;
       case 'codigo':    return <RenderCode block={block} />;
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
@@ -474,27 +520,30 @@ function BlockNode({
         return (
           <RenderColumns
             block={block}
+            slideId={slideId}
             modo={modo}
             selectedId={selectedId}
             onBlockClick={onBlockClick}
             pathPrefix={pathPrefix}
             onActivityChange={onActivityChange}
+            onRemoveBlock={onRemoveBlock}
           />
         );
     }
   }
 
   const editorMode = modo === 'editor';
+  const isFormBlock = block.tipo === 'actividad' && editorMode;
 
   return (
     <div
-      role={editorMode ? 'button' : undefined}
-      tabIndex={editorMode ? 0 : undefined}
+      role={editorMode && !isFormBlock ? 'button' : undefined}
+      tabIndex={editorMode && !isFormBlock ? 0 : undefined}
       aria-pressed={editorMode ? isSelected : undefined}
       data-block-id={blockId}
       onClick={editorMode ? onClick : undefined}
       onKeyDown={
-        editorMode
+        editorMode && !isFormBlock
           ? (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -504,9 +553,10 @@ function BlockNode({
           : undefined
       }
       className={cn(
-        editorMode && 'cursor-pointer outline-none rounded-sm',
-        editorMode && 'hover:ring-2 hover:ring-primary/40 hover:ring-offset-1',
-        isSelected && 'ring-2 ring-primary ring-offset-1',
+        editorMode && !isFormBlock && 'cursor-pointer outline-none rounded-sm',
+        editorMode && !isFormBlock && 'hover:ring-1 hover:ring-primary/40',
+        isFormBlock && 'min-h-0 max-w-full cursor-default',
+        isSelected && !isFormBlock && 'ring-1 ring-primary/50',
       )}
     >
       {renderContent()}
@@ -524,10 +574,19 @@ export interface SlideRendererProps {
   onBlockSelect?: (blockId: string) => void;
   /** Persiste cambios de una actividad (PATCH vía el padre). */
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  /** Elimina un bloque del slide (p. ej. actividad equivocada). */
+  onRemoveBlock?: (blockId: string) => void;
   className?: string;
 }
 
-export function SlideRenderer({ slide, modo, onBlockSelect, onActivityChange, className }: SlideRendererProps) {
+export function SlideRenderer({
+  slide,
+  modo,
+  onBlockSelect,
+  onActivityChange,
+  onRemoveBlock,
+  className,
+}: SlideRendererProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const bgStyle = buildBackgroundStyle(slide.fondo);
@@ -540,37 +599,71 @@ export function SlideRenderer({ slide, modo, onBlockSelect, onActivityChange, cl
   }
 
   const blocks = slide.bloques ?? [];
+  const topLevelActivityIndices = blocks
+    .map((b, i) => (b.tipo === 'actividad' ? i : -1))
+    .filter((i) => i >= 0);
+  const isActivityExclusiveSlide = topLevelActivityIndices.length > 0;
 
   return (
     <div
       className={cn('relative w-full h-full overflow-hidden', className)}
       style={bgStyle}
     >
-      <div style={layoutStyle}>
-        {blocks.map((block, index) => {
-          const blockId = String(index);
-          return (
-            <BlockNode
-              key={blockId}
-              block={block}
-              blockId={blockId}
-              isSelected={modo === 'editor' && selectedId === blockId}
-              modo={modo}
-              selectedId={selectedId}
-              onClick={() => handleBlockClick(blockId)}
-              onBlockClick={handleBlockClick}
-              pathPrefix={blockId}
-              onActivityChange={onActivityChange}
-            />
-          );
-        })}
-
-        {blocks.length === 0 && modo === 'editor' && (
-          <div className="flex min-h-32 items-center justify-center text-sm text-neutral-400 select-none pointer-events-none">
-            Sin bloques — agrega contenido desde el panel lateral
+      {isActivityExclusiveSlide ? (
+        <div className="relative flex h-full min-h-0 min-w-0 w-full items-center justify-center overflow-hidden p-4 sm:p-6">
+          <div className="flex w-full max-w-xl min-h-0 flex-col items-stretch justify-center gap-6">
+            {topLevelActivityIndices.map((index) => {
+              const blockId = String(index);
+              const block = blocks[index]!;
+              return (
+                <BlockNode
+                  key={blockId}
+                  block={block}
+                  blockId={blockId}
+                  slideId={slide.id}
+                  isSelected={modo === 'editor' && selectedId === blockId}
+                  modo={modo}
+                  selectedId={selectedId}
+                  onClick={() => handleBlockClick(blockId)}
+                  onBlockClick={handleBlockClick}
+                  pathPrefix={blockId}
+                  onActivityChange={onActivityChange}
+                  onRemoveBlock={onRemoveBlock}
+                  activityCanvasLayout
+                />
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="relative h-full min-h-0 min-w-0 w-full" style={layoutStyle}>
+          {blocks.map((block, index) => {
+            const blockId = String(index);
+            return (
+              <BlockNode
+                key={blockId}
+                block={block}
+                blockId={blockId}
+                slideId={slide.id}
+                isSelected={modo === 'editor' && selectedId === blockId}
+                modo={modo}
+                selectedId={selectedId}
+                onClick={() => handleBlockClick(blockId)}
+                onBlockClick={handleBlockClick}
+                pathPrefix={blockId}
+                onActivityChange={onActivityChange}
+                onRemoveBlock={onRemoveBlock}
+              />
+            );
+          })}
+
+          {blocks.length === 0 && modo === 'editor' && (
+            <div className="flex min-h-32 items-center justify-center text-sm text-neutral-400 select-none pointer-events-none">
+              Sin bloques — agrega contenido desde el panel lateral
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

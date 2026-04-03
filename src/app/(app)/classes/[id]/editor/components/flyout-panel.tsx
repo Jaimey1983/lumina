@@ -67,6 +67,8 @@ export interface FlyoutPanelProps {
   apiSlide: ApiSlide | null;
   /** Persiste el JSON completo `content` del slide (PATCH). */
   onCommitSlideContent: (content: Record<string, unknown>) => void;
+  /** Crea un slide nuevo con una sola actividad (POST). */
+  onCreateActivitySlide: (content: Record<string, unknown>, title: string) => void;
   slides: { id: string; order: number; title: string; type: string }[];
   activeSlideIndex: number;
   onSelectSlide: (index: number) => void;
@@ -83,6 +85,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       onClose,
       apiSlide,
       onCommitSlideContent,
+      onCreateActivitySlide,
       slides,
       activeSlideIndex,
       onSelectSlide,
@@ -141,6 +144,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 panel={activePanel ?? ''}
                 apiSlide={apiSlide}
                 onCommitContent={onCommitSlideContent}
+                onCreateActivitySlide={onCreateActivitySlide}
                 slides={slides}
                 activeSlideIndex={activeSlideIndex}
                 onSelectSlide={onSelectSlide}

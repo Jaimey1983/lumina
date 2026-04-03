@@ -5,19 +5,19 @@ import Link from 'next/link';
 import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useClass } from '@/hooks/api/use-class';
+import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useCreateSlide, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
-import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import {
-  appendBlockToSlideContent,
+  buildContentDocumentForNewActivitySlide,
   classSlideToRendererSlide,
   getSlideContentRecord,
   mergeSlideContent,
+  removeBlockAtPath,
+  sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import type { Activity, Block } from '@/types/slide.types';
-
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
@@ -178,8 +178,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleSave = useCallback(() => {
     if (!activeSlide) return;
     setSaveStatus('saving');
+    let payload: unknown = activeSlide.content ?? null;
+    if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+      const s = sanitizeSlideContentForPersistence(payload);
+      if (s !== null) payload = s;
+    }
     updateSlide.mutate(
-      { slideId: activeSlide.id, content: activeSlide.content ?? null },
+      { slideId: activeSlide.id, content: payload },
       {
         onSuccess: () => {
           setSaveStatus('saved');
@@ -219,8 +224,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleCommitSlideContent = useCallback(
     (content: Record<string, unknown>) => {
       if (!activeSlide) return;
+      const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
       updateSlide.mutate(
-        { slideId: activeSlide.id, content },
+        { slideId: activeSlide.id, content: sanitized },
         {
           onError: () => toast.error('No se pudo guardar el slide'),
         },
@@ -243,21 +249,53 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide, handleCommitSlideContent],
   );
 
+  const handleRemoveBlock = useCallback(
+    (blockPath: string) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = removeBlockAtPath(bloques, blockPath);
+      if (next === bloques) return;
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+      toast.success('Actividad eliminada');
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
+  const handleCreateSlideWithActivity = useCallback(
+    (content: Record<string, unknown>, title: string) => {
+      const nextOrder = sortedSlides.length + 1;
+      const fullContent = { ...content, orden: nextOrder };
+      const sanitized = sanitizeSlideContentForPersistence(fullContent) ?? fullContent;
+      createSlide.mutate(
+        {
+          type: 'CONTENT',
+          title,
+          content: sanitized,
+        },
+        {
+          onSuccess: () => setActiveSlideIndex(nextOrder - 1),
+          onError: () => toast.error('No se pudo crear el slide'),
+        },
+      );
+    },
+    [sortedSlides.length, createSlide],
+  );
+
   const handleAddActivity = useCallback(
     (type: ActivityType) => {
-      if (!activeSlide) {
-        toast.error('Selecciona un slide');
-        return;
-      }
       if (type === 'short-answer') {
         const block: Block = { tipo: 'actividad', actividad: shortAnswerTemplate() };
-        handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
-        toast.success('Actividad insertada en el slide');
+        handleCreateSlideWithActivity(
+          buildContentDocumentForNewActivitySlide(block),
+          'Respuesta corta',
+        );
+        toast.success('Nuevo slide solo con la actividad');
         return;
       }
       toast.info(`Actividad "${type}" próximamente disponible`);
     },
-    [activeSlide, handleCommitSlideContent],
+    [handleCreateSlideWithActivity],
   );
 
   const handleApplyTheme = useCallback((bg: string) => {
@@ -268,8 +306,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         : {}
     ) as Record<string, unknown>;
     const updatedContent = { ...base, fondo: { tipo: 'color', valor: bg } };
+    const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
     updateSlide.mutate(
-      { slideId: activeSlide.id, content: updatedContent },
+      { slideId: activeSlide.id, content: sanitized },
       {
         onSuccess: () => toast.success('Tema aplicado'),
         onError: () => toast.error('Error al aplicar tema'),
@@ -415,6 +454,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onClose={() => setActivePanel(null)}
               apiSlide={activeSlide as ApiSlide}
               onCommitSlideContent={handleCommitSlideContent}
+              onCreateActivitySlide={handleCreateSlideWithActivity}
               slides={sortedSlides.map((s) => ({
                 id: s.id,
                 order: s.order,
@@ -433,6 +473,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             slide={rendererSlide}
             isLoading={isLoading}
             onActivityChange={handleActivityChange}
+            onRemoveBlock={handleRemoveBlock}
           />
 
           {/* Flyout panel derecho */}

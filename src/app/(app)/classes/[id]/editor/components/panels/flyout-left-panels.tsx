@@ -22,6 +22,7 @@ import type { Activity, Block } from '@/types/slide.types';
 import {
   applyLayoutPreset,
   appendBlockToSlideContent,
+  buildContentDocumentForNewActivitySlide,
   getSlideContentRecord,
   mergeSlideContent,
 } from '@/lib/class-slide-normalize';
@@ -198,6 +199,8 @@ export interface FlyoutLeftPanelsProps {
   apiSlide: ApiSlide | null;
   /** Contenido completo a persistir en PATCH (merge del JSON `content`). */
   onCommitContent: (content: Record<string, unknown>) => void;
+  /** POST de un slide nuevo cuyo contenido es solo la actividad (no modifica el slide actual). */
+  onCreateActivitySlide: (content: Record<string, unknown>, title: string) => void;
   slides: { id: string; order: number; title: string; type: string }[];
   activeSlideIndex: number;
   onSelectSlide: (index: number) => void;
@@ -298,29 +301,35 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
   );
 }
 
-function ActividadesInsertPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
-  const add = (act: Activity) => {
+function ActividadesInsertPanel({
+  onCreateActivitySlide,
+  disabled,
+}: {
+  onCreateActivitySlide: (content: Record<string, unknown>, title: string) => void;
+  disabled?: boolean;
+}) {
+  const add = (act: Activity, title: string) => {
     const block: Block = { tipo: 'actividad', actividad: act };
-    onCommitContent(appendBlockToSlideContent(apiSlide, block));
-    toast.success('Actividad insertada en el slide');
+    onCreateActivitySlide(buildContentDocumentForNewActivitySlide(block), title);
+    toast.success('Nuevo slide solo con la actividad');
   };
 
   return (
     <ScrollArea className="h-full min-h-0">
       <div className="space-y-1 p-3 pr-2">
         <p className="mb-2 text-xs text-muted-foreground">
-          Se añade un bloque de actividad al final del slide. Edición detallada próximamente.
+          Se crea un slide nuevo al final; el slide que estés viendo no se modifica.
         </p>
-        <InsertBtn label="Quiz opción múltiple" icon={LayoutGrid} disabled={disabled} onClick={() => add(quizTemplate())} />
-        <InsertBtn label="Verdadero / falso" icon={LayoutGrid} disabled={disabled} onClick={() => add(trueFalseTemplate())} />
-        <InsertBtn label="Respuesta corta" icon={MessageSquare} disabled={disabled} onClick={() => add(shortAnswerTemplate())} />
-        <InsertBtn label="Completar blancos" icon={LayoutGrid} disabled={disabled} onClick={() => add(fillBlanksTemplate())} />
-        <InsertBtn label="Arrastrar y soltar" icon={LayoutGrid} disabled={disabled} onClick={() => add(dragDropTemplate())} />
-        <InsertBtn label="Emparejar" icon={LayoutGrid} disabled={disabled} onClick={() => add(matchPairsTemplate())} />
-        <InsertBtn label="Ordenar pasos" icon={LayoutGrid} disabled={disabled} onClick={() => add(orderStepsTemplate())} />
-        <InsertBtn label="Video interactivo" icon={Video} disabled={disabled} onClick={() => add(videoInteractiveTemplate())} />
-        <InsertBtn label="Encuesta en vivo" icon={LayoutGrid} disabled={disabled} onClick={() => add(livePollTemplate())} />
-        <InsertBtn label="Nube de palabras" icon={LayoutGrid} disabled={disabled} onClick={() => add(wordCloudTemplate())} />
+        <InsertBtn label="Quiz opción múltiple" icon={LayoutGrid} disabled={disabled} onClick={() => add(quizTemplate(), 'Quiz opción múltiple')} />
+        <InsertBtn label="Verdadero / falso" icon={LayoutGrid} disabled={disabled} onClick={() => add(trueFalseTemplate(), 'Verdadero / falso')} />
+        <InsertBtn label="Respuesta corta" icon={MessageSquare} disabled={disabled} onClick={() => add(shortAnswerTemplate(), 'Respuesta corta')} />
+        <InsertBtn label="Completar blancos" icon={LayoutGrid} disabled={disabled} onClick={() => add(fillBlanksTemplate(), 'Completar blancos')} />
+        <InsertBtn label="Arrastrar y soltar" icon={LayoutGrid} disabled={disabled} onClick={() => add(dragDropTemplate(), 'Arrastrar y soltar')} />
+        <InsertBtn label="Emparejar" icon={LayoutGrid} disabled={disabled} onClick={() => add(matchPairsTemplate(), 'Emparejar')} />
+        <InsertBtn label="Ordenar pasos" icon={LayoutGrid} disabled={disabled} onClick={() => add(orderStepsTemplate(), 'Ordenar pasos')} />
+        <InsertBtn label="Video interactivo" icon={Video} disabled={disabled} onClick={() => add(videoInteractiveTemplate(), 'Video interactivo')} />
+        <InsertBtn label="Encuesta en vivo" icon={LayoutGrid} disabled={disabled} onClick={() => add(livePollTemplate(), 'Encuesta en vivo')} />
+        <InsertBtn label="Nube de palabras" icon={LayoutGrid} disabled={disabled} onClick={() => add(wordCloudTemplate(), 'Nube de palabras')} />
       </div>
     </ScrollArea>
   );
@@ -538,14 +547,24 @@ function PaginasPanel({
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
-  const { panel, apiSlide, onCommitContent, slides, activeSlideIndex, onSelectSlide, desempenoEnunciado, busy } = props;
+  const {
+    panel,
+    apiSlide,
+    onCommitContent,
+    onCreateActivitySlide,
+    slides,
+    activeSlideIndex,
+    onSelectSlide,
+    desempenoEnunciado,
+    busy,
+  } = props;
   const disabled = !apiSlide || busy;
 
   switch (panel) {
     case 'elementos':
       return <ElementosPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
     case 'actividades':
-      return <ActividadesInsertPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
+      return <ActividadesInsertPanel onCreateActivitySlide={onCreateActivitySlide} disabled={busy} />;
     case 'layout':
       return <LayoutPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
     case 'fondo':

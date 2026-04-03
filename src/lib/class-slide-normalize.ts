@@ -1,5 +1,5 @@
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Background, Block, Layout, Slide } from '@/types/slide.types';
+import type { ActivityBlock, Background, Block, Layout, Slide } from '@/types/slide.types';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -82,6 +82,75 @@ export function appendBlockToSlideContent(
   return mergeSlideContent(api, { bloques: [...prev, block] });
 }
 
+/** Una diapositiva de actividad solo contiene ese bloque (sin texto/imagen mezclado). */
+export function replaceSlideContentWithSingleActivity(
+  api: ApiSlide | null,
+  activityBlock: Block,
+): Record<string, unknown> {
+  let clean = activityBlock;
+  if (activityBlock.tipo === 'actividad') {
+    const ab = activityBlock as ActivityBlock;
+    if (ab.marco != null) {
+      const { marco: _m, ...rest } = ab;
+      clean = rest as Block;
+    }
+  }
+  return mergeSlideContent(api, {
+    bloques: [clean],
+    layout: 'titulo_centrado',
+    diseno: LAYOUT_FROM_KEY.titulo_centrado,
+  });
+}
+
+function stripMarcoDeep(block: Block): Block {
+  if (block.tipo === 'actividad') {
+    const ab = block as ActivityBlock;
+    if (ab.marco == null) return block;
+    const { marco: _m, ...rest } = ab;
+    return rest as Block;
+  }
+  if (block.tipo === 'columnas') {
+    return {
+      ...block,
+      columnas: block.columnas.map((col) => col.map(stripMarcoDeep)),
+    };
+  }
+  return block;
+}
+
+/**
+ * Antes de PATCH: quita `marco` obsoleto y, si hay actividad de primer nivel,
+ * deja solo esos bloques (como en el renderer) y fija layout centrado.
+ */
+export function sanitizeSlideContentForPersistence(content: unknown): Record<string, unknown> | null {
+  if (content === null || content === undefined) return null;
+  if (typeof content !== 'object' || Array.isArray(content)) return null;
+  const c = { ...(content as Record<string, unknown>) };
+  const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+  if (bloques.length === 0) return c;
+
+  const hasTopLevelActivity = bloques.some((b) => b.tipo === 'actividad');
+  if (hasTopLevelActivity) {
+    c.bloques = bloques.filter((b) => b.tipo === 'actividad').map(stripMarcoDeep);
+    c.layout = 'titulo_centrado';
+    c.diseno = LAYOUT_FROM_KEY.titulo_centrado;
+  } else {
+    c.bloques = bloques.map(stripMarcoDeep);
+  }
+  return c;
+}
+
+/** Documento `content` para POST de un slide nuevo dedicado a una actividad (`orden` lo asigna el caller). */
+export function buildContentDocumentForNewActivitySlide(activityBlock: Block): Record<string, unknown> {
+  const core = replaceSlideContentWithSingleActivity(null, activityBlock);
+  return {
+    id: `slide_${Date.now()}`,
+    tipo: 'contenido',
+    fondo: { tipo: 'color', valor: '#FFFFFF' },
+    ...core,
+  };
+}
+
 /** Actualiza un bloque por ruta tipo `"2"` o `"5-0-1"` (columnas anidadas). */
 export function updateBlockAtPath(
   bloques: Block[],
@@ -97,6 +166,36 @@ export function updateBlockAtPath(
 
     if (depth === parts.length - 1) {
       return arr.map((b, j) => (j === i ? fn(b) : b));
+    }
+
+    const block = arr[i];
+    if (block.tipo !== 'columnas') return arr;
+
+    const colIdx = parts[depth + 1];
+    if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return arr;
+
+    const newColumnas = block.columnas.map((col, cj) => {
+      if (cj !== colIdx) return col;
+      return go(col, depth + 2);
+    });
+
+    return arr.map((b, j) => (j === i ? { ...block, columnas: newColumnas } : b));
+  }
+
+  return go(bloques, 0);
+}
+
+/** Elimina el bloque en la ruta (`"2"` o `"5-0-1"`). */
+export function removeBlockAtPath(bloques: Block[], path: string): Block[] {
+  const parts = path.split('-').map((x) => parseInt(x, 10));
+  if (parts.some((n) => Number.isNaN(n))) return bloques;
+
+  function go(arr: Block[], depth: number): Block[] {
+    const i = parts[depth]!;
+    if (i < 0 || i >= arr.length) return arr;
+
+    if (depth === parts.length - 1) {
+      return arr.filter((_, j) => j !== i);
     }
 
     const block = arr[i];
