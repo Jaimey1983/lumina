@@ -98,6 +98,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const flyoutPanelRef = useRef<HTMLElement>(null);
   const rightRailWrapRef = useRef<HTMLDivElement>(null);
   const rightFlyoutPanelRef = useRef<HTMLElement>(null);
+  /** Top bar (Volver, acciones): no cerrar flyouts aquí en pointerdown — el setState antes del click rompe la navegación del Link. */
+  const editorHeaderRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!activePanel && !rightPanel) return;
@@ -105,6 +107,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       const t = e.target as Node;
       const el = e.target as HTMLElement;
       if (isPointerOnPortedOverlay(el)) return;
+      if (editorHeaderRef.current?.contains(el)) return;
 
       if (activePanel) {
         if (flyoutPanelRef.current?.contains(t)) return;
@@ -354,16 +357,21 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       <div className="hidden min-h-0 flex-1 flex-col overflow-hidden bg-editor-shell md:flex">
 
         {/* ── TOPBAR ── h-14 ──────────────────────────────────────────────── */}
-        <header className="flex h-14 shrink-0 items-center border-b border-border bg-background">
+        <header
+          ref={editorHeaderRef}
+          className="flex h-14 shrink-0 items-center border-b border-border bg-background"
+        >
 
           {/* Zona Volver — 4rem fijo, alineada con IconRail del cuerpo */}
-          <div className="flex h-full w-16 min-w-16 max-w-16 shrink-0 items-center justify-center border-r border-border bg-background">
+          <div className="flex h-full w-16 min-w-16 max-w-16 shrink-0 items-center justify-center bg-background">
             <Button variant="ghost" size="icon" asChild className="shrink-0">
               <Link href={`/classes/${classId}`} aria-label="Volver a la clase">
                 <ArrowLeft className="size-4" />
               </Link>
             </Button>
           </div>
+
+          <div className="h-5 w-px bg-border" />
 
           {/* Título + desempeño — flex-1 */}
           <div className="flex min-w-0 flex-1 flex-col px-3">

@@ -15,6 +15,14 @@ import {
   Type,
   Video,
   Volume2,
+  MousePointer2,
+  Target,
+  Timer,
+  MonitorPlay,
+  Film,
+  QrCode,
+  BarChart,
+  Table,
 } from 'lucide-react';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
@@ -31,121 +39,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-
-// ─── Activity templates ───────────────────────────────────────────────────────
-
-function uid() {
-  return crypto.randomUUID();
-}
-
-function quizTemplate(): Activity {
-  return {
-    tipo: 'quiz_multiple',
-    pregunta: 'Nueva pregunta',
-    opciones: [
-      { id: uid(), texto: 'Opción correcta', esCorrecta: true },
-      { id: uid(), texto: 'Opción incorrecta', esCorrecta: false },
-    ],
-  };
-}
-
-function trueFalseTemplate(): Activity {
-  return {
-    tipo: 'verdadero_falso',
-    afirmacion: 'Nueva afirmación',
-    respuestaCorrecta: true,
-  };
-}
-
-function shortAnswerTemplate(): Activity {
-  return {
-    tipo: 'short_answer',
-    question: 'Nueva pregunta',
-    expectedAnswer: '',
-    caseSensitive: false,
-    maxLength: 200,
-  };
-}
-
-function dragDropTemplate(): Activity {
-  const i1 = uid();
-  const i2 = uid();
-  const z1 = uid();
-  const z2 = uid();
-  return {
-    tipo: 'arrastrar_soltar',
-    instruccion: 'Arrastra cada elemento a su zona',
-    items: [
-      { id: i1, texto: 'Elemento 1' },
-      { id: i2, texto: 'Elemento 2' },
-    ],
-    zonas: [
-      { id: z1, etiqueta: 'Zona A', itemsCorrectos: [i1] },
-      { id: z2, etiqueta: 'Zona B', itemsCorrectos: [i2] },
-    ],
-  };
-}
-
-function matchPairsTemplate(): Activity {
-  const p = uid();
-  return {
-    tipo: 'emparejar',
-    instruccion: 'Relaciona cada par',
-    pares: [
-      { id: p, izquierda: 'Término', derecha: 'Definición' },
-      { id: uid(), izquierda: 'Concepto B', derecha: 'Significado B' },
-    ],
-  };
-}
-
-function orderStepsTemplate(): Activity {
-  return {
-    tipo: 'ordenar_pasos',
-    instruccion: 'Ordena los pasos',
-    pasos: [
-      { id: uid(), contenido: 'Primer paso', ordenCorrecto: 1 },
-      { id: uid(), contenido: 'Segundo paso', ordenCorrecto: 2 },
-      { id: uid(), contenido: 'Tercer paso', ordenCorrecto: 3 },
-    ],
-  };
-}
-
-function livePollTemplate(): Activity {
-  return {
-    tipo: 'encuesta_viva',
-    pregunta: '¿Qué opinas?',
-    opciones: [
-      { id: uid(), texto: 'Opción A' },
-      { id: uid(), texto: 'Opción B' },
-      { id: uid(), texto: 'Opción C' },
-    ],
-  };
-}
-
-function wordCloudTemplate(): Activity {
-  return {
-    tipo: 'nube_palabras',
-    instruccion: 'Escribe una palabra clave',
-  };
-}
-
-function videoInteractiveTemplate(): Activity {
-  return {
-    tipo: 'video_interactivo',
-    urlVideo: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    plataforma: 'youtube',
-    preguntas: [],
-  };
-}
-
-function fillBlanksTemplate(): Activity {
-  const b = uid();
-  return {
-    tipo: 'completar_blancos',
-    texto: `Completa: el agua hierve a {{blank:${b}}} °C.`,
-    blancos: [{ id: b, respuesta: '100' }],
-  };
-}
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
@@ -301,35 +194,33 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
   );
 }
 
-function ActividadesInsertPanel({
-  onCreateActivitySlide,
-  disabled,
-}: {
-  onCreateActivitySlide: (content: Record<string, unknown>, title: string) => void;
-  disabled?: boolean;
-}) {
-  const add = (act: Activity, title: string) => {
-    const block: Block = { tipo: 'actividad', actividad: act };
-    onCreateActivitySlide(buildContentDocumentForNewActivitySlide(block), title);
-    toast.success('Nuevo slide solo con la actividad');
+function ActividadesInsertPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
+  const addBlock = (tipo: string, subtipo: string) => {
+    onCommitContent(appendBlockToSlideContent(apiSlide, { tipo, subtipo } as unknown as Block));
+    toast.info('Próximamente');
   };
 
   return (
     <ScrollArea className="h-full min-h-0">
-      <div className="space-y-1 p-3 pr-2">
-        <p className="mb-2 text-xs text-muted-foreground">
-          Se crea un slide nuevo al final; el slide que estés viendo no se modifica.
-        </p>
-        <InsertBtn label="Quiz opción múltiple" icon={LayoutGrid} disabled={disabled} onClick={() => add(quizTemplate(), 'Quiz opción múltiple')} />
-        <InsertBtn label="Verdadero / falso" icon={LayoutGrid} disabled={disabled} onClick={() => add(trueFalseTemplate(), 'Verdadero / falso')} />
-        <InsertBtn label="Respuesta corta" icon={MessageSquare} disabled={disabled} onClick={() => add(shortAnswerTemplate(), 'Respuesta corta')} />
-        <InsertBtn label="Completar blancos" icon={LayoutGrid} disabled={disabled} onClick={() => add(fillBlanksTemplate(), 'Completar blancos')} />
-        <InsertBtn label="Arrastrar y soltar" icon={LayoutGrid} disabled={disabled} onClick={() => add(dragDropTemplate(), 'Arrastrar y soltar')} />
-        <InsertBtn label="Emparejar" icon={LayoutGrid} disabled={disabled} onClick={() => add(matchPairsTemplate(), 'Emparejar')} />
-        <InsertBtn label="Ordenar pasos" icon={LayoutGrid} disabled={disabled} onClick={() => add(orderStepsTemplate(), 'Ordenar pasos')} />
-        <InsertBtn label="Video interactivo" icon={Video} disabled={disabled} onClick={() => add(videoInteractiveTemplate(), 'Video interactivo')} />
-        <InsertBtn label="Encuesta en vivo" icon={LayoutGrid} disabled={disabled} onClick={() => add(livePollTemplate(), 'Encuesta en vivo')} />
-        <InsertBtn label="Nube de palabras" icon={LayoutGrid} disabled={disabled} onClick={() => add(wordCloudTemplate(), 'Nube de palabras')} />
+      <div className="space-y-4 p-3 pr-2">
+        <PanelSection title="Interacción">
+          <InsertBtn label="Botón" icon={MousePointer2} disabled={disabled} onClick={() => addBlock('interactivo', 'boton')} />
+          <InsertBtn label="Hotspot" icon={Target} disabled={disabled} onClick={() => addBlock('interactivo', 'hotspot')} />
+          <InsertBtn label="Tooltip emergente" icon={MessageSquare} disabled={disabled} onClick={() => addBlock('interactivo', 'tooltip')} />
+          <InsertBtn label="Contador / temporizador" icon={Timer} disabled={disabled} onClick={() => addBlock('interactivo', 'contador')} />
+          <InsertBtn label="Barra de progreso" icon={Columns2} disabled={disabled} onClick={() => addBlock('interactivo', 'progreso')} />
+        </PanelSection>
+
+        <PanelSection title="Multimedia">
+          <InsertBtn label="Iframe embebido" icon={MonitorPlay} disabled={disabled} onClick={() => addBlock('interactivo', 'iframe')} />
+          <InsertBtn label="GIF animado" icon={Film} disabled={disabled} onClick={() => addBlock('interactivo', 'gif')} />
+          <InsertBtn label="Código QR" icon={QrCode} disabled={disabled} onClick={() => addBlock('interactivo', 'qr')} />
+        </PanelSection>
+
+        <PanelSection title="Datos">
+          <InsertBtn label="Gráfico de barras" icon={BarChart} disabled={disabled} onClick={() => addBlock('interactivo', 'grafico_barras')} />
+          <InsertBtn label="Tabla de datos" icon={Table} disabled={disabled} onClick={() => addBlock('interactivo', 'tabla')} />
+        </PanelSection>
       </div>
     </ScrollArea>
   );
@@ -564,7 +455,7 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     case 'elementos':
       return <ElementosPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
     case 'actividades':
-      return <ActividadesInsertPanel onCreateActivitySlide={onCreateActivitySlide} disabled={busy} />;
+      return <ActividadesInsertPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
     case 'layout':
       return <LayoutPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
     case 'fondo':

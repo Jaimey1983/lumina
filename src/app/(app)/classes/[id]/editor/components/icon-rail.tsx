@@ -12,7 +12,7 @@ import {
   Shapes,
   Sparkles,
   User,
-  Zap,
+  Puzzle,
 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -38,7 +38,7 @@ interface RailItem {
 
 const ITEMS: RailItem[] = [
   { id: 'elementos',   label: 'Elementos',   Icon: Shapes },
-  { id: 'actividades', label: 'Actividades', Icon: Zap },
+  { id: 'actividades', label: 'Interactivos', Icon: Puzzle },
   { id: 'layout',      label: 'Layout',      Icon: LayoutTemplate },
   { id: 'fondo',       label: 'Fondo',       Icon: Palette },
   { id: 'ia',          label: 'IA',          Icon: Sparkles },
