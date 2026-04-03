@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 import { useClass } from '@/hooks/api/use-class';
 import { useCreateSlide, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
-import type { Slide as SlideSchema } from '@/types/slide.types';
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
@@ -142,6 +143,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
 
+  const rendererSlide = useMemo(
+    () => (activeSlide ? classSlideToRendererSlide(activeSlide as ApiSlide) : null),
+    [activeSlide],
+  );
+
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
   function toggleLeftPanel(id: LeftPanelId) {
@@ -196,6 +202,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleAddActivity = useCallback((type: ActivityType) => {
     toast.info(`Actividad "${type}" próximamente disponible`);
   }, []);
+
+  const handleCommitSlideContent = useCallback(
+    (content: Record<string, unknown>) => {
+      if (!activeSlide) return;
+      updateSlide.mutate(
+        { slideId: activeSlide.id, content },
+        {
+          onError: () => toast.error('No se pudo guardar el slide'),
+        },
+      );
+    },
+    [activeSlide, updateSlide],
+  );
 
   const handleApplyTheme = useCallback((bg: string) => {
     if (!activeSlide) return;
@@ -350,14 +369,23 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               ref={flyoutPanelRef}
               activePanel={activePanel}
               onClose={() => setActivePanel(null)}
+              apiSlide={activeSlide as ApiSlide}
+              onCommitSlideContent={handleCommitSlideContent}
+              slides={sortedSlides.map((s) => ({
+                id: s.id,
+                order: s.order,
+                title: s.title,
+                type: s.type,
+              }))}
+              activeSlideIndex={resolvedSlideIndex}
+              onSelectSlide={setActiveSlideIndex}
+              desempenoEnunciado={desempeno?.enunciado}
+              isSlideSaving={updateSlide.isPending}
             />
           </div>
 
           {/* Canvas area — flex-1 */}
-          <CanvasArea
-            slide={activeSlide as unknown as SlideSchema}
-            isLoading={isLoading}
-          />
+          <CanvasArea slide={rendererSlide} isLoading={isLoading} />
 
           {/* Flyout panel derecho */}
           <RightFlyoutPanel

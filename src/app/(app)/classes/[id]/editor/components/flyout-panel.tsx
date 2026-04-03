@@ -12,8 +12,11 @@ import {
   Zap,
 } from 'lucide-react';
 
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { FlyoutLeftPanels } from './panels/flyout-left-panels';
+import type { LeftPanelId } from './icon-rail';
 
 // ─── Panel config ─────────────────────────────────────────────────────────────
 
@@ -59,14 +62,35 @@ const PANELS: Record<string, PanelConfig> = {
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface FlyoutPanelProps {
-  activePanel: string | null;
+  activePanel: LeftPanelId | null;
   onClose: () => void;
+  apiSlide: ApiSlide | null;
+  /** Persiste el JSON completo `content` del slide (PATCH). */
+  onCommitSlideContent: (content: Record<string, unknown>) => void;
+  slides: { id: string; order: number; title: string; type: string }[];
+  activeSlideIndex: number;
+  onSelectSlide: (index: number) => void;
+  desempenoEnunciado?: string;
+  isSlideSaving?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
-  function FlyoutPanel({ activePanel, onClose }, ref) {
+  function FlyoutPanel(
+    {
+      activePanel,
+      onClose,
+      apiSlide,
+      onCommitSlideContent,
+      slides,
+      activeSlideIndex,
+      onSelectSlide,
+      desempenoEnunciado,
+      isSlideSaving,
+    },
+    ref,
+  ) {
     const config = activePanel ? (PANELS[activePanel] ?? null) : null;
 
     return (
@@ -90,7 +114,6 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
               'motion-reduce:animate-none',
             )}
           >
-            {/* Header */}
             <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {config.label}
@@ -107,19 +130,27 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
               </Button>
             </div>
 
-            {/* Placeholder content */}
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                <config.Icon className="size-5 text-muted-foreground" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{config.label}</p>
-                <p className="text-xs leading-relaxed text-muted-foreground">{config.description}</p>
-              </div>
+            {!apiSlide && activePanel !== 'paginas' && activePanel !== 'ia' && (
+              <p className="border-b border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
+                Selecciona un slide para editar
+              </p>
+            )}
+
+            <div className="min-h-0 flex-1">
+              <FlyoutLeftPanels
+                panel={activePanel ?? ''}
+                apiSlide={apiSlide}
+                onCommitContent={onCommitSlideContent}
+                slides={slides}
+                activeSlideIndex={activeSlideIndex}
+                onSelectSlide={onSelectSlide}
+                desempenoEnunciado={desempenoEnunciado}
+                busy={isSlideSaving}
+              />
             </div>
           </div>
         )}
       </aside>
     );
-  }
+  },
 );
