@@ -2,7 +2,7 @@
 
 import { Presentation } from 'lucide-react';
 
-import type { Slide } from '@/types/slide.types';
+import type { Activity, Slide } from '@/types/slide.types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditorToolbar } from './editor-toolbar';
 import { SlideRenderer } from './slide-renderer';
@@ -14,6 +14,7 @@ export interface CanvasAreaProps {
   slide: Slide | null;
   isLoading?: boolean;
   onBlockSelect?: (id: string) => void;
+  onActivityChange?: (blockId: string, activity: Activity) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -24,7 +25,12 @@ const SLIDE_FRAME_CLASS = cn(
   'rounded-md border border-border bg-card shadow-md',
 );
 
-export function CanvasArea({ slide, isLoading, onBlockSelect }: CanvasAreaProps) {
+export function CanvasArea({
+  slide,
+  isLoading,
+  onBlockSelect,
+  onActivityChange,
+}: CanvasAreaProps) {
   return (
     <div
       className={cn(
@@ -54,6 +60,7 @@ export function CanvasArea({ slide, isLoading, onBlockSelect }: CanvasAreaProps)
             slide={slide}
             modo="editor"
             onBlockSelect={onBlockSelect}
+            onActivityChange={onActivityChange}
             className="absolute inset-0 h-full w-full"
           />
         </div>

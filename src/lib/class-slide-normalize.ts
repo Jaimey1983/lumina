@@ -82,6 +82,40 @@ export function appendBlockToSlideContent(
   return mergeSlideContent(api, { bloques: [...prev, block] });
 }
 
+/** Actualiza un bloque por ruta tipo `"2"` o `"5-0-1"` (columnas anidadas). */
+export function updateBlockAtPath(
+  bloques: Block[],
+  path: string,
+  fn: (b: Block) => Block,
+): Block[] {
+  const parts = path.split('-').map((x) => parseInt(x, 10));
+  if (parts.some((n) => Number.isNaN(n))) return bloques;
+
+  function go(arr: Block[], depth: number): Block[] {
+    const i = parts[depth]!;
+    if (i < 0 || i >= arr.length) return arr;
+
+    if (depth === parts.length - 1) {
+      return arr.map((b, j) => (j === i ? fn(b) : b));
+    }
+
+    const block = arr[i];
+    if (block.tipo !== 'columnas') return arr;
+
+    const colIdx = parts[depth + 1];
+    if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return arr;
+
+    const newColumnas = block.columnas.map((col, cj) => {
+      if (cj !== colIdx) return col;
+      return go(col, depth + 2);
+    });
+
+    return arr.map((b, j) => (j === i ? { ...block, columnas: newColumnas } : b));
+  }
+
+  return go(bloques, 0);
+}
+
 export function applyLayoutPreset(
   api: ApiSlide | null,
   layoutKey: string,

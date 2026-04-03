@@ -87,6 +87,17 @@ export interface TrueFalse {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface ShortAnswerActivity {
+  tipo: 'short_answer';
+  question: string;
+  expectedAnswer: string;
+  caseSensitive: boolean;
+  maxLength: number;
+  hint?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface FillBlank {
   id: string;
   respuesta: string;
@@ -217,6 +228,7 @@ export interface WordCloud {
 export type Activity =
   | QuizMultiple
   | TrueFalse
+  | ShortAnswerActivity
   | FillBlanks
   | DragDrop
   | MatchPairs

@@ -8,6 +8,7 @@ import {
   ImageIcon,
   LayoutGrid,
   LayoutTemplate,
+  MessageSquare,
   Minus,
   Quote,
   Sparkles,
@@ -52,6 +53,16 @@ function trueFalseTemplate(): Activity {
     tipo: 'verdadero_falso',
     afirmacion: 'Nueva afirmación',
     respuestaCorrecta: true,
+  };
+}
+
+function shortAnswerTemplate(): Activity {
+  return {
+    tipo: 'short_answer',
+    question: 'Nueva pregunta',
+    expectedAnswer: '',
+    caseSensitive: false,
+    maxLength: 200,
   };
 }
 
@@ -302,6 +313,7 @@ function ActividadesInsertPanel({ apiSlide, onCommitContent, disabled }: Content
         </p>
         <InsertBtn label="Quiz opción múltiple" icon={LayoutGrid} disabled={disabled} onClick={() => add(quizTemplate())} />
         <InsertBtn label="Verdadero / falso" icon={LayoutGrid} disabled={disabled} onClick={() => add(trueFalseTemplate())} />
+        <InsertBtn label="Respuesta corta" icon={MessageSquare} disabled={disabled} onClick={() => add(shortAnswerTemplate())} />
         <InsertBtn label="Completar blancos" icon={LayoutGrid} disabled={disabled} onClick={() => add(fillBlanksTemplate())} />
         <InsertBtn label="Arrastrar y soltar" icon={LayoutGrid} disabled={disabled} onClick={() => add(dragDropTemplate())} />
         <InsertBtn label="Emparejar" icon={LayoutGrid} disabled={disabled} onClick={() => add(matchPairsTemplate())} />

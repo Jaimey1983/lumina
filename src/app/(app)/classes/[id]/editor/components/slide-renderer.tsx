@@ -21,11 +21,14 @@ import type {
 } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
 
+import { ShortAnswerActivityEditor } from './activities/short-answer';
+
 // ─── Activity placeholder labels ──────────────────────────────────────────────
 
 const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   quiz_multiple: 'Quiz · Opción múltiple',
   verdadero_falso: 'Actividad · Verdadero / Falso',
+  short_answer: 'Actividad · Respuesta corta',
   completar_blancos: 'Actividad · Completar blancos',
   arrastrar_soltar: 'Actividad · Arrastrar y soltar',
   emparejar: 'Actividad · Emparejar',
@@ -308,8 +311,36 @@ function RenderDivider({ block }: { block: DividerBlock }) {
   );
 }
 
-function RenderActivity({ block }: { block: ActivityBlock }) {
-  const label = ACTIVITY_LABELS[block.actividad.tipo];
+function RenderActivity({
+  block,
+  blockId,
+  modo,
+  onActivityChange,
+}: {
+  block: ActivityBlock;
+  blockId: string;
+  modo: 'editor' | 'viewer';
+  onActivityChange?: (blockId: string, activity: Activity) => void;
+}) {
+  const act = block.actividad;
+
+  if (act.tipo === 'short_answer') {
+    if (modo === 'editor') {
+      return (
+        <ShortAnswerActivityEditor
+          activity={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+        />
+      );
+    }
+    return (
+      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+        Vista previa no disponible aún
+      </div>
+    );
+  }
+
+  const label = ACTIVITY_LABELS[act.tipo];
   return (
     <div
       style={{
@@ -340,9 +371,17 @@ interface RenderColumnsProps {
   selectedId: string | null;
   onBlockClick: (id: string) => void;
   pathPrefix: string;
+  onActivityChange?: (blockId: string, activity: Activity) => void;
 }
 
-function RenderColumns({ block, modo, selectedId, onBlockClick, pathPrefix }: RenderColumnsProps) {
+function RenderColumns({
+  block,
+  modo,
+  selectedId,
+  onBlockClick,
+  pathPrefix,
+  onActivityChange,
+}: RenderColumnsProps) {
   let gridCols = `repeat(${block.columnas.length}, 1fr)`;
   if (block.proporcion) {
     const parts = block.proporcion.split(':');
@@ -378,6 +417,7 @@ function RenderColumns({ block, modo, selectedId, onBlockClick, pathPrefix }: Re
                 onClick={() => onBlockClick(id)}
                 onBlockClick={onBlockClick}
                 pathPrefix={id}
+                onActivityChange={onActivityChange}
               />
             );
           })}
@@ -398,6 +438,7 @@ interface BlockNodeProps {
   onClick: () => void;
   onBlockClick: (id: string) => void;
   pathPrefix: string;
+  onActivityChange?: (blockId: string, activity: Activity) => void;
 }
 
 function BlockNode({
@@ -409,6 +450,7 @@ function BlockNode({
   onClick,
   onBlockClick,
   pathPrefix,
+  onActivityChange,
 }: BlockNodeProps) {
   function renderContent() {
     switch (block.tipo) {
@@ -416,7 +458,15 @@ function BlockNode({
       case 'imagen':    return <RenderImage block={block} />;
       case 'video':     return <RenderVideo block={block} />;
       case 'audio':     return <RenderAudio block={block} />;
-      case 'actividad': return <RenderActivity block={block} />;
+      case 'actividad':
+        return (
+          <RenderActivity
+            block={block}
+            blockId={blockId}
+            modo={modo}
+            onActivityChange={onActivityChange}
+          />
+        );
       case 'codigo':    return <RenderCode block={block} />;
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
@@ -428,6 +478,7 @@ function BlockNode({
             selectedId={selectedId}
             onBlockClick={onBlockClick}
             pathPrefix={pathPrefix}
+            onActivityChange={onActivityChange}
           />
         );
     }
@@ -471,10 +522,12 @@ export interface SlideRendererProps {
   modo: 'editor' | 'viewer';
   /** Called with the block's index-path string when a block is selected in editor mode. */
   onBlockSelect?: (blockId: string) => void;
+  /** Persiste cambios de una actividad (PATCH vía el padre). */
+  onActivityChange?: (blockId: string, activity: Activity) => void;
   className?: string;
 }
 
-export function SlideRenderer({ slide, modo, onBlockSelect, className }: SlideRendererProps) {
+export function SlideRenderer({ slide, modo, onBlockSelect, onActivityChange, className }: SlideRendererProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const bgStyle = buildBackgroundStyle(slide.fondo);
@@ -507,6 +560,7 @@ export function SlideRenderer({ slide, modo, onBlockSelect, className }: SlideRe
               onClick={() => handleBlockClick(blockId)}
               onBlockClick={handleBlockClick}
               pathPrefix={blockId}
+              onActivityChange={onActivityChange}
             />
           );
         })}

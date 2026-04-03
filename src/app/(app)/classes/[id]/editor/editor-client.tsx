@@ -9,7 +9,14 @@ import { useClass } from '@/hooks/api/use-class';
 import { useCreateSlide, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
+import {
+  appendBlockToSlideContent,
+  classSlideToRendererSlide,
+  getSlideContentRecord,
+  mergeSlideContent,
+  updateBlockAtPath,
+} from '@/lib/class-slide-normalize';
+import type { Activity, Block } from '@/types/slide.types';
 
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
@@ -33,6 +40,16 @@ const SAVE_LABEL: Record<SaveStatus, string> = {
   saved:  'Guardado ✓',
   error:  'Error al guardar',
 };
+
+function shortAnswerTemplate(): Activity {
+  return {
+    tipo: 'short_answer',
+    question: 'Nueva pregunta',
+    expectedAnswer: '',
+    caseSensitive: false,
+    maxLength: 200,
+  };
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -199,10 +216,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     );
   }, [sortedSlides.length, createSlide]);
 
-  const handleAddActivity = useCallback((type: ActivityType) => {
-    toast.info(`Actividad "${type}" próximamente disponible`);
-  }, []);
-
   const handleCommitSlideContent = useCallback(
     (content: Record<string, unknown>) => {
       if (!activeSlide) return;
@@ -214,6 +227,37 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       );
     },
     [activeSlide, updateSlide],
+  );
+
+  const handleActivityChange = useCallback(
+    (blockPath: string, activity: Activity) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'actividad') return b;
+        return { ...b, actividad: activity };
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
+  const handleAddActivity = useCallback(
+    (type: ActivityType) => {
+      if (!activeSlide) {
+        toast.error('Selecciona un slide');
+        return;
+      }
+      if (type === 'short-answer') {
+        const block: Block = { tipo: 'actividad', actividad: shortAnswerTemplate() };
+        handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
+        toast.success('Actividad insertada en el slide');
+        return;
+      }
+      toast.info(`Actividad "${type}" próximamente disponible`);
+    },
+    [activeSlide, handleCommitSlideContent],
   );
 
   const handleApplyTheme = useCallback((bg: string) => {
@@ -385,7 +429,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           </div>
 
           {/* Canvas area — flex-1 */}
-          <CanvasArea slide={rendererSlide} isLoading={isLoading} />
+          <CanvasArea
+            slide={rendererSlide}
+            isLoading={isLoading}
+            onActivityChange={handleActivityChange}
+          />
 
           {/* Flyout panel derecho */}
           <RightFlyoutPanel
