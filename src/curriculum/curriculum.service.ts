@@ -25,6 +25,7 @@ export interface DesempenoResult {
     basico: string;
     bajo: string;
   };
+  actividadesSugeridas: string[];
 }
 
 // ─── Banco de DBA simulados ───────────────────────────────
@@ -192,6 +193,35 @@ const DBA_BANCO: DbaItem[] = [
 
 // ─── Fallback hardcodeado ─────────────────────────────────
 
+function buildActividadesFallback(dto: GenerateDesempenoDto): string[] {
+  const { tema, area, grado, tipo } = dto;
+  if (tipo === 'Cognitivo') {
+    return [
+      `Los estudiantes de grado ${grado} responden preguntas de comprensión sobre "${tema}" en ${area} [Tipo: Quiz opción múltiple]`,
+      `Lectura guiada sobre "${tema}" seguida de completar oraciones clave del concepto [Tipo: Llenar espacios]`,
+      `Los estudiantes emparejan conceptos y definiciones fundamentales de "${tema}" en ${area} [Tipo: Emparejar]`,
+      `Clasificar afirmaciones sobre "${tema}" como verdaderas o falsas con justificación breve [Tipo: Verdadero/Falso]`,
+      `Los estudiantes escriben con sus palabras la idea principal de "${tema}" para grado ${grado} [Tipo: Respuesta corta]`,
+    ];
+  }
+  if (tipo === 'Procedimental') {
+    return [
+      `Ordenar los pasos del procedimiento de "${tema}" en ${area} para grado ${grado} [Tipo: Ordenar pasos]`,
+      `Arrastrar cada etapa de "${tema}" a su posición correcta en el diagrama del proceso [Tipo: Drag & Drop]`,
+      `Los estudiantes resuelven un ejercicio aplicado de "${tema}" y explican su razonamiento [Tipo: Respuesta corta]`,
+      `Video demostrativo de "${tema}" con preguntas de verificación en puntos clave [Tipo: Video interactivo]`,
+      `Completar el procedimiento de "${tema}" insertando los términos técnicos faltantes [Tipo: Llenar espacios]`,
+    ];
+  }
+  return [
+    `Encuesta anónima: ¿cómo se sienten los estudiantes de grado ${grado} frente a "${tema}" en ${area}? [Tipo: Encuesta en vivo]`,
+    `Nube de palabras: cada estudiante escribe la primera palabra que asocia con "${tema}" [Tipo: Nube de palabras]`,
+    `Los estudiantes indican si están de acuerdo o no con afirmaciones actitudinales sobre "${tema}" [Tipo: Verdadero/Falso]`,
+    `Respuesta escrita: ¿qué compromiso personal asumes respecto a "${tema}" en ${area}? [Tipo: Respuesta corta]`,
+    `Emparejar situaciones cotidianas del grado ${grado} con las actitudes positivas asociadas a "${tema}" [Tipo: Emparejar]`,
+  ];
+}
+
 function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
   return {
     enunciado: `Analizar los conceptos fundamentales de ${dto.tema} mediante el estudio de casos del entorno, para desarrollar pensamiento crítico en ${dto.area} de grado ${dto.grado}.`,
@@ -205,6 +235,7 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
       basico: `Comprende los conceptos básicos de ${dto.tema} y los aplica en situaciones guiadas con apoyo del docente.`,
       bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
     },
+    actividadesSugeridas: buildActividadesFallback(dto),
   };
 }
 
@@ -269,8 +300,27 @@ Devuelve JSON con esta estructura exacta:
     "alto": "string — desempeño para nivel alto (4.0 - 4.5)",
     "basico": "string — desempeño para nivel básico (3.0 - 3.9)",
     "bajo": "string — desempeño para nivel bajo (1.0 - 2.9)"
-  }
-}`;
+  },
+  "actividadesSugeridas": ["string", "..."]
+}
+Para "actividadesSugeridas" genera EXACTAMENTE 5 actividades de aula ESPECÍFICAS para el tema "${dto.tema}" en ${dto.area} de grado ${dto.grado}, tipo ${dto.tipo}.
+Reglas obligatorias para cada actividad:
+1. Debe mencionar explícitamente "${dto.tema}" y ser adecuada para grado ${dto.grado}.
+2. Debe estar alineada al tipo ${dto.tipo} (Cognitivo=comprensión/análisis, Procedimental=práctica/aplicación, Actitudinal=valores/actitudes).
+3. Debe terminar con la etiqueta del tipo de actividad interactiva de la plataforma Lumina que se usaría, en formato: [Tipo: <nombre>].
+Los tipos disponibles en Lumina son ÚNICAMENTE estos (elige el más apropiado para cada actividad):
+- Quiz opción múltiple
+- Verdadero/Falso
+- Llenar espacios
+- Respuesta corta
+- Drag & Drop
+- Emparejar
+- Ordenar pasos
+- Video interactivo
+- Encuesta en vivo
+- Nube de palabras
+Ejemplo de formato correcto: "Los estudiantes identifican las partes de la célula arrastrando cada etiqueta a su lugar correspondiente [Tipo: Drag & Drop]"
+No uses ningún tipo de actividad fuera de la lista anterior.`;
 
     try {
       const response = await this.openai.chat.completions.create({
@@ -281,7 +331,7 @@ Devuelve JSON con esta estructura exacta:
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
-        max_tokens: 800,
+        max_tokens: 1200,
       });
 
       const raw = response.choices[0]?.message?.content ?? '';
@@ -289,6 +339,7 @@ Devuelve JSON con esta estructura exacta:
 
       const enunciado = parsed['enunciado'];
       const indicadores = parsed['indicadores'];
+      const actRaw = parsed['actividadesSugeridas'];
 
       if (
         typeof enunciado !== 'string' ||
@@ -300,6 +351,17 @@ Devuelve JSON con esta estructura exacta:
       }
 
       const ind = indicadores as Record<string, unknown>;
+
+      let actividadesSugeridas: string[] = buildActividadesFallback(dto);
+      if (Array.isArray(actRaw)) {
+        const fromAi = actRaw
+          .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+          .map((s) => s.trim())
+          .slice(0, 5);
+        if (fromAi.length >= 3) {
+          actividadesSugeridas = fromAi;
+        }
+      }
 
       return {
         enunciado,
@@ -325,6 +387,7 @@ Devuelve JSON con esta estructura exacta:
               ? ind['bajo']
               : buildFallbackDesempeno(dto).indicadores.bajo,
         },
+        actividadesSugeridas,
       };
     } catch {
       return buildFallbackDesempeno(dto);

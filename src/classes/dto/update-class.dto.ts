@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsOptional, MinLength, IsObject } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { trimIfString } from '../../common/trim-if-string';
 
@@ -13,4 +13,8 @@ export class UpdateClassDto {
   @IsString()
   @Transform(trimIfString)
   description?: string;
+
+  @IsOptional()
+  @IsObject()
+  desempeno?: Record<string, unknown>;
 }

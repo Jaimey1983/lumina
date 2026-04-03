@@ -85,6 +85,7 @@ export class ClassesService {
         code: true,
         status: true,
         courseId: true,
+        desempeno: true,
         createdAt: true,
         updatedAt: true,
         slides: {
@@ -113,13 +114,20 @@ export class ClassesService {
     const cls = await this.findOneRaw(id);
     await this.verifyTeacherOwnership(cls.courseId, userId);
 
+    const { desempeno, ...rest } = dto;
     return this.prisma.class.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        ...(desempeno !== undefined
+          ? { desempeno: desempeno as Prisma.InputJsonValue }
+          : {}),
+      },
       select: {
         id: true,
         title: true,
         description: true,
+        desempeno: true,
         status: true,
         updatedAt: true,
       },
