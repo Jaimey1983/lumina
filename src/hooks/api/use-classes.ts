@@ -68,6 +68,7 @@ export interface CreateClassInput {
 export interface UpdateClassInput {
   title?: string;
   description?: string;
+  desempeno?: unknown;
 }
 
 export function useCreateClass(courseId: string) {
@@ -91,7 +92,9 @@ export function useUpdateClass(classId: string, courseId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      if (courseId) {
+        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
     },
   });

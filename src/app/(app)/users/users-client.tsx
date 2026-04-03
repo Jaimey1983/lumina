@@ -464,7 +464,18 @@ export function UsersClient() {
   const [editUser, setEditUser] = useState<ApiUser | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
-  // Access guard
+  const filtered = useMemo(() => {
+    if (!search.trim()) return users;
+    const q = search.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.lastName?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q),
+    );
+  }, [users, search]);
+
+  // Access guard (después de todos los hooks)
   if (!isAdmin(authUser?.role)) {
     return (
       <div className="container py-6">
@@ -482,18 +493,6 @@ export function UsersClient() {
       </div>
     );
   }
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const filtered = useMemo(() => {
-    if (!search.trim()) return users;
-    const q = search.toLowerCase();
-    return users.filter(
-      (u) =>
-        u.name?.toLowerCase().includes(q) ||
-        u.lastName?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q),
-    );
-  }, [users, search]);
 
   function handleEdit(u: ApiUser) {
     setEditUser(u);

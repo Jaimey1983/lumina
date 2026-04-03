@@ -44,7 +44,8 @@ import { Separator } from '@/components/ui/separator';
 // ─── Grade calculation types ──────────────────────────────────────────────────
 
 interface GradeEntry {
-  studentId: string;
+  studentId?: string;
+  userId?: string;
   studentName: string;
   finalGrade: number;
   status: 'complete' | 'partial';
@@ -628,8 +629,8 @@ function GradesTab({ courseId }: { courseId: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {grades.map((entry) => (
-                  <TableRow key={entry.studentId}>
+                {grades.map((entry, index) => (
+                  <TableRow key={entry.studentId ?? entry.userId ?? index}>
                     <TableCell className="font-medium">{entry.studentName}</TableCell>
                     <TableCell>
                       <span className="font-semibold">{entry.finalGrade.toFixed(1)}</span>

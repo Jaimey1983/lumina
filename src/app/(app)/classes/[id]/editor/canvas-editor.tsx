@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
+import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,12 +38,22 @@ export interface CanvasEditorAPI {
   sendToBack: () => void;
   setProperty: (key: string, value: unknown) => void;
   setBackground: (color: string) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 interface CanvasEditorProps {
   content: unknown;
   onSelectionChange: (props: SelectedObjectProps | null) => void;
   onReady: (api: CanvasEditorAPI) => void;
+  /** Clases Tailwind del contenedor exterior del canvas (área gris + centrado). */
+  wrapperClassName?: string;
+  onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
+  /**
+   * Si true (defecto), el lienzo llena el contenedor padre (h-full + overflow-hidden)
+   * y la escala se calcula para caber sin desbordar el viewport.
+   */
+  fillContainer?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -73,17 +84,75 @@ function isFabricJSON(v: unknown): v is { fabricJSON: object; background?: { val
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function CanvasEditor({ content, onSelectionChange, onReady }: CanvasEditorProps) {
+const HISTORY_MAX = 50;
+
+export default function CanvasEditor({
+  content,
+  onSelectionChange,
+  onReady,
+  wrapperClassName,
+  onHistoryChange,
+  fillContainer = true,
+}: CanvasEditorProps) {
   const canvasElRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.65);
 
+  const isRestoringRef = useRef(false);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
+  const historyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Keep callbacks in refs to avoid stale closures
   const onSelectionChangeRef = useRef(onSelectionChange);
   const onReadyRef = useRef(onReady);
+  const onHistoryChangeRef = useRef(onHistoryChange);
   useEffect(() => { onSelectionChangeRef.current = onSelectionChange; }, [onSelectionChange]);
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+  useEffect(() => { onHistoryChangeRef.current = onHistoryChange; }, [onHistoryChange]);
+
+  const emitHistory = () => {
+    const h = historyRef.current;
+    const i = historyIndexRef.current;
+    onHistoryChangeRef.current?.({
+      canUndo: i > 0,
+      canRedo: i < h.length - 1,
+    });
+  };
+
+  const pushHistorySnapshot = () => {
+    const canvas = fabricRef.current;
+    if (!canvas || isRestoringRef.current) return;
+    const json = JSON.stringify(canvas.toJSON(['data']));
+    const h = historyRef.current;
+    h.splice(historyIndexRef.current + 1);
+    h.push(json);
+    historyIndexRef.current = h.length - 1;
+    while (h.length > HISTORY_MAX) {
+      h.shift();
+      historyIndexRef.current--;
+    }
+    emitHistory();
+  };
+
+  const scheduleHistorySnapshot = () => {
+    if (isRestoringRef.current) return;
+    if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
+    historyDebounceRef.current = setTimeout(() => {
+      historyDebounceRef.current = null;
+      pushHistorySnapshot();
+    }, 280);
+  };
+
+  const resetHistoryFromCanvas = () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const json = JSON.stringify(canvas.toJSON(['data']));
+    historyRef.current = [json];
+    historyIndexRef.current = 0;
+    emitHistory();
+  };
 
   // ── Initialize Fabric canvas ────────────────────────────────────────────────
   useEffect(() => {
@@ -108,6 +177,10 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
     canvas.on('object:scaling', notify);
     canvas.on('object:moving', notify);
     canvas.on('selection:cleared', () => onSelectionChangeRef.current(null));
+
+    canvas.on('object:added', scheduleHistorySnapshot);
+    canvas.on('object:removed', scheduleHistorySnapshot);
+    canvas.on('object:modified', scheduleHistorySnapshot);
 
     // ── Expose imperative API ──────────────────────────────────────────────────
     const api: CanvasEditorAPI = {
@@ -214,6 +287,7 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
         if (obj) {
           canvas.bringToFront(obj);
           canvas.renderAll();
+          pushHistorySnapshot();
         }
       },
       sendToBack: () => {
@@ -221,7 +295,34 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
         if (obj) {
           canvas.sendToBack(obj);
           canvas.renderAll();
+          pushHistorySnapshot();
         }
+      },
+      undo: () => {
+        if (historyIndexRef.current <= 0) return;
+        historyIndexRef.current--;
+        isRestoringRef.current = true;
+        const raw = historyRef.current[historyIndexRef.current];
+        canvas.loadFromJSON(JSON.parse(raw), () => {
+          canvas.renderAll();
+          isRestoringRef.current = false;
+          const obj = canvas.getActiveObject();
+          onSelectionChangeRef.current(obj ? extractProps(obj) : null);
+          emitHistory();
+        });
+      },
+      redo: () => {
+        const h = historyRef.current;
+        if (historyIndexRef.current >= h.length - 1) return;
+        historyIndexRef.current++;
+        isRestoringRef.current = true;
+        canvas.loadFromJSON(JSON.parse(h[historyIndexRef.current]), () => {
+          canvas.renderAll();
+          isRestoringRef.current = false;
+          const obj = canvas.getActiveObject();
+          onSelectionChangeRef.current(obj ? extractProps(obj) : null);
+          emitHistory();
+        });
       },
       setProperty: (key: string, value: unknown) => {
         const obj = canvas.getActiveObject();
@@ -231,16 +332,21 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
         onSelectionChangeRef.current(extractProps(obj));
       },
       setBackground: (color: string) => {
-        canvas.setBackgroundColor(color, () => canvas.renderAll());
+        canvas.setBackgroundColor(color, () => {
+          canvas.renderAll();
+          pushHistorySnapshot();
+        });
       },
     };
 
     onReadyRef.current(api);
 
     return () => {
+      if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
       canvas.dispose();
       fabricRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init Fabric una vez; handlers usan refs
   }, []);
 
   // ── Load slide content when it changes ─────────────────────────────────────
@@ -248,21 +354,34 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
     const canvas = fabricRef.current;
     if (!canvas) return;
 
+    isRestoringRef.current = true;
+
     const bg = isFabricJSON(content)
       ? ((content as { background?: { value?: string } }).background?.value ?? '#ffffff')
       : '#ffffff';
 
+    const afterLoad = () => {
+      canvas.discardActiveObject();
+      onSelectionChangeRef.current(null);
+      isRestoringRef.current = false;
+      resetHistoryFromCanvas();
+    };
+
     if (isFabricJSON(content)) {
       canvas.loadFromJSON(content.fabricJSON, () => {
-        canvas.setBackgroundColor(bg, () => canvas.renderAll());
+        canvas.setBackgroundColor(bg, () => {
+          canvas.renderAll();
+          afterLoad();
+        });
       });
     } else {
       canvas.clear();
-      canvas.setBackgroundColor(bg, () => canvas.renderAll());
+      canvas.setBackgroundColor(bg, () => {
+        canvas.renderAll();
+        afterLoad();
+      });
     }
-
-    canvas.discardActiveObject();
-    onSelectionChangeRef.current(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cambiar slide (content)
   }, [content]);
 
   // ── Scale canvas to fit container ──────────────────────────────────────────
@@ -270,20 +389,26 @@ export default function CanvasEditor({ content, onSelectionChange, onReady }: Ca
     const container = containerRef.current;
     if (!container) return;
 
+    const pad = fillContainer ? 8 : 32;
     const observer = new ResizeObserver(() => {
-      const availW = container.clientWidth - 96;
-      const availH = container.clientHeight - 96;
+      const availW = Math.max(container.clientWidth - pad, 40);
+      const availH = Math.max(container.clientHeight - pad, 40);
       const s = Math.min(availW / CANVAS_WIDTH, availH / CANVAS_HEIGHT, 1);
-      setScale(Math.max(s, 0.2));
+      setScale(Math.max(s, 0.15));
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, []);
+  }, [fillContainer]);
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 min-h-0 flex items-start justify-center p-6 overflow-auto bg-neutral-100"
+      className={cn(
+        fillContainer
+          ? 'flex h-full min-h-0 w-full min-w-0 flex-1 items-center justify-center overflow-hidden bg-neutral-100'
+          : 'flex min-h-0 flex-1 items-start justify-center overflow-auto bg-neutral-100 p-6',
+        wrapperClassName,
+      )}
     >
       {/* Outer wrapper has the visual (scaled) dimensions so layout flows correctly */}
       <div

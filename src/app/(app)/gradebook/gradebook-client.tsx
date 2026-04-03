@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertCircle, BookOpen, CheckCircle2, XCircle } from 'lucide-react';
+import { AlertCircle, BookOpen, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCourses } from '@/hooks/api/use-courses';
@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -372,6 +373,7 @@ function GradeCalculationPanel({
 export function GradebookClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
+  const [filtersSidebarExpanded, setFiltersSidebarExpanded] = useState(true);
   const [coursePick, setCoursePick] = useState<string | null>(null);
   const [periodPick, setPeriodPick] = useState<string | null>(null);
 
@@ -412,152 +414,193 @@ export function GradebookClient() {
   const entries = gradebook?.entries ?? [];
 
   return (
-    <div className="container py-6 space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-semibold">Calificaciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Registra y gestiona las notas de los estudiantes por período.
-        </p>
-      </div>
-
-      {/* Selectors */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <label htmlFor="course-select" className="text-sm font-medium shrink-0">
-            Curso:
-          </label>
-          {coursesLoading ? (
-            <Skeleton className="h-8.5 w-52" />
-          ) : courses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay cursos disponibles.</p>
-          ) : (
-            <select
-              id="course-select"
-              value={selectedCourseId}
-              onChange={(e) => setCoursePick(e.target.value)}
-              className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground min-w-[14rem]"
-            >
-              <option value="" disabled>
-                Selecciona un curso
-              </option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.code})
-                </option>
-              ))}
-            </select>
+    <div className="container py-6">
+      <div className="flex gap-0 overflow-hidden rounded-lg border border-border bg-background">
+        {/* ── Filtros: 240px expandido / 48px contraído (mismo patrón que el editor) ── */}
+        <aside
+          className={cn(
+            'flex shrink-0 flex-col border-r border-border bg-muted/15 transition-[width] duration-200',
+            filtersSidebarExpanded ? 'w-[240px]' : 'w-[48px]',
           )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label htmlFor="period-select" className="text-sm font-medium shrink-0">
-            Período:
-          </label>
-          {periodsLoading && selectedCourseId ? (
-            <Skeleton className="h-8.5 w-44" />
-          ) : !selectedCourseId ? (
-            <p className="text-sm text-muted-foreground">Selecciona un curso primero.</p>
-          ) : periods.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin períodos disponibles.</p>
-          ) : (
-            <select
-              id="period-select"
-              value={selectedPeriodId}
-              onChange={(e) => setPeriodPick(e.target.value)}
-              className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground min-w-[11rem]"
+        >
+          <div className="flex h-10 shrink-0 items-center border-b border-border px-0.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-9 shrink-0"
+              aria-label={filtersSidebarExpanded ? 'Contraer filtros' : 'Expandir filtros'}
+              aria-expanded={filtersSidebarExpanded}
+              onClick={() => setFiltersSidebarExpanded((v) => !v)}
             >
-              <option value="" disabled>
-                Selecciona un período
-              </option>
-              {periods.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              {filtersSidebarExpanded ? (
+                <ChevronLeft className="size-5" />
+              ) : (
+                <ChevronRight className="size-5" />
+              )}
+            </Button>
+            {filtersSidebarExpanded && (
+              <span className="truncate pr-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Filtros
+              </span>
+            )}
+          </div>
+
+          {!filtersSidebarExpanded && (
+            <div
+              className="flex flex-col items-center gap-2 border-b border-border py-2 text-muted-foreground"
+              title="Curso y período"
+            >
+              <BookOpen className="size-5" aria-hidden />
+              <CalendarRange className="size-5" aria-hidden />
+            </div>
           )}
-        </div>
-      </div>
 
-      {/* Error */}
-      {gradebookError && (
-        <Alert variant="destructive" appearance="light">
-          <AlertIcon>
-            <AlertCircle />
-          </AlertIcon>
-          <AlertContent>
-            <AlertTitle>No se pudo cargar el libro de calificaciones.</AlertTitle>
-          </AlertContent>
-        </Alert>
-      )}
+          {filtersSidebarExpanded && (
+            <div className="flex flex-col gap-4 p-3">
+              <div className="space-y-1.5">
+                <label htmlFor="course-select" className="text-xs font-medium text-muted-foreground">
+                  Curso
+                </label>
+                {coursesLoading ? (
+                  <Skeleton className="h-8 w-full" />
+                ) : courses.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Sin cursos.</p>
+                ) : (
+                  <select
+                    id="course-select"
+                    value={selectedCourseId}
+                    onChange={(e) => setCoursePick(e.target.value)}
+                    className="h-8 w-full rounded-md border border-input bg-background px-2 text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring"
+                  >
+                    <option value="" disabled>
+                      Seleccionar
+                    </option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.code})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
-      {/* Gradebook Table */}
-      <Card>
-        <CardHeader>
-          <CardHeading>
-            <CardTitle>Libro de notas</CardTitle>
-          </CardHeading>
-        </CardHeader>
-        {!hasData ? (
-          <CardContent>
-            <div className="flex flex-col items-center py-16 gap-3 text-center">
-              <BookOpen className="size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Selecciona un curso y un período para ver el libro de notas.
-              </p>
+              <div className="space-y-1.5">
+                <label htmlFor="period-select" className="text-xs font-medium text-muted-foreground">
+                  Período
+                </label>
+                {periodsLoading && selectedCourseId ? (
+                  <Skeleton className="h-8 w-full" />
+                ) : !selectedCourseId ? (
+                  <p className="text-xs text-muted-foreground">Elige un curso.</p>
+                ) : periods.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Sin períodos.</p>
+                ) : (
+                  <select
+                    id="period-select"
+                    value={selectedPeriodId}
+                    onChange={(e) => setPeriodPick(e.target.value)}
+                    className="h-8 w-full rounded-md border border-input bg-background px-2 text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring"
+                  >
+                    <option value="" disabled>
+                      Seleccionar
+                    </option>
+                    {periods.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
-          </CardContent>
-        ) : gradebookLoading ? (
-          <CardContent>
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        ) : activities.length === 0 || students.length === 0 ? (
-          <CardContent>
-            <div className="flex flex-col items-center py-16 gap-3 text-center">
-              <BookOpen className="size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                No hay actividades ni estudiantes registrados para este período.
-              </p>
-            </div>
-          </CardContent>
-        ) : (
-          <GradebookTable
-            students={students}
-            activities={activities}
-            entries={entries}
-            onCellClick={handleCellClick}
+          )}
+        </aside>
+
+        <div className="min-w-0 flex-1 space-y-6 p-6">
+          <div>
+            <h1 className="text-2xl font-semibold">Calificaciones</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Registra y gestiona las notas de los estudiantes por período.
+            </p>
+          </div>
+
+          {gradebookError && (
+            <Alert variant="destructive" appearance="light">
+              <AlertIcon>
+                <AlertCircle />
+              </AlertIcon>
+              <AlertContent>
+                <AlertTitle>No se pudo cargar el libro de calificaciones.</AlertTitle>
+              </AlertContent>
+            </Alert>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardHeading>
+                <CardTitle>Libro de notas</CardTitle>
+              </CardHeading>
+            </CardHeader>
+            {!hasData ? (
+              <CardContent>
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <BookOpen className="size-10 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Selecciona un curso y un período para ver el libro de notas.
+                  </p>
+                </div>
+              </CardContent>
+            ) : gradebookLoading ? (
+              <CardContent>
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            ) : activities.length === 0 || students.length === 0 ? (
+              <CardContent>
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <BookOpen className="size-10 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No hay actividades ni estudiantes registrados para este período.
+                  </p>
+                </div>
+              </CardContent>
+            ) : (
+              <GradebookTable
+                students={students}
+                activities={activities}
+                entries={entries}
+                onCellClick={handleCellClick}
+              />
+            )}
+          </Card>
+
+          {hasData && (
+            <Card>
+              <CardHeader>
+                <CardHeading>
+                  <CardTitle>Notas finales</CardTitle>
+                </CardHeading>
+              </CardHeader>
+              <GradeCalculationPanel courseId={selectedCourseId} periodId={selectedPeriodId} />
+            </Card>
+          )}
+
+          <GradeEntryModal
+            key={`${modalStudent?.id}-${modalActivity?.id}`}
+            open={modalOpen}
+            onOpenChange={setModalOpen}
+            courseId={selectedCourseId}
+            periodId={selectedPeriodId}
+            student={modalStudent}
+            activity={modalActivity}
+            existingEntry={modalEntry}
           />
-        )}
-      </Card>
-
-      {/* Grade Calculation Panel */}
-      {hasData && (
-        <Card>
-          <CardHeader>
-            <CardHeading>
-              <CardTitle>Notas finales</CardTitle>
-            </CardHeading>
-          </CardHeader>
-          <GradeCalculationPanel courseId={selectedCourseId} periodId={selectedPeriodId} />
-        </Card>
-      )}
-
-      {/* Grade Entry Modal */}
-      <GradeEntryModal
-        key={`${modalStudent?.id}-${modalActivity?.id}`}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        courseId={selectedCourseId}
-        periodId={selectedPeriodId}
-        student={modalStudent}
-        activity={modalActivity}
-        existingEntry={modalEntry}
-      />
+        </div>
+      </div>
     </div>
   );
 }

@@ -13,13 +13,13 @@ export function useGradeCalculation(courseId: string, periodId: string) {
     queryKey: ['grade-calculation', courseId, periodId],
     enabled: !!courseId && !!periodId,
     queryFn: async () => {
-      const { data } = await api.get(
+      const { data: responseData } = await api.get(
         `/courses/${courseId}/grade-calculation`,
         { params: { periodId } },
       );
-      if (Array.isArray(data)) return data as GradeCalculationRow[];
-      const inner = (data as { data?: unknown })?.data;
-      return Array.isArray(inner) ? (inner as GradeCalculationRow[]) : [];
+      const body = responseData as { data?: GradeCalculationRow[] } | GradeCalculationRow[] | null | undefined;
+      const rows = Array.isArray(body) ? body : body?.data;
+      return (Array.isArray(rows) ? rows : []) as GradeCalculationRow[];
     },
   });
 }

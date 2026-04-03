@@ -39,6 +39,7 @@ export interface DesempenoGenerado {
   area: string;
   grado: string;
   tema: string;
+  actividadesSugeridas: string[];
 }
 
 // ─── Form options ─────────────────────────────────────────────────────────────
@@ -96,6 +97,56 @@ const INDICATORS: Array<{
   },
 ];
 
+// ─── Actividades simuladas (si el API no envía el campo) ─────────────────────
+
+function buildActividadesSimuladas(
+  tipo: string,
+  tema: string,
+  area: string,
+): string[] {
+  if (tipo === 'Cognitivo') {
+    return [
+      `Mapa conceptual grupal sobre ${tema} en ${area} con corrección entre pares.`,
+      `Lectura breve + preguntas de inferencia y justificación oral.`,
+      `Análisis de un caso vinculado a ${tema} con puesta en común.`,
+      `Juego de roles para argumentar distintas perspectivas del tema.`,
+      `Autoevaluación con rúbrica alineada a los cuatro indicadores.`,
+    ];
+  }
+  if (tipo === 'Procedimental') {
+    return [
+      `Demostración docente y práctica guiada del procedimiento clave de ${tema}.`,
+      `Taller en parejas: resolver 3 situaciones tipo con retroalimentación.`,
+      `Estación de práctica autónoma con lista de verificación paso a paso.`,
+      `Mini reto aplicado: usar ${tema} en un contexto del aula o del hogar.`,
+      `Revisión cruzada usando los criterios del nivel alto y superior.`,
+    ];
+  }
+  return [
+    `Reflexión escrita: valoración personal frente a ${tema}.`,
+    `Acuerdos de trabajo en equipo relacionados con el propósito de ${area}.`,
+    `Simulación o dramatización para practicar la actitud esperada.`,
+    `Círculo de cierre: reconocimientos y compromisos para la siguiente clase.`,
+  ];
+}
+
+export function withActividadesSugeridas(d: DesempenoGenerado): DesempenoGenerado {
+  const raw = d.actividadesSugeridas;
+  if (Array.isArray(raw) && raw.length >= 3) {
+    const cleaned = raw
+      .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+      .map((s) => s.trim())
+      .slice(0, 5);
+    if (cleaned.length >= 3) {
+      return { ...d, actividadesSugeridas: cleaned };
+    }
+  }
+  return {
+    ...d,
+    actividadesSugeridas: buildActividadesSimuladas(d.tipo, d.tema, d.area),
+  };
+}
+
 // ─── Mock fallback ────────────────────────────────────────────────────────────
 
 function buildMock(
@@ -110,7 +161,7 @@ function buildMock(
       : tipo === 'Procedimental'
         ? 'aplica y desarrolla procedimientos para trabajar con'
         : 'valora y asume una actitud crítica frente a';
-  return {
+  return withActividadesSugeridas({
     tipo,
     area,
     grado,
@@ -122,7 +173,8 @@ function buildMock(
       basico: `Identifica los conceptos esenciales de "${tema}" y los aplica en situaciones sencillas con orientación del docente, alcanzando los mínimos requeridos para el grado ${grado}.`,
       bajo: `Presenta dificultades para comprender y aplicar los conceptos de "${tema}", requiere acompañamiento permanente y no alcanza los desempeños mínimos establecidos para el grado ${grado}.`,
     },
-  };
+    actividadesSugeridas: [],
+  });
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -132,16 +184,21 @@ export interface NewClassModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (desempeno: DesempenoGenerado) => void;
+  /** When true the modal cannot be dismissed until onConfirm is called. */
+  required?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function NewClassModal({
-  classId: _classId,
+  classId,
   isOpen,
   onClose,
   onConfirm,
+  required = false,
 }: NewClassModalProps) {
+  void classId;
+
   // Form
   const [area, setArea] = useState('');
   const [grado, setGrado] = useState('');
@@ -174,7 +231,7 @@ export function NewClassModal({
         '/curriculum/generate-desempeno',
         { area, grado, tema: tema.trim(), tipo },
       );
-      setDraft(data);
+      setDraft(withActividadesSugeridas(data));
     } catch {
       // Endpoint not yet available — use mock data to unblock frontend development
       setDraft(buildMock(area, grado, tema.trim(), tipo));
@@ -202,12 +259,18 @@ export function NewClassModal({
   }
 
   function handleOpenChange(open: boolean) {
+    if (!open && required) return;
     if (!open) onClose();
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent
+        className="max-w-2xl"
+        showCloseButton={!required}
+        onInteractOutside={required ? (e) => e.preventDefault() : undefined}
+        onEscapeKeyDown={required ? (e) => e.preventDefault() : undefined}
+      >
         <DialogHeader>
           <DialogTitle>Configurar contexto curricular</DialogTitle>
           <DialogDescription>
@@ -383,14 +446,28 @@ export function NewClassModal({
                   ))}
                 </div>
               </div>
+
+              {/* Actividades sugeridas */}
+              <div className="space-y-1.5">
+                <p className="text-[0.8125rem] font-medium leading-none">
+                  Actividades sugeridas
+                </p>
+                <ul className="list-inside list-disc space-y-1.5 text-sm text-muted-foreground">
+                  {draft.actividadesSugeridas.map((act, i) => (
+                    <li key={i}>{act}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </DialogBody>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
+          {!required && (
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+          )}
           <Button onClick={handleConfirm} disabled={!draft}>
             Confirmar y abrir editor
           </Button>

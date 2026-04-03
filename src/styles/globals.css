@@ -33,6 +33,16 @@
   --input: var(--color-zinc-200);
   --ring: var(--color-zinc-400);
   --radius: 0.5rem;
+
+  /* Editor (slide editor layout + canvas) */
+  --editor-shell-bg: var(--color-zinc-100);
+  --editor-workspace-bg: var(--color-zinc-200);
+  --editor-slide-max-w: 96%;
+  --editor-slide-max-h: calc(98% + 3px);
+  --editor-toolbar-top: 5px;
+  --editor-toolbar-top-md: 9px;
+  --editor-canvas-pt: 3.5rem;
+  --editor-canvas-pt-md: 4rem;
 }
 
 .dark {
@@ -60,6 +70,9 @@
   --border: var(--color-zinc-800);
   --input: var(--color-zinc-800);
   --ring: var(--color-zinc-600);
+
+  --editor-shell-bg: var(--color-zinc-900);
+  --editor-workspace-bg: var(--color-zinc-950);
 }
 
 /** Theme Setup **/
@@ -86,6 +99,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-editor-shell: var(--editor-shell-bg);
+  --color-editor-workspace: var(--editor-workspace-bg);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -142,9 +157,15 @@
   }
 }
 
-/** Smooth scroll **/
+/** Smooth scroll (respeta reducción de movimiento) **/
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 /** Custom Containers **/
