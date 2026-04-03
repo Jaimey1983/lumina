@@ -136,7 +136,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         ? raw.actividadesSugeridas
         : [],
     });
-  }, [cls]);
+  }, [cls?.desempeno]);
 
   const desempeno = confirmedDesempeno ?? desempenoFromCls;
 
@@ -151,7 +151,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     const slides = cls?.slides;
     if (!slides?.length) return [];
     return [...slides].sort((a, b) => a.order - b.order);
-  }, [cls]);
+  }, [cls?.slides]);
 
   const resolvedSlideIndex = useMemo(() => {
     if (sortedSlides.length === 0) return 0;
@@ -167,13 +167,17 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
-  function toggleLeftPanel(id: LeftPanelId) {
+  const toggleLeftPanel = useCallback((id: LeftPanelId) => {
     setActivePanel((prev) => (prev === id ? null : id));
-  }
+  }, []);
 
-  function toggleRightPanel(id: RightPanelId) {
+  const toggleRightPanel = useCallback((id: RightPanelId) => {
     setRightPanel((prev) => (prev === id ? null : id));
-  }
+  }, []);
+
+  const handleRefreshDesempeno = useCallback(() => {
+    setModalUserOpen(true);
+  }, []);
 
   const handleSave = useCallback(() => {
     if (!activeSlide) return;
@@ -434,7 +438,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <IconRail
               activePanel={activePanel}
               onPanelToggle={toggleLeftPanel}
-              onRefreshDesempeno={() => setModalUserOpen(true)}
+              onRefreshDesempeno={handleRefreshDesempeno}
             />
           </div>
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -23,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,6 +62,35 @@ const ICON_BTN =
   'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out ' +
   'motion-reduce:transition-none';
 
+// ─── RailButton — memo-ized to prevent Radix composeRefs loop ─────────────────
+
+const RailButton = memo(function RailButton({
+  id,
+  label,
+  Icon,
+  isActive,
+  onToggle,
+}: {
+  id: LeftPanelId;
+  label: string;
+  Icon: LucideIcon;
+  isActive: boolean;
+  onToggle: (id: LeftPanelId) => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      onClick={() => onToggle(id)}
+      aria-label={label}
+      aria-pressed={isActive}
+      className={cn(ICON_BTN, isActive && 'bg-accent text-foreground')}
+    >
+      <Icon className="size-5 shrink-0" aria-hidden />
+    </button>
+  );
+});
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: IconRailProps) {
@@ -77,20 +106,14 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
       {/* ── Top: panel icons ────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col items-center gap-1 pt-2">
         {ITEMS.map(({ id, label, Icon }) => (
-          <Tooltip key={id}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => onPanelToggle(id)}
-                aria-label={label}
-                aria-pressed={activePanel === id}
-                className={cn(ICON_BTN, activePanel === id && 'bg-accent text-foreground')}
-              >
-                <Icon className="size-5 shrink-0" aria-hidden />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">{label}</TooltipContent>
-          </Tooltip>
+          <RailButton
+            key={id}
+            id={id}
+            label={label}
+            Icon={Icon}
+            isActive={activePanel === id}
+            onToggle={onPanelToggle}
+          />
         ))}
       </div>
 
@@ -98,19 +121,15 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
       <div className="flex flex-col items-center gap-1 pb-3">
 
         {/* Cambiar desempeño */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={onRefreshDesempeno}
-              aria-label="Cambiar desempeño"
-              className={ICON_BTN}
-            >
-              <RefreshCw className="size-5 shrink-0" aria-hidden />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Cambiar desempeño</TooltipContent>
-        </Tooltip>
+        <button
+          type="button"
+          title="Cambiar desempeño"
+          onClick={onRefreshDesempeno}
+          aria-label="Cambiar desempeño"
+          className={ICON_BTN}
+        >
+          <RefreshCw className="size-5 shrink-0" aria-hidden />
+        </button>
 
         {/* Avatar con dropdown */}
         <DropdownMenu>

@@ -4,7 +4,6 @@ import { ArrowDown, ArrowUp, Copy, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -44,7 +43,6 @@ export function FloatingToolbar({
       }}
       className="flex items-center gap-0.5 rounded-md border border-border bg-background px-1 py-1 shadow-lg"
     >
-      {/* Block type label */}
       {blockType && (
         <>
           <span className="px-2 text-[10px] font-medium capitalize text-muted-foreground">
@@ -54,71 +52,55 @@ export function FloatingToolbar({
         </>
       )}
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            aria-label="Subir bloque"
-            onClick={() => onMoveUp?.(blockId)}
-          >
-            <ArrowUp className="size-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Subir</TooltipContent>
-      </Tooltip>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        title="Subir"
+        aria-label="Subir bloque"
+        onClick={() => onMoveUp?.(blockId)}
+      >
+        <ArrowUp className="size-3.5" />
+      </Button>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            aria-label="Bajar bloque"
-            onClick={() => onMoveDown?.(blockId)}
-          >
-            <ArrowDown className="size-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Bajar</TooltipContent>
-      </Tooltip>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        title="Bajar"
+        aria-label="Bajar bloque"
+        onClick={() => onMoveDown?.(blockId)}
+      >
+        <ArrowDown className="size-3.5" />
+      </Button>
 
       <Separator orientation="vertical" className="h-5" />
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            aria-label="Duplicar bloque"
-            onClick={() => onDuplicate?.(blockId)}
-          >
-            <Copy className="size-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Duplicar</TooltipContent>
-      </Tooltip>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        title="Duplicar"
+        aria-label="Duplicar bloque"
+        onClick={() => onDuplicate?.(blockId)}
+      >
+        <Copy className="size-3.5" />
+      </Button>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7 text-destructive hover:text-destructive"
-            aria-label="Eliminar bloque"
-            onClick={() => onDelete?.(blockId)}
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Eliminar</TooltipContent>
-      </Tooltip>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7 text-destructive hover:text-destructive"
+        title="Eliminar"
+        aria-label="Eliminar bloque"
+        onClick={() => onDelete?.(blockId)}
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
     </div>
   );
 }

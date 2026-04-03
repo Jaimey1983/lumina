@@ -22,6 +22,10 @@ import type {
 import { cn } from '@/lib/utils';
 
 import { ShortAnswerActivityEditor } from './activities/short-answer';
+import { FillBlanksActivityEditor } from './activities/fill-blanks';
+import { MatchPairsActivityEditor } from './activities/match-pairs';
+import { OrderStepsActivityEditor } from './activities/order-steps';
+import { WordCloudActivityEditor } from './activities/word-cloud';
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
   if (!block.marco) return block;
@@ -356,6 +360,85 @@ function RenderActivity({
           isSelected={isSelected}
           onChange={(a) => onActivityChange?.(blockId, a)}
           onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
+        />
+      );
+    }
+    // VIEWER
+    return (
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <p className="text-base font-medium text-foreground">{act.question}</p>
+        {act.hint && (
+          <p className="text-xs text-muted-foreground">💡 {act.hint}</p>
+        )}
+        <textarea
+          className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="Escribe tu respuesta aquí…"
+          maxLength={act.maxLength ?? 200}
+          readOnly
+        />
+        {act.maxLength && (
+          <p className="text-right text-xs text-muted-foreground">
+            Máx. {act.maxLength} caracteres
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (act.tipo === 'completar_blancos') {
+    if (modo === 'editor') {
+      return (
+        <FillBlanksActivityEditor
+          data={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+        />
+      );
+    }
+    return (
+      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+        Vista previa no disponible aún
+      </div>
+    );
+  }
+
+  if (act.tipo === 'emparejar') {
+    if (modo === 'editor') {
+      return (
+        <MatchPairsActivityEditor
+          data={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+        />
+      );
+    }
+    return (
+      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+        Vista previa no disponible aún
+      </div>
+    );
+  }
+
+  if (act.tipo === 'ordenar_pasos') {
+    if (modo === 'editor') {
+      return (
+        <OrderStepsActivityEditor
+          data={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+        />
+      );
+    }
+    return (
+      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+        Vista previa no disponible aún
+      </div>
+    );
+  }
+
+  if (act.tipo === 'nube_palabras') {
+    if (modo === 'editor') {
+      return (
+        <WordCloudActivityEditor
+          data={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
         />
       );
     }

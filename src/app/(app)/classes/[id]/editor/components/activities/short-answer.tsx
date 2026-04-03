@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import type { ShortAnswerActivity } from '@/types/slide.types';
@@ -10,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useActivityEditor } from './use-activity-editor';
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -21,13 +21,11 @@ const DEFAULTS: ShortAnswerActivity = {
   maxLength: 200,
 };
 
-const DEBOUNCE_MS = 450;
-
 function clampMaxLength(n: number): number {
   return Math.min(1000, Math.max(10, Math.round(Number.isFinite(n) ? n : DEFAULTS.maxLength)));
 }
 
-function normalize(a: ShortAnswerActivity | null): ShortAnswerActivity {
+function normalize(a: ShortAnswerActivity | null | undefined): ShortAnswerActivity {
   if (!a) return { ...DEFAULTS };
   return { ...DEFAULTS, ...a, tipo: 'short_answer' };
 }
@@ -55,49 +53,13 @@ export function ShortAnswerActivityEditor({
   canvasLayout,
   isSelected,
 }: Props) {
-  const [local, setLocal] = useState(() => normalize(activity));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRef = useRef<ShortAnswerActivity | null>(null);
-
-  useEffect(() => {
-    setLocal(normalize(activity));
-    // Solo al cambiar slide/bloque; no depender de `activity` en cada PATCH.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- editorSyncKey acota el reinicio
-  }, [editorSyncKey]);
-
-  const flush = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    const p = pendingRef.current;
-    if (p) {
-      onChange(p);
-      pendingRef.current = null;
-    }
-  }, [onChange]);
-
-  const schedulePersist = useCallback(
-    (next: ShortAnswerActivity) => {
-      pendingRef.current = next;
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        onChange(next);
-        pendingRef.current = null;
-        timerRef.current = null;
-      }, DEBOUNCE_MS);
-    },
-    [onChange],
-  );
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      const p = pendingRef.current;
-      if (p) onChange(p);
-    },
-    [onChange],
-  );
+  const { local, setLocal, flush, schedulePersist, commitImmediate } =
+    useActivityEditor<ShortAnswerActivity>({
+      data: activity,
+      editorSyncKey,
+      normalize,
+      onChange,
+    });
 
   function updateText(partial: Partial<ShortAnswerActivity>) {
     const next = { ...local, ...partial, tipo: 'short_answer' as const };
@@ -106,14 +68,7 @@ export function ShortAnswerActivityEditor({
   }
 
   function updateImmediate(partial: Partial<ShortAnswerActivity>) {
-    const next = { ...local, ...partial, tipo: 'short_answer' as const };
-    setLocal(next);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    pendingRef.current = null;
-    onChange(next);
+    commitImmediate({ ...local, ...partial, tipo: 'short_answer' as const });
   }
 
   return (

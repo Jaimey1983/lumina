@@ -18,7 +18,6 @@ import {
   Video,
 } from 'lucide-react';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -39,27 +38,22 @@ function ToolBtn({
   children: ReactNode;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={onClick}
-          className={cn(
-            'flex items-center justify-center rounded-md p-1.5 outline-none',
-            'text-muted-foreground hover:bg-accent hover:text-foreground',
-            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-            'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
-            'motion-reduce:transition-none',
-            active && 'bg-accent text-foreground',
-          )}
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" align="center">
-        {label}
-      </TooltipContent>
-    </Tooltip>
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className={cn(
+        'flex items-center justify-center rounded-md p-1.5 outline-none',
+        'text-muted-foreground hover:bg-accent hover:text-foreground',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
+        'motion-reduce:transition-none',
+        active && 'bg-accent text-foreground',
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
