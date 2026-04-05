@@ -61,6 +61,7 @@ const LIVE: ActivityItem[] = [
 
 interface Props {
   onAddActivity: (type: ActivityType) => void;
+  hasActivity?: boolean;
 }
 
 // ─── Sub-component ────────────────────────────────────────────────────────────
@@ -69,10 +70,12 @@ function ActivityGroup({
   title,
   items,
   onAdd,
+  disabled,
 }: {
   title: string;
   items: ActivityItem[];
   onAdd: (type: ActivityType) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -83,10 +86,13 @@ function ActivityGroup({
         <button
           key={type}
           type="button"
+          disabled={disabled}
           onClick={() => onAdd(type)}
           className={cn(
             'flex items-center gap-2.5 px-4 py-2 text-left transition-colors',
-            'text-muted-foreground hover:bg-accent hover:text-foreground',
+            disabled
+              ? 'cursor-not-allowed opacity-40'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           <Icon className="size-4 shrink-0" />
@@ -99,12 +105,17 @@ function ActivityGroup({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ActivitiesPanel({ onAddActivity }: Props) {
+export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
   return (
     <div className="flex flex-col pb-4">
-      <ActivityGroup title="Evaluación"  items={EVALUATION}  onAdd={onAddActivity} />
-      <ActivityGroup title="Interacción" items={INTERACTION} onAdd={onAddActivity} />
-      <ActivityGroup title="En vivo"     items={LIVE}        onAdd={onAddActivity} />
+      {hasActivity && (
+        <p className="mx-3 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+          Este slide ya tiene una actividad. Elimínala para agregar otra.
+        </p>
+      )}
+      <ActivityGroup title="Evaluación"  items={EVALUATION}  onAdd={onAddActivity} disabled={hasActivity} />
+      <ActivityGroup title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
+      <ActivityGroup title="En vivo"     items={LIVE}        onAdd={onAddActivity} disabled={hasActivity} />
     </div>
   );
 }

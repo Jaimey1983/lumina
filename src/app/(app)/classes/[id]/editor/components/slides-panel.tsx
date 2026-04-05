@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ export interface SlidesPanelProps {
   isAddingSlide?: boolean;
   onSelect: (index: number) => void;
   onAddSlide: () => void;
+  onRemoveSlide?: (slideId: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -45,6 +46,7 @@ export function SlidesPanel({
   isAddingSlide,
   onSelect,
   onAddSlide,
+  onRemoveSlide,
 }: SlidesPanelProps) {
   return (
     <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-border bg-background">
@@ -75,34 +77,50 @@ export function SlidesPanel({
             const isActive = idx === activeIndex;
             const thumbBg = THUMB_BG[slide.type] ?? 'bg-muted';
             return (
-              <button
-                key={slide.id}
-                type="button"
-                onClick={() => onSelect(idx)}
-                className={cn(
-                  'w-full overflow-hidden rounded-md border text-left transition-all',
-                  isActive
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-border hover:border-primary/50',
-                )}
-              >
-                {/* Thumbnail — aspect ratio 16/9 */}
-                <div
-                  className={cn('flex items-center justify-center', thumbBg)}
-                  style={{ aspectRatio: '16/9' }}
+              <div key={slide.id} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => onSelect(idx)}
+                  className={cn(
+                    'w-full overflow-hidden rounded-md border text-left transition-all',
+                    isActive
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-border hover:border-primary/50',
+                  )}
                 >
-                  <span className="font-mono text-sm font-bold text-foreground/30">
-                    {slide.order}
-                  </span>
-                </div>
-                {/* Label */}
-                <div className="px-2 py-1.5">
-                  <p className="truncate text-[10px] font-medium leading-tight">{slide.title}</p>
-                  <p className="text-[9px] text-muted-foreground">
-                    {SLIDE_LABELS[slide.type] ?? slide.type}
-                  </p>
-                </div>
-              </button>
+                  {/* Thumbnail — aspect ratio 16/9 */}
+                  <div
+                    className={cn('flex items-center justify-center', thumbBg)}
+                    style={{ aspectRatio: '16/9' }}
+                  >
+                    <span className="font-mono text-sm font-bold text-foreground/30">
+                      {slide.order}
+                    </span>
+                  </div>
+                  {/* Label */}
+                  <div className="px-2 py-1.5">
+                    <p className="truncate text-[10px] font-medium leading-tight">{slide.title}</p>
+                    <p className="text-[9px] text-muted-foreground">
+                      {SLIDE_LABELS[slide.type] ?? slide.type}
+                    </p>
+                  </div>
+                </button>
+                {onRemoveSlide && (
+                  <button
+                    type="button"
+                    aria-label="Eliminar slide"
+                    onClick={(e) => { e.stopPropagation(); onRemoveSlide(slide.id); }}
+                    className={cn(
+                      'absolute top-1 right-1 size-6 z-10',
+                      'flex items-center justify-center rounded',
+                      'bg-destructive/80 hover:bg-destructive text-white',
+                      'opacity-0 group-hover:opacity-100 transition-opacity',
+                    )}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                )}
+              </div>
             );
           })}
       </div>

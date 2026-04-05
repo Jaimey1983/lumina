@@ -159,3 +159,15 @@ export function useUpdateSlide(classId: string) {
     },
   });
 }
+
+export function useRemoveSlide(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (slideId: string) => {
+      await api.delete(`/classes/${classId}/slides/${slideId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}

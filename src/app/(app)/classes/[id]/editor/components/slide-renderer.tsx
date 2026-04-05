@@ -1,6 +1,7 @@
 'use client';
 
 import { createElement, CSSProperties, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 
 import type {
   Activity,
@@ -636,6 +637,7 @@ function BlockNode({
           : undefined
       }
       className={cn(
+        editorMode && 'relative group',
         editorMode && !isFormBlock && 'cursor-pointer outline-none rounded-sm',
         editorMode && !isFormBlock && 'hover:ring-1 hover:ring-primary/40',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
@@ -643,6 +645,21 @@ function BlockNode({
       )}
     >
       {renderContent()}
+      {editorMode && !!onRemoveBlock && (
+        <button
+          type="button"
+          aria-label="Eliminar bloque"
+          onClick={(e) => { e.stopPropagation(); onRemoveBlock(blockId); }}
+          className={cn(
+            'absolute top-1 right-1 z-10 size-6',
+            'flex items-center justify-center rounded',
+            'bg-destructive/80 hover:bg-destructive text-white',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+          )}
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      )}
     </div>
   );
 }
@@ -685,6 +702,9 @@ export function SlideRenderer({
   const topLevelActivityIndices = blocks
     .map((b, i) => (b.tipo === 'actividad' ? i : -1))
     .filter((i) => i >= 0);
+  const topLevelTextIndices = blocks
+    .map((b, i) => (b.tipo === 'texto' ? i : -1))
+    .filter((i) => i >= 0);
   const isActivityExclusiveSlide = topLevelActivityIndices.length > 0;
 
   return (
@@ -695,6 +715,26 @@ export function SlideRenderer({
       {isActivityExclusiveSlide ? (
         <div className="relative flex h-full min-h-0 min-w-0 w-full items-center justify-center overflow-hidden p-4 sm:p-6">
           <div className="flex w-full max-w-xl min-h-0 flex-col items-stretch justify-center gap-6">
+            {topLevelTextIndices.map((index) => {
+              const blockId = String(index);
+              const block = blocks[index]!;
+              return (
+                <BlockNode
+                  key={blockId}
+                  block={block}
+                  blockId={blockId}
+                  slideId={slide.id}
+                  isSelected={modo === 'editor' && selectedId === blockId}
+                  modo={modo}
+                  selectedId={selectedId}
+                  onClick={() => handleBlockClick(blockId)}
+                  onBlockClick={handleBlockClick}
+                  pathPrefix={blockId}
+                  onActivityChange={onActivityChange}
+                  onRemoveBlock={onRemoveBlock}
+                />
+              );
+            })}
             {topLevelActivityIndices.map((index) => {
               const blockId = String(index);
               const block = blocks[index]!;

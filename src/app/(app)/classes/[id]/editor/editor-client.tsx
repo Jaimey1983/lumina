@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
+import { useCreateSlide, useRemoveSlide, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -51,6 +51,131 @@ function shortAnswerTemplate(): Activity {
   };
 }
 
+function quizMultipleTemplate(): Activity {
+  return {
+    tipo: 'quiz_multiple',
+    pregunta: '¿Nueva pregunta?',
+    opciones: [
+      { id: 'a', texto: 'Opción A', esCorrecta: true },
+      { id: 'b', texto: 'Opción B', esCorrecta: false },
+      { id: 'c', texto: 'Opción C', esCorrecta: false },
+      { id: 'd', texto: 'Opción D', esCorrecta: false },
+    ],
+    puntos: 10,
+  };
+}
+
+function trueFalseTemplate(): Activity {
+  return {
+    tipo: 'verdadero_falso',
+    afirmacion: 'Nueva afirmación para evaluar.',
+    respuestaCorrecta: true,
+    puntos: 5,
+  };
+}
+
+function fillBlanksTemplate(): Activity {
+  return {
+    tipo: 'completar_blancos',
+    texto: 'El {{blank:b1}} es fundamental para {{blank:b2}}.',
+    blancos: [
+      { id: 'b1', respuesta: 'concepto', ignorarMayusculas: true },
+      { id: 'b2', respuesta: 'aprender', ignorarMayusculas: true },
+    ],
+    puntos: 10,
+  };
+}
+
+function dragDropTemplate(): Activity {
+  return {
+    tipo: 'arrastrar_soltar',
+    instruccion: 'Arrastra cada elemento a la categoría correcta.',
+    items: [
+      { id: 'i1', texto: 'Elemento 1' },
+      { id: 'i2', texto: 'Elemento 2' },
+      { id: 'i3', texto: 'Elemento 3' },
+      { id: 'i4', texto: 'Elemento 4' },
+    ],
+    zonas: [
+      { id: 'z1', etiqueta: 'Categoría 1', itemsCorrectos: ['i1', 'i2'] },
+      { id: 'z2', etiqueta: 'Categoría 2', itemsCorrectos: ['i3', 'i4'] },
+    ],
+    puntos: 10,
+  };
+}
+
+function matchPairsTemplate(): Activity {
+  return {
+    tipo: 'emparejar',
+    instruccion: 'Empareja cada concepto con su definición.',
+    pares: [
+      { id: 'p1', izquierda: 'Concepto 1', derecha: 'Definición 1' },
+      { id: 'p2', izquierda: 'Concepto 2', derecha: 'Definición 2' },
+      { id: 'p3', izquierda: 'Concepto 3', derecha: 'Definición 3' },
+    ],
+    puntos: 10,
+  };
+}
+
+function orderStepsTemplate(): Activity {
+  return {
+    tipo: 'ordenar_pasos',
+    instruccion: 'Ordena los pasos del proceso correctamente.',
+    pasos: [
+      { id: 's1', contenido: 'Paso 1', ordenCorrecto: 1 },
+      { id: 's2', contenido: 'Paso 2', ordenCorrecto: 2 },
+      { id: 's3', contenido: 'Paso 3', ordenCorrecto: 3 },
+      { id: 's4', contenido: 'Paso 4', ordenCorrecto: 4 },
+    ],
+    puntos: 10,
+  };
+}
+
+function videoInteractiveTemplate(): Activity {
+  return {
+    tipo: 'video_interactivo',
+    urlVideo: 'https://www.youtube.com/watch?v=',
+    plataforma: 'youtube',
+    preguntas: [
+      {
+        id: 'q1',
+        tiempoSegundos: 30,
+        pregunta: '¿Nueva pregunta?',
+        opciones: [
+          { id: 'a', texto: 'Opción A', esCorrecta: true },
+          { id: 'b', texto: 'Opción B', esCorrecta: false },
+        ],
+        pausarVideo: true,
+      },
+    ],
+    debeResponderParaContinuar: false,
+  };
+}
+
+function livePollTemplate(): Activity {
+  return {
+    tipo: 'encuesta_viva',
+    pregunta: '¿Nueva pregunta de encuesta?',
+    opciones: [
+      { id: 'o1', texto: 'Opción 1' },
+      { id: 'o2', texto: 'Opción 2' },
+      { id: 'o3', texto: 'Opción 3' },
+    ],
+    mostrarResultadosEnTiempoReal: true,
+    mostrarResultadosAlFinalizar: true,
+  };
+}
+
+function wordCloudTemplate(): Activity {
+  return {
+    tipo: 'nube_palabras',
+    instruccion: 'Escribe una palabra que asocies con el tema.',
+    maxPalabrasPorUsuario: 3,
+    maxPalabrasEnNube: 50,
+    filtrarPalabrasComunes: true,
+  };
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Clics en capas portadas (Radix) no deben cerrar los flyouts al usar menús/modales. */
@@ -86,6 +211,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const updateSlide  = useUpdateSlide(classId);
   const updateClass  = useUpdateClass(classId, cls?.courseId ?? '');
   const createSlide  = useCreateSlide(classId);
+  const removeSlide  = useRemoveSlide(classId);
 
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
@@ -168,6 +294,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide],
   );
 
+  const activeSlideHasActivity = useMemo(() => {
+    if (!activeSlide) return false;
+    const c = getSlideContentRecord(activeSlide as ApiSlide);
+    const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+    return bloques.some((b) => b.tipo === 'actividad');
+  }, [activeSlide]);
+
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
   const toggleLeftPanel = useCallback((id: LeftPanelId) => {
@@ -231,6 +364,14 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleCommitSlideContent = useCallback(
     (content: Record<string, unknown>) => {
       if (!activeSlide) return;
+      if (activeSlideHasActivity) {
+        const bloques = Array.isArray(content.bloques) ? (content.bloques as Block[]) : [];
+        const hasDisallowed = bloques.some((b) => b.tipo !== 'texto' && b.tipo !== 'actividad');
+        if (hasDisallowed) {
+          toast.warning('Este slide solo admite un título junto a la actividad');
+          return;
+        }
+      }
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
       updateSlide.mutate(
         { slideId: activeSlide.id, content: sanitized },
@@ -239,7 +380,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         },
       );
     },
-    [activeSlide, updateSlide],
+    [activeSlide, activeSlideHasActivity, updateSlide],
   );
 
   const handleActivityChange = useCallback(
@@ -289,18 +430,51 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [sortedSlides.length, createSlide],
   );
 
+  const handleRemoveSlide = useCallback(
+    (slideId: string) => {
+      removeSlide.mutate(slideId, {
+        onSuccess: () => {
+          toast.success('Slide eliminado');
+          setActiveSlideIndex((prev) => Math.max(0, prev - 1));
+        },
+        onError: () => toast.error('No se pudo eliminar el slide'),
+      });
+    },
+    [removeSlide],
+  );
+
   const handleAddActivity = useCallback(
     (type: ActivityType) => {
-      if (type === 'short-answer') {
-        const block: Block = { tipo: 'actividad', actividad: shortAnswerTemplate() };
-        handleCreateSlideWithActivity(
-          buildContentDocumentForNewActivitySlide(block),
-          'Respuesta corta',
-        );
-        toast.success('Nuevo slide solo con la actividad');
-        return;
-      }
-      toast.info(`Actividad "${type}" próximamente disponible`);
+      const templates: Record<ActivityType, () => Activity> = {
+        'quiz-multiple':    quizMultipleTemplate,
+        'true-false':       trueFalseTemplate,
+        'fill-blank':       fillBlanksTemplate,
+        'short-answer':     shortAnswerTemplate,
+        'drag-drop':        dragDropTemplate,
+        'match':            matchPairsTemplate,
+        'sort-steps':       orderStepsTemplate,
+        'video-interactive': videoInteractiveTemplate,
+        'live-poll':        livePollTemplate,
+        'word-cloud':       wordCloudTemplate,
+      };
+      const titles: Record<ActivityType, string> = {
+        'quiz-multiple':    'Opción múltiple',
+        'true-false':       'Verdadero o falso',
+        'fill-blank':       'Completar blancos',
+        'short-answer':     'Respuesta corta',
+        'drag-drop':        'Arrastrar y soltar',
+        'match':            'Emparejar',
+        'sort-steps':       'Ordenar pasos',
+        'video-interactive': 'Video interactivo',
+        'live-poll':        'Encuesta en vivo',
+        'word-cloud':       'Nube de palabras',
+      };
+      const block: Block = { tipo: 'actividad', actividad: templates[type]() };
+      handleCreateSlideWithActivity(
+        buildContentDocumentForNewActivitySlide(block),
+        titles[type],
+      );
+      toast.success(`Slide con ${titles[type]} creado`);
     },
     [handleCreateSlideWithActivity],
   );
@@ -459,6 +633,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               isAddingSlide={createSlide.isPending}
               onSelect={setActiveSlideIndex}
               onAddSlide={handleAddSlide}
+              onRemoveSlide={handleRemoveSlide}
             />
             <FlyoutPanel
               ref={flyoutPanelRef}
@@ -477,6 +652,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onSelectSlide={setActiveSlideIndex}
               desempenoEnunciado={desempeno?.enunciado}
               isSlideSaving={updateSlide.isPending}
+              slideHasActivity={activeSlideHasActivity}
             />
           </div>
 
@@ -496,6 +672,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onAddActivity={handleAddActivity}
             onApplyTheme={handleApplyTheme}
             desempenoEnunciado={desempeno?.enunciado}
+            hasActivity={activeSlideHasActivity}
           />
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}

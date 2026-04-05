@@ -74,6 +74,7 @@ export interface FlyoutPanelProps {
   onSelectSlide: (index: number) => void;
   desempenoEnunciado?: string;
   isSlideSaving?: boolean;
+  slideHasActivity?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -91,6 +92,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       onSelectSlide,
       desempenoEnunciado,
       isSlideSaving,
+      slideHasActivity,
     },
     ref,
   ) {
@@ -150,6 +152,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 onSelectSlide={onSelectSlide}
                 desempenoEnunciado={desempenoEnunciado}
                 busy={isSlideSaving}
+                slideHasActivity={slideHasActivity}
               />
             </div>
           </div>

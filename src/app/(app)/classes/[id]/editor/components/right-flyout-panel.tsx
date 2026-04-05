@@ -27,6 +27,7 @@ export interface RightFlyoutPanelProps {
   onAddActivity: (type: ActivityType) => void;
   onApplyTheme: (bg: string) => void;
   desempenoEnunciado?: string;
+  hasActivity?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       onAddActivity,
       onApplyTheme,
       desempenoEnunciado,
+      hasActivity,
     },
     ref,
   ) {
@@ -81,10 +83,10 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
           {/* Content */}
           <div className="min-h-0 flex-1 overflow-y-auto">
             {activePanel === 'ia' && (
-              <ActivitiesAiPanel desempenoEnunciado={desempenoEnunciado} />
+              <ActivitiesAiPanel desempenoEnunciado={desempenoEnunciado} hasActivity={hasActivity} />
             )}
             {activePanel === 'activities' && (
-              <ActivitiesPanel onAddActivity={onAddActivity} />
+              <ActivitiesPanel onAddActivity={onAddActivity} hasActivity={hasActivity} />
             )}
             {activePanel === 'themes' && (
               <ThemesPanel onApplyTheme={onApplyTheme} />

@@ -99,25 +99,34 @@ export interface FlyoutLeftPanelsProps {
   onSelectSlide: (index: number) => void;
   desempenoEnunciado?: string;
   busy?: boolean;
+  slideHasActivity?: boolean;
 }
 
 type ContentPanelProps = {
   apiSlide: ApiSlide | null;
   onCommitContent: (content: Record<string, unknown>) => void;
   disabled?: boolean;
+  slideHasActivity?: boolean;
 };
 
 // ─── Panels ───────────────────────────────────────────────────────────────────
 
-function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
+function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity }: ContentPanelProps) {
   const add = (block: Block) => {
     onCommitContent(appendBlockToSlideContent(apiSlide, block));
     toast.success('Elemento añadido');
   };
 
+  const disabledNonText = disabled || !!slideHasActivity;
+
   return (
     <ScrollArea className="h-full min-h-0">
       <div className="space-y-4 p-3 pr-2">
+        {slideHasActivity && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+            Solo puedes agregar texto (título) a este slide.
+          </p>
+        )}
         <PanelSection title="Básico">
           <InsertBtn
             label="Texto"
@@ -128,7 +137,7 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
           <InsertBtn
             label="Imagen (marcador)"
             icon={ImageIcon}
-            disabled={disabled}
+            disabled={disabledNonText}
             onClick={() =>
               add({
                 tipo: 'imagen',
@@ -140,7 +149,7 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
           <InsertBtn
             label="Video (YouTube)"
             icon={Video}
-            disabled={disabled}
+            disabled={disabledNonText}
             onClick={() =>
               add({
                 tipo: 'video',
@@ -153,7 +162,7 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
           <InsertBtn
             label="Audio"
             icon={Volume2}
-            disabled={disabled}
+            disabled={disabledNonText}
             onClick={() =>
               add({
                 tipo: 'audio',
@@ -167,19 +176,19 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
           <InsertBtn
             label="Separador"
             icon={Minus}
-            disabled={disabled}
+            disabled={disabledNonText}
             onClick={() => add({ tipo: 'separador' })}
           />
           <InsertBtn
             label="Cita"
             icon={Quote}
-            disabled={disabled}
+            disabled={disabledNonText}
             onClick={() => add({ tipo: 'cita', texto: 'Texto de la cita', autor: 'Autor' })}
           />
           <InsertBtn
             label="Dos columnas (vacías)"
             icon={Columns2}
-            disabled={disabled}
+            disabled={disabledNonText}
             onClick={() =>
               add({
                 tipo: 'columnas',
@@ -194,32 +203,39 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled }: ContentPanelPro
   );
 }
 
-function ActividadesInsertPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
+function ActividadesInsertPanel({ apiSlide, onCommitContent, disabled, slideHasActivity }: ContentPanelProps) {
   const addBlock = (tipo: string, subtipo: string) => {
     onCommitContent(appendBlockToSlideContent(apiSlide, { tipo, subtipo } as unknown as Block));
     toast.info('Próximamente');
   };
 
+  const allDisabled = disabled || !!slideHasActivity;
+
   return (
     <ScrollArea className="h-full min-h-0">
       <div className="space-y-4 p-3 pr-2">
+        {slideHasActivity && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+            Elimina la actividad para agregar otros elementos.
+          </p>
+        )}
         <PanelSection title="Interacción">
-          <InsertBtn label="Botón" icon={MousePointer2} disabled={disabled} onClick={() => addBlock('interactivo', 'boton')} />
-          <InsertBtn label="Hotspot" icon={Target} disabled={disabled} onClick={() => addBlock('interactivo', 'hotspot')} />
-          <InsertBtn label="Tooltip emergente" icon={MessageSquare} disabled={disabled} onClick={() => addBlock('interactivo', 'tooltip')} />
-          <InsertBtn label="Contador / temporizador" icon={Timer} disabled={disabled} onClick={() => addBlock('interactivo', 'contador')} />
-          <InsertBtn label="Barra de progreso" icon={Columns2} disabled={disabled} onClick={() => addBlock('interactivo', 'progreso')} />
+          <InsertBtn label="Botón" icon={MousePointer2} disabled={allDisabled} onClick={() => addBlock('interactivo', 'boton')} />
+          <InsertBtn label="Hotspot" icon={Target} disabled={allDisabled} onClick={() => addBlock('interactivo', 'hotspot')} />
+          <InsertBtn label="Tooltip emergente" icon={MessageSquare} disabled={allDisabled} onClick={() => addBlock('interactivo', 'tooltip')} />
+          <InsertBtn label="Contador / temporizador" icon={Timer} disabled={allDisabled} onClick={() => addBlock('interactivo', 'contador')} />
+          <InsertBtn label="Barra de progreso" icon={Columns2} disabled={allDisabled} onClick={() => addBlock('interactivo', 'progreso')} />
         </PanelSection>
 
         <PanelSection title="Multimedia">
-          <InsertBtn label="Iframe embebido" icon={MonitorPlay} disabled={disabled} onClick={() => addBlock('interactivo', 'iframe')} />
-          <InsertBtn label="GIF animado" icon={Film} disabled={disabled} onClick={() => addBlock('interactivo', 'gif')} />
-          <InsertBtn label="Código QR" icon={QrCode} disabled={disabled} onClick={() => addBlock('interactivo', 'qr')} />
+          <InsertBtn label="Iframe embebido" icon={MonitorPlay} disabled={allDisabled} onClick={() => addBlock('interactivo', 'iframe')} />
+          <InsertBtn label="GIF animado" icon={Film} disabled={allDisabled} onClick={() => addBlock('interactivo', 'gif')} />
+          <InsertBtn label="Código QR" icon={QrCode} disabled={allDisabled} onClick={() => addBlock('interactivo', 'qr')} />
         </PanelSection>
 
         <PanelSection title="Datos">
-          <InsertBtn label="Gráfico de barras" icon={BarChart} disabled={disabled} onClick={() => addBlock('interactivo', 'grafico_barras')} />
-          <InsertBtn label="Tabla de datos" icon={Table} disabled={disabled} onClick={() => addBlock('interactivo', 'tabla')} />
+          <InsertBtn label="Gráfico de barras" icon={BarChart} disabled={allDisabled} onClick={() => addBlock('interactivo', 'grafico_barras')} />
+          <InsertBtn label="Tabla de datos" icon={Table} disabled={allDisabled} onClick={() => addBlock('interactivo', 'tabla')} />
         </PanelSection>
       </div>
     </ScrollArea>
@@ -237,15 +253,22 @@ const LAYOUT_LABELS: { key: string; label: string }[] = [
   { key: 'pantalla_completa', label: 'Pantalla completa' },
 ];
 
-function LayoutPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
+function LayoutPanel({ apiSlide, onCommitContent, disabled, slideHasActivity }: ContentPanelProps) {
   const current =
     typeof getSlideContentRecord(apiSlide).layout === 'string'
       ? (getSlideContentRecord(apiSlide).layout as string)
       : 'titulo_y_contenido';
 
+  const allDisabled = disabled || !!slideHasActivity;
+
   return (
     <ScrollArea className="h-full min-h-0">
       <div className="space-y-2 p-3 pr-2">
+        {slideHasActivity && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+            Elimina la actividad para cambiar el layout.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Afecta la cuadrícula y alineación del contenido del slide (ver `diseno` en JSON).
         </p>
@@ -256,7 +279,7 @@ function LayoutPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps)
             variant={current === key ? 'secondary' : 'outline'}
             size="sm"
             className="h-auto w-full justify-start gap-2 py-2 text-left text-xs font-normal"
-            disabled={disabled}
+            disabled={allDisabled}
             onClick={() => {
               onCommitContent(applyLayoutPreset(apiSlide, key));
               toast.success('Layout aplicado');
@@ -448,16 +471,17 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     onSelectSlide,
     desempenoEnunciado,
     busy,
+    slideHasActivity,
   } = props;
   const disabled = !apiSlide || busy;
 
   switch (panel) {
     case 'elementos':
-      return <ElementosPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
+      return <ElementosPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} slideHasActivity={slideHasActivity} />;
     case 'actividades':
-      return <ActividadesInsertPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
+      return <ActividadesInsertPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} slideHasActivity={slideHasActivity} />;
     case 'layout':
-      return <LayoutPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />;
+      return <LayoutPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} slideHasActivity={slideHasActivity} />;
     case 'fondo':
       return (
         <FondoPanel

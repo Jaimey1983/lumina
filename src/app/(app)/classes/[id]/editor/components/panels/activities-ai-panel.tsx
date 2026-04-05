@@ -9,13 +9,19 @@ import { Button } from '@/components/ui/button';
 
 interface Props {
   desempenoEnunciado?: string;
+  hasActivity?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ActivitiesAiPanel({ desempenoEnunciado }: Props) {
+export function ActivitiesAiPanel({ desempenoEnunciado, hasActivity }: Props) {
   return (
     <div className="flex flex-col gap-4 p-4">
+      {hasActivity && (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+          Este slide ya tiene una actividad. Elimínala para agregar otra.
+        </p>
+      )}
       <p className="text-xs leading-relaxed text-muted-foreground">
         Genera actividades automáticamente basadas en el desempeño de la clase.
       </p>
@@ -23,6 +29,7 @@ export function ActivitiesAiPanel({ desempenoEnunciado }: Props) {
       <Button
         variant="outline"
         size="sm"
+        disabled={hasActivity}
         className="w-full justify-start gap-2"
         onClick={() => toast.info('Próximamente: generación de preguntas con IA')}
       >
@@ -33,6 +40,7 @@ export function ActivitiesAiPanel({ desempenoEnunciado }: Props) {
       <Button
         variant="outline"
         size="sm"
+        disabled={hasActivity}
         className="w-full justify-start gap-2"
         onClick={() => toast.info('Próximamente: generación de actividades con IA')}
       >
