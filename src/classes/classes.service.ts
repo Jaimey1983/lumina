@@ -247,6 +247,39 @@ export class ClassesService {
     return { message: 'Slide eliminado correctamente' };
   }
 
+  async reorderSlides(
+    classId: string,
+    userId: string,
+    order: { id: string; order: number }[],
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    const slides = await this.prisma.slide.findMany({
+      where: { classId },
+      select: { id: true },
+    });
+    const validIds = new Set(slides.map((s) => s.id));
+    const allValid = order.every((item) => validIds.has(item.id));
+    if (!allValid)
+      throw new NotFoundException('Uno o más slides no pertenecen a esta clase');
+
+    await this.prisma.$transaction(
+      order.map((item) =>
+        this.prisma.slide.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        }),
+      ),
+    );
+
+    return this.prisma.slide.findMany({
+      where: { classId },
+      select: { id: true, order: true, type: true, title: true },
+      orderBy: { order: 'asc' },
+    });
+  }
+
   // ─── HELPERS PRIVADOS ──────────────────────────────────
 
   private async findOneRaw(id: string) {
