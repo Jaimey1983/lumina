@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useRemoveSlide, useReorderSlides, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
+import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -213,6 +213,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const createSlide  = useCreateSlide(classId);
   const removeSlide    = useRemoveSlide(classId);
   const reorderSlides  = useReorderSlides(classId);
+  const insertSlide    = useInsertSlide(classId);
 
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
@@ -341,26 +342,29 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [activeSlide, updateSlide]);
 
   const handleAddSlide = useCallback(() => {
-    const nextOrder = sortedSlides.length + 1;
-    createSlide.mutate(
+    const afterOrder = sortedSlides[resolvedSlideIndex]?.order ?? 0;
+    insertSlide.mutate(
       {
-        type: 'CONTENT',
-        title: 'Nuevo slide',
-        content: {
-          id: `slide_${Date.now()}`,
-          orden: nextOrder,
-          tipo: 'contenido',
-          layout: 'titulo_y_contenido',
-          fondo: { tipo: 'color', valor: '#FFFFFF' },
-          bloques: [],
+        afterOrder,
+        slide: {
+          type: 'CONTENT',
+          title: 'Nuevo slide',
+          content: {
+            id: `slide_${Date.now()}`,
+            orden: afterOrder + 1,
+            tipo: 'contenido',
+            layout: 'titulo_y_contenido',
+            fondo: { tipo: 'color', valor: '#FFFFFF' },
+            bloques: [],
+          },
         },
       },
       {
-        onSuccess: () => setActiveSlideIndex(nextOrder - 1),
+        onSuccess: () => setActiveSlideIndex(resolvedSlideIndex + 1),
         onError: () => toast.error('Error al crear el slide'),
       },
     );
-  }, [sortedSlides.length, createSlide]);
+  }, [sortedSlides, resolvedSlideIndex, insertSlide]);
 
   const handleCommitSlideContent = useCallback(
     (content: Record<string, unknown>) => {
@@ -721,6 +725,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onApplyTheme={handleApplyTheme}
             desempenoEnunciado={desempeno?.enunciado}
             hasActivity={activeSlideHasActivity}
+
           />
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}

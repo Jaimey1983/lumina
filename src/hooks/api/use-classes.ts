@@ -184,3 +184,19 @@ export function useReorderSlides(classId: string) {
     },
   });
 }
+
+export function useInsertSlide(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { afterOrder: number; slide: CreateSlideInput }) => {
+      const { data } = await api.post(
+        `/classes/${classId}/slides/insert`,
+        input,
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
