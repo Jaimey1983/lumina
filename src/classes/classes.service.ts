@@ -280,6 +280,46 @@ export class ClassesService {
     });
   }
 
+  async addSlideAtPosition(
+    classId: string,
+    userId: string,
+    afterOrder: number,
+    dto: CreateSlideDto,
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.slide.updateMany({
+        where: { classId, order: { gt: afterOrder } },
+        data: { order: { increment: 1 } },
+      });
+
+      return tx.slide.create({
+        data: {
+          type: dto.type,
+          title: dto.title,
+          content: dto.content as Prisma.InputJsonValue,
+          order: afterOrder + 1,
+          class: { connect: { id: classId } },
+        },
+      });
+    });
+
+    return this.prisma.slide.findMany({
+      where: { classId },
+      select: {
+        id: true,
+        order: true,
+        type: true,
+        title: true,
+        content: true,
+        createdAt: true,
+      },
+      orderBy: { order: 'asc' },
+    });
+  }
+
   // ─── HELPERS PRIVADOS ──────────────────────────────────
 
   private async findOneRaw(id: string) {
