@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useRemoveSlide, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
+import { useCreateSlide, useRemoveSlide, useReorderSlides, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -211,7 +211,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const updateSlide  = useUpdateSlide(classId);
   const updateClass  = useUpdateClass(classId, cls?.courseId ?? '');
   const createSlide  = useCreateSlide(classId);
-  const removeSlide  = useRemoveSlide(classId);
+  const removeSlide    = useRemoveSlide(classId);
+  const reorderSlides  = useReorderSlides(classId);
 
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
@@ -443,6 +444,30 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [removeSlide],
   );
 
+  const handleMoveSlide = useCallback(
+    (slideId: string, direction: 'up' | 'down') => {
+      const idx = sortedSlides.findIndex((s) => s.id === slideId);
+      if (idx === -1) return;
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sortedSlides.length) return;
+
+      const newOrder = sortedSlides.map((s, i) => {
+        if (i === idx)     return { id: s.id, order: sortedSlides[swapIdx]!.order };
+        if (i === swapIdx) return { id: s.id, order: sortedSlides[idx]!.order };
+        return { id: s.id, order: s.order };
+      });
+
+      reorderSlides.mutate(newOrder, {
+        onSuccess: () => {
+          setActiveSlideIndex(swapIdx);
+          toast.success('Slide reordenado');
+        },
+        onError: () => toast.error('No se pudo reordenar el slide'),
+      });
+    },
+    [sortedSlides, reorderSlides],
+  );
+
   const handleAddActivity = useCallback(
     (type: ActivityType) => {
       const templates: Record<ActivityType, () => Activity> = {
@@ -469,14 +494,35 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'live-poll':        'Encuesta en vivo',
         'word-cloud':       'Nube de palabras',
       };
-      const block: Block = { tipo: 'actividad', actividad: templates[type]() };
+      const templateFn = templates[type];
+      if (!templateFn) {
+        toast.info(`Actividad "${type}" próximamente disponible`);
+        return;
+      }
+
+      const block: Block = { tipo: 'actividad', actividad: templateFn() };
+
+      // Si el slide activo existe y está vacío (sin bloques), agregar ahí
+      if (activeSlide) {
+        const c = getSlideContentRecord(activeSlide as ApiSlide);
+        const bloques = Array.isArray(c.bloques) ? c.bloques : [];
+        if (bloques.length === 0) {
+          handleCommitSlideContent(
+            mergeSlideContent(activeSlide as ApiSlide, { bloques: [block] }),
+          );
+          toast.success(`${titles[type]} agregada al slide actual`);
+          return;
+        }
+      }
+
+      // Si no hay slide activo o tiene contenido, crear nuevo slide
       handleCreateSlideWithActivity(
         buildContentDocumentForNewActivitySlide(block),
         titles[type],
       );
       toast.success(`Slide con ${titles[type]} creado`);
     },
-    [handleCreateSlideWithActivity],
+    [activeSlide, handleCommitSlideContent, handleCreateSlideWithActivity],
   );
 
   const handleApplyTheme = useCallback((bg: string) => {
@@ -634,6 +680,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onSelect={setActiveSlideIndex}
               onAddSlide={handleAddSlide}
               onRemoveSlide={handleRemoveSlide}
+              onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
+              onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
             />
             <FlyoutPanel
               ref={flyoutPanelRef}

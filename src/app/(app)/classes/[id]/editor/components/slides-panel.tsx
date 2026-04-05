@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,8 @@ export interface SlidesPanelProps {
   onSelect: (index: number) => void;
   onAddSlide: () => void;
   onRemoveSlide?: (slideId: string) => void;
+  onMoveSlideUp?: (slideId: string) => void;
+  onMoveSlideDown?: (slideId: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -47,6 +49,8 @@ export function SlidesPanel({
   onSelect,
   onAddSlide,
   onRemoveSlide,
+  onMoveSlideUp,
+  onMoveSlideDown,
 }: SlidesPanelProps) {
   return (
     <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-border bg-background">
@@ -119,6 +123,43 @@ export function SlidesPanel({
                   >
                     <Trash2 className="size-3.5" />
                   </button>
+                )}
+                {(onMoveSlideUp || onMoveSlideDown) && (
+                  <div
+                    className={cn(
+                      'absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-10',
+                      'opacity-0 group-hover:opacity-100 transition-opacity',
+                    )}
+                  >
+                    <button
+                      type="button"
+                      aria-label="Mover slide arriba"
+                      disabled={idx === 0}
+                      onClick={(e) => { e.stopPropagation(); onMoveSlideUp?.(slide.id); }}
+                      className={cn(
+                        'size-6 flex items-center justify-center rounded',
+                        'bg-background/90 hover:bg-accent border border-border',
+                        'text-muted-foreground hover:text-foreground',
+                        'disabled:opacity-30 disabled:cursor-not-allowed',
+                      )}
+                    >
+                      <ChevronUp className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Mover slide abajo"
+                      disabled={idx === slides.length - 1}
+                      onClick={(e) => { e.stopPropagation(); onMoveSlideDown?.(slide.id); }}
+                      className={cn(
+                        'size-6 flex items-center justify-center rounded',
+                        'bg-background/90 hover:bg-accent border border-border',
+                        'text-muted-foreground hover:text-foreground',
+                        'disabled:opacity-30 disabled:cursor-not-allowed',
+                      )}
+                    >
+                      <ChevronDown className="size-3.5" />
+                    </button>
+                  </div>
                 )}
               </div>
             );

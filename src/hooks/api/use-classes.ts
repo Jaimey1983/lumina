@@ -171,3 +171,16 @@ export function useRemoveSlide(classId: string) {
     },
   });
 }
+
+export function useReorderSlides(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (order: { id: string; order: number }[]) => {
+      const { data } = await api.patch(`/classes/${classId}/slides/reorder`, { order });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
