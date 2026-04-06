@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run:*)",
+      "Bash(echo \"BUILD_EXIT: $?\")",
+      "Bash(npx prisma:*)",
+      "Bash(pnpm test:*)",
+      "Bash(find 'C:\\\\Users\\\\Jaime\\\\proyectos\\\\lumina-backend\\\\src' -name *.guard.ts)",
+      "Bash(cd:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm prisma:*)",
+      "Bash(FORCE_COLOR=0 CI=false pnpm exec prisma migrate dev --create-only --name achievement_performance_indicator)",
+      "Bash(echo \"EXIT: $?\")"
+    ]
+  }
+}
