@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 
 import type { MatchPairs } from '@/types/slide.types';
@@ -234,6 +235,139 @@ export function MatchPairsActivityEditor({
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+export function MatchPairsViewer({
+  activity,
+  onAnswer,
+}: {
+  activity: MatchPairs;
+  onAnswer?: (pairs: { leftId: string; rightId: string }[]) => void;
+}) {
+  const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
+  const [matches, setMatches] = useState<{ leftId: string; rightId: string }[]>([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [shuffledRight, setShuffledRight] = useState<{ id: string; text: string }[]>([]);
+
+  useEffect(() => {
+    if (!activity?.pares) return;
+    const rightItems = activity.pares.map((p) => ({ id: p.id, text: p.derecha }));
+    setShuffledRight(rightItems.sort(() => Math.random() - 0.5));
+    setMatches([]);
+    setShowFeedback(false);
+  }, [activity?.pares]);
+
+  const handleLeftClick = (id: string) => {
+    if (selectedLeft === id) setSelectedLeft(null);
+    else setSelectedLeft(id);
+  };
+
+  const handleRightClick = (rightId: string) => {
+    if (!selectedLeft) return;
+    setMatches((prev) => {
+      const filtered = prev.filter((m) => m.leftId !== selectedLeft && m.rightId !== rightId);
+      return [...filtered, { leftId: selectedLeft, rightId }];
+    });
+    setSelectedLeft(null);
+    setShowFeedback(false);
+  };
+
+  const removeMatch = (leftId: string) => {
+    setMatches((prev) => prev.filter((m) => m.leftId !== leftId));
+    setShowFeedback(false);
+  };
+
+  const handleCheck = () => {
+    setShowFeedback(true);
+    if (onAnswer) onAnswer(matches);
+  };
+
+  if (!activity) return null;
+
+  return (
+    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+      {activity.instruccion && (
+        <p className="text-sm font-medium text-foreground">{activity.instruccion}</p>
+      )}
+
+      <div className="grid grid-cols-2 gap-8">
+        <div className="flex flex-col gap-3">
+          {activity.pares.map((p) => {
+            const matchIndex = matches.findIndex((m) => m.leftId === p.id);
+            const isMatched = matchIndex !== -1;
+            const isSelected = selectedLeft === p.id;
+
+            let feedbackClass = '';
+            if (showFeedback && isMatched) {
+              const match = matches[matchIndex];
+              feedbackClass = match.leftId === match.rightId ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
+            } else if (isSelected) {
+              feedbackClass = 'border-primary ring-1 ring-primary';
+            } else if (isMatched) {
+              feedbackClass = 'border-primary/50 bg-primary/5';
+            } else {
+              feedbackClass = 'bg-background hover:bg-muted/50 cursor-pointer';
+            }
+
+            return (
+              <div
+                key={p.id}
+                onClick={() => (!isMatched ? handleLeftClick(p.id) : removeMatch(p.id))}
+                className={cn('flex min-h-[3rem] items-center justify-between rounded-md border p-3 text-sm transition-colors', feedbackClass)}
+              >
+                <span>{p.izquierda}</span>
+                {isMatched && (
+                  <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                    {matchIndex + 1}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {shuffledRight.map((r) => {
+            const matchIndex = matches.findIndex((m) => m.rightId === r.id);
+            const isMatched = matchIndex !== -1;
+
+            let feedbackClass = '';
+            if (showFeedback && isMatched) {
+              const match = matches[matchIndex];
+              feedbackClass = match.leftId === match.rightId ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
+            } else if (isMatched) {
+              feedbackClass = 'border-primary/50 bg-primary/5';
+            } else {
+              feedbackClass = 'bg-background hover:bg-muted/50 cursor-pointer';
+            }
+
+            return (
+              <div
+                key={r.id}
+                onClick={() => !isMatched && handleRightClick(r.id)}
+                className={cn('flex min-h-[3rem] items-center gap-3 rounded-md border p-3 text-sm transition-colors', feedbackClass, !isMatched && !selectedLeft && 'cursor-not-allowed opacity-70')}
+              >
+                {isMatched && (
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                    {matchIndex + 1}
+                  </span>
+                )}
+                <span>{r.text}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleCheck} disabled={matches.length !== activity.pares.length}>
+          Comprobar
+        </Button>
       </div>
     </div>
   );

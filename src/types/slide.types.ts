@@ -73,6 +73,7 @@ export interface QuizMultiple {
   multipleRespuesta?: boolean;
   puntos?: number;
   retroalimentacion?: Feedback;
+  shuffleOptions?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

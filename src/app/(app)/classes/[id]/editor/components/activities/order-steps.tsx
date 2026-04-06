@@ -1,6 +1,24 @@
 'use client';
 
-import { Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Trash2, ChevronUp, ChevronDown, Plus, GripVertical } from 'lucide-react';
 
 import type { OrderSteps, OrderStep } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -12,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { useActivityEditor } from './use-activity-editor';
 
 // Editor-only fields that ride along with the persisted activity data.
-type OrderStepsLocal = OrderSteps & { mostrarNumeros?: boolean };
+export type OrderStepsLocal = OrderSteps & { mostrarNumeros?: boolean };
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -251,6 +269,139 @@ export function OrderStepsActivityEditor({
             onCheckedChange={(checked) => updateImmediate({ mostrarNumeros: checked })}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+function SortableStep({ id, content, index, showNumbers }: { id: string; content: string; index: number; showNumbers?: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'flex w-full items-center gap-3 rounded-md border bg-background p-3 shadow-sm',
+        isDragging && 'opacity-50 ring-2 ring-primary'
+      )}
+    >
+      <button
+        type="button"
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-4" />
+      </button>
+      {showNumbers && (
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+          {index + 1}
+        </span>
+      )}
+      <span className="text-sm">{content}</span>
+    </div>
+  );
+}
+
+export function OrderStepsViewer({
+  activity,
+  onAnswer,
+}: {
+  activity: OrderStepsLocal;
+  onAnswer?: (order: string[]) => void;
+}) {
+  const [items, setItems] = useState<{ id: string; content: string }[]>([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    if (!activity?.pasos) return;
+    const shuffled = [...activity.pasos].sort(() => Math.random() - 0.5);
+    setItems(shuffled.map((s) => ({ id: s.id, content: s.contenido })));
+    setShowFeedback(false);
+  }, [activity?.pasos]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setItems((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      setShowFeedback(false);
+    }
+  }
+
+  const handleCheck = () => {
+    setShowFeedback(true);
+    if (onAnswer) onAnswer(items.map((i) => i.id));
+  };
+
+  if (!activity) return null;
+
+  const isCorrectOrder = items.every((i, idx) => {
+    const origIndex = activity.pasos.findIndex((p) => p.id === i.id);
+    return origIndex === idx;
+  });
+
+  return (
+    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+      {activity.instruccion && (
+        <p className="text-sm font-medium text-foreground">{activity.instruccion}</p>
+      )}
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          <div className="flex flex-col gap-2">
+            {items.map((item, index) => (
+              <SortableStep
+                key={item.id}
+                id={item.id}
+                content={item.content}
+                index={index}
+                showNumbers={activity.mostrarNumeros}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <div className="flex items-center justify-between">
+        {showFeedback ? (
+          <div className={cn('text-sm font-medium', isCorrectOrder ? 'text-green-600' : 'text-red-600')}>
+            {isCorrectOrder ? '¡Orden correcto!' : 'El orden no es correcto.'}
+          </div>
+        ) : (
+          <div />
+        )}
+        <Button onClick={handleCheck}>Comprobar</Button>
       </div>
     </div>
   );

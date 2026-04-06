@@ -23,10 +23,15 @@ import type {
 import { cn } from '@/lib/utils';
 
 import { ShortAnswerActivityEditor } from './activities/short-answer';
-import { FillBlanksActivityEditor } from './activities/fill-blanks';
-import { MatchPairsActivityEditor } from './activities/match-pairs';
-import { OrderStepsActivityEditor } from './activities/order-steps';
-import { WordCloudActivityEditor } from './activities/word-cloud';
+import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
+import { MatchPairsActivityEditor, MatchPairsViewer } from './activities/match-pairs';
+import { OrderStepsActivityEditor, OrderStepsViewer } from './activities/order-steps';
+import { WordCloudActivityEditor, WordCloudViewer } from './activities/word-cloud';
+import { QuizMultipleActivityEditor } from './activities/quiz-multiple';
+import { TrueFalseActivityEditor } from './activities/true-false';
+import { DragDropActivityEditor } from './activities/drag-drop';
+import { VideoInteractiveActivity, VideoInteractiveActivityEditor } from './activities/video-interactive';
+import { LivePollActivity, LivePollActivityEditor } from './activities/live-poll';
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
   if (!block.marco) return block;
@@ -386,6 +391,51 @@ function RenderActivity({
     );
   }
 
+  if (act.tipo === 'quiz_multiple') {
+    if (modo === 'editor') {
+      return (
+        <QuizMultipleActivityEditor
+          editorSyncKey={`${slideId}-${blockId}`}
+          activity={act}
+          canvasLayout={!!activityCanvasLayout}
+          isSelected={isSelected}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
+        />
+      );
+    }
+  }
+
+  if (act.tipo === 'verdadero_falso') {
+    if (modo === 'editor') {
+      return (
+        <TrueFalseActivityEditor
+          editorSyncKey={`${slideId}-${blockId}`}
+          activity={act}
+          canvasLayout={!!activityCanvasLayout}
+          isSelected={isSelected}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
+        />
+      );
+    }
+  }
+
+  if (act.tipo === 'arrastrar_soltar') {
+    if (modo === 'editor') {
+      return (
+        <DragDropActivityEditor
+          editorSyncKey={`${slideId}-${blockId}`}
+          activity={act}
+          canvasLayout={!!activityCanvasLayout}
+          isSelected={isSelected}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
+        />
+      );
+    }
+  }
+
   if (act.tipo === 'completar_blancos') {
     if (modo === 'editor') {
       return (
@@ -395,11 +445,7 @@ function RenderActivity({
         />
       );
     }
-    return (
-      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-        Vista previa no disponible aún
-      </div>
-    );
+    return <FillBlanksViewer activity={act} />;
   }
 
   if (act.tipo === 'emparejar') {
@@ -411,11 +457,7 @@ function RenderActivity({
         />
       );
     }
-    return (
-      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-        Vista previa no disponible aún
-      </div>
-    );
+    return <MatchPairsViewer activity={act} />;
   }
 
   if (act.tipo === 'ordenar_pasos') {
@@ -427,11 +469,7 @@ function RenderActivity({
         />
       );
     }
-    return (
-      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-        Vista previa no disponible aún
-      </div>
-    );
+    return <OrderStepsViewer activity={act} />;
   }
 
   if (act.tipo === 'nube_palabras') {
@@ -443,11 +481,31 @@ function RenderActivity({
         />
       );
     }
-    return (
-      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-        Vista previa no disponible aún
-      </div>
-    );
+    return <WordCloudViewer activity={act} />;
+  }
+
+  if (act.tipo === 'video_interactivo') {
+    if (modo === 'editor') {
+      return (
+        <VideoInteractiveActivityEditor
+          activity={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+        />
+      );
+    }
+    return <VideoInteractiveActivity actividad={act} modo="viewer" />;
+  }
+
+  if (act.tipo === 'encuesta_viva') {
+    if (modo === 'editor') {
+      return (
+        <LivePollActivityEditor
+          activity={act}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+        />
+      );
+    }
+    return <LivePollActivity actividad={act} modo="viewer" />;
   }
 
   const label = ACTIVITY_LABELS[act.tipo];

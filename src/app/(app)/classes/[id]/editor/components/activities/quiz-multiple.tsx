@@ -1,11 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, Circle, XCircle } from 'lucide-react';
+import { CheckCircle, Circle, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { QuizMultiple, QuizOption } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -178,4 +182,183 @@ export function QuizMultipleActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── Activity Editor ──────────────────────────────────────────────────────────
+
+const DEFAULTS: QuizMultiple = {
+  tipo: 'quiz_multiple',
+  pregunta: '',
+  opciones: [],
+  shuffleOptions: false,
+};
+
+function normalize(a: QuizMultiple | null | undefined): QuizMultiple {
+  if (!a) return { ...DEFAULTS };
+  return { ...DEFAULTS, ...a, tipo: 'quiz_multiple' };
+}
+
+interface EditorProps {
+  editorSyncKey: string;
+  activity: QuizMultiple | null;
+  onChange: (a: QuizMultiple) => void;
+  onRemove?: () => void;
+  canvasLayout?: boolean;
+  isSelected?: boolean;
+}
+
+export function QuizMultipleActivityEditor({
+  editorSyncKey,
+  activity,
+  onChange,
+  onRemove,
+  canvasLayout,
+  isSelected,
+}: EditorProps) {
+  const { local, setLocal, flush, commitImmediate, schedulePersist } = useActivityEditor<QuizMultiple>({
+    data: activity,
+    editorSyncKey,
+    normalize,
+    onChange,
+  });
+
+  function updateImmediate(partial: Partial<QuizMultiple>) {
+    commitImmediate({ ...local, ...partial, tipo: 'quiz_multiple' });
+  }
+
+  function updateText(partial: Partial<QuizMultiple>) {
+    const next = { ...local, ...partial, tipo: 'quiz_multiple' as const };
+    setLocal(next);
+    schedulePersist(next);
+  }
+
+  function addOption() {
+    if (local.opciones.length >= 6) return;
+    const newOption: QuizOption = { id: crypto.randomUUID(), texto: '', esCorrecta: false };
+    updateImmediate({ opciones: [...local.opciones, newOption] });
+  }
+
+  function updateOptionText(id: string, texto: string) {
+    const nextOpciones = local.opciones.map(o => o.id === id ? { ...o, texto } : o);
+    setLocal({ ...local, opciones: nextOpciones, tipo: 'quiz_multiple' });
+    schedulePersist({ ...local, opciones: nextOpciones, tipo: 'quiz_multiple' });
+  }
+
+  function removeOption(id: string) {
+    const nextOpciones = local.opciones.filter(o => o.id !== id);
+    updateImmediate({ opciones: nextOpciones });
+  }
+
+  function setCorrectOption(id: string) {
+    // Para single correct answer (por defecto si no usamos checkbox de multipleRespuesta)
+    const nextOpciones = local.opciones.map(o => ({
+      ...o,
+      esCorrecta: o.id === id
+    }));
+    updateImmediate({ opciones: nextOpciones });
+  }
+
+  return (
+    <div
+      data-activity-editor-root
+      className={cn(
+        canvasLayout
+          ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
+          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+      )}
+    >
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
+        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+          Quiz
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+          Los cambios se guardan automáticamente
+        </span>
+        {onRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              flush();
+              onRemove();
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        <div className="space-y-1">
+          <Label className="text-[11px] font-medium">Pregunta</Label>
+          <Input
+            value={local.pregunta}
+            onChange={(e) => updateText({ pregunta: e.target.value })}
+            onBlur={flush}
+            className="h-8 text-xs"
+            placeholder="Escribe la pregunta..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-[11px] font-medium">Opciones</Label>
+          <div className="space-y-1.5">
+            {local.opciones.map((op, idx) => (
+              <div key={op.id} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name={`quiz-correct-${editorSyncKey}`}
+                  checked={op.esCorrecta}
+                  onChange={() => setCorrectOption(op.id)}
+                  className="size-4 shrink-0 cursor-pointer"
+                />
+                <Input
+                  value={op.texto}
+                  onChange={(e) => updateOptionText(op.id, e.target.value)}
+                  onBlur={flush}
+                  className={cn('h-8 text-xs', op.esCorrecta && 'border-green-300 bg-green-50/30')}
+                  placeholder={`Opción ${idx + 1}`}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeOption(op.id)}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          {local.opciones.length < 6 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addOption}
+              className="mt-1 h-8 text-xs w-full"
+            >
+              <Plus className="mr-1.5 size-3" /> Agregar opción
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+          <Label className="cursor-pointer text-[11px] font-medium leading-tight">
+            Mezclar opciones
+          </Label>
+          <Switch
+            className="scale-90"
+            checked={local.shuffleOptions ?? false}
+            onCheckedChange={(checked) => updateImmediate({ shuffleOptions: checked })}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

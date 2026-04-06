@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { FillBlanks, FillBlank } from '@/types/slide.types';
@@ -223,6 +224,71 @@ export function FillBlanksActivityEditor({
             Aún no hay huecos en el texto. Añade uno con el botón de arriba.
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+export function FillBlanksViewer({
+  activity,
+  onAnswer,
+}: {
+  activity: FillBlanks;
+  onAnswer?: (answers: string[]) => void;
+}) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  const regex = /\{\{blank:([^}]+)\}\}/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  const text = activity.texto || '';
+  const matches = [...text.matchAll(regex)];
+
+  matches.forEach((m) => {
+    parts.push(text.slice(lastIndex, m.index));
+    const id = m[1];
+    const blank = activity.blancos.find((b) => b.id === id);
+    
+    let borderClass = 'border-input';
+    if (showFeedback && blank) {
+      const isCorrect = answers[id]?.trim().toLowerCase() === blank.respuesta.trim().toLowerCase();
+      borderClass = isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
+    }
+
+    parts.push(
+      <input
+        key={id}
+        type="text"
+        className={`mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm ${borderClass} focus:outline-none focus:ring-2 focus:ring-ring`}
+        value={answers[id] || ''}
+        onChange={(e) => {
+          setAnswers((prev) => ({ ...prev, [id]: e.target.value }));
+          setShowFeedback(false);
+        }}
+      />
+    );
+    lastIndex = (m.index || 0) + m[0].length;
+  });
+  parts.push(text.slice(lastIndex));
+
+  const handleCheck = () => {
+    setShowFeedback(true);
+    if (onAnswer) {
+      const orderedAnswers = matches.map((m) => answers[m[1]] || '');
+      onAnswer(orderedAnswers);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="text-base font-medium leading-relaxed text-foreground">
+        {parts}
+      </div>
+      <div className="flex justify-end">
+        <Button onClick={handleCheck}>Comprobar</Button>
       </div>
     </div>
   );

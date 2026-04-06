@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import type { WordCloud } from '@/types/slide.types';
@@ -12,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useActivityEditor } from './use-activity-editor';
 
 // Editor-only fields that ride along with the persisted activity data.
-type WordCloudLocal = WordCloud & {
+export type WordCloudLocal = WordCloud & {
   maxCaracteresPorPalabra?: number;
   mostrarTiempoReal?: boolean;
 };
@@ -199,6 +200,79 @@ export function WordCloudActivityEditor({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+export function WordCloudViewer({
+  activity,
+  onAnswer,
+}: {
+  activity: WordCloudLocal;
+  onAnswer?: (word: string) => void;
+}) {
+  const [word, setWord] = useState('');
+  const [submittedWords, setSubmittedWords] = useState<string[]>([]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!word.trim()) return;
+    const cleanWord = word.trim().toUpperCase();
+    setSubmittedWords((prev) => [...prev, cleanWord]);
+    if (onAnswer) onAnswer(cleanWord);
+    setWord('');
+  };
+
+  const wordCounts = submittedWords.reduce((acc, curr) => {
+    acc[curr] = (acc[curr] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  if (!activity) return null;
+
+  return (
+    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+      <p className="text-center text-base font-medium text-foreground">
+        {activity.instruccion || '¿En una palabra, cómo describes el tema de hoy?'}
+      </p>
+
+      <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm items-center gap-2">
+        <Input
+          value={word}
+          onChange={(e) => setWord(e.target.value)}
+          placeholder="Escribe tu palabra..."
+          maxLength={activity.maxCaracteresPorPalabra ?? 20}
+          className="flex-1"
+        />
+        <Button
+          type="submit"
+          disabled={!word.trim() || (activity.maxPalabrasPorUsuario ? submittedWords.length >= activity.maxPalabrasPorUsuario : false)}
+        >
+          Enviar
+        </Button>
+      </form>
+
+      {activity.maxPalabrasPorUsuario && (
+        <p className="mt-[-1rem] text-center text-xs text-muted-foreground">
+          {submittedWords.length} de {activity.maxPalabrasPorUsuario} palabras enviadas
+        </p>
+      )}
+
+      {activity.mostrarTiempoReal !== false && Object.entries(wordCounts).length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t py-8">
+          {Object.entries(wordCounts).map(([w, count]) => (
+            <span
+              key={w}
+              className="font-bold text-primary transition-all"
+              style={{ fontSize: `${Math.min(3, 1 + (count - 1) * 0.2)}rem`, opacity: Math.min(1, 0.5 + count * 0.2) }}
+            >
+              {w}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

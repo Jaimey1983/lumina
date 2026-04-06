@@ -1,11 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Trash2, Plus } from 'lucide-react';
 
 import type { LivePoll } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { cn, seeded01 } from '@/lib/utils';
+import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -180,4 +184,131 @@ export function LivePollActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── Named Export Editor ──────────────────────────────────────────────────────
+
+const DEFAULTS_POLL: LivePoll = {
+  tipo: 'encuesta_viva',
+  pregunta: '',
+  opciones: [],
+};
+
+function normalizePoll(a: LivePoll | null | undefined): LivePoll {
+  if (!a) return { ...DEFAULTS_POLL };
+  return { ...DEFAULTS_POLL, ...a, tipo: 'encuesta_viva' };
+}
+
+export function LivePollActivityEditor({
+  activity,
+  onChange,
+  editorSyncKey = 'live_poll',
+}: {
+  activity: LivePoll;
+  onChange: (a: LivePoll) => void;
+  editorSyncKey?: string;
+}) {
+  const { local, setLocal, flush, commitImmediate } = useActivityEditor<LivePoll>({
+    data: activity,
+    editorSyncKey,
+    normalize: normalizePoll,
+    onChange,
+  });
+
+  function updateImmediate(partial: Partial<LivePoll>) {
+    commitImmediate({ ...local, ...partial, tipo: 'encuesta_viva' });
+  }
+
+  function addOption() {
+    if (local.opciones.length >= 8) return;
+    updateImmediate({
+      opciones: [...local.opciones, { id: crypto.randomUUID(), texto: '' }],
+    });
+  }
+
+  function removeOption(optId: string) {
+    if (local.opciones.length <= 2) return;
+    updateImmediate({
+      opciones: local.opciones.filter((o) => o.id !== optId),
+    });
+  }
+
+  function updateOptionText(optId: string, text: string) {
+    updateImmediate({
+      opciones: local.opciones.map((o) => (o.id === optId ? { ...o, texto: text } : o)),
+    });
+  }
+
+  return (
+    <div className="flex max-h-[min(42vh,400px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">
+          Encuesta en vivo
+        </span>
+        <span className="text-[10px] text-muted-foreground truncate">
+          Editor de encuesta interactiva
+        </span>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden p-3">
+        <div className="space-y-1">
+          <Label className="text-[11px] font-medium">Pregunta de la encuesta</Label>
+          <Input
+            value={local.pregunta}
+            onChange={(e) => {
+              const next = { ...local, pregunta: e.target.value };
+              setLocal(next);
+            }}
+            onBlur={() => flush()}
+            className="h-8 text-xs"
+            placeholder="Escribe la pregunta..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-[11px] font-medium">Opciones (mín 2, máx 8)</Label>
+          {local.opciones.map((opt) => (
+            <div key={opt.id} className="flex items-center gap-2">
+              <Input
+                value={opt.texto}
+                onChange={(e) => updateOptionText(opt.id, e.target.value)}
+                className="h-8 flex-1 text-xs"
+                placeholder="Texto de la opción..."
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => removeOption(opt.id)}
+                disabled={local.opciones.length <= 2}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          ))}
+          {local.opciones.length < 8 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1 h-8 w-full text-xs border-dashed"
+              onClick={addOption}
+            >
+              <Plus className="mr-1 size-3.5" /> Agregar opción
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-2">
+          <Label className="cursor-pointer text-[11px] font-medium leading-tight">
+            Permitir múltiples respuestas
+          </Label>
+          <Switch
+            className="scale-90"
+            checked={local.multipleRespuesta ?? false}
+            onCheckedChange={(checked) => updateImmediate({ multipleRespuesta: checked })}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

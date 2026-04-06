@@ -1,10 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Trash2, XCircle } from 'lucide-react';
 
 import type { TrueFalse } from '@/types/slide.types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -141,4 +145,147 @@ export function TrueFalseActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── Activity Editor ──────────────────────────────────────────────────────────
+
+const DEFAULTS: TrueFalse = {
+  tipo: 'verdadero_falso',
+  afirmacion: '',
+  respuestaCorrecta: true,
+};
+
+function normalize(a: TrueFalse | null | undefined): TrueFalse {
+  if (!a) return { ...DEFAULTS };
+  return { ...DEFAULTS, ...a, tipo: 'verdadero_falso' };
+}
+
+interface EditorProps {
+  editorSyncKey: string;
+  activity: TrueFalse | null;
+  onChange: (a: TrueFalse) => void;
+  onRemove?: () => void;
+  canvasLayout?: boolean;
+  isSelected?: boolean;
+}
+
+export function TrueFalseActivityEditor({
+  editorSyncKey,
+  activity,
+  onChange,
+  onRemove,
+  canvasLayout,
+  isSelected,
+}: EditorProps) {
+  const { local, setLocal, flush, commitImmediate, schedulePersist } = useActivityEditor<TrueFalse>({
+    data: activity,
+    editorSyncKey,
+    normalize,
+    onChange,
+  });
+
+  function updateImmediate(partial: Partial<TrueFalse>) {
+    commitImmediate({ ...local, ...partial, tipo: 'verdadero_falso' });
+  }
+
+  function updateText(partial: Partial<TrueFalse>) {
+    const next = { ...local, ...partial, tipo: 'verdadero_falso' as const };
+    setLocal(next);
+    schedulePersist(next);
+  }
+
+  function updateExplanation(explicacion: string) {
+    const { explicacion: _, ...resto } = local.retroalimentacion || {};
+    const newRetro = explicacion ? { ...resto, explicacion } : resto;
+    const finalRetro = Object.keys(newRetro).length > 0 ? newRetro : undefined;
+    updateImmediate({ retroalimentacion: finalRetro });
+  }
+
+  return (
+    <div
+      data-activity-editor-root
+      className={cn(
+        canvasLayout
+          ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
+          : 'flex max-h-[min(50vh,300px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+      )}
+    >
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
+        <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+          Verdadero / Falso
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+          Los cambios se guardan automáticamente
+        </span>
+        {onRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              flush();
+              onRemove();
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        <div className="space-y-1">
+          <Label className="text-[11px] font-medium">Enunciado</Label>
+          <Input
+            value={local.afirmacion}
+            onChange={(e) => updateText({ afirmacion: e.target.value })}
+            onBlur={flush}
+            className="h-8 text-xs"
+            placeholder="Ej: La tierra es plana..."
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-[11px] font-medium">Respuesta correcta</Label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={local.respuestaCorrecta ? 'primary' : 'outline'}
+              className="flex-1 h-8 text-xs"
+              onClick={() => updateImmediate({ respuestaCorrecta: true })}
+            >
+              Verdadero
+            </Button>
+            <Button
+              type="button"
+              variant={!local.respuestaCorrecta ? 'primary' : 'outline'}
+              className="flex-1 h-8 text-xs"
+              onClick={() => updateImmediate({ respuestaCorrecta: false })}
+            >
+              Falso
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-[11px] font-medium">Explicación (opcional)</Label>
+          <Input
+            value={local.retroalimentacion?.explicacion ?? ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setLocal({
+                ...local,
+                retroalimentacion: { ...local.retroalimentacion, explicacion: val }
+              });
+            }}
+            onBlur={(e) => updateExplanation(e.target.value)}
+            className="h-8 text-xs text-muted-foreground"
+            placeholder="Aparecerá al elegir la respuesta incorrecta..."
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

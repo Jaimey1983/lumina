@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, GripVertical, XCircle } from 'lucide-react';
+import { CheckCircle, GripVertical, Plus, Trash2, XCircle } from 'lucide-react';
 
-import type { DragDrop } from '@/types/slide.types';
+import type { DragDrop, DragDropItem, DragDropZone } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -265,4 +268,246 @@ export function DragDropActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── Activity Editor ──────────────────────────────────────────────────────────
+
+const DEFAULTS: DragDrop = {
+  tipo: 'arrastrar_soltar',
+  instruccion: '',
+  items: [],
+  zonas: [],
+};
+
+function normalize(a: DragDrop | null | undefined): DragDrop {
+  if (!a) return { ...DEFAULTS };
+  return { ...DEFAULTS, ...a, tipo: 'arrastrar_soltar' };
+}
+
+interface EditorProps {
+  editorSyncKey: string;
+  activity: DragDrop | null;
+  onChange: (a: DragDrop) => void;
+  onRemove?: () => void;
+  canvasLayout?: boolean;
+  isSelected?: boolean;
+}
+
+export function DragDropActivityEditor({
+  editorSyncKey,
+  activity,
+  onChange,
+  onRemove,
+  canvasLayout,
+  isSelected,
+}: EditorProps) {
+  const { local, setLocal, flush, commitImmediate, schedulePersist } = useActivityEditor<DragDrop>({
+    data: activity,
+    editorSyncKey,
+    normalize,
+    onChange,
+  });
+
+  function updateImmediate(partial: Partial<DragDrop>) {
+    commitImmediate({ ...local, ...partial, tipo: 'arrastrar_soltar' });
+  }
+
+  function updateText(partial: Partial<DragDrop>) {
+    const next = { ...local, ...partial, tipo: 'arrastrar_soltar' as const };
+    setLocal(next);
+    schedulePersist(next);
+  }
+
+  // --- Elementos ---
+  function addItem() {
+    const nextItem: DragDropItem = { id: crypto.randomUUID(), texto: '' };
+    updateImmediate({ items: [...local.items, nextItem] });
+  }
+
+  function updateItemText(id: string, texto: string) {
+    const nextItems = local.items.map((i) => (i.id === id ? { ...i, texto } : i));
+    setLocal({ ...local, items: nextItems, tipo: 'arrastrar_soltar' });
+    schedulePersist({ ...local, items: nextItems, tipo: 'arrastrar_soltar' });
+  }
+
+  function removeItem(id: string) {
+    const nextItems = local.items.filter((i) => i.id !== id);
+    // Removerlo también de las zonas
+    const nextZonas = local.zonas.map((z) => ({
+      ...z,
+      itemsCorrectos: z.itemsCorrectos.filter((iId) => iId !== id),
+    }));
+    updateImmediate({ items: nextItems, zonas: nextZonas });
+  }
+
+  function changeItemZone(itemId: string, zoneId: string | 'none') {
+    const nextZonas = local.zonas.map((z) => {
+      // sacarlo de todas partes primero
+      const itemsCorrectos = z.itemsCorrectos.filter((id) => id !== itemId);
+      // agregarlo si es la zona seleccionada
+      if (z.id === zoneId) {
+        itemsCorrectos.push(itemId);
+      }
+      return { ...z, itemsCorrectos };
+    });
+    updateImmediate({ zonas: nextZonas });
+  }
+
+  function getItemZoneId(itemId: string) {
+    const zone = local.zonas.find((z) => z.itemsCorrectos.includes(itemId));
+    return zone ? zone.id : 'none';
+  }
+
+  // --- Zonas ---
+  function addZone() {
+    const nextZone: DragDropZone = { id: crypto.randomUUID(), etiqueta: '', itemsCorrectos: [] };
+    updateImmediate({ zonas: [...local.zonas, nextZone] });
+  }
+
+  function updateZoneLabel(id: string, etiqueta: string) {
+    const nextZonas = local.zonas.map((z) => (z.id === id ? { ...z, etiqueta } : z));
+    setLocal({ ...local, zonas: nextZonas, tipo: 'arrastrar_soltar' });
+    schedulePersist({ ...local, zonas: nextZonas, tipo: 'arrastrar_soltar' });
+  }
+
+  function removeZone(id: string) {
+    const nextZonas = local.zonas.filter((z) => z.id !== id);
+    updateImmediate({ zonas: nextZonas });
+  }
+
+  return (
+    <div
+      data-activity-editor-root
+      className={cn(
+        canvasLayout
+          ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
+          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
+        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+      )}
+    >
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+          Arrastrar y soltar
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+          Los cambios se guardan automáticamente
+        </span>
+        {onRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              flush();
+              onRemove();
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        <div className="space-y-1">
+          <Label className="text-[11px] font-medium">Instrucción</Label>
+          <Input
+            value={local.instruccion}
+            onChange={(e) => updateText({ instruccion: e.target.value })}
+            onBlur={flush}
+            className="h-8 text-xs"
+            placeholder="Ej: Arrastra cada animal a su hábitat..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-[11px] font-medium">Elementos</Label>
+            <div className="space-y-1.5">
+              {local.items.map((item, idx) => (
+                <div key={item.id} className="flex gap-1.5">
+                  <Input
+                    value={item.texto}
+                    onChange={(e) => updateItemText(item.id, e.target.value)}
+                    onBlur={flush}
+                    className="h-8 text-xs flex-1 min-w-0"
+                    placeholder={`Elemento ${idx + 1}`}
+                  />
+                  <select
+                    value={getItemZoneId(item.id)}
+                    onChange={(e) => changeItemZone(item.id, e.target.value)}
+                    className="h-8 rounded-md border border-input bg-transparent px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    title="Zona destino"
+                  >
+                    <option value="none" disabled>
+                      Destino...
+                    </option>
+                    {local.zonas.map((z) => (
+                      <option key={z.id} value={z.id}>
+                        {z.etiqueta || 'Sin nombre'}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeItem(item.id)}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addItem}
+              className="mt-1 h-8 text-xs w-full"
+            >
+              <Plus className="mr-1.5 size-3" /> Agregar elemento
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[11px] font-medium">Zonas destino</Label>
+            <div className="space-y-1.5">
+              {local.zonas.map((zone, idx) => (
+                <div key={zone.id} className="flex gap-1.5">
+                  <Input
+                    value={zone.etiqueta}
+                    onChange={(e) => updateZoneLabel(zone.id, e.target.value)}
+                    onBlur={flush}
+                    className="h-8 text-xs flex-1 min-w-0"
+                    placeholder={`Zona ${idx + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeZone(zone.id)}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addZone}
+              className="mt-1 h-8 text-xs w-full"
+            >
+              <Plus className="mr-1.5 size-3" /> Agregar zona
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -1,11 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { CheckCircle, Circle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Circle, Clock, XCircle, Trash2, Plus } from 'lucide-react';
 
 import type { VideoInteractive, VideoQuestion } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -255,4 +258,204 @@ export function VideoInteractiveActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── Named Export Editor ──────────────────────────────────────────────────────
+
+const DEFAULTS_VIDEO: VideoInteractive = {
+  tipo: 'video_interactivo',
+  urlVideo: '',
+  preguntas: [],
+};
+
+function normalizeVideo(a: VideoInteractive | null | undefined): VideoInteractive {
+  if (!a) return { ...DEFAULTS_VIDEO };
+  return { ...DEFAULTS_VIDEO, ...a, tipo: 'video_interactivo' };
+}
+
+export function VideoInteractiveActivityEditor({
+  activity,
+  onChange,
+}: {
+  activity: VideoInteractive;
+  onChange: (a: VideoInteractive) => void;
+}) {
+  const { local, setLocal, flush, commitImmediate } = useActivityEditor<VideoInteractive>({
+    data: activity,
+    editorSyncKey: 'video_interactivo',
+    normalize: normalizeVideo,
+    onChange,
+  });
+
+  function updateImmediate(partial: Partial<VideoInteractive>) {
+    commitImmediate({ ...local, ...partial, tipo: 'video_interactivo' as const });
+  }
+
+  function addQuestion() {
+    const q: VideoQuestion = {
+      id: crypto.randomUUID(),
+      tiempoSegundos: 0,
+      pregunta: '',
+      opciones: [
+        { id: crypto.randomUUID(), texto: '', esCorrecta: true },
+        { id: crypto.randomUUID(), texto: '', esCorrecta: false },
+      ],
+      pausarVideo: true,
+    };
+    updateImmediate({ preguntas: [...local.preguntas, q] });
+  }
+
+  function removeQuestion(qId: string) {
+    updateImmediate({ preguntas: local.preguntas.filter((q) => q.id !== qId) });
+  }
+
+  function updateQuestion(qId: string, partial: Partial<VideoQuestion>) {
+    updateImmediate({
+      preguntas: local.preguntas.map((q) => (q.id === qId ? { ...q, ...partial } : q)),
+    });
+  }
+
+  function addOption(qId: string) {
+    const q = local.preguntas.find((x) => x.id === qId);
+    if (!q || q.opciones.length >= 4) return;
+    updateQuestion(qId, {
+      opciones: [...q.opciones, { id: crypto.randomUUID(), texto: '', esCorrecta: false }],
+    });
+  }
+
+  function removeOption(qId: string, optId: string) {
+    const q = local.preguntas.find((x) => x.id === qId);
+    if (!q || q.opciones.length <= 1) return;
+    updateQuestion(qId, {
+      opciones: q.opciones.filter((o) => o.id !== optId),
+    });
+  }
+
+  function updateOption(qId: string, optId: string, text: string) {
+    const q = local.preguntas.find((x) => x.id === qId);
+    if (!q) return;
+    updateQuestion(qId, {
+      opciones: q.opciones.map((o) => (o.id === optId ? { ...o, texto: text } : o)),
+    });
+  }
+
+  function setCorrectOption(qId: string, optId: string) {
+    const q = local.preguntas.find((x) => x.id === qId);
+    if (!q) return;
+    updateQuestion(qId, {
+      opciones: q.opciones.map((o) => ({ ...o, esCorrecta: o.id === optId })),
+    });
+  }
+
+  return (
+    <div className="flex max-h-[min(60vh,500px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
+        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">
+          Video Interactivo
+        </span>
+        <span className="text-[10px] text-muted-foreground truncate">
+          Editor de pausas y preguntas
+        </span>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden p-3">
+        <div className="space-y-1">
+          <Label className="text-[11px] font-medium">URL del video — YouTube o Vimeo</Label>
+          <Input
+            value={local.urlVideo}
+            onChange={(e) => {
+              setLocal({ ...local, urlVideo: e.target.value });
+            }}
+            onBlur={() => flush()}
+            className="h-8 text-xs"
+            placeholder="https://..."
+          />
+        </div>
+
+        <div className="space-y-3">
+          {local.preguntas.map((q) => (
+            <div key={q.id} className="relative rounded-md border border-border bg-muted/10 p-3 shadow-sm">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-2 size-6 text-muted-foreground hover:text-destructive"
+                onClick={() => removeQuestion(q.id)}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+              
+              <div className="mb-3 grid grid-cols-[90px_1fr] gap-3 pr-8">
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-medium">Pausar en (seg)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={q.tiempoSegundos}
+                    onChange={(e) => updateQuestion(q.id, { tiempoSegundos: Number(e.target.value) })}
+                    className="h-7 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-medium">Pregunta</Label>
+                  <Input
+                    value={q.pregunta}
+                    onChange={(e) => updateQuestion(q.id, { pregunta: e.target.value })}
+                    className="h-7 text-xs"
+                    placeholder="Escribe la pregunta..."
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                {q.opciones.map((opt) => (
+                  <div key={opt.id} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`correct-${q.id}`}
+                      checked={opt.esCorrecta}
+                      onChange={() => setCorrectOption(q.id, opt.id)}
+                      className="size-3.5 accent-primary cursor-pointer"
+                    />
+                    <Input
+                      value={opt.texto}
+                      onChange={(e) => updateOption(q.id, opt.id, e.target.value)}
+                      className="h-7 flex-1 text-xs"
+                      placeholder="Texto de la opción..."
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 text-muted-foreground hover:text-destructive shrink-0"
+                      onClick={() => removeOption(q.id, opt.id)}
+                      disabled={q.opciones.length <= 1}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                {q.opciones.length < 4 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px] text-muted-foreground"
+                    onClick={() => addOption(q.id)}
+                  >
+                    <Plus className="mr-1 size-3" /> Agregar opción
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs border-dashed"
+            onClick={addQuestion}
+          >
+            <Plus className="mr-1 size-3.5" /> Agregar pregunta
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
