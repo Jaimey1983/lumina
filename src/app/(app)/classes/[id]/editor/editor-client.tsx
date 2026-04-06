@@ -472,6 +472,28 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [sortedSlides, reorderSlides],
   );
 
+  const handleReorderSlides = useCallback(
+    (slideId: string, newIndex: number) => {
+      const oldIndex = sortedSlides.findIndex((s) => s.id === slideId);
+      if (oldIndex === -1 || oldIndex === newIndex) return;
+
+      const reordered = [...sortedSlides];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved!);
+
+      const newOrder = reordered.map((s, i) => ({ id: s.id, order: i + 1 }));
+
+      reorderSlides.mutate(newOrder, {
+        onSuccess: () => {
+          setActiveSlideIndex(newIndex);
+          toast.success('Slide reordenado');
+        },
+        onError: () => toast.error('No se pudo reordenar'),
+      });
+    },
+    [sortedSlides, reorderSlides],
+  );
+
   const handleAddActivity = useCallback(
     (type: ActivityType) => {
       const templates: Record<ActivityType, () => Activity> = {
@@ -686,6 +708,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onRemoveSlide={handleRemoveSlide}
               onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
               onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
+              onReorderSlides={handleReorderSlides}
             />
             <FlyoutPanel
               ref={flyoutPanelRef}
