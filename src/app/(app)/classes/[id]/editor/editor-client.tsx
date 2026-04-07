@@ -29,6 +29,7 @@ import type { ActivityType } from './components/panels/activities-panel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useSocket } from '@/hooks/use-socket';
 
 // ─── Save status ──────────────────────────────────────────────────────────────
 
@@ -208,6 +209,7 @@ function hasDesempenoPersistido(value: unknown): boolean {
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
+  const { emit: socketEmit, isConnected } = useSocket();
   const updateSlide  = useUpdateSlide(classId);
   const updateClass  = useUpdateClass(classId, cls?.courseId ?? '');
   const createSlide  = useCreateSlide(classId);
@@ -221,8 +223,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [saveStatus,         setSaveStatus]         = useState<SaveStatus>('idle');
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
   const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
+  const [showCurricularModal, setShowCurricularModal] = useState(false);
 
   const leftRailWrapRef = useRef<HTMLDivElement>(null);
+  const autoOpenedRef = useRef(false);
   const flyoutPanelRef = useRef<HTMLElement>(null);
   const rightRailWrapRef = useRef<HTMLDivElement>(null);
   const rightFlyoutPanelRef = useRef<HTMLElement>(null);
@@ -256,6 +260,15 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     return () => document.removeEventListener('pointerdown', handlePointerDown, true);
   }, [activePanel, rightPanel]);
 
+  // ─── Auto-open curricular modal once per session when class has no desempeño ─
+
+  useEffect(() => {
+    if (cls && !isLoading && !hasDesempenoPersistido(cls.desempeno) && !autoOpenedRef.current) {
+      autoOpenedRef.current = true;
+      setShowCurricularModal(true);
+    }
+  }, [cls, isLoading]);
+
   // ─── Desempeño ──────────────────────────────────────────────────────────────
 
   const desempenoFromCls = useMemo(() => {
@@ -274,7 +287,14 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const needsFirstTimeSetup =
     cls != null && !isLoading && !hasDesempenoPersistido(cls.desempeno);
 
-  const modalOpen = needsFirstTimeSetup || modalUserOpen;
+  const modalOpen = showCurricularModal || modalUserOpen;
+
+  // ─── Socket: emit slide-change when active slide changes ────────────────────
+
+  useEffect(() => {
+    if (!isConnected) return;
+    socketEmit('slide-change', { slideIndex: activeSlideIndex, classId });
+  }, [activeSlideIndex, classId, socketEmit, isConnected]);
 
   // ─── Slides ─────────────────────────────────────────────────────────────────
 
@@ -641,6 +661,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
           {/* Botones acción — shrink-0 */}
           <div className="flex shrink-0 items-center gap-2 pr-3">
+            {/* Socket connection indicator */}
+            <span
+              title={isConnected ? 'Conectado en tiempo real' : 'Sin conexión en tiempo real'}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            >
+              <span
+                className={cn(
+                  'size-2 rounded-full',
+                  isConnected ? 'bg-green-500' : 'bg-muted-foreground/40',
+                )}
+              />
+            </span>
+
             <Button
               variant="ghost"
               size="sm"
@@ -784,19 +817,16 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       <NewClassModal
         classId={classId}
         isOpen={modalOpen}
-        required={needsFirstTimeSetup}
-        onClose={() => setModalUserOpen(false)}
+        required={false}
+        onClose={() => {
+          setModalUserOpen(false);
+          setShowCurricularModal(false);
+        }}
         onConfirm={(d) => {
           const normalized = withActividadesSugeridas(d);
           setConfirmedDesempeno(normalized);
           setModalUserOpen(false);
-          updateClass.mutate(
-            { desempeno: normalized },
-            {
-              onError: () =>
-                toast.error('No se pudo guardar el desempeño en el servidor'),
-            },
-          );
+          setShowCurricularModal(false);
         }}
       />
     </div>
