@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return <ScreenLoader />;
   }
 
-  if (pathname.startsWith('/editor') || /^\/classes\/[^/]+\/editor/.test(pathname)) {
+  if (/^\/classes\/[^/]+\/editor/.test(pathname)) {
     return (
       <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background">
         {children}
