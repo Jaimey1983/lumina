@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { fabric } from 'fabric';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { LAYOUT_FROM_KEY, removeBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
+import type { Background, Block, Layout, Slide as RendererSlide } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
+
+import { SlideRenderer } from './components/slide-renderer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,6 +15,11 @@ export interface SlideContent {
   background: { type: 'color'; value: string };
   width: number;
   height: number;
+  /** Bloques JSON (renderer). Convive con campos legacy por compatibilidad. */
+  bloques?: Block[];
+  fondo?: Background;
+  diseno?: Layout;
+  layout?: string;
   fabricJSON?: object;
 }
 
@@ -49,10 +58,6 @@ interface CanvasEditorProps {
   /** Clases Tailwind del contenedor exterior del canvas (área gris + centrado). */
   wrapperClassName?: string;
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
-  /**
-   * Si true (defecto), el lienzo llena el contenedor padre (h-full + overflow-hidden)
-   * y la escala se calcula para caber sin desbordar el viewport.
-   */
   fillContainer?: boolean;
 }
 
@@ -60,31 +65,179 @@ interface CanvasEditorProps {
 
 const CANVAS_WIDTH = 1280;
 const CANVAS_HEIGHT = 720;
+const HISTORY_MAX = 50;
+
+const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
+const DEFAULT_DISENO: Layout = LAYOUT_FROM_KEY.titulo_y_contenido!;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function extractProps(obj: fabric.Object): SelectedObjectProps {
-  const br = obj.getBoundingRect();
+interface EditorDoc {
+  bloques: Block[];
+  fondo: Background;
+  diseno: Layout;
+}
+
+function backgroundToHex(fondo: Background): string {
+  return fondo.tipo === 'color' ? fondo.valor : '#ffffff';
+}
+
+function parseEditorContent(content: unknown): EditorDoc {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return { bloques: [], fondo: DEFAULT_FONDO, diseno: DEFAULT_DISENO };
+  }
+  const c = content as Record<string, unknown>;
+
+  if (Array.isArray(c.bloques)) {
+    let fondo: Background = DEFAULT_FONDO;
+    if (c.fondo && typeof c.fondo === 'object' && c.fondo !== null && 'tipo' in c.fondo) {
+      fondo = c.fondo as Background;
+    } else if (
+      c.background &&
+      typeof c.background === 'object' &&
+      c.background !== null &&
+      'value' in c.background
+    ) {
+      fondo = { tipo: 'color', valor: String((c.background as { value?: string }).value ?? '#ffffff') };
+    }
+
+    let diseno: Layout = DEFAULT_DISENO;
+    if (c.diseno && typeof c.diseno === 'object' && !Array.isArray(c.diseno)) {
+      diseno = c.diseno as Layout;
+    } else if (typeof c.layout === 'string' && c.layout in LAYOUT_FROM_KEY) {
+      diseno = LAYOUT_FROM_KEY[c.layout]!;
+    }
+
+    return { bloques: c.bloques as Block[], fondo, diseno };
+  }
+
+  if ('fabricJSON' in c && c.fabricJSON) {
+    return {
+      bloques: [
+        {
+          tipo: 'texto',
+          contenido:
+            'Este slide usa formato antiguo (lienzo). Edita el texto aquí o continúa en el editor de clase con bloques.',
+          color: '#92400e',
+          tamanoFuente: '1.125rem',
+        },
+      ],
+      fondo:
+        c.background &&
+        typeof c.background === 'object' &&
+        c.background !== null &&
+        'value' in c.background
+          ? { tipo: 'color', valor: String((c.background as { value?: string }).value) }
+          : DEFAULT_FONDO,
+      diseno: DEFAULT_DISENO,
+    };
+  }
+
+  return { bloques: [], fondo: DEFAULT_FONDO, diseno: DEFAULT_DISENO };
+}
+
+function getBlockAtPath(bloques: Block[], path: string): Block | null {
+  const parts = path.split('-').map((x) => parseInt(x, 10));
+  if (parts.some((n) => Number.isNaN(n))) return null;
+
+  function go(arr: Block[], depth: number): Block | null {
+    const i = parts[depth]!;
+    if (i < 0 || i >= arr.length) return null;
+    if (depth === parts.length - 1) return arr[i]!;
+
+    const block = arr[i];
+    if (block?.tipo !== 'columnas') return null;
+    const colIdx = parts[depth + 1];
+    if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return null;
+    return go(block.columnas[colIdx]!, depth + 2);
+  }
+
+  return go(bloques, 0);
+}
+
+function blockToSelectedProps(block: Block): SelectedObjectProps {
+  if (block.tipo === 'texto') {
+    return {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      fill: block.color ?? '#111827',
+      stroke: '',
+      strokeWidth: 0,
+      opacity: 1,
+      type: 'texto',
+    };
+  }
+  if (block.tipo === 'imagen') {
+    const w = block.ancho ? parseInt(String(block.ancho).replace(/\D/g, ''), 10) : 400;
+    return {
+      x: 0,
+      y: 0,
+      width: Number.isFinite(w) ? w : 400,
+      height: 0,
+      fill: '#e5e7eb',
+      stroke: '',
+      strokeWidth: 0,
+      opacity: 1,
+      type: 'imagen',
+    };
+  }
   return {
-    x: Math.round(obj.left ?? 0),
-    y: Math.round(obj.top ?? 0),
-    width: Math.round(br.width),
-    height: Math.round(br.height),
-    fill: typeof obj.fill === 'string' ? obj.fill : '#000000',
-    stroke: obj.stroke ?? '',
-    strokeWidth: obj.strokeWidth ?? 0,
-    opacity: Math.round((obj.opacity ?? 1) * 100) / 100,
-    type: obj.type ?? 'object',
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    fill: '#6366f1',
+    stroke: '',
+    strokeWidth: 0,
+    opacity: 1,
+    type: block.tipo,
   };
 }
 
-function isFabricJSON(v: unknown): v is { fabricJSON: object; background?: { value?: string } } {
-  return typeof v === 'object' && v !== null && 'fabricJSON' in v;
+function bringIndexToEnd(arr: Block[], path: string): Block[] {
+  const i = parseInt(path, 10);
+  if (Number.isNaN(i) || i < 0 || i >= arr.length || !path.match(/^\d+$/)) return arr;
+  const b = arr[i]!;
+  return [...arr.filter((_, j) => j !== i), b];
+}
+
+function sendIndexToStart(arr: Block[], path: string): Block[] {
+  const i = parseInt(path, 10);
+  if (Number.isNaN(i) || i < 0 || i >= arr.length || !path.match(/^\d+$/)) return arr;
+  const b = arr[i]!;
+  return [b, ...arr.filter((_, j) => j !== i)];
+}
+
+function docToSlide(doc: EditorDoc): RendererSlide {
+  return {
+    id: 'canvas-editor',
+    order: 0,
+    type: 'CONTENT',
+    title: '',
+    bloques: doc.bloques,
+    fondo: doc.fondo,
+    diseno: doc.diseno,
+    content: null,
+  };
+}
+
+function serializeDoc(doc: EditorDoc): SlideContent {
+  const bg = backgroundToHex(doc.fondo);
+  return {
+    version: '1.0',
+    background: { type: 'color', value: bg },
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+    bloques: doc.bloques,
+    fondo: doc.fondo,
+    diseno: doc.diseno,
+    layout: 'titulo_y_contenido',
+  };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-
-const HISTORY_MAX = 50;
 
 export default function CanvasEditor({
   content,
@@ -94,37 +247,56 @@ export default function CanvasEditor({
   onHistoryChange,
   fillContainer = true,
 }: CanvasEditorProps) {
-  const canvasElRef = useRef<HTMLCanvasElement>(null);
-  const fabricRef = useRef<fabric.Canvas | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [doc, setDoc] = useState<EditorDoc>(() => parseEditorContent(content));
   const [scale, setScale] = useState(0.65);
+  const [rendererEpoch, setRendererEpoch] = useState(0);
+
+  const docRef = useRef(doc);
+  useEffect(() => {
+    docRef.current = doc;
+  }, [doc]);
+
+  const selectedPathRef = useRef<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  useEffect(() => {
+    selectedPathRef.current = selectedPath;
+  }, [selectedPath]);
 
   const isRestoringRef = useRef(false);
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef(-1);
   const historyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep callbacks in refs to avoid stale closures
   const onSelectionChangeRef = useRef(onSelectionChange);
   const onReadyRef = useRef(onReady);
   const onHistoryChangeRef = useRef(onHistoryChange);
-  useEffect(() => { onSelectionChangeRef.current = onSelectionChange; }, [onSelectionChange]);
-  useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
-  useEffect(() => { onHistoryChangeRef.current = onHistoryChange; }, [onHistoryChange]);
+  useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  }, [onSelectionChange]);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
+  useEffect(() => {
+    onHistoryChangeRef.current = onHistoryChange;
+  }, [onHistoryChange]);
 
-  const emitHistory = () => {
+  const commitDoc = useCallback((next: EditorDoc) => {
+    docRef.current = next;
+    setDoc(next);
+  }, []);
+
+  const emitHistory = useCallback(() => {
     const h = historyRef.current;
     const i = historyIndexRef.current;
     onHistoryChangeRef.current?.({
       canUndo: i > 0,
       canRedo: i < h.length - 1,
     });
-  };
+  }, []);
 
-  const pushHistorySnapshot = () => {
-    const canvas = fabricRef.current;
-    if (!canvas || isRestoringRef.current) return;
-    const json = JSON.stringify(canvas.toJSON(['data']));
+  const pushHistorySnapshot = useCallback(() => {
+    if (isRestoringRef.current) return;
+    const json = JSON.stringify(docRef.current);
     const h = historyRef.current;
     h.splice(historyIndexRef.current + 1);
     h.push(json);
@@ -134,257 +306,231 @@ export default function CanvasEditor({
       historyIndexRef.current--;
     }
     emitHistory();
-  };
+  }, [emitHistory]);
 
-  const scheduleHistorySnapshot = () => {
+  const scheduleHistorySnapshot = useCallback(() => {
     if (isRestoringRef.current) return;
     if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
     historyDebounceRef.current = setTimeout(() => {
       historyDebounceRef.current = null;
       pushHistorySnapshot();
     }, 280);
-  };
+  }, [pushHistorySnapshot]);
 
-  const resetHistoryFromCanvas = () => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    const json = JSON.stringify(canvas.toJSON(['data']));
+  const resetHistoryFromDoc = useCallback(() => {
+    const json = JSON.stringify(docRef.current);
     historyRef.current = [json];
     historyIndexRef.current = 0;
     emitHistory();
-  };
+  }, [emitHistory]);
 
-  // ── Initialize Fabric canvas ────────────────────────────────────────────────
+  // Cargar contenido del slide seleccionado
   useEffect(() => {
-    if (!canvasElRef.current) return;
+    isRestoringRef.current = true;
+    const next = parseEditorContent(content);
+    docRef.current = next;
+    setDoc(next);
+    selectedPathRef.current = null;
+    setSelectedPath(null);
+    onSelectionChangeRef.current(null);
+    setRendererEpoch((e) => e + 1);
+    isRestoringRef.current = false;
+    resetHistoryFromDoc();
+  }, [content, resetHistoryFromDoc]);
 
-    const canvas = new fabric.Canvas(canvasElRef.current, {
-      width: CANVAS_WIDTH,
-      height: CANVAS_HEIGHT,
-      backgroundColor: '#ffffff',
-      preserveObjectStacking: true,
-    });
-    fabricRef.current = canvas;
+  const handleBlockSelect = useCallback(
+    (blockId: string) => {
+      selectedPathRef.current = blockId;
+      setSelectedPath(blockId);
+      const b = getBlockAtPath(docRef.current.bloques, blockId);
+      onSelectionChangeRef.current(b ? blockToSelectedProps(b) : null);
+    },
+    [],
+  );
 
-    const notify = () => {
-      const obj = canvas.getActiveObject();
-      onSelectionChangeRef.current(obj ? extractProps(obj) : null);
-    };
+  useEffect(() => {
+    if (!selectedPath) return;
+    const b = getBlockAtPath(doc.bloques, selectedPath);
+    onSelectionChangeRef.current(b ? blockToSelectedProps(b) : null);
+  }, [doc.bloques, selectedPath]);
 
-    canvas.on('selection:created', notify);
-    canvas.on('selection:updated', notify);
-    canvas.on('object:modified', notify);
-    canvas.on('object:scaling', notify);
-    canvas.on('object:moving', notify);
-    canvas.on('selection:cleared', () => onSelectionChangeRef.current(null));
+  const slideForRenderer = useMemo(() => docToSlide(doc), [doc]);
 
-    canvas.on('object:added', scheduleHistorySnapshot);
-    canvas.on('object:removed', scheduleHistorySnapshot);
-    canvas.on('object:modified', scheduleHistorySnapshot);
-
-    // ── Expose imperative API ──────────────────────────────────────────────────
+  useEffect(() => {
     const api: CanvasEditorAPI = {
-      save: () => {
-        const bg =
-          typeof canvas.backgroundColor === 'string' ? canvas.backgroundColor : '#ffffff';
-        return {
-          version: '1.0',
-          background: { type: 'color', value: bg },
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
-          fabricJSON: canvas.toJSON(['data']),
-        };
-      },
+      save: () => serializeDoc(docRef.current),
+
       addText: () => {
-        const text = new fabric.Textbox('Texto nuevo', {
-          left: 160,
-          top: 200,
-          width: 400,
-          fontSize: 36,
-          fill: '#111827',
-          fontFamily: 'sans-serif',
-        });
-        canvas.add(text);
-        canvas.setActiveObject(text);
-        canvas.renderAll();
+        const block: Block = {
+          tipo: 'texto',
+          contenido: 'Texto nuevo',
+          tamanoFuente: '1.5rem',
+          color: '#111827',
+        };
+        commitDoc({ ...docRef.current, bloques: [...docRef.current.bloques, block] });
+        scheduleHistorySnapshot();
       },
+
       addImage: (url: string) => {
-        fabric.Image.fromURL(
-          url,
-          (img) => {
-            const w = img.width ?? 400;
-            const h = img.height ?? 300;
-            const s = Math.min(500 / w, 350 / h, 1);
-            img.set({ left: 200, top: 150, scaleX: s, scaleY: s });
-            canvas.add(img);
-            canvas.setActiveObject(img);
-            canvas.renderAll();
-          },
-          { crossOrigin: 'anonymous' },
-        );
+        const block: Block = {
+          tipo: 'imagen',
+          url: url.trim() || 'https://placehold.co/400x300/png?text=Imagen',
+          ancho: 'min(100%, 480px)',
+        };
+        commitDoc({ ...docRef.current, bloques: [...docRef.current.bloques, block] });
+        scheduleHistorySnapshot();
       },
+
       addRect: () => {
-        const rect = new fabric.Rect({
-          left: 200,
-          top: 200,
-          width: 300,
-          height: 200,
-          fill: '#4f46e5',
-          rx: 8,
-          ry: 8,
-        });
-        canvas.add(rect);
-        canvas.setActiveObject(rect);
-        canvas.renderAll();
+        const block: Block = {
+          tipo: 'texto',
+          contenido: 'Bloque tipo rectángulo (usa color de relleno en propiedades)',
+          tamanoFuente: '1.125rem',
+          color: '#4f46e5',
+          negrita: true,
+        };
+        commitDoc({ ...docRef.current, bloques: [...docRef.current.bloques, block] });
+        scheduleHistorySnapshot();
       },
+
       addCircle: () => {
-        const circle = new fabric.Circle({
-          left: 300,
-          top: 200,
-          radius: 100,
-          fill: '#0ea5e9',
-        });
-        canvas.add(circle);
-        canvas.setActiveObject(circle);
-        canvas.renderAll();
+        const block: Block = {
+          tipo: 'texto',
+          contenido: '● Bloque circular (edita color en propiedades)',
+          tamanoFuente: '1.25rem',
+          color: '#0ea5e9',
+          negrita: true,
+        };
+        commitDoc({ ...docRef.current, bloques: [...docRef.current.bloques, block] });
+        scheduleHistorySnapshot();
       },
+
       addButton: () => {
-        const rect = new fabric.Rect({
-          width: 200,
-          height: 52,
-          fill: '#4f46e5',
-          rx: 10,
-          ry: 10,
-        });
-        const label = new fabric.Text('Botón', {
-          fontSize: 20,
-          fill: '#ffffff',
-          originX: 'center',
-          originY: 'center',
-          left: 100,
-          top: 26,
-          selectable: false,
-          evented: false,
-        });
-        const group = new fabric.Group([rect, label], {
-          left: 300,
-          top: 280,
-          data: { interactive: true, type: 'button' },
-        });
-        canvas.add(group);
-        canvas.setActiveObject(group);
-        canvas.renderAll();
+        const block: Block = {
+          tipo: 'texto',
+          contenido: 'Botón / llamada a la acción',
+          tamanoFuente: '1.125rem',
+          color: '#ffffff',
+          negrita: true,
+          alineacion: 'centro',
+        };
+        commitDoc({ ...docRef.current, bloques: [...docRef.current.bloques, block] });
+        scheduleHistorySnapshot();
       },
+
       deleteSelected: () => {
-        const obj = canvas.getActiveObject();
-        if (obj) {
-          canvas.remove(obj);
-          canvas.renderAll();
-        }
+        const path = selectedPathRef.current;
+        if (!path) return;
+        const next = { ...docRef.current, bloques: removeBlockAtPath(docRef.current.bloques, path) };
+        commitDoc(next);
+        selectedPathRef.current = null;
+        setSelectedPath(null);
+        onSelectionChangeRef.current(null);
+        pushHistorySnapshot();
       },
+
       bringToFront: () => {
-        const obj = canvas.getActiveObject();
-        if (obj) {
-          canvas.bringToFront(obj);
-          canvas.renderAll();
-          pushHistorySnapshot();
-        }
+        const path = selectedPathRef.current;
+        if (!path || !path.match(/^\d+$/)) return;
+        const next = { ...docRef.current, bloques: bringIndexToEnd(docRef.current.bloques, path) };
+        const newIdx = next.bloques.length - 1;
+        const newPath = String(newIdx);
+        commitDoc(next);
+        selectedPathRef.current = newPath;
+        setSelectedPath(newPath);
+        const b = getBlockAtPath(next.bloques, newPath);
+        onSelectionChangeRef.current(b ? blockToSelectedProps(b) : null);
+        pushHistorySnapshot();
       },
+
       sendToBack: () => {
-        const obj = canvas.getActiveObject();
-        if (obj) {
-          canvas.sendToBack(obj);
-          canvas.renderAll();
-          pushHistorySnapshot();
-        }
+        const path = selectedPathRef.current;
+        if (!path || !path.match(/^\d+$/)) return;
+        const next = { ...docRef.current, bloques: sendIndexToStart(docRef.current.bloques, path) };
+        commitDoc(next);
+        selectedPathRef.current = '0';
+        setSelectedPath('0');
+        const b = getBlockAtPath(next.bloques, '0');
+        onSelectionChangeRef.current(b ? blockToSelectedProps(b) : null);
+        pushHistorySnapshot();
       },
+
       undo: () => {
         if (historyIndexRef.current <= 0) return;
         historyIndexRef.current--;
         isRestoringRef.current = true;
         const raw = historyRef.current[historyIndexRef.current];
-        canvas.loadFromJSON(JSON.parse(raw), () => {
-          canvas.renderAll();
-          isRestoringRef.current = false;
-          const obj = canvas.getActiveObject();
-          onSelectionChangeRef.current(obj ? extractProps(obj) : null);
-          emitHistory();
-        });
+        const parsed = JSON.parse(raw) as EditorDoc;
+        docRef.current = parsed;
+        setDoc(parsed);
+        selectedPathRef.current = null;
+        setSelectedPath(null);
+        onSelectionChangeRef.current(null);
+        setRendererEpoch((e) => e + 1);
+        isRestoringRef.current = false;
+        emitHistory();
       },
+
       redo: () => {
         const h = historyRef.current;
         if (historyIndexRef.current >= h.length - 1) return;
         historyIndexRef.current++;
         isRestoringRef.current = true;
-        canvas.loadFromJSON(JSON.parse(h[historyIndexRef.current]), () => {
-          canvas.renderAll();
-          isRestoringRef.current = false;
-          const obj = canvas.getActiveObject();
-          onSelectionChangeRef.current(obj ? extractProps(obj) : null);
-          emitHistory();
-        });
+        const parsed = JSON.parse(h[historyIndexRef.current]) as EditorDoc;
+        docRef.current = parsed;
+        setDoc(parsed);
+        selectedPathRef.current = null;
+        setSelectedPath(null);
+        onSelectionChangeRef.current(null);
+        setRendererEpoch((e) => e + 1);
+        isRestoringRef.current = false;
+        emitHistory();
       },
+
       setProperty: (key: string, value: unknown) => {
-        const obj = canvas.getActiveObject();
-        if (!obj) return;
-        obj.set(key as keyof fabric.Object, value as never);
-        canvas.requestRenderAll();
-        onSelectionChangeRef.current(extractProps(obj));
+        const path = selectedPathRef.current;
+        if (!path) return;
+        const current = docRef.current;
+        const block = getBlockAtPath(current.bloques, path);
+        if (!block) return;
+
+        if (block.tipo === 'texto') {
+          if (key === 'fill') {
+            const bloques = updateBlockAtPath(current.bloques, path, (b) =>
+              b.tipo === 'texto' ? { ...b, color: String(value) } : b,
+            );
+            const next = { ...current, bloques };
+            commitDoc(next);
+            onSelectionChangeRef.current(blockToSelectedProps(getBlockAtPath(bloques, path)!));
+            scheduleHistorySnapshot();
+          }
+          return;
+        }
       },
+
       setBackground: (color: string) => {
-        canvas.setBackgroundColor(color, () => {
-          canvas.renderAll();
-          pushHistorySnapshot();
-        });
+        const next = {
+          ...docRef.current,
+          fondo: { tipo: 'color' as const, valor: color },
+        };
+        commitDoc(next);
+        pushHistorySnapshot();
       },
     };
 
     onReadyRef.current(api);
-
-    return () => {
-      if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
-      canvas.dispose();
-      fabricRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init Fabric una vez; handlers usan refs
+    // setState de React es estable; el API es imperativo y lee siempre docRef/history refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- API del lienzo: una sola instancia expuesta al padre
   }, []);
 
-  // ── Load slide content when it changes ─────────────────────────────────────
   useEffect(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-
-    isRestoringRef.current = true;
-
-    const bg = isFabricJSON(content)
-      ? ((content as { background?: { value?: string } }).background?.value ?? '#ffffff')
-      : '#ffffff';
-
-    const afterLoad = () => {
-      canvas.discardActiveObject();
-      onSelectionChangeRef.current(null);
-      isRestoringRef.current = false;
-      resetHistoryFromCanvas();
+    return () => {
+      if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
     };
+  }, []);
 
-    if (isFabricJSON(content)) {
-      canvas.loadFromJSON(content.fabricJSON, () => {
-        canvas.setBackgroundColor(bg, () => {
-          canvas.renderAll();
-          afterLoad();
-        });
-      });
-    } else {
-      canvas.clear();
-      canvas.setBackgroundColor(bg, () => {
-        canvas.renderAll();
-        afterLoad();
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cambiar slide (content)
-  }, [content]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // ── Scale canvas to fit container ──────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -410,7 +556,6 @@ export default function CanvasEditor({
         wrapperClassName,
       )}
     >
-      {/* Outer wrapper has the visual (scaled) dimensions so layout flows correctly */}
       <div
         style={{
           width: CANVAS_WIDTH * scale,
@@ -419,7 +564,6 @@ export default function CanvasEditor({
           flexShrink: 0,
         }}
       >
-        {/* Inner wrapper is full canvas size, scaled via CSS transform */}
         <div
           style={{
             width: CANVAS_WIDTH,
@@ -432,7 +576,25 @@ export default function CanvasEditor({
             boxShadow: '0 8px 40px rgba(0,0,0,0.22)',
           }}
         >
-          <canvas ref={canvasElRef} />
+          <div className="relative h-full w-full overflow-hidden rounded-sm border border-border bg-card">
+            <SlideRenderer
+              key={rendererEpoch}
+              slide={slideForRenderer}
+              modo="editor"
+              onBlockSelect={handleBlockSelect}
+              onRemoveBlock={(blockId) => {
+                const next = { ...docRef.current, bloques: removeBlockAtPath(docRef.current.bloques, blockId) };
+                commitDoc(next);
+                if (selectedPathRef.current === blockId) {
+                  selectedPathRef.current = null;
+                  setSelectedPath(null);
+                  onSelectionChangeRef.current(null);
+                }
+                pushHistorySnapshot();
+              }}
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
         </div>
       </div>
     </div>
