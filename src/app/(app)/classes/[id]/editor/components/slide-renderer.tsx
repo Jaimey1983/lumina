@@ -488,8 +488,9 @@ function RenderActivity({
     if (modo === 'editor') {
       return (
         <VideoInteractiveActivityEditor
+          editorSyncKey={`${slideId}-${blockId}`}
           activity={act}
-          onChange={(a) => onActivityChange?.(blockId, a)}
+          onChange={(updated) => onActivityChange?.(blockId, updated)}
         />
       );
     }
@@ -500,8 +501,9 @@ function RenderActivity({
     if (modo === 'editor') {
       return (
         <LivePollActivityEditor
+          editorSyncKey={`${slideId}-${blockId}`}
           activity={act}
-          onChange={(a) => onActivityChange?.(blockId, a)}
+          onChange={(updated) => onActivityChange?.(blockId, updated)}
         />
       );
     }

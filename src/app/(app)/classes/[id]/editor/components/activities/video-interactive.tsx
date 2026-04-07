@@ -10,6 +10,9 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useActivityEditor } from './use-activity-editor';
 
+/** Alias descriptivo para props del editor (misma forma que `VideoInteractive`). */
+export type VideoInteractiveActivity = VideoInteractive;
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -274,21 +277,30 @@ function normalizeVideo(a: VideoInteractive | null | undefined): VideoInteractiv
 }
 
 export function VideoInteractiveActivityEditor({
+  editorSyncKey,
   activity,
   onChange,
 }: {
-  activity: VideoInteractive;
-  onChange: (a: VideoInteractive) => void;
+  editorSyncKey: string;
+  activity: VideoInteractiveActivity;
+  onChange: (a: VideoInteractiveActivity) => void;
 }) {
-  const { local, setLocal, flush, commitImmediate } = useActivityEditor<VideoInteractive>({
-    data: activity,
-    editorSyncKey: 'video_interactivo',
-    normalize: normalizeVideo,
-    onChange,
-  });
+  const { local, setLocal, flush, schedulePersist, commitImmediate } =
+    useActivityEditor<VideoInteractive>({
+      data: activity,
+      editorSyncKey,
+      normalize: normalizeVideo,
+      onChange,
+    });
 
   function updateImmediate(partial: Partial<VideoInteractive>) {
     commitImmediate({ ...local, ...partial, tipo: 'video_interactivo' as const });
+  }
+
+  function persistDebounced(next: VideoInteractive) {
+    const typed = { ...next, tipo: 'video_interactivo' as const };
+    setLocal(typed);
+    schedulePersist(typed);
   }
 
   function addQuestion() {
@@ -309,41 +321,69 @@ export function VideoInteractiveActivityEditor({
     updateImmediate({ preguntas: local.preguntas.filter((q) => q.id !== qId) });
   }
 
-  function updateQuestion(qId: string, partial: Partial<VideoQuestion>) {
+  function setQuestionTime(qId: string, raw: number) {
+    const tiempoSegundos =
+      Number.isFinite(raw) && raw >= 0 ? Math.min(86400, Math.floor(raw)) : 0;
     updateImmediate({
-      preguntas: local.preguntas.map((q) => (q.id === qId ? { ...q, ...partial } : q)),
+      preguntas: local.preguntas.map((q) => (q.id === qId ? { ...q, tiempoSegundos } : q)),
+    });
+  }
+
+  function setQuestionText(qId: string, pregunta: string) {
+    persistDebounced({
+      ...local,
+      tipo: 'video_interactivo',
+      preguntas: local.preguntas.map((q) => (q.id === qId ? { ...q, pregunta } : q)),
     });
   }
 
   function addOption(qId: string) {
     const q = local.preguntas.find((x) => x.id === qId);
     if (!q || q.opciones.length >= 4) return;
-    updateQuestion(qId, {
-      opciones: [...q.opciones, { id: crypto.randomUUID(), texto: '', esCorrecta: false }],
+    updateImmediate({
+      preguntas: local.preguntas.map((x) =>
+        x.id === qId
+          ? {
+              ...x,
+              opciones: [...x.opciones, { id: crypto.randomUUID(), texto: '', esCorrecta: false }],
+            }
+          : x,
+      ),
     });
   }
 
   function removeOption(qId: string, optId: string) {
     const q = local.preguntas.find((x) => x.id === qId);
-    if (!q || q.opciones.length <= 1) return;
-    updateQuestion(qId, {
-      opciones: q.opciones.filter((o) => o.id !== optId),
+    if (!q || q.opciones.length <= 2) return;
+    updateImmediate({
+      preguntas: local.preguntas.map((x) =>
+        x.id === qId ? { ...x, opciones: x.opciones.filter((o) => o.id !== optId) } : x,
+      ),
     });
   }
 
-  function updateOption(qId: string, optId: string, text: string) {
-    const q = local.preguntas.find((x) => x.id === qId);
-    if (!q) return;
-    updateQuestion(qId, {
-      opciones: q.opciones.map((o) => (o.id === optId ? { ...o, texto: text } : o)),
+  function setOptionText(qId: string, optId: string, texto: string) {
+    persistDebounced({
+      ...local,
+      tipo: 'video_interactivo',
+      preguntas: local.preguntas.map((x) =>
+        x.id !== qId
+          ? x
+          : {
+              ...x,
+              opciones: x.opciones.map((o) => (o.id === optId ? { ...o, texto } : o)),
+            },
+      ),
     });
   }
 
   function setCorrectOption(qId: string, optId: string) {
-    const q = local.preguntas.find((x) => x.id === qId);
-    if (!q) return;
-    updateQuestion(qId, {
-      opciones: q.opciones.map((o) => ({ ...o, esCorrecta: o.id === optId })),
+    updateImmediate({
+      preguntas: local.preguntas.map((x) =>
+        x.id === qId
+          ? { ...x, opciones: x.opciones.map((o) => ({ ...o, esCorrecta: o.id === optId })) }
+          : x,
+      ),
     });
   }
 
@@ -364,9 +404,9 @@ export function VideoInteractiveActivityEditor({
           <Input
             value={local.urlVideo}
             onChange={(e) => {
-              setLocal({ ...local, urlVideo: e.target.value });
+              persistDebounced({ ...local, urlVideo: e.target.value, tipo: 'video_interactivo' });
             }}
-            onBlur={() => flush()}
+            onBlur={flush}
             className="h-8 text-xs"
             placeholder="https://..."
           />
@@ -386,22 +426,23 @@ export function VideoInteractiveActivityEditor({
               
               <div className="mb-3 grid grid-cols-[90px_1fr] gap-3 pr-8">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-medium">Pausar en (seg)</Label>
+                  <Label className="text-[10px] font-medium">Pausar en (segundos)</Label>
                   <Input
                     type="number"
                     min={0}
                     value={q.tiempoSegundos}
-                    onChange={(e) => updateQuestion(q.id, { tiempoSegundos: Number(e.target.value) })}
-                    className="h-7 text-xs"
+                    onChange={(e) => setQuestionTime(q.id, Number(e.target.value))}
+                    className="h-7 text-xs tabular-nums"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-medium">Pregunta</Label>
                   <Input
                     value={q.pregunta}
-                    onChange={(e) => updateQuestion(q.id, { pregunta: e.target.value })}
+                    onChange={(e) => setQuestionText(q.id, e.target.value)}
+                    onBlur={flush}
                     className="h-7 text-xs"
-                    placeholder="Escribe la pregunta..."
+                    placeholder="Escribe la pregunta…"
                   />
                 </div>
               </div>
@@ -418,16 +459,17 @@ export function VideoInteractiveActivityEditor({
                     />
                     <Input
                       value={opt.texto}
-                      onChange={(e) => updateOption(q.id, opt.id, e.target.value)}
+                      onChange={(e) => setOptionText(q.id, opt.id, e.target.value)}
+                      onBlur={flush}
                       className="h-7 flex-1 text-xs"
-                      placeholder="Texto de la opción..."
+                      placeholder="Texto de la opción…"
                     />
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-6 text-muted-foreground hover:text-destructive shrink-0"
+                      className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => removeOption(q.id, opt.id)}
-                      disabled={q.opciones.length <= 1}
+                      disabled={q.opciones.length <= 2}
                     >
                       <Trash2 className="size-3.5" />
                     </Button>

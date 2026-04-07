@@ -216,7 +216,7 @@ export function TrueFalseActivityEditor({
           Verdadero / Falso
         </span>
         <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
-          Los cambios se guardan automáticamente
+          Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
           <Button
@@ -235,7 +235,7 @@ export function TrueFalseActivityEditor({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-2.5 pr-1">
         <div className="space-y-1">
           <Label className="text-[11px] font-medium">Enunciado</Label>
           <Input

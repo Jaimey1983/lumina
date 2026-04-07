@@ -7,6 +7,13 @@ import type { DragDrop, DragDropItem, DragDropZone } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useActivityEditor } from './use-activity-editor';
 
@@ -390,7 +397,7 @@ export function DragDropActivityEditor({
           Arrastrar y soltar
         </span>
         <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
-          Los cambios se guardan automáticamente
+          Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
           <Button
@@ -409,7 +416,7 @@ export function DragDropActivityEditor({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-2.5 pr-1">
         <div className="space-y-1">
           <Label className="text-[11px] font-medium">Instrucción</Label>
           <Input
@@ -431,24 +438,29 @@ export function DragDropActivityEditor({
                     value={item.texto}
                     onChange={(e) => updateItemText(item.id, e.target.value)}
                     onBlur={flush}
-                    className="h-8 text-xs flex-1 min-w-0"
+                    className="h-8 min-w-0 flex-1 text-xs"
                     placeholder={`Elemento ${idx + 1}`}
                   />
-                  <select
+                  <Select
                     value={getItemZoneId(item.id)}
-                    onChange={(e) => changeItemZone(item.id, e.target.value)}
-                    className="h-8 rounded-md border border-input bg-transparent px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    title="Zona destino"
+                    onValueChange={(zoneId) => changeItemZone(item.id, zoneId)}
                   >
-                    <option value="none" disabled>
-                      Destino...
-                    </option>
-                    {local.zonas.map((z) => (
-                      <option key={z.id} value={z.id}>
-                        {z.etiqueta || 'Sin nombre'}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      size="sm"
+                      className="h-8 w-[7.5rem] shrink-0 text-xs"
+                      title="Zona destino"
+                    >
+                      <SelectValue placeholder="Zona…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin asignar</SelectItem>
+                      {local.zonas.map((z) => (
+                        <SelectItem key={z.id} value={z.id}>
+                          {z.etiqueta || 'Sin nombre'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button
                     type="button"
                     variant="ghost"

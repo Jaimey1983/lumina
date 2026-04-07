@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import { CheckCircle, Trash2, Plus } from 'lucide-react';
 
-import type { LivePoll } from '@/types/slide.types';
+import type { LivePoll, PollOption } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn, seeded01 } from '@/lib/utils';
 import { useActivityEditor } from './use-activity-editor';
+
+/** Alias descriptivo para props del editor (misma forma que `LivePoll`). */
+export type LivePollActivity = LivePoll;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -194,21 +197,31 @@ const DEFAULTS_POLL: LivePoll = {
   opciones: [],
 };
 
+function ensureMinOptions(opciones: PollOption[]): PollOption[] {
+  const list = opciones.length ? [...opciones] : [];
+  while (list.length < 2) {
+    list.push({ id: crypto.randomUUID(), texto: '' });
+  }
+  return list;
+}
+
 function normalizePoll(a: LivePoll | null | undefined): LivePoll {
-  if (!a) return { ...DEFAULTS_POLL };
-  return { ...DEFAULTS_POLL, ...a, tipo: 'encuesta_viva' };
+  const merged: LivePoll = !a
+    ? { ...DEFAULTS_POLL }
+    : { ...DEFAULTS_POLL, ...a, tipo: 'encuesta_viva' };
+  return { ...merged, opciones: ensureMinOptions(merged.opciones) };
 }
 
 export function LivePollActivityEditor({
+  editorSyncKey,
   activity,
   onChange,
-  editorSyncKey = 'live_poll',
 }: {
-  activity: LivePoll;
-  onChange: (a: LivePoll) => void;
-  editorSyncKey?: string;
+  editorSyncKey: string;
+  activity: LivePollActivity;
+  onChange: (a: LivePollActivity) => void;
 }) {
-  const { local, setLocal, flush, commitImmediate } = useActivityEditor<LivePoll>({
+  const { local, setLocal, flush, schedulePersist, commitImmediate } = useActivityEditor<LivePoll>({
     data: activity,
     editorSyncKey,
     normalize: normalizePoll,
@@ -216,7 +229,7 @@ export function LivePollActivityEditor({
   });
 
   function updateImmediate(partial: Partial<LivePoll>) {
-    commitImmediate({ ...local, ...partial, tipo: 'encuesta_viva' });
+    commitImmediate({ ...local, ...partial, tipo: 'encuesta_viva' as const });
   }
 
   function addOption() {
@@ -234,9 +247,13 @@ export function LivePollActivityEditor({
   }
 
   function updateOptionText(optId: string, text: string) {
-    updateImmediate({
+    const next: LivePoll = {
+      ...local,
+      tipo: 'encuesta_viva',
       opciones: local.opciones.map((o) => (o.id === optId ? { ...o, texto: text } : o)),
-    });
+    };
+    setLocal(next);
+    schedulePersist(next);
   }
 
   return (
@@ -256,12 +273,13 @@ export function LivePollActivityEditor({
           <Input
             value={local.pregunta}
             onChange={(e) => {
-              const next = { ...local, pregunta: e.target.value };
+              const next = { ...local, tipo: 'encuesta_viva' as const, pregunta: e.target.value };
               setLocal(next);
+              schedulePersist(next);
             }}
-            onBlur={() => flush()}
+            onBlur={flush}
             className="h-8 text-xs"
-            placeholder="Escribe la pregunta..."
+            placeholder="Escribe la pregunta…"
           />
         </div>
 
@@ -272,8 +290,9 @@ export function LivePollActivityEditor({
               <Input
                 value={opt.texto}
                 onChange={(e) => updateOptionText(opt.id, e.target.value)}
+                onBlur={flush}
                 className="h-8 flex-1 text-xs"
-                placeholder="Texto de la opción..."
+                placeholder="Texto de la opción…"
               />
               <Button
                 variant="ghost"
