@@ -5,14 +5,11 @@ import { toast } from 'sonner';
 import {
   BookOpen,
   Columns2,
-  ImageIcon,
-  LayoutGrid,
   LayoutTemplate,
   MessageSquare,
   Minus,
   Quote,
   Sparkles,
-  Type,
   Video,
   Volume2,
   MousePointer2,
@@ -26,11 +23,10 @@ import {
 } from 'lucide-react';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Activity, Block } from '@/types/slide.types';
+import type { Block } from '@/types/slide.types';
 import {
   applyLayoutPreset,
   appendBlockToSlideContent,
-  buildContentDocumentForNewActivitySlide,
   getSlideContentRecord,
   mergeSlideContent,
 } from '@/lib/class-slide-normalize';
@@ -39,6 +35,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+
+import { ImagesElementPanel } from './images-element-panel';
+import { ShapesPanel } from './shapes-panel';
+import { TextFormatPanel } from './text-format-panel';
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
@@ -120,32 +120,21 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
   const disabledNonText = disabled || !!slideHasActivity;
 
   return (
-    <ScrollArea className="h-full min-h-0">
+    <ScrollArea className="h-full min-h-0 bg-white dark:bg-zinc-900">
       <div className="space-y-4 p-3 pr-2">
         {slideHasActivity && (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
             Solo puedes agregar texto (título) a este slide.
           </p>
         )}
-        <PanelSection title="Básico">
-          <InsertBtn
-            label="Texto"
-            icon={Type}
-            disabled={disabled}
-            onClick={() => add({ tipo: 'texto', contenido: 'Escribe aquí…' })}
-          />
-          <InsertBtn
-            label="Imagen (marcador)"
-            icon={ImageIcon}
-            disabled={disabledNonText}
-            onClick={() =>
-              add({
-                tipo: 'imagen',
-                url: 'https://placehold.co/640x360/e2e8f0/64748b?text=Imagen',
-                alt: 'Descripción',
-              })
-            }
-          />
+        <TextFormatPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} />
+        <ImagesElementPanel
+          apiSlide={apiSlide}
+          onCommitContent={onCommitContent}
+          disabled={disabledNonText}
+        />
+        <ShapesPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
+        <PanelSection title="Multimedia">
           <InsertBtn
             label="Video (YouTube)"
             icon={Video}
@@ -465,7 +454,6 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     panel,
     apiSlide,
     onCommitContent,
-    onCreateActivitySlide,
     slides,
     activeSlideIndex,
     onSelectSlide,
