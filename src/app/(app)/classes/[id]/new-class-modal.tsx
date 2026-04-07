@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { api } from '@/lib/api';
+import { useUpdateClass } from '@/hooks/api/use-classes';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -197,7 +199,7 @@ export function NewClassModal({
   onConfirm,
   required = false,
 }: NewClassModalProps) {
-  void classId;
+  const updateClass = useUpdateClass(classId, '');
 
   // Form
   const [area, setArea] = useState('');
@@ -255,7 +257,17 @@ export function NewClassModal({
 
   function handleConfirm() {
     if (!draft) return;
-    onConfirm(draft);
+    updateClass.mutate(
+      { desempeno: draft },
+      {
+        onSuccess: () => {
+          onConfirm(draft);
+        },
+        onError: () => {
+          toast.error('No se pudo guardar el desempeño en el servidor');
+        },
+      },
+    );
   }
 
   function handleOpenChange(open: boolean) {
@@ -468,8 +480,15 @@ export function NewClassModal({
               Cancelar
             </Button>
           )}
-          <Button onClick={handleConfirm} disabled={!draft}>
-            Confirmar y abrir editor
+          <Button onClick={handleConfirm} disabled={!draft || updateClass.isPending}>
+            {updateClass.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Confirmar y abrir editor'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

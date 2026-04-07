@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
+import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -211,7 +211,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
   const { emit: socketEmit, isConnected } = useSocket();
   const updateSlide  = useUpdateSlide(classId);
-  const updateClass  = useUpdateClass(classId, cls?.courseId ?? '');
   const createSlide  = useCreateSlide(classId);
   const removeSlide    = useRemoveSlide(classId);
   const reorderSlides  = useReorderSlides(classId);
@@ -283,9 +282,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [cls?.desempeno]);
 
   const desempeno = confirmedDesempeno ?? desempenoFromCls;
-
-  const needsFirstTimeSetup =
-    cls != null && !isLoading && !hasDesempenoPersistido(cls.desempeno);
 
   const modalOpen = showCurricularModal || modalUserOpen;
 
