@@ -12,6 +12,7 @@ import type {
   CodeBlock,
   ColumnsBlock,
   DividerBlock,
+  FormaBlock,
   ImageBlock,
   Layout,
   LayoutPadding,
@@ -332,6 +333,50 @@ function RenderDivider({ block }: { block: DividerBlock }) {
       }}
     />
   );
+}
+
+function RenderForma({ block }: { block: FormaBlock }) {
+  if (block.forma === 'linea') {
+    return (
+      <hr
+        style={{
+          border: 'none',
+          borderTop: `${block.grosorBorde ?? 2}px solid ${block.color}`,
+          margin: 0,
+          width: block.ancho ? `${block.ancho}px` : '100%',
+        }}
+      />
+    );
+  }
+
+  if (block.forma === 'triangulo') {
+    return (
+      <div
+        style={{
+          width: 0,
+          height: 0,
+          borderLeft: `${(block.ancho || 100) / 2}px solid transparent`,
+          borderRight: `${(block.ancho || 100) / 2}px solid transparent`,
+          borderBottom: `${block.alto || 100}px solid ${block.color}`,
+        }}
+      />
+    );
+  }
+
+  const baseStyle: CSSProperties = {
+    width: block.ancho ? `${block.ancho}px` : '100%',
+    height: block.alto ? `${block.alto}px` : '100px',
+    backgroundColor: block.color,
+    border: block.grosorBorde ? `${block.grosorBorde}px solid ${block.colorBorde || '#000'}` : 'none',
+  };
+
+  if (block.forma === 'circulo') {
+    baseStyle.borderRadius = '50%';
+  } else if (block.forma === 'rectangulo') {
+    baseStyle.borderRadius = 0;
+  }
+
+  return <div style={baseStyle} />;
 }
 
 function RenderActivity({
@@ -660,6 +705,7 @@ function BlockNode({
       case 'codigo':    return <RenderCode block={block} />;
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
+      case 'forma':     return <RenderForma block={block} />;
       case 'columnas':
         return (
           <RenderColumns

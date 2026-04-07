@@ -331,6 +331,19 @@ export interface ColumnsBlock {
   proporcion?: string;
 }
 
+export interface FormaBlock {
+  tipo: 'forma';
+  id: string;
+  forma: 'rectangulo' | 'circulo' | 'triangulo' | 'linea';
+  color: string;
+  colorBorde?: string;
+  grosorBorde?: number;
+  ancho?: number;
+  alto?: number;
+  x?: number;
+  y?: number;
+}
+
 // ─── Block (discriminated union) ──────────────────────────────────────────────
 
 export type Block =
@@ -342,7 +355,8 @@ export type Block =
   | CodeBlock
   | QuoteBlock
   | DividerBlock
-  | ColumnsBlock;
+  | ColumnsBlock
+  | FormaBlock;
 
 export type BlockTipo = Block['tipo'];
 

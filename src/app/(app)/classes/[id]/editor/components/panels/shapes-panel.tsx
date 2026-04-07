@@ -5,11 +5,9 @@ import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Block, DividerBlock, ImageBlock } from '@/types/slide.types';
+import type { Block, FormaBlock } from '@/types/slide.types';
 import { appendBlockToSlideContent } from '@/lib/class-slide-normalize';
 import { cn } from '@/lib/utils';
-
-import { svgImageDataUrl } from './slide-block-helpers';
 
 type ShapeKind = 'rect' | 'circle' | 'triangle' | 'line';
 
@@ -33,36 +31,35 @@ interface Props {
 }
 
 function shapeToBlock(kind: ShapeKind): Block {
-  if (kind === 'line') {
-    const sep: DividerBlock = {
-      tipo: 'separador',
-      estilo: 'solido',
-      color: '#64748b',
-      grosor: 2,
-    };
-    return sep;
-  }
-
-  const stroke = '#475569';
-  const fill = '#94a3b8';
-
-  let svg: string;
-  if (kind === 'rect') {
-    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 240 140"><rect x="8" y="8" width="224" height="124" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="4"/></svg>`;
-  } else if (kind === 'circle') {
-    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 240 140"><circle cx="120" cy="70" r="56" fill="${fill}" stroke="${stroke}" stroke-width="4"/></svg>`;
-  } else {
-    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 240 140"><polygon points="120,12 228,128 12,128" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/></svg>`;
-  }
-
-  const img: ImageBlock = {
-    tipo: 'imagen',
-    url: svgImageDataUrl(svg),
-    alt: kind,
-    ancho: 'min(100%, 280px)',
-    ajuste: 'contener',
+  const shapeMap: Record<ShapeKind, FormaBlock['forma']> = {
+    rect: 'rectangulo',
+    circle: 'circulo',
+    triangle: 'triangulo',
+    line: 'linea',
   };
-  return img;
+
+  const forma: FormaBlock = {
+    tipo: 'forma',
+    id: crypto.randomUUID(),
+    forma: shapeMap[kind],
+    color: '#94a3b8',
+  };
+
+  if (kind === 'line') {
+    forma.color = '#64748b';
+    forma.grosorBorde = 2;
+  } else {
+    forma.colorBorde = '#475569';
+    forma.grosorBorde = 4;
+    forma.ancho = kind === 'circle' ? 140 : 240;
+    if (kind !== 'circle') {
+      forma.alto = 140;
+    } else {
+      forma.alto = 140;
+    }
+  }
+
+  return forma;
 }
 
 export function ShapesPanel({ apiSlide, onCommitContent, disabled }: Props) {
