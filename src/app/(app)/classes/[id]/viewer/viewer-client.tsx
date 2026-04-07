@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { Loader2 } from 'lucide-react';
 import { useClass } from '@/hooks/api/use-class';
 import { SlideRenderer } from '../editor/components/slide-renderer';
-import { ScreenLoader } from '@/components/screen-loader';
+import type { Slide } from '@/types/slide.types';
 
 export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
@@ -12,23 +13,17 @@ export function ViewerClient({ id }: { id: string }) {
   const [, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    // Connect to Socket.IO server
-    const socketInstance = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');
+    const socketInstance = io(
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+    );
     setSocket(socketInstance);
-
-    socketInstance.on('connect', () => {
-      console.log('Connected to socket server');
-      // join class room if needed, e.g. socketInstance.emit('join-class', id);
-    });
 
     socketInstance.on('slide-change', (index: number) => {
       setActiveSlideIndex(index);
     });
 
-    socketInstance.on('activity-answer', (answerData) => {
-      // Activity answers logic goes here, probably passed to slide renderer via context or state if needed.
-      // For now, listening to it.
-      console.log('Received activity answer', answerData);
+    socketInstance.on('activity-answer', (_answerData: unknown) => {
+      // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
 
     return () => {
@@ -37,42 +32,57 @@ export function ViewerClient({ id }: { id: string }) {
   }, [id]);
 
   if (isLoading) {
-    return <ScreenLoader />;
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (error || !classData) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Error al cargar la clase</p>
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+        <p className="text-center text-muted-foreground">
+          Error al cargar la clase
+        </p>
       </div>
     );
   }
 
   if (classData.status !== 'PUBLISHED') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Esta clase no está disponible aún</p>
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+        <div className="text-center">
+          <p className="text-lg font-medium text-foreground">
+            Esta clase no está disponible aún
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            La clase será visible una vez que el docente la publique.
+          </p>
+        </div>
       </div>
     );
   }
 
-  const slides = classData.slides || [];
+  const slides = (classData.slides ?? []) as Slide[];
   const activeSlide = slides[activeSlideIndex];
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <main className="flex-1 overflow-hidden relative">
+      <main className="relative flex-1 overflow-hidden">
         {activeSlide ? (
-          <SlideRenderer slide={activeSlide as any} modo="viewer" />
+          <SlideRenderer slide={activeSlide} modo="viewer" />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-muted-foreground">No slides available</p>
+            <p className="text-muted-foreground">
+              No hay slides en esta clase
+            </p>
           </div>
         )}
       </main>
-      
+
       {slides.length > 0 && (
-        <div className="absolute bottom-4 right-4 z-50 rounded-full bg-background/80 px-4 py-2 text-sm font-medium shadow backdrop-blur border">
+        <div className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-background/80 px-4 py-1.5 text-xs font-medium shadow-md backdrop-blur sm:text-sm border border-border">
           Slide {activeSlideIndex + 1} de {slides.length}
         </div>
       )}

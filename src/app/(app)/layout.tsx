@@ -11,11 +11,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
+  const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isViewerRoute && !isLoading && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, isViewerRoute]);
+
+  if (isViewerRoute) {
+    return <>{children}</>;
+  }
 
   if (isLoading || !isAuthenticated) {
     return <ScreenLoader />;
