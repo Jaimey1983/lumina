@@ -77,6 +77,33 @@ export class ClassesController {
 
   // ─── SLIDES ────────────────────────────────────────────
 
+  @Patch(':id/slides/reorder')
+  @UseGuards(RolesGuard)
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  reorderSlides(
+    @Param('id') classId: string,
+    @Body() body: { order: { id: string; order: number }[] },
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.reorderSlides(classId, user.id, body.order);
+  }
+
+  @Post(':id/slides/insert')
+  @UseGuards(RolesGuard)
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  addSlideAtPosition(
+    @Param('id') classId: string,
+    @Body() body: { afterOrder: number; slide: CreateSlideDto },
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.addSlideAtPosition(
+      classId,
+      user.id,
+      body.afterOrder,
+      body.slide,
+    );
+  }
+
   @Post(':id/slides')
   @UseGuards(RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')

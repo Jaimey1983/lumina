@@ -7,7 +7,6 @@ import {
   BarChart3,
   Users,
   User,
-  Pencil,
 } from 'lucide-react';
 
 export const MENU_SIDEBAR: MenuConfig = [
@@ -33,11 +32,6 @@ export const MENU_SIDEBAR: MenuConfig = [
         title: 'Clases',
         path: '/classes',
         icon: GraduationCap,
-      },
-      {
-        title: 'Editor',
-        path: '/editor',
-        icon: Pencil,
       },
       {
         title: 'Calificaciones',
@@ -86,10 +80,6 @@ export const MENU_HEADER: MenuConfig = [
   {
     title: 'Clases',
     path: '/classes',
-  },
-  {
-    title: 'Editor',
-    path: '/editor',
   },
   {
     title: 'Analytics',

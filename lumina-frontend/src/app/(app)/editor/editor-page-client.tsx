@@ -40,6 +40,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { SLIDE_LABELS, SLIDE_TYPES } from '@/config/slide.constants';
 import {
   Dialog,
   DialogBody,
@@ -63,16 +64,6 @@ const CanvasEditor = dynamic(() => import('@/app/(app)/classes/[id]/editor/canva
 const SlidePreviewCanvas = dynamic(() => import('@/app/(app)/classes/[id]/editor/slide-preview'), {
   ssr: false,
 });
-
-const SLIDE_TYPES = ['COVER', 'CONTENT', 'ACTIVITY', 'VIDEO', 'IMAGE'] as const;
-
-const SLIDE_LABELS: Record<string, string> = {
-  COVER: 'Portada',
-  CONTENT: 'Contenido',
-  ACTIVITY: 'Actividad',
-  VIDEO: 'Video',
-  IMAGE: 'Imagen',
-};
 
 const SLIDE_BG: Record<string, string> = {
   COVER: 'bg-violet-500',

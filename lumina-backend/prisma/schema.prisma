@@ -113,6 +113,7 @@ model Class {
   code        String      @unique
   status      ClassStatus @default(DRAFT)
   courseId    String
+  desempeno   Json?
   course      Course      @relation(fields: [courseId], references: [id])
   slides             Slide[]
   whiteboardSessions WhiteboardSession[]

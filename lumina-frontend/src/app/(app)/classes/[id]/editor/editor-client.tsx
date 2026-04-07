@@ -1,900 +1,804 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import {
-  ArrowLeft,
-  ArrowRight,
-  BringToFront,
-  ChevronLeft,
-  ChevronRight,
-  Circle,
-  Eye,
-  ImageIcon,
-  MousePointerClick,
-  Plus,
-  Redo2,
-  Save,
-  SendToBack,
-  Square,
-  Trash2,
-  Type,
-  Undo2,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 
-import { useClass } from '@/hooks/api/use-class';
-import { useCreateSlide, useUpdateSlide, type CreateSlideInput } from '@/hooks/api/use-classes';
-import type { CanvasEditorAPI, SelectedObjectProps, SlideContent } from './canvas-editor';
+import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
+import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateClass, useUpdateSlide } from '@/hooks/api/use-classes';
+import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
+import {
+  buildContentDocumentForNewActivitySlide,
+  classSlideToRendererSlide,
+  getSlideContentRecord,
+  mergeSlideContent,
+  removeBlockAtPath,
+  sanitizeSlideContentForPersistence,
+  updateBlockAtPath,
+} from '@/lib/class-slide-normalize';
+import type { Activity, Block } from '@/types/slide.types';
+import { IconRail, type LeftPanelId } from './components/icon-rail';
+import { FlyoutPanel } from './components/flyout-panel';
+import { SlidesPanel } from './components/slides-panel';
+import { CanvasArea } from './components/canvas-area';
+import { RightRail, type RightPanelId } from './components/right-rail';
+import { RightFlyoutPanel } from './components/right-flyout-panel';
+import type { ActivityType } from './components/panels/activities-panel';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 
-// Canvas and preview loaded client-side only — Fabric.js is browser-only
-const CanvasEditor = dynamic(() => import('./canvas-editor'), { ssr: false });
-const SlidePreviewCanvas = dynamic(() => import('./slide-preview'), { ssr: false });
+// ─── Save status ──────────────────────────────────────────────────────────────
 
-// ─── Slide labels / colors ────────────────────────────────────────────────────
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-const SLIDE_TYPES = ['COVER', 'CONTENT', 'ACTIVITY', 'VIDEO', 'IMAGE'] as const;
-
-const SLIDE_LABELS: Record<string, string> = {
-  COVER: 'Portada',
-  CONTENT: 'Contenido',
-  ACTIVITY: 'Actividad',
-  VIDEO: 'Video',
-  IMAGE: 'Imagen',
+const SAVE_LABEL: Record<SaveStatus, string> = {
+  idle:   'Sin cambios',
+  saving: 'Guardando…',
+  saved:  'Guardado ✓',
+  error:  'Error al guardar',
 };
 
-const SLIDE_BG: Record<string, string> = {
-  COVER: 'bg-violet-500',
-  CONTENT: 'bg-blue-500',
-  ACTIVITY: 'bg-amber-500',
-  VIDEO: 'bg-rose-500',
-  IMAGE: 'bg-emerald-500',
-};
+function shortAnswerTemplate(): Activity {
+  return {
+    tipo: 'short_answer',
+    question: 'Nueva pregunta',
+    expectedAnswer: '',
+    caseSensitive: false,
+    maxLength: 200,
+  };
+}
 
-// ─── Add Slide Modal ──────────────────────────────────────────────────────────
+function quizMultipleTemplate(): Activity {
+  return {
+    tipo: 'quiz_multiple',
+    pregunta: '¿Nueva pregunta?',
+    opciones: [
+      { id: 'a', texto: 'Opción A', esCorrecta: true },
+      { id: 'b', texto: 'Opción B', esCorrecta: false },
+      { id: 'c', texto: 'Opción C', esCorrecta: false },
+      { id: 'd', texto: 'Opción D', esCorrecta: false },
+    ],
+    puntos: 10,
+  };
+}
 
-const slideSchema = z.object({
-  type: z.enum(['COVER', 'CONTENT', 'ACTIVITY', 'VIDEO', 'IMAGE']),
-  title: z.string().min(1, 'El título es obligatorio'),
-});
-type SlideFormData = z.infer<typeof slideSchema>;
+function trueFalseTemplate(): Activity {
+  return {
+    tipo: 'verdadero_falso',
+    afirmacion: 'Nueva afirmación para evaluar.',
+    respuestaCorrecta: true,
+    puntos: 5,
+  };
+}
 
-function AddSlideModal({
-  classId,
-  open,
-  onOpenChange,
-  onCreated,
-}: {
-  classId: string;
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  onCreated?: (id: string) => void;
-}) {
-  const createSlide = useCreateSlide(classId);
-  const form = useForm<SlideFormData>({
-    resolver: zodResolver(slideSchema),
-    defaultValues: { type: 'CONTENT', title: '' },
-  });
+function fillBlanksTemplate(): Activity {
+  return {
+    tipo: 'completar_blancos',
+    texto: 'El {{blank:b1}} es fundamental para {{blank:b2}}.',
+    blancos: [
+      { id: 'b1', respuesta: 'concepto', ignorarMayusculas: true },
+      { id: 'b2', respuesta: 'aprender', ignorarMayusculas: true },
+    ],
+    puntos: 10,
+  };
+}
 
-  function onSubmit(data: SlideFormData) {
-    const input: CreateSlideInput = { type: data.type, title: data.title };
-    createSlide.mutate(input, {
-      onSuccess: (created) => {
-        toast.success('Slide creado');
-        form.reset();
-        onOpenChange(false);
-        if (created?.id) onCreated?.(created.id);
+function dragDropTemplate(): Activity {
+  return {
+    tipo: 'arrastrar_soltar',
+    instruccion: 'Arrastra cada elemento a la categoría correcta.',
+    items: [
+      { id: 'i1', texto: 'Elemento 1' },
+      { id: 'i2', texto: 'Elemento 2' },
+      { id: 'i3', texto: 'Elemento 3' },
+      { id: 'i4', texto: 'Elemento 4' },
+    ],
+    zonas: [
+      { id: 'z1', etiqueta: 'Categoría 1', itemsCorrectos: ['i1', 'i2'] },
+      { id: 'z2', etiqueta: 'Categoría 2', itemsCorrectos: ['i3', 'i4'] },
+    ],
+    puntos: 10,
+  };
+}
+
+function matchPairsTemplate(): Activity {
+  return {
+    tipo: 'emparejar',
+    instruccion: 'Empareja cada concepto con su definición.',
+    pares: [
+      { id: 'p1', izquierda: 'Concepto 1', derecha: 'Definición 1' },
+      { id: 'p2', izquierda: 'Concepto 2', derecha: 'Definición 2' },
+      { id: 'p3', izquierda: 'Concepto 3', derecha: 'Definición 3' },
+    ],
+    puntos: 10,
+  };
+}
+
+function orderStepsTemplate(): Activity {
+  return {
+    tipo: 'ordenar_pasos',
+    instruccion: 'Ordena los pasos del proceso correctamente.',
+    pasos: [
+      { id: 's1', contenido: 'Paso 1', ordenCorrecto: 1 },
+      { id: 's2', contenido: 'Paso 2', ordenCorrecto: 2 },
+      { id: 's3', contenido: 'Paso 3', ordenCorrecto: 3 },
+      { id: 's4', contenido: 'Paso 4', ordenCorrecto: 4 },
+    ],
+    puntos: 10,
+  };
+}
+
+function videoInteractiveTemplate(): Activity {
+  return {
+    tipo: 'video_interactivo',
+    urlVideo: 'https://www.youtube.com/watch?v=',
+    plataforma: 'youtube',
+    preguntas: [
+      {
+        id: 'q1',
+        tiempoSegundos: 30,
+        pregunta: '¿Nueva pregunta?',
+        opciones: [
+          { id: 'a', texto: 'Opción A', esCorrecta: true },
+          { id: 'b', texto: 'Opción B', esCorrecta: false },
+        ],
+        pausarVideo: true,
       },
-      onError: () => toast.error('Error al crear el slide'),
-    });
-  }
+    ],
+    debeResponderParaContinuar: false,
+  };
+}
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nuevo slide</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogBody className="space-y-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-8.5 w-full rounded-md border border-input bg-background px-3 text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground"
-                        {...field}
-                      >
-                        {SLIDE_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {SLIDE_LABELS[t]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Título del slide" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </DialogBody>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createSlide.isPending}>
-                {createSlide.isPending ? 'Creando…' : 'Crear slide'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+function livePollTemplate(): Activity {
+  return {
+    tipo: 'encuesta_viva',
+    pregunta: '¿Nueva pregunta de encuesta?',
+    opciones: [
+      { id: 'o1', texto: 'Opción 1' },
+      { id: 'o2', texto: 'Opción 2' },
+      { id: 'o3', texto: 'Opción 3' },
+    ],
+    mostrarResultadosEnTiempoReal: true,
+    mostrarResultadosAlFinalizar: true,
+  };
+}
+
+function wordCloudTemplate(): Activity {
+  return {
+    tipo: 'nube_palabras',
+    instruccion: 'Escribe una palabra que asocies con el tema.',
+    maxPalabrasPorUsuario: 3,
+    maxPalabrasEnNube: 50,
+    filtrarPalabrasComunes: true,
+  };
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Clics en capas portadas (Radix) no deben cerrar los flyouts al usar menús/modales. */
+function isPointerOnPortedOverlay(el: HTMLElement) {
+  return !!(
+    el.closest('[role="dialog"]') ||
+    el.closest('[data-slot="dropdown-menu-content"]') ||
+    el.closest('[data-slot="dropdown-menu-sub-content"]') ||
+    el.closest('[data-slot="select-content"]') ||
+    el.closest('[data-slot="popover-content"]') ||
+    el.closest('[data-slot="tooltip-content"]')
   );
 }
 
-// ─── Slide Preview Modal (fullscreen presentation) ────────────────────────────
-
-type Slide = NonNullable<NonNullable<ReturnType<typeof useClass>['data']>['slides']>[number];
-
-function SlidePreviewModal({
-  slides,
-  startIndex,
-  onClose,
-}: {
-  slides: Slide[];
-  startIndex: number;
-  onClose: () => void;
-}) {
-  const [current, setCurrent] = useState(startIndex);
-
-  const prev = () => setCurrent((i) => Math.max(i - 1, 0));
-  const next = () => setCurrent((i) => Math.min(i + 1, slides.length - 1));
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') next();
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
-      else if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onClose]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const slide = slides[current];
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center select-none">
-      {/* Close */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
-        aria-label="Cerrar vista previa"
-      >
-        <X className="size-6" />
-      </button>
-
-      {/* Slide title */}
-      <p className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium">
-        {slide?.title}
-      </p>
-
-      {/* Canvas */}
-      <div className="flex items-center justify-center w-full px-20">
-        <SlidePreviewCanvas
-          content={slide?.content}
-          displayWidth={Math.min(window.innerWidth - 160, 1280)}
-        />
-      </div>
-
-      {/* Navigation controls */}
-      <div className="absolute bottom-6 flex items-center gap-6">
-        <button
-          onClick={prev}
-          disabled={current === 0}
-          className="text-white/60 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-          aria-label="Slide anterior"
-        >
-          <ArrowLeft className="size-8" />
-        </button>
-
-        <span className="text-white/70 text-sm tabular-nums">
-          {current + 1} / {slides.length}
-        </span>
-
-        <button
-          onClick={next}
-          disabled={current === slides.length - 1}
-          className="text-white/60 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-          aria-label="Slide siguiente"
-        >
-          <ArrowRight className="size-8" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Properties Panel ─────────────────────────────────────────────────────────
-
-function PropertiesPanel({
-  selected,
-  onChangeProp,
-}: {
-  selected: SelectedObjectProps | null;
-  onChangeProp: (key: string, value: unknown) => void;
-}) {
-  if (!selected) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-        <div className="size-10 rounded-full bg-muted flex items-center justify-center mb-3">
-          <MousePointerClick className="size-5 text-muted-foreground" />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Selecciona un elemento para ver sus propiedades
-        </p>
-      </div>
+function hasDesempenoPersistido(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value !== 'object' || Array.isArray(value)) return false;
+  const o = value as Record<string, unknown>;
+  if (typeof o.enunciado === 'string' && o.enunciado.trim().length > 0) return true;
+  const ind = o.indicadores;
+  if (ind && typeof ind === 'object' && !Array.isArray(ind)) {
+    return Object.values(ind as Record<string, unknown>).some(
+      (v) => typeof v === 'string' && v.trim().length > 0,
     );
   }
-
-  return (
-    <div className="p-4 space-y-4 overflow-y-auto">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {selected.type}
-      </p>
-
-      {/* Position */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-1.5">Posición</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] text-muted-foreground">X</label>
-            <Input
-              type="number"
-              value={selected.x}
-              onChange={(e) => onChangeProp('left', Number(e.target.value))}
-              className="h-7 text-xs"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] text-muted-foreground">Y</label>
-            <Input
-              type="number"
-              value={selected.y}
-              onChange={(e) => onChangeProp('top', Number(e.target.value))}
-              className="h-7 text-xs"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Size (read-only) */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-1.5">Tamaño</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] text-muted-foreground">Ancho</label>
-            <Input type="number" value={selected.width} readOnly className="h-7 text-xs opacity-60" />
-          </div>
-          <div>
-            <label className="text-[10px] text-muted-foreground">Alto</label>
-            <Input type="number" value={selected.height} readOnly className="h-7 text-xs opacity-60" />
-          </div>
-        </div>
-      </div>
-
-      {/* Fill */}
-      {selected.fill && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-1.5">Color de relleno</p>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={selected.fill.startsWith('#') ? selected.fill : '#000000'}
-              onChange={(e) => onChangeProp('fill', e.target.value)}
-              className="size-7 rounded border border-input cursor-pointer p-0.5"
-            />
-            <Input
-              value={selected.fill}
-              onChange={(e) => onChangeProp('fill', e.target.value)}
-              className="h-7 text-xs font-mono flex-1"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Stroke */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-1.5">Color de borde</p>
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={
-              selected.stroke && selected.stroke.startsWith('#') ? selected.stroke : '#000000'
-            }
-            onChange={(e) => onChangeProp('stroke', e.target.value)}
-            className="size-7 rounded border border-input cursor-pointer p-0.5"
-          />
-          <Input
-            value={selected.stroke}
-            onChange={(e) => onChangeProp('stroke', e.target.value)}
-            className="h-7 text-xs font-mono flex-1"
-            placeholder="sin borde"
-          />
-        </div>
-        <div className="mt-2">
-          <label className="text-[10px] text-muted-foreground">Grosor</label>
-          <Input
-            type="number"
-            min={0}
-            max={20}
-            value={selected.strokeWidth}
-            onChange={(e) => onChangeProp('strokeWidth', Number(e.target.value))}
-            className="h-7 text-xs"
-          />
-        </div>
-      </div>
-
-      {/* Opacity */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-1.5">
-          Opacidad — {Math.round(selected.opacity * 100)}%
-        </p>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={selected.opacity}
-          onChange={(e) => onChangeProp('opacity', Number(e.target.value))}
-          className="w-full accent-primary"
-        />
-      </div>
-    </div>
-  );
+  return false;
 }
 
-// ─── Toolbar ──────────────────────────────────────────────────────────────────
-
-interface ToolbarProps {
-  onAddText: () => void;
-  onAddImage: () => void;
-  onAddRect: () => void;
-  onAddCircle: () => void;
-  onAddButton: () => void;
-  onDelete: () => void;
-  onBringToFront: () => void;
-  onSendToBack: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  hasSelection: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
-}
-
-function EditorToolbar({
-  onAddText,
-  onAddImage,
-  onAddRect,
-  onAddCircle,
-  onAddButton,
-  onDelete,
-  onBringToFront,
-  onSendToBack,
-  onUndo,
-  onRedo,
-  hasSelection,
-  canUndo,
-  canRedo,
-}: ToolbarProps) {
-  return (
-    <div className="flex items-center gap-1 px-3 h-10 border-b border-border bg-background">
-      <Button size="icon" variant="ghost" title="Agregar texto" onClick={onAddText} className="size-8">
-        <Type className="size-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        title="Agregar imagen (URL)"
-        onClick={onAddImage}
-        className="size-8"
-      >
-        <ImageIcon className="size-4" />
-      </Button>
-      <Button size="icon" variant="ghost" title="Agregar rectángulo" onClick={onAddRect} className="size-8">
-        <Square className="size-4" />
-      </Button>
-      <Button size="icon" variant="ghost" title="Agregar círculo" onClick={onAddCircle} className="size-8">
-        <Circle className="size-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        title="Botón interactivo"
-        onClick={onAddButton}
-        className="size-8"
-      >
-        <MousePointerClick className="size-4" />
-      </Button>
-
-      <div className="w-px h-5 bg-border mx-1" />
-
-      <Button size="icon" variant="ghost" title="Deshacer" onClick={onUndo} disabled={!canUndo} className="size-8">
-        <Undo2 className="size-4" />
-      </Button>
-      <Button size="icon" variant="ghost" title="Rehacer" onClick={onRedo} disabled={!canRedo} className="size-8">
-        <Redo2 className="size-4" />
-      </Button>
-
-      <div className="w-px h-5 bg-border mx-1" />
-
-      <Button
-        size="icon"
-        variant="ghost"
-        title="Traer al frente"
-        onClick={onBringToFront}
-        disabled={!hasSelection}
-        className="size-8"
-      >
-        <BringToFront className="size-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        title="Enviar al fondo"
-        onClick={onSendToBack}
-        disabled={!hasSelection}
-        className="size-8"
-      >
-        <SendToBack className="size-4" />
-      </Button>
-
-      <div className="w-px h-5 bg-border mx-1" />
-
-      <Button
-        size="icon"
-        variant="ghost"
-        title="Eliminar elemento"
-        onClick={onDelete}
-        disabled={!hasSelection}
-        className="size-8 text-destructive hover:text-destructive"
-      >
-        <Trash2 className="size-4" />
-      </Button>
-    </div>
-  );
-}
-
-// ─── Image URL overlay ────────────────────────────────────────────────────────
-
-function ImageUrlOverlay({
-  open,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  onConfirm: (url: string) => void;
-  onCancel: () => void;
-}) {
-  const [url, setUrl] = useState('');
-  if (!open) return null;
-  return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-background rounded-lg shadow-xl p-6 w-96 space-y-4">
-        <p className="font-semibold">Agregar imagen por URL</p>
-        <Input
-          autoFocus
-          placeholder="https://example.com/image.png"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              onConfirm(url);
-              setUrl('');
-            }
-            if (e.key === 'Escape') onCancel();
-          }}
-        />
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              onConfirm(url);
-              setUrl('');
-            }}
-            disabled={!url.trim()}
-          >
-            Agregar
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Editor Client ───────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
-  const updateSlide = useUpdateSlide(classId);
+  const updateSlide  = useUpdateSlide(classId);
+  const updateClass  = useUpdateClass(classId, cls?.courseId ?? '');
+  const createSlide  = useCreateSlide(classId);
+  const removeSlide    = useRemoveSlide(classId);
+  const reorderSlides  = useReorderSlides(classId);
+  const insertSlide    = useInsertSlide(classId);
 
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [slidePick, setSlidePick] = useState<string | null>(null);
-  const [selectedProps, setSelectedProps] = useState<SelectedObjectProps | null>(null);
-  const [showImageOverlay, setShowImageOverlay] = useState(false);
-  const [showAddSlide, setShowAddSlide] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [historyUi, setHistoryUi] = useState({ canUndo: false, canRedo: false });
+  const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
+  const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
+  const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
+  const [saveStatus,         setSaveStatus]         = useState<SaveStatus>('idle');
+  const [modalUserOpen,      setModalUserOpen]      = useState(false);
+  const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
 
-  const apiRef = useRef<CanvasEditorAPI | null>(null);
-  const selectedSlideIdRef = useRef<string | null>(null);
+  const leftRailWrapRef = useRef<HTMLDivElement>(null);
+  const flyoutPanelRef = useRef<HTMLElement>(null);
+  const rightRailWrapRef = useRef<HTMLDivElement>(null);
+  const rightFlyoutPanelRef = useRef<HTMLElement>(null);
+  /** Top bar (Volver, acciones): no cerrar flyouts aquí en pointerdown — el setState antes del click rompe la navegación del Link. */
+  const editorHeaderRef = useRef<HTMLElement>(null);
 
-  const slides = cls?.slides;
+  useEffect(() => {
+    if (!activePanel && !rightPanel) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      const el = e.target as HTMLElement;
+      if (isPointerOnPortedOverlay(el)) return;
+      if (editorHeaderRef.current?.contains(el)) return;
+
+      if (activePanel) {
+        if (flyoutPanelRef.current?.contains(t)) return;
+        if (leftRailWrapRef.current?.contains(t)) return;
+        if (rightRailWrapRef.current?.contains(t)) return;
+        if (rightFlyoutPanelRef.current?.contains(t)) return;
+        setActivePanel(null);
+      }
+      if (rightPanel) {
+        if (rightFlyoutPanelRef.current?.contains(t)) return;
+        if (rightRailWrapRef.current?.contains(t)) return;
+        if (leftRailWrapRef.current?.contains(t)) return;
+        if (flyoutPanelRef.current?.contains(t)) return;
+        setRightPanel(null);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+  }, [activePanel, rightPanel]);
+
+  // ─── Desempeño ──────────────────────────────────────────────────────────────
+
+  const desempenoFromCls = useMemo(() => {
+    if (!cls?.desempeno || !hasDesempenoPersistido(cls.desempeno)) return null;
+    const raw = cls.desempeno as DesempenoGenerado;
+    return withActividadesSugeridas({
+      ...raw,
+      actividadesSugeridas: Array.isArray(raw.actividadesSugeridas)
+        ? raw.actividadesSugeridas
+        : [],
+    });
+  }, [cls?.desempeno]);
+
+  const desempeno = confirmedDesempeno ?? desempenoFromCls;
+
+  const needsFirstTimeSetup =
+    cls != null && !isLoading && !hasDesempenoPersistido(cls.desempeno);
+
+  const modalOpen = needsFirstTimeSetup || modalUserOpen;
+
+  // ─── Slides ─────────────────────────────────────────────────────────────────
+
   const sortedSlides = useMemo(() => {
+    const slides = cls?.slides;
     if (!slides?.length) return [];
     return [...slides].sort((a, b) => a.order - b.order);
-  }, [slides]);
+  }, [cls?.slides]);
 
-  const selectedSlideId = useMemo(() => {
-    if (sortedSlides.length === 0) return null;
-    if (slidePick && sortedSlides.some((s) => s.id === slidePick)) return slidePick;
-    return sortedSlides[0]!.id;
-  }, [sortedSlides, slidePick]);
+  const resolvedSlideIndex = useMemo(() => {
+    if (sortedSlides.length === 0) return 0;
+    return Math.min(Math.max(0, activeSlideIndex), sortedSlides.length - 1);
+  }, [sortedSlides.length, activeSlideIndex]);
 
-  // Keep ref in sync
-  useEffect(() => {
-    selectedSlideIdRef.current = selectedSlideId;
-  }, [selectedSlideId]);
+  const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
 
-  const selectedSlide = cls?.slides?.find((s) => s.id === selectedSlideId);
+  const rendererSlide = useMemo(
+    () => (activeSlide ? classSlideToRendererSlide(activeSlide as ApiSlide) : null),
+    [activeSlide],
+  );
 
-  // ── Save current slide ──────────────────────────────────────────────────────
-  const handleSave = useCallback(
-    (silent = false) => {
-      const slideId = selectedSlideIdRef.current;
-      if (!apiRef.current || !slideId) return;
+  const activeSlideHasActivity = useMemo(() => {
+    if (!activeSlide) return false;
+    const c = getSlideContentRecord(activeSlide as ApiSlide);
+    const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+    return bloques.some((b) => b.tipo === 'actividad');
+  }, [activeSlide]);
 
-      const content: SlideContent = apiRef.current.save();
-      setIsSaving(true);
+  // ─── Handlers ───────────────────────────────────────────────────────────────
+
+  const toggleLeftPanel = useCallback((id: LeftPanelId) => {
+    setActivePanel((prev) => (prev === id ? null : id));
+  }, []);
+
+  const toggleRightPanel = useCallback((id: RightPanelId) => {
+    setRightPanel((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleRefreshDesempeno = useCallback(() => {
+    setModalUserOpen(true);
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (!activeSlide) return;
+    setSaveStatus('saving');
+    let payload: unknown = activeSlide.content ?? null;
+    if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+      const s = sanitizeSlideContentForPersistence(payload);
+      if (s !== null) payload = s;
+    }
+    updateSlide.mutate(
+      { slideId: activeSlide.id, content: payload },
+      {
+        onSuccess: () => {
+          setSaveStatus('saved');
+          toast.success('Slide guardado');
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        },
+        onError: () => {
+          setSaveStatus('error');
+          toast.error('Error al guardar');
+        },
+      },
+    );
+  }, [activeSlide, updateSlide]);
+
+  const handleAddSlide = useCallback(() => {
+    const afterOrder = sortedSlides[resolvedSlideIndex]?.order ?? 0;
+    insertSlide.mutate(
+      {
+        afterOrder,
+        slide: {
+          type: 'CONTENT',
+          title: 'Nuevo slide',
+          content: {
+            id: `slide_${Date.now()}`,
+            orden: afterOrder + 1,
+            tipo: 'contenido',
+            layout: 'titulo_y_contenido',
+            fondo: { tipo: 'color', valor: '#FFFFFF' },
+            bloques: [],
+          },
+        },
+      },
+      {
+        onSuccess: () => setActiveSlideIndex(resolvedSlideIndex + 1),
+        onError: () => toast.error('Error al crear el slide'),
+      },
+    );
+  }, [sortedSlides, resolvedSlideIndex, insertSlide]);
+
+  const handleCommitSlideContent = useCallback(
+    (content: Record<string, unknown>) => {
+      if (!activeSlide) return;
+      if (activeSlideHasActivity) {
+        const bloques = Array.isArray(content.bloques) ? (content.bloques as Block[]) : [];
+        const hasDisallowed = bloques.some((b) => b.tipo !== 'texto' && b.tipo !== 'actividad');
+        if (hasDisallowed) {
+          toast.warning('Este slide solo admite un título junto a la actividad');
+          return;
+        }
+      }
+      const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
       updateSlide.mutate(
-        { slideId, content },
+        { slideId: activeSlide.id, content: sanitized },
         {
-          onSuccess: () => {
-            if (!silent) toast.success('Slide guardado');
-            setIsSaving(false);
-          },
-          onError: () => {
-            if (!silent) toast.error('Error al guardar el slide');
-            setIsSaving(false);
-          },
+          onError: () => toast.error('No se pudo guardar el slide'),
         },
       );
     },
-    [updateSlide],
+    [activeSlide, activeSlideHasActivity, updateSlide],
   );
 
-  // Auto-save every 30 s
-  useEffect(() => {
-    const timer = setInterval(() => handleSave(true), 30_000);
-    return () => clearInterval(timer);
-  }, [handleSave]);
+  const handleActivityChange = useCallback(
+    (blockPath: string, activity: Activity) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'actividad') return b;
+        return { ...b, actividad: activity };
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
 
-  // Ctrl/Cmd+S shortcut
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave(false);
+  const handleRemoveBlock = useCallback(
+    (blockPath: string) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = removeBlockAtPath(bloques, blockPath);
+      if (next === bloques) return;
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+      toast.success('Actividad eliminada');
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
+  const handleCreateSlideWithActivity = useCallback(
+    (content: Record<string, unknown>, title: string) => {
+      const nextOrder = sortedSlides.length + 1;
+      const fullContent = { ...content, orden: nextOrder };
+      const sanitized = sanitizeSlideContentForPersistence(fullContent) ?? fullContent;
+      createSlide.mutate(
+        {
+          type: 'CONTENT',
+          title,
+          content: sanitized,
+        },
+        {
+          onSuccess: () => setActiveSlideIndex(nextOrder - 1),
+          onError: () => toast.error('No se pudo crear el slide'),
+        },
+      );
+    },
+    [sortedSlides.length, createSlide],
+  );
+
+  const handleRemoveSlide = useCallback(
+    (slideId: string) => {
+      removeSlide.mutate(slideId, {
+        onSuccess: () => {
+          toast.success('Slide eliminado');
+          setActiveSlideIndex((prev) => Math.max(0, prev - 1));
+        },
+        onError: () => toast.error('No se pudo eliminar el slide'),
+      });
+    },
+    [removeSlide],
+  );
+
+  const handleMoveSlide = useCallback(
+    (slideId: string, direction: 'up' | 'down') => {
+      const idx = sortedSlides.findIndex((s) => s.id === slideId);
+      if (idx === -1) return;
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sortedSlides.length) return;
+
+      const newOrder = sortedSlides.map((s, i) => {
+        if (i === idx)     return { id: s.id, order: sortedSlides[swapIdx]!.order };
+        if (i === swapIdx) return { id: s.id, order: sortedSlides[idx]!.order };
+        return { id: s.id, order: s.order };
+      });
+
+      reorderSlides.mutate(newOrder, {
+        onSuccess: () => {
+          setActiveSlideIndex(swapIdx);
+          toast.success('Slide reordenado');
+        },
+        onError: () => toast.error('No se pudo reordenar el slide'),
+      });
+    },
+    [sortedSlides, reorderSlides],
+  );
+
+  const handleReorderSlides = useCallback(
+    (slideId: string, newIndex: number) => {
+      const oldIndex = sortedSlides.findIndex((s) => s.id === slideId);
+      if (oldIndex === -1 || oldIndex === newIndex) return;
+
+      const reordered = [...sortedSlides];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved!);
+
+      const newOrder = reordered.map((s, i) => ({ id: s.id, order: i + 1 }));
+
+      reorderSlides.mutate(newOrder, {
+        onSuccess: () => {
+          setActiveSlideIndex(newIndex);
+          toast.success('Slide reordenado');
+        },
+        onError: () => toast.error('No se pudo reordenar'),
+      });
+    },
+    [sortedSlides, reorderSlides],
+  );
+
+  const handleAddActivity = useCallback(
+    (type: ActivityType) => {
+      const templates: Record<ActivityType, () => Activity> = {
+        'quiz-multiple':    quizMultipleTemplate,
+        'true-false':       trueFalseTemplate,
+        'fill-blank':       fillBlanksTemplate,
+        'short-answer':     shortAnswerTemplate,
+        'drag-drop':        dragDropTemplate,
+        'match':            matchPairsTemplate,
+        'sort-steps':       orderStepsTemplate,
+        'video-interactive': videoInteractiveTemplate,
+        'live-poll':        livePollTemplate,
+        'word-cloud':       wordCloudTemplate,
+      };
+      const titles: Record<ActivityType, string> = {
+        'quiz-multiple':    'Opción múltiple',
+        'true-false':       'Verdadero o falso',
+        'fill-blank':       'Completar blancos',
+        'short-answer':     'Respuesta corta',
+        'drag-drop':        'Arrastrar y soltar',
+        'match':            'Emparejar',
+        'sort-steps':       'Ordenar pasos',
+        'video-interactive': 'Video interactivo',
+        'live-poll':        'Encuesta en vivo',
+        'word-cloud':       'Nube de palabras',
+      };
+      const templateFn = templates[type];
+      if (!templateFn) {
+        toast.info(`Actividad "${type}" próximamente disponible`);
+        return;
       }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [handleSave]);
+
+      const block: Block = { tipo: 'actividad', actividad: templateFn() };
+
+      // Si el slide activo existe y está vacío (sin bloques), agregar ahí
+      if (activeSlide) {
+        const c = getSlideContentRecord(activeSlide as ApiSlide);
+        const bloques = Array.isArray(c.bloques) ? c.bloques : [];
+        if (bloques.length === 0) {
+          handleCommitSlideContent(
+            mergeSlideContent(activeSlide as ApiSlide, { bloques: [block] }),
+          );
+          toast.success(`${titles[type]} agregada al slide actual`);
+          return;
+        }
+      }
+
+      // Si no hay slide activo o tiene contenido, crear nuevo slide
+      handleCreateSlideWithActivity(
+        buildContentDocumentForNewActivitySlide(block),
+        titles[type],
+      );
+      toast.success(`Slide con ${titles[type]} creado`);
+    },
+    [activeSlide, handleCommitSlideContent, handleCreateSlideWithActivity],
+  );
+
+  const handleApplyTheme = useCallback((bg: string) => {
+    if (!activeSlide) return;
+    const base = (
+      typeof activeSlide.content === 'object' && activeSlide.content !== null
+        ? activeSlide.content
+        : {}
+    ) as Record<string, unknown>;
+    const updatedContent = { ...base, fondo: { tipo: 'color', valor: bg } };
+    const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
+    updateSlide.mutate(
+      { slideId: activeSlide.id, content: sanitized },
+      {
+        onSuccess: () => toast.success('Tema aplicado'),
+        onError: () => toast.error('Error al aplicar tema'),
+      },
+    );
+  }, [activeSlide, updateSlide]);
+
+  // ─── Error state ─────────────────────────────────────────────────────────────
 
   if (isError) {
     return (
-      <div className="flex h-dvh items-center justify-center">
-        <p className="text-destructive">No se pudo cargar la clase.</p>
+      <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center p-6">
+        <p className="text-sm text-destructive">No se pudo cargar la clase.</p>
       </div>
     );
   }
 
-  const previewStartIndex = Math.max(
-    sortedSlides.findIndex((s) => s.id === selectedSlideId),
-    0,
-  );
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-background">
-
-      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
-        <Button variant="ghost" size="sm" asChild className="gap-1.5">
-          <Link href={`/classes/${classId}`}>
-            <ArrowLeft className="size-4" />
-            Volver
-          </Link>
-        </Button>
-
-        <Separator orientation="vertical" className="h-5" />
-
-        <div className="flex-1 min-w-0">
-          {isLoading ? (
-            <Skeleton className="h-5 w-48" />
-          ) : (
-            <span className="font-semibold text-sm truncate">{cls?.title ?? 'Editor'}</span>
-          )}
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col">
+      {/* ── Móvil: no disponible (viewport menor que breakpoint md) ─────────── */}
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-6 text-center md:hidden">
+        <Monitor className="size-12 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="max-w-sm space-y-2">
+          <h2 className="text-lg font-semibold">Editor no disponible en el móvil</h2>
+          <p className="text-sm text-muted-foreground">
+            El editor de slides necesita una pantalla más ancha (tablet en horizontal, portátil o
+            escritorio). Abre esta clase desde un dispositivo mayor o amplía la ventana del
+            navegador.
+          </p>
         </div>
-
-        {selectedSlide && (
-          <Badge variant="secondary" appearance="light" size="sm">
-            {SLIDE_LABELS[selectedSlide.type] ?? selectedSlide.type} #{selectedSlide.order}
-          </Badge>
-        )}
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowPreview(true)}
-          disabled={sortedSlides.length === 0}
-          title="Ver presentación fullscreen"
-        >
-          <Eye className="size-4" />
-          Vista previa
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/classes/${classId}`}>Volver a la clase</Link>
         </Button>
+      </div>
 
-        <Button
-          size="sm"
-          onClick={() => handleSave(false)}
-          disabled={isSaving || !selectedSlideId}
+      {/* ── Editor a pantalla completa — md+ (canvas centrado en el espacio flex) ─ */}
+      <div className="hidden min-h-0 flex-1 flex-col overflow-hidden bg-editor-shell md:flex">
+
+        {/* ── TOPBAR ── h-14 ──────────────────────────────────────────────── */}
+        <header
+          ref={editorHeaderRef}
+          className="flex h-14 shrink-0 items-center border-b border-border bg-background"
         >
-          <Save className="size-4" />
-          {isSaving ? 'Guardando…' : 'Guardar'}
-        </Button>
-      </header>
 
-      {/* ── Body: flex-1 rellena el viewport bajo el header (3rem); toolbar 2.5rem + canvas flex-1 ── */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-
-        {/* ── Left panel — slide list (240px / 48px) ───────────────────────── */}
-        <aside
-          className={cn(
-            'flex shrink-0 flex-col overflow-hidden border-r border-border bg-muted/10 transition-[width] duration-200',
-            sidebarExpanded ? 'w-[240px]' : 'w-[48px]',
-          )}
-        >
-          <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-0.5">
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="size-9 shrink-0"
-              aria-label={sidebarExpanded ? 'Contraer lista de slides' : 'Expandir lista de slides'}
-              aria-expanded={sidebarExpanded}
-              onClick={() => setSidebarExpanded((v) => !v)}
-            >
-              {sidebarExpanded ? (
-                <ChevronLeft className="size-5" />
-              ) : (
-                <ChevronRight className="size-5" />
-              )}
+          {/* Zona Volver — 4rem fijo, alineada con IconRail del cuerpo */}
+          <div className="flex h-full w-16 min-w-16 max-w-16 shrink-0 items-center justify-center bg-background">
+            <Button variant="ghost" size="icon" asChild className="shrink-0">
+              <Link href={`/classes/${classId}`} aria-label="Volver a la clase">
+                <ArrowLeft className="size-4" />
+              </Link>
             </Button>
-            {sidebarExpanded && (
-              <>
-                <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Slides
-                </span>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7 shrink-0"
-                  title="Nuevo slide"
-                  onClick={() => setShowAddSlide(true)}
-                >
-                  <Plus className="size-3.5" />
-                </Button>
-              </>
-            )}
           </div>
 
-          {!sidebarExpanded && (
-            <div className="flex shrink-0 flex-col items-center border-b border-border py-1">
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="size-9"
-                title="Nuevo slide"
-                onClick={() => setShowAddSlide(true)}
-              >
-                <Plus className="size-4" />
-              </Button>
-            </div>
-          )}
+          <div className="h-5 w-px bg-border" />
 
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-1 py-2">
-            {sidebarExpanded ? (
+          {/* Título + desempeño — flex-1 */}
+          <div className="flex min-w-0 flex-1 flex-col px-3">
+            {isLoading ? (
+              <Skeleton className="h-4 w-48" />
+            ) : (
               <>
-                {isLoading &&
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-md" />
-                  ))}
-                {sortedSlides.map((slide) => {
-                  const isActive = slide.id === selectedSlideId;
-                  const bgColor = SLIDE_BG[slide.type] ?? 'bg-muted';
-                  return (
-                    <button
-                      key={slide.id}
-                      type="button"
-                      onClick={() => setSlidePick(slide.id)}
-                      className={cn(
-                        'w-full overflow-hidden rounded-md border text-left transition-all',
-                        isActive
-                          ? 'border-primary ring-2 ring-primary/20'
-                          : 'border-border hover:border-primary/50',
-                      )}
-                    >
-                      <div className={`${bgColor} flex h-12 items-center justify-center opacity-80`}>
-                        <span className="font-mono text-xs text-white">{slide.order}</span>
-                      </div>
-                      <div className="px-2 py-1.5">
-                        <p className="truncate text-xs font-medium">{slide.title}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {SLIDE_LABELS[slide.type] ?? slide.type}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-                {!isLoading && sortedSlides.length === 0 && (
-                  <p className="px-1 py-6 text-center text-xs text-muted-foreground">
-                    Sin slides — pulsa + para crear
+                <p className={cn('truncate text-sm font-semibold leading-tight')}>
+                  {cls?.title ?? 'Editor'}
+                </p>
+                {desempeno && (
+                  <p className="max-w-sm truncate text-xs text-muted-foreground">
+                    {desempeno.enunciado.length > 80
+                      ? desempeno.enunciado.slice(0, 80) + '…'
+                      : desempeno.enunciado}
                   </p>
                 )}
               </>
-            ) : (
-              <div className="flex flex-col items-center gap-1">
-                {sortedSlides.map((slide) => {
-                  const bgColor = SLIDE_BG[slide.type] ?? 'bg-muted';
-                  return (
-                    <button
-                      key={slide.id}
-                      type="button"
-                      title={slide.title}
-                      onClick={() => setSlidePick(slide.id)}
-                      className={cn(
-                        'flex size-8 items-center justify-center rounded-md text-[10px] font-bold text-white',
-                        bgColor,
-                        slide.id === selectedSlideId ? 'ring-2 ring-primary ring-offset-1' : '',
-                      )}
-                    >
-                      {slide.order}
-                    </button>
-                  );
-                })}
-              </div>
             )}
           </div>
-        </aside>
 
-        {/* ── Center: toolbar (2.5rem) + canvas (resto) ───────────────────────── */}
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <EditorToolbar
-            onAddText={() => apiRef.current?.addText()}
-            onAddImage={() => setShowImageOverlay(true)}
-            onAddRect={() => apiRef.current?.addRect()}
-            onAddCircle={() => apiRef.current?.addCircle()}
-            onAddButton={() => apiRef.current?.addButton()}
-            onDelete={() => apiRef.current?.deleteSelected()}
-            onBringToFront={() => apiRef.current?.bringToFront()}
-            onSendToBack={() => apiRef.current?.sendToBack()}
-            onUndo={() => apiRef.current?.undo()}
-            onRedo={() => apiRef.current?.redo()}
-            hasSelection={!!selectedProps}
-            canUndo={historyUi.canUndo}
-            canRedo={historyUi.canRedo}
+          {/* Botones acción — shrink-0 */}
+          <div className="flex shrink-0 items-center gap-2 pr-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toast.info('Compartir próximamente disponible')}
+            >
+              <Share2 className="size-4" />
+              Compartir
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={sortedSlides.length === 0}
+              onClick={() => toast.info('Vista previa no disponible aún')}
+            >
+              <Eye className="size-4" />
+              Vista previa
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!activeSlide || saveStatus === 'saving'}
+              onClick={handleSave}
+            >
+              <Save className="size-4" />
+              {saveStatus === 'saving' ? 'Guardando…' : 'Guardar'}
+            </Button>
+
+            <Button
+              size="sm"
+              disabled={!activeSlide}
+              onClick={() => toast.info('Publicación no disponible aún')}
+            >
+              <Send className="size-4" />
+              Publicar
+            </Button>
+          </div>
+        </header>
+
+        {/* ── CUERPO (flex-1 + min-h-0 para canvas centrado y scroll correcto) ─ */}
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+
+          {/* Icon rail — ancho fijo 4rem (md+); no encoger en flex */}
+          <div
+            ref={leftRailWrapRef}
+            className="flex h-full min-h-0 w-16 min-w-16 max-w-16 shrink-0 flex-col overflow-hidden"
+          >
+            <IconRail
+              activePanel={activePanel}
+              onPanelToggle={toggleLeftPanel}
+              onRefreshDesempeno={handleRefreshDesempeno}
+            />
+          </div>
+
+          {/* Slides + flyout — 14rem fijo; canvas absorbe el resto (min-w-0) */}
+          <div className="relative h-full min-h-0 w-56 min-w-56 max-w-56 shrink-0 overflow-visible">
+            <SlidesPanel
+              slides={sortedSlides}
+              activeIndex={resolvedSlideIndex}
+              isLoading={isLoading}
+              isAddingSlide={createSlide.isPending}
+              onSelect={setActiveSlideIndex}
+              onAddSlide={handleAddSlide}
+              onRemoveSlide={handleRemoveSlide}
+              onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
+              onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
+              onReorderSlides={handleReorderSlides}
+            />
+            <FlyoutPanel
+              ref={flyoutPanelRef}
+              activePanel={activePanel}
+              onClose={() => setActivePanel(null)}
+              apiSlide={activeSlide as ApiSlide}
+              onCommitSlideContent={handleCommitSlideContent}
+              onCreateActivitySlide={handleCreateSlideWithActivity}
+              slides={sortedSlides.map((s) => ({
+                id: s.id,
+                order: s.order,
+                title: s.title,
+                type: s.type,
+              }))}
+              activeSlideIndex={resolvedSlideIndex}
+              onSelectSlide={setActiveSlideIndex}
+              desempenoEnunciado={desempeno?.enunciado}
+              isSlideSaving={updateSlide.isPending}
+              slideHasActivity={activeSlideHasActivity}
+            />
+          </div>
+
+          {/* Canvas area — flex-1 */}
+          <CanvasArea
+            slide={rendererSlide}
+            isLoading={isLoading}
+            onActivityChange={handleActivityChange}
+            onRemoveBlock={handleRemoveBlock}
           />
 
-          <CanvasEditor
-            content={selectedSlide?.content ?? null}
-            onSelectionChange={setSelectedProps}
-            onReady={(api) => {
-              apiRef.current = api;
-            }}
-            onHistoryChange={setHistoryUi}
-            fillContainer
-            wrapperClassName="min-h-0"
+          {/* Flyout panel derecho */}
+          <RightFlyoutPanel
+            ref={rightFlyoutPanelRef}
+            activePanel={rightPanel}
+            onClose={() => setRightPanel(null)}
+            onAddActivity={handleAddActivity}
+            onApplyTheme={handleApplyTheme}
+            desempenoEnunciado={desempeno?.enunciado}
+            hasActivity={activeSlideHasActivity}
+
           />
 
-          <ImageUrlOverlay
-            open={showImageOverlay}
-            onConfirm={(url) => {
-              apiRef.current?.addImage(url);
-              setShowImageOverlay(false);
-            }}
-            onCancel={() => setShowImageOverlay(false)}
-          />
+          {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}
+          <div
+            ref={rightRailWrapRef}
+            className="flex h-full min-h-0 w-16 min-w-16 max-w-16 shrink-0 flex-col overflow-hidden"
+          >
+            <RightRail
+              activePanel={rightPanel}
+              onPanelToggle={toggleRightPanel}
+            />
+          </div>
+
         </div>
 
-        {/* ── Right panel — properties ──────────────────────────────────────── */}
-        <aside className="flex w-64 shrink-0 flex-col overflow-hidden border-l border-border">
-          <div className="px-4 py-2 border-b border-border">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Propiedades
-            </span>
-          </div>
-          <PropertiesPanel
-            selected={selectedProps}
-            onChangeProp={(key, value) => apiRef.current?.setProperty(key, value)}
-          />
-        </aside>
+        {/* ── STATUS BAR ───────────────────────────────────────────────────── */}
+        <footer className="flex min-h-9 shrink-0 items-center justify-between border-t border-border bg-background px-4 py-1.5">
+          <span
+            className={cn(
+              'text-xs tabular-nums',
+              saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground',
+            )}
+          >
+            {SAVE_LABEL[saveStatus]}
+          </span>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {sortedSlides.length} {sortedSlides.length === 1 ? 'slide' : 'slides'}
+          </span>
+        </footer>
+
       </div>
 
-      {/* ── Modals ───────────────────────────────────────────────────────────── */}
-      <AddSlideModal
+      <NewClassModal
         classId={classId}
-        open={showAddSlide}
-        onOpenChange={setShowAddSlide}
-        onCreated={(id) => setSlidePick(id)}
+        isOpen={modalOpen}
+        required={needsFirstTimeSetup}
+        onClose={() => setModalUserOpen(false)}
+        onConfirm={(d) => {
+          const normalized = withActividadesSugeridas(d);
+          setConfirmedDesempeno(normalized);
+          setModalUserOpen(false);
+          updateClass.mutate(
+            { desempeno: normalized },
+            {
+              onError: () =>
+                toast.error('No se pudo guardar el desempeño en el servidor'),
+            },
+          );
+        }}
       />
-
-      {showPreview && sortedSlides.length > 0 && (
-        <SlidePreviewModal
-          slides={sortedSlides}
-          startIndex={previewStartIndex}
-          onClose={() => setShowPreview(false)}
-        />
-      )}
     </div>
   );
 }

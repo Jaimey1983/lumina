@@ -10,7 +10,8 @@
       "Bash(pnpm add:*)",
       "Bash(pnpm prisma:*)",
       "Bash(FORCE_COLOR=0 CI=false pnpm exec prisma migrate dev --create-only --name achievement_performance_indicator)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npx tsc:*)"
     ]
   }
 }

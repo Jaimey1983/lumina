@@ -12,5 +12,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SlideEditorPage({ params }: Props) {
   const { id } = await params;
-  return <SlideEditorClient classId={id} />;
+  return <SlideEditorClient key={id} classId={id} />;
 }

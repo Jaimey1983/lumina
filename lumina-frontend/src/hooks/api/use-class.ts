@@ -17,6 +17,7 @@ export interface ClassDetail {
   status: string;
   createdAt: string;
   slides?: Slide[];
+  desempeno?: unknown;
 }
 
 export function useClass(id: string) {

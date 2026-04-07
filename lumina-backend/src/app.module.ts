@@ -26,6 +26,7 @@ import { CollaborationModule } from './collaboration/collaboration.module';
 import { ForumsModule } from './forums/forums.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { CurriculumModule } from './curriculum/curriculum.module';
 
 @Module({
   imports: [
@@ -71,6 +72,9 @@ import { AchievementsModule } from './achievements/achievements.module';
 
     // ── Fase 5 — Logros e Indicadores de Logro ───────────────────────────
     AchievementsModule,
+
+    // ── Fase 6 — Currículo y generación de desempeños ────────────────────
+    CurriculumModule,
   ],
 })
 export class AppModule {}

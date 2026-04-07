@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { SLIDE_LABELS } from '@/config/slide.constants';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,14 +66,6 @@ const SLIDE_ICONS: Record<string, React.ElementType> = {
   ACTIVITY: Zap,
   VIDEO: Play,
   IMAGE: Image,
-};
-
-const SLIDE_LABELS: Record<string, string> = {
-  COVER: 'Portada',
-  CONTENT: 'Contenido',
-  ACTIVITY: 'Actividad',
-  VIDEO: 'Video',
-  IMAGE: 'Imagen',
 };
 
 // ─── Slides List ──────────────────────────────────────────────────────────────

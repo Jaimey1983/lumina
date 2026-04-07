@@ -85,6 +85,7 @@ export class ClassesService {
         code: true,
         status: true,
         courseId: true,
+        desempeno: true,
         createdAt: true,
         updatedAt: true,
         slides: {
@@ -113,13 +114,20 @@ export class ClassesService {
     const cls = await this.findOneRaw(id);
     await this.verifyTeacherOwnership(cls.courseId, userId);
 
+    const { desempeno, ...rest } = dto;
     return this.prisma.class.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        ...(desempeno !== undefined
+          ? { desempeno: desempeno as Prisma.InputJsonValue }
+          : {}),
+      },
       select: {
         id: true,
         title: true,
         description: true,
+        desempeno: true,
         status: true,
         updatedAt: true,
       },
@@ -237,6 +245,79 @@ export class ClassesService {
     );
 
     return { message: 'Slide eliminado correctamente' };
+  }
+
+  async reorderSlides(
+    classId: string,
+    userId: string,
+    order: { id: string; order: number }[],
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    const slides = await this.prisma.slide.findMany({
+      where: { classId },
+      select: { id: true },
+    });
+    const validIds = new Set(slides.map((s) => s.id));
+    const allValid = order.every((item) => validIds.has(item.id));
+    if (!allValid)
+      throw new NotFoundException('Uno o más slides no pertenecen a esta clase');
+
+    await this.prisma.$transaction(
+      order.map((item) =>
+        this.prisma.slide.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        }),
+      ),
+    );
+
+    return this.prisma.slide.findMany({
+      where: { classId },
+      select: { id: true, order: true, type: true, title: true },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  async addSlideAtPosition(
+    classId: string,
+    userId: string,
+    afterOrder: number,
+    dto: CreateSlideDto,
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.slide.updateMany({
+        where: { classId, order: { gt: afterOrder } },
+        data: { order: { increment: 1 } },
+      });
+
+      return tx.slide.create({
+        data: {
+          type: dto.type,
+          title: dto.title,
+          content: dto.content as Prisma.InputJsonValue,
+          order: afterOrder + 1,
+          class: { connect: { id: classId } },
+        },
+      });
+    });
+
+    return this.prisma.slide.findMany({
+      where: { classId },
+      select: {
+        id: true,
+        order: true,
+        type: true,
+        title: true,
+        content: true,
+        createdAt: true,
+      },
+      orderBy: { order: 'asc' },
+    });
   }
 
   // ─── HELPERS PRIVADOS ──────────────────────────────────

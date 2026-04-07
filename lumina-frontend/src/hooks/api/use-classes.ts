@@ -68,6 +68,7 @@ export interface CreateClassInput {
 export interface UpdateClassInput {
   title?: string;
   description?: string;
+  desempeno?: unknown;
 }
 
 export function useCreateClass(courseId: string) {
@@ -91,7 +92,9 @@ export function useUpdateClass(classId: string, courseId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      if (courseId) {
+        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
     },
   });
@@ -149,6 +152,47 @@ export function useUpdateSlide(classId: string) {
   return useMutation({
     mutationFn: async ({ slideId, content }: { slideId: string; content: unknown }) => {
       const { data } = await api.patch(`/classes/${classId}/slides/${slideId}`, { content });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
+
+export function useRemoveSlide(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (slideId: string) => {
+      await api.delete(`/classes/${classId}/slides/${slideId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
+
+export function useReorderSlides(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (order: { id: string; order: number }[]) => {
+      const { data } = await api.patch(`/classes/${classId}/slides/reorder`, { order });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+    },
+  });
+}
+
+export function useInsertSlide(classId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { afterOrder: number; slide: CreateSlideInput }) => {
+      const { data } = await api.post(
+        `/classes/${classId}/slides/insert`,
+        input,
+      );
       return data;
     },
     onSuccess: () => {

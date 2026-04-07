@@ -11,18 +11,28 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
+  const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isViewerRoute && !isLoading && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, isViewerRoute]);
+
+  if (isViewerRoute) {
+    return <>{children}</>;
+  }
 
   if (isLoading || !isAuthenticated) {
     return <ScreenLoader />;
   }
 
-  if (pathname.startsWith('/editor')) {
-    return <div className="h-svh min-h-0 overflow-hidden bg-background">{children}</div>;
+  if (pathname.startsWith('/editor') || /^\/classes\/[^/]+\/editor/.test(pathname)) {
+    return (
+      <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background">
+        {children}
+      </div>
+    );
   }
 
   return <Layout11>{children}</Layout11>;
