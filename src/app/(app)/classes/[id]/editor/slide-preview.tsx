@@ -10,6 +10,7 @@ const CANVAS_W = 1280;
 const CANVAS_H = 720;
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
+const DEFAULT_DISENO: Layout = LAYOUT_FROM_KEY.titulo_y_contenido!;
 
 interface Props {
   content: unknown;
@@ -25,7 +26,7 @@ function contentToRendererSlide(content: unknown): RendererSlide {
     title: '',
     bloques: [],
     fondo: DEFAULT_FONDO,
-    diseno: LAYOUT_FROM_KEY.titulo_y_contenido,
+    diseno: DEFAULT_DISENO,
     content: null,
   };
 
@@ -48,7 +49,7 @@ function contentToRendererSlide(content: unknown): RendererSlide {
     fondo = { tipo: 'color', valor: String((c.background as { value?: string }).value ?? '#ffffff') };
   }
 
-  let diseno: Layout = LAYOUT_FROM_KEY.titulo_y_contenido;
+  let diseno: Layout = DEFAULT_DISENO;
   if (c.diseno && typeof c.diseno === 'object' && !Array.isArray(c.diseno)) {
     diseno = c.diseno as Layout;
   } else if (typeof c.layout === 'string' && c.layout in LAYOUT_FROM_KEY) {

@@ -10,15 +10,15 @@ import { SlideRenderer } from './components/slide-renderer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** Objeto que retorna `save()` para persistir en el API (bloques + metadatos de lienzo). */
 export interface SlideContent {
   version: string;
   background: { type: 'color'; value: string };
   width: number;
   height: number;
-  /** Bloques JSON (renderer). Convive con campos legacy por compatibilidad. */
-  bloques?: Block[];
-  fondo?: Background;
-  diseno?: Layout;
+  bloques: Block[];
+  fondo: Background;
+  diseno: Layout;
   layout?: string;
   fabricJSON?: object;
 }
@@ -34,6 +34,9 @@ export interface SelectedObjectProps {
   opacity: number;
   type: string;
 }
+
+/** Slide activo (metadatos API) para `SlideRenderer` (id, actividades, etc.). */
+export type CanvasEditorActiveSlide = Pick<RendererSlide, 'id' | 'order' | 'type' | 'title'>;
 
 export interface CanvasEditorAPI {
   save: () => SlideContent;
@@ -53,6 +56,8 @@ export interface CanvasEditorAPI {
 
 interface CanvasEditorProps {
   content: unknown;
+  /** Metadatos del slide seleccionado; si se omiten, el renderer usa valores por defecto. */
+  activeSlide?: CanvasEditorActiveSlide | null;
   onSelectionChange: (props: SelectedObjectProps | null) => void;
   onReady: (api: CanvasEditorAPI) => void;
   /** Clases Tailwind del contenedor exterior del canvas (área gris + centrado). */
@@ -76,6 +81,8 @@ interface EditorDoc {
   bloques: Block[];
   fondo: Background;
   diseno: Layout;
+  /** Clave `layout` persistida en el JSON de clase, si se conoce. */
+  layoutKey?: string;
 }
 
 function backgroundToHex(fondo: Background): string {
@@ -101,14 +108,31 @@ function parseEditorContent(content: unknown): EditorDoc {
       fondo = { tipo: 'color', valor: String((c.background as { value?: string }).value ?? '#ffffff') };
     }
 
+    let layoutKey: string | undefined;
+    if (typeof c.layout === 'string' && c.layout in LAYOUT_FROM_KEY) {
+      layoutKey = c.layout;
+    }
     let diseno: Layout = DEFAULT_DISENO;
     if (c.diseno && typeof c.diseno === 'object' && !Array.isArray(c.diseno)) {
       diseno = c.diseno as Layout;
-    } else if (typeof c.layout === 'string' && c.layout in LAYOUT_FROM_KEY) {
-      diseno = LAYOUT_FROM_KEY[c.layout]!;
+    } else if (layoutKey) {
+      diseno = LAYOUT_FROM_KEY[layoutKey]!;
     }
 
-    return { bloques: c.bloques as Block[], fondo, diseno };
+    let bloques = c.bloques as Block[];
+    if (bloques.length === 0 && 'fabricJSON' in c && c.fabricJSON) {
+      bloques = [
+        {
+          tipo: 'texto',
+          contenido:
+            'Este slide usa formato antiguo (lienzo). Edita el texto aquí o continúa en el editor de clase con bloques.',
+          color: '#92400e',
+          tamanoFuente: '1.125rem',
+        },
+      ];
+    }
+
+    return { bloques, fondo, diseno, layoutKey };
   }
 
   if ('fabricJSON' in c && c.fabricJSON) {
@@ -130,6 +154,7 @@ function parseEditorContent(content: unknown): EditorDoc {
           ? { tipo: 'color', valor: String((c.background as { value?: string }).value) }
           : DEFAULT_FONDO,
       diseno: DEFAULT_DISENO,
+      layoutKey: typeof c.layout === 'string' && c.layout in LAYOUT_FROM_KEY ? c.layout : undefined,
     };
   }
 
@@ -210,12 +235,12 @@ function sendIndexToStart(arr: Block[], path: string): Block[] {
   return [b, ...arr.filter((_, j) => j !== i)];
 }
 
-function docToSlide(doc: EditorDoc): RendererSlide {
+function docToSlide(doc: EditorDoc, meta: CanvasEditorActiveSlide | null | undefined): RendererSlide {
   return {
-    id: 'canvas-editor',
-    order: 0,
-    type: 'CONTENT',
-    title: '',
+    id: meta?.id ?? 'canvas-editor',
+    order: meta?.order ?? 0,
+    type: meta?.type ?? 'CONTENT',
+    title: meta?.title ?? '',
     bloques: doc.bloques,
     fondo: doc.fondo,
     diseno: doc.diseno,
@@ -233,7 +258,7 @@ function serializeDoc(doc: EditorDoc): SlideContent {
     bloques: doc.bloques,
     fondo: doc.fondo,
     diseno: doc.diseno,
-    layout: 'titulo_y_contenido',
+    layout: doc.layoutKey ?? 'titulo_y_contenido',
   };
 }
 
@@ -241,6 +266,7 @@ function serializeDoc(doc: EditorDoc): SlideContent {
 
 export default function CanvasEditor({
   content,
+  activeSlide = null,
   onSelectionChange,
   onReady,
   wrapperClassName,
@@ -354,7 +380,7 @@ export default function CanvasEditor({
     onSelectionChangeRef.current(b ? blockToSelectedProps(b) : null);
   }, [doc.bloques, selectedPath]);
 
-  const slideForRenderer = useMemo(() => docToSlide(doc), [doc]);
+  const slideForRenderer = useMemo(() => docToSlide(doc, activeSlide), [doc, activeSlide]);
 
   useEffect(() => {
     const api: CanvasEditorAPI = {
