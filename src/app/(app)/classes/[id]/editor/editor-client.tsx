@@ -2,11 +2,13 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide } from '@/hooks/api/use-classes';
+import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide, usePublishClass } from '@/hooks/api/use-classes';
+import { useQueryClient } from '@tanstack/react-query';
+import { PublishSuccessModal } from '@/components/publish-success-modal';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -209,6 +211,8 @@ function hasDesempenoPersistido(value: unknown): boolean {
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
+  const queryClient = useQueryClient();
+  const publishClass = usePublishClass(cls?.courseId ?? '');
   const { emit: socketEmit, isConnected } = useSocket();
   const updateSlide  = useUpdateSlide(classId);
   const createSlide  = useCreateSlide(classId);
@@ -221,6 +225,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
   const [saveStatus,         setSaveStatus]         = useState<SaveStatus>('idle');
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
+  const [showPublishModal,   setShowPublishModal]   = useState(false);
   const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
   const [showCurricularModal, setShowCurricularModal] = useState(false);
 
@@ -332,6 +337,18 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleRefreshDesempeno = useCallback(() => {
     setModalUserOpen(true);
   }, []);
+
+  const handlePublish = useCallback(() => {
+    if (!cls || !classId) return;
+    publishClass.mutate(classId, {
+      onSuccess: () => {
+        toast.success('Clase publicada');
+        queryClient.invalidateQueries({ queryKey: ['class', classId] });
+        setShowPublishModal(true);
+      },
+      onError: () => toast.error('Error al publicar la clase'),
+    });
+  }, [cls, classId, publishClass, queryClient]);
 
   const handleSave = useCallback(() => {
     if (!activeSlide) return;
@@ -699,14 +716,35 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               {saveStatus === 'saving' ? 'Guardando…' : 'Guardar'}
             </Button>
 
-            <Button
-              size="sm"
-              disabled={!activeSlide}
-              onClick={() => toast.info('Publicación no disponible aún')}
-            >
-              <Send className="size-4" />
-              Publicar
-            </Button>
+            {cls?.status === 'PUBLISHED' ? (
+              <Button
+                size="sm"
+                disabled
+                variant="outline"
+                className="border-green-500 text-green-600 opacity-100 dark:border-green-400 dark:text-green-400"
+              >
+                <CheckCircle className="mr-2 size-4" />
+                Publicada
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                disabled={!cls || publishClass.isPending}
+                onClick={handlePublish}
+              >
+                {publishClass.isPending ? (
+                  <>
+                    <span className="mr-2 size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Publicando…
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 size-4" />
+                    Publicar
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </header>
 
@@ -824,6 +862,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           setModalUserOpen(false);
           setShowCurricularModal(false);
         }}
+      />
+      <PublishSuccessModal 
+        open={showPublishModal} 
+        onOpenChange={setShowPublishModal} 
+        classId={classId} 
       />
     </div>
   );
