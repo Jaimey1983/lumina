@@ -290,6 +290,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const modalOpen = showCurricularModal || modalUserOpen;
 
+  // ─── Socket: join class room on connect ─────────────────────────────────────
+
+  useEffect(() => {
+    if (!isConnected) return;
+    socketEmit('join-class', { classId });
+  }, [isConnected, classId, socketEmit]);
+
   // ─── Socket: emit slide-change when active slide changes ────────────────────
 
   useEffect(() => {

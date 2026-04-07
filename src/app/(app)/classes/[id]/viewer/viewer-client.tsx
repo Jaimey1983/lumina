@@ -18,8 +18,12 @@ export function ViewerClient({ id }: { id: string }) {
     );
     setSocket(socketInstance);
 
-    socketInstance.on('slide-change', (index: number) => {
-      setActiveSlideIndex(index);
+    socketInstance.on('connect', () => {
+      socketInstance.emit('join-class', { classId: id });
+    });
+
+    socketInstance.on('slide-change', (payload: { slideIndex: number; classId: string }) => {
+      setActiveSlideIndex(payload.slideIndex);
     });
 
     socketInstance.on('activity-answer', (_answerData: unknown) => {
