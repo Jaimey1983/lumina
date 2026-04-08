@@ -21,6 +21,16 @@ export function ViewerClient({ id }: { id: string }) {
 
   const activeSlide = slides[activeSlideIndex] ?? null;
 
+  // Prevent the student from leaving the viewer via the browser back button.
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+    function handlePopState() {
+      window.history.pushState(null, '', window.location.href);
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     const socketInstance = io(
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
@@ -78,10 +88,12 @@ export function ViewerClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <main className="relative flex-1 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950">
+      <main className="relative flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
         {activeSlide ? (
-          <SlideRenderer slide={activeSlide} modo="viewer" />
+          <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">
+            <SlideRenderer slide={activeSlide} modo="viewer" />
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center">
             <p className="text-muted-foreground">

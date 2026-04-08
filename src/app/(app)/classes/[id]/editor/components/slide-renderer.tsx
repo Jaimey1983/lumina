@@ -30,7 +30,7 @@ import { OrderStepsActivityEditor, OrderStepsViewer } from './activities/order-s
 import { WordCloudActivityEditor, WordCloudViewer } from './activities/word-cloud';
 import { QuizMultipleActivityEditor } from './activities/quiz-multiple';
 import { TrueFalseActivityEditor } from './activities/true-false';
-import { DragDropActivityEditor } from './activities/drag-drop';
+import { DragDropActivity, DragDropActivityEditor } from './activities/drag-drop';
 import { VideoInteractiveActivity, VideoInteractiveActivityEditor } from './activities/video-interactive';
 import { LivePollActivity, LivePollActivityEditor } from './activities/live-poll';
 
@@ -175,7 +175,7 @@ function RenderImage({ block }: { block: ImageBlock }) {
   };
 
   return (
-    <figure style={{ margin: 0 }}>
+    <figure style={{ margin: 0, width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={block.url}
@@ -183,7 +183,9 @@ function RenderImage({ block }: { block: ImageBlock }) {
         style={{
           display: 'block',
           width: block.ancho ?? '100%',
-          height: block.alto ?? 'auto',
+          height: block.alto ?? '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
           objectFit: block.ajuste ? fitMap[block.ajuste] : 'contain',
           borderRadius: block.bordeRedondeado,
         }}
@@ -479,6 +481,7 @@ function RenderActivity({
         />
       );
     }
+    return <DragDropActivity actividad={act} modo="viewer" />;
   }
 
   if (act.tipo === 'completar_blancos') {
@@ -748,6 +751,7 @@ function BlockNode({
         editorMode && !isFormBlock && 'hover:ring-1 hover:ring-primary/40',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
         isSelected && !isFormBlock && 'ring-1 ring-primary/50',
+        !editorMode && 'overflow-hidden max-w-full max-h-full',
       )}
     >
       {renderContent()}

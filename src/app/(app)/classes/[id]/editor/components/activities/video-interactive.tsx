@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckCircle, Circle, Clock, XCircle, Trash2, Plus } from 'lucide-react';
 
 import type { VideoInteractive, VideoQuestion } from '@/types/slide.types';
@@ -33,7 +33,7 @@ function buildEmbedUrl(actividad: VideoInteractive): string | null {
   if (plataforma === 'youtube' || (!plataforma && urlVideo.includes('youtu'))) {
     const match = urlVideo.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
     const id = match?.[1];
-    return id ? `https://www.youtube.com/embed/${id}?rel=0` : null;
+    return id ? `https://www.youtube.com/embed/${id}?rel=0&enablejsapi=1` : null;
   }
   if (plataforma === 'vimeo' || (!plataforma && urlVideo.includes('vimeo'))) {
     const match = urlVideo.match(/vimeo\.com\/(\d+)/);
@@ -41,6 +41,19 @@ function buildEmbedUrl(actividad: VideoInteractive): string | null {
     return id ? `https://player.vimeo.com/video/${id}` : null;
   }
   return null; // direct video
+}
+
+function extraerVideoId(url: string): string {
+  // https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([^&?/]+)/);
+  if (watchMatch) return watchMatch[1];
+  // https://youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?&/]+)/);
+  if (shortMatch) return shortMatch[1];
+  // https://www.youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&/]+)/);
+  if (embedMatch) return embedMatch[1];
+  return '';
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
@@ -188,29 +201,157 @@ function QuestionOverlay({
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
+/** Minimal interface for the YouTube IFrame player we need. */
+interface YTPlayer {
+  getCurrentTime(): number;
+  pauseVideo(): void;
+  playVideo(): void;
+}
+
 function ViewerView({ actividad }: { actividad: VideoInteractive }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef    = useRef<HTMLVideoElement>(null);
+  const blockId     = useRef(Math.random().toString(36).slice(2)).current;
+  const ytPlayerRef = useRef<YTPlayer | null>(null);
+  const pollingRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** IDs of questions already shown — never triggers re-render. */
+  const shownQIds   = useRef<Set<string>>(new Set());
+  /** Ref mirror of activeQ so intervals/closures always read the latest value. */
+  const activeQRef  = useRef<VideoQuestion | null>(null);
   const [activeQ, setActiveQ] = useState<VideoQuestion | null>(null);
-  const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
+
   const embedUrl = buildEmbedUrl(actividad);
   const isDirect = !embedUrl;
+  const isYouTube =
+    !isDirect &&
+    (actividad.plataforma === 'youtube' ||
+      (!actividad.plataforma && actividad.urlVideo.includes('youtu')));
 
+  // Keep ref in sync so closures inside intervals/event-handlers are not stale.
+  useEffect(() => { activeQRef.current = activeQ; }, [activeQ]);
+
+  // ── YouTube IFrame API ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isYouTube || actividad.preguntas.length === 0) return;
+
+    function startPolling() {
+      // Campo verificado en slide.types.ts → VideoQuestion.tiempoSegundos (número entero, segundos).
+      if (pollingRef.current) clearInterval(pollingRef.current)
+      pollingRef.current = setInterval(() => {
+        const player = ytPlayerRef.current;
+        // Guard: player must exist and be fully initialised before calling methods.
+        if (!player || typeof player.getCurrentTime !== 'function') return;
+        if (activeQRef.current) return;
+        const t = player.getCurrentTime();
+        const q = actividad.preguntas.find(
+          (q) => !shownQIds.current.has(q.id) && t >= q.tiempoSegundos,
+        );
+        if (q) {
+          shownQIds.current.add(q.id);
+          if (q.pausarVideo !== false) {
+            console.log('[VideoInteractivo] pausando en', t, 'seg — pregunta:', q);
+            player.pauseVideo();
+          }
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          pollingRef.current = null
+          setActiveQ(q);
+        }
+      }, 250);
+    }
+
+    function initPlayer() {
+      const videoId = extraerVideoId(actividad.urlVideo);
+      if (!videoId) return;
+      const container = document.getElementById(`yt-player-${blockId}`);
+      if (!container) {
+        const observer = new MutationObserver(() => {
+          const el = document.getElementById(`yt-player-${blockId}`);
+          if (el) {
+            observer.disconnect();
+            initPlayer();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ytPlayerRef.current = new (window as any).YT.Player(`yt-player-${blockId}`, {
+        videoId,
+        playerVars: {
+          enablejsapi: 1,
+          rel: 0,
+          modestbranding: 1,
+        },
+        events: {
+          onReady: () => {
+            startPolling();
+          },
+          onStateChange: (event: { data: number }) => {
+            const YT_ENDED = 0;
+            const YT_PLAYING = 1;
+            if (event.data === YT_ENDED) {
+              shownQIds.current.clear();
+              setActiveQ(null);
+              activeQRef.current = null;
+              if (pollingRef.current) clearInterval(pollingRef.current);
+              pollingRef.current = null;
+              ytPlayerRef.current?.destroy();
+              ytPlayerRef.current = null;
+              initTimerRef.current = setTimeout(initPlayer, 100);
+            }
+            if (event.data === YT_PLAYING && activeQRef.current === null) {
+              startPolling();
+            }
+          },
+        },
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).YT?.Player) {
+      initPlayer();
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const prev = (window as any).onYouTubeIframeAPIReady as (() => void) | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).onYouTubeIframeAPIReady = () => { prev?.(); initPlayer(); };
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(script);
+      }
+    }
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      pollingRef.current = null;
+      if (initTimerRef.current) clearTimeout(initTimerRef.current);
+      initTimerRef.current = null;
+      ytPlayerRef.current?.destroy();
+      ytPlayerRef.current = null;
+    };
+    // Re-run if preguntas change (from 0 to length > 0) to properly initialize polling
+  }, [isYouTube, actividad.preguntas.length]);
+
+  // ── Direct video time tracking ──────────────────────────────────────────────
   function onTimeUpdate() {
-    if (activeQ) return;
+    if (activeQRef.current) return;
     const t = videoRef.current?.currentTime ?? 0;
     const q = actividad.preguntas.find(
-      (q) => !answeredIds.has(q.id) && Math.abs(t - q.tiempoSegundos) < 0.5,
+      (q) => !shownQIds.current.has(q.id) && t >= q.tiempoSegundos,
     );
     if (q) {
+      shownQIds.current.add(q.id);
       if (q.pausarVideo !== false) videoRef.current?.pause();
       setActiveQ(q);
     }
   }
 
   function dismissQ() {
-    if (activeQ) setAnsweredIds((p) => new Set([...p, activeQ.id]));
     setActiveQ(null);
-    if (isDirect) videoRef.current?.play().catch(() => {});
+    activeQRef.current = null;
+    if (isDirect)   videoRef.current?.play().catch(() => {});
+    if (isYouTube)  ytPlayerRef.current?.playVideo();
   }
 
   return (
@@ -225,9 +366,11 @@ function ViewerView({ actividad }: { actividad: VideoInteractive }) {
             onTimeUpdate={onTimeUpdate}
             className="h-full w-full object-cover"
           />
+        ) : isYouTube ? (
+          <div id={`yt-player-${blockId}`} style={{ width: '100%', aspectRatio: '16/9' }} />
         ) : (
           <iframe
-            src={embedUrl}
+            src={embedUrl ?? undefined}
             title="Video"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -237,8 +380,8 @@ function ViewerView({ actividad }: { actividad: VideoInteractive }) {
         {activeQ && <QuestionOverlay question={activeQ} onDismiss={dismissQ} />}
       </div>
 
-      {/* For embedded videos: show questions list (can't intercept time events) */}
-      {!isDirect && actividad.preguntas.length > 0 && (
+      {/* Non-YouTube embeds (e.g. Vimeo): show static questions list */}
+      {!isDirect && !isYouTube && actividad.preguntas.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-muted-foreground">Preguntas del video</p>
           {actividad.preguntas.map((q) => (
