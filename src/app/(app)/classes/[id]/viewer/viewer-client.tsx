@@ -1,16 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Loader2 } from 'lucide-react';
-import { useClass } from '@/hooks/api/use-class';
+import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
+import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideRenderer } from '../editor/components/slide-renderer';
-import type { Slide } from '@/types/slide.types';
 
 export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [, setSocket] = useState<Socket | null>(null);
+
+  // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
+  const slides = useMemo(() => {
+    const raw = classData?.slides ?? [];
+    const sorted = [...raw].sort((a, b) => a.order - b.order);
+    return sorted.map((s) => classSlideToRendererSlide(s as ApiSlide));
+  }, [classData?.slides]);
+
+  const activeSlide = slides[activeSlideIndex] ?? null;
 
   useEffect(() => {
     const socketInstance = io(
@@ -67,9 +76,6 @@ export function ViewerClient({ id }: { id: string }) {
       </div>
     );
   }
-
-  const slides = (classData.slides ?? []) as Slide[];
-  const activeSlide = slides[activeSlideIndex];
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
