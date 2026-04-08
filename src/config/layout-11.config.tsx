@@ -34,8 +34,8 @@ export const MENU_SIDEBAR: MenuConfig = [
         icon: GraduationCap,
       },
       {
-        title: 'Calificaciones',
-        path: '/gradebook',
+        title: 'Lumina Edu',
+        path: '/edu',
         icon: ClipboardList,
       },
     ],
