@@ -33,4 +33,12 @@ export class ClassesGateway {
   ) {
     client.to(`class-${payload.classId}`).emit('slide-change', payload);
   }
+
+  @SubscribeMessage('student-response')
+  handleStudentResponse(
+    @MessageBody() data: { classId: string; slideIndex: number; activityType: string; response: unknown; studentId?: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.to(`class-${data.classId}`).emit('response-update', data);
+  }
 }
