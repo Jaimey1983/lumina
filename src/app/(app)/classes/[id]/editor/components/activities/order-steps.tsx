@@ -321,20 +321,22 @@ function SortableStep({ id, content, index, showNumbers }: { id: string; content
 
 export function OrderStepsViewer({
   activity,
-  onAnswer,
+  editorSyncKey,
+  onResponse,
 }: {
   activity: OrderStepsLocal;
-  onAnswer?: (order: string[]) => void;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
 }) {
   const [items, setItems] = useState<{ id: string; content: string }[]>([]);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [answered, setAnswered] = useState(false);
 
   useEffect(() => {
     if (!activity?.pasos) return;
     const shuffled = [...activity.pasos].sort(() => Math.random() - 0.5);
     setItems(shuffled.map((s) => ({ id: s.id, content: s.contenido })));
-    setShowFeedback(false);
-  }, [activity?.pasos]);
+    setAnswered(false);
+  }, [activity?.pasos, editorSyncKey]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -344,6 +346,7 @@ export function OrderStepsViewer({
   );
 
   function handleDragEnd(event: DragEndEvent) {
+    if (answered) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setItems((items) => {
@@ -351,21 +354,16 @@ export function OrderStepsViewer({
         const newIndex = items.findIndex((i) => i.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
-      setShowFeedback(false);
     }
   }
 
-  const handleCheck = () => {
-    setShowFeedback(true);
-    if (onAnswer) onAnswer(items.map((i) => i.id));
+  const handleSubmit = () => {
+    if (answered) return;
+    setAnswered(true);
+    onResponse?.(items.map((i) => i.id));
   };
 
   if (!activity) return null;
-
-  const isCorrectOrder = items.every((i, idx) => {
-    const origIndex = activity.pasos.findIndex((p) => p.id === i.id);
-    return origIndex === idx;
-  });
 
   return (
     <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -393,16 +391,15 @@ export function OrderStepsViewer({
         </SortableContext>
       </DndContext>
 
-      <div className="flex items-center justify-between">
-        {showFeedback ? (
-          <div className={cn('text-sm font-medium', isCorrectOrder ? 'text-green-600' : 'text-red-600')}>
-            {isCorrectOrder ? '¡Orden correcto!' : 'El orden no es correcto.'}
-          </div>
-        ) : (
-          <div />
-        )}
-        <Button onClick={handleCheck}>Comprobar</Button>
-      </div>
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit}>Enviar</Button>
+        </div>
+      )}
     </div>
   );
 }

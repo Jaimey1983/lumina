@@ -1,6 +1,7 @@
 'use client';
 
 import { Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import type { ShortAnswerActivity } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -179,6 +180,69 @@ export function ShortAnswerActivityEditor({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+export function ShortAnswerViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+}: {
+  activity: ShortAnswerActivity;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+}) {
+  const [text, setText] = useState('');
+  const [answered, setAnswered] = useState(false);
+
+  useEffect(() => {
+    setAnswered(false);
+    setText('');
+  }, [editorSyncKey]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (answered || !text.trim()) return;
+    setAnswered(true);
+    onResponse?.(text.trim());
+  }
+
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm">
+      <p className="text-base font-medium text-foreground">{activity.question}</p>
+      {activity.hint && (
+        <p className="text-xs text-muted-foreground">💡 {activity.hint}</p>
+      )}
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <textarea
+            className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Escribe tu respuesta aquí…"
+            maxLength={activity.maxLength ?? 200}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          {activity.maxLength && (
+            <p className="text-right text-xs text-muted-foreground">
+              {text.length}/{activity.maxLength}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={!text.trim()}
+            className="self-end rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            Enviar
+          </button>
+        </form>
+      )}
     </div>
   );
 }

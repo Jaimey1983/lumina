@@ -1,13 +1,13 @@
 'use client';
 
-import { LayoutGrid, Palette, Sparkles } from 'lucide-react';
+import { LayoutGrid, Palette, Radio, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type RightPanelId = 'ia' | 'activities' | 'themes';
+export type RightPanelId = 'ia' | 'activities' | 'themes' | 'live';
 
 interface RailItem {
   id: RightPanelId;
@@ -19,6 +19,7 @@ const ITEMS: RailItem[] = [
   { id: 'ia',         label: 'Actividades con IA',       Icon: Sparkles },
   { id: 'activities', label: 'Actividades interactivas',  Icon: LayoutGrid },
   { id: 'themes',     label: 'Temas de diapositivas',    Icon: Palette },
+  { id: 'live',       label: 'Respuestas en vivo',       Icon: Radio },
 ];
 
 // ─── Props ────────────────────────────────────────────────────────────────────

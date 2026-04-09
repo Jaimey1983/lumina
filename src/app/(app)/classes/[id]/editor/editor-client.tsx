@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { io } from 'socket.io-client';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide, usePublishClass } from '@/hooks/api/use-classes';
@@ -229,6 +230,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
   const [showCurricularModal, setShowCurricularModal] = useState(false);
 
+  // ── Live responses from students (keyed by slideId) ────────────────────────
+  const [liveResponses, setLiveResponses] = useState<Map<string, { activityType: string; responses: unknown[] }>>(new Map());
+
   const leftRailWrapRef = useRef<HTMLDivElement>(null);
   const autoOpenedRef = useRef(false);
   const flyoutPanelRef = useRef<HTMLElement>(null);
@@ -303,6 +307,38 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     if (!isConnected) return;
     socketEmit('slide-change', { slideIndex: activeSlideIndex, classId });
   }, [activeSlideIndex, classId, socketEmit, isConnected]);
+
+  // ── Socket: listen for student responses ─────────────────────────────────────
+
+  useEffect(() => {
+    const sock = io(
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+    );
+
+    sock.on('connect', () => {
+      sock.emit('join-class', { classId });
+    });
+
+    sock.on('response-update', (payload: { slideId: string; slideIndex: number; activityType: string; response: unknown }) => {
+      console.log('[editor] response-update received', payload);
+      setLiveResponses((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(payload.slideId);
+        if (existing) {
+          next.set(payload.slideId, { ...existing, responses: [...existing.responses, payload.response] });
+        } else {
+          next.set(payload.slideId, { activityType: payload.activityType, responses: [payload.response] });
+        }
+        return next;
+      });
+    });
+
+    return () => {
+      sock.off('connect');
+      sock.off('response-update');
+      sock.disconnect();
+    };
+  }, [classId]);
 
   // ─── Slides ─────────────────────────────────────────────────────────────────
 
@@ -822,7 +858,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onApplyTheme={handleApplyTheme}
             desempenoEnunciado={desempeno?.enunciado}
             hasActivity={activeSlideHasActivity}
-
+            liveResponses={liveResponses}
+            activeSlideId={activeSlide?.id ?? ''}
+            activeSlideIndex={resolvedSlideIndex}
           />
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}

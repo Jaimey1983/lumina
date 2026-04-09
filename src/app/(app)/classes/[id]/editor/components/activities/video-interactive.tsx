@@ -18,6 +18,8 @@ export type VideoInteractiveActivity = VideoInteractive;
 interface Props {
   actividad: VideoInteractive;
   modo: 'editor' | 'viewer';
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -122,9 +124,11 @@ function EditorView({ actividad }: { actividad: VideoInteractive }) {
 function QuestionOverlay({
   question,
   onDismiss,
+  onAnswer,
 }: {
   question: VideoQuestion;
   onDismiss: () => void;
+  onAnswer?: (answer: unknown) => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
@@ -133,6 +137,7 @@ function QuestionOverlay({
     if (!selected) return;
     const correct = question.opciones.find((o) => o.id === selected)?.esCorrecta ?? false;
     setFeedback({ correct });
+    onAnswer?.(selected);
   }
 
   return (
@@ -206,9 +211,10 @@ interface YTPlayer {
   getCurrentTime(): number;
   pauseVideo(): void;
   playVideo(): void;
+  destroy(): void;
 }
 
-function ViewerView({ actividad }: { actividad: VideoInteractive }) {
+function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: VideoInteractive; editorSyncKey?: string; onResponse?: (response: unknown) => void }) {
   const videoRef    = useRef<HTMLVideoElement>(null);
   const blockId     = useRef(Math.random().toString(36).slice(2)).current;
   const ytPlayerRef = useRef<YTPlayer | null>(null);
@@ -219,6 +225,14 @@ function ViewerView({ actividad }: { actividad: VideoInteractive }) {
   /** Ref mirror of activeQ so intervals/closures always read the latest value. */
   const activeQRef  = useRef<VideoQuestion | null>(null);
   const [activeQ, setActiveQ] = useState<VideoQuestion | null>(null);
+  /** Track answered questions by ID — prevents double-sending. */
+  const [answeredQIds, setAnsweredQIds] = useState<Set<string>>(new Set());
+
+  // Reset answered state when editorSyncKey changes (slide changed)
+  useEffect(() => {
+    setAnsweredQIds(new Set());
+    shownQIds.current.clear();
+  }, [editorSyncKey]);
 
   const embedUrl = buildEmbedUrl(actividad);
   const isDirect = !embedUrl;
@@ -377,7 +391,19 @@ function ViewerView({ actividad }: { actividad: VideoInteractive }) {
             className="absolute inset-0 h-full w-full border-0"
           />
         )}
-        {activeQ && <QuestionOverlay question={activeQ} onDismiss={dismissQ} />}
+        {activeQ && (
+          <QuestionOverlay
+            question={activeQ}
+            onDismiss={dismissQ}
+            onAnswer={(answer) => {
+              if (!answeredQIds.has(activeQ.id)) {
+                const qIndex = actividad.preguntas.findIndex((q) => q.id === activeQ.id);
+                setAnsweredQIds((prev) => new Set(prev).add(activeQ.id));
+                onResponse?.({ questionIndex: qIndex, answer });
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Non-YouTube embeds (e.g. Vimeo): show static questions list */}
@@ -400,10 +426,10 @@ function ViewerView({ actividad }: { actividad: VideoInteractive }) {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export function VideoInteractiveActivity({ actividad, modo }: Props) {
+export function VideoInteractiveActivity({ actividad, modo, editorSyncKey, onResponse }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} />;
+    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} />;
 }
 
 // ─── Named Export Editor ──────────────────────────────────────────────────────

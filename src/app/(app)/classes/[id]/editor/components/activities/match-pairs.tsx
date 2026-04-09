@@ -244,14 +244,16 @@ export function MatchPairsActivityEditor({
 
 export function MatchPairsViewer({
   activity,
-  onAnswer,
+  editorSyncKey,
+  onResponse,
 }: {
   activity: MatchPairs;
-  onAnswer?: (pairs: { leftId: string; rightId: string }[]) => void;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
 }) {
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [matches, setMatches] = useState<{ leftId: string; rightId: string }[]>([]);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [answered, setAnswered] = useState(false);
   const [shuffledRight, setShuffledRight] = useState<{ id: string; text: string }[]>([]);
 
   useEffect(() => {
@@ -259,32 +261,33 @@ export function MatchPairsViewer({
     const rightItems = activity.pares.map((p) => ({ id: p.id, text: p.derecha }));
     setShuffledRight(rightItems.sort(() => Math.random() - 0.5));
     setMatches([]);
-    setShowFeedback(false);
-  }, [activity?.pares]);
+    setAnswered(false);
+  }, [activity?.pares, editorSyncKey]);
 
   const handleLeftClick = (id: string) => {
+    if (answered) return;
     if (selectedLeft === id) setSelectedLeft(null);
     else setSelectedLeft(id);
   };
 
   const handleRightClick = (rightId: string) => {
-    if (!selectedLeft) return;
+    if (!selectedLeft || answered) return;
     setMatches((prev) => {
       const filtered = prev.filter((m) => m.leftId !== selectedLeft && m.rightId !== rightId);
       return [...filtered, { leftId: selectedLeft, rightId }];
     });
     setSelectedLeft(null);
-    setShowFeedback(false);
   };
 
   const removeMatch = (leftId: string) => {
+    if (answered) return;
     setMatches((prev) => prev.filter((m) => m.leftId !== leftId));
-    setShowFeedback(false);
   };
 
-  const handleCheck = () => {
-    setShowFeedback(true);
-    if (onAnswer) onAnswer(matches);
+  const handleSubmit = () => {
+    if (answered) return;
+    setAnswered(true);
+    onResponse?.(matches);
   };
 
   if (!activity) return null;
@@ -303,10 +306,7 @@ export function MatchPairsViewer({
             const isSelected = selectedLeft === p.id;
 
             let feedbackClass = '';
-            if (showFeedback && isMatched) {
-              const match = matches[matchIndex];
-              feedbackClass = match.leftId === match.rightId ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
-            } else if (isSelected) {
+            if (isSelected) {
               feedbackClass = 'border-primary ring-1 ring-primary';
             } else if (isMatched) {
               feedbackClass = 'border-primary/50 bg-primary/5';
@@ -318,7 +318,7 @@ export function MatchPairsViewer({
               <div
                 key={p.id}
                 onClick={() => (!isMatched ? handleLeftClick(p.id) : removeMatch(p.id))}
-                className={cn('flex min-h-[3rem] items-center justify-between rounded-md border p-3 text-sm transition-colors', feedbackClass)}
+                className={cn('flex min-h-[3rem] items-center justify-between rounded-md border p-3 text-sm transition-colors', feedbackClass, answered && 'pointer-events-none')}
               >
                 <span>{p.izquierda}</span>
                 {isMatched && (
@@ -337,10 +337,7 @@ export function MatchPairsViewer({
             const isMatched = matchIndex !== -1;
 
             let feedbackClass = '';
-            if (showFeedback && isMatched) {
-              const match = matches[matchIndex];
-              feedbackClass = match.leftId === match.rightId ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
-            } else if (isMatched) {
+            if (isMatched) {
               feedbackClass = 'border-primary/50 bg-primary/5';
             } else {
               feedbackClass = 'bg-background hover:bg-muted/50 cursor-pointer';
@@ -350,7 +347,7 @@ export function MatchPairsViewer({
               <div
                 key={r.id}
                 onClick={() => !isMatched && handleRightClick(r.id)}
-                className={cn('flex min-h-[3rem] items-center gap-3 rounded-md border p-3 text-sm transition-colors', feedbackClass, !isMatched && !selectedLeft && 'cursor-not-allowed opacity-70')}
+                className={cn('flex min-h-[3rem] items-center gap-3 rounded-md border p-3 text-sm transition-colors', feedbackClass, !isMatched && !selectedLeft && 'cursor-not-allowed opacity-70', answered && 'pointer-events-none')}
               >
                 {isMatched && (
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
@@ -364,11 +361,17 @@ export function MatchPairsViewer({
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleCheck} disabled={matches.length !== activity.pares.length}>
-          Comprobar
-        </Button>
-      </div>
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit} disabled={matches.length !== activity.pares.length}>
+            Enviar
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

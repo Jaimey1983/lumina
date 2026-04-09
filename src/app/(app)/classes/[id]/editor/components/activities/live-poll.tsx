@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, Trash2, Plus } from 'lucide-react';
 
 import type { LivePoll, PollOption } from '@/types/slide.types';
@@ -137,56 +137,77 @@ function EditorView({ actividad }: { actividad: LivePoll }) {
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function ViewerView({ actividad }: { actividad: LivePoll }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const [voted, setVoted] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, number> | null>(null);
-
-  function handleVote() {
-    if (!selected) return;
-    setVoted(selected);
-    setResults(simulateResults(actividad, selected));
-  }
-
-  const hasVoted = !!voted;
-
-  return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
-      <p className="text-sm font-medium leading-snug">{actividad.pregunta}</p>
-
-      <div className="space-y-3">
-        {actividad.opciones.map((op) => (
-          <OptionBar
-            key={op.id}
-            label={op.texto}
-            pct={results?.[op.id] ?? 0}
-            isVoted={voted === op.id}
-            interactive={!hasVoted}
-            selected={selected === op.id}
-            onSelect={() => { if (!hasVoted) setSelected(op.id); }}
-          />
-        ))}
-      </div>
-
-      {!hasVoted ? (
-        <Button size="sm" onClick={handleVote} disabled={!selected}>
-          Votar
-        </Button>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Tu voto ha sido registrado. Resultados simulados localmente.
-        </p>
-      )}
-    </div>
-  );
-}
-
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export function LivePollActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} />;
+    : <EditorView actividad={actividad} />;
+}
+
+// ─── LivePollViewer (con onResponse y answered) ───────────────────────────────
+
+export function LivePollViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+}: {
+  activity: LivePoll;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [answered, setAnswered] = useState(false);
+
+  useEffect(() => {
+    setAnswered(false);
+    setSelected(null);
+  }, [editorSyncKey]);
+
+  function handleVote(index: number) {
+    if (answered) return;
+    setSelected(activity.opciones[index]?.id ?? null);
+    setAnswered(true);
+    onResponse?.(index);
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border p-5">
+      <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
+
+      <div className="space-y-2">
+        {activity.opciones.map((op, idx) => {
+          const isSel = selected === op.id;
+          return (
+            <button
+              key={op.id}
+              type="button"
+              onClick={() => handleVote(idx)}
+              disabled={answered}
+              className={cn(
+                'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                !answered && 'border-border hover:border-primary/50 hover:bg-accent cursor-pointer',
+                answered && isSel && 'border-primary bg-primary/5',
+                answered && !isSel && 'border-border opacity-40',
+              )}
+            >
+              {isSel
+                ? <CheckCircle className="size-3.5 shrink-0 text-primary" />
+                : <span className="size-3.5 shrink-0" />
+              }
+              <span className="flex-1 truncate">{op.texto}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {answered && (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Voto registrado!
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Named Export Editor ──────────────────────────────────────────────────────

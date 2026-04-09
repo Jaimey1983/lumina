@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import type { WordCloud } from '@/types/slide.types';
@@ -208,20 +208,27 @@ export function WordCloudActivityEditor({
 
 export function WordCloudViewer({
   activity,
-  onAnswer,
+  editorSyncKey,
+  onResponse,
 }: {
   activity: WordCloudLocal;
-  onAnswer?: (word: string) => void;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
 }) {
   const [word, setWord] = useState('');
   const [submittedWords, setSubmittedWords] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSubmittedWords([]);
+    setWord('');
+  }, [editorSyncKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!word.trim()) return;
     const cleanWord = word.trim().toUpperCase();
     setSubmittedWords((prev) => [...prev, cleanWord]);
-    if (onAnswer) onAnswer(cleanWord);
+    onResponse?.(cleanWord);
     setWord('');
   };
 

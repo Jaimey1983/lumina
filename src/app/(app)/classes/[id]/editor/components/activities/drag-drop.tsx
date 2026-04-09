@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, GripVertical, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { DragDrop, DragDropItem, DragDropZone } from '@/types/slide.types';
@@ -22,6 +22,8 @@ import { useActivityEditor } from './use-activity-editor';
 interface Props {
   actividad: DragDrop;
   modo: 'editor' | 'viewer';
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
@@ -93,14 +95,18 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function ViewerView({ actividad }: { actividad: DragDrop }) {
+function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragDrop; editorSyncKey?: string; onResponse?: (response: unknown) => void }) {
   // placements: itemId → zoneId | null (null = unplaced)
   const [placements, setPlacements] = useState<Record<string, string | null>>(
     () => Object.fromEntries(actividad.items.map((i) => [i.id, null])),
   );
   const [dragging, setDragging] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
+  const [answered, setAnswered] = useState(false);
+
+  useEffect(() => {
+    setPlacements(Object.fromEntries(actividad.items.map((i) => [i.id, null])));
+    setAnswered(false);
+  }, [editorSyncKey, actividad.items]);
 
   const unplaced = actividad.items.filter((i) => placements[i.id] === null);
 
@@ -118,7 +124,7 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
   function onDropToZone(e: React.DragEvent, zoneId: string) {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('itemId');
-    if (!itemId || submitted) return;
+    if (!itemId || answered) return;
     const zone = actividad.zonas.find((z) => z.id === zoneId);
     if (zone?.capacidadMaxima !== undefined && itemsInZone(zoneId).length >= zone.capacidadMaxima) {
       return;
@@ -130,23 +136,20 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
   function onDropToUnplaced(e: React.DragEvent) {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('itemId');
-    if (!itemId || submitted) return;
+    if (!itemId || answered) return;
     setPlacements((p) => ({ ...p, [itemId]: null }));
     setDragging(null);
   }
 
   function handleSubmit() {
-    const correct = actividad.zonas.every((zone) => {
-      const placed = actividad.items
-        .filter((i) => placements[i.id] === zone.id)
-        .map((i) => i.id);
-      return (
-        placed.length === zone.itemsCorrectos.length &&
-        placed.every((id) => zone.itemsCorrectos.includes(id))
-      );
-    });
-    setIsCorrect(correct);
-    setSubmitted(true);
+    if (answered) return;
+    // Build result: array of { itemId, zoneId }
+    const result = actividad.items.map((i) => ({
+      itemId: i.id,
+      zoneId: placements[i.id],
+    }));
+    setAnswered(true);
+    onResponse?.(result);
   }
 
   return (
@@ -159,7 +162,7 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
         onDrop={onDropToUnplaced}
         className={cn(
           'min-h-12 rounded-md border-2 border-dashed p-3 transition-colors',
-          dragging && !submitted ? 'border-primary/50 bg-primary/5' : 'border-border',
+          dragging && !answered ? 'border-primary/50 bg-primary/5' : 'border-border',
         )}
       >
         <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -169,11 +172,12 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
           {unplaced.map((item) => (
             <div
               key={item.id}
-              draggable={!submitted}
+              draggable={!answered}
               onDragStart={(e) => onDragStart(e, item.id)}
               onDragEnd={onDragEnd}
               className={cn(
                 'flex cursor-grab items-center gap-1 rounded-md bg-muted px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                answered && 'cursor-default',
                 dragging === item.id && 'opacity-40',
               )}
             >
@@ -193,11 +197,8 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
       <div className="grid grid-cols-2 gap-3">
         {actividad.zonas.map((zone) => {
           const placed = itemsInZone(zone.id);
-          const zoneCorrect =
-            submitted &&
-            placed.length === zone.itemsCorrectos.length &&
-            placed.every((i) => zone.itemsCorrectos.includes(i.id));
-          const zoneWrong = submitted && !zoneCorrect;
+          const zoneCorrect = false;
+          const zoneWrong = false;
 
           return (
             <div
@@ -206,8 +207,8 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
               onDrop={(e) => onDropToZone(e, zone.id)}
               className={cn(
                 'rounded-md border-2 border-dashed p-3 transition-colors',
-                !submitted && dragging  && 'border-primary/40 bg-primary/5',
-                !submitted && !dragging && 'border-border',
+                !answered && dragging  && 'border-primary/40 bg-primary/5',
+                !answered && !dragging && 'border-border',
                 zoneCorrect && 'border-green-400 bg-green-50 dark:bg-green-950/20',
                 zoneWrong   && 'border-red-400 bg-red-50 dark:bg-red-950/20',
               )}
@@ -221,12 +222,12 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
                 {placed.map((item) => (
                   <div
                     key={item.id}
-                    draggable={!submitted}
+                    draggable={!answered}
                     onDragStart={(e) => onDragStart(e, item.id)}
                     onDragEnd={onDragEnd}
                     className={cn(
                       'flex cursor-grab items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
-                      submitted ? 'bg-white/80 dark:bg-white/10' : 'bg-background shadow-sm',
+                      answered ? 'bg-white/80 dark:bg-white/10' : 'bg-background shadow-sm',
                       dragging === item.id && 'opacity-40',
                     )}
                   >
@@ -243,26 +244,17 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
         })}
       </div>
 
-      {!submitted ? (
+      {!answered ? (
         <Button
           size="sm"
           onClick={handleSubmit}
           disabled={unplaced.length > 0}
         >
-          Comprobar
+          Enviar
         </Button>
       ) : (
-        <div
-          className={cn(
-            'rounded-md px-3 py-2 text-sm',
-            isCorrect
-              ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300'
-              : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300',
-          )}
-        >
-          {isCorrect
-            ? (actividad.retroalimentacion?.correcto ?? '¡Excelente! Todos los elementos están bien ubicados.')
-            : (actividad.retroalimentacion?.incorrecto ?? 'Hay errores en la distribución. Revisa las zonas marcadas en rojo.')}
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Respuesta enviada!
         </div>
       )}
     </div>
@@ -271,10 +263,10 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export function DragDropActivity({ actividad, modo }: Props) {
+export function DragDropActivity({ actividad, modo, editorSyncKey, onResponse }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} />;
+    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} />;
 }
 
 // ─── Activity Editor ──────────────────────────────────────────────────────────

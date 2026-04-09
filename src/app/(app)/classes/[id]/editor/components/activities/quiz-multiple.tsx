@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, Circle, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { QuizMultiple, QuizOption } from '@/types/slide.types';
@@ -182,6 +182,70 @@ export function QuizMultipleActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── QuizMultipleViewer (con onResponse y answered) ───────────────────────────
+
+export function QuizMultipleViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+}: {
+  activity: QuizMultiple;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [answered, setAnswered] = useState(false);
+
+  useEffect(() => {
+    setAnswered(false);
+    setSelected(null);
+  }, [editorSyncKey]);
+
+  function handleSelect(index: number) {
+    if (answered) return;
+    setSelected(activity.opciones[index]?.id ?? null);
+    setAnswered(true);
+    onResponse?.(index);
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border p-5">
+      <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
+      <ul className="space-y-2">
+        {activity.opciones.map((op, idx) => {
+          const isSel = selected === op.id;
+          return (
+            <li key={op.id}>
+              <button
+                type="button"
+                onClick={() => handleSelect(idx)}
+                disabled={answered}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
+                  !answered && 'border-border hover:border-primary/50 hover:bg-accent',
+                  answered && isSel && 'border-primary bg-primary/5',
+                  answered && !isSel && 'border-border opacity-40',
+                )}
+              >
+                {isSel
+                  ? <CheckCircle className="size-4 shrink-0 text-primary" />
+                  : <Circle className="size-4 shrink-0 text-muted-foreground/40" />
+                }
+                {op.texto}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {answered && (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Activity Editor ──────────────────────────────────────────────────────────

@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Loader2 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideRenderer } from '../editor/components/slide-renderer';
+import type { Block } from '@/types/slide.types';
 
 export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [, setSocket] = useState<Socket | null>(null);
+  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -32,27 +33,53 @@ export function ViewerClient({ id }: { id: string }) {
   }, []);
 
   useEffect(() => {
-    const socketInstance = io(
+    const sock = io(
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
     );
-    setSocket(socketInstance);
+    setSocketInstance(sock);
 
-    socketInstance.on('connect', () => {
-      socketInstance.emit('join-class', { classId: id });
+    sock.on('connect', () => {
+      sock.emit('join-class', { classId: id });
     });
 
-    socketInstance.on('slide-change', (payload: { slideIndex: number; classId: string }) => {
+    sock.on('slide-change', (payload: { slideIndex: number; classId: string }) => {
       setActiveSlideIndex(payload.slideIndex);
     });
 
-    socketInstance.on('activity-answer', (_answerData: unknown) => {
+    sock.on('activity-answer', (_answerData: unknown) => {
       // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
 
     return () => {
-      socketInstance.disconnect();
+      sock.off('connect');
+      sock.off('slide-change');
+      sock.off('activity-answer');
+      sock.disconnect();
     };
   }, [id]);
+
+  // ── Build the onResponse callback for activity components ───────────────────
+  const handleResponse = useCallback(
+    (response: unknown) => {
+      if (!socketInstance || !activeSlide) return;
+
+      // Find the activity block to determine its type
+      const blocks = activeSlide.bloques ?? [];
+      const actBlock = blocks.find((b: Block) => b.tipo === 'actividad');
+      if (!actBlock || actBlock.tipo !== 'actividad') return;
+
+      const payload = {
+        classId: id,
+        slideId: activeSlide.id,
+        slideIndex: activeSlideIndex,
+        activityType: actBlock.actividad.tipo,
+        response,
+      };
+      console.log('[viewer] emitting student-response', payload);
+      socketInstance.emit('student-response', payload);
+    },
+    [socketInstance, activeSlide, id, activeSlideIndex],
+  );
 
   if (isLoading) {
     return (
@@ -92,7 +119,11 @@ export function ViewerClient({ id }: { id: string }) {
       <main className="relative flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
         {activeSlide ? (
           <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">
-            <SlideRenderer slide={activeSlide} modo="viewer" />
+            <SlideRenderer
+              slide={activeSlide}
+              modo="viewer"
+              onResponse={handleResponse}
+            />
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { FillBlanks, FillBlank } from '@/types/slide.types';
@@ -233,13 +233,20 @@ export function FillBlanksActivityEditor({
 
 export function FillBlanksViewer({
   activity,
-  onAnswer,
+  editorSyncKey,
+  onResponse,
 }: {
   activity: FillBlanks;
-  onAnswer?: (answers: string[]) => void;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [answered, setAnswered] = useState(false);
+
+  useEffect(() => {
+    setAnswered(false);
+    setAnswers({});
+  }, [editorSyncKey]);
 
   const regex = /\{\{blank:([^}]+)\}\}/g;
   const parts: React.ReactNode[] = [];
@@ -250,23 +257,16 @@ export function FillBlanksViewer({
   matches.forEach((m) => {
     parts.push(text.slice(lastIndex, m.index));
     const id = m[1];
-    const blank = activity.blancos.find((b) => b.id === id);
-    
-    let borderClass = 'border-input';
-    if (showFeedback && blank) {
-      const isCorrect = answers[id]?.trim().toLowerCase() === blank.respuesta.trim().toLowerCase();
-      borderClass = isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
-    }
 
     parts.push(
       <input
         key={id}
         type="text"
-        className={`mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm ${borderClass} focus:outline-none focus:ring-2 focus:ring-ring`}
+        className={`mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm border-input focus:outline-none focus:ring-2 focus:ring-ring`}
         value={answers[id] || ''}
+        disabled={answered}
         onChange={(e) => {
           setAnswers((prev) => ({ ...prev, [id]: e.target.value }));
-          setShowFeedback(false);
         }}
       />
     );
@@ -274,12 +274,11 @@ export function FillBlanksViewer({
   });
   parts.push(text.slice(lastIndex));
 
-  const handleCheck = () => {
-    setShowFeedback(true);
-    if (onAnswer) {
-      const orderedAnswers = matches.map((m) => answers[m[1]] || '');
-      onAnswer(orderedAnswers);
-    }
+  const handleSubmit = () => {
+    if (answered) return;
+    setAnswered(true);
+    const orderedAnswers = matches.map((m) => answers[m[1]] || '');
+    onResponse?.(orderedAnswers.join(', '));
   };
 
   return (
@@ -287,9 +286,15 @@ export function FillBlanksViewer({
       <div className="text-base font-medium leading-relaxed text-foreground">
         {parts}
       </div>
-      <div className="flex justify-end">
-        <Button onClick={handleCheck}>Comprobar</Button>
-      </div>
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit}>Enviar</Button>
+        </div>
+      )}
     </div>
   );
 }

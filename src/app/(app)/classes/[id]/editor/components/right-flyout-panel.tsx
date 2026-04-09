@@ -10,6 +10,7 @@ import type { ActivityType } from './panels/activities-panel';
 import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import { ActivitiesPanel } from './panels/activities-panel';
 import { ThemesPanel } from './panels/themes-panel';
+import { LiveResponsesPanel } from './panels/live-responses-panel';
 
 // ─── Panel labels ─────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const PANEL_LABELS: Record<RightPanelId, string> = {
   ia:         'Actividades con IA',
   activities: 'Actividades',
   themes:     'Temas',
+  live:       'En vivo',
 };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -28,6 +30,9 @@ export interface RightFlyoutPanelProps {
   onApplyTheme: (bg: string) => void;
   desempenoEnunciado?: string;
   hasActivity?: boolean;
+  liveResponses?: Map<string, { activityType: string; responses: unknown[] }>;
+  activeSlideId?: string;
+  activeSlideIndex?: number;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -41,6 +46,9 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       onApplyTheme,
       desempenoEnunciado,
       hasActivity,
+      liveResponses,
+      activeSlideId,
+      activeSlideIndex,
     },
     ref,
   ) {
@@ -90,6 +98,13 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
             )}
             {activePanel === 'themes' && (
               <ThemesPanel onApplyTheme={onApplyTheme} />
+            )}
+            {activePanel === 'live' && (
+              <LiveResponsesPanel
+                liveResponses={liveResponses ?? new Map()}
+                activeSlideId={activeSlideId ?? ''}
+                activeSlideIndex={activeSlideIndex ?? 0}
+              />
             )}
           </div>
 

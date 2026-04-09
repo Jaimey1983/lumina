@@ -23,16 +23,16 @@ import type {
 } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
 
-import { ShortAnswerActivityEditor } from './activities/short-answer';
+import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
 import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
 import { MatchPairsActivityEditor, MatchPairsViewer } from './activities/match-pairs';
 import { OrderStepsActivityEditor, OrderStepsViewer } from './activities/order-steps';
 import { WordCloudActivityEditor, WordCloudViewer } from './activities/word-cloud';
-import { QuizMultipleActivityEditor } from './activities/quiz-multiple';
-import { TrueFalseActivityEditor } from './activities/true-false';
+import { QuizMultipleActivityEditor, QuizMultipleViewer } from './activities/quiz-multiple';
+import { TrueFalseActivityEditor, TrueFalseViewer } from './activities/true-false';
 import { DragDropActivity, DragDropActivityEditor } from './activities/drag-drop';
 import { VideoInteractiveActivity, VideoInteractiveActivityEditor } from './activities/video-interactive';
-import { LivePollActivity, LivePollActivityEditor } from './activities/live-poll';
+import { LivePollActivityEditor, LivePollViewer } from './activities/live-poll';
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
   if (!block.marco) return block;
@@ -390,6 +390,7 @@ function RenderActivity({
   activityCanvasLayout,
   onActivityChange,
   onRemoveBlock,
+  onResponse,
 }: {
   block: ActivityBlock;
   blockId: string;
@@ -400,14 +401,17 @@ function RenderActivity({
   activityCanvasLayout?: boolean;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
+  /** Callback emitido por el estudiante al responder (solo modo viewer). */
+  onResponse?: (response: unknown) => void;
 }) {
   const act = block.actividad;
+  const syncKey = `${slideId}-${blockId}`;
 
   if (act.tipo === 'short_answer') {
     if (modo === 'editor') {
       return (
         <ShortAnswerActivityEditor
-          editorSyncKey={`${slideId}-${blockId}`}
+          editorSyncKey={syncKey}
           activity={act}
           canvasLayout={!!activityCanvasLayout}
           isSelected={isSelected}
@@ -416,33 +420,14 @@ function RenderActivity({
         />
       );
     }
-    // VIEWER
-    return (
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <p className="text-base font-medium text-foreground">{act.question}</p>
-        {act.hint && (
-          <p className="text-xs text-muted-foreground">💡 {act.hint}</p>
-        )}
-        <textarea
-          className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          placeholder="Escribe tu respuesta aquí…"
-          maxLength={act.maxLength ?? 200}
-          readOnly
-        />
-        {act.maxLength && (
-          <p className="text-right text-xs text-muted-foreground">
-            Máx. {act.maxLength} caracteres
-          </p>
-        )}
-      </div>
-    );
+    return <ShortAnswerViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'quiz_multiple') {
     if (modo === 'editor') {
       return (
         <QuizMultipleActivityEditor
-          editorSyncKey={`${slideId}-${blockId}`}
+          editorSyncKey={syncKey}
           activity={act}
           canvasLayout={!!activityCanvasLayout}
           isSelected={isSelected}
@@ -451,13 +436,14 @@ function RenderActivity({
         />
       );
     }
+    return <QuizMultipleViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'verdadero_falso') {
     if (modo === 'editor') {
       return (
         <TrueFalseActivityEditor
-          editorSyncKey={`${slideId}-${blockId}`}
+          editorSyncKey={syncKey}
           activity={act}
           canvasLayout={!!activityCanvasLayout}
           isSelected={isSelected}
@@ -466,13 +452,14 @@ function RenderActivity({
         />
       );
     }
+    return <TrueFalseViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'arrastrar_soltar') {
     if (modo === 'editor') {
       return (
         <DragDropActivityEditor
-          editorSyncKey={`${slideId}-${blockId}`}
+          editorSyncKey={syncKey}
           activity={act}
           canvasLayout={!!activityCanvasLayout}
           isSelected={isSelected}
@@ -481,7 +468,7 @@ function RenderActivity({
         />
       );
     }
-    return <DragDropActivity actividad={act} modo="viewer" />;
+    return <DragDropActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'completar_blancos') {
@@ -493,7 +480,7 @@ function RenderActivity({
         />
       );
     }
-    return <FillBlanksViewer activity={act} />;
+    return <FillBlanksViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'emparejar') {
@@ -505,7 +492,7 @@ function RenderActivity({
         />
       );
     }
-    return <MatchPairsViewer activity={act} />;
+    return <MatchPairsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'ordenar_pasos') {
@@ -517,7 +504,7 @@ function RenderActivity({
         />
       );
     }
-    return <OrderStepsViewer activity={act} />;
+    return <OrderStepsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'nube_palabras') {
@@ -529,36 +516,36 @@ function RenderActivity({
         />
       );
     }
-    return <WordCloudViewer activity={act} />;
+    return <WordCloudViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'video_interactivo') {
     if (modo === 'editor') {
       return (
         <VideoInteractiveActivityEditor
-          editorSyncKey={`${slideId}-${blockId}`}
+          editorSyncKey={syncKey}
           activity={act}
           onChange={(updated) => onActivityChange?.(blockId, updated)}
         />
       );
     }
-    return <VideoInteractiveActivity actividad={act} modo="viewer" />;
+    return <VideoInteractiveActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
   if (act.tipo === 'encuesta_viva') {
     if (modo === 'editor') {
       return (
         <LivePollActivityEditor
-          editorSyncKey={`${slideId}-${blockId}`}
+          editorSyncKey={syncKey}
           activity={act}
           onChange={(updated) => onActivityChange?.(blockId, updated)}
         />
       );
     }
-    return <LivePollActivity actividad={act} modo="viewer" />;
+    return <LivePollViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
   }
 
-  const label = ACTIVITY_LABELS[act.tipo];
+  const label = ACTIVITY_LABELS[(act as { tipo: keyof typeof ACTIVITY_LABELS }).tipo];
   return (
     <div
       style={{
@@ -592,6 +579,7 @@ interface RenderColumnsProps {
   pathPrefix: string;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
+  onResponse?: (response: unknown) => void;
 }
 
 function RenderColumns({
@@ -603,6 +591,7 @@ function RenderColumns({
   pathPrefix,
   onActivityChange,
   onRemoveBlock,
+  onResponse,
 }: RenderColumnsProps) {
   let gridCols = `repeat(${block.columnas.length}, 1fr)`;
   if (block.proporcion) {
@@ -642,6 +631,7 @@ function RenderColumns({
                 pathPrefix={id}
                 onActivityChange={onActivityChange}
                 onRemoveBlock={onRemoveBlock}
+                onResponse={onResponse}
               />
             );
           })}
@@ -667,6 +657,8 @@ interface BlockNodeProps {
   onRemoveBlock?: (blockId: string) => void;
   /** Slide dedicado a actividad(es): el editor de respuesta corta usa layout de lienzo acotado. */
   activityCanvasLayout?: boolean;
+  /** Callback emitido por el estudiante al responder (solo modo viewer). */
+  onResponse?: (response: unknown) => void;
 }
 
 function BlockNode({
@@ -682,6 +674,7 @@ function BlockNode({
   onActivityChange,
   onRemoveBlock,
   activityCanvasLayout,
+  onResponse,
 }: BlockNodeProps) {
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
@@ -703,6 +696,7 @@ function BlockNode({
             activityCanvasLayout={activityCanvasLayout}
             onActivityChange={onActivityChange}
             onRemoveBlock={onRemoveBlock}
+            onResponse={onResponse}
           />
         ) : null;
       case 'codigo':    return <RenderCode block={block} />;
@@ -720,6 +714,7 @@ function BlockNode({
             pathPrefix={pathPrefix}
             onActivityChange={onActivityChange}
             onRemoveBlock={onRemoveBlock}
+            onResponse={onResponse}
           />
         );
     }
@@ -786,6 +781,8 @@ export interface SlideRendererProps {
   onActivityChange?: (blockId: string, activity: Activity) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
+  /** Callback emitido por el estudiante al responder una actividad (solo modo viewer). */
+  onResponse?: (response: unknown) => void;
   className?: string;
 }
 
@@ -795,6 +792,7 @@ export function SlideRenderer({
   onBlockSelect,
   onActivityChange,
   onRemoveBlock,
+  onResponse,
   className,
 }: SlideRendererProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -842,6 +840,7 @@ export function SlideRenderer({
                   pathPrefix={blockId}
                   onActivityChange={onActivityChange}
                   onRemoveBlock={onRemoveBlock}
+                  onResponse={onResponse}
                 />
               );
             })}
@@ -862,6 +861,7 @@ export function SlideRenderer({
                   pathPrefix={blockId}
                   onActivityChange={onActivityChange}
                   onRemoveBlock={onRemoveBlock}
+                  onResponse={onResponse}
                   activityCanvasLayout
                 />
               );
@@ -886,6 +886,7 @@ export function SlideRenderer({
                 pathPrefix={blockId}
                 onActivityChange={onActivityChange}
                 onRemoveBlock={onRemoveBlock}
+                onResponse={onResponse}
               />
             );
           })}
