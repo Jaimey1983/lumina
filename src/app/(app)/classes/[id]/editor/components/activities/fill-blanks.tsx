@@ -277,8 +277,12 @@ export function FillBlanksViewer({
   const handleSubmit = () => {
     if (answered) return;
     setAnswered(true);
-    const orderedAnswers = matches.map((m) => answers[m[1]] || '');
-    onResponse?.(orderedAnswers.join(', '));
+    // Emit Record<string, string>: blankId → given answer
+    const result: Record<string, string> = {};
+    matches.forEach((m) => {
+      result[m[1]] = answers[m[1]] ?? '';
+    });
+    onResponse?.(result);
   };
 
   return (

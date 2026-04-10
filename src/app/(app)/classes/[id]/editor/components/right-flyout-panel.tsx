@@ -10,7 +10,10 @@ import type { ActivityType } from './panels/activities-panel';
 import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import { ActivitiesPanel } from './panels/activities-panel';
 import { ThemesPanel } from './panels/themes-panel';
-import { LiveResponsesPanel } from './panels/live-responses-panel';
+import {
+  LiveResponsesPanel,
+  type StudentResponse,
+} from './panels/live-responses-panel';
 
 // ─── Panel labels ─────────────────────────────────────────────────────────────
 
@@ -30,7 +33,7 @@ export interface RightFlyoutPanelProps {
   onApplyTheme: (bg: string) => void;
   desempenoEnunciado?: string;
   hasActivity?: boolean;
-  liveResponses?: Map<string, { activityType: string; responses: unknown[] }>;
+  liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
   activeSlideId?: string;
   activeSlideIndex?: number;
 }

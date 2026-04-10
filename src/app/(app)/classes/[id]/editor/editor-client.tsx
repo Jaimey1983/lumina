@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide, usePublishClass } from '@/hooks/api/use-classes';
@@ -28,6 +28,7 @@ import { CanvasArea } from './components/canvas-area';
 import { RightRail, type RightPanelId } from './components/right-rail';
 import { RightFlyoutPanel } from './components/right-flyout-panel';
 import type { ActivityType } from './components/panels/activities-panel';
+import type { StudentResponse } from './components/panels/live-responses-panel';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -231,7 +232,31 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [showCurricularModal, setShowCurricularModal] = useState(false);
 
   // ── Live responses from students (keyed by slideId) ────────────────────────
-  const [liveResponses, setLiveResponses] = useState<Map<string, { activityType: string; responses: unknown[] }>>(new Map());
+  const [liveResponses, setLiveResponses] = useState<
+    Map<string, { activityType: string; responses: StudentResponse[] }>
+  >(() => {
+    try {
+      const raw = sessionStorage.getItem(`lumina-live-responses-${classId}`);
+      if (raw) {
+        return new Map(
+          JSON.parse(raw) as [string, { activityType: string; responses: StudentResponse[] }][],
+        );
+      }
+    } catch { /* ignore */ }
+    return new Map();
+  });
+
+  // Persist live responses to sessionStorage on every change (survives hard refresh)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        `lumina-live-responses-${classId}`,
+        JSON.stringify([...liveResponses]),
+      );
+    } catch { /* ignore */ }
+  }, [liveResponses, classId]);
+
+  const socketRef = useRef<Socket | null>(null);
 
   const leftRailWrapRef = useRef<HTMLDivElement>(null);
   const autoOpenedRef = useRef(false);
@@ -311,24 +336,74 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   // ── Socket: listen for student responses ─────────────────────────────────────
 
   useEffect(() => {
+    if (socketRef.current?.connected) return; // already connected, skip
     const sock = io(
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
     );
+    socketRef.current = sock;
 
     sock.on('connect', () => {
       sock.emit('join-class', { classId });
     });
 
-    sock.on('response-update', (payload: { slideId: string; slideIndex: number; activityType: string; response: unknown }) => {
+    sock.on('response-update', (payload: {
+      slideId: string;
+      slideIndex: number;
+      activityType: string;
+      studentId: string;
+      correct: boolean | null;
+      details?: { label: string; correct: boolean | null }[];
+      response: unknown;
+    }) => {
       console.log('[editor] response-update received', payload);
       setLiveResponses((prev) => {
         const next = new Map(prev);
-        const existing = next.get(payload.slideId);
-        if (existing) {
-          next.set(payload.slideId, { ...existing, responses: [...existing.responses, payload.response] });
+        const existing = next.get(payload.slideId) ?? {
+          activityType: payload.activityType,
+          responses: [] as StudentResponse[],
+        };
+
+        const existingIndex = existing.responses.findIndex(
+          (r) => r.studentId === payload.studentId,
+        );
+
+        let updatedResponses: StudentResponse[];
+        if (existingIndex >= 0) {
+          // Update existing entry — accumulate details (video_interactivo fires one per question)
+          const prevEntry = existing.responses[existingIndex]!;
+          const mergedDetails = payload.details
+            ? [...(prevEntry.details ?? []), ...payload.details]
+            : prevEntry.details;
+          // Derive correct from accumulated details; fall back to payload.correct if no details
+          const mergedCorrect: boolean | null = mergedDetails
+            ? mergedDetails.every((d) => d.correct === true)
+              ? true
+              : mergedDetails.some((d) => d.correct === false)
+                ? false
+                : null
+            : payload.correct;
+          updatedResponses = existing.responses.map((r, i) =>
+            i === existingIndex
+              ? { ...r, correct: mergedCorrect, details: mergedDetails }
+              : r,
+          );
         } else {
-          next.set(payload.slideId, { activityType: payload.activityType, responses: [payload.response] });
+          // New entry for this student
+          updatedResponses = [
+            ...existing.responses,
+            {
+              studentId: payload.studentId,
+              correct: payload.correct,
+              activityType: payload.activityType,
+              details: payload.details,
+            },
+          ];
         }
+
+        next.set(payload.slideId, {
+          activityType: payload.activityType,
+          responses: updatedResponses,
+        });
         return next;
       });
     });
@@ -337,6 +412,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       sock.off('connect');
       sock.off('response-update');
       sock.disconnect();
+      socketRef.current = null;
     };
   }, [classId]);
 
@@ -696,21 +772,17 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           <div className="h-5 w-px bg-border" />
 
           {/* Título + desempeño — flex-1 */}
-          <div className="flex min-w-0 flex-1 flex-col px-3">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-3">
             {isLoading ? (
               <Skeleton className="h-4 w-48" />
             ) : (
               <>
-                <p className={cn('truncate text-sm font-semibold leading-tight')}>
+                <p
+                  className={cn('truncate text-sm font-semibold leading-tight')}
+                  title={desempeno ? desempeno.enunciado : undefined}
+                >
                   {cls?.title ?? 'Editor'}
                 </p>
-                {desempeno && (
-                  <p className="max-w-sm truncate text-xs text-muted-foreground">
-                    {desempeno.enunciado.length > 80
-                      ? desempeno.enunciado.slice(0, 80) + '…'
-                      : desempeno.enunciado}
-                  </p>
-                )}
               </>
             )}
           </div>

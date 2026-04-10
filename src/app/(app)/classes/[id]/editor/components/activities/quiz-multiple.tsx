@@ -205,9 +205,11 @@ export function QuizMultipleViewer({
 
   function handleSelect(index: number) {
     if (answered) return;
-    setSelected(activity.opciones[index]?.id ?? null);
+    const optionId = activity.opciones[index]?.id ?? null;
+    if (!optionId) return;
+    setSelected(optionId);
     setAnswered(true);
-    onResponse?.(index);
+    onResponse?.(optionId);
   }
 
   return (

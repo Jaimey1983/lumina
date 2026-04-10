@@ -232,6 +232,8 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
   useEffect(() => {
     setAnsweredQIds(new Set());
     shownQIds.current.clear();
+    setActiveQ(null);
+    activeQRef.current = null;
   }, [editorSyncKey]);
 
   const embedUrl = buildEmbedUrl(actividad);
@@ -262,12 +264,11 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
         );
         if (q) {
           shownQIds.current.add(q.id);
+          activeQRef.current = q; // bloquea nuevas preguntas inmediatamente sin detener el intervalo
           if (q.pausarVideo !== false) {
             console.log('[VideoInteractivo] pausando en', t, 'seg — pregunta:', q);
             player.pauseVideo();
           }
-          if (pollingRef.current) clearInterval(pollingRef.current)
-          pollingRef.current = null
           setActiveQ(q);
         }
       }, 250);
@@ -344,8 +345,8 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
       ytPlayerRef.current?.destroy();
       ytPlayerRef.current = null;
     };
-    // Re-run if preguntas change (from 0 to length > 0) to properly initialize polling
-  }, [isYouTube, actividad.preguntas.length]);
+    // Re-run si cambia el número de preguntas o la URL del video para reinicializar el player
+  }, [isYouTube, actividad.preguntas.length, actividad.urlVideo]);
 
   // ── Direct video time tracking ──────────────────────────────────────────────
   function onTimeUpdate() {
@@ -356,6 +357,7 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
     );
     if (q) {
       shownQIds.current.add(q.id);
+      activeQRef.current = q; // bloquea nuevas preguntas inmediatamente
       if (q.pausarVideo !== false) videoRef.current?.pause();
       setActiveQ(q);
     }

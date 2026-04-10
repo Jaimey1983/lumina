@@ -1,30 +1,32 @@
 'use client';
 
-import { Users } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ChevronDown, ChevronUp, Users, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface StudentResponse {
+  studentId: string;
+  correct: boolean | null;
+  activityType: string;
+  details?: { label: string; correct: boolean | null }[];
+}
 
 export interface LiveResponsesPanelProps {
-  liveResponses: Map<string, { activityType: string; responses: unknown[] }>;
+  liveResponses: Map<string, { activityType: string; responses: StudentResponse[] }>;
   activeSlideId: string;
   activeSlideIndex: number;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function isPrimitive(v: unknown): v is string | number | boolean {
-  return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
+function getStudentBadge(studentId: string): string {
+  const match = studentId.match(/(\d+)$/);
+  return match ? `E${match[1]}` : studentId.slice(0, 2).toUpperCase();
 }
 
-function formatResponse(v: unknown): string {
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number') return String(v);
-  if (typeof v === 'boolean') return v ? 'Verdadero' : 'Falso';
-  if (Array.isArray(v)) return v.map(formatResponse).join(', ');
-  if (v && typeof v === 'object') return JSON.stringify(v);
-  return String(v);
-}
+const NON_EVALUABLE = new Set(['encuesta_viva', 'nube_palabras']);
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -33,118 +35,150 @@ export function LiveResponsesPanel({
   activeSlideId,
   activeSlideIndex,
 }: LiveResponsesPanelProps) {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
   const entry = liveResponses.get(activeSlideId);
   const responses = entry?.responses ?? [];
-  const totalAll = Array.from(liveResponses.values()).reduce((sum, e) => sum + e.responses.length, 0);
+  const activityType = entry?.activityType ?? '';
+  const isNonEvaluable = NON_EVALUABLE.has(activityType);
+
+  function toggleExpand(studentId: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+  }
+
+  const uniqueResponses = responses.filter(
+    (r, index, self) => index === self.findIndex(t => t.studentId === r.studentId)
+  );
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      {/* Summary banner */}
+
+      {/* Banner */}
       <div className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2">
-        <Users className="size-4 text-primary" />
-        <div className="flex-1 text-xs">
+        <Users className="size-4 shrink-0 text-primary" />
+        <span className="text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">{responses.length}</span>
-          <span className="text-muted-foreground"> en este slide</span>
-          <span className="mx-1.5 text-border">|</span>
-          <span className="font-semibold text-foreground">{totalAll}</span>
-          <span className="text-muted-foreground"> total</span>
-        </div>
+          {' '}estudiante{responses.length !== 1 ? 's' : ''} respondieron
+        </span>
       </div>
 
-      {/* Slide indicator */}
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Slide {activeSlideIndex + 1} — Respuestas
       </p>
 
-      {/* Activity type badge */}
-      {entry?.activityType && (
+      {activityType && (
         <span className="self-start rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {entry.activityType}
+          {activityType}
         </span>
       )}
 
-      {/* Responses list */}
       {responses.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
           <div className="flex size-10 items-center justify-center rounded-full bg-muted">
             <Users className="size-5 text-muted-foreground" />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Sin respuestas aún.
-          </p>
+          <p className="text-xs text-muted-foreground">Sin respuestas aún.</p>
           <p className="text-[10px] text-muted-foreground/60">
-            Las respuestas de los estudiantes aparecerán aquí en tiempo real.
+            Las respuestas aparecerán aquí en tiempo real.
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {responses.map((resp, idx) => (
-            <div
-              key={idx}
-              className={cn(
-                'flex items-start gap-2 rounded-md border border-border bg-card p-2 text-xs',
-                'animate-in fade-in-0 slide-in-from-top-1 duration-200',
-              )}
-            >
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[9px] font-bold text-primary tabular-nums">
-                {idx + 1}
-              </span>
-              <span className="min-w-0 flex-1 break-words text-foreground">
-                {isPrimitive(resp) ? (
-                  <span>{formatResponse(resp)}</span>
-                ) : (
-                  <code className="text-[10px] text-muted-foreground">
-                    {formatResponse(resp)}
-                  </code>
+          {uniqueResponses.map((resp) => {
+            const isExpanded = expandedIds.has(resp.studentId);
+            const hasDetails = (resp.details?.length ?? 0) > 0;
+            const globalCorrect = isNonEvaluable ? null : resp.correct;
+
+            return (
+              <div
+                key={resp.studentId}
+                className={cn(
+                  'overflow-hidden rounded-md border border-border bg-card text-xs',
+                  'animate-in fade-in-0 slide-in-from-top-1 duration-200',
                 )}
-              </span>
-            </div>
-          ))}
+              >
+                {/* Row header — always visible */}
+                <button
+                  type="button"
+                  onClick={() => hasDetails && toggleExpand(resp.studentId)}
+                  className={cn(
+                    'flex w-full items-center gap-2 p-2 text-left',
+                    hasDetails
+                      ? 'cursor-pointer hover:bg-muted/40'
+                      : 'cursor-default',
+                  )}
+                >
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary tabular-nums">
+                    {getStudentBadge(resp.studentId)}
+                  </span>
+
+                  <span className="min-w-0 flex-1 truncate text-foreground">
+                    {resp.studentId}
+                  </span>
+
+                  {/* Correct/incorrect icon */}
+                  <span className="shrink-0">
+                    {isNonEvaluable ? (
+                      <span className="text-[10px] text-muted-foreground">Respondió</span>
+                    ) : globalCorrect === true ? (
+                      <CheckCircle2 className="size-4 text-emerald-500" />
+                    ) : globalCorrect === false ? (
+                      <XCircle className="size-4 text-rose-500" />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </span>
+
+                  {/* Chevron — only when there are details to expand */}
+                  {hasDetails && (
+                    <span className="shrink-0 text-muted-foreground">
+                      {isExpanded
+                        ? <ChevronUp className="size-3.5" />
+                        : <ChevronDown className="size-3.5" />}
+                    </span>
+                  )}
+                </button>
+
+                {/* Expanded detail list */}
+                {isExpanded && hasDetails && (
+                  <div className="border-t border-border bg-muted/20 px-2 pb-2 pt-1">
+                    {resp.details!.map((detail, i) => {
+                      const isLast = i === resp.details!.length - 1;
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 py-0.5 text-[11px]"
+                        >
+                          <span className="w-3 shrink-0 font-mono text-muted-foreground/50">
+                            {isLast ? '└' : '├'}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                            {detail.label}
+                          </span>
+                          <span className="shrink-0">
+                            {detail.correct === true ? (
+                              <CheckCircle2 className="size-3.5 text-emerald-500" />
+                            ) : detail.correct === false ? (
+                              <XCircle className="size-3.5 text-rose-500" />
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-
-      {/* Aggregate for primitives */}
-      {responses.length > 0 && responses.every(isPrimitive) && (
-        <ResponseAggregate responses={responses as (string | number | boolean)[]} />
-      )}
-    </div>
-  );
-}
-
-// ─── Aggregate view for simple responses ──────────────────────────────────────
-
-function ResponseAggregate({ responses }: { responses: (string | number | boolean)[] }) {
-  // Count frequencies
-  const counts = new Map<string, number>();
-  for (const r of responses) {
-    const key = formatResponse(r);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  const max = sorted[0]?.[1] ?? 1;
-
-  return (
-    <div className="mt-1 space-y-1.5 rounded-md border border-border bg-muted/20 p-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Distribución
-      </p>
-      {sorted.map(([label, count]) => (
-        <div key={label} className="space-y-0.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="truncate font-medium text-foreground">{label}</span>
-            <span className="tabular-nums text-muted-foreground">
-              {count} ({Math.round((count / responses.length) * 100)}%)
-            </span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${(count / max) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

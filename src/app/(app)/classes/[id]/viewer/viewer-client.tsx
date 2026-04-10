@@ -1,17 +1,134 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Loader2 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideRenderer } from '../editor/components/slide-renderer';
-import type { Block } from '@/types/slide.types';
+import type { Activity, Block } from '@/types/slide.types';
+
+interface EvalDetail {
+  label: string;
+  correct: boolean | null;
+}
+
+interface EvalResult {
+  correct: boolean | null;
+  details?: EvalDetail[];
+}
+
+function evaluateResponse(actividad: Activity, response: unknown): EvalResult {
+  switch (actividad.tipo) {
+    case 'quiz_multiple': {
+      const selected = Array.isArray(response) ? response : [response];
+      const correctIds = actividad.opciones
+        .filter((o) => o.esCorrecta)
+        .map((o) => o.id);
+      const correct =
+        selected.length === correctIds.length &&
+        selected.every((id) => correctIds.includes(id as string));
+      return { correct };
+    }
+    case 'verdadero_falso':
+      return { correct: response === actividad.respuestaCorrecta };
+    case 'short_answer': {
+      const correct = actividad.caseSensitive
+        ? response === actividad.expectedAnswer
+        : typeof response === 'string' &&
+          response.trim().toLowerCase() ===
+            actividad.expectedAnswer.trim().toLowerCase();
+      return { correct };
+    }
+    case 'completar_blancos': {
+      if (!response || typeof response !== 'object' || Array.isArray(response))
+        return { correct: false };
+      const answers = response as Record<string, string>;
+      const details: EvalDetail[] = actividad.blancos.map((blank, i) => {
+        const given = answers[blank.id] ?? '';
+        const expected = blank.ignorarMayusculas
+          ? blank.respuesta.toLowerCase()
+          : blank.respuesta;
+        const givenNorm = blank.ignorarMayusculas ? given.toLowerCase() : given;
+        const isCorrect =
+          givenNorm === expected ||
+          (blank.alternativas ?? []).some((alt) =>
+            blank.ignorarMayusculas
+              ? alt.toLowerCase() === givenNorm
+              : alt === givenNorm,
+          );
+        return { label: `Hueco ${i + 1}`, correct: isCorrect };
+      });
+      return { correct: details.every((d) => d.correct === true), details };
+    }
+    case 'arrastrar_soltar': {
+      if (!Array.isArray(response)) return { correct: false };
+      const result = response as { itemId: string; zoneId: string | null }[];
+      const details: EvalDetail[] = actividad.items.map((item) => {
+        const placement = result.find((r) => r.itemId === item.id);
+        if (!placement || placement.zoneId === null)
+          return { label: item.texto, correct: false };
+        const zone = actividad.zonas.find((z) => z.id === placement.zoneId);
+        return { label: item.texto, correct: zone?.itemsCorrectos.includes(item.id) ?? false };
+      });
+      return { correct: details.every((d) => d.correct === true), details };
+    }
+    case 'emparejar': {
+      if (!Array.isArray(response)) return { correct: false };
+      const matches = response as { leftId: string; rightId: string }[];
+      const details: EvalDetail[] = actividad.pares.map((par) => {
+        const match = matches.find((m) => m.leftId === par.id);
+        return { label: par.izquierda, correct: match?.rightId === par.id };
+      });
+      return { correct: details.every((d) => d.correct === true), details };
+    }
+    case 'ordenar_pasos': {
+      if (!Array.isArray(response)) return { correct: false };
+      const ordered = response as string[];
+      const correctOrder = [...actividad.pasos]
+        .sort((a, b) => a.ordenCorrecto - b.ordenCorrecto)
+        .map((s) => s.id);
+      const details: EvalDetail[] = correctOrder.map((stepId, pos) => {
+        const paso = actividad.pasos.find((p) => p.id === stepId)!;
+        const label =
+          paso.contenido.length > 30
+            ? paso.contenido.slice(0, 30) + '…'
+            : paso.contenido;
+        return { label, correct: ordered.indexOf(stepId) === pos };
+      });
+      return { correct: details.every((d) => d.correct === true), details };
+    }
+    case 'video_interactivo': {
+      if (!response || typeof response !== 'object' || Array.isArray(response))
+        return { correct: null };
+      const { questionIndex, answer } = response as {
+        questionIndex: number;
+        answer: string;
+      };
+      const question = actividad.preguntas[questionIndex];
+      if (!question) return { correct: null };
+      const isCorrect =
+        question.opciones.find((op) => op.id === answer)?.esCorrecta ?? false;
+      return {
+        correct: isCorrect,
+        details: [{ label: `Pregunta ${questionIndex + 1}`, correct: isCorrect }],
+      };
+    }
+    case 'encuesta_viva':
+    case 'nube_palabras':
+      return { correct: null };
+    default:
+      return { correct: null };
+  }
+}
 
 export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
+  const studentIdRef = useRef<string>(
+    'Estudiante ' + Math.floor(Math.random() * 900 + 100),
+  );
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -62,17 +179,20 @@ export function ViewerClient({ id }: { id: string }) {
   const handleResponse = useCallback(
     (response: unknown) => {
       if (!socketInstance || !activeSlide) return;
-
-      // Find the activity block to determine its type
       const blocks = activeSlide.bloques ?? [];
       const actBlock = blocks.find((b: Block) => b.tipo === 'actividad');
       if (!actBlock || actBlock.tipo !== 'actividad') return;
+
+      const { correct, details } = evaluateResponse(actBlock.actividad, response);
 
       const payload = {
         classId: id,
         slideId: activeSlide.id,
         slideIndex: activeSlideIndex,
         activityType: actBlock.actividad.tipo,
+        studentId: studentIdRef.current,
+        correct,
+        details,
         response,
       };
       console.log('[viewer] emitting student-response', payload);
