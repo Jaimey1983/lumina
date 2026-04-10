@@ -35,10 +35,18 @@ export class ClassesGateway {
   }
 
   @SubscribeMessage('student-response')
-  handleStudentResponse(
-    @MessageBody() data: { classId: string; slideIndex: number; activityType: string; response: unknown; studentId?: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    client.to(`class-${data.classId}`).emit('response-update', data);
-  }
+handleStudentResponse(
+  @MessageBody() data: {
+    classId: string;
+    slideId: string;
+    slideIndex: number;
+    activityType: string;
+    studentId: string;
+    correct: boolean | null;
+    response: unknown;
+  },
+  @ConnectedSocket() client: Socket,
+) {
+  client.to(`class-${data.classId}`).emit('response-update', data);
+}
 }
