@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, IsObject } from 'class-validator';
+import { IsString, IsOptional, MinLength, IsObject, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { trimIfString } from '../../common/trim-if-string';
 
@@ -17,4 +17,11 @@ export class UpdateClassDto {
   @IsOptional()
   @IsObject()
   desempeno?: Record<string, unknown>;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsIn(['DRAFT', 'PUBLISHED', 'LIVE', 'ARCHIVED'])
+  status?: 'DRAFT' | 'PUBLISHED' | 'LIVE' | 'ARCHIVED';
 }

@@ -18,25 +18,27 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
+import { SaveResultsDto } from './dto/save-results.dto';
+import { SaveManualGradeDto } from './dto/save-manual-grade.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('classes')
-@UseGuards(JwtAuthGuard)
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 
   // ─── CLASES ────────────────────────────────────────────
 
   @Post()
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   create(@Body() dto: CreateClassDto, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.create(dto, user.id);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll(
     @Query('courseId') courseId: string,
     @CurrentUser() user: JwtAuthUser,
@@ -44,13 +46,19 @@ export class ClassesController {
     return this.classesService.findAllByCourse(courseId, user.id, user.role);
   }
 
+  @Get('join/:codigo')
+  findByCodigo(@Param('codigo') codigo: string) {
+    return this.classesService.findByCodigo(codigo);
+  }
+
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.findOne(id, user.id, user.role);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   update(
     @Param('id') id: string,
@@ -61,7 +69,7 @@ export class ClassesController {
   }
 
   @Post(':id/publish')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   publish(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.publish(id, user.id);
@@ -69,16 +77,59 @@ export class ClassesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   remove(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.remove(id, user.id);
   }
 
+  @Post(':id/sessions/start')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER')
+  startSession(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
+    return this.classesService.startSession(id, user.id);
+  }
+
+  @Patch(':id/sessions/end')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER')
+  endSession(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
+    return this.classesService.endSession(id, user.id);
+  }
+
+  @Post(':id/results')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER')
+  saveResults(
+    @Param('id') id: string,
+    @Body() dto: SaveResultsDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.saveResults(id, dto, user.id);
+  }
+
+  @Get(':id/gradebook')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER')
+  getGradebook(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
+    return this.classesService.getGradebook(id, user.id);
+  }
+
+  @Patch(':id/results/manual')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER')
+  saveManualGrade(
+    @Param('id') id: string,
+    @Body() dto: SaveManualGradeDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.saveManualGrade(id, dto, user.id);
+  }
+
   // ─── SLIDES ────────────────────────────────────────────
 
   @Patch(':id/slides/reorder')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   reorderSlides(
     @Param('id') classId: string,
@@ -89,7 +140,7 @@ export class ClassesController {
   }
 
   @Post(':id/slides/insert')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   addSlideAtPosition(
     @Param('id') classId: string,
@@ -105,7 +156,7 @@ export class ClassesController {
   }
 
   @Post(':id/slides')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   addSlide(
     @Param('id') classId: string,
@@ -116,7 +167,7 @@ export class ClassesController {
   }
 
   @Patch(':id/slides/:slideId')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   updateSlide(
     @Param('id') classId: string,
@@ -129,7 +180,7 @@ export class ClassesController {
 
   @Delete(':id/slides/:slideId')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   removeSlide(
     @Param('id') classId: string,
