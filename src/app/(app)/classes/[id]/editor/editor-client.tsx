@@ -2,14 +2,12 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Eye, Monitor, Save, Send, Share2 } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, Monitor, Save, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { io, Socket } from 'socket.io-client';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide, usePublishClass } from '@/hooks/api/use-classes';
-import { useQueryClient } from '@tanstack/react-query';
-import { PublishSuccessModal } from '@/components/publish-success-modal';
+import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide } from '@/hooks/api/use-classes';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -32,6 +30,7 @@ import type { StudentResponse } from './components/panels/live-responses-panel';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useSocket } from '@/hooks/use-socket';
 
@@ -213,8 +212,6 @@ function hasDesempenoPersistido(value: unknown): boolean {
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
-  const queryClient = useQueryClient();
-  const publishClass = usePublishClass(cls?.courseId ?? '');
   const { emit: socketEmit, isConnected } = useSocket();
   const updateSlide  = useUpdateSlide(classId);
   const createSlide  = useCreateSlide(classId);
@@ -227,9 +224,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
   const [saveStatus,         setSaveStatus]         = useState<SaveStatus>('idle');
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
-  const [showPublishModal,   setShowPublishModal]   = useState(false);
   const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
   const [showCurricularModal, setShowCurricularModal] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(false);
 
   // ── Live responses from students (keyed by slideId) ────────────────────────
   const [liveResponses, setLiveResponses] = useState<
@@ -457,18 +455,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     setModalUserOpen(true);
   }, []);
 
-  const handlePublish = useCallback(() => {
-    if (!cls || !classId) return;
-    publishClass.mutate(classId, {
-      onSuccess: () => {
-        toast.success('Clase publicada');
-        queryClient.invalidateQueries({ queryKey: ['class', classId] });
-        setShowPublishModal(true);
-      },
-      onError: () => toast.error('Error al publicar la clase'),
-    });
-  }, [cls, classId, publishClass, queryClient]);
-
   const handleSave = useCallback(() => {
     if (!activeSlide) return;
     setSaveStatus('saving');
@@ -492,6 +478,67 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       },
     );
   }, [activeSlide, updateSlide]);
+
+  const handleStartSession = useCallback(async () => {
+    if (!classId) return;
+    setSessionLoading(true);
+    try {
+      const { data } = await api.post<{ id: string }>(
+        `/classes/${classId}/sessions/start`,
+      );
+      setSessionId(data.id);
+    } catch {
+      toast.error('No se pudo iniciar la clase');
+    } finally {
+      setSessionLoading(false);
+    }
+  }, [classId]);
+
+  const handleEndSession = useCallback(async () => {
+    if (!classId || !sessionId) return;
+    if (
+      !window.confirm(
+        '¿Finalizar la clase? Los resultados quedarán guardados.',
+      )
+    ) {
+      return;
+    }
+    setSessionLoading(true);
+    try {
+      const results: {
+        studentId: string;
+        slideId: string;
+        activityType: string;
+        correct: boolean | null;
+        historial: { label: string; correct: boolean | null }[][];
+      }[] = [];
+      for (const [slideId, entry] of liveResponses) {
+        for (const response of entry.responses) {
+          results.push({
+            studentId: response.studentId,
+            slideId,
+            activityType: response.activityType,
+            correct: response.correct ?? null,
+            historial: response.details ? [response.details] : [],
+          });
+        }
+      }
+      try {
+        await api.post(`/classes/${classId}/results`, {
+          sessionId,
+          results,
+        });
+      } catch {
+        toast.error('No se pudieron enviar los resultados al servidor');
+      }
+      await api.patch(`/classes/${classId}/sessions/end`);
+      setSessionId(null);
+    } catch {
+      toast.error('No se pudo finalizar la clase');
+    } finally {
+      setSessionLoading(false);
+    }
+  }, [classId, sessionId, liveResponses]);
 
   const handleAddSlide = useCallback(() => {
     const afterOrder = sortedSlides[resolvedSlideIndex]?.order ?? 0;
@@ -811,6 +858,40 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               Compartir
             </Button>
 
+            {sessionId === null ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={!classId || sessionLoading}
+                onClick={handleStartSession}
+                className={cn(
+                  'bg-green-600 text-white hover:bg-green-700 hover:text-white',
+                  'disabled:pointer-events-none disabled:opacity-50',
+                )}
+              >
+                {sessionLoading ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : null}
+                Iniciar clase
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                disabled={!classId || sessionLoading}
+                onClick={handleEndSession}
+                className={cn(
+                  'bg-red-600 text-white hover:bg-red-700 hover:text-white',
+                  'disabled:pointer-events-none disabled:opacity-50',
+                )}
+              >
+                {sessionLoading ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : null}
+                Finalizar clase
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="sm"
@@ -831,35 +912,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               {saveStatus === 'saving' ? 'Guardando…' : 'Guardar'}
             </Button>
 
-            {cls?.status === 'PUBLISHED' ? (
-              <Button
-                size="sm"
-                disabled
-                variant="outline"
-                className="border-green-500 text-green-600 opacity-100 dark:border-green-400 dark:text-green-400"
-              >
-                <CheckCircle className="mr-2 size-4" />
-                Publicada
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                disabled={!cls || publishClass.isPending}
-                onClick={handlePublish}
-              >
-                {publishClass.isPending ? (
-                  <>
-                    <span className="mr-2 size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Publicando…
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 size-4" />
-                    Publicar
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         </header>
 
@@ -979,11 +1031,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           setModalUserOpen(false);
           setShowCurricularModal(false);
         }}
-      />
-      <PublishSuccessModal 
-        open={showPublishModal} 
-        onOpenChange={setShowPublishModal} 
-        classId={classId} 
       />
     </div>
   );

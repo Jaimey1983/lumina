@@ -14,6 +14,7 @@ export interface ClassDetail {
   title: string;
   description?: string;
   courseId: string;
+  codigo?: string;
   status: string;
   createdAt: string;
   slides?: Slide[];

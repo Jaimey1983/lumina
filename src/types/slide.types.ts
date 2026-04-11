@@ -399,6 +399,8 @@ export interface SlideClass {
   title: string;
   description?: string;
   courseId: string;
+  /** Código de unión en vivo (ej. LUM-XXXX). */
+  codigo?: string;
   status: SlideClassStatus;
   slides: Slide[];
   createdAt: string;

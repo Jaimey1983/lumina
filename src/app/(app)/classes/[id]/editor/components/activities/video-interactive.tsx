@@ -216,7 +216,7 @@ interface YTPlayer {
 
 function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: VideoInteractive; editorSyncKey?: string; onResponse?: (response: unknown) => void }) {
   const videoRef    = useRef<HTMLVideoElement>(null);
-  const blockId     = useRef(Math.random().toString(36).slice(2)).current;
+  const [blockId] = useState(() => Math.random().toString(36).slice(2));
   const ytPlayerRef = useRef<YTPlayer | null>(null);
   const pollingRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const initTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

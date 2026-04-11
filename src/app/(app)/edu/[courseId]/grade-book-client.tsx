@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   ArrowLeft,
-  BookCheck,
+  BookOpen,
   Calculator,
   LoaderCircle,
   NotebookPen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { GradeScaleBadge } from '@/components/grade-scale-badge';
+import { GradeScaleBadge, getColombianGradeScale } from '@/components/grade-scale-badge';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,144 +22,153 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useClasses } from '@/hooks/api/use-classes';
 import { useCourse } from '@/hooks/api/use-course';
-import { useGradebookStructure } from '@/hooks/api/use-gradebook-structure';
-import {
-  useGradeCalculation,
-  useGradeSheet,
-  useSaveGradeSheetEntry,
-  type GradeSheetActivity,
-  type GradeSheetEntry,
-} from '@/hooks/api/use-grade-calculation';
-import { useCoursePeriods } from '@/hooks/api/use-periods';
+import { useGradebook } from '@/hooks/use-gradebook';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-function toFiveScale(score: number | null, maxScore: number) {
-  if (score === null || Number.isNaN(score)) {
-    return '';
+const ACTIVITY_LABEL: Record<string, string> = {
+  quiz_multiple: 'Quiz',
+  verdadero_falso: 'V/F',
+  completar_blancos: 'Completar',
+  arrastrar_soltar: 'Arrastrar',
+  emparejar: 'Emparejar',
+  ordenar_pasos: 'Ordenar',
+  video_interactivo: 'Video',
+  short_answer: 'Respuesta',
+  encuesta_viva: 'Encuesta',
+  nube_palabras: 'Nube',
+};
+
+function abbreviateActivityType(activityType: string) {
+  return ACTIVITY_LABEL[activityType] ?? activityType;
+}
+
+function studentDisplayName(s: { nombre?: string; name?: string }) {
+  return s.nombre ?? s.name ?? 'Sin nombre';
+}
+
+function noteForSlide(
+  notas: Record<string, number | null | undefined> | undefined,
+  slideId: string,
+): number | null {
+  const v = notas?.[slideId];
+  if (v === undefined || v === null || Number.isNaN(v)) return null;
+  return v;
+}
+
+function AutoGradeCell({ note }: { note: number | null }) {
+  if (note === null) {
+    return <span className="text-muted-foreground">—</span>;
   }
-
-  if (maxScore <= 0) {
-    return score.toFixed(1);
-  }
-
-  const scaled = (score / maxScore) * 5;
-  return scaled.toFixed(1);
+  const scale = getColombianGradeScale(note);
+  return (
+    <span
+      className={cn(
+        'inline-flex min-w-12 justify-center rounded-md border px-2 py-1 text-sm font-semibold',
+        scale?.className ?? 'border-border bg-muted/40 text-foreground',
+      )}
+    >
+      {note.toFixed(1)}
+    </span>
+  );
 }
 
-function fromFiveScale(score: number, maxScore: number) {
-  if (maxScore <= 0) {
-    return score;
-  }
-
-  return Number(((score / 5) * maxScore).toFixed(2));
-}
-
-function findEntry(entries: GradeSheetEntry[], studentId: string, activityId: string) {
-  return entries.find((entry) => entry.studentId === studentId && entry.activityId === activityId) ?? null;
-}
-
-function getWeightStatus(totalWeight: number) {
-  const rounded = Number(totalWeight.toFixed(2));
-  const isValid = Math.abs(rounded - 0.9) < 0.001;
-  return {
-    rounded,
-    isValid,
-  };
-}
-
-function EditableGradeCell({
-  activity,
-  entry,
+function ManualGradeCell({
+  classId,
   studentId,
-  onSave,
-  disabled,
+  slideId,
+  initialNote,
 }: {
-  activity: GradeSheetActivity;
-  entry: GradeSheetEntry | null;
+  classId: string;
   studentId: string;
-  onSave: (input: {
-    entryId?: string;
-    studentId: string;
-    activityId: string;
-    score: number;
-  }) => Promise<void>;
-  disabled: boolean;
+  slideId: string;
+  initialNote: number | null;
 }) {
-  const [value, setValue] = useState(toFiveScale(entry?.score ?? null, activity.maxScore));
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState(() =>
+    initialNote != null ? initialNote.toFixed(1) : '',
+  );
+  const [invalid, setInvalid] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setValue(toFiveScale(entry?.score ?? null, activity.maxScore));
-  }, [activity.maxScore, entry?.id, entry?.score]);
+    setValue(initialNote != null ? initialNote.toFixed(1) : '');
+    setInvalid(false);
+  }, [initialNote, studentId, slideId]);
 
-  async function commitValue() {
+  async function commit() {
+    if (isSaving) return;
+    setInvalid(false);
     const trimmed = value.trim();
-
     if (!trimmed) {
-      setValue(toFiveScale(entry?.score ?? null, activity.maxScore));
+      setValue(initialNote != null ? initialNote.toFixed(1) : '');
       return;
     }
-
-    const numericValue = Number(trimmed);
-
-    if (Number.isNaN(numericValue) || numericValue < 1 || numericValue > 5) {
-      toast.error('La nota debe estar entre 1.0 y 5.0');
-      setValue(toFiveScale(entry?.score ?? null, activity.maxScore));
+    const raw = trimmed.replace(',', '.');
+    const n = parseFloat(raw);
+    if (Number.isNaN(n) || n < 1 || n > 5) {
+      setInvalid(true);
       return;
     }
-
-    const nextScore = fromFiveScale(numericValue, activity.maxScore);
-    const currentScore = entry?.score ?? null;
-    if (currentScore !== null && Math.abs(currentScore - nextScore) < 0.001) {
-      setValue(numericValue.toFixed(1));
+    const nota = parseFloat(raw);
+    const orig =
+      initialNote != null && !Number.isNaN(initialNote)
+        ? Number(initialNote.toFixed(1))
+        : null;
+    if (orig !== null && Math.abs(orig - nota) < 0.001) {
+      setValue(nota.toFixed(1));
       return;
     }
 
     setIsSaving(true);
     try {
-      await onSave({
-        entryId: entry?.id,
+      await api.patch(`/classes/${classId}/results/manual`, {
         studentId,
-        activityId: activity.id,
-        score: nextScore,
+        slideId,
+        nota,
       });
-      setValue(numericValue.toFixed(1));
+      await queryClient.invalidateQueries({ queryKey: ['gradebook', classId] });
+      setValue(nota.toFixed(1));
+    } catch {
+      toast.error('No se pudo guardar la nota');
     } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <div className="relative min-w-24">
+    <div className="relative inline-flex">
       <Input
-        type="number"
-        min={1}
-        max={5}
-        step="0.1"
-        value={value}
-        disabled={disabled || isSaving}
+        type="text"
+        inputMode="decimal"
+        disabled={isSaving}
+        aria-invalid={invalid}
         className={cn(
-          'h-9 text-center font-medium',
-          isSaving && 'pr-8',
+          'h-9 w-20 text-center font-medium',
+          invalid && 'border-destructive ring-1 ring-destructive',
+          isSaving && 'cursor-wait pr-8',
         )}
-        onChange={(event) => setValue(event.target.value)}
-        onBlur={() => {
-          void commitValue();
+        value={value}
+        onChange={(e) => {
+          setInvalid(false);
+          setValue(e.target.value);
         }}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            void commitValue();
+        onBlur={() => void commit()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            void commit();
           }
-
-          if (event.key === 'Escape') {
-            setValue(toFiveScale(entry?.score ?? null, activity.maxScore));
+          if (e.key === 'Escape') {
+            setInvalid(false);
+            setValue(initialNote != null ? initialNote.toFixed(1) : '');
           }
         }}
       />
       {isSaving ? (
-        <LoaderCircle className="absolute right-2 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+        <LoaderCircle className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
       ) : null}
     </div>
   );
@@ -166,62 +176,43 @@ function EditableGradeCell({
 
 export function GradeBookClient({ courseId }: { courseId: string }) {
   const { data: course, isLoading: courseLoading } = useCourse(courseId);
-  const { data: periods = [], isLoading: periodsLoading } = useCoursePeriods(courseId);
-  const { data: structure, isLoading: structureLoading } = useGradebookStructure(courseId);
+  const {
+    data: classes = [],
+    isLoading: classesLoading,
+    isError: classesError,
+  } = useClasses(courseId);
 
-  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
 
   useEffect(() => {
-    if (!selectedPeriodId && periods[0]?.id) {
-      setSelectedPeriodId(periods[0].id);
+    if (classes.length === 0) {
+      setSelectedClassId('');
+      return;
     }
-  }, [periods, selectedPeriodId]);
-
-  const activePeriodId = periods.some((period) => period.id === selectedPeriodId)
-    ? selectedPeriodId
-    : (periods[0]?.id ?? '');
+    setSelectedClassId((prev) => {
+      if (prev && classes.some((c) => c.id === prev)) return prev;
+      return classes[0]!.id;
+    });
+  }, [classes]);
 
   const {
-    data: sheet,
-    isLoading: sheetLoading,
-    isError: sheetError,
-  } = useGradeSheet(courseId, activePeriodId);
-  const {
-    data: calculations = [],
-    isLoading: calculationsLoading,
-    isError: calculationsError,
-  } = useGradeCalculation(courseId, activePeriodId);
-  const saveGradeMutation = useSaveGradeSheetEntry(courseId, activePeriodId);
+    data: gradebook,
+    isLoading: gradebookLoading,
+    isError: gradebookError,
+    isFetching: gradebookFetching,
+  } = useGradebook(selectedClassId || undefined);
 
-  const students = sheet?.students ?? [];
-  const activities = sheet?.activities ?? [];
-  const entries = sheet?.entries ?? [];
-  const finalGradeMap = new Map(
-    calculations.map((row) => [
-      row.studentId,
-      { finalGrade: row.finalGrade, isComplete: row.isComplete, studentName: row.studentName },
-    ]),
-  );
+  const actividades = gradebook?.actividades ?? [];
+  const estudiantes = gradebook?.estudiantes ?? [];
 
-  const totalWeight = structure?.aspects.reduce((sum, aspect) => sum + aspect.weight, 0) ?? 0;
-  const weightStatus = getWeightStatus(totalWeight);
-
-  async function handleSaveGrade(input: {
-    entryId?: string;
-    studentId: string;
-    activityId: string;
-    score: number;
-  }) {
-    try {
-      await saveGradeMutation.mutateAsync(input);
-      toast.success('Nota guardada');
-    } catch {
-      toast.error('No se pudo guardar la nota');
-      throw new Error('save-grade-failed');
-    }
-  }
-
-  const showEmptyState = !sheetLoading && !sheetError && students.length === 0;
+  const showClassSelect = classes.length > 1;
+  const gradebookReady = !gradebookLoading && !gradebookError && !!gradebook;
+  const showEmptyGrid =
+    gradebookReady && estudiantes.length === 0 && actividades.length === 0;
+  const showEmptyStudentsOnly =
+    gradebookReady && estudiantes.length === 0 && actividades.length > 0;
+  const showEmptyActivitiesOnly =
+    gradebookReady && estudiantes.length > 0 && actividades.length === 0;
 
   return (
     <div className="space-y-6 p-6">
@@ -241,7 +232,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               {courseLoading ? 'Cargando curso...' : course?.name ?? 'Planilla de notas'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Registro de actividades en escala colombiana y promedio final institucional por estudiante.
+              Notas por clase y actividad (slides). Escala colombiana 1.0 a 5.0.
             </p>
           </div>
         </div>
@@ -252,16 +243,31 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Curso
               </p>
-              <p className="text-sm font-medium text-foreground">{course?.code ?? 'Sin codigo'}</p>
+              <p className="text-sm font-medium text-foreground">{course?.code ?? '—'}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Período
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                {periods.find((period) => period.id === activePeriodId)?.name ?? 'Selecciona un período'}
-              </p>
-            </div>
+            {showClassSelect ? (
+              <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Clase
+                </p>
+                <Select
+                  value={selectedClassId}
+                  onValueChange={setSelectedClassId}
+                  disabled={classesLoading || classes.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una clase" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>
@@ -273,52 +279,60 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               <CardHeading className="w-full space-y-3">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <CardTitle>Planilla por curso</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="size-4 text-muted-foreground" />
+                      Planilla por clase
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Edita cada nota entre 1.0 y 5.0. Los cambios se guardan al salir de la celda o al presionar Enter.
+                      Las celdas automáticas son de solo lectura. Las manuales permiten editar entre
+                      1.0 y 5.0 (el guardado en servidor se habilitará próximamente).
                     </p>
-                  </div>
-                  <div className="w-full lg:w-64">
-                    <Select value={activePeriodId} onValueChange={setSelectedPeriodId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={periodsLoading ? 'Cargando períodos...' : 'Selecciona un período'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {periods.map((period) => (
-                          <SelectItem key={period.id} value={period.id}>
-                            {period.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
               </CardHeading>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!periodsLoading && periods.length === 0 ? (
+              {classesError ? (
                 <Alert variant="destructive">
                   <AlertIcon>
                     <AlertTriangle className="size-4" />
                   </AlertIcon>
                   <AlertContent>
-                    <AlertTitle>El curso no tiene períodos configurados.</AlertTitle>
+                    <AlertTitle>No se pudieron cargar las clases del curso.</AlertTitle>
                   </AlertContent>
                 </Alert>
               ) : null}
 
-              {sheetError ? (
+              {!classesLoading && classes.length === 0 ? (
+                <Alert>
+                  <AlertIcon>
+                    <NotebookPen className="size-4" />
+                  </AlertIcon>
+                  <AlertContent>
+                    <AlertTitle>Este curso no tiene clases todavía.</AlertTitle>
+                  </AlertContent>
+                </Alert>
+              ) : null}
+
+              {classesLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : null}
+
+              {gradebookError ? (
                 <Alert variant="destructive">
                   <AlertIcon>
                     <AlertTriangle className="size-4" />
                   </AlertIcon>
                   <AlertContent>
-                    <AlertTitle>No se pudo cargar la planilla de notas.</AlertTitle>
+                    <AlertTitle>No se pudo cargar el libro de calificaciones de la clase.</AlertTitle>
                   </AlertContent>
                 </Alert>
               ) : null}
 
-              {sheetLoading ? (
+              {selectedClassId && (gradebookLoading || gradebookFetching) && !gradebook ? (
                 <div className="space-y-3">
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
@@ -326,81 +340,106 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                 </div>
               ) : null}
 
-              {showEmptyState ? (
+              {showEmptyGrid ? (
                 <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
                   <NotebookPen className="size-9 text-muted-foreground/70" />
                   <div className="space-y-1">
-                    <h3 className="font-medium">No hay estudiantes o actividades registradas</h3>
+                    <h3 className="font-medium">Sin actividades ni estudiantes</h3>
                     <p className="text-sm text-muted-foreground">
-                      La planilla se llenará cuando el curso tenga estudiantes matriculados y actividades evaluables.
+                      Cuando la clase tenga slides evaluables y estudiantes con resultados, aparecerán
+                      aquí.
                     </p>
                   </div>
                 </div>
               ) : null}
 
-              {!sheetLoading && !sheetError && students.length > 0 ? (
-                <Table className="min-w-max">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="sticky left-0 z-20 min-w-56 bg-card">Estudiante</TableHead>
-                      {activities.map((activity) => (
-                        <TableHead key={activity.id} className="min-w-32 text-center">
-                          <div className="space-y-1">
-                            <p className="line-clamp-2 font-medium text-foreground">{activity.name}</p>
-                            <p className="text-xs text-muted-foreground">Escala 1.0 a 5.0</p>
-                          </div>
-                        </TableHead>
-                      ))}
-                      <TableHead className="sticky right-0 z-20 min-w-44 bg-card text-center">Promedio final</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {students.map((student) => {
-                      const finalRow = finalGradeMap.get(student.id);
+              {showEmptyStudentsOnly ? (
+                <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+                  No hay estudiantes con filas en esta planilla.
+                </div>
+              ) : null}
 
-                      return (
-                        <TableRow key={student.id}>
+              {showEmptyActivitiesOnly ? (
+                <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+                  Esta clase aún no tiene actividades evaluables en el libro de calificaciones.
+                </div>
+              ) : null}
+
+              {!gradebookLoading &&
+              !gradebookError &&
+              estudiantes.length > 0 &&
+              actividades.length > 0 ? (
+                <div className="relative">
+                  {gradebookFetching ? (
+                    <div className="absolute inset-0 z-10 flex items-start justify-end pt-1 pr-1">
+                      <LoaderCircle className="size-5 animate-spin text-muted-foreground" aria-hidden />
+                    </div>
+                  ) : null}
+                  <Table className="min-w-max">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="sticky left-0 z-20 min-w-56 bg-card">
+                          Estudiante
+                        </TableHead>
+                        {actividades.map((act) => (
+                          <TableHead key={act.slideId} className="min-w-28 text-center text-xs">
+                            <span className="font-medium">
+                              {abbreviateActivityType(act.activityType)}
+                            </span>
+                          </TableHead>
+                        ))}
+                        <TableHead className="sticky right-0 z-20 min-w-44 bg-card text-center">
+                          Nota final
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {estudiantes.map((est) => (
+                        <TableRow key={est.studentId}>
                           <TableCell className="sticky left-0 z-10 bg-card">
                             <div className="space-y-1">
-                              <p className="font-medium">{student.name}</p>
-                              <p className="text-xs text-muted-foreground">{student.email}</p>
+                              <p className="font-medium">{studentDisplayName(est)}</p>
+                              {est.email ? (
+                                <p className="text-xs text-muted-foreground">{est.email}</p>
+                              ) : null}
                             </div>
                           </TableCell>
-
-                          {activities.map((activity) => {
-                            const entry = findEntry(entries, student.id, activity.id);
-
+                          {actividades.map((act) => {
+                            const nota = noteForSlide(est.notas, act.slideId);
+                            const manual = act.esManual === true;
                             return (
-                              <TableCell key={activity.id} className="text-center">
-                                <EditableGradeCell
-                                  activity={activity}
-                                  entry={entry}
-                                  studentId={student.id}
-                                  disabled={!activePeriodId || saveGradeMutation.isPending}
-                                  onSave={handleSaveGrade}
-                                />
+                              <TableCell key={act.slideId} className="text-center">
+                                {manual ? (
+                                  <ManualGradeCell
+                                    key={`${est.studentId}-${act.slideId}`}
+                                    classId={selectedClassId}
+                                    studentId={est.studentId}
+                                    slideId={act.slideId}
+                                    initialNote={nota}
+                                  />
+                                ) : (
+                                  <AutoGradeCell note={nota} />
+                                )}
                               </TableCell>
                             );
                           })}
-
-                          <TableCell className="sticky right-0 z-10 bg-card text-center">
+                          <TableCell className="sticky right-0 z-10 bg-card">
                             <div className="flex flex-col items-center gap-2">
-                              <span className="text-base font-semibold">
-                                {finalRow?.finalGrade !== null && finalRow?.finalGrade !== undefined
-                                  ? finalRow.finalGrade.toFixed(1)
-                                  : '--'}
-                              </span>
-                              <GradeScaleBadge note={finalRow?.finalGrade} />
-                              <span className="text-xs text-muted-foreground">
-                                {finalRow?.isComplete ? 'Completo' : 'Pendiente'}
-                              </span>
+                              {est.notaFinal != null && !Number.isNaN(est.notaFinal) ? (
+                                <span className="text-base font-semibold">
+                                  {est.notaFinal.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-base font-semibold text-muted-foreground">—</span>
+                              )}
+                              <GradeScaleBadge note={est.notaFinal} />
                             </div>
                           </TableCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               ) : null}
             </CardContent>
           </Card>
@@ -424,103 +463,21 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                 <GradeScaleBadge note={4.9} />
               </div>
               <div className="grid gap-2 text-sm text-muted-foreground">
-                <p><span className="font-medium text-foreground">Bajo:</span> 1.0 - 2.9</p>
-                <p><span className="font-medium text-foreground">Basico:</span> 3.0 - 3.9</p>
-                <p><span className="font-medium text-foreground">Alto:</span> 4.0 - 4.6</p>
-                <p><span className="font-medium text-foreground">Superior:</span> 4.7 - 5.0</p>
+                <p>
+                  <span className="font-medium text-foreground">Bajo:</span> 1.0 - 2.9
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Basico:</span> 3.0 - 3.9
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Alto:</span> 4.0 - 4.6
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Superior:</span> 4.7 - 5.0
+                </p>
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardHeading>
-                <CardTitle className="flex items-center gap-2">
-                  <BookCheck className="size-4 text-muted-foreground" />
-                  Estructura institucional
-                </CardTitle>
-              </CardHeading>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {structureLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-3/4" />
-                </div>
-              ) : null}
-
-              {!structureLoading && (structure?.aspects.length ?? 0) > 0 ? (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {structure?.aspects.map((aspect) => (
-                      <Badge key={aspect.id} variant="secondary" appearance="outline" className="gap-2">
-                        <span>{aspect.name}</span>
-                        <span className="font-semibold text-foreground">{aspect.weight.toFixed(2)}</span>
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-muted-foreground">Suma de aspectos evaluativos</span>
-                      <span className="font-semibold text-foreground">{weightStatus.rounded.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  {!weightStatus.isValid ? (
-                    <Alert variant="destructive">
-                      <AlertIcon>
-                        <AlertTriangle className="size-4" />
-                      </AlertIcon>
-                      <AlertContent>
-                        <AlertTitle>
-                          Los aspectos deben sumar exactamente 0.90. El 0.10 restante se reserva para autoevaluacion y coevaluacion.
-                        </AlertTitle>
-                      </AlertContent>
-                    </Alert>
-                  ) : (
-                    <Alert>
-                      <AlertIcon>
-                        <BookCheck className="size-4" />
-                      </AlertIcon>
-                      <AlertContent>
-                        <AlertTitle>
-                          Configuracion valida: 0.90 en aspectos + 0.05 autoevaluacion + 0.05 coevaluacion.
-                        </AlertTitle>
-                      </AlertContent>
-                    </Alert>
-                  )}
-                </>
-              ) : null}
-
-              {!structureLoading && (structure?.aspects.length ?? 0) === 0 ? (
-                <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-                  Este curso aun no tiene estructura institucional configurada para la planilla.
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {calculationsError ? (
-            <Alert variant="destructive">
-              <AlertIcon>
-                <AlertTriangle className="size-4" />
-              </AlertIcon>
-              <AlertContent>
-                <AlertTitle>No se pudo cargar el calculo final de notas.</AlertTitle>
-              </AlertContent>
-            </Alert>
-          ) : null}
-
-          {calculationsLoading ? (
-            <Card>
-              <CardContent className="space-y-3 pt-5">
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-5/6" />
-                <Skeleton className="h-6 w-4/6" />
-              </CardContent>
-            </Card>
-          ) : null}
         </div>
       </div>
     </div>

@@ -126,9 +126,10 @@ export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
-  const studentIdRef = useRef<string>(
-    'Estudiante ' + Math.floor(Math.random() * 900 + 100),
+  const [studentId] = useState(
+    () => 'Estudiante ' + Math.floor(Math.random() * 900 + 100),
   );
+  const studentIdRef = useRef(studentId);
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -163,14 +164,14 @@ export function ViewerClient({ id }: { id: string }) {
       setActiveSlideIndex(payload.slideIndex);
     });
 
-    sock.on('activity-answer', (_answerData: unknown) => {
+    sock.on('response-update', (_answerData: unknown) => {
       // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
 
     return () => {
       sock.off('connect');
       sock.off('slide-change');
-      sock.off('activity-answer');
+      sock.off('response-update');
       sock.disconnect();
     };
   }, [id]);
