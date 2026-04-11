@@ -1,6 +1,28 @@
 'use client';
 
-import { ChevronDown, ChevronUp, GripVertical, Loader2, Plus, Trash2 } from 'lucide-react';
+import type { CSSProperties, ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  BarChart2,
+  ChevronDown,
+  ChevronUp,
+  Cloud,
+  GitMerge,
+  GripHorizontal,
+  GripVertical,
+  HelpCircle,
+  Image as ImageIcon,
+  ListOrdered,
+  Loader2,
+  MessageSquare,
+  PenLine,
+  Plus,
+  Shapes,
+  ToggleLeft,
+  Trash2,
+  Type,
+  Video,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -27,17 +49,269 @@ interface SlideItem {
   order: number;
   type: string;
   title: string;
+  content?: unknown;
 }
 
-// ─── Thumbnail colors by slide type ──────────────────────────────────────────
+// ─── Activity preview map ─────────────────────────────────────────────────────
 
-const THUMB_BG: Record<string, string> = {
-  COVER:    'bg-violet-100 dark:bg-violet-900/40',
-  CONTENT:  'bg-blue-100  dark:bg-blue-900/40',
-  ACTIVITY: 'bg-amber-100 dark:bg-amber-900/40',
-  VIDEO:    'bg-rose-100  dark:bg-rose-900/40',
-  IMAGE:    'bg-emerald-100 dark:bg-emerald-900/40',
+const ACTIVITY_PREVIEW: Record<string, { Icon: LucideIcon; label: string }> = {
+  quiz_multiple: { Icon: HelpCircle, label: 'Quiz' },
+  verdadero_falso: { Icon: ToggleLeft, label: 'V/F' },
+  short_answer: { Icon: MessageSquare, label: 'Respuesta' },
+  completar_blancos: { Icon: PenLine, label: 'Completar' },
+  arrastrar_soltar: { Icon: GripHorizontal, label: 'Arrastrar' },
+  emparejar: { Icon: GitMerge, label: 'Emparejar' },
+  ordenar_pasos: { Icon: ListOrdered, label: 'Ordenar' },
+  video_interactivo: { Icon: Video, label: 'Video' },
+  encuesta_viva: { Icon: BarChart2, label: 'Encuesta' },
+  nube_palabras: { Icon: Cloud, label: 'Nube' },
 };
+
+// ─── Content helpers ──────────────────────────────────────────────────────────
+
+function getContentRecord(content: unknown): Record<string, unknown> {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return {};
+  }
+  return { ...(content as Record<string, unknown>) };
+}
+
+function flattenBlocks(blocks: unknown[]): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = [];
+  for (const b of blocks) {
+    if (!b || typeof b !== 'object' || Array.isArray(b)) continue;
+    const o = b as Record<string, unknown>;
+    if (o.tipo === 'columnas' && Array.isArray(o.columnas)) {
+      for (const col of o.columnas as unknown[]) {
+        if (Array.isArray(col)) {
+          out.push(...flattenBlocks(col));
+        }
+      }
+    } else {
+      out.push(o);
+    }
+  }
+  return out;
+}
+
+function getSlideBloques(content: unknown): Record<string, unknown>[] {
+  const c = getContentRecord(content);
+  const raw = c.bloques;
+  return Array.isArray(raw) ? flattenBlocks(raw) : [];
+}
+
+/** `fondo` (API) o `background` si existiera. */
+function getSlideFondo(content: unknown): unknown {
+  const c = getContentRecord(content);
+  return c.fondo ?? c.background;
+}
+
+function fondoToStyle(fondo: unknown): CSSProperties | undefined {
+  if (!fondo || typeof fondo !== 'object' || Array.isArray(fondo)) return undefined;
+  const f = fondo as Record<string, unknown>;
+  if (f.tipo === 'color' && typeof f.valor === 'string') {
+    return { backgroundColor: f.valor };
+  }
+  if (f.tipo === 'gradiente') {
+    const start = typeof f.inicio === 'string' ? f.inicio : '#000000';
+    const end = typeof f.fin === 'string' ? f.fin : '#ffffff';
+    const deg = typeof f.direccion === 'number' ? f.direccion : 180;
+    return { background: `linear-gradient(${deg}deg, ${start}, ${end})` };
+  }
+  if (f.tipo === 'imagen' && typeof f.url === 'string' && f.url.length > 0) {
+    const ajuste = f.ajuste;
+    let backgroundSize: string;
+    if (ajuste === 'cubrir') backgroundSize = 'cover';
+    else if (ajuste === 'contener') backgroundSize = 'contain';
+    else backgroundSize = 'fill';
+    const pos = typeof f.posicion === 'string' ? f.posicion : 'center';
+    return {
+      backgroundImage: `url(${f.url})`,
+      backgroundSize,
+      backgroundPosition: pos,
+      backgroundRepeat: 'no-repeat',
+    };
+  }
+  return undefined;
+}
+
+function stripToPlainText(htmlOrText: string): string {
+  return htmlOrText
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function firstImageBlockUrl(bloques: Record<string, unknown>[]): string | null {
+  for (const b of bloques) {
+    if (b.tipo !== 'imagen') continue;
+    const url = typeof b.url === 'string' ? b.url : '';
+    if (url.length > 0) return url;
+  }
+  return null;
+}
+
+function firstTextPreview(bloques: Record<string, unknown>[]): string | null {
+  for (const b of bloques) {
+    if (b.tipo !== 'texto') continue;
+    const raw = typeof b.contenido === 'string' ? b.contenido : '';
+    const plain = stripToPlainText(raw);
+    if (!plain) continue;
+    const lines = plain.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length >= 2) return `${lines[0]}\n${lines[1]}`;
+    return lines[0] ?? plain.slice(0, 80);
+  }
+  return null;
+}
+
+function firstActivityBlock(
+  bloques: Record<string, unknown>[],
+): { tipo: string } | null {
+  for (const b of bloques) {
+    if (b.tipo !== 'actividad') continue;
+    const act = b.actividad;
+    if (act && typeof act === 'object' && !Array.isArray(act) && 'tipo' in act) {
+      const t = (act as { tipo?: string }).tipo;
+      if (typeof t === 'string') return { tipo: t };
+    }
+  }
+  return null;
+}
+
+type CornerPick =
+  | { kind: 'actividad'; activityType: string }
+  | { kind: 'imagen' }
+  | { kind: 'video' }
+  | { kind: 'texto' }
+  | { kind: 'forma' };
+
+function pickCornerIconKind(bloques: Record<string, unknown>[]): CornerPick | null {
+  const has = (t: string) => bloques.some((b) => b.tipo === t);
+  if (has('actividad')) {
+    const act = firstActivityBlock(bloques);
+    return { kind: 'actividad', activityType: act?.tipo ?? '' };
+  }
+  if (has('imagen')) return { kind: 'imagen' };
+  if (has('video')) return { kind: 'video' };
+  if (has('texto')) return { kind: 'texto' };
+  if (has('forma')) return { kind: 'forma' };
+  return null;
+}
+
+function CornerTypeIcon({ pick }: { pick: CornerPick | null }) {
+  if (!pick) return null;
+  if (pick.kind === 'actividad') {
+    const def = ACTIVITY_PREVIEW[pick.activityType];
+    const Icon = def?.Icon ?? HelpCircle;
+    return <Icon className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  if (pick.kind === 'imagen') {
+    return <ImageIcon className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  if (pick.kind === 'video') {
+    return <Video className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  if (pick.kind === 'texto') {
+    return <Type className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  return <Shapes className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+}
+
+export interface SlideThumbnailPreviewProps {
+  order: number;
+  content?: unknown;
+  isActive?: boolean;
+  aspectRatio?: '16/9' | '4/3';
+  /** Si es false, no se muestra ring (p. ej. miniatura dentro de tarjeta). */
+  showOuterRing?: boolean;
+  className?: string;
+}
+
+export function SlideThumbnailPreview({
+  order,
+  content,
+  isActive = false,
+  aspectRatio = '16/9',
+  showOuterRing = true,
+  className,
+}: SlideThumbnailPreviewProps) {
+  const bloques = getSlideBloques(content);
+  const fondo = getSlideFondo(content);
+  const bgStyle = fondoToStyle(fondo);
+  const hasCustomBg = !!bgStyle;
+
+  const imageBlockUrl = firstImageBlockUrl(bloques);
+  const textPreview = firstTextPreview(bloques);
+  const activity = firstActivityBlock(bloques);
+  const activityDef = activity ? ACTIVITY_PREVIEW[activity.tipo] : undefined;
+  const ActivityIcon = activityDef?.Icon ?? HelpCircle;
+  const activityLabel = activityDef?.label ?? activity?.tipo ?? '';
+
+  const cornerPick = pickCornerIconKind(bloques);
+
+  let main: ReactNode;
+  if (imageBlockUrl) {
+    main = (
+      <img
+        src={imageBlockUrl}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    );
+  } else if (textPreview) {
+    main = (
+      <p
+        className="relative z-[1] line-clamp-2 max-w-[95%] whitespace-pre-line text-center text-[6px] leading-tight text-white drop-shadow-sm"
+      >
+        {textPreview}
+      </p>
+    );
+  } else if (activity) {
+    main = (
+      <div className="relative z-[1] flex max-w-[95%] flex-col items-center gap-0.5 text-white drop-shadow-sm">
+        <ActivityIcon className="size-3 shrink-0" aria-hidden />
+        <span className="text-center text-[6px] font-medium leading-tight">{activityLabel}</span>
+      </div>
+    );
+  } else {
+    main = (
+      <span className="relative z-[1] text-sm font-bold text-white/90 drop-shadow-sm tabular-nums">
+        {order}
+      </span>
+    );
+  }
+
+  const ratio = aspectRatio === '4/3' ? '4/3' : '16/9';
+
+  return (
+    <div
+      className={cn(
+        'relative flex w-full items-center justify-center overflow-hidden rounded-md',
+        !hasCustomBg && !imageBlockUrl && 'bg-zinc-800',
+        showOuterRing &&
+          (isActive ? 'ring-2 ring-blue-500' : 'ring-1 ring-zinc-600 hover:ring-zinc-400'),
+        className,
+      )}
+      style={{ aspectRatio: ratio, ...bgStyle }}
+    >
+      <span
+        className="absolute left-0.5 top-0.5 z-[1] rounded-sm bg-black/50 px-1 text-[7px] font-medium tabular-nums text-white"
+      >
+        {order}
+      </span>
+      {imageBlockUrl ? (
+        main
+      ) : (
+        <div className="pointer-events-none flex min-h-0 flex-1 items-center justify-center px-1 py-3">
+          {main}
+        </div>
+      )}
+      <div className="pointer-events-none absolute bottom-0.5 right-0.5 z-[1] flex items-center justify-center">
+        <CornerTypeIcon pick={cornerPick} />
+      </div>
+    </div>
+  );
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -92,19 +366,18 @@ function SortableSlideItem({
   };
 
   const isActive = idx === activeIndex;
-  const thumbBg = THUMB_BG[slide.type] ?? 'bg-muted';
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group">
+    <div ref={setNodeRef} style={style} className="group relative">
       {/* Drag handle - visible on hover */}
       <div
         {...attributes}
         {...listeners}
         className={cn(
-          'absolute left-1 top-1/2 -translate-y-1/2 z-10 size-5 cursor-grab active:cursor-grabbing',
-          'flex items-center justify-center rounded',
+          'absolute left-1 top-1/2 z-10 size-5 -translate-y-1/2 cursor-grab',
+          'flex items-center justify-center rounded active:cursor-grabbing',
           'bg-background/80 text-muted-foreground',
-          'opacity-0 group-hover:opacity-100 transition-opacity',
+          'opacity-0 transition-opacity group-hover:opacity-100',
         )}
       >
         <GripVertical className="size-3" />
@@ -113,22 +386,14 @@ function SortableSlideItem({
       <button
         type="button"
         onClick={() => onSelect(idx)}
-        className={cn(
-          'w-full overflow-hidden rounded-md border text-left transition-all',
-          isActive
-            ? 'border-primary ring-2 ring-primary/20'
-            : 'border-border hover:border-primary/50',
-        )}
+        className="w-full overflow-hidden rounded-none border border-border text-left transition-colors hover:border-primary/40"
       >
-        {/* Thumbnail — aspect ratio 16/9 */}
-        <div
-          className={cn('flex items-center justify-center', thumbBg)}
-          style={{ aspectRatio: '16/9' }}
-        >
-          <span className="font-mono text-sm font-bold text-foreground/30">
-            {slide.order}
-          </span>
-        </div>
+        <SlideThumbnailPreview
+          order={slide.order}
+          content={slide.content}
+          isActive={isActive}
+          className="rounded-none"
+        />
         {/* Label */}
         <div className="px-2 py-1.5">
           <p className="truncate text-[10px] font-medium leading-tight">{slide.title}</p>
@@ -142,12 +407,15 @@ function SortableSlideItem({
         <button
           type="button"
           aria-label="Eliminar slide"
-          onClick={(e) => { e.stopPropagation(); onRemoveSlide(slide.id); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveSlide(slide.id);
+          }}
           className={cn(
-            'absolute top-1 right-1 size-6 z-10',
+            'absolute right-1 top-1 z-10 size-6',
             'flex items-center justify-center rounded',
-            'bg-destructive/80 hover:bg-destructive text-white',
-            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'bg-destructive/80 text-white hover:bg-destructive',
+            'opacity-0 transition-opacity group-hover:opacity-100',
           )}
         >
           <Trash2 className="size-3.5" />
@@ -157,20 +425,22 @@ function SortableSlideItem({
       {(onMoveSlideUp || onMoveSlideDown) && (
         <div
           className={cn(
-            'absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-10',
-            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-1',
+            'opacity-0 transition-opacity group-hover:opacity-100',
           )}
         >
           <button
             type="button"
             aria-label="Mover slide arriba"
             disabled={idx === 0}
-            onClick={(e) => { e.stopPropagation(); onMoveSlideUp?.(slide.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveSlideUp?.(slide.id);
+            }}
             className={cn(
-              'size-6 flex items-center justify-center rounded',
-              'bg-background/90 hover:bg-accent border border-border',
-              'text-muted-foreground hover:text-foreground',
-              'disabled:opacity-30 disabled:cursor-not-allowed',
+              'flex size-6 items-center justify-center rounded border border-border',
+              'bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground',
+              'disabled:cursor-not-allowed disabled:opacity-30',
             )}
           >
             <ChevronUp className="size-3.5" />
@@ -179,12 +449,14 @@ function SortableSlideItem({
             type="button"
             aria-label="Mover slide abajo"
             disabled={idx === totalSlides - 1}
-            onClick={(e) => { e.stopPropagation(); onMoveSlideDown?.(slide.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveSlideDown?.(slide.id);
+            }}
             className={cn(
-              'size-6 flex items-center justify-center rounded',
-              'bg-background/90 hover:bg-accent border border-border',
-              'text-muted-foreground hover:text-foreground',
-              'disabled:opacity-30 disabled:cursor-not-allowed',
+              'flex size-6 items-center justify-center rounded border border-border',
+              'bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground',
+              'disabled:cursor-not-allowed disabled:opacity-30',
             )}
           >
             <ChevronDown className="size-3.5" />
@@ -227,15 +499,12 @@ export function SlidesPanel({
 
   return (
     <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-border bg-background">
-
       {/* Header */}
       <div className="flex h-10 shrink-0 items-center border-b border-border px-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Slides
         </span>
-        <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-          {slides.length}
-        </span>
+        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{slides.length}</span>
       </div>
 
       {/* Thumbnail list */}
@@ -244,10 +513,7 @@ export function SlidesPanel({
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext
-          items={slides.map((s) => s.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={slides.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-2">
             {isLoading &&
               Array.from({ length: 4 }).map((_, i) => (
@@ -297,7 +563,6 @@ export function SlidesPanel({
           {isAddingSlide ? 'Creando…' : 'Agregar slide'}
         </button>
       </div>
-
     </aside>
   );
 }

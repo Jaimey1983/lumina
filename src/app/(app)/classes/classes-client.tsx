@@ -5,14 +5,10 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  BookOpen,
   Eye,
   GraduationCap,
   Pencil,
@@ -22,22 +18,24 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { SlideThumbnailPreview } from '@/app/(app)/classes/[id]/editor/components/slides-panel';
 import { useCourses } from '@/hooks/api/use-courses';
 import {
   useClasses,
   useCreateClass,
   useUpdateClass,
   useDeleteClass,
-  usePublishClass,
   type Class,
 } from '@/hooks/api/use-classes';
 import { useClass } from '@/hooks/api/use-class';
+import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 import {
   Card,
+  CardContent,
   CardHeader,
   CardHeading,
-  CardTable,
   CardTitle,
   CardToolbar,
 } from '@/components/ui/card';
@@ -45,14 +43,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Dialog,
   DialogBody,
@@ -98,7 +88,11 @@ function statusVariant(status: string) {
   return STATUS_VARIANTS[status?.toUpperCase()] ?? 'secondary';
 }
 
-function isDraft(status: string) {
+function isPublishedStatus(status: string) {
+  return status?.toUpperCase() === 'PUBLISHED';
+}
+
+function isDraftStatus(status: string) {
   return status?.toUpperCase() === 'DRAFT';
 }
 
@@ -291,140 +285,160 @@ function DeleteDialog({
   );
 }
 
-// ─── Classes Table ────────────────────────────────────────────────────────────
+// ─── Class card (grid) ────────────────────────────────────────────────────────
 
-function ClassesTable({
+function ClassCard({
+  cls,
+  courseId,
+  onDelete,
+}: {
+  cls: Class;
+  courseId: string;
+  onDelete: (c: Class) => void;
+}) {
+  const queryClient = useQueryClient();
+  const { data: detail, isLoading: detailLoading } = useClass(cls.id);
+
+  const firstSlide = useMemo(() => {
+    const slides = detail?.slides;
+    if (!slides?.length) return null;
+    return [...slides].sort((a, b) => a.order - b.order)[0] ?? null;
+  }, [detail?.slides]);
+
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      await api.patch(`/classes/${cls.id}`, { status: 'published' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', cls.id] });
+      toast.success('Clase publicada');
+    },
+    onError: () => toast.error('Error al publicar la clase'),
+  });
+
+  const published = isPublishedStatus(cls.status);
+  const draft = isDraftStatus(cls.status);
+
+  return (
+    <div
+      className={cn(
+        'group cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-card shadow-md',
+        'transition-shadow hover:shadow-lg dark:border-zinc-700',
+      )}
+    >
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
+        {detailLoading ? (
+          <Skeleton className="absolute inset-0 size-full rounded-none" />
+        ) : firstSlide ? (
+          <SlideThumbnailPreview
+            order={firstSlide.order}
+            content={firstSlide.content}
+            isActive={false}
+            aspectRatio="4/3"
+            showOuterRing={false}
+            className="rounded-none"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+            <BookOpen className="size-14 text-white/75" aria-hidden />
+          </div>
+        )}
+
+        <div
+          className={cn(
+            'absolute bottom-2 right-2 z-10 flex items-center gap-2',
+            'pointer-events-none opacity-0 transition-opacity duration-150',
+            'group-hover:pointer-events-auto group-hover:opacity-100',
+          )}
+        >
+          <Link
+            href={`/classes/${cls.id}`}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Ver clase"
+            className="inline-flex text-white/70 transition-colors hover:text-blue-400"
+          >
+            <Eye size={18} className="cursor-pointer" aria-hidden />
+          </Link>
+          <Link
+            href={`/classes/${cls.id}/editor`}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Abrir editor"
+            className="inline-flex text-white/70 transition-colors hover:text-blue-400"
+          >
+            <Pencil size={18} className="cursor-pointer" aria-hidden />
+          </Link>
+          {!published ? (
+            <button
+              type="button"
+              disabled={publishMutation.isPending}
+              onClick={(e) => {
+                e.stopPropagation();
+                publishMutation.mutate();
+              }}
+              aria-label="Publicar clase"
+              className={cn(
+                'inline-flex border-0 bg-transparent p-0 text-white/70 transition-colors',
+                'hover:text-blue-400 disabled:pointer-events-none disabled:opacity-40',
+              )}
+            >
+              <Send size={18} className="cursor-pointer" aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(cls);
+            }}
+            aria-label="Eliminar clase"
+            className="inline-flex border-0 bg-transparent p-0 text-red-400 transition-colors hover:text-red-300"
+          >
+            <Trash2 size={18} className="cursor-pointer" aria-hidden />
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-border/60 p-3">
+        <p className="truncate font-medium text-foreground">{cls.title}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <Badge
+            variant={
+              published ? 'success' : draft ? 'secondary' : statusVariant(cls.status)
+            }
+            appearance="light"
+            className="text-[10px]"
+          >
+            {published ? 'Publicada' : draft ? 'Borrador' : statusLabel(cls.status)}
+          </Badge>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {new Date(cls.createdAt).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ClassesGrid({
   classes,
   courseId,
-  onEdit,
   onDelete,
 }: {
   classes: Class[];
   courseId: string;
-  onEdit: (cls: Class) => void;
   onDelete: (cls: Class) => void;
 }) {
-  const publishMutation = usePublishClass(courseId);
-
-  const columns = useMemo<ColumnDef<Class>[]>(
-    () => [
-      {
-        accessorKey: 'title',
-        header: 'Título',
-        cell: ({ row }) => <span className="font-medium">{row.original.title}</span>,
-      },
-      {
-        accessorKey: 'status',
-        header: 'Estado',
-        cell: ({ row }) => (
-          <Badge variant={statusVariant(row.original.status)} appearance="light">
-            {statusLabel(row.original.status)}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Fecha',
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {new Date(row.original.createdAt).toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => {
-          const cls = row.original;
-          return (
-            <div className="flex items-center justify-end gap-1">
-              <Button size="sm" variant="ghost" asChild title="Ver clase">
-                <Link href={`/classes/${cls.id}`}>
-                  <Eye className="size-4" />
-                  Ver
-                </Link>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onEdit(cls)}
-                title="Editar clase"
-              >
-                <Pencil className="size-4" />
-                Editar
-              </Button>
-              {isDraft(cls.status) && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={publishMutation.isPending}
-                  onClick={() => {
-                    publishMutation.mutate(cls.id, {
-                      onSuccess: () => toast.success('Clase publicada'),
-                      onError: () => toast.error('Error al publicar la clase'),
-                    });
-                  }}
-                  title="Publicar clase"
-                >
-                  <Send className="size-4" />
-                  Publicar
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                onClick={() => onDelete(cls)}
-                title="Eliminar clase"
-              >
-                <Trash2 className="size-4" />
-                Eliminar
-              </Button>
-            </div>
-          );
-        },
-      },
-    ],
-    [onEdit, onDelete, publishMutation],
-  );
-
-  const table = useReactTable({
-    data: classes,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
   return (
-    <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((hg) => (
-          <TableRow key={hg.id}>
-            {hg.headers.map((header) => (
-              <TableHead key={header.id}>
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {classes.map((cls) => (
+        <ClassCard key={cls.id} cls={cls} courseId={courseId} onDelete={onDelete} />
+      ))}
+    </div>
   );
 }
 
@@ -436,7 +450,6 @@ export function ClassesClient() {
   const [coursePick, setCoursePick] = useState<string | null>(null);
   const selectedCourseId = coursePick ?? courses[0]?.id ?? '';
   const [formOpen, setFormOpen] = useState(false);
-  const [editingClass, setEditingClass] = useState<Class | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; cls: Class | null }>({
     open: false,
     cls: null,
@@ -447,11 +460,6 @@ export function ClassesClient() {
     isLoading: classesLoading,
     isError: classesError,
   } = useClasses(selectedCourseId);
-
-  function handleEdit(cls: Class) {
-    setEditingClass(cls);
-    setFormOpen(true);
-  }
 
   function handleDelete(cls: Class) {
     setDeleteDialog({ open: true, cls });
@@ -470,7 +478,6 @@ export function ClassesClient() {
         <Button
           disabled={!selectedCourseId}
           onClick={() => {
-            setEditingClass(undefined);
             setFormOpen(true);
           }}
         >
@@ -540,35 +547,44 @@ export function ClassesClient() {
             </CardToolbar>
           )}
         </CardHeader>
-        <CardTable>
+        <CardContent className="p-4">
           {!selectedCourseId ? (
-            <div className="flex flex-col items-center py-16 gap-3 text-center">
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
               <GraduationCap className="size-10 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 Selecciona un curso para ver sus clases.
               </p>
             </div>
           ) : classesLoading ? (
-            <div className="p-5 space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
+                >
+                  <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                  <div className="space-y-2 p-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : classes.length === 0 ? (
-            <div className="flex flex-col items-center py-16 gap-4 text-center">
-              <div className="size-12 rounded-full bg-muted flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4 py-16 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
                 <GraduationCap className="size-6 text-muted-foreground" />
               </div>
               <div>
                 <p className="font-medium">No hay clases aún</p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Crea la primera clase para este curso.
                 </p>
               </div>
               <Button
                 size="sm"
                 onClick={() => {
-                  setEditingClass(undefined);
                   setFormOpen(true);
                 }}
               >
@@ -577,27 +593,21 @@ export function ClassesClient() {
               </Button>
             </div>
           ) : (
-            <ClassesTable
+            <ClassesGrid
               classes={classes}
               courseId={selectedCourseId}
-              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           )}
-        </CardTable>
+        </CardContent>
       </Card>
 
       {/* Create / Edit modal */}
       {selectedCourseId && (
         <ClassFormModal
-          key={editingClass?.id ?? 'new'}
           courseId={selectedCourseId}
-          classId={editingClass?.id}
           open={formOpen}
-          onOpenChange={(open) => {
-            setFormOpen(open);
-            if (!open) setEditingClass(undefined);
-          }}
+          onOpenChange={setFormOpen}
         />
       )}
 
