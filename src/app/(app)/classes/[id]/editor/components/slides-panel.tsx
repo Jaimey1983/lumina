@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -41,6 +42,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { SLIDE_LABELS } from '@/config/slide.constants';
+import { SlideRenderer } from './slide-renderer';
+import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 
 // ─── Local slide interface (compatible with API Slide type) ───────────────────
 
@@ -313,6 +317,62 @@ export function SlideThumbnailPreview({
   );
 }
 
+// ─── Canvas-based thumbnail ───────────────────────────────────────────────────
+
+/**
+ * Renders the slide using SlideRenderer so that block positions (x, y, ancho, alto)
+ * are reflected immediately after drag / resize, without waiting for the
+ * simplified SlideThumbnailPreview to receive a different text or image.
+ *
+ * `liveContent` overrides `slide.content` — used during and immediately after
+ * a drag to show committed positions before the query refetch settles.
+ */
+export const SlideCanvasThumb = memo(function SlideCanvasThumb({
+  slide,
+  isActive,
+  liveContent,
+  className,
+}: {
+  slide: SlideItem;
+  isActive: boolean;
+  liveContent?: unknown;
+  className?: string;
+}) {
+  // Include slide.content explicitly so the thumbnail re-renders after a
+  // query refetch even when only block positions (x/y/ancho/alto) changed.
+  const rendererSlide = useMemo(
+    () =>
+      classSlideToRendererSlide({
+        ...slide,
+        content: liveContent ?? slide.content,
+      } as unknown as ApiSlide),
+    [slide, liveContent],
+  );
+
+  return (
+    <div
+      className={cn(
+        'relative w-full overflow-hidden rounded-md',
+        isActive ? 'ring-2 ring-blue-500' : 'ring-1 ring-zinc-600 hover:ring-zinc-400',
+        className,
+      )}
+      style={{ aspectRatio: '16/9' }}
+    >
+      {/* pointer-events:none so click events reach the wrapping <button> */}
+      <div className="pointer-events-none absolute inset-0">
+        <SlideRenderer
+          slide={rendererSlide}
+          modo="preview"
+          className="absolute inset-0 h-full w-full"
+        />
+      </div>
+      <span className="absolute left-0.5 top-0.5 z-[1] rounded-sm bg-black/50 px-1 text-[7px] font-medium tabular-nums text-white">
+        {slide.order}
+      </span>
+    </div>
+  );
+});
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface SlidesPanelProps {
@@ -320,6 +380,8 @@ export interface SlidesPanelProps {
   activeIndex: number;
   isLoading?: boolean;
   isAddingSlide?: boolean;
+  /** Override content for the active slide during/after drag (shows live positions). */
+  activeSlideLiveContent?: unknown;
   onSelect: (index: number) => void;
   onAddSlide: () => void;
   onRemoveSlide?: (slideId: string) => void;
@@ -335,6 +397,7 @@ function SortableSlideItem({
   idx,
   totalSlides,
   activeIndex,
+  liveContent,
   onSelect,
   onRemoveSlide,
   onMoveSlideUp,
@@ -344,6 +407,7 @@ function SortableSlideItem({
   idx: number;
   totalSlides: number;
   activeIndex: number;
+  liveContent?: unknown;
   onSelect: (idx: number) => void;
   onRemoveSlide?: (id: string) => void;
   onMoveSlideUp?: (id: string) => void;
@@ -383,15 +447,26 @@ function SortableSlideItem({
         <GripVertical className="size-3" />
       </div>
 
-      <button
-        type="button"
+      {/*
+        * div instead of <button> to avoid invalid HTML (SlideRenderer renders
+        * activity viewer components that contain their own <button> elements).
+        */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onSelect(idx)}
-        className="w-full overflow-hidden rounded-none border border-border text-left transition-colors hover:border-primary/40"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(idx);
+          }
+        }}
+        className="w-full cursor-pointer overflow-hidden rounded-none border border-border text-left transition-colors hover:border-primary/40"
       >
-        <SlideThumbnailPreview
-          order={slide.order}
-          content={slide.content}
+        <SlideCanvasThumb
+          slide={slide}
           isActive={isActive}
+          liveContent={isActive ? liveContent : undefined}
           className="rounded-none"
         />
         {/* Label */}
@@ -401,7 +476,7 @@ function SortableSlideItem({
             {SLIDE_LABELS[slide.type] ?? slide.type}
           </p>
         </div>
-      </button>
+      </div>
 
       {onRemoveSlide && (
         <button
@@ -474,6 +549,7 @@ export function SlidesPanel({
   activeIndex,
   isLoading,
   isAddingSlide,
+  activeSlideLiveContent,
   onSelect,
   onAddSlide,
   onRemoveSlide,
@@ -532,6 +608,7 @@ export function SlidesPanel({
                   idx={idx}
                   totalSlides={slides.length}
                   activeIndex={activeIndex}
+                  liveContent={idx === activeIndex ? activeSlideLiveContent : undefined}
                   onSelect={onSelect}
                   onRemoveSlide={onRemoveSlide}
                   onMoveSlideUp={onMoveSlideUp}

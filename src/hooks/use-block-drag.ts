@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 import type { RefObject } from 'react';
 
@@ -111,6 +111,13 @@ export function useBlockDrag({
   /** Original x, y of the dragged block recorded at drag-start. */
   const originRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Reset drag state when the active slide changes.
+  useEffect(() => {
+    setDraggingId(null);
+    setLiveBloques(null);
+    originRef.current = null;
+  }, [slide?.id]);
+
   // ─── helpers ────────────────────────────────────────────────────────────────
 
   function getRect(): DOMRect | null {
@@ -127,64 +134,84 @@ export function useBlockDrag({
     const block   = bloques[blockIndex];
     if (!block || !originRef.current) return null;
 
-    const { ancho, alto } = getBlockPos(block);
     const dx = (delta.x / rect.width)  * 100;
     const dy = (delta.y / rect.height) * 100;
 
+    // Allow blocks to go partially off-canvas (matches PowerPoint / Canva behaviour).
+    // Only apply an extreme guard so the block can never disappear entirely.
     return {
-      newX: Math.max(0, Math.min(100 - ancho, originRef.current.x + dx)),
-      newY: Math.max(0, Math.min(100 - alto,  originRef.current.y + dy)),
+      newX: Math.max(-50, Math.min(150, originRef.current.x + dx)),
+      newY: Math.max(-50, Math.min(150, originRef.current.y + dy)),
     };
   }
 
-  // ─── handlers ───────────────────────────────────────────────────────────────
+  // ─── handlers (useCallback: referencias estables para DndContext; evita bucles en onMove) ──
 
-  function handleDragStart(event: DragStartEvent) {
-    const id      = String(event.active.id);
-    const bloques = slide?.bloques ?? [];
-    const block   = bloques[Number(id)];
-    if (!block) return;
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const id      = String(event.active.id);
+      const bloques = slide?.bloques ?? [];
+      const block   = bloques[Number(id)];
+      if (!block) return;
 
-    const { x, y } = getBlockPos(block);
-    originRef.current = { x, y };
-    setDraggingId(id);
-    setLiveBloques([...bloques]);
-  }
+      const { x, y } = getBlockPos(block);
+      originRef.current = { x, y };
+      setDraggingId(id);
+      setLiveBloques([...bloques]);
+    },
+    [slide],
+  );
 
-  function handleDragMove(event: DragMoveEvent) {
-    if (!originRef.current) return;
-    const rect = getRect();
-    if (!rect) return;
+  const handleDragMove = useCallback(
+    (event: DragMoveEvent) => {
+      if (!originRef.current) return;
+      const rect = getRect();
+      if (!rect) return;
 
-    const index   = Number(String(event.active.id));
-    const bloques = slide?.bloques ?? [];
-    const res     = deltaToPos(index, event.delta, rect);
-    if (!res) return;
+      const index   = Number(String(event.active.id));
+      const bloques = slide?.bloques ?? [];
+      const res     = deltaToPos(index, event.delta, rect);
+      if (!res) return;
 
-    setLiveBloques(
-      bloques.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b)),
-    );
-  }
+      setLiveBloques((prev) => {
+        const base = prev ?? bloques;
+        const cur  = base[index];
+        if (!cur) return prev;
+        const { x: ox, y: oy } = getBlockPos(cur);
+        if (
+          Math.abs(ox - res.newX) < 0.0001 &&
+          Math.abs(oy - res.newY) < 0.0001
+        ) {
+          return prev;
+        }
+        return base.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b));
+      });
+    },
+    [slide],
+  );
 
-  function handleDragEnd(event: DragEndEvent) {
-    const id      = String(event.active.id);
-    const index   = Number(id);
-    const bloques = slide?.bloques ?? [];
-    const rect    = getRect();
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const id      = String(event.active.id);
+      const index   = Number(id);
+      const bloques = slide?.bloques ?? [];
+      const rect    = getRect();
 
-    if (rect && originRef.current) {
-      const res = deltaToPos(index, event.delta, rect);
-      if (res) {
-        onSave(
-          bloques.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b)),
-        );
+      if (rect && originRef.current) {
+        const res = deltaToPos(index, event.delta, rect);
+        if (res) {
+          onSave(
+            bloques.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b)),
+          );
+        }
       }
-    }
 
-    setDraggingId(null);
-    setLiveBloques(null);
-    originRef.current = null;
-  }
+      setDraggingId(null);
+      setLiveBloques(null);
+      originRef.current = null;
+    },
+    [slide, onSave],
+  );
 
   return { handleDragStart, handleDragEnd, handleDragMove, draggingId, liveBloques };
 }

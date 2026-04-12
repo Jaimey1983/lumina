@@ -1,0 +1,138 @@
+
+> lumina-frontend@0.1.0 build
+> next build
+
+   ▲ Next.js 15.3.1
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 8.0s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./src/app/(app)/classes/[id]/class-detail-client.tsx
+18:24  Warning: 'ApiSlide' is defined but never used.  @typescript-eslint/no-unused-vars
+27:10  Warning: 'SLIDE_LABELS' is defined but never used.  @typescript-eslint/no-unused-vars
+69:32  Error: Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `cls.slides`, but the source dependencies were [cls?.slides]. Inferred different dependency than source.
+
+C:\Users\Jaime\proyectos\lumina\lumina-frontend\src\app\(app)\classes\[id]\class-detail-client.tsx:69:32
+  67 |   const isDraft = cls?.status?.toUpperCase() === 'DRAFT';
+  68 |
+> 69 |   const sortedSlides = useMemo(() => {
+     |                                ^^^^^^^
+> 70 |     if (!cls?.slides) return [];
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 71 |     return [...cls.slides].sort((a, b) => a.order - b.order);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 72 |   }, [cls?.slides]);
+     | ^^^^ Could not preserve existing manual memoization
+  73 |
+  74 |   const activeSlide = sortedSlides[activeIndex];
+  75 |   const rendererActiveSlide = useMemo(  react-hooks/preserve-manual-memoization
+76:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+179:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+219:28  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+221:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/classes/[id]/editor/components/activities/live-poll.tsx
+26:10  Warning: 'simulateResults' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/classes/[id]/editor/components/activities/true-false.tsx
+198:26  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/classes/[id]/editor/components/activities/video-interactive.tsx
+349:6  Warning: React Hook useEffect has missing dependencies: 'actividad.preguntas' and 'blockId'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx
+56:18  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+1028:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1050:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/classes/[id]/editor/components/slides-panel.tsx
+259:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+344:5  Error: Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `slide`, but the source dependencies were [slide.id, slide.order, slide.type, slide.title, slide.content, liveContent]. Inferred less specific property than source.
+
+C:\Users\Jaime\proyectos\lumina\lumina-frontend\src\app\(app)\classes\[id]\editor\components\slides-panel.tsx:344:5
+  342 |   // query refetch even when only block positions (x/y/ancho/alto) changed.
+  343 |   const rendererSlide = useMemo(
+> 344 |     () =>
+      |     ^^^^^
+> 345 |       classSlideToRendererSlide({
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 346 |         ...slide,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 347 |         content: liveContent ?? slide.content,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 348 |       } as unknown as ApiSlide),
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Could not preserve existing manual memoization
+  349 |     [slide.id, slide.order, slide.type, slide.title, slide.content, liveContent],
+  350 |   );
+  351 |  react-hooks/preserve-manual-memoization
+349:5  Warning: React Hook useMemo has a missing dependency: 'slide'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/(app)/classes/[id]/viewer/viewer-client.tsx
+167:33  Warning: '_answerData' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/courses/courses-client.tsx
+351:17  Warning: Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Jaime\proyectos\lumina\lumina-frontend\src\app\(app)\courses\courses-client.tsx:351:17
+  349 |   );
+  350 |
+> 351 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  352 |     data: filtered,
+  353 |     columns,
+  354 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+./src/app/(app)/courses/[id]/course-detail-client.tsx
+255:17  Warning: Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Jaime\proyectos\lumina\lumina-frontend\src\app\(app)\courses\[id]\course-detail-client.tsx:255:17
+  253 |   ];
+  254 |
+> 255 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  256 |     data: students,
+  257 |     columns,
+  258 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+468:17  Warning: Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Jaime\proyectos\lumina\lumina-frontend\src\app\(app)\courses\[id]\course-detail-client.tsx:468:17
+  466 |   ];
+  467 |
+> 468 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  469 |     data: classes,
+  470 |     columns,
+  471 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+./src/app/(app)/dashboard/dashboard-client.tsx
+176:17  Warning: Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Jaime\proyectos\lumina\lumina-frontend\src\app\(app)\dashboard\dashboard-client.tsx:176:17
+  174 |   );
+  175 |
+> 176 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  177 |     data: courses,
+  178 |     columns,
+  179 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+./src/lib/class-slide-normalize.ts
+94:22  Warning: '_m' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+109:20  Warning: '_m' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

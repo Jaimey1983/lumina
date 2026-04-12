@@ -1,11 +1,24 @@
 'use client';
 
-import { createElement, CSSProperties, useState, useRef, useCallback, useEffect } from 'react';
+import {
+  createElement,
+  CSSProperties,
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  type RefObject,
+} from 'react';
 import { Trash2 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
 import { useUpdateSlide } from '@/hooks/api/use-classes';
-import { mergeSlideContent, sanitizeSlideContentForPersistence } from '@/lib/class-slide-normalize';
+import {
+  mergeSlideContent,
+  sanitizeSlideContentForPersistence,
+  updateBlockAtPath,
+} from '@/lib/class-slide-normalize';
 import { ResizeHandles } from './resize-handles';
 
 import type {
@@ -176,6 +189,37 @@ function getBlockPositionStyle(block: Block): CSSProperties {
   }
 }
 
+function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number; alto: number } {
+  switch (block.tipo) {
+    case 'texto': {
+      const fb = BLOCK_FALLBACKS.text;
+      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
+               ancho: block.ancho ?? fb.ancho, alto: block.alto ?? fb.alto };
+    }
+    case 'imagen': {
+      const fb = BLOCK_FALLBACKS.image;
+      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
+               ancho: typeof block.ancho === 'number' ? block.ancho : fb.ancho,
+               alto: typeof block.alto === 'number' ? block.alto : fb.alto };
+    }
+    case 'video': {
+      const fb = BLOCK_FALLBACKS.video;
+      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
+               ancho: typeof block.ancho === 'number' ? block.ancho : fb.ancho,
+               alto: typeof block.alto === 'number' ? block.alto : fb.alto };
+    }
+    case 'forma': {
+      const fb = BLOCK_FALLBACKS.forma;
+      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
+               ancho: block.ancho ?? fb.ancho, alto: block.alto ?? fb.alto };
+    }
+    default: {
+      const fb = ACTIVITY_POSITION_FALLBACK;
+      return { x: fb.x, y: fb.y, ancho: fb.ancho, alto: fb.alto };
+    }
+  }
+}
+
 // ─── YouTube embed URL ────────────────────────────────────────────────────────
 
 function buildEmbedUrl(url: string, autoplay?: boolean): string {
@@ -305,7 +349,7 @@ function RenderText({ block, isEditing, onCommit, onDiscard }: RenderTextProps) 
   return createElement(tag, { style }, block.contenido);
 }
 
-function RenderImage({ block }: { block: ImageBlock }) {
+function RenderImage({ block, forceFill }: { block: ImageBlock; forceFill?: boolean }) {
   const fitMap: Record<string, CSSProperties['objectFit']> = {
     cubrir: 'cover',
     contener: 'contain',
@@ -324,7 +368,7 @@ function RenderImage({ block }: { block: ImageBlock }) {
           height: '100%',
           maxWidth: '100%',
           maxHeight: '100%',
-          objectFit: block.ajuste ? fitMap[block.ajuste] : 'contain',
+          objectFit: forceFill ? 'fill' : (block.ajuste ? fitMap[block.ajuste] : 'fill'),
           borderRadius: block.bordeRedondeado,
         }}
       />
@@ -793,6 +837,8 @@ interface BlockNodeProps {
   onEditCommit?: (blockId: string, newText: string) => void;
   /** Discard changes and exit inline-edit mode (Escape). */
   onEditCancel?: () => void;
+  /** True while this block is being resized for live visual feedback tweaks. */
+  isResizing?: boolean;
 }
 
 function BlockNode({
@@ -818,6 +864,7 @@ function BlockNode({
   onEditStart,
   onEditCommit,
   onEditCancel,
+  isResizing,
 }: BlockNodeProps) {
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
@@ -840,7 +887,7 @@ function BlockNode({
             onDiscard={onEditCancel}
           />
         );
-      case 'imagen':    return <RenderImage block={block} />;
+      case 'imagen':    return <RenderImage block={block} forceFill={isResizing} />;
       case 'video':     return <RenderVideo block={block} />;
       case 'audio':     return <RenderAudio block={block} />;
       case 'actividad':
@@ -923,6 +970,7 @@ function BlockNode({
           y={currentCoords.y}
           ancho={currentCoords.ancho}
           alto={currentCoords.alto}
+          lockAspectRatio={block.tipo === 'imagen' ? !!block.lockAspectRatio : false}
           canvasRef={canvasRef}
           onResize={onResize}
           onResizeEnd={onResizeEnd}
@@ -953,6 +1001,11 @@ export interface SlideRendererProps {
   slide: Slide;
   /** `'editor'` shows click-selection borders; `'viewer'`/`'preview'` are purely presentational. */
   modo: Modo;
+  /**
+   * Ref al marco del lienzo (misma caja que `canvasRef` en `CanvasArea`) para medir resize/drag.
+   * Si no se pasa, se usa un ref interno en la raíz del renderer.
+   */
+  canvasRef?: RefObject<HTMLDivElement | null>;
   /** Called with the block's index-path string when a block is selected in editor mode. */
   onBlockSelect?: (blockId: string) => void;
   /** Persiste cambios de una actividad (PATCH vía el padre). */
@@ -967,6 +1020,7 @@ export interface SlideRendererProps {
 export function SlideRenderer({
   slide,
   modo,
+  canvasRef: canvasRefProp,
   onBlockSelect,
   onActivityChange,
   onRemoveBlock,
@@ -976,7 +1030,8 @@ export function SlideRenderer({
   const [selectedId,    setSelectedId]    = useState<string | null>(null);
   const [editingId,     setEditingId]     = useState<string | null>(null);
   const [resizingCoords, setResizingCoords] = useState<Record<string, { x: number; y: number; ancho: number; alto: number }>>({});
-  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const internalCanvasRef = useRef<HTMLDivElement | null>(null);
+  const measureCanvasRef = canvasRefProp ?? internalCanvasRef;
 
   const params = useParams();
   const classId = params.id as string;
@@ -997,19 +1052,21 @@ export function SlideRenderer({
     });
 
     const blocks = slide.bloques ? [...slide.bloques] : [];
-    const blockIndex = parseInt(blockId, 10);
+    const nextBlocks = updateBlockAtPath(blocks, blockId, (b) => {
+      const nextBase: Block = {
+        ...b,
+        x: coords.x,
+        y: coords.y,
+        ancho: coords.ancho,
+        alto: coords.alto,
+      } as Block;
+      if (b.tipo === 'imagen') {
+        return { ...nextBase, ajuste: 'llenar' } as Block;
+      }
+      return nextBase;
+    });
     
-    if (blocks[blockIndex]) {
-       blocks[blockIndex] = {
-          ...blocks[blockIndex],
-          x: coords.x,
-          y: coords.y,
-          ancho: coords.ancho,
-          alto: coords.alto,
-       } as Block;
-    }
-    
-    const updatedContent = mergeSlideContent(slide as any, { bloques: blocks });
+    const updatedContent = mergeSlideContent(slide as unknown as Slide, { bloques: nextBlocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
 
     updateSlide.mutate({ slideId: slide.id, content: sanitized });
@@ -1031,7 +1088,7 @@ export function SlideRenderer({
     const block = blocks[blockIndex];
     if (!block || block.tipo !== 'texto' || block.contenido === newText) return;
     blocks[blockIndex] = { ...block, contenido: newText } as Block;
-    const updatedContent = mergeSlideContent(slide as any, { bloques: blocks });
+    const updatedContent = mergeSlideContent(slide as unknown as Slide, { bloques: blocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
     updateSlide.mutate({ slideId: slide.id, content: sanitized });
   }, [slide, updateSlide]);
@@ -1057,35 +1114,111 @@ export function SlideRenderer({
 
   const blocks = slide.bloques ?? [];
 
+  // ─── Preview mode: scaled-down thumbnail ──────────────────────────────────
+  // Render a fixed 1280×720 virtual canvas and scale it to fit the thumbnail
+  // container. This ensures fonts, images, and block positions are all
+  // proportionally correct — identical to how PowerPoint / Canva do it.
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(0);
+
+  useLayoutEffect(() => {
+    if (modo !== 'preview') return;
+    const el = previewContainerRef.current;
+    if (!el) return;
+    const update = () => {
+      if (el.clientWidth > 0) setPreviewScale(el.clientWidth / 1280);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [modo]);
+
+  if (modo === 'preview') {
+    return (
+      <div
+        ref={previewContainerRef}
+        className={cn('relative overflow-hidden', className)}
+        style={{ aspectRatio: '16 / 9' }}
+      >
+        {previewScale > 0 && (
+          <div
+            style={{
+              ...bgStyle,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 1280,
+              height: 720,
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top left',
+            }}
+          >
+            {blocks.map((block, index) => {
+              const blockId = String(index);
+              return (
+                <BlockNode
+                  key={blockId}
+                  block={block}
+                  blockId={blockId}
+                  slideId={slide.id}
+                  isSelected={false}
+                  modo="preview"
+                  selectedId={null}
+                  onClick={() => {}}
+                  onBlockClick={() => {}}
+                  pathPrefix={blockId}
+                  positionStyle={getBlockPositionStyle(block)}
+                  canvasRef={measureCanvasRef}
+                  currentCoords={{ x: 0, y: 0, ancho: 0, alto: 0 }}
+                  onResize={() => {}}
+                  onResizeEnd={() => {}}
+                  editingId={null}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── Editor / viewer mode ─────────────────────────────────────────────────
   return (
     <div
-      className={cn('overflow-hidden', className)}
+      className={cn(editorMode ? 'overflow-visible' : 'overflow-hidden', className)}
       style={{
         ...bgStyle,
-        position: 'relative',
-        width: '100%',
-        aspectRatio: '16 / 9',
-        overflow: 'hidden',
+        ...(editorMode
+          ? {
+              width: '100%',
+              height: '100%',
+              minHeight: 0,
+              minWidth: 0,
+              overflow: 'visible',
+            }
+          : {
+              position: 'relative',
+              width: '100%',
+              aspectRatio: '16 / 9',
+              overflow: 'hidden',
+            }),
       }}
       onClick={handleCanvasClick}
-      ref={canvasRef}
+      ref={canvasRefProp ? undefined : internalCanvasRef}
     >
       {blocks.map((block, index) => {
         const blockId = String(index);
         const posStyleObj = getBlockPositionStyle(block);
-        const currentCoords = resizingCoords[blockId] ?? {
-          x: parseFloat(posStyleObj.left as string) || 0,
-          y: parseFloat(posStyleObj.top as string) || 0,
-          ancho: parseFloat(posStyleObj.width as string) || 0,
-          alto: parseFloat(posStyleObj.height as string) || 0,
-        };
+        const currentCoords = resizingCoords[blockId] ?? getBlockRawCoords(block);
 
         const posStyle = resizingCoords[blockId] ? {
-           ...posStyleObj,
-           left: `${currentCoords.x}%`,
-           top: `${currentCoords.y}%`,
-           width: `${currentCoords.ancho}%`,
-           height: `${currentCoords.alto}%`,
+          position: 'absolute' as const,
+          left: `${currentCoords.x}%`,
+          top: `${currentCoords.y}%`,
+          width: `${currentCoords.ancho}%`,
+          height: `${currentCoords.alto}%`,
+          zIndex: (block as { zIndex?: number }).zIndex ?? 1,
         } : posStyleObj;
 
         return (
@@ -1104,7 +1237,7 @@ export function SlideRenderer({
             onActivityChange={onActivityChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onResponse={onResponse}
-            canvasRef={canvasRef}
+            canvasRef={measureCanvasRef}
             currentCoords={currentCoords}
             onResize={handleResize}
             onResizeEnd={handleResizeEnd}
@@ -1112,6 +1245,7 @@ export function SlideRenderer({
             onEditStart={editorMode ? handleEditStart : undefined}
             onEditCommit={editorMode ? handleEditCommit : undefined}
             onEditCancel={editorMode ? handleEditCancel : undefined}
+            isResizing={Boolean(resizingCoords[blockId])}
           />
         );
       })}

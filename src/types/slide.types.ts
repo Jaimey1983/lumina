@@ -253,6 +253,10 @@ export interface TextBlock {
   tamanoFuente?: string;
   negrita?: boolean;
   cursiva?: boolean;
+  /** Familia tipográfica (p. ej. Inter, Georgia). */
+  fuente?: string;
+  /** Subrayado (persistido; el renderer puede mostrarlo cuando lo soporte). */
+  subrayado?: boolean;
   color?: string;
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
   x?: number;
@@ -271,6 +275,8 @@ export interface ImageBlock {
   /** CSS string (e.g. '100%') or canvas percentage number (0-100). */
   alto?: string | number;
   ajuste?: 'cubrir' | 'contener' | 'llenar';
+  /** Keep original aspect ratio during corner resize in editor. */
+  lockAspectRatio?: boolean;
   bordeRedondeado?: string;
   caption?: string;
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
@@ -355,6 +361,8 @@ export interface FormaBlock {
   id: string;
   forma: 'rectangulo' | 'circulo' | 'triangulo' | 'linea';
   color: string;
+  /** Opacidad del relleno 0–100. */
+  opacidad?: number;
   colorBorde?: string;
   grosorBorde?: number;
   ancho?: number;

@@ -75,7 +75,7 @@ export function ImagesElementPanel({ apiSlide, onCommitContent, disabled }: Prop
       url: imageUrl,
       alt: alt ?? 'Imagen',
       ancho: '100%',
-      ajuste: 'contener',
+      ajuste: 'llenar',
     };
     onCommitContent(appendBlockToSlideContent(apiSlide, block));
     toast.success('Imagen añadida al slide');

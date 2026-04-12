@@ -102,6 +102,7 @@ export function SlideInsertionToolbar({
           y: fb.y,
           ancho: fb.ancho,
           alto: fb.alto,
+          ajuste: 'llenar',
         };
         await onInsert(block);
       } catch {

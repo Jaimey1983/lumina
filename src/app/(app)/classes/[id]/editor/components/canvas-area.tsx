@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { GripHorizontal, Presentation } from 'lucide-react';
@@ -12,13 +12,14 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 
 import type { Activity, Block, Slide } from '@/types/slide.types';
+import { getBlockAtPath } from '@/lib/class-slide-normalize';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { EditorToolbar } from './editor-toolbar';
 import { SlideInsertionToolbar } from './floating-toolbar';
+import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
 import { useBlockDrag, getBlockPos } from '@/hooks/use-block-drag';
@@ -62,6 +63,7 @@ function BlockDragHandle({
       {/* Only the badge is interactive */}
       <div
         ref={setNodeRef}
+        data-drag-handle
         {...attributes}
         {...listeners}
         title="Arrastrar bloque"
@@ -99,14 +101,23 @@ export interface CanvasAreaProps {
   onBlockSelect?: (id: string) => void;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
+  /** Fired with live/committed block positions during and after drag (null when settled). */
+  onEffectiveBloques?: (bloques: Block[] | null) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-/** Marco del slide: dimensiones vía CSS vars (--editor-slide-*) en globals.css */
-const SLIDE_FRAME_CLASS = cn(
-  'relative aspect-video w-full max-w-[var(--editor-slide-max-w)] max-h-[var(--editor-slide-max-h)] shrink-0 overflow-hidden',
-  'rounded-md border border-border bg-card shadow-md',
+/**
+ * Viewport 16:9 con tamaño de layout fijo (no crece con el contenido desbordado).
+ * El marco interno (surface) es absolute inset-0 + overflow visible; el viewport fija el 16:9.
+ */
+const SLIDE_VIEWPORT_CLASS = cn(
+  'relative aspect-video w-full max-w-[var(--editor-slide-max-w)] max-h-[var(--editor-slide-max-h)] shrink-0',
+  'min-h-0 min-w-0',
+);
+
+const SLIDE_SURFACE_CLASS = cn(
+  'absolute inset-0 overflow-visible rounded-md border border-border bg-card shadow-md',
 );
 
 export function CanvasArea({
@@ -115,6 +126,7 @@ export function CanvasArea({
   onBlockSelect,
   onActivityChange,
   onRemoveBlock,
+  onEffectiveBloques,
 }: CanvasAreaProps) {
   // ── classId (for PATCH URL) ─────────────────────────────────────────────────
   const params  = useParams<{ id: string }>();
@@ -123,6 +135,25 @@ export function CanvasArea({
 
   // ── canvasRef — points at the slide frame div ───────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Optimistic bridge: holds the final block positions immediately after a
+   * successful drag so the canvas doesn't snap back while the query refetches.
+   * Cleared once the query settles or the active slide changes.
+   */
+  const [committedBloques, setCommittedBloques] = useState<Block[] | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const onBlockSelectRef = useRef(onBlockSelect);
+  onBlockSelectRef.current = onBlockSelect;
+
+  // Clear committed state when the user switches slides.
+  useEffect(() => {
+    setCommittedBloques(null);
+  }, [slide?.id]);
+
+  useEffect(() => {
+    setSelectedBlockId(null);
+  }, [slide?.id]);
 
   const hasActivityBlock =
     Boolean(slide?.bloques?.some((b) => b.tipo === 'actividad'));
@@ -187,18 +218,31 @@ export function CanvasArea({
     [slide, classId, hasActivityBlock, patchSlideBloques, queryClient],
   );
 
+  const handleDragSave = useCallback(
+    async (updatedBlocks: Block[]) => {
+      setCommittedBloques(updatedBlocks);
+      try {
+        const ok = await patchSlideBloques(updatedBlocks);
+        if (ok) {
+          await queryClient.refetchQueries({
+            queryKey: ['classes', 'detail', classId],
+          });
+        }
+      } catch {
+        // Silently ignore — positions will re-sync on next load.
+      } finally {
+        setCommittedBloques(null);
+      }
+    },
+    [patchSlideBloques, queryClient, classId],
+  );
+
   // ── drag hook ───────────────────────────────────────────────────────────────
   const { handleDragStart, handleDragEnd, handleDragMove, draggingId, liveBloques } =
     useBlockDrag({
       canvasRef,
       slide,
-      onSave: async (updatedBlocks: Block[]) => {
-        try {
-          await patchSlideBloques(updatedBlocks);
-        } catch {
-          // Silently ignore — the slide will re-sync on next load.
-        }
-      },
+      onSave: handleDragSave,
     });
 
   // ── dnd-kit sensors ─────────────────────────────────────────────────────────
@@ -210,17 +254,104 @@ export function CanvasArea({
   );
 
   // ── live slide: inject updated positions during drag for real-time preview ──
+  // Priority: live drag positions > committed (post-drag, pre-refetch) > server state
+  const effectiveBloques = liveBloques ?? committedBloques;
   const liveSlide: Slide | null =
-    slide && liveBloques ? { ...slide, bloques: liveBloques } : slide;
+    slide && effectiveBloques ? { ...slide, bloques: effectiveBloques } : slide;
+
+  // Bubble effectiveBloques to parent so the slide panel thumbnail stays in sync.
+  const onEffectiveBloquesRef = useRef(onEffectiveBloques);
+  onEffectiveBloquesRef.current = onEffectiveBloques;
+  /** Evita setState en el padre en cada render cuando la referencia ya se sincronizó (bucle infinito). */
+  const lastPushedEffectiveBloquesRef = useRef<Block[] | null | undefined>(undefined);
+  const lastSlideIdForPushRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (slide?.id !== lastSlideIdForPushRef.current) {
+      lastSlideIdForPushRef.current = slide?.id;
+      lastPushedEffectiveBloquesRef.current = undefined;
+    }
+    // Mientras DndKit mueve el puntero, actualizar el padre re-renderiza todo el árbol y
+    // @dnd-kit puede re-entrar en onMove → Maximum update depth.
+    if (draggingId != null) return;
+
+    if (Object.is(lastPushedEffectiveBloquesRef.current, effectiveBloques)) return;
+    lastPushedEffectiveBloquesRef.current = effectiveBloques;
+    onEffectiveBloquesRef.current?.(effectiveBloques);
+  }, [effectiveBloques, slide?.id, draggingId]);
 
   const blocks = slide?.bloques ?? [];
 
+  useEffect(() => {
+    if (!selectedBlockId) return;
+    const bloques = effectiveBloques ?? slide?.bloques ?? [];
+    if (!bloques.length) {
+      setSelectedBlockId(null);
+      onBlockSelectRef.current?.('');
+      return;
+    }
+    if (!getBlockAtPath(bloques, selectedBlockId)) {
+      setSelectedBlockId(null);
+      onBlockSelectRef.current?.('');
+    }
+  }, [
+    slide?.id,
+    selectedBlockId,
+    effectiveBloques,
+    slide?.bloques?.length,
+  ]);
+
+  const handleRendererBlockSelect = useCallback(
+    (id: string) => {
+      setSelectedBlockId(id);
+      onBlockSelect?.(id);
+    },
+    [onBlockSelect],
+  );
+
+  const handleApplyBloques = useCallback(
+    async (next: Block[]) => {
+      const ok = await patchSlideBloques(next);
+      if (ok) {
+        await queryClient.refetchQueries({
+          queryKey: ['classes', 'detail', classId],
+        });
+      }
+      return ok;
+    },
+    [patchSlideBloques, queryClient, classId],
+  );
+
+  useEffect(() => {
+    const root = canvasRef.current;
+    if (!root) return;
+    const onClickCapture = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-block-id]')) return;
+      if (t.closest('[data-drag-handle]')) return;
+      setSelectedBlockId(null);
+      onBlockSelectRef.current?.('');
+    };
+    root.addEventListener('click', onClickCapture, true);
+    return () => root.removeEventListener('click', onClickCapture, true);
+  }, [slide?.id]);
+
   // ── render ──────────────────────────────────────────────────────────────────
   return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-row overflow-hidden">
+    {/*
+      * overflow-visible (not hidden) so that blocks dragged outside the slide
+      * frame remain visible and interactable in the grey workspace margin.
+      * 48 px padding on all sides guarantees handles stay reachable.
+      * The outermost flex div keeps overflow-hidden as the final clip boundary.
+      */}
     <div
       className={cn(
-        'relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end overflow-hidden',
-        'bg-editor-workspace px-4 pb-2 pt-[var(--editor-canvas-pt)] md:px-6 md:pb-2 md:pt-[var(--editor-canvas-pt-md)]',
+        // isolate: new stacking context — blocks can't z-index-bleed into siblings.
+        // overflow-clip: clips overflow at workspace boundary without creating a
+        //   scroll container, so blocks beyond the 48 px padding are hidden but
+        //   blocks in the padding zone remain visible and interactive.
+        'relative isolate flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end overflow-clip',
+        'bg-editor-workspace px-12 pb-12 pt-[var(--editor-canvas-pt)] md:px-12 md:pb-12 md:pt-[var(--editor-canvas-pt-md)]',
       )}
     >
       {/* Floating editor toolbar */}
@@ -243,25 +374,29 @@ export function CanvasArea({
       </div>
 
       {isLoading ? (
-        <div className={SLIDE_FRAME_CLASS}>
-          <Skeleton className="h-full w-full rounded-none" />
+        <div className={SLIDE_VIEWPORT_CLASS}>
+          <div className={SLIDE_SURFACE_CLASS}>
+            <Skeleton className="h-full w-full rounded-none" />
+          </div>
         </div>
       ) : liveSlide ? (
         <DndContext
           sensors={sensors}
-          onDragStart={(e: DragStartEvent) => handleDragStart(e)}
-          onDragMove={(e: DragMoveEvent)  => handleDragMove(e)}
-          onDragEnd={(e: DragEndEvent)    => handleDragEnd(e)}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
         >
-          <div className={SLIDE_FRAME_CLASS} ref={canvasRef}>
+          <div className={SLIDE_VIEWPORT_CLASS}>
+            <div ref={canvasRef} className={SLIDE_SURFACE_CLASS}>
             {/* Slide content — receives live positions during drag */}
             <SlideRenderer
               slide={liveSlide}
               modo="editor"
-              onBlockSelect={onBlockSelect}
+              canvasRef={canvasRef}
+              onBlockSelect={handleRendererBlockSelect}
               onActivityChange={onActivityChange}
               onRemoveBlock={onRemoveBlock}
-              className="absolute inset-0 h-full w-full"
+              className="absolute inset-0 h-full w-full min-h-0 min-w-0"
             />
 
             {/* Drag handles — one badge per block, overlaid above SlideRenderer */}
@@ -273,6 +408,7 @@ export function CanvasArea({
                 draggingId={draggingId}
               />
             ))}
+            </div>
           </div>
         </DndContext>
       ) : (
@@ -289,6 +425,13 @@ export function CanvasArea({
           </div>
         </div>
       )}
+    </div>
+
+    <PropertiesPanel
+      bloques={liveSlide?.bloques ?? []}
+      selectedBlockId={selectedBlockId}
+      onApplyBloques={handleApplyBloques}
+    />
     </div>
   );
 }

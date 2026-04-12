@@ -402,6 +402,7 @@ export default function CanvasEditor({
           tipo: 'imagen',
           url: url.trim() || 'https://placehold.co/400x300/png?text=Imagen',
           ancho: 'min(100%, 480px)',
+          ajuste: 'llenar',
         };
         commitDoc({ ...docRef.current, bloques: [...docRef.current.bloques, block] });
         scheduleHistorySnapshot();

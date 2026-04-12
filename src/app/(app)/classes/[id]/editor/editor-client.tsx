@@ -229,6 +229,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
 
+  /** Live block positions from CanvasArea during / immediately after drag. */
+  const [activeSlideLiveBloques, setActiveSlideLiveBloques] = useState<Block[] | null>(null);
+
   // ── Live responses from students (keyed by slideId) ────────────────────────
   const [liveResponses, setLiveResponses] = useState<
     Map<string, { activityType: string; responses: StudentResponse[] }>
@@ -429,10 +432,28 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
 
+  // Clear live bloques whenever the user switches to a different slide.
+  useEffect(() => {
+    setActiveSlideLiveBloques(null);
+  }, [resolvedSlideIndex]);
+
   const rendererSlide = useMemo(
     () => (activeSlide ? classSlideToRendererSlide(activeSlide as ApiSlide) : null),
     [activeSlide],
   );
+
+  /**
+   * Content override for the active slide thumbnail: merge live block positions
+   * into the raw API content so SlidesPanel shows real-time positions.
+   */
+  const activeSlideLiveContent = useMemo<unknown>(() => {
+    if (!activeSlideLiveBloques || !activeSlide) return undefined;
+    const base =
+      activeSlide.content && typeof activeSlide.content === 'object' && !Array.isArray(activeSlide.content)
+        ? (activeSlide.content as Record<string, unknown>)
+        : {};
+    return { ...base, bloques: activeSlideLiveBloques };
+  }, [activeSlideLiveBloques, activeSlide]);
 
   const activeSlideHasActivity = useMemo(() => {
     if (!activeSlide) return false;
@@ -935,6 +956,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <SlidesPanel
               slides={sortedSlides}
               activeIndex={resolvedSlideIndex}
+              activeSlideLiveContent={activeSlideLiveContent}
               isLoading={isLoading}
               isAddingSlide={createSlide.isPending}
               onSelect={setActiveSlideIndex}
@@ -971,6 +993,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             isLoading={isLoading}
             onActivityChange={handleActivityChange}
             onRemoveBlock={handleRemoveBlock}
+            onEffectiveBloques={setActiveSlideLiveBloques}
           />
 
           {/* Flyout panel derecho */}

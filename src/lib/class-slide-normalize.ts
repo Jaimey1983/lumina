@@ -151,6 +151,26 @@ export function buildContentDocumentForNewActivitySlide(activityBlock: Block): R
   };
 }
 
+/** Obtiene un bloque por la misma ruta que `updateBlockAtPath`. */
+export function getBlockAtPath(bloques: Block[], path: string): Block | null {
+  const parts = path.split('-').map((x) => parseInt(x, 10));
+  if (parts.some((n) => Number.isNaN(n))) return null;
+
+  function go(arr: Block[], depth: number): Block | null {
+    const i = parts[depth]!;
+    if (i < 0 || i >= arr.length) return null;
+    if (depth === parts.length - 1) return arr[i]!;
+
+    const block = arr[i];
+    if (block.tipo !== 'columnas') return null;
+    const colIdx = parts[depth + 1];
+    if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return null;
+    return go(block.columnas[colIdx]!, depth + 2);
+  }
+
+  return go(bloques, 0);
+}
+
 /** Actualiza un bloque por ruta tipo `"2"` o `"5-0-1"` (columnas anidadas). */
 export function updateBlockAtPath(
   bloques: Block[],

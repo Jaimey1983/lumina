@@ -25,6 +25,8 @@ export function useClass(id: string) {
   return useQuery({
     queryKey: ['classes', 'detail', id],
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data } = await api.get<ClassDetail>(`/classes/${id}`);
       return data ?? null;
