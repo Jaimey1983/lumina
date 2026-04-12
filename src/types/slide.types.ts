@@ -254,29 +254,48 @@ export interface TextBlock {
   negrita?: boolean;
   cursiva?: boolean;
   color?: string;
+  /** Canvas positioning — percentage of canvas dimensions (0-100). */
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
 }
 
 export interface ImageBlock {
   tipo: 'imagen';
   url: string;
   alt?: string;
-  ancho?: string;
-  alto?: string;
+  /** CSS string (e.g. '100%') or canvas percentage number (0-100). */
+  ancho?: string | number;
+  /** CSS string (e.g. '100%') or canvas percentage number (0-100). */
+  alto?: string | number;
   ajuste?: 'cubrir' | 'contener' | 'llenar';
   bordeRedondeado?: string;
   caption?: string;
+  /** Canvas positioning — percentage of canvas dimensions (0-100). */
+  x?: number;
+  y?: number;
+  zIndex?: number;
 }
 
 export interface VideoBlock {
   tipo: 'video';
+  id?: string;
   url: string;
   plataforma?: 'youtube' | 'vimeo' | 'directo';
   autoplay?: boolean;
   controles?: boolean;
   bucle?: boolean;
   silenciado?: boolean;
-  ancho?: string;
-  alto?: string;
+  /** CSS string (e.g. '100%') or canvas percentage number (0-100). */
+  ancho?: string | number;
+  /** CSS string (e.g. '100%') or canvas percentage number (0-100). */
+  alto?: string | number;
+  /** Canvas positioning — percentage of canvas dimensions (0-100). */
+  x?: number;
+  y?: number;
+  zIndex?: number;
 }
 
 export interface AudioBlock {
@@ -342,6 +361,7 @@ export interface FormaBlock {
   alto?: number;
   x?: number;
   y?: number;
+  zIndex?: number;
 }
 
 // ─── Block (discriminated union) ──────────────────────────────────────────────
@@ -406,3 +426,13 @@ export interface SlideClass {
   createdAt: string;
   updatedAt?: string;
 }
+
+// ─── Canvas positioning fallbacks ─────────────────────────────────────────────
+// Default coordinates (%) for blocks that pre-date the free-canvas system.
+
+export const BLOCK_FALLBACKS = {
+  text:  { x: 10, y: 10, ancho: 80, alto: 20 },
+  image: { x: 25, y: 25, ancho: 50, alto: 50 },
+  forma: { x: 10, y: 10, ancho: 30, alto: 30 },
+  video: { x: 10, y: 30, ancho: 80, alto: 40 },
+} as const;

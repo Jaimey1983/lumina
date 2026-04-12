@@ -1,7 +1,12 @@
 'use client';
 
-import { createElement, CSSProperties, useState } from 'react';
+import { createElement, CSSProperties, useState, useRef, useCallback, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
+
+import { useUpdateSlide } from '@/hooks/api/use-classes';
+import { mergeSlideContent, sanitizeSlideContentForPersistence } from '@/lib/class-slide-normalize';
+import { ResizeHandles } from './resize-handles';
 
 import type {
   Activity,
@@ -14,13 +19,12 @@ import type {
   DividerBlock,
   FormaBlock,
   ImageBlock,
-  Layout,
-  LayoutPadding,
   QuoteBlock,
   Slide,
   TextBlock,
   VideoBlock,
 } from '@/types/slide.types';
+import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
 
 import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
@@ -33,6 +37,10 @@ import { TrueFalseActivityEditor, TrueFalseViewer } from './activities/true-fals
 import { DragDropActivity, DragDropActivityEditor } from './activities/drag-drop';
 import { VideoInteractiveActivity, VideoInteractiveActivityEditor } from './activities/video-interactive';
 import { LivePollActivityEditor, LivePollViewer } from './activities/live-poll';
+
+// ─── Modo ──────────────────────────────────────────────────────────────────────
+
+type Modo = 'editor' | 'viewer' | 'preview';
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
   if (!block.marco) return block;
@@ -91,58 +99,99 @@ function buildBackgroundStyle(fondo?: Background): CSSProperties {
   }
 }
 
-// ─── Layout → CSS ─────────────────────────────────────────────────────────────
+// ─── Canvas positioning ───────────────────────────────────────────────────────
 
-const H_ALIGN_MAP: Record<string, string> = {
-  izquierda: 'flex-start',
-  centro: 'center',
-  derecha: 'flex-end',
-};
+const ACTIVITY_POSITION_FALLBACK = { x: 5, y: 5, ancho: 90, alto: 90 };
 
-const V_ALIGN_MAP: Record<string, string> = {
-  inicio: 'flex-start',
-  centro: 'center',
-  fin: 'flex-end',
-};
-
-function resolvePadding(relleno: Layout['relleno']): string {
-  if (relleno === undefined) return '2rem';
-  if (typeof relleno === 'number') return `${relleno}px`;
-  const p = relleno as LayoutPadding;
-  return `${p.arriba}px ${p.derecha}px ${p.abajo}px ${p.izquierda}px`;
+function getBlockPositionStyle(block: Block): CSSProperties {
+  switch (block.tipo) {
+    case 'texto': {
+      const fb = BLOCK_FALLBACKS.text;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${block.ancho ?? fb.ancho}%`,
+        height: `${block.alto ?? fb.alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
+    case 'imagen': {
+      const fb = BLOCK_FALLBACKS.image;
+      const ancho = typeof block.ancho === 'number' ? block.ancho : fb.ancho;
+      const alto = typeof block.alto === 'number' ? block.alto : fb.alto;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${ancho}%`,
+        height: `${alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
+    case 'video': {
+      const fb = BLOCK_FALLBACKS.video;
+      const ancho = typeof block.ancho === 'number' ? block.ancho : fb.ancho;
+      const alto = typeof block.alto === 'number' ? block.alto : fb.alto;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${ancho}%`,
+        height: `${alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
+    case 'forma': {
+      const fb = BLOCK_FALLBACKS.forma;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${block.ancho ?? fb.ancho}%`,
+        height: `${block.alto ?? fb.alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
+    case 'actividad': {
+      const fb = ACTIVITY_POSITION_FALLBACK;
+      return {
+        position: 'absolute',
+        left: `${fb.x}%`,
+        top: `${fb.y}%`,
+        width: `${fb.ancho}%`,
+        height: `${fb.alto}%`,
+        zIndex: 1,
+      };
+    }
+    default:
+      return {
+        position: 'absolute',
+        left: '5%',
+        top: '5%',
+        width: '90%',
+        height: '90%',
+        zIndex: 1,
+      };
+  }
 }
 
-function buildLayoutStyle(diseno?: Layout): CSSProperties {
-  const padding = resolvePadding(diseno?.relleno);
-  const gap = diseno?.brecha !== undefined ? `${diseno.brecha}px` : '0.75rem';
-  const hAlign = diseno?.alineacionHorizontal ? (H_ALIGN_MAP[diseno.alineacionHorizontal] ?? 'stretch') : 'stretch';
-  const vAlign = diseno?.alineacionVertical ? (V_ALIGN_MAP[diseno.alineacionVertical] ?? 'flex-start') : 'flex-start';
+// ─── YouTube embed URL ────────────────────────────────────────────────────────
 
-  if (diseno?.columnas && diseno.columnas > 1) {
-    return {
-      display: 'grid',
-      gridTemplateColumns: `repeat(${diseno.columnas}, 1fr)`,
-      gap,
-      alignItems: vAlign,
-      justifyItems: hAlign,
-      padding,
-      height: '100%',
-      minHeight: 0,
-      boxSizing: 'border-box',
-    };
+function buildEmbedUrl(url: string, autoplay?: boolean): string {
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+  if (ytMatch) {
+    const videoId = ytMatch[1];
+    const params = new URLSearchParams({ ...(autoplay ? { autoplay: '1' } : {}) });
+    return `https://www.youtube.com/embed/${videoId}${params.size ? `?${params}` : ''}`;
   }
-
-  return {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: vAlign,
-    alignItems: hAlign,
-    gap,
-    padding,
-    height: '100%',
-    minHeight: 0,
-    boxSizing: 'border-box',
-  };
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) {
+    const videoId = vimeoMatch[1];
+    const params = new URLSearchParams({ ...(autoplay ? { autoplay: '1' } : {}) });
+    return `https://player.vimeo.com/video/${videoId}${params.size ? `?${params}` : ''}`;
+  }
+  return url;
 }
 
 // ─── Individual block renderers ───────────────────────────────────────────────
@@ -154,7 +203,96 @@ const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   justificado: 'justify',
 };
 
-function RenderText({ block }: { block: TextBlock }) {
+// ─── Inline text editor ───────────────────────────────────────────────────────
+
+function InlineTextEditor({
+  block,
+  onCommit,
+  onDiscard,
+}: {
+  block: TextBlock;
+  onCommit: (text: string) => void;
+  onDiscard: () => void;
+}) {
+  const [value, setValue] = useState(block.contenido);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  /** Guards against double-fire from blur + Enter/Escape. */
+  const exitedRef = useRef(false);
+
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.focus();
+    ta.select();
+  }, []);
+
+  function commit() {
+    if (exitedRef.current) return;
+    exitedRef.current = true;
+    onCommit(value);
+  }
+
+  function discard() {
+    if (exitedRef.current) return;
+    exitedRef.current = true;
+    onDiscard();
+  }
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
+        else if (e.key === 'Escape')          { e.preventDefault(); discard(); }
+      }}
+      // Prevent click/dblclick from bubbling to BlockNode while editing
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        margin: 0,
+        padding: '2px',
+        border: 'none',
+        outline: 'none',
+        background: 'rgba(255,255,255,0.05)',
+        resize: 'none',
+        cursor: 'text',
+        fontFamily: 'inherit',
+        fontSize: block.tamanoFuente,
+        fontWeight: block.negrita ? 'bold' : 'normal',
+        fontStyle: block.cursiva ? 'italic' : 'normal',
+        color: block.color ?? 'inherit',
+        textAlign: block.alineacion
+          ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
+          : 'left',
+        lineHeight: 'inherit',
+        overflowY: 'auto',
+        boxSizing: 'border-box',
+      }}
+    />
+  );
+}
+
+// ─── RenderText ───────────────────────────────────────────────────────────────
+
+interface RenderTextProps {
+  block: TextBlock;
+  isEditing?: boolean;
+  onCommit?: (text: string) => void;
+  onDiscard?: () => void;
+}
+
+function RenderText({ block, isEditing, onCommit, onDiscard }: RenderTextProps) {
+  if (isEditing && onCommit && onDiscard) {
+    return <InlineTextEditor block={block} onCommit={onCommit} onDiscard={onDiscard} />;
+  }
+
   const style: CSSProperties = {
     margin: 0,
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
@@ -182,8 +320,8 @@ function RenderImage({ block }: { block: ImageBlock }) {
         alt={block.alt ?? ''}
         style={{
           display: 'block',
-          width: block.ancho ?? '100%',
-          height: block.alto ?? '100%',
+          width: '100%',
+          height: '100%',
           maxWidth: '100%',
           maxHeight: '100%',
           objectFit: block.ajuste ? fitMap[block.ajuste] : 'contain',
@@ -202,15 +340,12 @@ function RenderImage({ block }: { block: ImageBlock }) {
 }
 
 function RenderVideo({ block }: { block: VideoBlock }) {
-  const width = block.ancho ?? '100%';
+  const isYoutube = block.url.includes('youtube') || block.url.includes('youtu.be');
 
-  if (block.plataforma === 'youtube') {
-    const match = block.url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
-    const videoId = match?.[1] ?? '';
-    const params = new URLSearchParams({ ...(block.autoplay ? { autoplay: '1' } : {}) });
-    const src = `https://www.youtube.com/embed/${videoId}${params.size ? `?${params}` : ''}`;
+  if (isYoutube) {
+    const src = buildEmbedUrl(block.url, block.autoplay);
     return (
-      <div style={{ width, position: 'relative', aspectRatio: '16/9' }}>
+      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <iframe
           src={src}
           title="Video YouTube"
@@ -222,25 +357,6 @@ function RenderVideo({ block }: { block: VideoBlock }) {
     );
   }
 
-  if (block.plataforma === 'vimeo') {
-    const match = block.url.match(/vimeo\.com\/(\d+)/);
-    const videoId = match?.[1] ?? '';
-    const params = new URLSearchParams({ ...(block.autoplay ? { autoplay: '1' } : {}) });
-    const src = `https://player.vimeo.com/video/${videoId}${params.size ? `?${params}` : ''}`;
-    return (
-      <div style={{ width, position: 'relative', aspectRatio: '16/9' }}>
-        <iframe
-          src={src}
-          title="Video Vimeo"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-        />
-      </div>
-    );
-  }
-
-  // Native / direct URL
   return (
     <video
       src={block.url}
@@ -248,7 +364,7 @@ function RenderVideo({ block }: { block: VideoBlock }) {
       autoPlay={block.autoplay}
       loop={block.bucle}
       muted={block.silenciado}
-      style={{ display: 'block', width, height: block.alto ?? 'auto' }}
+      style={{ display: 'block', width: '100%', height: '100%' }}
     />
   );
 }
@@ -332,6 +448,7 @@ function RenderDivider({ block }: { block: DividerBlock }) {
         border: 'none',
         borderTop: `${block.grosor ?? 1}px ${styleMap[block.estilo ?? 'solido'] ?? 'solid'} ${block.color ?? '#e5e7eb'}`,
         margin: 0,
+        width: '100%',
       }}
     />
   );
@@ -345,7 +462,7 @@ function RenderForma({ block }: { block: FormaBlock }) {
           border: 'none',
           borderTop: `${block.grosorBorde ?? 2}px solid ${block.color}`,
           margin: 0,
-          width: block.ancho ? `${block.ancho}px` : '100%',
+          width: '100%',
         }}
       />
     );
@@ -353,29 +470,31 @@ function RenderForma({ block }: { block: FormaBlock }) {
 
   if (block.forma === 'triangulo') {
     return (
-      <div
-        style={{
-          width: 0,
-          height: 0,
-          borderLeft: `${(block.ancho || 100) / 2}px solid transparent`,
-          borderRight: `${(block.ancho || 100) / 2}px solid transparent`,
-          borderBottom: `${block.alto || 100}px solid ${block.color}`,
-        }}
-      />
+      <svg
+        viewBox="0 0 100 100"
+        style={{ width: '100%', height: '100%' }}
+        preserveAspectRatio="none"
+      >
+        <polygon
+          points="50,0 100,100 0,100"
+          fill={block.color}
+          stroke={block.colorBorde ?? 'none'}
+          strokeWidth={block.grosorBorde ?? 0}
+        />
+      </svg>
     );
   }
 
   const baseStyle: CSSProperties = {
-    width: block.ancho ? `${block.ancho}px` : '100%',
-    height: block.alto ? `${block.alto}px` : '100px',
+    width: '100%',
+    height: '100%',
     backgroundColor: block.color,
     border: block.grosorBorde ? `${block.grosorBorde}px solid ${block.colorBorde || '#000'}` : 'none',
+    boxSizing: 'border-box',
   };
 
   if (block.forma === 'circulo') {
     baseStyle.borderRadius = '50%';
-  } else if (block.forma === 'rectangulo') {
-    baseStyle.borderRadius = 0;
   }
 
   return <div style={baseStyle} />;
@@ -573,7 +692,7 @@ function RenderActivity({
 interface RenderColumnsProps {
   block: ColumnsBlock;
   slideId: string;
-  modo: 'editor' | 'viewer';
+  modo: Modo;
   selectedId: string | null;
   onBlockClick: (id: string) => void;
   pathPrefix: string;
@@ -608,6 +727,7 @@ function RenderColumns({
         gridTemplateColumns: gridCols,
         gap: '1rem',
         width: '100%',
+        height: '100%',
       }}
     >
       {block.columnas.map((colBlocks, colIdx) => (
@@ -648,17 +768,31 @@ interface BlockNodeProps {
   blockId: string;
   slideId: string;
   isSelected: boolean;
-  modo: 'editor' | 'viewer';
+  modo: Modo;
   selectedId: string | null;
   onClick: () => void;
   onBlockClick: (id: string) => void;
   pathPrefix: string;
+  /** Absolute-position style applied to the wrapper div (top-level blocks only). */
+  positionStyle?: CSSProperties;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
   /** Slide dedicado a actividad(es): el editor de respuesta corta usa layout de lienzo acotado. */
   activityCanvasLayout?: boolean;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
   onResponse?: (response: unknown) => void;
+  canvasRef?: React.RefObject<HTMLDivElement | null>;
+  currentCoords?: { x: number; y: number; ancho: number; alto: number };
+  onResize?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
+  onResizeEnd?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
+  /** ID of the block currently in inline-text-edit mode (null if none). */
+  editingId?: string | null;
+  /** Enter inline-edit mode for a TextBlock (double-click in editor). */
+  onEditStart?: (blockId: string) => void;
+  /** Commit the edited text and persist (Enter / blur). */
+  onEditCommit?: (blockId: string, newText: string) => void;
+  /** Discard changes and exit inline-edit mode (Escape). */
+  onEditCancel?: () => void;
 }
 
 function BlockNode({
@@ -671,17 +805,41 @@ function BlockNode({
   onClick,
   onBlockClick,
   pathPrefix,
+  positionStyle,
   onActivityChange,
   onRemoveBlock,
   activityCanvasLayout,
   onResponse,
+  canvasRef,
+  currentCoords,
+  onResize,
+  onResizeEnd,
+  editingId,
+  onEditStart,
+  onEditCommit,
+  onEditCancel,
 }: BlockNodeProps) {
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
 
+  const editorMode = modo === 'editor';
+  const isFormBlock = block.tipo === 'actividad' && editorMode;
+  // Normalize 'preview' to 'viewer' for activity renderers
+  const activityModo: 'editor' | 'viewer' = editorMode ? 'editor' : 'viewer';
+
+  const isTextEditing = editorMode && block.tipo === 'texto' && editingId === blockId;
+
   function renderContent() {
     switch (block.tipo) {
-      case 'texto':     return <RenderText block={block} />;
+      case 'texto':
+        return (
+          <RenderText
+            block={block}
+            isEditing={isTextEditing}
+            onCommit={onEditCommit ? (text) => onEditCommit(blockId, text) : undefined}
+            onDiscard={onEditCancel}
+          />
+        );
       case 'imagen':    return <RenderImage block={block} />;
       case 'video':     return <RenderVideo block={block} />;
       case 'audio':     return <RenderAudio block={block} />;
@@ -691,7 +849,7 @@ function BlockNode({
             block={activityBlockForRender}
             blockId={blockId}
             slideId={slideId}
-            modo={modo}
+            modo={activityModo}
             isSelected={isSelected}
             activityCanvasLayout={activityCanvasLayout}
             onActivityChange={onActivityChange}
@@ -720,18 +878,25 @@ function BlockNode({
     }
   }
 
-  const editorMode = modo === 'editor';
-  const isFormBlock = block.tipo === 'actividad' && editorMode;
-
   return (
     <div
-      role={editorMode && !isFormBlock ? 'button' : undefined}
-      tabIndex={editorMode && !isFormBlock ? 0 : undefined}
-      aria-pressed={editorMode ? isSelected : undefined}
+      role={editorMode && !isFormBlock && !isTextEditing ? 'button' : undefined}
+      tabIndex={editorMode && !isFormBlock && !isTextEditing ? 0 : undefined}
+      aria-pressed={editorMode && !isTextEditing ? isSelected : undefined}
       data-block-id={blockId}
-      onClick={editorMode ? onClick : undefined}
+      style={positionStyle}
+      onClick={
+        editorMode && !isTextEditing
+          ? (e) => { e.stopPropagation(); onClick(); }
+          : undefined
+      }
+      onDoubleClick={
+        editorMode && block.tipo === 'texto' && !isTextEditing
+          ? (e) => { e.stopPropagation(); onEditStart?.(blockId); }
+          : undefined
+      }
       onKeyDown={
-        editorMode && !isFormBlock
+        editorMode && !isFormBlock && !isTextEditing
           ? (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -742,14 +907,27 @@ function BlockNode({
       }
       className={cn(
         editorMode && 'relative group',
-        editorMode && !isFormBlock && 'cursor-pointer outline-none rounded-sm',
-        editorMode && !isFormBlock && 'hover:ring-1 hover:ring-primary/40',
+        editorMode && !isFormBlock && !isTextEditing && 'cursor-pointer outline-none rounded-sm',
+        editorMode && !isFormBlock && !isTextEditing && 'hover:ring-2 hover:ring-blue-500/40',
+        editorMode && isTextEditing && 'cursor-text outline-none rounded-sm',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
-        isSelected && !isFormBlock && 'ring-1 ring-primary/50',
+        editorMode && isSelected && !isFormBlock && 'ring-2 ring-blue-500 ring-offset-1',
         !editorMode && 'overflow-hidden max-w-full max-h-full',
       )}
     >
       {renderContent()}
+      {editorMode && isSelected && !isFormBlock && canvasRef && currentCoords && onResize && onResizeEnd && (
+        <ResizeHandles
+          blockId={blockId}
+          x={currentCoords.x}
+          y={currentCoords.y}
+          ancho={currentCoords.ancho}
+          alto={currentCoords.alto}
+          canvasRef={canvasRef}
+          onResize={onResize}
+          onResizeEnd={onResizeEnd}
+        />
+      )}
       {editorMode && !!onRemoveBlock && (
         <button
           type="button"
@@ -773,8 +951,8 @@ function BlockNode({
 
 export interface SlideRendererProps {
   slide: Slide;
-  /** `'editor'` shows click-selection borders; `'viewer'` is purely presentational. */
-  modo: 'editor' | 'viewer';
+  /** `'editor'` shows click-selection borders; `'viewer'`/`'preview'` are purely presentational. */
+  modo: Modo;
   /** Called with the block's index-path string when a block is selected in editor mode. */
   onBlockSelect?: (blockId: string) => void;
   /** Persiste cambios de una actividad (PATCH vía el padre). */
@@ -795,107 +973,152 @@ export function SlideRenderer({
   onResponse,
   className,
 }: SlideRendererProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId,    setSelectedId]    = useState<string | null>(null);
+  const [editingId,     setEditingId]     = useState<string | null>(null);
+  const [resizingCoords, setResizingCoords] = useState<Record<string, { x: number; y: number; ancho: number; alto: number }>>({});
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+
+  const params = useParams();
+  const classId = params.id as string;
+  const updateSlide = useUpdateSlide(classId);
 
   const bgStyle = buildBackgroundStyle(slide.fondo);
-  const layoutStyle = buildLayoutStyle(slide.diseno);
+  const editorMode = modo === 'editor';
 
-  function handleBlockClick(blockId: string) {
-    if (modo !== 'editor') return;
+  const handleResize = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
+    setResizingCoords((prev) => ({ ...prev, [blockId]: coords }));
+  }, []);
+
+  const handleResizeEnd = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
+    setResizingCoords((prev) => {
+      const next = { ...prev };
+      delete next[blockId];
+      return next;
+    });
+
+    const blocks = slide.bloques ? [...slide.bloques] : [];
+    const blockIndex = parseInt(blockId, 10);
+    
+    if (blocks[blockIndex]) {
+       blocks[blockIndex] = {
+          ...blocks[blockIndex],
+          x: coords.x,
+          y: coords.y,
+          ancho: coords.ancho,
+          alto: coords.alto,
+       } as Block;
+    }
+    
+    const updatedContent = mergeSlideContent(slide as any, { bloques: blocks });
+    const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
+
+    updateSlide.mutate({ slideId: slide.id, content: sanitized });
+  }, [slide, updateSlide]);
+
+  // ─── Inline text editing ──────────────────────────────────────────────────
+
+  function handleEditStart(blockId: string) {
+    if (!editorMode || editingId === blockId) return;
+    setEditingId(blockId);
     setSelectedId(blockId);
     onBlockSelect?.(blockId);
   }
 
+  const handleEditCommit = useCallback((blockId: string, newText: string) => {
+    setEditingId(null);
+    const blocks = slide.bloques ? [...slide.bloques] : [];
+    const blockIndex = parseInt(blockId, 10);
+    const block = blocks[blockIndex];
+    if (!block || block.tipo !== 'texto' || block.contenido === newText) return;
+    blocks[blockIndex] = { ...block, contenido: newText } as Block;
+    const updatedContent = mergeSlideContent(slide as any, { bloques: blocks });
+    const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
+    updateSlide.mutate({ slideId: slide.id, content: sanitized });
+  }, [slide, updateSlide]);
+
+  function handleEditCancel() {
+    setEditingId(null);
+  }
+
+  // ─── Block selection / canvas deselect ────────────────────────────────────
+
+  function handleBlockClick(blockId: string) {
+    if (!editorMode) return;
+    setSelectedId(blockId);
+    onBlockSelect?.(blockId);
+  }
+
+  function handleCanvasClick() {
+    if (editorMode) {
+      setSelectedId(null);
+      setEditingId(null);
+    }
+  }
+
   const blocks = slide.bloques ?? [];
-  const topLevelActivityIndices = blocks
-    .map((b, i) => (b.tipo === 'actividad' ? i : -1))
-    .filter((i) => i >= 0);
-  const topLevelTextIndices = blocks
-    .map((b, i) => (b.tipo === 'texto' ? i : -1))
-    .filter((i) => i >= 0);
-  const isActivityExclusiveSlide = topLevelActivityIndices.length > 0;
 
   return (
     <div
-      className={cn('relative w-full h-full overflow-hidden', className)}
-      style={bgStyle}
+      className={cn('overflow-hidden', className)}
+      style={{
+        ...bgStyle,
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '16 / 9',
+        overflow: 'hidden',
+      }}
+      onClick={handleCanvasClick}
+      ref={canvasRef}
     >
-      {isActivityExclusiveSlide ? (
-        <div className="relative flex h-full min-h-0 min-w-0 w-full items-center justify-center overflow-hidden p-4 sm:p-6">
-          <div className="flex w-full max-w-xl min-h-0 flex-col items-stretch justify-center gap-6">
-            {topLevelTextIndices.map((index) => {
-              const blockId = String(index);
-              const block = blocks[index]!;
-              return (
-                <BlockNode
-                  key={blockId}
-                  block={block}
-                  blockId={blockId}
-                  slideId={slide.id}
-                  isSelected={modo === 'editor' && selectedId === blockId}
-                  modo={modo}
-                  selectedId={selectedId}
-                  onClick={() => handleBlockClick(blockId)}
-                  onBlockClick={handleBlockClick}
-                  pathPrefix={blockId}
-                  onActivityChange={onActivityChange}
-                  onRemoveBlock={onRemoveBlock}
-                  onResponse={onResponse}
-                />
-              );
-            })}
-            {topLevelActivityIndices.map((index) => {
-              const blockId = String(index);
-              const block = blocks[index]!;
-              return (
-                <BlockNode
-                  key={blockId}
-                  block={block}
-                  blockId={blockId}
-                  slideId={slide.id}
-                  isSelected={modo === 'editor' && selectedId === blockId}
-                  modo={modo}
-                  selectedId={selectedId}
-                  onClick={() => handleBlockClick(blockId)}
-                  onBlockClick={handleBlockClick}
-                  pathPrefix={blockId}
-                  onActivityChange={onActivityChange}
-                  onRemoveBlock={onRemoveBlock}
-                  onResponse={onResponse}
-                  activityCanvasLayout
-                />
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="relative h-full min-h-0 min-w-0 w-full" style={layoutStyle}>
-          {blocks.map((block, index) => {
-            const blockId = String(index);
-            return (
-              <BlockNode
-                key={blockId}
-                block={block}
-                blockId={blockId}
-                slideId={slide.id}
-                isSelected={modo === 'editor' && selectedId === blockId}
-                modo={modo}
-                selectedId={selectedId}
-                onClick={() => handleBlockClick(blockId)}
-                onBlockClick={handleBlockClick}
-                pathPrefix={blockId}
-                onActivityChange={onActivityChange}
-                onRemoveBlock={onRemoveBlock}
-                onResponse={onResponse}
-              />
-            );
-          })}
+      {blocks.map((block, index) => {
+        const blockId = String(index);
+        const posStyleObj = getBlockPositionStyle(block);
+        const currentCoords = resizingCoords[blockId] ?? {
+          x: parseFloat(posStyleObj.left as string) || 0,
+          y: parseFloat(posStyleObj.top as string) || 0,
+          ancho: parseFloat(posStyleObj.width as string) || 0,
+          alto: parseFloat(posStyleObj.height as string) || 0,
+        };
 
-          {blocks.length === 0 && modo === 'editor' && (
-            <div className="flex min-h-32 items-center justify-center text-sm text-neutral-400 select-none pointer-events-none">
-              Sin bloques — agrega contenido desde el panel lateral
-            </div>
-          )}
+        const posStyle = resizingCoords[blockId] ? {
+           ...posStyleObj,
+           left: `${currentCoords.x}%`,
+           top: `${currentCoords.y}%`,
+           width: `${currentCoords.ancho}%`,
+           height: `${currentCoords.alto}%`,
+        } : posStyleObj;
+
+        return (
+          <BlockNode
+            key={blockId}
+            block={block}
+            blockId={blockId}
+            slideId={slide.id}
+            isSelected={editorMode && selectedId === blockId}
+            modo={modo}
+            selectedId={selectedId}
+            onClick={() => handleBlockClick(blockId)}
+            onBlockClick={handleBlockClick}
+            pathPrefix={blockId}
+            positionStyle={posStyle}
+            onActivityChange={onActivityChange}
+            onRemoveBlock={editorMode ? onRemoveBlock : undefined}
+            onResponse={onResponse}
+            canvasRef={canvasRef}
+            currentCoords={currentCoords}
+            onResize={handleResize}
+            onResizeEnd={handleResizeEnd}
+            editingId={editingId}
+            onEditStart={editorMode ? handleEditStart : undefined}
+            onEditCommit={editorMode ? handleEditCommit : undefined}
+            onEditCancel={editorMode ? handleEditCancel : undefined}
+          />
+        );
+      })}
+
+      {blocks.length === 0 && editorMode && (
+        <div className="flex h-full items-center justify-center text-sm text-neutral-400 select-none pointer-events-none">
+          Sin bloques — agrega contenido desde el panel lateral
         </div>
       )}
     </div>
