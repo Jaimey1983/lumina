@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CheckCircle, Circle, Clock, XCircle, Trash2, Plus } from 'lucide-react';
 
 import type { VideoInteractive, VideoQuestion } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { normalizeVideoSource } from '@/lib/video-url-utils';
 import { cn } from '@/lib/utils';
 import { useActivityEditor } from './use-activity-editor';
+import { useVideoInteractiveRuntime } from './use-video-interactive-runtime';
 
 /** Alias descriptivo para props del editor (misma forma que `VideoInteractive`). */
 export type VideoInteractiveActivity = VideoInteractive;
@@ -30,38 +32,14 @@ function formatTime(secs: number): string {
   return `${m}:${s}`;
 }
 
-function buildEmbedUrl(actividad: VideoInteractive): string | null {
-  const { plataforma, urlVideo } = actividad;
-  if (plataforma === 'youtube' || (!plataforma && urlVideo.includes('youtu'))) {
-    const match = urlVideo.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
-    const id = match?.[1];
-    return id ? `https://www.youtube.com/embed/${id}?rel=0&enablejsapi=1` : null;
-  }
-  if (plataforma === 'vimeo' || (!plataforma && urlVideo.includes('vimeo'))) {
-    const match = urlVideo.match(/vimeo\.com\/(\d+)/);
-    const id = match?.[1];
-    return id ? `https://player.vimeo.com/video/${id}` : null;
-  }
-  return null; // direct video
-}
-
-function extraerVideoId(url: string): string {
-  // https://www.youtube.com/watch?v=VIDEO_ID
-  const watchMatch = url.match(/[?&]v=([^&?/]+)/);
-  if (watchMatch) return watchMatch[1];
-  // https://youtu.be/VIDEO_ID
-  const shortMatch = url.match(/youtu\.be\/([^?&/]+)/);
-  if (shortMatch) return shortMatch[1];
-  // https://www.youtube.com/embed/VIDEO_ID
-  const embedMatch = url.match(/youtube\.com\/embed\/([^?&/]+)/);
-  if (embedMatch) return embedMatch[1];
-  return '';
-}
-
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
 function EditorView({ actividad }: { actividad: VideoInteractive }) {
-  const embedUrl = buildEmbedUrl(actividad);
+  const source = useMemo(
+    () => normalizeVideoSource(actividad.urlVideo, actividad.plataforma),
+    [actividad.urlVideo, actividad.plataforma],
+  );
+  const embedUrl = source.embedUrl;
   return (
     <div className="space-y-4 rounded-lg border border-border p-4">
       <div className="flex items-center gap-2">
@@ -141,9 +119,9 @@ function QuestionOverlay({
   }
 
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="question-overlay">
       <div className="w-80 max-w-[90%] space-y-4 rounded-xl bg-background p-5 shadow-2xl">
-        <p className="text-sm font-medium">{question.pregunta}</p>
+        <p className="text-sm font-medium" data-testid="question-text">{question.pregunta}</p>
 
         <ul className="space-y-2">
           {question.opciones.map((op) => {
@@ -155,6 +133,7 @@ function QuestionOverlay({
                   type="button"
                   disabled={!!feedback}
                   onClick={() => setSelected(op.id)}
+                  data-testid="question-option"
                   className={cn(
                     'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors',
                     !feedback && !isSel && 'border-border hover:border-primary/50 hover:bg-accent',
@@ -194,7 +173,7 @@ function QuestionOverlay({
             >
               {feedback.correct ? '¡Correcto!' : 'Incorrecto.'}
             </p>
-            <Button size="sm" variant="outline" onClick={onDismiss} className="w-full">
+            <Button size="sm" variant="outline" onClick={onDismiss} className="w-full" data-testid="question-close-button">
               Continuar
             </Button>
           </div>
@@ -206,184 +185,52 @@ function QuestionOverlay({
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-/** Minimal interface for the YouTube IFrame player we need. */
-interface YTPlayer {
-  getCurrentTime(): number;
-  pauseVideo(): void;
-  playVideo(): void;
-  destroy(): void;
-}
-
 function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: VideoInteractive; editorSyncKey?: string; onResponse?: (response: unknown) => void }) {
-  const videoRef    = useRef<HTMLVideoElement>(null);
-  const [blockId] = useState(() => Math.random().toString(36).slice(2));
-  const ytPlayerRef = useRef<YTPlayer | null>(null);
-  const pollingRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const initTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** IDs of questions already shown — never triggers re-render. */
-  const shownQIds   = useRef<Set<string>>(new Set());
-  /** Ref mirror of activeQ so intervals/closures always read the latest value. */
-  const activeQRef  = useRef<VideoQuestion | null>(null);
-  const [activeQ, setActiveQ] = useState<VideoQuestion | null>(null);
-  /** Track answered questions by ID — prevents double-sending. */
-  const [answeredQIds, setAnsweredQIds] = useState<Set<string>>(new Set());
-
-  // Reset answered state when editorSyncKey changes (slide changed)
-  useEffect(() => {
-    setAnsweredQIds(new Set());
-    shownQIds.current.clear();
-    setActiveQ(null);
-    activeQRef.current = null;
-  }, [editorSyncKey]);
-
-  const embedUrl = buildEmbedUrl(actividad);
-  const isDirect = !embedUrl;
-  const isYouTube =
-    !isDirect &&
-    (actividad.plataforma === 'youtube' ||
-      (!actividad.plataforma && actividad.urlVideo.includes('youtu')));
-
-  // Keep ref in sync so closures inside intervals/event-handlers are not stale.
-  useEffect(() => { activeQRef.current = activeQ; }, [activeQ]);
-
-  // ── YouTube IFrame API ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isYouTube || actividad.preguntas.length === 0) return;
-
-    function startPolling() {
-      // Campo verificado en slide.types.ts → VideoQuestion.tiempoSegundos (número entero, segundos).
-      if (pollingRef.current) clearInterval(pollingRef.current)
-      pollingRef.current = setInterval(() => {
-        const player = ytPlayerRef.current;
-        // Guard: player must exist and be fully initialised before calling methods.
-        if (!player || typeof player.getCurrentTime !== 'function') return;
-        if (activeQRef.current) return;
-        const t = player.getCurrentTime();
-        const q = actividad.preguntas.find(
-          (q) => !shownQIds.current.has(q.id) && t >= q.tiempoSegundos,
-        );
-        if (q) {
-          shownQIds.current.add(q.id);
-          activeQRef.current = q; // bloquea nuevas preguntas inmediatamente sin detener el intervalo
-          if (q.pausarVideo !== false) {
-            console.log('[VideoInteractivo] pausando en', t, 'seg — pregunta:', q);
-            player.pauseVideo();
-          }
-          setActiveQ(q);
-        }
-      }, 250);
-    }
-
-    function initPlayer() {
-      const videoId = extraerVideoId(actividad.urlVideo);
-      if (!videoId) return;
-      const container = document.getElementById(`yt-player-${blockId}`);
-      if (!container) {
-        const observer = new MutationObserver(() => {
-          const el = document.getElementById(`yt-player-${blockId}`);
-          if (el) {
-            observer.disconnect();
-            initPlayer();
-          }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-        return;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ytPlayerRef.current = new (window as any).YT.Player(`yt-player-${blockId}`, {
-        videoId,
-        playerVars: {
-          enablejsapi: 1,
-          rel: 0,
-          modestbranding: 1,
-        },
-        events: {
-          onReady: () => {
-            startPolling();
-          },
-          onStateChange: (event: { data: number }) => {
-            const YT_ENDED = 0;
-            const YT_PLAYING = 1;
-            if (event.data === YT_ENDED) {
-              shownQIds.current.clear();
-              setActiveQ(null);
-              activeQRef.current = null;
-              if (pollingRef.current) clearInterval(pollingRef.current);
-              pollingRef.current = null;
-              ytPlayerRef.current?.destroy();
-              ytPlayerRef.current = null;
-              initTimerRef.current = setTimeout(initPlayer, 100);
-            }
-            if (event.data === YT_PLAYING && activeQRef.current === null) {
-              startPolling();
-            }
-          },
-        },
-      });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).YT?.Player) {
-      initPlayer();
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const prev = (window as any).onYouTubeIframeAPIReady as (() => void) | undefined;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).onYouTubeIframeAPIReady = () => { prev?.(); initPlayer(); };
-      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-        const script = document.createElement('script');
-        script.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(script);
-      }
-    }
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = null;
-      if (initTimerRef.current) clearTimeout(initTimerRef.current);
-      initTimerRef.current = null;
-      ytPlayerRef.current?.destroy();
-      ytPlayerRef.current = null;
-    };
-    // Re-run si cambia el número de preguntas o la URL del video para reinicializar el player
-  }, [isYouTube, actividad.preguntas.length, actividad.urlVideo]);
-
-  // ── Direct video time tracking ──────────────────────────────────────────────
-  function onTimeUpdate() {
-    if (activeQRef.current) return;
-    const t = videoRef.current?.currentTime ?? 0;
-    const q = actividad.preguntas.find(
-      (q) => !shownQIds.current.has(q.id) && t >= q.tiempoSegundos,
-    );
-    if (q) {
-      shownQIds.current.add(q.id);
-      activeQRef.current = q; // bloquea nuevas preguntas inmediatamente
-      if (q.pausarVideo !== false) videoRef.current?.pause();
-      setActiveQ(q);
-    }
-  }
-
-  function dismissQ() {
-    setActiveQ(null);
-    activeQRef.current = null;
-    if (isDirect)   videoRef.current?.play().catch(() => {});
-    if (isYouTube)  ytPlayerRef.current?.playVideo();
-  }
+  const {
+    source,
+    embedUrl,
+    isYouTube,
+    isVimeo,
+    isDirect,
+    vimeoEmbedUrl,
+    videoRef,
+    ytMountRef,
+    vimeoFrameRef,
+    hasStarted,
+    setHasStarted,
+    activeQ,
+    dismissQ,
+    handleOverlayAnswer,
+  } = useVideoInteractiveRuntime({
+    actividad,
+    editorSyncKey,
+    onResponse,
+  });
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 rounded-lg border border-border p-4" data-testid="video-interactive-viewer">
       {/* Video */}
       <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: '16/9' }}>
         {isDirect ? (
           <video
             ref={videoRef}
-            src={actividad.urlVideo}
+            src={source.normalizedUrl || actividad.urlVideo}
             controls
-            onTimeUpdate={onTimeUpdate}
+            data-testid="video-player-html5"
             className="h-full w-full object-cover"
           />
         ) : isYouTube ? (
-          <div id={`yt-player-${blockId}`} style={{ width: '100%', aspectRatio: '16/9' }} />
+          <div ref={ytMountRef} style={{ width: '100%', aspectRatio: '16/9' }} data-testid="video-player-yt" />
+        ) : isVimeo ? (
+          <iframe
+            ref={vimeoFrameRef}
+            src={vimeoEmbedUrl ?? undefined}
+            title="Video Vimeo"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            data-testid="video-player-vimeo"
+            className="absolute inset-0 h-full w-full border-0"
+          />
         ) : (
           <iframe
             src={embedUrl ?? undefined}
@@ -393,23 +240,26 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
             className="absolute inset-0 h-full w-full border-0"
           />
         )}
+
+        {!hasStarted && (
+          <div className="absolute inset-0 z-5 flex items-center justify-center bg-black/65 backdrop-blur-sm">
+            <Button size="sm" onClick={() => setHasStarted(true)} data-testid="video-start-button">
+              Iniciar actividad
+            </Button>
+          </div>
+        )}
+
         {activeQ && (
           <QuestionOverlay
             question={activeQ}
             onDismiss={dismissQ}
-            onAnswer={(answer) => {
-              if (!answeredQIds.has(activeQ.id)) {
-                const qIndex = actividad.preguntas.findIndex((q) => q.id === activeQ.id);
-                setAnsweredQIds((prev) => new Set(prev).add(activeQ.id));
-                onResponse?.({ questionIndex: qIndex, answer });
-              }
-            }}
+            onAnswer={handleOverlayAnswer}
           />
         )}
       </div>
 
-      {/* Non-YouTube embeds (e.g. Vimeo): show static questions list */}
-      {!isDirect && !isYouTube && actividad.preguntas.length > 0 && (
+      {/* Unknown embeds: show static questions list */}
+      {!isDirect && !isYouTube && !isVimeo && actividad.preguntas.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-muted-foreground">Preguntas del video</p>
           {actividad.preguntas.map((q) => (
