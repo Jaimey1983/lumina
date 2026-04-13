@@ -18,8 +18,9 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
-import { SaveResultsDto } from './dto/save-results.dto';
-import { SaveManualGradeDto } from './dto/save-manual-grade.dto';
+import { GuardarResultadosDto } from './dto/save-results.dto';
+import { NotaManualDto } from './dto/save-manual-grade.dto';
+import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -51,10 +52,17 @@ export class ClassesController {
     return this.classesService.findByCodigo(codigo);
   }
 
+  @Post('join/:codigo/guest')
+  joinAsGuest(
+    @Param('codigo') codigo: string,
+    @Body() dto: JoinAsGuestDto,
+  ) {
+    return this.classesService.joinAsGuest(codigo, dto);
+  }
+
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
-    return this.classesService.findOne(id, user.id, user.role);
+  findOne(@Param('id') id: string) {
+    return this.classesService.findOne(id);
   }
 
   @Patch(':id')
@@ -83,6 +91,8 @@ export class ClassesController {
     return this.classesService.remove(id, user.id);
   }
 
+  // ─── SESIONES ──────────────────────────────────────────
+
   @Post(':id/sessions/start')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER')
@@ -97,15 +107,16 @@ export class ClassesController {
     return this.classesService.endSession(id, user.id);
   }
 
+  // ─── RESULTADOS ────────────────────────────────────────
+
   @Post(':id/results')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER')
+  @Roles('TEACHER', 'STUDENT')
   saveResults(
     @Param('id') id: string,
-    @Body() dto: SaveResultsDto,
-    @CurrentUser() user: JwtAuthUser,
+    @Body() dto: GuardarResultadosDto,
   ) {
-    return this.classesService.saveResults(id, dto, user.id);
+    return this.classesService.saveResults(id, dto);
   }
 
   @Get(':id/gradebook')
@@ -120,7 +131,7 @@ export class ClassesController {
   @Roles('TEACHER')
   saveManualGrade(
     @Param('id') id: string,
-    @Body() dto: SaveManualGradeDto,
+    @Body() dto: NotaManualDto,
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.classesService.saveManualGrade(id, dto, user.id);

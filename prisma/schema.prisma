@@ -112,13 +112,14 @@ model Class {
   title       String
   description String?
   code        String      @unique
-  codigo      String      @unique @default("")
+  codigo      String      @unique @default(cuid())
   status      ClassStatus @default(DRAFT)
   courseId    String
   desempeno   Json?
   course      Course      @relation(fields: [courseId], references: [id])
   slides             Slide[]
   sessions           ClassSession[]
+  results            ClassResult[]
   whiteboardSessions WhiteboardSession[]
   collabNotes        CollabNote[]
   createdAt   DateTime    @default(now())
@@ -149,25 +150,35 @@ model Slide {
 }
 
 model ClassSession {
-  id         String        @id @default(cuid())
-  classId    String
-  startedAt  DateTime      @default(now())
-  finishedAt DateTime?
-  class      Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
-  results    ClassResult[]
+  id          String    @id @default(cuid())
+  classId     String
+  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  activeSlide Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("class_sessions")
 }
 
 model ClassResult {
-  id           String       @id @default(cuid())
-  sessionId    String
+  id           String   @id @default(cuid())
+  classId      String
+  class        Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
   studentId    String
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   slideId      String
   activityType String
-  correct      Boolean?
-  historial    Json         @default("[]")
-  createdAt    DateTime     @default(now())
-  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student      User         @relation(fields: [studentId], references: [id])
+  score        Float    @default(0)
+  maxScore     Float    @default(1)
+  isManual     Boolean  @default(false)
+  response     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([classId, studentId, slideId])
+  @@map("class_results")
 }
 
 enum SlideType {

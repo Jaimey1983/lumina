@@ -1,6 +1,6 @@
 import { IsNumber, IsString, Max, Min } from 'class-validator';
 
-export class SaveManualGradeDto {
+export class NotaManualDto {
   @IsString()
   studentId: string;
 
@@ -8,7 +8,7 @@ export class SaveManualGradeDto {
   slideId: string;
 
   @IsNumber()
-  @Min(1)
+  @Min(0)
   @Max(5)
-  nota: number;
+  score: number;
 }

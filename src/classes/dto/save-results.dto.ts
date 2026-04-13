@@ -1,13 +1,14 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
+  IsNumber,
   IsOptional,
   IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
-export class StudentResultDto {
+export class ResultItemDto {
   @IsString()
   studentId: string;
 
@@ -17,20 +18,21 @@ export class StudentResultDto {
   @IsString()
   activityType: string;
 
-  @IsOptional()
-  @IsBoolean()
-  correct?: boolean | null;
+  @IsNumber()
+  @Min(0)
+  score: number;
 
-  @IsArray()
-  historial: any[];
+  @IsNumber()
+  @Min(0)
+  maxScore: number;
+
+  @IsOptional()
+  response?: any;
 }
 
-export class SaveResultsDto {
-  @IsString()
-  sessionId: string;
-
+export class GuardarResultadosDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => StudentResultDto)
-  results: StudentResultDto[];
+  @Type(() => ResultItemDto)
+  resultados: ResultItemDto[];
 }

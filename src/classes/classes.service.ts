@@ -10,31 +10,11 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
-import { SaveResultsDto } from './dto/save-results.dto';
-import { SaveManualGradeDto } from './dto/save-manual-grade.dto';
+import { GuardarResultadosDto } from './dto/save-results.dto';
+import { NotaManualDto } from './dto/save-manual-grade.dto';
+import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import { nanoid } from 'nanoid';
-
-const AUTOMATIC_ACTIVITY_TYPES = new Set([
-  'quiz_multiple',
-  'verdadero_falso',
-  'completar_blancos',
-  'arrastrar_soltar',
-  'emparejar',
-  'ordenar_pasos',
-  'video_interactivo',
-]);
-
-const MANUAL_ACTIVITY_TYPES = new Set([
-  'short_answer',
-  'encuesta_viva',
-  'nube_palabras',
-]);
-
-type GradebookActivity = {
-  slideId: string;
-  activityType: string;
-  esManual: boolean;
-};
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ClassesService {
@@ -46,7 +26,6 @@ export class ClassesService {
   // ─── CLASES ────────────────────────────────────────────
 
   async create(dto: CreateClassDto, userId: string) {
-    // Verificar que el curso existe y pertenece al teacher
     const course = await this.prisma.course.findUnique({
       where: { id: dto.courseId },
       select: { id: true, teacherId: true },
@@ -82,7 +61,6 @@ export class ClassesService {
   }
 
   async findAllByCourse(courseId: string, userId: string, userRole: string) {
-    // Verificar acceso al curso
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
     return this.prisma.class.findMany({
@@ -106,13 +84,58 @@ export class ClassesService {
   async findByCodigo(codigo: string) {
     const clase = await this.prisma.class.findUnique({
       where: { codigo },
-      select: { id: true, title: true, codigo: true, status: true },
+      select: {
+        id: true,
+        title: true,
+        codigo: true,
+        status: true,
+        slides: {
+          select: {
+            id: true,
+            order: true,
+            type: true,
+            title: true,
+            content: true,
+          },
+          orderBy: { order: 'asc' },
+        },
+      },
     });
     if (!clase) throw new NotFoundException('Código de clase inválido');
     return clase;
   }
 
-  async findOne(id: string, userId: string, userRole: string) {
+  async joinAsGuest(codigo: string, dto: JoinAsGuestDto) {
+    const clase = await this.prisma.class.findUnique({
+      where: { codigo },
+      select: { id: true, title: true },
+    });
+    if (!clase) throw new NotFoundException('Código de clase inválido');
+
+    const email = `guest_${Date.now()}_${Math.random().toString(36).slice(2)}@lumina.guest`;
+    const password = await bcrypt.hash(Math.random().toString(36), 4);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        password,
+        name: dto.nombre,
+        lastName: '',
+        role: 'STUDENT',
+        isActive: true,
+      },
+      select: { id: true, name: true },
+    });
+
+    return {
+      classId: clase.id,
+      className: clase.title,
+      studentId: user.id,
+      studentName: user.name,
+    };
+  }
+
+  async findOne(id: string) {
     const cls = await this.prisma.class.findUnique({
       where: { id },
       select: {
@@ -140,11 +163,6 @@ export class ClassesService {
       },
     });
     if (!cls) throw new NotFoundException('Clase no encontrada');
-    await this.courseAuth.verifyCourseReadAccess(
-      cls.courseId,
-      userId,
-      userRole,
-    );
     return cls;
   }
 
@@ -195,6 +213,8 @@ export class ClassesService {
     });
   }
 
+  // ─── SESIONES ──────────────────────────────────────────
+
   async startSession(id: string, userId: string) {
     const cls = await this.findOneRaw(id);
     await this.verifyTeacherOwnership(cls.courseId, userId);
@@ -202,12 +222,13 @@ export class ClassesService {
     const activeSession = await this.prisma.classSession.findFirst({
       where: {
         classId: id,
-        finishedAt: null,
+        endedAt: null,
       },
       select: {
         id: true,
         classId: true,
         startedAt: true,
+        activeSlide: true,
       },
       orderBy: { startedAt: 'desc' },
     });
@@ -219,11 +240,13 @@ export class ClassesService {
     return this.prisma.classSession.create({
       data: {
         classId: id,
+        activeSlide: 0,
       },
       select: {
         id: true,
         classId: true,
         startedAt: true,
+        activeSlide: true,
       },
     });
   }
@@ -235,11 +258,9 @@ export class ClassesService {
     const activeSession = await this.prisma.classSession.findFirst({
       where: {
         classId: id,
-        finishedAt: null,
+        endedAt: null,
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
       orderBy: { startedAt: 'desc' },
     });
 
@@ -249,281 +270,148 @@ export class ClassesService {
 
     return this.prisma.classSession.update({
       where: { id: activeSession.id },
-      data: {
-        finishedAt: new Date(),
-      },
+      data: { endedAt: new Date() },
       select: {
         id: true,
         classId: true,
         startedAt: true,
-        finishedAt: true,
+        endedAt: true,
       },
     });
   }
 
-  async saveResults(classId: string, dto: SaveResultsDto, userId: string) {
-    const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+  // ─── RESULTADOS ────────────────────────────────────────
 
-    const session = await this.prisma.classSession.findUnique({
-      where: { id: dto.sessionId },
-      select: { id: true, classId: true },
+  async saveResults(classId: string, dto: GuardarResultadosDto) {
+    const cls = await this.prisma.class.findUnique({
+      where: { id: classId },
+      select: { id: true },
     });
+    if (!cls) throw new NotFoundException('Clase no encontrada');
 
-    if (!session || session.classId !== classId) {
-      throw new NotFoundException('Sesión de clase no encontrada');
-    }
+    await Promise.all(
+      dto.resultados.map((item) =>
+        this.prisma.classResult.upsert({
+          where: {
+            classId_studentId_slideId: {
+              classId,
+              studentId: item.studentId,
+              slideId: item.slideId,
+            },
+          },
+          create: {
+            classId,
+            studentId: item.studentId,
+            slideId: item.slideId,
+            activityType: item.activityType,
+            score: item.score,
+            maxScore: item.maxScore,
+            isManual: false,
+            response: item.response ?? Prisma.JsonNull,
+          },
+          update: {
+            activityType: item.activityType,
+            score: item.score,
+            maxScore: item.maxScore,
+            isManual: false,
+            response: item.response ?? Prisma.JsonNull,
+          },
+        }),
+      ),
+    );
 
-    if (dto.results.length > 0) {
-      await this.prisma.classResult.createMany({
-        data: dto.results.map((result) => ({
-          sessionId: dto.sessionId,
-          studentId: result.studentId,
-          slideId: result.slideId,
-          activityType: result.activityType,
-          correct: result.correct ?? null,
-          historial: (result.historial ?? []) as Prisma.InputJsonValue,
-        })),
-      });
-    }
-
-    return { saved: dto.results.length };
+    return { guardados: dto.resultados.length };
   }
 
   async getGradebook(classId: string, userId: string) {
     const cls = await this.findOneRaw(classId);
     await this.verifyTeacherOwnership(cls.courseId, userId);
 
-    const classWithSlides = await this.prisma.class.findUnique({
-      where: { id: classId },
+    const results = await this.prisma.classResult.findMany({
+      where: { classId },
       select: {
         id: true,
-        slides: {
-          select: {
-            id: true,
-            order: true,
-            content: true,
-          },
-          orderBy: { order: 'asc' },
+        studentId: true,
+        slideId: true,
+        activityType: true,
+        score: true,
+        maxScore: true,
+        isManual: true,
+        response: true,
+        createdAt: true,
+        updatedAt: true,
+        student: {
+          select: { id: true, name: true },
         },
       },
     });
 
-    if (!classWithSlides) {
-      throw new NotFoundException('Clase no encontrada');
-    }
-
-    const actividades: GradebookActivity[] = [];
-    for (const slide of classWithSlides.slides) {
-      const blocks = this.extractSlideBlocks(slide.content);
-      const activityBlocks = blocks.filter(
-        (block) => this.getStringField(block, 'tipo') === 'actividad',
-      );
-      if (activityBlocks.length === 0) {
-        continue;
-      }
-
-      for (const block of activityBlocks) {
-        const activityType = this.extractActivityType(block);
-        actividades.push({
-          slideId: slide.id,
-          activityType,
-          esManual: MANUAL_ACTIVITY_TYPES.has(activityType),
-        });
-      }
-    }
-
-    const latestSession = await this.prisma.classSession.findFirst({
-      where: {
-        classId,
-        finishedAt: { not: null },
-      },
-      orderBy: { finishedAt: 'desc' },
-      select: {
-        id: true,
-        results: {
-          orderBy: { createdAt: 'asc' },
-          select: {
-            studentId: true,
-            slideId: true,
-            activityType: true,
-            correct: true,
-            student: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!latestSession) {
-      return {
-        actividades,
-        estudiantes: [],
-      };
-    }
-
-    const resultsByStudent = new Map<
+    const byStudent = new Map<
       string,
       {
         studentId: string;
         nombre: string;
-        email: string;
-        notas: Record<string, number | null>;
-        notaFinal: number;
-        resultByActivityKey: Map<string, { correct: boolean | null }>;
+        resultados: typeof results;
+        sum: number;
+        count: number;
       }
     >();
 
-    for (const result of latestSession.results) {
-      const existing = resultsByStudent.get(result.studentId);
-      if (!existing) {
-        resultsByStudent.set(result.studentId, {
-          studentId: result.student.id,
+    for (const result of results) {
+      if (!byStudent.has(result.studentId)) {
+        byStudent.set(result.studentId, {
+          studentId: result.studentId,
           nombre: result.student.name,
-          email: result.student.email,
-          notas: {},
-          notaFinal: 0,
-          resultByActivityKey: new Map(),
+          resultados: [],
+          sum: 0,
+          count: 0,
         });
       }
-
-      const studentEntry = resultsByStudent.get(result.studentId);
-      if (!studentEntry) continue;
-
-      const key = `${result.slideId}::${result.activityType}`;
-      studentEntry.resultByActivityKey.set(key, { correct: result.correct });
+      const entry = byStudent.get(result.studentId)!;
+      entry.resultados.push(result);
+      if (result.maxScore > 0) {
+        entry.sum += (result.score / result.maxScore) * 5.0;
+        entry.count += 1;
+      }
     }
 
-    const estudiantes = Array.from(resultsByStudent.values()).map((student) => {
-      let sum = 0;
-      let count = 0;
-
-      for (const actividad of actividades) {
-        const activityKey = `${actividad.slideId}::${actividad.activityType}`;
-        const result = student.resultByActivityKey.get(activityKey);
-
-        let nota: number | null;
-        if (MANUAL_ACTIVITY_TYPES.has(actividad.activityType)) {
-          nota = result ? null : 0;
-        } else if (AUTOMATIC_ACTIVITY_TYPES.has(actividad.activityType)) {
-          nota = result?.correct === true ? 5.0 : 0.0;
-        } else {
-          nota = result?.correct === true ? 5.0 : 0.0;
-        }
-
-        student.notas[actividad.slideId] = nota;
-
-        if (nota === null) {
-          sum += 0;
-          count += 1;
-        } else {
-          sum += nota;
-          count += 1;
-        }
-      }
-
-      student.notaFinal = count > 0 ? Number((sum / count).toFixed(2)) : 0;
-      return {
-        studentId: student.studentId,
-        nombre: student.nombre,
-        email: student.email,
-        notas: student.notas,
-        notaFinal: student.notaFinal,
-      };
-    });
-
-    return {
-      actividades,
-      estudiantes,
-    };
+    return Array.from(byStudent.values()).map(
+      ({ studentId, nombre, resultados, sum, count }) => ({
+        studentId,
+        nombre,
+        promedio: count > 0 ? Number((sum / count).toFixed(2)) : 0,
+        resultados,
+      }),
+    );
   }
 
-  async saveManualGrade(classId: string, dto: SaveManualGradeDto, userId: string) {
+  async saveManualGrade(classId: string, dto: NotaManualDto, userId: string) {
     const cls = await this.findOneRaw(classId);
     await this.verifyTeacherOwnership(cls.courseId, userId);
 
-    const lastFinishedSession = await this.prisma.classSession.findFirst({
+    return this.prisma.classResult.upsert({
       where: {
-        classId,
-        finishedAt: { not: null },
-      },
-      orderBy: { finishedAt: 'desc' },
-      select: { id: true },
-    });
-
-    if (!lastFinishedSession) {
-      throw new NotFoundException('No hay sesión finalizada para esta clase');
-    }
-
-    const existingResult = await this.prisma.classResult.findFirst({
-      where: {
-        sessionId: lastFinishedSession.id,
-        studentId: dto.studentId,
-        slideId: dto.slideId,
-      },
-      select: {
-        id: true,
-        historial: true,
-      },
-    });
-
-    const newHistoryEntry = { nota: dto.nota, manual: true };
-    const manualCorrect = dto.nota >= 3.0;
-
-    if (existingResult) {
-      const historialActual = Array.isArray(existingResult.historial)
-        ? [...existingResult.historial]
-        : [];
-      historialActual.push(newHistoryEntry);
-
-      await this.prisma.classResult.update({
-        where: { id: existingResult.id },
-        data: {
-          correct: manualCorrect,
-          historial: historialActual as Prisma.InputJsonValue,
+        classId_studentId_slideId: {
+          classId,
+          studentId: dto.studentId,
+          slideId: dto.slideId,
         },
-      });
-
-      return { saved: true, nota: dto.nota };
-    }
-
-    const slide = await this.prisma.slide.findUnique({
-      where: { id: dto.slideId },
-      select: {
-        id: true,
-        classId: true,
-        content: true,
       },
-    });
-
-    if (!slide || slide.classId !== classId) {
-      throw new NotFoundException('Slide no encontrado');
-    }
-
-    const activityBlock = this.extractSlideBlocks(slide.content).find(
-      (block) => this.getStringField(block, 'tipo') === 'actividad',
-    );
-    const activityType = activityBlock
-      ? this.extractActivityType(activityBlock)
-      : 'short_answer';
-
-    await this.prisma.classResult.create({
-      data: {
-        sessionId: lastFinishedSession.id,
+      create: {
+        classId,
         studentId: dto.studentId,
         slideId: dto.slideId,
-        activityType,
-        correct: manualCorrect,
-        historial: [newHistoryEntry] as Prisma.InputJsonValue,
+        activityType: 'manual',
+        score: dto.score,
+        maxScore: 5.0,
+        isManual: true,
+      },
+      update: {
+        score: dto.score,
+        maxScore: 5.0,
+        isManual: true,
       },
     });
-
-    return { saved: true, nota: dto.nota };
   }
 
   // ─── SLIDES ────────────────────────────────────────────
@@ -532,7 +420,6 @@ export class ClassesService {
     const cls = await this.findOneRaw(classId);
     await this.verifyTeacherOwnership(cls.courseId, userId);
 
-    // Calcular el siguiente order
     const lastSlide = await this.prisma.slide.findFirst({
       where: { classId },
       orderBy: { order: 'desc' },
@@ -596,10 +483,8 @@ export class ClassesService {
       throw new NotFoundException('Slide no encontrado');
     }
 
-    // Eliminar el slide (cascade en DB lo maneja)
     await this.prisma.slide.delete({ where: { id: slideId } });
 
-    // Reordenar los slides restantes
     const remaining = await this.prisma.slide.findMany({
       where: { classId },
       orderBy: { order: 'asc' },
@@ -632,7 +517,9 @@ export class ClassesService {
     const validIds = new Set(slides.map((s) => s.id));
     const allValid = order.every((item) => validIds.has(item.id));
     if (!allValid)
-      throw new NotFoundException('Uno o más slides no pertenecen a esta clase');
+      throw new NotFoundException(
+        'Uno o más slides no pertenecen a esta clase',
+      );
 
     await this.prisma.$transaction(
       order.map((item) =>
@@ -726,40 +613,5 @@ export class ClassesService {
         'No tienes permiso para modificar esta clase',
       );
     }
-  }
-
-  private extractSlideBlocks(content: Prisma.JsonValue | null): Record<string, unknown>[] {
-    if (!content || typeof content !== 'object' || Array.isArray(content)) {
-      return [];
-    }
-
-    const blocks = (content as { blocks?: unknown }).blocks;
-    if (!Array.isArray(blocks)) {
-      return [];
-    }
-
-    return blocks.filter(
-      (block): block is Record<string, unknown> =>
-        !!block && typeof block === 'object' && !Array.isArray(block),
-    );
-  }
-
-  private getStringField(
-    obj: Record<string, unknown>,
-    key: string,
-  ): string | null {
-    const value = obj[key];
-    return typeof value === 'string' ? value : null;
-  }
-
-  private extractActivityType(block: Record<string, unknown>): string {
-    return (
-      this.getStringField(block, 'activityType') ??
-      this.getStringField(block, 'tipoActividad') ??
-      this.getStringField(block, 'actividadTipo') ??
-      this.getStringField(block, 'subtipo') ??
-      this.getStringField(block, 'tipoActividadInteractiva') ??
-      'actividad'
-    );
   }
 }
