@@ -73,6 +73,19 @@ export function mergeSlideContent(
   return { ...base, ...patch };
 }
 
+/** Une el estado ya normalizado del renderer (`Slide`) con un parche (p. ej. antes de PATCH). */
+export function mergeRendererSlideState(
+  slide: { bloques?: Block[]; fondo?: Background; diseno?: Layout },
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    ...(Array.isArray(slide.bloques) ? { bloques: slide.bloques } : {}),
+    ...(slide.fondo ? { fondo: slide.fondo } : {}),
+    ...(slide.diseno ? { diseno: slide.diseno } : {}),
+    ...patch,
+  };
+}
+
 export function appendBlockToSlideContent(
   api: ApiSlide | null,
   block: Block,

@@ -13,16 +13,53 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 
-import type { Activity, Block, Slide } from '@/types/slide.types';
-import { getBlockAtPath } from '@/lib/class-slide-normalize';
+import type { Activity, Background, Block, Slide } from '@/types/slide.types';
+import type { StudentResponse } from './panels/live-responses-panel';
+import {
+  getBlockAtPath,
+  sanitizeSlideContentForPersistence,
+  updateBlockAtPath,
+} from '@/lib/class-slide-normalize';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { EditorToolbar } from './editor-toolbar';
-import { SlideInsertionToolbar } from './floating-toolbar';
+import {
+  SlideEditorChrome,
+  SlideInsertionToolbar,
+  type LayerReorderAction,
+} from './floating-toolbar';
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
 import { useBlockDrag, getBlockPos } from '@/hooks/use-block-drag';
+
+const MAX_UNDO = 20;
+
+function cloneBloques(bloques: Block[]): Block[] {
+  try {
+    return structuredClone(bloques);
+  } catch {
+    return JSON.parse(JSON.stringify(bloques)) as Block[];
+  }
+}
+
+function getBlockZ(block: Block): number {
+  const z = (block as { zIndex?: number }).zIndex;
+  return typeof z === 'number' ? z : 1;
+}
+
+function collectZIndices(blocks: Block[]): number[] {
+  const out: number[] = [];
+  function walk(arr: Block[]) {
+    for (const b of arr) {
+      out.push(getBlockZ(b));
+      if (b.tipo === 'columnas') {
+        for (const col of b.columnas) walk(col);
+      }
+    }
+  }
+  walk(blocks);
+  return out;
+}
 
 // ─── Per-block drag handle ────────────────────────────────────────────────────
 
@@ -103,6 +140,8 @@ export interface CanvasAreaProps {
   onRemoveBlock?: (blockId: string) => void;
   /** Fired with live/committed block positions during and after drag (null when settled). */
   onEffectiveBloques?: (bloques: Block[] | null) => void;
+  liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
+  slides?: Slide[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -127,6 +166,8 @@ export function CanvasArea({
   onActivityChange,
   onRemoveBlock,
   onEffectiveBloques,
+  liveResponses,
+  slides,
 }: CanvasAreaProps) {
   // ── classId (for PATCH URL) ─────────────────────────────────────────────────
   const params  = useParams<{ id: string }>();
@@ -158,12 +199,29 @@ export function CanvasArea({
   const hasActivityBlock =
     Boolean(slide?.bloques?.some((b) => b.tipo === 'actividad'));
 
-  const patchSlideBloques = useCallback(
-    async (bloques: Block[]) => {
+  const undoRef = useRef<Block[][]>([]);
+  const redoRef = useRef<Block[][]>([]);
+  const isUndoRedoRef = useRef(false);
+  const [historyTick, setHistoryTick] = useState(0);
+  const bumpHistory = useCallback(() => setHistoryTick((t) => t + 1), []);
+
+  useEffect(() => {
+    undoRef.current = [];
+    redoRef.current = [];
+    bumpHistory();
+  }, [slide?.id, bumpHistory]);
+
+  const canUndo = undoRef.current.length > 0;
+  const canRedo = redoRef.current.length > 0;
+  void historyTick;
+
+  const patchSlideContent = useCallback(
+    async (content: Record<string, unknown>): Promise<boolean> => {
       if (!slide?.id || !classId) return false;
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+      const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
       const res = await fetch(
         `${apiUrl}/classes/${classId}/slides/${slide.id}`,
         {
@@ -172,18 +230,68 @@ export function CanvasArea({
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({
-            content: {
-              bloques,
-              ...(slide.fondo ? { fondo: slide.fondo } : {}),
-              ...(slide.diseno ? { diseno: slide.diseno } : {}),
-            },
-          }),
+          body: JSON.stringify({ content: sanitized }),
         },
       );
       return res.ok;
     },
-    [slide, classId],
+    [slide?.id, classId],
+  );
+
+  const buildContentPayload = useCallback(
+    (bloques: Block[], fondoOverride?: Background) => {
+      return {
+        bloques,
+        ...(fondoOverride !== undefined
+          ? { fondo: fondoOverride }
+          : slide?.fondo
+            ? { fondo: slide.fondo }
+            : {}),
+        ...(slide?.diseno ? { diseno: slide.diseno } : {}),
+      };
+    },
+    [slide?.fondo, slide?.diseno],
+  );
+
+  const pushUndo = useCallback(
+    (prev: Block[]) => {
+      if (isUndoRedoRef.current) return;
+      undoRef.current = [...undoRef.current, cloneBloques(prev)];
+      if (undoRef.current.length > MAX_UNDO) {
+        undoRef.current = undoRef.current.slice(-MAX_UNDO);
+      }
+      redoRef.current = [];
+      bumpHistory();
+    },
+    [bumpHistory],
+  );
+
+  const persistBloques = useCallback(
+    async (
+      nextBloques: Block[],
+      previousBloques: Block[],
+      recordHistory: boolean,
+    ): Promise<boolean> => {
+      let pushed = false;
+      if (recordHistory && !isUndoRedoRef.current) {
+        pushUndo(previousBloques);
+        pushed = true;
+      }
+      const content = buildContentPayload(nextBloques);
+      const ok = await patchSlideContent(content);
+      if (!ok) {
+        if (pushed && !isUndoRedoRef.current) {
+          undoRef.current = undoRef.current.slice(0, -1);
+          bumpHistory();
+        }
+        return false;
+      }
+      await queryClient.refetchQueries({
+        queryKey: ['classes', 'detail', classId],
+      });
+      return true;
+    },
+    [buildContentPayload, patchSlideContent, pushUndo, queryClient, classId, bumpHistory],
   );
 
   const handleInsertBlock = useCallback(
@@ -193,18 +301,15 @@ export function CanvasArea({
         return;
       }
       if (!slide?.id || !classId) return;
-      const prev = slide.bloques ?? [];
+      const prev = cloneBloques(slide.bloques ?? []);
       const next = [...prev, block];
       const newIndex = next.length - 1;
       try {
-        const ok = await patchSlideBloques(next);
+        const ok = await persistBloques(next, prev, true);
         if (!ok) {
           toast.error('No se pudo guardar el bloque');
           return;
         }
-        await queryClient.refetchQueries({
-          queryKey: ['classes', 'detail', classId],
-        });
         setTimeout(() => {
           const el = canvasRef.current?.querySelector(
             `[data-block-id="${String(newIndex)}"]`,
@@ -215,26 +320,22 @@ export function CanvasArea({
         toast.error('No se pudo guardar el bloque');
       }
     },
-    [slide, classId, hasActivityBlock, patchSlideBloques, queryClient],
+    [slide, classId, hasActivityBlock, persistBloques],
   );
 
   const handleDragSave = useCallback(
     async (updatedBlocks: Block[]) => {
       setCommittedBloques(updatedBlocks);
       try {
-        const ok = await patchSlideBloques(updatedBlocks);
-        if (ok) {
-          await queryClient.refetchQueries({
-            queryKey: ['classes', 'detail', classId],
-          });
-        }
+        const prev = cloneBloques(slide?.bloques ?? []);
+        await persistBloques(updatedBlocks, prev, true);
       } catch {
         // Silently ignore — positions will re-sync on next load.
       } finally {
         setCommittedBloques(null);
       }
     },
-    [patchSlideBloques, queryClient, classId],
+    [persistBloques, slide?.bloques],
   );
 
   // ── drag hook ───────────────────────────────────────────────────────────────
@@ -258,6 +359,131 @@ export function CanvasArea({
   const effectiveBloques = liveBloques ?? committedBloques;
   const liveSlide: Slide | null =
     slide && effectiveBloques ? { ...slide, bloques: effectiveBloques } : slide;
+
+  const handleUndo = useCallback(async () => {
+    if (!slide?.id || undoRef.current.length === 0) return;
+    const snapshot = undoRef.current.pop()!;
+    const current = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
+    isUndoRedoRef.current = true;
+    const content = buildContentPayload(snapshot);
+    const ok = await patchSlideContent(content);
+    isUndoRedoRef.current = false;
+    if (ok) {
+      redoRef.current.push(current);
+      bumpHistory();
+      await queryClient.refetchQueries({
+        queryKey: ['classes', 'detail', classId],
+      });
+    } else {
+      undoRef.current.push(snapshot);
+      bumpHistory();
+      toast.error('No se pudo deshacer');
+    }
+  }, [
+    slide?.id,
+    slide?.bloques,
+    liveSlide?.bloques,
+    buildContentPayload,
+    patchSlideContent,
+    queryClient,
+    classId,
+    bumpHistory,
+  ]);
+
+  const handleRedo = useCallback(async () => {
+    if (redoRef.current.length === 0) return;
+    const snapshot = redoRef.current.pop()!;
+    const current = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
+    isUndoRedoRef.current = true;
+    const content = buildContentPayload(snapshot);
+    const ok = await patchSlideContent(content);
+    isUndoRedoRef.current = false;
+    if (ok) {
+      undoRef.current.push(current);
+      if (undoRef.current.length > MAX_UNDO) {
+        undoRef.current = undoRef.current.slice(-MAX_UNDO);
+      }
+      bumpHistory();
+      await queryClient.refetchQueries({
+        queryKey: ['classes', 'detail', classId],
+      });
+    } else {
+      redoRef.current.push(snapshot);
+      bumpHistory();
+      toast.error('No se pudo rehacer');
+    }
+  }, [
+    liveSlide?.bloques,
+    slide?.bloques,
+    buildContentPayload,
+    patchSlideContent,
+    queryClient,
+    classId,
+    bumpHistory,
+  ]);
+
+  const handleReorder = useCallback(
+    (action: LayerReorderAction) => {
+      if (!selectedBlockId || !liveSlide?.bloques) return;
+      const bloques = cloneBloques(liveSlide.bloques);
+      const prev = cloneBloques(liveSlide.bloques);
+      const zs = collectZIndices(bloques);
+      if (zs.length === 0) return;
+      const min = Math.min(...zs);
+      const max = Math.max(...zs);
+      const next = updateBlockAtPath(bloques, selectedBlockId, (b) => {
+        const z = getBlockZ(b);
+        let nz = z;
+        if (action === 'traer_frente') nz = max + 1;
+        else if (action === 'enviar_atras_total') nz = min - 1;
+        else if (action === 'adelante_uno') nz = z + 1;
+        else if (action === 'atras_uno') nz = z - 1;
+        return { ...b, zIndex: nz } as Block;
+      });
+      void persistBloques(next, prev, true).then((ok) => {
+        if (!ok) toast.error('No se pudo actualizar el orden de capas');
+      });
+    },
+    [selectedBlockId, liveSlide?.bloques, persistBloques],
+  );
+
+  const handleChangeFondo = useCallback(
+    async (fondo: Background) => {
+      const bloques = liveSlide?.bloques ?? slide?.bloques ?? [];
+      const content = buildContentPayload(cloneBloques(bloques), fondo);
+      const ok = await patchSlideContent(content);
+      if (ok) {
+        await queryClient.refetchQueries({
+          queryKey: ['classes', 'detail', classId],
+        });
+        toast.success('Fondo guardado');
+      } else {
+        toast.error('No se pudo guardar el fondo');
+      }
+    },
+    [
+      liveSlide?.bloques,
+      slide?.bloques,
+      buildContentPayload,
+      patchSlideContent,
+      queryClient,
+      classId,
+    ],
+  );
+
+  const handlePersistFromRenderer = useCallback(
+    async ({
+      previousBloques,
+      content,
+    }: {
+      previousBloques: Block[];
+      content: Record<string, unknown>;
+    }) => {
+      const nextBloques = (content.bloques as Block[]) ?? [];
+      return persistBloques(nextBloques, previousBloques, true);
+    },
+    [persistBloques],
+  );
 
   // Bubble effectiveBloques to parent so the slide panel thumbnail stays in sync.
   const onEffectiveBloquesRef = useRef(onEffectiveBloques);
@@ -293,12 +519,7 @@ export function CanvasArea({
       setSelectedBlockId(null);
       onBlockSelectRef.current?.('');
     }
-  }, [
-    slide?.id,
-    selectedBlockId,
-    effectiveBloques,
-    slide?.bloques?.length,
-  ]);
+  }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques]);
 
   const handleRendererBlockSelect = useCallback(
     (id: string) => {
@@ -310,15 +531,10 @@ export function CanvasArea({
 
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
-      const ok = await patchSlideBloques(next);
-      if (ok) {
-        await queryClient.refetchQueries({
-          queryKey: ['classes', 'detail', classId],
-        });
-      }
-      return ok;
+      const prev = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
+      return persistBloques(next, prev, true);
     },
-    [patchSlideBloques, queryClient, classId],
+    [liveSlide?.bloques, slide?.bloques, persistBloques],
   );
 
   useEffect(() => {
@@ -357,7 +573,7 @@ export function CanvasArea({
       {/* Floating editor toolbar */}
       <div
         className={cn(
-          'absolute left-1/2 z-10 flex -translate-x-1/2 items-center gap-1',
+          'absolute left-1/2 z-10 flex max-w-[calc(100vw-2rem)] min-w-0 -translate-x-1/2 items-center gap-1',
           'top-[var(--editor-toolbar-top)] md:top-[var(--editor-toolbar-top-md)]',
           'rounded-md border border-border bg-card px-2 py-1 shadow-sm',
           'motion-safe:transition-[box-shadow,transform] motion-safe:duration-200 motion-safe:ease-out',
@@ -370,7 +586,21 @@ export function CanvasArea({
           onInsert={handleInsertBlock}
         />
         <Separator orientation="vertical" className="h-6" />
-        <EditorToolbar />
+        <SlideEditorChrome
+          disabled={isLoading || !liveSlide}
+          restrictToTextOnly={hasActivityBlock}
+          selectedBlockId={selectedBlockId}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={() => void handleUndo()}
+          onRedo={() => void handleRedo()}
+          onReorder={handleReorder}
+          fondo={liveSlide?.fondo}
+          onChangeFondo={(f) => void handleChangeFondo(f)}
+          onInsertAudio={handleInsertBlock}
+          liveResponses={liveResponses}
+          slides={slides}
+        />
       </div>
 
       {isLoading ? (
@@ -396,6 +626,7 @@ export function CanvasArea({
               onBlockSelect={handleRendererBlockSelect}
               onActivityChange={onActivityChange}
               onRemoveBlock={onRemoveBlock}
+              onPersistSlide={handlePersistFromRenderer}
               className="absolute inset-0 h-full w-full min-h-0 min-w-0"
             />
 

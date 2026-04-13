@@ -17,7 +17,8 @@
       "Bash(git config:*)",
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

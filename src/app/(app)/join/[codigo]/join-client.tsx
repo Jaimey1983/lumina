@@ -3,191 +3,194 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { api } from '@/lib/api';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+
+const LS_NAME = 'lumina_student_name';
+const LS_ID = 'lumina_student_id';
 
 interface ClassJoinResponse {
   id: string;
   title?: string;
 }
 
+interface GuestJoinResponse {
+  classId: string;
+  className?: string;
+  studentId: string;
+  studentName?: string;
+}
+
 interface Props {
   codigo: string;
 }
 
+type Phase = 'loading' | 'invalid' | 'ready';
+
+function unwrapGuestBody(raw: unknown): GuestJoinResponse | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  if ('data' in o && o.data && typeof o.data === 'object') {
+    return unwrapGuestBody(o.data);
+  }
+  const classId = o.classId;
+  const studentId = o.studentId;
+  if (typeof classId !== 'string' || typeof studentId !== 'string') return null;
+  return {
+    classId,
+    className: typeof o.className === 'string' ? o.className : undefined,
+    studentId,
+    studentName: typeof o.studentName === 'string' ? o.studentName : undefined,
+  };
+}
+
 export function JoinClient({ codigo }: Props) {
   const router = useRouter();
+  const [phase, setPhase] = useState<Phase>('loading');
+  const [classTitle, setClassTitle] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [joinError, setJoinError] = useState('');
 
-  // tri-state: null = checking, true = yes, false = no
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // On mount: determine auth state
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
-
-  // When authenticated, immediately join the class
-  useEffect(() => {
-    if (isAuthenticated !== true) return;
-    setIsLoading(true);
-    setError('');
-    api
-      .get<ClassJoinResponse>(`/classes/join/${codigo}`)
-      .then(({ data }) => {
-        router.replace(`/classes/${data.id}/viewer`);
-      })
-      .catch((err) => {
-        const status = err?.response?.status;
-        if (status === 404) {
-          setError('Código inválido. Verifica el código e inténtalo de nuevo.');
-        } else {
-          setError('Error al buscar la clase. Inténtalo de nuevo.');
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/classes/join/${encodeURIComponent(codigo)}`,
+          { method: 'GET', headers: { Accept: 'application/json' } },
+        );
+        if (cancelled) return;
+        if (res.status === 404) {
+          setPhase('invalid');
+          return;
         }
-        setIsLoading(false);
-      });
-  }, [isAuthenticated, codigo, router]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      // 1. Login
-      const { data } = await api.post<{ token: string; user?: unknown }>(
-        '/auth/login',
-        { email, password },
-      );
-      localStorage.setItem('token', data.token);
-
-      // 2. Join class
-      const { data: classData } = await api.get<ClassJoinResponse>(
-        `/classes/join/${codigo}`,
-      );
-      router.replace(`/classes/${classData.id}/viewer`);
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 401) {
-        setError('Credenciales incorrectas. Verifica tu email y contraseña.');
-      } else if (status === 404) {
-        setError('Código inválido. Verifica el código e inténtalo de nuevo.');
-      } else {
-        setError('Ocurrió un error. Inténtalo de nuevo.');
+        if (!res.ok) {
+          setPhase('invalid');
+          return;
+        }
+        const data = (await res.json()) as ClassJoinResponse;
+        if (!data?.id) {
+          setPhase('invalid');
+          return;
+        }
+        setClassTitle(data.title?.trim() || 'Clase');
+        setPhase('ready');
+      } catch {
+        if (!cancelled) setPhase('invalid');
       }
-      setIsLoading(false);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [codigo]);
+
+  async function handleJoin(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = nombre.trim();
+    if (!trimmed || phase !== 'ready') return;
+    setJoinError('');
+    setSubmitting(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/classes/join/${encodeURIComponent(codigo)}/guest`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nombre: trimmed }),
+        },
+      );
+      if (!res.ok) {
+        setJoinError('No se pudo unir a la clase, intenta de nuevo');
+        setSubmitting(false);
+        return;
+      }
+      const raw = await res.json();
+      const payload = unwrapGuestBody(raw);
+      if (!payload) {
+        setJoinError('No se pudo unir a la clase, intenta de nuevo');
+        setSubmitting(false);
+        return;
+      }
+      localStorage.setItem(LS_ID, payload.studentId);
+      localStorage.setItem(LS_NAME, payload.studentName ?? trimmed);
+      router.replace(`/classes/${payload.classId}/viewer`);
+    } catch {
+      setJoinError('No se pudo unir a la clase, intenta de nuevo');
+      setSubmitting(false);
     }
   }
 
-  // Still checking localStorage
-  if (isAuthenticated === null) {
-    return null;
+  if (phase === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
+        <Loader2 className="size-10 animate-spin text-[#F97316]" aria-label="Cargando" />
+      </div>
+    );
+  }
+
+  if (phase === 'invalid') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-8">
+        <div className="w-full max-w-md rounded-xl bg-white p-8 text-center shadow-lg">
+          <p className="text-lg font-semibold text-zinc-900">Lumina</p>
+          <p className="mt-6 text-sm text-zinc-600">Código inválido</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-card shadow-lg p-8 flex flex-col gap-6">
-        {/* Logo */}
-        <div className="text-center">
-          <span className="text-2xl font-bold tracking-tight text-foreground">
-            Lumina
-          </span>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Únete a la clase
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-8">
+      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Lumina</h1>
+          <p className="mt-2 text-sm text-zinc-600">{classTitle}</p>
         </div>
 
-        {/* Código (read-only) */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Código de clase
-          </label>
-          <input
-            type="text"
-            value={codigo.toUpperCase()}
-            disabled
-            className="h-10 rounded-md border border-border bg-muted px-3 text-sm font-mono text-foreground opacity-70 cursor-not-allowed"
-          />
-        </div>
-
-        {/* Authenticated: spinner */}
-        {isAuthenticated && (
-          <div className="flex flex-col items-center gap-3 py-2">
-            {isLoading && (
-              <>
-                <Loader2 className="size-6 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  Buscando clase...
-                </span>
-              </>
-            )}
-            {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
-            )}
+        <form onSubmit={(e) => void handleJoin(e)} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="join-name" className="text-sm font-medium text-zinc-800">
+              ¿Cómo te llamas?
+            </label>
+            <input
+              id="join-name"
+              type="text"
+              autoComplete="name"
+              required
+              value={nombre}
+              onChange={(e) => {
+                setNombre(e.target.value);
+                if (joinError) setJoinError('');
+              }}
+              disabled={submitting}
+              placeholder="Tu nombre"
+              className="h-11 rounded-lg border border-zinc-200 bg-white px-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-[#F97316] focus:outline-none focus:ring-2 focus:ring-[#F97316]/30 disabled:opacity-60"
+            />
           </div>
-        )}
 
-        {/* Not authenticated: login form */}
-        {!isAuthenticated && (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="email"
-                className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
-                placeholder="tu@email.com"
-              />
-            </div>
+          {joinError ? (
+            <p className="text-center text-sm text-red-600" role="alert">
+              {joinError}
+            </p>
+          ) : null}
 
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="password"
-                className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
-                placeholder="••••••••"
-              />
-            </div>
-
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 flex items-center justify-center gap-2 transition-colors"
-            >
-              {isLoading && <Loader2 className="size-4 animate-spin" />}
-              Entrar a la clase
-            </button>
-          </form>
-        )}
+          <button
+            type="submit"
+            disabled={submitting || !nombre.trim()}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+            style={{ backgroundColor: '#F97316' }}
+          >
+            {submitting ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : null}
+            Unirse a la clase
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -118,32 +118,33 @@ export function useBlockDrag({
     originRef.current = null;
   }, [slide?.id]);
 
-  // ─── helpers ────────────────────────────────────────────────────────────────
+  // ─── helpers (useCallback: deps alineadas con react-hooks/preserve-manual-memoization) ──
 
-  function getRect(): DOMRect | null {
+  const getRect = useCallback((): DOMRect | null => {
     const rect = canvasRef.current?.getBoundingClientRect() ?? null;
     return rect && rect.width > 0 ? rect : null;
-  }
+  }, [canvasRef]);
 
-  function deltaToPos(
-    blockIndex: number,
-    delta: { x: number; y: number },
-    rect: DOMRect,
-  ): { newX: number; newY: number } | null {
-    const bloques = slide?.bloques ?? [];
-    const block   = bloques[blockIndex];
-    if (!block || !originRef.current) return null;
+  const deltaToPos = useCallback(
+    (
+      blockIndex: number,
+      delta: { x: number; y: number },
+      rect: DOMRect,
+    ): { newX: number; newY: number } | null => {
+      const bloques = slide?.bloques ?? [];
+      const block = bloques[blockIndex];
+      if (!block || !originRef.current) return null;
 
-    const dx = (delta.x / rect.width)  * 100;
-    const dy = (delta.y / rect.height) * 100;
+      const dx = (delta.x / rect.width) * 100;
+      const dy = (delta.y / rect.height) * 100;
 
-    // Allow blocks to go partially off-canvas (matches PowerPoint / Canva behaviour).
-    // Only apply an extreme guard so the block can never disappear entirely.
-    return {
-      newX: Math.max(-50, Math.min(150, originRef.current.x + dx)),
-      newY: Math.max(-50, Math.min(150, originRef.current.y + dy)),
-    };
-  }
+      return {
+        newX: Math.max(-50, Math.min(150, originRef.current.x + dx)),
+        newY: Math.max(-50, Math.min(150, originRef.current.y + dy)),
+      };
+    },
+    [slide],
+  );
 
   // ─── handlers (useCallback: referencias estables para DndContext; evita bucles en onMove) ──
 
@@ -187,7 +188,7 @@ export function useBlockDrag({
         return base.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b));
       });
     },
-    [slide],
+    [slide, getRect, deltaToPos],
   );
 
   const handleDragEnd = useCallback(
@@ -210,7 +211,7 @@ export function useBlockDrag({
       setLiveBloques(null);
       originRef.current = null;
     },
-    [slide, onSave],
+    [slide, onSave, getRect, deltaToPos],
   );
 
   return { handleDragStart, handleDragEnd, handleDragMove, draggingId, liveBloques };

@@ -268,6 +268,8 @@ export interface TextBlock {
 
 export interface ImageBlock {
   tipo: 'imagen';
+  /** Identificador estable opcional (p. ej. para trazas o futuras APIs). */
+  id?: string;
   url: string;
   alt?: string;
   /** CSS string (e.g. '100%') or canvas percentage number (0-100). */

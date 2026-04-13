@@ -19,7 +19,7 @@ const SCALE_STYLES: Record<ColombianGradeLevel, ColombianGradeScale> = {
   },
   Basico: {
     level: 'Basico',
-    label: 'Basico',
+    label: 'Básico',
     variant: 'warning',
     className: 'border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950/70 dark:text-yellow-300',
   },

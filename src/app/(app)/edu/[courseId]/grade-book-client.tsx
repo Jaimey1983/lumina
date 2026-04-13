@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { GradeScaleBadge, getColombianGradeScale } from '@/components/grade-scale-badge';
+import { GradeScaleBadge } from '@/components/grade-scale-badge';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useClass } from '@/hooks/api/use-class';
 import { useClasses } from '@/hooks/api/use-classes';
 import { useCourse } from '@/hooks/api/use-course';
 import { useGradebook } from '@/hooks/use-gradebook';
@@ -62,18 +63,22 @@ function AutoGradeCell({ note }: { note: number | null }) {
   if (note === null) {
     return <span className="text-muted-foreground">—</span>;
   }
-  const scale = getColombianGradeScale(note);
+  const good = note >= 3;
   return (
     <span
       className={cn(
         'inline-flex min-w-12 justify-center rounded-md border px-2 py-1 text-sm font-semibold',
-        scale?.className ?? 'border-border bg-muted/40 text-foreground',
+        good
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+          : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200',
       )}
     >
       {note.toFixed(1)}
     </span>
   );
 }
+
+const MANUAL_DEBOUNCE_MS = 800;
 
 function ManualGradeCell({
   classId,
@@ -92,51 +97,82 @@ function ManualGradeCell({
   );
   const [invalid, setInvalid] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setValue(initialNote != null ? initialNote.toFixed(1) : '');
     setInvalid(false);
   }, [initialNote, studentId, slideId]);
 
-  async function commit() {
-    if (isSaving) return;
-    setInvalid(false);
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setValue(initialNote != null ? initialNote.toFixed(1) : '');
-      return;
-    }
-    const raw = trimmed.replace(',', '.');
-    const n = parseFloat(raw);
-    if (Number.isNaN(n) || n < 1 || n > 5) {
-      setInvalid(true);
-      return;
-    }
-    const nota = parseFloat(raw);
-    const orig =
-      initialNote != null && !Number.isNaN(initialNote)
-        ? Number(initialNote.toFixed(1))
-        : null;
-    if (orig !== null && Math.abs(orig - nota) < 0.001) {
-      setValue(nota.toFixed(1));
-      return;
-    }
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
-    setIsSaving(true);
-    try {
-      await api.patch(`/classes/${classId}/results/manual`, {
-        studentId,
-        slideId,
-        nota,
-      });
-      await queryClient.invalidateQueries({ queryKey: ['gradebook', classId] });
-      setValue(nota.toFixed(1));
-    } catch {
-      toast.error('No se pudo guardar la nota');
-    } finally {
-      setIsSaving(false);
+  const patchIfValid = useCallback(
+    async (trimmed: string, opts?: { showInvalid?: boolean }) => {
+      if (savingRef.current) return;
+      if (!trimmed) {
+        setValue(initialNote != null ? initialNote.toFixed(1) : '');
+        return;
+      }
+      const raw = trimmed.replace(',', '.');
+      const n = parseFloat(raw);
+      if (Number.isNaN(n) || n < 0 || n > 5) {
+        if (opts?.showInvalid) setInvalid(true);
+        return;
+      }
+      setInvalid(false);
+      const score = Math.round(n * 10) / 10;
+      const orig =
+        initialNote != null && !Number.isNaN(initialNote)
+          ? Math.round(initialNote * 10) / 10
+          : null;
+      if (orig !== null && Math.abs(orig - score) < 0.001) {
+        setValue(score.toFixed(1));
+        return;
+      }
+
+      savingRef.current = true;
+      setIsSaving(true);
+      try {
+        await api.patch(`/classes/${classId}/results/manual`, {
+          studentId,
+          slideId,
+          score,
+        });
+        await queryClient.invalidateQueries({ queryKey: ['gradebook', classId] });
+        setValue(score.toFixed(1));
+      } catch {
+        toast.error('No se pudo guardar la nota');
+      } finally {
+        savingRef.current = false;
+        setIsSaving(false);
+      }
+    },
+    [classId, studentId, slideId, initialNote, queryClient],
+  );
+
+  const schedulePatch = useCallback(
+    (next: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        void patchIfValid(next.trim());
+      }, MANUAL_DEBOUNCE_MS);
+    },
+    [patchIfValid],
+  );
+
+  const handleBlur = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
     }
-  }
+    void patchIfValid(value.trim(), { showInvalid: true });
+  }, [patchIfValid, value]);
 
   return (
     <div className="relative inline-flex">
@@ -153,15 +189,25 @@ function ManualGradeCell({
         value={value}
         onChange={(e) => {
           setInvalid(false);
-          setValue(e.target.value);
+          const next = e.target.value;
+          setValue(next);
+          schedulePatch(next);
         }}
-        onBlur={() => void commit()}
+        onBlur={handleBlur}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            void commit();
+            if (debounceRef.current) {
+              clearTimeout(debounceRef.current);
+              debounceRef.current = null;
+            }
+            void patchIfValid(value.trim(), { showInvalid: true });
           }
           if (e.key === 'Escape') {
+            if (debounceRef.current) {
+              clearTimeout(debounceRef.current);
+              debounceRef.current = null;
+            }
             setInvalid(false);
             setValue(initialNote != null ? initialNote.toFixed(1) : '');
           }
@@ -195,6 +241,8 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
     });
   }, [classes]);
 
+  const { data: classDetail } = useClass(selectedClassId);
+
   const {
     data: gradebook,
     isLoading: gradebookLoading,
@@ -205,14 +253,21 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
   const actividades = gradebook?.actividades ?? [];
   const estudiantes = gradebook?.estudiantes ?? [];
 
+  const slideColumnTitle = useCallback(
+    (slideId: string, index: number) => {
+      const s = classDetail?.slides?.find((x) => x.id === slideId);
+      const t = s?.title?.trim();
+      if (t) return t;
+      return `Actividad ${index + 1}`;
+    },
+    [classDetail?.slides],
+  );
+
   const showClassSelect = classes.length > 1;
   const gradebookReady = !gradebookLoading && !gradebookError && !!gradebook;
-  const showEmptyGrid =
-    gradebookReady && estudiantes.length === 0 && actividades.length === 0;
-  const showEmptyStudentsOnly =
-    gradebookReady && estudiantes.length === 0 && actividades.length > 0;
-  const showEmptyActivitiesOnly =
-    gradebookReady && estudiantes.length > 0 && actividades.length === 0;
+  const noHayResultados = gradebookReady && estudiantes.length === 0;
+  const showFullGrid = gradebookReady && estudiantes.length > 0 && actividades.length > 0;
+  const showPromedioOnly = gradebookReady && estudiantes.length > 0 && actividades.length === 0;
 
   return (
     <div className="space-y-6 p-6">
@@ -232,7 +287,8 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               {courseLoading ? 'Cargando curso...' : course?.name ?? 'Planilla de notas'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Notas por clase y actividad (slides). Escala colombiana 1.0 a 5.0.
+              Notas por clase y actividad (slides). Escala colombiana 1.0 a 5.0. Notas manuales: 0.0
+              a 5.0.
             </p>
           </div>
         </div>
@@ -284,8 +340,9 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                       Planilla por clase
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Las celdas automáticas son de solo lectura. Las manuales permiten editar entre
-                      1.0 y 5.0 (el guardado en servidor se habilitará próximamente).
+                      Datos en vivo desde el libro de calificaciones. Las actividades automáticas se
+                      muestran en verde si la nota es ≥ 3 y en rojo si es &lt; 3. Las manuales se
+                      guardan al escribir (espera 800 ms) o al salir del campo.
                     </p>
                   </div>
                 </div>
@@ -340,35 +397,19 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                 </div>
               ) : null}
 
-              {showEmptyGrid ? (
+              {noHayResultados ? (
                 <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
                   <NotebookPen className="size-9 text-muted-foreground/70" />
                   <div className="space-y-1">
-                    <h3 className="font-medium">Sin actividades ni estudiantes</h3>
+                    <h3 className="font-medium">Aún no hay resultados para esta clase</h3>
                     <p className="text-sm text-muted-foreground">
-                      Cuando la clase tenga slides evaluables y estudiantes con resultados, aparecerán
-                      aquí.
+                      Cuando haya calificaciones por actividades, aparecerán aquí.
                     </p>
                   </div>
                 </div>
               ) : null}
 
-              {showEmptyStudentsOnly ? (
-                <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-                  No hay estudiantes con filas en esta planilla.
-                </div>
-              ) : null}
-
-              {showEmptyActivitiesOnly ? (
-                <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-                  Esta clase aún no tiene actividades evaluables en el libro de calificaciones.
-                </div>
-              ) : null}
-
-              {!gradebookLoading &&
-              !gradebookError &&
-              estudiantes.length > 0 &&
-              actividades.length > 0 ? (
+              {showFullGrid || showPromedioOnly ? (
                 <div className="relative">
                   {gradebookFetching ? (
                     <div className="absolute inset-0 z-10 flex items-start justify-end pt-1 pr-1">
@@ -381,15 +422,24 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                         <TableHead className="sticky left-0 z-20 min-w-56 bg-card">
                           Estudiante
                         </TableHead>
-                        {actividades.map((act) => (
-                          <TableHead key={act.slideId} className="min-w-28 text-center text-xs">
-                            <span className="font-medium">
-                              {abbreviateActivityType(act.activityType)}
-                            </span>
-                          </TableHead>
-                        ))}
-                        <TableHead className="sticky right-0 z-20 min-w-44 bg-card text-center">
-                          Nota final
+                        {showFullGrid
+                          ? actividades.map((act, idx) => (
+                              <TableHead key={act.slideId} className="max-w-40 text-center text-xs">
+                                <span
+                                  className="line-clamp-2 font-medium leading-tight"
+                                  title={slideColumnTitle(act.slideId, idx)}
+                                >
+                                  {slideColumnTitle(act.slideId, idx)}
+                                </span>
+                                <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
+                                  {abbreviateActivityType(act.activityType)}
+                                </span>
+                              </TableHead>
+                            ))
+                          : null}
+                        <TableHead className="min-w-28 text-center">Promedio final</TableHead>
+                        <TableHead className="sticky right-0 z-20 min-w-36 bg-card text-center">
+                          Desempeño
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -404,34 +454,37 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                               ) : null}
                             </div>
                           </TableCell>
-                          {actividades.map((act) => {
-                            const nota = noteForSlide(est.notas, act.slideId);
-                            const manual = act.esManual === true;
-                            return (
-                              <TableCell key={act.slideId} className="text-center">
-                                {manual ? (
-                                  <ManualGradeCell
-                                    key={`${est.studentId}-${act.slideId}`}
-                                    classId={selectedClassId}
-                                    studentId={est.studentId}
-                                    slideId={act.slideId}
-                                    initialNote={nota}
-                                  />
-                                ) : (
-                                  <AutoGradeCell note={nota} />
-                                )}
-                              </TableCell>
-                            );
-                          })}
+                          {showFullGrid
+                            ? actividades.map((act) => {
+                                const nota = noteForSlide(est.notas, act.slideId);
+                                const manual = est.manualPorSlide?.[act.slideId] === true;
+                                return (
+                                  <TableCell key={act.slideId} className="text-center">
+                                    {manual ? (
+                                      <ManualGradeCell
+                                        classId={selectedClassId}
+                                        studentId={est.studentId}
+                                        slideId={act.slideId}
+                                        initialNote={nota}
+                                      />
+                                    ) : (
+                                      <AutoGradeCell note={nota} />
+                                    )}
+                                  </TableCell>
+                                );
+                              })
+                            : null}
+                          <TableCell className="text-center">
+                            {est.notaFinal != null && !Number.isNaN(est.notaFinal) ? (
+                              <span className="text-base font-semibold tabular-nums">
+                                {est.notaFinal.toFixed(1)}
+                              </span>
+                            ) : (
+                              <span className="text-base font-semibold text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="sticky right-0 z-10 bg-card">
-                            <div className="flex flex-col items-center gap-2">
-                              {est.notaFinal != null && !Number.isNaN(est.notaFinal) ? (
-                                <span className="text-base font-semibold">
-                                  {est.notaFinal.toFixed(1)}
-                                </span>
-                              ) : (
-                                <span className="text-base font-semibold text-muted-foreground">—</span>
-                              )}
+                            <div className="flex justify-center">
                               <GradeScaleBadge note={est.notaFinal} />
                             </div>
                           </TableCell>
@@ -467,7 +520,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                   <span className="font-medium text-foreground">Bajo:</span> 1.0 - 2.9
                 </p>
                 <p>
-                  <span className="font-medium text-foreground">Basico:</span> 3.0 - 3.9
+                  <span className="font-medium text-foreground">Básico:</span> 3.0 - 3.9
                 </p>
                 <p>
                   <span className="font-medium text-foreground">Alto:</span> 4.0 - 4.6

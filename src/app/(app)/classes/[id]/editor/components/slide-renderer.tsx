@@ -15,7 +15,7 @@ import { useParams } from 'next/navigation';
 
 import { useUpdateSlide } from '@/hooks/api/use-classes';
 import {
-  mergeSlideContent,
+  mergeRendererSlideState,
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
@@ -1015,6 +1015,13 @@ export interface SlideRendererProps {
   /** Callback emitido por el estudiante al responder una actividad (solo modo viewer). */
   onResponse?: (response: unknown) => void;
   className?: string;
+  /**
+   * Si existe, sustituye `useUpdateSlide` para resize/texto: permite historial deshacer/rehacer en el padre.
+   */
+  onPersistSlide?: (args: {
+    previousBloques: Block[];
+    content: Record<string, unknown>;
+  }) => Promise<boolean>;
 }
 
 export function SlideRenderer({
@@ -1026,6 +1033,7 @@ export function SlideRenderer({
   onRemoveBlock,
   onResponse,
   className,
+  onPersistSlide,
 }: SlideRendererProps) {
   const [selectedId,    setSelectedId]    = useState<string | null>(null);
   const [editingId,     setEditingId]     = useState<string | null>(null);
@@ -1051,6 +1059,7 @@ export function SlideRenderer({
       return next;
     });
 
+    const previousBloques = slide.bloques ? [...slide.bloques] : [];
     const blocks = slide.bloques ? [...slide.bloques] : [];
     const nextBlocks = updateBlockAtPath(blocks, blockId, (b) => {
       const nextBase: Block = {
@@ -1065,12 +1074,16 @@ export function SlideRenderer({
       }
       return nextBase;
     });
-    
-    const updatedContent = mergeSlideContent(slide as unknown as Slide, { bloques: nextBlocks });
+
+    const updatedContent = mergeRendererSlideState(slide, { bloques: nextBlocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
 
-    updateSlide.mutate({ slideId: slide.id, content: sanitized });
-  }, [slide, updateSlide]);
+    if (onPersistSlide) {
+      void onPersistSlide({ previousBloques, content: sanitized });
+    } else {
+      updateSlide.mutate({ slideId: slide.id, content: sanitized });
+    }
+  }, [slide, updateSlide, onPersistSlide]);
 
   // ─── Inline text editing ──────────────────────────────────────────────────
 
@@ -1083,15 +1096,20 @@ export function SlideRenderer({
 
   const handleEditCommit = useCallback((blockId: string, newText: string) => {
     setEditingId(null);
+    const previousBloques = slide.bloques ? [...slide.bloques] : [];
     const blocks = slide.bloques ? [...slide.bloques] : [];
     const blockIndex = parseInt(blockId, 10);
     const block = blocks[blockIndex];
     if (!block || block.tipo !== 'texto' || block.contenido === newText) return;
     blocks[blockIndex] = { ...block, contenido: newText } as Block;
-    const updatedContent = mergeSlideContent(slide as unknown as Slide, { bloques: blocks });
+    const updatedContent = mergeRendererSlideState(slide, { bloques: blocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
-    updateSlide.mutate({ slideId: slide.id, content: sanitized });
-  }, [slide, updateSlide]);
+    if (onPersistSlide) {
+      void onPersistSlide({ previousBloques, content: sanitized });
+    } else {
+      updateSlide.mutate({ slideId: slide.id, content: sanitized });
+    }
+  }, [slide, updateSlide, onPersistSlide]);
 
   function handleEditCancel() {
     setEditingId(null);

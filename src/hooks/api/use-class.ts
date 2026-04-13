@@ -15,6 +15,8 @@ export interface ClassDetail {
   description?: string;
   courseId: string;
   codigo?: string;
+  /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */
+  sessionActive?: boolean;
   status: string;
   createdAt: string;
   slides?: Slide[];

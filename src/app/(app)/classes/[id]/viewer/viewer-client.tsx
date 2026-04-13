@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Loader2 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
@@ -122,14 +122,24 @@ function evaluateResponse(actividad: Activity, response: unknown): EvalResult {
   }
 }
 
+const LS_STUDENT_ID = 'lumina_student_id';
+const LS_STUDENT_NAME = 'lumina_student_name';
+
+function readGuestIdentity(): { studentId: string; studentName: string } {
+  if (typeof window === 'undefined') {
+    return { studentId: '', studentName: '' };
+  }
+  return {
+    studentId: localStorage.getItem(LS_STUDENT_ID) ?? '',
+    studentName: localStorage.getItem(LS_STUDENT_NAME) ?? '',
+  };
+}
+
 export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
-  const [studentId] = useState(
-    () => 'Estudiante ' + Math.floor(Math.random() * 900 + 100),
-  );
-  const studentIdRef = useRef(studentId);
+  const [guestIdentity] = useState(readGuestIdentity);
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -164,7 +174,7 @@ export function ViewerClient({ id }: { id: string }) {
       setActiveSlideIndex(payload.slideIndex);
     });
 
-    sock.on('response-update', (_answerData: unknown) => {
+    sock.on('response-update', () => {
       // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
 
@@ -191,15 +201,15 @@ export function ViewerClient({ id }: { id: string }) {
         slideId: activeSlide.id,
         slideIndex: activeSlideIndex,
         activityType: actBlock.actividad.tipo,
-        studentId: studentIdRef.current,
+        studentId: guestIdentity.studentId,
+        studentName: guestIdentity.studentName,
         correct,
         details,
         response,
       };
-      console.log('[viewer] emitting student-response', payload);
       socketInstance.emit('student-response', payload);
     },
-    [socketInstance, activeSlide, id, activeSlideIndex],
+    [socketInstance, activeSlide, id, activeSlideIndex, guestIdentity],
   );
 
   if (isLoading) {

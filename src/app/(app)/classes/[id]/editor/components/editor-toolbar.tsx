@@ -1,303 +1,182 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import {
-  ChevronDown,
-  Eraser,
-  Film,
-  Highlighter,
-  ImageIcon,
-  Mic,
-  MousePointer2,
-  Pencil,
-  Redo2,
-  Send,
-  Shapes,
-  Share2,
-  Table,
-  Type,
-  Undo2,
-  Video,
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Loader2, Play, Square } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { Slide } from '@/types/slide.types';
+import type { StudentResponse } from './panels/live-responses-panel';
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Score calculation ────────────────────────────────────────────────────────
 
-function ToolSep() {
-  return <div className="mx-1 h-5 w-px shrink-0 bg-border" />;
+const MANUAL_ACTIVITY_TYPES = new Set([
+  'short_answer',
+  'encuesta_viva',
+  'nube_palabras',
+]);
+
+function calcularScoreDeRespuesta(
+  activityType: string,
+  correct: boolean | null,
+  details?: { label: string; correct: boolean | null }[],
+): number {
+  if (MANUAL_ACTIVITY_TYPES.has(activityType)) return 0;
+  if (details && details.length > 0) {
+    const correctCount = details.filter((d) => d.correct === true).length;
+    return Math.round((correctCount / details.length) * 5.0 * 100) / 100;
+  }
+  return correct === true ? 5.0 : 0;
 }
 
-function ToolBtn({
-  label,
-  active,
-  onClick,
-  children,
-}: {
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      onClick={onClick}
-      className={cn(
-        'flex items-center justify-center rounded-md p-1.5 outline-none',
-        'text-muted-foreground hover:bg-accent hover:text-foreground',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-        'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
-        'motion-reduce:transition-none',
-        active && 'bg-accent text-foreground',
-      )}
-    >
-      {children}
-    </button>
-  );
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+export interface EditorSessionControlsProps {
+  classId: string;
+  disabled?: boolean;
+  liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
+  slides?: Slide[];
 }
 
-function DropBtn({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        'flex items-center gap-1 rounded-md px-2 py-1 text-xs outline-none',
-        'text-muted-foreground hover:bg-accent hover:text-foreground',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-        'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
-        'motion-reduce:transition-none',
-      )}
-    >
-      {label}
-      <ChevronDown className="size-3" />
-    </button>
-  );
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export function EditorToolbar() {
-  const params = useParams();
-  const classId = typeof params?.id === 'string' ? params.id : '';
-  const queryClient = useQueryClient();
-  const { data: cls } = useClass(classId);
-
-  const [shareOpen, setShareOpen] = useState(false);
-  const [copyDone, setCopyDone] = useState(false);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+/**
+ * Chip LUM-XXXX + Iniciar / Finalizar sesión en vivo (POST/PATCH sessions).
+ */
+export function EditorSessionControls({ classId, disabled, liveResponses, slides: _slides }: EditorSessionControlsProps) {
+  const { data: cls, refetch } = useClass(classId);
+  const [sessionActiva, setSessionActiva] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   useEffect(() => {
-    return () => {
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    };
-  }, []);
+    if (typeof cls?.sessionActive === 'boolean') {
+      setSessionActiva(cls.sessionActive);
+    }
+  }, [cls?.sessionActive]);
 
   const codigo =
-    cls?.codigo && cls.codigo.length > 0 ? cls.codigo : '';
+    cls?.codigo && cls.codigo.length > 0 ? cls.codigo.toUpperCase() : '';
 
-  const shareUrl =
-    typeof window !== 'undefined' && codigo
-      ? `${window.location.origin}/join/${codigo}`
-      : '';
-
-  const isPublished = cls?.status === 'PUBLISHED';
-
-  const publishMutation = useMutation({
-    mutationFn: async () => {
-      await api.patch(`/classes/${classId}`, { status: 'published' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
-      const courseId = cls?.courseId;
-      if (courseId) {
-        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
-      }
-    },
-  });
-
-  const openShareModal = useCallback(() => {
-    setShareOpen(true);
-  }, []);
-
-  const handlePublishOrShare = useCallback(() => {
-    if (!classId || !cls) return;
-    if (isPublished) {
-      openShareModal();
-      return;
-    }
-    publishMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast.success('Clase publicada');
-        openShareModal();
-      },
-      onError: () => toast.error('Error al publicar la clase'),
-    });
-  }, [
-    classId,
-    cls,
-    isPublished,
-    openShareModal,
-    publishMutation,
-  ]);
-
-  const handleCopyLink = useCallback(async () => {
-    if (!shareUrl) return;
+  const handleStart = useCallback(async () => {
+    if (!classId || disabled) return;
+    setStarting(true);
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopyDone(true);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => setCopyDone(false), 2000);
+      await api.post(`/classes/${classId}/sessions/start`);
+      setSessionActiva(true);
+      await refetch();
+      toast.success('Sesión iniciada');
     } catch {
-      toast.error('No se pudo copiar el enlace');
+      toast.error('No se pudo iniciar la sesión');
+    } finally {
+      setStarting(false);
     }
-  }, [shareUrl]);
+  }, [classId, disabled, refetch]);
+
+  const handleEnd = useCallback(async () => {
+    if (!classId || disabled) return;
+    setEnding(true);
+    try {
+      await api.patch(`/classes/${classId}/sessions/end`);
+      setSessionActiva(false);
+      await refetch();
+
+      // Calcular y enviar resultados al backend
+      const resultados: {
+        studentId: string;
+        slideId: string;
+        activityType: string;
+        score: number;
+        maxScore: number;
+      }[] = [];
+
+      for (const [slideId, entry] of (liveResponses ?? new Map())) {
+        for (const resp of entry.responses) {
+          resultados.push({
+            studentId: resp.studentId,
+            slideId,
+            activityType: entry.activityType,
+            score: calcularScoreDeRespuesta(entry.activityType, resp.correct, resp.details),
+            maxScore: 5.0,
+          });
+        }
+      }
+
+      try {
+        await api.post(`/classes/${classId}/results`, { resultados });
+        toast.success('Sesión finalizada y resultados guardados');
+      } catch {
+        toast.success('Sesión finalizada');
+        console.error('[EditorSessionControls] No se pudieron guardar los resultados');
+      }
+    } catch {
+      toast.error('No se pudo finalizar la sesión');
+    } finally {
+      setEnding(false);
+    }
+  }, [classId, disabled, liveResponses, refetch]);
+
+  const busy = starting || ending;
+  const showLoader = sessionActiva ? ending : starting;
 
   return (
-    <>
-      <div className="flex h-9 items-center gap-0.5 overflow-x-auto">
-        {/* Undo / Redo */}
-        <ToolBtn label="Deshacer">
-          <Undo2 className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Rehacer">
-          <Redo2 className="size-4" />
-        </ToolBtn>
+    <div className="flex shrink-0 items-center gap-2">
+      {codigo ? (
+        <span
+          className={cn(
+            'rounded-md px-2 py-1 font-mono text-xs font-semibold tracking-wide text-white',
+          )}
+          style={{ backgroundColor: '#F97316' }}
+          title="Código de la clase"
+        >
+          {codigo}
+        </span>
+      ) : (
+        <span
+          className="rounded-md bg-muted px-2 py-1 font-mono text-xs text-muted-foreground"
+          title="Sin código asignado"
+        >
+          —
+        </span>
+      )}
 
-        <ToolSep />
-
-        {/* Cursor / Text */}
-        <ToolBtn label="Seleccionar">
-          <MousePointer2 className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Texto">
-          <Type className="size-4" />
-        </ToolBtn>
-
-        <ToolSep />
-
-        {/* Dropdowns */}
-        <DropBtn label="Ordenar" />
-        <DropBtn label="Diseño" />
-
-        <ToolSep />
-
-        {/* Insert elements */}
-        <ToolBtn label="Forma">
-          <Shapes className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Imagen">
-          <ImageIcon className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Tabla">
-          <Table className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Video">
-          <Video className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Audio">
-          <Mic className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="GIF">
-          <Film className="size-4" />
-        </ToolBtn>
-
-        <ToolSep />
-
-        {/* Drawing tools */}
-        <ToolBtn label="Lápiz">
-          <Pencil className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Borrador">
-          <Eraser className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Goma">
-          <Highlighter className="size-4" />
-        </ToolBtn>
-
-        <ToolSep />
-
+      {!sessionActiva ? (
         <button
           type="button"
-          disabled={!classId || !cls || publishMutation.isPending}
-          onClick={handlePublishOrShare}
+          disabled={!classId || !cls || disabled || busy}
+          onClick={() => void handleStart()}
           className={cn(
-            'flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium outline-none',
-            'text-muted-foreground hover:bg-accent hover:text-foreground',
-            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-            'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
-            'motion-reduce:transition-none',
+            'flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-white',
+            'bg-green-600 hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1',
             'disabled:pointer-events-none disabled:opacity-50',
           )}
         >
-          {isPublished ? (
-            <Share2 className="size-3.5 shrink-0" aria-hidden />
+          {showLoader ? (
+            <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
           ) : (
-            <Send className="size-3.5 shrink-0" aria-hidden />
+            <Play className="size-3.5 shrink-0 fill-current" aria-hidden />
           )}
-          {isPublished
-            ? 'Compartir'
-            : publishMutation.isPending
-              ? 'Publicando…'
-              : 'Publicar'}
+          Iniciar clase
         </button>
-      </div>
-
-      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="sm:max-w-md" showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Clase publicada</DialogTitle>
-          </DialogHeader>
-          <DialogBody className="space-y-3">
-            <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">
-                Código
-              </p>
-              <p className="font-mono text-sm font-semibold tracking-wide">
-                {codigo || '—'}
-              </p>
-            </div>
-            <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">
-                Enlace
-              </p>
-              <p className="break-all font-mono text-xs text-foreground">
-                {shareUrl || '—'}
-              </p>
-            </div>
-          </DialogBody>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!shareUrl}
-              onClick={handleCopyLink}
-            >
-              {copyDone ? '¡Copiado!' : 'Copiar link'}
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => setShareOpen(false)}>
-              Cerrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+      ) : (
+        <button
+          type="button"
+          disabled={!classId || !cls || disabled || busy}
+          onClick={() => void handleEnd()}
+          className={cn(
+            'flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-white',
+            'bg-red-600 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1',
+            'disabled:pointer-events-none disabled:opacity-50',
+          )}
+        >
+          {showLoader ? (
+            <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+          ) : (
+            <Square className="size-3.5 shrink-0 fill-current" aria-hidden />
+          )}
+          Finalizar clase
+        </button>
+      )}
+    </div>
   );
 }

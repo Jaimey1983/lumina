@@ -12,14 +12,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
+  const isJoinRoute = /^\/join\//.test(pathname);
 
   useEffect(() => {
-    if (!isViewerRoute && !isLoading && !isAuthenticated) {
+    if (!isViewerRoute && !isJoinRoute && !isLoading && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router, isViewerRoute]);
+  }, [isLoading, isAuthenticated, router, isViewerRoute, isJoinRoute]);
 
-  if (isViewerRoute) {
+  if (isViewerRoute || isJoinRoute) {
     return <>{children}</>;
   }
 

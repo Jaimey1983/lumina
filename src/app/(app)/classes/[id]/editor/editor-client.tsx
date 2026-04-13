@@ -994,6 +994,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onActivityChange={handleActivityChange}
             onRemoveBlock={handleRemoveBlock}
             onEffectiveBloques={setActiveSlideLiveBloques}
+            liveResponses={liveResponses}
+            slides={sortedSlides.map((s) => classSlideToRendererSlide(s as ApiSlide))}
           />
 
           {/* Flyout panel derecho */}
