@@ -537,22 +537,43 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         slideId: string;
         activityType: string;
         correct: boolean | null;
-        score: number;
+        score: number | null;
         maxScore: number;
         historial: { label: string; correct: boolean | null }[][];
       }[] = [];
       for (const [slideId, entry] of liveResponses) {
         for (const response of entry.responses) {
-          let score: number;
+          let score: number | null;
           let maxScore: number;
-          if (response.activityType === 'video_interactivo') {
-            const historial = response.details ?? [];
-            const correctas = historial.filter((h) => h.correct).length;
-            const total = historial.length;
-            score = total > 0 ? (correctas / total) * 5.0 : 0;
+
+          if (response.activityType === 'short_answer') {
+            score = null;
+            maxScore = 5;
+          } else if (response.details && response.details.length > 0) {
+            // Actividades con sub-respuestas: video_interactivo, match_pairs,
+            // fill_blanks, drag_drop, order_steps
+            const total = response.details.length;
+            const correctas = response.details.filter((d) => d.correct === true)
+              .length;
+            if (response.correct === null) {
+              // No respondió
+              score = 0.0;
+            } else if (correctas === 0) {
+              // Respondió pero todo mal — mínimo colombiano
+              score = 1.0;
+            } else {
+              score = (correctas / total) * 5.0;
+            }
             maxScore = 5;
           } else {
-            score = response.correct === true ? 5.0 : 0;
+            // Actividades con respuesta única: quiz, verdadero_falso, encuesta_viva, etc.
+            if (response.correct === null) {
+              score = 0.0;
+            } else if (response.correct === false) {
+              score = 1.0;
+            } else {
+              score = 5.0;
+            }
             maxScore = 5;
           }
           results.push({
