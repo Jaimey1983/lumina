@@ -14,6 +14,7 @@ import {
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { ClassesService } from './classes.service';
+import { ClassesGateway } from './classes.gateway';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { CreateSlideDto } from './dto/create-slide.dto';
@@ -27,7 +28,10 @@ import { Roles } from '../auth/roles.decorator';
 
 @Controller('classes')
 export class ClassesController {
-  constructor(private readonly classesService: ClassesService) {}
+  constructor(
+    private readonly classesService: ClassesService,
+    private readonly classesGateway: ClassesGateway,
+  ) {}
 
   // ─── CLASES ────────────────────────────────────────────
 
@@ -103,8 +107,10 @@ export class ClassesController {
   @Patch(':id/sessions/end')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER')
-  endSession(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
-    return this.classesService.endSession(id, user.id);
+  async endSession(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
+    const session = await this.classesService.endSession(id, user.id);
+    this.classesGateway.server.to(`class-${id}`).emit('class-ended');
+    return session;
   }
 
   // ─── RESULTADOS ────────────────────────────────────────

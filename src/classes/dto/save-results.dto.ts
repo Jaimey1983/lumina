@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,9 +9,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class ResultItemDto {
+export class StudentResultDto {
   @IsString()
   studentId: string;
+
+  @IsString()
+  @IsOptional()
+  sessionId?: string;
 
   @IsString()
   slideId: string;
@@ -20,19 +25,29 @@ export class ResultItemDto {
 
   @IsNumber()
   @Min(0)
-  score: number;
+  @IsOptional()
+  score?: number;
 
   @IsNumber()
   @Min(0)
-  maxScore: number;
+  @IsOptional()
+  maxScore?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  correct?: boolean | null;
 
   @IsOptional()
-  response?: any;
+  historial?: any[];
 }
 
 export class GuardarResultadosDto {
+  @IsString()
+  @IsOptional()
+  sessionId?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ResultItemDto)
-  resultados: ResultItemDto[];
+  @Type(() => StudentResultDto)
+  resultados: StudentResultDto[];
 }

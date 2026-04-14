@@ -44,7 +44,7 @@ export class ClassesService {
         title: dto.title,
         description: dto.description,
         code: nanoid(8),
-        codigo,
+        codigo: codigo.toUpperCase(),
         courseId: dto.courseId,
       },
       select: {
@@ -82,8 +82,14 @@ export class ClassesService {
   }
 
   async findByCodigo(codigo: string) {
-    const clase = await this.prisma.class.findUnique({
-      where: { codigo },
+    const codigoNormalizado = codigo.toUpperCase();
+    const clase = await this.prisma.class.findFirst({
+      where: {
+        codigo: {
+          equals: codigoNormalizado,
+          mode: 'insensitive',
+        },
+      },
       select: {
         id: true,
         title: true,
@@ -106,8 +112,14 @@ export class ClassesService {
   }
 
   async joinAsGuest(codigo: string, dto: JoinAsGuestDto) {
-    const clase = await this.prisma.class.findUnique({
-      where: { codigo },
+    const codigoNormalizado = codigo.toUpperCase();
+    const clase = await this.prisma.class.findFirst({
+      where: {
+        codigo: {
+          equals: codigoNormalizado,
+          mode: 'insensitive',
+        },
+      },
       select: { id: true, title: true },
     });
     if (!clase) throw new NotFoundException('Código de clase inválido');
@@ -289,38 +301,89 @@ export class ClassesService {
     });
     if (!cls) throw new NotFoundException('Clase no encontrada');
 
-    await Promise.all(
-      dto.resultados.map((item) =>
-        this.prisma.classResult.upsert({
-          where: {
-            classId_studentId_slideId: {
-              classId,
-              studentId: item.studentId,
-              slideId: item.slideId,
-            },
-          },
-          create: {
+    const sessionId =
+      dto.sessionId !== undefined &&
+      dto.sessionId !== null &&
+      String(dto.sessionId).trim() !== ''
+        ? String(dto.sessionId).trim()
+        : undefined;
+
+    for (const item of dto.resultados) {
+      const responsePayload: Record<
+        string,
+        Prisma.InputJsonValue | boolean | null
+      > = {};
+      if (item.correct !== undefined && item.correct !== null) {
+        responsePayload.correct = item.correct;
+      }
+      if (item.historial !== undefined) {
+        responsePayload.historial = item.historial as Prisma.InputJsonValue;
+      }
+      const responseValue:
+        | Prisma.NullableJsonNullValueInput
+        | Prisma.InputJsonValue =
+        Object.keys(responsePayload).length > 0
+          ? (responsePayload as unknown as Prisma.InputJsonValue)
+          : Prisma.JsonNull;
+
+      const itemSessionId =
+        item.sessionId !== undefined &&
+        item.sessionId !== null &&
+        String(item.sessionId).trim() !== ''
+          ? String(item.sessionId).trim()
+          : undefined;
+      const resolvedSessionId = itemSessionId ?? sessionId ?? null;
+
+      const maxScore = item.maxScore ?? 1;
+      let resolvedScore: number | undefined;
+      if (item.score !== undefined) {
+        resolvedScore = item.score;
+      } else if (item.correct === true) {
+        resolvedScore = maxScore;
+      } else if (item.correct === false) {
+        resolvedScore = 0;
+      }
+      const createScore = resolvedScore ?? 0;
+
+      const updateData: Prisma.ClassResultUncheckedUpdateInput = {
+        activityType: item.activityType,
+        response: responseValue,
+        sessionId: resolvedSessionId,
+        isManual: false,
+      };
+      if (resolvedScore !== undefined) {
+        updateData.score = resolvedScore;
+        updateData.maxScore =
+          item.maxScore !== undefined ? item.maxScore : maxScore;
+      } else if (item.maxScore !== undefined) {
+        updateData.maxScore = item.maxScore;
+      }
+
+      await this.prisma.classResult.upsert({
+        where: {
+          classId_studentId_slideId: {
             classId,
             studentId: item.studentId,
             slideId: item.slideId,
-            activityType: item.activityType,
-            score: item.score,
-            maxScore: item.maxScore,
-            isManual: false,
-            response: item.response ?? Prisma.JsonNull,
           },
-          update: {
-            activityType: item.activityType,
-            score: item.score,
-            maxScore: item.maxScore,
-            isManual: false,
-            response: item.response ?? Prisma.JsonNull,
-          },
-        }),
-      ),
-    );
+        },
+        update: updateData,
+        create: {
+          classId,
+          studentId: item.studentId,
+          slideId: item.slideId,
+          activityType: item.activityType,
+          score: createScore,
+          maxScore: maxScore,
+          response: responseValue,
+          sessionId: resolvedSessionId,
+          isManual: false,
+        },
+      });
+    }
 
-    return { guardados: dto.resultados.length };
+    const n = dto.resultados.length;
+    return { saved: n, guardados: n };
   }
 
   async getGradebook(classId: string, userId: string) {
@@ -586,10 +649,19 @@ export class ClassesService {
     do {
       codigo =
         'LUM-' +
-        Array.from({ length: 4 }, () =>
+        Array.from({ length: 6 }, () =>
           chars[Math.floor(Math.random() * chars.length)],
-        ).join('');
-      existe = !!(await this.prisma.class.findUnique({ where: { codigo } }));
+        )
+          .join('')
+          .toUpperCase();
+      existe = !!(await this.prisma.class.findFirst({
+        where: {
+          codigo: {
+            equals: codigo,
+            mode: 'insensitive',
+          },
+        },
+      }));
     } while (existe);
     return codigo;
   }

@@ -6,136 +6,107 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── USUARIOS ─────────────────────────────────────────────
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  password    String
-  name        String
-  lastName    String
-  role        Role     @default(STUDENT)
-  avatar      String?
-  institution String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaciones
-  teacherCourses    Course[]        @relation("TeacherCourses")
-  enrollments       Enrollment[]
-  gradebookEntries  GradeEntry[]
-  selfEvaluations   SelfEvaluation[]
-  peerEvaluationsGiven    PeerEvaluation[] @relation("EvaluatorUser")
-  peerEvaluationsReceived PeerEvaluation[] @relation("EvaluatedUser")
-  studentPoints     StudentPoints[]
-  studentBadges     StudentBadge[]
-  sentMessages      Message[]       @relation("SentMessages")
-  receivedMessages  Message[]       @relation("ReceivedMessages")
-  messageReads      MessageRead[]
-  workGroupMemberships WorkGroupMember[]
-  classResults       ClassResult[]
+  id                      String            @id @default(cuid())
+  email                   String            @unique
+  password                String
+  name                    String
+  lastName                String
+  role                    Role              @default(STUDENT)
+  avatar                  String?
+  isActive                Boolean           @default(true)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  institution             String?
+  classResults            ClassResult[]
+  teacherCourses          Course[]          @relation("TeacherCourses")
+  enrollments             Enrollment[]
+  gradebookEntries        GradeEntry[]
+  messageReads            MessageRead[]
+  receivedMessages        Message[]         @relation("ReceivedMessages")
+  sentMessages            Message[]         @relation("SentMessages")
+  peerEvaluationsReceived PeerEvaluation[]  @relation("EvaluatedUser")
+  peerEvaluationsGiven    PeerEvaluation[]  @relation("EvaluatorUser")
+  selfEvaluations         SelfEvaluation[]
+  studentBadges           StudentBadge[]
+  studentPoints           StudentPoints[]
+  workGroupMemberships    WorkGroupMember[]
 
   @@map("users")
 }
 
-enum Role {
-  SUPERADMIN
-  ADMIN
-  DEPARTMENT_HEAD
-  TEACHER
-  TEACHER_ASSISTANT
-  STUDENT
-  PARENT
-  GUEST
-}
-
-// ─── CURSOS ────────────────────────────────────────────────
 model Course {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  code        String   @unique
-  isActive    Boolean  @default(true)
-  teacherId   String
-  teacher     User     @relation("TeacherCourses", fields: [teacherId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaciones
-  enrollments         Enrollment[]
-  classes             Class[]
-  gradebookStructure  GradebookStructure?
-  periods             Period[]
-  studentPoints       StudentPoints[]
-  badges              Badge[]
-  messages            Message[]
-  workGroups          WorkGroup[]
-  forums              Forum[]
-  achievements        Achievement[]
+  id                 String              @id @default(cuid())
+  name               String
+  description        String?
+  code               String              @unique
+  isActive           Boolean             @default(true)
+  teacherId          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  achievements       Achievement[]
+  badges             Badge[]
+  classes            Class[]
+  teacher            User                @relation("TeacherCourses", fields: [teacherId], references: [id])
+  enrollments        Enrollment[]
+  forums             Forum[]
+  gradebookStructure GradebookStructure?
+  messages           Message[]
+  periods            Period[]
+  studentPoints      StudentPoints[]
+  workGroups         WorkGroup[]
 
   @@map("courses")
 }
 
-// ─── PERÍODOS ACADÉMICOS ───────────────────────────────────
 model Period {
-  id        String   @id @default(cuid())
-  name      String
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(true)
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id])
-  createdAt DateTime @default(now())
-
-  gradeEntries GradeEntry[]
+  id           String        @id @default(cuid())
+  name         String
+  startDate    DateTime
+  endDate      DateTime
+  isActive     Boolean       @default(true)
+  courseId     String
+  createdAt    DateTime      @default(now())
   achievements Achievement[]
+  gradeEntries GradeEntry[]
+  course       Course        @relation(fields: [courseId], references: [id])
 
   @@map("periods")
 }
 
-// ─── MATRÍCULAS ────────────────────────────────────────────
 model Enrollment {
   id        String   @id @default(cuid())
   userId    String
   courseId  String
-  user      User     @relation(fields: [userId], references: [id])
-  course    Course   @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, courseId])
   @@map("enrollments")
 }
 
-// ─── CLASES ────────────────────────────────────────────────
 model Class {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  code        String      @unique
-  codigo      String      @unique @default(cuid())
-  status      ClassStatus @default(DRAFT)
-  courseId    String
-  desempeno   Json?
-  course      Course      @relation(fields: [courseId], references: [id])
-  slides             Slide[]
-  sessions           ClassSession[]
+  id                 String              @id @default(cuid())
+  title              String
+  description        String?
+  code               String              @unique
+  status             ClassStatus         @default(DRAFT)
+  courseId           String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  desempeno          Json?
+  codigo             String              @unique @default(cuid())
   results            ClassResult[]
-  whiteboardSessions WhiteboardSession[]
+  sessions           ClassSession[]
+  course             Course              @relation(fields: [courseId], references: [id])
   collabNotes        CollabNote[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  slides             Slide[]
+  whiteboardSessions WhiteboardSession[]
 
   @@map("classes")
 }
 
-enum ClassStatus {
-  DRAFT
-  PUBLISHED
-  LIVE
-  ARCHIVED
-}
-
-// ─── SLIDES ────────────────────────────────────────────────
 model Slide {
   id        String    @id @default(cuid())
   order     Int
@@ -143,58 +114,52 @@ model Slide {
   title     String
   content   Json?
   classId   String
-  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
+  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   @@map("slides")
 }
 
 model ClassSession {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   classId     String
-  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
-  startedAt   DateTime  @default(now())
+  startedAt   DateTime      @default(now())
   endedAt     DateTime?
-  activeSlide Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  activeSlide Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  results     ClassResult[]
 
   @@map("class_sessions")
 }
 
 model ClassResult {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   classId      String
-  class        Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
   studentId    String
-  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   slideId      String
   activityType String
-  score        Float    @default(0)
-  maxScore     Float    @default(1)
-  isManual     Boolean  @default(false)
+  score        Float         @default(0)
+  maxScore     Float         @default(1)
+  isManual     Boolean       @default(false)
   response     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  sessionId    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  class        Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student      User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session      ClassSession? @relation(fields: [sessionId], references: [id])
 
   @@unique([classId, studentId, slideId])
   @@map("class_results")
 }
 
-enum SlideType {
-  COVER
-  CONTENT
-  ACTIVITY
-  VIDEO
-  IMAGE
-}
-
-// ─── SISTEMA DE CALIFICACIÓN ───────────────────────────────
 model GradebookStructure {
   id       String   @id @default(cuid())
   courseId String   @unique
-  course   Course   @relation(fields: [courseId], references: [id])
   aspects  Aspect[]
+  course   Course   @relation(fields: [courseId], references: [id])
 
   @@map("gradebook_structures")
 }
@@ -204,46 +169,25 @@ model Aspect {
   name         String
   weight       Float
   structureId  String
-  structure    GradebookStructure @relation(fields: [structureId], references: [id])
   achievements Achievement[]
+  structure    GradebookStructure @relation(fields: [structureId], references: [id])
 
   @@map("aspects")
 }
 
-// ─── LOGROS E INDICADORES DE LOGRO ────────────────────────
-
-enum AchievementScope {
-  SPECIFIC
-  SUBJECT
-  GENERAL
-}
-
-enum CompetenceType {
-  COGNITIVE
-  METHODOLOGICAL
-  INTERPERSONAL
-  INSTRUMENTAL
-  SUBJECT_SPECIFIC
-}
-
-enum CompetenceScope {
-  GENERAL
-  SPECIFIC
-}
-
 model Achievement {
-  id           String              @id @default(cuid())
-  code         String
-  statement    String
-  scope        AchievementScope    @default(SPECIFIC)
-  courseId     String
-  aspectId     String
-  periodId     String
-  aspect       Aspect              @relation(fields: [aspectId], references: [id])
-  course       Course              @relation(fields: [courseId], references: [id])
-  period       Period              @relation(fields: [periodId], references: [id])
+  id                    String                 @id @default(cuid())
+  code                  String
+  statement             String
+  scope                 AchievementScope       @default(SPECIFIC)
+  courseId              String
+  aspectId              String
+  periodId              String
+  createdAt             DateTime               @default(now())
+  aspect                Aspect                 @relation(fields: [aspectId], references: [id])
+  course                Course                 @relation(fields: [courseId], references: [id])
+  period                Period                 @relation(fields: [periodId], references: [id])
   performanceIndicators PerformanceIndicator[]
-  createdAt    DateTime            @default(now())
 
   @@unique([code, courseId])
   @@map("achievements")
@@ -257,9 +201,9 @@ model PerformanceIndicator {
   subject         String?
   weight          Float
   achievementId   String
-  achievement     Achievement     @relation(fields: [achievementId], references: [id])
-  activities      Activity[]
   createdAt       DateTime        @default(now())
+  activities      Activity[]
+  achievement     Achievement     @relation(fields: [achievementId], references: [id])
 
   @@map("performance_indicators")
 }
@@ -277,7 +221,6 @@ model Activity {
   @@map("activities")
 }
 
-// ─── NOTAS ─────────────────────────────────────────────────
 model GradeEntry {
   id         String   @id @default(cuid())
   score      Float
@@ -285,17 +228,16 @@ model GradeEntry {
   userId     String
   activityId String
   periodId   String
-  user       User     @relation(fields: [userId], references: [id])
-  activity   Activity @relation(fields: [activityId], references: [id])
-  period     Period   @relation(fields: [periodId], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  activity   Activity @relation(fields: [activityId], references: [id])
+  period     Period   @relation(fields: [periodId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, activityId, periodId])
   @@map("grade_entries")
 }
 
-// ─── AUTOEVALUACIÓN ────────────────────────────────────────
 model SelfEvaluation {
   id        String   @id @default(cuid())
   score     Float
@@ -303,14 +245,13 @@ model SelfEvaluation {
   userId    String
   courseId  String
   periodId  String
-  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, courseId, periodId])
   @@map("self_evaluations")
 }
 
-// ─── COEVALUACIÓN ──────────────────────────────────────────
 model PeerEvaluation {
   id          String   @id @default(cuid())
   score       Float
@@ -319,25 +260,24 @@ model PeerEvaluation {
   evaluatedId String
   courseId    String
   periodId    String
-  evaluator   User     @relation("EvaluatorUser", fields: [evaluatorId], references: [id])
-  evaluated   User     @relation("EvaluatedUser", fields: [evaluatedId], references: [id])
   createdAt   DateTime @default(now())
+  evaluated   User     @relation("EvaluatedUser", fields: [evaluatedId], references: [id])
+  evaluator   User     @relation("EvaluatorUser", fields: [evaluatorId], references: [id])
 
   @@unique([evaluatorId, evaluatedId, courseId, periodId])
   @@map("peer_evaluations")
 }
 
-// ─── GAMIFICACIÓN ─────────────────────────────────────────
 model StudentPoints {
   id        String   @id @default(cuid())
   points    Int      @default(0)
-  reason    String?
   userId    String
   courseId  String
-  user      User     @relation(fields: [userId], references: [id])
-  course    Course   @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  reason    String?
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, courseId])
   @@map("student_points")
@@ -350,9 +290,9 @@ model Badge {
   icon        String?
   isActive    Boolean        @default(true)
   courseId    String
-  course      Course         @relation(fields: [courseId], references: [id])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  course      Course         @relation(fields: [courseId], references: [id])
   assignments StudentBadge[]
 
   @@map("badges")
@@ -362,33 +302,30 @@ model StudentBadge {
   id        String   @id @default(cuid())
   userId    String
   badgeId   String
-  user      User     @relation(fields: [userId], references: [id])
-  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
   awardedAt DateTime @default(now())
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, badgeId])
   @@map("student_badges")
 }
 
-// ─── MENSAJERÍA ────────────────────────────────────────────
 model Message {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   content     String
-  isDeleted   Boolean   @default(false)
+  isDeleted   Boolean       @default(false)
   courseId    String
   senderId    String
   recipientId String?
   parentId    String?
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  course    Course        @relation(fields: [courseId], references: [id])
-  sender    User          @relation("SentMessages", fields: [senderId], references: [id])
-  recipient User?         @relation("ReceivedMessages", fields: [recipientId], references: [id])
-  parent    Message?      @relation("MessageReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replies   Message[]     @relation("MessageReplies")
-  reads     MessageRead[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  reads       MessageRead[]
+  course      Course        @relation(fields: [courseId], references: [id])
+  parent      Message?      @relation("MessageReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies     Message[]     @relation("MessageReplies")
+  recipient   User?         @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  sender      User          @relation("SentMessages", fields: [senderId], references: [id])
 
   @@map("messages")
 }
@@ -398,7 +335,6 @@ model MessageRead {
   messageId String
   userId    String
   readAt    DateTime @default(now())
-
   message   Message  @relation(fields: [messageId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 
@@ -406,20 +342,18 @@ model MessageRead {
   @@map("message_reads")
 }
 
-// ─── INTEGRACIONES / WEBHOOKS ─────────────────────────────
-
 model Webhook {
-  id        String       @id @default(cuid())
-  name      String
-  url       String
-  secret    String?      // HMAC-SHA256 signing secret opcional
-  events    String[]     // lista de eventos suscritos
-  isActive  Boolean      @default(true)
-  courseId  String?      // null = webhook global (solo ADMIN/SUPERADMIN)
+  id          String       @id @default(cuid())
+  name        String
+  url         String
+  secret      String?
+  events      String[]
+  isActive    Boolean      @default(true)
+  courseId    String?
   createdById String
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  logs      WebhookLog[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  logs        WebhookLog[]
 
   @@map("webhooks")
 }
@@ -438,18 +372,16 @@ model WebhookLog {
   @@map("webhook_logs")
 }
 
-// ─── FOROS ────────────────────────────────────────────────
-
 model Forum {
   id          String        @id @default(cuid())
   name        String
   description String?
   isActive    Boolean       @default(true)
   courseId    String
-  course      Course        @relation(fields: [courseId], references: [id])
-  threads     ForumThread[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  threads     ForumThread[]
+  course      Course        @relation(fields: [courseId], references: [id])
 
   @@map("forums")
 }
@@ -463,10 +395,10 @@ model ForumThread {
   isActive  Boolean      @default(true)
   forumId   String
   authorId  String
-  forum     Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
-  replies   ForumReply[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+  replies   ForumReply[]
+  forum     Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
 
   @@map("forum_threads")
 }
@@ -477,25 +409,23 @@ model ForumReply {
   isActive  Boolean     @default(true)
   threadId  String
   authorId  String
-  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@map("forum_replies")
 }
 
-// ─── COLABORACIÓN ──────────────────────────────────────────
-
 model WhiteboardSession {
   id          String   @id @default(cuid())
   name        String
-  content     Json?    // Estado canvas Fabric.js
+  content     Json?
   isActive    Boolean  @default(true)
   classId     String
   createdById String
-  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   @@map("whiteboard_sessions")
 }
@@ -503,25 +433,25 @@ model WhiteboardSession {
 model CollabNote {
   id          String        @id @default(cuid())
   title       String
-  content     Json?         // Documento Tiptap JSON
+  content     Json?
   isActive    Boolean       @default(true)
   classId     String
   createdById String
-  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
-  versions    NoteVersion[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  versions    NoteVersion[]
 
   @@map("collab_notes")
 }
 
 model NoteVersion {
   id        String     @id @default(cuid())
-  content   Json       // Snapshot del contenido Tiptap
+  content   Json
   noteId    String
   authorId  String
-  note      CollabNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
+  note      CollabNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@map("note_versions")
 }
@@ -532,11 +462,11 @@ model WorkGroup {
   description String?
   isActive    Boolean           @default(true)
   courseId    String
-  course      Course            @relation(fields: [courseId], references: [id])
-  members     WorkGroupMember[]
-  activities  GroupActivity[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  activities  GroupActivity[]
+  members     WorkGroupMember[]
+  course      Course            @relation(fields: [courseId], references: [id])
 
   @@map("work_groups")
 }
@@ -545,9 +475,9 @@ model WorkGroupMember {
   id       String    @id @default(cuid())
   groupId  String
   userId   String
+  joinedAt DateTime  @default(now())
   group    WorkGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user     User      @relation(fields: [userId], references: [id])
-  joinedAt DateTime  @default(now())
 
   @@unique([groupId, userId])
   @@map("work_group_members")
@@ -557,10 +487,55 @@ model GroupActivity {
   id         String    @id @default(cuid())
   groupId    String
   activityId String
-  group      WorkGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  activity   Activity  @relation(fields: [activityId], references: [id])
   assignedAt DateTime  @default(now())
+  activity   Activity  @relation(fields: [activityId], references: [id])
+  group      WorkGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, activityId])
   @@map("group_activities")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  DEPARTMENT_HEAD
+  TEACHER
+  TEACHER_ASSISTANT
+  STUDENT
+  PARENT
+  GUEST
+}
+
+enum ClassStatus {
+  DRAFT
+  PUBLISHED
+  LIVE
+  ARCHIVED
+}
+
+enum SlideType {
+  COVER
+  CONTENT
+  ACTIVITY
+  VIDEO
+  IMAGE
+}
+
+enum AchievementScope {
+  SPECIFIC
+  SUBJECT
+  GENERAL
+}
+
+enum CompetenceType {
+  COGNITIVE
+  METHODOLOGICAL
+  INTERPERSONAL
+  INSTRUMENTAL
+  SUBJECT_SPECIFIC
+}
+
+enum CompetenceScope {
+  GENERAL
+  SPECIFIC
 }

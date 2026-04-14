@@ -35,18 +35,26 @@ export class ClassesGateway {
   }
 
   @SubscribeMessage('student-response')
-handleStudentResponse(
-  @MessageBody() data: {
-    classId: string;
-    slideId: string;
-    slideIndex: number;
-    activityType: string;
-    studentId: string;
-    correct: boolean | null;
-    response: unknown;
-  },
-  @ConnectedSocket() client: Socket,
-) {
-  client.to(`class-${data.classId}`).emit('response-update', data);
-}
+  handleStudentResponse(
+    @MessageBody() data: {
+      classId: string;
+      slideId: string;
+      slideIndex: number;
+      activityType: string;
+      studentId: string;
+      correct: boolean | null;
+      response: unknown;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.to(`class-${data.classId}`).emit('response-update', data);
+  }
+
+  @SubscribeMessage('end-session')
+  handleEndSession(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { classId: string },
+  ) {
+    this.server.to(`class-${payload.classId}`).emit('class-ended');
+  }
 }
