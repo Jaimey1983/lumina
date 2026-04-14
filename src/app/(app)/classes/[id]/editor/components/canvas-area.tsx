@@ -14,7 +14,6 @@ import {
 } from '@dnd-kit/core';
 
 import type { Activity, Background, Block, Slide } from '@/types/slide.types';
-import type { StudentResponse } from './panels/live-responses-panel';
 import {
   getBlockAtPath,
   sanitizeSlideContentForPersistence,
@@ -140,8 +139,8 @@ export interface CanvasAreaProps {
   onRemoveBlock?: (blockId: string) => void;
   /** Fired with live/committed block positions during and after drag (null when settled). */
   onEffectiveBloques?: (bloques: Block[] | null) => void;
-  liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
-  slides?: Slide[];
+  /** Panel «Respuestas en vivo» abierto: oculta PROPIEDADES aunque haya bloque seleccionado. */
+  livePanelOpen?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -166,8 +165,7 @@ export function CanvasArea({
   onActivityChange,
   onRemoveBlock,
   onEffectiveBloques,
-  liveResponses,
-  slides,
+  livePanelOpen = false,
 }: CanvasAreaProps) {
   // ── classId (for PATCH URL) ─────────────────────────────────────────────────
   const params  = useParams<{ id: string }>();
@@ -551,6 +549,9 @@ export function CanvasArea({
     return () => root.removeEventListener('click', onClickCapture, true);
   }, [slide?.id]);
 
+  const showPropertiesPanel =
+    selectedBlockId != null && selectedBlockId !== '' && !livePanelOpen;
+
   // ── render ──────────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-row overflow-hidden">
@@ -569,6 +570,12 @@ export function CanvasArea({
         'relative isolate flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end overflow-clip',
         'bg-editor-workspace px-12 pb-12 pt-[var(--editor-canvas-pt)] md:px-12 md:pb-12 md:pt-[var(--editor-canvas-pt-md)]',
       )}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setSelectedBlockId(null);
+          onBlockSelectRef.current?.('');
+        }
+      }}
     >
       {/* Floating editor toolbar */}
       <div
@@ -598,8 +605,6 @@ export function CanvasArea({
           fondo={liveSlide?.fondo}
           onChangeFondo={(f) => void handleChangeFondo(f)}
           onInsertAudio={handleInsertBlock}
-          liveResponses={liveResponses}
-          slides={slides}
         />
       </div>
 
@@ -658,11 +663,20 @@ export function CanvasArea({
       )}
     </div>
 
-    <PropertiesPanel
-      bloques={liveSlide?.bloques ?? []}
-      selectedBlockId={selectedBlockId}
-      onApplyBloques={handleApplyBloques}
-    />
+    <div
+      className={cn(
+        'h-full min-w-0 shrink-0 overflow-hidden transition-all duration-200 ease-in-out',
+        showPropertiesPanel
+          ? 'max-w-64 opacity-100 translate-x-0 pointer-events-auto'
+          : 'max-w-0 opacity-0 translate-x-4 pointer-events-none',
+      )}
+    >
+      <PropertiesPanel
+        bloques={liveSlide?.bloques ?? []}
+        selectedBlockId={selectedBlockId}
+        onApplyBloques={handleApplyBloques}
+      />
+    </div>
     </div>
   );
 }

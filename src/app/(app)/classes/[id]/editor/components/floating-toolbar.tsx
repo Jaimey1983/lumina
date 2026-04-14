@@ -10,7 +10,6 @@ import {
   Film,
   ImageIcon,
   Mic,
-  MousePointer2,
   Redo2,
   Send,
   Share2,
@@ -23,8 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Background, Block, Slide } from '@/types/slide.types';
-import type { StudentResponse } from './panels/live-responses-panel';
+import type { Background, Block } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';
@@ -49,8 +47,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-
-import { EditorSessionControls } from './editor-toolbar';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -544,8 +540,6 @@ export interface SlideEditorChromeProps {
   fondo?: Background;
   onChangeFondo: (fondo: Background) => void | Promise<void>;
   onInsertAudio: (block: Block) => void | Promise<void>;
-  liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
-  slides?: Slide[];
 }
 
 export function SlideEditorChrome({
@@ -560,8 +554,6 @@ export function SlideEditorChrome({
   fondo,
   onChangeFondo,
   onInsertAudio,
-  liveResponses,
-  slides,
 }: SlideEditorChromeProps) {
   const params = useParams();
   const classId = typeof params?.id === 'string' ? params.id : '';
@@ -588,7 +580,8 @@ export function SlideEditorChrome({
   }, []);
 
   const audioRef = useRef<HTMLInputElement>(null);
-  const codigo = cls?.codigo && cls.codigo.length > 0 ? cls.codigo : '';
+  const codigo =
+    cls?.codigo && cls.codigo.length > 0 ? cls.codigo.toUpperCase() : '';
   const shareUrl =
     typeof window !== 'undefined' && codigo ? `${window.location.origin}/join/${codigo}` : '';
   const isPublished = cls?.status === 'PUBLISHED';
@@ -695,15 +688,6 @@ export function SlideEditorChrome({
         </ToolBtn>
         <ToolBtn label="Rehacer" disabled={disabled || !canRedo} onClick={onRedo}>
           <Redo2 className="size-4" />
-        </ToolBtn>
-
-        <ToolSep />
-
-        <ToolBtn label="Seleccionar" disabled={disabled}>
-          <MousePointer2 className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Texto" disabled={disabled}>
-          <Type className="size-4" />
         </ToolBtn>
 
         <ToolSep />
@@ -843,12 +827,6 @@ export function SlideEditorChrome({
         </div>
 
         <div className="flex shrink-0 items-center gap-2 border-l border-border ps-2">
-          <EditorSessionControls
-            classId={classId}
-            disabled={disabled || !cls}
-            liveResponses={liveResponses}
-            slides={slides}
-          />
           <button
             type="button"
             disabled={!classId || !cls || publishMutation.isPending || disabled}

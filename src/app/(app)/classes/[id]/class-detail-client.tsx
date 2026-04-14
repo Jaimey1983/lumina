@@ -7,10 +7,10 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Play,
   Pencil,
   LayoutList,
   Send,
+  Presentation,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -218,11 +218,6 @@ export function ClassDetailClient({ id }: { id: string }) {
                       {statusLabel(cls.status)}
                     </Badge>
                   )}
-                  {(cls as unknown as Record<string, string>)?.codigo && (
-                    <Badge variant="outline" size="sm" className="font-mono text-muted-foreground">
-                      {(cls as unknown as Record<string, string>).codigo}
-                    </Badge>
-                  )}
                 </div>
                 <h2 className="text-2xl font-semibold leading-tight break-words">
                   {cls?.title ?? 'Clase sin título'}
@@ -266,17 +261,34 @@ export function ClassDetailClient({ id }: { id: string }) {
               )}
 
               <div className="space-y-2 pt-2">
-                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" size="lg" disabled>
-                  <Play className="size-4 mr-2" />
-                  Iniciar clase
-                </Button>
-                
-                <Button variant="outline" className="w-full" size="lg" asChild>
-                  <Link href={`/classes/${id}/editor`}>
-                    <Pencil className="size-4 mr-2" />
-                    Abrir editor
-                  </Link>
-                </Button>
+                {(cls as unknown as Record<string, string>)?.codigo ? (
+                  <div
+                    className="flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2.5 font-mono text-sm font-medium text-white"
+                    aria-label="Código de la clase"
+                  >
+                    {(cls as unknown as Record<string, string>).codigo.toUpperCase()}
+                  </div>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <Button variant="outline" className="w-full flex-1" size="lg" asChild>
+                    <Link href={`/classes/${id}/editor`}>
+                      <Pencil className="size-4 mr-2" />
+                      Editor
+                    </Link>
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    className="w-full flex-1 bg-gray-100 hover:bg-gray-200 text-foreground" 
+                    size="lg" 
+                    asChild
+                  >
+                    <Link href={`/classes/${id}/present`}>
+                      <Presentation className="size-4 mr-2" />
+                      Presentar
+                    </Link>
+                  </Button>
+                </div>
 
                 {isDraft && (
                   <Button

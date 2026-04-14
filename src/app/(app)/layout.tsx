@@ -12,15 +12,32 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
+  const isPresentRoute = pathname.startsWith('/classes/') && pathname.endsWith('/present');
   const isJoinRoute = /^\/join\//.test(pathname);
+  const isClassEndedRoute = pathname === '/class-ended';
 
   useEffect(() => {
-    if (!isViewerRoute && !isJoinRoute && !isLoading && !isAuthenticated) {
+    if (
+      !isViewerRoute &&
+      !isPresentRoute &&
+      !isJoinRoute &&
+      !isClassEndedRoute &&
+      !isLoading &&
+      !isAuthenticated
+    ) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router, isViewerRoute, isJoinRoute]);
+  }, [
+    isLoading,
+    isAuthenticated,
+    router,
+    isViewerRoute,
+    isPresentRoute,
+    isJoinRoute,
+    isClassEndedRoute,
+  ]);
 
-  if (isViewerRoute || isJoinRoute) {
+  if (isViewerRoute || isPresentRoute || isJoinRoute || isClassEndedRoute) {
     return <>{children}</>;
   }
 

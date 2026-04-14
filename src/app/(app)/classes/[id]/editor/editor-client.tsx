@@ -23,6 +23,7 @@ import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
 import { CanvasArea } from './components/canvas-area';
+import { EditorClassCodeSubtitle } from './components/editor-toolbar';
 import { RightRail, type RightPanelId } from './components/right-rail';
 import { RightFlyoutPanel } from './components/right-flyout-panel';
 import type { ActivityType } from './components/panels/activities-panel';
@@ -32,7 +33,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useSocket } from '@/hooks/use-socket';
 
 // ─── Save status ──────────────────────────────────────────────────────────────
 
@@ -212,7 +212,8 @@ function hasDesempenoPersistido(value: unknown): boolean {
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
-  const { emit: socketEmit, isConnected } = useSocket();
+  // Socket connection indicator — driven by the single local socket below.
+  const [isConnected, setIsConnected] = useState(false);
   const updateSlide  = useUpdateSlide(classId);
   const createSlide  = useCreateSlide(classId);
   const removeSlide    = useRemoveSlide(classId);
@@ -320,38 +321,35 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const modalOpen = showCurricularModal || modalUserOpen;
 
-  // ─── Socket: join class room on connect ─────────────────────────────────────
-
-  useEffect(() => {
-    if (!isConnected) return;
-    socketEmit('join-class', { classId });
-  }, [isConnected, classId, socketEmit]);
-
   // ─── Socket: emit slide-change when active slide changes ────────────────────
+  // join-class is emitted inside the socket's 'connect' handler below.
 
   useEffect(() => {
-    if (!isConnected) return;
-    socketEmit('slide-change', { slideIndex: activeSlideIndex, classId });
-  }, [activeSlideIndex, classId, socketEmit, isConnected]);
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('slide-change', { slideIndex: activeSlideIndex, classId });
+  }, [activeSlideIndex, classId]);
 
-  // ── Socket: listen for student responses ─────────────────────────────────────
+  // ── Socket: single connection — join room, track connection state, listen for responses ──
 
   useEffect(() => {
-    if (socketRef.current?.connected) return; // already connected, skip
     const sock = io(
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
     );
     socketRef.current = sock;
 
     sock.on('connect', () => {
+      setIsConnected(true);
       sock.emit('join-class', { classId });
     });
+
+    sock.on('disconnect', () => setIsConnected(false));
 
     sock.on('response-update', (payload: {
       slideId: string;
       slideIndex: number;
       activityType: string;
       studentId: string;
+      studentName?: string;
       correct: boolean | null;
       details?: { label: string; correct: boolean | null }[];
       response: unknown;
@@ -385,7 +383,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             : payload.correct;
           updatedResponses = existing.responses.map((r, i) =>
             i === existingIndex
-              ? { ...r, correct: mergedCorrect, details: mergedDetails }
+              ? {
+                  ...r,
+                  correct: mergedCorrect,
+                  details: mergedDetails,
+                  studentName: payload.studentName ?? r.studentName,
+                }
               : r,
           );
         } else {
@@ -394,6 +397,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             ...existing.responses,
             {
               studentId: payload.studentId,
+              studentName: payload.studentName,
               correct: payload.correct,
               activityType: payload.activityType,
               details: payload.details,
@@ -411,9 +415,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
     return () => {
       sock.off('connect');
+      sock.off('disconnect');
       sock.off('response-update');
       sock.disconnect();
       socketRef.current = null;
+      setIsConnected(false);
     };
   }, [classId]);
 
@@ -531,24 +537,43 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         slideId: string;
         activityType: string;
         correct: boolean | null;
+        score: number;
+        maxScore: number;
         historial: { label: string; correct: boolean | null }[][];
       }[] = [];
       for (const [slideId, entry] of liveResponses) {
         for (const response of entry.responses) {
+          let score: number;
+          let maxScore: number;
+          if (response.activityType === 'video_interactivo') {
+            const historial = response.details ?? [];
+            const correctas = historial.filter((h) => h.correct).length;
+            const total = historial.length;
+            score = total > 0 ? (correctas / total) * 5.0 : 0;
+            maxScore = 5;
+          } else {
+            score = response.correct === true ? 5.0 : 0;
+            maxScore = 5;
+          }
           results.push({
             studentId: response.studentId,
             slideId,
             activityType: response.activityType,
             correct: response.correct ?? null,
+            score,
+            maxScore,
             historial: response.details ? [response.details] : [],
           });
         }
       }
       try {
-        await api.post(`/classes/${classId}/results`, {
-          sessionId,
-          results,
-        });
+        const resultadosFiltrados = results.filter((r) => !!r.studentId);
+        if (resultadosFiltrados.length > 0) {
+          await api.post(`/classes/${classId}/results`, {
+            sessionId,
+            resultados: resultadosFiltrados,
+          });
+        }
       } catch {
         toast.error('No se pudieron enviar los resultados al servidor');
       }
@@ -851,6 +876,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 >
                   {cls?.title ?? 'Editor'}
                 </p>
+                <EditorClassCodeSubtitle codigo={cls?.codigo} />
               </>
             )}
           </div>
@@ -994,8 +1020,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onActivityChange={handleActivityChange}
             onRemoveBlock={handleRemoveBlock}
             onEffectiveBloques={setActiveSlideLiveBloques}
-            liveResponses={liveResponses}
-            slides={sortedSlides.map((s) => classSlideToRendererSlide(s as ApiSlide))}
+            livePanelOpen={rightPanel === 'live'}
           />
 
           {/* Flyout panel derecho */}

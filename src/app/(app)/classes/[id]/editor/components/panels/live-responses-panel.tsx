@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Users, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 
 export interface StudentResponse {
   studentId: string;
+  /** Nombre mostrado (viene del viewer / evento response-update). */
+  studentName?: string;
   correct: boolean | null;
   activityType: string;
   details?: { label: string; correct: boolean | null }[];
@@ -21,9 +23,43 @@ export interface LiveResponsesPanelProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getStudentBadge(studentId: string): string {
-  const match = studentId.match(/(\d+)$/);
-  return match ? `E${match[1]}` : studentId.slice(0, 2).toUpperCase();
+function colorFromId(id: string): string {
+  const colors = [
+    '#F97316', '#3B82F6', '#10B981', '#8B5CF6',
+    '#EF4444', '#F59E0B', '#06B6D4', '#EC4899',
+  ];
+  let hash = 0;
+  for (const c of id) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+  return colors[hash % colors.length]!;
+}
+
+/** Iniciales: primera + última palabra; una sola palabra → una letra; sin nombre → ? */
+function liveResponseInitials(studentName: string | undefined): string {
+  const trimmed = (studentName ?? '').trim();
+  if (!trimmed) return '?';
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  const first = parts[0];
+  if (!first?.[0]) return '?';
+  if (parts.length === 1) return first[0].toUpperCase();
+  const last = parts[parts.length - 1];
+  const a = first[0].toUpperCase();
+  const b = (last?.[0] ?? '').toUpperCase();
+  return `${a}${b}`.slice(0, 2);
+}
+
+function liveAvatarStyle(studentId: string): CSSProperties {
+  return {
+    backgroundColor: colorFromId(studentId),
+    color: '#ffffff',
+  };
+}
+
+function displayStudentLabel(resp: StudentResponse): string {
+  const name = resp.studentName?.trim();
+  if (name) return name;
+  const id = resp.studentId?.trim();
+  if (id) return id;
+  return 'Estudiante';
 }
 
 const NON_EVALUABLE = new Set(['encuesta_viva', 'nube_palabras']);
@@ -113,12 +149,15 @@ export function LiveResponsesPanel({
                       : 'cursor-default',
                   )}
                 >
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary tabular-nums">
-                    {getStudentBadge(resp.studentId)}
+                  <span
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none text-white tabular-nums shadow-sm"
+                    style={liveAvatarStyle(String(resp.studentId ?? ''))}
+                  >
+                    {liveResponseInitials(resp.studentName)}
                   </span>
 
                   <span className="min-w-0 flex-1 truncate text-foreground">
-                    {resp.studentId}
+                    {displayStudentLabel(resp)}
                   </span>
 
                   {/* Correct/incorrect icon */}

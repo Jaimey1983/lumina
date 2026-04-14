@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Minimize2 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideRenderer } from '../editor/components/slide-renderer';
@@ -136,10 +137,17 @@ function readGuestIdentity(): { studentId: string; studentName: string } {
 }
 
 export function ViewerClient({ id }: { id: string }) {
+  const router = useRouter();
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [guestIdentity] = useState(readGuestIdentity);
+  /** Respuestas acumuladas por slide para emitir `historial` en video interactivo. */
+  const videoInteractiveHistorialRef = useRef<{ slideId: string; entries: unknown[] }>({
+    slideId: '',
+    entries: [],
+  });
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -150,6 +158,11 @@ export function ViewerClient({ id }: { id: string }) {
 
   const activeSlide = slides[activeSlideIndex] ?? null;
 
+  useEffect(() => {
+    if (!activeSlide?.id) return;
+    videoInteractiveHistorialRef.current = { slideId: activeSlide.id, entries: [] };
+  }, [activeSlide?.id]);
+
   // Prevent the student from leaving the viewer via the browser back button.
   useEffect(() => {
     window.history.pushState(null, '', window.location.href);
@@ -158,6 +171,29 @@ export function ViewerClient({ id }: { id: string }) {
     }
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    handleFullscreenChange();
+
+    const el = document.documentElement;
+    if (el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {
+        // Browser may reject fullscreen without prior user interaction.
+      });
+    }
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -178,13 +214,18 @@ export function ViewerClient({ id }: { id: string }) {
       // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
 
+    sock.on('class-ended', () => {
+      router.push('/class-ended');
+    });
+
     return () => {
       sock.off('connect');
       sock.off('slide-change');
       sock.off('response-update');
+      sock.off('class-ended');
       sock.disconnect();
     };
-  }, [id]);
+  }, [id, router]);
 
   // ── Build the onResponse callback for activity components ───────────────────
   const handleResponse = useCallback(
@@ -195,6 +236,30 @@ export function ViewerClient({ id }: { id: string }) {
       if (!actBlock || actBlock.tipo !== 'actividad') return;
 
       const { correct, details } = evaluateResponse(actBlock.actividad, response);
+
+      if (actBlock.actividad.tipo === 'video_interactivo') {
+        if (videoInteractiveHistorialRef.current.slideId !== activeSlide.id) {
+          videoInteractiveHistorialRef.current = { slideId: activeSlide.id, entries: [] };
+        }
+        const prev = response && typeof response === 'object' && !Array.isArray(response)
+          ? (response as Record<string, unknown>)
+          : {};
+        videoInteractiveHistorialRef.current.entries.push({ ...prev, correct });
+        const historial = [...videoInteractiveHistorialRef.current.entries];
+        socketInstance.emit('student-response', {
+          classId: id,
+          slideId: activeSlide.id,
+          slideIndex: activeSlideIndex,
+          studentId: guestIdentity.studentId,
+          studentName: guestIdentity.studentName,
+          activityType: 'video_interactivo' as const,
+          correct,
+          historial,
+          details,
+          response: { correct, historial },
+        });
+        return;
+      }
 
       const payload = {
         classId: id,
@@ -247,6 +312,21 @@ export function ViewerClient({ id }: { id: string }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950">
+      {isFullscreen && (
+        <button
+          type="button"
+          aria-label="Salir de pantalla completa"
+          className="fixed right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md bg-black/60 text-white transition hover:bg-black/75"
+          onClick={() => {
+            if (document.fullscreenElement) {
+              document.exitFullscreen().catch(() => {});
+            }
+          }}
+        >
+          <Minimize2 className="size-4" />
+        </button>
+      )}
+
       <main className="relative flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
         {activeSlide ? (
           <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">

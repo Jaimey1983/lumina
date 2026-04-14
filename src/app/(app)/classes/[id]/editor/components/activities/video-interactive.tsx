@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { CheckCircle, Circle, Clock, XCircle, Trash2, Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle, Circle, Clock, Play, Trash2, Plus, XCircle } from 'lucide-react';
 
 import type { VideoInteractive, VideoQuestion } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,13 @@ function formatTime(secs: number): string {
   const m = Math.floor(secs / 60).toString().padStart(2, '0');
   const s = Math.floor(secs % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  return match ? match[1] : null;
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
@@ -207,6 +214,16 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
     onResponse,
   });
 
+  const youtubeThumbId = useMemo(
+    () => extractYouTubeId(actividad.urlVideo ?? ''),
+    [actividad.urlVideo],
+  );
+  const [youtubeThumbTier, setYoutubeThumbTier] = useState<'max' | 'hq'>('max');
+
+  useEffect(() => {
+    setYoutubeThumbTier('max');
+  }, [actividad.urlVideo, editorSyncKey]);
+
   return (
     <div className="space-y-3 rounded-lg border border-border p-4" data-testid="video-interactive-viewer">
       {/* Video */}
@@ -242,10 +259,38 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
         )}
 
         {!hasStarted && (
-          <div className="absolute inset-0 z-5 flex items-center justify-center bg-black/65 backdrop-blur-sm">
-            <Button size="sm" onClick={() => setHasStarted(true)} data-testid="video-start-button">
-              Iniciar actividad
-            </Button>
+          <div className="absolute inset-0 z-[5] flex items-center justify-center">
+            {youtubeThumbId ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element -- miniatura CDN de YouTube */}
+                <img
+                  alt=""
+                  src={
+                    youtubeThumbTier === 'max'
+                      ? `https://img.youtube.com/vi/${youtubeThumbId}/maxresdefault.jpg`
+                      : `https://img.youtube.com/vi/${youtubeThumbId}/hqdefault.jpg`
+                  }
+                  onError={() => {
+                    if (youtubeThumbTier === 'max') setYoutubeThumbTier('hq');
+                  }}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-black" aria-hidden />
+            )}
+            <div className="absolute inset-0 bg-black/50" aria-hidden />
+            <button
+              type="button"
+              onClick={() => setHasStarted(true)}
+              data-testid="video-start-button"
+              className="relative z-10 flex flex-col items-center gap-3 rounded-lg p-4 transition-transform duration-200 ease-out hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-white/30">
+                <Play className="size-10 text-white" fill="currentColor" aria-hidden />
+              </span>
+              <span className="text-sm font-medium text-white">Toca para comenzar</span>
+            </button>
           </div>
         )}
 

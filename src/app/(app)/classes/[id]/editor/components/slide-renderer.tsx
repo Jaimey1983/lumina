@@ -247,6 +247,11 @@ const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   justificado: 'justify',
 };
 
+function textBlockOpacityScale(block: TextBlock): number {
+  const pct = (block as TextBlock & { opacidad?: number }).opacidad;
+  return pct !== undefined ? pct / 100 : 1;
+}
+
 // ─── Inline text editor ───────────────────────────────────────────────────────
 
 function InlineTextEditor({
@@ -307,17 +312,19 @@ function InlineTextEditor({
         background: 'rgba(255,255,255,0.05)',
         resize: 'none',
         cursor: 'text',
-        fontFamily: 'inherit',
+        fontFamily: block.fuente ?? 'inherit',
         fontSize: block.tamanoFuente,
         fontWeight: block.negrita ? 'bold' : 'normal',
         fontStyle: block.cursiva ? 'italic' : 'normal',
         color: block.color ?? 'inherit',
+        textDecoration: block.subrayado ? 'underline' : undefined,
         textAlign: block.alineacion
           ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
           : 'left',
         lineHeight: 'inherit',
         overflowY: 'auto',
         boxSizing: 'border-box',
+        opacity: textBlockOpacityScale(block),
       }}
     />
   );
@@ -341,9 +348,12 @@ function RenderText({ block, isEditing, onCommit, onDiscard }: RenderTextProps) 
     margin: 0,
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
     fontSize: block.tamanoFuente,
+    fontFamily: block.fuente ?? 'inherit',
     fontWeight: block.negrita ? 'bold' : undefined,
     fontStyle: block.cursiva ? 'italic' : undefined,
     color: block.color,
+    textDecoration: block.subrayado ? 'underline' : undefined,
+    opacity: textBlockOpacityScale(block),
   };
   const tag = block.nivel ? `h${block.nivel}` : 'p';
   return createElement(tag, { style }, block.contenido);
@@ -499,6 +509,9 @@ function RenderDivider({ block }: { block: DividerBlock }) {
 }
 
 function RenderForma({ block }: { block: FormaBlock }) {
+  const formaOpacity =
+    block.opacidad !== undefined ? block.opacidad / 100 : 1;
+
   if (block.forma === 'linea') {
     return (
       <hr
@@ -507,6 +520,7 @@ function RenderForma({ block }: { block: FormaBlock }) {
           borderTop: `${block.grosorBorde ?? 2}px solid ${block.color}`,
           margin: 0,
           width: '100%',
+          opacity: formaOpacity,
         }}
       />
     );
@@ -516,7 +530,7 @@ function RenderForma({ block }: { block: FormaBlock }) {
     return (
       <svg
         viewBox="0 0 100 100"
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', opacity: formaOpacity }}
         preserveAspectRatio="none"
       >
         <polygon
@@ -535,6 +549,7 @@ function RenderForma({ block }: { block: FormaBlock }) {
     backgroundColor: block.color,
     border: block.grosorBorde ? `${block.grosorBorde}px solid ${block.colorBorde || '#000'}` : 'none',
     boxSizing: 'border-box',
+    opacity: formaOpacity,
   };
 
   if (block.forma === 'circulo') {
