@@ -1,4 +1,4 @@
-import { IsNumber, IsString, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class NotaManualDto {
   @IsString()
@@ -6,6 +6,10 @@ export class NotaManualDto {
 
   @IsString()
   slideId: string;
+
+  @IsString()
+  @IsOptional()
+  sessionId?: string;
 
   @IsNumber()
   @Min(0)

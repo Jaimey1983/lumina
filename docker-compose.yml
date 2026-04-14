@@ -1,6 +1,8 @@
 version: '3.8'
 
 services:
+  # El backend usa por defecto PostgreSQL instalado en Windows (puerto 5432 en el host).
+  # Este servicio es un PostgreSQL de respaldo en Docker; se expone en 5434 del host para no chocar con el local.
   postgres:
     image: postgres:16
     container_name: lumina_postgres
@@ -10,7 +12,7 @@ services:
       POSTGRES_PASSWORD: lumina1234
       POSTGRES_DB: lumina
     ports:
-      - '5432:5432'
+      - '5434:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

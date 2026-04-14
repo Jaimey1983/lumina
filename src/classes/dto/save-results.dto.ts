@@ -26,7 +26,7 @@ export class StudentResultDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
-  score?: number;
+  score?: number | null;
 
   @IsNumber()
   @Min(0)
@@ -38,7 +38,7 @@ export class StudentResultDto {
   correct?: boolean | null;
 
   @IsOptional()
-  historial?: any[];
+  historial?: unknown[];
 }
 
 export class GuardarResultadosDto {

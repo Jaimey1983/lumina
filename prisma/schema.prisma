@@ -135,23 +135,23 @@ model ClassSession {
 }
 
 model ClassResult {
-  id           String        @id @default(cuid())
+  id           String       @id @default(cuid())
   classId      String
   studentId    String
   slideId      String
   activityType String
-  score        Float         @default(0)
-  maxScore     Float         @default(1)
-  isManual     Boolean       @default(false)
+  score        Float?
+  maxScore     Float        @default(1)
+  isManual     Boolean      @default(false)
   response     Json?
-  sessionId    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  class        Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student      User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  session      ClassSession? @relation(fields: [sessionId], references: [id])
+  sessionId    String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  class        Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@unique([classId, studentId, slideId])
+  @@unique([classId, studentId, slideId, sessionId])
   @@map("class_results")
 }
 
