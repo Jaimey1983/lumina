@@ -25,6 +25,7 @@ import {
   Trash2,
   Type,
   Video,
+  Zap,
 } from 'lucide-react';
 import {
   DndContext,
@@ -49,6 +50,11 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CORE_SLIDE_LAYOUTS, type CoreSlideLayoutKey } from './templates-panel';
 import { LayoutThumbnail } from './layout-thumbnails';
@@ -82,6 +88,65 @@ const ACTIVITY_PREVIEW: Record<string, { Icon: LucideIcon; label: string }> = {
   encuesta_viva: { Icon: BarChart2, label: 'Encuesta' },
   nube_palabras: { Icon: Cloud, label: 'Nube' },
 };
+
+// ─── Activity badge ───────────────────────────────────────────────────────────
+
+/**
+ * Returns the list of activity sub-types found in the slide's bloques.
+ * Each `actividad` block contributes one entry (its `actividad.tipo`).
+ */
+function getSlideActivityTypes(content: unknown): string[] {
+  const bloques = getSlideBloques(content);
+  const types: string[] = [];
+  for (const b of bloques) {
+    if (b.tipo !== 'actividad') continue;
+    const act = b.actividad;
+    if (act && typeof act === 'object' && !Array.isArray(act) && 'tipo' in act) {
+      const t = (act as { tipo?: string }).tipo;
+      if (typeof t === 'string') types.push(t);
+    }
+  }
+  return types;
+}
+
+/**
+ * Orange pill shown in the bottom-right corner of a slide thumbnail when the
+ * slide contains at least one activity block.
+ *
+ * - 1 activity  → Zap icon only
+ * - 2+ activities → Zap icon + count number
+ * - Tooltip always lists the readable activity name(s)
+ */
+function ActivityBadge({ activityTypes }: { activityTypes: string[] }) {
+  if (activityTypes.length === 0) return null;
+
+  const labels = activityTypes.map((t) => ACTIVITY_PREVIEW[t]?.label ?? t);
+  const tooltipText = labels.join(', ');
+  const showCount = activityTypes.length > 1;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* pointer-events-auto so the tooltip works even inside pointer-events-none wrappers */}
+        <div
+          className="pointer-events-auto absolute bottom-1 right-1 z-20 flex items-center gap-0.5 rounded-full px-1 py-0.5"
+          style={{ backgroundColor: '#F97316', minWidth: 18, height: 18 }}
+          aria-label={`Actividad: ${tooltipText}`}
+        >
+          <Zap className="size-2.5 shrink-0 text-white" aria-hidden />
+          {showCount && (
+            <span className="text-[9px] font-bold leading-none text-white">
+              {activityTypes.length}
+            </span>
+          )}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="max-w-[160px] text-center">
+        {tooltipText}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 // ─── Content helpers ──────────────────────────────────────────────────────────
 
@@ -414,6 +479,11 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
     [slide, effectiveContent],
   );
 
+  const activityTypes = useMemo(
+    () => getSlideActivityTypes(effectiveContent),
+    [effectiveContent],
+  );
+
   return (
     <div
       className={cn(
@@ -451,6 +521,7 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
       <span className="absolute left-0.5 top-0.5 z-[1] rounded-sm bg-black/50 px-1 text-[7px] font-medium tabular-nums text-white">
         {slide.order}
       </span>
+      <ActivityBadge activityTypes={activityTypes} />
     </div>
   );
 });

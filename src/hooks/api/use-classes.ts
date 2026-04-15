@@ -1,5 +1,6 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { ClassModoEntrega } from '@/types/slide.types';
 
 export interface Class {
   id: string;
@@ -71,6 +72,7 @@ export interface UpdateClassInput {
   desempeno?: unknown;
   /** Segundos; 0 = temporizador global desactivado. */
   timerGlobal?: number;
+  modoEntrega?: ClassModoEntrega;
 }
 
 export function useCreateClass(courseId: string) {

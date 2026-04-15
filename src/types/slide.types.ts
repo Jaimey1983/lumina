@@ -429,6 +429,16 @@ export interface Slide {
 
 export type SlideClassStatus = 'borrador' | 'publicado' | 'archivado';
 
+/** Cómo se imparte la sesión con estudiantes (persistido en API como `modoEntrega`). */
+export type ClassModoEntrega = 'clase' | 'presentacion' | 'autonomo';
+
+export function parseClassModoEntrega(value: unknown): ClassModoEntrega {
+  if (value === 'presentacion' || value === 'autonomo' || value === 'clase') {
+    return value;
+  }
+  return 'clase';
+}
+
 export interface SlideClass {
   id: string;
   title: string;
@@ -438,6 +448,8 @@ export interface SlideClass {
   codigo?: string;
   /** Segundos por defecto para temporizador en vivo (0 = desactivado). */
   timerGlobal?: number;
+  /** Alineado con el backend: `clase` | `presentacion` | `autonomo`. */
+  modoEntrega?: ClassModoEntrega;
   status: SlideClassStatus;
   slides: Slide[];
   createdAt: string;

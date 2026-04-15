@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { ClassModoEntrega } from '@/types/slide.types';
 
 export interface Slide {
   id: string;
@@ -17,6 +18,7 @@ export interface ClassDetail {
   codigo?: string;
   /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
   timerGlobal?: number;
+  modoEntrega?: ClassModoEntrega;
   /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */
   sessionActive?: boolean;
   status: string;

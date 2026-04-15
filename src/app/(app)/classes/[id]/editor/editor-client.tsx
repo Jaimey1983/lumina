@@ -41,7 +41,12 @@ import {
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
-import type { Activity, Block } from '@/types/slide.types';
+import {
+  parseClassModoEntrega,
+  type Activity,
+  type Block,
+  type ClassModoEntrega,
+} from '@/types/slide.types';
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
@@ -271,6 +276,9 @@ function parseRoomStudentCount(payload: unknown): number | null {
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
+  const modoEntrega = parseClassModoEntrega(cls?.modoEntrega);
+  const modoEntregaRef = useRef<ClassModoEntrega>(modoEntrega);
+  modoEntregaRef.current = modoEntrega;
   // Socket connection indicator — driven by the single local socket below.
   const [isConnected, setIsConnected] = useState(false);
   const updateSlide  = useUpdateSlide(classId);
@@ -322,6 +330,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       );
     } catch { /* ignore */ }
   }, [liveResponses, classId]);
+
+  /** Declarado antes del socket para handlers que leen `sessionActiveRef`. */
+  const sessionActiveRef = useRef(false);
+  const [autonomousStudentSlide, setAutonomousStudentSlide] = useState<Map<string, number>>(
+    () => new Map(),
+  );
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -487,12 +501,34 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       });
     });
 
+    sock.on(
+      'student-progress',
+      (payload: {
+        classId?: string;
+        studentId?: string;
+        slideIndex?: number;
+      }) => {
+        if (payload?.classId && payload.classId !== classId) return;
+        if (!sessionActiveRef.current || modoEntregaRef.current !== 'autonomo') return;
+        const sid = payload?.studentId;
+        const rawIdx = payload?.slideIndex;
+        if (!sid || typeof rawIdx !== 'number' || !Number.isFinite(rawIdx)) return;
+        const slideIndex = Math.max(0, Math.floor(rawIdx));
+        setAutonomousStudentSlide((prev) => {
+          const next = new Map(prev);
+          next.set(sid, slideIndex);
+          return next;
+        });
+      },
+    );
+
     return () => {
       sock.off('connect');
       sock.off('disconnect');
       sock.off('students-connected', onRoomStudentCount);
       sock.off('room-students-count', onRoomStudentCount);
       sock.off('response-update');
+      sock.off('student-progress');
       sock.disconnect();
       socketRef.current = null;
       setIsConnected(false);
@@ -521,6 +557,21 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     if (!sessionActive) setRoomStudentCount(0);
   }, [sessionActive]);
 
+  useEffect(() => {
+    if (!sessionActive) setAutonomousStudentSlide(new Map());
+  }, [sessionActive]);
+
+  const autonomousStudentsPerSlide = useMemo(() => {
+    const n = sortedSlides.length;
+    const arr = new Array<number>(n).fill(0);
+    for (const idx of autonomousStudentSlide.values()) {
+      if (typeof idx === 'number' && idx >= 0 && idx < n) {
+        arr[idx] += 1;
+      }
+    }
+    return arr;
+  }, [sortedSlides.length, autonomousStudentSlide]);
+
   const buildSlidePayload = useCallback((raw: unknown) => {
     let payload: unknown = raw ?? null;
     if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
@@ -531,7 +582,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, []);
 
   const activeSlideIdRef = useRef<string | null>(null);
-  const sessionActiveRef = useRef(false);
   const responsesLockedRef = useRef(false);
   const prevActiveSlideIdForLockRef = useRef<string | null>(null);
   activeSlideIdRef.current = activeSlide?.id ?? null;
@@ -584,10 +634,18 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   useEffect(() => {
     const sock = socketRef.current;
     if (!sock?.connected) return;
-    sock.emit('slide-change', { slideIndex: resolvedSlideIndex, classId });
+    if (modoEntrega === 'clase') {
+      sock.emit('slide-change', { slideIndex: resolvedSlideIndex, classId });
+    }
     const slide = sortedSlides[resolvedSlideIndex] ?? null;
     const eff = getEffectiveTimerForApiSlide(slide as ApiSlide | null, cls?.timerGlobal);
-    if (sessionActive && !previewOpen && eff > 0 && slide?.id) {
+    if (
+      modoEntrega === 'clase' &&
+      sessionActive &&
+      !previewOpen &&
+      eff > 0 &&
+      slide?.id
+    ) {
       queueMicrotask(() => {
         socketRef.current?.emit('timer-start', {
           slideId: slide.id,
@@ -605,6 +663,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     cls?.timerGlobal,
     editorLiveTimerSeconds,
     activeSlide?.id,
+    modoEntrega,
   ]);
 
   /** Al cambiar de slide: desbloquear estado local y notificar al backend si seguía bloqueado. */
@@ -642,6 +701,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       }
     },
     [classId, queryClient],
+  );
+
+  const handleModoEntregaChange = useCallback(
+    async (next: ClassModoEntrega) => {
+      if (!classId || sessionActive) return;
+      try {
+        await api.patch(`/classes/${classId}`, { modoEntrega: next });
+        await queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+      } catch {
+        toast.error('No se pudo guardar el modo de clase');
+      }
+    },
+    [classId, queryClient, sessionActive],
   );
 
   const autosaveSaveFn = useCallback(
@@ -773,11 +845,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       const c = getSlideContentRecord(targetSlide as ApiSlide);
       const prevBloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
       
-      const dup = (typeof structuredClone === 'function' ? structuredClone(block) : JSON.parse(JSON.stringify(block))) as Block & { id?: string; x?: number; y?: number };
+      const dup = (typeof structuredClone === 'function' ? structuredClone(block) : JSON.parse(JSON.stringify(block))) as Block & { id?: string; x?: number; y?: number; ancho?: number };
       dup.id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       if (typeof dup.x === 'number') {
         dup.x += 3;
-        const w = typeof (dup as any).ancho === 'number' ? ((dup as any).ancho as number) : 0;
+        const w = typeof dup.ancho === 'number' ? dup.ancho : 0;
         if (dup.x + w > 100) dup.x -= 3;
       }
       if (typeof dup.y === 'number') {
@@ -1462,6 +1534,30 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
             {canConfigureLiveTimer ? (
               <div className="flex items-center gap-1.5">
+                <Select
+                  value={modoEntrega}
+                  disabled={isLoading || sessionLoading || sessionActive}
+                  onValueChange={(v) => void handleModoEntregaChange(v as ClassModoEntrega)}
+                >
+                  <SelectTrigger
+                    className="h-8 w-[10.75rem] text-xs"
+                    size="sm"
+                    aria-label="Modo de clase"
+                  >
+                    <SelectValue placeholder="Modo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clase" className="text-xs">
+                      Clase en vivo
+                    </SelectItem>
+                    <SelectItem value="presentacion" className="text-xs">
+                      Presentación
+                    </SelectItem>
+                    <SelectItem value="autonomo" className="text-xs">
+                      Autónomo
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 <Timer className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 <Select
                   value={String(cls?.timerGlobal ?? 0)}
@@ -1668,6 +1764,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             activeSlideId={activeSlide?.id ?? ''}
             activeSlideIndex={resolvedSlideIndex}
             activeActivity={activeActivity}
+            showAutonomousSlideProgress={
+              sessionActive && modoEntrega === 'autonomo'
+            }
+            autonomousStudentsPerSlide={autonomousStudentsPerSlide}
           />
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}

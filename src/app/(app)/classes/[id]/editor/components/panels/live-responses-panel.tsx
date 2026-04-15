@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Users, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Activity, LivePoll } from '@/types/slide.types';
+import type { Activity } from '@/types/slide.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,6 +22,10 @@ export interface LiveResponsesPanelProps {
   activeSlideId: string;
   activeSlideIndex: number;
   activeActivity?: Activity | null;
+  /** Sesión autónoma activa: muestra cuántos estudiantes están en cada slide. */
+  showAutonomousSlideProgress?: boolean;
+  /** Índice 0-based → número de estudiantes con el cursor en ese slide. */
+  autonomousStudentsPerSlide?: number[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -74,6 +78,8 @@ export function LiveResponsesPanel({
   activeSlideId,
   activeSlideIndex,
   activeActivity,
+  showAutonomousSlideProgress,
+  autonomousStudentsPerSlide,
 }: LiveResponsesPanelProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -112,6 +118,36 @@ export function LiveResponsesPanel({
 
   return (
     <div className="flex flex-col gap-3 p-3">
+
+      {showAutonomousSlideProgress &&
+      autonomousStudentsPerSlide &&
+      autonomousStudentsPerSlide.length > 0 ? (
+        <div className="rounded-md border border-emerald-500/25 bg-emerald-500/5 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+            Progreso (autónomo)
+          </p>
+          <ul className="mt-2 space-y-1.5 text-xs text-foreground">
+            {autonomousStudentsPerSlide.map((count, idx) => (
+              <li
+                key={idx}
+                className="flex justify-between gap-2 tabular-nums text-muted-foreground"
+              >
+                <span>
+                  Slide {idx + 1}
+                  {idx === activeSlideIndex ? (
+                    <span className="ml-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                      (activo)
+                    </span>
+                  ) : null}
+                </span>
+                <span className="shrink-0 font-medium text-foreground">
+                  {count} estudiante{count !== 1 ? 's' : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {/* Banner */}
       <div className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2">

@@ -38,6 +38,8 @@ export interface RightFlyoutPanelProps {
   activeSlideId?: string;
   activeSlideIndex?: number;
   activeActivity?: Activity | null;
+  showAutonomousSlideProgress?: boolean;
+  autonomousStudentsPerSlide?: number[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -55,6 +57,8 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       activeSlideId,
       activeSlideIndex,
       activeActivity,
+      showAutonomousSlideProgress,
+      autonomousStudentsPerSlide,
     },
     ref,
   ) {
@@ -111,6 +115,8 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 activeSlideId={activeSlideId ?? ''}
                 activeSlideIndex={activeSlideIndex ?? 0}
                 activeActivity={activeActivity}
+                showAutonomousSlideProgress={showAutonomousSlideProgress}
+                autonomousStudentsPerSlide={autonomousStudentsPerSlide}
               />
             )}
           </div>

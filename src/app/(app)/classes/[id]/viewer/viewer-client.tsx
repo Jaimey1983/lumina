@@ -3,13 +3,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Check, CheckCircle2, Loader2, Lock, Minimize2, PartyPopper, XCircle } from 'lucide-react';
+import {
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Lock,
+  Minimize2,
+  PartyPopper,
+  XCircle,
+} from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useSlideTimer } from '@/hooks/use-slide-timer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
-import type { Activity, Block } from '@/types/slide.types';
+import { parseClassModoEntrega, type Activity, type Block } from '@/types/slide.types';
 import { SlideCountdownOverlay } from './slide-countdown-overlay';
 
 interface EvalDetail {
@@ -205,6 +215,18 @@ export function ViewerClient({ id }: { id: string }) {
     return sorted.map((s) => classSlideToRendererSlide(s as ApiSlide));
   }, [classData?.slides]);
 
+  const modoEntrega = useMemo(
+    () => parseClassModoEntrega(classData?.modoEntrega),
+    [classData?.modoEntrega],
+  );
+
+  /** En modo `clase`, hasta el primer `slide-change` del docente. */
+  const [liveTeacherSynced, setLiveTeacherSynced] = useState(false);
+  useEffect(() => {
+    if (modoEntrega !== 'clase') setLiveTeacherSynced(true);
+    else setLiveTeacherSynced(false);
+  }, [id, modoEntrega]);
+
   const activeSlide = slides[activeSlideIndex] ?? null;
 
   const viewerTimerDuration =
@@ -259,22 +281,31 @@ export function ViewerClient({ id }: { id: string }) {
   }, []);
 
   useEffect(() => {
-    const sock = io(
-      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-    );
+    if (!classData || classData.status !== 'PUBLISHED') {
+      setSocketInstance(null);
+      return undefined;
+    }
+
+    const modo = parseClassModoEntrega(classData.modoEntrega);
+    const sock = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');
     setSocketInstance(sock);
 
-    sock.on('connect', () => {
-      sock.emit('join-class', { classId: id });
-    });
-
-    sock.on('slide-change', (payload: { slideIndex: number; classId: string }) => {
+    const onSlideChange = (payload: { slideIndex: number; classId: string }) => {
       clearResponsePillTimers();
       setResponsePill(null);
       setSocketTimer(null);
       setResponsesLocked(false);
       setActiveSlideIndex(payload.slideIndex);
+      setLiveTeacherSynced(true);
+    };
+
+    sock.on('connect', () => {
+      sock.emit('join-class', { classId: id });
     });
+
+    if (modo === 'clase') {
+      sock.on('slide-change', onSlideChange);
+    }
 
     sock.on('timer-start', (payload: { slideId: string; duration: number; classId?: string }) => {
       const d = Math.max(0, Math.floor(Number(payload.duration) || 0));
@@ -313,7 +344,7 @@ export function ViewerClient({ id }: { id: string }) {
 
     return () => {
       sock.off('connect');
-      sock.off('slide-change');
+      sock.off('slide-change', onSlideChange);
       sock.off('timer-start');
       sock.off('lock-responses');
       sock.off('unlock-responses');
@@ -321,8 +352,19 @@ export function ViewerClient({ id }: { id: string }) {
       sock.off('session-ended');
       sock.off('class-ended');
       sock.disconnect();
+      setSocketInstance(null);
     };
-  }, [id, router, clearResponsePillTimers]);
+  }, [id, classData, clearResponsePillTimers]);
+
+  useEffect(() => {
+    if (modoEntrega !== 'autonomo') return;
+    if (!socketInstance?.connected || !guestIdentity.studentId) return;
+    socketInstance.emit('student-progress', {
+      classId: id,
+      studentId: guestIdentity.studentId,
+      slideIndex: activeSlideIndex,
+    });
+  }, [modoEntrega, socketInstance, id, guestIdentity.studentId, activeSlideIndex]);
 
   // Función para determinar el desempeño según escala colombiana (1-5)
   const getPerformance = (score: number) => {
@@ -524,6 +566,20 @@ export function ViewerClient({ id }: { id: string }) {
           </div>
         )}
 
+        {modoEntrega === 'clase' && !liveTeacherSynced && slides.length > 0 ? (
+          <div
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-zinc-950/85 px-6 text-center backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="size-10 animate-spin text-orange-400" aria-hidden />
+            <p className="max-w-sm text-base font-medium text-white">Esperando al docente…</p>
+            <p className="max-w-sm text-sm text-zinc-400">
+              En cuanto el docente avance la diapositiva, verás el contenido aquí.
+            </p>
+          </div>
+        ) : null}
+
         {activeSlide ? (
           <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">
             <SlideCountdownOverlay
@@ -551,6 +607,35 @@ export function ViewerClient({ id }: { id: string }) {
             </p>
           </div>
         )}
+
+        {slides.length > 0 && modoEntrega !== 'clase' ? (
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
+            <button
+              type="button"
+              aria-label="Diapositiva anterior"
+              disabled={activeSlideIndex <= 0}
+              onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
+              className={cn(
+                'pointer-events-auto inline-flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg transition hover:bg-black/70 disabled:pointer-events-none disabled:opacity-35',
+              )}
+            >
+              <ChevronLeft className="size-6" />
+            </button>
+            <button
+              type="button"
+              aria-label="Diapositiva siguiente"
+              disabled={activeSlideIndex >= slides.length - 1}
+              onClick={() =>
+                setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))
+              }
+              className={cn(
+                'pointer-events-auto inline-flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg transition hover:bg-black/70 disabled:pointer-events-none disabled:opacity-35',
+              )}
+            >
+              <ChevronRight className="size-6" />
+            </button>
+          </div>
+        ) : null}
       </main>
 
       {slides.length > 0 && (
