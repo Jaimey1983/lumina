@@ -321,6 +321,49 @@ export function CanvasArea({
     [slide, classId, hasActivityBlock, persistBloques],
   );
 
+  const handleDuplicateBlock = useCallback(
+    async (blockPath: string) => {
+      if (!slide?.id || !classId) return;
+      const prev = cloneBloques(slide.bloques ?? []);
+      const b = getBlockAtPath(prev, blockPath);
+      if (!b) return;
+
+      const dup = structuredClone(b) as Block;
+      (dup as any).id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+      const dupPos = dup as { x?: number; y?: number; ancho?: number; alto?: number };
+
+      if (dupPos.x !== undefined) {
+        dupPos.x += 3;
+        const width = typeof dupPos.ancho === 'number' ? dupPos.ancho : 0;
+        if (dupPos.x + width > 100) dupPos.x -= 3;
+      }
+      if (dupPos.y !== undefined) {
+        dupPos.y += 3;
+      }
+
+      const next = [...prev, dup];
+      const newIndex = next.length - 1;
+
+      try {
+        const ok = await persistBloques(next, prev, true);
+        if (ok) {
+          setTimeout(() => {
+            const el = canvasRef.current?.querySelector(
+              `[data-block-id="${String(newIndex)}"]`
+            ) as HTMLElement | null;
+            if (el) el.click();
+          }, 50);
+        } else {
+          toast.error('No se pudo duplicar el bloque');
+        }
+      } catch {
+        toast.error('No se pudo duplicar el bloque');
+      }
+    },
+    [slide?.id, classId, slide?.bloques, persistBloques],
+  );
+
   const handleDragSave = useCallback(
     async (updatedBlocks: Block[]) => {
       setCommittedBloques(updatedBlocks);
@@ -631,6 +674,7 @@ export function CanvasArea({
               onBlockSelect={handleRendererBlockSelect}
               onActivityChange={onActivityChange}
               onRemoveBlock={onRemoveBlock}
+              onDuplicateBlock={handleDuplicateBlock}
               onPersistSlide={handlePersistFromRenderer}
               className="absolute inset-0 h-full w-full min-h-0 min-w-0"
             />

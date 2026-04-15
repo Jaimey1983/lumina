@@ -10,7 +10,7 @@ import {
   useLayoutEffect,
   type RefObject,
 } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
 import { useUpdateSlide } from '@/hooks/api/use-classes';
@@ -824,6 +824,7 @@ interface RenderColumnsProps {
   pathPrefix: string;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
+  onDuplicateBlock?: (blockId: string) => void;
   onResponse?: (response: unknown) => void;
 }
 
@@ -836,6 +837,7 @@ function RenderColumns({
   pathPrefix,
   onActivityChange,
   onRemoveBlock,
+  onDuplicateBlock,
   onResponse,
 }: RenderColumnsProps) {
   let gridCols = `repeat(${block.columnas.length}, 1fr)`;
@@ -877,6 +879,7 @@ function RenderColumns({
                 pathPrefix={id}
                 onActivityChange={onActivityChange}
                 onRemoveBlock={onRemoveBlock}
+                onDuplicateBlock={onDuplicateBlock}
                 onResponse={onResponse}
               />
             );
@@ -903,6 +906,7 @@ interface BlockNodeProps {
   positionStyle?: CSSProperties;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
+  onDuplicateBlock?: (blockId: string) => void;
   /** Slide dedicado a actividad(es): el editor de respuesta corta usa layout de lienzo acotado. */
   activityCanvasLayout?: boolean;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
@@ -936,6 +940,7 @@ function BlockNode({
   positionStyle,
   onActivityChange,
   onRemoveBlock,
+  onDuplicateBlock,
   activityCanvasLayout,
   onResponse,
   canvasRef,
@@ -1059,20 +1064,29 @@ function BlockNode({
           onResizeEnd={onResizeEnd}
         />
       )}
-      {editorMode && !!onRemoveBlock && (
-        <button
-          type="button"
-          aria-label="Eliminar bloque"
-          onClick={(e) => { e.stopPropagation(); onRemoveBlock(blockId); }}
-          className={cn(
-            'absolute top-1 right-1 z-10 size-6',
-            'flex items-center justify-center rounded',
-            'bg-destructive/80 hover:bg-destructive text-white',
-            'opacity-0 group-hover:opacity-100 transition-opacity',
+      {editorMode && (!!onRemoveBlock || !!onDuplicateBlock) && (
+        <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 rounded bg-background/80 p-0.5 shadow-sm backdrop-blur border border-border">
+          {!!onDuplicateBlock && block.tipo !== 'actividad' && (
+            <button
+              type="button"
+              aria-label="Duplicar bloque"
+              onClick={(e) => { e.stopPropagation(); onDuplicateBlock(blockId); }}
+              className="flex size-6 items-center justify-center rounded-[3px] bg-blue-500/80 text-white hover:bg-blue-600 shadow-sm"
+            >
+              <Copy className="size-3.5" />
+            </button>
           )}
-        >
-          <Trash2 className="size-3.5" />
-        </button>
+          {!!onRemoveBlock && (
+            <button
+              type="button"
+              aria-label="Eliminar bloque"
+              onClick={(e) => { e.stopPropagation(); onRemoveBlock(blockId); }}
+              className="flex size-6 items-center justify-center rounded-[3px] bg-destructive/80 text-white hover:bg-destructive shadow-sm"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -1095,6 +1109,7 @@ export interface SlideRendererProps {
   onActivityChange?: (blockId: string, activity: Activity) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
+  onDuplicateBlock?: (blockId: string) => void;
   /** Callback emitido por el estudiante al responder una actividad (solo modo viewer). */
   onResponse?: (response: unknown) => void;
   className?: string;
@@ -1114,6 +1129,7 @@ export function SlideRenderer({
   onBlockSelect,
   onActivityChange,
   onRemoveBlock,
+  onDuplicateBlock,
   onResponse,
   className,
   onPersistSlide,
@@ -1337,6 +1353,7 @@ export function SlideRenderer({
             positionStyle={posStyle}
             onActivityChange={onActivityChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
+            onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}
             onResponse={onResponse}
             canvasRef={measureCanvasRef}
             currentCoords={currentCoords}

@@ -58,17 +58,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SlideRenderer } from './components/slide-renderer';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-
-// ─── Save status ──────────────────────────────────────────────────────────────
-
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-
-const SAVE_LABEL: Record<SaveStatus, string> = {
-  idle:   'Sin cambios',
-  saving: 'Guardando…',
-  saved:  'Guardado ✓',
-  error:  'Error al guardar',
-};
+import { useAutosave } from '@/hooks/use-autosave';
 
 function shortAnswerTemplate(): Activity {
   return {
@@ -258,7 +248,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
-  const [saveStatus,         setSaveStatus]         = useState<SaveStatus>('idle');
+  const [saveError, setSaveError] = useState(false);
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
   const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
   const [showCurricularModal, setShowCurricularModal] = useState(false);
@@ -484,6 +474,61 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
 
+  const sessionActive = sessionId !== null || cls?.sessionActive === true;
+
+  const buildSlidePayload = useCallback((raw: unknown) => {
+    let payload: unknown = raw ?? null;
+    if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+      const s = sanitizeSlideContentForPersistence(payload);
+      if (s !== null) payload = s;
+    }
+    return payload;
+  }, []);
+
+  const activeSlideIdRef = useRef<string | null>(null);
+  const sessionActiveRef = useRef(false);
+  activeSlideIdRef.current = activeSlide?.id ?? null;
+  sessionActiveRef.current = sessionActive;
+
+  const autosaveSaveFn = useCallback(
+    (latest: unknown) => {
+      const slideId = activeSlideIdRef.current;
+      if (!slideId || sessionActiveRef.current) return;
+      const payload = buildSlidePayload(latest);
+      updateSlide.mutate(
+        { slideId, content: payload },
+        {
+          onSuccess: () => setSaveError(false),
+          onError: () => {
+            setSaveError(true);
+            toast.error('Error al guardar');
+          },
+        },
+      );
+    },
+    [buildSlidePayload, updateSlide],
+  );
+
+  const autosaveValue = activeSlide?.content ?? null;
+
+  const { isDirty: autosaveDirty, isSaving: autosaveIsSaving } = useAutosave(
+    autosaveValue,
+    autosaveSaveFn,
+    2000,
+    {
+      enabled: !sessionActive && !!activeSlide,
+      isSavePending: updateSlide.isPending,
+      resetKey: activeSlide?.id ?? null,
+    },
+  );
+
+  const saveStatusLabel = useMemo(() => {
+    if (saveError) return 'Error al guardar';
+    if (autosaveIsSaving) return 'Guardando…';
+    if (autosaveDirty) return 'Cambios pendientes…';
+    return 'Sin cambios';
+  }, [saveError, autosaveIsSaving, autosaveDirty]);
+
   const previewResolvedIndex = useMemo(() => {
     if (sortedSlides.length === 0) return 0;
     return Math.min(Math.max(0, previewSlideIndex), sortedSlides.length - 1);
@@ -547,27 +592,32 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const handleSave = useCallback(() => {
     if (!activeSlide) return;
-    setSaveStatus('saving');
-    let payload: unknown = activeSlide.content ?? null;
-    if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
-      const s = sanitizeSlideContentForPersistence(payload);
-      if (s !== null) payload = s;
-    }
+    const payload = buildSlidePayload(activeSlide.content ?? null);
     updateSlide.mutate(
       { slideId: activeSlide.id, content: payload },
       {
         onSuccess: () => {
-          setSaveStatus('saved');
+          setSaveError(false);
           toast.success('Slide guardado');
-          setTimeout(() => setSaveStatus('idle'), 2000);
         },
         onError: () => {
-          setSaveStatus('error');
+          setSaveError(true);
           toast.error('Error al guardar');
         },
       },
     );
-  }, [activeSlide, updateSlide]);
+  }, [activeSlide, buildSlidePayload, updateSlide]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleSave]);
 
   const handleStartSession = useCallback(async () => {
     if (!classId) return;
@@ -703,6 +753,58 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       );
     },
     [sortedSlides, resolvedSlideIndex, insertSlide],
+  );
+
+  const handleDuplicateSlide = useCallback(
+    (slideId: string) => {
+      const idx = sortedSlides.findIndex((s) => s.id === slideId);
+      if (idx === -1) return;
+      const slide = sortedSlides[idx]! as ApiSlide;
+      const record = getSlideContentRecord(slide);
+      const raw = slide.content;
+      let contentClone: Record<string, unknown>;
+      if (raw !== null && raw !== undefined && typeof raw === 'object' && !Array.isArray(raw)) {
+        contentClone = JSON.parse(JSON.stringify(raw)) as Record<string, unknown>;
+      } else {
+        contentClone = { ...record };
+      }
+
+      const layoutFromClone = typeof contentClone.layout === 'string' ? contentClone.layout : undefined;
+      const layoutFromRecord = typeof record.layout === 'string' ? record.layout : undefined;
+      const layout = layoutFromClone ?? layoutFromRecord ?? 'titulo_y_contenido';
+
+      const fondo = contentClone.fondo ?? record.fondo ?? { tipo: 'color' as const, valor: '#ffffff' };
+
+      const merged: Record<string, unknown> = {
+        ...contentClone,
+        layout,
+        fondo,
+        id: `slide_${Date.now()}`,
+        orden: slide.order + 1,
+        tipo:
+          typeof contentClone.tipo === 'string'
+            ? contentClone.tipo
+            : (typeof record.tipo === 'string' ? record.tipo : 'contenido'),
+      };
+
+      const sanitized = sanitizeSlideContentForPersistence(merged) ?? merged;
+
+      insertSlide.mutate(
+        {
+          afterOrder: slide.order,
+          slide: {
+            type: slide.type,
+            title: `${slide.title} (copia)`,
+            content: sanitized,
+          },
+        },
+        {
+          onSuccess: () => setActiveSlideIndex(idx + 1),
+          onError: () => toast.error('No se pudo duplicar el slide'),
+        },
+      );
+    },
+    [sortedSlides, insertSlide],
   );
 
   const handleApplyLayout = useCallback(
@@ -1139,11 +1241,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <Button
               variant="outline"
               size="sm"
-              disabled={!activeSlide || saveStatus === 'saving'}
+              disabled={!activeSlide || updateSlide.isPending}
               onClick={handleSave}
             >
               <Save className="size-4" />
-              {saveStatus === 'saving' ? 'Guardando…' : 'Guardar'}
+              {updateSlide.isPending ? 'Guardando…' : 'Guardar'}
             </Button>
 
           </div>
@@ -1175,6 +1277,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onSelect={setActiveSlideIndex}
               onAddSlide={handleAddSlideWithLayout}
               onRemoveSlide={handleRemoveSlide}
+              onDuplicateSlide={handleDuplicateSlide}
               onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
               onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
               onReorderSlides={handleReorderSlides}
@@ -1245,10 +1348,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           <span
             className={cn(
               'text-xs tabular-nums',
-              saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground',
+              saveError ? 'text-destructive' : 'text-muted-foreground',
             )}
           >
-            {SAVE_LABEL[saveStatus]}
+            {saveStatusLabel}
           </span>
           <span className="text-xs tabular-nums text-muted-foreground">
             {sortedSlides.length} {sortedSlides.length === 1 ? 'slide' : 'slides'}

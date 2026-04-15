@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Cloud,
+  Copy,
   GitMerge,
   GripHorizontal,
   GripVertical,
@@ -41,6 +42,12 @@ import { CSS } from '@dnd-kit/utilities';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { CORE_SLIDE_LAYOUTS, type CoreSlideLayoutKey } from './templates-panel';
 import { LayoutThumbnail } from './layout-thumbnails';
@@ -458,6 +465,7 @@ export interface SlidesPanelProps {
   onSelect: (index: number) => void;
   onAddSlide: (layoutKey: CoreSlideLayoutKey) => void;
   onRemoveSlide?: (slideId: string) => void;
+  onDuplicateSlide?: (slideId: string) => void;
   onMoveSlideUp?: (slideId: string) => void;
   onMoveSlideDown?: (slideId: string) => void;
   onReorderSlides?: (slideId: string, newIndex: number) => void;
@@ -473,6 +481,7 @@ function SortableSlideItem({
   liveContent,
   onSelect,
   onRemoveSlide,
+  onDuplicateSlide,
   onMoveSlideUp,
   onMoveSlideDown,
 }: {
@@ -483,6 +492,7 @@ function SortableSlideItem({
   liveContent?: unknown;
   onSelect: (idx: number) => void;
   onRemoveSlide?: (id: string) => void;
+  onDuplicateSlide?: (id: string) => void;
   onMoveSlideUp?: (id: string) => void;
   onMoveSlideDown?: (id: string) => void;
 }) {
@@ -504,8 +514,8 @@ function SortableSlideItem({
 
   const isActive = idx === activeIndex;
 
-  return (
-    <div ref={setNodeRef} style={style} className="group relative">
+  const triggerBody = (
+    <div className="relative w-full">
       {/* Drag handle - visible on hover */}
       <div
         {...attributes}
@@ -521,9 +531,9 @@ function SortableSlideItem({
       </div>
 
       {/*
-        * div instead of <button> to avoid invalid HTML (SlideRenderer renders
-        * activity viewer components that contain their own <button> elements).
-        */}
+       * div instead of <button> to avoid invalid HTML (SlideRenderer renders
+       * activity viewer components that contain their own <button> elements).
+       */}
       <div
         role="button"
         tabIndex={0}
@@ -613,6 +623,28 @@ function SortableSlideItem({
       )}
     </div>
   );
+
+  return (
+    <div ref={setNodeRef} style={style} className="group relative">
+      {onDuplicateSlide ? (
+        <ContextMenu>
+          <ContextMenuTrigger asChild>{triggerBody}</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem
+              onSelect={() => {
+                onDuplicateSlide(slide.id);
+              }}
+            >
+              <Copy className="size-4" aria-hidden />
+              Duplicar slide
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      ) : (
+        triggerBody
+      )}
+    </div>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -626,6 +658,7 @@ export function SlidesPanel({
   onSelect,
   onAddSlide,
   onRemoveSlide,
+  onDuplicateSlide,
   onMoveSlideUp,
   onMoveSlideDown,
   onReorderSlides,
@@ -686,6 +719,7 @@ export function SlidesPanel({
                   liveContent={idx === activeIndex ? activeSlideLiveContent : undefined}
                   onSelect={onSelect}
                   onRemoveSlide={onRemoveSlide}
+                  onDuplicateSlide={onDuplicateSlide}
                   onMoveSlideUp={onMoveSlideUp}
                   onMoveSlideDown={onMoveSlideDown}
                 />
