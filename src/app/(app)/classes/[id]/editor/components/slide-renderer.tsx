@@ -247,9 +247,20 @@ const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   justificado: 'justify',
 };
 
-function textBlockOpacityScale(block: TextBlock): number {
-  const pct = (block as TextBlock & { opacidad?: number }).opacidad;
-  return pct !== undefined ? pct / 100 : 1;
+/** Estilos opcionales del JSON de texto: solo se añaden si el campo viene definido. */
+function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
+  const out: CSSProperties = {};
+  if (block.fuente !== undefined && block.fuente !== '') {
+    out.fontFamily = block.fuente;
+  }
+  if (block.subrayado === true) {
+    out.textDecoration = 'underline';
+  }
+  const opacidad = (block as TextBlock & { opacidad?: number }).opacidad;
+  if (opacidad !== undefined && typeof opacidad === 'number') {
+    out.opacity = opacidad / 100;
+  }
+  return out;
 }
 
 // ─── Inline text editor ───────────────────────────────────────────────────────
@@ -312,19 +323,17 @@ function InlineTextEditor({
         background: 'rgba(255,255,255,0.05)',
         resize: 'none',
         cursor: 'text',
-        fontFamily: block.fuente ?? 'inherit',
         fontSize: block.tamanoFuente,
         fontWeight: block.negrita ? 'bold' : 'normal',
         fontStyle: block.cursiva ? 'italic' : 'normal',
         color: block.color ?? 'inherit',
-        textDecoration: block.subrayado ? 'underline' : undefined,
         textAlign: block.alineacion
           ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
           : 'left',
         lineHeight: 'inherit',
         overflowY: 'auto',
         boxSizing: 'border-box',
-        opacity: textBlockOpacityScale(block),
+        ...textBlockOptionalVisualStyle(block),
       }}
     />
   );
@@ -348,12 +357,10 @@ function RenderText({ block, isEditing, onCommit, onDiscard }: RenderTextProps) 
     margin: 0,
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
     fontSize: block.tamanoFuente,
-    fontFamily: block.fuente ?? 'inherit',
     fontWeight: block.negrita ? 'bold' : undefined,
     fontStyle: block.cursiva ? 'italic' : undefined,
     color: block.color,
-    textDecoration: block.subrayado ? 'underline' : undefined,
-    opacity: textBlockOpacityScale(block),
+    ...textBlockOptionalVisualStyle(block),
   };
   const tag = block.nivel ? `h${block.nivel}` : 'p';
   return createElement(tag, { style }, block.contenido);

@@ -2,7 +2,17 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye, Loader2, Monitor, Save, Share2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Loader2,
+  Monitor,
+  Save,
+  Share2,
+  Zap,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { io, Socket } from 'socket.io-client';
 
@@ -30,7 +40,15 @@ import type { ActivityType } from './components/panels/activities-panel';
 import type { StudentResponse } from './components/panels/live-responses-panel';
 
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SlideRenderer } from './components/slide-renderer';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -194,6 +212,12 @@ function isPointerOnPortedOverlay(el: HTMLElement) {
   );
 }
 
+function apiSlideHasActivity(slide: ApiSlide): boolean {
+  const c = getSlideContentRecord(slide);
+  const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+  return bloques.some((b) => b.tipo === 'actividad');
+}
+
 function hasDesempenoPersistido(value: unknown): boolean {
   if (value === null || value === undefined) return false;
   if (typeof value !== 'object' || Array.isArray(value)) return false;
@@ -229,6 +253,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [showCurricularModal, setShowCurricularModal] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
 
   /** Live block positions from CanvasArea during / immediately after drag. */
   const [activeSlideLiveBloques, setActiveSlideLiveBloques] = useState<Block[] | null>(null);
@@ -381,6 +407,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 ? false
                 : null
             : payload.correct;
+
+          let mergedResponse = payload.response;
+          if (payload.activityType === 'nube_palabras') {
+            const arr = Array.isArray(prevEntry.response) ? prevEntry.response : (prevEntry.response ? [prevEntry.response] : []);
+            mergedResponse = [...arr, payload.response];
+          }
+
           updatedResponses = existing.responses.map((r, i) =>
             i === existingIndex
               ? {
@@ -388,6 +421,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   correct: mergedCorrect,
                   details: mergedDetails,
                   studentName: payload.studentName ?? r.studentName,
+                  response: mergedResponse,
                 }
               : r,
           );
@@ -401,6 +435,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               correct: payload.correct,
               activityType: payload.activityType,
               details: payload.details,
+              response: payload.activityType === 'nube_palabras' ? [payload.response] : payload.response,
             },
           ];
         }
@@ -438,6 +473,21 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
 
+  const previewResolvedIndex = useMemo(() => {
+    if (sortedSlides.length === 0) return 0;
+    return Math.min(Math.max(0, previewSlideIndex), sortedSlides.length - 1);
+  }, [sortedSlides.length, previewSlideIndex]);
+
+  const previewApiSlide = sortedSlides[previewResolvedIndex] ?? null;
+  const previewRendererSlide = useMemo(
+    () =>
+      previewApiSlide ? classSlideToRendererSlide(previewApiSlide as ApiSlide) : null,
+    [previewApiSlide],
+  );
+  const previewHasActivity = previewApiSlide
+    ? apiSlideHasActivity(previewApiSlide as ApiSlide)
+    : false;
+
   // Clear live bloques whenever the user switches to a different slide.
   useEffect(() => {
     setActiveSlideLiveBloques(null);
@@ -461,12 +511,14 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     return { ...base, bloques: activeSlideLiveBloques };
   }, [activeSlideLiveBloques, activeSlide]);
 
-  const activeSlideHasActivity = useMemo(() => {
-    if (!activeSlide) return false;
+  const activeActivity = useMemo<Activity | null>(() => {
+    if (!activeSlide) return null;
     const c = getSlideContentRecord(activeSlide as ApiSlide);
     const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
-    return bloques.some((b) => b.tipo === 'actividad');
+    const actBlock = bloques.find((b) => b.tipo === 'actividad');
+    return (actBlock?.actividad as Activity) ?? null;
   }, [activeSlide]);
+  const activeSlideHasActivity = !!activeActivity;
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -964,15 +1016,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               </Button>
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={sortedSlides.length === 0}
-              onClick={() => toast.info('Vista previa no disponible aún')}
-            >
-              <Eye className="size-4" />
-              Vista previa
-            </Button>
+            {sortedSlides.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPreviewSlideIndex(resolvedSlideIndex);
+                  setPreviewOpen(true);
+                }}
+              >
+                <Eye className="size-4" />
+                Vista previa
+              </Button>
+            ) : null}
 
             <Button
               variant="outline"
@@ -1060,6 +1117,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             liveResponses={liveResponses}
             activeSlideId={activeSlide?.id ?? ''}
             activeSlideIndex={resolvedSlideIndex}
+            activeActivity={activeActivity}
           />
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}
@@ -1091,6 +1149,98 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         </footer>
 
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent
+          className={cn(
+            'flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-5xl flex-col gap-0 overflow-hidden p-0',
+            'border-border bg-[#fff8f3] sm:w-full',
+          )}
+        >
+          <DialogHeader className="mb-0 shrink-0 space-y-0 border-b border-border/60 bg-white px-6 py-4 text-start">
+            <DialogTitle className="text-lg font-semibold text-foreground">
+              Vista previa de la clase
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="min-h-0 overflow-y-auto px-4 pb-6 pt-4 sm:px-6">
+            <div className="mx-auto flex w-full max-w-full flex-col items-stretch gap-4">
+              <div className="flex w-full items-center gap-2 sm:gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9 shrink-0 rounded-full border-border bg-white shadow-sm hover:border-[#F97316]/40"
+                  disabled={previewResolvedIndex <= 0}
+                  aria-label="Diapositiva anterior"
+                  onClick={() =>
+                    setPreviewSlideIndex((i) => Math.max(0, i - 1))
+                  }
+                >
+                  <ChevronLeft className="size-5" />
+                </Button>
+
+                <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-white shadow-sm">
+                  {previewHasActivity ? (
+                    <span
+                      className="absolute right-2 top-2 z-10 inline-flex items-center rounded-md bg-white/95 px-1.5 py-1 text-[#F97316] shadow-sm ring-1 ring-border/60"
+                      title="Incluye actividad"
+                    >
+                      <Zap className="size-4 shrink-0" aria-hidden />
+                      <span className="sr-only">Incluye actividad</span>
+                    </span>
+                  ) : null}
+                  <div className="pointer-events-none w-full [&_*]:pointer-events-none">
+                    {previewRendererSlide ? (
+                      <SlideRenderer
+                        slide={previewRendererSlide}
+                        modo="preview"
+                        className="h-full w-full"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9 shrink-0 rounded-full border-border bg-white shadow-sm hover:border-[#F97316]/40"
+                  disabled={
+                    sortedSlides.length === 0 ||
+                    previewResolvedIndex >= sortedSlides.length - 1
+                  }
+                  aria-label="Diapositiva siguiente"
+                  onClick={() =>
+                    setPreviewSlideIndex((i) =>
+                      Math.min(sortedSlides.length - 1, i + 1),
+                    )
+                  }
+                >
+                  <ChevronRight className="size-5" />
+                </Button>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-center text-sm font-medium tabular-nums text-foreground">
+                  Diapositiva {previewResolvedIndex + 1} de {sortedSlides.length}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 border-[#F97316]/35 bg-white text-xs text-foreground hover:border-[#F97316]/60 hover:bg-[#fff8f3]"
+                  onClick={() => {
+                    setPreviewOpen(false);
+                    setActiveSlideIndex(previewResolvedIndex);
+                  }}
+                >
+                  Ir a este slide
+                </Button>
+              </div>
+            </div>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
 
       <NewClassModal
         classId={classId}

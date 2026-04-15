@@ -14,6 +14,7 @@ import {
   LiveResponsesPanel,
   type StudentResponse,
 } from './panels/live-responses-panel';
+import type { Activity } from '@/types/slide.types';
 
 // ─── Panel labels ─────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export interface RightFlyoutPanelProps {
   liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
   activeSlideId?: string;
   activeSlideIndex?: number;
+  activeActivity?: Activity | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       liveResponses,
       activeSlideId,
       activeSlideIndex,
+      activeActivity,
     },
     ref,
   ) {
@@ -107,6 +110,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 liveResponses={liveResponses ?? new Map()}
                 activeSlideId={activeSlideId ?? ''}
                 activeSlideIndex={activeSlideIndex ?? 0}
+                activeActivity={activeActivity}
               />
             )}
           </div>

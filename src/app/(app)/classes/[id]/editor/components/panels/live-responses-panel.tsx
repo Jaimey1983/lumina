@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Users, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Activity, LivePoll } from '@/types/slide.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,12 +14,14 @@ export interface StudentResponse {
   correct: boolean | null;
   activityType: string;
   details?: { label: string; correct: boolean | null }[];
+  response?: unknown;
 }
 
 export interface LiveResponsesPanelProps {
   liveResponses: Map<string, { activityType: string; responses: StudentResponse[] }>;
   activeSlideId: string;
   activeSlideIndex: number;
+  activeActivity?: Activity | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -70,6 +73,7 @@ export function LiveResponsesPanel({
   liveResponses,
   activeSlideId,
   activeSlideIndex,
+  activeActivity,
 }: LiveResponsesPanelProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -90,6 +94,21 @@ export function LiveResponsesPanel({
   const uniqueResponses = responses.filter(
     (r, index, self) => index === self.findIndex(t => t.studentId === r.studentId)
   );
+
+  const isPoll = activityType === 'encuesta_viva';
+  let pollCounts: { idx: number; label: string; count: number; pct: number }[] = [];
+  if (isPoll && activeActivity?.tipo === 'encuesta_viva') {
+    const totalVotes = uniqueResponses.length;
+    pollCounts = activeActivity.opciones.map((opt, idx) => {
+      const count = uniqueResponses.filter((r) => Number(r.response) === idx).length;
+      return {
+        idx,
+        label: opt.texto,
+        count,
+        pct: totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0,
+      };
+    });
+  }
 
   return (
     <div className="flex flex-col gap-3 p-3">
@@ -125,6 +144,27 @@ export function LiveResponsesPanel({
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
+          {/* Poll Summary */}
+          {isPoll && pollCounts.length > 0 && (
+            <div className="mb-2 space-y-1.5 rounded-md border border-border bg-card p-3 shadow-sm">
+              <p className="mb-2 text-xs font-semibold">Resultados</p>
+              {pollCounts.map((pc) => (
+                <div key={pc.idx} className="space-y-1">
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span className="truncate pr-2 font-medium text-foreground">{pc.label}</span>
+                    <span className="shrink-0">{pc.count} ({pc.pct}%)</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{ width: `${pc.pct}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {uniqueResponses.map((resp) => {
             const isExpanded = expandedIds.has(resp.studentId);
             const hasDetails = (resp.details?.length ?? 0) > 0;
@@ -156,9 +196,30 @@ export function LiveResponsesPanel({
                     {liveResponseInitials(resp.studentName)}
                   </span>
 
-                  <span className="min-w-0 flex-1 truncate text-foreground">
-                    {displayStudentLabel(resp)}
-                  </span>
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="truncate text-foreground font-medium">
+                      {displayStudentLabel(resp)}
+                    </div>
+                    {resp.response !== undefined && activityType === 'short_answer' && (
+                      <div className="mt-1 break-words rounded bg-muted/50 p-1.5 text-[11px] italic text-muted-foreground">
+                        {`"${String(resp.response)}"`}
+                      </div>
+                    )}
+                    {resp.response !== undefined && activityType === 'nube_palabras' && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(Array.isArray(resp.response) ? resp.response : [resp.response]).map((w, i) => (
+                          <span key={i} className="rounded-sm bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                            {String(w)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {resp.response !== undefined && activityType === 'encuesta_viva' && activeActivity?.tipo === 'encuesta_viva' && (
+                      <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                        Votó: <span className="font-medium text-foreground">{activeActivity.opciones[Number(resp.response)]?.texto ?? '?'}</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Correct/incorrect icon */}
                   <span className="shrink-0">
