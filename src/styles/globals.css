@@ -181,5 +181,25 @@ html {
   @apply w-full mx-auto px-4 lg:px-5;
 }
 
+/** Viewer: feedback en opciones incorrectas (quiz / V-F) **/
+@keyframes lumina-viewer-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.lumina-viewer-shake {
+  animation: lumina-viewer-shake 0.5s ease-in-out;
+}
+
 /* Metronic Configs */
 @import './config.metronic.css';

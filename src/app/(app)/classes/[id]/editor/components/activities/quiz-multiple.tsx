@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle, Circle, Plus, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, CheckCircle2, Circle, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { QuizMultiple, QuizOption } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -186,6 +186,16 @@ export function QuizMultipleActivity({ actividad, modo }: Props) {
 
 // ─── QuizMultipleViewer (con onResponse y answered) ───────────────────────────
 
+function isQuizOverallCorrect(activity: QuizMultiple, optionId: string): boolean {
+  const selected = [optionId];
+  const correctIds = activity.opciones.filter((o) => o.esCorrecta).map((o) => o.id);
+  return (
+    correctIds.length > 0 &&
+    selected.length === correctIds.length &&
+    selected.every((id) => correctIds.includes(id))
+  );
+}
+
 export function QuizMultipleViewer({
   activity,
   editorSyncKey,
@@ -197,6 +207,8 @@ export function QuizMultipleViewer({
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
+
+  const hasDefinedCorrect = activity.opciones.some((o) => o.esCorrecta);
 
   useEffect(() => {
     setAnswered(false);
@@ -212,12 +224,23 @@ export function QuizMultipleViewer({
     onResponse?.(optionId);
   }
 
+  const overallCorrect =
+    selected && hasDefinedCorrect ? isQuizOverallCorrect(activity, selected) : false;
+
   return (
     <div className="space-y-4 rounded-lg border border-border p-5">
       <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
       <ul className="space-y-2">
         {activity.opciones.map((op, idx) => {
           const isSel = selected === op.id;
+          const showAuto = answered && hasDefinedCorrect;
+          const isCorrectOption = op.esCorrecta;
+          const showCorrectReveal = showAuto && !overallCorrect && isCorrectOption;
+
+          const selectedWrong = showAuto && isSel && !overallCorrect;
+
+          const selectedRight = showAuto && isSel && overallCorrect;
+
           return (
             <li key={op.id}>
               <button
@@ -227,25 +250,62 @@ export function QuizMultipleViewer({
                 className={cn(
                   'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
                   !answered && 'border-border hover:border-primary/50 hover:bg-accent',
-                  answered && isSel && 'border-primary bg-primary/5',
-                  answered && !isSel && 'border-border opacity-40',
+                  answered &&
+                    !hasDefinedCorrect &&
+                    isSel &&
+                    'border-primary bg-primary/5',
+                  answered && !hasDefinedCorrect && !isSel && 'border-border opacity-40',
+                  selectedRight &&
+                    'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                  selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
+                  showCorrectReveal &&
+                    'border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                  showAuto &&
+                    !isSel &&
+                    !showCorrectReveal &&
+                    !selectedRight &&
+                    'border-border opacity-50',
                 )}
               >
-                {isSel
-                  ? <CheckCircle className="size-4 shrink-0 text-primary" />
-                  : <Circle className="size-4 shrink-0 text-muted-foreground/40" />
-                }
-                {op.texto}
+                {showAuto ? (
+                  <>
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      {isSel ? (
+                        selectedWrong ? (
+                          <Circle className="size-4 shrink-0 text-[#DC2626]" />
+                        ) : (
+                          <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
+                        )
+                      ) : (
+                        <Circle className="size-4 shrink-0 text-muted-foreground/40" />
+                      )}
+                      <span className="min-w-0 flex-1">{op.texto}</span>
+                    </span>
+                    {selectedRight && (
+                      <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                    )}
+                    {selectedWrong && (
+                      <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />
+                    )}
+                    {showCorrectReveal && !isSel && (
+                      <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {isSel ? (
+                      <CheckCircle className="size-4 shrink-0 text-primary" />
+                    ) : (
+                      <Circle className="size-4 shrink-0 text-muted-foreground/40" />
+                    )}
+                    {op.texto}
+                  </>
+                )}
               </button>
             </li>
           );
         })}
       </ul>
-      {answered && (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
-          <span>✓</span> ¡Respuesta enviada!
-        </div>
-      )}
     </div>
   );
 }

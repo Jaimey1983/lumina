@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, CheckCircle2, Trash2, XCircle } from 'lucide-react';
 
 import type { TrueFalse } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -304,6 +304,8 @@ export function TrueFalseViewer({
   const [answered, setAnswered] = useState(false);
   const [selected, setSelected] = useState<boolean | null>(null);
 
+  const hasDefinedCorrect = typeof activity.respuestaCorrecta === 'boolean';
+
   useEffect(() => {
     setAnswered(false);
     setSelected(null);
@@ -316,6 +318,9 @@ export function TrueFalseViewer({
     onResponse?.(val);
   }
 
+  const overallCorrect =
+    hasDefinedCorrect && selected !== null ? selected === activity.respuestaCorrecta : false;
+
   return (
     <div className="space-y-5 rounded-lg border border-border p-5">
       <p className="text-sm font-medium leading-snug">{activity.afirmacion}</p>
@@ -323,6 +328,12 @@ export function TrueFalseViewer({
         {([true, false] as const).map((val) => {
           const label = val ? 'Verdadero' : 'Falso';
           const isSel = selected === val;
+          const isCorrectOption = hasDefinedCorrect && val === activity.respuestaCorrecta;
+          const showAuto = answered && hasDefinedCorrect;
+          const showCorrectReveal = showAuto && !overallCorrect && isCorrectOption;
+          const selectedWrong = showAuto && isSel && !overallCorrect;
+          const selectedRight = showAuto && isSel && overallCorrect;
+
           return (
             <button
               key={label}
@@ -330,23 +341,42 @@ export function TrueFalseViewer({
               onClick={() => handleSelect(val)}
               disabled={answered}
               className={cn(
-                'flex flex-1 flex-col items-center gap-2 rounded-md border py-6 text-sm font-medium transition-colors',
+                'relative flex flex-1 flex-col items-center gap-2 rounded-md border py-6 text-sm font-medium transition-colors',
                 !answered && 'border-border hover:border-primary/50 hover:bg-accent',
-                answered && isSel && 'border-primary bg-primary/5',
-                answered && !isSel && 'border-border opacity-40',
+                answered &&
+                  !hasDefinedCorrect &&
+                  isSel &&
+                  'border-primary bg-primary/5',
+                answered && !hasDefinedCorrect && !isSel && 'border-border opacity-40',
+                selectedRight &&
+                  'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
+                showCorrectReveal &&
+                  'border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                showAuto && !isSel && !showCorrectReveal && !selectedRight && 'border-border opacity-50',
               )}
             >
+              {selectedRight && (
+                <CheckCircle2
+                  className="absolute right-2 top-2 size-5 text-[#16A34A]"
+                  aria-hidden
+                />
+              )}
+              {selectedWrong && isSel && (
+                <XCircle className="absolute right-2 top-2 size-5 text-[#DC2626]" aria-hidden />
+              )}
+              {showCorrectReveal && !isSel && (
+                <CheckCircle2
+                  className="absolute right-2 top-2 size-5 text-[#16A34A]"
+                  aria-hidden
+                />
+              )}
               <span className="text-2xl font-bold">{val ? 'V' : 'F'}</span>
               {label}
             </button>
           );
         })}
       </div>
-      {answered && (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
-          <span>✓</span> ¡Respuesta enviada!
-        </div>
-      )}
     </div>
   );
 }

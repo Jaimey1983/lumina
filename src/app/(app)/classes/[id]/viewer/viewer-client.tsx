@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Loader2, Minimize2, PartyPopper, Lock } from 'lucide-react';
+import { Check, CheckCircle2, Loader2, Lock, Minimize2, PartyPopper, XCircle } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useSlideTimer } from '@/hooks/use-slide-timer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
@@ -129,6 +129,11 @@ function evaluateResponse(actividad: Activity, response: unknown): EvalResult {
 const LS_STUDENT_ID = 'lumina_student_id';
 const LS_STUDENT_NAME = 'lumina_student_name';
 
+type ResponsePillState = {
+  variant: 'correct' | 'incorrect' | 'sent';
+  visible: boolean;
+};
+
 interface SessionEndedScores {
   finalScore?: number;
   score?: number;
@@ -159,11 +164,39 @@ export function ViewerClient({ id }: { id: string }) {
     scores?: SessionEndedScores;
   }>({ ended: false });
   const [guestIdentity] = useState(readGuestIdentity);
+  const [responsePill, setResponsePill] = useState<ResponsePillState | null>(null);
+  const pillFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pillRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Respuestas acumuladas por slide para emitir `historial` en video interactivo. */
   const videoInteractiveHistorialRef = useRef<{ slideId: string; entries: unknown[] }>({
     slideId: '',
     entries: [],
   });
+
+  const clearResponsePillTimers = useCallback(() => {
+    if (pillFadeTimerRef.current) clearTimeout(pillFadeTimerRef.current);
+    if (pillRemoveTimerRef.current) clearTimeout(pillRemoveTimerRef.current);
+    pillFadeTimerRef.current = null;
+    pillRemoveTimerRef.current = null;
+  }, []);
+
+  const showResponsePill = useCallback(
+    (correct: boolean | null) => {
+      clearResponsePillTimers();
+      const variant =
+        correct === true ? 'correct' : correct === false ? 'incorrect' : 'sent';
+      setResponsePill({ variant, visible: true });
+      pillFadeTimerRef.current = setTimeout(() => {
+        setResponsePill((prev) => (prev ? { ...prev, visible: false } : null));
+      }, 2200);
+      pillRemoveTimerRef.current = setTimeout(() => {
+        setResponsePill(null);
+      }, 2500);
+    },
+    [clearResponsePillTimers],
+  );
+
+  useEffect(() => () => clearResponsePillTimers(), [clearResponsePillTimers]);
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -236,6 +269,8 @@ export function ViewerClient({ id }: { id: string }) {
     });
 
     sock.on('slide-change', (payload: { slideIndex: number; classId: string }) => {
+      clearResponsePillTimers();
+      setResponsePill(null);
       setSocketTimer(null);
       setResponsesLocked(false);
       setActiveSlideIndex(payload.slideIndex);
@@ -287,7 +322,7 @@ export function ViewerClient({ id }: { id: string }) {
       sock.off('class-ended');
       sock.disconnect();
     };
-  }, [id, router]);
+  }, [id, router, clearResponsePillTimers]);
 
   // Función para determinar el desempeño según escala colombiana (1-5)
   const getPerformance = (score: number) => {
@@ -306,9 +341,21 @@ export function ViewerClient({ id }: { id: string }) {
       const actBlock = blocks.find((b: Block) => b.tipo === 'actividad');
       if (!actBlock || actBlock.tipo !== 'actividad') return;
 
-      const { correct, details } = evaluateResponse(actBlock.actividad, response);
+      const actividad = actBlock.actividad;
+      const { correct, details } = evaluateResponse(actividad, response);
 
-      if (actBlock.actividad.tipo === 'video_interactivo') {
+      function pillOutcomeForActivity(): boolean | null {
+        if (actividad.tipo === 'quiz_multiple') {
+          const hasDef = actividad.opciones.some((o) => o.esCorrecta);
+          return hasDef ? correct : null;
+        }
+        if (actividad.tipo === 'verdadero_falso') {
+          return typeof actividad.respuestaCorrecta === 'boolean' ? correct : null;
+        }
+        return correct;
+      }
+
+      if (actividad.tipo === 'video_interactivo') {
         if (videoInteractiveHistorialRef.current.slideId !== activeSlide.id) {
           videoInteractiveHistorialRef.current = { slideId: activeSlide.id, entries: [] };
         }
@@ -329,6 +376,7 @@ export function ViewerClient({ id }: { id: string }) {
           details,
           response: { correct, historial },
         });
+        showResponsePill(pillOutcomeForActivity());
         return;
       }
 
@@ -336,7 +384,7 @@ export function ViewerClient({ id }: { id: string }) {
         classId: id,
         slideId: activeSlide.id,
         slideIndex: activeSlideIndex,
-        activityType: actBlock.actividad.tipo,
+        activityType: actividad.tipo,
         studentId: guestIdentity.studentId,
         studentName: guestIdentity.studentName,
         correct,
@@ -344,8 +392,17 @@ export function ViewerClient({ id }: { id: string }) {
         response,
       };
       socketInstance.emit('student-response', payload);
+      showResponsePill(pillOutcomeForActivity());
     },
-    [socketInstance, activeSlide, id, activeSlideIndex, guestIdentity, responsesLocked],
+    [
+      socketInstance,
+      activeSlide,
+      id,
+      activeSlideIndex,
+      guestIdentity,
+      responsesLocked,
+      showResponsePill,
+    ],
   );
 
   if (isLoading) {
@@ -499,6 +556,39 @@ export function ViewerClient({ id }: { id: string }) {
       {slides.length > 0 && (
         <div className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-background/80 px-4 py-1.5 text-xs font-medium shadow-md backdrop-blur sm:text-sm border border-border">
           Slide {activeSlideIndex + 1} de {slides.length}
+        </div>
+      )}
+
+      {responsePill && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            'fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium shadow-lg',
+            responsePill.variant === 'correct' &&
+              'border-[#16A34A]/30 bg-[#DCFCE7] text-green-900',
+            responsePill.variant === 'incorrect' &&
+              'border-[#DC2626]/30 bg-[#FEE2E2] text-red-900',
+            responsePill.variant === 'sent' && 'border-orange-200/60 bg-[#FFF0E6] text-orange-950',
+            responsePill.visible
+              ? 'animate-in fade-in slide-in-from-bottom-6 duration-300'
+              : 'pointer-events-none opacity-0 transition-opacity duration-300',
+          )}
+        >
+          {responsePill.variant === 'correct' && (
+            <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+          )}
+          {responsePill.variant === 'incorrect' && (
+            <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />
+          )}
+          {responsePill.variant === 'sent' && (
+            <Check className="size-5 shrink-0 text-orange-700" aria-hidden />
+          )}
+          <span>
+            {responsePill.variant === 'correct' && '¡Correcto!'}
+            {responsePill.variant === 'incorrect' && 'Incorrecto'}
+            {responsePill.variant === 'sent' && '¡Respuesta enviada!'}
+          </span>
         </div>
       )}
     </div>
