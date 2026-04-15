@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { useParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { GripHorizontal, Presentation } from 'lucide-react';
@@ -143,6 +150,15 @@ export interface CanvasAreaProps {
   livePanelOpen?: boolean;
 }
 
+export type CanvasAreaHandle = {
+  undo: () => void;
+  redo: () => void;
+  duplicateSelectedBlock: () => void;
+  /** Elimina el bloque seleccionado si hay uno; devuelve si se ejecutó la eliminación. */
+  deleteSelectedBlock: () => boolean;
+  clearBlockSelection: () => void;
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
@@ -158,15 +174,18 @@ const SLIDE_SURFACE_CLASS = cn(
   'absolute inset-0 overflow-visible rounded-md border border-border bg-card shadow-md',
 );
 
-export function CanvasArea({
-  slide,
-  isLoading,
-  onBlockSelect,
-  onActivityChange,
-  onRemoveBlock,
-  onEffectiveBloques,
-  livePanelOpen = false,
-}: CanvasAreaProps) {
+export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function CanvasArea(
+  {
+    slide,
+    isLoading,
+    onBlockSelect,
+    onActivityChange,
+    onRemoveBlock,
+    onEffectiveBloques,
+    livePanelOpen = false,
+  },
+  ref,
+) {
   // ── classId (for PATCH URL) ─────────────────────────────────────────────────
   const params  = useParams<{ id: string }>();
   const classId = params.id ?? '';
@@ -328,8 +347,8 @@ export function CanvasArea({
       const b = getBlockAtPath(prev, blockPath);
       if (!b) return;
 
-      const dup = structuredClone(b) as Block;
-      (dup as any).id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const dup = structuredClone(b) as Block & { id?: string };
+      dup.id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
       const dupPos = dup as { x?: number; y?: number; ancho?: number; alto?: number };
 
@@ -595,6 +614,40 @@ export function CanvasArea({
   const showPropertiesPanel =
     selectedBlockId != null && selectedBlockId !== '' && !livePanelOpen;
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      undo: () => {
+        void handleUndo();
+      },
+      redo: () => {
+        void handleRedo();
+      },
+      duplicateSelectedBlock: () => {
+        if (!selectedBlockId) return;
+        void handleDuplicateBlock(selectedBlockId);
+      },
+      deleteSelectedBlock: () => {
+        if (!selectedBlockId) return false;
+        onRemoveBlock?.(selectedBlockId);
+        setSelectedBlockId(null);
+        onBlockSelectRef.current?.('');
+        return true;
+      },
+      clearBlockSelection: () => {
+        setSelectedBlockId(null);
+        onBlockSelectRef.current?.('');
+      },
+    }),
+    [
+      selectedBlockId,
+      handleUndo,
+      handleRedo,
+      handleDuplicateBlock,
+      onRemoveBlock,
+    ],
+  );
+
   // ── render ──────────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-row overflow-hidden">
@@ -723,4 +776,4 @@ export function CanvasArea({
     </div>
     </div>
   );
-}
+});

@@ -11,6 +11,7 @@ import {
   Monitor,
   Save,
   Share2,
+  Users,
   Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,7 +34,7 @@ import type { Activity, Block } from '@/types/slide.types';
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
-import { CanvasArea } from './components/canvas-area';
+import { CanvasArea, type CanvasAreaHandle } from './components/canvas-area';
 import { EditorClassCodeSubtitle } from './components/editor-toolbar';
 import { RightRail, type RightPanelId } from './components/right-rail';
 import { RightFlyoutPanel } from './components/right-flyout-panel';
@@ -233,6 +234,21 @@ function slideTitleForLayoutKey(key: SlidePersistedLayoutKey): string {
   return SLIDE_LAYOUT_ORDER.find((e) => e.key === key)?.label ?? key;
 }
 
+/** Normaliza el conteo de sala desde distintos formatos del backend (Socket.IO). */
+function parseRoomStudentCount(payload: unknown): number | null {
+  if (typeof payload === 'number' && Number.isFinite(payload)) {
+    return Math.max(0, Math.floor(payload));
+  }
+  if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+    const o = payload as Record<string, unknown>;
+    const raw = o.count ?? o.connected ?? o.total ?? o.students ?? o.roomSize;
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+      return Math.max(0, Math.floor(raw));
+    }
+  }
+  return null;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SlideEditorClient({ classId }: { classId: string }) {
@@ -254,6 +270,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [showCurricularModal, setShowCurricularModal] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
+  /** Estudiantes conectados en la sala (eventos Socket.IO del backend). */
+  const [roomStudentCount, setRoomStudentCount] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
 
@@ -294,6 +312,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const rightFlyoutPanelRef = useRef<HTMLElement>(null);
   /** Top bar (Volver, acciones): no cerrar flyouts aquí en pointerdown — el setState antes del click rompe la navegación del Link. */
   const editorHeaderRef = useRef<HTMLElement>(null);
+  const canvasAreaRef = useRef<CanvasAreaHandle>(null);
 
   useEffect(() => {
     if (!activePanel && !rightPanel) return;
@@ -370,6 +389,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     });
 
     sock.on('disconnect', () => setIsConnected(false));
+
+    const onRoomStudentCount = (payload: unknown) => {
+      const n = parseRoomStudentCount(payload);
+      if (n !== null) setRoomStudentCount(n);
+    };
+    sock.on('students-connected', onRoomStudentCount);
+    sock.on('room-students-count', onRoomStudentCount);
 
     sock.on('response-update', (payload: {
       slideId: string;
@@ -452,10 +478,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     return () => {
       sock.off('connect');
       sock.off('disconnect');
+      sock.off('students-connected', onRoomStudentCount);
+      sock.off('room-students-count', onRoomStudentCount);
       sock.off('response-update');
       sock.disconnect();
       socketRef.current = null;
       setIsConnected(false);
+      setRoomStudentCount(0);
     };
   }, [classId]);
 
@@ -475,6 +504,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
 
   const sessionActive = sessionId !== null || cls?.sessionActive === true;
+
+  useEffect(() => {
+    if (!sessionActive) setRoomStudentCount(0);
+  }, [sessionActive]);
 
   const buildSlidePayload = useCallback((raw: unknown) => {
     let payload: unknown = raw ?? null;
@@ -576,6 +609,16 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [activeSlide]);
   const activeSlideHasActivity = !!activeActivity;
 
+  const liveSlideRespondedCount = useMemo(() => {
+    if (!activeSlide?.id) return 0;
+    const list = liveResponses.get(activeSlide.id)?.responses;
+    if (!list?.length) return 0;
+    return new Set(list.map((r) => r.studentId).filter(Boolean)).size;
+  }, [activeSlide?.id, liveResponses]);
+
+  const showLiveResponsesTopbar =
+    sessionActive && activeSlideHasActivity && roomStudentCount > 0;
+
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
   const toggleLeftPanel = useCallback((id: LeftPanelId) => {
@@ -610,14 +653,71 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         handleSave();
+        return;
+      }
+
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      const isEditing =
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        (document.activeElement as HTMLElement)?.isContentEditable;
+      if (isEditing) return;
+
+      const canvas = canvasAreaRef.current;
+      const mod = e.ctrlKey || e.metaKey;
+
+      if (e.key === 'Escape') {
+        if (modalOpen || previewOpen) return;
+        if (activePanel) {
+          e.preventDefault();
+          setActivePanel(null);
+          return;
+        }
+        if (rightPanel) {
+          e.preventDefault();
+          setRightPanel(null);
+          return;
+        }
+        e.preventDefault();
+        canvas?.clearBlockSelection();
+        return;
+      }
+
+      if (mod && (e.key === 'z' || e.key === 'Z') && !e.altKey) {
+        e.preventDefault();
+        if (e.shiftKey) canvas?.redo();
+        else canvas?.undo();
+        return;
+      }
+
+      if (mod && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        canvas?.redo();
+        return;
+      }
+
+      if (mod && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        canvas?.duplicateSelectedBlock();
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (canvas?.deleteSelectedBlock()) e.preventDefault();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleSave]);
+  }, [
+    handleSave,
+    modalOpen,
+    previewOpen,
+    activePanel,
+    rightPanel,
+  ]);
 
   const handleStartSession = useCallback(async () => {
     if (!classId) return;
@@ -1223,6 +1323,17 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               </Button>
             )}
 
+            {showLiveResponsesTopbar ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#F97316]/25 px-2.5 py-0.5 text-xs font-medium tabular-nums"
+                style={{ backgroundColor: '#FFF0E6', color: '#F97316' }}
+                title="Respuestas en este slide vs. estudiantes conectados en la sala"
+              >
+                <Users className="size-3.5 shrink-0" aria-hidden />
+                {liveSlideRespondedCount} / {roomStudentCount} respondieron
+              </span>
+            ) : null}
+
             {sortedSlides.length > 0 ? (
               <Button
                 type="button"
@@ -1307,6 +1418,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
           {/* Canvas area — flex-1 */}
           <CanvasArea
+            ref={canvasAreaRef}
             slide={rendererSlide}
             isLoading={isLoading}
             onActivityChange={handleActivityChange}
