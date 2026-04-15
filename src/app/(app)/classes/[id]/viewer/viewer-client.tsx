@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Loader2, Minimize2 } from 'lucide-react';
+import { Loader2, Minimize2, PartyPopper } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
+import { useSlideTimer } from '@/hooks/use-slide-timer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
+import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import type { Activity, Block } from '@/types/slide.types';
+import { SlideCountdownOverlay } from './slide-countdown-overlay';
 
 interface EvalDetail {
   label: string;
@@ -126,6 +129,11 @@ function evaluateResponse(actividad: Activity, response: unknown): EvalResult {
 const LS_STUDENT_ID = 'lumina_student_id';
 const LS_STUDENT_NAME = 'lumina_student_name';
 
+interface SessionEndedScores {
+  finalScore?: number;
+  score?: number;
+}
+
 function readGuestIdentity(): { studentId: string; studentName: string } {
   if (typeof window === 'undefined') {
     return { studentId: '', studentName: '' };
@@ -141,7 +149,15 @@ export function ViewerClient({ id }: { id: string }) {
   const { data: classData, isLoading, error } = useClass(id);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
+  const [socketTimer, setSocketTimer] = useState<{ slideId: string; duration: number } | null>(
+    null,
+  );
+  const [responsesLocked, setResponsesLocked] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sessionEndedData, setSessionEndedData] = useState<{
+    ended: boolean;
+    scores?: SessionEndedScores;
+  }>({ ended: false });
   const [guestIdentity] = useState(readGuestIdentity);
   /** Respuestas acumuladas por slide para emitir `historial` en video interactivo. */
   const videoInteractiveHistorialRef = useRef<{ slideId: string; entries: unknown[] }>({
@@ -157,6 +173,19 @@ export function ViewerClient({ id }: { id: string }) {
   }, [classData?.slides]);
 
   const activeSlide = slides[activeSlideIndex] ?? null;
+
+  const viewerTimerDuration =
+    socketTimer && activeSlide?.id === socketTimer.slideId ? socketTimer.duration : 0;
+  const viewerTimerActive = viewerTimerDuration > 0;
+
+  const { timeLeft: viewerTimeLeft } = useSlideTimer({
+    duration: viewerTimerDuration,
+    isActive: viewerTimerActive,
+    resetKey: activeSlide?.id ?? null,
+    onExpire: () => {
+      setResponsesLocked(true);
+    },
+  });
 
   useEffect(() => {
     if (!activeSlide?.id) return;
@@ -207,29 +236,66 @@ export function ViewerClient({ id }: { id: string }) {
     });
 
     sock.on('slide-change', (payload: { slideIndex: number; classId: string }) => {
+      setSocketTimer(null);
+      setResponsesLocked(false);
       setActiveSlideIndex(payload.slideIndex);
+    });
+
+    sock.on('timer-start', (payload: { slideId: string; duration: number; classId?: string }) => {
+      const d = Math.max(0, Math.floor(Number(payload.duration) || 0));
+      if (!payload.slideId || d <= 0) return;
+      setResponsesLocked(false);
+      setSocketTimer({ slideId: payload.slideId, duration: d });
+    });
+
+    sock.on('lock-responses', () => {
+      setResponsesLocked(true);
     });
 
     sock.on('response-update', () => {
       // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
 
-    sock.on('class-ended', () => {
-      router.push('/class-ended');
+    sock.on('session-ended', (payload?: unknown) => {
+      const scores =
+        payload && typeof payload === 'object' && payload !== null && 'scores' in payload
+          ? (payload as { scores?: SessionEndedScores }).scores
+          : undefined;
+      setSessionEndedData({ ended: true, scores });
+    });
+
+    sock.on('class-ended', (payload?: unknown) => {
+      const scores =
+        payload && typeof payload === 'object' && payload !== null && 'scores' in payload
+          ? (payload as { scores?: SessionEndedScores }).scores
+          : undefined;
+      setSessionEndedData({ ended: true, scores });
     });
 
     return () => {
       sock.off('connect');
       sock.off('slide-change');
+      sock.off('timer-start');
+      sock.off('lock-responses');
       sock.off('response-update');
+      sock.off('session-ended');
       sock.off('class-ended');
       sock.disconnect();
     };
   }, [id, router]);
 
+  // Función para determinar el desempeño según escala colombiana (1-5)
+  const getPerformance = (score: number) => {
+    if (score < 3.0) return 'Bajo';
+    if (score < 4.0) return 'Básico';
+    if (score < 4.6) return 'Alto';
+    return 'Superior';
+  };
+
   // ── Build the onResponse callback for activity components ───────────────────
   const handleResponse = useCallback(
     (response: unknown) => {
+      if (responsesLocked) return;
       if (!socketInstance || !activeSlide) return;
       const blocks = activeSlide.bloques ?? [];
       const actBlock = blocks.find((b: Block) => b.tipo === 'actividad');
@@ -274,7 +340,7 @@ export function ViewerClient({ id }: { id: string }) {
       };
       socketInstance.emit('student-response', payload);
     },
-    [socketInstance, activeSlide, id, activeSlideIndex, guestIdentity],
+    [socketInstance, activeSlide, id, activeSlideIndex, guestIdentity, responsesLocked],
   );
 
   if (isLoading) {
@@ -310,6 +376,67 @@ export function ViewerClient({ id }: { id: string }) {
     );
   }
 
+  if (sessionEndedData.ended) {
+    const defaultScore = sessionEndedData.scores?.finalScore ?? sessionEndedData.scores?.score;
+    const scoreVal = typeof defaultScore === 'number' ? defaultScore : undefined;
+
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-4">
+        {isFullscreen && (
+          <button
+            type="button"
+            className="fixed right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md bg-black/60 text-white transition hover:bg-black/75"
+            onClick={() => {
+              if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+              }
+            }}
+          >
+            <Minimize2 className="size-4" />
+          </button>
+        )}
+        
+        <div className="relative z-10 flex w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-3xl bg-zinc-900/80 p-8 shadow-2xl backdrop-blur-xl ring-1 ring-white/10 text-center animate-in fade-in zoom-in duration-500">
+          <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 ring-4 ring-indigo-500/30">
+            <PartyPopper className="size-10" />
+          </div>
+          
+          <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">¡Clase finalizada!</h1>
+          <p className="mb-6 text-lg text-zinc-400">
+            Gracias por participar, <span className="font-semibold text-white">{guestIdentity.studentName}</span>.
+          </p>
+
+          {scoreVal !== undefined && (
+            <div className="mb-8 flex w-full flex-col items-center rounded-2xl bg-zinc-800/50 p-6 ring-1 ring-white/5">
+              <span className="text-sm font-medium uppercase tracking-wider text-zinc-400">Tu nota final</span>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-6xl font-black text-white">{scoreVal.toFixed(1)}</span>
+                <span className="text-xl font-medium text-zinc-500">/ 5.0</span>
+              </div>
+              <div className="mt-4 flex items-center justify-center">
+                <span className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold ring-1 ${
+                  scoreVal >= 4.6 ? 'bg-indigo-500/10 text-indigo-400 ring-indigo-500/20' :
+                  scoreVal >= 4.0 ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20' :
+                  scoreVal >= 3.0 ? 'bg-amber-500/10 text-amber-400 ring-amber-500/20' :
+                  'bg-red-500/10 text-red-400 ring-red-500/20'
+                }`}>
+                  Desempeño {getPerformance(scoreVal)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => router.push('/')}
+            className="w-full rounded-xl bg-indigo-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-indigo-500 hover:shadow-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 active:scale-95"
+          >
+            Salir
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950">
       {isFullscreen && (
@@ -330,11 +457,23 @@ export function ViewerClient({ id }: { id: string }) {
       <main className="relative flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
         {activeSlide ? (
           <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">
-            <SlideRenderer
-              slide={activeSlide}
-              modo="viewer"
-              onResponse={handleResponse}
+            <SlideCountdownOverlay
+              visible={viewerTimerDuration > 0}
+              timeLeft={viewerTimeLeft}
+              duration={viewerTimerDuration}
             />
+            <div
+              className={cn(
+                'h-full w-full',
+                responsesLocked && 'pointer-events-none select-none opacity-[0.92]',
+              )}
+            >
+              <SlideRenderer
+                slide={activeSlide}
+                modo="viewer"
+                onResponse={handleResponse}
+              />
+            </div>
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">

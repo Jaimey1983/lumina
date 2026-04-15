@@ -11,11 +11,20 @@ import {
   Monitor,
   Save,
   Share2,
+  Timer,
   Users,
   Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { io, Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { useAuth } from '@/hooks/use-auth';
+import { useSlideTimer } from '@/hooks/use-slide-timer';
+import {
+  getEffectiveTimerForApiSlide,
+  SLIDE_TIMER_GLOBAL_OPTIONS,
+} from '@/lib/slide-timer-resolve';
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide } from '@/hooks/api/use-classes';
@@ -47,6 +56,13 @@ import {
 import type { ActivityType } from './components/panels/activities-panel';
 import type { StudentResponse } from './components/panels/live-responses-panel';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -367,14 +383,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const modalOpen = showCurricularModal || modalUserOpen;
 
-  // ─── Socket: emit slide-change when active slide changes ────────────────────
-  // join-class is emitted inside the socket's 'connect' handler below.
-
-  useEffect(() => {
-    if (!socketRef.current?.connected) return;
-    socketRef.current.emit('slide-change', { slideIndex: activeSlideIndex, classId });
-  }, [activeSlideIndex, classId]);
-
   // ── Socket: single connection — join room, track connection state, listen for responses ──
 
   useEffect(() => {
@@ -522,6 +530,90 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const sessionActiveRef = useRef(false);
   activeSlideIdRef.current = activeSlide?.id ?? null;
   sessionActiveRef.current = sessionActive;
+
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const canConfigureLiveTimer = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(user?.role ?? '');
+  const [timerGlobalSaving, setTimerGlobalSaving] = useState(false);
+
+  const previewOpenRef = useRef(false);
+  const sortedSlidesLengthRef = useRef(0);
+  const handleEditorTimerExpireRef = useRef<() => void>(() => {});
+
+  previewOpenRef.current = previewOpen;
+  sortedSlidesLengthRef.current = sortedSlides.length;
+
+  useEffect(() => {
+    handleEditorTimerExpireRef.current = () => {
+      if (!sessionActiveRef.current || previewOpenRef.current) return;
+      const sock = socketRef.current;
+      const sid = activeSlideIdRef.current;
+      if (!sock?.connected || !classId || !sid) return;
+      sock.emit('lock-responses', { classId, slideId: sid });
+      window.setTimeout(() => {
+        setActiveSlideIndex((i) => {
+          const max = Math.max(0, sortedSlidesLengthRef.current - 1);
+          if (i >= max) return i;
+          return i + 1;
+        });
+      }, 2000);
+    };
+  }, [classId]);
+
+  const editorLiveTimerSeconds = activeSlide
+    ? getEffectiveTimerForApiSlide(activeSlide as ApiSlide, cls?.timerGlobal)
+    : 0;
+  const editorTimerRunning =
+    sessionActive && !previewOpen && editorLiveTimerSeconds > 0 && Boolean(activeSlide?.id);
+
+  useSlideTimer({
+    duration: editorLiveTimerSeconds,
+    isActive: editorTimerRunning,
+    resetKey: activeSlide?.id ?? null,
+    onExpire: () => handleEditorTimerExpireRef.current(),
+  });
+
+  useEffect(() => {
+    const sock = socketRef.current;
+    if (!sock?.connected) return;
+    sock.emit('slide-change', { slideIndex: resolvedSlideIndex, classId });
+    const slide = sortedSlides[resolvedSlideIndex] ?? null;
+    const eff = getEffectiveTimerForApiSlide(slide as ApiSlide | null, cls?.timerGlobal);
+    if (sessionActive && !previewOpen && eff > 0 && slide?.id) {
+      queueMicrotask(() => {
+        socketRef.current?.emit('timer-start', {
+          slideId: slide.id,
+          duration: eff,
+          classId,
+        });
+      });
+    }
+  }, [
+    resolvedSlideIndex,
+    classId,
+    sessionActive,
+    previewOpen,
+    sortedSlides,
+    cls?.timerGlobal,
+    editorLiveTimerSeconds,
+    activeSlide?.id,
+  ]);
+
+  const handleTimerGlobalChange = useCallback(
+    async (value: string) => {
+      const n = Number(value);
+      setTimerGlobalSaving(true);
+      try {
+        await api.patch(`/classes/${classId}`, { timerGlobal: n });
+        await queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+      } catch {
+        toast.error('No se pudo guardar el temporizador global');
+      } finally {
+        setTimerGlobalSaving(false);
+      }
+    },
+    [classId, queryClient],
+  );
 
   const autosaveSaveFn = useCallback(
     (latest: unknown) => {
@@ -1279,6 +1371,28 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 )}
               />
             </span>
+
+            {canConfigureLiveTimer ? (
+              <div className="flex items-center gap-1.5">
+                <Timer className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <Select
+                  value={String(cls?.timerGlobal ?? 0)}
+                  disabled={timerGlobalSaving || isLoading}
+                  onValueChange={handleTimerGlobalChange}
+                >
+                  <SelectTrigger className="h-8 w-[7.25rem] text-xs" size="sm">
+                    <SelectValue placeholder="Timer global" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SLIDE_TIMER_GLOBAL_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={String(o.value)} className="text-xs">
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
 
             <Button
               variant="ghost"

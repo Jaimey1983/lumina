@@ -23,11 +23,24 @@ import {
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block } from '@/types/slide.types';
-import { appendBlockToSlideContent, getSlideContentRecord, mergeSlideContent } from '@/lib/class-slide-normalize';
+import {
+  appendBlockToSlideContent,
+  getSlideContentRecord,
+  mergeSlideContent,
+  sanitizeSlideContentForPersistence,
+} from '@/lib/class-slide-normalize';
+import { SLIDE_TIMER_PER_SLIDE_OPTIONS } from '@/lib/slide-timer-resolve';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 import { ImagesElementPanel } from './images-element-panel';
@@ -359,10 +372,58 @@ function PaginasPanel({
   slides,
   activeSlideIndex,
   onSelectSlide,
-}: Pick<FlyoutLeftPanelsProps, 'slides' | 'activeSlideIndex' | 'onSelectSlide'>) {
+  apiSlide,
+  onCommitContent,
+  busy,
+}: Pick<
+  FlyoutLeftPanelsProps,
+  'slides' | 'activeSlideIndex' | 'onSelectSlide' | 'apiSlide' | 'onCommitContent' | 'busy'
+>) {
+  const c = apiSlide ? getSlideContentRecord(apiSlide) : {};
+  const rawTimer = c.timer;
+  const selectValue =
+    rawTimer === undefined || rawTimer === null || rawTimer === ''
+      ? 'inherit'
+      : String(rawTimer);
+
   return (
     <ScrollArea className="h-full min-h-0">
       <div className="space-y-1 p-3 pr-2">
+        {apiSlide && (
+          <PanelSection title="Temporizador (en vivo)" className="mb-3">
+            <Label className="text-[11px] text-muted-foreground">Tiempo del slide</Label>
+            <Select
+              value={selectValue}
+              disabled={busy}
+              onValueChange={(v) => {
+                const base = getSlideContentRecord(apiSlide);
+                const next: Record<string, unknown> = { ...base };
+                if (v === 'inherit') {
+                  delete next.timer;
+                } else {
+                  next.timer = Number(v);
+                }
+                const sanitized = sanitizeSlideContentForPersistence(next) ?? next;
+                onCommitContent(sanitized);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs" size="sm">
+                <SelectValue placeholder="Usar tiempo global" />
+              </SelectTrigger>
+              <SelectContent>
+                {SLIDE_TIMER_PER_SLIDE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value} className="text-xs">
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              Vacío = usa el temporizador global de la clase. 0 = sin temporizador en este slide.
+            </p>
+          </PanelSection>
+        )}
+
         <p className="mb-2 text-xs text-muted-foreground">
           {slides.length} slide{slides.length === 1 ? '' : 's'} en esta clase.
         </p>
@@ -437,7 +498,16 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     case 'ia':
       return <IaPanel desempenoEnunciado={desempenoEnunciado} />;
     case 'paginas':
-      return <PaginasPanel slides={slides} activeSlideIndex={activeSlideIndex} onSelectSlide={onSelectSlide} />;
+      return (
+        <PaginasPanel
+          slides={slides}
+          activeSlideIndex={activeSlideIndex}
+          onSelectSlide={onSelectSlide}
+          apiSlide={apiSlide}
+          onCommitContent={onCommitContent}
+          busy={busy}
+        />
+      );
     default:
       return null;
   }

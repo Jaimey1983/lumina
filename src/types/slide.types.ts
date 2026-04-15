@@ -418,6 +418,11 @@ export interface Slide {
   duracionSeg?: number;
   /** Speaker notes (not shown to students). */
   notas?: string;
+  /**
+   * En el API, el temporizador por slide suele persistirse en `content.timer`.
+   * Campo opcional aquí solo para tipos locales / documentación.
+   */
+  timer?: number;
 }
 
 // ─── SlideClass ───────────────────────────────────────────────────────────────
@@ -431,6 +436,8 @@ export interface SlideClass {
   courseId: string;
   /** Código de unión en vivo (ej. LUM-XXXX). */
   codigo?: string;
+  /** Segundos por defecto para temporizador en vivo (0 = desactivado). */
+  timerGlobal?: number;
   status: SlideClassStatus;
   slides: Slide[];
   createdAt: string;

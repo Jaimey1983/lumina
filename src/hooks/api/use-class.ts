@@ -15,6 +15,8 @@ export interface ClassDetail {
   description?: string;
   courseId: string;
   codigo?: string;
+  /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
+  timerGlobal?: number;
   /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */
   sessionActive?: boolean;
   status: string;
