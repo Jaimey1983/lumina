@@ -519,6 +519,26 @@ export class ClassesService {
     });
   }
 
+  async updateResultScore(
+    classId: string,
+    resultId: string,
+    score: number,
+    userId: string,
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    const result = await this.prisma.classResult.findFirst({
+      where: { id: resultId, classId },
+    });
+    if (!result) throw new NotFoundException('Resultado no encontrado');
+
+    return this.prisma.classResult.update({
+      where: { id: resultId },
+      data: { score },
+    });
+  }
+
   // ─── SLIDES ────────────────────────────────────────────
 
   async addSlide(classId: string, dto: CreateSlideDto, userId: string) {

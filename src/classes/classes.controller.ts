@@ -21,6 +21,7 @@ import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
 import { GuardarResultadosDto } from './dto/save-results.dto';
 import { NotaManualDto } from './dto/save-manual-grade.dto';
+import { UpdateResultScoreDto } from './dto/update-result-score.dto';
 import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -141,6 +142,22 @@ export class ClassesController {
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.classesService.saveManualGrade(id, dto, user.id);
+  }
+
+  @Patch(':classId/results/:resultId')
+  @UseGuards(JwtAuthGuard)
+  updateResultScore(
+    @Param('classId') classId: string,
+    @Param('resultId') resultId: string,
+    @Body() dto: UpdateResultScoreDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.updateResultScore(
+      classId,
+      resultId,
+      dto.score,
+      user.id,
+    );
   }
 
   // ─── SLIDES ────────────────────────────────────────────
