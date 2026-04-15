@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import {
   BookOpen,
   Columns2,
-  LayoutTemplate,
   MessageSquare,
   Minus,
   Quote,
@@ -24,12 +23,7 @@ import {
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block } from '@/types/slide.types';
-import {
-  applyLayoutPreset,
-  appendBlockToSlideContent,
-  getSlideContentRecord,
-  mergeSlideContent,
-} from '@/lib/class-slide-normalize';
+import { appendBlockToSlideContent, getSlideContentRecord, mergeSlideContent } from '@/lib/class-slide-normalize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,6 +33,8 @@ import { cn } from '@/lib/utils';
 import { ImagesElementPanel } from './images-element-panel';
 import { ShapesPanel } from './shapes-panel';
 import { TextFormatPanel } from './text-format-panel';
+import { LayoutPanel } from '../layout-panel';
+import type { SlidePersistedLayoutKey } from '../templates-panel';
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
@@ -100,6 +96,8 @@ export interface FlyoutLeftPanelsProps {
   desempenoEnunciado?: string;
   busy?: boolean;
   slideHasActivity?: boolean;
+  onApplyLayout: (layoutKey: SlidePersistedLayoutKey) => void;
+  applyLayoutPending?: boolean;
 }
 
 type ContentPanelProps = {
@@ -226,58 +224,6 @@ function ActividadesInsertPanel({ apiSlide, onCommitContent, disabled, slideHasA
           <InsertBtn label="Gráfico de barras" icon={BarChart} disabled={allDisabled} onClick={() => addBlock('interactivo', 'grafico_barras')} />
           <InsertBtn label="Tabla de datos" icon={Table} disabled={allDisabled} onClick={() => addBlock('interactivo', 'tabla')} />
         </PanelSection>
-      </div>
-    </ScrollArea>
-  );
-}
-
-const LAYOUT_LABELS: { key: string; label: string }[] = [
-  { key: 'en_blanco', label: 'En blanco' },
-  { key: 'titulo_centrado', label: 'Título centrado' },
-  { key: 'titulo_y_contenido', label: 'Título + contenido' },
-  { key: 'dos_columnas', label: 'Dos columnas' },
-  { key: 'imagen_derecha', label: 'Imagen a la derecha' },
-  { key: 'imagen_izquierda', label: 'Imagen a la izquierda' },
-  { key: 'tres_columnas', label: 'Tres columnas' },
-  { key: 'pantalla_completa', label: 'Pantalla completa' },
-];
-
-function LayoutPanel({ apiSlide, onCommitContent, disabled, slideHasActivity }: ContentPanelProps) {
-  const current =
-    typeof getSlideContentRecord(apiSlide).layout === 'string'
-      ? (getSlideContentRecord(apiSlide).layout as string)
-      : 'titulo_y_contenido';
-
-  const allDisabled = disabled || !!slideHasActivity;
-
-  return (
-    <ScrollArea className="h-full min-h-0">
-      <div className="space-y-2 p-3 pr-2">
-        {slideHasActivity && (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
-            Elimina la actividad para cambiar el layout.
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Afecta la cuadrícula y alineación del contenido del slide (ver `diseno` en JSON).
-        </p>
-        {LAYOUT_LABELS.map(({ key, label }) => (
-          <Button
-            key={key}
-            type="button"
-            variant={current === key ? 'secondary' : 'outline'}
-            size="sm"
-            className="h-auto w-full justify-start gap-2 py-2 text-left text-xs font-normal"
-            disabled={allDisabled}
-            onClick={() => {
-              onCommitContent(applyLayoutPreset(apiSlide, key));
-              toast.success('Layout aplicado');
-            }}
-          >
-            <LayoutTemplate className="size-3.5 shrink-0 text-muted-foreground" />
-            {label}
-          </Button>
-        ))}
       </div>
     </ScrollArea>
   );
@@ -460,6 +406,8 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     desempenoEnunciado,
     busy,
     slideHasActivity,
+    onApplyLayout,
+    applyLayoutPending,
   } = props;
   const disabled = !apiSlide || busy;
 
@@ -469,7 +417,14 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     case 'actividades':
       return <ActividadesInsertPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} slideHasActivity={slideHasActivity} />;
     case 'layout':
-      return <LayoutPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} slideHasActivity={slideHasActivity} />;
+      return (
+        <LayoutPanel
+          apiSlide={apiSlide}
+          disabled={disabled}
+          onApplyLayout={onApplyLayout}
+          applyLayoutPending={applyLayoutPending}
+        />
+      );
     case 'fondo':
       return (
         <FondoPanel

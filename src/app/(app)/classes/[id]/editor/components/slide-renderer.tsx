@@ -247,6 +247,23 @@ const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   justificado: 'justify',
 };
 
+function textBlockContenidoIsEmpty(block: TextBlock): boolean {
+  const c = block.contenido;
+  return c === undefined || c === '';
+}
+
+function textBlockFontSizePx(block: TextBlock): number {
+  const raw = block.tamanoFuente ?? '';
+  const m = String(raw).match(/(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]!) : 0;
+}
+
+function emptyTextPlaceholderLabel(block: TextBlock): string {
+  return textBlockFontSizePx(block) >= 28
+    ? 'Haga clic para agregar título'
+    : 'Haga clic para agregar texto';
+}
+
 /** Estilos opcionales del JSON de texto: solo se añaden si el campo viene definido. */
 function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
   const out: CSSProperties = {};
@@ -274,7 +291,7 @@ function InlineTextEditor({
   onCommit: (text: string) => void;
   onDiscard: () => void;
 }) {
-  const [value, setValue] = useState(block.contenido);
+  const [value, setValue] = useState(block.contenido ?? '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   /** Guards against double-fire from blur + Enter/Escape. */
   const exitedRef = useRef(false);
@@ -298,44 +315,67 @@ function InlineTextEditor({
     onDiscard();
   }
 
+  const isEmpty = value === '';
+
   return (
-    <textarea
-      ref={textareaRef}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
-        else if (e.key === 'Escape')          { e.preventDefault(); discard(); }
-      }}
-      // Prevent click/dblclick from bubbling to BlockNode while editing
-      onClick={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => e.stopPropagation()}
-      style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        margin: 0,
-        padding: '2px',
-        border: 'none',
-        outline: 'none',
-        background: 'rgba(255,255,255,0.05)',
-        resize: 'none',
-        cursor: 'text',
-        fontSize: block.tamanoFuente,
-        fontWeight: block.negrita ? 'bold' : 'normal',
-        fontStyle: block.cursiva ? 'italic' : 'normal',
-        color: block.color ?? 'inherit',
-        textAlign: block.alineacion
-          ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
-          : 'left',
-        lineHeight: 'inherit',
-        overflowY: 'auto',
-        boxSizing: 'border-box',
-        ...textBlockOptionalVisualStyle(block),
-      }}
-    />
+    <div
+      className="relative h-full w-full min-h-0"
+      style={
+        isEmpty
+          ? { border: '2px dashed #aaa', boxSizing: 'border-box' }
+          : undefined
+      }
+    >
+      {isEmpty && (
+        <span
+          className="pointer-events-none absolute left-1/2 top-1/2 z-0 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
+          style={{
+            color: '#bbb',
+            fontSize: 'clamp(10px, 1.6vw, 13px)',
+          }}
+        >
+          {emptyTextPlaceholderLabel(block)}
+        </span>
+      )}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape')          { e.preventDefault(); discard(); }
+        }}
+        // Prevent click/dblclick from bubbling to BlockNode while editing
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          margin: 0,
+          padding: '2px',
+          border: 'none',
+          outline: 'none',
+          background: isEmpty ? 'transparent' : 'rgba(255,255,255,0.05)',
+          resize: 'none',
+          cursor: 'text',
+          fontSize: block.tamanoFuente,
+          fontWeight: block.negrita ? 'bold' : 'normal',
+          fontStyle: block.cursiva ? 'italic' : 'normal',
+          color: block.color ?? 'inherit',
+          textAlign: block.alineacion
+            ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
+            : 'left',
+          lineHeight: 'inherit',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+          zIndex: 1,
+          ...textBlockOptionalVisualStyle(block),
+        }}
+      />
+    </div>
   );
 }
 
@@ -343,14 +383,34 @@ function InlineTextEditor({
 
 interface RenderTextProps {
   block: TextBlock;
+  modo: Modo;
   isEditing?: boolean;
   onCommit?: (text: string) => void;
   onDiscard?: () => void;
 }
 
-function RenderText({ block, isEditing, onCommit, onDiscard }: RenderTextProps) {
+function RenderText({ block, modo, isEditing, onCommit, onDiscard }: RenderTextProps) {
   if (isEditing && onCommit && onDiscard) {
     return <InlineTextEditor block={block} onCommit={onCommit} onDiscard={onDiscard} />;
+  }
+
+  if (modo === 'editor' && textBlockContenidoIsEmpty(block)) {
+    return (
+      <div
+        className="relative box-border h-full min-h-[1.25em] w-full"
+        style={{ border: '2px dashed #aaa' }}
+      >
+        <span
+          className="pointer-events-none absolute left-1/2 top-1/2 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
+          style={{
+            color: '#bbb',
+            fontSize: 'clamp(10px, 1.6vw, 13px)',
+          }}
+        >
+          {emptyTextPlaceholderLabel(block)}
+        </span>
+      </div>
+    );
   }
 
   const style: CSSProperties = {
@@ -904,6 +964,7 @@ function BlockNode({
         return (
           <RenderText
             block={block}
+            modo={modo}
             isEditing={isTextEditing}
             onCommit={onEditCommit ? (text) => onEditCommit(blockId, text) : undefined}
             onDiscard={onEditCancel}

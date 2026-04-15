@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FlyoutLeftPanels } from './panels/flyout-left-panels';
 import type { LeftPanelId } from './icon-rail';
+import type { SlidePersistedLayoutKey } from './templates-panel';
 
 // ─── Panel config ─────────────────────────────────────────────────────────────
 
@@ -75,6 +76,8 @@ export interface FlyoutPanelProps {
   desempenoEnunciado?: string;
   isSlideSaving?: boolean;
   slideHasActivity?: boolean;
+  onApplyLayout: (layoutKey: SlidePersistedLayoutKey) => void;
+  applyLayoutPending?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -93,6 +96,8 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       desempenoEnunciado,
       isSlideSaving,
       slideHasActivity,
+      onApplyLayout,
+      applyLayoutPending,
     },
     ref,
   ) {
@@ -153,6 +158,8 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 desempenoEnunciado={desempenoEnunciado}
                 busy={isSlideSaving}
                 slideHasActivity={slideHasActivity}
+                onApplyLayout={onApplyLayout}
+                applyLayoutPending={applyLayoutPending}
               />
             </div>
           </div>

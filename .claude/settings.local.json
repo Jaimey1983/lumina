@@ -18,7 +18,9 @@
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
       "Bash(npx next:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm build:*)"
     ]
   }
 }

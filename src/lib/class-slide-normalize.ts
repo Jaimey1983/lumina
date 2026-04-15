@@ -13,7 +13,15 @@ export const LAYOUT_FROM_KEY: Record<string, Layout> = {
     brecha: 16,
     relleno: 24,
   },
+  titulo_centrado_subtitulo: {
+    columnas: 1,
+    alineacionHorizontal: 'centro',
+    alineacionVertical: 'centro',
+    brecha: 12,
+    relleno: 24,
+  },
   titulo_y_contenido: { columnas: 1, brecha: 16, relleno: 24 },
+  titulo_texto_imagen: { columnas: 1, brecha: 16, relleno: 24 },
   dos_columnas: { columnas: 2, brecha: 20, relleno: 20 },
   imagen_derecha: { columnas: 2, brecha: 20, relleno: 20 },
   imagen_izquierda: { columnas: 2, brecha: 20, relleno: 20 },
@@ -246,12 +254,4 @@ export function removeBlockAtPath(bloques: Block[], path: string): Block[] {
   }
 
   return go(bloques, 0);
-}
-
-export function applyLayoutPreset(
-  api: ApiSlide | null,
-  layoutKey: string,
-): Record<string, unknown> {
-  const key = layoutKey in LAYOUT_FROM_KEY ? layoutKey : FALLBACK_LAYOUT_KEY;
-  return mergeSlideContent(api, { layout: key, diseno: LAYOUT_FROM_KEY[key] });
 }

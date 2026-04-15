@@ -23,6 +23,7 @@ import {
   buildContentDocumentForNewActivitySlide,
   classSlideToRendererSlide,
   getSlideContentRecord,
+  LAYOUT_FROM_KEY,
   mergeSlideContent,
   removeBlockAtPath,
   sanitizeSlideContentForPersistence,
@@ -36,6 +37,12 @@ import { CanvasArea } from './components/canvas-area';
 import { EditorClassCodeSubtitle } from './components/editor-toolbar';
 import { RightRail, type RightPanelId } from './components/right-rail';
 import { RightFlyoutPanel } from './components/right-flyout-panel';
+import {
+  buildInsertSlideBloques,
+  SLIDE_LAYOUT_ORDER,
+  type CoreSlideLayoutKey,
+  type SlidePersistedLayoutKey,
+} from './components/templates-panel';
 import type { ActivityType } from './components/panels/activities-panel';
 import type { StudentResponse } from './components/panels/live-responses-panel';
 
@@ -230,6 +237,10 @@ function hasDesempenoPersistido(value: unknown): boolean {
     );
   }
   return false;
+}
+
+function slideTitleForLayoutKey(key: SlidePersistedLayoutKey): string {
+  return SLIDE_LAYOUT_ORDER.find((e) => e.key === key)?.label ?? key;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -663,30 +674,124 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     }
   }, [classId, sessionId, liveResponses]);
 
-  const handleAddSlide = useCallback(() => {
-    const afterOrder = sortedSlides[resolvedSlideIndex]?.order ?? 0;
-    insertSlide.mutate(
-      {
-        afterOrder,
-        slide: {
-          type: 'CONTENT',
-          title: 'Nuevo slide',
-          content: {
-            id: `slide_${Date.now()}`,
-            orden: afterOrder + 1,
-            tipo: 'contenido',
-            layout: 'titulo_y_contenido',
-            fondo: { tipo: 'color', valor: '#FFFFFF' },
-            bloques: [],
+  const handleAddSlideWithLayout = useCallback(
+    (layoutKey: CoreSlideLayoutKey) => {
+      const slideActivo = sortedSlides[resolvedSlideIndex];
+      const afterOrder = slideActivo?.order ?? 0;
+      const bloques = buildInsertSlideBloques(layoutKey, false);
+      insertSlide.mutate(
+        {
+          afterOrder,
+          slide: {
+            type: 'CONTENT',
+            title: slideTitleForLayoutKey(layoutKey),
+            content: {
+              id: `slide_${Date.now()}`,
+              orden: afterOrder + 1,
+              tipo: 'contenido',
+              layout: layoutKey,
+              fondo: { tipo: 'color', valor: '#ffffff' },
+              bloques,
+            },
           },
         },
-      },
-      {
-        onSuccess: () => setActiveSlideIndex(resolvedSlideIndex + 1),
-        onError: () => toast.error('Error al crear el slide'),
-      },
-    );
-  }, [sortedSlides, resolvedSlideIndex, insertSlide]);
+        {
+          onSuccess: () =>
+            setActiveSlideIndex(slideActivo ? resolvedSlideIndex + 1 : 0),
+          onError: () => toast.error('Error al crear el slide'),
+        },
+      );
+    },
+    [sortedSlides, resolvedSlideIndex, insertSlide],
+  );
+
+  const handleApplyLayout = useCallback(
+    (layoutKey: SlidePersistedLayoutKey) => {
+      const slideActivo = sortedSlides[resolvedSlideIndex];
+      const afterOrder = slideActivo?.order ?? 0;
+      const bloquesNew = buildInsertSlideBloques(layoutKey, false);
+      const fondo = { tipo: 'color' as const, valor: '#ffffff' };
+
+      const insertAfterActive = () => {
+        insertSlide.mutate(
+          {
+            afterOrder,
+            slide: {
+              type: 'CONTENT',
+              title: slideTitleForLayoutKey(layoutKey),
+              content: {
+                id: `slide_${Date.now()}`,
+                orden: afterOrder + 1,
+                tipo: 'contenido',
+                layout: layoutKey,
+                fondo,
+                bloques: bloquesNew,
+              },
+            },
+          },
+          {
+            onSuccess: () =>
+              setActiveSlideIndex(
+                slideActivo ? resolvedSlideIndex + 1 : 0,
+              ),
+            onError: () => toast.error('Error al insertar el slide'),
+          },
+        );
+      };
+
+      if (!slideActivo) {
+        insertAfterActive();
+        return;
+      }
+
+      const c = getSlideContentRecord(slideActivo as ApiSlide);
+      const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+      const tieneActividad = bloques.some((b) => b.tipo === 'actividad');
+      const tieneContenidoReal = bloques.some((b) => {
+        if (b.tipo === 'actividad') return true;
+        if (b.tipo === 'texto') {
+          const t = b.contenido;
+          return typeof t === 'string' && t.trim() !== '';
+        }
+        if (b.tipo === 'imagen') {
+          const u = b.url;
+          return typeof u === 'string' && u.trim() !== '';
+        }
+        return false;
+      });
+
+      if (tieneActividad) {
+        insertAfterActive();
+        return;
+      }
+
+      if (!tieneContenidoReal) {
+        const resolvedKey =
+          layoutKey in LAYOUT_FROM_KEY ? layoutKey : 'titulo_y_contenido';
+        const nextContent = mergeSlideContent(slideActivo as ApiSlide, {
+          layout: resolvedKey,
+          diseno: LAYOUT_FROM_KEY[resolvedKey],
+          bloques: bloquesNew,
+          fondo,
+        });
+        const sanitized =
+          sanitizeSlideContentForPersistence(nextContent) ?? nextContent;
+        updateSlide.mutate(
+          { slideId: slideActivo.id, content: sanitized },
+          {
+            onSuccess: () => toast.success('Layout aplicado'),
+            onError: () => toast.error('No se pudo aplicar el layout'),
+          },
+        );
+        return;
+      }
+
+      toast('El slide tiene contenido', {
+        description: 'Solo se puede aplicar un layout a slides vacíos.',
+      });
+    },
+    [sortedSlides, resolvedSlideIndex, insertSlide, updateSlide],
+  );
 
   const handleCommitSlideContent = useCallback(
     (content: Record<string, unknown>) => {
@@ -1066,9 +1171,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               activeIndex={resolvedSlideIndex}
               activeSlideLiveContent={activeSlideLiveContent}
               isLoading={isLoading}
-              isAddingSlide={createSlide.isPending}
+              isAddingSlide={insertSlide.isPending}
               onSelect={setActiveSlideIndex}
-              onAddSlide={handleAddSlide}
+              onAddSlide={handleAddSlideWithLayout}
               onRemoveSlide={handleRemoveSlide}
               onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
               onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
@@ -1092,6 +1197,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               desempenoEnunciado={desempeno?.enunciado}
               isSlideSaving={updateSlide.isPending}
               slideHasActivity={activeSlideHasActivity}
+              onApplyLayout={handleApplyLayout}
+              applyLayoutPending={insertSlide.isPending || updateSlide.isPending}
             />
           </div>
 

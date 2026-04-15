@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -40,7 +40,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { CORE_SLIDE_LAYOUTS, type CoreSlideLayoutKey } from './templates-panel';
+import { LayoutThumbnail } from './layout-thumbnails';
 import { SLIDE_LABELS } from '@/config/slide.constants';
 import { SlideRenderer } from './slide-renderer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
@@ -453,7 +456,7 @@ export interface SlidesPanelProps {
   /** Override content for the active slide during/after drag (shows live positions). */
   activeSlideLiveContent?: unknown;
   onSelect: (index: number) => void;
-  onAddSlide: () => void;
+  onAddSlide: (layoutKey: CoreSlideLayoutKey) => void;
   onRemoveSlide?: (slideId: string) => void;
   onMoveSlideUp?: (slideId: string) => void;
   onMoveSlideDown?: (slideId: string) => void;
@@ -627,6 +630,8 @@ export function SlidesPanel({
   onMoveSlideDown,
   onReorderSlides,
 }: SlidesPanelProps) {
+  const [addOpen, setAddOpen] = useState(false);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -689,26 +694,55 @@ export function SlidesPanel({
         </SortableContext>
       </DndContext>
 
-      {/* Agregar slide */}
+      {/* Agregar slide — elige layout */}
       <div className="shrink-0 border-t border-border p-2">
-        <button
-          type="button"
-          disabled={isAddingSlide}
-          onClick={onAddSlide}
-          className={cn(
-            'flex w-full items-center justify-center gap-2 rounded-md border border-border',
-            'bg-background py-2 text-xs font-medium text-muted-foreground',
-            'transition-colors hover:border-primary/60 hover:bg-accent hover:text-primary',
-            isAddingSlide && 'cursor-not-allowed opacity-50',
-          )}
-        >
-          {isAddingSlide ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Plus className="size-3.5" />
-          )}
-          {isAddingSlide ? 'Creando…' : 'Agregar slide'}
-        </button>
+        <Popover open={addOpen} onOpenChange={setAddOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={isAddingSlide}
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-md border border-border',
+                'bg-background py-2 text-xs font-medium text-muted-foreground',
+                'transition-colors hover:border-primary/60 hover:bg-accent hover:text-primary',
+                isAddingSlide && 'cursor-not-allowed opacity-50',
+              )}
+            >
+              {isAddingSlide ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Plus className="size-3.5" />
+              )}
+              {isAddingSlide ? 'Creando…' : 'Agregar slide'}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="center" className="w-auto p-2">
+            <p className="mb-2 text-center text-[10px] font-medium text-muted-foreground">
+              Layout
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {CORE_SLIDE_LAYOUTS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={label}
+                  disabled={isAddingSlide}
+                  onClick={() => {
+                    onAddSlide(key);
+                    setAddOpen(false);
+                  }}
+                  className={cn(
+                    'flex items-center justify-center rounded-md border border-border bg-background p-1.5',
+                    'transition-colors hover:border-primary/50 hover:bg-accent',
+                    'disabled:pointer-events-none disabled:opacity-50',
+                  )}
+                >
+                  <LayoutThumbnail layoutKey={key} compact />
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </aside>
   );
