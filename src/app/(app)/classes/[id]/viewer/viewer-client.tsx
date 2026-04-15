@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Loader2, Minimize2, PartyPopper } from 'lucide-react';
+import { Loader2, Minimize2, PartyPopper, Lock } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useSlideTimer } from '@/hooks/use-slide-timer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
@@ -252,6 +252,10 @@ export function ViewerClient({ id }: { id: string }) {
       setResponsesLocked(true);
     });
 
+    sock.on('unlock-responses', () => {
+      setResponsesLocked(false);
+    });
+
     sock.on('response-update', () => {
       // Respuestas de otros estudiantes (word-cloud, live-poll)
     });
@@ -277,6 +281,7 @@ export function ViewerClient({ id }: { id: string }) {
       sock.off('slide-change');
       sock.off('timer-start');
       sock.off('lock-responses');
+      sock.off('unlock-responses');
       sock.off('response-update');
       sock.off('session-ended');
       sock.off('class-ended');
@@ -455,6 +460,13 @@ export function ViewerClient({ id }: { id: string }) {
       )}
 
       <main className="relative flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
+        {responsesLocked && (
+          <div className="absolute left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#FEE2E2] px-4 py-2 text-sm font-medium text-[#DC2626] shadow-md animate-in fade-in slide-in-from-top-4 duration-500">
+            <Lock className="size-4" />
+            El docente ha bloqueado las respuestas
+          </div>
+        )}
+
         {activeSlide ? (
           <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">
             <SlideCountdownOverlay

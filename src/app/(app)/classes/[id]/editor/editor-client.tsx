@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Eye,
   Loader2,
+  Lock,
+  LockOpen,
   Monitor,
   Save,
   Share2,
@@ -290,6 +292,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [roomStudentCount, setRoomStudentCount] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
+  const [responsesLocked, setResponsesLocked] = useState(false);
 
   /** Live block positions from CanvasArea during / immediately after drag. */
   const [activeSlideLiveBloques, setActiveSlideLiveBloques] = useState<Block[] | null>(null);
@@ -528,8 +531,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const activeSlideIdRef = useRef<string | null>(null);
   const sessionActiveRef = useRef(false);
+  const responsesLockedRef = useRef(false);
+  const prevActiveSlideIdForLockRef = useRef<string | null>(null);
   activeSlideIdRef.current = activeSlide?.id ?? null;
   sessionActiveRef.current = sessionActive;
+  responsesLockedRef.current = responsesLocked;
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -550,6 +556,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       const sid = activeSlideIdRef.current;
       if (!sock?.connected || !classId || !sid) return;
       sock.emit('lock-responses', { classId, slideId: sid });
+      setResponsesLocked(true);
       window.setTimeout(() => {
         setActiveSlideIndex((i) => {
           const max = Math.max(0, sortedSlidesLengthRef.current - 1);
@@ -598,6 +605,27 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     editorLiveTimerSeconds,
     activeSlide?.id,
   ]);
+
+  /** Al cambiar de slide: desbloquear estado local y notificar al backend si seguía bloqueado. */
+  useEffect(() => {
+    const currentId = activeSlide?.id ?? null;
+    const prevId = prevActiveSlideIdForLockRef.current;
+
+    if (prevId === currentId) return;
+
+    if (prevId !== null && responsesLockedRef.current) {
+      const sock = socketRef.current;
+      if (sock?.connected && classId) {
+        sock.emit('unlock-responses', { classId, slideId: prevId });
+      }
+    }
+
+    if (prevId !== currentId) {
+      setResponsesLocked(false);
+    }
+
+    prevActiveSlideIdForLockRef.current = currentId;
+  }, [activeSlide?.id, classId]);
 
   const handleTimerGlobalChange = useCallback(
     async (value: string) => {
@@ -710,6 +738,22 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const showLiveResponsesTopbar =
     sessionActive && activeSlideHasActivity && roomStudentCount > 0;
+
+  const handleToggleResponsesLocked = useCallback(() => {
+    if (!sessionActive) return;
+    const sock = socketRef.current;
+    const sid = activeSlide?.id;
+    if (!sock?.connected || !classId || !sid) return;
+
+    setResponsesLocked((wasLocked) => {
+      if (!wasLocked) {
+        sock.emit('lock-responses', { classId, slideId: sid });
+        return true;
+      }
+      sock.emit('unlock-responses', { classId, slideId: sid });
+      return false;
+    });
+  }, [sessionActive, classId, activeSlide?.id]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -1436,6 +1480,28 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 Finalizar clase
               </Button>
             )}
+
+            {sessionActive ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={!activeSlide?.id || !isConnected}
+                onClick={handleToggleResponsesLocked}
+                className={cn(
+                  'shrink-0 border-0 shadow-none',
+                  responsesLocked
+                    ? 'bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2] hover:text-[#DC2626]'
+                    : 'bg-muted/60 text-foreground hover:bg-muted/80',
+                )}
+              >
+                {responsesLocked ? (
+                  <Lock className="size-4 shrink-0" aria-hidden />
+                ) : (
+                  <LockOpen className="size-4 shrink-0" aria-hidden />
+                )}
+                {responsesLocked ? 'Desbloquear' : 'Bloquear respuestas'}
+              </Button>
+            ) : null}
 
             {showLiveResponsesTopbar ? (
               <span
