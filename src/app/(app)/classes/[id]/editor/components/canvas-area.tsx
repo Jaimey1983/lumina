@@ -144,6 +144,8 @@ export interface CanvasAreaProps {
   onBlockSelect?: (id: string) => void;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
+  onCopyBlock?: (block: Block) => void;
+  copiedBlock?: Block | null;
   /** Fired with live/committed block positions during and after drag (null when settled). */
   onEffectiveBloques?: (bloques: Block[] | null) => void;
   /** Panel «Respuestas en vivo» abierto: oculta PROPIEDADES aunque haya bloque seleccionado. */
@@ -154,6 +156,7 @@ export type CanvasAreaHandle = {
   undo: () => void;
   redo: () => void;
   duplicateSelectedBlock: () => void;
+  copySelectedBlock: () => void;
   /** Elimina el bloque seleccionado si hay uno; devuelve si se ejecutó la eliminación. */
   deleteSelectedBlock: () => boolean;
   clearBlockSelection: () => void;
@@ -181,6 +184,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onBlockSelect,
     onActivityChange,
     onRemoveBlock,
+    onCopyBlock,
+    copiedBlock,
     onEffectiveBloques,
     livePanelOpen = false,
   },
@@ -383,6 +388,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     [slide?.id, classId, slide?.bloques, persistBloques],
   );
 
+  const handleCopyBlock = useCallback(
+    (blockPath: string) => {
+      const b = getBlockAtPath(slide?.bloques ?? [], blockPath);
+      if (b && onCopyBlock) {
+        onCopyBlock(b);
+        toast.success('Bloque copiado');
+      }
+    },
+    [slide?.bloques, onCopyBlock],
+  );
+
   const handleDragSave = useCallback(
     async (updatedBlocks: Block[]) => {
       setCommittedBloques(updatedBlocks);
@@ -399,12 +415,19 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   );
 
   // ── drag hook ───────────────────────────────────────────────────────────────
-  const { handleDragStart, handleDragEnd, handleDragMove, draggingId, liveBloques } =
-    useBlockDrag({
-      canvasRef,
-      slide,
-      onSave: handleDragSave,
-    });
+  const {
+    handleDragStart,
+    handleDragEnd,
+    handleDragMove,
+    draggingId,
+    liveBloques,
+    snapLines,
+    clearSnapLines,
+  } = useBlockDrag({
+    canvasRef,
+    slide,
+    onSave: handleDragSave,
+  });
 
   // ── dnd-kit sensors ─────────────────────────────────────────────────────────
   const sensors = useSensors(
@@ -627,6 +650,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         if (!selectedBlockId) return;
         void handleDuplicateBlock(selectedBlockId);
       },
+      copySelectedBlock: () => {
+        if (!selectedBlockId) return;
+        handleCopyBlock(selectedBlockId);
+      },
       deleteSelectedBlock: () => {
         if (!selectedBlockId) return false;
         onRemoveBlock?.(selectedBlockId);
@@ -644,6 +671,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleUndo,
       handleRedo,
       handleDuplicateBlock,
+      handleCopyBlock,
       onRemoveBlock,
     ],
   );
@@ -728,7 +756,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
               onActivityChange={onActivityChange}
               onRemoveBlock={onRemoveBlock}
               onDuplicateBlock={handleDuplicateBlock}
+              onCopyBlock={handleCopyBlock}
               onPersistSlide={handlePersistFromRenderer}
+              onResizeInteractionEnd={clearSnapLines}
               className="absolute inset-0 h-full w-full min-h-0 min-w-0"
             />
 
@@ -741,6 +771,38 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
                 draggingId={draggingId}
               />
             ))}
+
+            {snapLines.map((line, i) =>
+              line.orientation === 'vertical' ? (
+                <div
+                  key={`snap-v-${line.position}-${i}`}
+                  style={{
+                    position: 'absolute',
+                    left: `${line.position}%`,
+                    top: 0,
+                    bottom: 0,
+                    width: '1px',
+                    background: '#F97316',
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                  }}
+                />
+              ) : (
+                <div
+                  key={`snap-h-${line.position}-${i}`}
+                  style={{
+                    position: 'absolute',
+                    top: `${line.position}%`,
+                    left: 0,
+                    right: 0,
+                    height: '1px',
+                    background: '#F97316',
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                  }}
+                />
+              ),
+            )}
             </div>
           </div>
         </DndContext>

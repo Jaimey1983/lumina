@@ -825,6 +825,7 @@ interface RenderColumnsProps {
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
+  onCopyBlock?: (blockId: string) => void;
   onResponse?: (response: unknown) => void;
 }
 
@@ -838,6 +839,7 @@ function RenderColumns({
   onActivityChange,
   onRemoveBlock,
   onDuplicateBlock,
+  onCopyBlock,
   onResponse,
 }: RenderColumnsProps) {
   let gridCols = `repeat(${block.columnas.length}, 1fr)`;
@@ -880,6 +882,7 @@ function RenderColumns({
                 onActivityChange={onActivityChange}
                 onRemoveBlock={onRemoveBlock}
                 onDuplicateBlock={onDuplicateBlock}
+                onCopyBlock={onCopyBlock}
                 onResponse={onResponse}
               />
             );
@@ -907,6 +910,7 @@ interface BlockNodeProps {
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
+  onCopyBlock?: (blockId: string) => void;
   /** Slide dedicado a actividad(es): el editor de respuesta corta usa layout de lienzo acotado. */
   activityCanvasLayout?: boolean;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
@@ -941,6 +945,7 @@ function BlockNode({
   onActivityChange,
   onRemoveBlock,
   onDuplicateBlock,
+  onCopyBlock,
   activityCanvasLayout,
   onResponse,
   canvasRef,
@@ -1064,14 +1069,26 @@ function BlockNode({
           onResizeEnd={onResizeEnd}
         />
       )}
-      {editorMode && (!!onRemoveBlock || !!onDuplicateBlock) && (
+      {editorMode && (!!onRemoveBlock || !!onDuplicateBlock || !!onCopyBlock) && (
         <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 rounded bg-background/80 p-0.5 shadow-sm backdrop-blur border border-border">
+          {!!onCopyBlock && block.tipo !== 'actividad' && (
+            <button
+              type="button"
+              aria-label="Copiar bloque"
+              onClick={(e) => { e.stopPropagation(); onCopyBlock(blockId); }}
+              className="flex size-6 items-center justify-center rounded-[3px] bg-indigo-500/80 text-white hover:bg-indigo-600 shadow-sm"
+              title="Copiar (Ctrl+C)"
+            >
+              <Copy className="size-3.5" />
+            </button>
+          )}
           {!!onDuplicateBlock && block.tipo !== 'actividad' && (
             <button
               type="button"
               aria-label="Duplicar bloque"
               onClick={(e) => { e.stopPropagation(); onDuplicateBlock(blockId); }}
               className="flex size-6 items-center justify-center rounded-[3px] bg-blue-500/80 text-white hover:bg-blue-600 shadow-sm"
+              title="Duplicar (Ctrl+D)"
             >
               <Copy className="size-3.5" />
             </button>
@@ -1082,6 +1099,7 @@ function BlockNode({
               aria-label="Eliminar bloque"
               onClick={(e) => { e.stopPropagation(); onRemoveBlock(blockId); }}
               className="flex size-6 items-center justify-center rounded-[3px] bg-destructive/80 text-white hover:bg-destructive shadow-sm"
+              title="Eliminar (Supr o Backspace)"
             >
               <Trash2 className="size-3.5" />
             </button>
@@ -1110,6 +1128,7 @@ export interface SlideRendererProps {
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
+  onCopyBlock?: (blockId: string) => void;
   /** Callback emitido por el estudiante al responder una actividad (solo modo viewer). */
   onResponse?: (response: unknown) => void;
   className?: string;
@@ -1120,6 +1139,8 @@ export interface SlideRendererProps {
     previousBloques: Block[];
     content: Record<string, unknown>;
   }) => Promise<boolean>;
+  /** Llamado al terminar un resize de bloque (p. ej. limpiar guías de snap del lienzo). */
+  onResizeInteractionEnd?: () => void;
 }
 
 export function SlideRenderer({
@@ -1130,9 +1151,11 @@ export function SlideRenderer({
   onActivityChange,
   onRemoveBlock,
   onDuplicateBlock,
+  onCopyBlock,
   onResponse,
   className,
   onPersistSlide,
+  onResizeInteractionEnd,
 }: SlideRendererProps) {
   const [selectedId,    setSelectedId]    = useState<string | null>(null);
   const [editingId,     setEditingId]     = useState<string | null>(null);
@@ -1182,7 +1205,8 @@ export function SlideRenderer({
     } else {
       updateSlide.mutate({ slideId: slide.id, content: sanitized });
     }
-  }, [slide, updateSlide, onPersistSlide]);
+    onResizeInteractionEnd?.();
+  }, [slide, updateSlide, onPersistSlide, onResizeInteractionEnd]);
 
   // ─── Inline text editing ──────────────────────────────────────────────────
 
@@ -1354,6 +1378,7 @@ export function SlideRenderer({
             onActivityChange={onActivityChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}
+            onCopyBlock={editorMode ? onCopyBlock : undefined}
             onResponse={onResponse}
             canvasRef={measureCanvasRef}
             currentCoords={currentCoords}

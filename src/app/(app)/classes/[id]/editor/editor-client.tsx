@@ -281,6 +281,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
+  const [copiedBlock,        setCopiedBlock]        = useState<Block | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
   const [saveError, setSaveError] = useState(false);
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
@@ -765,6 +766,32 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     setRightPanel((prev) => (prev === id ? null : id));
   }, []);
 
+  const handlePasteBlockInSlide = useCallback(
+    (slideId: string, block: Block) => {
+      const targetSlide = sortedSlides.find((s) => s.id === slideId);
+      if (!targetSlide) return;
+      const c = getSlideContentRecord(targetSlide as ApiSlide);
+      const prevBloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+      
+      const dup = (typeof structuredClone === 'function' ? structuredClone(block) : JSON.parse(JSON.stringify(block))) as Block & { id?: string; x?: number; y?: number };
+      dup.id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      if (typeof dup.x === 'number') {
+        dup.x += 3;
+        const w = typeof (dup as any).ancho === 'number' ? ((dup as any).ancho as number) : 0;
+        if (dup.x + w > 100) dup.x -= 3;
+      }
+      if (typeof dup.y === 'number') {
+        dup.y += 3;
+      }
+
+      const nextContent = { ...c, bloques: [...prevBloques, dup] };
+      const sanitized = sanitizeSlideContentForPersistence(nextContent) ?? nextContent;
+      updateSlide.mutate({ slideId: targetSlide.id, content: sanitized });
+      toast.success('Bloque pegado');
+    },
+    [sortedSlides, updateSlide],
+  );
+
   const handleRefreshDesempeno = useCallback(() => {
     setModalUserOpen(true);
   }, []);
@@ -835,6 +862,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         return;
       }
 
+      if (mod && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        canvas?.copySelectedBlock();
+        return;
+      }
+
+      if (mod && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        if (copiedBlock && activeSlide?.id) {
+          handlePasteBlockInSlide(activeSlide.id, copiedBlock);
+        }
+        return;
+      }
+
       if (mod && (e.key === 'd' || e.key === 'D')) {
         e.preventDefault();
         canvas?.duplicateSelectedBlock();
@@ -853,6 +894,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     previewOpen,
     activePanel,
     rightPanel,
+    copiedBlock,
+    activeSlide?.id,
+    handlePasteBlockInSlide,
   ]);
 
   const handleStartSession = useCallback(async () => {
@@ -1572,6 +1616,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
               onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
               onReorderSlides={handleReorderSlides}
+              copiedBlock={copiedBlock}
+              onPasteBlockInSlide={handlePasteBlockInSlide}
             />
             <FlyoutPanel
               ref={flyoutPanelRef}
@@ -1605,6 +1651,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onRemoveBlock={handleRemoveBlock}
             onEffectiveBloques={setActiveSlideLiveBloques}
             livePanelOpen={rightPanel === 'live'}
+            onCopyBlock={setCopiedBlock}
+            copiedBlock={copiedBlock}
           />
 
           {/* Flyout panel derecho */}

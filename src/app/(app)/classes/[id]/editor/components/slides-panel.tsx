@@ -9,6 +9,7 @@ import {
   ChevronUp,
   Cloud,
   Copy,
+  ClipboardPaste,
   GitMerge,
   GripHorizontal,
   GripVertical,
@@ -55,6 +56,7 @@ import { SLIDE_LABELS } from '@/config/slide.constants';
 import { SlideRenderer } from './slide-renderer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import type { Block } from '@/types/slide.types';
 
 // ─── Local slide interface (compatible with API Slide type) ───────────────────
 
@@ -469,6 +471,8 @@ export interface SlidesPanelProps {
   onMoveSlideUp?: (slideId: string) => void;
   onMoveSlideDown?: (slideId: string) => void;
   onReorderSlides?: (slideId: string, newIndex: number) => void;
+  copiedBlock?: Block | null;
+  onPasteBlockInSlide?: (slideId: string, block: Block) => void;
 }
 
 // ─── SortableSlideItem ────────────────────────────────────────────────────────
@@ -484,6 +488,8 @@ function SortableSlideItem({
   onDuplicateSlide,
   onMoveSlideUp,
   onMoveSlideDown,
+  copiedBlock,
+  onPasteBlockInSlide,
 }: {
   slide: SlideItem;
   idx: number;
@@ -495,6 +501,8 @@ function SortableSlideItem({
   onDuplicateSlide?: (id: string) => void;
   onMoveSlideUp?: (id: string) => void;
   onMoveSlideDown?: (id: string) => void;
+  copiedBlock?: Block | null;
+  onPasteBlockInSlide?: (slideId: string, block: Block) => void;
 }) {
   const {
     attributes,
@@ -626,18 +634,30 @@ function SortableSlideItem({
 
   return (
     <div ref={setNodeRef} style={style} className="group relative">
-      {onDuplicateSlide ? (
+      {onDuplicateSlide || (copiedBlock && onPasteBlockInSlide) ? (
         <ContextMenu>
           <ContextMenuTrigger asChild>{triggerBody}</ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem
-              onSelect={() => {
-                onDuplicateSlide(slide.id);
-              }}
-            >
-              <Copy className="size-4" aria-hidden />
-              Duplicar slide
-            </ContextMenuItem>
+            {onDuplicateSlide && (
+              <ContextMenuItem
+                onSelect={() => {
+                  onDuplicateSlide(slide.id);
+                }}
+              >
+                <Copy className="size-4" aria-hidden />
+                Duplicar slide
+              </ContextMenuItem>
+            )}
+            {copiedBlock && onPasteBlockInSlide && (
+              <ContextMenuItem
+                onSelect={() => {
+                  onPasteBlockInSlide(slide.id, copiedBlock);
+                }}
+              >
+                <ClipboardPaste className="size-4" aria-hidden />
+                Pegar bloque
+              </ContextMenuItem>
+            )}
           </ContextMenuContent>
         </ContextMenu>
       ) : (
@@ -662,6 +682,8 @@ export function SlidesPanel({
   onMoveSlideUp,
   onMoveSlideDown,
   onReorderSlides,
+  copiedBlock,
+  onPasteBlockInSlide,
 }: SlidesPanelProps) {
   const [addOpen, setAddOpen] = useState(false);
 
@@ -722,6 +744,8 @@ export function SlidesPanel({
                   onDuplicateSlide={onDuplicateSlide}
                   onMoveSlideUp={onMoveSlideUp}
                   onMoveSlideDown={onMoveSlideDown}
+                  copiedBlock={copiedBlock}
+                  onPasteBlockInSlide={onPasteBlockInSlide}
                 />
               ))}
           </div>

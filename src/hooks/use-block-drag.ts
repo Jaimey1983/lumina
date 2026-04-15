@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 import type { RefObject } from 'react';
 
@@ -79,6 +79,94 @@ function withPosition(block: Block, x: number, y: number): Block {
   }
 }
 
+/** Porcentaje del lienzo: alineación con centro/bordes del canvas u otros bloques. */
+const SNAP_THRESHOLD_PCT = 2;
+
+export type SnapLine = {
+  orientation: 'horizontal' | 'vertical';
+  /** Porcentaje 0–100 en el eje correspondiente (igual que `left`/`top` en CSS). */
+  position: number;
+};
+
+function clampDragCorner(x: number, y: number): { x: number; y: number } {
+  return {
+    x: Math.max(-50, Math.min(150, x)),
+    y: Math.max(-50, Math.min(150, y)),
+  };
+}
+
+/**
+ * Ajusta (x, y) al punto de snap más cercano y devuelve las guías a dibujar.
+ * Solo usa bloques de primer nivel (mismo modelo que el drag por índice).
+ */
+function snapPositionToGuides(
+  rawX: number,
+  rawY: number,
+  ancho: number,
+  alto: number,
+  draggedIndex: number,
+  peers: Block[],
+): { x: number; y: number; lines: SnapLine[] } {
+  const xTargets: number[] = [0, 50, 100];
+  const yTargets: number[] = [0, 50, 100];
+  for (let i = 0; i < peers.length; i++) {
+    if (i === draggedIndex) continue;
+    const p = getBlockPos(peers[i]);
+    xTargets.push(p.x, p.x + p.ancho / 2, p.x + p.ancho);
+    yTargets.push(p.y, p.y + p.alto / 2, p.y + p.alto);
+  }
+
+  let snapX = rawX;
+  let bestDx = SNAP_THRESHOLD_PCT + 1;
+  let guideX: number | null = null;
+  for (const target of xTargets) {
+    const candidates: { dist: number; x: number; guide: number }[] = [
+      { dist: Math.abs(rawX - target), x: target, guide: target },
+      {
+        dist: Math.abs(rawX + ancho / 2 - target),
+        x: target - ancho / 2,
+        guide: target,
+      },
+      { dist: Math.abs(rawX + ancho - target), x: target - ancho, guide: target },
+    ];
+    for (const c of candidates) {
+      if (c.dist <= SNAP_THRESHOLD_PCT && c.dist < bestDx - 1e-9) {
+        bestDx = c.dist;
+        snapX = c.x;
+        guideX = c.guide;
+      }
+    }
+  }
+
+  let snapY = rawY;
+  let bestDy = SNAP_THRESHOLD_PCT + 1;
+  let guideY: number | null = null;
+  for (const target of yTargets) {
+    const candidates: { dist: number; y: number; guide: number }[] = [
+      { dist: Math.abs(rawY - target), y: target, guide: target },
+      {
+        dist: Math.abs(rawY + alto / 2 - target),
+        y: target - alto / 2,
+        guide: target,
+      },
+      { dist: Math.abs(rawY + alto - target), y: target - alto, guide: target },
+    ];
+    for (const c of candidates) {
+      if (c.dist <= SNAP_THRESHOLD_PCT && c.dist < bestDy - 1e-9) {
+        bestDy = c.dist;
+        snapY = c.y;
+        guideY = c.guide;
+      }
+    }
+  }
+
+  const { x, y } = clampDragCorner(snapX, snapY);
+  const lines: SnapLine[] = [];
+  if (guideX !== null) lines.push({ orientation: 'vertical', position: guideX });
+  if (guideY !== null) lines.push({ orientation: 'horizontal', position: guideY });
+  return { x, y, lines };
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export interface BlockDragOptions {
@@ -98,6 +186,10 @@ export interface BlockDragResult {
   draggingId:  string | null;
   /** Live block array with updated x/y during drag (null when not dragging). */
   liveBloques: Block[] | null;
+  /** Guías de alineación visibles solo mientras `draggingId !== null`. */
+  snapLines: SnapLine[];
+  /** Limpia guías (p. ej. al terminar un resize en el lienzo). */
+  clearSnapLines: () => void;
 }
 
 export function useBlockDrag({
@@ -107,15 +199,24 @@ export function useBlockDrag({
 }: BlockDragOptions): BlockDragResult {
   const [draggingId,  setDraggingId]  = useState<string | null>(null);
   const [liveBloques, setLiveBloques] = useState<Block[] | null>(null);
+  const [snapLines, setSnapLines] = useState<SnapLine[]>([]);
 
   /** Original x, y of the dragged block recorded at drag-start. */
   const originRef = useRef<{ x: number; y: number } | null>(null);
+  /** Última posición con snap (persistir al soltar). */
+  const pendingDragPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const clearSnapLines = useCallback(() => {
+    setSnapLines([]);
+  }, []);
 
   // Reset drag state when the active slide changes.
   useEffect(() => {
     setDraggingId(null);
     setLiveBloques(null);
+    setSnapLines([]);
     originRef.current = null;
+    pendingDragPosRef.current = null;
   }, [slide?.id]);
 
   // ─── helpers (react-compiler now handles memoization) ──
@@ -153,6 +254,8 @@ export function useBlockDrag({
 
     const { x, y } = getBlockPos(block);
     originRef.current = { x, y };
+    pendingDragPosRef.current = { x, y };
+    setSnapLines([]);
     setDraggingId(id);
     setLiveBloques([...bloques]);
   };
@@ -167,18 +270,33 @@ export function useBlockDrag({
     const res     = deltaToPos(index, event.delta, rect);
     if (!res) return;
 
+    const dragged = bloques[index];
+    if (!dragged) return;
+    const { ancho, alto } = getBlockPos(dragged);
+
+    const { x: snapX, y: snapY, lines } = snapPositionToGuides(
+      res.newX,
+      res.newY,
+      ancho,
+      alto,
+      index,
+      bloques,
+    );
+    pendingDragPosRef.current = { x: snapX, y: snapY };
+    setSnapLines(lines);
+
     setLiveBloques((prev) => {
       const base = prev ?? bloques;
       const cur  = base[index];
       if (!cur) return prev;
       const { x: ox, y: oy } = getBlockPos(cur);
       if (
-        Math.abs(ox - res.newX) < 0.0001 &&
-        Math.abs(oy - res.newY) < 0.0001
+        Math.abs(ox - snapX) < 0.0001 &&
+        Math.abs(oy - snapY) < 0.0001
       ) {
         return prev;
       }
-      return base.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b));
+      return base.map((b, i) => (i === index ? withPosition(b, snapX, snapY) : b));
     });
   };
 
@@ -189,18 +307,37 @@ export function useBlockDrag({
     const rect    = getRect();
 
     if (rect && originRef.current) {
-      const res = deltaToPos(index, event.delta, rect);
-      if (res) {
+      const pending = pendingDragPosRef.current;
+      if (pending) {
         onSave(
-          bloques.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b)),
+          bloques.map((b, i) =>
+            i === index ? withPosition(b, pending.x, pending.y) : b,
+          ),
         );
+      } else {
+        const res = deltaToPos(index, event.delta, rect);
+        if (res) {
+          onSave(
+            bloques.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b)),
+          );
+        }
       }
     }
 
+    setSnapLines([]);
     setDraggingId(null);
     setLiveBloques(null);
     originRef.current = null;
+    pendingDragPosRef.current = null;
   };
 
-  return { handleDragStart, handleDragEnd, handleDragMove, draggingId, liveBloques };
+  return {
+    handleDragStart,
+    handleDragEnd,
+    handleDragMove,
+    draggingId,
+    liveBloques,
+    snapLines,
+    clearSnapLines,
+  };
 }
