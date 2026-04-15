@@ -34,6 +34,28 @@ export class ClassesGateway {
     client.to(`class-${payload.classId}`).emit('slide-change', payload);
   }
 
+  /** Estudiante (viewer autónomo): el docente recibe progreso por diapositiva. */
+  @SubscribeMessage('student-progress')
+  handleStudentProgress(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: { classId: string; studentId: string; slideIndex: number },
+  ) {
+    if (!payload?.classId || typeof payload.studentId !== 'string' || !payload.studentId.trim()) {
+      return { ok: false as const };
+    }
+    const slideIndex = Math.max(0, Math.floor(Number(payload.slideIndex)));
+    if (!Number.isFinite(slideIndex)) {
+      return { ok: false as const };
+    }
+    client.to(`class-${payload.classId}`).emit('student-progress', {
+      classId: payload.classId,
+      studentId: payload.studentId.trim(),
+      slideIndex,
+    });
+    return { ok: true as const };
+  }
+
   @SubscribeMessage('student-response')
   handleStudentResponse(
     @MessageBody() data: {

@@ -24,4 +24,11 @@ export class UpdateClassDto {
   )
   @IsIn(['DRAFT', 'PUBLISHED', 'LIVE', 'ARCHIVED'])
   status?: 'DRAFT' | 'PUBLISHED' | 'LIVE' | 'ARCHIVED';
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  )
+  @IsIn(['clase', 'presentacion', 'autonomo'])
+  modoEntrega?: 'clase' | 'presentacion' | 'autonomo';
 }

@@ -159,6 +159,7 @@ export class ClassesService {
         code: true,
         codigo: true,
         status: true,
+        modoEntrega: true,
         courseId: true,
         desempeno: true,
         createdAt: true,
