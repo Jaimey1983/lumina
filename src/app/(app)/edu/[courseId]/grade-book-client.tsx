@@ -18,16 +18,35 @@ import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/aler
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { inputVariants } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAuth } from '@/hooks/use-auth';
 import { useClass } from '@/hooks/api/use-class';
 import { useClasses } from '@/hooks/api/use-classes';
 import { useCourse } from '@/hooks/api/use-course';
-import { useGradebook } from '@/hooks/use-gradebook';
+import {
+  useGradebook,
+  computeStudentPromedio,
+  type ClassGradebookData,
+} from '@/hooks/use-gradebook';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+
+/** Actividades calificadas manualmente por el docente (PATCH por resultId). */
+const MANUAL_GRADING = ['short_answer', 'encuesta_viva', 'nube_palabras'] as const;
+
+function isManualGradingActivityType(activityType: string): boolean {
+  return (MANUAL_GRADING as readonly string[]).includes(activityType);
+}
+
+function canEditEduManualCells(role: string | undefined): boolean {
+  if (!role) return false;
+  return role !== 'STUDENT';
+}
+
+const MANUAL_CELL_BORDER = 'border-2 border-[#F97316]';
 
 const ACTIVITY_LABEL: Record<string, string> = {
   quiz_multiple: 'Quiz',
@@ -78,138 +97,172 @@ function AutoGradeCell({ note }: { note: number | null }) {
   );
 }
 
-const MANUAL_DEBOUNCE_MS = 800;
+function ReadOnlyManualGradeCell({ note }: { note: number | null }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex min-w-12 justify-center rounded-md px-2 py-1 text-sm font-semibold tabular-nums',
+        MANUAL_CELL_BORDER,
+        'bg-background text-foreground',
+      )}
+    >
+      {note === null || Number.isNaN(note) ? '—' : note.toFixed(1)}
+    </span>
+  );
+}
 
 function ManualGradeCell({
   classId,
+  resultId,
   studentId,
   slideId,
   initialNote,
 }: {
   classId: string;
+  resultId: string;
   studentId: string;
   slideId: string;
   initialNote: number | null;
 }) {
   const queryClient = useQueryClient();
-  const [value, setValue] = useState(() =>
-    initialNote != null ? initialNote.toFixed(1) : '',
-  );
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   const [invalid, setInvalid] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setValue(initialNote != null ? initialNote.toFixed(1) : '');
-    setInvalid(false);
-  }, [initialNote, studentId, slideId]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  const patchIfValid = useCallback(
-    async (trimmed: string, opts?: { showInvalid?: boolean }) => {
-      if (savingRef.current) return;
-      if (!trimmed) {
-        setValue(initialNote != null ? initialNote.toFixed(1) : '');
-        return;
-      }
-      const raw = trimmed.replace(',', '.');
-      const n = parseFloat(raw);
-      if (Number.isNaN(n) || n < 0 || n > 5) {
-        if (opts?.showInvalid) setInvalid(true);
-        return;
-      }
+    if (!isEditing) {
       setInvalid(false);
-      const score = Math.round(n * 10) / 10;
-      const orig =
-        initialNote != null && !Number.isNaN(initialNote)
-          ? Math.round(initialNote * 10) / 10
-          : null;
-      if (orig !== null && Math.abs(orig - score) < 0.001) {
-        setValue(score.toFixed(1));
-        return;
-      }
-
-      savingRef.current = true;
-      setIsSaving(true);
-      try {
-        await api.patch(`/classes/${classId}/results/manual`, {
-          studentId,
-          slideId,
-          score,
-        });
-        await queryClient.invalidateQueries({ queryKey: ['gradebook', classId] });
-        setValue(score.toFixed(1));
-      } catch {
-        toast.error('No se pudo guardar la nota');
-      } finally {
-        savingRef.current = false;
-        setIsSaving(false);
-      }
-    },
-    [classId, studentId, slideId, initialNote, queryClient],
-  );
-
-  const schedulePatch = useCallback(
-    (next: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        debounceRef.current = null;
-        void patchIfValid(next.trim());
-      }, MANUAL_DEBOUNCE_MS);
-    },
-    [patchIfValid],
-  );
-
-  const handleBlur = useCallback(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
     }
-    void patchIfValid(value.trim(), { showInvalid: true });
-  }, [patchIfValid, value]);
+  }, [isEditing, initialNote, studentId, slideId]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const applyCacheAfterSave = useCallback(
+    (score: number) => {
+      queryClient.setQueryData<ClassGradebookData>(['gradebook', classId], (old) => {
+        if (!old) return old;
+        const estudiantes = old.estudiantes.map((e) => {
+          if (e.studentId !== studentId) return e;
+          const notas = { ...(e.notas ?? {}), [slideId]: score };
+          const notaFinal = computeStudentPromedio(old.actividades, notas);
+          return { ...e, notas, notaFinal };
+        });
+        return { ...old, estudiantes };
+      });
+    },
+    [classId, queryClient, slideId, studentId],
+  );
+
+  const commit = useCallback(async () => {
+    if (savingRef.current) return;
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setInvalid(false);
+      setIsEditing(false);
+      return;
+    }
+    const raw = trimmed.replace(',', '.');
+    const n = parseFloat(raw);
+    if (Number.isNaN(n) || n < 0 || n > 5) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
+    const score = Math.round(n * 10) / 10;
+    const orig =
+      initialNote != null && !Number.isNaN(initialNote)
+        ? Math.round(initialNote * 10) / 10
+        : null;
+    if (orig !== null && Math.abs(orig - score) < 0.001) {
+      setIsEditing(false);
+      return;
+    }
+
+    savingRef.current = true;
+    setIsSaving(true);
+    try {
+      await api.patch(`/classes/${classId}/results/${resultId}`, { score });
+      applyCacheAfterSave(score);
+      setIsEditing(false);
+    } catch {
+      toast.error('No se pudo guardar la nota');
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  }, [applyCacheAfterSave, classId, draft, initialNote, resultId]);
+
+  const openEdit = useCallback(() => {
+    setDraft(
+      initialNote != null && !Number.isNaN(initialNote) ? initialNote.toFixed(1) : '',
+    );
+    setInvalid(false);
+    setIsEditing(true);
+  }, [initialNote]);
+
+  if (!isEditing) {
+    return (
+      <div className="relative inline-flex justify-center">
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={openEdit}
+          className={cn(
+            'inline-flex h-9 min-w-20 items-center justify-center rounded-md px-2 text-sm font-semibold tabular-nums transition-colors',
+            MANUAL_CELL_BORDER,
+            'bg-background hover:bg-muted/60',
+            isSaving && 'cursor-wait opacity-70',
+          )}
+        >
+          {initialNote != null && !Number.isNaN(initialNote) ? initialNote.toFixed(1) : '—'}
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative inline-flex">
-      <Input
-        type="text"
-        inputMode="decimal"
+    <div className="relative inline-flex justify-center">
+      <input
+        ref={inputRef}
+        data-slot="input"
+        type="number"
+        min={0}
+        max={5}
+        step={0.1}
         disabled={isSaving}
         aria-invalid={invalid}
         className={cn(
-          'h-9 w-20 text-center font-medium',
-          invalid && 'border-destructive ring-1 ring-destructive',
+          inputVariants({ variant: 'md' }),
+          'h-9 w-24 text-center font-semibold tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          MANUAL_CELL_BORDER,
+          invalid && 'ring-2 ring-destructive',
           isSaving && 'cursor-wait pr-8',
         )}
-        value={value}
+        value={draft}
         onChange={(e) => {
           setInvalid(false);
-          const next = e.target.value;
-          setValue(next);
-          schedulePatch(next);
+          setDraft(e.target.value);
         }}
-        onBlur={handleBlur}
+        onBlur={() => {
+          void commit();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            if (debounceRef.current) {
-              clearTimeout(debounceRef.current);
-              debounceRef.current = null;
-            }
-            void patchIfValid(value.trim(), { showInvalid: true });
+            void commit();
           }
           if (e.key === 'Escape') {
-            if (debounceRef.current) {
-              clearTimeout(debounceRef.current);
-              debounceRef.current = null;
-            }
+            e.preventDefault();
             setInvalid(false);
-            setValue(initialNote != null ? initialNote.toFixed(1) : '');
+            setIsEditing(false);
           }
         }}
       />
@@ -221,6 +274,8 @@ function ManualGradeCell({
 }
 
 export function GradeBookClient({ courseId }: { courseId: string }) {
+  const { user } = useAuth();
+  const docentePuedeEditarManual = canEditEduManualCells(user?.role);
   const { data: course, isLoading: courseLoading } = useCourse(courseId);
   const {
     data: classes = [],
@@ -287,8 +342,8 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               {courseLoading ? 'Cargando curso...' : course?.name ?? 'Planilla de notas'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Notas por clase y actividad (slides). Escala colombiana 1.0 a 5.0. Notas manuales: 0.0
-              a 5.0.
+              Notas por clase y actividad (slides). Escala colombiana 1.0 a 5.0. Calificación manual
+              (borde naranja): 0.0 a 5.0, guardado al salir del campo o con Enter.
             </p>
           </div>
         </div>
@@ -341,8 +396,10 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
                       Datos en vivo desde el libro de calificaciones. Las actividades automáticas se
-                      muestran en verde si la nota es ≥ 3 y en rojo si es &lt; 3. Las manuales se
-                      guardan al escribir (espera 800 ms) o al salir del campo.
+                      muestran en verde si la nota es ≥ 3 y en rojo si es &lt; 3. Las actividades
+                      manuales (respuesta corta, encuesta viva, nube de palabras) llevan borde naranja:
+                      el docente hace clic en la celda, edita entre 0.0 y 5.0 y guarda con Enter o
+                      al salir del campo.
                     </p>
                   </div>
                 </div>
@@ -457,16 +514,22 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                           {showFullGrid
                             ? actividades.map((act) => {
                                 const nota = noteForSlide(est.notas, act.slideId);
-                                const manual = est.manualPorSlide?.[act.slideId] === true;
+                                const manual = isManualGradingActivityType(act.activityType);
+                                const resultId = est.resultIdsPorSlide?.[act.slideId];
                                 return (
                                   <TableCell key={act.slideId} className="text-center">
                                     {manual ? (
-                                      <ManualGradeCell
-                                        classId={selectedClassId}
-                                        studentId={est.studentId}
-                                        slideId={act.slideId}
-                                        initialNote={nota}
-                                      />
+                                      docentePuedeEditarManual && resultId ? (
+                                        <ManualGradeCell
+                                          classId={selectedClassId}
+                                          resultId={resultId}
+                                          studentId={est.studentId}
+                                          slideId={act.slideId}
+                                          initialNote={nota}
+                                        />
+                                      ) : (
+                                        <ReadOnlyManualGradeCell note={nota} />
+                                      )
                                     ) : (
                                       <AutoGradeCell note={nota} />
                                     )}

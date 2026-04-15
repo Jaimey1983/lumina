@@ -22,6 +22,8 @@ export interface ClassGradebookEstudiante {
   notas?: Record<string, number | null | undefined>;
   /** Por slideId: si true, la celda es nota manual editable. */
   manualPorSlide?: Record<string, boolean>;
+  /** Por slideId: id del resultado para PATCH /classes/:classId/results/:id */
+  resultIdsPorSlide?: Record<string, string>;
 }
 
 export interface ClassGradebookData {
@@ -36,6 +38,9 @@ export interface ApiGradebookResultado {
   score: number;
   maxScore: number;
   isManual: boolean;
+  /** Identificador del resultado (el backend puede enviar `id` o `resultId`). */
+  id?: string;
+  resultId?: string;
 }
 
 export interface ApiGradebookRow {
@@ -50,6 +55,24 @@ function unwrapEnvelope(data: unknown): unknown {
     return (data as { data: unknown }).data;
   }
   return data;
+}
+
+/** Promedio simple de las notas por columnas de actividad (escala 0–5). */
+export function computeStudentPromedio(
+  actividades: { slideId: string }[],
+  notas: Record<string, number | null | undefined> | undefined,
+): number | null {
+  if (!notas || actividades.length === 0) return null;
+  const values: number[] = [];
+  for (const a of actividades) {
+    const v = notas[a.slideId];
+    if (v !== null && v !== undefined && Number.isFinite(Number(v))) {
+      values.push(Number(v));
+    }
+  }
+  if (values.length === 0) return null;
+  const sum = values.reduce((acc, n) => acc + n, 0);
+  return Math.round((sum / values.length) * 10) / 10;
 }
 
 /** Pasa score/maxScore a escala 0–5 para mostrar y comparar con el umbral 3. */
@@ -92,10 +115,15 @@ function normalizeFromRows(rows: ApiGradebookRow[]): ClassGradebookData {
   const estudiantes: ClassGradebookEstudiante[] = rows.map((row) => {
     const notas: Record<string, number | null> = {};
     const manualPorSlide: Record<string, boolean> = {};
+    const resultIdsPorSlide: Record<string, string> = {};
     for (const r of row.resultados ?? []) {
       notas[r.slideId] = toDisplayNoteOnFive(r.score, r.maxScore);
       if (r.isManual) {
         manualPorSlide[r.slideId] = true;
+      }
+      const rid = r.id ?? r.resultId;
+      if (rid != null && String(rid).length > 0) {
+        resultIdsPorSlide[r.slideId] = String(rid);
       }
     }
     const p = row.promedio;
@@ -106,6 +134,7 @@ function normalizeFromRows(rows: ApiGradebookRow[]): ClassGradebookData {
         p !== null && p !== undefined && Number.isFinite(Number(p)) ? Number(p) : null,
       notas,
       manualPorSlide,
+      resultIdsPorSlide,
     };
   });
 

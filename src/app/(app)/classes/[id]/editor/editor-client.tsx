@@ -546,8 +546,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           let score: number | null;
           let maxScore: number;
 
-          if (response.activityType === 'short_answer') {
-            score = null;
+          if (
+            response.activityType === 'short_answer' ||
+            response.activityType === 'encuesta_viva' ||
+            response.activityType === 'nube_palabras'
+          ) {
+            score = response.correct === null ? 0.0 : 1.0;
             maxScore = 5;
           } else if (response.details && response.details.length > 0) {
             // Actividades con sub-respuestas: video_interactivo, match_pairs,
@@ -566,7 +570,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             }
             maxScore = 5;
           } else {
-            // Actividades con respuesta única: quiz, verdadero_falso, encuesta_viva, etc.
+            // Actividades con respuesta única: quiz, verdadero_falso, etc.
             if (response.correct === null) {
               score = 0.0;
             } else if (response.correct === false) {
