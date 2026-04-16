@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  History,
   Loader2,
   Lock,
   LockOpen,
@@ -17,6 +18,8 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es as esLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -30,6 +33,12 @@ import {
 
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide } from '@/hooks/api/use-classes';
+import {
+  useCreateSlideVersion,
+  useRestoreSlideVersion,
+  useSlideVersions,
+  type SlideVersion,
+} from '@/hooks/api/use-slide-versions';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
   buildContentDocumentForNewActivitySlide,
@@ -79,6 +88,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -258,6 +274,12 @@ function slideTitleForLayoutKey(key: SlidePersistedLayoutKey): string {
 }
 
 /** Normaliza el conteo de sala desde distintos formatos del backend (Socket.IO). */
+function countBloquesInSlideContent(content: unknown): number {
+  if (content === null || typeof content !== 'object' || Array.isArray(content)) return 0;
+  const bloques = (content as { bloques?: unknown }).bloques;
+  return Array.isArray(bloques) ? bloques.length : 0;
+}
+
 function parseRoomStudentCount(payload: unknown): number | null {
   if (typeof payload === 'number' && Number.isFinite(payload)) {
     return Math.max(0, Math.floor(payload));
@@ -302,6 +324,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
   const [responsesLocked, setResponsesLocked] = useState(false);
+  const [historySheetOpen, setHistorySheetOpen] = useState(false);
+  const [versionPendingRestore, setVersionPendingRestore] = useState<SlideVersion | null>(null);
 
   /** Live block positions from CanvasArea during / immediately after drag. */
   const [activeSlideLiveBloques, setActiveSlideLiveBloques] = useState<Block[] | null>(null);
@@ -550,6 +574,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [sortedSlides.length, activeSlideIndex]);
 
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
+
+  const createSlideVersion = useCreateSlideVersion(classId, activeSlide?.id);
+  const restoreSlideVersion = useRestoreSlideVersion(classId, activeSlide?.id);
+  const { data: slideVersions = [], isLoading: slideVersionsLoading } = useSlideVersions(
+    classId,
+    activeSlide?.id,
+  );
 
   const sessionActive = sessionId !== null || cls?.sessionActive === true;
 
@@ -877,6 +908,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         onSuccess: () => {
           setSaveError(false);
           toast.success('Slide guardado');
+          if (!sessionActiveRef.current) {
+            const versionContent =
+              payload !== null && typeof payload === 'object' && !Array.isArray(payload)
+                ? payload
+                : {};
+            createSlideVersion.mutate(
+              { content: versionContent },
+              {
+                onError: () => {
+                  toast.error('No se pudo guardar la versión en el historial');
+                },
+              },
+            );
+          }
         },
         onError: () => {
           setSaveError(true);
@@ -884,7 +929,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         },
       },
     );
-  }, [activeSlide, buildSlidePayload, updateSlide]);
+  }, [activeSlide, buildSlidePayload, updateSlide, createSlideVersion]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -1669,6 +1714,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               </Button>
             ) : null}
 
+            {!sessionActive && sortedSlides.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setHistorySheetOpen(true)}
+                aria-label="Historial de versiones"
+              >
+                <History className="size-4" />
+                Historial
+              </Button>
+            ) : null}
+
             <Button
               variant="outline"
               size="sm"
@@ -1799,6 +1857,113 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         </footer>
 
       </div>
+
+      <Sheet open={historySheetOpen} onOpenChange={setHistorySheetOpen}>
+        <SheetContent side="right" className="flex w-full sm:max-w-md flex-col gap-0 p-0">
+          <SheetHeader className="border-b border-border px-6 py-4 text-start">
+            <SheetTitle>Historial de versiones</SheetTitle>
+          </SheetHeader>
+          <SheetBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4">
+            {!activeSlide?.id ? (
+              <p className="text-sm text-muted-foreground">Selecciona un slide.</p>
+            ) : slideVersionsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin shrink-0" aria-hidden />
+                Cargando…
+              </div>
+            ) : slideVersions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay versiones. Usa Ctrl+S para crear una.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {slideVersions.map((v) => {
+                  const n = countBloquesInSlideContent(v.content);
+                  const bloquesLabel = n === 1 ? '1 bloque' : `${n} bloques`;
+                  const when = format(new Date(v.createdAt), "d MMM yyyy · HH:mm", {
+                    locale: esLocale,
+                  });
+                  return (
+                    <li
+                      key={v.id}
+                      className="flex flex-col gap-2 rounded-lg border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 space-y-0.5">
+                        <p className="text-sm font-medium tabular-nums text-foreground">{when}</p>
+                        <p className="text-xs text-muted-foreground">{bloquesLabel}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="shrink-0 self-start sm:self-center"
+                        disabled={restoreSlideVersion.isPending}
+                        onClick={() => setVersionPendingRestore(v)}
+                      >
+                        Restaurar
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog
+        open={!!versionPendingRestore}
+        onOpenChange={(open) => {
+          if (!open) setVersionPendingRestore(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Restaurar esta versión?</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="text-sm text-muted-foreground">
+            Se reemplazará el contenido del slide actual por el de la versión seleccionada.
+          </DialogBody>
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setVersionPendingRestore(null)}
+              disabled={restoreSlideVersion.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="gap-2"
+              disabled={restoreSlideVersion.isPending || !versionPendingRestore}
+              onClick={() => {
+                const id = versionPendingRestore?.id;
+                if (!id) return;
+                restoreSlideVersion.mutate(id, {
+                  onSuccess: () => {
+                    toast.success('Versión restaurada');
+                    setVersionPendingRestore(null);
+                    setHistorySheetOpen(false);
+                  },
+                  onError: () => {
+                    toast.error('No se pudo restaurar la versión');
+                  },
+                });
+              }}
+            >
+              {restoreSlideVersion.isPending ? (
+                <>
+                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                  Restaurando…
+                </>
+              ) : (
+                'Restaurar'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent
