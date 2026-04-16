@@ -703,6 +703,92 @@ export class ClassesService {
     });
   }
 
+  async getSlideVersions(classId: string, slideId: string, userId: string) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    const slide = await this.prisma.slide.findFirst({
+      where: { id: slideId, classId },
+      select: { id: true },
+    });
+    if (!slide) throw new NotFoundException('Slide no encontrado');
+
+    return this.prisma.slideVersion.findMany({
+      where: { slideId },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        slideId: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async createSlideVersion(
+    classId: string,
+    slideId: string,
+    content: Record<string, unknown>,
+    userId: string,
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    const slide = await this.prisma.slide.findFirst({
+      where: { id: slideId, classId },
+      select: { id: true },
+    });
+    if (!slide) throw new NotFoundException('Slide no encontrado');
+
+    const created = await this.prisma.slideVersion.create({
+      data: {
+        slideId,
+        content: content as Prisma.InputJsonValue,
+      },
+    });
+
+    const excess = await this.prisma.slideVersion.findMany({
+      where: { slideId },
+      orderBy: { createdAt: 'desc' },
+      skip: 10,
+      select: { id: true },
+    });
+    if (excess.length > 0) {
+      await this.prisma.slideVersion.deleteMany({
+        where: { id: { in: excess.map((v) => v.id) } },
+      });
+    }
+
+    return created;
+  }
+
+  async restoreSlideVersion(
+    classId: string,
+    slideId: string,
+    versionId: string,
+    userId: string,
+  ) {
+    const cls = await this.findOneRaw(classId);
+    await this.verifyTeacherOwnership(cls.courseId, userId);
+
+    const slide = await this.prisma.slide.findFirst({
+      where: { id: slideId, classId },
+      select: { id: true },
+    });
+    if (!slide) throw new NotFoundException('Slide no encontrado');
+
+    const version = await this.prisma.slideVersion.findFirst({
+      where: { id: versionId, slideId },
+    });
+    if (!version) throw new NotFoundException('Versión no encontrada');
+
+    return this.prisma.slide.update({
+      where: { id: slideId },
+      data: { content: version.content as Prisma.InputJsonValue },
+    });
+  }
+
   // ─── HELPERS PRIVADOS ──────────────────────────────────
 
   private async generarCodigoUnico(): Promise<string> {

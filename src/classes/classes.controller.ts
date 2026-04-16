@@ -19,6 +19,7 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
+import { CreateSlideVersionDto } from './dto/create-slide-version.dto';
 import { GuardarResultadosDto } from './dto/save-results.dto';
 import { NotaManualDto } from './dto/save-manual-grade.dto';
 import { UpdateResultScoreDto } from './dto/update-result-score.dto';
@@ -198,6 +199,48 @@ export class ClassesController {
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.classesService.addSlide(classId, dto, user.id);
+  }
+
+  @Get(':id/slides/:slideId/versions')
+  @UseGuards(JwtAuthGuard)
+  getSlideVersions(
+    @Param('id') classId: string,
+    @Param('slideId') slideId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.getSlideVersions(classId, slideId, user.id);
+  }
+
+  @Post(':id/slides/:slideId/versions')
+  @UseGuards(JwtAuthGuard)
+  createSlideVersion(
+    @Param('id') classId: string,
+    @Param('slideId') slideId: string,
+    @Body() dto: CreateSlideVersionDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.createSlideVersion(
+      classId,
+      slideId,
+      dto.content,
+      user.id,
+    );
+  }
+
+  @Post(':id/slides/:slideId/versions/:versionId/restore')
+  @UseGuards(JwtAuthGuard)
+  restoreSlideVersion(
+    @Param('id') classId: string,
+    @Param('slideId') slideId: string,
+    @Param('versionId') versionId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.classesService.restoreSlideVersion(
+      classId,
+      slideId,
+      versionId,
+      user.id,
+    );
   }
 
   @Patch(':id/slides/:slideId')

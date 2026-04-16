@@ -110,16 +110,28 @@ model Class {
 }
 
 model Slide {
-  id        String    @id @default(cuid())
+  id        String         @id @default(cuid())
   order     Int
   type      SlideType
   title     String
   content   Json?
   classId   String
-  createdAt DateTime  @default(now())
-  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  versions  SlideVersion[]
 
   @@map("slides")
+}
+
+model SlideVersion {
+  id        String   @id @default(cuid())
+  slideId   String
+  slide     Slide    @relation(fields: [slideId], references: [id], onDelete: Cascade)
+  content   Json
+  createdAt DateTime @default(now())
+
+  @@index([slideId, createdAt])
+  @@map("slide_versions")
 }
 
 model ClassSession {
