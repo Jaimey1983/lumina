@@ -99,7 +99,7 @@ function clampDragCorner(x: number, y: number): { x: number; y: number } {
  * Ajusta (x, y) al punto de snap más cercano y devuelve las guías a dibujar.
  * Solo usa bloques de primer nivel (mismo modelo que el drag por índice).
  */
-function snapPositionToGuides(
+export function snapPositionToGuides(
   rawX: number,
   rawY: number,
   ancho: number,
@@ -190,6 +190,8 @@ export interface BlockDragResult {
   snapLines: SnapLine[];
   /** Limpia guías (p. ej. al terminar un resize en el lienzo). */
   clearSnapLines: () => void;
+  /** Actualiza guías directamente (p. ej. durante resize en el lienzo). */
+  setSnapLines: (lines: SnapLine[]) => void;
 }
 
 export function useBlockDrag({
@@ -339,5 +341,6 @@ export function useBlockDrag({
     liveBloques,
     snapLines,
     clearSnapLines,
+    setSnapLines,
   };
 }

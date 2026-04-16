@@ -13,6 +13,7 @@ import {
 import { Trash2, Copy } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
+
 import { useUpdateSlide } from '@/hooks/api/use-classes';
 import {
   mergeRendererSlideState,
@@ -1141,6 +1142,15 @@ export interface SlideRendererProps {
   }) => Promise<boolean>;
   /** Llamado al terminar un resize de bloque (p. ej. limpiar guías de snap del lienzo). */
   onResizeInteractionEnd?: () => void;
+  /**
+   * Llamado en cada frame de resize con las coordenadas provisionales brutas.
+   * Puede devolver coordenadas ajustadas (snapped) que SlideRenderer usará para el
+   * live preview. Si no se proporciona, se usan las coords brutas sin snap.
+   */
+  onResizeMove?: (
+    blockId: string,
+    rawCoords: { x: number; y: number; ancho: number; alto: number },
+  ) => { x: number; y: number; ancho: number; alto: number };
 }
 
 export function SlideRenderer({
@@ -1156,6 +1166,7 @@ export function SlideRenderer({
   className,
   onPersistSlide,
   onResizeInteractionEnd,
+  onResizeMove,
 }: SlideRendererProps) {
   const [selectedId,    setSelectedId]    = useState<string | null>(null);
   const [editingId,     setEditingId]     = useState<string | null>(null);
@@ -1171,10 +1182,14 @@ export function SlideRenderer({
   const editorMode = modo === 'editor';
 
   const handleResize = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
-    setResizingCoords((prev) => ({ ...prev, [blockId]: coords }));
-  }, []);
+    const snapped = onResizeMove ? onResizeMove(blockId, coords) : coords;
+    setResizingCoords((prev) => ({ ...prev, [blockId]: snapped }));
+  }, [onResizeMove]);
 
   const handleResizeEnd = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
+    // Apply snap to the final commit coords so the saved position matches the guide.
+    const finalCoords = onResizeMove ? onResizeMove(blockId, coords) : coords;
+
     setResizingCoords((prev) => {
       const next = { ...prev };
       delete next[blockId];
@@ -1186,10 +1201,10 @@ export function SlideRenderer({
     const nextBlocks = updateBlockAtPath(blocks, blockId, (b) => {
       const nextBase: Block = {
         ...b,
-        x: coords.x,
-        y: coords.y,
-        ancho: coords.ancho,
-        alto: coords.alto,
+        x: finalCoords.x,
+        y: finalCoords.y,
+        ancho: finalCoords.ancho,
+        alto: finalCoords.alto,
       } as Block;
       if (b.tipo === 'imagen') {
         return { ...nextBase, ajuste: 'llenar' } as Block;
@@ -1206,7 +1221,7 @@ export function SlideRenderer({
       updateSlide.mutate({ slideId: slide.id, content: sanitized });
     }
     onResizeInteractionEnd?.();
-  }, [slide, updateSlide, onPersistSlide, onResizeInteractionEnd]);
+  }, [slide, updateSlide, onPersistSlide, onResizeInteractionEnd, onResizeMove]);
 
   // ─── Inline text editing ──────────────────────────────────────────────────
 

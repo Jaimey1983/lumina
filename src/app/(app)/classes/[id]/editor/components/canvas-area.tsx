@@ -36,7 +36,7 @@ import {
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
-import { useBlockDrag, getBlockPos } from '@/hooks/use-block-drag';
+import { useBlockDrag, getBlockPos, snapPositionToGuides } from '@/hooks/use-block-drag';
 
 const MAX_UNDO = 20;
 
@@ -423,6 +423,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     liveBloques,
     snapLines,
     clearSnapLines,
+    setSnapLines,
   } = useBlockDrag({
     canvasRef,
     slide,
@@ -435,6 +436,36 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       // Require ≥4 px movement before activating drag so normal clicks work.
       activationConstraint: { distance: 4 },
     }),
+  );
+
+  // ── snap during resize ──────────────────────────────────────────────────────
+  /**
+   * Called by SlideRenderer on every resize frame with the raw provisional
+   * coordinates.  Runs the same snapPositionToGuides logic used during drag,
+   * updates the visible orange guide lines, and returns the snapped coords so
+   * SlideRenderer can show the live preview at the snapped position.
+   */
+  const handleResizeMove = useCallback(
+    (
+      blockId: string,
+      rawCoords: { x: number; y: number; ancho: number; alto: number },
+    ): { x: number; y: number; ancho: number; alto: number } => {
+      const peers = slide?.bloques ?? [];
+      const draggedIndex = parseInt(blockId, 10);
+
+      const { x, y, lines } = snapPositionToGuides(
+        rawCoords.x,
+        rawCoords.y,
+        rawCoords.ancho,
+        rawCoords.alto,
+        isNaN(draggedIndex) ? -1 : draggedIndex,
+        peers,
+      );
+
+      setSnapLines(lines);
+      return { x, y, ancho: rawCoords.ancho, alto: rawCoords.alto };
+    },
+    [slide?.bloques, setSnapLines],
   );
 
   // ── live slide: inject updated positions during drag for real-time preview ──
@@ -759,6 +790,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
               onCopyBlock={handleCopyBlock}
               onPersistSlide={handlePersistFromRenderer}
               onResizeInteractionEnd={clearSnapLines}
+              onResizeMove={handleResizeMove}
               className="absolute inset-0 h-full w-full min-h-0 min-w-0"
             />
 
