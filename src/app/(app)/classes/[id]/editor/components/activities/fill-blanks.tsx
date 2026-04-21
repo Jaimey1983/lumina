@@ -117,16 +117,16 @@ export function FillBlanksActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
           Completar blancos
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Usa {'{{blank:id}}'} en el texto para marcar los huecos
         </span>
         {onRemove && (
@@ -134,7 +134,7 @@ export function FillBlanksActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -164,7 +164,7 @@ export function FillBlanksActivityEditor({
             className="min-h-[4rem] resize-none font-mono text-xs"
             placeholder="Ej: El agua hierve a {{blank:abc123}} °C."
           />
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-[#9ca3af]">
             Escribe {'{{blank:id}}'} donde quieres un hueco, o usa el botón.
           </p>
         </div>
@@ -192,7 +192,7 @@ export function FillBlanksActivityEditor({
                 const blank = local.blancos.find((b) => b.id === id);
                 return (
                   <div key={id} className="flex items-center gap-1.5">
-                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-muted-foreground">
+                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-[#9ca3af]">
                       {idx + 1}
                     </span>
                     <Input
@@ -206,7 +206,7 @@ export function FillBlanksActivityEditor({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-6 shrink-0 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
+                      className="size-6 shrink-0 text-[#9ca3af]/50 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => removeBlank(id)}
                       title="Eliminar hueco"
                     >
@@ -220,7 +220,7 @@ export function FillBlanksActivityEditor({
         )}
 
         {referencedIds.length === 0 && (
-          <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-center text-[11px] text-muted-foreground">
+          <p className="rounded-md border border-dashed border-[#e5e7eb] bg-[#f9fafb] px-3 py-4 text-center text-[11px] text-[#9ca3af]">
             Aún no hay huecos en el texto. Añade uno con el botón de arriba.
           </p>
         )}
@@ -262,7 +262,7 @@ export function FillBlanksViewer({
       <input
         key={id}
         type="text"
-        className={`mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm border-input focus:outline-none focus:ring-2 focus:ring-ring`}
+        className={`mx-1 inline-block h-8 w-24 rounded-md border border-[#e5e7eb] px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]`}
         value={answers[id] || ''}
         disabled={answered}
         onChange={(e) => {
@@ -286,12 +286,12 @@ export function FillBlanksViewer({
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="text-base font-medium leading-relaxed text-foreground">
+    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
+      <div className="text-base font-medium leading-relaxed text-[#111827]">
         {parts}
       </div>
       {answered ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           <span>✓</span> ¡Respuesta enviada!
         </div>
       ) : (

@@ -108,15 +108,15 @@ export function MatchPairsActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800">
           Emparejar columnas
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -124,7 +124,7 @@ export function MatchPairsActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -174,14 +174,14 @@ export function MatchPairsActivityEditor({
             {local.pares.map((pair, idx) => (
               <div
                 key={pair.id}
-                className="group relative flex items-start gap-1 rounded-md border border-border bg-muted/10 p-1.5"
+                className="group relative flex items-start gap-1 rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-1.5"
               >
                 <div className="flex flex-col items-center gap-0.5 pt-1">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-5 rounded-[4px] text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+                    className="size-5 rounded-[4px] text-[#9ca3af]/50 hover:bg-[#f9fafb] hover:text-[#111827]"
                     disabled={idx === 0}
                     onClick={() => movePair(idx, 'up')}
                   >
@@ -191,7 +191,7 @@ export function MatchPairsActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-5 rounded-[4px] text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+                    className="size-5 rounded-[4px] text-[#9ca3af]/50 hover:bg-[#f9fafb] hover:text-[#111827]"
                     disabled={idx === local.pares.length - 1}
                     onClick={() => movePair(idx, 'down')}
                   >
@@ -224,7 +224,7 @@ export function MatchPairsActivityEditor({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="mt-0.5 size-6 shrink-0 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
+                  className="mt-0.5 size-6 shrink-0 text-[#9ca3af]/50 hover:bg-destructive/10 hover:text-destructive"
                   disabled={local.pares.length <= 2}
                   onClick={() => removePair(pair.id)}
                   title={local.pares.length <= 2 ? 'Se requieren mínimo 2 pares' : 'Eliminar par'}
@@ -293,9 +293,9 @@ export function MatchPairsViewer({
   if (!activity) return null;
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       {activity.instruccion && (
-        <p className="text-sm font-medium text-foreground">{activity.instruccion}</p>
+        <p className="text-sm font-medium text-[#111827]">{activity.instruccion}</p>
       )}
 
       <div className="grid grid-cols-2 gap-8">
@@ -307,11 +307,11 @@ export function MatchPairsViewer({
 
             let feedbackClass = '';
             if (isSelected) {
-              feedbackClass = 'border-primary ring-1 ring-primary';
+              feedbackClass = 'border-[#2563EB] ring-1 ring-[#2563EB]';
             } else if (isMatched) {
-              feedbackClass = 'border-primary/50 bg-primary/5';
+              feedbackClass = 'border-[#2563EB]/50 bg-[#dbeafe]';
             } else {
-              feedbackClass = 'bg-background hover:bg-muted/50 cursor-pointer';
+              feedbackClass = 'border-[#e5e7eb] bg-white hover:bg-[#f9fafb] cursor-pointer';
             }
 
             return (
@@ -322,7 +322,7 @@ export function MatchPairsViewer({
               >
                 <span>{p.izquierda}</span>
                 {isMatched && (
-                  <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-[#2563EB] text-[10px] text-white">
                     {matchIndex + 1}
                   </span>
                 )}
@@ -338,9 +338,9 @@ export function MatchPairsViewer({
 
             let feedbackClass = '';
             if (isMatched) {
-              feedbackClass = 'border-primary/50 bg-primary/5';
+              feedbackClass = 'border-[#2563EB]/50 bg-[#dbeafe]';
             } else {
-              feedbackClass = 'bg-background hover:bg-muted/50 cursor-pointer';
+              feedbackClass = 'border-[#e5e7eb] bg-white hover:bg-[#f9fafb] cursor-pointer';
             }
 
             return (
@@ -350,7 +350,7 @@ export function MatchPairsViewer({
                 className={cn('flex min-h-[3rem] items-center gap-3 rounded-md border p-3 text-sm transition-colors', feedbackClass, !isMatched && !selectedLeft && 'cursor-not-allowed opacity-70', answered && 'pointer-events-none')}
               >
                 {isMatched && (
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-[10px] text-white">
                     {matchIndex + 1}
                   </span>
                 )}
@@ -362,7 +362,7 @@ export function MatchPairsViewer({
       </div>
 
       {answered ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           <span>✓</span> ¡Respuesta enviada!
         </div>
       ) : (

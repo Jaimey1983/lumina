@@ -27,7 +27,6 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 import {
   SlideEditorChrome,
   SlideInsertionToolbar,
@@ -737,7 +736,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         className={cn(
           'absolute left-1/2 z-10 flex max-w-[calc(100vw-2rem)] min-w-0 -translate-x-1/2 items-center gap-1',
           'top-[var(--editor-toolbar-top)] md:top-[var(--editor-toolbar-top-md)]',
-          'rounded-md border border-border bg-card px-2 py-1 shadow-sm',
+          'rounded-2xl border border-[#e5e7eb] bg-white px-3 py-1.5 shadow-sm',
           'motion-safe:transition-[box-shadow,transform] motion-safe:duration-200 motion-safe:ease-out',
           'motion-reduce:transition-none',
         )}
@@ -747,7 +746,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           restrictToTextOnly={hasActivityBlock}
           onInsert={handleInsertBlock}
         />
-        <Separator orientation="vertical" className="h-6" />
+        <div className="mx-1 h-4 w-px shrink-0 bg-[#e5e7eb]" aria-hidden />
         <SlideEditorChrome
           disabled={isLoading || !liveSlide}
           restrictToTextOnly={hasActivityBlock}

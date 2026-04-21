@@ -478,7 +478,7 @@ export function UsersClient() {
   // Access guard (después de todos los hooks)
   if (!isAdmin(authUser?.role)) {
     return (
-      <div className="container py-6">
+      <div className="w-full p-6">
         <div className="flex flex-col items-center py-24 gap-4 text-center">
           <div className="size-14 rounded-full bg-destructive/10 flex items-center justify-center">
             <ShieldOff className="size-7 text-destructive" />
@@ -511,7 +511,7 @@ export function UsersClient() {
   }
 
   return (
-    <div className="container py-6 space-y-4">
+    <div className="w-full space-y-4 p-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

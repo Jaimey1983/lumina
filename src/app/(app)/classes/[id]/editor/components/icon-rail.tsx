@@ -57,8 +57,8 @@ export interface IconRailProps {
 
 const ICON_BTN =
   'flex items-center justify-center rounded-lg p-3 outline-none ' +
-  'text-muted-foreground hover:bg-accent hover:text-foreground ' +
-  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
+  'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB] ' +
+  'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1 ' +
   'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out ' +
   'motion-reduce:transition-none';
 
@@ -84,7 +84,7 @@ const RailButton = memo(function RailButton({
       onClick={() => onToggle(id)}
       aria-label={label}
       aria-pressed={isActive}
-      className={cn(ICON_BTN, isActive && 'bg-accent text-foreground')}
+      className={cn(ICON_BTN, isActive && 'bg-[#f9fafb] text-[#2563EB]')}
     >
       <Icon className="size-5 shrink-0" aria-hidden />
     </button>
@@ -101,7 +101,7 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
   const userName = user ? `${user.name}${user.lastName ? ` ${user.lastName}` : ''}` : '';
 
   return (
-    <aside className="flex h-full min-h-0 w-full min-w-0 flex-col border-r border-border bg-background">
+    <aside className="flex h-full min-h-0 w-full min-w-0 flex-col border-r border-[#e5e7eb] bg-white">
 
       {/* ── Top: panel icons ────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col items-center gap-1 pt-2">
@@ -138,7 +138,7 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
               type="button"
               title={userName}
               aria-label={userName}
-              className="flex size-9 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground transition-opacity hover:opacity-80 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="flex size-9 items-center justify-center rounded-full bg-[#2563EB] text-[11px] font-semibold text-white transition-opacity hover:opacity-80 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             >
               {userInitials}
             </button>

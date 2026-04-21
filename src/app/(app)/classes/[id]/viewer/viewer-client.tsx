@@ -11,7 +11,7 @@ import {
   Loader2,
   Lock,
   Minimize2,
-  PartyPopper,
+  Trophy,
   XCircle,
 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
@@ -20,8 +20,6 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { parseClassModoEntrega, type Activity, type Block } from '@/types/slide.types';
-import { SlideCountdownOverlay } from './slide-countdown-overlay';
-
 interface EvalDetail {
   label: string;
   correct: boolean | null;
@@ -157,6 +155,16 @@ function readGuestIdentity(): { studentId: string; studentName: string } {
     studentId: localStorage.getItem(LS_STUDENT_ID) ?? '',
     studentName: localStorage.getItem(LS_STUDENT_NAME) ?? '',
   };
+}
+
+function ViewerMark({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn('shrink-0 rounded-lg shadow-sm', className)}
+      style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }}
+      aria-hidden
+    />
+  );
 }
 
 export function ViewerClient({ id }: { id: string }) {
@@ -366,7 +374,7 @@ export function ViewerClient({ id }: { id: string }) {
     });
   }, [modoEntrega, socketInstance, id, guestIdentity.studentId, activeSlideIndex]);
 
-  // Función para determinar el desempeño según escala colombiana (1-5)
+  // Función para determinar el desempeño según escala de valoración (1-5)
   const getPerformance = (score: number) => {
     if (score < 3.0) return 'Bajo';
     if (score < 4.0) return 'Básico';
@@ -449,30 +457,26 @@ export function ViewerClient({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-screen items-center justify-center bg-[#1e1b4b]">
+        <Loader2 className="size-10 animate-spin text-white/70" aria-label="Cargando" />
       </div>
     );
   }
 
   if (error || !classData) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-        <p className="text-center text-muted-foreground">
-          Error al cargar la clase
-        </p>
+      <div className="flex min-h-screen items-center justify-center bg-[#1e1b4b] px-4">
+        <p className="text-center text-sm font-medium text-slate-300">Error al cargar la clase</p>
       </div>
     );
   }
 
   if (classData.status !== 'PUBLISHED') {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-        <div className="text-center">
-          <p className="text-lg font-medium text-foreground">
-            Esta clase no está disponible aún
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-[#1e1b4b] px-4">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-lg font-bold text-white">Esta clase no está disponible aún</p>
+          <p className="mt-2 text-sm text-slate-300">
             La clase será visible una vez que el docente la publique.
           </p>
         </div>
@@ -485,11 +489,11 @@ export function ViewerClient({ id }: { id: string }) {
     const scoreVal = typeof defaultScore === 'number' ? defaultScore : undefined;
 
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-4">
+      <div className="fixed inset-0 z-50 flex min-h-screen flex-col items-center justify-center bg-[#1e1b4b] p-4">
         {isFullscreen && (
           <button
             type="button"
-            className="fixed right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md bg-black/60 text-white transition hover:bg-black/75"
+            className="fixed right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
             onClick={() => {
               if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
@@ -499,40 +503,46 @@ export function ViewerClient({ id }: { id: string }) {
             <Minimize2 className="size-4" />
           </button>
         )}
-        
-        <div className="relative z-10 flex w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-3xl bg-zinc-900/80 p-8 shadow-2xl backdrop-blur-xl ring-1 ring-white/10 text-center animate-in fade-in zoom-in duration-500">
-          <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 ring-4 ring-indigo-500/30">
-            <PartyPopper className="size-10" />
-          </div>
-          
-          <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">¡Clase finalizada!</h1>
-          <p className="mb-6 text-lg text-zinc-400">
-            Gracias por participar, <span className="font-semibold text-white">{guestIdentity.studentName}</span>.
-          </p>
 
-          {scoreVal !== undefined && (
-            <div className="mb-8 flex w-full flex-col items-center rounded-2xl bg-zinc-800/50 p-6 ring-1 ring-white/5">
-              <span className="text-sm font-medium uppercase tracking-wider text-zinc-400">Tu nota final</span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-6xl font-black text-white">{scoreVal.toFixed(1)}</span>
-                <span className="text-xl font-medium text-zinc-500">/ 5.0</span>
-              </div>
-              <div className="mt-4 flex items-center justify-center">
-                <span className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold ring-1 ${
-                  scoreVal >= 4.6 ? 'bg-indigo-500/10 text-indigo-400 ring-indigo-500/20' :
-                  scoreVal >= 4.0 ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20' :
-                  scoreVal >= 3.0 ? 'bg-amber-500/10 text-amber-400 ring-amber-500/20' :
-                  'bg-red-500/10 text-red-400 ring-red-500/20'
-                }`}>
+        <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl animate-in fade-in zoom-in duration-500">
+          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-[#2563EB] to-[#60A5FA] shadow-lg">
+            <Trophy className="size-10 text-white" aria-hidden />
+          </div>
+
+          <h1 className="text-2xl font-extrabold text-[#1e1b4b]">¡Clase finalizada!</h1>
+
+          {scoreVal !== undefined ? (
+            <>
+              <p
+                className="mt-4 bg-gradient-to-r from-[#2563EB] to-[#60A5FA] bg-clip-text text-5xl font-extrabold tabular-nums text-transparent"
+                style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+              >
+                {scoreVal.toFixed(1)}
+              </p>
+              <p className="mt-1 text-sm font-medium text-[#6b7280]">/ 5.0</p>
+              <div className="mt-6 flex justify-center">
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold',
+                    scoreVal >= 4.7
+                      ? 'bg-[#dcfce7] text-[#16a34a]'
+                      : scoreVal >= 4.0
+                        ? 'bg-[#dbeafe] text-[#2563EB]'
+                        : scoreVal >= 3.0
+                          ? 'bg-[#fef3c7] text-[#d97706]'
+                          : 'bg-[#fee2e2] text-[#f87171]',
+                  )}
+                >
                   Desempeño {getPerformance(scoreVal)}
                 </span>
               </div>
-            </div>
-          )}
+            </>
+          ) : null}
 
           <button
+            type="button"
             onClick={() => router.push('/')}
-            className="w-full rounded-xl bg-indigo-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-indigo-500 hover:shadow-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 active:scale-95"
+            className="mt-8 flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] py-3 text-base font-bold text-white shadow-sm transition-opacity hover:opacity-95"
           >
             Salir
           </button>
@@ -541,13 +551,20 @@ export function ViewerClient({ id }: { id: string }) {
     );
   }
 
+  const headerTimerClass =
+    viewerTimeLeft < 5
+      ? 'text-[#f87171]'
+      : viewerTimeLeft < 10
+        ? 'text-[#fbbf24]'
+        : 'text-slate-300';
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950">
+    <div className="fixed inset-0 z-50 flex min-h-screen flex-col bg-[#1e1b4b]">
       {isFullscreen && (
         <button
           type="button"
           aria-label="Salir de pantalla completa"
-          className="fixed right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md bg-black/60 text-white transition hover:bg-black/75"
+          className="fixed right-3 top-3 z-[60] inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
           onClick={() => {
             if (document.fullscreenElement) {
               document.exitFullscreen().catch(() => {});
@@ -558,91 +575,118 @@ export function ViewerClient({ id }: { id: string }) {
         </button>
       )}
 
-      <main className="relative flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
-        {responsesLocked && (
-          <div className="absolute left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#FEE2E2] px-4 py-2 text-sm font-medium text-[#DC2626] shadow-md animate-in fade-in slide-in-from-top-4 duration-500">
-            <Lock className="size-4" />
-            El docente ha bloqueado las respuestas
-          </div>
-        )}
-
-        {modoEntrega === 'clase' && !liveTeacherSynced && slides.length > 0 ? (
-          <div
-            className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-zinc-950/85 px-6 text-center backdrop-blur-sm"
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2 className="size-10 animate-spin text-orange-400" aria-hidden />
-            <p className="max-w-sm text-base font-medium text-white">Esperando al docente…</p>
-            <p className="max-w-sm text-sm text-zinc-400">
-              En cuanto el docente avance la diapositiva, verás el contenido aquí.
-            </p>
-          </div>
-        ) : null}
-
-        {activeSlide ? (
-          <div className="relative aspect-video w-full max-h-full max-w-[177.78vh] shrink-0 overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-white/10 mx-auto">
-            <SlideCountdownOverlay
-              visible={viewerTimerDuration > 0}
-              timeLeft={viewerTimeLeft}
-              duration={viewerTimerDuration}
-            />
-            <div
-              className={cn(
-                'h-full w-full',
-                responsesLocked && 'pointer-events-none select-none opacity-[0.92]',
-              )}
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 bg-white/5 px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
+          <ViewerMark className="size-7 rounded-lg" />
+          <span className="truncate text-sm font-bold text-white">{classData.title}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {viewerTimerActive ? (
+            <span
+              className={cn('text-sm font-bold tabular-nums', headerTimerClass)}
+              aria-live="polite"
             >
-              <SlideRenderer
-                slide={activeSlide}
-                modo="viewer"
-                onResponse={handleResponse}
-              />
+              {viewerTimeLeft}s
+            </span>
+          ) : null}
+          {slides.length > 0 ? (
+            <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/70">
+              Slide {activeSlideIndex + 1} de {slides.length}
+            </span>
+          ) : null}
+        </div>
+      </header>
+
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        {responsesLocked ? (
+          <div className="pointer-events-none absolute left-1/2 top-3 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 px-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-[#2563EB]/40 bg-[#2563EB]/20 px-4 py-3 text-center text-sm font-medium text-slate-200">
+              <Lock className="size-4 shrink-0" aria-hidden />
+              <span>El docente ha bloqueado las respuestas</span>
             </div>
           </div>
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-muted-foreground">
-              No hay slides en esta clase
-            </p>
-          </div>
-        )}
-
-        {slides.length > 0 && modoEntrega !== 'clase' ? (
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
-            <button
-              type="button"
-              aria-label="Diapositiva anterior"
-              disabled={activeSlideIndex <= 0}
-              onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
-              className={cn(
-                'pointer-events-auto inline-flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg transition hover:bg-black/70 disabled:pointer-events-none disabled:opacity-35',
-              )}
-            >
-              <ChevronLeft className="size-6" />
-            </button>
-            <button
-              type="button"
-              aria-label="Diapositiva siguiente"
-              disabled={activeSlideIndex >= slides.length - 1}
-              onClick={() =>
-                setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))
-              }
-              className={cn(
-                'pointer-events-auto inline-flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg transition hover:bg-black/70 disabled:pointer-events-none disabled:opacity-35',
-              )}
-            >
-              <ChevronRight className="size-6" />
-            </button>
-          </div>
         ) : null}
-      </main>
 
-      {slides.length > 0 && (
-        <div className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-background/80 px-4 py-1.5 text-xs font-medium shadow-md backdrop-blur sm:text-sm border border-border">
-          Slide {activeSlideIndex + 1} de {slides.length}
+        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden">
+          {modoEntrega === 'clase' && !liveTeacherSynced && slides.length > 0 ? (
+            <div
+              className="absolute inset-0 z-40 flex items-center justify-center bg-[#1e1b4b] px-6"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+                <div className="mb-6 flex flex-col items-center gap-2">
+                  <ViewerMark className="size-12 rounded-xl" />
+                  <span className="text-lg font-extrabold text-white">
+                    Lumi<span className="text-white/50">na</span>
+                  </span>
+                </div>
+                <p className="text-lg font-bold text-white">Esperando al docente...</p>
+                <p className="mt-2 text-sm text-slate-300">
+                  En cuanto el docente avance la diapositiva, verás el contenido aquí.
+                </p>
+                <div className="mt-6 flex justify-center">
+                  <span className="size-3 rounded-full bg-[#2563EB] animate-pulse" aria-hidden />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-4 py-6">
+            {activeSlide ? (
+              <div className="relative aspect-video w-full max-h-[min(78vh,calc(100vw-2rem))] shrink-0 overflow-hidden rounded-2xl bg-background shadow-2xl shadow-black/30">
+                <div
+                  className={cn(
+                    'h-full w-full',
+                    responsesLocked && 'pointer-events-none select-none opacity-[0.92]',
+                  )}
+                >
+                  <SlideRenderer
+                    slide={activeSlide}
+                    modo="viewer"
+                    onResponse={handleResponse}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-1 items-center justify-center py-12">
+                <p className="text-center text-sm font-medium text-slate-300">
+                  No hay slides en esta clase
+                </p>
+              </div>
+            )}
+          </div>
+
+          {slides.length > 0 && modoEntrega !== 'clase' ? (
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
+              <button
+                type="button"
+                aria-label="Diapositiva anterior"
+                disabled={activeSlideIndex <= 0}
+                onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
+                className={cn(
+                  'pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-white/20 disabled:pointer-events-none disabled:opacity-35',
+                )}
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Diapositiva siguiente"
+                disabled={activeSlideIndex >= slides.length - 1}
+                onClick={() =>
+                  setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))
+                }
+                className={cn(
+                  'pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-white/20 disabled:pointer-events-none disabled:opacity-35',
+                )}
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </div>
+          ) : null}
         </div>
-      )}
+      </main>
 
       {responsePill && (
         <div

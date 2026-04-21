@@ -129,13 +129,12 @@ function ActivityBadge({ activityTypes }: { activityTypes: string[] }) {
       <TooltipTrigger asChild>
         {/* pointer-events-auto so the tooltip works even inside pointer-events-none wrappers */}
         <div
-          className="pointer-events-auto absolute bottom-1 right-1 z-20 flex items-center gap-0.5 rounded-full px-1 py-0.5"
-          style={{ backgroundColor: '#F97316', minWidth: 18, height: 18 }}
+          className="pointer-events-auto absolute bottom-1 right-1 z-20 flex min-h-[18px] min-w-[18px] items-center gap-0.5 rounded-full bg-[#dbeafe] px-1 py-0.5 text-[#2563EB]"
           aria-label={`Actividad: ${tooltipText}`}
         >
-          <Zap className="size-2.5 shrink-0 text-white" aria-hidden />
+          <Zap className="size-2.5 shrink-0" aria-hidden />
           {showCount && (
-            <span className="text-[9px] font-bold leading-none text-white">
+            <span className="text-[9px] font-bold leading-none">
               {activityTypes.length}
             </span>
           )}
@@ -421,11 +420,6 @@ export function SlideThumbnailPreview({
       )}
       style={{ aspectRatio: ratio, ...bgStyle }}
     >
-      <span
-        className="absolute left-0.5 top-0.5 z-[1] rounded-sm bg-black/50 px-1 text-[7px] font-medium tabular-nums text-white"
-      >
-        {order}
-      </span>
       {imageBlockUrl ? (
         main
       ) : (
@@ -461,6 +455,7 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
   liveContent?: unknown;
   className?: string;
 }) {
+  void isActive;
   const effectiveContent = liveContent ?? slide.content;
   const { hasVideo, videoUrl } = useMemo(
     () => findVideoBlockPreview(slide, effectiveContent),
@@ -486,11 +481,7 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
 
   return (
     <div
-      className={cn(
-        'relative w-full overflow-hidden rounded-md',
-        isActive ? 'ring-2 ring-blue-500' : 'ring-1 ring-zinc-600 hover:ring-zinc-400',
-        className,
-      )}
+      className={cn('relative w-full overflow-hidden rounded-xl', className)}
       style={{ aspectRatio: '16/9' }}
     >
       {hasVideo ? (
@@ -518,7 +509,7 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
           />
         </div>
       )}
-      <span className="absolute left-0.5 top-0.5 z-[1] rounded-sm bg-black/50 px-1 text-[7px] font-medium tabular-nums text-white">
+      <span className="absolute left-0.5 top-0.5 z-[1] rounded-md bg-black/45 px-1 text-[7px] font-medium tabular-nums text-white">
         {slide.order}
       </span>
       <ActivityBadge activityTypes={activityTypes} />
@@ -623,18 +614,21 @@ function SortableSlideItem({
             onSelect(idx);
           }
         }}
-        className="w-full cursor-pointer overflow-hidden rounded-none border border-border text-left transition-colors hover:border-primary/40"
+        className={cn(
+          'w-full cursor-pointer overflow-hidden rounded-xl border-2 text-left transition-colors',
+          isActive ? 'border-[#2563EB]' : 'border-transparent hover:border-[#93c5fd]',
+        )}
       >
         <SlideCanvasThumb
           slide={slide}
           isActive={isActive}
           liveContent={isActive ? liveContent : undefined}
-          className="rounded-none"
+          className="rounded-b-none rounded-t-xl"
         />
         {/* Label */}
-        <div className="px-2 py-1.5">
-          <p className="truncate text-[10px] font-medium leading-tight">{slide.title}</p>
-          <p className="text-[9px] text-muted-foreground">
+        <div className="border-t border-[#e5e7eb] bg-white px-2 py-1.5">
+          <p className="truncate text-[10px] font-semibold leading-tight text-[#1e1b4b]">{slide.title}</p>
+          <p className="text-[9px] text-[#6b7280]">
             {SLIDE_LABELS[slide.type] ?? slide.type}
           </p>
         </div>
@@ -775,13 +769,55 @@ export function SlidesPanel({
   }
 
   return (
-    <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-border bg-background">
+    <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-[#e5e7eb] bg-white">
       {/* Header */}
-      <div className="flex h-10 shrink-0 items-center border-b border-border px-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Slides
-        </span>
-        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{slides.length}</span>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#e5e7eb] px-3 py-2">
+        <span className="text-xs font-bold text-[#1e1b4b]">Slides</span>
+        <Popover open={addOpen} onOpenChange={setAddOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={isAddingSlide}
+              title={isAddingSlide ? 'Creando…' : 'Agregar slide'}
+              aria-label={isAddingSlide ? 'Creando slide' : 'Agregar slide'}
+              className={cn(
+                'flex size-7 shrink-0 items-center justify-center rounded-lg text-white shadow-sm',
+                'bg-[linear-gradient(135deg,#2563EB,#60A5FA)] transition-opacity hover:opacity-95',
+                isAddingSlide && 'cursor-not-allowed opacity-50',
+              )}
+            >
+              {isAddingSlide ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Plus className="size-3.5" aria-hidden />
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="end" className="w-auto p-2">
+            <p className="mb-2 text-center text-[10px] font-medium text-muted-foreground">Layout</p>
+            <div className="grid grid-cols-2 gap-2">
+              {CORE_SLIDE_LAYOUTS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={label}
+                  disabled={isAddingSlide}
+                  onClick={() => {
+                    onAddSlide(key);
+                    setAddOpen(false);
+                  }}
+                  className={cn(
+                    'flex items-center justify-center rounded-md border border-border bg-background p-1.5',
+                    'transition-colors hover:border-primary/50 hover:bg-accent',
+                    'disabled:pointer-events-none disabled:opacity-50',
+                  )}
+                >
+                  <LayoutThumbnail layoutKey={key} compact />
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Thumbnail list */}
@@ -822,57 +858,6 @@ export function SlidesPanel({
           </div>
         </SortableContext>
       </DndContext>
-
-      {/* Agregar slide — elige layout */}
-      <div className="shrink-0 border-t border-border p-2">
-        <Popover open={addOpen} onOpenChange={setAddOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              disabled={isAddingSlide}
-              className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-md border border-border',
-                'bg-background py-2 text-xs font-medium text-muted-foreground',
-                'transition-colors hover:border-primary/60 hover:bg-accent hover:text-primary',
-                isAddingSlide && 'cursor-not-allowed opacity-50',
-              )}
-            >
-              {isAddingSlide ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Plus className="size-3.5" />
-              )}
-              {isAddingSlide ? 'Creando…' : 'Agregar slide'}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="top" align="center" className="w-auto p-2">
-            <p className="mb-2 text-center text-[10px] font-medium text-muted-foreground">
-              Layout
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {CORE_SLIDE_LAYOUTS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  title={label}
-                  disabled={isAddingSlide}
-                  onClick={() => {
-                    onAddSlide(key);
-                    setAddOpen(false);
-                  }}
-                  className={cn(
-                    'flex items-center justify-center rounded-md border border-border bg-background p-1.5',
-                    'transition-colors hover:border-primary/50 hover:bg-accent',
-                    'disabled:pointer-events-none disabled:opacity-50',
-                  )}
-                >
-                  <LayoutThumbnail layoutKey={key} compact />
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
     </aside>
   );
 }

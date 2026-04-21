@@ -14,9 +14,9 @@ interface Theme {
 
 const THEMES: Theme[] = [
   { id: 'white',     label: 'Blanco',      bg: '#FFFFFF', previewBg: 'bg-white',        accentBg: 'bg-gray-200' },
-  { id: 'blue',      label: 'Azul suave',  bg: '#EFF6FF', previewBg: 'bg-blue-50',      accentBg: 'bg-blue-400' },
+  { id: 'blue',      label: 'Azul suave',  bg: '#F9FAFB', previewBg: 'bg-gray-50',      accentBg: 'bg-blue-400' },
   { id: 'green',     label: 'Verde suave', bg: '#F0FDF4', previewBg: 'bg-green-50',     accentBg: 'bg-green-400' },
-  { id: 'lavender',  label: 'Lavanda',     bg: '#F5F3FF', previewBg: 'bg-violet-50',    accentBg: 'bg-violet-400' },
+  { id: 'lavender',  label: 'Lavanda',     bg: '#F9FAFB', previewBg: 'bg-gray-50',    accentBg: 'bg-violet-400' },
   { id: 'dark',      label: 'Gris oscuro', bg: '#1F2937', previewBg: 'bg-gray-800',     accentBg: 'bg-gray-500' },
   { id: 'navy',      label: 'Azul marino', bg: '#1E3A5F', previewBg: 'bg-blue-900',     accentBg: 'bg-blue-500' },
   { id: 'terracota', label: 'Terracota',   bg: '#7C2D12', previewBg: 'bg-orange-900',   accentBg: 'bg-orange-500' },

@@ -48,13 +48,13 @@ function EditorView({ actividad }: { actividad: VideoInteractive }) {
   );
   const embedUrl = source.embedUrl;
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-700">
           Video interactivo
         </span>
         {actividad.plataforma && (
-          <span className="text-[10px] capitalize text-muted-foreground">
+          <span className="text-[10px] capitalize text-[#9ca3af]">
             {actividad.plataforma}
           </span>
         )}
@@ -72,26 +72,26 @@ function EditorView({ actividad }: { actividad: VideoInteractive }) {
           />
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2">
-          <span className="truncate text-xs text-muted-foreground">{actividad.urlVideo}</span>
+        <div className="flex items-center gap-2 rounded-md bg-[#f9fafb] px-3 py-2">
+          <span className="truncate text-xs text-[#9ca3af]">{actividad.urlVideo}</span>
         </div>
       )}
 
       {/* Questions list */}
       {actividad.preguntas.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
             Pausas programadas
           </p>
           {actividad.preguntas.map((q) => (
-            <div key={q.id} className="flex gap-3 rounded-md border border-border px-3 py-2">
-              <div className="flex items-center gap-1 shrink-0 text-[10px] tabular-nums text-muted-foreground">
+            <div key={q.id} className="flex gap-3 rounded-md border border-[#e5e7eb] px-3 py-2">
+              <div className="flex shrink-0 items-center gap-1 text-[10px] tabular-nums text-[#9ca3af]">
                 <Clock className="size-3" />
                 {formatTime(q.tiempoSegundos)}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-medium">{q.pregunta}</p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-[#9ca3af]">
                   {q.opciones.length} opciones
                   {q.pausarVideo && ' · pausa automática'}
                 </p>
@@ -127,7 +127,7 @@ function QuestionOverlay({
 
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="question-overlay">
-      <div className="w-80 max-w-[90%] space-y-4 rounded-xl bg-background p-5 shadow-2xl">
+      <div className="w-80 max-w-[90%] space-y-4 rounded-xl bg-white p-5 shadow-2xl">
         <p className="text-sm font-medium" data-testid="question-text">{question.pregunta}</p>
 
         <ul className="space-y-2">
@@ -142,19 +142,19 @@ function QuestionOverlay({
                   onClick={() => setSelected(op.id)}
                   data-testid="question-option"
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors',
-                    !feedback && !isSel && 'border-border hover:border-primary/50 hover:bg-accent',
-                    !feedback && isSel  && 'border-primary bg-primary/5',
+                    'flex w-full items-center gap-2 rounded-md border border-[#e5e7eb] px-3 py-2 text-left text-xs transition-colors',
+                    !feedback && !isSel && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
+                    !feedback && isSel  && 'border-[#2563EB] bg-[#dbeafe]',
                     showRes && isSel && op.esCorrecta  && 'border-green-400 bg-green-50 text-green-800',
                     showRes && isSel && !op.esCorrecta && 'border-red-400 bg-red-50 text-red-800',
                     showRes && !isSel && op.esCorrecta  && 'border-green-200 bg-green-50/50',
-                    showRes && !isSel && !op.esCorrecta && 'border-border opacity-40',
+                    showRes && !isSel && !op.esCorrecta && 'border-[#e5e7eb] opacity-40',
                   )}
                 >
                   {showRes && isSel && op.esCorrecta  && <CheckCircle className="size-3.5 shrink-0 text-green-600" />}
                   {showRes && isSel && !op.esCorrecta && <XCircle className="size-3.5 shrink-0 text-red-500" />}
                   {(!showRes || (!isSel && !op.esCorrecta)) && (
-                    <Circle className={cn('size-3.5 shrink-0', isSel ? 'text-primary' : 'opacity-30')} />
+                    <Circle className={cn('size-3.5 shrink-0', isSel ? 'text-[#2563EB]' : 'opacity-30')} />
                   )}
                   {showRes && !isSel && op.esCorrecta && <CheckCircle className="size-3.5 shrink-0 text-green-400 opacity-60" />}
                   {op.texto}
@@ -174,8 +174,8 @@ function QuestionOverlay({
               className={cn(
                 'rounded-md px-3 py-1.5 text-xs',
                 feedback.correct
-                  ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300'
-                  : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300',
+                  ? 'bg-green-50 text-green-800'
+                  : 'bg-red-50 text-red-800',
               )}
             >
               {feedback.correct ? '¡Correcto!' : 'Incorrecto.'}
@@ -225,7 +225,7 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
   }, [actividad.urlVideo, editorSyncKey]);
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4" data-testid="video-interactive-viewer">
+    <div className="space-y-3 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs" data-testid="video-interactive-viewer">
       {/* Video */}
       <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: '16/9' }}>
         {isDirect ? (
@@ -306,10 +306,10 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
       {/* Unknown embeds: show static questions list */}
       {!isDirect && !isYouTube && !isVimeo && actividad.preguntas.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">Preguntas del video</p>
+          <p className="text-xs font-medium text-[#9ca3af]">Preguntas del video</p>
           {actividad.preguntas.map((q) => (
-            <div key={q.id} className="flex gap-3 rounded-md border border-border px-3 py-2 text-xs">
-              <span className="shrink-0 tabular-nums text-muted-foreground">
+            <div key={q.id} className="flex gap-3 rounded-md border border-[#e5e7eb] px-3 py-2 text-xs">
+              <span className="shrink-0 tabular-nums text-[#9ca3af]">
                 {formatTime(q.tiempoSegundos)}
               </span>
               <span>{q.pregunta}</span>
@@ -454,12 +454,12 @@ export function VideoInteractiveActivityEditor({
   }
 
   return (
-    <div className="flex max-h-[min(60vh,500px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">
+    <div className="flex max-h-[min(60vh,500px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-800">
           Video Interactivo
         </span>
-        <span className="text-[10px] text-muted-foreground truncate">
+        <span className="truncate text-[10px] text-[#9ca3af]">
           Editor de pausas y preguntas
         </span>
       </div>
@@ -480,11 +480,11 @@ export function VideoInteractiveActivityEditor({
 
         <div className="space-y-3">
           {local.preguntas.map((q) => (
-            <div key={q.id} className="relative rounded-md border border-border bg-muted/10 p-3 shadow-sm">
+            <div key={q.id} className="relative rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-3 shadow-lumina-xs">
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-2 size-6 text-muted-foreground hover:text-destructive"
+                className="absolute right-2 top-2 size-6 text-[#9ca3af] hover:text-destructive"
                 onClick={() => removeQuestion(q.id)}
               >
                 <Trash2 className="size-3.5" />
@@ -513,7 +513,7 @@ export function VideoInteractiveActivityEditor({
                 </div>
               </div>
 
-              <div className="space-y-2 pl-2 border-l-2 border-border/50">
+              <div className="space-y-2 border-l-2 border-[#e5e7eb]/50 pl-2">
                 {q.opciones.map((opt) => (
                   <div key={opt.id} className="flex items-center gap-2">
                     <input
@@ -533,7 +533,7 @@ export function VideoInteractiveActivityEditor({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
+                      className="size-6 shrink-0 text-[#9ca3af] hover:text-destructive"
                       onClick={() => removeOption(q.id, opt.id)}
                       disabled={q.opciones.length <= 2}
                     >
@@ -545,7 +545,7 @@ export function VideoInteractiveActivityEditor({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-[10px] text-muted-foreground"
+                    className="h-6 px-2 text-[10px] text-[#9ca3af]"
                     onClick={() => addOption(q.id)}
                   >
                     <Plus className="mr-1 size-3" /> Agregar opción

@@ -138,15 +138,15 @@ export function OrderStepsActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(52vh,380px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(52vh,380px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800">
           Ordenar Pasos
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -154,7 +154,7 @@ export function OrderStepsActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -187,7 +187,7 @@ export function OrderStepsActivityEditor({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-[11px] font-medium">Secuencia Correcta</Label>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[10px] text-[#9ca3af]">
               {local.pasos.length}/10
             </span>
           </div>
@@ -200,7 +200,7 @@ export function OrderStepsActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-4 w-5 rounded-none text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    className="h-4 w-5 rounded-none text-[#9ca3af] hover:text-[#111827] disabled:opacity-30"
                     disabled={idx === 0}
                     onClick={() => moveStep(idx, 'up')}
                   >
@@ -210,7 +210,7 @@ export function OrderStepsActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-4 w-5 rounded-none text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    className="h-4 w-5 rounded-none text-[#9ca3af] hover:text-[#111827] disabled:opacity-30"
                     disabled={idx === local.pasos.length - 1}
                     onClick={() => moveStep(idx, 'down')}
                   >
@@ -218,8 +218,8 @@ export function OrderStepsActivityEditor({
                   </Button>
                 </div>
 
-                <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-background px-2 py-1">
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground">
+                <div className="flex flex-1 items-center gap-2 rounded-md border border-[#e5e7eb] bg-white px-2 py-1">
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[#f3f4f6] text-[9px] font-medium text-[#9ca3af]">
                     {idx + 1}
                   </span>
                   <Input
@@ -233,7 +233,7 @@ export function OrderStepsActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-6 shrink-0 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                    className="size-6 shrink-0 text-[#9ca3af] hover:text-destructive disabled:opacity-30"
                     disabled={local.pasos.length <= 2}
                     onClick={() => removeStep(paso.id)}
                   >
@@ -249,7 +249,7 @@ export function OrderStepsActivityEditor({
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 w-full border-dashed text-[11px] text-muted-foreground hover:text-foreground"
+              className="h-7 w-full border-dashed text-[11px] text-[#9ca3af] hover:text-[#111827]"
               onClick={addStep}
             >
               <Plus className="mr-1.5 size-3" />
@@ -258,7 +258,7 @@ export function OrderStepsActivityEditor({
           )}
         </div>
 
-        <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+        <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
           <Label htmlFor="os-show-numbers" className="cursor-pointer text-[11px] font-medium leading-tight">
             Mostrar números de orden al estudiante
           </Label>
@@ -297,20 +297,20 @@ function SortableStep({ id, content, index, showNumbers }: { id: string; content
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex w-full items-center gap-3 rounded-md border bg-background p-3 shadow-sm',
-        isDragging && 'opacity-50 ring-2 ring-primary'
+        'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] bg-white p-3 shadow-lumina-xs',
+        isDragging && 'opacity-50 ring-2 ring-[#2563EB]'
       )}
     >
       <button
         type="button"
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        className="cursor-grab touch-none text-[#9ca3af] hover:text-[#111827]"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="size-4" />
       </button>
       {showNumbers && (
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#f3f4f6] text-[10px] font-medium text-[#9ca3af]">
           {index + 1}
         </span>
       )}
@@ -366,9 +366,9 @@ export function OrderStepsViewer({
   if (!activity) return null;
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       {activity.instruccion && (
-        <p className="text-sm font-medium text-foreground">{activity.instruccion}</p>
+        <p className="text-sm font-medium text-[#111827]">{activity.instruccion}</p>
       )}
 
       <DndContext
@@ -392,7 +392,7 @@ export function OrderStepsViewer({
       </DndContext>
 
       {answered ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           <span>✓</span> ¡Respuesta enviada!
         </div>
       ) : (

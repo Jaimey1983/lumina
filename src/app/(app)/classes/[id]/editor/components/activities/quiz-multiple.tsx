@@ -22,16 +22,16 @@ interface Props {
 
 function EditorView({ actividad }: { actividad: QuizMultiple }) {
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
           Quiz
         </span>
         {actividad.multipleRespuesta && (
-          <span className="text-[10px] text-muted-foreground">múltiple respuesta</span>
+          <span className="text-[10px] text-[#9ca3af]">múltiple respuesta</span>
         )}
         {actividad.puntos !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
             {actividad.puntos} pts
           </span>
         )}
@@ -46,8 +46,8 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
             className={cn(
               'flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm',
               op.esCorrecta
-                ? 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300'
-                : 'border-border bg-muted/30 text-muted-foreground',
+                ? 'border-green-300 bg-green-50 text-green-800'
+                : 'border-[#e5e7eb] bg-[#f9fafb] text-[#9ca3af]',
             )}
           >
             <span className="flex items-center gap-2">
@@ -58,7 +58,7 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
               {op.texto}
             </span>
             {op.esCorrecta && (
-              <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+              <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
                 Correcta
               </span>
             )}
@@ -67,7 +67,7 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
       </ul>
 
       {actividad.retroalimentacion?.explicacion && (
-        <p className="rounded-md bg-muted/50 px-3 py-2 text-xs italic text-muted-foreground">
+        <p className="rounded-md bg-[#f9fafb] px-3 py-2 text-xs italic text-[#9ca3af]">
           {actividad.retroalimentacion.explicacion}
         </p>
       )}
@@ -88,8 +88,8 @@ function OptionIcon({
 }) {
   if (!submitted) {
     return isSelected
-      ? <CheckCircle className="size-4 shrink-0 text-primary" />
-      : <Circle className="size-4 shrink-0 text-muted-foreground/40" />;
+      ? <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+      : <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />;
   }
   if (isSelected && op.esCorrecta)  return <CheckCircle className="size-4 shrink-0 text-green-600" />;
   if (isSelected && !op.esCorrecta) return <XCircle className="size-4 shrink-0 text-red-500" />;
@@ -117,7 +117,7 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
     selected.every((id) => correctIds.includes(id));
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
+    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       <p className="text-sm font-medium leading-snug">{actividad.pregunta}</p>
 
       <ul className="space-y-2">
@@ -130,13 +130,13 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
                 onClick={() => toggle(op.id)}
                 disabled={submitted}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
-                  !submitted && !isSel && 'border-border hover:border-primary/50 hover:bg-accent',
-                  !submitted && isSel  && 'border-primary bg-primary/5',
-                  submitted && isSel && op.esCorrecta  && 'border-green-400 bg-green-50 text-green-800 dark:bg-green-950/20 dark:text-green-300',
-                  submitted && isSel && !op.esCorrecta && 'border-red-400 bg-red-50 text-red-800 dark:bg-red-950/20 dark:text-red-300',
-                  submitted && !isSel && op.esCorrecta  && 'border-green-200 bg-green-50/50 opacity-80 dark:border-green-800',
-                  submitted && !isSel && !op.esCorrecta && 'border-border opacity-40',
+                  'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] px-3 py-2.5 text-left text-sm transition-colors',
+                  !submitted && !isSel && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
+                  !submitted && isSel  && 'border-[#2563EB] bg-[#dbeafe]',
+                  submitted && isSel && op.esCorrecta  && 'border-green-400 bg-green-50 text-green-800',
+                  submitted && isSel && !op.esCorrecta && 'border-red-400 bg-red-50 text-red-800',
+                  submitted && !isSel && op.esCorrecta  && 'border-green-200 bg-green-50/50 opacity-80',
+                  submitted && !isSel && !op.esCorrecta && 'border-[#e5e7eb] opacity-40',
                 )}
               >
                 <OptionIcon op={op} isSelected={isSel} submitted={submitted} />
@@ -156,8 +156,8 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
           className={cn(
             'rounded-md px-3 py-2 text-sm',
             isCorrect
-              ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300'
-              : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300',
+              ? 'bg-green-50 text-green-800'
+              : 'bg-red-50 text-red-800',
           )}
         >
           {isCorrect
@@ -228,7 +228,7 @@ export function QuizMultipleViewer({
     selected && hasDefinedCorrect ? isQuizOverallCorrect(activity, selected) : false;
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
+    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
       <ul className="space-y-2">
         {activity.opciones.map((op, idx) => {
@@ -248,13 +248,13 @@ export function QuizMultipleViewer({
                 onClick={() => handleSelect(idx)}
                 disabled={answered}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
-                  !answered && 'border-border hover:border-primary/50 hover:bg-accent',
+                  'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] px-3 py-2.5 text-left text-sm transition-colors',
+                  !answered && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
                   answered &&
                     !hasDefinedCorrect &&
                     isSel &&
-                    'border-primary bg-primary/5',
-                  answered && !hasDefinedCorrect && !isSel && 'border-border opacity-40',
+                    'border-[#2563EB] bg-[#dbeafe]',
+                  answered && !hasDefinedCorrect && !isSel && 'border-[#e5e7eb] opacity-40',
                   selectedRight &&
                     'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
                   selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
@@ -264,7 +264,7 @@ export function QuizMultipleViewer({
                     !isSel &&
                     !showCorrectReveal &&
                     !selectedRight &&
-                    'border-border opacity-50',
+                    'border-[#e5e7eb] opacity-50',
                 )}
               >
                 {showAuto ? (
@@ -277,7 +277,7 @@ export function QuizMultipleViewer({
                           <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
                         )
                       ) : (
-                        <Circle className="size-4 shrink-0 text-muted-foreground/40" />
+                        <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
                       )}
                       <span className="min-w-0 flex-1">{op.texto}</span>
                     </span>
@@ -294,9 +294,9 @@ export function QuizMultipleViewer({
                 ) : (
                   <>
                     {isSel ? (
-                      <CheckCircle className="size-4 shrink-0 text-primary" />
+                      <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
                     ) : (
-                      <Circle className="size-4 shrink-0 text-muted-foreground/40" />
+                      <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
                     )}
                     {op.texto}
                   </>
@@ -390,15 +390,15 @@ export function QuizMultipleActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
           Quiz
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -406,7 +406,7 @@ export function QuizMultipleActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -453,7 +453,7 @@ export function QuizMultipleActivityEditor({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
                   onClick={() => removeOption(op.id)}
                 >
                   <Trash2 className="size-3.5" />
@@ -474,7 +474,7 @@ export function QuizMultipleActivityEditor({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
           <Label className="cursor-pointer text-[11px] font-medium leading-tight">
             Mezclar opciones
           </Label>

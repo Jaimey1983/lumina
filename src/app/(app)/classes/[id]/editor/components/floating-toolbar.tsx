@@ -10,14 +10,12 @@ import {
   Film,
   ImageIcon,
   Mic,
-  Redo2,
   Send,
   Share2,
   Shapes,
   Table,
   Trash2,
   Type,
-  Undo2,
   Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -309,7 +307,7 @@ export function SlideInsertionToolbar({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0"
+          className="size-8 shrink-0 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
           title="Texto"
           aria-label="Insertar texto"
           disabled={disabled}
@@ -324,7 +322,7 @@ export function SlideInsertionToolbar({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0"
+              className="size-8 shrink-0 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
               title={restrictToTextOnly ? 'Solo texto en slides de actividad' : 'Imagen'}
               aria-label="Insertar imagen"
               disabled={mediaLocked}
@@ -371,7 +369,7 @@ export function SlideInsertionToolbar({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0"
+              className="size-8 shrink-0 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
               title={restrictToTextOnly ? 'Solo texto en slides de actividad' : 'Vídeo'}
               aria-label="Insertar vídeo"
               disabled={mediaLocked}
@@ -413,7 +411,7 @@ export function SlideInsertionToolbar({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0"
+          className="size-8 shrink-0 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
           title={restrictToTextOnly ? 'Solo texto en slides de actividad' : 'Forma'}
           aria-label="Insertar forma"
           disabled={mediaLocked}
@@ -428,7 +426,7 @@ export function SlideInsertionToolbar({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0"
+              className="size-8 shrink-0 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
               title={restrictToTextOnly ? 'Solo texto en slides de actividad' : 'GIF'}
               aria-label="Insertar GIF"
               disabled={mediaLocked}
@@ -484,7 +482,7 @@ export function SlideInsertionToolbar({
 // ─── Editor chrome (deshacer, ordenar, diseño, tabla, audio, publicar) ────────
 
 function ToolSep() {
-  return <div className="mx-1 h-5 w-px shrink-0 bg-border" />;
+  return <div className="mx-1 h-4 w-px shrink-0 bg-[#e5e7eb]" />;
 }
 
 function ToolBtn({
@@ -508,13 +506,13 @@ function ToolBtn({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'flex items-center justify-center rounded-md p-1.5 outline-none',
-        'text-muted-foreground hover:bg-accent hover:text-foreground',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        'flex items-center justify-center rounded-lg p-1.5 outline-none',
+        'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+        'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1',
         'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
         'motion-reduce:transition-none',
         'disabled:pointer-events-none disabled:opacity-40',
-        active && 'bg-accent text-foreground',
+        active && 'bg-[#f9fafb] text-[#2563EB]',
       )}
     >
       {children}
@@ -555,6 +553,10 @@ export function SlideEditorChrome({
   onChangeFondo,
   onInsertAudio,
 }: SlideEditorChromeProps) {
+  void canUndo;
+  void canRedo;
+  void onUndo;
+  void onRedo;
   const params = useParams();
   const classId = typeof params?.id === 'string' ? params.id : '';
   const queryClient = useQueryClient();
@@ -683,24 +685,15 @@ export function SlideEditorChrome({
 
       <div className="flex h-9 w-full min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
-        <ToolBtn label="Deshacer" disabled={disabled || !canUndo} onClick={onUndo}>
-          <Undo2 className="size-4" />
-        </ToolBtn>
-        <ToolBtn label="Rehacer" disabled={disabled || !canRedo} onClick={onRedo}>
-          <Redo2 className="size-4" />
-        </ToolBtn>
-
-        <ToolSep />
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               disabled={reorderDisabled}
               className={cn(
-                'flex items-center gap-1 rounded-md px-2 py-1 text-xs outline-none',
-                'text-muted-foreground hover:bg-accent hover:text-foreground',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium outline-none',
+                'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+                'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1',
                 'disabled:pointer-events-none disabled:opacity-40',
               )}
             >
@@ -742,9 +735,9 @@ export function SlideEditorChrome({
               type="button"
               disabled={disabled}
               className={cn(
-                'flex items-center gap-1 rounded-md px-2 py-1 text-xs outline-none',
-                'text-muted-foreground hover:bg-accent hover:text-foreground',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium outline-none',
+                'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+                'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1',
                 'disabled:pointer-events-none disabled:opacity-40',
               )}
             >
@@ -754,13 +747,13 @@ export function SlideEditorChrome({
           </PopoverTrigger>
           <PopoverContent className="w-80 space-y-4 p-3" align="start">
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-foreground">Color sólido</p>
+              <p className="text-xs font-semibold text-[#111827]">Color sólido</p>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={solidColor}
                   onChange={(ev) => setSolidColor(ev.target.value)}
-                  className="h-9 w-14 cursor-pointer rounded border border-border bg-transparent"
+                  className="h-9 w-14 cursor-pointer rounded border border-[#e5e7eb] bg-transparent"
                   aria-label="Color de fondo"
                 />
                 <Button type="button" size="sm" onClick={applySolidFondo}>
@@ -770,27 +763,27 @@ export function SlideEditorChrome({
             </div>
             <Separator />
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-foreground">Gradiente</p>
+              <p className="text-xs font-semibold text-[#111827]">Gradiente</p>
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="color"
                   value={grad.desde}
                   onChange={(ev) => setGrad((g) => ({ ...g, desde: ev.target.value }))}
-                  className="h-8 w-12 cursor-pointer rounded border border-border"
+                  className="h-8 w-12 cursor-pointer rounded border border-[#e5e7eb]"
                   aria-label="Color inicial"
                 />
                 <input
                   type="color"
                   value={grad.hasta}
                   onChange={(ev) => setGrad((g) => ({ ...g, hasta: ev.target.value }))}
-                  className="h-8 w-12 cursor-pointer rounded border border-border"
+                  className="h-8 w-12 cursor-pointer rounded border border-[#e5e7eb]"
                   aria-label="Color final"
                 />
               </div>
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              <label className="flex flex-col gap-1 text-xs text-[#6b7280]">
                 Dirección
                 <select
-                  className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+                  className="rounded-md border border-[#e5e7eb] bg-white px-2 py-1.5 text-sm text-[#111827]"
                   value={grad.direccion}
                   onChange={(ev) =>
                     setGrad((g) => ({ ...g, direccion: ev.target.value }))
@@ -826,15 +819,15 @@ export function SlideEditorChrome({
         </ToolBtn>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 border-l border-border ps-2">
+        <div className="flex shrink-0 items-center gap-2 border-l border-[#e5e7eb] ps-2">
           <button
             type="button"
             disabled={!classId || !cls || publishMutation.isPending || disabled}
             onClick={handlePublishOrShare}
             className={cn(
-              'flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium outline-none',
-              'text-muted-foreground hover:bg-accent hover:text-foreground',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+              'flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium outline-none',
+              'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+              'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1',
               'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
               'motion-reduce:transition-none',
               'disabled:pointer-events-none disabled:opacity-50',
@@ -861,12 +854,12 @@ export function SlideEditorChrome({
           </DialogHeader>
           <DialogBody className="space-y-3">
             <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">Código</p>
+              <p className="mb-1 text-xs font-medium text-[#6b7280]">Código</p>
               <p className="font-mono text-sm font-semibold tracking-wide">{codigo || '—'}</p>
             </div>
             <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">Enlace</p>
-              <p className="break-all font-mono text-xs text-foreground">{shareUrl || '—'}</p>
+              <p className="mb-1 text-xs font-medium text-[#6b7280]">Enlace</p>
+              <p className="break-all font-mono text-xs text-[#111827]">{shareUrl || '—'}</p>
             </div>
           </DialogBody>
           <DialogFooter className="gap-2 sm:gap-2">
@@ -918,15 +911,15 @@ export function FloatingToolbar({
         transform: 'translateX(-50%)',
       }}
       className={cn(
-        'flex items-center gap-0.5 rounded-md border border-border bg-background px-1 py-1 shadow-lg',
+        'flex items-center gap-1 rounded-2xl border border-[#e5e7eb] bg-white px-3 py-1.5 shadow-sm',
       )}
     >
       {blockType && (
         <>
-          <span className="px-2 text-[10px] font-medium capitalize text-muted-foreground">
+          <span className="px-1.5 text-[10px] font-medium capitalize text-[#9ca3af]">
             {blockType}
           </span>
-          <Separator orientation="vertical" className="h-5" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-[#e5e7eb]" />
         </>
       )}
 
@@ -934,7 +927,7 @@ export function FloatingToolbar({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-7"
+        className="size-7 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
         title="Subir"
         aria-label="Subir bloque"
         onClick={() => onMoveUp?.(blockId)}
@@ -946,7 +939,7 @@ export function FloatingToolbar({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-7"
+        className="size-7 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
         title="Bajar"
         aria-label="Bajar bloque"
         onClick={() => onMoveDown?.(blockId)}
@@ -954,13 +947,13 @@ export function FloatingToolbar({
         <ArrowDown className="size-3.5" />
       </Button>
 
-      <Separator orientation="vertical" className="h-5" />
+      <div className="mx-1 h-4 w-px shrink-0 bg-[#e5e7eb]" />
 
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-7"
+        className="size-7 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
         title="Duplicar"
         aria-label="Duplicar bloque"
         onClick={() => onDuplicate?.(blockId)}
@@ -972,7 +965,7 @@ export function FloatingToolbar({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-7 text-destructive hover:text-destructive"
+        className="size-7 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB] hover:text-red-600"
         title="Eliminar"
         aria-label="Eliminar bloque"
         onClick={() => onDelete?.(blockId)}

@@ -66,7 +66,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       <aside
         ref={ref}
         className={cn(
-          'flex shrink-0 flex-col overflow-hidden border-l border-border bg-background shadow-xl',
+          'flex shrink-0 flex-col overflow-hidden border-l border-[#e5e7eb] bg-white shadow-xl',
           'motion-safe:transition-[width,box-shadow,opacity] motion-safe:duration-200 motion-safe:ease-out',
           'motion-reduce:transition-none',
           activePanel ? 'w-64 opacity-100' : 'w-0 border-transparent opacity-0 shadow-none',
@@ -82,8 +82,8 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
         >
 
           {/* Header */}
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="flex h-10 shrink-0 items-center justify-between border-b border-[#e5e7eb] px-4">
+            <span className="border-b-2 border-[#2563EB] pb-0.5 text-xs font-bold leading-tight text-[#2563EB]">
               {PANEL_LABELS[activePanel]}
             </span>
             <Button

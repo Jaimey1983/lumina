@@ -15,25 +15,25 @@ const SCALE_STYLES: Record<ColombianGradeLevel, ColombianGradeScale> = {
     level: 'Bajo',
     label: 'Bajo',
     variant: 'destructive',
-    className: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/70 dark:text-red-300',
+    className: 'border-0 bg-[#fee2e2] text-[#f87171] dark:border-red-900 dark:bg-red-950/70 dark:text-red-300',
   },
   Basico: {
     level: 'Basico',
     label: 'Básico',
     variant: 'warning',
-    className: 'border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950/70 dark:text-yellow-300',
+    className: 'border-0 bg-[#fef3c7] text-[#d97706] dark:border-amber-900 dark:bg-amber-950/70 dark:text-amber-300',
   },
   Alto: {
     level: 'Alto',
     label: 'Alto',
-    variant: 'success',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-300',
+    variant: 'primary',
+    className: 'border-0 bg-[#dbeafe] text-[#2563EB] dark:border-blue-900 dark:bg-blue-950/70 dark:text-blue-300',
   },
   Superior: {
     level: 'Superior',
     label: 'Superior',
-    variant: 'primary',
-    className: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/70 dark:text-blue-300',
+    variant: 'success',
+    className: 'border-0 bg-[#dcfce7] text-[#16a34a] dark:border-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-300',
   },
 };
 

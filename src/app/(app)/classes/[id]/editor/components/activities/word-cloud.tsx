@@ -87,15 +87,15 @@ export function WordCloudActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(52vh,360px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(52vh,360px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800">
           Nube de palabras
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -103,7 +103,7 @@ export function WordCloudActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -175,7 +175,7 @@ export function WordCloudActivityEditor({
         </div>
 
         <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
             <Label htmlFor="wc-moderate" className="cursor-pointer text-[11px] font-medium leading-tight">
               Moderar respuestas
             </Label>
@@ -187,7 +187,7 @@ export function WordCloudActivityEditor({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
             <Label htmlFor="wc-realtime" className="cursor-pointer text-[11px] font-medium leading-tight">
               Mostrar resultados en tiempo real
             </Label>
@@ -240,8 +240,8 @@ export function WordCloudViewer({
   if (!activity) return null;
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-      <p className="text-center text-base font-medium text-foreground">
+    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
+      <p className="text-center text-base font-medium text-[#111827]">
         {activity.instruccion || '¿En una palabra, cómo describes el tema de hoy?'}
       </p>
 
@@ -262,17 +262,17 @@ export function WordCloudViewer({
       </form>
 
       {activity.maxPalabrasPorUsuario && (
-        <p className="mt-[-1rem] text-center text-xs text-muted-foreground">
+        <p className="mt-[-1rem] text-center text-xs text-[#9ca3af]">
           {submittedWords.length} de {activity.maxPalabrasPorUsuario} palabras enviadas
         </p>
       )}
 
       {activity.mostrarTiempoReal !== false && Object.entries(wordCounts).length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t py-8">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t border-[#e5e7eb] py-8">
           {Object.entries(wordCounts).map(([w, count]) => (
             <span
               key={w}
-              className="font-bold text-primary transition-all"
+              className="font-bold text-[#2563EB] transition-all"
               style={{ fontSize: `${Math.min(3, 1 + (count - 1) * 0.2)}rem`, opacity: Math.min(1, 0.5 + count * 0.2) }}
             >
               {w}

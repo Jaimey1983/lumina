@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +10,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   BookOpen,
-  Eye,
   GraduationCap,
   Pencil,
   Plus,
@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 
 import { SlideThumbnailPreview } from '@/app/(app)/classes/[id]/editor/components/slides-panel';
+import { STATUS_BADGE_STYLE } from '@/app/(app)/classes/class-status-badge-styles';
 import { useCourses } from '@/hooks/api/use-courses';
 import {
   useClasses,
@@ -90,10 +91,6 @@ function statusVariant(status: string) {
 
 function isPublishedStatus(status: string) {
   return status?.toUpperCase() === 'PUBLISHED';
-}
-
-function isDraftStatus(status: string) {
-  return status?.toUpperCase() === 'DRAFT';
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -287,15 +284,24 @@ function DeleteDialog({
 
 // ─── Class card (grid) ────────────────────────────────────────────────────────
 
+const EMPTY_GRADIENTS = [
+  'linear-gradient(135deg, #dbeafe, #dbeafe)',
+  'linear-gradient(135deg, #dbeafe, #e0f2fe)',
+  'linear-gradient(135deg, #fef3c7, #dbeafe)',
+];
+
 function ClassCard({
   cls,
   courseId,
   onDelete,
+  index,
 }: {
   cls: Class;
   courseId: string;
   onDelete: (c: Class) => void;
+  index: number;
 }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: detail, isLoading: detailLoading } = useClass(cls.id);
 
@@ -318,16 +324,44 @@ function ClassCard({
   });
 
   const published = isPublishedStatus(cls.status);
-  const draft = isDraftStatus(cls.status);
+
+  const emptyGradient = EMPTY_GRADIENTS[index % EMPTY_GRADIENTS.length];
+  const badgeStyle = STATUS_BADGE_STYLE[cls.status?.toUpperCase()] ?? STATUS_BADGE_STYLE.DRAFT;
 
   return (
     <div
-      className={cn(
-        'group cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-card shadow-md',
-        'transition-shadow hover:shadow-lg dark:border-zinc-700',
-      )}
+      role="link"
+      tabIndex={0}
+      aria-label={`Abrir clase: ${cls.title}`}
+      className="group cursor-pointer overflow-hidden bg-white"
+      style={{
+        border: '1px solid #e5e7eb',
+        borderRadius: '10px',
+        boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.06)',
+        transition: 'all 200ms ease',
+      }}
+      onClick={() => router.push(`/classes/${cls.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          router.push(`/classes/${cls.id}`);
+        }
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        el.style.borderColor = '#d1d5db';
+        el.style.boxShadow = '0px 6px 20px rgba(0, 0, 0, 0.10)';
+        el.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.borderColor = '#e5e7eb';
+        el.style.boxShadow = '0px 2px 6px rgba(0, 0, 0, 0.06)';
+        el.style.transform = 'translateY(0)';
+      }}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
+      {/* Thumbnail */}
+      <div className="relative w-full overflow-hidden" style={{ height: '180px' }}>
         {detailLoading ? (
           <Skeleton className="absolute inset-0 size-full rounded-none" />
         ) : firstSlide ? (
@@ -340,11 +374,19 @@ function ClassCard({
             className="rounded-none"
           />
         ) : (
-          <div className="flex size-full items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
-            <BookOpen className="size-14 text-white/75" aria-hidden />
+          <div
+            className="flex size-full items-center justify-center"
+            style={{ background: emptyGradient }}
+          >
+            <BookOpen
+              className="size-12"
+              style={{ color: '#2563EB', opacity: 0.4 }}
+              aria-hidden
+            />
           </div>
         )}
 
+        {/* Hover actions */}
         <div
           className={cn(
             'absolute bottom-2 right-2 z-10 flex items-center gap-2',
@@ -352,14 +394,6 @@ function ClassCard({
             'group-hover:pointer-events-auto group-hover:opacity-100',
           )}
         >
-          <Link
-            href={`/classes/${cls.id}`}
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Ver clase"
-            className="inline-flex text-white/70 transition-colors hover:text-blue-400"
-          >
-            <Eye size={18} className="cursor-pointer" aria-hidden />
-          </Link>
           <Link
             href={`/classes/${cls.id}/editor`}
             onClick={(e) => e.stopPropagation()}
@@ -399,26 +433,24 @@ function ClassCard({
         </div>
       </div>
 
-      <div className="border-t border-border/60 p-3">
-        <p className="truncate font-medium text-foreground">{cls.title}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          <Badge
-            variant={
-              published ? 'success' : draft ? 'secondary' : statusVariant(cls.status)
-            }
-            appearance="light"
-            className="text-[10px]"
+      {/* Card info */}
+      <div className="p-3">
+        <p className="truncate text-sm font-semibold text-[#111827]">{cls.title}</p>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
           >
-            {published ? 'Publicada' : draft ? 'Borrador' : statusLabel(cls.status)}
-          </Badge>
+            {statusLabel(cls.status)}
+          </span>
+          <span className="text-xs text-[#9ca3af] shrink-0">
+            {new Date(cls.createdAt).toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </span>
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          {new Date(cls.createdAt).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })}
-        </p>
       </div>
     </div>
   );
@@ -435,8 +467,8 @@ function ClassesGrid({
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {classes.map((cls) => (
-        <ClassCard key={cls.id} cls={cls} courseId={courseId} onDelete={onDelete} />
+      {classes.map((cls, index) => (
+        <ClassCard key={cls.id} cls={cls} courseId={courseId} onDelete={onDelete} index={index} />
       ))}
     </div>
   );
@@ -466,24 +498,35 @@ export function ClassesClient() {
   }
 
   return (
-    <div className="container py-6 space-y-4">
+    <div className="w-full space-y-4 p-6">
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Clases</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl font-bold text-[#111827]">Clases</h1>
+          <p className="text-sm text-[#6b7280] mt-1">
             Gestiona las clases de tus cursos.
           </p>
         </div>
-        <Button
+        <button
+          type="button"
           disabled={!selectedCourseId}
           onClick={() => {
             setFormOpen(true);
           }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: '#2563EB',
+            borderRadius: '6px',
+            border: 'none',
+            cursor: selectedCourseId ? 'pointer' : 'not-allowed',
+            transition: 'background-color 150ms ease',
+          }}
+          onMouseEnter={(e) => { if (selectedCourseId) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1d4ed8'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2563EB'; }}
         >
           <Plus className="size-4" />
           Nueva clase
-        </Button>
+        </button>
       </div>
 
       {/* Course selector */}

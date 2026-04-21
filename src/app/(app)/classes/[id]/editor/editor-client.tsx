@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  ArrowLeft,
+  Check,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -12,9 +12,11 @@ import {
   Lock,
   LockOpen,
   Monitor,
+  Redo2,
   Save,
   Share2,
   Timer,
+  Undo2,
   Users,
   Zap,
 } from 'lucide-react';
@@ -60,7 +62,6 @@ import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
 import { CanvasArea, type CanvasAreaHandle } from './components/canvas-area';
-import { EditorClassCodeSubtitle } from './components/editor-toolbar';
 import { RightRail, type RightPanelId } from './components/right-rail';
 import { RightFlyoutPanel } from './components/right-flyout-panel';
 import {
@@ -1528,88 +1529,137 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       {/* ── Editor a pantalla completa — md+ (canvas centrado en el espacio flex) ─ */}
       <div className="hidden min-h-0 flex-1 flex-col overflow-hidden bg-editor-shell md:flex">
 
-        {/* ── TOPBAR ── h-14 ──────────────────────────────────────────────── */}
+        {/* ── TOPBAR Lumina 2.0 ── */}
         <header
           ref={editorHeaderRef}
-          className="flex h-14 shrink-0 items-center border-b border-border bg-background"
+          className="flex h-12 shrink-0 items-center gap-3 border-b border-[#e5e7eb] bg-white px-4"
         >
-
-          {/* Zona Volver — 4rem fijo, alineada con IconRail del cuerpo */}
-          <div className="flex h-full w-16 min-w-16 max-w-16 shrink-0 items-center justify-center bg-background">
-            <Button variant="ghost" size="icon" asChild className="shrink-0">
-              <Link href={`/classes/${classId}`} aria-label="Volver a la clase">
-                <ArrowLeft className="size-4" />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="h-5 w-px bg-border" />
-
-          {/* Título + desempeño — flex-1 */}
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-3">
+          {/* Izquierda: marca + título + código */}
+          <div className="flex min-w-0 shrink-0 items-center gap-3">
+            <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
+              <span
+                className="flex size-8 shrink-0 rounded-lg"
+                style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }}
+                aria-hidden
+              />
+              <span className="hidden text-base font-extrabold leading-tight tracking-tight sm:inline">
+                <span className="text-[#1e1b4b]">Lumi</span>
+                <span
+                  className="bg-[linear-gradient(135deg,#2563EB,#60A5FA)] bg-clip-text text-transparent"
+                  style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                >
+                  na
+                </span>
+              </span>
+            </Link>
+            <div className="h-5 w-px shrink-0 bg-[#e5e7eb]" aria-hidden />
             {isLoading ? (
-              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-48 max-w-[12rem]" />
             ) : (
               <>
-                <p
-                  className={cn('truncate text-sm font-semibold leading-tight')}
-                  title={desempeno ? desempeno.enunciado : undefined}
-                >
-                  {cls?.title ?? 'Editor'}
-                </p>
-                <EditorClassCodeSubtitle codigo={cls?.codigo} />
+                <input
+                  readOnly
+                  value={cls?.title ?? 'Editor'}
+                  title={desempeno ? desempeno.enunciado : (cls?.title ?? undefined)}
+                  aria-label="Título de la clase"
+                  className="w-48 max-w-[12rem] truncate border-none bg-transparent text-sm font-bold text-[#1e1b4b] outline-none"
+                />
+                {cls?.codigo?.trim() ? (
+                  <span className="shrink-0 rounded-lg bg-[#f9fafb] px-2 py-0.5 text-xs font-bold text-[#2563EB]">
+                    {cls.codigo.toUpperCase().startsWith('LUM')
+                      ? cls.codigo.toUpperCase()
+                      : `LUM-${cls.codigo.toUpperCase()}`}
+                  </span>
+                ) : null}
               </>
             )}
           </div>
 
-          {/* Botones acción — shrink-0 */}
-          <div className="flex shrink-0 items-center gap-2 pr-3">
-            {/* Socket connection indicator */}
-            <span
-              title={isConnected ? 'Conectado en tiempo real' : 'Sin conexión en tiempo real'}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          {/* Centro: deshacer / rehacer + autoguardado */}
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+            <button
+              type="button"
+              title="Deshacer"
+              aria-label="Deshacer"
+              className="rounded-lg p-1.5 text-[#93c5fd] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+              onClick={() => {
+                canvasAreaRef.current?.undo();
+              }}
             >
-              <span
-                className={cn(
-                  'size-2 rounded-full',
-                  isConnected ? 'bg-green-500' : 'bg-muted-foreground/40',
-                )}
-              />
+              <Undo2 className="size-4 shrink-0" aria-hidden />
+            </button>
+            <button
+              type="button"
+              title="Rehacer"
+              aria-label="Rehacer"
+              className="rounded-lg p-1.5 text-[#93c5fd] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+              onClick={() => {
+                canvasAreaRef.current?.redo();
+              }}
+            >
+              <Redo2 className="size-4 shrink-0" aria-hidden />
+            </button>
+            <div className="h-5 w-px shrink-0 bg-[#e5e7eb]" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 text-xs text-[#6b7280]">
+              {saveError ? (
+                <span className="text-destructive">Error al guardar</span>
+              ) : autosaveIsSaving || updateSlide.isPending ? (
+                <>
+                  <Loader2 className="size-3.5 shrink-0 animate-spin text-[#2563EB]" aria-hidden />
+                  <span>Guardando…</span>
+                </>
+              ) : autosaveDirty ? (
+                <span>Cambios pendientes…</span>
+              ) : (
+                <>
+                  <Check className="size-3.5 shrink-0 text-green-600" aria-hidden />
+                  <span>Guardado</span>
+                </>
+              )}
             </span>
+          </div>
 
+          {/* Derecha: modo, timer, compartir, sesión, pill, utilidades */}
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {canConfigureLiveTimer ? (
-              <div className="flex items-center gap-1.5">
-                <Select
-                  value={modoEntrega}
-                  disabled={isLoading || sessionLoading || sessionActive}
-                  onValueChange={(v) => void handleModoEntregaChange(v as ClassModoEntrega)}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <div
+                  className="flex rounded-xl border border-[#e5e7eb] bg-[#fafafa] p-0.5"
+                  role="group"
+                  aria-label="Modo de clase"
                 >
-                  <SelectTrigger
-                    className="h-8 w-[10.75rem] text-xs"
-                    size="sm"
-                    aria-label="Modo de clase"
-                  >
-                    <SelectValue placeholder="Modo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="clase" className="text-xs">
-                      Clase en vivo
-                    </SelectItem>
-                    <SelectItem value="presentacion" className="text-xs">
-                      Presentación
-                    </SelectItem>
-                    <SelectItem value="autonomo" className="text-xs">
-                      Autónomo
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Timer className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  {(
+                    [
+                      { value: 'clase' as const, label: 'clase' },
+                      { value: 'presentacion' as const, label: 'presentacion' },
+                      { value: 'autonomo' as const, label: 'autonomo' },
+                    ] as const
+                  ).map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={isLoading || sessionLoading || sessionActive}
+                      onClick={() => void handleModoEntregaChange(value)}
+                      className={cn(
+                        'rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors',
+                        modoEntrega === value
+                          ? 'bg-white text-[#2563EB] shadow-sm'
+                          : 'text-[#9ca3af] hover:text-[#2563EB]',
+                        (isLoading || sessionLoading || sessionActive) &&
+                          'pointer-events-none opacity-50',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <Timer className="size-4 shrink-0 text-[#6b7280]" aria-hidden />
                 <Select
                   value={String(cls?.timerGlobal ?? 0)}
                   disabled={timerGlobalSaving || isLoading}
                   onValueChange={handleTimerGlobalChange}
                 >
-                  <SelectTrigger className="h-8 w-[7.25rem] text-xs" size="sm">
+                  <SelectTrigger className="h-8 w-[7.25rem] border-[#e5e7eb] text-xs" size="sm">
                     <SelectValue placeholder="Timer global" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1623,12 +1673,26 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               </div>
             ) : null}
 
+            <span
+              title={isConnected ? 'Conectado en tiempo real' : 'Sin conexión en tiempo real'}
+              className="flex items-center gap-1.5 text-xs text-[#6b7280]"
+            >
+              <span
+                className={cn(
+                  'size-2 rounded-full',
+                  isConnected ? 'bg-green-500' : 'bg-[#93c5fd]/60',
+                )}
+              />
+            </span>
+
             <Button
-              variant="ghost"
+              type="button"
+              variant="outline"
               size="sm"
               onClick={() => toast.info('Compartir próximamente disponible')}
+              className="rounded-xl border border-[#e5e7eb] px-3 py-1.5 text-xs font-semibold text-[#9ca3af] hover:bg-[#f9fafb]"
             >
-              <Share2 className="size-4" />
+              <Share2 className="size-3.5" aria-hidden />
               Compartir
             </Button>
 
@@ -1639,12 +1703,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!classId || sessionLoading}
                 onClick={handleStartSession}
                 className={cn(
-                  'bg-green-600 text-white hover:bg-green-700 hover:text-white',
-                  'disabled:pointer-events-none disabled:opacity-50',
+                  'rounded-xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] px-4 py-1.5 text-xs font-bold text-white shadow-sm',
+                  'hover:opacity-95 disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
                 {sessionLoading ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  <Loader2 className="mr-1 inline size-3.5 animate-spin align-middle" aria-hidden />
                 ) : null}
                 Iniciar clase
               </Button>
@@ -1655,12 +1719,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!classId || sessionLoading}
                 onClick={handleEndSession}
                 className={cn(
-                  'bg-red-600 text-white hover:bg-red-700 hover:text-white',
-                  'disabled:pointer-events-none disabled:opacity-50',
+                  'rounded-xl bg-[#f87171] px-4 py-1.5 text-xs font-bold text-white shadow-sm',
+                  'hover:opacity-95 disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
                 {sessionLoading ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  <Loader2 className="mr-1 inline size-3.5 animate-spin align-middle" aria-hidden />
                 ) : null}
                 Finalizar clase
               </Button>
@@ -1673,29 +1737,28 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!activeSlide?.id || !isConnected}
                 onClick={handleToggleResponsesLocked}
                 className={cn(
-                  'shrink-0 border-0 shadow-none',
+                  'shrink-0 rounded-xl border-0 text-xs shadow-none',
                   responsesLocked
                     ? 'bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2] hover:text-[#DC2626]'
-                    : 'bg-muted/60 text-foreground hover:bg-muted/80',
+                    : 'bg-[#f9fafb] text-[#2563EB] hover:bg-[#dbeafe]',
                 )}
               >
                 {responsesLocked ? (
-                  <Lock className="size-4 shrink-0" aria-hidden />
+                  <Lock className="size-3.5 shrink-0" aria-hidden />
                 ) : (
-                  <LockOpen className="size-4 shrink-0" aria-hidden />
+                  <LockOpen className="size-3.5 shrink-0" aria-hidden />
                 )}
-                {responsesLocked ? 'Desbloquear' : 'Bloquear respuestas'}
+                {responsesLocked ? 'Desbloquear' : 'Bloquear'}
               </Button>
             ) : null}
 
             {showLiveResponsesTopbar ? (
               <span
-                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#F97316]/25 px-2.5 py-0.5 text-xs font-medium tabular-nums"
-                style={{ backgroundColor: '#FFF0E6', color: '#F97316' }}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#dbeafe] px-2.5 py-1 text-xs font-bold tabular-nums text-[#2563EB]"
                 title="Respuestas en este slide vs. estudiantes conectados en la sala"
               >
                 <Users className="size-3.5 shrink-0" aria-hidden />
-                {liveSlideRespondedCount} / {roomStudentCount} respondieron
+                {liveSlideRespondedCount}/{roomStudentCount} respondieron
               </span>
             ) : null}
 
@@ -1704,12 +1767,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
+                className="rounded-xl border-[#e5e7eb] text-xs"
                 onClick={() => {
                   setPreviewSlideIndex(resolvedSlideIndex);
                   setPreviewOpen(true);
                 }}
               >
-                <Eye className="size-4" />
+                <Eye className="size-3.5" />
                 Vista previa
               </Button>
             ) : null}
@@ -1719,10 +1783,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
+                className="rounded-xl border-[#e5e7eb] text-xs"
                 onClick={() => setHistorySheetOpen(true)}
                 aria-label="Historial de versiones"
               >
-                <History className="size-4" />
+                <History className="size-3.5" />
                 Historial
               </Button>
             ) : null}
@@ -1731,12 +1796,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               variant="outline"
               size="sm"
               disabled={!activeSlide || updateSlide.isPending}
+              className="rounded-xl border-[#e5e7eb] text-xs"
               onClick={handleSave}
             >
-              <Save className="size-4" />
+              <Save className="size-3.5" />
               {updateSlide.isPending ? 'Guardando…' : 'Guardar'}
             </Button>
-
           </div>
         </header>
 
@@ -1756,7 +1821,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           </div>
 
           {/* Slides + flyout — 14rem fijo; canvas absorbe el resto (min-w-0) */}
-          <div className="relative h-full min-h-0 w-56 min-w-56 max-w-56 shrink-0 overflow-visible">
+          <div className="relative h-full min-h-0 w-48 min-w-48 max-w-48 shrink-0 overflow-visible">
             <SlidesPanel
               slides={sortedSlides}
               activeIndex={resolvedSlideIndex}

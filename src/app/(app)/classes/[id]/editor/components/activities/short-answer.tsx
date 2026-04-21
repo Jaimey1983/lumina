@@ -78,15 +78,15 @@ export function ShortAnswerActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(42vh,280px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(42vh,280px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
           Respuesta corta
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -94,7 +94,7 @@ export function ShortAnswerActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -168,7 +168,7 @@ export function ShortAnswerActivityEditor({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
           <Label htmlFor="sa-case" className="cursor-pointer text-[11px] font-medium leading-tight">
             Distinguir mayúsculas
           </Label>
@@ -211,33 +211,33 @@ export function ShortAnswerViewer({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-      <p className="text-base font-medium text-foreground">{activity.question}</p>
+    <div className="flex flex-col gap-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
+      <p className="text-base font-medium text-[#111827]">{activity.question}</p>
       {activity.hint && (
-        <p className="text-xs text-muted-foreground">💡 {activity.hint}</p>
+        <p className="text-xs text-[#9ca3af]">💡 {activity.hint}</p>
       )}
       {answered ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           <span>✓</span> ¡Respuesta enviada!
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <textarea
-            className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="min-h-[80px] w-full resize-none rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#93c5fd]"
             placeholder="Escribe tu respuesta aquí…"
             maxLength={activity.maxLength ?? 200}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
           {activity.maxLength && (
-            <p className="text-right text-xs text-muted-foreground">
+            <p className="text-right text-xs text-[#9ca3af]">
               {text.length}/{activity.maxLength}
             </p>
           )}
           <button
             type="submit"
             disabled={!text.trim()}
-            className="self-end rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="self-end rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1d4ed8] disabled:opacity-50"
           >
             Enviar
           </button>

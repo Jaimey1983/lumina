@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Layout11 } from '@/components/layout';
+import { Sidebar } from '@/components/layout/sidebar';
 import { ScreenLoader } from '@/components/screen-loader';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -53,5 +53,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <Layout11>{children}</Layout11>;
+  return (
+    <div className="flex h-screen bg-[#f9fafb] font-sans">
+      <Sidebar />
+      <main className="flex min-w-0 flex-1 overflow-y-auto bg-[#f9fafb]">{children}</main>
+    </div>
+  );
 }

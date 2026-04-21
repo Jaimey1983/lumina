@@ -1071,13 +1071,13 @@ function BlockNode({
         />
       )}
       {editorMode && (!!onRemoveBlock || !!onDuplicateBlock || !!onCopyBlock) && (
-        <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 rounded bg-background/80 p-0.5 shadow-sm backdrop-blur border border-border">
+        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 rounded-2xl border border-[#e5e7eb] bg-white px-2 py-1.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
           {!!onCopyBlock && block.tipo !== 'actividad' && (
             <button
               type="button"
               aria-label="Copiar bloque"
               onClick={(e) => { e.stopPropagation(); onCopyBlock(blockId); }}
-              className="flex size-6 items-center justify-center rounded-[3px] bg-indigo-500/80 text-white hover:bg-indigo-600 shadow-sm"
+              className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
               title="Copiar (Ctrl+C)"
             >
               <Copy className="size-3.5" />
@@ -1088,7 +1088,7 @@ function BlockNode({
               type="button"
               aria-label="Duplicar bloque"
               onClick={(e) => { e.stopPropagation(); onDuplicateBlock(blockId); }}
-              className="flex size-6 items-center justify-center rounded-[3px] bg-blue-500/80 text-white hover:bg-blue-600 shadow-sm"
+              className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
               title="Duplicar (Ctrl+D)"
             >
               <Copy className="size-3.5" />
@@ -1099,7 +1099,7 @@ function BlockNode({
               type="button"
               aria-label="Eliminar bloque"
               onClick={(e) => { e.stopPropagation(); onRemoveBlock(blockId); }}
-              className="flex size-6 items-center justify-center rounded-[3px] bg-destructive/80 text-white hover:bg-destructive shadow-sm"
+              className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-red-600"
               title="Eliminar (Supr o Backspace)"
             >
               <Trash2 className="size-3.5" />

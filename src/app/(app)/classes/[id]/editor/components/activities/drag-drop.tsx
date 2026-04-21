@@ -30,13 +30,13 @@ interface Props {
 
 function EditorView({ actividad }: { actividad: DragDrop }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
           Arrastrar y soltar
         </span>
         {actividad.puntos !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
             {actividad.puntos} pts
           </span>
         )}
@@ -47,16 +47,16 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
       <div className="grid grid-cols-2 gap-4">
         {/* Items column */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
             Elementos
           </p>
           <div className="space-y-1.5">
             {actividad.items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-2 rounded-md bg-muted/60 px-2.5 py-1.5 text-xs"
+                className="flex items-center gap-2 rounded-md bg-[#f3f4f6] px-2.5 py-1.5 text-xs"
               >
-                <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" />
+                <GripVertical className="size-3.5 shrink-0 text-[#9ca3af]/60" />
                 {item.texto}
               </div>
             ))}
@@ -65,19 +65,19 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
 
         {/* Zones column */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
             Zonas
           </p>
           <div className="space-y-2">
             {actividad.zonas.map((zone) => (
-              <div key={zone.id} className="rounded-md border border-dashed border-border p-2.5">
+              <div key={zone.id} className="rounded-md border border-dashed border-[#e5e7eb] p-2.5">
                 <p className="mb-1.5 text-xs font-medium">{zone.etiqueta}</p>
                 {zone.itemsCorrectos.map((itemId) => {
                   const item = actividad.items.find((i) => i.id === itemId);
                   return item ? (
                     <div
                       key={itemId}
-                      className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400"
+                      className="flex items-center gap-1.5 text-xs text-green-700"
                     >
                       <CheckCircle className="size-3 shrink-0" />
                       {item.texto}
@@ -153,7 +153,7 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
+    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       <p className="text-sm font-medium">{actividad.instruccion}</p>
 
       {/* Unplaced items pool */}
@@ -162,10 +162,10 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
         onDrop={onDropToUnplaced}
         className={cn(
           'min-h-12 rounded-md border-2 border-dashed p-3 transition-colors',
-          dragging && !answered ? 'border-primary/50 bg-primary/5' : 'border-border',
+          dragging && !answered ? 'border-[#2563EB]/50 bg-[#dbeafe]' : 'border-[#e5e7eb]',
         )}
       >
-        <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <p className="mb-2 text-[10px] uppercase tracking-wider text-[#9ca3af]">
           Elementos disponibles
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -176,17 +176,17 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
               onDragStart={(e) => onDragStart(e, item.id)}
               onDragEnd={onDragEnd}
               className={cn(
-                'flex cursor-grab items-center gap-1 rounded-md bg-muted px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                'flex cursor-grab items-center gap-1 rounded-md bg-[#f3f4f6] px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
                 answered && 'cursor-default',
                 dragging === item.id && 'opacity-40',
               )}
             >
-              <GripVertical className="size-3 text-muted-foreground" />
+              <GripVertical className="size-3 text-[#9ca3af]" />
               {item.texto}
             </div>
           ))}
           {unplaced.length === 0 && (
-            <p className="text-xs text-muted-foreground/50">
+            <p className="text-xs text-[#9ca3af]/50">
               Todos los elementos están ubicados
             </p>
           )}
@@ -207,10 +207,10 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
               onDrop={(e) => onDropToZone(e, zone.id)}
               className={cn(
                 'rounded-md border-2 border-dashed p-3 transition-colors',
-                !answered && dragging  && 'border-primary/40 bg-primary/5',
-                !answered && !dragging && 'border-border',
-                zoneCorrect && 'border-green-400 bg-green-50 dark:bg-green-950/20',
-                zoneWrong   && 'border-red-400 bg-red-50 dark:bg-red-950/20',
+                !answered && dragging  && 'border-[#2563EB]/40 bg-[#dbeafe]',
+                !answered && !dragging && 'border-[#e5e7eb]',
+                zoneCorrect && 'border-green-400 bg-green-50',
+                zoneWrong   && 'border-red-400 bg-red-50',
               )}
             >
               <div className="mb-2 flex items-center gap-1.5">
@@ -227,16 +227,16 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
                     onDragEnd={onDragEnd}
                     className={cn(
                       'flex cursor-grab items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
-                      answered ? 'bg-white/80 dark:bg-white/10' : 'bg-background shadow-sm',
+                      answered ? 'bg-white/80' : 'bg-white shadow-lumina-xs',
                       dragging === item.id && 'opacity-40',
                     )}
                   >
-                    <GripVertical className="size-3 text-muted-foreground" />
+                    <GripVertical className="size-3 text-[#9ca3af]" />
                     {item.texto}
                   </div>
                 ))}
                 {placed.length === 0 && (
-                  <span className="text-xs text-muted-foreground/40">Suelta aquí</span>
+                  <span className="text-xs text-[#9ca3af]/40">Suelta aquí</span>
                 )}
               </div>
             </div>
@@ -253,7 +253,7 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
           Enviar
         </Button>
       ) : (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           <span>✓</span> ¡Respuesta enviada!
         </div>
       )}
@@ -380,15 +380,15 @@ export function DragDropActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
           Arrastrar y soltar
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -396,7 +396,7 @@ export function DragDropActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -457,7 +457,7 @@ export function DragDropActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="size-8 shrink-0 text-[#9ca3af] hover:text-destructive"
                     onClick={() => removeItem(item.id)}
                   >
                     <Trash2 className="size-3.5" />
@@ -492,7 +492,7 @@ export function DragDropActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="size-8 shrink-0 text-[#9ca3af] hover:text-destructive"
                     onClick={() => removeZone(zone.id)}
                   >
                     <Trash2 className="size-3.5" />

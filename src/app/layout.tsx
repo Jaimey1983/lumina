@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
@@ -9,7 +9,12 @@ import { ReactNode, Suspense } from 'react';
 
 import '@/styles/globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -21,11 +26,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html className="h-full" suppressHydrationWarning>
+    <html
+      lang="es"
+      className={cn('h-full', plusJakarta.variable)}
+      suppressHydrationWarning
+    >
       <body
         className={cn(
-          'antialiased flex h-full text-base text-foreground bg-background',
-          inter.className,
+          'antialiased flex h-full min-w-0 flex-col text-base text-foreground bg-background',
         )}
       >
         <QueryProvider>
@@ -38,7 +46,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             disableTransitionOnChange
             enableColorScheme
           >
-            <Suspense>{children}</Suspense>
+            <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
+              <Suspense>{children}</Suspense>
+            </div>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

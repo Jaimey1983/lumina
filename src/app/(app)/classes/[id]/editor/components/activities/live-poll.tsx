@@ -71,24 +71,24 @@ function OptionBar({
           onClick={onSelect}
           className={cn(
             'flex flex-1 items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
-            interactive && !selected && 'border-border hover:border-primary/50 hover:bg-accent cursor-pointer',
-            interactive && selected  && 'border-primary bg-primary/5 cursor-pointer',
-            !interactive && isVoted  && 'border-primary/40 bg-primary/5',
-            !interactive && !isVoted && 'border-border cursor-default',
+            interactive && !selected && 'border-[#e5e7eb] hover:border-[#2563EB]/50 hover:bg-[#f9fafb] cursor-pointer',
+            interactive && selected  && 'border-[#2563EB] bg-[#dbeafe] cursor-pointer',
+            !interactive && isVoted  && 'border-[#2563EB]/40 bg-[#dbeafe]',
+            !interactive && !isVoted && 'border-[#e5e7eb] cursor-default',
           )}
         >
-          {isVoted && !interactive && <CheckCircle className="size-3.5 shrink-0 text-primary" />}
+          {isVoted && !interactive && <CheckCircle className="size-3.5 shrink-0 text-[#2563EB]" />}
           <span className="flex-1 truncate">{label}</span>
         </button>
-        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-[#9ca3af]">
           {pct}%
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
+      <div className="h-2 overflow-hidden rounded-full bg-[#f3f4f6]">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700',
-            isVoted ? 'bg-primary' : 'bg-muted-foreground/30',
+            isVoted ? 'bg-[#2563EB]' : 'bg-[#d1d5db]',
           )}
           style={{ width: `${pct}%` }}
         />
@@ -101,13 +101,13 @@ function OptionBar({
 
 function EditorView({ actividad }: { actividad: LivePoll }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-700">
           Encuesta en vivo
         </span>
         {actividad.tiempoLimiteSeg !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
             {actividad.tiempoLimiteSeg}s
           </span>
         )}
@@ -128,7 +128,7 @@ function EditorView({ actividad }: { actividad: LivePoll }) {
         ))}
       </div>
 
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-[10px] text-[#9ca3af]">
         {actividad.opciones.length} opciones · Los porcentajes se actualizan en tiempo real durante la sesión
       </p>
     </div>
@@ -172,7 +172,7 @@ export function LivePollViewer({
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
+    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
 
       <div className="space-y-2">
@@ -186,13 +186,13 @@ export function LivePollViewer({
               disabled={answered}
               className={cn(
                 'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
-                !answered && 'border-border hover:border-primary/50 hover:bg-accent cursor-pointer',
-                answered && isSel && 'border-primary bg-primary/5',
-                answered && !isSel && 'border-border opacity-40',
+                !answered && 'border-[#e5e7eb] hover:border-[#2563EB]/50 hover:bg-[#f9fafb] cursor-pointer',
+                answered && isSel && 'border-[#2563EB] bg-[#dbeafe]',
+                answered && !isSel && 'border-[#e5e7eb] opacity-40',
               )}
             >
               {isSel
-                ? <CheckCircle className="size-3.5 shrink-0 text-primary" />
+                ? <CheckCircle className="size-3.5 shrink-0 text-[#2563EB]" />
                 : <span className="size-3.5 shrink-0" />
               }
               <span className="flex-1 truncate">{op.texto}</span>
@@ -202,7 +202,7 @@ export function LivePollViewer({
       </div>
 
       {answered && (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/30 dark:text-green-300">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           <span>✓</span> ¡Voto registrado!
         </div>
       )}
@@ -278,12 +278,12 @@ export function LivePollActivityEditor({
   }
 
   return (
-    <div className="flex max-h-[min(42vh,400px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">
+    <div className="flex max-h-[min(42vh,400px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
           Encuesta en vivo
         </span>
-        <span className="text-[10px] text-muted-foreground truncate">
+        <span className="truncate text-[10px] text-[#9ca3af]">
           Editor de encuesta interactiva
         </span>
       </div>
@@ -318,7 +318,7 @@ export function LivePollActivityEditor({
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                className="size-8 shrink-0 text-[#9ca3af] hover:text-destructive"
                 onClick={() => removeOption(opt.id)}
                 disabled={local.opciones.length <= 2}
               >
@@ -338,7 +338,7 @@ export function LivePollActivityEditor({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-2">
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-2">
           <Label className="cursor-pointer text-[11px] font-medium leading-tight">
             Permitir múltiples respuestas
           </Label>

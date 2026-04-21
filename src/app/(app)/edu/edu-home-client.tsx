@@ -7,23 +7,25 @@ import { useCourses } from '@/hooks/api/use-courses';
 
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+
+const courseCardShell =
+  'overflow-hidden rounded-[10px] border border-[#e5e7eb] bg-[#ffffff] shadow-[0px_2px_6px_rgba(0,0,0,0.06)]';
 
 function CourseCardSkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <CardHeading className="space-y-2">
+    <Card className={cn(courseCardShell)}>
+      <div className="flex flex-col gap-4 p-6">
+        <div className="flex items-start justify-between gap-3">
           <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-4 w-24" />
-        </CardHeading>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-9 w-36" />
-      </CardContent>
+          <Skeleton className="h-5 w-14 shrink-0 rounded-full" />
+        </div>
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-10 w-full rounded-md" />
+      </div>
     </Card>
   );
 }
@@ -32,7 +34,7 @@ export function EduHomeClient() {
   const { data: courses = [], isLoading, isError } = useCourses();
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="w-full space-y-6 p-6">
       <section className="rounded-2xl border border-border bg-linear-to-br from-slate-50 via-white to-blue-50 p-6 shadow-xs dark:from-slate-950 dark:via-background dark:to-blue-950/40">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
@@ -41,10 +43,10 @@ export function EduHomeClient() {
             </Badge>
             <h1 className="text-2xl font-semibold tracking-tight">Planilla institucional de notas</h1>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Accede a la planilla de cada curso, registra notas en escala colombiana y revisa el promedio final con su nivel de desempeno.
+              Accede a la planilla de cada curso, registra notas en escala de valoración y revisa el promedio final con su nivel de desempeno.
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white/80 px-4 py-3 text-sm shadow-xs dark:border-blue-950 dark:bg-background/80">
+          <div className="flex items-center gap-3 rounded-xl border border-[#e5e7eb] bg-white/80 px-4 py-3 text-sm shadow-xs dark:border-[#374151] dark:bg-background/80">
             <ClipboardList className="size-4 text-blue-600" />
             <span className="text-muted-foreground">
               Escala oficial: <span className="font-medium text-foreground">1.0 a 5.0</span>
@@ -95,32 +97,34 @@ export function EduHomeClient() {
         {!isLoading && !isError && courses.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {courses.map((course) => (
-              <Card key={course.id} className="overflow-hidden">
-                <CardHeader>
-                  <CardHeading className="space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <CardTitle className="leading-snug">{course.name}</CardTitle>
-                      <Badge
-                        variant={course.isActive ? 'success' : 'secondary'}
-                        appearance="light"
-                      >
-                        {course.isActive ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{course.code}</p>
-                  </CardHeading>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
-                    Promedio final, escala colombiana y captura rapida por actividad en una sola vista.
+              <Card key={course.id} className={cn(courseCardShell)}>
+                <div className="flex flex-col gap-4 p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug text-[#111827]">
+                      {course.name}
+                    </h3>
+                    {course.isActive ? (
+                      <span className="shrink-0 rounded-full bg-[#dcfce7] px-2 py-0.5 text-xs font-medium text-[#16a34a]">
+                        Activo
+                      </span>
+                    ) : (
+                      <span className="shrink-0 rounded-full bg-[#f3f4f6] px-2 py-0.5 text-xs font-medium text-[#9ca3af]">
+                        Inactivo
+                      </span>
+                    )}
                   </div>
-                  <Button asChild className="w-full justify-between">
-                    <Link href={`/edu/${course.id}`}>
-                      Abrir planilla
-                      <ChevronRight className="size-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
+                  <p className="text-xs text-[#6b7280]">{course.code}</p>
+                  <p className="text-sm text-[#6b7280]">
+                    Promedio final, escala de valoración y captura rapida por actividad en una sola vista.
+                  </p>
+                  <Link
+                    href={`/edu/${course.id}`}
+                    className="flex w-full items-center justify-between rounded-md bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1d4ed8]"
+                  >
+                    Abrir planilla
+                    <ChevronRight className="size-4 shrink-0" aria-hidden />
+                  </Link>
+                </div>
               </Card>
             ))}
           </div>

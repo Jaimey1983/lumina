@@ -8,19 +8,14 @@ import {
   ArrowLeft,
   BookOpen,
   Calculator,
-  LoaderCircle,
+  Loader2,
   NotebookPen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { GradeScaleBadge } from '@/components/grade-scale-badge';
+import { GradeScaleBadge, getColombianGradeScale } from '@/components/grade-scale-badge';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
-import { inputVariants } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
 import { useClass } from '@/hooks/api/use-class';
@@ -32,6 +27,7 @@ import {
   type ClassGradebookData,
 } from '@/hooks/use-gradebook';
 import { api } from '@/lib/api';
+import { getInitials } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 
 /** Actividades calificadas manualmente por el docente (PATCH por resultId). */
@@ -45,8 +41,6 @@ function canEditEduManualCells(role: string | undefined): boolean {
   if (!role) return false;
   return role !== 'STUDENT';
 }
-
-const MANUAL_CELL_BORDER = 'border-2 border-[#F97316]';
 
 const ACTIVITY_LABEL: Record<string, string> = {
   quiz_multiple: 'Quiz',
@@ -65,6 +59,17 @@ function abbreviateActivityType(activityType: string) {
   return ACTIVITY_LABEL[activityType] ?? activityType;
 }
 
+// colombianNoteColorClass eliminada — Lumina 2.1: color solo en badges, no en celdas numéricas
+
+function performanceBadgeClassName(note: number | null | undefined) {
+  const level = getColombianGradeScale(note)?.level;
+  if (level === 'Superior') return 'border-0 bg-[#dcfce7] text-[#16a34a]';
+  if (level === 'Alto') return 'border-0 bg-[#dbeafe] text-[#3b82f6]';
+  if (level === 'Basico') return 'border-0 bg-[#fef3c7] text-[#d97706]';
+  if (level === 'Bajo') return 'border-0 bg-[#fee2e2] text-[#f87171]';
+  return 'border-0 bg-[#f9fafb] text-[#6b7280]';
+}
+
 function studentDisplayName(s: { nombre?: string; name?: string }) {
   return s.nombre ?? s.name ?? 'Sin nombre';
 }
@@ -80,18 +85,10 @@ function noteForSlide(
 
 function AutoGradeCell({ note }: { note: number | null }) {
   if (note === null) {
-    return <span className="text-muted-foreground">—</span>;
+    return <span className="text-[#9ca3af]">—</span>;
   }
-  const good = note >= 3;
   return (
-    <span
-      className={cn(
-        'inline-flex min-w-12 justify-center rounded-md border px-2 py-1 text-sm font-semibold',
-        good
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-          : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200',
-      )}
-    >
+    <span className="inline-flex min-w-12 justify-center text-sm tabular-nums text-[#111827]">
       {note.toFixed(1)}
     </span>
   );
@@ -101,9 +98,7 @@ function ReadOnlyManualGradeCell({ note }: { note: number | null }) {
   return (
     <span
       className={cn(
-        'inline-flex min-w-12 justify-center rounded-md px-2 py-1 text-sm font-semibold tabular-nums',
-        MANUAL_CELL_BORDER,
-        'bg-background text-foreground',
+        'inline-flex min-w-16 justify-center rounded-lg border border-[#2563EB]/30 border-l-2 border-l-[#2563EB] bg-white px-2 py-1.5 text-sm font-bold tabular-nums text-[#2563EB]',
       )}
     >
       {note === null || Number.isNaN(note) ? '—' : note.toFixed(1)}
@@ -216,9 +211,7 @@ function ManualGradeCell({
           disabled={isSaving}
           onClick={openEdit}
           className={cn(
-            'inline-flex h-9 min-w-20 items-center justify-center rounded-md px-2 text-sm font-semibold tabular-nums transition-colors',
-            MANUAL_CELL_BORDER,
-            'bg-background hover:bg-muted/60',
+            'inline-flex h-9 min-w-16 items-center justify-center rounded-lg border border-[#2563EB]/30 border-l-2 border-l-[#2563EB] bg-white px-2 text-sm font-bold tabular-nums text-[#2563EB] transition-colors hover:bg-[#f9fafb]',
             isSaving && 'cursor-wait opacity-70',
           )}
         >
@@ -240,10 +233,8 @@ function ManualGradeCell({
         disabled={isSaving}
         aria-invalid={invalid}
         className={cn(
-          inputVariants({ variant: 'md' }),
-          'h-9 w-24 text-center font-semibold tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
-          MANUAL_CELL_BORDER,
-          invalid && 'ring-2 ring-destructive',
+          'h-9 w-16 rounded-lg border border-[#2563EB] bg-white text-center text-sm font-bold tabular-nums text-[#2563EB] ring-2 ring-[#dbeafe] [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          invalid && 'border-[#f87171] ring-2 ring-[#fee2e2]',
           isSaving && 'cursor-wait pr-8',
         )}
         value={draft}
@@ -267,7 +258,7 @@ function ManualGradeCell({
         }}
       />
       {isSaving ? (
-        <LoaderCircle className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+        <Loader2 className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 animate-spin text-[#6b7280]" />
       ) : null}
     </div>
   );
@@ -324,191 +315,182 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
   const showFullGrid = gradebookReady && estudiantes.length > 0 && actividades.length > 0;
   const showPromedioOnly = gradebookReady && estudiantes.length > 0 && actividades.length === 0;
 
-  return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
-          <Button asChild variant="ghost" size="sm" className="w-fit px-0">
-            <Link href="/edu">
-              <ArrowLeft className="size-4" />
-              Volver a cursos
-            </Link>
-          </Button>
-          <div className="space-y-2">
-            <Badge variant="primary" appearance="outline" className="w-fit">
-              Lumina Edu
-            </Badge>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {courseLoading ? 'Cargando curso...' : course?.name ?? 'Planilla de notas'}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Notas por clase y actividad (slides). Escala colombiana 1.0 a 5.0. Calificación manual
-              (borde naranja): 0.0 a 5.0, guardado al salir del campo o con Enter.
-            </p>
-          </div>
-        </div>
+  const nombreClase =
+    classDetail?.title?.trim() ||
+    course?.name ||
+    (courseLoading ? 'Cargando…' : 'Planilla de notas');
+  const estudiantesCountDisplay =
+    gradebook != null && !gradebookLoading
+      ? String(estudiantes.length)
+      : selectedClassId && gradebookLoading
+        ? '…'
+        : '—';
 
-        <Card className="min-w-full lg:min-w-80 lg:max-w-sm">
-          <CardContent className="grid gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Curso
-              </p>
-              <p className="text-sm font-medium text-foreground">{course?.code ?? '—'}</p>
-            </div>
-            {showClassSelect ? (
-              <div className="space-y-1 sm:col-span-2 lg:col-span-1">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Clase
-                </p>
-                <Select
-                  value={selectedClassId}
-                  onValueChange={setSelectedClassId}
-                  disabled={classesLoading || classes.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una clase" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+  return (
+    <div className="w-full p-6">
+      <Link
+        href="/edu"
+        className="mb-6 inline-flex w-fit items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#6b7280] no-underline transition-all duration-150 ease-in-out hover:bg-[#eff6ff] hover:text-[#2563EB]"
+      >
+        <ArrowLeft className="size-4 shrink-0" />
+        Volver a cursos
+      </Link>
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold tracking-tight text-[#1e1b4b]">Lumina Edu</h1>
+          <p className="mt-1 text-xs font-medium text-[#6b7280]">
+            {nombreClase} · {estudiantesCountDisplay} estudiantes
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+          {course?.code ? (
+            <p className="text-xs font-medium text-[#6b7280]">Curso {course.code}</p>
+          ) : null}
+          {showClassSelect ? (
+            <Select
+              value={selectedClassId}
+              onValueChange={setSelectedClassId}
+              disabled={classesLoading || classes.length === 0}
+            >
+              <SelectTrigger className="w-full min-w-[12rem] border-[#e5e7eb] bg-white sm:w-64">
+                <SelectValue placeholder="Selecciona una clase" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardHeading className="w-full space-y-3">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="size-4 text-muted-foreground" />
-                      Planilla por clase
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Datos en vivo desde el libro de calificaciones. Las actividades automáticas se
-                      muestran en verde si la nota es ≥ 3 y en rojo si es &lt; 3. Las actividades
-                      manuales (respuesta corta, encuesta viva, nube de palabras) llevan borde naranja:
-                      el docente hace clic en la celda, edita entre 0.0 y 5.0 y guarda con Enter o
-                      al salir del campo.
-                    </p>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-lumina-sm">
+          <div className="border-b border-[#e5e7eb] bg-[#f9fafb] px-4 py-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="size-4 text-[#6b7280]" />
+              <h2 className="text-sm font-bold text-[#1e1b4b]">Planilla por clase</h2>
+            </div>
+          </div>
+          <div className="space-y-4 p-4">
+            {classesError ? (
+              <Alert variant="destructive">
+                <AlertIcon>
+                  <AlertTriangle className="size-4" />
+                </AlertIcon>
+                <AlertContent>
+                  <AlertTitle>No se pudieron cargar las clases del curso.</AlertTitle>
+                </AlertContent>
+              </Alert>
+            ) : null}
+
+            {!classesLoading && classes.length === 0 ? (
+              <Alert className="border-[#e5e7eb] bg-[#f0f9ff]">
+                <AlertIcon>
+                  <NotebookPen className="size-4 text-[#6b7280]" />
+                </AlertIcon>
+                <AlertContent>
+                  <AlertTitle className="text-[#1e1b4b]">Este curso no tiene clases todavía.</AlertTitle>
+                </AlertContent>
+              </Alert>
+            ) : null}
+
+            {classesLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="size-8 animate-spin text-[#6b7280]" />
+              </div>
+            ) : null}
+
+            {gradebookError ? (
+              <Alert variant="destructive">
+                <AlertIcon>
+                  <AlertTriangle className="size-4" />
+                </AlertIcon>
+                <AlertContent>
+                  <AlertTitle>No se pudo cargar el libro de calificaciones de la clase.</AlertTitle>
+                </AlertContent>
+              </Alert>
+            ) : null}
+
+            {selectedClassId && (gradebookLoading || gradebookFetching) && !gradebook ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="size-8 animate-spin text-[#6b7280]" />
+              </div>
+            ) : null}
+
+            {noHayResultados ? (
+              <div className="py-20 text-center">
+                <p className="font-medium text-[#6b7280]">No hay resultados registrados aún</p>
+              </div>
+            ) : null}
+
+            {showFullGrid || showPromedioOnly ? (
+              <div className="relative overflow-x-auto">
+                {gradebookFetching ? (
+                  <div className="absolute inset-0 z-10 flex items-start justify-end pt-1 pr-1">
+                    <Loader2 className="size-5 animate-spin text-[#6b7280]" aria-hidden />
                   </div>
-                </div>
-              </CardHeading>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {classesError ? (
-                <Alert variant="destructive">
-                  <AlertIcon>
-                    <AlertTriangle className="size-4" />
-                  </AlertIcon>
-                  <AlertContent>
-                    <AlertTitle>No se pudieron cargar las clases del curso.</AlertTitle>
-                  </AlertContent>
-                </Alert>
-              ) : null}
-
-              {!classesLoading && classes.length === 0 ? (
-                <Alert>
-                  <AlertIcon>
-                    <NotebookPen className="size-4" />
-                  </AlertIcon>
-                  <AlertContent>
-                    <AlertTitle>Este curso no tiene clases todavía.</AlertTitle>
-                  </AlertContent>
-                </Alert>
-              ) : null}
-
-              {classesLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ) : null}
-
-              {gradebookError ? (
-                <Alert variant="destructive">
-                  <AlertIcon>
-                    <AlertTriangle className="size-4" />
-                  </AlertIcon>
-                  <AlertContent>
-                    <AlertTitle>No se pudo cargar el libro de calificaciones de la clase.</AlertTitle>
-                  </AlertContent>
-                </Alert>
-              ) : null}
-
-              {selectedClassId && (gradebookLoading || gradebookFetching) && !gradebook ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ) : null}
-
-              {noHayResultados ? (
-                <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
-                  <NotebookPen className="size-9 text-muted-foreground/70" />
-                  <div className="space-y-1">
-                    <h3 className="font-medium">Aún no hay resultados para esta clase</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Cuando haya calificaciones por actividades, aparecerán aquí.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-
-              {showFullGrid || showPromedioOnly ? (
-                <div className="relative">
-                  {gradebookFetching ? (
-                    <div className="absolute inset-0 z-10 flex items-start justify-end pt-1 pr-1">
-                      <LoaderCircle className="size-5 animate-spin text-muted-foreground" aria-hidden />
-                    </div>
-                  ) : null}
-                  <Table className="min-w-max">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="sticky left-0 z-20 min-w-56 bg-card">
-                          Estudiante
-                        </TableHead>
-                        {showFullGrid
-                          ? actividades.map((act, idx) => (
-                              <TableHead key={act.slideId} className="max-w-40 text-center text-xs">
-                                <span
-                                  className="line-clamp-2 font-medium leading-tight"
-                                  title={slideColumnTitle(act.slideId, idx)}
-                                >
-                                  {slideColumnTitle(act.slideId, idx)}
-                                </span>
-                                <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
-                                  {abbreviateActivityType(act.activityType)}
-                                </span>
-                              </TableHead>
-                            ))
-                          : null}
-                        <TableHead className="min-w-28 text-center">Promedio final</TableHead>
-                        <TableHead className="sticky right-0 z-20 min-w-36 bg-card text-center">
-                          Desempeño
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {estudiantes.map((est) => (
-                        <TableRow key={est.studentId}>
-                          <TableCell className="sticky left-0 z-10 bg-card">
-                            <div className="space-y-1">
-                              <p className="font-medium">{studentDisplayName(est)}</p>
-                              {est.email ? (
-                                <p className="text-xs text-muted-foreground">{est.email}</p>
-                              ) : null}
+                ) : null}
+                <Table className="min-w-max">
+                  <TableHeader>
+                    <TableRow className="h-[var(--lumina-table-header-height)] border-[--lumina-divider] bg-[var(--lumina-table-header-bg)] hover:bg-[var(--lumina-table-header-bg)]">
+                      <TableHead className="sticky left-0 z-20 h-[var(--lumina-table-header-height)] min-w-56 bg-[var(--lumina-table-header-bg)] px-4 py-2 text-xs font-medium text-[#6b7280]">
+                        Estudiante
+                      </TableHead>
+                      {showFullGrid
+                        ? actividades.map((act, idx) => (
+                            <TableHead
+                              key={act.slideId}
+                              className="h-[var(--lumina-table-header-height)] max-w-40 px-4 py-2 text-center text-xs font-medium text-[#6b7280]"
+                            >
+                              <span
+                                className="line-clamp-2 font-medium leading-tight"
+                                title={slideColumnTitle(act.slideId, idx)}
+                              >
+                                {slideColumnTitle(act.slideId, idx)}
+                              </span>
+                              <span className="mt-0.5 block text-[10px] font-medium tracking-normal text-[#9ca3af]">
+                                {abbreviateActivityType(act.activityType)}
+                              </span>
+                            </TableHead>
+                          ))
+                        : null}
+                      <TableHead className="h-[var(--lumina-table-header-height)] min-w-28 px-4 py-2 text-center text-xs font-medium text-[#6b7280]">
+                        Promedio final
+                      </TableHead>
+                      <TableHead className="sticky right-0 z-20 h-[var(--lumina-table-header-height)] min-w-36 bg-[var(--lumina-table-header-bg)] px-4 py-2 text-center text-xs font-medium text-[#6b7280]">
+                        Desempeño
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {estudiantes.map((est, rowIdx) => {
+                      const rowStripe = rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f0f9ff]';
+                      return (
+                        <TableRow key={est.studentId} className="group h-[var(--lumina-table-row-height)] border-b border-[--lumina-divider]">
+                          <TableCell
+                            className={cn(
+                              'sticky left-0 z-10 border-b border-[--lumina-divider] px-4 py-2',
+                              rowStripe,
+                              'group-hover:bg-[#f9fafb]',
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#60a5fa] to-[#60A5FA] text-xs font-bold text-white">
+                                {getInitials(studentDisplayName(est), 2)}
+                              </div>
+                              <div className="min-w-0 space-y-0.5">
+                                <p className="text-sm font-medium text-[#111827]">
+                                  {studentDisplayName(est)}
+                                </p>
+                                {est.email ? (
+                                  <p className="truncate text-xs text-[#6b7280]">{est.email}</p>
+                                ) : null}
+                              </div>
                             </div>
                           </TableCell>
                           {showFullGrid
@@ -517,7 +499,14 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                                 const manual = isManualGradingActivityType(act.activityType);
                                 const resultId = est.resultIdsPorSlide?.[act.slideId];
                                 return (
-                                  <TableCell key={act.slideId} className="text-center">
+                                  <TableCell
+                                    key={act.slideId}
+                                    className={cn(
+                                      'border-b border-[--lumina-divider] px-4 py-2 text-center',
+                                      rowStripe,
+                                      'group-hover:bg-[#f9fafb]',
+                                    )}
+                                  >
                                     {manual ? (
                                       docentePuedeEditarManual && resultId ? (
                                         <ManualGradeCell
@@ -537,63 +526,70 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                                 );
                               })
                             : null}
-                          <TableCell className="text-center">
+                          <TableCell
+                            className={cn(
+                              'border-b border-[--lumina-divider] px-4 py-2 text-center',
+                              rowStripe,
+                              'group-hover:bg-[#f9fafb]',
+                            )}
+                          >
                             {est.notaFinal != null && !Number.isNaN(est.notaFinal) ? (
-                              <span className="text-base font-semibold tabular-nums">
+                              <span className="text-base font-semibold tabular-nums text-[#111827]">
                                 {est.notaFinal.toFixed(1)}
                               </span>
                             ) : (
-                              <span className="text-base font-semibold text-muted-foreground">—</span>
+                              <span className="text-base font-semibold text-[#9ca3af]">—</span>
                             )}
                           </TableCell>
-                          <TableCell className="sticky right-0 z-10 bg-card">
+                          <TableCell
+                            className={cn(
+                              'sticky right-0 z-10 border-b border-[--lumina-divider] px-4 py-2',
+                              rowStripe,
+                              'group-hover:bg-[#f9fafb]',
+                            )}
+                          >
                             <div className="flex justify-center">
-                              <GradeScaleBadge note={est.notaFinal} />
+                              <GradeScaleBadge
+                                note={est.notaFinal}
+                                className={performanceBadgeClassName(est.notaFinal)}
+                              />
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardHeading>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="size-4 text-muted-foreground" />
-                  Escala colombiana
-                </CardTitle>
-              </CardHeading>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <GradeScaleBadge note={2.5} />
-                <GradeScaleBadge note={3.4} />
-                <GradeScaleBadge note={4.3} />
-                <GradeScaleBadge note={4.9} />
-              </div>
-              <div className="grid gap-2 text-sm text-muted-foreground">
-                <p>
-                  <span className="font-medium text-foreground">Bajo:</span> 1.0 - 2.9
-                </p>
-                <p>
-                  <span className="font-medium text-foreground">Básico:</span> 3.0 - 3.9
-                </p>
-                <p>
-                  <span className="font-medium text-foreground">Alto:</span> 4.0 - 4.6
-                </p>
-                <p>
-                  <span className="font-medium text-foreground">Superior:</span> 4.7 - 5.0
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="h-fit overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white p-5">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[#1e1b4b]">
+            <Calculator className="size-4 text-[#6b7280]" />
+            Escala de valoración
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            <GradeScaleBadge note={2.5} className={performanceBadgeClassName(2.5)} />
+            <GradeScaleBadge note={3.4} className={performanceBadgeClassName(3.4)} />
+            <GradeScaleBadge note={4.3} className={performanceBadgeClassName(4.3)} />
+            <GradeScaleBadge note={4.9} className={performanceBadgeClassName(4.9)} />
+          </div>
+          <div className="mt-4 grid gap-2 text-sm text-[#6b7280]">
+            <p>
+              <span className="font-semibold text-[#1e1b4b]">Bajo:</span> 1.0 - 2.9
+            </p>
+            <p>
+              <span className="font-semibold text-[#1e1b4b]">Básico:</span> 3.0 - 3.9
+            </p>
+            <p>
+              <span className="font-semibold text-[#1e1b4b]">Alto:</span> 4.0 - 4.6
+            </p>
+            <p>
+              <span className="font-semibold text-[#1e1b4b]">Superior:</span> 4.7 - 5.0
+            </p>
+          </div>
         </div>
       </div>
     </div>

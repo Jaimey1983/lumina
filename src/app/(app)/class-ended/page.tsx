@@ -7,7 +7,7 @@ export default function ClassEndedPage() {
         className="mb-6 size-24 shrink-0"
         strokeWidth={1.25}
         aria-hidden
-        style={{ color: '#7C3AED' }}
+        style={{ color: '#2563EB' }}
       />
       <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         ¡Clase finalizada!

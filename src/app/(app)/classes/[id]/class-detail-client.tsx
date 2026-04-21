@@ -19,40 +19,17 @@ import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { usePublishClass } from '@/hooks/api/use-classes';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { SlideRenderer } from './editor/components/slide-renderer';
 import { SlideCanvasThumb } from './editor/components/slides-panel';
-
-// ─── Helpers Status ──────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: 'Borrador',
-  PUBLISHED: 'Publicada',
-  LIVE: 'En vivo',
-  ARCHIVED: 'Archivada',
-};
-
-const STATUS_VARIANTS: Record<
-  string,
-  'secondary' | 'success' | 'warning' | 'destructive' | 'primary'
-> = {
-  DRAFT: 'secondary',
-  PUBLISHED: 'success',
-  LIVE: 'primary',
-  ARCHIVED: 'destructive',
-};
+import {
+  STATUS_BADGE_STYLE,
+  STATUS_LABELS,
+} from '@/app/(app)/classes/class-status-badge-styles';
 
 function statusLabel(status: string) {
   return STATUS_LABELS[status?.toUpperCase()] ?? status;
-}
-
-function statusVariant(status: string) {
-  return STATUS_VARIANTS[status?.toUpperCase()] ?? 'secondary';
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -64,6 +41,8 @@ export function ClassDetailClient({ id }: { id: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const isDraft = cls?.status?.toUpperCase() === 'DRAFT';
+  const statusBadgeStyle =
+    STATUS_BADGE_STYLE[cls?.status?.toUpperCase() ?? ''] ?? STATUS_BADGE_STYLE.DRAFT;
 
   const sortedSlides = useMemo(() => {
     if (!cls?.slides) return [];
@@ -81,7 +60,7 @@ export function ClassDetailClient({ id }: { id: string }) {
 
   if (isError) {
     return (
-      <div className="container py-6">
+      <div className="w-full p-6">
         <Alert variant="destructive" appearance="light">
           <AlertIcon>
             <AlertCircle />
@@ -96,7 +75,7 @@ export function ClassDetailClient({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="container py-6">
+      <div className="w-full p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 space-y-4">
             <Skeleton className="w-full aspect-[16/9] rounded-xl" />
@@ -115,15 +94,16 @@ export function ClassDetailClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="container py-6">
+    <div className="w-full p-6">
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href="/classes">
-            <ArrowLeft className="size-4" />
-            <span className="sr-only">Volver</span>
-          </Link>
-        </Button>
-        <h1 className="text-xl font-semibold opacity-80">Detalles de la Clase</h1>
+        <Link
+          href="/classes"
+          className="inline-flex items-center justify-center size-8 rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs hover:bg-[#f9fafb] text-[#6b7280] -ml-2"
+        >
+          <ArrowLeft className="size-4" />
+          <span className="sr-only">Volver</span>
+        </Link>
+        <h1 className="text-xl font-extrabold tracking-tight text-[#111827]">Detalles de la Clase</h1>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
@@ -132,8 +112,8 @@ export function ClassDetailClient({ id }: { id: string }) {
           {sortedSlides.length > 0 ? (
             <>
               {/* Grand Preview */}
-              <div className="relative group w-full bg-muted/30 rounded-xl p-2 border border-border/50 shadow-sm">
-                <div className="relative w-full rounded overflow-hidden bg-background">
+              <div className="relative group w-full bg-[#f9fafb] rounded-xl p-2 border border-[#e5e7eb] shadow-lumina-sm">
+                <div className="relative w-full rounded overflow-hidden bg-white">
                   {rendererActiveSlide && (
                     <SlideRenderer slide={rendererActiveSlide} modo="preview" />
                   )}
@@ -141,24 +121,22 @@ export function ClassDetailClient({ id }: { id: string }) {
 
                 {/* Navigation Controls overlay */}
                 {activeIndex > 0 && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  <button
+                    type="button"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity size-8 flex items-center justify-center bg-white border border-[#e5e7eb] shadow-lumina-sm text-[#6b7280] hover:bg-[#f9fafb]"
                     onClick={handlePrev}
                   >
                     <ChevronLeft className="size-5" />
-                  </Button>
+                  </button>
                 )}
                 {activeIndex < sortedSlides.length - 1 && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity size-8 flex items-center justify-center bg-white border border-[#e5e7eb] shadow-lumina-sm text-[#6b7280] hover:bg-[#f9fafb]"
                     onClick={handleNext}
                   >
                     <ChevronRight className="size-5" />
-                  </Button>
+                  </button>
                 )}
               </div>
 
@@ -174,67 +152,73 @@ export function ClassDetailClient({ id }: { id: string }) {
                       role="button"
                       tabIndex={0}
                       onClick={() => setActiveIndex(i)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click(); }}
-                      className="group shrink-0 w-24 sm:w-28 xl:w-32 snap-start flex flex-col items-center gap-1.5 focus:outline-none cursor-pointer"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click();
+                      }}
+                      className="group w-24 shrink-0 snap-start cursor-pointer focus:outline-none sm:w-28 xl:w-32"
                     >
-                      <div className="w-full relative rounded-md overflow-hidden transition-transform group-hover:scale-105">
+                      <div className="relative w-full overflow-hidden rounded-md transition-transform group-hover:scale-105">
                         <SlideCanvasThumb slide={slide as unknown as Parameters<typeof SlideCanvasThumb>[0]['slide']} isActive={i === activeIndex} />
                       </div>
-                      <span className={cn('text-xs font-medium', i === activeIndex ? 'text-primary' : 'text-muted-foreground')}>
-                        Slide {slide.order}
-                      </span>
                     </div>
                   ))}
                 </div>
               </div>
             </>
           ) : (
-            <div className="w-full aspect-[16/9] flex flex-col items-center justify-center bg-muted/20 border border-dashed rounded-xl gap-4">
-              <div className="bg-muted p-4 rounded-full">
-                <LayoutList className="size-8 text-muted-foreground" />
+            <div className="w-full aspect-[16/9] flex flex-col items-center justify-center bg-[#f9fafb] border border-dashed border-[#e5e7eb] rounded-xl gap-4">
+              <div className="bg-white border border-[#e5e7eb] p-4 rounded-full shadow-lumina-xs">
+                <LayoutList className="size-8 text-[#9ca3af]" />
               </div>
               <div className="text-center space-y-1">
-                <h3 className="font-medium text-lg">No hay slides</h3>
-                <p className="text-muted-foreground">Abre el editor para comenzar a crear tu clase.</p>
+                <h3 className="font-bold text-lumina-lg text-[#111827]">No hay slides</h3>
+                <p className="text-lumina-sm text-[#6b7280]">Abre el editor para comenzar a crear tu clase.</p>
               </div>
-              <Button asChild className="mt-2">
-                <Link href={`/classes/${id}/editor`}>
-                  <Pencil className="size-4 mr-2" />
-                  Abrir editor
-                </Link>
-              </Button>
+              <Link
+                href={`/classes/${id}/editor`}
+                className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-lumina-sm font-bold text-white hover:bg-[#1d4ed8]"
+              >
+                <Pencil className="size-4" />
+                Abrir editor
+              </Link>
             </div>
           )}
         </div>
 
         {/* Right Column - Info & Actions */}
         <div className="w-full lg:w-80 shrink-0">
-          <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden sticky top-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-lumina-sm overflow-hidden sticky top-6">
             <div className="p-6 space-y-5">
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {cls?.status && (
-                    <Badge variant={statusVariant(cls.status)} appearance="light" size="sm">
+                    <span
+                      className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                      style={{
+                        backgroundColor: statusBadgeStyle.bg,
+                        color: statusBadgeStyle.color,
+                      }}
+                    >
                       {statusLabel(cls.status)}
-                    </Badge>
+                    </span>
                   )}
                 </div>
-                <h2 className="text-2xl font-semibold leading-tight break-words">
+                <h2 className="text-xl font-extrabold tracking-tight leading-tight break-words text-[#111827]">
                   {cls?.title ?? 'Clase sin título'}
                 </h2>
                 {cls?.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-3">
+                  <p className="text-lumina-sm text-[#6b7280] line-clamp-3">
                     {cls.description}
                   </p>
                 )}
               </div>
 
-              <Separator />
+              <div className="border-t border-[#e5e7eb]" />
 
-              <dl className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
+              <dl className="grid grid-cols-2 gap-y-4 gap-x-2">
                 <div>
-                  <dt className="text-muted-foreground mb-1">Fecha</dt>
-                  <dd className="font-medium">
+                  <dt className="text-lumina-sm text-[#9ca3af] mb-1">Fecha</dt>
+                  <dd className="text-lumina-sm font-semibold text-[#111827]">
                     {cls?.createdAt
                       ? new Date(cls.createdAt).toLocaleDateString('es-ES', {
                           day: '2-digit',
@@ -245,55 +229,55 @@ export function ClassDetailClient({ id }: { id: string }) {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground mb-1">Slides</dt>
-                  <dd className="font-medium">{sortedSlides.length}</dd>
+                  <dt className="text-lumina-sm text-[#9ca3af] mb-1">Slides</dt>
+                  <dd className="text-lumina-sm font-semibold text-[#111827]">{sortedSlides.length}</dd>
                 </div>
               </dl>
 
-              <Separator />
+              <div className="border-t border-[#e5e7eb]" />
 
               {sortedSlides.length > 0 && (
-                <div className="text-center px-3 py-2 bg-muted/40 rounded-lg">
-                  <span className="text-sm font-medium">
-                    Diapositiva <span className="text-primary">{activeIndex + 1}</span> de {sortedSlides.length}
+                <div className="text-center px-3 py-2 bg-[#f9fafb] rounded-lg border border-[#e5e7eb]">
+                  <span className="text-lumina-sm font-semibold text-[#6b7280]">
+                    Diapositiva{' '}
+                    <span className="font-extrabold text-[#2563EB]">{activeIndex + 1}</span>
+                    {' '}de {sortedSlides.length}
                   </span>
                 </div>
               )}
 
               <div className="space-y-2 pt-2">
                 {(cls as unknown as Record<string, string>)?.codigo ? (
-                  <div
-                    className="flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2.5 font-mono text-sm font-medium text-white"
+                  <button
+                    type="button"
+                    className="flex w-full cursor-default items-center justify-center rounded-md bg-[#2563EB] px-4 py-2 font-mono text-sm font-medium text-white transition-colors hover:bg-[#1d4ed8]"
                     aria-label="Código de la clase"
                   >
                     {(cls as unknown as Record<string, string>).codigo.toUpperCase()}
-                  </div>
+                  </button>
                 ) : null}
 
                 <div className="flex gap-2">
-                  <Button variant="outline" className="w-full flex-1" size="lg" asChild>
-                    <Link href={`/classes/${id}/editor`}>
-                      <Pencil className="size-4 mr-2" />
-                      Editor
-                    </Link>
-                  </Button>
-                  <Button 
-                    variant="secondary" 
-                    className="w-full flex-1 bg-gray-100 hover:bg-gray-200 text-foreground" 
-                    size="lg" 
-                    asChild
+                  <Link
+                    href={`/classes/${id}/editor`}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
                   >
-                    <Link href={`/classes/${id}/present`}>
-                      <Presentation className="size-4 mr-2" />
-                      Presentar
-                    </Link>
-                  </Button>
+                    <Pencil className="size-4 text-[#2563EB]" />
+                    Editor
+                  </Link>
+                  <Link
+                    href={`/classes/${id}/present`}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
+                  >
+                    <Presentation className="size-4 text-[#6b7280]" />
+                    Presentar
+                  </Link>
                 </div>
 
                 {isDraft && (
-                  <Button
-                    variant="ghost"
-                    className="w-full mt-2 text-muted-foreground hover:text-foreground"
+                  <button
+                    type="button"
+                    className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#6b7280] shadow-lumina-xs hover:bg-[#f9fafb] disabled:opacity-50"
                     disabled={publishMutation.isPending}
                     onClick={() => {
                       publishMutation.mutate(id, {
@@ -303,8 +287,8 @@ export function ClassDetailClient({ id }: { id: string }) {
                     }}
                   >
                     {publishMutation.isPending ? 'Publicando...' : 'Publicar clase'}
-                    <Send className="size-4 ml-2" />
-                  </Button>
+                    <Send className="size-4" />
+                  </button>
                 )}
               </div>
             </div>
@@ -314,4 +298,3 @@ export function ClassDetailClient({ id }: { id: string }) {
     </div>
   );
 }
-

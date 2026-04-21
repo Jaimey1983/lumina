@@ -25,7 +25,7 @@ interface Props {
   codigo: string;
 }
 
-type Phase = 'loading' | 'invalid' | 'ready';
+type JoinStep = 'code' | 'name';
 
 function unwrapGuestBody(raw: unknown): GuestJoinResponse | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -44,57 +44,90 @@ function unwrapGuestBody(raw: unknown): GuestJoinResponse | null {
   };
 }
 
+function LuminaJoinLogo() {
+  return (
+    <div className="mb-6 flex flex-col items-center gap-2">
+      <span
+        className="flex size-12 shrink-0 rounded-xl shadow-sm"
+        style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }}
+        aria-hidden
+      />
+      <span className="text-xl font-extrabold leading-tight tracking-tight text-[#1e1b4b]">
+        Lumi
+        <span
+          className="bg-[linear-gradient(135deg,#2563EB,#60A5FA)] bg-clip-text text-transparent"
+          style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+        >
+          na
+        </span>
+      </span>
+    </div>
+  );
+}
+
 export function JoinClient({ codigo }: Props) {
   const router = useRouter();
-  const [phase, setPhase] = useState<Phase>('loading');
+  const [joinStep, setJoinStep] = useState<JoinStep>('code');
+  const [codeInput, setCodeInput] = useState(codigo);
+  const [resolvedCodigo, setResolvedCodigo] = useState('');
   const [classTitle, setClassTitle] = useState('');
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [codeError, setCodeError] = useState('');
   const [nombre, setNombre] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [joinError, setJoinError] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE}/classes/join/${encodeURIComponent(codigo)}`,
-          { method: 'GET', headers: { Accept: 'application/json' } },
-        );
-        if (cancelled) return;
-        if (res.status === 404) {
-          setPhase('invalid');
-          return;
-        }
-        if (!res.ok) {
-          setPhase('invalid');
-          return;
-        }
-        const data = (await res.json()) as ClassJoinResponse;
-        if (!data?.id) {
-          setPhase('invalid');
-          return;
-        }
-        setClassTitle(data.title?.trim() || 'Clase');
-        setPhase('ready');
-      } catch {
-        if (!cancelled) setPhase('invalid');
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
+    setCodeInput(codigo);
+    setJoinStep('code');
+    setResolvedCodigo('');
+    setClassTitle('');
+    setCodeError('');
+    setJoinError('');
+    setNombre('');
   }, [codigo]);
+
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = codeInput.trim();
+    if (!trimmed || verifyingCode) return;
+    setCodeError('');
+    setVerifyingCode(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/classes/join/${encodeURIComponent(trimmed)}`,
+        { method: 'GET', headers: { Accept: 'application/json' } },
+      );
+      if (res.status === 404 || !res.ok) {
+        setCodeError('Código no válido. Revisa e intenta de nuevo.');
+        setVerifyingCode(false);
+        return;
+      }
+      const data = (await res.json()) as ClassJoinResponse;
+      if (!data?.id) {
+        setCodeError('Código no válido. Revisa e intenta de nuevo.');
+        setVerifyingCode(false);
+        return;
+      }
+      setClassTitle(data.title?.trim() || 'Clase');
+      setResolvedCodigo(trimmed);
+      setJoinStep('name');
+    } catch {
+      setCodeError('No se pudo verificar el código. Intenta de nuevo.');
+    } finally {
+      setVerifyingCode(false);
+    }
+  }
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = nombre.trim();
-    if (!trimmed || phase !== 'ready') return;
+    if (!trimmed || !resolvedCodigo) return;
     setJoinError('');
     setSubmitting(true);
     try {
       const res = await fetch(
-        `${API_BASE}/classes/join/${encodeURIComponent(codigo)}/guest`,
+        `${API_BASE}/classes/join/${encodeURIComponent(resolvedCodigo)}/guest`,
         {
           method: 'POST',
           headers: {
@@ -125,38 +158,63 @@ export function JoinClient({ codigo }: Props) {
     }
   }
 
-  if (phase === 'loading') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
-        <Loader2 className="size-10 animate-spin text-[#F97316]" aria-label="Cargando" />
-      </div>
-    );
-  }
-
-  if (phase === 'invalid') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-8">
-        <div className="w-full max-w-md rounded-xl bg-white p-8 text-center shadow-lg">
-          <p className="text-lg font-semibold text-zinc-900">Lumina</p>
-          <p className="mt-6 text-sm text-zinc-600">Código inválido</p>
-        </div>
-      </div>
-    );
-  }
+  const inputCodeClass =
+    'w-full rounded-xl border border-[#dbeafe] px-4 py-3 text-center text-lg font-bold tracking-widest text-[#1e1b4b] placeholder:text-[#6b7280]/70 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#dbeafe] disabled:opacity-60';
+  const inputNameClass =
+    'w-full rounded-xl border border-[#dbeafe] px-4 py-3 text-left text-base font-bold tracking-normal text-[#1e1b4b] placeholder:text-[#6b7280]/70 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#dbeafe] disabled:opacity-60';
+  const gradientBtnClass =
+    'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] py-3 text-base font-bold text-white shadow-sm transition-opacity disabled:opacity-50';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-8">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Lumina</h1>
-          <p className="mt-2 text-sm text-zinc-600">{classTitle}</p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-[#f9fafb] px-4 py-8">
+      <div className="w-full max-w-sm rounded-2xl border border-[#dbeafe] bg-white p-8 text-center shadow-sm">
+        <LuminaJoinLogo />
 
-        <form onSubmit={(e) => void handleJoin(e)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="join-name" className="text-sm font-medium text-zinc-800">
-              ¿Cómo te llamas?
-            </label>
+        {joinStep === 'code' ? (
+          <form onSubmit={(e) => void handleVerifyCode(e)} className="flex flex-col gap-4 text-left">
+            <div>
+              <h1 className="text-center text-xl font-extrabold text-[#1e1b4b]">
+                Únete a la clase
+              </h1>
+              <p className="mt-2 text-center text-sm text-[#6b7280]">
+                Ingresa el código que te dio tu docente
+              </p>
+            </div>
+            <input
+              type="text"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              value={codeInput}
+              onChange={(e) => {
+                setCodeInput(e.target.value);
+                if (codeError) setCodeError('');
+              }}
+              disabled={verifyingCode}
+              placeholder="LUM-XXXXXX"
+              className={inputCodeClass}
+              aria-invalid={Boolean(codeError)}
+            />
+            {codeError ? (
+              <p className="text-center text-sm text-red-600" role="alert">
+                {codeError}
+              </p>
+            ) : null}
+            <button type="submit" disabled={verifyingCode || !codeInput.trim()} className={gradientBtnClass}>
+              {verifyingCode ? <Loader2 className="size-5 animate-spin" aria-hidden /> : null}
+              Continuar
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={(e) => void handleJoin(e)} className="flex flex-col gap-4 text-left">
+            <div>
+              <h1 className="text-center text-xl font-extrabold text-[#1e1b4b]">
+                ¿Cómo te llamas?
+              </h1>
+              {classTitle ? (
+                <p className="mt-2 text-center text-sm text-[#6b7280]">{classTitle}</p>
+              ) : null}
+            </div>
             <input
               id="join-name"
               type="text"
@@ -168,29 +226,26 @@ export function JoinClient({ codigo }: Props) {
                 if (joinError) setJoinError('');
               }}
               disabled={submitting}
-              placeholder="Tu nombre"
-              className="h-11 rounded-lg border border-zinc-200 bg-white px-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-[#F97316] focus:outline-none focus:ring-2 focus:ring-[#F97316]/30 disabled:opacity-60"
+              placeholder="Tu nombre completo"
+              className={inputNameClass}
             />
-          </div>
 
-          {joinError ? (
-            <p className="text-center text-sm text-red-600" role="alert">
-              {joinError}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={submitting || !nombre.trim()}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-            style={{ backgroundColor: '#F97316' }}
-          >
-            {submitting ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
+            {joinError ? (
+              <p className="text-center text-sm text-red-600" role="alert">
+                {joinError}
+              </p>
             ) : null}
-            Unirse a la clase
-          </button>
-        </form>
+
+            <button
+              type="submit"
+              disabled={submitting || !nombre.trim()}
+              className={gradientBtnClass}
+            >
+              {submitting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : null}
+              Entrar a la clase
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

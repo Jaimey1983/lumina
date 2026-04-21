@@ -414,7 +414,7 @@ export function GradebookClient() {
   const entries = gradebook?.entries ?? [];
 
   return (
-    <div className="container py-6">
+    <div className="w-full p-6">
       <div className="flex gap-0 overflow-hidden rounded-lg border border-border bg-background">
         {/* ── Filtros: 240px expandido / 48px contraído (mismo patrón que el editor) ── */}
         <aside
