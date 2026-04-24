@@ -99,14 +99,66 @@ model Class {
   updatedAt          DateTime            @updatedAt
   desempeno          Json?
   codigo             String              @unique @default(cuid())
-  results            ClassResult[]
-  sessions           ClassSession[]
-  course             Course              @relation(fields: [courseId], references: [id])
-  collabNotes        CollabNote[]
-  slides             Slide[]
-  whiteboardSessions WhiteboardSession[]
+  /** Id del fondo del canvas en viewer (`none`, `blanco`, …). */
+  background         String?             @default("none")
+  results             ClassResult[]
+  sessions            ClassSession[]
+  course              Course               @relation(fields: [courseId], references: [id])
+  collabNotes         CollabNote[]
+  slides              Slide[]
+  whiteboardSessions  WhiteboardSession[]
+  autonomousSessions  AutonomousSession[]
 
   @@map("classes")
+}
+
+model AutonomousSession {
+  id                 String               @id @default(cuid())
+  classId            String
+  class              Class                @relation(fields: [classId], references: [id])
+  teacherId          String
+  opensAt            DateTime
+  closesAt           DateTime
+  allowBackNav       Boolean              @default(true)
+  maxAttempts        Int                  @default(1)
+  timerBehavior      String               @default("advance")
+  requireManualStart Boolean              @default(false)
+  pin                String               @default("")
+  status             String               @default("scheduled")
+  createdAt          DateTime             @default(now())
+  progress           AutonomousProgress[]
+  results            AutonomousResult[]
+
+  @@map("autonomous_sessions")
+}
+
+model AutonomousProgress {
+  id            String            @id @default(cuid())
+  sessionId     String
+  session       AutonomousSession @relation(fields: [sessionId], references: [id])
+  studentId     String
+  studentName   String
+  slideId       String
+  response      Json?
+  answeredAt    DateTime          @default(now())
+  attemptNumber Int               @default(1)
+
+  @@map("autonomous_progress")
+}
+
+model AutonomousResult {
+  id            String            @id @default(cuid())
+  sessionId     String
+  session       AutonomousSession @relation(fields: [sessionId], references: [id])
+  studentId     String
+  studentName   String
+  attemptNumber Int               @default(1)
+  status        String            @default("in_progress")
+  finalScore    Float?
+  completedAt   DateTime?
+  createdAt     DateTime          @default(now())
+
+  @@map("autonomous_results")
 }
 
 model Slide {

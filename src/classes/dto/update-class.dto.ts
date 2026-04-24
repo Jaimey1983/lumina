@@ -31,4 +31,8 @@ export class UpdateClassDto {
   )
   @IsIn(['clase', 'presentacion', 'autonomo'])
   modoEntrega?: 'clase' | 'presentacion' | 'autonomo';
+
+  @IsOptional()
+  @IsString()
+  background?: string;
 }
