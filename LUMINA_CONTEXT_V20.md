@@ -1,5 +1,5 @@
-# LUMINA_CONTEXT_V19.md
-_Actualizado: 17/04/2026 — Sesión 08:00–21:00_
+# LUMINA_CONTEXT_V20.md
+_Actualizado: 20/04/2026 — Sesión 19:50–22:00_
 
 ---
 
@@ -114,6 +114,13 @@ Inspirada en Nearpod, Genially y Wordwall.
 ### Colores eliminados
 - `#F97316` naranja — solo persiste en SNAP_COLOR del canvas
 - `#7C3AED` violeta — reemplazado globalmente por `#2563EB`
+
+### Tokens shadcn PROHIBIDOS en código nuevo
+Los siguientes tokens están prohibidos — siempre usar hex explícito:
+`border-border`, `bg-card`, `bg-muted`, `bg-muted/*`, `bg-background`, `bg-accent`,
+`text-muted-foreground`, `text-foreground`, `hover:text-foreground`, `hover:bg-accent`,
+`bg-primary`, `text-primary`, `text-primary-foreground`, `border-primary`, `border-input`,
+`ring-ring`, `ring-primary`, `divide-border`, `shadow-sm` (usar `shadow-lumina-*`)
 
 ### Archivos de tokens
 - `src/styles/globals.css` — variables CSS en `:root`
@@ -230,35 +237,21 @@ POST   /auth/register
 GET    /classes/:id                    — público (viewer)
 PATCH  /classes/:id                    — actualizar clase
 GET    /classes/join/:codigo           — público, sin guard
-GET    /classes?courseId=:id           — clases por curso
-
 POST   /classes/:id/sessions/start
 PATCH  /classes/:id/sessions/end
-
 POST   /classes/:id/results
-PATCH  /classes/:id/results/:resultId
+PATCH  /classes/:classId/results/:resultId
+GET    /classes/:id/versions
+POST   /classes/:id/versions
+PUT    /classes/:id/versions/:versionId/restore
+POST   /classes/:id/slides/insert
 
-GET    /classes/:id/gradebook          — planilla Lumina Edu
+GET    /courses
+POST   /courses
+GET    /courses/:id
 
-GET    /classes/:id/slides/:slideId/versions
-POST   /classes/:id/slides/:slideId/versions
-POST   /classes/:id/slides/:slideId/versions/:versionId/restore
-```
-
-### Payload POST /classes/:id/results
-```typescript
-{
-  sessionId: string,
-  resultados: {
-    studentId: string,
-    slideId: string,
-    activityType: string,
-    correct: boolean | null,
-    score: number,
-    maxScore: number,
-    historial: { label: string; correct: boolean | null }[][]
-  }[]
-}
+GET    /edu/courses/:courseId/gradebook
+GET    /edu/courses/:courseId/analytics
 ```
 
 ---
@@ -287,26 +280,32 @@ src/hooks/api/use-course-analytics.ts  — KPIs desde gradebook
 
 ### Frontend
 ```
-src/app/(app)/classes/classes-client.tsx                       — lista de clases
-src/app/(app)/classes/[id]/editor/editor-client.tsx            — lógica principal editor
+src/app/(app)/classes/classes-client.tsx
+src/app/(app)/classes/[id]/editor/editor-client.tsx
 src/app/(app)/classes/[id]/editor/components/canvas-area.tsx
 src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx
-src/app/(app)/classes/[id]/editor/components/slides-panel.tsx  — SlideThumbnailPreview (sin número)
+src/app/(app)/classes/[id]/editor/components/slides-panel.tsx
+src/app/(app)/classes/[id]/editor/components/icon-rail.tsx          — polish V20
+src/app/(app)/classes/[id]/editor/components/right-rail.tsx         — polish V20
+src/app/(app)/classes/[id]/editor/components/right-flyout-panel.tsx — polish V20
+src/app/(app)/classes/[id]/editor/components/floating-toolbar.tsx   — polish V20
+src/app/(app)/classes/[id]/editor/components/activities/            — polish V20 (10 archivos)
+src/app/(app)/classes/[id]/class-detail-client.tsx                  — polish V20
 src/app/(app)/classes/[id]/viewer/viewer-client.tsx
 src/app/(app)/edu/[courseId]/grade-book-client.tsx
 src/app/(app)/edu/edu-home-client.tsx
-src/app/(app)/dashboard/dashboard-client.tsx
+src/app/(app)/dashboard/dashboard-client.tsx                        — polish V20
 src/app/(app)/analytics/analytics-client.tsx
-src/app/(app)/courses/                                         — lista de cursos
-src/app/(app)/profile/page.tsx                                 — perfil docente (nuevo)
-src/app/join/[codigo]/join-client.tsx
-src/components/layout/sidebar.tsx                              — sidebar con avatar + logout
-src/hooks/api/use-course-analytics.ts                          — analytics KPIs (nuevo)
+src/app/(app)/courses/
+src/app/(app)/profile/page.tsx
+src/app/join/[codigo]/join-client.tsx                               — verificado OK
+src/components/layout/sidebar.tsx
+src/hooks/api/use-course-analytics.ts
 src/hooks/use-autosave.ts
 src/hooks/use-slide-timer.ts
 src/hooks/use-slide-versions.ts
 src/hooks/use-gradebook.ts
-src/styles/globals.css                                         — tokens Lumina 2.1
+src/styles/globals.css                                              — tokens Lumina 2.1
 tailwind.config.ts
 ```
 
@@ -365,7 +364,7 @@ prisma/schema.prisma
 - Distribución de desempeño
 - Engagement: "Disponible próximamente"
 
-### Visual Lumina 2.1 (completado 17/04/2026)
+### Visual Lumina 2.1 (completado 20/04/2026)
 - Color primario azul `#2563EB` — reemplaza violeta globalmente
 - Tipografía negra/gris como protagonista, base 15px
 - Fondos blancos/gris neutro sin tinte
@@ -373,27 +372,32 @@ prisma/schema.prisma
 - Bordes `#e5e7eb` neutros
 - Sidebar con avatar + cierre de sesión en pie
 - `/profile` página creada
-- Navegación sidebar corregida (Inicio/Cursos/Mis Clases/Lumina Edu/Analytics/Perfil)
+- Navegación sidebar corregida
 - Cards `/classes` con click para abrir detalle
 - Badge Superior → verde
+- `dashboard-client.tsx` — AdminDashboard y StudentDashboard alineados a Lumina 2.1
+- `class-detail-client.tsx` — panel derecho, botones, separadores, tipografía
+- `icon-rail.tsx` — tokens shadcn eliminados, íconos inactivos `#9ca3af`
+- `right-rail.tsx` — borde `#e5e7eb`, íconos inactivos `#9ca3af`
+- `right-flyout-panel.tsx` — bordes `#e5e7eb`
+- `floating-toolbar.tsx` — separadores, inputs, selects, dialog
+- `activities/*.tsx` — 10 editores y viewers: tokens shadcn eliminados, dark: eliminados
 
 ---
 
 ## Estado del Roadmap
 
 ### ✅ Completado
-- Todo lo de V18 +
-- Polish visual Lumina 2.1 (páginas principales)
-- Analytics con datos reales
-- Página /profile
-- Sidebar navegación + logout
+- Todo lo de V19 +
+- Polish visual Lumina 2.1 COMPLETO (todas las páginas y componentes principales)
 
-### ⏳ Polish visual pendiente
-1. `/dashboard` (Inicio) — verificar paleta nueva
-2. Página detalle de clase — badge Publicada + botón LUM
-3. Editores de actividad — polish visual
-4. Viewers de actividad — polish visual
-5. Página `/join` — verificar paleta
+### 🔲 Mejoras estéticas pendientes (conversación diseño abril 2026)
+- Viewers fullscreen (100dvh) con fondo de pantalla por clase
+- Catálogo de 12 fondos SVG/CSS propios (sin imágenes externas)
+- Entrada escalonada en actividades (staggered animation)
+- useSound con Web Audio API (sin dependencias externas)
+- Barras animadas en vivo para encuesta (live poll)
+- prop `variant: "dark" | "light"` en viewers según fondo elegido
 
 ### 🔲 Funcionalidades pendientes (roadmap)
 - Modo autónomo — configuración granular (definido, no implementado)
@@ -419,7 +423,7 @@ prisma/schema.prisma
 - Insignias y reputación docente
 - Auth rediseñado (login split-screen, registro multi-step 3 pasos, forgot/reset, verificación email)
 - Onboarding checklist + tour opcional (2 roles: docente / coordinador)
-- Feedback beta widget flotante (tipo + valoración + texto + URL automática)
+- Feedback beta widget flotante
 - Bloque `contenido_externo_html5` (Scratch, PhET, GeoGebra)
 - Fondos animados en slides (particles, ondas, gradientes)
 - Página pública de landing `/`
@@ -456,12 +460,17 @@ prisma/schema.prisma
 - Respuestas paginadas: `Array.isArray(raw) ? raw : raw?.data ?? []`
 - Tras PATCH manual: actualizar caché con `setQueryData` + `computeStudentPromedio()`
 
-### Diseño Lumina 2.1
+### Diseño Lumina 2.1 — regla de oro
 - Color `#2563EB` SOLO en botones CTA, links activos, íconos de acción, barras de progreso
 - Tipografía siempre `#111827` / `#6b7280` — nunca azul en texto de contenido
 - Fondos: `#ffffff` cards, `#f9fafb` app shell
 - Bordes: `#e5e7eb` siempre neutro
 - Sombras: `rgba(0,0,0, 0.06–0.10)` neutras
+- dark: prefixes eliminados — Lumina no tiene modo oscuro
+
+### LUMINA_CONTEXT_V20.md — ubicación
+- Colocar en `lumina-frontend/` (raíz del proyecto frontend) para que Cursor lo encuentre
+- El workspace de Cursor apunta a `lumina-frontend/`, no a la raíz del monorepo
 
 ---
 

@@ -1,61 +1,89 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { useParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
-// ─── Theme definitions ────────────────────────────────────────────────────────
-
-interface Theme {
-  id: string;
-  label: string;
-  bg: string;
-  previewBg: string;
-  accentBg: string;
-}
-
-const THEMES: Theme[] = [
-  { id: 'white',     label: 'Blanco',      bg: '#FFFFFF', previewBg: 'bg-white',        accentBg: 'bg-gray-200' },
-  { id: 'blue',      label: 'Azul suave',  bg: '#F9FAFB', previewBg: 'bg-gray-50',      accentBg: 'bg-blue-400' },
-  { id: 'green',     label: 'Verde suave', bg: '#F0FDF4', previewBg: 'bg-green-50',     accentBg: 'bg-green-400' },
-  { id: 'lavender',  label: 'Lavanda',     bg: '#F9FAFB', previewBg: 'bg-gray-50',    accentBg: 'bg-violet-400' },
-  { id: 'dark',      label: 'Gris oscuro', bg: '#1F2937', previewBg: 'bg-gray-800',     accentBg: 'bg-gray-500' },
-  { id: 'navy',      label: 'Azul marino', bg: '#1E3A5F', previewBg: 'bg-blue-900',     accentBg: 'bg-blue-500' },
-  { id: 'terracota', label: 'Terracota',   bg: '#7C2D12', previewBg: 'bg-orange-900',   accentBg: 'bg-orange-500' },
-  { id: 'mint',      label: 'Menta',       bg: '#ECFDF5', previewBg: 'bg-emerald-50',   accentBg: 'bg-emerald-400' },
-];
+import { useClass, type ClassDetail } from '@/hooks/api/use-class';
+import { useUpdateClass } from '@/hooks/api/use-classes';
+import { CLASS_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
+  /** Conservado para compatibilidad con `right-flyout-panel.tsx`; no se usa aquí. */
   onApplyTheme: (bg: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ThemesPanel({ onApplyTheme }: Props) {
+export function ThemesPanel(props: Props) {
+  void props.onApplyTheme;
+  const params = useParams();
+  const classId = typeof params?.id === 'string' ? params.id : '';
+  const queryClient = useQueryClient();
+  const { data: classData } = useClass(classId);
+  const courseId = classData?.courseId ?? '';
+  const updateClassMutation = useUpdateClass(classId, courseId);
+  const activeBackgroundId = classData?.background ?? 'none';
+
+  const handleSelect = (id: string) => {
+    queryClient.setQueryData<ClassDetail | null | undefined>(
+      ['classes', 'detail', classId],
+      (prev) => (prev ? { ...prev, background: id } : prev),
+    );
+    updateClassMutation.mutate(
+      { background: id },
+      {
+        onError: () => {
+          queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+          toast.error('No se pudo guardar el fondo');
+        },
+      },
+    );
+  };
+
   return (
-    <div className="flex flex-col gap-3 p-4">
-      <p className="text-xs text-muted-foreground">
-        Selecciona un tema para aplicar al slide activo.
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {THEMES.map((theme) => (
-          <button
-            key={theme.id}
-            type="button"
-            title={theme.label}
-            onClick={() => onApplyTheme(theme.bg)}
-            className="overflow-hidden rounded-md border border-border text-left transition-all hover:border-primary hover:ring-2 hover:ring-primary/20"
-          >
-            {/* Color preview */}
-            <div className={cn('flex h-12 w-full flex-col justify-end', theme.previewBg)}>
-              <div className={cn('h-2 w-full', theme.accentBg)} />
-            </div>
-            <div className="px-2 py-1.5">
-              <p className="text-[10px] font-medium leading-tight">{theme.label}</p>
-            </div>
-          </button>
-        ))}
+    <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
+          Fondo de clase
+        </h2>
+        <p className="text-xs text-[#9ca3af]">Se aplica a todos los slides de la clase</p>
       </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {CLASS_BACKGROUNDS.map((b) => {
+          const isActive = activeBackgroundId === b.id;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              title={b.name}
+              aria-label={b.name}
+              aria-pressed={isActive}
+              disabled={!classId || updateClassMutation.isPending}
+              onClick={() => handleSelect(b.id)}
+              className="w-full cursor-pointer rounded-[6px] p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 hover:opacity-80"
+            >
+              <span
+                className="block w-full shrink-0 overflow-hidden"
+                style={{
+                  height: 48,
+                  borderRadius: 6,
+                  boxSizing: 'border-box',
+                  ...b.style,
+                  border: isActive ? '2px solid #2563EB' : '1px solid #e5e7eb',
+                }}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-[10px] text-[#6b7280]">
+        {getBackground(activeBackgroundId).name}
+      </p>
     </div>
   );
 }

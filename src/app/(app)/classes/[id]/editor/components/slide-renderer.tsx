@@ -1151,6 +1151,8 @@ export interface SlideRendererProps {
     blockId: string,
     rawCoords: { x: number; y: number; ancho: number; alto: number },
   ) => { x: number; y: number; ancho: number; alto: number };
+  /** Variante del lienzo según el fondo de clase (p. ej. viewer); reservado para estilos futuros. */
+  variant?: 'light' | 'dark';
 }
 
 export function SlideRenderer({

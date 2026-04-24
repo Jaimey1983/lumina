@@ -44,6 +44,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { PageBanner } from '@/components/ui/page-banner';
 
 // ─── Styling constants ────────────────────────────────────────────────────────
 
@@ -548,19 +549,21 @@ export function AnalyticsClient() {
   const atRisk = analytics?.atRisk ?? [];
   const distribution = analytics?.distribution ?? null;
 
-  return (
-    <div className="w-full space-y-6 p-6">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Analytics</h1>
-          <p className="text-sm mt-1 text-[#6b7280]">Métricas y reportes de rendimiento por curso</p>
-        </div>
+  const activeCourseName = courses.find((c) => c.id === selectedCourseId)?.name;
+  const bannerSubtitle =
+    activeCourseName ??
+    (coursesLoading ? 'Cargando…' : courses.length === 0 ? 'Sin cursos disponibles' : 'Selecciona un curso');
 
+  return (
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner title="Analytics" subtitle={bannerSubtitle} />
+
+      <div className="px-6 pt-4 space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           {/* Course selector */}
           <div className="flex items-center gap-2">
-            <label htmlFor="course-select" className="text-sm font-medium shrink-0">
+            <label htmlFor="course-select" className="text-sm font-medium shrink-0 text-[#111827]">
               Curso:
             </label>
             {coursesLoading ? (
@@ -647,6 +650,7 @@ export function AnalyticsClient() {
           />
         </div>
       )}
+      </div>
     </div>
   );
 }

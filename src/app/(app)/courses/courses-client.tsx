@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageBanner } from '@/components/ui/page-banner';
 import {
   Dialog,
   DialogBody,
@@ -357,28 +358,28 @@ export function CoursesClient() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  return (
-    <div className="w-full space-y-4 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Cursos</h1>
-          <p className="text-sm text-[#6b7280] mt-1">
-            Gestiona todos tus cursos desde aquí.
-          </p>
-        </div>
-        <Button
-          className="rounded-[6px] bg-[#2563EB] text-white shadow-none hover:bg-[#1d4ed8] data-[state=open]:bg-[#1d4ed8] px-4 py-2 h-auto text-sm font-medium gap-1.5"
-          onClick={() => {
-            setEditingCourseId(undefined);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          Nuevo curso
-        </Button>
-      </div>
+  const coursesBannerSubtitle = `${courses.length} curso${courses.length !== 1 ? 's' : ''} · Gestiona todos tus cursos desde aquí`;
 
+  return (
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner
+        title="Cursos"
+        subtitle={coursesBannerSubtitle}
+        action={
+          <button
+            type="button"
+            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+            onClick={() => {
+              setEditingCourseId(undefined);
+              setFormOpen(true);
+            }}
+          >
+            ＋ Nuevo curso
+          </button>
+        }
+      />
+
+      <div className="px-6 pt-4 space-y-4">
       {/* Error */}
       {isError && (
         <Alert variant="destructive" appearance="light">
@@ -516,6 +517,7 @@ export function CoursesClient() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
       />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getInitials, formatDate } from '@/lib/helpers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PageBanner } from '@/components/ui/page-banner';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,13 +81,10 @@ export function ProfileClient() {
   const initials = getInitials(fullName, 2) || '?';
 
   return (
-    <div className="w-full p-6">
-      {/* Page header */}
-      <header className="mb-6">
-        <h1 className="text-xl font-bold text-[#111827]">Perfil</h1>
-        <p className="mt-1 text-sm text-[#6b7280]">Información de tu cuenta</p>
-      </header>
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner title="Mi Perfil" subtitle="Configuración de tu cuenta" />
 
+      <div className="px-6 pt-4">
       <div className="flex flex-col gap-6">
         {/* ── Identity card ── */}
         <ProfileCard>
@@ -208,6 +206,7 @@ export function ProfileClient() {
             description="Personaliza qué notificaciones recibes y cómo te llegan."
           />
         </div>
+      </div>
       </div>
     </div>
   );

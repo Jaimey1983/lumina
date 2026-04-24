@@ -115,21 +115,18 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-52 shrink-0 flex-col border-r border-[#e5e7eb] bg-[#ffffff]">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-5">
-        <Link href="/dashboard" className="mb-6 flex items-center gap-2.5 px-1">
-          <span
-            className="flex size-9 shrink-0 rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, #2563EB, #60A5FA)',
-            }}
+        <Link
+          href="/dashboard"
+          className="mb-6 flex items-center gap-2 border-b border-[#e5e7eb] px-1 pb-4"
+        >
+          <img
+            src="/LM-e5004c.svg"
+            alt="Lumina"
+            className="h-8 w-auto shrink-0"
+            draggable={false}
           />
-          <span className="text-lg font-extrabold leading-tight tracking-tight">
-            <span className="text-[#1e1b4b]">Lumi</span>
-            <span
-              className="bg-[linear-gradient(135deg,#2563EB,#60A5FA)] bg-clip-text text-transparent"
-              style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-            >
-              na
-            </span>
+          <span className="text-[1rem] font-extrabold tracking-tight text-[#111827]">
+            Lumina
           </span>
         </Link>
 

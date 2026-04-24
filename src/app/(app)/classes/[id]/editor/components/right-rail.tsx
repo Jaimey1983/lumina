@@ -33,28 +33,30 @@ export interface RightRailProps {
 
 export function RightRail({ activePanel, onPanelToggle }: RightRailProps) {
   return (
-    <aside className="flex h-full min-h-0 w-full min-w-0 flex-col items-center gap-1 border-l border-[#e5e7eb] bg-white py-2">
-      {ITEMS.map(({ id, label, Icon }) => (
-        <button
-          key={id}
-          type="button"
-          title={label}
-          onClick={() => onPanelToggle(id)}
-          aria-label={label}
-          aria-pressed={activePanel === id}
-          className={cn(
-            'flex items-center justify-center rounded-lg p-3 outline-none',
-            'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
-            'motion-reduce:transition-none',
-            'focus-visible:ring-2 focus-visible:ring-[#9ca3af] focus-visible:ring-offset-1',
-            activePanel === id
-              ? 'bg-[#f9fafb] text-[#2563EB]'
-              : 'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
-          )}
-        >
-          <Icon className="size-5 shrink-0" aria-hidden />
-        </button>
-      ))}
+    <aside className="flex h-full min-h-0 w-full min-w-0 flex-col border-l border-[#e5e7eb] bg-white">
+      <div className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
+        {ITEMS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            title={label}
+            onClick={() => onPanelToggle(id)}
+            aria-label={label}
+            aria-pressed={activePanel === id}
+            className={cn(
+              'flex items-center justify-center rounded-lg p-3 outline-none',
+              'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
+              'motion-reduce:transition-none',
+              'focus-visible:ring-2 focus-visible:ring-[#9ca3af] focus-visible:ring-offset-1',
+              activePanel === id
+                ? 'bg-[#f9fafb] text-[#2563EB]'
+                : 'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+            )}
+          >
+            <Icon className="size-5 shrink-0" aria-hidden />
+          </button>
+        ))}
+      </div>
     </aside>
   );
 }

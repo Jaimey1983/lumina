@@ -47,9 +47,11 @@ function unwrapGuestBody(raw: unknown): GuestJoinResponse | null {
 function LuminaJoinLogo() {
   return (
     <div className="mb-6 flex flex-col items-center gap-2">
-      <span
-        className="flex size-12 shrink-0 rounded-xl shadow-sm"
-        style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }}
+      <img
+        src="/LM-e5004c.svg"
+        alt=""
+        className="h-12 w-auto shrink-0"
+        draggable={false}
         aria-hidden
       />
       <span className="text-xl font-extrabold leading-tight tracking-tight text-[#1e1b4b]">

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 
 import { GradeScaleBadge, getColombianGradeScale } from '@/components/grade-scale-badge';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { PageBanner } from '@/components/ui/page-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
@@ -319,6 +320,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
     classDetail?.title?.trim() ||
     course?.name ||
     (courseLoading ? 'Cargando…' : 'Planilla de notas');
+  const nombreCurso = course?.name?.trim() || (courseLoading ? 'Cargando…' : '—');
   const estudiantesCountDisplay =
     gradebook != null && !gradebookLoading
       ? String(estudiantes.length)
@@ -327,48 +329,61 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
         : '—';
 
   return (
-    <div className="w-full p-6">
-      <Link
-        href="/edu"
-        className="mb-6 inline-flex w-fit items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#6b7280] no-underline transition-all duration-150 ease-in-out hover:bg-[#eff6ff] hover:text-[#2563EB]"
-      >
-        <ArrowLeft className="size-4 shrink-0" />
-        Volver a cursos
-      </Link>
-
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-[#1e1b4b]">Lumina Edu</h1>
-          <p className="mt-1 text-xs font-medium text-[#6b7280]">
-            {nombreClase} · {estudiantesCountDisplay} estudiantes
-          </p>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-          {course?.code ? (
-            <p className="text-xs font-medium text-[#6b7280]">Curso {course.code}</p>
-          ) : null}
-          {showClassSelect ? (
-            <Select
-              value={selectedClassId}
-              onValueChange={setSelectedClassId}
-              disabled={classesLoading || classes.length === 0}
-            >
-              <SelectTrigger className="w-full min-w-[12rem] border-[#e5e7eb] bg-white sm:w-64">
-                <SelectValue placeholder="Selecciona una clase" />
-              </SelectTrigger>
-              <SelectContent>
-                {classes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-        </div>
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <div className="px-6 pt-4">
+        <Link
+          href="/edu"
+          className="mb-4 inline-flex w-fit items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#6b7280] no-underline transition-all duration-150 ease-in-out hover:bg-[#eff6ff] hover:text-[#2563EB]"
+        >
+          <ArrowLeft className="size-4 shrink-0" />
+          Volver a cursos
+        </Link>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+      <PageBanner
+        title="Lumina Edu — Planilla"
+        subtitle={`${nombreCurso} · Escala colombiana 1.0–5.0`}
+        action={
+          <button
+            type="button"
+            className="rounded-lg border border-white/50 bg-transparent px-4 py-1.5 text-[0.75rem] font-extrabold text-white hover:bg-white/10"
+          >
+            Exportar
+          </button>
+        }
+      />
+
+      <div className="px-6 pt-4 space-y-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <p className="text-xs font-medium text-[#6b7280]">
+            {nombreClase} · {estudiantesCountDisplay} estudiantes
+          </p>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            {course?.code ? (
+              <p className="text-xs font-medium text-[#6b7280]">Curso {course.code}</p>
+            ) : null}
+            {showClassSelect ? (
+              <Select
+                value={selectedClassId}
+                onValueChange={setSelectedClassId}
+                disabled={classesLoading || classes.length === 0}
+              >
+                <SelectTrigger className="w-full min-w-[12rem] border-[#e5e7eb] bg-white sm:w-64">
+                  <SelectValue placeholder="Selecciona una clase" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-lumina-sm">
           <div className="border-b border-[#e5e7eb] bg-[#f9fafb] px-4 py-3">
             <div className="flex items-center gap-2">
@@ -590,6 +605,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               <span className="font-semibold text-[#1e1b4b]">Superior:</span> 4.7 - 5.0
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>

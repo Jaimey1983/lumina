@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   AlertCircle,
@@ -17,6 +17,11 @@ import { toast } from 'sonner';
 import { useClass } from '@/hooks/api/use-class';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { usePublishClass } from '@/hooks/api/use-classes';
+import {
+  getActiveAutonomousSession,
+  getAutonomousActionBadge,
+  useAutonomousSessions,
+} from '@/hooks/api/use-autonomous-sessions';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +32,8 @@ import {
   STATUS_BADGE_STYLE,
   STATUS_LABELS,
 } from '@/app/(app)/classes/class-status-badge-styles';
+import { EditAutonomousModal } from './components/edit-autonomous-modal';
+import { LaunchAutonomousModal } from './components/launch-autonomous-modal';
 
 function statusLabel(status: string) {
   return STATUS_LABELS[status?.toUpperCase()] ?? status;
@@ -37,8 +44,24 @@ function statusLabel(status: string) {
 export function ClassDetailClient({ id }: { id: string }) {
   const { data: cls, isLoading, isError } = useClass(id);
   const publishMutation = usePublishClass(cls?.courseId ?? '');
+  const { data: autonomousSessions } = useAutonomousSessions(id);
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [launchAutonomousOpen, setLaunchAutonomousOpen] = useState(false);
+  const [editAutonomousOpen, setEditAutonomousOpen] = useState(false);
+
+  const activeSession = useMemo(
+    () => getActiveAutonomousSession(autonomousSessions),
+    [autonomousSessions],
+  );
+  const autonomousActionBadge = useMemo(
+    () => getAutonomousActionBadge(activeSession),
+    [activeSession],
+  );
+
+  useEffect(() => {
+    if (!activeSession) setEditAutonomousOpen(false);
+  }, [activeSession]);
 
   const isDraft = cls?.status?.toUpperCase() === 'DRAFT';
   const statusBadgeStyle =
@@ -274,6 +297,38 @@ export function ClassDetailClient({ id }: { id: string }) {
                   </Link>
                 </div>
 
+                {sortedSlides.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      disabled={sortedSlides.length === 0 || (!activeSession && !cls?.codigo)}
+                      title={
+                        !activeSession && !cls?.codigo
+                          ? 'Publica la clase para obtener código de acceso'
+                          : undefined
+                      }
+                      onClick={() =>
+                        activeSession ? setEditAutonomousOpen(true) : setLaunchAutonomousOpen(true)
+                      }
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Autónomo
+                    </button>
+                    {autonomousActionBadge.kind ? (
+                      <span
+                        className="flex w-full justify-center rounded-lumina-md px-2 py-1.5 text-center text-xs font-semibold"
+                        style={
+                          autonomousActionBadge.kind === 'scheduled'
+                            ? { backgroundColor: '#fef3c7', color: '#d97706' }
+                            : { backgroundColor: '#dcfce7', color: '#16a34a' }
+                        }
+                      >
+                        {autonomousActionBadge.label}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {isDraft && (
                   <button
                     type="button"
@@ -295,6 +350,27 @@ export function ClassDetailClient({ id }: { id: string }) {
           </div>
         </div>
       </div>
+
+      {/* Mantener el modal montado tras crear la sesión: si no, activeSession pasa a existir,
+          el modal se desmonta y se pierde el paso 3 (enlace y PIN). */}
+      {cls?.codigo && (!activeSession || launchAutonomousOpen) ? (
+        <LaunchAutonomousModal
+          open={launchAutonomousOpen}
+          onOpenChange={setLaunchAutonomousOpen}
+          classId={id}
+          classCode={cls.codigo.toUpperCase()}
+        />
+      ) : null}
+      {activeSession ? (
+        <EditAutonomousModal
+          key={activeSession.id}
+          open={editAutonomousOpen}
+          onOpenChange={setEditAutonomousOpen}
+          classId={id}
+          session={activeSession}
+          classCode={(cls?.codigo ?? '').toUpperCase()}
+        />
+      ) : null}
     </div>
   );
 }

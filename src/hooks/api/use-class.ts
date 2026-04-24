@@ -19,6 +19,8 @@ export interface ClassDetail {
   /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
   timerGlobal?: number;
   modoEntrega?: ClassModoEntrega;
+  /** Id del fondo del canvas en viewer (`none`, `blanco`, …). */
+  background?: string | null;
   /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */
   sessionActive?: boolean;
   status: string;

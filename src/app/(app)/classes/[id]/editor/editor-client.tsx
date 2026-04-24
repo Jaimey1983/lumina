@@ -98,6 +98,7 @@ import {
 } from '@/components/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
 import { api } from '@/lib/api';
+import { getBackground } from '@/lib/class-backgrounds';
 import { cn } from '@/lib/utils';
 import { useAutosave } from '@/hooks/use-autosave';
 
@@ -299,6 +300,7 @@ function parseRoomStudentCount(payload: unknown): number | null {
 
 export function SlideEditorClient({ classId }: { classId: string }) {
   const { data: cls, isLoading, isError } = useClass(classId);
+  const classBackground = getBackground(cls?.background ?? 'none');
   const modoEntrega = parseClassModoEntrega(cls?.modoEntrega);
   const modoEntregaRef = useRef<ClassModoEntrega>(modoEntrega);
   modoEntregaRef.current = modoEntrega;
@@ -1532,27 +1534,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         {/* ── TOPBAR Lumina 2.0 ── */}
         <header
           ref={editorHeaderRef}
-          className="flex h-12 shrink-0 items-center gap-3 border-b border-[#e5e7eb] bg-white px-4"
+          className="flex h-14 shrink-0 items-center gap-3 border-b border-[#1d4ed8] bg-[#2563EB] px-4"
         >
           {/* Izquierda: marca + título + código */}
           <div className="flex min-w-0 shrink-0 items-center gap-3">
             <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
-              <span
-                className="flex size-8 shrink-0 rounded-lg"
-                style={{ background: 'linear-gradient(135deg, #2563EB, #60A5FA)' }}
-                aria-hidden
+              <img
+                src="/LM-ffffff.svg"
+                alt="Lumina"
+                className="h-8 w-auto shrink-0"
+                draggable={false}
               />
-              <span className="hidden text-base font-extrabold leading-tight tracking-tight sm:inline">
-                <span className="text-[#1e1b4b]">Lumi</span>
-                <span
-                  className="bg-[linear-gradient(135deg,#2563EB,#60A5FA)] bg-clip-text text-transparent"
-                  style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-                >
-                  na
-                </span>
-              </span>
+              <span className="text-[1rem] font-extrabold text-white">Lumina</span>
             </Link>
-            <div className="h-5 w-px shrink-0 bg-[#e5e7eb]" aria-hidden />
+            <div className="h-5 w-px shrink-0 bg-white/20" aria-hidden />
             {isLoading ? (
               <Skeleton className="h-4 w-48 max-w-[12rem]" />
             ) : (
@@ -1562,10 +1557,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   value={cls?.title ?? 'Editor'}
                   title={desempeno ? desempeno.enunciado : (cls?.title ?? undefined)}
                   aria-label="Título de la clase"
-                  className="w-48 max-w-[12rem] truncate border-none bg-transparent text-sm font-bold text-[#1e1b4b] outline-none"
+                  className="w-48 max-w-[12rem] truncate border-none bg-transparent text-sm font-bold text-white outline-none"
                 />
                 {cls?.codigo?.trim() ? (
-                  <span className="shrink-0 rounded-lg bg-[#f9fafb] px-2 py-0.5 text-xs font-bold text-[#2563EB]">
+                  <span className="shrink-0 rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold text-white">
                     {cls.codigo.toUpperCase().startsWith('LUM')
                       ? cls.codigo.toUpperCase()
                       : `LUM-${cls.codigo.toUpperCase()}`}
@@ -1581,7 +1576,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               type="button"
               title="Deshacer"
               aria-label="Deshacer"
-              className="rounded-lg p-1.5 text-[#93c5fd] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+              className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
               onClick={() => {
                 canvasAreaRef.current?.undo();
               }}
@@ -1592,27 +1587,27 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               type="button"
               title="Rehacer"
               aria-label="Rehacer"
-              className="rounded-lg p-1.5 text-[#93c5fd] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+              className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
               onClick={() => {
                 canvasAreaRef.current?.redo();
               }}
             >
               <Redo2 className="size-4 shrink-0" aria-hidden />
             </button>
-            <div className="h-5 w-px shrink-0 bg-[#e5e7eb]" aria-hidden />
-            <span className="inline-flex items-center gap-1.5 text-xs text-[#6b7280]">
+            <div className="h-5 w-px shrink-0 bg-white/20" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 text-xs text-white/60">
               {saveError ? (
                 <span className="text-destructive">Error al guardar</span>
               ) : autosaveIsSaving || updateSlide.isPending ? (
                 <>
-                  <Loader2 className="size-3.5 shrink-0 animate-spin text-[#2563EB]" aria-hidden />
+                  <Loader2 className="size-3.5 shrink-0 animate-spin text-white/80" aria-hidden />
                   <span>Guardando…</span>
                 </>
               ) : autosaveDirty ? (
                 <span>Cambios pendientes…</span>
               ) : (
                 <>
-                  <Check className="size-3.5 shrink-0 text-green-600" aria-hidden />
+                  <Check className="size-3.5 shrink-0 text-white/80" aria-hidden />
                   <span>Guardado</span>
                 </>
               )}
@@ -1624,7 +1619,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             {canConfigureLiveTimer ? (
               <div className="flex flex-wrap items-center gap-1.5">
                 <div
-                  className="flex rounded-xl border border-[#e5e7eb] bg-[#fafafa] p-0.5"
+                  className="flex rounded-xl border border-white/20 bg-white/10 p-0.5"
                   role="group"
                   aria-label="Modo de clase"
                 >
@@ -1643,8 +1638,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                       className={cn(
                         'rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors',
                         modoEntrega === value
-                          ? 'bg-white text-[#2563EB] shadow-sm'
-                          : 'text-[#9ca3af] hover:text-[#2563EB]',
+                          ? 'bg-white/20 text-white shadow-sm'
+                          : 'text-white/50 hover:text-white',
                         (isLoading || sessionLoading || sessionActive) &&
                           'pointer-events-none opacity-50',
                       )}
@@ -1653,13 +1648,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                     </button>
                   ))}
                 </div>
-                <Timer className="size-4 shrink-0 text-[#6b7280]" aria-hidden />
+                <Timer className="size-4 shrink-0 text-white/60" aria-hidden />
                 <Select
                   value={String(cls?.timerGlobal ?? 0)}
                   disabled={timerGlobalSaving || isLoading}
                   onValueChange={handleTimerGlobalChange}
                 >
-                  <SelectTrigger className="h-8 w-[7.25rem] border-[#e5e7eb] text-xs" size="sm">
+                  <SelectTrigger className="h-8 w-[7.25rem] border-white/20 bg-white/10 text-white text-xs" size="sm">
                     <SelectValue placeholder="Timer global" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1675,12 +1670,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
             <span
               title={isConnected ? 'Conectado en tiempo real' : 'Sin conexión en tiempo real'}
-              className="flex items-center gap-1.5 text-xs text-[#6b7280]"
+              className="flex items-center gap-1.5 text-xs text-white/50"
             >
               <span
                 className={cn(
                   'size-2 rounded-full',
-                  isConnected ? 'bg-green-500' : 'bg-[#93c5fd]/60',
+                  isConnected ? 'bg-green-500' : 'bg-white/30',
                 )}
               />
             </span>
@@ -1690,7 +1685,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               variant="outline"
               size="sm"
               onClick={() => toast.info('Compartir próximamente disponible')}
-              className="rounded-xl border border-[#e5e7eb] px-3 py-1.5 text-xs font-semibold text-[#9ca3af] hover:bg-[#f9fafb]"
+              className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
             >
               <Share2 className="size-3.5" aria-hidden />
               Compartir
@@ -1703,7 +1698,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!classId || sessionLoading}
                 onClick={handleStartSession}
                 className={cn(
-                  'rounded-xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] px-4 py-1.5 text-xs font-bold text-white shadow-sm',
+                  'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-[#2563EB] shadow-sm',
                   'hover:opacity-95 disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
@@ -1719,7 +1714,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!classId || sessionLoading}
                 onClick={handleEndSession}
                 className={cn(
-                  'rounded-xl bg-[#f87171] px-4 py-1.5 text-xs font-bold text-white shadow-sm',
+                  'rounded-xl bg-white/90 px-4 py-1.5 text-xs font-bold text-[#f87171] shadow-sm',
                   'hover:opacity-95 disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
@@ -1739,8 +1734,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 className={cn(
                   'shrink-0 rounded-xl border-0 text-xs shadow-none',
                   responsesLocked
-                    ? 'bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2] hover:text-[#DC2626]'
-                    : 'bg-[#f9fafb] text-[#2563EB] hover:bg-[#dbeafe]',
+                    ? 'bg-white/90 text-[#DC2626] hover:bg-white/90 hover:text-[#DC2626]'
+                    : 'bg-white/15 text-white hover:bg-white/25',
                 )}
               >
                 {responsesLocked ? (
@@ -1754,7 +1749,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
             {showLiveResponsesTopbar ? (
               <span
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#dbeafe] px-2.5 py-1 text-xs font-bold tabular-nums text-[#2563EB]"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold tabular-nums text-white"
                 title="Respuestas en este slide vs. estudiantes conectados en la sala"
               >
                 <Users className="size-3.5 shrink-0" aria-hidden />
@@ -1767,7 +1762,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-[#e5e7eb] text-xs"
+                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
                 onClick={() => {
                   setPreviewSlideIndex(resolvedSlideIndex);
                   setPreviewOpen(true);
@@ -1783,7 +1778,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-[#e5e7eb] text-xs"
+                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
                 onClick={() => setHistorySheetOpen(true)}
                 aria-label="Historial de versiones"
               >
@@ -1796,7 +1791,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               variant="outline"
               size="sm"
               disabled={!activeSlide || updateSlide.isPending}
-              className="rounded-xl border-[#e5e7eb] text-xs"
+              className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
               onClick={handleSave}
             >
               <Save className="size-3.5" />
@@ -1861,18 +1856,26 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             />
           </div>
 
-          {/* Canvas area — flex-1 */}
-          <CanvasArea
-            ref={canvasAreaRef}
-            slide={rendererSlide}
-            isLoading={isLoading}
-            onActivityChange={handleActivityChange}
-            onRemoveBlock={handleRemoveBlock}
-            onEffectiveBloques={setActiveSlideLiveBloques}
-            livePanelOpen={rightPanel === 'live'}
-            onCopyBlock={setCopiedBlock}
-            copiedBlock={copiedBlock}
-          />
+          {/* Canvas area — flex-1 (fondo de clase en el contenedor del workspace) */}
+          <div
+            className={cn(
+              'flex min-h-0 min-w-0 flex-1 overflow-hidden',
+              '[&_.bg-editor-workspace]:bg-transparent',
+            )}
+            style={classBackground.style}
+          >
+            <CanvasArea
+              ref={canvasAreaRef}
+              slide={rendererSlide}
+              isLoading={isLoading}
+              onActivityChange={handleActivityChange}
+              onRemoveBlock={handleRemoveBlock}
+              onEffectiveBloques={setActiveSlideLiveBloques}
+              livePanelOpen={rightPanel === 'live'}
+              onCopyBlock={setCopiedBlock}
+              copiedBlock={copiedBlock}
+            />
+          </div>
 
           {/* Flyout panel derecho */}
           <RightFlyoutPanel

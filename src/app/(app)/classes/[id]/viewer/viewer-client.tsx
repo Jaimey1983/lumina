@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useSlideTimer } from '@/hooks/use-slide-timer';
+import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
@@ -215,6 +216,13 @@ export function ViewerClient({ id }: { id: string }) {
   );
 
   useEffect(() => () => clearResponsePillTimers(), [clearResponsePillTimers]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
   const slides = useMemo(() => {
@@ -457,7 +465,7 @@ export function ViewerClient({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#1e1b4b]">
+      <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#1e1b4b]">
         <Loader2 className="size-10 animate-spin text-white/70" aria-label="Cargando" />
       </div>
     );
@@ -465,7 +473,7 @@ export function ViewerClient({ id }: { id: string }) {
 
   if (error || !classData) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#1e1b4b] px-4">
+      <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#1e1b4b] px-4">
         <p className="text-center text-sm font-medium text-slate-300">Error al cargar la clase</p>
       </div>
     );
@@ -473,7 +481,7 @@ export function ViewerClient({ id }: { id: string }) {
 
   if (classData.status !== 'PUBLISHED') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#1e1b4b] px-4">
+      <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#1e1b4b] px-4">
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
           <p className="text-lg font-bold text-white">Esta clase no está disponible aún</p>
           <p className="mt-2 text-sm text-slate-300">
@@ -489,11 +497,11 @@ export function ViewerClient({ id }: { id: string }) {
     const scoreVal = typeof defaultScore === 'number' ? defaultScore : undefined;
 
     return (
-      <div className="fixed inset-0 z-50 flex min-h-screen flex-col items-center justify-center bg-[#1e1b4b] p-4">
+      <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col items-center justify-center overflow-hidden bg-[#1e1b4b] p-4">
         {isFullscreen && (
           <button
             type="button"
-            className="fixed right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
+            className="absolute right-3 top-3 z-50 inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
             onClick={() => {
               if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
@@ -551,6 +559,9 @@ export function ViewerClient({ id }: { id: string }) {
     );
   }
 
+  const bg = getBackground(classData.background ?? 'none');
+  const slideCanvasVariant = DARK_BACKGROUNDS.includes(bg.id) ? 'dark' : 'light';
+
   const headerTimerClass =
     viewerTimeLeft < 5
       ? 'text-[#f87171]'
@@ -559,12 +570,12 @@ export function ViewerClient({ id }: { id: string }) {
         : 'text-slate-300';
 
   return (
-    <div className="fixed inset-0 z-50 flex min-h-screen flex-col bg-[#1e1b4b]">
+    <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1e1b4b]">
       {isFullscreen && (
         <button
           type="button"
           aria-label="Salir de pantalla completa"
-          className="fixed right-3 top-3 z-[60] inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
+          className="absolute right-3 top-3 z-[60] inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
           onClick={() => {
             if (document.fullscreenElement) {
               document.exitFullscreen().catch(() => {});
@@ -632,9 +643,12 @@ export function ViewerClient({ id }: { id: string }) {
             </div>
           ) : null}
 
-          <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-4 py-6">
+          <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col justify-center overflow-hidden px-4 py-6">
             {activeSlide ? (
-              <div className="relative aspect-video w-full max-h-[min(78vh,calc(100vw-2rem))] shrink-0 overflow-hidden rounded-2xl bg-background shadow-2xl shadow-black/30">
+              <div
+                className="relative aspect-video w-full max-h-[min(78dvh,calc(100vw-2rem))] shrink-0 overflow-hidden rounded-2xl shadow-2xl shadow-black/30"
+                style={bg.style}
+              >
                 <div
                   className={cn(
                     'h-full w-full',
@@ -645,6 +659,7 @@ export function ViewerClient({ id }: { id: string }) {
                     slide={activeSlide}
                     modo="viewer"
                     onResponse={handleResponse}
+                    variant={slideCanvasVariant}
                   />
                 </div>
               </div>
@@ -693,7 +708,7 @@ export function ViewerClient({ id }: { id: string }) {
           role="status"
           aria-live="polite"
           className={cn(
-            'fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium shadow-lg',
+            'absolute bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium shadow-lg',
             responsePill.variant === 'correct' &&
               'border-[#16A34A]/30 bg-[#DCFCE7] text-green-900',
             responsePill.variant === 'incorrect' &&

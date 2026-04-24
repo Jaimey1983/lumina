@@ -73,6 +73,7 @@ export interface UpdateClassInput {
   /** Segundos; 0 = temporizador global desactivado. */
   timerGlobal?: number;
   modoEntrega?: ClassModoEntrega;
+  background?: string;
 }
 
 export function useCreateClass(courseId: string) {

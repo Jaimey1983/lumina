@@ -11,7 +11,6 @@ import {
 import {
   AlertCircle,
   Award,
-  Bell,
   BookOpen,
   Plus,
   Users,
@@ -28,6 +27,7 @@ import { type AuthUser } from '@/contexts/auth-context';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PageBanner } from '@/components/ui/page-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import {
@@ -373,44 +373,24 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
   const loadingLists = coursesQuery.isLoading || classesQuery.isLoading;
 
   return (
-    <div className="w-full p-6">
-      {coursesQuery.isError && <ErrorAlert message="No se pudieron cargar los cursos." />}
-      {classesQuery.isError && <ErrorAlert message="No se pudieron cargar las clases." />}
-
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-[#1e1b4b]">
-            {greetingForNow()},{' '}
-            <span className="bg-gradient-to-r from-[#2563EB] to-[#60A5FA] bg-clip-text text-transparent">
-              {nombre}
-            </span>{' '}
-            👋
-          </h1>
-          <p className="mt-1 text-lumina-sm font-medium text-[#6b7280]">
-            {formatTodayEs()} · {classes.length} clases
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="rounded-xl border-[#e5e7eb] text-[#2563EB]"
-            aria-label="Notificaciones"
-          >
-            <Bell className="size-4" />
-          </Button>
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner
+        title={`${greetingForNow()}, ${nombre} 👋`}
+        subtitle={`${formatTodayEs()} · ${classes.length} clases`}
+        action={
           <Link
             href="/classes"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] px-4 py-2 text-sm font-bold text-white"
+            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg"
           >
-            <Plus className="size-3.5" strokeWidth={2.5} />
-            Nueva clase
+            ＋ Nueva clase
           </Link>
-        </div>
-      </div>
+        }
+      />
+      <div className="px-6 pt-4 space-y-5">
+        {coursesQuery.isError && <ErrorAlert message="No se pudieron cargar los cursos." />}
+        {classesQuery.isError && <ErrorAlert message="No se pudieron cargar las clases." />}
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingLists ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div
@@ -450,10 +430,10 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
             />
           </>
         )}
-      </div>
+        </div>
 
-      {liveClass && (
-        <div className="mb-4 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] p-5 text-white shadow-lumina-md">
+        {liveClass && (
+        <div className="rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#60A5FA] p-5 text-white shadow-lumina-md">
           <p className="mb-1 flex items-center gap-1.5 text-lumina-sm font-bold opacity-80">
             <span className="size-2 animate-pulse rounded-full bg-white" />
             Clase en vivo ahora
@@ -480,9 +460,9 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
             Ver clase en vivo →
           </Link>
         </div>
-      )}
+        )}
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-lumina-sm">
           <h2 className="mb-4 text-lumina-md font-bold text-[#1e1b4b]">Clases recientes</h2>
           {classesQuery.isLoading ? (
@@ -557,9 +537,9 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
             ))}
           </ul>
         </div>
-      </div>
+        </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
         <Link
           href="/courses"
           className="text-sm font-semibold text-[#2563EB] underline-offset-2 hover:underline"
@@ -572,6 +552,7 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
         >
           Gestionar clases →
         </Link>
+        </div>
       </div>
     </div>
   );

@@ -61,6 +61,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { PageBanner } from '@/components/ui/page-banner';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -497,38 +498,30 @@ export function ClassesClient() {
     setDeleteDialog({ open: true, cls });
   }
 
-  return (
-    <div className="w-full space-y-4 p-6">
-      {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Clases</h1>
-          <p className="text-sm text-[#6b7280] mt-1">
-            Gestiona las clases de tus cursos.
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={!selectedCourseId}
-          onClick={() => {
-            setFormOpen(true);
-          }}
-          className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: '#2563EB',
-            borderRadius: '6px',
-            border: 'none',
-            cursor: selectedCourseId ? 'pointer' : 'not-allowed',
-            transition: 'background-color 150ms ease',
-          }}
-          onMouseEnter={(e) => { if (selectedCourseId) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1d4ed8'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2563EB'; }}
-        >
-          <Plus className="size-4" />
-          Nueva clase
-        </button>
-      </div>
+  const bannerSubtitle = selectedCourseId
+    ? `${classes.length} clase${classes.length !== 1 ? 's' : ''} · Gestiona y organiza tu contenido`
+    : 'Selecciona un curso para ver tus clases';
 
+  return (
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner
+        title="Mis Clases"
+        subtitle={bannerSubtitle}
+        action={
+          <button
+            type="button"
+            disabled={!selectedCourseId}
+            onClick={() => {
+              setFormOpen(true);
+            }}
+            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ＋ Nueva clase
+          </button>
+        }
+      />
+
+      <div className="px-6 pt-4 space-y-4">
       {/* Course selector */}
       <div className="flex items-center gap-3">
         <label
@@ -661,6 +654,7 @@ export function ClassesClient() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
       />
+      </div>
     </div>
   );
 }
