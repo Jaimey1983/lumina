@@ -15,6 +15,7 @@ import {
 import {
   useLaunchAutonomousSession,
   type AutonomousSession,
+  type AutonomousSessionPurpose,
   type AutonomousTimerBehavior,
   type LaunchAutonomousSessionInput,
 } from '@/hooks/api/use-autonomous-sessions';
@@ -113,6 +114,7 @@ export function LaunchAutonomousModal({ open, onOpenChange, classId, classCode }
   const [maxAttemptsChoice, setMaxAttemptsChoice] = useState<1 | 2 | 3 | 'unlimited'>(1);
   const [allowBackNav, setAllowBackNav] = useState(false);
   const [timerBehavior, setTimerBehavior] = useState<AutonomousTimerBehavior>('advance');
+  const [purpose, setPurpose] = useState<AutonomousSessionPurpose>('independent');
 
   const launchMutation = useLaunchAutonomousSession(classId);
 
@@ -124,6 +126,7 @@ export function LaunchAutonomousModal({ open, onOpenChange, classId, classCode }
     setMaxAttemptsChoice(1);
     setAllowBackNav(false);
     setTimerBehavior('advance');
+    setPurpose('independent');
     setStep(1);
     setCreatedSession(null);
     launchMutation.reset();
@@ -142,14 +145,17 @@ export function LaunchAutonomousModal({ open, onOpenChange, classId, classCode }
       maxAttempts: maxAttemptsChoice === 'unlimited' ? -1 : maxAttemptsChoice,
       allowBackNav,
       timerBehavior,
+      purpose,
     };
-  }, [opensDate, closesDate, maxAttemptsChoice, allowBackNav, timerBehavior]);
+  }, [opensDate, closesDate, maxAttemptsChoice, allowBackNav, timerBehavior, purpose]);
 
   const summaryAttempts =
     maxAttemptsChoice === 'unlimited' ? 'Ilimitados' : maxAttemptsChoice === 1 ? '1' : String(maxAttemptsChoice);
 
   const summaryTimer =
     timerBehavior === 'advance' ? 'Avanzar automáticamente' : 'Bloquear respuesta';
+
+  const summaryPurpose = purpose === 'recovery' ? 'Recuperación' : 'Tarea independiente';
 
   const handleNext = () => {
     if (!opensDate || !closesDate) {
@@ -167,8 +173,6 @@ export function LaunchAutonomousModal({ open, onOpenChange, classId, classCode }
     if (!payload) return;
     launchMutation.mutate(payload, {
       onSuccess: (session) => {
-        // eslint-disable-next-line no-console -- depurar respuesta del POST
-        console.log(session);
         setCreatedSession(session);
         setStep(3);
       },
@@ -226,6 +230,40 @@ export function LaunchAutonomousModal({ open, onOpenChange, classId, classCode }
         <DialogBody className="px-6 pb-2 max-h-[min(70vh,560px)] overflow-y-auto">
           {step === 1 ? (
             <div className="space-y-4">
+              <div>
+                {fieldLabel('¿Para qué es esta tarea?')}
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setPurpose('recovery')}
+                    className={`w-full rounded-lumina-md border p-3 text-left transition-colors ${
+                      purpose === 'recovery'
+                        ? 'border-[#2563EB] bg-[#eff6ff]'
+                        : 'border-[#e5e7eb] bg-[#ffffff] hover:bg-[#f9fafb]'
+                    }`}
+                  >
+                    <div className="text-lumina-sm font-semibold text-[#111827]">🔵 Recuperación</div>
+                    <p className="mt-1 text-lumina-sm leading-snug text-[#6b7280]">
+                      Para estudiantes que no asistieron a la clase en vivo. La nota quedará registrada en la planilla
+                      principal.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPurpose('independent')}
+                    className={`w-full rounded-lumina-md border p-3 text-left transition-colors ${
+                      purpose === 'independent'
+                        ? 'border-[#2563EB] bg-[#eff6ff]'
+                        : 'border-[#e5e7eb] bg-[#ffffff] hover:bg-[#f9fafb]'
+                    }`}
+                  >
+                    <div className="text-lumina-sm font-semibold text-[#111827]">📋 Tarea independiente</div>
+                    <p className="mt-1 text-lumina-sm leading-snug text-[#6b7280]">
+                      Trabajo adicional o para la casa. Los resultados aparecen en una planilla separada.
+                    </p>
+                  </button>
+                </div>
+              </div>
               <div>
                 {fieldLabel('Apertura')}
                 <DateTimeField id="opens" value={opensLocal} onChange={setOpensLocal} />
@@ -325,6 +363,7 @@ export function LaunchAutonomousModal({ open, onOpenChange, classId, classCode }
                 <p className="text-lumina-xs font-semibold uppercase tracking-wide text-[#6b7280] mb-2">Resumen</p>
                 <SummaryRow label="Apertura" value={opensDate ? `${formatDayMonth(opensDate)} · ${formatTimeAmPm(opensDate)}` : '—'} />
                 <SummaryRow label="Cierre" value={closesDate ? `${formatDayMonth(closesDate)} · ${formatTimeAmPm(closesDate)}` : '—'} />
+                <SummaryRow label="Propósito" value={summaryPurpose} />
                 <SummaryRow label="Intentos" value={summaryAttempts} />
                 <SummaryRow label="Volver atrás" value={allowBackNav ? 'Sí' : 'No'} />
                 <SummaryRow label="Al expirar timer" value={summaryTimer} />

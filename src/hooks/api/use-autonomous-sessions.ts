@@ -15,6 +15,9 @@ function backendErrorMessage(error: unknown): string | undefined {
 /** Comportamiento al expirar el temporizador de slide (contrato backend). */
 export type AutonomousTimerBehavior = 'advance' | 'lock';
 
+/** Uso académico: recuperación (planilla principal) vs tarea adicional (planilla separada). */
+export type AutonomousSessionPurpose = 'recovery' | 'independent';
+
 export interface LaunchAutonomousSessionInput {
   opensAt: string;
   closesAt: string;
@@ -22,6 +25,7 @@ export interface LaunchAutonomousSessionInput {
   maxAttempts: number;
   allowBackNav: boolean;
   timerBehavior: AutonomousTimerBehavior;
+  purpose: AutonomousSessionPurpose;
 }
 
 export type AutonomousSessionStatus = 'scheduled' | 'open' | 'closed';
@@ -35,6 +39,8 @@ export interface AutonomousSession {
   maxAttempts: number;
   allowBackNav: boolean;
   timerBehavior: AutonomousTimerBehavior;
+  /** Si el API no lo envía (sesiones anteriores), asumir `independent`. */
+  purpose?: AutonomousSessionPurpose;
   /** PIN de acceso (docente / respuesta de creación). */
   pin?: string | null;
 }

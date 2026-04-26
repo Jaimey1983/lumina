@@ -459,9 +459,27 @@ function ViewerScreen({
   const progress     = slides.length > 0 ? ((idx + 1) / slides.length) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1e1b4b]">
-      {/* ── Top bar ── */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 bg-white/5 px-4">
+    <div className="fixed inset-0 z-50 h-[100dvh] w-screen overflow-hidden bg-[#1e1b4b]">
+      {/* ── Slide: ocupa 100% del viewport ── */}
+      {activeSlide ? (
+        <div className="absolute inset-0 h-full w-full" style={bg.style}>
+          <div className={cn('h-full w-full', locked && 'pointer-events-none select-none opacity-[0.92]')}>
+            <SlideRenderer
+              slide={activeSlide}
+              modo="viewer"
+              onResponse={handleResponse}
+              variant={slideVariant}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-center text-sm text-slate-300">No hay slides en esta tarea</p>
+        </div>
+      )}
+
+      {/* ── Top bar superpuesta ── */}
+      <header className="absolute inset-x-0 top-0 z-30 flex h-12 items-center justify-between border-b border-white/10 bg-black/40 px-4 backdrop-blur-sm">
         <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
           <LuminaMark className="size-7 rounded-lg" />
           {/* Progress bar */}
@@ -497,64 +515,39 @@ function ViewerScreen({
         </div>
       </header>
 
-      {/* ── Slide ── */}
-      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden">
-          <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col justify-center overflow-hidden px-4 py-6">
-            {activeSlide ? (
-              <div
-                className="relative aspect-video w-full max-h-[min(78dvh,calc(100vw-2rem))] shrink-0 overflow-hidden rounded-2xl shadow-2xl shadow-black/30"
-                style={bg.style}
-              >
-                <div className={cn('h-full w-full', locked && 'pointer-events-none select-none opacity-[0.92]')}>
-                  <SlideRenderer
-                    slide={activeSlide}
-                    modo="viewer"
-                    onResponse={handleResponse}
-                    variant={slideVariant}
-                  />
-                </div>
-              </div>
-            ) : (
-              <p className="text-center text-sm text-slate-300">No hay slides en esta tarea</p>
-            )}
-          </div>
+      {/* ── Nav superpuesta: centrada verticalmente ── */}
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
+        <button
+          type="button"
+          aria-label="Diapositiva anterior"
+          disabled={idx <= 0 || !allowBackNav}
+          onClick={() => { setLocked(false); setIdx((i) => Math.max(0, i - 1)); }}
+          className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/50 disabled:pointer-events-none disabled:opacity-35"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
 
-          {/* ── Nav ── */}
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
-            <button
-              type="button"
-              aria-label="Diapositiva anterior"
-              disabled={idx <= 0 || !allowBackNav}
-              onClick={() => { setLocked(false); setIdx((i) => Math.max(0, i - 1)); }}
-              className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-white/20 disabled:pointer-events-none disabled:opacity-35"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-
-            {isLastSlide ? (
-              <button
-                id="btn-entregar"
-                type="button"
-                onClick={onComplete}
-                className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-95"
-              >
-                <Check className="size-4" />
-                Entregar tarea
-              </button>
-            ) : (
-              <button
-                type="button"
-                aria-label="Diapositiva siguiente"
-                onClick={handleAdvance}
-                className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-white/20"
-              >
-                <ChevronRight className="size-5" />
-              </button>
-            )}
-          </div>
-        </div>
-      </main>
+        {isLastSlide ? (
+          <button
+            id="btn-entregar"
+            type="button"
+            onClick={onComplete}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-95"
+          >
+            <Check className="size-4" />
+            Entregar tarea
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label="Diapositiva siguiente"
+            onClick={handleAdvance}
+            className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/50"
+          >
+            <ChevronRight className="size-5" />
+          </button>
+        )}
+      </div>
 
       {/* ── Response pill ── */}
       {pill && (

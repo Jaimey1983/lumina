@@ -143,6 +143,10 @@ export function EditAutonomousModal({
   const badge = statusBadgeStyle(session.status);
   const pinDisplay = session.pin != null && session.pin !== '' ? session.pin : '—';
 
+  const purposeIsRecovery = session.purpose === 'recovery';
+  const purposeInfoText = purposeIsRecovery ? 'Propósito: Recuperación' : 'Propósito: Tarea independiente';
+  const purposeInfoColor = purposeIsRecovery ? '#2563EB' : '#6b7280';
+
   const studentLink = useMemo(
     () =>
       typeof window !== 'undefined' ? `${window.location.origin}/autonomo/${session.id}` : '',
@@ -203,6 +207,9 @@ export function EditAutonomousModal({
                   {STATUS_LABEL[session.status]}
                 </span>
               </div>
+              <p className="text-lumina-sm font-medium" style={{ color: purposeInfoColor }}>
+                {purposeInfoText}
+              </p>
             </div>
 
             <div className="rounded-lumina-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 space-y-3">
