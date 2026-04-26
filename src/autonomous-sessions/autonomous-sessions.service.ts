@@ -54,13 +54,38 @@ export class AutonomousSessionsService {
   }
 
   async findAllByClass(classId: string) {
-    return this.prisma.autonomousSession.findMany({
+    const sessions = await this.prisma.autonomousSession.findMany({
       where: { classId },
       include: {
         _count: { select: { results: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    const now = new Date();
+    const updates: Promise<any>[] = [];
+
+    for (const session of sessions) {
+      let newStatus = session.status;
+      if (session.status === 'scheduled' && session.opensAt <= now) {
+        newStatus = 'open';
+      } else if (session.status === 'open' && session.closesAt <= now) {
+        newStatus = 'closed';
+      }
+      if (newStatus !== session.status) {
+        updates.push(
+          this.prisma.autonomousSession.update({
+            where: { id: session.id },
+            data: { status: newStatus },
+          }),
+        );
+        session.status = newStatus;
+      }
+    }
+
+    if (updates.length > 0) await Promise.all(updates);
+
+    return sessions;
   }
 
   async findOne(sessionId: string) {
@@ -71,6 +96,8 @@ export class AutonomousSessionsService {
           select: {
             id: true,
             title: true,
+            description: true,
+            codigo: true,
             slides: {
               orderBy: { order: 'asc' },
             },
@@ -135,7 +162,7 @@ export class AutonomousSessionsService {
           where: { sessionId, studentId, attemptNumber: inProgress.attemptNumber },
           orderBy: { answeredAt: 'asc' },
         });
-        return { studentId, attemptNumber: inProgress.attemptNumber, existingProgress, resuming: true };
+        return { session, studentId, attemptNumber: inProgress.attemptNumber, existingProgress, resuming: true };
       }
 
       const maxAttemptNumber = Math.max(...studentResults.map((r) => r.attemptNumber), 0);
@@ -151,7 +178,7 @@ export class AutonomousSessionsService {
         },
       });
 
-      return { studentId, attemptNumber, existingProgress: [], resuming: false };
+      return { session, studentId, attemptNumber, existingProgress: [], resuming: false };
     }
 
     const studentId = nanoid();
@@ -165,7 +192,7 @@ export class AutonomousSessionsService {
       },
     });
 
-    return { studentId, attemptNumber: 1, existingProgress: [], resuming: false };
+    return { session, studentId, attemptNumber: 1, existingProgress: [], resuming: false };
   }
 
   async saveProgress(sessionId: string, dto: SaveProgressDto) {
@@ -300,6 +327,7 @@ export class AutonomousSessionsService {
   }
 
   async remove(sessionId: string, teacherId: string) {
+    console.log('DELETE autonomous-session:', sessionId);
     const session = await this.prisma.autonomousSession.findUnique({
       where: { id: sessionId },
       select: { id: true, teacherId: true, status: true },
