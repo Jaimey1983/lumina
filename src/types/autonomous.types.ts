@@ -1,8 +1,18 @@
 // ─── Autonomous Session Types ─────────────────────────────────────────────────
 
+/** Slide tal como lo devuelve GET/POST de sesión autónoma (viewer). */
+export interface ApiSlide {
+  id: string;
+  order: number;
+  type: string;
+  title: string;
+  content: unknown;
+}
+
 export interface AutonomousSession {
   id: string;
-  classId: string;
+  /** Algunas respuestas del API aún pueden incluir el id de clase explícito. */
+  classId?: string;
   opensAt: string;
   closesAt: string;
   allowBackNav: boolean;
@@ -13,9 +23,11 @@ export interface AutonomousSession {
   /** Si el backend lo envía a nivel sesión (además de en `class`). */
   background?: string | null;
   class: {
+    id?: string;
     title: string;
+    description?: string;
     codigo: string;
-    content: unknown;
+    slides: ApiSlide[];
     /** Fondo del viewer (misma semántica que en detalle de clase). */
     background?: string | null;
   };
@@ -30,9 +42,10 @@ export interface AutonomousProgressEntry {
 export interface JoinSessionResponse {
   studentId: string;
   attemptNumber: number;
-  hasExistingProgress: boolean;
   resuming: boolean;
   existingProgress?: unknown;
+  /** Sesión anidada devuelta por POST /join (incluye `class.slides` sin GET extra). */
+  session?: AutonomousSession;
 }
 
 export interface CompleteSessionResponse {

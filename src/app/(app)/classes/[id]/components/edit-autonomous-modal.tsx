@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { ClipboardCopy } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -65,6 +66,8 @@ export function EditAutonomousModal({
   const updateMutation = useUpdateAutonomousSession(classId);
   const cancelMutation = useCancelAutonomousSession(classId);
 
+  const onClose = () => onOpenChange(false);
+
   useEffect(() => {
     if (!open) {
       setConfirmCancel(false);
@@ -120,24 +123,55 @@ export function EditAutonomousModal({
     updateMutation.mutate(payload, {
       onSuccess: () => {
         toast.success('Cambios guardados');
-        onOpenChange(false);
+        onClose();
       },
     });
   };
 
-  const handleCancelTask = () => {
-    cancelMutation.mutate(session.id, {
-      onSuccess: () => {
-        toast.success('Tarea cancelada');
-        setConfirmCancel(false);
-        onOpenChange(false);
-      },
-    });
+  const handleCancelTask = async () => {
+    try {
+      await cancelMutation.mutateAsync(session.id);
+      toast.success('Tarea cancelada correctamente');
+      setConfirmCancel(false);
+      onClose();
+    } catch {
+      // Errores: toast en useCancelAutonomousSession
+    }
   };
 
   const opensReadOnly = new Date(session.opensAt);
   const badge = statusBadgeStyle(session.status);
   const pinDisplay = session.pin != null && session.pin !== '' ? session.pin : '—';
+
+  const studentLink = useMemo(
+    () =>
+      typeof window !== 'undefined' ? `${window.location.origin}/autonomo/${session.id}` : '',
+    [session.id],
+  );
+
+  const copyStudentLink = async () => {
+    if (!studentLink) return;
+    try {
+      await navigator.clipboard.writeText(studentLink);
+      toast.success('Enlace copiado');
+    } catch {
+      toast.error('No se pudo copiar el enlace');
+    }
+  };
+
+  const copyPin = async () => {
+    const pin = session.pin;
+    if (pin == null || pin === '') {
+      toast.error('No hay PIN disponible');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(pin);
+      toast.success('PIN copiado');
+    } catch {
+      toast.error('No se pudo copiar el PIN');
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -168,6 +202,34 @@ export function EditAutonomousModal({
                 >
                   {STATUS_LABEL[session.status]}
                 </span>
+              </div>
+            </div>
+
+            <div className="rounded-lumina-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 space-y-3">
+              <span className="block text-lumina-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                Enlace para estudiantes
+              </span>
+              <div className="rounded-lumina-md border border-[#e5e7eb] bg-[#ffffff] px-3 py-2.5 font-mono text-lumina-sm break-all text-[#111827]">
+                {studentLink || '—'}
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={copyStudentLink}
+                  disabled={!studentLink}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lumina-md border border-[#e5e7eb] bg-[#ffffff] px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] hover:bg-[#f9fafb] disabled:opacity-50"
+                >
+                  <ClipboardCopy className="size-4 text-[#2563EB]" />
+                  Copiar link
+                </button>
+                <button
+                  type="button"
+                  onClick={copyPin}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lumina-md border border-[#e5e7eb] bg-[#ffffff] px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] hover:bg-[#f9fafb]"
+                >
+                  <ClipboardCopy className="size-4 text-[#2563EB]" />
+                  Copiar PIN
+                </button>
               </div>
             </div>
 
@@ -333,7 +395,7 @@ export function EditAutonomousModal({
           ) : null}
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onClick={onClose}
             className="w-full rounded-lumina-md border border-[#e5e7eb] bg-[#ffffff] px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] hover:bg-[#f9fafb]"
           >
             Cerrar

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Check, CheckCircle2, ChevronLeft, ChevronRight,
   Clock, Loader2, Trophy, XCircle,
@@ -16,14 +17,61 @@ import {
   useSaveProgress,
   useCompleteSession,
 } from '@/hooks/api/use-autonomous-viewer';
-import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import type { Slide } from '@/hooks/api/use-class';
 import type { Block, Activity } from '@/types/slide.types';
-import type { CompleteSessionResponse } from '@/types/autonomous.types';
+import type { AutonomousSession, CompleteSessionResponse } from '@/types/autonomous.types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const LS_STUDENT_NAME = 'lumina_student_name';
 const LS_STUDENT_ID   = 'lumina_student_id';
+
+type JoinApiError = {
+  message?: string;
+  response?: {
+    status?: number;
+    statusText?: string;
+    data?: { message?: string | string[]; error?: string };
+  };
+};
+
+/** Texto de `response.data.message` normalizado a string. */
+function extractJoinApiMessage(err: unknown): string {
+  const raw = (err as JoinApiError)?.response?.data?.message;
+  if (Array.isArray(raw)) return raw.map(String).join(', ');
+  if (typeof raw === 'string') return raw;
+  return '';
+}
+
+/** Una línea legible para depuración en `npm run dev` (status + cuerpo + fallo de red). */
+function formatJoinErrorForDev(err: unknown): string {
+  const e = err as JoinApiError;
+  const parts: string[] = [];
+  if (e.response?.status != null) {
+    parts.push(`HTTP ${e.response.status}${e.response.statusText ? ` ${e.response.statusText}` : ''}`);
+  }
+  const bodyMsg = extractJoinApiMessage(err).trim();
+  if (bodyMsg) parts.push(bodyMsg);
+  const errKey = e.response?.data?.error;
+  if (typeof errKey === 'string' && errKey.trim()) parts.push(`error: ${errKey.trim()}`);
+  if (typeof e.message === 'string' && e.message && !bodyMsg) parts.push(e.message);
+  return parts.join(' — ') || 'Sin detalle (revisa red / CORS / URL del API)';
+}
+
+/** Mensajes típicos de Nest/validación sin la palabra literal "pin". */
+function shouldTreatAsPinError(lower: string): boolean {
+  if (lower.includes('pin')) return true;
+  if (/(invalid|wrong|incorrect).{0,20}\bpin\b|\bpin\b.{0,20}(invalid|wrong|incorrect|denied|error)/.test(lower)) {
+    return true;
+  }
+  if (lower.includes('código de acceso') || lower.includes('codigo de acceso')) return true;
+  if ((lower.includes('código') || lower.includes('codigo')) &&
+    (lower.includes('inválido') || lower.includes('invalido') || lower.includes('incorrect'))) {
+    return true;
+  }
+  if (lower.includes('access code') && (lower.includes('invalid') || lower.includes('wrong'))) return true;
+  return false;
+}
 
 function getPerformanceBadge(score: number) {
   if (score >= 4.6) return { label: 'Superior', cls: 'bg-[#dcfce7] text-[#16a34a]' };
@@ -110,12 +158,15 @@ interface EntryProps {
   pinError: boolean;
   /** 403 Ya completaste esta tarea */
   alreadyCompleted: boolean;
+  /** Solo en desarrollo: detalle crudo del último fallo al unirse */
+  joinDebugMessage: string | null;
 }
 
 function EntryScreen({
   title, status, opensAt, closesAt,
   hasExisting, singleAttemptResume,
   onStart, joining, joinError, pinError, alreadyCompleted,
+  joinDebugMessage,
 }: EntryProps) {
   const [name, setName] = useState(
     () => (typeof window !== 'undefined' ? localStorage.getItem(LS_STUDENT_NAME) : null) ?? '',
@@ -208,6 +259,17 @@ function EntryScreen({
               <p className="mt-3 text-center text-xs font-medium text-[#dc2626]">
                 Ocurrió un error al unirse. Intenta de nuevo.
               </p>
+            )}
+
+            {process.env.NODE_ENV === 'development' && joinDebugMessage && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                  Depuración (solo dev)
+                </p>
+                <p className="mt-1 break-words font-mono text-[11px] leading-snug text-amber-950">
+                  {joinDebugMessage}
+                </p>
+              </div>
             )}
 
             {/* ── Botones ── */}
@@ -340,9 +402,16 @@ function ViewerScreen({
     },
   });
 
-  // Force-complete when session window closes
+  // Track whether the close countdown was ever > 0 so we don't fire
+  // onComplete immediately when closesAt is already in the past at mount.
+  const countdownWasPositive = useRef(false);
   useEffect(() => {
-    if (closeCountdown.secs === 0) onComplete();
+    if (closeCountdown.secs > 0) countdownWasPositive.current = true;
+  }, [closeCountdown.secs]);
+
+  // Force-complete when session window closes — only after it was open.
+  useEffect(() => {
+    if (countdownWasPositive.current && closeCountdown.secs === 0) onComplete();
   }, [closeCountdown.secs, onComplete]);
 
   const clearPill = useCallback(() => {
@@ -521,6 +590,7 @@ function ViewerScreen({
 type Screen = 'entry' | 'viewer' | 'complete';
 
 export function AutonomoClient({ sessionId }: { sessionId: string }) {
+  const queryClient = useQueryClient();
   const { data: session, isLoading, error } = useAutonomousSession(sessionId);
   const joinMutation     = useJoinSession(sessionId);
   const completeMutation = useCompleteSession(sessionId);
@@ -532,52 +602,58 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
   const [pinError,        setPinError]        = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [result,          setResult]          = useState<CompleteSessionResponse | null>(null);
+  const [joinDebugMessage, setJoinDebugMessage] = useState<string | null>(null);
 
-  // Build renderer slides from class content JSON
+  // Slides vienen en session.class.slides[] (API autónomo / join).
   const slides = useMemo<ReturnType<typeof classSlideToRendererSlide>[]>(() => {
-    const raw = session?.class?.content;
-    if (!Array.isArray(raw)) return [];
-    const list = raw as ApiSlide[];
+    const list = session?.class?.slides ?? [];
     return [...list]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((s) => classSlideToRendererSlide(s));
+      .map((s) => classSlideToRendererSlide(s as Slide));
   }, [session]);
 
   const handleStart = useCallback(async (name: string, pin: string, newAttempt: boolean) => {
     // Reset 403 states before each attempt
     setPinError(false);
     setAlreadyCompleted(false);
+    setJoinDebugMessage(null);
 
     if (typeof window !== 'undefined') localStorage.setItem(LS_STUDENT_NAME, name);
-    const existingId = typeof window !== 'undefined' ? (localStorage.getItem(LS_STUDENT_ID) ?? '') : '';
 
     try {
-      const res = await joinMutation.mutateAsync({
-        studentName: name,
-        pin,
-        ...(existingId ? { studentId: existingId } : {}),
-        newAttempt,
-      });
+      // Body alineado con el DTO del backend (solo studentName + pin; forbidNonWhitelisted).
+      const res = await joinMutation.mutateAsync({ studentName: name, pin });
+      if (res.session) {
+        queryClient.setQueryData<AutonomousSession>(
+          ['autonomous-session', sessionId],
+          res.session,
+        );
+      }
       if (typeof window !== 'undefined') localStorage.setItem(LS_STUDENT_ID, res.studentId);
       setStudentId(res.studentId);
       setAttemptNumber(res.attemptNumber);
       // If backend says resuming and we're not starting a new attempt, show resume options
       setHasExisting(res.resuming && !newAttempt);
       setScreen('viewer');
+      setJoinDebugMessage(null);
     } catch (err: unknown) {
-      // Differentiate 403 sub-types by message
-      const message: string =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '';
-      if (message.toLowerCase().includes('ya completaste') || message.toLowerCase().includes('no tienes más intentos')) {
+      if (process.env.NODE_ENV === 'development') {
+        setJoinDebugMessage(formatJoinErrorForDev(err));
+      }
+      const message = extractJoinApiMessage(err);
+      const lower = message.toLowerCase();
+      if (lower.includes('ya completaste') || lower.includes('no tienes más intentos')) {
         setAlreadyCompleted(true);
-      } else if (message.toLowerCase().includes('pin')) {
+      } else if (shouldTreatAsPinError(lower)) {
         setPinError(true);
       }
-      // joinMutation.isError handles the generic case
     }
-  }, [joinMutation]);
+  }, [joinMutation, queryClient, sessionId]);
 
   const handleComplete = useCallback(async () => {
+    // Guard: never complete without a valid studentId (prevents spurious
+    // calls before the student has joined the session).
+    if (!studentId) return;
     try {
       const res = await completeMutation.mutateAsync({ studentId, attemptNumber });
       setResult(res);
@@ -639,6 +715,7 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
       joinError={joinMutation.isError && !pinError && !alreadyCompleted}
       pinError={pinError}
       alreadyCompleted={alreadyCompleted}
+      joinDebugMessage={joinDebugMessage}
     />
   );
 }

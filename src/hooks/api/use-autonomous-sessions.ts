@@ -60,11 +60,15 @@ function normalizeList(raw: unknown): AutonomousSession[] {
 
 const autonomousSessionsKey = (classId: string) => ['autonomous-sessions', classId] as const;
 
-export function useAutonomousSessions(classId: string) {
+export function useAutonomousSessions(
+  classId: string,
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: autonomousSessionsKey(classId),
     enabled: !!classId,
     staleTime: 30_000,
+    refetchInterval: options?.refetchInterval,
     queryFn: async () => {
       const { data } = await api.get<unknown>(`/classes/${classId}/autonomous-sessions`);
       return normalizeList(data);

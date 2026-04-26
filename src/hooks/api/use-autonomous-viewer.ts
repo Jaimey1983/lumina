@@ -11,6 +11,7 @@ import type {
 } from '@/types/autonomous.types';
 
 // ─── Fetch session metadata (public) ──────────────────────────────────────────
+/** `class.slides[]` es la fuente de verdad de diapositivas (no `class.content`). */
 
 export function useAutonomousSession(sessionId: string) {
   return useQuery<AutonomousSession>({
@@ -29,15 +30,11 @@ export function useAutonomousSession(sessionId: string) {
 // ─── Join session ─────────────────────────────────────────────────────────────
 
 export function useJoinSession(sessionId: string) {
-  return useMutation<
-    JoinSessionResponse,
-    Error,
-    { studentName: string; pin: string; studentId?: string; newAttempt?: boolean }
-  >({
-    mutationFn: async (body) => {
+  return useMutation<JoinSessionResponse, Error, { studentName: string; pin: string }>({
+    mutationFn: async ({ studentName, pin }) => {
       const { data } = await api.post<JoinSessionResponse>(
         `/autonomous-sessions/${sessionId}/join`,
-        body,
+        { studentName, pin },
       );
       return data;
     },

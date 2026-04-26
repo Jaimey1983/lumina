@@ -44,7 +44,7 @@ function statusLabel(status: string) {
 export function ClassDetailClient({ id }: { id: string }) {
   const { data: cls, isLoading, isError } = useClass(id);
   const publishMutation = usePublishClass(cls?.courseId ?? '');
-  const { data: autonomousSessions } = useAutonomousSessions(id);
+  const { data: autonomousSessions } = useAutonomousSessions(id, { refetchInterval: 30_000 });
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [launchAutonomousOpen, setLaunchAutonomousOpen] = useState(false);
