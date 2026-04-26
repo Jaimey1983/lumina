@@ -108,6 +108,7 @@ model Class {
   slides              Slide[]
   whiteboardSessions  WhiteboardSession[]
   autonomousSessions  AutonomousSession[]
+  autonomousGrades    AutonomousGrade[]
 
   @@map("classes")
 }
@@ -125,11 +126,30 @@ model AutonomousSession {
   requireManualStart Boolean              @default(false)
   pin                String               @default("")
   status             String               @default("scheduled")
+  /** "recovery" | "independent" */
+  purpose            String               @default("independent")
   createdAt          DateTime             @default(now())
   progress           AutonomousProgress[]
   results            AutonomousResult[]
+  grades             AutonomousGrade[]
 
   @@map("autonomous_sessions")
+}
+
+model AutonomousGrade {
+  id          String            @id @default(cuid())
+  sessionId   String
+  session     AutonomousSession @relation(fields: [sessionId], references: [id])
+  classId     String
+  class       Class             @relation(fields: [classId], references: [id])
+  studentId   String
+  studentName String
+  score       Float
+  source      String            @default("autonomous")
+  completedAt DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+
+  @@map("autonomous_grades")
 }
 
 model AutonomousProgress {

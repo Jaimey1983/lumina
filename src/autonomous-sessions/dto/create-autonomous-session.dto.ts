@@ -29,4 +29,8 @@ export class CreateAutonomousSessionDto {
   @IsOptional()
   @IsString()
   pin?: string;
+
+  @IsOptional()
+  @IsIn(['recovery', 'independent'])
+  purpose?: string;
 }

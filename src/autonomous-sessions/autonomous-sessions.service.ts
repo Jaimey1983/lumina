@@ -49,6 +49,7 @@ export class AutonomousSessionsService {
         maxAttempts: dto.maxAttempts ?? 1,
         timerBehavior: dto.timerBehavior ?? 'advance',
         requireManualStart: dto.requireManualStart ?? false,
+        purpose: dto.purpose ?? 'independent',
       },
     });
   }
@@ -139,6 +140,35 @@ export class AutonomousSessionsService {
 
     if (dto.pin !== session.pin) {
       throw new ForbiddenException('PIN incorrecto');
+    }
+
+    if (session.purpose === 'recovery') {
+      const classResults = await this.prisma.classResult.findMany({
+        where: { classId: session.classId },
+        include: { student: { select: { name: true, lastName: true } } },
+        distinct: ['studentId'],
+      });
+
+      for (const result of classResults) {
+        const fullName = `${result.student.name} ${result.student.lastName}`;
+        if (namesMatch(dto.studentName, fullName)) {
+          throw new ForbiddenException(
+            'Ya tienes una nota registrada para esta clase. Consulta con tu docente.',
+          );
+        }
+      }
+
+      const existingGrades = await this.prisma.autonomousGrade.findMany({
+        where: { classId: session.classId },
+      });
+
+      for (const grade of existingGrades) {
+        if (namesMatch(dto.studentName, grade.studentName)) {
+          throw new ForbiddenException(
+            'Ya tienes una nota registrada para esta clase. Consulta con tu docente.',
+          );
+        }
+      }
     }
 
     const allResults = await this.prisma.autonomousResult.findMany({
@@ -285,6 +315,20 @@ export class AutonomousSessionsService {
       data: { status: 'completed', finalScore, completedAt: new Date() },
     });
 
+    if (session.purpose === 'recovery') {
+      await this.prisma.autonomousGrade.create({
+        data: {
+          sessionId,
+          classId: session.classId,
+          studentId: result.studentId,
+          studentName: result.studentName,
+          score: finalScore,
+          source: 'autonomous',
+          completedAt: new Date(),
+        },
+      });
+    }
+
     return { finalScore, desempeno };
   }
 
@@ -349,7 +393,7 @@ export class AutonomousSessionsService {
   async getResults(sessionId: string, teacherId: string) {
     const session = await this.prisma.autonomousSession.findUnique({
       where: { id: sessionId },
-      select: { teacherId: true },
+      select: { teacherId: true, purpose: true },
     });
     if (!session) throw new NotFoundException('Sesión no encontrada');
     if (session.teacherId !== teacherId) throw new ForbiddenException('Sin permiso');
@@ -364,11 +408,14 @@ export class AutonomousSessionsService {
       orderBy: { answeredAt: 'asc' },
     });
 
-    return results.map((r) => ({
-      ...r,
-      progress: progress.filter(
-        (p) => p.studentId === r.studentId && p.attemptNumber === r.attemptNumber,
-      ),
-    }));
+    return {
+      purpose: session.purpose,
+      results: results.map((r) => ({
+        ...r,
+        progress: progress.filter(
+          (p) => p.studentId === r.studentId && p.attemptNumber === r.attemptNumber,
+        ),
+      })),
+    };
   }
 }
