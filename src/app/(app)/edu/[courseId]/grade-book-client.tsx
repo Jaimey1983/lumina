@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -19,13 +19,19 @@ import { PageBanner } from '@/components/ui/page-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
+import { useAutonomousResults } from '@/hooks/api/use-autonomous-results';
+import { useAutonomousSessions } from '@/hooks/api/use-autonomous-sessions';
 import { useClass } from '@/hooks/api/use-class';
 import { useClasses } from '@/hooks/api/use-classes';
 import { useCourse } from '@/hooks/api/use-course';
 import {
   useGradebook,
   computeStudentPromedio,
+  normalizeFromRows,
+  type ApiGradebookRow,
+  type ClassGradebookActividad,
   type ClassGradebookData,
+  type ClassGradebookEstudiante,
 } from '@/hooks/use-gradebook';
 import { api } from '@/lib/api';
 import { getInitials } from '@/lib/helpers';
@@ -65,7 +71,7 @@ function abbreviateActivityType(activityType: string) {
 function performanceBadgeClassName(note: number | null | undefined) {
   const level = getColombianGradeScale(note)?.level;
   if (level === 'Superior') return 'border-0 bg-[#dcfce7] text-[#16a34a]';
-  if (level === 'Alto') return 'border-0 bg-[#dbeafe] text-[#3b82f6]';
+  if (level === 'Alto') return 'border-0 bg-[#dbeafe] text-[#2563EB]';
   if (level === 'Basico') return 'border-0 bg-[#fef3c7] text-[#d97706]';
   if (level === 'Bajo') return 'border-0 bg-[#fee2e2] text-[#f87171]';
   return 'border-0 bg-[#f9fafb] text-[#6b7280]';
@@ -83,6 +89,8 @@ function noteForSlide(
   if (v === undefined || v === null || Number.isNaN(v)) return null;
   return v;
 }
+
+type GradeSheetTab = 'live' | 'autonomous';
 
 function AutoGradeCell({ note }: { note: number | null }) {
   if (note === null) {
@@ -265,6 +273,174 @@ function ManualGradeCell({
   );
 }
 
+function SessionGradebookTable({
+  classId,
+  actividades,
+  estudiantes,
+  showFullGrid,
+  isFetching,
+  manualColumnReadOnly,
+  docentePuedeEditarManual,
+  slideColumnTitle,
+}: {
+  classId: string;
+  actividades: ClassGradebookActividad[];
+  estudiantes: ClassGradebookEstudiante[];
+  showFullGrid: boolean;
+  isFetching: boolean;
+  /** Sesión autónoma: celdas manuales solo lectura (no PATCH de clase en vivo). */
+  manualColumnReadOnly: boolean;
+  docentePuedeEditarManual: boolean;
+  slideColumnTitle: (slideId: string, index: number) => string;
+}) {
+  return (
+    <div className="relative overflow-x-auto">
+      {isFetching ? (
+        <div className="absolute inset-0 z-10 flex items-start justify-end pt-1 pr-1">
+          <Loader2 className="size-5 animate-spin text-[#6b7280]" aria-hidden />
+        </div>
+      ) : null}
+      <Table className="min-w-max">
+        <TableHeader>
+          <TableRow className="h-[var(--lumina-table-header-height)] border-[--lumina-divider] bg-[var(--lumina-table-header-bg)] hover:bg-[var(--lumina-table-header-bg)]">
+            <TableHead className="sticky left-0 z-20 h-[var(--lumina-table-header-height)] min-w-56 bg-[var(--lumina-table-header-bg)] px-4 py-2 text-xs font-medium text-[#6b7280]">
+              Estudiante
+            </TableHead>
+            {showFullGrid
+              ? actividades.map((act, idx) => (
+                  <TableHead
+                    key={act.slideId}
+                    className="h-[var(--lumina-table-header-height)] max-w-40 px-4 py-2 text-center text-xs font-medium text-[#6b7280]"
+                  >
+                    <span
+                      className="line-clamp-2 font-medium leading-tight"
+                      title={slideColumnTitle(act.slideId, idx)}
+                    >
+                      {slideColumnTitle(act.slideId, idx)}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] font-medium tracking-normal text-[#9ca3af]">
+                      {abbreviateActivityType(act.activityType)}
+                    </span>
+                  </TableHead>
+                ))
+              : null}
+            <TableHead className="h-[var(--lumina-table-header-height)] min-w-28 px-4 py-2 text-center text-xs font-medium text-[#6b7280]">
+              Promedio final
+            </TableHead>
+            <TableHead className="sticky right-0 z-20 h-[var(--lumina-table-header-height)] min-w-36 bg-[var(--lumina-table-header-bg)] px-4 py-2 text-center text-xs font-medium text-[#6b7280]">
+              Desempeño
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {estudiantes.map((est, rowIdx) => {
+            const rowStripe = rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f0f9ff]';
+            return (
+              <TableRow
+                key={est.studentId}
+                className="group h-[var(--lumina-table-row-height)] border-b border-[--lumina-divider]"
+              >
+                <TableCell
+                  className={cn(
+                    'sticky left-0 z-10 border-b border-[--lumina-divider] px-4 py-2',
+                    rowStripe,
+                    'group-hover:bg-[#f9fafb]',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#60a5fa] to-[#60A5FA] text-xs font-bold text-white">
+                      {getInitials(studentDisplayName(est), 2)}
+                    </div>
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="text-sm font-medium text-[#111827]">{studentDisplayName(est)}</p>
+                        {est.source === 'autonomous' ? (
+                          <span className="inline-flex shrink-0 rounded-lumina-sm bg-[#dbeafe] px-1.5 py-0.5 text-xs font-medium text-[#2563EB]">
+                            Recuperación
+                          </span>
+                        ) : null}
+                      </div>
+                      {est.email ? (
+                        <p className="truncate text-xs text-[#6b7280]">{est.email}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </TableCell>
+                {showFullGrid
+                  ? actividades.map((act) => {
+                      const nota = noteForSlide(est.notas, act.slideId);
+                      const manual = isManualGradingActivityType(act.activityType);
+                      const resultId = est.resultIdsPorSlide?.[act.slideId];
+                      const useReadonlyManual =
+                        manualColumnReadOnly || !docentePuedeEditarManual || !resultId;
+                      return (
+                        <TableCell
+                          key={act.slideId}
+                          className={cn(
+                            'border-b border-[--lumina-divider] px-4 py-2 text-center',
+                            rowStripe,
+                            'group-hover:bg-[#f9fafb]',
+                          )}
+                        >
+                          {est.source === 'autonomous' ? (
+                            <span className="text-[#9ca3af]">—</span>
+                          ) : manual ? (
+                            useReadonlyManual ? (
+                              <ReadOnlyManualGradeCell note={nota} />
+                            ) : (
+                              <ManualGradeCell
+                                classId={classId}
+                                resultId={resultId}
+                                studentId={est.studentId}
+                                slideId={act.slideId}
+                                initialNote={nota}
+                              />
+                            )
+                          ) : (
+                            <AutoGradeCell note={nota} />
+                          )}
+                        </TableCell>
+                      );
+                    })
+                  : null}
+                <TableCell
+                  className={cn(
+                    'border-b border-[--lumina-divider] px-4 py-2 text-center',
+                    rowStripe,
+                    'group-hover:bg-[#f9fafb]',
+                  )}
+                >
+                  {est.notaFinal != null && !Number.isNaN(est.notaFinal) ? (
+                    <span className="text-base font-semibold tabular-nums text-[#111827]">
+                      {est.notaFinal.toFixed(1)}
+                    </span>
+                  ) : (
+                    <span className="text-base font-semibold text-[#9ca3af]">—</span>
+                  )}
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    'sticky right-0 z-10 border-b border-[--lumina-divider] px-4 py-2',
+                    rowStripe,
+                    'group-hover:bg-[#f9fafb]',
+                  )}
+                >
+                  <div className="flex justify-center">
+                    <GradeScaleBadge
+                      note={est.notaFinal}
+                      className={performanceBadgeClassName(est.notaFinal)}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 export function GradeBookClient({ courseId }: { courseId: string }) {
   const { user } = useAuth();
   const docentePuedeEditarManual = canEditEduManualCells(user?.role);
@@ -276,6 +452,8 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
   } = useClasses(courseId);
 
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [gradeSheetTab, setGradeSheetTab] = useState<GradeSheetTab>('live');
+  const [selectedAutonomousSessionId, setSelectedAutonomousSessionId] = useState('');
 
   useEffect(() => {
     if (classes.length === 0) {
@@ -296,6 +474,66 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
     isError: gradebookError,
     isFetching: gradebookFetching,
   } = useGradebook(selectedClassId || undefined);
+
+  const {
+    data: autonomousSessionsRaw = [],
+    isLoading: autonomousSessionsLoading,
+    isError: autonomousSessionsError,
+  } = useAutonomousSessions(selectedClassId, { enabled: gradeSheetTab === 'autonomous' });
+
+  const independentSessions = useMemo(() => {
+    return autonomousSessionsRaw.filter((s) => {
+      const purpose = s.purpose ?? 'independent';
+      if (purpose !== 'independent') return false;
+      return s.status === 'closed' || s.status === 'open';
+    });
+  }, [autonomousSessionsRaw]);
+
+  useEffect(() => {
+    setSelectedAutonomousSessionId((prev) => {
+      if (prev && independentSessions.some((x) => x.id === prev)) return prev;
+      return independentSessions[0]?.id ?? '';
+    });
+  }, [independentSessions]);
+
+  const {
+    data: autonomousResults = [],
+    isLoading: autonomousResultsLoading,
+    isError: autonomousResultsError,
+  } = useAutonomousResults(
+    gradeSheetTab === 'autonomous' && selectedAutonomousSessionId
+      ? selectedAutonomousSessionId
+      : undefined,
+  );
+
+  const autonomousApiRows: ApiGradebookRow[] = useMemo(
+    () =>
+      autonomousResults.map((r) => ({
+        studentId: r.studentId,
+        nombre: r.studentName,
+        promedio: r.score,
+        resultados: r.resultados,
+      })),
+    [autonomousResults],
+  );
+
+  const autonomousGradebookData = useMemo(
+    () => normalizeFromRows(autonomousApiRows),
+    [autonomousApiRows],
+  );
+
+  const autonomousEstudiantesSorted = useMemo(() => {
+    const e = autonomousGradebookData.estudiantes;
+    return [...e].sort((a, b) =>
+      studentDisplayName(a).localeCompare(studentDisplayName(b), 'es', { sensitivity: 'base' }),
+    );
+  }, [autonomousGradebookData]);
+
+  const actividadesAutonomas = autonomousGradebookData.actividades;
+  const showFullGridAutonomous =
+    autonomousEstudiantesSorted.length > 0 && actividadesAutonomas.length > 0;
+  const showPromedioOnlyAutonomous =
+    autonomousEstudiantesSorted.length > 0 && actividadesAutonomas.length === 0;
 
   const actividades = gradebook?.actividades ?? [];
   const estudiantes = gradebook?.estudiantes ?? [];
@@ -391,6 +629,38 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               <h2 className="text-sm font-bold text-[#1e1b4b]">Planilla por clase</h2>
             </div>
           </div>
+          {!classesLoading && classes.length > 0 && selectedClassId ? (
+            <div className="flex border-b border-[#e5e7eb] px-2" role="tablist" aria-label="Vista de planilla">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={gradeSheetTab === 'live'}
+                onClick={() => setGradeSheetTab('live')}
+                className={cn(
+                  'rounded-none border-b-2 px-4 py-2.5 text-sm font-medium transition-colors',
+                  gradeSheetTab === 'live'
+                    ? 'border-[#2563EB] text-[#111827]'
+                    : 'border-transparent text-[#6b7280] hover:bg-[#f9fafb]',
+                )}
+              >
+                Clase en vivo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={gradeSheetTab === 'autonomous'}
+                onClick={() => setGradeSheetTab('autonomous')}
+                className={cn(
+                  'rounded-none border-b-2 px-4 py-2.5 text-sm font-medium transition-colors',
+                  gradeSheetTab === 'autonomous'
+                    ? 'border-[#2563EB] text-[#111827]'
+                    : 'border-transparent text-[#6b7280] hover:bg-[#f9fafb]',
+                )}
+              >
+                Tareas autónomas
+              </button>
+            </div>
+          ) : null}
           <div className="space-y-4 p-4">
             {classesError ? (
               <Alert variant="destructive">
@@ -420,6 +690,8 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
               </div>
             ) : null}
 
+            {!classesLoading && classes.length > 0 && selectedClassId && gradeSheetTab === 'live' ? (
+              <>
             {gradebookError ? (
               <Alert variant="destructive">
                 <AlertIcon>
@@ -444,138 +716,106 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
             ) : null}
 
             {showFullGrid || showPromedioOnly ? (
-              <div className="relative overflow-x-auto">
-                {gradebookFetching ? (
-                  <div className="absolute inset-0 z-10 flex items-start justify-end pt-1 pr-1">
-                    <Loader2 className="size-5 animate-spin text-[#6b7280]" aria-hidden />
-                  </div>
+              <SessionGradebookTable
+                classId={selectedClassId}
+                actividades={actividades}
+                estudiantes={estudiantes}
+                showFullGrid={showFullGrid}
+                isFetching={gradebookFetching}
+                manualColumnReadOnly={false}
+                docentePuedeEditarManual={docentePuedeEditarManual}
+                slideColumnTitle={slideColumnTitle}
+              />
+            ) : null}
+              </>
+            ) : null}
+
+            {!classesLoading && classes.length > 0 && selectedClassId && gradeSheetTab === 'autonomous' ? (
+              <>
+                {autonomousSessionsError ? (
+                  <Alert variant="destructive">
+                    <AlertIcon>
+                      <AlertTriangle className="size-4" />
+                    </AlertIcon>
+                    <AlertContent>
+                      <AlertTitle>No se pudieron cargar las tareas autónomas.</AlertTitle>
+                    </AlertContent>
+                  </Alert>
                 ) : null}
-                <Table className="min-w-max">
-                  <TableHeader>
-                    <TableRow className="h-[var(--lumina-table-header-height)] border-[--lumina-divider] bg-[var(--lumina-table-header-bg)] hover:bg-[var(--lumina-table-header-bg)]">
-                      <TableHead className="sticky left-0 z-20 h-[var(--lumina-table-header-height)] min-w-56 bg-[var(--lumina-table-header-bg)] px-4 py-2 text-xs font-medium text-[#6b7280]">
-                        Estudiante
-                      </TableHead>
-                      {showFullGrid
-                        ? actividades.map((act, idx) => (
-                            <TableHead
-                              key={act.slideId}
-                              className="h-[var(--lumina-table-header-height)] max-w-40 px-4 py-2 text-center text-xs font-medium text-[#6b7280]"
-                            >
-                              <span
-                                className="line-clamp-2 font-medium leading-tight"
-                                title={slideColumnTitle(act.slideId, idx)}
-                              >
-                                {slideColumnTitle(act.slideId, idx)}
-                              </span>
-                              <span className="mt-0.5 block text-[10px] font-medium tracking-normal text-[#9ca3af]">
-                                {abbreviateActivityType(act.activityType)}
-                              </span>
-                            </TableHead>
-                          ))
-                        : null}
-                      <TableHead className="h-[var(--lumina-table-header-height)] min-w-28 px-4 py-2 text-center text-xs font-medium text-[#6b7280]">
-                        Promedio final
-                      </TableHead>
-                      <TableHead className="sticky right-0 z-20 h-[var(--lumina-table-header-height)] min-w-36 bg-[var(--lumina-table-header-bg)] px-4 py-2 text-center text-xs font-medium text-[#6b7280]">
-                        Desempeño
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {estudiantes.map((est, rowIdx) => {
-                      const rowStripe = rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f0f9ff]';
-                      return (
-                        <TableRow key={est.studentId} className="group h-[var(--lumina-table-row-height)] border-b border-[--lumina-divider]">
-                          <TableCell
-                            className={cn(
-                              'sticky left-0 z-10 border-b border-[--lumina-divider] px-4 py-2',
-                              rowStripe,
-                              'group-hover:bg-[#f9fafb]',
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#60a5fa] to-[#60A5FA] text-xs font-bold text-white">
-                                {getInitials(studentDisplayName(est), 2)}
-                              </div>
-                              <div className="min-w-0 space-y-0.5">
-                                <p className="text-sm font-medium text-[#111827]">
-                                  {studentDisplayName(est)}
-                                </p>
-                                {est.email ? (
-                                  <p className="truncate text-xs text-[#6b7280]">{est.email}</p>
-                                ) : null}
-                              </div>
-                            </div>
-                          </TableCell>
-                          {showFullGrid
-                            ? actividades.map((act) => {
-                                const nota = noteForSlide(est.notas, act.slideId);
-                                const manual = isManualGradingActivityType(act.activityType);
-                                const resultId = est.resultIdsPorSlide?.[act.slideId];
-                                return (
-                                  <TableCell
-                                    key={act.slideId}
-                                    className={cn(
-                                      'border-b border-[--lumina-divider] px-4 py-2 text-center',
-                                      rowStripe,
-                                      'group-hover:bg-[#f9fafb]',
-                                    )}
-                                  >
-                                    {manual ? (
-                                      docentePuedeEditarManual && resultId ? (
-                                        <ManualGradeCell
-                                          classId={selectedClassId}
-                                          resultId={resultId}
-                                          studentId={est.studentId}
-                                          slideId={act.slideId}
-                                          initialNote={nota}
-                                        />
-                                      ) : (
-                                        <ReadOnlyManualGradeCell note={nota} />
-                                      )
-                                    ) : (
-                                      <AutoGradeCell note={nota} />
-                                    )}
-                                  </TableCell>
-                                );
-                              })
-                            : null}
-                          <TableCell
-                            className={cn(
-                              'border-b border-[--lumina-divider] px-4 py-2 text-center',
-                              rowStripe,
-                              'group-hover:bg-[#f9fafb]',
-                            )}
-                          >
-                            {est.notaFinal != null && !Number.isNaN(est.notaFinal) ? (
-                              <span className="text-base font-semibold tabular-nums text-[#111827]">
-                                {est.notaFinal.toFixed(1)}
-                              </span>
-                            ) : (
-                              <span className="text-base font-semibold text-[#9ca3af]">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell
-                            className={cn(
-                              'sticky right-0 z-10 border-b border-[--lumina-divider] px-4 py-2',
-                              rowStripe,
-                              'group-hover:bg-[#f9fafb]',
-                            )}
-                          >
-                            <div className="flex justify-center">
-                              <GradeScaleBadge
-                                note={est.notaFinal}
-                                className={performanceBadgeClassName(est.notaFinal)}
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+
+                {autonomousSessionsLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="size-8 animate-spin text-[#6b7280]" />
+                  </div>
+                ) : independentSessions.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <p className="text-sm font-medium text-[#6b7280]">
+                      No hay tareas independientes para esta clase
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {independentSessions.length > 1 ? (
+                      <div className="max-w-md">
+                        <Select
+                          value={selectedAutonomousSessionId}
+                          onValueChange={setSelectedAutonomousSessionId}
+                        >
+                          <SelectTrigger className="w-full border-[#e5e7eb] bg-white">
+                            <SelectValue placeholder="Selecciona una sesión" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {independentSessions.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                Tarea ·{' '}
+                                {new Date(s.opensAt).toLocaleDateString('es-CO', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+                    {autonomousResultsError ? (
+                      <Alert variant="destructive">
+                        <AlertIcon>
+                          <AlertTriangle className="size-4" />
+                        </AlertIcon>
+                        <AlertContent>
+                          <AlertTitle>No se pudieron cargar los resultados de la sesión.</AlertTitle>
+                        </AlertContent>
+                      </Alert>
+                    ) : null}
+                    {!selectedAutonomousSessionId ? null : autonomousResultsLoading ? (
+                      <div className="flex items-center justify-center py-16">
+                        <Loader2 className="size-8 animate-spin text-[#6b7280]" />
+                      </div>
+                    ) : autonomousResults.length === 0 ? (
+                      <div className="py-16 text-center">
+                        <p className="text-sm font-medium text-[#6b7280]">
+                          No hay tareas independientes para esta clase
+                        </p>
+                      </div>
+                    ) : showFullGridAutonomous || showPromedioOnlyAutonomous ? (
+                      <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
+                        <SessionGradebookTable
+                          classId={selectedClassId}
+                          actividades={actividadesAutonomas}
+                          estudiantes={autonomousEstudiantesSorted}
+                          showFullGrid={showFullGridAutonomous}
+                          isFetching={false}
+                          manualColumnReadOnly
+                          docentePuedeEditarManual={docentePuedeEditarManual}
+                          slideColumnTitle={slideColumnTitle}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </>
             ) : null}
           </div>
         </div>

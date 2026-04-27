@@ -107,9 +107,12 @@ function useCountdown(targetIso: string | undefined) {
 function evaluateActivity(actividad: Activity, response: unknown): boolean | null {
   switch (actividad.tipo) {
     case 'quiz_multiple': {
-      const sel = Array.isArray(response) ? response : [response];
+      const raw = Array.isArray(response) ? response : [response];
+      const sel = raw.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
       const ids = actividad.opciones.filter((o) => o.esCorrecta).map((o) => o.id);
-      return sel.length === ids.length && sel.every((id) => ids.includes(id as string));
+      if (ids.length === 0) return null;
+      if (sel.length !== ids.length) return false;
+      return ids.every((id) => sel.includes(id));
     }
     case 'verdadero_falso': return response === actividad.respuestaCorrecta;
     case 'short_answer': {
@@ -435,6 +438,10 @@ function ViewerScreen({
     setPill(null);
   }, [slides.length, clearPill]);
 
+  // Track which slides already triggered handleResponse so that handleAdvance
+  // doesn't overwrite a captured drag-drop response with null.
+  const respondedSlideIds = useRef<Set<string>>(new Set());
+
   const handleResponse = useCallback((response: unknown) => {
     if (locked || !activeSlide) return;
     const actBlock = (activeSlide.bloques ?? []).find((b: Block) => b.tipo === 'actividad');
@@ -443,12 +450,25 @@ function ViewerScreen({
     const correct = evaluateActivity(actBlock.actividad, response);
     showPill(correct === true ? 'correct' : correct === false ? 'incorrect' : 'sent');
 
-    saveProgress({ studentId, slideId: activeSlide.id, response, attemptNumber });
+    const activityType = actBlock.actividad?.tipo as string | undefined;
+    // Mark this slide as responded so handleAdvance won't overwrite with null
+    respondedSlideIds.current.add(activeSlide.id);
+    saveProgress({ studentId, slideId: activeSlide.id, response, attemptNumber, activityType });
   }, [locked, activeSlide, studentId, attemptNumber, saveProgress, showPill]);
 
   const handleAdvance = useCallback(() => {
     if (activeSlide) {
-      saveProgress({ studentId, slideId: activeSlide.id, response: null, attemptNumber });
+      const advActBlock = (activeSlide.bloques ?? []).find((b: Block) => b.tipo === 'actividad');
+      const activityType = advActBlock?.tipo === 'actividad'
+        ? (advActBlock.actividad?.tipo as string | undefined)
+        : undefined;
+
+      // For arrastrar_soltar: the viewer already calls handleResponse on each drop.
+      // Only send null if no drop was recorded at all (student never interacted).
+      const alreadyResponded = respondedSlideIds.current.has(activeSlide.id);
+      if (!alreadyResponded) {
+        saveProgress({ studentId, slideId: activeSlide.id, response: null, attemptNumber, activityType });
+      }
     }
     goNext();
   }, [activeSlide, studentId, attemptNumber, saveProgress, goNext]);

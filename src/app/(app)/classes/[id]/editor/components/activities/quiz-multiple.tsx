@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, CheckCircle2, Circle, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { QuizMultiple, QuizOption } from '@/types/slide.types';
@@ -186,14 +186,12 @@ export function QuizMultipleActivity({ actividad, modo }: Props) {
 
 // ─── QuizMultipleViewer (con onResponse y answered) ───────────────────────────
 
-function isQuizOverallCorrect(activity: QuizMultiple, optionId: string): boolean {
-  const selected = [optionId];
+function isQuizSelectionCorrect(activity: QuizMultiple, selectedIds: string[]): boolean {
   const correctIds = activity.opciones.filter((o) => o.esCorrecta).map((o) => o.id);
-  return (
-    correctIds.length > 0 &&
-    selected.length === correctIds.length &&
-    selected.every((id) => correctIds.includes(id))
-  );
+  if (correctIds.length === 0) return false;
+  if (selectedIds.length !== correctIds.length) return false;
+  const set = new Set(selectedIds);
+  return correctIds.every((id) => set.has(id));
 }
 
 export function QuizMultipleViewer({
@@ -205,15 +203,123 @@ export function QuizMultipleViewer({
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const [answered, setAnswered] = useState(false);
+  const correctIds = useMemo(
+    () => activity.opciones.filter((o) => o.esCorrecta).map((o) => o.id),
+    [activity],
+  );
+  const isMulti = activity.multipleRespuesta === true || correctIds.length > 1;
+  const hasDefinedCorrect = correctIds.length > 0;
 
-  const hasDefinedCorrect = activity.opciones.some((o) => o.esCorrecta);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [answered, setAnswered] = useState(false);
 
   useEffect(() => {
     setAnswered(false);
     setSelected(null);
+    setSelectedIds([]);
   }, [editorSyncKey]);
+
+  if (isMulti) {
+    const overallMulti =
+      answered && hasDefinedCorrect
+        ? isQuizSelectionCorrect(activity, selectedIds)
+        : false;
+
+    return (
+      <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
+        <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
+        <p className="text-xs text-[#6b7280]">
+          {activity.multipleRespuesta
+            ? 'Selecciona las opciones correctas y envía.'
+            : 'Varias respuestas correctas: marca todas las que apliquen y envía.'}
+        </p>
+        <ul className="space-y-2">
+          {activity.opciones.map((op) => {
+            const isSel = selectedIds.includes(op.id);
+            const showAuto = answered && hasDefinedCorrect;
+            const isCorrectOption = op.esCorrecta;
+            const showCorrectReveal = showAuto && !overallMulti && isCorrectOption;
+            const selectedWrong = showAuto && isSel && !overallMulti;
+            const selectedRight = showAuto && isSel && overallMulti;
+            return (
+              <li key={op.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (answered) return;
+                    setSelectedIds((p) =>
+                      p.includes(op.id) ? p.filter((x) => x !== op.id) : [...p, op.id],
+                    );
+                  }}
+                  disabled={answered}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] px-3 py-2.5 text-left text-sm transition-colors',
+                    !answered && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
+                    answered && !hasDefinedCorrect && isSel && 'border-[#2563EB] bg-[#dbeafe]',
+                    answered && !hasDefinedCorrect && !isSel && 'border-[#e5e7eb] opacity-40',
+                    selectedRight &&
+                      'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                    selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
+                    showCorrectReveal && 'border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                    showAuto && !isSel && !showCorrectReveal && !selectedRight && 'border-[#e5e7eb] opacity-50',
+                  )}
+                >
+                  {showAuto ? (
+                    <>
+                      <span className="flex min-w-0 flex-1 items-center gap-3">
+                        {isSel ? (
+                          selectedWrong ? (
+                            <Circle className="size-4 shrink-0 text-[#DC2626]" />
+                          ) : (
+                            <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
+                          )
+                        ) : (
+                          <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                        )}
+                        <span className="min-w-0 flex-1">{op.texto}</span>
+                      </span>
+                      {selectedRight && (
+                        <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                      )}
+                      {selectedWrong && <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />}
+                      {showCorrectReveal && !isSel && (
+                        <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {isSel ? (
+                        <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+                      ) : (
+                        <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                      )}
+                      {op.texto}
+                    </>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {!answered ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              if (selectedIds.length === 0) return;
+              setAnswered(true);
+              onResponse?.([...selectedIds]);
+            }}
+            disabled={selectedIds.length === 0}
+            className="w-full sm:w-auto"
+          >
+            Enviar respuesta
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
 
   function handleSelect(index: number) {
     if (answered) return;
@@ -225,7 +331,7 @@ export function QuizMultipleViewer({
   }
 
   const overallCorrect =
-    selected && hasDefinedCorrect ? isQuizOverallCorrect(activity, selected) : false;
+    selected && hasDefinedCorrect ? isQuizSelectionCorrect(activity, [selected]) : false;
 
   return (
     <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">

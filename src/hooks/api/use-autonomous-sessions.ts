@@ -68,11 +68,11 @@ const autonomousSessionsKey = (classId: string) => ['autonomous-sessions', class
 
 export function useAutonomousSessions(
   classId: string,
-  options?: { refetchInterval?: number | false },
+  options?: { refetchInterval?: number | false; enabled?: boolean },
 ) {
   return useQuery({
     queryKey: autonomousSessionsKey(classId),
-    enabled: !!classId,
+    enabled: !!classId && (options?.enabled ?? true),
     staleTime: 30_000,
     refetchInterval: options?.refetchInterval,
     queryFn: async () => {

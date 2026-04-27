@@ -16,6 +16,8 @@ export interface ClassGradebookEstudiante {
   nombre?: string;
   name?: string;
   email?: string;
+  /** Origen de la fila: sesión en vivo o recuperación vía sesión autónoma. */
+  source?: 'live' | 'autonomous';
   /** Promedio final en escala 0–5 (según backend). */
   notaFinal?: number | null;
   /** Nota mostrada por slideId (0–5), o null si no hay resultado. */
@@ -48,6 +50,8 @@ export interface ApiGradebookRow {
   nombre: string;
   promedio: number | null;
   resultados: ApiGradebookResultado[];
+  /** Si `autonomous`, la fila es recuperación: sin desglose por actividad en planilla principal. */
+  source?: 'live' | 'autonomous';
 }
 
 function unwrapEnvelope(data: unknown): unknown {
@@ -89,7 +93,8 @@ export function toDisplayNoteOnFive(score: number, maxScore: number): number | n
   return Math.min(5, Math.max(0, (s / m) * 5));
 }
 
-function normalizeFromRows(rows: ApiGradebookRow[]): ClassGradebookData {
+/** A partir de filas estilo API (p. ej. gradebook o resultados de sesión autónoma) construye `actividades` y `estudiantes`. */
+export function normalizeFromRows(rows: ApiGradebookRow[]): ClassGradebookData {
   const slideOrder: string[] = [];
   const seen = new Set<string>();
   for (const row of rows) {
@@ -130,6 +135,7 @@ function normalizeFromRows(rows: ApiGradebookRow[]): ClassGradebookData {
     return {
       studentId: row.studentId,
       nombre: row.nombre,
+      source: row.source,
       notaFinal:
         p !== null && p !== undefined && Number.isFinite(Number(p)) ? Number(p) : null,
       notas,

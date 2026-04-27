@@ -114,6 +114,15 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
     return actividad.items.filter((i) => placements[i.id] === zoneId);
   }
 
+  /** Emit current placements snapshot so autonomo-client can capture partial state. */
+  function emitDraft(nextPlacements: Record<string, string | null>) {
+    const result = actividad.items.map((i) => ({
+      itemId: i.id,
+      zoneId: nextPlacements[i.id] ?? null,
+    }));
+    onResponse?.(result);
+  }
+
   function onDragStart(e: React.DragEvent, itemId: string) {
     e.dataTransfer.setData('itemId', itemId);
     setDragging(itemId);
@@ -129,16 +138,22 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
     if (zone?.capacidadMaxima !== undefined && itemsInZone(zoneId).length >= zone.capacidadMaxima) {
       return;
     }
-    setPlacements((p) => ({ ...p, [itemId]: zoneId }));
+    const next = { ...placements, [itemId]: zoneId };
+    setPlacements(next);
     setDragging(null);
+    // Report intermediate state so autonomo-client can capture it on advance
+    emitDraft(next);
   }
 
   function onDropToUnplaced(e: React.DragEvent) {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('itemId');
     if (!itemId || answered) return;
-    setPlacements((p) => ({ ...p, [itemId]: null }));
+    const next = { ...placements, [itemId]: null };
+    setPlacements(next);
     setDragging(null);
+    // Report intermediate state so autonomo-client can capture it on advance
+    emitDraft(next);
   }
 
   function handleSubmit() {

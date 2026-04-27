@@ -37,6 +37,7 @@ export interface AutonomousProgressEntry {
   slideId: string;
   response: unknown;
   attemptNumber: number;
+  activityType?: string;
 }
 
 export interface JoinSessionResponse {
