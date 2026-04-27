@@ -15,6 +15,7 @@ import { GuardarResultadosDto } from './dto/save-results.dto';
 import { NotaManualDto } from './dto/save-manual-grade.dto';
 import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import { sumAndDenominatorForClassGradebook } from './class-results-gradebook.helper';
+import { namesMatch } from '../autonomous-sessions/name-matcher.helper';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcryptjs';
 
@@ -414,76 +415,102 @@ export class ClassesService {
     });
     const activitySlideIds = activitySlides.map((s) => s.id);
 
-    if (!sessionId) {
-      return [];
-    }
-
-    const results = await this.prisma.classResult.findMany({
-      where: { classId, sessionId },
-      select: {
-        id: true,
-        studentId: true,
-        slideId: true,
-        activityType: true,
-        score: true,
-        maxScore: true,
-        isManual: true,
-        response: true,
-        createdAt: true,
-        updatedAt: true,
-        student: {
-          select: { id: true, name: true },
-        },
-      },
+    const autonomousGrades = await this.prisma.autonomousGrade.findMany({
+      where: { classId, source: 'autonomous' },
+      orderBy: { completedAt: 'asc' },
     });
 
-    const byStudent = new Map<
-      string,
-      {
-        studentId: string;
-        nombre: string;
-        resultados: typeof results;
-        resultBySlideId: Map<
-          string,
-          { activityType: string; score: number | null; maxScore: number }
-        >;
-      }
-    >();
+    type GradebookRow = {
+      studentId: string;
+      nombre: string;
+      promedio: number;
+      resultados: any[];
+      source: 'live' | 'autonomous';
+    };
 
-    for (const result of results) {
-      let entry = byStudent.get(result.studentId);
-      if (!entry) {
-        entry = {
-          studentId: result.studentId,
-          nombre: result.student.name,
-          resultados: [],
-          resultBySlideId: new Map(),
-        };
-        byStudent.set(result.studentId, entry);
-      }
-      entry.resultados.push(result);
-      entry.resultBySlideId.set(result.slideId, {
-        activityType: result.activityType,
-        score: result.score,
-        maxScore: result.maxScore,
+    const liveRows: GradebookRow[] = [];
+
+    if (sessionId) {
+      const results = await this.prisma.classResult.findMany({
+        where: { classId, sessionId },
+        select: {
+          id: true,
+          studentId: true,
+          slideId: true,
+          activityType: true,
+          score: true,
+          maxScore: true,
+          isManual: true,
+          response: true,
+          createdAt: true,
+          updatedAt: true,
+          student: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { updatedAt: 'asc' },
       });
-    }
 
-    return Array.from(byStudent.values()).map(
-      ({ studentId, nombre, resultados, resultBySlideId }) => {
+      const byStudent = new Map<
+        string,
+        {
+          studentId: string;
+          nombre: string;
+          resultados: typeof results;
+          resultBySlideId: Map<
+            string,
+            { activityType: string; score: number | null; maxScore: number }
+          >;
+        }
+      >();
+
+      for (const result of results) {
+        let entry = byStudent.get(result.studentId);
+        if (!entry) {
+          entry = {
+            studentId: result.studentId,
+            nombre: result.student.name,
+            resultados: [],
+            resultBySlideId: new Map(),
+          };
+          byStudent.set(result.studentId, entry);
+        }
+        entry.resultados.push(result);
+        entry.resultBySlideId.set(result.slideId, {
+          activityType: result.activityType,
+          score: result.score,
+          maxScore: result.maxScore,
+        });
+      }
+
+      for (const { studentId, nombre, resultados, resultBySlideId } of byStudent.values()) {
         const { sum, denominator } = sumAndDenominatorForClassGradebook(
           activitySlideIds,
           resultBySlideId,
         );
-        return {
+        liveRows.push({
           studentId,
           nombre,
-          promedio:
-            denominator > 0 ? Number((sum / denominator).toFixed(2)) : 0,
+          promedio: denominator > 0 ? Number((sum / denominator).toFixed(2)) : 0,
           resultados,
-        };
-      },
-    );
+          source: 'live',
+        });
+      }
+    }
+
+    const liveNames = liveRows.map((r) => r.nombre);
+
+    const autonomousRows: GradebookRow[] = autonomousGrades
+      .filter((grade) => !liveNames.some((name) => namesMatch(grade.studentName, name)))
+      .map((grade) => ({
+        studentId: grade.studentId,
+        nombre: grade.studentName,
+        promedio: grade.score,
+        resultados: [],
+        source: 'autonomous' as const,
+      }));
+
+    return [...liveRows, ...autonomousRows];
   }
 
   async saveManualGrade(classId: string, dto: NotaManualDto, userId: string) {
@@ -852,11 +879,23 @@ export class ClassesService {
     }
   }
 
-  /** Sesión activa obligatoria si existe; si no, sessionId explícito en el DTO. */
+  /** Solo se puede guardar en una sesión activa (endedAt: null). */
   private async resolveWriteSessionId(
     classId: string,
     dto: GuardarResultadosDto,
   ): Promise<string> {
+    const active = await this.prisma.classSession.findFirst({
+      where: { classId, endedAt: null },
+      orderBy: { startedAt: 'desc' },
+      select: { id: true },
+    });
+
+    if (!active) {
+      throw new BadRequestException(
+        'No hay una sesión activa para esta clase.',
+      );
+    }
+
     let explicit = dto.sessionId?.trim();
     if (!explicit) {
       for (const r of dto.resultados) {
@@ -868,29 +907,13 @@ export class ClassesService {
       }
     }
 
-    const active = await this.prisma.classSession.findFirst({
-      where: { classId, endedAt: null },
-      orderBy: { startedAt: 'desc' },
-      select: { id: true },
-    });
-
-    if (active) {
-      if (explicit && explicit !== active.id) {
-        throw new BadRequestException(
-          'Solo se pueden guardar resultados de la sesión activa.',
-        );
-      }
-      return active.id;
-    }
-
-    if (!explicit) {
+    if (explicit && explicit !== active.id) {
       throw new BadRequestException(
-        'Indica sessionId o inicia una sesión para guardar resultados.',
+        'Solo se pueden guardar resultados de la sesión activa.',
       );
     }
 
-    await this.ensureSessionBelongsToClass(classId, explicit);
-    return explicit;
+    return active.id;
   }
 
   private async resolveManualWriteSessionId(

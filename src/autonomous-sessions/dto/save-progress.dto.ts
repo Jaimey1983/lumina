@@ -13,6 +13,10 @@ export class SaveProgressDto {
   @IsInt()
   @Min(1)
   attemptNumber: number;
+
+  @IsString()
+  @IsOptional()
+  activityType?: string;
 }
 
 export class JoinSessionDto {
