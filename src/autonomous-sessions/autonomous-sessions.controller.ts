@@ -15,6 +15,7 @@ import { CreateAutonomousSessionDto } from './dto/create-autonomous-session.dto'
 import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto';
 import { JoinAutonomousSessionDto } from './dto/join-autonomous-session.dto';
 import { SaveProgressDto, CompleteSessionDto } from './dto/save-progress.dto';
+import { UpdateAutonomousProgressScoreDto } from './dto/update-autonomous-progress-score.dto';
 
 // Routes: POST/GET /classes/:classId/autonomous-sessions
 @Controller('classes')
@@ -62,6 +63,17 @@ export class AutonomousSessionsController {
     @Body() dto: SaveProgressDto,
   ) {
     return this.service.saveProgress(sessionId, dto);
+  }
+
+  @Patch(':sessionId/progress/:progressId')
+  @UseGuards(JwtAuthGuard)
+  updateProgressScore(
+    @Param('sessionId') sessionId: string,
+    @Param('progressId') progressId: string,
+    @Body() dto: UpdateAutonomousProgressScoreDto,
+    @Request() req: any,
+  ) {
+    return this.service.updateProgressScore(sessionId, progressId, req.user.id, dto.score);
   }
 
   @Post(':sessionId/complete')

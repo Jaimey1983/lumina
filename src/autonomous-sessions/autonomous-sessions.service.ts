@@ -24,6 +24,47 @@ function generatePin(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+type VideoAnswerEntry = { questionIndex: number; answer: string };
+
+function extractVideoAnswerEntries(response: unknown): VideoAnswerEntry[] {
+  if (!response || typeof response !== 'object') return [];
+  const asRecord = response as Record<string, unknown>;
+  const rawHistorial = asRecord.historial;
+  if (Array.isArray(rawHistorial)) {
+    return rawHistorial
+      .map((item) => {
+        if (!item || typeof item !== 'object') return null;
+        const o = item as Record<string, unknown>;
+        const questionIndex = typeof o.questionIndex === 'number' ? o.questionIndex : NaN;
+        const answer = typeof o.answer === 'string' ? o.answer : '';
+        if (!Number.isFinite(questionIndex) || !answer.trim()) return null;
+        return { questionIndex, answer };
+      })
+      .filter((x): x is VideoAnswerEntry => x !== null);
+  }
+
+  const questionIndex =
+    typeof asRecord.questionIndex === 'number' ? asRecord.questionIndex : NaN;
+  const answer = typeof asRecord.answer === 'string' ? asRecord.answer : '';
+  if (!Number.isFinite(questionIndex) || !answer.trim()) return [];
+  return [{ questionIndex, answer }];
+}
+
+function mergeVideoInteractiveResponse(existing: unknown, incoming: unknown): unknown {
+  const mergedByQuestion = new Map<number, string>();
+  for (const entry of extractVideoAnswerEntries(existing)) {
+    mergedByQuestion.set(entry.questionIndex, entry.answer);
+  }
+  for (const entry of extractVideoAnswerEntries(incoming)) {
+    // Latest answer per question wins.
+    mergedByQuestion.set(entry.questionIndex, entry.answer);
+  }
+  const historial = Array.from(mergedByQuestion.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([questionIndex, answer]) => ({ questionIndex, answer }));
+  return { historial };
+}
+
 @Injectable()
 export class AutonomousSessionsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -228,6 +269,20 @@ export class AutonomousSessionsService {
   async saveProgress(sessionId: string, dto: SaveProgressDto) {
     if (!dto.activityType) return { saved: true };
 
+    const existing = await this.prisma.autonomousProgress.findFirst({
+      where: {
+        sessionId,
+        studentId: dto.studentId,
+        slideId: dto.slideId,
+        attemptNumber: dto.attemptNumber,
+      },
+    });
+
+    let responseToStore: unknown = dto.response;
+    if (dto.activityType === 'video_interactivo' && dto.response !== null && dto.response !== undefined) {
+      responseToStore = mergeVideoInteractiveResponse(existing?.response, dto.response);
+    }
+
     // Compute score immediately when activityType is provided
     let computedScore: number | null = null;
     if (dto.activityType) {
@@ -241,20 +296,11 @@ export class AutonomousSessionsService {
         const actBlock = bloques.find((b: any) => b.tipo === 'actividad');
         computedScore = scoreActivityResponse(
           dto.activityType,
-          dto.response ?? null,
+          responseToStore ?? null,
           actBlock?.actividad,
         );
       }
     }
-
-    const existing = await this.prisma.autonomousProgress.findFirst({
-      where: {
-        sessionId,
-        studentId: dto.studentId,
-        slideId: dto.slideId,
-        attemptNumber: dto.attemptNumber,
-      },
-    });
 
     // Si ya existe con score calculado y la nueva response es null → no actualizar
     if (existing?.score !== null && existing?.score !== undefined && dto.response === null) {
@@ -264,7 +310,7 @@ export class AutonomousSessionsService {
     if (existing) {
       // Only overwrite activityType/score when activityType is explicitly provided
       const updateData: Record<string, unknown> = {
-        response: dto.response as any,
+        response: responseToStore as any,
         answeredAt: new Date(),
       };
       if (dto.activityType !== undefined) {
@@ -286,7 +332,7 @@ export class AutonomousSessionsService {
           studentId: dto.studentId,
           studentName: result?.studentName ?? '',
           slideId: dto.slideId,
-          response: dto.response as any,
+          response: responseToStore as any,
           attemptNumber: dto.attemptNumber,
           activityType: dto.activityType,
           score: computedScore,
@@ -463,20 +509,90 @@ export class AutonomousSessionsService {
       const resultados = studentProgress
         .filter((p) => p.activityType !== null && p.score !== null)
         .map((p) => ({
+          id: p.id,
           slideId: p.slideId,
           activityType: p.activityType as string,
           score: p.score as number,
           maxScore: 5,
-          isManual: false,
+          isManual:
+            p.activityType === 'short_answer' ||
+            p.activityType === 'encuesta_viva' ||
+            p.activityType === 'nube_palabras',
         }));
+
+      const promedioFromProgress =
+        resultados.length > 0
+          ? Math.round(
+              (resultados.reduce((acc, item) => acc + item.score, 0) / resultados.length) * 100,
+            ) / 100
+          : null;
 
       return {
         studentId: r.studentId,
         nombre: r.studentName,
-        promedio: r.finalScore ?? 0,
+        // Use live aggregate from progress so manual score edits are reflected immediately.
+        promedio: promedioFromProgress ?? r.finalScore ?? 0,
         source: 'autonomous' as const,
         resultados,
       };
     });
+  }
+
+  async updateProgressScore(
+    sessionId: string,
+    progressId: string,
+    teacherId: string,
+    score: number,
+  ) {
+    const session = await this.prisma.autonomousSession.findUnique({
+      where: { id: sessionId },
+      select: { id: true, teacherId: true },
+    });
+    if (!session) throw new NotFoundException('Sesión no encontrada');
+    if (session.teacherId !== teacherId) throw new ForbiddenException('Sin permiso');
+
+    const progress = await this.prisma.autonomousProgress.findUnique({
+      where: { id: progressId },
+      select: { id: true, sessionId: true },
+    });
+    if (!progress || progress.sessionId !== sessionId) {
+      throw new NotFoundException('Progreso no encontrado para esta sesión');
+    }
+
+    const roundedScore = Math.round(score * 10) / 10;
+    const updatedProgress = await this.prisma.autonomousProgress.update({
+      where: { id: progressId },
+      data: { score: roundedScore },
+    });
+
+    const allAttemptProgress = await this.prisma.autonomousProgress.findMany({
+      where: {
+        sessionId,
+        studentId: updatedProgress.studentId,
+        attemptNumber: updatedProgress.attemptNumber,
+        activityType: { not: null },
+        score: { not: null },
+      },
+      select: { score: true },
+    });
+    const recomputedFinal =
+      allAttemptProgress.length > 0
+        ? Math.round(
+            (allAttemptProgress.reduce((acc, p) => acc + (p.score ?? 0), 0) /
+              allAttemptProgress.length) *
+              100,
+          ) / 100
+        : null;
+
+    await this.prisma.autonomousResult.updateMany({
+      where: {
+        sessionId,
+        studentId: updatedProgress.studentId,
+        attemptNumber: updatedProgress.attemptNumber,
+      },
+      data: { finalScore: recomputedFinal ?? undefined },
+    });
+
+    return { updated: true, id: progressId, score: roundedScore };
   }
 }

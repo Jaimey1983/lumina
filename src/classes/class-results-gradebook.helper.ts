@@ -128,15 +128,62 @@ export function scoreActivityResponse(activityType: string, response: unknown, a
       return applyMinScore((correct / pasos.length) * 5.0, true);
     }
 
-    // Participación: respondió (no vacío) → 1.0, no respondió → 0.0
+    // Participación: respondió → 1.0, no respondió → 0.0
     case 'short_answer':
-    case 'encuesta_viva':
-    case 'nube_palabras':
       if (typeof response === 'string') return response.trim().length > 0 ? 1.0 : 0.0;
       return 1.0;
 
-    case 'video_interactivo':
-      return applyMinScore(1.0, true);
+    case 'encuesta_viva':
+    case 'nube_palabras':
+      return applyMinScore(1.0, response !== null && response !== undefined);
+
+    case 'video_interactivo': {
+      // Accept both legacy single-answer payload and the accumulated
+      // `{ historial: [{ questionIndex, answer }] }` shape.
+      const preguntas = Array.isArray(activityDef?.preguntas) ? activityDef.preguntas : [];
+      if (preguntas.length === 0) return 1.0;
+
+      let answerByQuestion = new Map<number, string>();
+      if (response && typeof response === 'object' && !Array.isArray(response)) {
+        const r = response as Record<string, unknown>;
+        if (Array.isArray(r.historial)) {
+          answerByQuestion = new Map(
+            r.historial
+              .map((item) => {
+                if (!item || typeof item !== 'object') return null;
+                const o = item as Record<string, unknown>;
+                const questionIndex =
+                  typeof o.questionIndex === 'number' ? o.questionIndex : NaN;
+                const answer = typeof o.answer === 'string' ? o.answer : '';
+                if (!Number.isFinite(questionIndex) || !answer.trim()) return null;
+                return [questionIndex, answer] as const;
+              })
+              .filter((x): x is readonly [number, string] => x !== null),
+          );
+        } else if (
+          typeof r.questionIndex === 'number' &&
+          typeof r.answer === 'string' &&
+          r.answer.trim()
+        ) {
+          answerByQuestion.set(r.questionIndex, r.answer);
+        }
+      }
+
+      const responded = answerByQuestion.size > 0;
+      if (!responded) return 0.0;
+
+      let correct = 0;
+      for (let i = 0; i < preguntas.length; i++) {
+        const selected = answerByQuestion.get(i);
+        if (!selected) continue;
+        const opciones = Array.isArray(preguntas[i]?.opciones) ? preguntas[i].opciones : [];
+        const isCorrect = opciones.some(
+          (op: any) => op?.id === selected && op?.esCorrecta === true,
+        );
+        if (isCorrect) correct += 1;
+      }
+      return applyMinScore((correct / preguntas.length) * 5.0, true);
+    }
 
     default:
       return 1.0;
