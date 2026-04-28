@@ -1,5 +1,5 @@
-# LUMINA_CONTEXT_V20.md
-_Actualizado: 20/04/2026 — Sesión 19:50–22:00_
+# LUMINA_CONTEXT_V21.md
+_Actualizado: 26/04/2026 — Sesiones 23/04–26/04/2026_
 
 ---
 
@@ -22,7 +22,8 @@ Inspirada en Nearpod, Genially y Wordwall.
 - Frontend: `C:\Users\Jaime\proyectos\lumina\lumina-frontend`
 - Backend: `C:\Users\Jaime\proyectos\lumina\lumina-backend`
 
-**Docker:** `lumina_postgres` (5432), `lumina_redis` (6379)
+**Docker:** `lumina_postgres` (5432 en contenedor, pero backend usa PostgreSQL local Windows en 5432)
+**Redis:** `lumina_redis` (6379)
 **DB:** usuario `lumina` / contraseña `lumina1234`
 **JWT secret:** `lumina_super_secret_key_2025_cambiar_en_produccion`
 
@@ -39,7 +40,7 @@ Inspirada en Nearpod, Genially y Wordwall.
 - pnpm
 
 **Backend:**
-- NestJS + Prisma + PostgreSQL
+- NestJS + Prisma 7 + PostgreSQL
 - Redis (caché y sesiones)
 - Socket.IO server
 - JWT auth
@@ -135,16 +136,129 @@ Los siguientes tokens están prohibidos — siempre usar hex explícito:
 |------|-------------|
 | `clase` | Clase en vivo — docente controla navegación, Socket.IO activo |
 | `presentacion` | Presentación — siempre disponible, estudiante navega libremente |
-| `autonomo` | Autónomo — estudiante navega a su ritmo, configurable por docente |
+| `autonomo` | Autónomo — estudiante navega a su ritmo, tarea para la casa |
 
-### Modo Autónomo — configuración granular (DEFINIDO, pendiente implementar)
-- **Navegación:** docente decide si permite volver a slides anteriores (sí/no)
-- **Timer:** hereda sistema existente (global o por slide)
-- **Al expirar timer:** avanza automáticamente O bloquea respuesta (configurable)
-- **Acceso:** con o sin inicio manual del docente
-- **Fecha/hora de apertura y cierre**
-- **Intentos:** 1 / N / ilimitados
-- **Al vencer fecha:** guarda progreso parcial — slides no visitados = 0.0
+---
+
+## Modo Autónomo — IMPLEMENTADO (V21)
+
+### Concepto
+Permite al docente lanzar una clase como tarea para la casa con ventana de tiempo,
+PIN de acceso, intentos configurables y calificación automática.
+
+### Modelos Prisma nuevos
+```prisma
+model AutonomousSession {
+  id                 String   @id @default(cuid())
+  classId            String
+  teacherId          String
+  opensAt            DateTime
+  closesAt           DateTime
+  allowBackNav       Boolean  @default(true)
+  maxAttempts        Int      @default(1)   // -1 = ilimitado
+  timerBehavior      String   @default("advance") // "advance" | "lock"
+  requireManualStart Boolean  @default(false)
+  status             String   @default("scheduled") // "scheduled" | "open" | "closed"
+  pin                String   // 6 dígitos generado automáticamente
+  purpose            String   @default("independent") // "recovery" | "independent"
+  createdAt          DateTime @default(now())
+}
+
+model AutonomousProgress {
+  id            String   @id @default(cuid())
+  sessionId     String
+  studentId     String
+  studentName   String
+  slideId       String
+  activityType  String?  // enviado desde el frontend
+  response      Json?
+  score         Float?   // calculado en saveProgress()
+  answeredAt    DateTime @default(now())
+  attemptNumber Int      @default(1)
+}
+
+model AutonomousResult {
+  id            String   @id @default(cuid())
+  sessionId     String
+  studentId     String
+  studentName   String
+  attemptNumber Int      @default(1)
+  status        String   @default("in_progress") // "in_progress" | "completed" | "expired"
+  finalScore    Float?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model AutonomousGrade {
+  id          String   @id @default(cuid())
+  sessionId   String
+  classId     String
+  studentId   String
+  studentName String
+  score       Float
+  source      String   @default("autonomous")
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+}
+```
+
+### Endpoints autonomous-sessions
+```
+POST   /classes/:classId/autonomous-sessions          — lanzar tarea (JWT)
+GET    /classes/:classId/autonomous-sessions          — listar sesiones (JWT)
+GET    /autonomous-sessions/:sessionId                — detalle + auto-update status (público)
+PATCH  /autonomous-sessions/:sessionId                — editar sesión (JWT)
+DELETE /autonomous-sessions/:sessionId                — cancelar (JWT, solo scheduled)
+POST   /autonomous-sessions/:sessionId/join           — estudiante entra (público)
+POST   /autonomous-sessions/:sessionId/progress       — guardar progreso por slide (público)
+POST   /autonomous-sessions/:sessionId/complete       — estudiante finaliza (público)
+GET    /autonomous-sessions/:sessionId/results        — gradebook docente (JWT)
+```
+
+### Seguridad de acceso
+- **PIN de 6 dígitos** generado automáticamente al crear la sesión
+- **Matching de nombres** con tolerancia: normalización + fonética colombiana + Levenshtein
+  - v↔b, s↔c↔z, ll↔y, h silenciosa, j↔g
+  - Tolerancia: ≤5 chars=1, 6-9=2, ≥10=3
+- **Anti-repetición:** PIN + nombre normalizado = identidad del estudiante
+- **Modo Recuperación:** bloquea si ya existe ClassResult para ese estudiante en esa clase
+
+### Propósito de la tarea
+- `independent` — tarea independiente, planilla separada en Lumina Edu
+- `recovery` — recuperación para estudiante ausente, nota va a planilla principal
+  - Al completar crea `AutonomousGrade` vinculado a la clase
+  - Al hacer join verifica si ya existe ClassResult → bloquea si existe
+
+### Cálculo de score
+- **Score calculado en saveProgress()** — no en complete()
+- `activityType` enviado desde el frontend en cada POST /progress
+- Usa `scoreActivityResponse()` del helper existente
+- **Regla:** sin responder → 0.0 | respondió (cualquier resultado) → mínimo 1.0 | todo correcto → 5.0
+- No sobreescribe score existente si nueva response es null
+- Slides sin actividad (activityType undefined) se ignoran
+
+### Helper name-matcher
+```
+src/autonomous-sessions/name-matcher.helper.ts
+- normalizeName()
+- applyPhonetics()
+- levenshteinTolerance()
+- namesMatch()
+```
+
+### Rutas frontend
+- `/autonomo/[sessionId]` — viewer del estudiante (3 pantallas: entrada, slides, finalización)
+- No usa Socket.IO — 100% REST/HTTP
+
+### Viewer autónomo — pantallas
+1. **Entrada:** título, ventana de tiempo, campo nombre + PIN, manejo de estados (scheduled/open/closed)
+2. **Viewer:** slides fullscreen con capas absolutas, barra progreso, countdown closesAt, nav Anterior/Siguiente
+3. **Finalización:** nota final, badge desempeño colombiano
+
+### Clase en vivo — fix de seguridad
+- `POST /classes/:id/results` ahora verifica que exista `ClassSession` activa
+- Sin sesión activa → 400 "No hay una sesión activa para esta clase"
+- Gradebook usa registro más reciente en caso de duplicados (orderBy updatedAt)
 
 ---
 
@@ -185,8 +299,11 @@ Los siguientes tokens están prohibidos — siempre usar hex explícito:
 
 ### Fórmula de score por actividad
 ```
-nota_actividad = (sub_respuestas_correctas / total_sub_respuestas) * 5.0
-nota_final = promedio simple de todas las notas de actividades
+Sin responder                    → 0.0
+Respondió, ningún acierto        → 1.0 (mínimo)
+Respondió, aciertos parciales    → proporcional 1.0–5.0
+Todo correcto                    → 5.0
+nota_final = promedio de scores por actividad
 ```
 
 ### Reglas por tipo de actividad
@@ -194,8 +311,8 @@ nota_final = promedio simple de todas las notas de actividades
 | Tipo | Cálculo | Notas |
 |------|---------|-------|
 | `quiz_multiple`, `verdadero_falso` | Binario: correcto=5.0, incorrecto=1.0, no respondió=0.0 | Automático |
-| `emparejar`, `completar_blancos`, `arrastrar_soltar`, `ordenar_pasos` | Proporcional por `details` | Automático |
-| `video_interactivo` | Proporcional por `details` acumulados | Automático |
+| `emparejar`, `completar_blancos`, `arrastrar_soltar`, `ordenar_pasos` | Proporcional + mínimo 1.0 | Automático |
+| `video_interactivo` | Participación: 1.0 | Automático |
 | `short_answer` | Respondió→1.0, no respondió→0.0 | **Manual** |
 | `encuesta_viva` | Respondió→1.0, no respondió→0.0 | **Manual** |
 | `nube_palabras` | Respondió→1.0, no respondió→0.0 | **Manual** |
@@ -206,8 +323,31 @@ const MANUAL_GRADING = ['short_answer', 'encuesta_viva', 'nube_palabras']
 ```
 - Celdas con borde azul `#2563EB` en planilla
 - Docente hace clic → input editable (0.0 a 5.0, step 0.1)
-- Guarda con Enter o blur → `PATCH /classes/:classId/results/:resultId`
-- **Los estudiantes nunca tienen permisos de escritura en calificaciones**
+
+---
+
+## Lumina Edu — Planilla (V21)
+
+### Tabs en grade-book-client.tsx
+- **Clase en vivo** — planilla existente con ClassResult
+- **Tareas autónomas** — nueva pestaña con AutonomousResult
+
+### Clase en vivo
+- Muestra desglose por actividad (columnas por slideId)
+- Badge "Recuperación" para estudiantes con AutonomousGrade (source='autonomous')
+- Celdas manuales editables con borde azul
+
+### Tareas autónomas
+- Selector de sesión si hay más de una (solo purpose='independent')
+- Tabla con columnas por actividad (mismo formato que clase en vivo)
+- Columnas: Estudiante | [actividades] | Promedio final | Desempeño
+- Celdas manuales en solo lectura (no hay PATCH para tareas)
+- Mensaje vacío si no hay sesiones independent
+
+### Normalización unificada
+- `normalizeFromRows()` exportada de `use-gradebook.ts`
+- Reutilizada para clase en vivo Y tareas autónomas
+- `GET /autonomous-sessions/:sessionId/results` retorna mismo formato que gradebook
 
 ---
 
@@ -219,11 +359,6 @@ const MANUAL_GRADING = ['short_answer', 'encuesta_viva', 'nube_palabras']
 4. Editor recibe respuestas en panel EN VIVO (`liveResponses` Map por slideId)
 5. Docente → **Finalizar clase** → calcula scores → `POST /classes/:id/results` → `PATCH /classes/:id/sessions/end`
 
-### Persistencia de respuestas en vivo
-```typescript
-sessionStorage.setItem(`lumina-live-responses-${classId}`, JSON.stringify([...liveResponses]))
-```
-
 ---
 
 ## Endpoints Clave
@@ -234,45 +369,35 @@ sessionStorage.setItem(`lumina-live-responses-${classId}`, JSON.stringify([...li
 POST   /auth/login
 POST   /auth/register
 
-GET    /classes/:id                    — público (viewer)
-PATCH  /classes/:id                    — actualizar clase
+GET    /classes/:id
+PATCH  /classes/:id
 GET    /classes/join/:codigo           — público, sin guard
 POST   /classes/:id/sessions/start
 PATCH  /classes/:id/sessions/end
-POST   /classes/:id/results
+POST   /classes/:id/results            — requiere ClassSession activa
 PATCH  /classes/:classId/results/:resultId
 GET    /classes/:id/versions
 POST   /classes/:id/versions
 PUT    /classes/:id/versions/:versionId/restore
 POST   /classes/:id/slides/insert
+GET    /classes/:id/gradebook
+GET    /classes/:classId/autonomous-sessions
+POST   /classes/:classId/autonomous-sessions
+
+GET    /autonomous-sessions/:sessionId
+PATCH  /autonomous-sessions/:sessionId
+DELETE /autonomous-sessions/:sessionId
+POST   /autonomous-sessions/:sessionId/join
+POST   /autonomous-sessions/:sessionId/progress
+POST   /autonomous-sessions/:sessionId/complete
+GET    /autonomous-sessions/:sessionId/results
 
 GET    /courses
 POST   /courses
 GET    /courses/:id
-
 GET    /edu/courses/:courseId/gradebook
 GET    /edu/courses/:courseId/analytics
 ```
-
----
-
-## Analytics — Hooks implementados
-
-```
-src/hooks/api/use-course-analytics.ts  — KPIs desde gradebook
-```
-
-**KPIs conectados a datos reales:**
-- Estudiantes totales del curso
-- Promedio general (escala 0-5)
-- Tasa de completitud (%)
-- Clases activas (count publicadas)
-- Ranking de actividades por tipo
-- Estudiantes en riesgo (promedio < 3.0)
-- Distribución de desempeño (Bajo/Básico/Alto/Superior)
-- Progreso por estudiante
-
-**Engagement:** pendiente — requiere `SessionLog` y `SlideEngagement` en backend
 
 ---
 
@@ -285,28 +410,37 @@ src/app/(app)/classes/[id]/editor/editor-client.tsx
 src/app/(app)/classes/[id]/editor/components/canvas-area.tsx
 src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx
 src/app/(app)/classes/[id]/editor/components/slides-panel.tsx
-src/app/(app)/classes/[id]/editor/components/icon-rail.tsx          — polish V20
-src/app/(app)/classes/[id]/editor/components/right-rail.tsx         — polish V20
-src/app/(app)/classes/[id]/editor/components/right-flyout-panel.tsx — polish V20
-src/app/(app)/classes/[id]/editor/components/floating-toolbar.tsx   — polish V20
-src/app/(app)/classes/[id]/editor/components/activities/            — polish V20 (10 archivos)
-src/app/(app)/classes/[id]/class-detail-client.tsx                  — polish V20
+src/app/(app)/classes/[id]/editor/components/icon-rail.tsx
+src/app/(app)/classes/[id]/editor/components/right-rail.tsx
+src/app/(app)/classes/[id]/editor/components/right-flyout-panel.tsx
+src/app/(app)/classes/[id]/editor/components/floating-toolbar.tsx
+src/app/(app)/classes/[id]/editor/components/activities/    — 10 archivos
+src/app/(app)/classes/[id]/class-detail-client.tsx
+src/app/(app)/classes/[id]/class-detail-client.tsx          — botón Autónomo + modales
+src/app/(app)/classes/[id]/components/launch-autonomous-modal.tsx
+src/app/(app)/classes/[id]/components/edit-autonomous-modal.tsx
 src/app/(app)/classes/[id]/viewer/viewer-client.tsx
-src/app/(app)/edu/[courseId]/grade-book-client.tsx
+src/app/(app)/edu/[courseId]/grade-book-client.tsx          — tabs Clase en vivo / Tareas autónomas
 src/app/(app)/edu/edu-home-client.tsx
-src/app/(app)/dashboard/dashboard-client.tsx                        — polish V20
+src/app/(app)/dashboard/dashboard-client.tsx
 src/app/(app)/analytics/analytics-client.tsx
 src/app/(app)/courses/
 src/app/(app)/profile/page.tsx
-src/app/join/[codigo]/join-client.tsx                               — verificado OK
+src/app/join/[codigo]/join-client.tsx
+src/app/autonomo/[sessionId]/page.tsx
+src/app/autonomo/[sessionId]/autonomo-client.tsx
 src/components/layout/sidebar.tsx
 src/hooks/api/use-course-analytics.ts
+src/hooks/api/use-autonomous-sessions.ts
+src/hooks/api/use-autonomous-viewer.ts
+src/hooks/api/use-autonomous-results.ts
 src/hooks/use-autosave.ts
 src/hooks/use-slide-timer.ts
 src/hooks/use-slide-versions.ts
 src/hooks/use-gradebook.ts
-src/styles/globals.css                                              — tokens Lumina 2.1
+src/styles/globals.css
 tailwind.config.ts
+src/types/autonomous.types.ts
 ```
 
 ### Backend
@@ -314,8 +448,16 @@ tailwind.config.ts
 src/classes/classes.controller.ts
 src/classes/classes.service.ts
 src/classes/classes.gateway.ts
-src/classes/class-results-gradebook.helper.ts
+src/classes/class-results-gradebook.helper.ts   — scoreActivityResponse() + applyMinScore()
 src/classes/dto/update-result-score.dto.ts
+src/autonomous-sessions/autonomous-sessions.module.ts
+src/autonomous-sessions/autonomous-sessions.controller.ts
+src/autonomous-sessions/autonomous-sessions.service.ts
+src/autonomous-sessions/name-matcher.helper.ts
+src/autonomous-sessions/dto/create-autonomous-session.dto.ts
+src/autonomous-sessions/dto/update-autonomous-session.dto.ts
+src/autonomous-sessions/dto/join-autonomous-session.dto.ts
+src/autonomous-sessions/dto/save-progress.dto.ts
 prisma/schema.prisma
 ```
 
@@ -329,7 +471,7 @@ prisma/schema.prisma
 - 10 tipos de actividad con editor y viewer
 - 10 layouts con miniaturas SVG tipo PowerPoint
 - Slide insert/reorder via @dnd-kit
-- Miniaturas de slides con badge de actividad (sin número de índice)
+- Miniaturas de slides con badge de actividad
 - Panel EN VIVO con respuestas legibles por tipo
 - Autoguardado debounce 2s
 - Historial de versiones (últimas 10, restaurar)
@@ -340,9 +482,9 @@ prisma/schema.prisma
 - Temporizador por slide (global + override)
 - Bloquear/desbloquear respuestas manual
 - Contador respondieron en topbar
-- Líneas referencia en bloques vacíos
+- 12 fondos SVG/CSS propios (sin imágenes externas)
 
-### Flujo de sesión
+### Flujo de sesión en vivo
 - Código LUM-6chars para unirse
 - Página `/join/[codigo]`
 - Botones Iniciar/Finalizar clase
@@ -350,57 +492,62 @@ prisma/schema.prisma
 - Modo presentación y modo autónomo
 - Pantalla resumen estudiante al finalizar
 - Confirmación visual al responder
+- Bloqueo de respuestas sin sesión activa
+
+### Modo Autónomo (NUEVO V21)
+- Lanzar clase como tarea con fechas apertura/cierre
+- PIN de acceso de 6 dígitos automático
+- Propósito: Recuperación o Tarea independiente
+- Intentos configurables (1/2/3/ilimitados)
+- Navegación configurable (permitir/bloquear volver)
+- Timer behavior: avanzar automáticamente o bloquear respuesta
+- Anti-repetición por PIN + matching nombre (fonética colombiana)
+- Bloqueo en modo Recuperación si ya tiene nota en clase en vivo
+- Badge de estado en class-detail (programada/abierta) con refetch 30s
+- Modal editar sesión con PIN visible
+- Viewer fullscreen igual que clase en vivo
+- Score calculado en tiempo real por slide
+- Mínimo 1.0 si respondió, 0.0 solo si no respondió
 
 ### Calificación (Lumina Edu)
 - Score proporcional escala colombiana
 - Actividades manuales con celdas azules editables
 - Promedio final y desempeño en tiempo real
-- "Escala de valoración" (no "Escala colombiana")
+- Tabs: Clase en vivo | Tareas autónomas
+- Badge "Recuperación" en planilla principal
+- Tareas autónomas con desglose por actividad
 
 ### Analytics
-- KPIs reales desde gradebook via `use-course-analytics`
+- KPIs reales desde gradebook
 - Ranking de actividades con rendimiento
 - Estudiantes en riesgo identificados
 - Distribución de desempeño
 - Engagement: "Disponible próximamente"
-
-### Visual Lumina 2.1 (completado 20/04/2026)
-- Color primario azul `#2563EB` — reemplaza violeta globalmente
-- Tipografía negra/gris como protagonista, base 15px
-- Fondos blancos/gris neutro sin tinte
-- Sombras grises neutras
-- Bordes `#e5e7eb` neutros
-- Sidebar con avatar + cierre de sesión en pie
-- `/profile` página creada
-- Navegación sidebar corregida
-- Cards `/classes` con click para abrir detalle
-- Badge Superior → verde
-- `dashboard-client.tsx` — AdminDashboard y StudentDashboard alineados a Lumina 2.1
-- `class-detail-client.tsx` — panel derecho, botones, separadores, tipografía
-- `icon-rail.tsx` — tokens shadcn eliminados, íconos inactivos `#9ca3af`
-- `right-rail.tsx` — borde `#e5e7eb`, íconos inactivos `#9ca3af`
-- `right-flyout-panel.tsx` — bordes `#e5e7eb`
-- `floating-toolbar.tsx` — separadores, inputs, selects, dialog
-- `activities/*.tsx` — 10 editores y viewers: tokens shadcn eliminados, dark: eliminados
 
 ---
 
 ## Estado del Roadmap
 
 ### ✅ Completado
-- Todo lo de V19 +
-- Polish visual Lumina 2.1 COMPLETO (todas las páginas y componentes principales)
+- Todo lo de V20 +
+- **Modo Autónomo completo** (backend + frontend + planilla)
+- Fix scoring: mínimo 1.0 si respondió
+- Fix arrastrar_soltar: onResponse en cada drop
+- Fix sobreescritura de score
+- Bloqueo clase en vivo sin sesión activa
+- Planilla Lumina Edu con tabs y tareas autónomas
 
-### 🔲 Mejoras estéticas pendientes (conversación diseño abril 2026)
-- Viewers fullscreen (100dvh) con fondo de pantalla por clase
-- Catálogo de 12 fondos SVG/CSS propios (sin imágenes externas)
+### 🔲 Pruebas pendientes (mañana)
+- Verificar todas las actividades en modo autónomo:
+  verdadero_falso, emparejar, respuesta corta, nube_palabras, encuesta_viva, video_interactivo
+
+### 🔲 Mejoras estéticas pendientes
 - Entrada escalonada en actividades (staggered animation)
 - useSound con Web Audio API (sin dependencias externas)
 - Barras animadas en vivo para encuesta (live poll)
 - prop `variant: "dark" | "light"` en viewers según fondo elegido
 
 ### 🔲 Funcionalidades pendientes (roadmap)
-- Modo autónomo — configuración granular (definido, no implementado)
 - Analytics backend — SessionLog, StudentConnection, SlideEngagement
 - Nuevas actividades Wordwall-style (15 tipos)
 - Escape Room
@@ -411,21 +558,11 @@ prisma/schema.prisma
 
 ### 🔲 Lumina 2.0 — visión futura (definida, no iniciada)
 - Repositorio público `/explore`
-- Sistema fork (original protegido + copia personal)
-- Rankings y calificación de material
-- Colecciones temáticas
-- Co-autoría
-- Perfil público como portafolio profesional
-- Seguir docentes / feed personalizado
-- Búsqueda por DBA colombianos
-- Versiones públicas con notificación a forks
-- Comentarios pedagógicos entre docentes
-- Insignias y reputación docente
-- Auth rediseñado (login split-screen, registro multi-step 3 pasos, forgot/reset, verificación email)
-- Onboarding checklist + tour opcional (2 roles: docente / coordinador)
-- Feedback beta widget flotante
+- Sistema fork, rankings, colecciones
+- Co-autoría, perfil público, seguir docentes
+- Auth rediseñado, onboarding, feedback widget
 - Bloque `contenido_externo_html5` (Scratch, PhET, GeoGebra)
-- Fondos animados en slides (particles, ondas, gradientes)
+- Fondos animados en slides
 - Página pública de landing `/`
 
 ---
@@ -450,15 +587,20 @@ prisma/schema.prisma
 - Layout: `main` tiene `flex-1 min-w-0 overflow-y-auto`
 - Páginas internas: contenedor raíz siempre `w-full p-6`
 - SNAP_COLOR naranja `#F97316` — no tocar
+- Viewer autónomo NO usa Socket.IO — 100% REST/HTTP
 
 ### Backend
 - `GET /classes/join/:codigo` es público (sin `@UseGuards`)
 - `verifyTeacherOwnership` para rutas de resultados/gradebook/versiones
 - Prisma 7: `prisma.config.ts` + driver adapter `PrismaPg`
+- `POST /classes/:id/results` requiere ClassSession activa
+- `saveProgress()` ignora slides sin activityType
+- `saveProgress()` no sobreescribe score válido con null
 
 ### React Query
 - Respuestas paginadas: `Array.isArray(raw) ? raw : raw?.data ?? []`
 - Tras PATCH manual: actualizar caché con `setQueryData` + `computeStudentPromedio()`
+- `useAutonomousSessions(classId, { refetchInterval: 30000 })` en class-detail
 
 ### Diseño Lumina 2.1 — regla de oro
 - Color `#2563EB` SOLO en botones CTA, links activos, íconos de acción, barras de progreso
@@ -468,7 +610,7 @@ prisma/schema.prisma
 - Sombras: `rgba(0,0,0, 0.06–0.10)` neutras
 - dark: prefixes eliminados — Lumina no tiene modo oscuro
 
-### LUMINA_CONTEXT_V20.md — ubicación
+### LUMINA_CONTEXT_V21.md — ubicación
 - Colocar en `lumina-frontend/` (raíz del proyecto frontend) para que Cursor lo encuentre
 - El workspace de Cursor apunta a `lumina-frontend/`, no a la raíz del monorepo
 
