@@ -643,10 +643,10 @@ export function ViewerClient({ id }: { id: string }) {
             </div>
           ) : null}
 
-          <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col justify-center overflow-hidden px-4 py-6">
+          <div className="flex min-h-0 w-full flex-1 overflow-hidden">
             {activeSlide ? (
               <div
-                className="relative aspect-video w-full max-h-[min(78dvh,calc(100vw-2rem))] shrink-0 overflow-hidden rounded-2xl shadow-2xl shadow-black/30"
+                className="relative h-full w-full shrink-0 overflow-hidden"
                 style={bg.style}
               >
                 <div
@@ -660,6 +660,7 @@ export function ViewerClient({ id }: { id: string }) {
                     modo="viewer"
                     onResponse={handleResponse}
                     variant={slideCanvasVariant}
+                    viewerFill
                   />
                 </div>
               </div>

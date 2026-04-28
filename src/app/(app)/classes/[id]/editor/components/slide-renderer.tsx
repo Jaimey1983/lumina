@@ -1153,6 +1153,8 @@ export interface SlideRendererProps {
   ) => { x: number; y: number; ancho: number; alto: number };
   /** Variante del lienzo según el fondo de clase (p. ej. viewer); reservado para estilos futuros. */
   variant?: 'light' | 'dark';
+  /** En modo viewer, permite llenar el contenedor padre sin forzar 16:9. */
+  viewerFill?: boolean;
 }
 
 export function SlideRenderer({
@@ -1169,6 +1171,7 @@ export function SlideRenderer({
   onPersistSlide,
   onResizeInteractionEnd,
   onResizeMove,
+  viewerFill = false,
 }: SlideRendererProps) {
   const [selectedId,    setSelectedId]    = useState<string | null>(null);
   const [editingId,     setEditingId]     = useState<string | null>(null);
@@ -1355,12 +1358,19 @@ export function SlideRenderer({
               minWidth: 0,
               overflow: 'visible',
             }
-          : {
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '16 / 9',
-              overflow: 'hidden',
-            }),
+          : viewerFill
+            ? {
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
+              }
+            : {
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '16 / 9',
+                overflow: 'hidden',
+              }),
       }}
       onClick={handleCanvasClick}
       ref={canvasRefProp ? undefined : internalCanvasRef}

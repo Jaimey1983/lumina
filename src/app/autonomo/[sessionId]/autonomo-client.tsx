@@ -123,6 +123,16 @@ function evaluateActivity(actividad: Activity, response: unknown): boolean | nul
       const got = actividad.caseSensitive ? response : response.trim().toLowerCase();
       return got === exp;
     }
+    case 'video_interactivo': {
+      if (!response || typeof response !== 'object' || Array.isArray(response)) return null;
+      const { questionIndex, answer } = response as {
+        questionIndex: number;
+        answer: string;
+      };
+      const question = actividad.preguntas?.[questionIndex];
+      if (!question) return null;
+      return question.opciones.find((op) => op.id === answer)?.esCorrecta ?? false;
+    }
     case 'encuesta_viva': case 'nube_palabras': return null;
     default: return null;
   }
@@ -384,6 +394,10 @@ function ViewerScreen({
   const { saveProgress }     = useSaveProgress(sessionId);
   const closeCountdown       = useCountdown(closesAt);
   const activeSlide          = slides[idx] ?? null;
+  const videoInteractiveHistorialRef = useRef<{ slideId: string; entries: unknown[] }>({
+    slideId: '',
+    entries: [],
+  });
   const isLastSlide          = idx === slides.length - 1;
 
   const bg                 = getBackground(background ?? 'none');
@@ -431,6 +445,18 @@ function ViewerScreen({
 
   useEffect(() => () => clearPill(), [clearPill]);
 
+  useEffect(() => {
+    if (!activeSlide?.id) return;
+    videoInteractiveHistorialRef.current = { slideId: activeSlide.id, entries: [] };
+  }, [activeSlide?.id]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const goNext = useCallback(() => {
     setIdx((i) => Math.min(slides.length - 1, i + 1));
     setLocked(false);
@@ -447,10 +473,32 @@ function ViewerScreen({
     const actBlock = (activeSlide.bloques ?? []).find((b: Block) => b.tipo === 'actividad');
     if (!actBlock || actBlock.tipo !== 'actividad') return;
 
+    const activityType = actBlock.actividad?.tipo as string | undefined;
+    if (activityType === 'video_interactivo') {
+      if (videoInteractiveHistorialRef.current.slideId !== activeSlide.id) {
+        videoInteractiveHistorialRef.current = { slideId: activeSlide.id, entries: [] };
+      }
+      const current =
+        response && typeof response === 'object' && !Array.isArray(response)
+          ? (response as Record<string, unknown>)
+          : {};
+      videoInteractiveHistorialRef.current.entries.push(current);
+      const historial = [...videoInteractiveHistorialRef.current.entries];
+      const correct = evaluateActivity(actBlock.actividad, response);
+      showPill(correct === true ? 'correct' : correct === false ? 'incorrect' : 'sent');
+      respondedSlideIds.current.add(activeSlide.id);
+      saveProgress({
+        studentId,
+        slideId: activeSlide.id,
+        response: { historial },
+        attemptNumber,
+        activityType,
+      });
+      return;
+    }
+
     const correct = evaluateActivity(actBlock.actividad, response);
     showPill(correct === true ? 'correct' : correct === false ? 'incorrect' : 'sent');
-
-    const activityType = actBlock.actividad?.tipo as string | undefined;
     // Mark this slide as responded so handleAdvance won't overwrite with null
     respondedSlideIds.current.add(activeSlide.id);
     saveProgress({ studentId, slideId: activeSlide.id, response, attemptNumber, activityType });
@@ -479,30 +527,10 @@ function ViewerScreen({
   const progress     = slides.length > 0 ? ((idx + 1) / slides.length) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 h-[100dvh] w-screen overflow-hidden bg-[#1e1b4b]">
-      {/* ── Slide: ocupa 100% del viewport ── */}
-      {activeSlide ? (
-        <div className="absolute inset-0 h-full w-full" style={bg.style}>
-          <div className={cn('h-full w-full', locked && 'pointer-events-none select-none opacity-[0.92]')}>
-            <SlideRenderer
-              slide={activeSlide}
-              modo="viewer"
-              onResponse={handleResponse}
-              variant={slideVariant}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-center text-sm text-slate-300">No hay slides en esta tarea</p>
-        </div>
-      )}
-
-      {/* ── Top bar superpuesta ── */}
-      <header className="absolute inset-x-0 top-0 z-30 flex h-12 items-center justify-between border-b border-white/10 bg-black/40 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1e1b4b]">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 bg-white/5 px-4">
         <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
           <LuminaMark className="size-7 rounded-lg" />
-          {/* Progress bar */}
           <div className="hidden min-w-0 flex-1 sm:block">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
@@ -535,62 +563,103 @@ function ViewerScreen({
         </div>
       </header>
 
-      {/* ── Nav superpuesta: centrada verticalmente ── */}
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
-        <button
-          type="button"
-          aria-label="Diapositiva anterior"
-          disabled={idx <= 0 || !allowBackNav}
-          onClick={() => { setLocked(false); setIdx((i) => Math.max(0, i - 1)); }}
-          className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/50 disabled:pointer-events-none disabled:opacity-35"
-        >
-          <ChevronLeft className="size-5" />
-        </button>
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden">
+          <div className="flex min-h-0 w-full flex-1 overflow-hidden">
+            {activeSlide ? (
+              <div
+                className="relative h-full w-full shrink-0 overflow-hidden"
+                style={bg.style}
+              >
+                <div
+                  className={cn(
+                    'h-full w-full',
+                    locked && 'pointer-events-none select-none opacity-[0.92]',
+                  )}
+                >
+                  <SlideRenderer
+                    slide={activeSlide}
+                    modo="viewer"
+                    onResponse={handleResponse}
+                    variant={slideVariant}
+                    viewerFill
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-1 items-center justify-center py-12">
+                <p className="text-center text-sm font-medium text-slate-300">
+                  No hay slides en esta tarea
+                </p>
+              </div>
+            )}
+          </div>
 
-        {isLastSlide ? (
-          <button
-            id="btn-entregar"
-            type="button"
-            onClick={onComplete}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-95"
-          >
-            <Check className="size-4" />
-            Entregar tarea
-          </button>
-        ) : (
-          <button
-            type="button"
-            aria-label="Diapositiva siguiente"
-            onClick={handleAdvance}
-            className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/50"
-          >
-            <ChevronRight className="size-5" />
-          </button>
-        )}
-      </div>
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-between gap-2 px-2 sm:px-4">
+            <button
+              type="button"
+              aria-label="Diapositiva anterior"
+              disabled={idx <= 0 || !allowBackNav}
+              onClick={() => {
+                setLocked(false);
+                setIdx((i) => Math.max(0, i - 1));
+              }}
+              className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/50 disabled:pointer-events-none disabled:opacity-35"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
 
-      {/* ── Response pill ── */}
+            {isLastSlide ? (
+              <button
+                id="btn-entregar"
+                type="button"
+                onClick={onComplete}
+                className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-95"
+              >
+                <Check className="size-4" />
+                Entregar tarea
+              </button>
+            ) : (
+              <button
+                type="button"
+                aria-label="Diapositiva siguiente"
+                onClick={handleAdvance}
+                className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-white/20 bg-black/30 px-5 py-2.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-black/50"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </main>
+
       {pill && (
         <div
           role="status"
           aria-live="polite"
           className={cn(
             'absolute bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium shadow-lg',
-            pill.variant === 'correct'   && 'border-[#16A34A]/30 bg-[#DCFCE7] text-green-900',
+            pill.variant === 'correct' && 'border-[#16A34A]/30 bg-[#DCFCE7] text-green-900',
             pill.variant === 'incorrect' && 'border-[#DC2626]/30 bg-[#FEE2E2] text-red-900',
-            pill.variant === 'sent'      && 'border-orange-200/60 bg-[#FFF0E6] text-orange-950',
+            pill.variant === 'sent' && 'border-orange-200/60 bg-[#FFF0E6] text-orange-950',
             pill.visible
               ? 'animate-in fade-in slide-in-from-bottom-6 duration-300'
               : 'pointer-events-none opacity-0 transition-opacity duration-300',
           )}
         >
-          {pill.variant === 'correct'   && <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />}
-          {pill.variant === 'incorrect' && <XCircle      className="size-5 shrink-0 text-[#DC2626]"  aria-hidden />}
-          {pill.variant === 'sent'      && <Check        className="size-5 shrink-0 text-orange-700" aria-hidden />}
+          {pill.variant === 'correct' && (
+            <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+          )}
+          {pill.variant === 'incorrect' && (
+            <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />
+          )}
+          {pill.variant === 'sent' && (
+            <Check className="size-5 shrink-0 text-orange-700" aria-hidden />
+          )}
           <span>
-            {pill.variant === 'correct'   && '¡Correcto!'}
+            {pill.variant === 'correct' && '¡Correcto!'}
             {pill.variant === 'incorrect' && 'Incorrecto'}
-            {pill.variant === 'sent'      && '¡Respuesta enviada!'}
+            {pill.variant === 'sent' && '¡Respuesta enviada!'}
           </span>
         </div>
       )}
