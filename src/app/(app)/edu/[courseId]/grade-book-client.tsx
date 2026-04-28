@@ -19,7 +19,7 @@ import { PageBanner } from '@/components/ui/page-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
-import { useAutonomousResults } from '@/hooks/api/use-autonomous-results';
+import { useAutonomousResults, useUpdateAutonomousScore } from '@/hooks/api/use-autonomous-results';
 import { useAutonomousSessions } from '@/hooks/api/use-autonomous-sessions';
 import { useClass } from '@/hooks/api/use-class';
 import { useClasses } from '@/hooks/api/use-classes';
@@ -273,13 +273,153 @@ function ManualGradeCell({
   );
 }
 
+function AutonomousManualGradeCell({
+  sessionId,
+  progressId,
+  studentId,
+  slideId,
+  initialNote,
+}: {
+  sessionId: string;
+  progressId: string;
+  studentId: string;
+  slideId: string;
+  initialNote: number | null;
+}) {
+  const updateScore = useUpdateAutonomousScore(sessionId);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const savingRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setInvalid(false);
+    }
+  }, [isEditing, initialNote, studentId, slideId]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const commit = useCallback(async () => {
+    if (savingRef.current || updateScore.isPending) return;
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setInvalid(false);
+      setIsEditing(false);
+      return;
+    }
+    const raw = trimmed.replace(',', '.');
+    const n = parseFloat(raw);
+    if (Number.isNaN(n) || n < 0 || n > 5) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
+    const score = Math.round(n * 10) / 10;
+    const orig =
+      initialNote != null && !Number.isNaN(initialNote)
+        ? Math.round(initialNote * 10) / 10
+        : null;
+    if (orig !== null && Math.abs(orig - score) < 0.001) {
+      setIsEditing(false);
+      return;
+    }
+
+    savingRef.current = true;
+    try {
+      await updateScore.mutateAsync({ progressId, score });
+      setIsEditing(false);
+    } catch {
+      toast.error('No se pudo guardar la nota');
+    } finally {
+      savingRef.current = false;
+    }
+  }, [draft, initialNote, progressId, updateScore]);
+
+  const openEdit = useCallback(() => {
+    setDraft(
+      initialNote != null && !Number.isNaN(initialNote) ? initialNote.toFixed(1) : '',
+    );
+    setInvalid(false);
+    setIsEditing(true);
+  }, [initialNote]);
+
+  const isSaving = updateScore.isPending;
+
+  if (!isEditing) {
+    return (
+      <div className="relative inline-flex justify-center">
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={openEdit}
+          className={cn(
+            'inline-flex h-9 min-w-16 items-center justify-center rounded-lg border border-[#2563EB]/30 border-l-2 border-l-[#2563EB] bg-white px-2 text-sm font-bold tabular-nums text-[#2563EB] transition-colors hover:bg-[#f9fafb]',
+            isSaving && 'cursor-wait opacity-70',
+          )}
+        >
+          {initialNote != null && !Number.isNaN(initialNote) ? initialNote.toFixed(1) : '—'}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative inline-flex justify-center">
+      <input
+        ref={inputRef}
+        data-slot="input"
+        type="number"
+        min={0}
+        max={5}
+        step={0.1}
+        disabled={isSaving}
+        aria-invalid={invalid}
+        className={cn(
+          'h-9 w-16 rounded-lg border border-[#2563EB] bg-white text-center text-sm font-bold tabular-nums text-[#2563EB] ring-2 ring-[#dbeafe] [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          invalid && 'border-[#f87171] ring-2 ring-[#fee2e2]',
+          isSaving && 'cursor-wait pr-8',
+        )}
+        value={draft}
+        onChange={(e) => {
+          setInvalid(false);
+          setDraft(e.target.value);
+        }}
+        onBlur={() => {
+          void commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            void commit();
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            setInvalid(false);
+            setIsEditing(false);
+          }
+        }}
+      />
+      {isSaving ? (
+        <Loader2 className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 animate-spin text-[#6b7280]" />
+      ) : null}
+    </div>
+  );
+}
+
 function SessionGradebookTable({
   classId,
   actividades,
   estudiantes,
   showFullGrid,
   isFetching,
-  manualColumnReadOnly,
+  autonomousSessionId,
   docentePuedeEditarManual,
   slideColumnTitle,
 }: {
@@ -288,8 +428,8 @@ function SessionGradebookTable({
   estudiantes: ClassGradebookEstudiante[];
   showFullGrid: boolean;
   isFetching: boolean;
-  /** Sesión autónoma: celdas manuales solo lectura (no PATCH de clase en vivo). */
-  manualColumnReadOnly: boolean;
+  /** Si está definido, las notas manuales usan PATCH de progreso autónomo. */
+  autonomousSessionId?: string;
   docentePuedeEditarManual: boolean;
   slideColumnTitle: (slideId: string, index: number) => string;
 }) {
@@ -372,7 +512,7 @@ function SessionGradebookTable({
                       const manual = isManualGradingActivityType(act.activityType);
                       const resultId = est.resultIdsPorSlide?.[act.slideId];
                       const useReadonlyManual =
-                        manualColumnReadOnly || !docentePuedeEditarManual || !resultId;
+                        !docentePuedeEditarManual || !resultId;
                       return (
                         <TableCell
                           key={act.slideId}
@@ -384,13 +524,29 @@ function SessionGradebookTable({
                         >
                           {est.source === 'autonomous' ? (
                             <span className="text-[#9ca3af]">—</span>
+                          ) : autonomousSessionId ? (
+                            manual ? (
+                              useReadonlyManual ? (
+                                <ReadOnlyManualGradeCell note={nota} />
+                              ) : (
+                                <AutonomousManualGradeCell
+                                  sessionId={autonomousSessionId}
+                                  progressId={resultId!}
+                                  studentId={est.studentId}
+                                  slideId={act.slideId}
+                                  initialNote={nota}
+                                />
+                              )
+                            ) : (
+                              <AutoGradeCell note={nota} />
+                            )
                           ) : manual ? (
                             useReadonlyManual ? (
                               <ReadOnlyManualGradeCell note={nota} />
                             ) : (
                               <ManualGradeCell
                                 classId={classId}
-                                resultId={resultId}
+                                resultId={resultId!}
                                 studentId={est.studentId}
                                 slideId={act.slideId}
                                 initialNote={nota}
@@ -722,7 +878,6 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                 estudiantes={estudiantes}
                 showFullGrid={showFullGrid}
                 isFetching={gradebookFetching}
-                manualColumnReadOnly={false}
                 docentePuedeEditarManual={docentePuedeEditarManual}
                 slideColumnTitle={slideColumnTitle}
               />
@@ -807,7 +962,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
                           estudiantes={autonomousEstudiantesSorted}
                           showFullGrid={showFullGridAutonomous}
                           isFetching={false}
-                          manualColumnReadOnly
+                          autonomousSessionId={selectedAutonomousSessionId}
                           docentePuedeEditarManual={docentePuedeEditarManual}
                           slideColumnTitle={slideColumnTitle}
                         />

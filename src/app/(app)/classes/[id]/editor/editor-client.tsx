@@ -1064,7 +1064,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             response.activityType === 'encuesta_viva' ||
             response.activityType === 'nube_palabras'
           ) {
-            score = response.correct === null ? 0.0 : 1.0;
+            // Participación: si hay entrada en liveResponses, el estudiante respondió → 1.0.
+            // encuesta_viva y nube_palabras siempre tienen correct=null (sin respuesta correcta).
+            score = 1.0;
             maxScore = 5;
           } else if (response.details && response.details.length > 0) {
             // Actividades con sub-respuestas: video_interactivo, match_pairs,

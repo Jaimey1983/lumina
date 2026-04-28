@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
 
@@ -8,6 +8,9 @@ export interface AutonomousResultado {
   score: number;
   maxScore: number;
   isManual: boolean;
+  /** Id de fila de progreso (PATCH `/autonomous-sessions/:sessionId/progress/:id`). */
+  id?: string;
+  resultId?: string;
 }
 
 export interface AutonomousResultRow {
@@ -62,7 +65,43 @@ function mapResultado(r: unknown): AutonomousResultado | null {
   const score = pickNumber(o.score) ?? 0;
   const maxScore = pickNumber(o.maxScore) ?? 0;
   const isManual = o.isManual === true;
-  return { slideId, activityType, score, maxScore, isManual };
+  const id =
+    pickString(o.id, o.progressId, o.progress_id) ??
+    (typeof o.progressId === 'string' ? o.progressId : null);
+  const resultId =
+    typeof o.resultId === 'string'
+      ? o.resultId
+      : typeof o.result_id === 'string'
+        ? o.result_id
+        : undefined;
+  return {
+    slideId,
+    activityType,
+    score,
+    maxScore,
+    isManual,
+    ...(id ? { id } : {}),
+    ...(resultId ? { resultId } : {}),
+  };
+}
+
+/** PATCH nota manual sobre un registro de progreso (docente, JWT). */
+export function useUpdateAutonomousScore(sessionId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ progressId, score }: { progressId: string; score: number }) => {
+      const { data } = await api.patch<unknown>(
+        `/autonomous-sessions/${sessionId}/progress/${progressId}`,
+        { score },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      if (sessionId) {
+        void queryClient.invalidateQueries({ queryKey: ['autonomous-session-results', sessionId] });
+      }
+    },
+  });
 }
 
 /** Normaliza la respuesta de GET /autonomous-sessions/:sessionId/results (mismo criterio que gradebook de clase). */
