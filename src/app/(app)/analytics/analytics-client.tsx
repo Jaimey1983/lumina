@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -31,6 +31,16 @@ import type {
   AtRiskStudentRow,
   GradeDistribution,
 } from '@/hooks/api/use-course-analytics';
+import {
+  useAutonomousTextResponses,
+  useSessionDetail,
+  useSessionsComparison,
+} from '@/hooks/api/use-analytics-sessions';
+import type {
+  SessionComparisonRow,
+  SessionDetailData,
+  TextResponseRow,
+} from '@/hooks/api/use-analytics-sessions';
 
 import {
   Card,
@@ -66,6 +76,97 @@ const ANALYTICS_TABLE_BODY_ROW =
 function fmt(n: number | null | undefined, decimals = 1): string {
   if (n === null || n === undefined) return '—';
   return n.toFixed(decimals);
+}
+
+function formatDurationSeconds(totalSec: number | null | undefined): string {
+  if (totalSec === null || totalSec === undefined || !Number.isFinite(totalSec)) return '—';
+  const s = Math.max(0, Math.floor(totalSec));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  if (m < 60) return r > 0 ? `${m} min ${r}s` : `${m} min`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return rm > 0 ? `${h} h ${rm} min` : `${h} h`;
+}
+
+function formatShortDuration(sec: number): string {
+  const s = Math.max(0, Math.floor(sec));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  if (m <= 0) return `${r}s`;
+  return `${m}m ${r}s`;
+}
+
+function downloadStudentProgressCSV(data: StudentProgressRow[], courseName: string) {
+  const headers = [
+    'Estudiante',
+    'Actividades completadas',
+    'Total actividades',
+    'Promedio',
+    'Desempeño',
+    'Última clase',
+  ];
+  const rows = data.map((r) => [
+    `"${String(r.studentName ?? '').replace(/"/g, '""')}"`,
+    String(r.activitiesCompleted),
+    String(r.totalActivities),
+    r.avgGrade !== null && r.avgGrade !== undefined ? r.avgGrade.toFixed(1) : '—',
+    r.performance ?? '—',
+    `"${String(r.lastClass ?? '').replace(/"/g, '""')}"`,
+  ]);
+  const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safe = courseName.replace(/[^\w\-]+/g, '_').slice(0, 40);
+  a.download = `reporte_${safe}_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatActivityDate(iso: string) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('es-CO', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function ResponsePreview({ response }: { response: unknown }) {
+  if (response === null || response === undefined) {
+    return <span className="text-[#9ca3af]">—</span>;
+  }
+  if (typeof response === 'string') {
+    return <span className="text-[#111827]">{response}</span>;
+  }
+  if (Array.isArray(response)) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {response.map((x, i) => (
+          <span
+            key={i}
+            className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-xs text-[#2563EB]"
+          >
+            {typeof x === 'object' && x !== null ? JSON.stringify(x) : String(x)}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  if (typeof response === 'object') {
+    return (
+      <pre className="max-h-40 overflow-auto text-xs whitespace-pre-wrap break-all text-[#374151]">
+        {JSON.stringify(response, null, 2)}
+      </pre>
+    );
+  }
+  return <span>{String(response)}</span>;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -362,25 +463,407 @@ function ActivityRankingSection({
   );
 }
 
-// ─── Engagement (no data source yet) ─────────────────────────────────────────
+// ─── Telemetría en vivo (resumen) ────────────────────────────────────────────
 
-function EngagementSection() {
+function TelemetryIntroSection({
+  sessionCount,
+  loading,
+}: {
+  sessionCount: number;
+  loading: boolean;
+}) {
   return (
     <Card className={ANALYTICS_CARD}>
       <CardHeader className={ANALYTICS_CARD_HEADER}>
         <CardHeading>
-          <CardTitle className={ANALYTICS_SECTION_TITLE}>Engagement</CardTitle>
+          <CardTitle className={ANALYTICS_SECTION_TITLE}>Engagement en vivo</CardTitle>
         </CardHeading>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center py-10 gap-3 text-center">
-          <MessageCircle className="size-9 text-[#9ca3af]" />
-          <p className="text-sm font-medium text-[#6b7280]">Disponible próximamente</p>
-          <p className="text-xs text-[#9ca3af] max-w-xs">
-            Requiere datos de sesión en vivo — esta sección se habilitará
-            cuando el backend registre eventos de participación en tiempo real.
+        {loading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <MessageCircle className="size-5 shrink-0 text-[#2563EB] mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm text-[#111827]">
+                  <span className="font-semibold">{sessionCount}</span>{' '}
+                  {sessionCount === 1
+                    ? 'sesión con telemetría registrada'
+                    : 'sesiones con telemetría registradas'}{' '}
+                  en este curso.
+                </p>
+                <p className="text-xs text-[#6b7280] leading-relaxed">
+                  Conexiones de estudiantes vía sala <code className="text-[#374151]">/live</code> cuando hay una{' '}
+                  <span className="font-medium">sesión HTTP activa</span> de la clase. El detalle por sesión está en la
+                  tabla inferior.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SessionsComparisonSection({
+  rows,
+  loading,
+  selectedSessionId,
+  onSelectSession,
+}: {
+  rows: SessionComparisonRow[];
+  loading: boolean;
+  selectedSessionId: string | null;
+  onSelectSession: (id: string | null) => void;
+}) {
+  return (
+    <Card className={ANALYTICS_CARD}>
+      <CardHeader className={ANALYTICS_CARD_HEADER}>
+        <CardHeading>
+          <CardTitle className={ANALYTICS_SECTION_TITLE}>Comparativa de sesiones en vivo</CardTitle>
+        </CardHeading>
+      </CardHeader>
+      {loading ? (
+        <SectionSkeleton rows={5} />
+      ) : rows.length === 0 ? (
+        <CardContent>
+          <p className="text-sm text-[#6b7280] text-center py-10">
+            Las sesiones con datos de telemetría aparecerán aquí.
           </p>
+        </CardContent>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className={ANALYTICS_TABLE_HEAD_ROW}>
+                <th className={cn(ANALYTICS_TABLE_HEAD_CELL, 'text-left')}>Clase</th>
+                <th className={cn(ANALYTICS_TABLE_HEAD_CELL, 'text-left')}>Fecha inicio</th>
+                <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Duración</th>
+                <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Participantes</th>
+                <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Promedio</th>
+                <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Conexiones pico</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const active = row.sessionId === selectedSessionId;
+                return (
+                  <tr
+                    key={row.sessionId}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      onSelectSession(active ? null : row.sessionId)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectSession(active ? null : row.sessionId);
+                      }
+                    }}
+                    className={cn(
+                      ANALYTICS_TABLE_BODY_ROW,
+                      'cursor-pointer',
+                      active && 'bg-[#eff6ff] border-l-2 border-l-[#2563EB]',
+                    )}
+                  >
+                    <td className="px-5 py-3 font-medium text-[#111827]">{row.classTitle}</td>
+                    <td className="px-5 py-3 text-[#6b7280]">
+                      {formatActivityDate(row.startedAt)}
+                    </td>
+                    <td className="px-4 py-3 text-center text-[#6b7280]">
+                      {formatDurationSeconds(row.durationSeconds)}
+                    </td>
+                    <td className="px-4 py-3 text-center text-[#111827]">{row.participantCount}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-[#111827]">
+                      {fmt(row.avgScore)}
+                    </td>
+                    <td className="px-4 py-3 text-center text-[#6b7280]">{row.peakConnections}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
+      )}
+    </Card>
+  );
+}
+
+function SessionDetailSection({
+  sessionId,
+  data,
+  loading,
+  onClose,
+}: {
+  sessionId: string;
+  data: SessionDetailData | undefined;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  const funnelChartData = useMemo(
+    () =>
+      (data?.funnelData ?? []).map((f) => ({
+        ...f,
+        label: `Slide ${f.slideIndex}`,
+      })),
+    [data?.funnelData],
+  );
+
+  return (
+    <Card className={ANALYTICS_CARD}>
+      <CardHeader className={cn(ANALYTICS_CARD_HEADER, 'flex-row flex-wrap items-center justify-between gap-3')}>
+        <CardHeading>
+          <CardTitle className={ANALYTICS_SECTION_TITLE}>Detalle de sesión</CardTitle>
+          <p className="text-xs font-normal text-[#6b7280] mt-1 font-mono">{sessionId}</p>
+        </CardHeading>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-sm font-medium text-[#2563EB] hover:text-[#1d4ed8]"
+        >
+          ✕ Cerrar detalle
+        </button>
+      </CardHeader>
+      {loading ? (
+        <SectionSkeleton rows={6} />
+      ) : !data ? (
+        <CardContent>
+          <p className="text-sm text-[#6b7280]">No se pudo cargar el detalle.</p>
+        </CardContent>
+      ) : (
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-[#6b7280]">Inicio</p>
+              <p className="font-medium text-[#111827]">{formatActivityDate(data.sessionLog.startedAt)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#6b7280]">Fin</p>
+              <p className="font-medium text-[#111827]">
+                {data.sessionLog.endedAt ? formatActivityDate(data.sessionLog.endedAt) : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[#6b7280]">Duración</p>
+              <p className="font-medium text-[#111827]">
+                {formatDurationSeconds(data.sessionLog.durationSeconds)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[#6b7280]">Pico conexiones</p>
+              <p className="font-medium text-[#111827]">{data.sessionLog.peakConnections}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#6b7280]">Slides totales</p>
+              <p className="font-medium text-[#111827]">{data.sessionLog.totalSlides}</p>
+            </div>
+          </div>
+
+          <div className="rounded-[10px] border border-[#e5e7eb] overflow-hidden">
+            <div className="px-4 py-3 bg-[#f9fafb] border-b border-[#e5e7eb]">
+              <p className={ANALYTICS_SECTION_TITLE}>Mapa de calor por slide</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={ANALYTICS_TABLE_HEAD_ROW}>
+                    <th className={cn(ANALYTICS_TABLE_HEAD_CELL, 'text-left')}>#</th>
+                    <th className={cn(ANALYTICS_TABLE_HEAD_CELL, 'text-left')}>Actividad</th>
+                    <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Tiempo prom. (s)</th>
+                    <th className={cn(ANALYTICS_TABLE_HEAD_CELL, 'text-left min-w-[160px]')}>
+                      Tasa respuesta
+                    </th>
+                    <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Estudiantes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...data.slideHeatmap]
+                    .sort((a, b) => a.slideIndex - b.slideIndex)
+                    .map((row) => (
+                      <tr key={`${row.slideIndex}-${row.slideId}`} className={ANALYTICS_TABLE_BODY_ROW}>
+                        <td className="px-5 py-3 text-[#6b7280]">{row.slideIndex}</td>
+                        <td className="px-5 py-3 text-[#111827]">
+                          {row.activityType ? labelForActivityType(row.activityType) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-center text-[#111827]">{row.avgTimeOnSlide}</td>
+                        <td className="px-5 py-3">
+                          <div className="h-2 rounded-full bg-[#dbeafe] overflow-hidden">
+                            <div
+                              className="h-full bg-[#2563EB] rounded-full transition-all"
+                              style={{ width: `${Math.min(100, Math.max(0, row.responseRate))}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-[#6b7280] mt-1">{row.responseRate}%</p>
+                        </td>
+                        <td className="px-4 py-3 text-center text-[#111827]">{row.totalStudents}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded-[10px] border border-[#e5e7eb] p-4">
+            <p className={cn(ANALYTICS_SECTION_TITLE, 'mb-3')}>Embudo de participación</p>
+            <ResponsiveContainer width="100%" height={Math.max(220, funnelChartData.length * 36)}>
+              <BarChart
+                layout="vertical"
+                data={funnelChartData}
+                margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal stroke="#e5e7eb" />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  width={88}
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                />
+                <Tooltip
+                  formatter={(value: number) => [value, 'Estudiantes alcanzados']}
+                  labelFormatter={(l) => String(l)}
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '0.8125rem',
+                  }}
+                />
+                <Bar dataKey="studentsReached" fill="#2563EB" radius={[0, 4, 4, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="rounded-[10px] border border-[#e5e7eb] overflow-hidden">
+            <div className="px-4 py-3 bg-[#f9fafb] border-b border-[#e5e7eb]">
+              <p className={ANALYTICS_SECTION_TITLE}>Engagement por estudiante</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={ANALYTICS_TABLE_HEAD_ROW}>
+                    <th className={cn(ANALYTICS_TABLE_HEAD_CELL, 'text-left')}>Estudiante</th>
+                    <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Slides vistas</th>
+                    <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Respondidas</th>
+                    <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Tiempo total</th>
+                    <th className={ANALYTICS_TABLE_HEAD_CELL_CENTER}>Completitud</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.studentEngagement.map((s) => {
+                    const denom = Math.max(1, data.sessionLog.totalSlides);
+                    const pct = Math.round((s.slidesAnswered / denom) * 100);
+                    let variant: 'success' | 'warning' | 'destructive' = 'destructive';
+                    if (pct >= 80) variant = 'success';
+                    else if (pct >= 50) variant = 'warning';
+                    return (
+                      <tr key={s.studentId} className={ANALYTICS_TABLE_BODY_ROW}>
+                        <td className="px-5 py-3 font-medium text-[#111827]">{s.studentName}</td>
+                        <td className="px-4 py-3 text-center text-[#6b7280]">{s.slidesViewed}</td>
+                        <td className="px-4 py-3 text-center text-[#111827]">{s.slidesAnswered}</td>
+                        <td className="px-4 py-3 text-center text-[#6b7280]">
+                          {formatShortDuration(s.totalTimeSeconds)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Badge variant={variant} appearance="light">
+                            {pct}%
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+const TEXT_ACTIVITY_BADGE: Record<
+  string,
+  { label: string; variant: 'primary' | 'warning' | 'success' }
+> = {
+  short_answer: { label: 'Respuesta corta', variant: 'primary' },
+  nube_palabras: { label: 'Nube de palabras', variant: 'warning' },
+  encuesta_viva: { label: 'Encuesta', variant: 'success' },
+};
+
+function TextResponsesSection({ rows }: { rows: TextResponseRow[] }) {
+  const [openType, setOpenType] = useState<string | null>(null);
+
+  const grouped = useMemo(() => {
+    const m = new Map<string, TextResponseRow[]>();
+    for (const r of rows) {
+      const k = r.activityType || 'otro';
+      const arr = m.get(k) ?? [];
+      arr.push(r);
+      m.set(k, arr);
+    }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [rows]);
+
+  return (
+    <Card className={ANALYTICS_CARD}>
+      <CardHeader className={ANALYTICS_CARD_HEADER}>
+        <CardHeading>
+          <CardTitle className={ANALYTICS_SECTION_TITLE}>Respuestas de texto — Modo autónomo</CardTitle>
+        </CardHeading>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {grouped.map(([activityType, list]) => {
+          const cfg = TEXT_ACTIVITY_BADGE[activityType] ?? {
+            label: labelForActivityType(activityType),
+            variant: 'primary' as const,
+          };
+          const open = openType === activityType;
+          return (
+            <div key={activityType} className="rounded-[10px] border border-[#e5e7eb] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setOpenType(open ? null : activityType)}
+                className="flex w-full items-center justify-between px-4 py-3 bg-[#f9fafb] hover:bg-[#f3f4f6] text-left"
+              >
+                <span className="flex items-center gap-2">
+                  <Badge variant={cfg.variant} appearance="light">
+                    {cfg.label}
+                  </Badge>
+                  <span className="text-sm text-[#6b7280]">{list.length} respuestas</span>
+                </span>
+                <span className="text-[#2563EB] text-sm">{open ? 'Ocultar' : 'Ver'}</span>
+              </button>
+              {open ? (
+                <div className="divide-y divide-[#e5e7eb]">
+                  {list.map((r) => (
+                    <div key={`${r.sessionId}-${r.studentId}-${r.slideId}-${r.answeredAt}`} className="px-4 py-4 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-[#111827]">{r.studentName}</p>
+                        <span className="text-xs text-[#6b7280]">{formatActivityDate(r.answeredAt)}</span>
+                      </div>
+                      <p className="text-xs text-[#6b7280]">
+                        {r.classTitle} · slide {r.slideId.slice(0, 8)}…
+                      </p>
+                      <div className="text-sm">
+                        <ResponsePreview response={r.response} />
+                      </div>
+                      {r.score !== null && r.score !== undefined ? (
+                        <p className="text-xs text-[#6b7280]">
+                          Nota: <span className="font-semibold text-[#111827]">{fmt(r.score)}</span>
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );
@@ -537,11 +1020,20 @@ function GradeDistributionSection({
 export function AnalyticsClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
   const [coursePick, setCoursePick] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const selectedCourseId = coursePick ?? courses[0]?.id ?? '';
 
   const { data: analytics, isLoading: analyticsLoading, isError: analyticsError } =
     useCourseAnalytics(selectedCourseId);
+
+  const { data: sessionsComparison = [], isLoading: sessionsLoading } =
+    useSessionsComparison(selectedCourseId);
+  const { data: sessionDetail, isLoading: sessionDetailLoading } = useSessionDetail(
+    selectedCourseId,
+    selectedSessionId,
+  );
+  const { data: textResponses = [] } = useAutonomousTextResponses(selectedCourseId);
 
   const summary = analytics?.summary ?? null;
   const studentProgress = analytics?.studentProgress ?? [];
@@ -574,7 +1066,10 @@ export function AnalyticsClient() {
               <select
                 id="course-select"
                 value={selectedCourseId}
-                onChange={(e) => setCoursePick(e.target.value)}
+                onChange={(e) => {
+                  setCoursePick(e.target.value);
+                  setSelectedSessionId(null);
+                }}
                 className={`${SELECT_CLS} min-w-[14rem]`}
               >
                 <option value="" disabled>
@@ -591,7 +1086,14 @@ export function AnalyticsClient() {
 
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1d4ed8]"
+            disabled={analyticsLoading || studentProgress.length === 0}
+            onClick={() =>
+              downloadStudentProgressCSV(
+                studentProgress,
+                activeCourseName ?? 'curso',
+              )
+            }
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1d4ed8] disabled:opacity-50 disabled:pointer-events-none"
           >
             <Download size={15} />
             Descargar reporte
@@ -612,6 +1114,15 @@ export function AnalyticsClient() {
             isLoading={analyticsLoading}
             isError={analyticsError}
           />
+
+          {selectedSessionId ? (
+            <SessionDetailSection
+              sessionId={selectedSessionId}
+              data={sessionDetail}
+              loading={sessionDetailLoading}
+              onClose={() => setSelectedSessionId(null)}
+            />
+          ) : null}
 
           {/* Loading indicator for analytics data */}
           {analyticsLoading && (
@@ -635,7 +1146,10 @@ export function AnalyticsClient() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <EngagementSection />
+            <TelemetryIntroSection
+              sessionCount={sessionsComparison.length}
+              loading={sessionsLoading}
+            />
             <AtRiskSection
               data={atRisk}
               isLoading={analyticsLoading}
@@ -648,6 +1162,15 @@ export function AnalyticsClient() {
             isLoading={analyticsLoading}
             isError={analyticsError}
           />
+
+          <SessionsComparisonSection
+            rows={sessionsComparison}
+            loading={sessionsLoading}
+            selectedSessionId={selectedSessionId}
+            onSelectSession={setSelectedSessionId}
+          />
+
+          {textResponses.length > 0 ? <TextResponsesSection rows={textResponses} /> : null}
         </div>
       )}
       </div>
