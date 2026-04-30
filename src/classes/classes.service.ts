@@ -16,6 +16,7 @@ import { NotaManualDto } from './dto/save-manual-grade.dto';
 import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import { sumAndDenominatorForClassGradebook } from './class-results-gradebook.helper';
 import { namesMatch } from '../autonomous-sessions/name-matcher.helper';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcryptjs';
 
@@ -24,6 +25,7 @@ export class ClassesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly courseAuth: CourseAuthorizationService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   // ─── CLASES ────────────────────────────────────────────
@@ -252,10 +254,25 @@ export class ClassesService {
     });
 
     if (activeSession) {
+      try {
+        const slideCount = await this.prisma.slide.count({
+          where: { classId: id },
+        });
+        await this.analyticsService.createSessionLog({
+          sessionId: activeSession.id,
+          classId: id,
+          courseId: cls.courseId,
+          teacherId: userId,
+          totalSlides: slideCount,
+          startedAt: activeSession.startedAt,
+        });
+      } catch {
+        /* analytics no rompe el flujo */
+      }
       return activeSession;
     }
 
-    return this.prisma.classSession.create({
+    const newSession = await this.prisma.classSession.create({
       data: {
         classId: id,
         activeSlide: 0,
@@ -267,6 +284,24 @@ export class ClassesService {
         activeSlide: true,
       },
     });
+
+    try {
+      const slideCount = await this.prisma.slide.count({
+        where: { classId: id },
+      });
+      await this.analyticsService.createSessionLog({
+        sessionId: newSession.id,
+        classId: id,
+        courseId: cls.courseId,
+        teacherId: userId,
+        totalSlides: slideCount,
+        startedAt: newSession.startedAt,
+      });
+    } catch {
+      /* analytics no rompe el flujo */
+    }
+
+    return newSession;
   }
 
   async endSession(id: string, userId: string) {
@@ -286,9 +321,10 @@ export class ClassesService {
       throw new NotFoundException('No hay una sesión activa para esta clase');
     }
 
-    return this.prisma.classSession.update({
+    const endedAt = new Date();
+    const updated = await this.prisma.classSession.update({
       where: { id: activeSession.id },
-      data: { endedAt: new Date() },
+      data: { endedAt },
       select: {
         id: true,
         classId: true,
@@ -296,6 +332,14 @@ export class ClassesService {
         endedAt: true,
       },
     });
+
+    try {
+      await this.analyticsService.closeSessionLog(activeSession.id, endedAt);
+    } catch {
+      /* no-op */
+    }
+
+    return updated;
   }
 
   // ─── RESULTADOS ────────────────────────────────────────
@@ -308,6 +352,21 @@ export class ClassesService {
     if (!cls) throw new NotFoundException('Clase no encontrada');
 
     const writeSessionId = await this.resolveWriteSessionId(classId, dto);
+
+    const studentIds = [...new Set(dto.resultados.map((r) => r.studentId))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: studentIds } },
+      select: { id: true, name: true, lastName: true },
+    });
+    const studentNameById = new Map(
+      users.map((u) => [u.id, `${u.name} ${u.lastName}`.trim()]),
+    );
+
+    const slidesMeta = await this.prisma.slide.findMany({
+      where: { classId },
+      select: { id: true, order: true },
+    });
+    const slideOrderById = new Map(slidesMeta.map((s) => [s.id, s.order]));
 
     for (const item of dto.resultados) {
       const responsePayload: Record<string, Prisma.InputJsonValue> = {};
@@ -385,6 +444,27 @@ export class ClassesService {
           isManual: false,
         },
       });
+
+      try {
+        const slideIndex =
+          item.slideIndex ?? slideOrderById.get(item.slideId) ?? 0;
+        const responded =
+          (item.score !== undefined && item.score !== null) ||
+          item.correct === true ||
+          item.correct === false;
+        await this.analyticsService.recordSlideEngagement({
+          sessionId: writeSessionId,
+          slideId: item.slideId,
+          slideIndex,
+          activityType: item.activityType,
+          studentId: item.studentId,
+          studentName: studentNameById.get(item.studentId) ?? '',
+          responded,
+          source: 'live',
+        });
+      } catch {
+        /* no-op */
+      }
     }
 
     const n = dto.resultados.length;

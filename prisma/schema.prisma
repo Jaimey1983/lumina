@@ -218,8 +218,64 @@ model ClassSession {
   updatedAt   DateTime      @updatedAt
   class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
   results     ClassResult[]
+  sessionLog  SessionLog?
 
   @@map("class_sessions")
+}
+
+// ─── ANALYTICS SESIÓN EN VIVO ─────────────────────────────────────────
+
+model SessionLog {
+  id              String    @id @default(cuid())
+  sessionId       String    @unique
+  classId         String
+  courseId        String
+  teacherId       String
+  totalSlides     Int       @default(0)
+  peakConnections Int       @default(0)
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int?
+  createdAt       DateTime  @default(now())
+
+  session          ClassSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  slideEngagements SlideEngagement[]
+
+  @@map("session_logs")
+}
+
+model StudentConnection {
+  id             String    @id @default(cuid())
+  sessionId      String
+  classId        String
+  studentId      String
+  studentName    String
+  connectedAt    DateTime  @default(now())
+  disconnectedAt DateTime?
+  reconnections  Int       @default(0)
+
+  @@index([sessionId, studentId])
+  @@map("student_connections")
+}
+
+model SlideEngagement {
+  id            String   @id @default(cuid())
+  sessionLogId  String
+  slideId       String
+  slideIndex    Int
+  activityType  String?
+  studentId     String
+  studentName   String
+  timeOnSlide   Int      @default(0)
+  responded     Boolean  @default(false)
+  attemptNumber Int      @default(1)
+  source        String   @default("live")
+  createdAt     DateTime @default(now())
+
+  sessionLog SessionLog @relation(fields: [sessionLogId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionLogId, slideId, studentId])
+  @@map("slide_engagements")
 }
 
 model ClassResult {

@@ -3,6 +3,7 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -44,7 +45,9 @@ function rethrowAsWs(e: unknown): never {
     credentials: true,
   },
 })
-export class LiveSessionsGateway implements OnGatewayConnection {
+export class LiveSessionsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -56,6 +59,10 @@ export class LiveSessionsGateway implements OnGatewayConnection {
     } catch {
       client.disconnect(true);
     }
+  }
+
+  async handleDisconnect(client: Socket) {
+    await this.liveSessions.onSocketDisconnect(client);
   }
 
   /**

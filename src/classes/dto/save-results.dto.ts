@@ -33,6 +33,11 @@ export class StudentResultDto {
   @IsOptional()
   maxScore?: number;
 
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  slideIndex?: number;
+
   @IsBoolean()
   @IsOptional()
   correct?: boolean | null;
