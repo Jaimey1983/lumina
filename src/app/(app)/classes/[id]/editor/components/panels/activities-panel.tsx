@@ -11,6 +11,8 @@ import {
   CircleDot,
   Video,
   Wind,
+  Trophy,
+  Lock,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -28,12 +30,17 @@ export type ActivityType =
   | 'sort-steps'
   | 'video-interactive'
   | 'live-poll'
-  | 'word-cloud';
+  | 'word-cloud'
+  | 'torneo'
+  | 'escape_room';
 
 interface ActivityItem {
   type: ActivityType;
   label: string;
   Icon: LucideIcon;
+  /** Estilos extra para la fila (p. ej. acento ámbar/dorado). */
+  rowClassName?: string;
+  iconClassName?: string;
 }
 
 // ─── Activity groups ──────────────────────────────────────────────────────────
@@ -55,6 +62,20 @@ const INTERACTION: ActivityItem[] = [
 const LIVE: ActivityItem[] = [
   { type: 'live-poll',  label: 'Encuesta en vivo', Icon: Radio },
   { type: 'word-cloud', label: 'Nube de palabras', Icon: Wind },
+  {
+    type: 'torneo',
+    label: 'Torneo de preguntas',
+    Icon: Trophy,
+    rowClassName: 'hover:bg-amber-50/90 dark:hover:bg-amber-950/25',
+    iconClassName: 'text-amber-600 dark:text-amber-400',
+  },
+  {
+    type: 'escape_room',
+    label: 'Escape Room',
+    Icon: Lock,
+    rowClassName: 'hover:bg-violet-50/90 dark:hover:bg-violet-950/25',
+    iconClassName: 'text-violet-600 dark:text-violet-400',
+  },
 ];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -82,7 +103,7 @@ function ActivityGroup({
       <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
-      {items.map(({ type, label, Icon }) => (
+      {items.map(({ type, label, Icon, rowClassName, iconClassName }) => (
         <button
           key={type}
           type="button"
@@ -93,9 +114,10 @@ function ActivityGroup({
             disabled
               ? 'cursor-not-allowed opacity-40'
               : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            !disabled && rowClassName,
           )}
         >
-          <Icon className="size-4 shrink-0" />
+          <Icon className={cn('size-4 shrink-0', iconClassName)} />
           <span className="text-xs">{label}</span>
         </button>
       ))}

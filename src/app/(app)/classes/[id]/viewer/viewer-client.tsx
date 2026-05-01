@@ -130,6 +130,18 @@ function evaluateResponse(actividad: Activity, response: unknown): EvalResult {
     case 'encuesta_viva':
     case 'nube_palabras':
       return { correct: null };
+    case 'torneo': {
+      const r = response as { questionIndex?: number; answer?: string };
+      const idx =
+        typeof r.questionIndex === 'number' && Number.isFinite(r.questionIndex)
+          ? Math.max(0, Math.floor(r.questionIndex))
+          : 0;
+      const q = actividad.preguntas[idx];
+      if (!q) return { correct: null };
+      const ans = typeof r.answer === 'string' ? r.answer.trim() : '';
+      if (!ans) return { correct: false };
+      return { correct: q.correcta === ans };
+    }
     default:
       return { correct: null };
   }
@@ -560,7 +572,7 @@ export function ViewerClient({ id }: { id: string }) {
   }
 
   const bg = getBackground(classData.background ?? 'none');
-  const slideCanvasVariant = DARK_BACKGROUNDS.includes(bg.id) ? 'dark' : 'light';
+  const slideCanvasVariant: 'dark' | 'light' = DARK_BACKGROUNDS.includes(bg.id) ? 'dark' : 'light';
 
   const headerTimerClass =
     viewerTimeLeft < 5
@@ -661,6 +673,10 @@ export function ViewerClient({ id }: { id: string }) {
                     onResponse={handleResponse}
                     variant={slideCanvasVariant}
                     viewerFill
+                    liveSocket={socketInstance}
+                    viewerStudentId={guestIdentity.studentId}
+                    viewerStudentName={guestIdentity.studentName}
+                    viewerClassId={id}
                   />
                 </div>
               </div>

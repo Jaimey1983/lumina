@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // Editor-only fields that ride along with the persisted activity data.
@@ -210,13 +211,16 @@ export function WordCloudViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: WordCloudLocal;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [word, setWord] = useState('');
   const [submittedWords, setSubmittedWords] = useState<string[]>([]);
+  const { play } = useSound();
 
   useEffect(() => {
     setSubmittedWords([]);
@@ -228,6 +232,7 @@ export function WordCloudViewer({
     if (!word.trim()) return;
     const cleanWord = word.trim().toUpperCase();
     setSubmittedWords((prev) => [...prev, cleanWord]);
+    play('submit');
     onResponse?.(cleanWord);
     setWord('');
   };
@@ -239,9 +244,16 @@ export function WordCloudViewer({
 
   if (!activity) return null;
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-center text-base font-medium text-[#111827]">
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-center text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>
         {activity.instruccion || '¿En una palabra, cómo describes el tema de hoy?'}
       </p>
 
@@ -251,7 +263,12 @@ export function WordCloudViewer({
           onChange={(e) => setWord(e.target.value)}
           placeholder="Escribe tu palabra..."
           maxLength={activity.maxCaracteresPorPalabra ?? 20}
-          className="flex-1"
+          className={cn(
+            'flex-1',
+            isDark
+              ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus-visible:border-white/60'
+              : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus-visible:border-[#2563EB]',
+          )}
         />
         <Button
           type="submit"
@@ -262,13 +279,18 @@ export function WordCloudViewer({
       </form>
 
       {activity.maxPalabrasPorUsuario && (
-        <p className="mt-[-1rem] text-center text-xs text-[#9ca3af]">
+        <p className={cn('mt-[-1rem] text-center text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
           {submittedWords.length} de {activity.maxPalabrasPorUsuario} palabras enviadas
         </p>
       )}
 
       {activity.mostrarTiempoReal !== false && Object.entries(wordCounts).length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t border-[#e5e7eb] py-8">
+        <div
+          className={cn(
+            'mt-4 flex flex-wrap items-center justify-center gap-4 border-t py-8',
+            isDark ? 'border-white/20' : 'border-[#e5e7eb]',
+          )}
+        >
           {Object.entries(wordCounts).map(([w, count]) => (
             <span
               key={w}

@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -190,31 +191,42 @@ export function ShortAnswerViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: ShortAnswerActivity;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [text, setText] = useState('');
   const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
 
   useEffect(() => {
     setAnswered(false);
     setText('');
   }, [editorSyncKey]);
 
+  const isDark = variant === 'dark';
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (answered || !text.trim()) return;
     setAnswered(true);
+    play('submit');
     onResponse?.(text.trim());
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-base font-medium text-[#111827]">{activity.question}</p>
+    <div
+      className={cn(
+        'flex flex-col gap-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{activity.question}</p>
       {activity.hint && (
-        <p className="text-xs text-[#9ca3af]">💡 {activity.hint}</p>
+        <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>💡 {activity.hint}</p>
       )}
       {answered ? (
         <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
@@ -223,14 +235,19 @@ export function ShortAnswerViewer({
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <textarea
-            className="min-h-[80px] w-full resize-none rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#93c5fd]"
+            className={cn(
+              'min-h-[80px] w-full resize-none rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
+              isDark
+                ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
+                : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
+            )}
             placeholder="Escribe tu respuesta aquí…"
             maxLength={activity.maxLength ?? 200}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
           {activity.maxLength && (
-            <p className="text-right text-xs text-[#9ca3af]">
+            <p className={cn('text-right text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
               {text.length}/{activity.maxLength}
             </p>
           )}

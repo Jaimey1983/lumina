@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // Editor-only fields that ride along with the persisted activity data.
@@ -276,7 +277,19 @@ export function OrderStepsActivityEditor({
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function SortableStep({ id, content, index, showNumbers }: { id: string; content: string; index: number; showNumbers?: boolean }) {
+function SortableStep({
+  id,
+  content,
+  index,
+  showNumbers,
+  variant = 'light',
+}: {
+  id: string;
+  content: string;
+  index: number;
+  showNumbers?: boolean;
+  variant?: 'dark' | 'light';
+}) {
   const {
     attributes,
     listeners,
@@ -292,29 +305,40 @@ function SortableStep({ id, content, index, showNumbers }: { id: string; content
     zIndex: isDragging ? 1 : 0,
   };
 
+  const isDark = variant === 'dark';
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] bg-white p-3 shadow-lumina-xs',
+        'flex w-full items-center gap-3 rounded-md border p-3 shadow-lumina-xs',
+        isDark ? 'border-white/20 bg-white/15' : 'border-[#e5e7eb] bg-white',
         isDragging && 'opacity-50 ring-2 ring-[#2563EB]'
       )}
     >
       <button
         type="button"
-        className="cursor-grab touch-none text-[#9ca3af] hover:text-[#111827]"
+        className={cn(
+          'cursor-grab touch-none',
+          isDark ? 'text-white/70 hover:text-white' : 'text-[#9ca3af] hover:text-[#111827]',
+        )}
         {...attributes}
         {...listeners}
       >
         <GripVertical className="size-4" />
       </button>
       {showNumbers && (
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#f3f4f6] text-[10px] font-medium text-[#9ca3af]">
+        <span
+          className={cn(
+            'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium',
+            isDark ? 'bg-white/10 text-white/70' : 'bg-[#f3f4f6] text-[#9ca3af]',
+          )}
+        >
           {index + 1}
         </span>
       )}
-      <span className="text-sm">{content}</span>
+      <span className={cn('text-sm', isDark ? 'text-white' : 'text-[#111827]')}>{content}</span>
     </div>
   );
 }
@@ -323,13 +347,16 @@ export function OrderStepsViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: OrderStepsLocal;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [items, setItems] = useState<{ id: string; content: string }[]>([]);
   const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
 
   useEffect(() => {
     if (!activity?.pasos) return;
@@ -360,15 +387,31 @@ export function OrderStepsViewer({
   const handleSubmit = () => {
     if (answered) return;
     setAnswered(true);
-    onResponse?.(items.map((i) => i.id));
+    const submittedIds = items.map((i) => i.id);
+    const correctIds = [...activity.pasos]
+      .sort((a, b) => a.ordenCorrecto - b.ordenCorrecto)
+      .map((p) => p.id);
+    const ok =
+      activity.pasos.length > 0 &&
+      submittedIds.length === correctIds.length &&
+      submittedIds.every((id, i) => id === correctIds[i]);
+    play(ok ? 'correct' : 'wrong');
+    onResponse?.(submittedIds);
   };
 
   if (!activity) return null;
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
       {activity.instruccion && (
-        <p className="text-sm font-medium text-[#111827]">{activity.instruccion}</p>
+        <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{activity.instruccion}</p>
       )}
 
       <DndContext
@@ -385,6 +428,7 @@ export function OrderStepsViewer({
                 content={item.content}
                 index={index}
                 showNumbers={activity.mostrarNumeros}
+                variant={variant}
               />
             ))}
           </div>

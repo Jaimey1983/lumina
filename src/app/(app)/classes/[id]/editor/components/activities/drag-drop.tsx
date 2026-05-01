@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ interface Props {
   modo: 'editor' | 'viewer';
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
@@ -95,18 +97,31 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragDrop; editorSyncKey?: string; onResponse?: (response: unknown) => void }) {
+function ViewerView({
+  actividad,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  actividad: DragDrop;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
   // placements: itemId → zoneId | null (null = unplaced)
   const [placements, setPlacements] = useState<Record<string, string | null>>(
     () => Object.fromEntries(actividad.items.map((i) => [i.id, null])),
   );
   const [dragging, setDragging] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
 
   useEffect(() => {
     setPlacements(Object.fromEntries(actividad.items.map((i) => [i.id, null])));
     setAnswered(false);
   }, [editorSyncKey, actividad.items]);
+
+  const isDark = variant === 'dark';
 
   const unplaced = actividad.items.filter((i) => placements[i.id] === null);
 
@@ -164,12 +179,18 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
       zoneId: placements[i.id],
     }));
     setAnswered(true);
+    play('submit');
     onResponse?.(result);
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-sm font-medium">{actividad.instruccion}</p>
+    <div
+      className={cn(
+        'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{actividad.instruccion}</p>
 
       {/* Unplaced items pool */}
       <div
@@ -177,10 +198,16 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
         onDrop={onDropToUnplaced}
         className={cn(
           'min-h-12 rounded-md border-2 border-dashed p-3 transition-colors',
-          dragging && !answered ? 'border-[#2563EB]/50 bg-[#dbeafe]' : 'border-[#e5e7eb]',
+          dragging && !answered
+            ? isDark
+              ? 'border-[#2563EB]/60 bg-[#2563EB]/25'
+              : 'border-[#2563EB]/50 bg-[#dbeafe]'
+            : isDark
+              ? 'border-white/30'
+              : 'border-[#e5e7eb]',
         )}
       >
-        <p className="mb-2 text-[10px] uppercase tracking-wider text-[#9ca3af]">
+        <p className={cn('mb-2 text-[10px] uppercase tracking-wider', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
           Elementos disponibles
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -191,17 +218,20 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
               onDragStart={(e) => onDragStart(e, item.id)}
               onDragEnd={onDragEnd}
               className={cn(
-                'flex cursor-grab items-center gap-1 rounded-md bg-[#f3f4f6] px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                'flex cursor-grab items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                isDark
+                  ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                  : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]',
                 answered && 'cursor-default',
                 dragging === item.id && 'opacity-40',
               )}
             >
-              <GripVertical className="size-3 text-[#9ca3af]" />
+              <GripVertical className={cn('size-3', isDark ? 'text-white/70' : 'text-[#9ca3af]')} />
               {item.texto}
             </div>
           ))}
           {unplaced.length === 0 && (
-            <p className="text-xs text-[#9ca3af]/50">
+            <p className={cn('text-xs', isDark ? 'text-white/40' : 'text-[#9ca3af]/50')}>
               Todos los elementos están ubicados
             </p>
           )}
@@ -222,14 +252,16 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
               onDrop={(e) => onDropToZone(e, zone.id)}
               className={cn(
                 'rounded-md border-2 border-dashed p-3 transition-colors',
-                !answered && dragging  && 'border-[#2563EB]/40 bg-[#dbeafe]',
-                !answered && !dragging && 'border-[#e5e7eb]',
-                zoneCorrect && 'border-green-400 bg-green-50',
-                zoneWrong   && 'border-red-400 bg-red-50',
+                !answered &&
+                  dragging &&
+                  (isDark ? 'border-[#2563EB]/50 bg-[#2563EB]/20' : 'border-[#2563EB]/40 bg-[#dbeafe]'),
+                !answered && !dragging && (isDark ? 'border-white/30' : 'border-[#e5e7eb]'),
+                zoneCorrect && (isDark ? 'border-green-400 bg-green-500/20' : 'border-green-400 bg-green-50'),
+                zoneWrong && (isDark ? 'border-red-400 bg-red-500/20' : 'border-red-400 bg-red-50'),
               )}
             >
               <div className="mb-2 flex items-center gap-1.5">
-                <p className="text-xs font-medium">{zone.etiqueta}</p>
+                <p className={cn('text-xs font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{zone.etiqueta}</p>
                 {zoneCorrect && <CheckCircle className="size-3.5 text-green-600" />}
                 {zoneWrong   && <XCircle className="size-3.5 text-red-500" />}
               </div>
@@ -241,17 +273,23 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
                     onDragStart={(e) => onDragStart(e, item.id)}
                     onDragEnd={onDragEnd}
                     className={cn(
-                      'flex cursor-grab items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
-                      answered ? 'bg-white/80' : 'bg-white shadow-lumina-xs',
+                      'flex cursor-grab items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                      isDark
+                        ? answered
+                          ? 'border-white/20 bg-white/10 text-white'
+                          : 'border-white/20 bg-white/15 text-white shadow-lumina-xs'
+                        : answered
+                          ? 'border-[#e5e7eb] bg-white/80 text-[#111827]'
+                          : 'border-[#e5e7eb] bg-white text-[#111827] shadow-lumina-xs',
                       dragging === item.id && 'opacity-40',
                     )}
                   >
-                    <GripVertical className="size-3 text-[#9ca3af]" />
+                    <GripVertical className={cn('size-3', isDark ? 'text-white/70' : 'text-[#9ca3af]')} />
                     {item.texto}
                   </div>
                 ))}
                 {placed.length === 0 && (
-                  <span className="text-xs text-[#9ca3af]/40">Suelta aquí</span>
+                  <span className={cn('text-xs', isDark ? 'text-white/40' : 'text-[#9ca3af]/40')}>Suelta aquí</span>
                 )}
               </div>
             </div>
@@ -278,10 +316,10 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: DragD
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export function DragDropActivity({ actividad, modo, editorSyncKey, onResponse }: Props) {
+export function DragDropActivity({ actividad, modo, editorSyncKey, onResponse, variant }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} />;
+    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} variant={variant} />;
 }
 
 // ─── Activity Editor ──────────────────────────────────────────────────────────

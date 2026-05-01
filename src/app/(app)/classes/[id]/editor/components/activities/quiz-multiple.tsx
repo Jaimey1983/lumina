@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -198,10 +199,12 @@ export function QuizMultipleViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: QuizMultiple;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const correctIds = useMemo(
     () => activity.opciones.filter((o) => o.esCorrecta).map((o) => o.id),
@@ -213,12 +216,15 @@ export function QuizMultipleViewer({
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
 
   useEffect(() => {
     setAnswered(false);
     setSelected(null);
     setSelectedIds([]);
   }, [editorSyncKey]);
+
+  const isDark = variant === 'dark';
 
   if (isMulti) {
     const overallMulti =
@@ -227,9 +233,14 @@ export function QuizMultipleViewer({
         : false;
 
     return (
-      <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-        <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
-        <p className="text-xs text-[#6b7280]">
+      <div
+        className={cn(
+          'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+          isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+        )}
+      >
+        <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>{activity.pregunta}</p>
+        <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
           {activity.multipleRespuesta
             ? 'Selecciona las opciones correctas y envía.'
             : 'Varias respuestas correctas: marca todas las que apliquen y envía.'}
@@ -254,15 +265,41 @@ export function QuizMultipleViewer({
                   }}
                   disabled={answered}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] px-3 py-2.5 text-left text-sm transition-colors',
-                    !answered && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
-                    answered && !hasDefinedCorrect && isSel && 'border-[#2563EB] bg-[#dbeafe]',
-                    answered && !hasDefinedCorrect && !isSel && 'border-[#e5e7eb] opacity-40',
+                    'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
+                    !answered &&
+                      !isSel &&
+                      (isDark
+                        ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                        : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
+                    !answered &&
+                      isSel &&
+                      (isDark
+                        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                    answered &&
+                      !hasDefinedCorrect &&
+                      isSel &&
+                      (isDark
+                        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                    answered && !hasDefinedCorrect && !isSel && (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
                     selectedRight &&
-                      'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
-                    selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
-                    showCorrectReveal && 'border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
-                    showAuto && !isSel && !showCorrectReveal && !selectedRight && 'border-[#e5e7eb] opacity-50',
+                      (isDark
+                        ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                        : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                    selectedWrong &&
+                      (isDark
+                        ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
+                        : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
+                    showCorrectReveal &&
+                      (isDark
+                        ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                        : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                    showAuto &&
+                      !isSel &&
+                      !showCorrectReveal &&
+                      !selectedRight &&
+                      (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
                   )}
                 >
                   {showAuto ? (
@@ -309,6 +346,11 @@ export function QuizMultipleViewer({
             onClick={() => {
               if (selectedIds.length === 0) return;
               setAnswered(true);
+              if (hasDefinedCorrect) {
+                play(isQuizSelectionCorrect(activity, selectedIds) ? 'correct' : 'wrong');
+              } else {
+                play('submit');
+              }
               onResponse?.([...selectedIds]);
             }}
             disabled={selectedIds.length === 0}
@@ -327,6 +369,11 @@ export function QuizMultipleViewer({
     if (!optionId) return;
     setSelected(optionId);
     setAnswered(true);
+    if (hasDefinedCorrect) {
+      play(isQuizSelectionCorrect(activity, [optionId]) ? 'correct' : 'wrong');
+    } else {
+      play('submit');
+    }
     onResponse?.(optionId);
   }
 
@@ -334,8 +381,13 @@ export function QuizMultipleViewer({
     selected && hasDefinedCorrect ? isQuizSelectionCorrect(activity, [selected]) : false;
 
   return (
-    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
+    <div
+      className={cn(
+        'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>{activity.pregunta}</p>
       <ul className="space-y-2">
         {activity.opciones.map((op, idx) => {
           const isSel = selected === op.id;
@@ -354,23 +406,35 @@ export function QuizMultipleViewer({
                 onClick={() => handleSelect(idx)}
                 disabled={answered}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] px-3 py-2.5 text-left text-sm transition-colors',
-                  !answered && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
+                  'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
+                  !answered &&
+                    (isDark
+                      ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                      : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
                   answered &&
                     !hasDefinedCorrect &&
                     isSel &&
-                    'border-[#2563EB] bg-[#dbeafe]',
-                  answered && !hasDefinedCorrect && !isSel && 'border-[#e5e7eb] opacity-40',
+                    (isDark
+                      ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                      : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                  answered && !hasDefinedCorrect && !isSel && (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
                   selectedRight &&
-                    'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
-                  selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
+                    (isDark
+                      ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                      : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                  selectedWrong &&
+                    (isDark
+                      ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
+                      : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
                   showCorrectReveal &&
-                    'border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
+                    (isDark
+                      ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                      : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
                   showAuto &&
                     !isSel &&
                     !showCorrectReveal &&
                     !selectedRight &&
-                    'border-[#e5e7eb] opacity-50',
+                    (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
                 )}
               >
                 {showAuto ? (

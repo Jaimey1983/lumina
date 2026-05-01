@@ -53,6 +53,7 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import {
+  BLOCK_FALLBACKS,
   parseClassModoEntrega,
   type Activity,
   type Block,
@@ -97,6 +98,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
+import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
 import { api } from '@/lib/api';
 import { getBackground } from '@/lib/class-backgrounds';
 import { cn } from '@/lib/utils';
@@ -235,6 +237,25 @@ function wordCloudTemplate(): Activity {
     maxPalabrasEnNube: 50,
     filtrarPalabrasComunes: true,
   };
+}
+
+function torneoTemplate(): Activity {
+  const fb = BLOCK_FALLBACKS.torneo;
+  return {
+    tipo: 'torneo',
+    preguntas: fb.preguntas.map((p) => ({
+      enunciado: p.enunciado,
+      opciones: [...p.opciones],
+      correcta: p.correcta,
+      tiempoSegundos: p.tiempoSegundos,
+    })),
+    puntosBase: fb.puntosBase,
+    bonusVelocidad: fb.bonusVelocidad,
+  };
+}
+
+function escapeRoomTemplate(): Activity {
+  return normalizeEscapeRoomActivity(undefined);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1438,6 +1459,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'video-interactive': videoInteractiveTemplate,
         'live-poll':        livePollTemplate,
         'word-cloud':       wordCloudTemplate,
+        torneo:             torneoTemplate,
+        escape_room:        escapeRoomTemplate,
       };
       const titles: Record<ActivityType, string> = {
         'quiz-multiple':    'Opción múltiple',
@@ -1450,6 +1473,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'video-interactive': 'Video interactivo',
         'live-poll':        'Encuesta en vivo',
         'word-cloud':       'Nube de palabras',
+        torneo:             'Torneo de preguntas',
+        escape_room:        'Escape Room',
       };
       const templateFn = templates[type];
       if (!templateFn) {
@@ -1896,6 +1921,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               sessionActive && modoEntrega === 'autonomo'
             }
             autonomousStudentsPerSlide={autonomousStudentsPerSlide}
+            liveSocket={socketRef.current}
+            liveSessionId={sessionId}
+            classId={classId}
           />
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}

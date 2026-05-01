@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn, seeded01 } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 /** Alias descriptivo para props del editor (misma forma que `LivePoll`). */
@@ -145,67 +146,188 @@ export function LivePollActivity({ actividad, modo }: Props) {
     : <EditorView actividad={actividad} />;
 }
 
+// ─── AnimatedBar: barra individual con porcentaje animado ────────────────────
+
+function AnimatedBar({
+  label,
+  pct,
+  votes,
+  isVoted,
+  isDark,
+}: {
+  label: string;
+  pct: number;
+  votes: number;
+  isVoted: boolean;
+  isDark: boolean;
+}) {
+  const animatedPct = pct;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          {isVoted && <CheckCircle className="size-3.5 shrink-0 text-[#2563EB]" />}
+          <span
+            className={cn(
+              'flex-1 truncate text-sm font-medium',
+              isDark ? 'text-white' : 'text-[#111827]',
+            )}
+          >
+            {label}
+          </span>
+        </div>
+        <span
+          className={cn(
+            'shrink-0 text-xs tabular-nums font-semibold',
+            isDark ? 'text-white/80' : 'text-[#6b7280]',
+          )}
+        >
+          {animatedPct}%
+        </span>
+      </div>
+
+      {/* Barra de progreso con CSS transition */}
+      <div
+        className={cn(
+          'h-2 overflow-hidden rounded-full',
+          isDark ? 'bg-white/15' : 'bg-[#f3f4f6]',
+        )}
+      >
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-700 ease-out',
+            isVoted
+              ? 'bg-[#2563EB]'
+              : isDark
+                ? 'bg-white/30'
+                : 'bg-[#6b7280]/40',
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Conteo de votos */}
+      <p
+        className={cn(
+          'text-[10px] tabular-nums',
+          isDark ? 'text-white/50' : 'text-[#9ca3af]',
+        )}
+      >
+        {votes} {votes === 1 ? 'voto' : 'votos'} · {animatedPct}%
+      </p>
+    </div>
+  );
+}
+
 // ─── LivePollViewer (con onResponse y answered) ───────────────────────────────
 
 export function LivePollViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: LivePoll;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
+  // resultados simulados tras votar: Record<optionId, percentage>
+  const [results, setResults] = useState<Record<string, number> | null>(null);
+  const { play } = useSound();
 
   useEffect(() => {
     setAnswered(false);
     setSelected(null);
+    setResults(null);
   }, [editorSyncKey]);
 
   function handleVote(index: number) {
     if (answered) return;
-    setSelected(activity.opciones[index]?.id ?? null);
+    const votedId = activity.opciones[index]?.id ?? null;
+    setSelected(votedId);
     setAnswered(true);
+    play('submit');
+    if (votedId) {
+      setResults(simulateResults(activity, votedId));
+    }
     onResponse?.(index);
   }
 
-  return (
-    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-sm font-medium leading-snug">{activity.pregunta}</p>
+  const isDark = variant === 'dark';
 
-      <div className="space-y-2">
-        {activity.opciones.map((op, idx) => {
-          const isSel = selected === op.id;
-          return (
+  // ── Fase pre-voto: botones interactivos ────────────────────────────────────
+  if (!answered) {
+    return (
+      <div
+        className={cn(
+          'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+          isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+        )}
+      >
+        <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>
+          {activity.pregunta}
+        </p>
+
+        <div className="space-y-2">
+          {activity.opciones.map((op, idx) => (
             <button
               key={op.id}
               type="button"
               onClick={() => handleVote(idx)}
-              disabled={answered}
               className={cn(
-                'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
-                !answered && 'border-[#e5e7eb] hover:border-[#2563EB]/50 hover:bg-[#f9fafb] cursor-pointer',
-                answered && isSel && 'border-[#2563EB] bg-[#dbeafe]',
-                answered && !isSel && 'border-[#e5e7eb] opacity-40',
+                'flex w-full cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                isDark
+                  ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                  : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]',
               )}
             >
-              {isSel
-                ? <CheckCircle className="size-3.5 shrink-0 text-[#2563EB]" />
-                : <span className="size-3.5 shrink-0" />
-              }
+              <span className="size-3.5 shrink-0" />
               <span className="flex-1 truncate">{op.texto}</span>
             </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Fase post-voto: barras animadas ────────────────────────────────────────
+  // Simulamos un total de votos proporcional para mostrar conteos verosímiles
+  const SIMULATED_TOTAL = 24;
+  return (
+    <div
+      className={cn(
+        'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>
+        {activity.pregunta}
+      </p>
+
+      <div className="space-y-3">
+        {activity.opciones.map((op) => {
+          const pct = results?.[op.id] ?? 0;
+          const votes = Math.max(op.id === selected ? 1 : 0, Math.round((pct / 100) * SIMULATED_TOTAL));
+          return (
+            <AnimatedBar
+              key={op.id}
+              label={op.texto}
+              pct={pct}
+              votes={votes}
+              isVoted={op.id === selected}
+              isDark={isDark}
+            />
           );
         })}
       </div>
 
-      {answered && (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
-          <span>✓</span> ¡Voto registrado!
-        </div>
-      )}
+      <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <span>✓</span> ¡Voto registrado!
+      </div>
     </div>
   );
 }

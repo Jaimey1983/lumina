@@ -1,5 +1,5 @@
-# LUMINA_CONTEXT_V22.md
-_Actualizado: 28/04/2026 — Sesiones 27/04/2026_
+# LUMINA_CONTEXT_V23.md
+_Actualizado: 29/04/2026 — Sesión 29/04/2026_
 
 ---
 
@@ -211,290 +211,128 @@ DELETE /autonomous-sessions/:sessionId                          — cancelar (JW
 POST   /autonomous-sessions/:sessionId/join                     — estudiante entra (público)
 POST   /autonomous-sessions/:sessionId/progress                 — guardar progreso por slide (público)
 PATCH  /autonomous-sessions/:sessionId/progress/:progressId     — editar score manual (JWT)
-POST   /autonomous-sessions/:sessionId/complete                 — estudiante finaliza (público)
-GET    /autonomous-sessions/:sessionId/results                  — gradebook docente (JWT)
+GET    /autonomous-sessions/:sessionId/results                  — planilla docente (JWT)
+GET    /autonomous-sessions/:sessionId/results/student          — resultado estudiante (público)
 ```
-
-### Seguridad de acceso
-- **PIN de 6 dígitos** generado automáticamente al crear la sesión
-- **Matching de nombres** con tolerancia: normalización + fonética colombiana + Levenshtein
-  - v↔b, s↔c↔z, ll↔y, h silenciosa, j↔g
-  - Tolerancia: ≤5 chars=1, 6-9=2, ≥10=3
-- **Anti-repetición:** PIN + nombre normalizado = identidad del estudiante
-- **Modo Recuperación:** bloquea si ya existe ClassResult para ese estudiante en esa clase
-
-### Propósito de la tarea
-- `independent` — tarea independiente, planilla separada en Lumina Edu
-- `recovery` — recuperación, nota va a planilla principal como AutonomousGrade
-
-### Cálculo de score — reglas completas
-```
-Sin responder (response === null)    → 0.0
-Respondió, ningún acierto            → 1.0 (mínimo siempre)
-Respondió, aciertos parciales        → proporcional 1.0–5.0
-Todo correcto                        → 5.0
-nota_final = promedio de scores por actividad
-```
-
-| Tipo | Cálculo |
-|------|---------|
-| `quiz_multiple`, `verdadero_falso` | Binario: correcto=5.0, incorrecto=1.0 |
-| `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos` | Proporcional + mínimo 1.0 |
-| `video_interactivo` | Proporcional por preguntas correctas + mínimo 1.0 |
-| `short_answer`, `encuesta_viva`, `nube_palabras` | Participación: respondió=1.0, no respondió=0.0 (**manual**) |
-
-### Comportamiento especial video_interactivo
-- El viewer autónomo acumula respuestas en un array por slideId
-- `handleResponse` para video_interactivo: `response: [...historial, { questionIndex, answer }]`
-- `saveProgress()` recibe el array acumulado y calcula score proporcional
-- `scoreActivityResponse` evalúa cada respuesta contra `opciones[i].esCorrecta`
-
-### Scoring en saveProgress()
-- `activityType` enviado desde el frontend en cada POST /progress
-- Score calculado inmediatamente al guardar — no en complete()
-- No sobreescribe score válido si nueva response es null
-- Slides sin activityType (contenido puro) son ignorados
-
-### Edición manual de scores
-- `PATCH /autonomous-sessions/:sessionId/progress/:progressId` con `{ score }`
-- Tras edición: recalcula `AutonomousResult.finalScore` automáticamente
-- `getResults()` calcula promedio en vivo desde progress (no desde finalScore guardado)
-- `finalScore` en AutonomousResult se actualiza para consistencia histórica
-
-### Viewer autónomo
-- Ruta: `/autonomo/[sessionId]`
-- 3 pantallas: entrada (nombre + PIN), slides, finalización
-- Fullscreen real: `fixed inset-0` con `SlideRenderer` en `absolute inset-0`
-- `SlideRenderer` acepta prop `viewerFill` para no forzar aspect ratio 16/9
-- NO usa Socket.IO — 100% REST/HTTP
-- `respondedSlideIds` ref previene sobreescribir respuesta con null
 
 ---
 
-## Arquitectura de Datos
+## Analytics — COMPLETO (V23)
 
-**Jerarquía:** Class → Slides → Blocks → Activities
+### Concepto
+Telemetría real de engagement durante sesiones en vivo + respuestas de texto en modo autónomo.
+Reemplaza el analytics de solo-notas por datos de comportamiento en tiempo real.
 
-**Slide content JSON:**
-```json
-{
-  "id": "slide_xxx",
-  "tipo": "contenido",
-  "layout": "titulo_y_contenido",
-  "fondo": { "tipo": "color", "valor": "#FFFFFF" },
-  "bloques": [],
-  "timer": 30
+### Modelos Prisma nuevos (migración: `add_analytics_models`)
+```prisma
+model SessionLog {
+  id              String    @id @default(cuid())
+  sessionId       String    @unique           // FK a ClassSession.id
+  classId         String
+  courseId        String
+  teacherId       String
+  totalSlides     Int       @default(0)
+  peakConnections Int       @default(0)
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int?
+  createdAt       DateTime  @default(now())
+
+  session          ClassSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  slideEngagements SlideEngagement[]
+}
+
+model StudentConnection {
+  id             String    @id @default(cuid())
+  sessionId      String
+  classId        String
+  studentId      String
+  studentName    String
+  connectedAt    DateTime  @default(now())
+  disconnectedAt DateTime?
+  reconnections  Int       @default(0)
+}
+
+model SlideEngagement {
+  id            String     @id @default(cuid())
+  sessionLogId  String
+  slideId       String
+  slideIndex    Int
+  activityType  String?
+  studentId     String
+  studentName   String
+  timeOnSlide   Int        @default(0)   // segundos
+  responded     Boolean    @default(false)
+  attemptNumber Int        @default(1)
+  source        String     @default("live") // "live" | "autonomous"
+  createdAt     DateTime   @default(now())
+
+  sessionLog SessionLog @relation(fields: [sessionLogId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionLogId, slideId, studentId])
 }
 ```
 
-**Block types:** `texto`, `imagen`, `actividad`
-
-**Activity types (10 implementados):**
-`quiz_multiple`, `verdadero_falso`, `arrastrar_soltar`, `video_interactivo`,
-`encuesta_viva`, `completar_blancos`, `emparejar`, `ordenar_pasos`,
-`nube_palabras`, `short_answer`
-
----
-
-## Sistema de Calificación — Reglas de Negocio
-
-### Escala de valoración colombiana
-| Rango | Desempeño |
-|-------|-----------|
-| 1.0 – 2.9 | Bajo |
-| 3.0 – 3.9 | Básico |
-| 4.0 – 4.6 | Alto |
-| 4.7 – 5.0 | Superior |
-
-### Helper scoreActivityResponse
-Ubicación: `src/classes/class-results-gradebook.helper.ts`
-Función: `applyMinScore(raw, responded)` — garantiza mínimo 1.0 si respondió
-
-### Actividades de calificación manual
-```typescript
-const MANUAL_GRADING = ['short_answer', 'encuesta_viva', 'nube_palabras']
+### Endpoints analytics
 ```
-- Celdas con borde azul `#2563EB` en planilla
-- Docente hace clic → input editable (0.0 a 5.0, step 0.1)
-- En clase en vivo: PATCH /classes/:classId/results/:resultId
-- En tareas autónomas: PATCH /autonomous-sessions/:sessionId/progress/:progressId
-
-### Fix scoring encuesta_viva y nube_palabras (V22)
-En clase en vivo, el frontend calculaba `score = response.correct === null ? 0.0 : 1.0`.
-`correct === null` es el comportamiento normal de estas actividades (no tienen respuesta correcta).
-**Fix:** `score = 1.0` siempre que haya respuesta en liveResponses.
-
----
-
-## Lumina Edu — Planilla (V22)
-
-### Tabs en grade-book-client.tsx
-- **Clase en vivo** — ClassResult con desglose por actividad
-- **Tareas autónomas** — AutonomousResult/Progress con desglose por actividad
-
-### Clase en vivo
-- Desglose por actividad (columnas por slideId)
-- Badge "Recuperación" para estudiantes con AutonomousGrade (source='autonomous')
-- Celdas manuales editables con borde azul → PATCH /classes/:classId/results/:resultId
-
-### Tareas autónomas
-- Selector de sesión si hay más de una (solo purpose='independent')
-- Tabla con columnas por actividad (mismo formato que clase en vivo via normalizeFromRows)
-- Celdas manuales editables → PATCH /autonomous-sessions/:sessionId/progress/:progressId
-- Promedio final calculado en vivo desde progress (no desde finalScore)
-- Mensaje vacío si no hay sesiones independent
-
-### normalizeFromRows — función unificada
-- Exportada de `use-gradebook.ts`
-- Reutilizada para clase en vivo Y tareas autónomas
-- `GET /autonomous-sessions/:sessionId/results` retorna mismo formato que gradebook:
-```json
-[{
-  "studentId": "...",
-  "nombre": "...",
-  "promedio": 3.45,
-  "source": "autonomous",
-  "resultados": [
-    { "slideId": "...", "activityType": "quiz_multiple", "score": 5.0, "maxScore": 5, "isManual": false, "id": "progressId" }
-  ]
-}]
+GET /analytics/course/:courseId              — resumen completo (KPIs, progreso, ranking, riesgo, distribución)
+GET /analytics/course/:courseId/sessions     — comparativa entre sesiones con telemetría
+GET /analytics/session/:sessionId/detail    — detalle: slideHeatmap, funnelData, studentEngagement
+GET /analytics/course/:courseId/text-responses — respuestas de texto del modo autónomo
 ```
 
----
-
-## Viewers — Layout Fullscreen (V22)
-
-### viewer-client.tsx (clase en vivo)
-- Contenedor raíz: `fixed inset-0 overflow-hidden`
-- Slide: `absolute inset-0`
-- `SlideRenderer` con prop `viewerFill={true}`
-
-### autonomo-client.tsx (tarea autónoma)
-- Mismo patrón de capas absolutas que viewer en vivo
-- Topbar superpuesta: `absolute inset-x-0 top-0 z-30`
-- Slide: `absolute inset-0 z-10`
-- Botones nav: `absolute left/right-4 top-1/2 z-30`
-
-### SlideRenderer — prop viewerFill
-- `viewerFill={true}` → no fuerza `aspectRatio: 16/9`
-- `viewerFill={false}` (default) → mantiene aspect ratio para editor y miniaturas
-
----
-
-## Flujo de Sesión en Vivo
-
-1. Docente → **Iniciar clase** → `POST /classes/:id/sessions/start` → retorna `sessionId`
-2. Estudiante → `/join/[codigo]` → ingresa nombre → `lumina_student_name` en localStorage
-3. Estudiante responde actividades → Socket.IO emite `response-update`
-4. Editor recibe respuestas en panel EN VIVO (`liveResponses` Map por slideId)
-5. Docente → **Finalizar clase** → calcula scores → `POST /classes/:id/results` → `PATCH /classes/:id/sessions/end`
-
-### Fix seguridad clase en vivo (V21)
-- `POST /classes/:id/results` verifica ClassSession activa
-- Sin sesión activa → 400 "No hay una sesión activa para esta clase"
-- Gradebook usa registro más reciente en duplicados (orderBy updatedAt)
-
----
-
-## Endpoints Clave
-
-### Backend (puerto 3000)
-```
-POST   /auth/login
-POST   /auth/register
-
-GET    /classes/:id
-PATCH  /classes/:id
-GET    /classes/join/:codigo                           — público
-POST   /classes/:id/sessions/start
-PATCH  /classes/:id/sessions/end
-POST   /classes/:id/results                            — requiere ClassSession activa
-PATCH  /classes/:classId/results/:resultId
-GET    /classes/:id/gradebook
-GET    /classes/:id/versions
-POST   /classes/:id/versions
-PUT    /classes/:id/versions/:versionId/restore
-POST   /classes/:id/slides/insert
-GET    /classes/:classId/autonomous-sessions
-POST   /classes/:classId/autonomous-sessions
-
-GET    /autonomous-sessions/:sessionId
-PATCH  /autonomous-sessions/:sessionId
-DELETE /autonomous-sessions/:sessionId
-POST   /autonomous-sessions/:sessionId/join
-POST   /autonomous-sessions/:sessionId/progress
-PATCH  /autonomous-sessions/:sessionId/progress/:progressId
-POST   /autonomous-sessions/:sessionId/complete
-GET    /autonomous-sessions/:sessionId/results
-
-GET    /courses
-POST   /courses
-GET    /courses/:id
-GET    /edu/courses/:courseId/gradebook
-GET    /edu/courses/:courseId/analytics
-```
-
----
-
-## Archivos Clave
+### Integración de escritura
+- `live-sessions.service.ts → startLiveSession()`: crea `ClassSession` + `SessionLog`
+- `live-sessions.service.ts → endLiveSession()`: cierra `ClassSession` + `SessionLog` con duración calculada
+- `live-sessions.service.ts → joinLiveClass()`: llama `recordConnection()` + `updatePeakConnections()`
+- `live-sessions.service.ts → onSocketDisconnect()`: llama `recordDisconnection()` vía `flushTelemetryDisconnect()`
+- `classes.service.ts → saveResults()`: llama `recordSlideEngagement()` por cada resultado
+- Todos los métodos de escritura son silenciosos (try/catch) — nunca rompen el flujo principal
 
 ### Frontend
-```
-src/app/(app)/classes/classes-client.tsx
-src/app/(app)/classes/[id]/editor/editor-client.tsx
-src/app/(app)/classes/[id]/editor/components/canvas-area.tsx
-src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx   — prop viewerFill
-src/app/(app)/classes/[id]/editor/components/slides-panel.tsx
-src/app/(app)/classes/[id]/editor/components/icon-rail.tsx
-src/app/(app)/classes/[id]/editor/components/right-rail.tsx
-src/app/(app)/classes/[id]/editor/components/right-flyout-panel.tsx
-src/app/(app)/classes/[id]/editor/components/floating-toolbar.tsx
-src/app/(app)/classes/[id]/editor/components/activities/           — 10 archivos
-src/app/(app)/classes/[id]/class-detail-client.tsx
-src/app/(app)/classes/[id]/components/launch-autonomous-modal.tsx
-src/app/(app)/classes/[id]/components/edit-autonomous-modal.tsx
-src/app/(app)/classes/[id]/viewer/viewer-client.tsx                — fullscreen fixed inset-0
-src/app/(app)/edu/[courseId]/grade-book-client.tsx                 — tabs + celdas manuales autónomas
-src/app/(app)/edu/edu-home-client.tsx
-src/app/(app)/dashboard/dashboard-client.tsx
-src/app/(app)/analytics/analytics-client.tsx
-src/app/(app)/courses/
-src/app/(app)/profile/page.tsx
-src/app/join/[codigo]/join-client.tsx
-src/app/autonomo/[sessionId]/page.tsx
-src/app/autonomo/[sessionId]/autonomo-client.tsx                   — fullscreen + video acumulado
-src/components/layout/sidebar.tsx
-src/hooks/api/use-course-analytics.ts
-src/hooks/api/use-autonomous-sessions.ts
-src/hooks/api/use-autonomous-viewer.ts
-src/hooks/api/use-autonomous-results.ts                            — useUpdateAutonomousScore
-src/hooks/use-autosave.ts
-src/hooks/use-slide-timer.ts
-src/hooks/use-slide-versions.ts
-src/hooks/use-gradebook.ts                                         — normalizeFromRows exportada
-src/styles/globals.css
-tailwind.config.ts
-src/types/autonomous.types.ts
-```
+- `src/hooks/api/use-analytics-sessions.ts` — hooks: `useSessionsComparison`, `useSessionDetail`, `useAutonomousTextResponses`
+- `src/app/(app)/analytics/analytics-client.tsx` — secciones nuevas:
+  - `SessionsComparisonSection` — tabla clicable de sesiones con telemetría
+  - `SessionDetailSection` — mapa de calor de slides + embudo de participación (Recharts) + engagement por estudiante
+  - `TextResponsesSection` — respuestas de texto autónomo agrupadas por tipo (short_answer / nube_palabras / encuesta_viva)
+  - Botón "Descargar reporte" — CSV real con BOM UTF-8
+  - `downloadStudentProgressCSV()` — genera y descarga CSV con nombre, actividades, promedio, desempeño
 
-### Backend
-```
-src/classes/classes.controller.ts
-src/classes/classes.service.ts
-src/classes/classes.gateway.ts
-src/classes/class-results-gradebook.helper.ts       — scoreActivityResponse() + applyMinScore()
-src/classes/dto/update-result-score.dto.ts
-src/autonomous-sessions/autonomous-sessions.module.ts
-src/autonomous-sessions/autonomous-sessions.controller.ts
-src/autonomous-sessions/autonomous-sessions.service.ts
-src/autonomous-sessions/name-matcher.helper.ts
-src/autonomous-sessions/dto/create-autonomous-session.dto.ts
-src/autonomous-sessions/dto/update-autonomous-session.dto.ts
-src/autonomous-sessions/dto/join-autonomous-session.dto.ts
-src/autonomous-sessions/dto/save-progress.dto.ts
-src/autonomous-sessions/dto/update-autonomous-progress-score.dto.ts
-prisma/schema.prisma
-```
+### Archivos modificados/creados (V23)
+**Backend:**
+- `prisma/schema.prisma` — 3 modelos nuevos
+- `src/analytics/analytics.module.ts` — nuevo
+- `src/analytics/analytics.service.ts` — nuevo (métodos lectura + escritura telemetría)
+- `src/analytics/analytics.controller.ts` — nuevo
+- `src/live-sessions/live-sessions.service.ts` — integración SessionLog + conexiones
+- `src/classes/classes.service.ts` — recordSlideEngagement en saveResults
+- `src/classes/classes.module.ts` — importa AnalyticsModule
+
+**Frontend:**
+- `src/hooks/api/use-analytics-sessions.ts` — nuevo
+- `src/app/(app)/analytics/analytics-client.tsx` — actualizado
+
+---
+
+## Flujo de Sesión en Vivo — Gateway
+
+El namespace activo es `/live` en `src/live-sessions/live-sessions.gateway.ts`.
+El módulo `src/classes/classes.gateway.ts` existe pero es secundario.
+
+Eventos Socket.IO del namespace `/live`:
+| Evento | Dirección | Descripción |
+|--------|-----------|-------------|
+| `session:start` | cliente→servidor | Docente inicia sesión (PUBLISHED→LIVE) |
+| `session:end` | cliente→servidor | Docente finaliza sesión (LIVE→PUBLISHED) |
+| `join` | cliente→servidor | Estudiante/docente entra a la sala |
+| `leave` | cliente→servidor | Salida voluntaria |
+| `slide:sync` | cliente→servidor | Docente sincroniza diapositiva activa |
+| `slide:state` | cliente→servidor | Leer estado actual sin unirse |
+| `session:started` | servidor→sala | Confirmación de inicio |
+| `session:ended` | servidor→sala | Confirmación de fin |
+| `slide:current` | servidor→sala | Broadcast de diapositiva actual |
+
+Autenticación: Bearer token en `handshake.auth.token` o header `Authorization`.
 
 ---
 
@@ -523,7 +361,7 @@ prisma/schema.prisma
 - Código LUM-6chars para unirse
 - Página `/join/[codigo]`
 - Botones Iniciar/Finalizar clase
-- Sync slide-change editor ↔ viewer via Socket.IO
+- Sync slide-change editor ↔ viewer via Socket.IO (namespace `/live`)
 - Modo presentación y modo autónomo
 - Pantalla resumen estudiante al finalizar
 - Confirmación visual al responder
@@ -557,26 +395,26 @@ prisma/schema.prisma
 - Tareas autónomas con desglose por actividad
 - Fix: encuesta_viva y nube_palabras = 1.0 cuando respondido
 
-### Analytics
-- KPIs reales desde gradebook
-- Ranking de actividades con rendimiento
-- Estudiantes en riesgo identificados
-- Distribución de desempeño
-- Engagement: "Disponible próximamente"
+### Analytics — COMPLETO (V23)
+- KPIs reales desde ClassResult + AutonomousGrade
+- Comparativa de sesiones con telemetría (duración, participantes, promedio, conexiones pico)
+- Detalle de sesión: mapa de calor de slides, embudo de participación, engagement por estudiante
+- Respuestas de texto del modo autónomo visibles para el docente (gap V22 cerrado)
+- Descarga CSV real con BOM UTF-8
+- Telemetría de conexiones: recordConnection, recordDisconnection, peakConnections
+- SlideEngagement registrado automáticamente en saveResults
 
 ---
 
 ## Estado del Roadmap
 
-### ✅ Completado (V22)
-- Todo lo de V21 +
-- Viewer fullscreen real (prop viewerFill en SlideRenderer)
-- video_interactivo: acumulación de respuestas + score proporcional
-- Celdas manuales editables en tareas autónomas
-- Promedio en vivo desde progress en getResults()
-- PATCH /autonomous-sessions/:sessionId/progress/:progressId
-- Fix encuesta_viva y nube_palabras = 1.0 en clase en vivo
-- Pruebas con todas las actividades en ambos modos ✅
+### ✅ Completado (V23)
+- Todo lo de V22 +
+- Módulo Analytics con telemetría real de sesiones en vivo
+- SessionLog, StudentConnection, SlideEngagement
+- Comparativa entre sesiones, detalle de sesión, embudo de participación
+- Respuestas de texto autónomo visibles para el docente
+- Descarga CSV del reporte de progreso
 
 ### 🔲 Mejoras estéticas pendientes
 - Entrada escalonada en actividades (staggered animation)
@@ -585,7 +423,6 @@ prisma/schema.prisma
 - prop `variant: "dark" | "light"` en viewers según fondo elegido
 
 ### 🔲 Funcionalidades pendientes (roadmap)
-- **Analytics backend** — SessionLog, StudentConnection, SlideEngagement (siguiente)
 - Nuevas actividades Wordwall-style (15 tipos)
 - Escape Room
 - Torneo de preguntas
@@ -636,11 +473,15 @@ prisma/schema.prisma
 - `saveProgress()` no sobreescribe score válido con null
 - `saveProgress()` para video_interactivo: mergea historial por questionIndex
 - `getResults()` calcula promedio en vivo desde progress, finalScore solo como fallback
+- Analytics: métodos de escritura siempre en try/catch — nunca rompen flujo principal
+- Gateway activo de sesión en vivo: namespace `/live` en `live-sessions.gateway.ts`
+- `telemetryBySocketId` Map en LiveSessionsService para rastrear socket→{sessionId, studentId}
 
 ### React Query
 - Respuestas paginadas: `Array.isArray(raw) ? raw : raw?.data ?? []`
 - Tras PATCH manual: actualizar caché con `setQueryData` + `computeStudentPromedio()`
 - `useAutonomousSessions(classId, { refetchInterval: 30000 })` en class-detail
+- Analytics hooks: queryKey prefijo `['analytics', ...]`
 
 ### Diseño Lumina 2.1 — regla de oro
 - Color `#2563EB` SOLO en botones CTA, links activos, íconos de acción, barras de progreso
@@ -650,9 +491,25 @@ prisma/schema.prisma
 - Sombras: `rgba(0,0,0, 0.06–0.10)` neutras
 - dark: prefixes eliminados — Lumina no tiene modo oscuro
 
-### LUMINA_CONTEXT_V22.md — ubicación
+### LUMINA_CONTEXT_V23.md — ubicación
 - Colocar en `lumina-frontend/` (raíz del proyecto frontend) para que Cursor lo encuentre
 - El workspace de Cursor apunta a `lumina-frontend/`, no a la raíz del monorepo
+
+---
+
+## Mapeo de Módulos Backend
+
+| Módulo | Ruta | Responsabilidad |
+|--------|------|-----------------|
+| auth | `src/auth/` | JWT, login, roles |
+| users | `src/users/` | CRUD usuarios |
+| courses | `src/courses/` | CRUD cursos |
+| classes | `src/classes/` | Editor, slides, resultados, gradebook |
+| live-sessions | `src/live-sessions/` | Gateway `/live`, sync slides, telemetría conexiones |
+| autonomous-sessions | `src/autonomous-sessions/` | Modo autónomo, progreso, calificación |
+| analytics | `src/analytics/` | Telemetría sesiones, engagement, resumen curso |
+| gradebook | `src/gradebook/` | Estructura de evaluación institucional |
+| curriculum | `src/curriculum/` | EBC, DBA, áreas MEN |
 
 ---
 

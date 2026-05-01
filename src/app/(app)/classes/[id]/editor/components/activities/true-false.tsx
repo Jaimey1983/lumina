@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -296,13 +297,16 @@ export function TrueFalseViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: TrueFalse;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [answered, setAnswered] = useState(false);
   const [selected, setSelected] = useState<boolean | null>(null);
+  const { play } = useSound();
 
   const hasDefinedCorrect = typeof activity.respuestaCorrecta === 'boolean';
 
@@ -315,15 +319,27 @@ export function TrueFalseViewer({
     if (answered) return;
     setSelected(val);
     setAnswered(true);
+    if (hasDefinedCorrect) {
+      play(val === activity.respuestaCorrecta ? 'correct' : 'wrong');
+    } else {
+      play('submit');
+    }
     onResponse?.(val);
   }
 
   const overallCorrect =
     hasDefinedCorrect && selected !== null ? selected === activity.respuestaCorrecta : false;
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="space-y-5 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-sm font-medium leading-snug">{activity.afirmacion}</p>
+    <div
+      className={cn(
+        'space-y-5 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>{activity.afirmacion}</p>
       <div className="flex gap-3">
         {([true, false] as const).map((val) => {
           const label = val ? 'Verdadero' : 'Falso';
@@ -341,19 +357,37 @@ export function TrueFalseViewer({
               onClick={() => handleSelect(val)}
               disabled={answered}
               className={cn(
-                'relative flex flex-1 flex-col items-center gap-2 rounded-md border border-[#e5e7eb] py-6 text-sm font-medium transition-colors',
-                !answered && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
+                'relative flex flex-1 flex-col items-center gap-2 rounded-md border py-6 text-sm font-medium transition-colors',
+                !answered &&
+                  !isSel &&
+                  (isDark
+                    ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                    : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
+                !answered &&
+                  isSel &&
+                  (isDark
+                    ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                    : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
                 answered &&
                   !hasDefinedCorrect &&
                   isSel &&
-                  'border-[#2563EB] bg-[#dbeafe]',
-                answered && !hasDefinedCorrect && !isSel && 'border-[#e5e7eb] opacity-40',
+                  (isDark
+                    ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                    : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                answered && !hasDefinedCorrect && !isSel && (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
                 selectedRight &&
-                  'origin-center border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
-                selectedWrong && 'border-[#DC2626] bg-[#FEE2E2] lumina-viewer-shake',
+                  (isDark
+                    ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                    : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                selectedWrong &&
+                  (isDark
+                    ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
+                    : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
                 showCorrectReveal &&
-                  'border-[#16A34A] bg-[#DCFCE7] animate-in zoom-in-95 duration-300',
-                showAuto && !isSel && !showCorrectReveal && !selectedRight && 'border-[#e5e7eb] opacity-50',
+                  (isDark
+                    ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                    : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                showAuto && !isSel && !showCorrectReveal && !selectedRight && (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
               )}
             >
               {selectedRight && (

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -246,15 +247,18 @@ export function MatchPairsViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: MatchPairs;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [matches, setMatches] = useState<{ leftId: string; rightId: string }[]>([]);
   const [answered, setAnswered] = useState(false);
   const [shuffledRight, setShuffledRight] = useState<{ id: string; text: string }[]>([]);
+  const { play } = useSound();
 
   useEffect(() => {
     if (!activity?.pares) return;
@@ -287,15 +291,27 @@ export function MatchPairsViewer({
   const handleSubmit = () => {
     if (answered) return;
     setAnswered(true);
+    const ok =
+      activity.pares.length > 0 &&
+      matches.length === activity.pares.length &&
+      matches.every((m) => m.leftId === m.rightId);
+    play(ok ? 'correct' : 'wrong');
     onResponse?.(matches);
   };
 
   if (!activity) return null;
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
       {activity.instruccion && (
-        <p className="text-sm font-medium text-[#111827]">{activity.instruccion}</p>
+        <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{activity.instruccion}</p>
       )}
 
       <div className="grid grid-cols-2 gap-8">
@@ -307,11 +323,17 @@ export function MatchPairsViewer({
 
             let feedbackClass = '';
             if (isSelected) {
-              feedbackClass = 'border-[#2563EB] ring-1 ring-[#2563EB]';
+              feedbackClass = isDark
+                ? 'border-[#2563EB] bg-[#2563EB]/80 ring-1 ring-[#2563EB] text-white'
+                : 'border-[#2563EB] bg-[#dbeafe] ring-1 ring-[#2563EB] text-[#2563EB]';
             } else if (isMatched) {
-              feedbackClass = 'border-[#2563EB]/50 bg-[#dbeafe]';
+              feedbackClass = isDark
+                ? 'border-[#2563EB] bg-[#2563EB]/40 text-white'
+                : 'border-[#2563EB]/50 bg-[#dbeafe] text-[#111827]';
             } else {
-              feedbackClass = 'border-[#e5e7eb] bg-white hover:bg-[#f9fafb] cursor-pointer';
+              feedbackClass = isDark
+                ? 'cursor-pointer border-white/20 bg-white/15 text-white hover:bg-white/25'
+                : 'cursor-pointer border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]';
             }
 
             return (
@@ -338,9 +360,13 @@ export function MatchPairsViewer({
 
             let feedbackClass = '';
             if (isMatched) {
-              feedbackClass = 'border-[#2563EB]/50 bg-[#dbeafe]';
+              feedbackClass = isDark
+                ? 'border-[#2563EB] bg-[#2563EB]/40 text-white'
+                : 'border-[#2563EB]/50 bg-[#dbeafe] text-[#111827]';
             } else {
-              feedbackClass = 'border-[#e5e7eb] bg-white hover:bg-[#f9fafb] cursor-pointer';
+              feedbackClass = isDark
+                ? 'cursor-pointer border-white/20 bg-white/15 text-white hover:bg-white/25'
+                : 'cursor-pointer border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]';
             }
 
             return (

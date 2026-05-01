@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { normalizeVideoSource } from '@/lib/video-url-utils';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 import { useVideoInteractiveRuntime } from './use-video-interactive-runtime';
 
@@ -22,6 +23,7 @@ interface Props {
   modo: 'editor' | 'viewer';
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -110,25 +112,36 @@ function QuestionOverlay({
   question,
   onDismiss,
   onAnswer,
+  variant = 'light',
 }: {
   question: VideoQuestion;
   onDismiss: () => void;
   onAnswer?: (answer: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
+  const { play } = useSound();
+
+  const isDark = variant === 'dark';
 
   function handleCheck() {
     if (!selected) return;
     const correct = question.opciones.find((o) => o.id === selected)?.esCorrecta ?? false;
     setFeedback({ correct });
+    play('submit');
     onAnswer?.(selected);
   }
 
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="question-overlay">
-      <div className="w-80 max-w-[90%] space-y-4 rounded-xl bg-white p-5 shadow-2xl">
-        <p className="text-sm font-medium" data-testid="question-text">{question.pregunta}</p>
+      <div
+        className={cn(
+          'w-80 max-w-[90%] space-y-4 rounded-xl border p-5 shadow-2xl',
+          isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/90',
+        )}
+      >
+        <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-[#111827]')} data-testid="question-text">{question.pregunta}</p>
 
         <ul className="space-y-2">
           {question.opciones.map((op) => {
@@ -142,13 +155,37 @@ function QuestionOverlay({
                   onClick={() => setSelected(op.id)}
                   data-testid="question-option"
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md border border-[#e5e7eb] px-3 py-2 text-left text-xs transition-colors',
-                    !feedback && !isSel && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
-                    !feedback && isSel  && 'border-[#2563EB] bg-[#dbeafe]',
-                    showRes && isSel && op.esCorrecta  && 'border-green-400 bg-green-50 text-green-800',
-                    showRes && isSel && !op.esCorrecta && 'border-red-400 bg-red-50 text-red-800',
-                    showRes && !isSel && op.esCorrecta  && 'border-green-200 bg-green-50/50',
-                    showRes && !isSel && !op.esCorrecta && 'border-[#e5e7eb] opacity-40',
+                    'flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors',
+                    !feedback &&
+                      !isSel &&
+                      (isDark
+                        ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                        : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
+                    !feedback &&
+                      isSel &&
+                      (isDark
+                        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                    showRes &&
+                      isSel &&
+                      op.esCorrecta &&
+                      (isDark
+                        ? 'border-green-400 bg-green-500/30 text-green-300'
+                        : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a]'),
+                    showRes &&
+                      isSel &&
+                      !op.esCorrecta &&
+                      (isDark
+                        ? 'border-red-400 bg-red-500/30 text-red-300'
+                        : 'border-[#f87171] bg-[#fee2e2] text-[#f87171]'),
+                    showRes &&
+                      !isSel &&
+                      op.esCorrecta &&
+                      (isDark ? 'border-green-400 bg-green-500/20 text-green-300' : 'border-[#16a34a] bg-[#dcfce7]/80'),
+                    showRes &&
+                      !isSel &&
+                      !op.esCorrecta &&
+                      (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
                   )}
                 >
                   {showRes && isSel && op.esCorrecta  && <CheckCircle className="size-3.5 shrink-0 text-green-600" />}
@@ -192,7 +229,17 @@ function QuestionOverlay({
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: VideoInteractive; editorSyncKey?: string; onResponse?: (response: unknown) => void }) {
+function ViewerView({
+  actividad,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  actividad: VideoInteractive;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
   const {
     source,
     embedUrl,
@@ -224,8 +271,16 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
     setYoutubeThumbTier('max');
   }, [actividad.urlVideo, editorSyncKey]);
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="space-y-3 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs" data-testid="video-interactive-viewer">
+    <div
+      className={cn(
+        'space-y-3 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+      data-testid="video-interactive-viewer"
+    >
       {/* Video */}
       <div className="relative overflow-hidden rounded-md" style={{ aspectRatio: '16/9' }}>
         {isDirect ? (
@@ -299,6 +354,7 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
             question={activeQ}
             onDismiss={dismissQ}
             onAnswer={handleOverlayAnswer}
+            variant={variant}
           />
         )}
       </div>
@@ -306,10 +362,16 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
       {/* Unknown embeds: show static questions list */}
       {!isDirect && !isYouTube && !isVimeo && actividad.preguntas.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-[#9ca3af]">Preguntas del video</p>
+          <p className={cn('text-xs font-medium', isDark ? 'text-white/70' : 'text-[#6b7280]')}>Preguntas del video</p>
           {actividad.preguntas.map((q) => (
-            <div key={q.id} className="flex gap-3 rounded-md border border-[#e5e7eb] px-3 py-2 text-xs">
-              <span className="shrink-0 tabular-nums text-[#9ca3af]">
+            <div
+              key={q.id}
+              className={cn(
+                'flex gap-3 rounded-md border px-3 py-2 text-xs',
+                isDark ? 'border-white/20 bg-white/10 text-white' : 'border-[#e5e7eb] bg-white text-[#111827]',
+              )}
+            >
+              <span className={cn('shrink-0 tabular-nums', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
                 {formatTime(q.tiempoSegundos)}
               </span>
               <span>{q.pregunta}</span>
@@ -323,10 +385,10 @@ function ViewerView({ actividad, editorSyncKey, onResponse }: { actividad: Video
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export function VideoInteractiveActivity({ actividad, modo, editorSyncKey, onResponse }: Props) {
+export function VideoInteractiveActivity({ actividad, modo, editorSyncKey, onResponse, variant }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} />;
+    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} variant={variant} />;
 }
 
 // ─── Named Export Editor ──────────────────────────────────────────────────────

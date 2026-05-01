@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import type { Socket } from 'socket.io-client';
 import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
   LiveResponsesPanel,
   type StudentResponse,
 } from './panels/live-responses-panel';
+import { TorneoPanel } from '@/components/editor/panels/torneo-panel';
 import type { Activity } from '@/types/slide.types';
 
 // ─── Panel labels ─────────────────────────────────────────────────────────────
@@ -40,6 +42,12 @@ export interface RightFlyoutPanelProps {
   activeActivity?: Activity | null;
   showAutonomousSlideProgress?: boolean;
   autonomousStudentsPerSlide?: number[];
+  /** Socket de la sesión en vivo — requerido para TorneoPanel. */
+  liveSocket?: Socket | null;
+  /** ID de la sesión en vivo activa. */
+  liveSessionId?: string | null;
+  /** classId activo. */
+  classId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -59,6 +67,9 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       activeActivity,
       showAutonomousSlideProgress,
       autonomousStudentsPerSlide,
+      liveSocket,
+      liveSessionId,
+      classId,
     },
     ref,
   ) {
@@ -109,16 +120,28 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
             {activePanel === 'themes' && (
               <ThemesPanel onApplyTheme={onApplyTheme} />
             )}
-            {activePanel === 'live' && (
-              <LiveResponsesPanel
-                liveResponses={liveResponses ?? new Map()}
-                activeSlideId={activeSlideId ?? ''}
-                activeSlideIndex={activeSlideIndex ?? 0}
-                activeActivity={activeActivity}
-                showAutonomousSlideProgress={showAutonomousSlideProgress}
-                autonomousStudentsPerSlide={autonomousStudentsPerSlide}
-              />
-            )}
+            {activePanel === 'live' &&
+              activeActivity?.tipo === 'torneo' &&
+              liveSocket &&
+              liveSessionId &&
+              classId ? (
+                <TorneoPanel
+                  classId={classId}
+                  sessionId={liveSessionId}
+                  activity={activeActivity}
+                  socket={liveSocket}
+                />
+              ) : activePanel === 'live' ? (
+                <LiveResponsesPanel
+                  liveResponses={liveResponses ?? new Map()}
+                  activeSlideId={activeSlideId ?? ''}
+                  activeSlideIndex={activeSlideIndex ?? 0}
+                  activeActivity={activeActivity}
+                  showAutonomousSlideProgress={showAutonomousSlideProgress}
+                  autonomousStudentsPerSlide={autonomousStudentsPerSlide}
+                />
+              ) : null
+            }
           </div>
 
         </div>

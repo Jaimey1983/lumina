@@ -104,7 +104,7 @@ function useCountdown(targetIso: string | undefined) {
   return { secs, label: `${h > 0 ? `${h}h ` : ''}${m}m ${s.toString().padStart(2, '0')}s` };
 }
 
-function evaluateActivity(actividad: Activity, response: unknown): boolean | null {
+function evaluateActivity(actividad: Activity, response: unknown): boolean | null | number {
   switch (actividad.tipo) {
     case 'quiz_multiple': {
       const raw = Array.isArray(response) ? response : [response];
@@ -134,6 +134,29 @@ function evaluateActivity(actividad: Activity, response: unknown): boolean | nul
       return question.opciones.find((op) => op.id === answer)?.esCorrecta ?? false;
     }
     case 'encuesta_viva': case 'nube_palabras': return null;
+    case 'torneo': {
+      if (!response || typeof response !== 'object' || Array.isArray(response)) return false;
+      const { questionIndex, answer } = response as {
+        questionIndex?: number;
+        answer?: string;
+      };
+      const idx =
+        typeof questionIndex === 'number' && Number.isFinite(questionIndex)
+          ? Math.max(0, Math.floor(questionIndex))
+          : 0;
+      const q = actividad.preguntas[idx];
+      if (!q) return false;
+      const ans = typeof answer === 'string' ? answer.trim() : '';
+      if (!ans) return false;
+      return q.correcta === ans;
+    }
+    case 'escape_room': {
+      if (typeof response !== 'number') return null;
+      const maxScore = actividad.salas.length * (actividad.puntosBase || 300);
+      if (maxScore <= 0) return 5.0;
+      if (response <= 0) return 1.0;
+      return 1.0 + (response / maxScore) * 4.0;
+    }
     default: return null;
   }
 }

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -21,6 +22,19 @@ function generateId() {
 function extractBlankIds(texto: string): string[] {
   const matches = [...texto.matchAll(/\{\{blank:([^}]+)\}\}/g)];
   return matches.map((m) => m[1]);
+}
+
+function isFillBlanksSubmissionCorrect(activity: FillBlanks, answers: Record<string, string>): boolean {
+  const blanks = activity.blancos ?? [];
+  if (blanks.length === 0) return false;
+  for (const b of blanks) {
+    const raw = (answers[b.id] ?? '').trim();
+    const ignoreCase = b.ignorarMayusculas !== false;
+    const norm = (s: string) => (ignoreCase ? s.toLowerCase() : s);
+    const accepted = [b.respuesta, ...(b.alternativas ?? [])].map((v) => norm(String(v).trim()));
+    if (!accepted.includes(norm(raw))) return false;
+  }
+  return true;
 }
 
 function normalize(a: FillBlanks | null | undefined): FillBlanks {
@@ -235,18 +249,29 @@ export function FillBlanksViewer({
   activity,
   editorSyncKey,
   onResponse,
+  variant = 'light',
 }: {
   activity: FillBlanks;
   editorSyncKey?: string;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
 
   useEffect(() => {
     setAnswered(false);
     setAnswers({});
   }, [editorSyncKey]);
+
+  const isDark = variant === 'dark';
+  const blankInputClass = cn(
+    'mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
+    isDark
+      ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
+      : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
+  );
 
   const regex = /\{\{blank:([^}]+)\}\}/g;
   const parts: React.ReactNode[] = [];
@@ -262,7 +287,7 @@ export function FillBlanksViewer({
       <input
         key={id}
         type="text"
-        className={`mx-1 inline-block h-8 w-24 rounded-md border border-[#e5e7eb] px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]`}
+        className={blankInputClass}
         value={answers[id] || ''}
         disabled={answered}
         onChange={(e) => {
@@ -282,12 +307,23 @@ export function FillBlanksViewer({
     matches.forEach((m) => {
       result[m[1]] = answers[m[1]] ?? '';
     });
+    const blanks = activity.blancos ?? [];
+    if (blanks.length > 0) {
+      play(isFillBlanksSubmissionCorrect(activity, result) ? 'correct' : 'wrong');
+    } else {
+      play('submit');
+    }
     onResponse?.(result);
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <div className="text-base font-medium leading-relaxed text-[#111827]">
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <div className={cn('text-base font-medium leading-relaxed', isDark ? 'text-white' : 'text-[#111827]')}>
         {parts}
       </div>
       {answered ? (

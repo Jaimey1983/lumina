@@ -40,6 +40,7 @@ import type {
 } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
+import { getSlideVariant } from '@/lib/slide-variant';
 
 import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
 import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
@@ -51,6 +52,11 @@ import { TrueFalseActivityEditor, TrueFalseViewer } from './activities/true-fals
 import { DragDropActivity, DragDropActivityEditor } from './activities/drag-drop';
 import { VideoInteractiveActivity, VideoInteractiveActivityEditor } from './activities/video-interactive';
 import { LivePollActivityEditor, LivePollViewer } from './activities/live-poll';
+import { TorneoActivityEditor } from './activities/torneo-activity';
+import type { Socket } from 'socket.io-client';
+import { TorneoViewer } from '@/components/viewers/torneo-viewer';
+import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
+import { EscapeRoomViewer } from '@/components/viewers/escape-room-viewer';
 
 // ─── Modo ──────────────────────────────────────────────────────────────────────
 
@@ -80,9 +86,25 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   video_interactivo: 'Actividad · Video interactivo',
   encuesta_viva: 'Actividad · Encuesta en vivo',
   nube_palabras: 'Actividad · Nube de palabras',
+  torneo: 'Actividad · Torneo de preguntas',
+  escape_room: 'Actividad · Escape room',
 };
 
 // ─── Background → CSS ─────────────────────────────────────────────────────────
+
+function slideBackgroundString(fondo?: Background): string | undefined {
+  if (!fondo) return undefined;
+  switch (fondo.tipo) {
+    case 'color':
+      return fondo.valor;
+    case 'gradiente':
+      return `${fondo.inicio} ${fondo.fin}`;
+    case 'imagen':
+      return fondo.url;
+    default:
+      return undefined;
+  }
+}
 
 function buildBackgroundStyle(fondo?: Background): CSSProperties {
   if (!fondo) return { backgroundColor: '#ffffff' };
@@ -637,6 +659,11 @@ function RenderActivity({
   onActivityChange,
   onRemoveBlock,
   onResponse,
+  variant = 'light',
+  liveSocket,
+  viewerStudentId,
+  viewerStudentName,
+  viewerClassId,
 }: {
   block: ActivityBlock;
   blockId: string;
@@ -649,6 +676,11 @@ function RenderActivity({
   onRemoveBlock?: (blockId: string) => void;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+  liveSocket?: Socket | null;
+  viewerStudentId?: string;
+  viewerStudentName?: string;
+  viewerClassId?: string;
 }) {
   const act = block.actividad;
   const syncKey = `${slideId}-${blockId}`;
@@ -666,7 +698,7 @@ function RenderActivity({
         />
       );
     }
-    return <ShortAnswerViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <ShortAnswerViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'quiz_multiple') {
@@ -682,7 +714,7 @@ function RenderActivity({
         />
       );
     }
-    return <QuizMultipleViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <QuizMultipleViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'verdadero_falso') {
@@ -698,7 +730,7 @@ function RenderActivity({
         />
       );
     }
-    return <TrueFalseViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <TrueFalseViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'arrastrar_soltar') {
@@ -714,7 +746,7 @@ function RenderActivity({
         />
       );
     }
-    return <DragDropActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <DragDropActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'completar_blancos') {
@@ -726,7 +758,7 @@ function RenderActivity({
         />
       );
     }
-    return <FillBlanksViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <FillBlanksViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'emparejar') {
@@ -738,7 +770,7 @@ function RenderActivity({
         />
       );
     }
-    return <MatchPairsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <MatchPairsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'ordenar_pasos') {
@@ -750,7 +782,7 @@ function RenderActivity({
         />
       );
     }
-    return <OrderStepsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <OrderStepsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'nube_palabras') {
@@ -762,7 +794,7 @@ function RenderActivity({
         />
       );
     }
-    return <WordCloudViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <WordCloudViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'video_interactivo') {
@@ -775,7 +807,7 @@ function RenderActivity({
         />
       );
     }
-    return <VideoInteractiveActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <VideoInteractiveActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
   }
 
   if (act.tipo === 'encuesta_viva') {
@@ -788,7 +820,64 @@ function RenderActivity({
         />
       );
     }
-    return <LivePollViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} />;
+    return <LivePollViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
+  }
+
+  if (act.tipo === 'torneo') {
+    if (modo === 'editor') {
+      return (
+        <TorneoActivityEditor
+          editorSyncKey={syncKey}
+          activity={act}
+          canvasLayout={!!activityCanvasLayout}
+          isSelected={isSelected}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
+        />
+      );
+    }
+    return (
+      <TorneoViewer
+        activity={act}
+        variant={variant}
+        studentId={viewerStudentId ?? ''}
+        studentName={viewerStudentName ?? ''}
+        classId={viewerClassId ?? ''}
+        editorSyncKey={syncKey}
+        liveSocket={liveSocket}
+        onAnswer={(questionIndex, answer, responseMs) =>
+          onResponse?.({ questionIndex, answer, responseMs })
+        }
+      />
+    );
+  }
+
+  if (act.tipo === 'escape_room') {
+    if (modo === 'editor') {
+      return (
+        <EscapeRoomActivityEditor
+          editorSyncKey={syncKey}
+          activity={act}
+          canvasLayout={!!activityCanvasLayout}
+          isSelected={isSelected}
+          onChange={(a) => onActivityChange?.(blockId, a)}
+          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
+        />
+      );
+    }
+    return (
+      <EscapeRoomViewer
+        activity={act}
+        variant={variant}
+        studentId={viewerStudentId ?? ''}
+        studentName={viewerStudentName ?? ''}
+        classId={viewerClassId ?? ''}
+        editorSyncKey={syncKey}
+        liveSocket={liveSocket}
+        onComplete={(score) => onResponse?.(score)}
+        onAnswer={(roomId, answer) => onResponse?.({ roomId, answer })}
+      />
+    );
   }
 
   const label = ACTIVITY_LABELS[(act as { tipo: keyof typeof ACTIVITY_LABELS }).tipo];
@@ -828,6 +917,11 @@ interface RenderColumnsProps {
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
   onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+  liveSocket?: Socket | null;
+  viewerStudentId?: string;
+  viewerStudentName?: string;
+  viewerClassId?: string;
 }
 
 function RenderColumns({
@@ -842,6 +936,11 @@ function RenderColumns({
   onDuplicateBlock,
   onCopyBlock,
   onResponse,
+  variant = 'light',
+  liveSocket,
+  viewerStudentId,
+  viewerStudentName,
+  viewerClassId,
 }: RenderColumnsProps) {
   let gridCols = `repeat(${block.columnas.length}, 1fr)`;
   if (block.proporcion) {
@@ -885,6 +984,11 @@ function RenderColumns({
                 onDuplicateBlock={onDuplicateBlock}
                 onCopyBlock={onCopyBlock}
                 onResponse={onResponse}
+                variant={variant}
+                liveSocket={liveSocket}
+                viewerStudentId={viewerStudentId}
+                viewerStudentName={viewerStudentName}
+                viewerClassId={viewerClassId}
               />
             );
           })}
@@ -916,6 +1020,13 @@ interface BlockNodeProps {
   activityCanvasLayout?: boolean;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
   onResponse?: (response: unknown) => void;
+  /** Contraste de viewers de actividad según luminancia del fondo del slide. */
+  variant?: 'dark' | 'light';
+  /** Socket en vivo (viewer estudiante) — actividades como torneo escuchan eventos aquí. */
+  liveSocket?: Socket | null;
+  viewerStudentId?: string;
+  viewerStudentName?: string;
+  viewerClassId?: string;
   canvasRef?: React.RefObject<HTMLDivElement | null>;
   currentCoords?: { x: number; y: number; ancho: number; alto: number };
   onResize?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
@@ -930,6 +1041,8 @@ interface BlockNodeProps {
   onEditCancel?: () => void;
   /** True while this block is being resized for live visual feedback tweaks. */
   isResizing?: boolean;
+  /** Position of this block in the slide's block array — used for staggered entry animation in viewer mode. */
+  blockIndex?: number;
 }
 
 function BlockNode({
@@ -949,6 +1062,11 @@ function BlockNode({
   onCopyBlock,
   activityCanvasLayout,
   onResponse,
+  variant = 'light',
+  liveSocket,
+  viewerStudentId,
+  viewerStudentName,
+  viewerClassId,
   canvasRef,
   currentCoords,
   onResize,
@@ -958,7 +1076,9 @@ function BlockNode({
   onEditCommit,
   onEditCancel,
   isResizing,
+  blockIndex,
 }: BlockNodeProps) {
+  const isViewerMode = modo === 'viewer' || modo === 'preview';
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
 
@@ -996,6 +1116,11 @@ function BlockNode({
             onActivityChange={onActivityChange}
             onRemoveBlock={onRemoveBlock}
             onResponse={onResponse}
+            variant={variant}
+            liveSocket={liveSocket}
+            viewerStudentId={viewerStudentId}
+            viewerStudentName={viewerStudentName}
+            viewerClassId={viewerClassId}
           />
         ) : null;
       case 'codigo':    return <RenderCode block={block} />;
@@ -1014,10 +1139,23 @@ function BlockNode({
             onActivityChange={onActivityChange}
             onRemoveBlock={onRemoveBlock}
             onResponse={onResponse}
+            variant={variant}
+            liveSocket={liveSocket}
+            viewerStudentId={viewerStudentId}
+            viewerStudentName={viewerStudentName}
+            viewerClassId={viewerClassId}
           />
         );
     }
   }
+
+  const animationStyle: CSSProperties =
+    isViewerMode && blockIndex !== undefined
+      ? {
+          animation: 'lumina-block-in 400ms ease-out both',
+          animationDelay: `${blockIndex * 80}ms`,
+        }
+      : {};
 
   return (
     <div
@@ -1025,7 +1163,7 @@ function BlockNode({
       tabIndex={editorMode && !isFormBlock && !isTextEditing ? 0 : undefined}
       aria-pressed={editorMode && !isTextEditing ? isSelected : undefined}
       data-block-id={blockId}
-      style={positionStyle}
+      style={{ ...positionStyle, ...animationStyle }}
       onClick={
         editorMode && !isTextEditing
           ? (e) => { e.stopPropagation(); onClick(); }
@@ -1151,10 +1289,18 @@ export interface SlideRendererProps {
     blockId: string,
     rawCoords: { x: number; y: number; ancho: number; alto: number },
   ) => { x: number; y: number; ancho: number; alto: number };
-  /** Variante del lienzo según el fondo de clase (p. ej. viewer); reservado para estilos futuros. */
-  variant?: 'light' | 'dark';
+  /**
+   * Variante visual de los viewers de actividad.
+   * Si se omite, se calcula con la luminancia de `slide.fondo` vía `getSlideVariant`.
+   */
+  variant?: 'dark' | 'light';
   /** En modo viewer, permite llenar el contenedor padre sin forzar 16:9. */
   viewerFill?: boolean;
+  /** Socket.IO del viewer en vivo (p. ej. torneo). */
+  liveSocket?: Socket | null;
+  viewerStudentId?: string;
+  viewerStudentName?: string;
+  viewerClassId?: string;
 }
 
 export function SlideRenderer({
@@ -1171,7 +1317,12 @@ export function SlideRenderer({
   onPersistSlide,
   onResizeInteractionEnd,
   onResizeMove,
+  variant: variantProp,
   viewerFill = false,
+  liveSocket,
+  viewerStudentId,
+  viewerStudentName,
+  viewerClassId: viewerClassIdProp,
 }: SlideRendererProps) {
   const [selectedId,    setSelectedId]    = useState<string | null>(null);
   const [editingId,     setEditingId]     = useState<string | null>(null);
@@ -1181,9 +1332,12 @@ export function SlideRenderer({
 
   const params = useParams();
   const classId = params.id as string;
+  const viewerClassIdResolved = viewerClassIdProp ?? classId;
   const updateSlide = useUpdateSlide(classId);
 
   const bgStyle = buildBackgroundStyle(slide.fondo);
+  const variant =
+    variantProp ?? getSlideVariant(slideBackgroundString(slide.fondo));
   const editorMode = modo === 'editor';
 
   const handleResize = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
@@ -1335,6 +1489,12 @@ export function SlideRenderer({
                   onResize={() => {}}
                   onResizeEnd={() => {}}
                   editingId={null}
+                  variant={variant}
+                  blockIndex={index}
+                  liveSocket={liveSocket}
+                  viewerStudentId={viewerStudentId}
+                  viewerStudentName={viewerStudentName}
+                  viewerClassId={viewerClassIdResolved}
                 />
               );
             })}
@@ -1375,6 +1535,7 @@ export function SlideRenderer({
       onClick={handleCanvasClick}
       ref={canvasRefProp ? undefined : internalCanvasRef}
     >
+      {/* key={slide.id} forces full remount of blocks on slide change → re-triggers entry animation */}
       {blocks.map((block, index) => {
         const blockId = String(index);
         const posStyleObj = getBlockPositionStyle(block);
@@ -1391,7 +1552,7 @@ export function SlideRenderer({
 
         return (
           <BlockNode
-            key={blockId}
+            key={`${slide.id}-${blockId}`}
             block={block}
             blockId={blockId}
             slideId={slide.id}
@@ -1416,6 +1577,12 @@ export function SlideRenderer({
             onEditCommit={editorMode ? handleEditCommit : undefined}
             onEditCancel={editorMode ? handleEditCancel : undefined}
             isResizing={Boolean(resizingCoords[blockId])}
+            variant={variant}
+            blockIndex={index}
+            liveSocket={liveSocket}
+            viewerStudentId={viewerStudentId}
+            viewerStudentName={viewerStudentName}
+            viewerClassId={viewerClassIdResolved}
           />
         );
       })}

@@ -23,6 +23,8 @@ import {
   Shapes,
   ToggleLeft,
   Trash2,
+  Trophy,
+  Lock,
   Type,
   Video,
   Zap,
@@ -87,6 +89,8 @@ const ACTIVITY_PREVIEW: Record<string, { Icon: LucideIcon; label: string }> = {
   video_interactivo: { Icon: Video, label: 'Video' },
   encuesta_viva: { Icon: BarChart2, label: 'Encuesta' },
   nube_palabras: { Icon: Cloud, label: 'Nube' },
+  torneo: { Icon: Trophy, label: 'Torneo' },
+  escape_room: { Icon: Lock, label: 'Escape Room' },
 };
 
 // ─── Activity badge ───────────────────────────────────────────────────────────

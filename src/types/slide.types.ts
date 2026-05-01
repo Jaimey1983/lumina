@@ -224,6 +224,50 @@ export interface WordCloud {
   filtrarPalabrasComunes?: boolean;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Torneo tipo Kahoot: preguntas de opción múltiple sincronizadas por el docente (Socket.IO). */
+export interface TorneoActivity {
+  tipo: 'torneo';
+  preguntas: {
+    enunciado: string;
+    opciones: string[];
+    correcta: string;
+    tiempoSegundos: number;
+  }[];
+  puntosBase: number;
+  bonusVelocidad: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface EscapeRoomSala {
+  /** cuid generado al crear */
+  id: string;
+  nombre: string;
+  descripcion: string;
+  desafio: string;
+  tipoRespuesta: 'texto' | 'opcion_multiple' | 'codigo';
+  /** Solo si tipoRespuesta === "opcion_multiple". */
+  opciones?: string[];
+  respuestaCorrecta: string;
+  ignorarMayusculas: boolean;
+  pista?: string;
+  intentosMaximos: number;
+}
+
+export interface EscapeRoomActivity {
+  tipo: 'escape_room';
+  titulo: string;
+  introduccion: string;
+  salas: EscapeRoomSala[];
+  /** Sin límite si está omitido o es 0. */
+  tiempoLimiteMinutos?: number;
+  mostrarRanking: boolean;
+  /** Puntos por sala al primer intento (por defecto 300). */
+  puntosBase: number;
+}
+
 // ─── Activity (discriminated union) ──────────────────────────────────────────
 
 export type Activity =
@@ -236,7 +280,9 @@ export type Activity =
   | OrderSteps
   | VideoInteractive
   | LivePoll
-  | WordCloud;
+  | WordCloud
+  | TorneoActivity
+  | EscapeRoomActivity;
 
 export type ActivityTipo = Activity['tipo'];
 
@@ -464,4 +510,72 @@ export const BLOCK_FALLBACKS = {
   image: { x: 25, y: 25, ancho: 50, alto: 50 },
   forma: { x: 10, y: 10, ancho: 30, alto: 30 },
   video: { x: 10, y: 30, ancho: 80, alto: 40 },
+  /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */
+  torneo: {
+    preguntas: [
+      {
+        enunciado: '¿Cuál es la capital de Colombia?',
+        opciones: ['Bogotá', 'Medellín', 'Cali', 'Barranquilla'],
+        correcta: 'Bogotá',
+        tiempoSegundos: 20,
+      },
+      {
+        enunciado: '¿En qué año se firmó la Constitución política de Colombia de 1991?',
+        opciones: ['1986', '1991', '1994', '2001'],
+        correcta: '1991',
+        tiempoSegundos: 25,
+      },
+      {
+        enunciado: '¿Cuál de estos es un departamento de la región Andina?',
+        opciones: ['La Guajira', 'Cundinamarca', 'Chocó', 'Amazonas'],
+        correcta: 'Cundinamarca',
+        tiempoSegundos: 20,
+      },
+    ],
+    puntosBase: 1000,
+    bonusVelocidad: 500,
+  },
+  escape_room: {
+    titulo: 'El Misterio del Laboratorio',
+    introduccion:
+      'Un experimento salió mal. Debes resolver los acertijos para escapar.',
+    tiempoLimiteMinutos: 10,
+    mostrarRanking: true,
+    puntosBase: 300,
+    salas: [
+      {
+        id: 'sala-1',
+        nombre: 'La Sala de Química',
+        descripcion: 'Los tubos de ensayo están desordenados. Identifica el compuesto.',
+        desafio: '¿Cuál es la fórmula química del agua?',
+        tipoRespuesta: 'texto',
+        respuestaCorrecta: 'H2O',
+        ignorarMayusculas: true,
+        pista: 'Dos hidrógenos y un oxígeno',
+        intentosMaximos: 3,
+      },
+      {
+        id: 'sala-2',
+        nombre: 'La Sala de Física',
+        descripcion: 'El panel de control está bloqueado. Necesitas el código.',
+        desafio: '¿A cuántos grados Celsius hierve el agua a nivel del mar?',
+        tipoRespuesta: 'codigo',
+        respuestaCorrecta: '100',
+        ignorarMayusculas: false,
+        pista: 'Es un número redondo',
+        intentosMaximos: 2,
+      },
+      {
+        id: 'sala-3',
+        nombre: 'La Sala Final',
+        descripcion: 'Una última pregunta para escapar.',
+        desafio: '¿Cuál es el estado del agua a -10°C?',
+        tipoRespuesta: 'opcion_multiple',
+        opciones: ['Líquido', 'Sólido', 'Gaseoso', 'Plasma'],
+        respuestaCorrecta: 'Sólido',
+        ignorarMayusculas: true,
+        intentosMaximos: 3,
+      },
+    ],
+  },
 } as const;
