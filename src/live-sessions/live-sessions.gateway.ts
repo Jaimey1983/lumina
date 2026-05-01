@@ -11,6 +11,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { LiveSessionsService } from './live-sessions.service';
+import { TorneoService } from '../torneo/torneo.service';
 import { JoinLiveDto } from './dto/join-live.dto';
 import { SlideSyncDto } from './dto/slide-sync.dto';
 
@@ -51,7 +52,10 @@ export class LiveSessionsGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly liveSessions: LiveSessionsService) {}
+  constructor(
+    private readonly liveSessions: LiveSessionsService,
+    private readonly torneoService: TorneoService,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -195,6 +199,97 @@ export class LiveSessionsGateway
         ...currentSlide,
       });
       return { ok: true as const, classId: body.classId, ...currentSlide };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('torneo:init')
+  async handleTorneoInit(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { classId: string; sessionId: string; totalQuestions?: number },
+  ) {
+    try {
+      const session = await this.torneoService.createSession(body.classId, body.sessionId);
+      const room = this.liveSessions.roomName(body.classId);
+      this.server.to(room).emit('torneo:start', { torneoId: session.id, totalQuestions: body.totalQuestions || 0 });
+      return { ok: true };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('torneo:launch-question')
+  async handleTorneoLaunch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { torneoId: string; index: number; question: any; timeLimit: number },
+  ) {
+    try {
+      await this.torneoService.startQuestion(body.torneoId, body.index, body.question, body.timeLimit);
+      const session = await this.torneoService.getSession(body.torneoId);
+      if (!session) throw new WsException('Torneo session not found');
+      const room = this.liveSessions.roomName(session.classId);
+
+      this.server.to(room).emit('torneo:question', {
+        index: body.index,
+        question: body.question,
+        options: body.question?.options,
+        timeLimit: body.timeLimit,
+      });
+
+      setTimeout(async () => {
+        try {
+          const ranking = await this.torneoService.getRanking(body.torneoId);
+          this.server.to(room).emit('torneo:ranking', ranking);
+        } catch (err) {
+          // ignore
+        }
+      }, body.timeLimit);
+
+      return { ok: true };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('torneo:answer')
+  async handleTorneoAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { torneoId: string; questionIndex: number; answer: string; correctAnswer: string; studentId: string; studentName: string },
+  ) {
+    try {
+      await this.torneoService.saveAnswer(
+        body.torneoId,
+        body.questionIndex,
+        body.studentId,
+        body.studentName,
+        body.answer,
+        body.correctAnswer,
+      );
+      return { ok: true };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('torneo:finish')
+  async handleTorneoFinish(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { torneoId: string },
+  ) {
+    try {
+      await this.torneoService.finishSession(body.torneoId);
+      const session = await this.torneoService.getSession(body.torneoId);
+      if (!session) throw new WsException('Torneo session not found');
+      const room = this.liveSessions.roomName(session.classId);
+
+      const ranking = await this.torneoService.getRanking(body.torneoId);
+      this.server.to(room).emit('torneo:end', {
+        ranking,
+        podio: ranking.slice(0, 3),
+      });
+
+      return { ok: true };
     } catch (e) {
       rethrowAsWs(e);
     }

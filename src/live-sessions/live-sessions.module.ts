@@ -4,8 +4,10 @@ import { AuthModule } from '../auth/auth.module';
 import { LiveSessionsGateway } from './live-sessions.gateway';
 import { LiveSessionsService } from './live-sessions.service';
 
+import { TorneoModule } from '../torneo/torneo.module';
+
 @Module({
-  imports: [AuthModule, AnalyticsModule],
+  imports: [AuthModule, AnalyticsModule, TorneoModule],
   providers: [LiveSessionsGateway, LiveSessionsService],
   exports: [LiveSessionsService],
 })

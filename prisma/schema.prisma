@@ -639,6 +639,32 @@ model GroupActivity {
   @@map("group_activities")
 }
 
+model TorneoSession {
+  id            String   @id @default(cuid())
+  classId       String
+  sessionId     String
+  status        String   @default("waiting")
+  currentQ      Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@map("torneo_sessions")
+}
+
+model TorneoAnswer {
+  id            String   @id @default(cuid())
+  torneoId      String
+  studentId     String
+  studentName   String
+  questionIndex Int
+  answer        String
+  correct       Boolean
+  responseMs    Int
+  points        Int
+  createdAt     DateTime @default(now())
+
+  @@map("torneo_answers")
+}
+
 enum Role {
   SUPERADMIN
   ADMIN
