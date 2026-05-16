@@ -15,13 +15,21 @@ export interface TorneoRankingRow {
   position: number;
 }
 
+export type TorneoAnswerPayload = {
+  questionIndex: number;
+  answer: string;
+  responseMs: number;
+  torneoId: string | null;
+  correctAnswer: string;
+};
+
 export interface TorneoViewerProps {
   activity: TorneoActivity;
   variant?: 'dark' | 'light';
   studentId: string;
   studentName: string;
   classId: string;
-  onAnswer?: (questionIndex: number, answer: string, responseMs: number) => void;
+  onAnswer?: (payload: TorneoAnswerPayload) => void;
   /** Socket del viewer en vivo; sin socket solo se muestra la pantalla de espera. */
   liveSocket?: Socket | null;
   /** Igual que otros viewers: cambio de slide reinicia estado local. */
@@ -36,8 +44,15 @@ const KAHOOT_COLORS = [
 ] as const;
 
 function parseRankingPayload(payload: unknown): TorneoRankingRow[] {
-  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return [];
-  const raw = (payload as { ranking?: unknown }).ranking;
+  let raw: unknown;
+  if (Array.isArray(payload)) {
+    raw = payload;
+  } else if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+    const o = payload as { ranking?: unknown; podio?: unknown };
+    raw = Array.isArray(o.ranking) && o.ranking.length > 0 ? o.ranking : o.podio ?? o.ranking;
+  } else {
+    raw = undefined;
+  }
   if (!Array.isArray(raw)) return [];
   const out: TorneoRankingRow[] = [];
   for (const row of raw) {
@@ -45,7 +60,13 @@ function parseRankingPayload(payload: unknown): TorneoRankingRow[] {
     const o = row as Record<string, unknown>;
     const studentId = typeof o.studentId === 'string' ? o.studentId : '';
     const studentName = typeof o.studentName === 'string' ? o.studentName : '';
-    const points = typeof o.points === 'number' && Number.isFinite(o.points) ? o.points : 0;
+    const pointsRaw =
+      typeof o.points === 'number' && Number.isFinite(o.points)
+        ? o.points
+        : typeof o.total === 'number' && Number.isFinite(o.total)
+          ? o.total
+          : 0;
+    const points = pointsRaw;
     const position =
       typeof o.position === 'number' && Number.isFinite(o.position)
         ? Math.floor(o.position)
@@ -103,6 +124,8 @@ export function TorneoViewer({
   const [startBanner, setStartBanner] = useState(false);
 
   const questionStartedAtRef = useRef<number>(0);
+  const torneoIdRef = useRef<string | null>(null);
+  const torneoEndedRef = useRef(false);
   const rankingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -144,6 +167,8 @@ export function TorneoViewer({
     setRanking([]);
     setRankingTick(3);
     setStartBanner(false);
+    torneoIdRef.current = null;
+    torneoEndedRef.current = false;
     clearQuestionTimer();
     clearRankingTimer();
   }, [editorSyncKey, clearQuestionTimer, clearRankingTimer]);
@@ -155,7 +180,13 @@ export function TorneoViewer({
     const sock = liveSocket;
     if (!sock) return undefined;
 
-    const onStart = () => {
+    const onStart = (payload: unknown) => {
+      if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+        const tid = (payload as Record<string, unknown>).torneoId;
+        if (typeof tid === 'string' && tid.trim()) {
+          torneoIdRef.current = tid.trim();
+        }
+      }
       setStartBanner(true);
       setPhase('waiting');
       window.setTimeout(() => setStartBanner(false), 2500);
@@ -202,7 +233,9 @@ export function TorneoViewer({
         setRankingTick((t) => {
           if (t <= 1) {
             clearRankingTimer();
-            setPhase('waiting');
+            if (!torneoEndedRef.current) {
+              setPhase('waiting');
+            }
             return 0;
           }
           return t - 1;
@@ -211,10 +244,10 @@ export function TorneoViewer({
     };
 
     const onEnd = (payload: unknown) => {
+      torneoEndedRef.current = true;
       clearQuestionTimer();
       clearRankingTimer();
-      const rows = parseRankingPayload(payload);
-      if (rows.length > 0) setRanking(rows);
+      setRanking(parseRankingPayload(payload));
       setPhase('finished');
     };
 
@@ -233,13 +266,30 @@ export function TorneoViewer({
     };
   }, [liveSocket, clearQuestionTimer, clearRankingTimer]);
 
+  const notifyAnswer = useCallback(
+    (questionIndex: number, answer: string, responseMs: number) => {
+      const list = activityRef.current.preguntas ?? [];
+      const cur = list[questionIndex];
+      const correctAnswer =
+        typeof cur?.correcta === 'string' ? cur.correcta : String(cur?.correcta ?? '');
+      onAnswer?.({
+        questionIndex,
+        answer,
+        responseMs,
+        torneoId: torneoIdRef.current,
+        correctAnswer,
+      });
+    },
+    [onAnswer],
+  );
+
   useEffect(() => {
     if (phase !== 'question' || answered || timeLeft > 0 || !q) return;
     setAnswered(true);
     play('wrong');
     const elapsed = elapsedSinceStartMs(questionStartedAtRef.current);
-    onAnswer?.(safeIndex, '', elapsed);
-  }, [phase, answered, timeLeft, q, play, onAnswer, safeIndex]);
+    notifyAnswer(safeIndex, '', elapsed);
+  }, [phase, answered, timeLeft, q, play, notifyAnswer, safeIndex]);
 
   const progressRatio = timeTotal > 0 ? Math.min(1, Math.max(0, timeLeft / timeTotal)) : 0;
   const barColor =
@@ -251,7 +301,7 @@ export function TorneoViewer({
     setAnswered(true);
     clearQuestionTimer();
     play('submit');
-    onAnswer?.(safeIndex, optionText, elapsedSinceStartMs(questionStartedAtRef.current));
+    notifyAnswer(safeIndex, optionText, elapsedSinceStartMs(questionStartedAtRef.current));
   }
 
   const myRankRow = useMemo(

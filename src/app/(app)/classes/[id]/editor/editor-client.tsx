@@ -343,6 +343,24 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [showCurricularModal, setShowCurricularModal] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
+
+  /** Recarga u otra pestaña: hidratar el id de sesión desde la clase si el estado local sigue vacío. */
+  useEffect(() => {
+    if (sessionId) return;
+    if (!cls) return;
+    const fromApi =
+      (typeof cls.activeSessionId === 'string' && cls.activeSessionId.trim()) ||
+      (typeof cls.liveSessionId === 'string' && cls.liveSessionId.trim()) ||
+      (typeof cls.sessionId === 'string' && cls.sessionId.trim()) ||
+      null;
+    if (fromApi) {
+      setSessionId(fromApi);
+      return;
+    }
+    if (cls.status === 'LIVE' || cls.sessionActive) {
+      setSessionId(cls.id);
+    }
+  }, [cls, sessionId]);
   /** Estudiantes conectados en la sala (eventos Socket.IO del backend). */
   const [roomStudentCount, setRoomStudentCount] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -386,6 +404,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   );
 
   const socketRef = useRef<Socket | null>(null);
+  const torneoSocketRef = useRef<Socket | null>(null);
 
   const leftRailWrapRef = useRef<HTMLDivElement>(null);
   const autoOpenedRef = useRef(false);
@@ -395,6 +414,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   /** Top bar (Volver, acciones): no cerrar flyouts aquí en pointerdown — el setState antes del click rompe la navegación del Link. */
   const editorHeaderRef = useRef<HTMLElement>(null);
   const canvasAreaRef = useRef<CanvasAreaHandle>(null);
+
+  const { user, token } = useAuth();
+  const [torneoSocketRevision, setTorneoSocketRevision] = useState(0);
 
   useEffect(() => {
     if (!activePanel && !rightPanel) return;
@@ -584,6 +606,27 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     };
   }, [classId]);
 
+  useEffect(() => {
+    if (!token) {
+      setTorneoSocketRevision((n) => n + 1);
+      return;
+    }
+    const sock = io(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/live`,
+      { auth: { token } },
+    );
+    sock.on('connect', () => {
+      sock.emit('join', { classId });
+    });
+    torneoSocketRef.current = sock;
+    setTorneoSocketRevision((n) => n + 1);
+    return () => {
+      sock.disconnect();
+      torneoSocketRef.current = null;
+      setTorneoSocketRevision((n) => n + 1);
+    };
+  }, [classId, token]);
+
   // ─── Slides ─────────────────────────────────────────────────────────────────
 
   const sortedSlides = useMemo(() => {
@@ -643,7 +686,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   sessionActiveRef.current = sessionActive;
   responsesLockedRef.current = responsesLocked;
 
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const canConfigureLiveTimer = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(user?.role ?? '');
   const [timerGlobalSaving, setTimerGlobalSaving] = useState(false);
@@ -856,6 +898,15 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     return (actBlock?.actividad as Activity) ?? null;
   }, [activeSlide]);
   const activeSlideHasActivity = !!activeActivity;
+
+  const rightFlyoutLiveSocket = useMemo(
+    () => {
+      if (activeActivity?.tipo === 'torneo') return torneoSocketRef.current;
+      return socketRef.current;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- torneoSocketRevision sincroniza el ref de /live
+    [activeActivity?.tipo, torneoSocketRevision],
+  );
 
   const liveSlideRespondedCount = useMemo(() => {
     if (!activeSlide?.id) return 0;
@@ -1921,7 +1972,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               sessionActive && modoEntrega === 'autonomo'
             }
             autonomousStudentsPerSlide={autonomousStudentsPerSlide}
-            liveSocket={socketRef.current}
+            liveSocket={rightFlyoutLiveSocket}
             liveSessionId={sessionId}
             classId={classId}
           />

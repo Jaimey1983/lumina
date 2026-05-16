@@ -23,6 +23,11 @@ export interface ClassDetail {
   background?: string | null;
   /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */
   sessionActive?: boolean;
+  /** Id de ClassSession activa (GET clase), si el backend lo expone. */
+  activeSessionId?: string;
+  liveSessionId?: string;
+  /** Alias posible para el id de sesión en curso. */
+  sessionId?: string;
   status: string;
   createdAt: string;
   slides?: Slide[];

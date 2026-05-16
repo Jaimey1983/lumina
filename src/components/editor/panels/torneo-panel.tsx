@@ -29,8 +29,14 @@ type Phase = 'idle' | 'active' | 'finished';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function parseRanking(payload: unknown): RankingEntry[] {
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return [];
-  const raw = (payload as { ranking?: unknown }).ranking;
+  const raw: unknown = Array.isArray(payload)
+    ? payload
+    : payload !== null &&
+        typeof payload === 'object' &&
+        !Array.isArray(payload) &&
+        'ranking' in payload
+      ? (payload as { ranking?: unknown }).ranking
+      : undefined;
   if (!Array.isArray(raw)) return [];
   const out: RankingEntry[] = [];
   for (const row of raw) {
@@ -38,8 +44,17 @@ function parseRanking(payload: unknown): RankingEntry[] {
     const r = row as Record<string, unknown>;
     const studentId = typeof r.studentId === 'string' ? r.studentId : '';
     const studentName = typeof r.studentName === 'string' ? r.studentName : '';
-    const points = typeof r.points === 'number' ? r.points : 0;
-    const position = typeof r.position === 'number' ? r.position : out.length + 1;
+    const pointsRaw =
+      typeof r.points === 'number' && Number.isFinite(r.points)
+        ? r.points
+        : typeof r.total === 'number' && Number.isFinite(r.total)
+          ? r.total
+          : 0;
+    const points = pointsRaw;
+    const position =
+      typeof r.position === 'number' && Number.isFinite(r.position)
+        ? r.position
+        : out.length + 1;
     if (studentId) out.push({ studentId, studentName, points, position });
   }
   return out.sort((a, b) => a.position - b.position);
@@ -145,6 +160,8 @@ export function TorneoPanel({ classId, sessionId, activity, socket }: TorneoPane
 
   const handleInit = useCallback(() => {
     socket.emit('torneo:init', { classId, sessionId });
+    setPhase('active');
+    setCurrentQ(0);
   }, [socket, classId, sessionId]);
 
   const handleLaunchQuestion = useCallback(() => {

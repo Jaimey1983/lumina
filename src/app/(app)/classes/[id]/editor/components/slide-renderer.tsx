@@ -661,6 +661,7 @@ function RenderActivity({
   onResponse,
   variant = 'light',
   liveSocket,
+  torneoSocket,
   viewerStudentId,
   viewerStudentName,
   viewerClassId,
@@ -678,6 +679,7 @@ function RenderActivity({
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
   liveSocket?: Socket | null;
+  torneoSocket?: Socket | null;
   viewerStudentId?: string;
   viewerStudentName?: string;
   viewerClassId?: string;
@@ -844,10 +846,8 @@ function RenderActivity({
         studentName={viewerStudentName ?? ''}
         classId={viewerClassId ?? ''}
         editorSyncKey={syncKey}
-        liveSocket={liveSocket}
-        onAnswer={(questionIndex, answer, responseMs) =>
-          onResponse?.({ questionIndex, answer, responseMs })
-        }
+        liveSocket={torneoSocket ?? liveSocket}
+        onAnswer={(payload) => onResponse?.(payload)}
       />
     );
   }
@@ -919,6 +919,7 @@ interface RenderColumnsProps {
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
   liveSocket?: Socket | null;
+  torneoSocket?: Socket | null;
   viewerStudentId?: string;
   viewerStudentName?: string;
   viewerClassId?: string;
@@ -938,6 +939,7 @@ function RenderColumns({
   onResponse,
   variant = 'light',
   liveSocket,
+  torneoSocket,
   viewerStudentId,
   viewerStudentName,
   viewerClassId,
@@ -986,6 +988,7 @@ function RenderColumns({
                 onResponse={onResponse}
                 variant={variant}
                 liveSocket={liveSocket}
+                torneoSocket={torneoSocket}
                 viewerStudentId={viewerStudentId}
                 viewerStudentName={viewerStudentName}
                 viewerClassId={viewerClassId}
@@ -1024,6 +1027,8 @@ interface BlockNodeProps {
   variant?: 'dark' | 'light';
   /** Socket en vivo (viewer estudiante) — actividades como torneo escuchan eventos aquí. */
   liveSocket?: Socket | null;
+  /** Namespace `/live` para eventos del torneo (opcional; si no, se usa `liveSocket`). */
+  torneoSocket?: Socket | null;
   viewerStudentId?: string;
   viewerStudentName?: string;
   viewerClassId?: string;
@@ -1064,6 +1069,7 @@ function BlockNode({
   onResponse,
   variant = 'light',
   liveSocket,
+  torneoSocket,
   viewerStudentId,
   viewerStudentName,
   viewerClassId,
@@ -1118,6 +1124,7 @@ function BlockNode({
             onResponse={onResponse}
             variant={variant}
             liveSocket={liveSocket}
+            torneoSocket={torneoSocket}
             viewerStudentId={viewerStudentId}
             viewerStudentName={viewerStudentName}
             viewerClassId={viewerClassId}
@@ -1141,6 +1148,7 @@ function BlockNode({
             onResponse={onResponse}
             variant={variant}
             liveSocket={liveSocket}
+            torneoSocket={torneoSocket}
             viewerStudentId={viewerStudentId}
             viewerStudentName={viewerStudentName}
             viewerClassId={viewerClassId}
@@ -1298,6 +1306,8 @@ export interface SlideRendererProps {
   viewerFill?: boolean;
   /** Socket.IO del viewer en vivo (p. ej. torneo). */
   liveSocket?: Socket | null;
+  /** Socket al namespace `/live` para eventos del torneo (viewer). */
+  torneoSocket?: Socket | null;
   viewerStudentId?: string;
   viewerStudentName?: string;
   viewerClassId?: string;
@@ -1320,6 +1330,7 @@ export function SlideRenderer({
   variant: variantProp,
   viewerFill = false,
   liveSocket,
+  torneoSocket,
   viewerStudentId,
   viewerStudentName,
   viewerClassId: viewerClassIdProp,
@@ -1492,6 +1503,7 @@ export function SlideRenderer({
                   variant={variant}
                   blockIndex={index}
                   liveSocket={liveSocket}
+                  torneoSocket={torneoSocket}
                   viewerStudentId={viewerStudentId}
                   viewerStudentName={viewerStudentName}
                   viewerClassId={viewerClassIdResolved}
@@ -1580,6 +1592,7 @@ export function SlideRenderer({
             variant={variant}
             blockIndex={index}
             liveSocket={liveSocket}
+            torneoSocket={torneoSocket}
             viewerStudentId={viewerStudentId}
             viewerStudentName={viewerStudentName}
             viewerClassId={viewerClassIdResolved}

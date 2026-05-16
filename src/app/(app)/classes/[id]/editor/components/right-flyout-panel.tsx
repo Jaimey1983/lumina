@@ -123,11 +123,10 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
             {activePanel === 'live' &&
               activeActivity?.tipo === 'torneo' &&
               liveSocket &&
-              liveSessionId &&
               classId ? (
                 <TorneoPanel
                   classId={classId}
-                  sessionId={liveSessionId}
+                  sessionId={liveSessionId ?? classId}
                   activity={activeActivity}
                   socket={liveSocket}
                 />
