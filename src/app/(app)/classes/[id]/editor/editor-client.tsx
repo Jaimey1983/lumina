@@ -1008,18 +1008,18 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isEditable =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+      if (isEditable) return;
+
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         handleSave();
         return;
       }
-
-      const tag = (document.activeElement as HTMLElement)?.tagName;
-      const isEditing =
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        (document.activeElement as HTMLElement)?.isContentEditable;
-      if (isEditing) return;
 
       const canvas = canvasAreaRef.current;
       const mod = e.ctrlKey || e.metaKey;
@@ -1075,6 +1075,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        const target = e.target as HTMLElement;
+        const isEditable =
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable;
+        if (isEditable) return;
         if (canvas?.deleteSelectedBlock()) e.preventDefault();
       }
     };

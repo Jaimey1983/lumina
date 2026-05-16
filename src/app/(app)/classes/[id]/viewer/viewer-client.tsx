@@ -309,7 +309,11 @@ export function ViewerClient({ id }: { id: string }) {
   }, []);
 
   useEffect(() => {
-    if (!classData || classData.status !== 'PUBLISHED') {
+    if (!classData) {
+      setSocketInstance(null);
+      return undefined;
+    }
+    if (classData.status !== 'PUBLISHED' && classData.status !== 'LIVE') {
       setSocketInstance(null);
       return undefined;
     }
@@ -491,7 +495,7 @@ export function ViewerClient({ id }: { id: string }) {
     );
   }
 
-  if (classData.status !== 'PUBLISHED') {
+  if (classData.status !== 'PUBLISHED' && classData.status !== 'LIVE') {
     return (
       <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#1e1b4b] px-4">
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center">

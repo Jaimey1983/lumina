@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import type { EscapeRoomActivity } from '@/types/slide.types';
@@ -27,12 +28,21 @@ export function EscapeRoomActivityEditor({
   onChange: (next: EscapeRoomActivity) => void;
   onRemove?: () => void;
 }) {
-  const { local, flush, schedulePersist } = useActivityEditor({
+  const { local, setLocal, flush, schedulePersist } = useActivityEditor({
     data: activity,
     editorSyncKey,
     normalize: normalizeEscapeRoomActivity,
     onChange,
   });
+
+  const persistChange = useCallback(
+    (next: EscapeRoomActivity) => {
+      const normalized = normalizeEscapeRoomActivity(next);
+      setLocal(normalized);
+      schedulePersist(normalized);
+    },
+    [setLocal, schedulePersist],
+  );
 
   return (
     <div
@@ -67,12 +77,7 @@ export function EscapeRoomActivityEditor({
           </Button>
         )}
       </div>
-      <EscapeRoomEditor
-        layout="embedded"
-        activity={local}
-        onChange={schedulePersist}
-        onBlurFlush={flush}
-      />
+      <EscapeRoomEditor activity={local} onChange={persistChange} onBlurFlush={flush} />
     </div>
   );
 }

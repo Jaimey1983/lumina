@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import {
@@ -28,18 +28,16 @@ import { Label } from '@/components/ui/label';
 import { uid } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface EscapeRoomEditorProps {
   activity: EscapeRoomActivity;
   onChange: (activity: EscapeRoomActivity) => void;
-  /** Integrado en el lienzo: sin borde externo ni cabecera duplicada. */
-  layout?: 'standalone' | 'embedded';
-  /** Igual que otras actividades: guardar pendiente al salir del campo. */
+  /** Guardar pendiente al salir del campo (debounce del lienzo). */
   onBlurFlush?: () => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const INPUT_BASE =
   'rounded-md border border-[#e5e7eb] bg-white px-2.5 py-2 text-xs text-[#111827] placeholder:text-[#9ca3af] focus-visible:border-[#2563EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/25';
@@ -52,9 +50,9 @@ function tipoRespuestaLabel(t: EscapeRoomSala['tipoRespuesta']) {
     case 'texto':
       return 'Texto';
     case 'opcion_multiple':
-      return 'Opción múltiple';
+      return 'OpciÃ³n mÃºltiple';
     case 'codigo':
-      return 'Código';
+      return 'CÃ³digo';
     default:
       return t;
   }
@@ -152,7 +150,36 @@ export function normalizeEscapeRoomActivity(
   };
 }
 
-// ─── Sortable sala card ───────────────────────────────────────────────────────
+function isDragActivatorTarget(target: EventTarget | null) {
+  let cur = target as HTMLElement | null;
+  while (cur) {
+    if (
+      cur.tagName === 'INPUT' ||
+      cur.tagName === 'TEXTAREA' ||
+      cur.tagName === 'SELECT' ||
+      cur.tagName === 'BUTTON' ||
+      cur.tagName === 'LABEL' ||
+      cur.isContentEditable
+    ) {
+      return false;
+    }
+    cur = cur.parentElement;
+  }
+  return true;
+}
+
+/** Evita que el drag de salas capture clics en campos del formulario. */
+class EscapeRoomPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown' as const,
+      handler: ({ nativeEvent }: { nativeEvent: Event }) =>
+        isDragActivatorTarget(nativeEvent.target),
+    },
+  ];
+}
+
+// â”€â”€â”€ Sortable sala card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SortableSalaCard({
   sala,
@@ -160,6 +187,7 @@ function SortableSalaCard({
   onToggleExpand,
   onUpdate,
   onRemove,
+  onBlurFlush,
   totalSalas,
 }: {
   sala: EscapeRoomSala;
@@ -167,6 +195,7 @@ function SortableSalaCard({
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<EscapeRoomSala>) => void;
   onRemove: () => void;
+  onBlurFlush?: () => void;
   totalSalas: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -250,16 +279,18 @@ function SortableSalaCard({
             <Input
               value={sala.nombre}
               onChange={(e) => onUpdate({ nombre: e.target.value })}
+              onBlur={onBlurFlush}
               className="h-8 text-xs"
               placeholder="Ej. La sala de los misterios"
             />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px]">Descripción / narrativa</Label>
+            <Label className="text-[11px]">DescripciÃ³n / narrativa</Label>
             <textarea
               value={sala.descripcion}
               onChange={(e) => onUpdate({ descripcion: e.target.value })}
+              onBlur={onBlurFlush}
               rows={3}
               className={cn(INPUT_BASE, 'min-h-[72px] resize-y')}
               placeholder="Contexto de la sala"
@@ -267,10 +298,11 @@ function SortableSalaCard({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px]">Desafío / pregunta</Label>
+            <Label className="text-[11px]">DesafÃ­o / pregunta</Label>
             <textarea
               value={sala.desafio}
               onChange={(e) => onUpdate({ desafio: e.target.value })}
+              onBlur={onBlurFlush}
               rows={2}
               className={cn(INPUT_BASE, 'min-h-[56px] resize-y')}
               placeholder="Enunciado del acertijo"
@@ -299,8 +331,8 @@ function SortableSalaCard({
               className={SELECT_BASE}
             >
               <option value="texto">Texto libre</option>
-              <option value="opcion_multiple">Opción múltiple</option>
-              <option value="codigo">Código numérico</option>
+              <option value="opcion_multiple">OpciÃ³n mÃºltiple</option>
+              <option value="codigo">CÃ³digo numÃ©rico</option>
             </select>
           </div>
 
@@ -323,7 +355,7 @@ function SortableSalaCard({
                           if (nonEmpty) onUpdate({ respuestaCorrecta: op });
                         }}
                         className="size-3.5 accent-[#2563EB]"
-                        aria-label={`Marcar opción ${letter} como correcta`}
+                        aria-label={`Marcar opciÃ³n ${letter} como correcta`}
                       />
                       <span className="w-4 shrink-0 text-[10px] font-semibold text-[#6b7280]">
                         {letter}
@@ -340,7 +372,7 @@ function SortableSalaCard({
                           });
                         }}
                         className="h-7 flex-1 text-xs"
-                        placeholder={`Opción ${letter}`}
+                        placeholder={`OpciÃ³n ${letter}`}
                       />
                     </div>
                   );
@@ -355,7 +387,7 @@ function SortableSalaCard({
                 onClick={() => onUpdate({ opciones: [...opts, ''] })}
               >
                 <Plus className="size-3" />
-                Agregar opción
+                Agregar opciÃ³n
               </Button>
             </div>
           )}
@@ -366,6 +398,7 @@ function SortableSalaCard({
               <Input
                 value={sala.respuestaCorrecta}
                 onChange={(e) => onUpdate({ respuestaCorrecta: e.target.value })}
+                onBlur={onBlurFlush}
                 className="h-8 text-xs"
                 placeholder={sala.tipoRespuesta === 'codigo' ? 'Ej. 100' : 'Texto esperado'}
               />
@@ -379,7 +412,7 @@ function SortableSalaCard({
               onChange={(e) => onUpdate({ ignorarMayusculas: e.target.checked })}
               className="size-3.5 accent-[#2563EB]"
             />
-            Ignorar mayúsculas
+            Ignorar mayÃºsculas
           </label>
 
           <div className="space-y-1">
@@ -387,6 +420,7 @@ function SortableSalaCard({
             <textarea
               value={sala.pista ?? ''}
               onChange={(e) => onUpdate({ pista: e.target.value || undefined })}
+              onBlur={onBlurFlush}
               rows={2}
               className={cn(INPUT_BASE, 'min-h-[48px] resize-y')}
               placeholder="Ayuda para el estudiante"
@@ -394,7 +428,7 @@ function SortableSalaCard({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px]">Intentos máximos</Label>
+            <Label className="text-[11px]">Intentos mÃ¡ximos</Label>
             <select
               value={String(sala.intentosMaximos)}
               onChange={(e) => onUpdate({ intentosMaximos: Number(e.target.value) })}
@@ -412,12 +446,11 @@ function SortableSalaCard({
   );
 }
 
-// ─── EscapeRoomEditor ───────────────────────────────────────────────────────────
+// â”€â”€â”€ EscapeRoomEditor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function EscapeRoomEditor({
   activity,
   onChange,
-  layout = 'standalone',
   onBlurFlush,
 }: EscapeRoomEditorProps) {
   const act = normalizeEscapeRoomActivity(activity);
@@ -432,10 +465,10 @@ export function EscapeRoomEditor({
       for (const id of valid) if (!prev.has(id)) next.add(id);
       return next;
     });
-  }, [salaIdKey, act.salas]);
+  }, [salaIdKey]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(EscapeRoomPointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -478,10 +511,11 @@ export function EscapeRoomEditor({
 
   const tiempoSlider = act.tiempoLimiteMinutos ?? 0;
 
-  const inner = (
-    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2.5">
+  return (
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2.5">
       <div className="space-y-1">
-        <Label className="text-[11px] font-medium">Título del Escape Room</Label>
+        <Label className="text-[11px] font-medium">TÃ­tulo del Escape Room</Label>
         <Input
           value={act.titulo}
           onChange={(e) => onChange({ ...act, titulo: e.target.value })}
@@ -492,7 +526,7 @@ export function EscapeRoomEditor({
       </div>
 
       <div className="space-y-1">
-        <Label className="text-[11px] font-medium">Introducción / narrativa</Label>
+        <Label className="text-[11px] font-medium">IntroducciÃ³n / narrativa</Label>
         <textarea
           value={act.introduccion}
           onChange={(e) => onChange({ ...act, introduccion: e.target.value })}
@@ -506,9 +540,9 @@ export function EscapeRoomEditor({
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[160px] flex-1 space-y-1">
           <div className="flex items-center justify-between gap-2">
-            <Label className="text-[11px] font-medium">Tiempo límite</Label>
+            <Label className="text-[11px] font-medium">Tiempo lÃ­mite</Label>
             <span className="text-[11px] font-semibold tabular-nums text-[#2563EB]">
-              {tiempoSlider === 0 ? 'Sin límite' : `${tiempoSlider} min`}
+              {tiempoSlider === 0 ? 'Sin lÃ­mite' : `${tiempoSlider} min`}
             </span>
           </div>
           <input
@@ -575,6 +609,7 @@ export function EscapeRoomEditor({
                 }
                 onUpdate={(patch) => updateSala(sala.id, patch)}
                 onRemove={() => removeSala(sala.id)}
+                onBlurFlush={onBlurFlush}
                 totalSalas={act.salas.length}
               />
             ))}
@@ -592,24 +627,7 @@ export function EscapeRoomEditor({
         <Plus className="size-3.5" />
         Agregar sala
       </Button>
-    </div>
-  );
-
-  if (layout === 'embedded') {
-    return <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">{inner}</div>;
-  }
-
-  return (
-    <div className="flex max-h-[min(70vh,560px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs">
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#eff6ff] px-2.5 py-1.5">
-        <span className="rounded bg-[#dbeafe] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#1e40af]">
-          Escape room
-        </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#6b7280]">
-          {act.salas.length} sala{act.salas.length !== 1 ? 's' : ''}
-        </span>
       </div>
-      {inner}
     </div>
   );
 }
