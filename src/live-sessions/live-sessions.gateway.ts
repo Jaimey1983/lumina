@@ -9,11 +9,30 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
 import { LiveSessionsService } from './live-sessions.service';
 import { TorneoService } from '../torneo/torneo.service';
+import type { RankingEntry } from '../torneo/torneo.service';
 import { JoinLiveDto } from './dto/join-live.dto';
 import { SlideSyncDto } from './dto/slide-sync.dto';
+
+/** Sala en namespace `/` donde están los viewers con `join-class` (no confundir con `live:${id}` en `/live`). */
+function classJoinRoom(classId: string): string {
+  return `class-${classId}`;
+}
+
+function wireTorneoRankingPayload(rows: RankingEntry[]): {
+  ranking: { studentId: string; studentName: string; points: number; position: number }[];
+} {
+  return {
+    ranking: rows.map((r) => ({
+      studentId: r.studentId,
+      studentName: r.studentName,
+      points: r.total,
+      position: r.position,
+    })),
+  };
+}
 
 function rethrowAsWs(e: unknown): never {
   if (e instanceof WsException) {
@@ -50,7 +69,7 @@ export class LiveSessionsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Namespace;
 
   constructor(
     private readonly liveSessions: LiveSessionsService,
@@ -212,7 +231,13 @@ export class LiveSessionsGateway
     try {
       const session = await this.torneoService.createSession(body.classId, body.sessionId);
       const room = this.liveSessions.roomName(body.classId);
-      this.server.to(room).emit('torneo:start', { torneoId: session.id, totalQuestions: body.totalQuestions || 0 });
+      const classRoom = classJoinRoom(body.classId);
+      const startPayload = {
+        torneoId: session.id,
+        totalQuestions: body.totalQuestions || 0,
+      };
+      this.server.to(room).emit('torneo:start', startPayload);
+      this.server.server.to(classRoom).emit('torneo:start', startPayload);
       return { ok: true };
     } catch (e) {
       rethrowAsWs(e);
@@ -225,26 +250,41 @@ export class LiveSessionsGateway
     @MessageBody() body: { torneoId: string; index: number; question: any; timeLimit: number },
   ) {
     try {
-      await this.torneoService.startQuestion(body.torneoId, body.index, body.question, body.timeLimit);
+      // `timeLimit` viene en segundos desde el panel; setTimeout y TorneoService usan ms.
+      const timeLimitSec = Math.max(1, Math.floor(Number(body.timeLimit ?? 30) || 1));
+      const timeLimitMs = timeLimitSec * 1000;
+      await this.torneoService.startQuestion(
+        body.torneoId,
+        body.index,
+        body.question,
+        timeLimitMs,
+      );
       const session = await this.torneoService.getSession(body.torneoId);
       if (!session) throw new WsException('Torneo session not found');
       const room = this.liveSessions.roomName(session.classId);
+      const classRoom = classJoinRoom(session.classId);
 
-      this.server.to(room).emit('torneo:question', {
+      const questionPayload = {
         index: body.index,
+        questionIndex: body.index,
         question: body.question,
         options: body.question?.options,
-        timeLimit: body.timeLimit,
-      });
+        tiempoSegundos: timeLimitSec,
+        timeLimit: timeLimitSec,
+      };
+      this.server.to(room).emit('torneo:question', questionPayload);
+      this.server.server.to(classRoom).emit('torneo:question', questionPayload);
 
       setTimeout(async () => {
         try {
           const ranking = await this.torneoService.getRanking(body.torneoId);
-          this.server.to(room).emit('torneo:ranking', ranking);
+          const rankingPayload = wireTorneoRankingPayload(ranking);
+          this.server.to(room).emit('torneo:ranking', rankingPayload);
+          this.server.server.to(classRoom).emit('torneo:ranking', rankingPayload);
         } catch (err) {
           // ignore
         }
-      }, body.timeLimit);
+      }, timeLimitMs);
 
       return { ok: true };
     } catch (e) {
@@ -282,12 +322,16 @@ export class LiveSessionsGateway
       const session = await this.torneoService.getSession(body.torneoId);
       if (!session) throw new WsException('Torneo session not found');
       const room = this.liveSessions.roomName(session.classId);
+      const classRoom = classJoinRoom(session.classId);
 
       const ranking = await this.torneoService.getRanking(body.torneoId);
-      this.server.to(room).emit('torneo:end', {
-        ranking,
-        podio: ranking.slice(0, 3),
-      });
+      const rankingPayload = wireTorneoRankingPayload(ranking);
+      const endPayload = {
+        ...rankingPayload,
+        podio: rankingPayload.ranking.slice(0, 3),
+      };
+      this.server.to(room).emit('torneo:end', endPayload);
+      this.server.server.to(classRoom).emit('torneo:end', endPayload);
 
       return { ok: true };
     } catch (e) {
