@@ -874,7 +874,7 @@ function RenderActivity({
         classId={viewerClassId ?? ''}
         editorSyncKey={syncKey}
         liveSocket={liveSocket}
-        onComplete={(score) => onResponse?.(score)}
+        onComplete={undefined}
         onAnswer={(roomId, answer) => onResponse?.({ roomId, answer })}
       />
     );

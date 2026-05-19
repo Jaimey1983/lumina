@@ -136,7 +136,7 @@ export function ClassDetailClient({ id }: { id: string }) {
             <>
               {/* Grand Preview */}
               <div className="relative group w-full bg-[#f9fafb] rounded-xl p-2 border border-[#e5e7eb] shadow-lumina-sm">
-                <div className="relative w-full rounded overflow-hidden bg-white">
+                <div className="pointer-events-none relative w-full rounded overflow-hidden bg-white [&_*]:pointer-events-none">
                   {rendererActiveSlide && (
                     <SlideRenderer slide={rendererActiveSlide} modo="preview" />
                   )}

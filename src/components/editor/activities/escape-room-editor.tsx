@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical, Plus, Trash2 } from 'lucide-react';
 
-import type { EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
+import type { Background, Block, EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ const INPUT_BASE =
 const SELECT_BASE =
   'h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-xs text-[#111827] focus-visible:border-[#2563EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/25';
 
-function tipoRespuestaLabel(t: EscapeRoomSala['tipoRespuesta']) {
+export function tipoRespuestaLabel(t: EscapeRoomSala['tipoRespuesta']) {
   switch (t) {
     case 'texto':
       return 'Texto';
@@ -58,7 +58,7 @@ function tipoRespuestaLabel(t: EscapeRoomSala['tipoRespuesta']) {
   }
 }
 
-function normalizeSala(raw: Partial<EscapeRoomSala> | undefined, fallbackId?: string): EscapeRoomSala {
+export function normalizeSala(raw: Partial<EscapeRoomSala> | undefined, fallbackId?: string): EscapeRoomSala {
   const id = raw?.id?.trim() || fallbackId || uid();
   const tipo =
     raw?.tipoRespuesta === 'opcion_multiple' || raw?.tipoRespuesta === 'codigo'
@@ -92,6 +92,8 @@ function normalizeSala(raw: Partial<EscapeRoomSala> | undefined, fallbackId?: st
     ignorarMayusculas: raw?.ignorarMayusculas !== false,
     pista: raw?.pista,
     intentosMaximos: intentos,
+    ...(Array.isArray(raw?.bloques) ? { bloques: raw.bloques as Block[] } : {}),
+    ...(raw?.fondo ? { fondo: raw.fondo as Background } : {}),
   };
 }
 
@@ -179,7 +181,201 @@ class EscapeRoomPointerSensor extends PointerSensor {
   ];
 }
 
-// â”€â”€â”€ Sortable sala card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Campos de configuración lógica de una sala ───────────────────────────────
+
+export interface EscapeRoomSalaConfigFieldsProps {
+  sala: EscapeRoomSala;
+  onUpdate: (patch: Partial<EscapeRoomSala>) => void;
+  onBlurFlush?: () => void;
+}
+
+export function EscapeRoomSalaConfigFields({
+  sala,
+  onUpdate,
+  onBlurFlush,
+}: EscapeRoomSalaConfigFieldsProps) {
+  const opts =
+    sala.tipoRespuesta === 'opcion_multiple'
+      ? (() => {
+          const o = [...(sala.opciones ?? [])];
+          while (o.length < 2) o.push('');
+          return o.slice(0, 12);
+        })()
+      : [];
+
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <Label className="text-[11px]">Nombre de la sala</Label>
+        <Input
+          value={sala.nombre}
+          onChange={(e) => onUpdate({ nombre: e.target.value })}
+          onBlur={onBlurFlush}
+          className="h-8 text-xs"
+          placeholder="Ej. La sala de los misterios"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-[11px]">Descripcion / narrativa</Label>
+        <textarea
+          value={sala.descripcion}
+          onChange={(e) => onUpdate({ descripcion: e.target.value })}
+          onBlur={onBlurFlush}
+          rows={3}
+          className={cn(INPUT_BASE, 'min-h-[72px] resize-y')}
+          placeholder="Contexto de la sala"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-[11px]">Desafío / pregunta</Label>
+        <textarea
+          value={sala.desafio}
+          onChange={(e) => onUpdate({ desafio: e.target.value })}
+          onBlur={onBlurFlush}
+          rows={2}
+          className={cn(INPUT_BASE, 'min-h-[56px] resize-y')}
+          placeholder="Enunciado del acertijo"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-[11px]">Tipo de respuesta</Label>
+        <select
+          value={sala.tipoRespuesta}
+          onChange={(e) => {
+            const nextTipo = e.target.value as EscapeRoomSala['tipoRespuesta'];
+            if (nextTipo === 'opcion_multiple') {
+              onUpdate({
+                tipoRespuesta: 'opcion_multiple',
+                opciones: ['', ''],
+                respuestaCorrecta: '',
+              });
+            } else {
+              onUpdate({
+                tipoRespuesta: nextTipo,
+                opciones: undefined,
+              });
+            }
+          }}
+          className={SELECT_BASE}
+        >
+          <option value="texto">Texto libre</option>
+          <option value="opcion_multiple">Opción múltiple</option>
+          <option value="codigo">Código numérico</option>
+        </select>
+      </div>
+
+      {sala.tipoRespuesta === 'opcion_multiple' && (
+        <div className="space-y-1">
+          <Label className="text-[11px]">Opciones (marca la correcta)</Label>
+          <div className="space-y-1">
+            {opts.map((op, oi) => {
+              const letter = String.fromCharCode(65 + oi);
+              const nonEmpty = op.trim() !== '';
+              const isCorrect = sala.respuestaCorrecta === op && nonEmpty;
+              return (
+                <div key={oi} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name={`correcta-${sala.id}`}
+                    checked={isCorrect}
+                    disabled={!nonEmpty}
+                    onChange={() => {
+                      if (nonEmpty) onUpdate({ respuestaCorrecta: op });
+                    }}
+                    className="size-3.5 accent-[#2563EB]"
+                    aria-label={`Marcar opción ${letter} como correcta`}
+                  />
+                  <span className="w-4 shrink-0 text-[10px] font-semibold text-[#6b7280]">
+                    {letter}
+                  </span>
+                  <Input
+                    value={op}
+                    onChange={(e) => {
+                      const next = [...opts];
+                      next[oi] = e.target.value;
+                      const wasCorrect = sala.respuestaCorrecta === opts[oi];
+                      onUpdate({
+                        opciones: next,
+                        ...(wasCorrect ? { respuestaCorrecta: e.target.value } : {}),
+                      });
+                    }}
+                    className="h-7 flex-1 text-xs"
+                    placeholder={`Opción ${letter}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-1 h-7 w-full gap-1 text-[10px]"
+            disabled={opts.length >= 12}
+            onClick={() => onUpdate({ opciones: [...opts, ''] })}
+          >
+            <Plus className="size-3" />
+            Agregar opción
+          </Button>
+        </div>
+      )}
+
+      {(sala.tipoRespuesta === 'texto' || sala.tipoRespuesta === 'codigo') && (
+        <div className="space-y-1">
+          <Label className="text-[11px]">Respuesta correcta</Label>
+          <Input
+            value={sala.respuestaCorrecta}
+            onChange={(e) => onUpdate({ respuestaCorrecta: e.target.value })}
+            onBlur={onBlurFlush}
+            className="h-8 text-xs"
+            placeholder={sala.tipoRespuesta === 'codigo' ? 'Ej. 100' : 'Texto esperado'}
+          />
+        </div>
+      )}
+
+      <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#374151]">
+        <input
+          type="checkbox"
+          checked={sala.ignorarMayusculas}
+          onChange={(e) => onUpdate({ ignorarMayusculas: e.target.checked })}
+          className="size-3.5 accent-[#2563EB]"
+        />
+        Ignorar mayúsculas
+      </label>
+
+      <div className="space-y-1">
+        <Label className="text-[11px]">Pista (opcional)</Label>
+        <textarea
+          value={sala.pista ?? ''}
+          onChange={(e) => onUpdate({ pista: e.target.value || undefined })}
+          onBlur={onBlurFlush}
+          rows={2}
+          className={cn(INPUT_BASE, 'min-h-[48px] resize-y')}
+          placeholder="Ayuda para el estudiante"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-[11px]">Intentos máximos</Label>
+        <select
+          value={String(sala.intentosMaximos)}
+          onChange={(e) => onUpdate({ intentosMaximos: Number(e.target.value) })}
+          className={SELECT_BASE}
+        >
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="-1">Ilimitado</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sortable sala card ───────────────────────────────────────────────────────
 
 function SortableSalaCard({
   sala,
@@ -208,15 +404,6 @@ function SortableSalaCard({
     zIndex: isDragging ? 10 : undefined,
     opacity: isDragging ? 0.75 : 1,
   };
-
-  const opts =
-    sala.tipoRespuesta === 'opcion_multiple'
-      ? (() => {
-          const o = [...(sala.opciones ?? [])];
-          while (o.length < 2) o.push('');
-          return o.slice(0, 12);
-        })()
-      : [];
 
   return (
     <div
@@ -273,180 +460,13 @@ function SortableSalaCard({
       </div>
 
       {expanded && (
-        <div className="space-y-2 p-2.5">
-          <div className="space-y-1">
-            <Label className="text-[11px]">Nombre de la sala</Label>
-            <Input
-              value={sala.nombre}
-              onChange={(e) => onUpdate({ nombre: e.target.value })}
-              onBlur={onBlurFlush}
-              className="h-8 text-xs"
-              placeholder="Ej. La sala de los misterios"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px]">DescripciÃ³n / narrativa</Label>
-            <textarea
-              value={sala.descripcion}
-              onChange={(e) => onUpdate({ descripcion: e.target.value })}
-              onBlur={onBlurFlush}
-              rows={3}
-              className={cn(INPUT_BASE, 'min-h-[72px] resize-y')}
-              placeholder="Contexto de la sala"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px]">DesafÃ­o / pregunta</Label>
-            <textarea
-              value={sala.desafio}
-              onChange={(e) => onUpdate({ desafio: e.target.value })}
-              onBlur={onBlurFlush}
-              rows={2}
-              className={cn(INPUT_BASE, 'min-h-[56px] resize-y')}
-              placeholder="Enunciado del acertijo"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px]">Tipo de respuesta</Label>
-            <select
-              value={sala.tipoRespuesta}
-              onChange={(e) => {
-                const nextTipo = e.target.value as EscapeRoomSala['tipoRespuesta'];
-                if (nextTipo === 'opcion_multiple') {
-                  onUpdate({
-                    tipoRespuesta: 'opcion_multiple',
-                    opciones: ['', ''],
-                    respuestaCorrecta: '',
-                  });
-                } else {
-                  onUpdate({
-                    tipoRespuesta: nextTipo,
-                    opciones: undefined,
-                  });
-                }
-              }}
-              className={SELECT_BASE}
-            >
-              <option value="texto">Texto libre</option>
-              <option value="opcion_multiple">OpciÃ³n mÃºltiple</option>
-              <option value="codigo">CÃ³digo numÃ©rico</option>
-            </select>
-          </div>
-
-          {sala.tipoRespuesta === 'opcion_multiple' && (
-            <div className="space-y-1">
-              <Label className="text-[11px]">Opciones (marca la correcta)</Label>
-              <div className="space-y-1">
-                {opts.map((op, oi) => {
-                  const letter = String.fromCharCode(65 + oi);
-                  const nonEmpty = op.trim() !== '';
-                  const isCorrect = sala.respuestaCorrecta === op && nonEmpty;
-                  return (
-                    <div key={oi} className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name={`correcta-${sala.id}`}
-                        checked={isCorrect}
-                        disabled={!nonEmpty}
-                        onChange={() => {
-                          if (nonEmpty) onUpdate({ respuestaCorrecta: op });
-                        }}
-                        className="size-3.5 accent-[#2563EB]"
-                        aria-label={`Marcar opciÃ³n ${letter} como correcta`}
-                      />
-                      <span className="w-4 shrink-0 text-[10px] font-semibold text-[#6b7280]">
-                        {letter}
-                      </span>
-                      <Input
-                        value={op}
-                        onChange={(e) => {
-                          const next = [...opts];
-                          next[oi] = e.target.value;
-                          const wasCorrect = sala.respuestaCorrecta === opts[oi];
-                          onUpdate({
-                            opciones: next,
-                            ...(wasCorrect ? { respuestaCorrecta: e.target.value } : {}),
-                          });
-                        }}
-                        className="h-7 flex-1 text-xs"
-                        placeholder={`OpciÃ³n ${letter}`}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-1 h-7 w-full gap-1 text-[10px]"
-                disabled={opts.length >= 12}
-                onClick={() => onUpdate({ opciones: [...opts, ''] })}
-              >
-                <Plus className="size-3" />
-                Agregar opciÃ³n
-              </Button>
-            </div>
-          )}
-
-          {(sala.tipoRespuesta === 'texto' || sala.tipoRespuesta === 'codigo') && (
-            <div className="space-y-1">
-              <Label className="text-[11px]">Respuesta correcta</Label>
-              <Input
-                value={sala.respuestaCorrecta}
-                onChange={(e) => onUpdate({ respuestaCorrecta: e.target.value })}
-                onBlur={onBlurFlush}
-                className="h-8 text-xs"
-                placeholder={sala.tipoRespuesta === 'codigo' ? 'Ej. 100' : 'Texto esperado'}
-              />
-            </div>
-          )}
-
-          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#374151]">
-            <input
-              type="checkbox"
-              checked={sala.ignorarMayusculas}
-              onChange={(e) => onUpdate({ ignorarMayusculas: e.target.checked })}
-              className="size-3.5 accent-[#2563EB]"
-            />
-            Ignorar mayÃºsculas
-          </label>
-
-          <div className="space-y-1">
-            <Label className="text-[11px]">Pista (opcional)</Label>
-            <textarea
-              value={sala.pista ?? ''}
-              onChange={(e) => onUpdate({ pista: e.target.value || undefined })}
-              onBlur={onBlurFlush}
-              rows={2}
-              className={cn(INPUT_BASE, 'min-h-[48px] resize-y')}
-              placeholder="Ayuda para el estudiante"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px]">Intentos mÃ¡ximos</Label>
-            <select
-              value={String(sala.intentosMaximos)}
-              onChange={(e) => onUpdate({ intentosMaximos: Number(e.target.value) })}
-              className={SELECT_BASE}
-            >
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="-1">Ilimitado</option>
-            </select>
-          </div>
+        <div className="p-2.5">
+          <EscapeRoomSalaConfigFields sala={sala} onUpdate={onUpdate} onBlurFlush={onBlurFlush} />
         </div>
       )}
     </div>
   );
 }
-
-// â”€â”€â”€ EscapeRoomEditor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function EscapeRoomEditor({
   activity,

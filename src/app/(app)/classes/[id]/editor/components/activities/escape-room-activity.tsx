@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { Trash2 } from 'lucide-react';
+import { KeyRound, Trash2 } from 'lucide-react';
 
 import type { EscapeRoomActivity } from '@/types/slide.types';
 import {
@@ -61,6 +61,21 @@ export function EscapeRoomActivityEditor({
         <span className="min-w-0 flex-1 truncate text-[10px] text-[#6b7280]">
           {local.salas.length} sala{local.salas.length !== 1 ? 's' : ''}
         </span>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled
+          title="Próximamente"
+          className="h-7 shrink-0 cursor-not-allowed gap-1 px-2 text-[10px] opacity-60"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <KeyRound className="size-3" aria-hidden />
+          Diseñar Escape Room
+          <span className="rounded bg-[#fef3c7] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#92400e]">
+            Próximamente
+          </span>
+        </Button>
         {onRemove && (
           <Button
             type="button"

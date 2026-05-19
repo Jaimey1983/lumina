@@ -45,7 +45,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return <ScreenLoader />;
   }
 
-  if (/^\/classes\/[^/]+\/editor/.test(pathname)) {
+  const isEditorFullscreen =
+    /^\/classes\/[^/]+\/editor/.test(pathname) ||
+    /^\/classes\/[^/]+\/escape-room/.test(pathname);
+
+  if (isEditorFullscreen) {
     return (
       <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background">
         {children}

@@ -1848,8 +1848,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 size="sm"
                 className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
                 onClick={() => {
-                  setPreviewSlideIndex(resolvedSlideIndex);
-                  setPreviewOpen(true);
+                  window.open(`/classes/${classId}/preview`, '_blank');
                 }}
               >
                 <Eye className="size-3.5" />

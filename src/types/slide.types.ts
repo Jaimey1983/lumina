@@ -254,6 +254,10 @@ export interface EscapeRoomSala {
   ignorarMayusculas: boolean;
   pista?: string;
   intentosMaximos: number;
+  /** Contenido visual del canvas de esta sala (bloques posicionados). */
+  bloques?: Block[];
+  /** Fondo visual de la sala. */
+  fondo?: Background;
 }
 
 export interface EscapeRoomActivity {

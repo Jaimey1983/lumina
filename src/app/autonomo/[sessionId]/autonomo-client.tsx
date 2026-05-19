@@ -402,7 +402,7 @@ interface ViewerProps {
   timerBehavior: 'advance' | 'lock';
   closesAt: string;
   background: string;
-  onComplete: () => void;
+  onComplete: (finalNota?: number) => void;
 }
 
 function ViewerScreen({
@@ -414,6 +414,7 @@ function ViewerScreen({
   const [pill, setPill]      = useState<Pill | null>(null);
   const pillFade             = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pillClear            = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const torneoFinalNotaRef   = useRef<number | null>(null);
   const { saveProgress }     = useSaveProgress(sessionId);
   const closeCountdown       = useCountdown(closesAt);
   const activeSlide          = slides[idx] ?? null;
@@ -451,7 +452,9 @@ function ViewerScreen({
 
   // Force-complete when session window closes — only after it was open.
   useEffect(() => {
-    if (countdownWasPositive.current && closeCountdown.secs === 0) onComplete();
+    if (countdownWasPositive.current && closeCountdown.secs === 0) {
+      onComplete(torneoFinalNotaRef.current ?? undefined);
+    }
   }, [closeCountdown.secs, onComplete]);
 
   const clearPill = useCallback(() => {
@@ -497,6 +500,21 @@ function ViewerScreen({
     if (!actBlock || actBlock.tipo !== 'actividad') return;
 
     const activityType = actBlock.actividad?.tipo as string | undefined;
+
+    // Intercept autonomous torneo completion signal — store pre-computed nota, skip saveProgress
+    if (
+      activityType === 'torneo' &&
+      response !== null &&
+      typeof response === 'object' &&
+      !Array.isArray(response)
+    ) {
+      const r = response as Record<string, unknown>;
+      if (typeof r.finalNota === 'number') {
+        torneoFinalNotaRef.current = r.finalNota;
+        return;
+      }
+    }
+
     if (activityType === 'video_interactivo') {
       if (videoInteractiveHistorialRef.current.slideId !== activeSlide.id) {
         videoInteractiveHistorialRef.current = { slideId: activeSlide.id, entries: [] };
@@ -636,7 +654,7 @@ function ViewerScreen({
               <button
                 id="btn-entregar"
                 type="button"
-                onClick={onComplete}
+                onClick={() => onComplete(torneoFinalNotaRef.current ?? undefined)}
                 className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-95"
               >
                 <Check className="size-4" />
@@ -755,15 +773,18 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
     }
   }, [joinMutation, queryClient, sessionId]);
 
-  const handleComplete = useCallback(async () => {
+  const handleComplete = useCallback(async (finalNota?: number) => {
     // Guard: never complete without a valid studentId (prevents spurious
     // calls before the student has joined the session).
     if (!studentId) return;
     try {
       const res = await completeMutation.mutateAsync({ studentId, attemptNumber });
-      setResult(res);
+      setResult(typeof finalNota === 'number' ? { ...res, finalScore: finalNota } : res);
     } catch {
-      setResult({ finalScore: 0, performance: 'Bajo' });
+      const score = typeof finalNota === 'number' ? finalNota : 0;
+      const performance: CompleteSessionResponse['performance'] =
+        score >= 4.6 ? 'Superior' : score >= 4.0 ? 'Alto' : score >= 3.0 ? 'Básico' : 'Bajo';
+      setResult({ finalScore: score, performance });
     }
     setScreen('complete');
   }, [completeMutation, studentId, attemptNumber]);

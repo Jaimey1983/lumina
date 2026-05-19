@@ -21,6 +21,8 @@ export type TorneoAnswerPayload = {
   responseMs: number;
   torneoId: string | null;
   correctAnswer: string;
+  /** Set only on autonomous torneo completion — pre-computed nota (1.0–5.0). */
+  finalNota?: number;
 };
 
 export interface TorneoViewerProps {
@@ -30,7 +32,7 @@ export interface TorneoViewerProps {
   studentName: string;
   classId: string;
   onAnswer?: (payload: TorneoAnswerPayload) => void;
-  /** Socket del viewer en vivo; sin socket solo se muestra la pantalla de espera. */
+  /** Socket del viewer en vivo; sin socket activa modo autónomo local. */
   liveSocket?: Socket | null;
   /** Igual que otros viewers: cambio de slide reinicia estado local. */
   editorSyncKey?: string;
@@ -93,13 +95,22 @@ function tiempoFromPayload(payload: unknown, fallback: number): number {
   return fallback;
 }
 
-/** Fuera del componente para no disparar `react-hooks/purity` al medir tiempos de respuesta. */
 function monotonicNowMs(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
 
 function elapsedSinceStartMs(startMs: number): number {
   return Math.max(0, Math.round(monotonicNowMs() - startMs));
+}
+
+function getAutonomoMotivational(correct: number, total: number): string {
+  if (total === 0) return '¡Buen intento!';
+  const ratio = correct / total;
+  if (ratio === 1) return '¡Perfecto! ¡Respondiste todo correctamente!';
+  if (ratio >= 0.8) return '¡Excelente resultado!';
+  if (ratio >= 0.6) return '¡Muy buen trabajo!';
+  if (ratio >= 0.4) return '¡Sigue practicando!';
+  return '¡No te rindas, practica y mejorarás!';
 }
 
 export function TorneoViewer({
@@ -123,6 +134,14 @@ export function TorneoViewer({
   const [rankingTick, setRankingTick] = useState(3);
   const [startBanner, setStartBanner] = useState(false);
 
+  // ── Autonomous mode state ───────────────────────────────────────────────────
+  /** null = socket mode; true/false = autonomous mode detected */
+  const isAutonomous = !liveSocket;
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState<string | null>(null);
+  const [autonomoSummary, setAutonomoSummary] = useState({ correct: 0, total: 0 });
+  const autonomoScoreRef = useRef({ correct: 0, total: 0, points: 0 });
+  const autonomoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const questionStartedAtRef = useRef<number>(0);
   const torneoIdRef = useRef<string | null>(null);
   const torneoEndedRef = useRef(false);
@@ -142,6 +161,13 @@ export function TorneoViewer({
     if (rankingIntervalRef.current) {
       clearInterval(rankingIntervalRef.current);
       rankingIntervalRef.current = null;
+    }
+  }, []);
+
+  const clearAutonomoAdvance = useCallback(() => {
+    if (autonomoAdvanceRef.current) {
+      clearTimeout(autonomoAdvanceRef.current);
+      autonomoAdvanceRef.current = null;
     }
   }, []);
 
@@ -167,14 +193,83 @@ export function TorneoViewer({
     setRanking([]);
     setRankingTick(3);
     setStartBanner(false);
+    setShowCorrectAnswer(null);
+    autonomoScoreRef.current = { correct: 0, total: 0, points: 0 };
+    setAutonomoSummary({ correct: 0, total: 0 });
+    clearAutonomoAdvance();
     torneoIdRef.current = null;
     torneoEndedRef.current = false;
     clearQuestionTimer();
     clearRankingTimer();
-  }, [editorSyncKey, clearQuestionTimer, clearRankingTimer]);
+  }, [editorSyncKey, clearQuestionTimer, clearRankingTimer, clearAutonomoAdvance]);
+
+  // Cleanup autonomous advance timer on unmount
+  useEffect(() => () => clearAutonomoAdvance(), [clearAutonomoAdvance]);
 
   const activityRef = useRef(activity);
   activityRef.current = activity;
+
+  // ── Launch question in autonomous mode ─────────────────────────────────────
+
+  const launchAutonomousQuestion = useCallback((index: number) => {
+    const list = activityRef.current.preguntas ?? [];
+    const pq = list[index];
+    if (!pq) return;
+    const dur = Math.max(1, pq.tiempoSegundos ?? 20);
+    setCurrentQuestion(index);
+    setTimeTotal(dur);
+    setTimeLeft(dur);
+    setSelectedAnswer(null);
+    setAnswered(false);
+    setShowCorrectAnswer(null);
+    questionStartedAtRef.current = monotonicNowMs();
+    setPhase('question');
+    clearQuestionTimer();
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) { clearQuestionTimer(); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [clearQuestionTimer]);
+
+  // ── Schedule autonomous advance to next question ───────────────────────────
+
+  const autonomoAdvanceToNext = useCallback((nextIndex: number, revealCorrect: string) => {
+    setShowCorrectAnswer(revealCorrect);
+    clearAutonomoAdvance();
+    autonomoAdvanceRef.current = setTimeout(() => {
+      setShowCorrectAnswer(null);
+      const act = activityRef.current;
+      const total = act.preguntas?.length ?? 0;
+      if (nextIndex >= total) {
+        const { correct, total: tot, points } = autonomoScoreRef.current;
+        const puntosMaximosPosibles = Math.max(
+          1,
+          act.preguntas.length * ((act.puntosBase ?? 1000) + (act.bonusVelocidad ?? 500)),
+        );
+        const nota =
+          points === 0
+            ? 1.0
+            : Math.min(5, Math.max(1, (points / puntosMaximosPosibles) * 4 + 1));
+        onAnswer?.({
+          questionIndex: -1,
+          answer: '',
+          responseMs: 0,
+          torneoId: torneoIdRef.current,
+          correctAnswer: '',
+          finalNota: nota,
+        });
+        setAutonomoSummary({ correct, total: tot });
+        torneoEndedRef.current = true;
+        setPhase('finished');
+      } else {
+        launchAutonomousQuestion(nextIndex);
+      }
+    }, 1600);
+  }, [clearAutonomoAdvance, launchAutonomousQuestion, onAnswer]);
+
+  // ── Live socket event listeners ────────────────────────────────────────────
 
   useEffect(() => {
     const sock = liveSocket;
@@ -283,13 +378,24 @@ export function TorneoViewer({
     [onAnswer],
   );
 
+  // ── Auto-advance when time runs out ────────────────────────────────────────
+
   useEffect(() => {
     if (phase !== 'question' || answered || timeLeft > 0 || !q) return;
     setAnswered(true);
     play('wrong');
     const elapsed = elapsedSinceStartMs(questionStartedAtRef.current);
     notifyAnswer(safeIndex, '', elapsed);
-  }, [phase, answered, timeLeft, q, play, notifyAnswer, safeIndex]);
+
+    if (isAutonomous) {
+      autonomoScoreRef.current = {
+        correct: autonomoScoreRef.current.correct,
+        total: autonomoScoreRef.current.total + 1,
+        points: autonomoScoreRef.current.points, // no points for timeout
+      };
+      autonomoAdvanceToNext(safeIndex + 1, q.correcta ?? '');
+    }
+  }, [phase, answered, timeLeft, q, play, notifyAnswer, safeIndex, isAutonomous, autonomoAdvanceToNext]);
 
   const progressRatio = timeTotal > 0 ? Math.min(1, Math.max(0, timeLeft / timeTotal)) : 0;
   const barColor =
@@ -300,8 +406,30 @@ export function TorneoViewer({
     setSelectedAnswer(optionText);
     setAnswered(true);
     clearQuestionTimer();
-    play('submit');
-    notifyAnswer(safeIndex, optionText, elapsedSinceStartMs(questionStartedAtRef.current));
+
+    const responseMs = elapsedSinceStartMs(questionStartedAtRef.current);
+    notifyAnswer(safeIndex, optionText, responseMs);
+
+    if (isAutonomous) {
+      const correctAnswer = q?.correcta ?? '';
+      const isCorrect = optionText.trim() === correctAnswer.trim();
+      play(isCorrect ? 'correct' : 'wrong');
+      const puntosBase = activityRef.current.puntosBase ?? 1000;
+      const bonusVelocidad = activityRef.current.bonusVelocidad ?? 500;
+      const durMs = Math.max(1, (q?.tiempoSegundos ?? 20)) * 1000;
+      const speedBonus = isCorrect
+        ? Math.round(bonusVelocidad * Math.max(0, 1 - responseMs / durMs))
+        : 0;
+      const questionPts = isCorrect ? puntosBase + speedBonus : 0;
+      autonomoScoreRef.current = {
+        correct: autonomoScoreRef.current.correct + (isCorrect ? 1 : 0),
+        total: autonomoScoreRef.current.total + 1,
+        points: autonomoScoreRef.current.points + questionPts,
+      };
+      autonomoAdvanceToNext(safeIndex + 1, correctAnswer);
+    } else {
+      play('submit');
+    }
   }
 
   const myRankRow = useMemo(
@@ -330,7 +458,75 @@ export function TorneoViewer({
 
   const rootProps = { 'data-lumina-class-id': classId || undefined };
 
+  // ─── FINISHED ──────────────────────────────────────────────────────────────
+
   if (phase === 'finished') {
+    // ── Autonomous finished: personal results, no podium ──
+    if (isAutonomous) {
+      const { correct, total } = autonomoSummary;
+      return (
+        <div className={shellClass} {...rootProps}>
+          <div className="mb-4 text-center">
+            <Trophy className="mx-auto size-14 text-amber-500 drop-shadow-md" aria-hidden />
+            <h2
+              className={cn('mt-2 text-xl font-bold', isDark ? 'text-white' : 'text-[#111827]')}
+            >
+              ¡Torneo completado!
+            </h2>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center gap-5">
+            <div
+              className={cn(
+                'flex flex-col items-center rounded-2xl border px-8 py-5 text-center shadow-lumina-xs',
+                isDark
+                  ? 'border-white/20 bg-white/10'
+                  : 'border-[#e5e7eb] bg-[#f9fafb]',
+              )}
+            >
+              <span
+                className={cn(
+                  'text-5xl font-extrabold tabular-nums',
+                  isDark ? 'text-white' : 'text-[#111827]',
+                )}
+              >
+                {correct}
+                <span
+                  className={cn('text-2xl font-bold', isDark ? 'text-white/40' : 'text-[#9ca3af]')}
+                >
+                  /{total}
+                </span>
+              </span>
+              <span
+                className={cn(
+                  'mt-1 text-sm font-medium',
+                  isDark ? 'text-white/60' : 'text-[#6b7280]',
+                )}
+              >
+                respuestas correctas
+              </span>
+            </div>
+
+            <p
+              className={cn(
+                'text-center text-sm font-semibold leading-snug',
+                isDark ? 'text-amber-200' : 'text-[#92400e]',
+              )}
+            >
+              {getAutonomoMotivational(correct, total)}
+            </p>
+
+            {studentName.trim() && (
+              <p className={cn('text-xs', isDark ? 'text-white/40' : 'text-[#9ca3af]')}>
+                {studentName}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ── Live mode finished: podium ──
     const [first, second, third] = topThree;
     return (
       <div className={shellClass} {...rootProps}>
@@ -386,6 +582,8 @@ export function TorneoViewer({
     );
   }
 
+  // ─── RANKING (live only) ───────────────────────────────────────────────────
+
   if (phase === 'ranking') {
     const top5 = [...ranking].sort((a, b) => a.position - b.position).slice(0, 5);
     return (
@@ -431,6 +629,8 @@ export function TorneoViewer({
     );
   }
 
+  // ─── QUESTION ─────────────────────────────────────────────────────────────
+
   if (phase === 'question' && q) {
     return (
       <div className={shellClass} {...rootProps}>
@@ -463,6 +663,14 @@ export function TorneoViewer({
           {paddedOptions.map((text, idx) => {
             const style = KAHOOT_COLORS[idx] ?? KAHOOT_COLORS[0];
             const disabled = answered || !text.trim();
+            // Autonomous mode: highlight correct/wrong after answering
+            const isCorrectOption =
+              isAutonomous && showCorrectAnswer !== null && text.trim() === showCorrectAnswer.trim();
+            const isWrongPick =
+              isAutonomous &&
+              showCorrectAnswer !== null &&
+              selectedAnswer === text &&
+              !isCorrectOption;
             return (
               <button
                 key={`${idx}-${style.label}`}
@@ -470,10 +678,17 @@ export function TorneoViewer({
                 disabled={disabled}
                 onClick={() => handlePick(text)}
                 className={cn(
-                  'flex min-h-[4.5rem] flex-col items-start justify-center rounded-xl border-b-4 px-4 py-3 text-left text-white shadow-lumina-xs transition-transform disabled:cursor-not-allowed disabled:opacity-45 enabled:active:scale-[0.98]',
-                  selectedAnswer === text && 'ring-4 ring-white/80',
+                  'flex min-h-[4.5rem] flex-col items-start justify-center rounded-xl border-b-4 px-4 py-3 text-left text-white shadow-lumina-xs transition-all disabled:cursor-not-allowed enabled:active:scale-[0.98]',
+                  selectedAnswer === text && !isAutonomous && 'ring-4 ring-white/80',
+                  isCorrectOption && 'scale-[1.02] ring-4 ring-white/90',
+                  isWrongPick && 'opacity-60',
+                  isAutonomous && showCorrectAnswer === null && disabled && 'opacity-45',
+                  !isAutonomous && disabled && 'opacity-45',
                 )}
-                style={{ backgroundColor: style.bg, borderColor: style.border }}
+                style={{
+                  backgroundColor: isCorrectOption ? '#22c55e' : isWrongPick ? '#6b7280' : style.bg,
+                  borderColor: isCorrectOption ? '#16a34a' : isWrongPick ? '#4b5563' : style.border,
+                }}
               >
                 <span className="text-lg font-black">{style.label}</span>
                 <span className="mt-1 line-clamp-3 text-sm font-semibold leading-tight">{text || '—'}</span>
@@ -481,9 +696,27 @@ export function TorneoViewer({
             );
           })}
         </div>
+
+        {/* Autonomous feedback banner */}
+        {isAutonomous && showCorrectAnswer !== null && (
+          <div
+            className={cn(
+              'mt-3 rounded-lg px-4 py-2.5 text-center text-sm font-semibold animate-in fade-in duration-200',
+              selectedAnswer?.trim() === showCorrectAnswer.trim()
+                ? isDark ? 'bg-emerald-800/60 text-emerald-200' : 'bg-emerald-50 text-emerald-700'
+                : isDark ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-700',
+            )}
+          >
+            {selectedAnswer?.trim() === showCorrectAnswer.trim()
+              ? '¡Correcto!'
+              : `Incorrecto · Respuesta: ${showCorrectAnswer}`}
+          </div>
+        )}
       </div>
     );
   }
+
+  // ─── WAITING ───────────────────────────────────────────────────────────────
 
   return (
     <div className={shellClass} {...rootProps}>
@@ -497,20 +730,48 @@ export function TorneoViewer({
           ¡Torneo iniciado!
         </div>
       ) : null}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 py-8">
-        <Trophy
-          className={cn(
-            'size-20 sm:size-24 text-amber-500 animate-pulse',
-          )}
-          aria-hidden
-        />
-        <p className={cn('text-center text-lg font-semibold', isDark ? 'text-white' : 'text-[#111827]')}>
-          Esperando al docente…
-        </p>
-        <p className={cn('max-w-xs text-center text-sm', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
-          Cuando el docente lance una pregunta, aparecerá aquí con tiempo limitado.
-        </p>
-      </div>
+
+      {isAutonomous ? (
+        // ── Autonomous waiting: show start button ──
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
+          <Trophy
+            className="size-20 sm:size-24 text-amber-500"
+            aria-hidden
+          />
+          <div className="text-center">
+            <p className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+              Torneo de preguntas
+            </p>
+            <p className={cn('mt-1 text-sm', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+              {totalQuestions} pregunta{totalQuestions !== 1 ? 's' : ''} · responde lo más rápido que puedas
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => launchAutonomousQuestion(0)}
+            className={cn(
+              'mt-2 rounded-xl px-8 py-3 text-base font-bold text-white shadow-lumina-sm transition-transform active:scale-[0.97]',
+              'bg-amber-500 hover:bg-amber-600',
+            )}
+          >
+            ¡Comenzar!
+          </button>
+        </div>
+      ) : (
+        // ── Live mode waiting: expect teacher to start ──
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-8">
+          <Trophy
+            className="size-20 sm:size-24 text-amber-500 animate-pulse"
+            aria-hidden
+          />
+          <p className={cn('text-center text-lg font-semibold', isDark ? 'text-white' : 'text-[#111827]')}>
+            Esperando al docente…
+          </p>
+          <p className={cn('max-w-xs text-center text-sm', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+            Cuando el docente lance una pregunta, aparecerá aquí con tiempo limitado.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
