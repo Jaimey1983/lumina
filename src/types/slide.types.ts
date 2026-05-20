@@ -27,6 +27,25 @@ export interface BackgroundImage {
 
 export type Background = BackgroundColor | BackgroundGradient | BackgroundImage;
 
+// ─── Slide themes ─────────────────────────────────────────────────────────────
+
+export interface SlideThemeColors {
+  texto: string;
+  textoSecundario: string;
+  acento: string;
+  fondo: string;
+}
+
+export interface SlideTheme {
+  id: string;
+  nombre: string;
+  esPersonalizado: boolean;
+  fondo: Background;
+  /** Nombre de la fuente, ej: 'Inter', 'Poppins'. */
+  fuente: string;
+  colores: SlideThemeColors;
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export interface LayoutPadding {
@@ -453,6 +472,17 @@ export interface CanvasContent {
   fabricJSON?: object;
 }
 
+/** Guías de alineación manuales del editor (coordenadas virtuales 1280×720). */
+export interface SlideGuias {
+  horizontales: number[];
+  verticales: number[];
+}
+
+export const EMPTY_SLIDE_GUIAS: SlideGuias = {
+  horizontales: [],
+  verticales: [],
+};
+
 export interface Slide {
   id: string;
   order: number;
@@ -460,9 +490,13 @@ export interface Slide {
   title: string;
   /** Block-based structured content. */
   bloques?: Block[];
+  /** Guías persistentes del lienzo (solo editor). */
+  guias?: SlideGuias;
   /** Free-canvas content (Fabric.js). Present when the slide was created via the canvas editor. */
   content?: CanvasContent | null;
   fondo?: Background;
+  /** Id del tema visual activo (predefinido o personalizado). */
+  temaId?: string;
   diseno?: Layout;
   /** Estimated display duration in seconds. */
   duracionSeg?: number;

@@ -12,7 +12,9 @@ import {
   Lock,
   LockOpen,
   Monitor,
+  Palette,
   Redo2,
+  Ruler,
   Save,
   Share2,
   Timer,
@@ -33,8 +35,15 @@ import {
   SLIDE_TIMER_GLOBAL_OPTIONS,
 } from '@/lib/slide-timer-resolve';
 
-import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
-import { useCreateSlide, useInsertSlide, useRemoveSlide, useReorderSlides, useUpdateSlide } from '@/hooks/api/use-classes';
+import { useClass, type ClassDetail, type Slide as ApiSlide } from '@/hooks/api/use-class';
+import {
+  useCreateSlide,
+  useInsertSlide,
+  useRemoveSlide,
+  useReorderSlides,
+  useUpdateClass,
+  useUpdateSlide,
+} from '@/hooks/api/use-classes';
 import {
   useCreateSlideVersion,
   useRestoreSlideVersion,
@@ -72,6 +81,9 @@ import {
   type SlidePersistedLayoutKey,
 } from './components/templates-panel';
 import type { ActivityType } from './components/panels/activities-panel';
+import { getActivityPanelItem } from './components/panels/activities-panel';
+import { EditorDndShell } from './components/editor-dnd-shell';
+import type { BlockMarco } from '@/types/slide.types';
 import type { StudentResponse } from './components/panels/live-responses-panel';
 
 import {
@@ -100,8 +112,19 @@ import {
 import { SlideRenderer } from './components/slide-renderer';
 import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
 import { api } from '@/lib/api';
+import {
+  getCustomThemesForClass,
+  mergeDesempenoWithCustomThemes,
+  persistCustomThemesLocally,
+} from '@/lib/class-custom-themes';
 import { getBackground } from '@/lib/class-backgrounds';
+import {
+  buildSlideContentWithTheme,
+  getSlideTemaIdFromContent,
+  NO_SLIDE_THEME_ID,
+} from '@/lib/slide-themes';
 import { cn } from '@/lib/utils';
+import type { SlideTheme } from '@/types/slide.types';
 import { useAutosave } from '@/hooks/use-autosave';
 
 function shortAnswerTemplate(): Activity {
@@ -327,7 +350,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   modoEntregaRef.current = modoEntrega;
   // Socket connection indicator — driven by the single local socket below.
   const [isConnected, setIsConnected] = useState(false);
+  const courseId = cls?.courseId ?? '';
   const updateSlide  = useUpdateSlide(classId);
+  const updateClassMutation = useUpdateClass(classId, courseId);
   const createSlide  = useCreateSlide(classId);
   const removeSlide    = useRemoveSlide(classId);
   const reorderSlides  = useReorderSlides(classId);
@@ -335,6 +360,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
+  const [guidesVisible,      setGuidesVisible]      = useState(true);
   const [copiedBlock,        setCopiedBlock]        = useState<Block | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
   const [saveError, setSaveError] = useState(false);
@@ -414,6 +440,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   /** Top bar (Volver, acciones): no cerrar flyouts aquí en pointerdown — el setState antes del click rompe la navegación del Link. */
   const editorHeaderRef = useRef<HTMLElement>(null);
   const canvasAreaRef = useRef<CanvasAreaHandle>(null);
+  const canvasSurfaceRef = useRef<HTMLDivElement>(null);
 
   const { user, token } = useAuth();
   const [torneoSocketRevision, setTorneoSocketRevision] = useState(0);
@@ -689,6 +716,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const queryClient = useQueryClient();
   const canConfigureLiveTimer = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(user?.role ?? '');
   const [timerGlobalSaving, setTimerGlobalSaving] = useState(false);
+  const [themeApplyBusy, setThemeApplyBusy] = useState(false);
+  const [contentSaveEpoch, setContentSaveEpoch] = useState(0);
 
   const previewOpenRef = useRef(false);
   const sortedSlidesLengthRef = useRef(0);
@@ -841,7 +870,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     {
       enabled: !sessionActive && !!activeSlide,
       isSavePending: updateSlide.isPending,
-      resetKey: activeSlide?.id ?? null,
+      resetKey: `${activeSlide?.id ?? ''}:${contentSaveEpoch}`,
     },
   );
 
@@ -874,6 +903,16 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const rendererSlide = useMemo(
     () => (activeSlide ? classSlideToRendererSlide(activeSlide as ApiSlide) : null),
+    [activeSlide],
+  );
+
+  const customThemes = useMemo(
+    () => getCustomThemesForClass(classId, cls?.desempeno),
+    [classId, cls?.desempeno],
+  );
+
+  const activeTemaId = useMemo(
+    () => (activeSlide ? getSlideTemaIdFromContent(activeSlide.content) : undefined),
     [activeSlide],
   );
 
@@ -1504,7 +1543,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   );
 
   const handleAddActivity = useCallback(
-    (type: ActivityType) => {
+    (type: ActivityType, dropMarco?: BlockMarco) => {
       const templates: Record<ActivityType, () => Activity> = {
         'quiz-multiple':    quizMultipleTemplate,
         'true-false':       trueFalseTemplate,
@@ -1539,7 +1578,15 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         return;
       }
 
-      const block: Block = { tipo: 'actividad', actividad: templateFn() };
+      const block: Block = {
+        tipo: 'actividad',
+        actividad: templateFn(),
+        ...(dropMarco ? { marco: dropMarco } : {}),
+      };
+
+      const selectInserted = () => {
+        window.setTimeout(() => canvasAreaRef.current?.selectBlockByIndex(0), 50);
+      };
 
       // Si el slide activo existe y está vacío (sin bloques), agregar ahí
       if (activeSlide) {
@@ -1549,6 +1596,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           handleCommitSlideContent(
             mergeSlideContent(activeSlide as ApiSlide, { bloques: [block] }),
           );
+          if (dropMarco) selectInserted();
           toast.success(`${titles[type]} agregada al slide actual`);
           return;
         }
@@ -1559,28 +1607,166 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         buildContentDocumentForNewActivitySlide(block),
         titles[type],
       );
+      if (dropMarco) {
+        window.setTimeout(() => {
+          canvasAreaRef.current?.selectBlockByIndex(0);
+        }, 300);
+      }
       toast.success(`Slide con ${titles[type]} creado`);
     },
     [activeSlide, handleCommitSlideContent, handleCreateSlideWithActivity],
   );
 
-  const handleApplyTheme = useCallback((bg: string) => {
-    if (!activeSlide) return;
-    const base = (
-      typeof activeSlide.content === 'object' && activeSlide.content !== null
-        ? activeSlide.content
-        : {}
-    ) as Record<string, unknown>;
-    const updatedContent = { ...base, fondo: { tipo: 'color', valor: bg } };
-    const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
-    updateSlide.mutate(
-      { slideId: activeSlide.id, content: sanitized },
-      {
-        onSuccess: () => toast.success('Tema aplicado'),
-        onError: () => toast.error('Error al aplicar tema'),
-      },
-    );
-  }, [activeSlide, updateSlide]);
+  const handleActivityDrop = useCallback(
+    (type: ActivityType, marco: BlockMarco) => {
+      if (activeSlideHasActivity) return;
+      handleAddActivity(type, marco);
+    },
+    [activeSlideHasActivity, handleAddActivity],
+  );
+
+  const handleBlockDragSave = useCallback((bloques: Block[]) => {
+    canvasAreaRef.current?.persistBloquesFromDrag(bloques);
+  }, []);
+
+  const getActivityDragOverlay = useCallback((type: ActivityType) => {
+    const item = getActivityPanelItem(type);
+    if (!item) return null;
+    return { label: item.label, Icon: item.Icon };
+  }, []);
+
+  const patchSlidesThemeInCache = useCallback(
+    (slideIds: string[], theme: SlideTheme) => {
+      queryClient.setQueryData<ClassDetail | null | undefined>(
+        ['classes', 'detail', classId],
+        (prev) => {
+          if (!prev?.slides) return prev;
+          const idSet = new Set(slideIds);
+          return {
+            ...prev,
+            slides: prev.slides.map((s) => {
+              if (!idSet.has(s.id)) return s;
+              const base = getSlideContentRecord(s as ApiSlide);
+              const next = buildSlideContentWithTheme(base, theme);
+              return { ...s, content: next };
+            }),
+          };
+        },
+      );
+    },
+    [classId, queryClient],
+  );
+
+  const persistThemeOnSlide = useCallback(
+    async (slideId: string, theme: SlideTheme): Promise<boolean> => {
+      const detail = queryClient.getQueryData<ClassDetail | null>(['classes', 'detail', classId]);
+      const slide = detail?.slides?.find((s) => s.id === slideId);
+      if (!slide) return false;
+
+      const base = getSlideContentRecord(slide as ApiSlide);
+      const updated = buildSlideContentWithTheme(base, theme);
+      const sanitized = sanitizeSlideContentForPersistence(updated) ?? updated;
+
+      try {
+        await api.patch(`/classes/${classId}/slides/${slideId}`, { content: sanitized });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [classId, queryClient],
+  );
+
+  const finishThemeApply = useCallback(
+    async (slideIds: string[], theme: SlideTheme, successMessage: string) => {
+      patchSlidesThemeInCache(slideIds, theme);
+      setContentSaveEpoch((n) => n + 1);
+      await queryClient.refetchQueries({ queryKey: ['classes', 'detail', classId] });
+      toast.success(successMessage);
+    },
+    [classId, patchSlidesThemeInCache, queryClient],
+  );
+
+  const handleApplyThemeToSlide = useCallback(
+    async (theme: SlideTheme) => {
+      const slideId = activeSlide?.id;
+      if (!slideId) return;
+      setThemeApplyBusy(true);
+      const ok = await persistThemeOnSlide(slideId, theme);
+      setThemeApplyBusy(false);
+      if (ok) {
+        const msg =
+          theme.id === NO_SLIDE_THEME_ID
+            ? 'Tema quitado del slide'
+            : 'Tema aplicado al slide';
+        await finishThemeApply([slideId], theme, msg);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+        toast.error('Error al aplicar tema');
+      }
+    },
+    [activeSlide?.id, classId, finishThemeApply, persistThemeOnSlide, queryClient],
+  );
+
+  const handleApplyThemeToAllSlides = useCallback(
+    async (theme: SlideTheme) => {
+      const slides = queryClient.getQueryData<ClassDetail | null>(['classes', 'detail', classId])
+        ?.slides;
+      if (!slides?.length) return;
+
+      setThemeApplyBusy(true);
+      const ids = slides.map((s) => s.id);
+      patchSlidesThemeInCache(ids, theme);
+
+      let applied = 0;
+      for (const slide of slides) {
+        const ok = await persistThemeOnSlide(slide.id, theme);
+        if (ok) applied += 1;
+      }
+      setThemeApplyBusy(false);
+
+      if (applied === 0) {
+        queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+        toast.error('Error al aplicar tema');
+        return;
+      }
+
+      setContentSaveEpoch((n) => n + 1);
+      await queryClient.refetchQueries({ queryKey: ['classes', 'detail', classId] });
+
+      const msg =
+        theme.id === NO_SLIDE_THEME_ID
+          ? `Tema quitado de ${applied} slides`
+          : `Tema aplicado a ${applied} slides`;
+      if (applied < slides.length) {
+        toast.warning(`${msg} (${applied} de ${slides.length})`);
+      } else {
+        toast.success(msg);
+      }
+    },
+    [classId, patchSlidesThemeInCache, persistThemeOnSlide, queryClient],
+  );
+
+  const handleSaveCustomThemes = useCallback(
+    (themes: SlideTheme[]) => {
+      persistCustomThemesLocally(classId, themes);
+      const desempeno = mergeDesempenoWithCustomThemes(cls?.desempeno, themes);
+      queryClient.setQueryData<ClassDetail | null | undefined>(
+        ['classes', 'detail', classId],
+        (prev) => (prev ? { ...prev, desempeno } : prev),
+      );
+      updateClassMutation.mutate(
+        { desempeno },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+            toast.error('No se pudieron guardar los temas personalizados');
+          },
+        },
+      );
+    },
+    [classId, cls?.desempeno, queryClient, updateClassMutation],
+  );
 
   // ─── Error state ─────────────────────────────────────────────────────────────
 
@@ -1677,6 +1863,21 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               }}
             >
               <Redo2 className="size-4 shrink-0" aria-hidden />
+            </button>
+            <button
+              type="button"
+              title={guidesVisible ? 'Ocultar guías' : 'Mostrar guías'}
+              aria-label={guidesVisible ? 'Ocultar guías' : 'Mostrar guías'}
+              aria-pressed={guidesVisible}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors',
+                guidesVisible
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/60 hover:bg-white/15 hover:text-white',
+              )}
+              onClick={() => setGuidesVisible((v) => !v)}
+            >
+              <Ruler className="size-4 shrink-0" aria-hidden />
             </button>
             <div className="h-5 w-px shrink-0 bg-white/20" aria-hidden />
             <span className="inline-flex items-center gap-1.5 text-xs text-white/60">
@@ -1846,6 +2047,25 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
+                className={cn(
+                  'rounded-xl border px-3 py-1.5 text-xs font-semibold',
+                  rightPanel === 'themes'
+                    ? 'border-white/40 bg-white/25 text-white'
+                    : 'border-white/20 bg-white/10 text-white/80 hover:bg-white/20',
+                )}
+                onClick={() => toggleRightPanel('themes')}
+                aria-pressed={rightPanel === 'themes'}
+              >
+                <Palette className="size-3.5" />
+                Temas
+              </Button>
+            ) : null}
+
+            {sortedSlides.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
                 onClick={() => {
                   window.open(`/classes/${classId}/preview`, '_blank');
@@ -1939,6 +2159,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             />
           </div>
 
+          <EditorDndShell
+            canvasRef={canvasSurfaceRef}
+            slide={rendererSlide}
+            onBlockDragSave={handleBlockDragSave}
+            onActivityDrop={handleActivityDrop}
+            getActivityDragOverlay={getActivityDragOverlay}
+          >
           {/* Canvas area — flex-1 (fondo de clase en el contenedor del workspace) */}
           <div
             className={cn(
@@ -1949,6 +2176,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           >
             <CanvasArea
               ref={canvasAreaRef}
+              canvasSurfaceRef={canvasSurfaceRef}
               slide={rendererSlide}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}
@@ -1957,6 +2185,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               livePanelOpen={rightPanel === 'live'}
               onCopyBlock={setCopiedBlock}
               copiedBlock={copiedBlock}
+              guidesVisible={guidesVisible}
             />
           </div>
 
@@ -1966,7 +2195,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             activePanel={rightPanel}
             onClose={() => setRightPanel(null)}
             onAddActivity={handleAddActivity}
-            onApplyTheme={handleApplyTheme}
+            activeSlide={activeSlide as ApiSlide | null}
+            activeTemaId={activeTemaId}
+            customThemes={customThemes}
+            isThemeSaving={themeApplyBusy || updateSlide.isPending}
+            onApplyThemeToSlide={handleApplyThemeToSlide}
+            onApplyThemeToAllSlides={handleApplyThemeToAllSlides}
+            onSaveCustomThemes={handleSaveCustomThemes}
             desempenoEnunciado={desempeno?.enunciado}
             hasActivity={activeSlideHasActivity}
             liveResponses={liveResponses}
@@ -1981,6 +2216,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             liveSessionId={sessionId}
             classId={classId}
           />
+          </EditorDndShell>
 
           {/* Icon rail derecho — w-16 (fuera del cierre por click exterior) */}
           <div

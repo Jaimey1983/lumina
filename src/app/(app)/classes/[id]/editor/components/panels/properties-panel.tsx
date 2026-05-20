@@ -80,6 +80,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 export interface PropertiesPanelProps {
   bloques: Block[];
   selectedBlockId: string | null;
+  selectedBlockIds?: string[];
   onApplyBloques: (next: Block[]) => Promise<boolean>;
 }
 
@@ -88,6 +89,7 @@ export interface PropertiesPanelProps {
 export function PropertiesPanel({
   bloques,
   selectedBlockId,
+  selectedBlockIds = [],
   onApplyBloques,
 }: PropertiesPanelProps) {
   const bloquesRef = useRef(bloques);
@@ -141,6 +143,23 @@ export function PropertiesPanel({
     },
     [onApplyBloques],
   );
+
+  if (selectedBlockIds.length > 1) {
+    return (
+      <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Propiedades
+          </h2>
+        </div>
+        <div className="flex flex-1 items-start p-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            {selectedBlockIds.length} bloques seleccionados
+          </p>
+        </div>
+      </aside>
+    );
+  }
 
   const block =
     selectedBlockId && bloques.length > 0

@@ -61,8 +61,18 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  block.alto  ?? fb.alto,
       };
     }
-    case 'actividad':
+    case 'actividad': {
+      const marco = block.marco;
+      if (marco) {
+        return {
+          x: marco.izquierdaPct,
+          y: marco.arribaPct,
+          ancho: marco.anchoPct,
+          alto: marco.altoPct,
+        };
+      }
       return { ...ACTIVITY_FALLBACK };
+    }
     default:
       return { ...DEFAULT_FALLBACK };
   }
@@ -104,13 +114,14 @@ export function snapPositionToGuides(
   rawY: number,
   ancho: number,
   alto: number,
-  draggedIndex: number,
+  draggedIndex: number | number[],
   peers: Block[],
 ): { x: number; y: number; lines: SnapLine[] } {
   const xTargets: number[] = [0, 50, 100];
   const yTargets: number[] = [0, 50, 100];
+  const ignores = Array.isArray(draggedIndex) ? draggedIndex : [draggedIndex];
   for (let i = 0; i < peers.length; i++) {
-    if (i === draggedIndex) continue;
+    if (ignores.includes(i)) continue;
     const p = getBlockPos(peers[i]);
     xTargets.push(p.x, p.x + p.ancho / 2, p.x + p.ancho);
     yTargets.push(p.y, p.y + p.alto / 2, p.y + p.alto);
@@ -207,6 +218,8 @@ export function useBlockDrag({
   const originRef = useRef<{ x: number; y: number } | null>(null);
   /** Última posición con snap (persistir al soltar). */
   const pendingDragPosRef = useRef<{ x: number; y: number } | null>(null);
+  /** Original positions of all selected blocks at drag start. */
+  const selectedOriginsRef = useRef<Record<string, { x: number; y: number }> | null>(null);
 
   const clearSnapLines = useCallback(() => {
     setSnapLines([]);
@@ -219,6 +232,7 @@ export function useBlockDrag({
     setSnapLines([]);
     originRef.current = null;
     pendingDragPosRef.current = null;
+    selectedOriginsRef.current = null;
   }, [slide?.id]);
 
   // ─── helpers (react-compiler now handles memoization) ──
@@ -257,6 +271,24 @@ export function useBlockDrag({
     const { x, y } = getBlockPos(block);
     originRef.current = { x, y };
     pendingDragPosRef.current = { x, y };
+
+    // Multi-select handling: check if dragged block is in the selected set
+    const selectedIds = (event.active.data.current?.selectedBlockIds as string[]) ?? [];
+    const isDraggingSelectedGroup = selectedIds.length > 1 && selectedIds.includes(id);
+
+    if (isDraggingSelectedGroup) {
+      const origins: Record<string, { x: number; y: number }> = {};
+      selectedIds.forEach((sid) => {
+        const b = bloques[Number(sid)];
+        if (b) {
+          origins[sid] = getBlockPos(b);
+        }
+      });
+      selectedOriginsRef.current = origins;
+    } else {
+      selectedOriginsRef.current = null;
+    }
+
     setSnapLines([]);
     setDraggingId(id);
     setLiveBloques([...bloques]);
@@ -276,29 +308,40 @@ export function useBlockDrag({
     if (!dragged) return;
     const { ancho, alto } = getBlockPos(dragged);
 
+    // If dragging a group, skip all selected indices from snap guide alignment peers
+    const snapIgnores = selectedOriginsRef.current
+      ? Object.keys(selectedOriginsRef.current).map(Number)
+      : index;
+
     const { x: snapX, y: snapY, lines } = snapPositionToGuides(
       res.newX,
       res.newY,
       ancho,
       alto,
-      index,
+      snapIgnores,
       bloques,
     );
     pendingDragPosRef.current = { x: snapX, y: snapY };
     setSnapLines(lines);
 
+    const deltaX = snapX - originRef.current.x;
+    const deltaY = snapY - originRef.current.y;
+
     setLiveBloques((prev) => {
       const base = prev ?? bloques;
-      const cur  = base[index];
-      if (!cur) return prev;
-      const { x: ox, y: oy } = getBlockPos(cur);
-      if (
-        Math.abs(ox - snapX) < 0.0001 &&
-        Math.abs(oy - snapY) < 0.0001
-      ) {
-        return prev;
-      }
-      return base.map((b, i) => (i === index ? withPosition(b, snapX, snapY) : b));
+      return base.map((b, i) => {
+        const sIndex = String(i);
+        const origPos = selectedOriginsRef.current?.[sIndex];
+        if (origPos) {
+          const { ancho: bAncho, alto: bAlto } = getBlockPos(b);
+          let newX = origPos.x + deltaX;
+          let newY = origPos.y + deltaY;
+          newX = Math.max(0, Math.min(100 - bAncho, newX));
+          newY = Math.max(0, Math.min(100 - bAlto, newY));
+          return withPosition(b, newX, newY);
+        }
+        return b;
+      });
     });
   };
 
@@ -310,19 +353,45 @@ export function useBlockDrag({
 
     if (rect && originRef.current) {
       const pending = pendingDragPosRef.current;
+      let finalX = originRef.current.x;
+      let finalY = originRef.current.y;
+
       if (pending) {
-        onSave(
-          bloques.map((b, i) =>
-            i === index ? withPosition(b, pending.x, pending.y) : b,
-          ),
-        );
+        finalX = pending.x;
+        finalY = pending.y;
       } else {
         const res = deltaToPos(index, event.delta, rect);
         if (res) {
-          onSave(
-            bloques.map((b, i) => (i === index ? withPosition(b, res.newX, res.newY) : b)),
-          );
+          finalX = res.newX;
+          finalY = res.newY;
         }
+      }
+
+      const deltaX = finalX - originRef.current.x;
+      const deltaY = finalY - originRef.current.y;
+
+      if (selectedOriginsRef.current) {
+        onSave(
+          bloques.map((b, i) => {
+            const sIndex = String(i);
+            const origPos = selectedOriginsRef.current?.[sIndex];
+            if (origPos) {
+              const { ancho: bAncho, alto: bAlto } = getBlockPos(b);
+              let newX = origPos.x + deltaX;
+              let newY = origPos.y + deltaY;
+              newX = Math.max(0, Math.min(100 - bAncho, newX));
+              newY = Math.max(0, Math.min(100 - bAlto, newY));
+              return withPosition(b, newX, newY);
+            }
+            return b;
+          }),
+        );
+      } else {
+        onSave(
+          bloques.map((b, i) =>
+            i === index ? withPosition(b, finalX, finalY) : b,
+          ),
+        );
       }
     }
 
@@ -331,6 +400,7 @@ export function useBlockDrag({
     setLiveBloques(null);
     originRef.current = null;
     pendingDragPosRef.current = null;
+    selectedOriginsRef.current = null;
   };
 
   return {

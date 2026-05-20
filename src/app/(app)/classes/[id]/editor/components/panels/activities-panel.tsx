@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { DraggableActivityItem } from '../draggable-activity-item';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,6 +78,16 @@ const LIVE: ActivityItem[] = [
   },
 ];
 
+export const ALL_ACTIVITY_ITEMS: ActivityItem[] = [
+  ...EVALUATION,
+  ...INTERACTION,
+  ...LIVE,
+];
+
+export function getActivityPanelItem(type: ActivityType): ActivityItem | undefined {
+  return ALL_ACTIVITY_ITEMS.find((item) => item.type === type);
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -103,23 +113,17 @@ function ActivityGroup({
       <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
-      {items.map(({ type, label, Icon, rowClassName, iconClassName }) => (
-        <button
-          key={type}
-          type="button"
+      {items.map((item) => (
+        <DraggableActivityItem
+          key={item.type}
+          type={item.type}
+          label={item.label}
+          Icon={item.Icon}
           disabled={disabled}
-          onClick={() => onAdd(type)}
-          className={cn(
-            'flex items-center gap-2.5 px-4 py-2 text-left transition-colors',
-            disabled
-              ? 'cursor-not-allowed opacity-40'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-            !disabled && rowClassName,
-          )}
-        >
-          <Icon className={cn('size-4 shrink-0', iconClassName)} />
-          <span className="text-xs">{label}</span>
-        </button>
+          onAdd={onAdd}
+          rowClassName={item.rowClassName}
+          iconClassName={item.iconClassName}
+        />
       ))}
     </div>
   );

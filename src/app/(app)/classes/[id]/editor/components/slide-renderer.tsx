@@ -8,8 +8,10 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  type ReactNode,
   type RefObject,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Copy } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
@@ -190,6 +192,16 @@ function getBlockPositionStyle(block: Block): CSSProperties {
       };
     }
     case 'actividad': {
+      if (block.marco) {
+        return {
+          position: 'absolute',
+          left: `${block.marco.izquierdaPct}%`,
+          top: `${block.marco.arribaPct}%`,
+          width: `${block.marco.anchoPct}%`,
+          height: `${block.marco.altoPct}%`,
+          zIndex: 1,
+        };
+      }
       const fb = ACTIVITY_POSITION_FALLBACK;
       return {
         position: 'absolute',
@@ -235,6 +247,18 @@ function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number;
       const fb = BLOCK_FALLBACKS.forma;
       return { x: block.x ?? fb.x, y: block.y ?? fb.y,
                ancho: block.ancho ?? fb.ancho, alto: block.alto ?? fb.alto };
+    }
+    case 'actividad': {
+      if (block.marco) {
+        return {
+          x: block.marco.izquierdaPct,
+          y: block.marco.arribaPct,
+          ancho: block.marco.anchoPct,
+          alto: block.marco.altoPct,
+        };
+      }
+      const fb = ACTIVITY_POSITION_FALLBACK;
+      return { x: fb.x, y: fb.y, ancho: fb.ancho, alto: fb.alto };
     }
     default: {
       const fb = ACTIVITY_POSITION_FALLBACK;
@@ -910,7 +934,8 @@ interface RenderColumnsProps {
   slideId: string;
   modo: Modo;
   selectedId: string | null;
-  onBlockClick: (id: string) => void;
+  selectedBlockIds?: string[];
+  onBlockClick: (id: string, e?: React.MouseEvent) => void;
   pathPrefix: string;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onRemoveBlock?: (blockId: string) => void;
@@ -930,6 +955,7 @@ function RenderColumns({
   slideId,
   modo,
   selectedId,
+  selectedBlockIds,
   onBlockClick,
   pathPrefix,
   onActivityChange,
@@ -952,6 +978,8 @@ function RenderColumns({
     }
   }
 
+  const editorMode = modo === 'editor';
+
   return (
     <div
       style={{
@@ -969,16 +997,22 @@ function RenderColumns({
         >
           {colBlocks.map((innerBlock, blockIdx) => {
             const id = `${pathPrefix}-${colIdx}-${blockIdx}`;
+            const isInnerSelected = editorMode && (
+              selectedBlockIds && selectedBlockIds.length > 0
+                ? selectedBlockIds.includes(id)
+                : selectedId === id
+            );
             return (
               <BlockNode
                 key={id}
                 block={innerBlock}
                 blockId={id}
                 slideId={slideId}
-                isSelected={selectedId === id}
+                isSelected={isInnerSelected}
                 modo={modo}
                 selectedId={selectedId}
-                onClick={() => onBlockClick(id)}
+                selectedBlockIds={selectedBlockIds}
+                onClick={(e) => onBlockClick(id, e)}
                 onBlockClick={onBlockClick}
                 pathPrefix={id}
                 onActivityChange={onActivityChange}
@@ -1001,6 +1035,71 @@ function RenderColumns({
   );
 }
 
+const BLOCK_TOOLBAR_GAP_PX = 4;
+
+/** Barra de acciones del bloque en `document.body` para evitar recorte por overflow del canvas. */
+function BlockActionToolbarPortal({
+  blockRef,
+  visible,
+  children,
+}: {
+  blockRef: RefObject<HTMLDivElement | null>;
+  visible: boolean;
+  children: ReactNode;
+}) {
+  const [style, setStyle] = useState<CSSProperties | null>(null);
+
+  const updatePosition = useCallback(() => {
+    const el = blockRef.current;
+    if (!el || !visible) {
+      setStyle(null);
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    setStyle({
+      position: 'fixed',
+      top: rect.top - BLOCK_TOOLBAR_GAP_PX,
+      left: rect.left + rect.width / 2,
+      transform: 'translate(-50%, -100%)',
+      zIndex: 1000,
+    });
+  }, [blockRef, visible]);
+
+  useLayoutEffect(() => {
+    updatePosition();
+    if (!visible) return;
+
+    const el = blockRef.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(updatePosition);
+    ro.observe(el);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [visible, updatePosition, blockRef]);
+
+  if (!visible || !style || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      role="toolbar"
+      aria-label="Opciones del bloque"
+      style={style}
+      className="flex items-center gap-1 rounded-2xl border border-[#e5e7eb] bg-white px-2 py-1.5 shadow-sm"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+}
+
 // ─── BlockNode ────────────────────────────────────────────────────────────────
 
 interface BlockNodeProps {
@@ -1010,8 +1109,9 @@ interface BlockNodeProps {
   isSelected: boolean;
   modo: Modo;
   selectedId: string | null;
-  onClick: () => void;
-  onBlockClick: (id: string) => void;
+  selectedBlockIds?: string[];
+  onClick: (e?: React.MouseEvent) => void;
+  onBlockClick: (id: string, e?: React.MouseEvent) => void;
   pathPrefix: string;
   /** Absolute-position style applied to the wrapper div (top-level blocks only). */
   positionStyle?: CSSProperties;
@@ -1057,6 +1157,7 @@ function BlockNode({
   isSelected,
   modo,
   selectedId,
+  selectedBlockIds,
   onClick,
   onBlockClick,
   pathPrefix,
@@ -1094,6 +1195,13 @@ function BlockNode({
   const activityModo: 'editor' | 'viewer' = editorMode ? 'editor' : 'viewer';
 
   const isTextEditing = editorMode && block.tipo === 'texto' && editingId === blockId;
+  const blockRef = useRef<HTMLDivElement>(null);
+  const showActionToolbar =
+    editorMode &&
+    isSelected &&
+    !isFormBlock &&
+    !isTextEditing &&
+    (!!onRemoveBlock || !!onDuplicateBlock || !!onCopyBlock);
 
   function renderContent() {
     switch (block.tipo) {
@@ -1141,6 +1249,7 @@ function BlockNode({
             slideId={slideId}
             modo={modo}
             selectedId={selectedId}
+            selectedBlockIds={selectedBlockIds}
             onBlockClick={onBlockClick}
             pathPrefix={pathPrefix}
             onActivityChange={onActivityChange}
@@ -1166,7 +1275,9 @@ function BlockNode({
       : {};
 
   return (
+    <>
     <div
+      ref={blockRef}
       role={editorMode && !isFormBlock && !isTextEditing ? 'button' : undefined}
       tabIndex={editorMode && !isFormBlock && !isTextEditing ? 0 : undefined}
       aria-pressed={editorMode && !isTextEditing ? isSelected : undefined}
@@ -1174,7 +1285,7 @@ function BlockNode({
       style={{ ...positionStyle, ...animationStyle }}
       onClick={
         editorMode && !isTextEditing
-          ? (e) => { e.stopPropagation(); onClick(); }
+          ? (e) => { e.stopPropagation(); onClick(e); }
           : undefined
       }
       onDoubleClick={
@@ -1216,44 +1327,52 @@ function BlockNode({
           onResizeEnd={onResizeEnd}
         />
       )}
-      {editorMode && (!!onRemoveBlock || !!onDuplicateBlock || !!onCopyBlock) && (
-        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 rounded-2xl border border-[#e5e7eb] bg-white px-2 py-1.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-          {!!onCopyBlock && block.tipo !== 'actividad' && (
-            <button
-              type="button"
-              aria-label="Copiar bloque"
-              onClick={(e) => { e.stopPropagation(); onCopyBlock(blockId); }}
-              className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
-              title="Copiar (Ctrl+C)"
-            >
-              <Copy className="size-3.5" />
-            </button>
-          )}
-          {!!onDuplicateBlock && block.tipo !== 'actividad' && (
-            <button
-              type="button"
-              aria-label="Duplicar bloque"
-              onClick={(e) => { e.stopPropagation(); onDuplicateBlock(blockId); }}
-              className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
-              title="Duplicar (Ctrl+D)"
-            >
-              <Copy className="size-3.5" />
-            </button>
-          )}
-          {!!onRemoveBlock && (
-            <button
-              type="button"
-              aria-label="Eliminar bloque"
-              onClick={(e) => { e.stopPropagation(); onRemoveBlock(blockId); }}
-              className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-red-600"
-              title="Eliminar (Supr o Backspace)"
-            >
-              <Trash2 className="size-3.5" />
-            </button>
-          )}
-        </div>
-      )}
     </div>
+    <BlockActionToolbarPortal blockRef={blockRef} visible={showActionToolbar}>
+      {!!onCopyBlock && block.tipo !== 'actividad' && (
+        <button
+          type="button"
+          aria-label="Copiar bloque"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCopyBlock(blockId);
+          }}
+          className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+          title="Copiar (Ctrl+C)"
+        >
+          <Copy className="size-3.5" />
+        </button>
+      )}
+      {!!onDuplicateBlock && block.tipo !== 'actividad' && (
+        <button
+          type="button"
+          aria-label="Duplicar bloque"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDuplicateBlock(blockId);
+          }}
+          className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+          title="Duplicar (Ctrl+D)"
+        >
+          <Copy className="size-3.5" />
+        </button>
+      )}
+      {!!onRemoveBlock && (
+        <button
+          type="button"
+          aria-label="Eliminar bloque"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveBlock(blockId);
+          }}
+          className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-red-600"
+          title="Eliminar (Supr o Backspace)"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      )}
+    </BlockActionToolbarPortal>
+    </>
   );
 }
 
@@ -1269,7 +1388,9 @@ export interface SlideRendererProps {
    */
   canvasRef?: RefObject<HTMLDivElement | null>;
   /** Called with the block's index-path string when a block is selected in editor mode. */
-  onBlockSelect?: (blockId: string) => void;
+  onBlockSelect?: (blockId: string, e?: React.MouseEvent) => void;
+  selectedBlockId?: string | null;
+  selectedBlockIds?: string[];
   /** Persiste cambios de una actividad (PATCH vía el padre). */
   onActivityChange?: (blockId: string, activity: Activity) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
@@ -1318,6 +1439,8 @@ export function SlideRenderer({
   modo,
   canvasRef: canvasRefProp,
   onBlockSelect,
+  selectedBlockId: selectedBlockIdProp,
+  selectedBlockIds: selectedBlockIdsProp,
   onActivityChange,
   onRemoveBlock,
   onDuplicateBlock,
@@ -1335,7 +1458,9 @@ export function SlideRenderer({
   viewerStudentName,
   viewerClassId: viewerClassIdProp,
 }: SlideRendererProps) {
-  const [selectedId,    setSelectedId]    = useState<string | null>(null);
+  const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
+  const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
+
   const [editingId,     setEditingId]     = useState<string | null>(null);
   const [resizingCoords, setResizingCoords] = useState<Record<string, { x: number; y: number; ancho: number; alto: number }>>({});
   const internalCanvasRef = useRef<HTMLDivElement | null>(null);
@@ -1398,7 +1523,7 @@ export function SlideRenderer({
   function handleEditStart(blockId: string) {
     if (!editorMode || editingId === blockId) return;
     setEditingId(blockId);
-    setSelectedId(blockId);
+    setSelectedIdState(blockId);
     onBlockSelect?.(blockId);
   }
 
@@ -1425,16 +1550,17 @@ export function SlideRenderer({
 
   // ─── Block selection / canvas deselect ────────────────────────────────────
 
-  function handleBlockClick(blockId: string) {
+  function handleBlockClick(blockId: string, e?: React.MouseEvent) {
     if (!editorMode) return;
-    setSelectedId(blockId);
-    onBlockSelect?.(blockId);
+    setSelectedIdState(blockId);
+    onBlockSelect?.(blockId, e);
   }
 
   function handleCanvasClick() {
     if (editorMode) {
-      setSelectedId(null);
+      setSelectedIdState(null);
       setEditingId(null);
+      onBlockSelect?.('');
     }
   }
 
@@ -1562,17 +1688,24 @@ export function SlideRenderer({
           zIndex: (block as { zIndex?: number }).zIndex ?? 1,
         } : posStyleObj;
 
+        const isBlockSelected = editorMode && (
+          selectedBlockIdsProp && selectedBlockIdsProp.length > 0
+            ? selectedBlockIdsProp.includes(blockId)
+            : selectedId === blockId
+        );
+
         return (
           <BlockNode
             key={`${slide.id}-${blockId}`}
             block={block}
             blockId={blockId}
             slideId={slide.id}
-            isSelected={editorMode && selectedId === blockId}
+            isSelected={isBlockSelected}
             modo={modo}
             selectedId={selectedId}
-            onClick={() => handleBlockClick(blockId)}
-            onBlockClick={handleBlockClick}
+            selectedBlockIds={selectedBlockIdsProp}
+            onClick={(e) => handleBlockClick(blockId, e)}
+            onBlockClick={(id, e) => handleBlockClick(id, e)}
             pathPrefix={blockId}
             positionStyle={posStyle}
             onActivityChange={onActivityChange}

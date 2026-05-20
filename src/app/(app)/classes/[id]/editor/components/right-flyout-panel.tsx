@@ -10,7 +10,9 @@ import type { RightPanelId } from './right-rail';
 import type { ActivityType } from './panels/activities-panel';
 import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import { ActivitiesPanel } from './panels/activities-panel';
-import { ThemesPanel } from './panels/themes-panel';
+import { SlideThemesPanel } from './panels/themes-panel';
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import type { SlideTheme } from '@/types/slide.types';
 import {
   LiveResponsesPanel,
   type StudentResponse,
@@ -33,7 +35,13 @@ export interface RightFlyoutPanelProps {
   activePanel: RightPanelId | null;
   onClose: () => void;
   onAddActivity: (type: ActivityType) => void;
-  onApplyTheme: (bg: string) => void;
+  activeSlide?: ApiSlide | null;
+  activeTemaId?: string;
+  customThemes?: SlideTheme[];
+  isThemeSaving?: boolean;
+  onApplyThemeToSlide?: (theme: SlideTheme) => void;
+  onApplyThemeToAllSlides?: (theme: SlideTheme) => void;
+  onSaveCustomThemes?: (themes: SlideTheme[]) => void;
   desempenoEnunciado?: string;
   hasActivity?: boolean;
   liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
@@ -58,7 +66,13 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       activePanel,
       onClose,
       onAddActivity,
-      onApplyTheme,
+      activeSlide,
+      activeTemaId,
+      customThemes = [],
+      isThemeSaving,
+      onApplyThemeToSlide,
+      onApplyThemeToAllSlides,
+      onSaveCustomThemes,
       desempenoEnunciado,
       hasActivity,
       liveResponses,
@@ -80,13 +94,17 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
           'flex shrink-0 flex-col overflow-hidden border-l border-[#e5e7eb] bg-white shadow-xl',
           'motion-safe:transition-[width,box-shadow,opacity] motion-safe:duration-200 motion-safe:ease-out',
           'motion-reduce:transition-none',
-          activePanel ? 'w-64 opacity-100' : 'w-0 border-transparent opacity-0 shadow-none',
+          activePanel
+            ? activePanel === 'themes'
+              ? 'w-72 opacity-100'
+              : 'w-64 opacity-100'
+            : 'w-0 border-transparent opacity-0 shadow-none',
         )}
       >
       {activePanel && (
         <div
           className={cn(
-            'flex h-full w-64 flex-col',
+            activePanel === 'themes' ? 'flex h-full w-72 flex-col' : 'flex h-full w-64 flex-col',
             'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200',
             'motion-reduce:animate-none',
           )}
@@ -117,8 +135,16 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
             {activePanel === 'activities' && (
               <ActivitiesPanel onAddActivity={onAddActivity} hasActivity={hasActivity} />
             )}
-            {activePanel === 'themes' && (
-              <ThemesPanel onApplyTheme={onApplyTheme} />
+            {activePanel === 'themes' && onApplyThemeToSlide && onApplyThemeToAllSlides && onSaveCustomThemes && (
+              <SlideThemesPanel
+                activeSlide={activeSlide ?? null}
+                activeTemaId={activeTemaId}
+                customThemes={customThemes}
+                isSaving={isThemeSaving}
+                onApplyToCurrentSlide={onApplyThemeToSlide}
+                onApplyToAllSlides={onApplyThemeToAllSlides}
+                onSaveCustomThemes={onSaveCustomThemes}
+              />
             )}
             {activePanel === 'live' &&
               activeActivity?.tipo === 'torneo' &&

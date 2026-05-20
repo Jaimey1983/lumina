@@ -74,6 +74,8 @@ export interface UpdateClassInput {
   timerGlobal?: number;
   modoEntrega?: ClassModoEntrega;
   background?: string;
+  /** Temas de diapositiva personalizados (también se persiste dentro de `desempeno`). */
+  temasPersonalizados?: unknown;
 }
 
 export function useCreateClass(courseId: string) {

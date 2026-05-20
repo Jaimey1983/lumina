@@ -1,5 +1,6 @@
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { ActivityBlock, Background, Block, Layout, Slide } from '@/types/slide.types';
+import type { ActivityBlock, Background, Block, Layout, Slide, SlideGuias } from '@/types/slide.types';
+import { parseSlideGuias } from '@/lib/canvas-guides';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -61,6 +62,8 @@ function resolveFondo(c: Record<string, unknown>): Background | undefined {
 export function classSlideToRendererSlide(api: ApiSlide): Slide {
   const c = getSlideContentRecord(api);
   const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+  const temaId = typeof c.temaId === 'string' && c.temaId.length > 0 ? c.temaId : undefined;
+
   return {
     id: api.id,
     order: api.order,
@@ -68,7 +71,9 @@ export function classSlideToRendererSlide(api: ApiSlide): Slide {
     title: api.title,
     bloques,
     fondo: resolveFondo(c),
+    temaId,
     diseno: resolveDiseno(c),
+    guias: parseSlideGuias(c.guias),
     content: null,
   };
 }
@@ -83,13 +88,14 @@ export function mergeSlideContent(
 
 /** Une el estado ya normalizado del renderer (`Slide`) con un parche (p. ej. antes de PATCH). */
 export function mergeRendererSlideState(
-  slide: { bloques?: Block[]; fondo?: Background; diseno?: Layout },
+  slide: { bloques?: Block[]; fondo?: Background; diseno?: Layout; guias?: SlideGuias },
   patch: Record<string, unknown>,
 ): Record<string, unknown> {
   return {
     ...(Array.isArray(slide.bloques) ? { bloques: slide.bloques } : {}),
     ...(slide.fondo ? { fondo: slide.fondo } : {}),
     ...(slide.diseno ? { diseno: slide.diseno } : {}),
+    ...(slide.guias ? { guias: slide.guias } : {}),
     ...patch,
   };
 }
@@ -108,35 +114,11 @@ export function replaceSlideContentWithSingleActivity(
   api: ApiSlide | null,
   activityBlock: Block,
 ): Record<string, unknown> {
-  let clean = activityBlock;
-  if (activityBlock.tipo === 'actividad') {
-    const ab = activityBlock as ActivityBlock;
-    if (ab.marco != null) {
-      const { marco: _m, ...rest } = ab;
-      clean = rest as Block;
-    }
-  }
   return mergeSlideContent(api, {
-    bloques: [clean],
+    bloques: [activityBlock],
     layout: 'titulo_centrado',
     diseno: LAYOUT_FROM_KEY.titulo_centrado,
   });
-}
-
-function stripMarcoDeep(block: Block): Block {
-  if (block.tipo === 'actividad') {
-    const ab = block as ActivityBlock;
-    if (ab.marco == null) return block;
-    const { marco: _m, ...rest } = ab;
-    return rest as Block;
-  }
-  if (block.tipo === 'columnas') {
-    return {
-      ...block,
-      columnas: block.columnas.map((col) => col.map(stripMarcoDeep)),
-    };
-  }
-  return block;
 }
 
 /**
@@ -152,11 +134,9 @@ export function sanitizeSlideContentForPersistence(content: unknown): Record<str
 
   const hasTopLevelActivity = bloques.some((b) => b.tipo === 'actividad');
   if (hasTopLevelActivity) {
-    c.bloques = bloques.filter((b) => b.tipo === 'actividad').map(stripMarcoDeep);
+    c.bloques = bloques.filter((b) => b.tipo === 'actividad');
     c.layout = 'titulo_centrado';
     c.diseno = LAYOUT_FROM_KEY.titulo_centrado;
-  } else {
-    c.bloques = bloques.map(stripMarcoDeep);
   }
   return c;
 }

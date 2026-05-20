@@ -7,20 +7,16 @@ import {
   useImperativeHandle,
   useRef,
   useState,
+  type Ref,
 } from 'react';
 import { useParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { GripHorizontal, Presentation } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  DndContext,
-  PointerSensor,
-  useDraggable,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
+import { useDraggable } from '@dnd-kit/core';
 
-import type { Activity, Background, Block, Slide } from '@/types/slide.types';
+import type { Activity, Background, Block, Slide, SlideGuias } from '@/types/slide.types';
+import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
 import {
   getBlockAtPath,
   sanitizeSlideContentForPersistence,
@@ -35,7 +31,12 @@ import {
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
-import { useBlockDrag, getBlockPos, snapPositionToGuides } from '@/hooks/use-block-drag';
+import { getBlockPos, snapPositionToGuides } from '@/hooks/use-block-drag';
+import { useEditorBlockDrag } from './editor-dnd-shell';
+import { DroppableCanvas } from './droppable-canvas';
+import { SpacingIndicators } from '@/components/editor/spacing-indicators';
+import { CanvasGuidesChrome } from './canvas-guides';
+import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
 
 const MAX_UNDO = 20;
 
@@ -77,13 +78,20 @@ function BlockDragHandle({
   block,
   index,
   draggingId,
+  selectedBlockIds,
 }: {
   block: Block;
   index: number;
   draggingId: string | null;
+  selectedBlockIds: string[];
 }) {
   const id = String(index);
-  const { attributes, listeners, setNodeRef } = useDraggable({ id });
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id,
+    data: {
+      selectedBlockIds,
+    },
+  });
   // Always use the original block position for the handle container so it
   // doesn't double-move while SlideRenderer shows the live preview.
   const pos = getBlockPos(block);
@@ -149,6 +157,10 @@ export interface CanvasAreaProps {
   onEffectiveBloques?: (bloques: Block[] | null) => void;
   /** Panel «Respuestas en vivo» abierto: oculta PROPIEDADES aunque haya bloque seleccionado. */
   livePanelOpen?: boolean;
+  /** Ref al marco del slide (compartido con EditorDndShell para drops del panel). */
+  canvasSurfaceRef?: Ref<HTMLDivElement | null>;
+  /** Muestra reglas y guías manuales (solo editor). */
+  guidesVisible?: boolean;
 }
 
 export type CanvasAreaHandle = {
@@ -159,6 +171,10 @@ export type CanvasAreaHandle = {
   /** Elimina el bloque seleccionado si hay uno; devuelve si se ejecutó la eliminación. */
   deleteSelectedBlock: () => boolean;
   clearBlockSelection: () => void;
+  /** Persiste posiciones tras arrastrar un bloque en el lienzo. */
+  persistBloquesFromDrag: (bloques: Block[]) => void;
+  /** Selecciona un bloque por índice (p. ej. tras insertar actividad). */
+  selectBlockByIndex: (index: number) => void;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -187,6 +203,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     copiedBlock,
     onEffectiveBloques,
     livePanelOpen = false,
+    canvasSurfaceRef,
+    guidesVisible = true,
   },
   ref,
 ) {
@@ -198,6 +216,26 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   // ── canvasRef — points at the slide frame div ───────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  const setCanvasSurfaceRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      canvasRef.current = node;
+      if (typeof canvasSurfaceRef === 'function') {
+        canvasSurfaceRef(node);
+      } else if (canvasSurfaceRef && 'current' in canvasSurfaceRef) {
+        (canvasSurfaceRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }
+    },
+    [canvasSurfaceRef],
+  );
+
+  const {
+    draggingId,
+    liveBloques,
+    snapLines,
+    clearSnapLines,
+    setSnapLines,
+  } = useEditorBlockDrag();
+
   /**
    * Optimistic bridge: holds the final block positions immediately after a
    * successful drag so the canvas doesn't snap back while the query refetches.
@@ -205,6 +243,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
    */
   const [committedBloques, setCommittedBloques] = useState<Block[] | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
+  const [marqueeRect, setMarqueeRect] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const wasDraggingRef = useRef(false);
   const onBlockSelectRef = useRef(onBlockSelect);
   onBlockSelectRef.current = onBlockSelect;
 
@@ -215,6 +261,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
   useEffect(() => {
     setSelectedBlockId(null);
+    setSelectedBlockIds([]);
   }, [slide?.id]);
 
   const hasActivityBlock =
@@ -260,7 +307,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   );
 
   const buildContentPayload = useCallback(
-    (bloques: Block[], fondoOverride?: Background) => {
+    (
+      bloques: Block[],
+      fondoOverride?: Background,
+      guiasOverride?: SlideGuias,
+    ) => {
+      const guias = guiasOverride ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
       return {
         bloques,
         ...(fondoOverride !== undefined
@@ -269,9 +321,27 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             ? { fondo: slide.fondo }
             : {}),
         ...(slide?.diseno ? { diseno: slide.diseno } : {}),
+        guias,
       };
     },
-    [slide?.fondo, slide?.diseno],
+    [slide?.fondo, slide?.diseno, slide?.guias],
+  );
+
+  const persistGuias = useCallback(
+    async (nextGuias: SlideGuias) => {
+      if (!slide?.id || !classId) return;
+      const bloques = slide.bloques ?? [];
+      const content = buildContentPayload(bloques, undefined, nextGuias);
+      const ok = await patchSlideContent(content);
+      if (ok) {
+        await queryClient.refetchQueries({
+          queryKey: ['classes', 'detail', classId],
+        });
+      } else {
+        toast.error('No se pudieron guardar las guías');
+      }
+    },
+    [slide?.id, slide?.bloques, classId, buildContentPayload, patchSlideContent, queryClient],
   );
 
   const pushUndo = useCallback(
@@ -411,30 +481,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [persistBloques, slide?.bloques],
-  );
-
-  // ── drag hook ───────────────────────────────────────────────────────────────
-  const {
-    handleDragStart,
-    handleDragEnd,
-    handleDragMove,
-    draggingId,
-    liveBloques,
-    snapLines,
-    clearSnapLines,
-    setSnapLines,
-  } = useBlockDrag({
-    canvasRef,
-    slide,
-    onSave: handleDragSave,
-  });
-
-  // ── dnd-kit sensors ─────────────────────────────────────────────────────────
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      // Require ≥4 px movement before activating drag so normal clicks work.
-      activationConstraint: { distance: 4 },
-    }),
   );
 
   // ── snap during resize ──────────────────────────────────────────────────────
@@ -619,28 +665,168 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   }, [effectiveBloques, slide?.id, draggingId]);
 
   const blocks = slide?.bloques ?? [];
+  const allBlocks = effectiveBloques ?? blocks;
+  const activeBlock = selectedBlockId ? allBlocks[Number(selectedBlockId)] : undefined;
 
   useEffect(() => {
-    if (!selectedBlockId) return;
     const bloques = effectiveBloques ?? slide?.bloques ?? [];
     if (!bloques.length) {
       setSelectedBlockId(null);
+      setSelectedBlockIds([]);
       onBlockSelectRef.current?.('');
       return;
     }
-    if (!getBlockAtPath(bloques, selectedBlockId)) {
-      setSelectedBlockId(null);
-      onBlockSelectRef.current?.('');
+    if (selectedBlockId) {
+      if (!getBlockAtPath(bloques, selectedBlockId)) {
+        setSelectedBlockId(null);
+        setSelectedBlockIds([]);
+        onBlockSelectRef.current?.('');
+      }
+    } else {
+      setSelectedBlockIds([]);
     }
   }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques]);
 
   const handleRendererBlockSelect = useCallback(
-    (id: string) => {
-      setSelectedBlockId(id);
-      onBlockSelect?.(id);
+    (id: string, e?: React.MouseEvent) => {
+      if (e?.shiftKey) {
+        setSelectedBlockIds((prev) => {
+          let next = [...prev];
+          if (next.includes(id)) {
+            next = next.filter((item) => item !== id);
+          } else {
+            next.push(id);
+          }
+          const lastSelected = next.length > 0 ? next[next.length - 1]! : null;
+          setSelectedBlockId(lastSelected);
+          onBlockSelect?.(lastSelected || '');
+          return next;
+        });
+      } else {
+        setSelectedBlockId(id);
+        setSelectedBlockIds(id ? [id] : []);
+        onBlockSelect?.(id);
+      }
     },
     [onBlockSelect],
   );
+
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Only left click
+    const target = e.target as HTMLElement;
+    
+    // Ignore if click started on interactive elements, block nodes, resize/drag handles
+    if (
+      target.closest('[data-block-id]') ||
+      target.closest('[data-drag-handle]') ||
+      target.closest('[data-resize-handle]') ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('textarea') ||
+      target.closest('select')
+    ) {
+      return;
+    }
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+
+    setMarqueeRect({
+      startX,
+      startY,
+      currentX: startX,
+      currentY: startY,
+    });
+
+    let hasMoved = false;
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!canvasRef.current) return;
+      const currentRect = canvasRef.current.getBoundingClientRect();
+      const currentX = Math.max(0, Math.min(currentRect.width, moveEvent.clientX - currentRect.left));
+      const currentY = Math.max(0, Math.min(currentRect.height, moveEvent.clientY - currentRect.top));
+
+      const dx = moveEvent.clientX - (rect.left + startX);
+      const dy = moveEvent.clientY - (rect.top + startY);
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        hasMoved = true;
+        wasDraggingRef.current = true;
+      }
+
+      setMarqueeRect((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          currentX,
+          currentY,
+        };
+      });
+    };
+
+    const handleMouseUp = (upEvent: MouseEvent) => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      setMarqueeRect((prev) => {
+        if (!prev) return null;
+
+        const x1 = Math.min(prev.startX, prev.currentX);
+        const x2 = Math.max(prev.startX, prev.currentX);
+        const y1 = Math.min(prev.startY, prev.currentY);
+        const y2 = Math.max(prev.startY, prev.currentY);
+
+        const marqueeWidth = x2 - x1;
+        const marqueeHeight = y2 - y1;
+
+        if (marqueeWidth > 4 || marqueeHeight > 4) {
+          const canvasBounds = canvasRef.current?.getBoundingClientRect();
+          if (canvasBounds) {
+            const canvasW = canvasBounds.width;
+            const canvasH = canvasBounds.height;
+
+            const marqueeLeftPct = (x1 / canvasW) * 100;
+            const marqueeRightPct = (x2 / canvasW) * 100;
+            const marqueeTopPct = (y1 / canvasH) * 100;
+            const marqueeBottomPct = (y2 / canvasH) * 100;
+
+            const intersectedIds: string[] = [];
+            allBlocks.forEach((block, index) => {
+              const pos = getBlockPos(block);
+              const blockLeft = pos.x;
+              const blockRight = pos.x + pos.ancho;
+              const blockTop = pos.y;
+              const blockBottom = pos.y + pos.alto;
+
+              const overlapX = marqueeLeftPct < blockRight && marqueeRightPct > blockLeft;
+              const overlapY = marqueeTopPct < blockBottom && marqueeBottomPct > blockTop;
+
+              if (overlapX && overlapY) {
+                intersectedIds.push(String(index));
+              }
+            });
+
+            if (intersectedIds.length > 0) {
+              setSelectedBlockIds(intersectedIds);
+              const lastId = intersectedIds[intersectedIds.length - 1]!;
+              setSelectedBlockId(lastId);
+              onBlockSelect?.(lastId);
+            } else {
+              setSelectedBlockIds([]);
+              setSelectedBlockId(null);
+              onBlockSelect?.('');
+            }
+          }
+        }
+
+        return null;
+      });
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [allBlocks, onBlockSelect]);
 
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
@@ -654,10 +840,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     const root = canvasRef.current;
     if (!root) return;
     const onClickCapture = (e: MouseEvent) => {
+      if (wasDraggingRef.current) {
+        wasDraggingRef.current = false;
+        e.stopPropagation();
+        e.preventDefault();
+        return;
+      }
       const t = e.target as HTMLElement;
       if (t.closest('[data-block-id]')) return;
       if (t.closest('[data-drag-handle]')) return;
       setSelectedBlockId(null);
+      setSelectedBlockIds([]);
       onBlockSelectRef.current?.('');
     };
     root.addEventListener('click', onClickCapture, true);
@@ -688,12 +881,29 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         if (!selectedBlockId) return false;
         onRemoveBlock?.(selectedBlockId);
         setSelectedBlockId(null);
+        setSelectedBlockIds([]);
         onBlockSelectRef.current?.('');
         return true;
       },
       clearBlockSelection: () => {
         setSelectedBlockId(null);
+        setSelectedBlockIds([]);
         onBlockSelectRef.current?.('');
+      },
+      persistBloquesFromDrag: (bloques) => {
+        void handleDragSave(bloques);
+      },
+      selectBlockByIndex: (index) => {
+        const id = String(index);
+        setSelectedBlockId(id);
+        setSelectedBlockIds([id]);
+        onBlockSelectRef.current?.(id);
+        setTimeout(() => {
+          const el = canvasRef.current?.querySelector(
+            `[data-block-id="${id}"]`,
+          ) as HTMLElement | null;
+          el?.click();
+        }, 0);
       },
     }),
     [
@@ -703,6 +913,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleDuplicateBlock,
       handleCopyBlock,
       onRemoveBlock,
+      handleDragSave,
     ],
   );
 
@@ -718,15 +929,15 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     <div
       className={cn(
         // isolate: new stacking context — blocks can't z-index-bleed into siblings.
-        // overflow-clip: clips overflow at workspace boundary without creating a
-        //   scroll container, so blocks beyond the 48 px padding are hidden but
-        //   blocks in the padding zone remain visible and interactive.
-        'relative isolate flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end overflow-clip',
+        // overflow-visible: allows rulers and blocks dragged outside the slide
+        //   frame to remain visible and interactive in the grey workspace margin.
+        'relative isolate flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end overflow-visible',
         'bg-editor-workspace px-12 pb-12 pt-[var(--editor-canvas-pt)] md:px-12 md:pb-12 md:pt-[var(--editor-canvas-pt-md)]',
       )}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           setSelectedBlockId(null);
+          setSelectedBlockIds([]);
           onBlockSelectRef.current?.('');
         }
       }}
@@ -734,7 +945,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       {/* Floating editor toolbar */}
       <div
         className={cn(
-          'absolute left-1/2 z-10 flex max-w-[calc(100vw-2rem)] min-w-0 -translate-x-1/2 items-center gap-1',
+          'absolute left-1/2 z-50 flex max-w-[calc(100vw-2rem)] min-w-0 -translate-x-1/2 items-center gap-1',
           'top-[var(--editor-toolbar-top)] md:top-[var(--editor-toolbar-top-md)]',
           'rounded-2xl border border-[#e5e7eb] bg-white px-3 py-1.5 shadow-sm',
           'motion-safe:transition-[box-shadow,transform] motion-safe:duration-200 motion-safe:ease-out',
@@ -762,6 +973,22 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         />
       </div>
 
+      {/* Floating Alignment Toolbar */}
+      {selectedBlockIds.length >= 2 && (
+        <div
+          className="absolute left-1/2 z-50 -translate-x-1/2 animate-in fade-in slide-in-from-top-1 duration-200"
+          style={{
+            top: 'calc(var(--editor-toolbar-top, 12px) + 52px)',
+          }}
+        >
+          <AlignmentToolbar
+            selectedIds={selectedBlockIds}
+            bloques={liveSlide?.bloques ?? []}
+            onApplyBloques={handleApplyBloques}
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className={SLIDE_VIEWPORT_CLASS}>
           <div className={SLIDE_SURFACE_CLASS}>
@@ -769,74 +996,107 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           </div>
         </div>
       ) : liveSlide ? (
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
+        <CanvasGuidesChrome
+          visible={guidesVisible}
+          viewportClassName={SLIDE_VIEWPORT_CLASS}
+          guias={liveSlide.guias ?? EMPTY_SLIDE_GUIAS}
+          onGuiasChange={(next) => {
+            void persistGuias(next);
+          }}
+          canvasRef={canvasRef}
         >
-          <div className={SLIDE_VIEWPORT_CLASS}>
-            <div ref={canvasRef} className={SLIDE_SURFACE_CLASS}>
-            {/* Slide content — receives live positions during drag */}
-            <SlideRenderer
-              slide={liveSlide}
-              modo="editor"
-              canvasRef={canvasRef}
-              onBlockSelect={handleRendererBlockSelect}
-              onActivityChange={onActivityChange}
-              onRemoveBlock={onRemoveBlock}
-              onDuplicateBlock={handleDuplicateBlock}
-              onCopyBlock={handleCopyBlock}
-              onPersistSlide={handlePersistFromRenderer}
-              onResizeInteractionEnd={clearSnapLines}
-              onResizeMove={handleResizeMove}
-              className="absolute inset-0 h-full w-full min-h-0 min-w-0"
+          <DroppableCanvas
+            ref={setCanvasSurfaceRef}
+            className={cn(SLIDE_SURFACE_CLASS, 'z-0')}
+            onMouseDown={handleCanvasMouseDown}
+          >
+          {/* Contenido del slide — independiente de reglas/guías */}
+          <SlideRenderer
+            slide={liveSlide}
+            modo="editor"
+            canvasRef={canvasRef}
+            onBlockSelect={handleRendererBlockSelect}
+            selectedBlockId={selectedBlockId}
+            selectedBlockIds={selectedBlockIds}
+            onActivityChange={onActivityChange}
+            onRemoveBlock={onRemoveBlock}
+            onDuplicateBlock={handleDuplicateBlock}
+            onCopyBlock={handleCopyBlock}
+            onPersistSlide={handlePersistFromRenderer}
+            onResizeInteractionEnd={clearSnapLines}
+            onResizeMove={handleResizeMove}
+            className="absolute inset-0 h-full w-full min-h-0 min-w-0"
+          />
+
+          {marqueeRect && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${Math.min(marqueeRect.startX, marqueeRect.currentX)}px`,
+                top: `${Math.min(marqueeRect.startY, marqueeRect.currentY)}px`,
+                width: `${Math.abs(marqueeRect.currentX - marqueeRect.startX)}px`,
+                height: `${Math.abs(marqueeRect.currentY - marqueeRect.startY)}px`,
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                border: '1px solid #2563EB',
+                pointerEvents: 'none',
+                zIndex: 1000,
+              }}
             />
+          )}
 
-            {/* Drag handles — one badge per block, overlaid above SlideRenderer */}
-            {blocks.map((block, index) => (
-              <BlockDragHandle
-                key={index}
-                block={block}
-                index={index}
-                draggingId={draggingId}
+          {activeBlock ? (
+            <SpacingIndicators
+              activeBlock={activeBlock}
+              allBlocks={allBlocks}
+              canvasWidth={1280}
+              canvasHeight={720}
+            />
+          ) : null}
+
+          {/* Drag handles — one badge per block, overlaid above SlideRenderer */}
+          {blocks.map((block, index) => (
+            <BlockDragHandle
+              key={index}
+              block={block}
+              index={index}
+              draggingId={draggingId}
+              selectedBlockIds={selectedBlockIds}
+            />
+          ))}
+
+          {snapLines.map((line, i) =>
+            line.orientation === 'vertical' ? (
+              <div
+                key={`snap-v-${line.position}-${i}`}
+                style={{
+                  position: 'absolute',
+                  left: `${line.position}%`,
+                  top: 0,
+                  bottom: 0,
+                  width: '1px',
+                  background: '#F97316',
+                  pointerEvents: 'none',
+                  zIndex: 9999,
+                }}
               />
-            ))}
-
-            {snapLines.map((line, i) =>
-              line.orientation === 'vertical' ? (
-                <div
-                  key={`snap-v-${line.position}-${i}`}
-                  style={{
-                    position: 'absolute',
-                    left: `${line.position}%`,
-                    top: 0,
-                    bottom: 0,
-                    width: '1px',
-                    background: '#F97316',
-                    pointerEvents: 'none',
-                    zIndex: 9999,
-                  }}
-                />
-              ) : (
-                <div
-                  key={`snap-h-${line.position}-${i}`}
-                  style={{
-                    position: 'absolute',
-                    top: `${line.position}%`,
-                    left: 0,
-                    right: 0,
-                    height: '1px',
-                    background: '#F97316',
-                    pointerEvents: 'none',
-                    zIndex: 9999,
-                  }}
-                />
-              ),
-            )}
-            </div>
-          </div>
-        </DndContext>
+            ) : (
+              <div
+                key={`snap-h-${line.position}-${i}`}
+                style={{
+                  position: 'absolute',
+                  top: `${line.position}%`,
+                  left: 0,
+                  right: 0,
+                  height: '1px',
+                  background: '#F97316',
+                  pointerEvents: 'none',
+                  zIndex: 9999,
+                }}
+              />
+            ),
+          )}
+          </DroppableCanvas>
+        </CanvasGuidesChrome>
       ) : (
         <div className="flex w-full max-w-[var(--editor-slide-max-w)] flex-col items-center gap-3 pb-2 text-center">
           <Presentation
@@ -864,6 +1124,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       <PropertiesPanel
         bloques={liveSlide?.bloques ?? []}
         selectedBlockId={selectedBlockId}
+        selectedBlockIds={selectedBlockIds}
         onApplyBloques={handleApplyBloques}
       />
     </div>
