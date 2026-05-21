@@ -14,12 +14,20 @@ import { toast } from 'sonner';
 
 import type {
   Block,
+  FlipCardsWidget,
   FormaBlock,
   ImageBlock,
   TextAlign,
   TextBlock,
   VideoBlock,
 } from '@/types/slide.types';
+import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
+import {
+  FlipCardsImageInnerProperties,
+  FlipCardsTextInnerProperties,
+} from '@/components/widgets/flip-cards/flip-cards-inner-properties';
+import { FlipCardsProperties, FlipCardsWidgetComponentes } from '@/components/widgets/flip-cards/flip-cards-properties';
+import { FlipCardsCardProperties } from '@/components/widgets/flip-cards/flip-cards-card-properties';
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,6 +90,7 @@ export interface PropertiesPanelProps {
   selectedBlockId: string | null;
   selectedBlockIds?: string[];
   onApplyBloques: (next: Block[]) => Promise<boolean>;
+  flipCardsInnerSelection?: FlipCardsInnerSelection | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -91,6 +100,7 @@ export function PropertiesPanel({
   selectedBlockId,
   selectedBlockIds = [],
   onApplyBloques,
+  flipCardsInnerSelection = null,
 }: PropertiesPanelProps) {
   const bloquesRef = useRef(bloques);
   bloquesRef.current = bloques;
@@ -198,6 +208,80 @@ export function PropertiesPanel({
           <p className="text-sm text-muted-foreground">
             Las actividades se configuran en el panel lateral derecho.
           </p>
+        </div>
+      </aside>
+    );
+  }
+
+  if (block.tipo === 'flip-cards') {
+    const flipBlock = block as FlipCardsWidget;
+    const inner = flipCardsInnerSelection;
+    const showTextInner =
+      inner?.kind === 'header-text' || inner?.kind === 'card-text';
+    const showImageInner = inner?.kind === 'card-image';
+    const showCardInner =
+      inner?.kind === 'card' ||
+      inner?.kind === 'card-text' ||
+      inner?.kind === 'card-image';
+    const panelTitle = showTextInner
+      ? 'Texto'
+      : showImageInner
+        ? 'Imagen'
+        : showCardInner
+          ? 'Tarjeta'
+          : 'Flip Cards';
+
+    return (
+      <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {panelTitle}
+          </h2>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col gap-5">
+            <FlipCardsWidgetComponentes block={flipBlock} applyNow={applyNow} />
+            {showCardInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <FlipCardsCardProperties
+                  block={flipBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : null}
+            {showTextInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <p className="text-[11px] text-muted-foreground">
+                  Edición contextual del texto seleccionado en el lienzo.
+                </p>
+                <FlipCardsTextInnerProperties
+                  block={flipBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : showImageInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <p className="text-[11px] text-muted-foreground">
+                  Edición contextual de la imagen seleccionada en el lienzo.
+                </p>
+                <FlipCardsImageInnerProperties
+                  block={flipBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : showCardInner ? null : (
+              <div className="border-t border-border pt-4">
+                <FlipCardsProperties
+                  block={flipBlock}
+                  applyNow={applyNow}
+                  hideComponentes
+                />
+              </div>
+            )}
+          </div>
         </div>
       </aside>
     );

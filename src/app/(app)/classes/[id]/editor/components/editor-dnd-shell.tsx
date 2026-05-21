@@ -27,16 +27,22 @@ import {
   clientPointToActivityMarco,
   getDropClientPoint,
   isActivityPanelDrag,
+  isWidgetPanelDrag,
 } from '../lib/activity-canvas-position';
 import { CANVAS_DROP_ZONE_ID } from './droppable-canvas';
 import type { ActivityPanelDragData } from './draggable-activity-item';
-import type { ActivityType } from './panels/activities-panel';
+import type { WidgetPanelDragData } from './draggable-widget-item';
+import type { ActivityType, WidgetType } from './panels/activities-panel';
 import { cn } from '@/lib/utils';
 
 export interface ActivityDragOverlayState {
   label: string;
   Icon: LucideIcon;
 }
+
+type PanelDragState =
+  | ({ kind: 'activity' } & ActivityPanelDragData)
+  | ({ kind: 'widget' } & WidgetPanelDragData);
 
 const EditorDndShellContext = createContext<{ isOverCanvas: boolean; panelDragActive: boolean }>({
   isOverCanvas: false,
@@ -63,7 +69,9 @@ interface EditorDndShellProps {
   slide: Slide | null;
   onBlockDragSave: (updatedBlocks: Block[]) => void | Promise<void>;
   onActivityDrop: (type: ActivityType, marco: BlockMarco) => void;
+  onWidgetDrop?: (type: WidgetType, marco: BlockMarco) => void;
   getActivityDragOverlay?: (type: ActivityType) => ActivityDragOverlayState | null;
+  getWidgetDragOverlay?: (type: WidgetType) => ActivityDragOverlayState | null;
 }
 
 export function EditorDndShell({
@@ -72,9 +80,11 @@ export function EditorDndShell({
   slide,
   onBlockDragSave,
   onActivityDrop,
+  onWidgetDrop,
   getActivityDragOverlay,
+  getWidgetDragOverlay,
 }: EditorDndShellProps) {
-  const [panelDrag, setPanelDrag] = useState<ActivityPanelDragData | null>(null);
+  const [panelDrag, setPanelDrag] = useState<PanelDragState | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
 
   const blockDrag = useBlockDrag({
@@ -93,7 +103,12 @@ export function EditorDndShell({
     (event: DragStartEvent) => {
       if (isActivityPanelDrag(event.active)) {
         const data = event.active.data.current as ActivityPanelDragData;
-        setPanelDrag(data);
+        setPanelDrag({ kind: 'activity', ...data });
+        return;
+      }
+      if (isWidgetPanelDrag(event.active)) {
+        const data = event.active.data.current as WidgetPanelDragData;
+        setPanelDrag({ kind: 'widget', ...data });
         return;
       }
       blockDrag.handleDragStart(event);
@@ -123,7 +138,11 @@ export function EditorDndShell({
               point.clientX,
               point.clientY,
             );
-            onActivityDrop(panelDrag.tipo, marco);
+            if (panelDrag.kind === 'activity') {
+              onActivityDrop(panelDrag.tipo, marco);
+            } else if (panelDrag.kind === 'widget') {
+              onWidgetDrop?.(panelDrag.tipo, marco);
+            }
           }
         }
         setPanelDrag(null);
@@ -132,7 +151,7 @@ export function EditorDndShell({
       }
       blockDrag.handleDragEnd(event);
     },
-    [blockDrag, canvasRef, onActivityDrop, panelDrag],
+    [blockDrag, canvasRef, onActivityDrop, onWidgetDrop, panelDrag],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -141,9 +160,11 @@ export function EditorDndShell({
   }, []);
 
   const overlay =
-    panelDrag && getActivityDragOverlay
+    panelDrag?.kind === 'activity' && getActivityDragOverlay
       ? getActivityDragOverlay(panelDrag.tipo)
-      : null;
+      : panelDrag?.kind === 'widget' && getWidgetDragOverlay
+        ? getWidgetDragOverlay(panelDrag.tipo)
+        : null;
 
   useEffect(() => {
     if (!panelDrag) return;

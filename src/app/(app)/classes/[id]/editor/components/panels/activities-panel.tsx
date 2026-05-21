@@ -13,10 +13,12 @@ import {
   Wind,
   Trophy,
   Lock,
+  Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { DraggableActivityItem } from '../draggable-activity-item';
+import { DraggableWidgetItem } from '../draggable-widget-item';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,11 +36,21 @@ export type ActivityType =
   | 'torneo'
   | 'escape_room';
 
+export type WidgetType = 'flip-cards';
+
 interface ActivityItem {
   type: ActivityType;
   label: string;
   Icon: LucideIcon;
   /** Estilos extra para la fila (p. ej. acento ámbar/dorado). */
+  rowClassName?: string;
+  iconClassName?: string;
+}
+
+interface WidgetItem {
+  type: WidgetType;
+  label: string;
+  Icon: LucideIcon;
   rowClassName?: string;
   iconClassName?: string;
 }
@@ -78,6 +90,16 @@ const LIVE: ActivityItem[] = [
   },
 ];
 
+const WIDGETS: WidgetItem[] = [
+  {
+    type: 'flip-cards',
+    label: 'Flip Cards',
+    Icon: Layers,
+    rowClassName: 'hover:bg-sky-50/90 dark:hover:bg-sky-950/25',
+    iconClassName: 'text-sky-600 dark:text-sky-400',
+  },
+];
+
 export const ALL_ACTIVITY_ITEMS: ActivityItem[] = [
   ...EVALUATION,
   ...INTERACTION,
@@ -88,10 +110,15 @@ export function getActivityPanelItem(type: ActivityType): ActivityItem | undefin
   return ALL_ACTIVITY_ITEMS.find((item) => item.type === type);
 }
 
+export function getWidgetPanelItem(type: WidgetType): WidgetItem | undefined {
+  return WIDGETS.find((item) => item.type === type);
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
   onAddActivity: (type: ActivityType) => void;
+  onAddWidget?: (type: WidgetType) => void;
   hasActivity?: boolean;
 }
 
@@ -131,7 +158,41 @@ function ActivityGroup({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
+function WidgetGroup({
+  title,
+  items,
+  onAdd,
+  disabled,
+}: {
+  title: string;
+  items: WidgetItem[];
+  onAdd: (type: WidgetType) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </p>
+      {items.map((item) => (
+        <DraggableWidgetItem
+          key={item.type}
+          type={item.type}
+          label={item.label}
+          Icon={item.Icon}
+          disabled={disabled}
+          onAdd={onAdd}
+          rowClassName={item.rowClassName}
+          iconClassName={item.iconClassName}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function ActivitiesPanel({ onAddActivity, onAddWidget, hasActivity }: Props) {
+  const handleAddWidget = onAddWidget ?? (() => {});
+
   return (
     <div className="flex flex-col pb-4">
       {hasActivity && (
@@ -139,6 +200,12 @@ export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
           Este slide ya tiene una actividad. Elimínala para agregar otra.
         </p>
       )}
+      <WidgetGroup
+        title="Widgets"
+        items={WIDGETS}
+        onAdd={handleAddWidget}
+        disabled={hasActivity}
+      />
       <ActivityGroup title="Evaluación"  items={EVALUATION}  onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup title="En vivo"     items={LIVE}        onAdd={onAddActivity} disabled={hasActivity} />

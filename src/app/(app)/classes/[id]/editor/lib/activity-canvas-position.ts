@@ -50,3 +50,12 @@ export function isActivityPanelDrag(active: { data: { current?: unknown } }): bo
   const data = active.data.current as { source?: string } | undefined;
   return data?.source === 'activity-panel';
 }
+
+export function isWidgetPanelDrag(active: { data: { current?: unknown } }): boolean {
+  const data = active.data.current as { source?: string } | undefined;
+  return data?.source === 'widget-panel';
+}
+
+export function isCanvasPanelDrag(active: { data: { current?: unknown } }): boolean {
+  return isActivityPanelDrag(active) || isWidgetPanelDrag(active);
+}

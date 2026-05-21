@@ -7,7 +7,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RightPanelId } from './right-rail';
-import type { ActivityType } from './panels/activities-panel';
+import type { ActivityType, WidgetType } from './panels/activities-panel';
 import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import { ActivitiesPanel } from './panels/activities-panel';
 import { SlideThemesPanel } from './panels/themes-panel';
@@ -35,6 +35,7 @@ export interface RightFlyoutPanelProps {
   activePanel: RightPanelId | null;
   onClose: () => void;
   onAddActivity: (type: ActivityType) => void;
+  onAddWidget?: (type: WidgetType) => void;
   activeSlide?: ApiSlide | null;
   activeTemaId?: string;
   customThemes?: SlideTheme[];
@@ -66,6 +67,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       activePanel,
       onClose,
       onAddActivity,
+      onAddWidget,
       activeSlide,
       activeTemaId,
       customThemes = [],
@@ -133,7 +135,11 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
               <ActivitiesAiPanel desempenoEnunciado={desempenoEnunciado} hasActivity={hasActivity} />
             )}
             {activePanel === 'activities' && (
-              <ActivitiesPanel onAddActivity={onAddActivity} hasActivity={hasActivity} />
+              <ActivitiesPanel
+                onAddActivity={onAddActivity}
+                onAddWidget={onAddWidget}
+                hasActivity={hasActivity}
+              />
             )}
             {activePanel === 'themes' && onApplyThemeToSlide && onApplyThemeToAllSlides && onSaveCustomThemes && (
               <SlideThemesPanel

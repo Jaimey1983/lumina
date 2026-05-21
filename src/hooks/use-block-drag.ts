@@ -61,6 +61,15 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  block.alto  ?? fb.alto,
       };
     }
+    case 'flip-cards': {
+      const fb = BLOCK_FALLBACKS.flipCards;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
     case 'actividad': {
       const marco = block.marco;
       if (marco) {
@@ -81,11 +90,12 @@ export function getBlockPos(block: Block): BlockPos {
 /** Returns a new block with updated x, y (only for block types that support canvas coords). */
 function withPosition(block: Block, x: number, y: number): Block {
   switch (block.tipo) {
-    case 'texto':  return { ...block, x, y };
-    case 'imagen': return { ...block, x, y };
-    case 'video':  return { ...block, x, y };
-    case 'forma':  return { ...block, x, y };
-    default:       return block;
+    case 'texto':       return { ...block, x, y };
+    case 'imagen':      return { ...block, x, y };
+    case 'video':       return { ...block, x, y };
+    case 'forma':       return { ...block, x, y };
+    case 'flip-cards':  return { ...block, x, y };
+    default:            return block;
   }
 }
 

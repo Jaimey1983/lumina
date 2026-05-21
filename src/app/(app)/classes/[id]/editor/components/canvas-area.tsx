@@ -15,7 +15,14 @@ import { GripHorizontal, Presentation } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDraggable } from '@dnd-kit/core';
 
-import type { Activity, Background, Block, Slide, SlideGuias } from '@/types/slide.types';
+import type {
+  Activity,
+  Background,
+  Block,
+  FlipCardsWidget,
+  Slide,
+  SlideGuias,
+} from '@/types/slide.types';
 import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
 import {
   getBlockAtPath,
@@ -28,6 +35,7 @@ import {
   SlideInsertionToolbar,
   type LayerReorderAction,
 } from './floating-toolbar';
+import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
@@ -150,6 +158,7 @@ export interface CanvasAreaProps {
   isLoading?: boolean;
   onBlockSelect?: (id: string) => void;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
   onRemoveBlock?: (blockId: string) => void;
   onCopyBlock?: (block: Block) => void;
   copiedBlock?: Block | null;
@@ -198,6 +207,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     isLoading,
     onBlockSelect,
     onActivityChange,
+    onFlipCardsChange,
     onRemoveBlock,
     onCopyBlock,
     copiedBlock,
@@ -244,6 +254,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const [committedBloques, setCommittedBloques] = useState<Block[] | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
+  const [flipCardsInnerSelection, setFlipCardsInnerSelection] =
+    useState<FlipCardsInnerSelection | null>(null);
+
+  useEffect(() => {
+    setFlipCardsInnerSelection(null);
+  }, [selectedBlockId]);
   const [marqueeRect, setMarqueeRect] = useState<{
     startX: number;
     startY: number;
@@ -1019,6 +1035,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             selectedBlockId={selectedBlockId}
             selectedBlockIds={selectedBlockIds}
             onActivityChange={onActivityChange}
+            onFlipCardsChange={onFlipCardsChange}
+            flipCardsInnerSelection={flipCardsInnerSelection}
+            onFlipCardsInnerSelectionChange={setFlipCardsInnerSelection}
             onRemoveBlock={onRemoveBlock}
             onDuplicateBlock={handleDuplicateBlock}
             onCopyBlock={handleCopyBlock}
@@ -1117,7 +1136,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       className={cn(
         'h-full min-w-0 shrink-0 overflow-hidden transition-all duration-200 ease-in-out',
         showPropertiesPanel
-          ? 'max-w-64 opacity-100 translate-x-0 pointer-events-auto'
+          ? 'max-w-72 opacity-100 translate-x-0 pointer-events-auto'
           : 'max-w-0 opacity-0 translate-x-4 pointer-events-none',
       )}
     >
@@ -1126,6 +1145,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         selectedBlockId={selectedBlockId}
         selectedBlockIds={selectedBlockIds}
         onApplyBloques={handleApplyBloques}
+        flipCardsInnerSelection={flipCardsInnerSelection}
       />
     </div>
     </div>

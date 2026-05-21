@@ -33,6 +33,7 @@ import type {
   CodeBlock,
   ColumnsBlock,
   DividerBlock,
+  FlipCardsWidget,
   FormaBlock,
   ImageBlock,
   QuoteBlock,
@@ -59,6 +60,9 @@ import type { Socket } from 'socket.io-client';
 import { TorneoViewer } from '@/components/viewers/torneo-viewer';
 import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
 import { EscapeRoomViewer } from '@/components/viewers/escape-room-viewer';
+import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
+import { FlipCardsEditor } from '@/components/widgets/flip-cards/flip-cards-editor';
+import { FlipCardsViewer } from '@/components/widgets/flip-cards/flip-cards-viewer';
 
 // ─── Modo ──────────────────────────────────────────────────────────────────────
 
@@ -191,6 +195,17 @@ function getBlockPositionStyle(block: Block): CSSProperties {
         zIndex: block.zIndex ?? 1,
       };
     }
+    case 'flip-cards': {
+      const fb = BLOCK_FALLBACKS.flipCards;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${block.ancho ?? fb.ancho}%`,
+        height: `${block.alto ?? fb.alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
     case 'actividad': {
       if (block.marco) {
         return {
@@ -247,6 +262,15 @@ function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number;
       const fb = BLOCK_FALLBACKS.forma;
       return { x: block.x ?? fb.x, y: block.y ?? fb.y,
                ancho: block.ancho ?? fb.ancho, alto: block.alto ?? fb.alto };
+    }
+    case 'flip-cards': {
+      const fb = BLOCK_FALLBACKS.flipCards;
+      return {
+        x: block.x ?? fb.x,
+        y: block.y ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto: block.alto ?? fb.alto,
+      };
     }
     case 'actividad': {
       if (block.marco) {
@@ -698,6 +722,7 @@ function RenderActivity({
   /** Altura acotada en el lienzo cuando la actividad va sola y centrada. */
   activityCanvasLayout?: boolean;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
   onRemoveBlock?: (blockId: string) => void;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
   onResponse?: (response: unknown) => void;
@@ -938,6 +963,9 @@ interface RenderColumnsProps {
   onBlockClick: (id: string, e?: React.MouseEvent) => void;
   pathPrefix: string;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
+  flipCardsInnerSelection?: FlipCardsInnerSelection | null;
+  onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
@@ -959,6 +987,9 @@ function RenderColumns({
   onBlockClick,
   pathPrefix,
   onActivityChange,
+  onFlipCardsChange,
+  flipCardsInnerSelection,
+  onFlipCardsInnerSelectionChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1016,6 +1047,9 @@ function RenderColumns({
                 onBlockClick={onBlockClick}
                 pathPrefix={id}
                 onActivityChange={onActivityChange}
+                onFlipCardsChange={onFlipCardsChange}
+                flipCardsInnerSelection={flipCardsInnerSelection}
+                onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
                 onRemoveBlock={onRemoveBlock}
                 onDuplicateBlock={onDuplicateBlock}
                 onCopyBlock={onCopyBlock}
@@ -1116,6 +1150,9 @@ interface BlockNodeProps {
   /** Absolute-position style applied to the wrapper div (top-level blocks only). */
   positionStyle?: CSSProperties;
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
+  flipCardsInnerSelection?: FlipCardsInnerSelection | null;
+  onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
@@ -1163,6 +1200,9 @@ function BlockNode({
   pathPrefix,
   positionStyle,
   onActivityChange,
+  onFlipCardsChange,
+  flipCardsInnerSelection,
+  onFlipCardsInnerSelectionChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1228,6 +1268,7 @@ function BlockNode({
             isSelected={isSelected}
             activityCanvasLayout={activityCanvasLayout}
             onActivityChange={onActivityChange}
+            onFlipCardsChange={onFlipCardsChange}
             onRemoveBlock={onRemoveBlock}
             onResponse={onResponse}
             variant={variant}
@@ -1242,6 +1283,22 @@ function BlockNode({
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
       case 'forma':     return <RenderForma block={block} />;
+      case 'flip-cards':
+        return editorMode ? (
+          <FlipCardsEditor
+            block={block}
+            onChange={(updated) => onFlipCardsChange?.(blockId, updated)}
+            onEnsureBlockSelected={() => onClick()}
+            innerSelection={
+              selectedId === blockId ? flipCardsInnerSelection ?? null : null
+            }
+            onInnerSelectionChange={
+              selectedId === blockId ? onFlipCardsInnerSelectionChange : undefined
+            }
+          />
+        ) : (
+          <FlipCardsViewer block={block} />
+        );
       case 'columnas':
         return (
           <RenderColumns
@@ -1253,6 +1310,9 @@ function BlockNode({
             onBlockClick={onBlockClick}
             pathPrefix={pathPrefix}
             onActivityChange={onActivityChange}
+            onFlipCardsChange={onFlipCardsChange}
+            flipCardsInnerSelection={flipCardsInnerSelection}
+            onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
             onRemoveBlock={onRemoveBlock}
             onResponse={onResponse}
             variant={variant}
@@ -1393,6 +1453,11 @@ export interface SlideRendererProps {
   selectedBlockIds?: string[];
   /** Persiste cambios de una actividad (PATCH vía el padre). */
   onActivityChange?: (blockId: string, activity: Activity) => void;
+  /** Persiste cambios de un widget flip-cards (PATCH vía el padre). */
+  onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
+  /** Selección interna del widget flip-cards (texto/imagen) para el panel contextual. */
+  flipCardsInnerSelection?: FlipCardsInnerSelection | null;
+  onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
@@ -1442,6 +1507,9 @@ export function SlideRenderer({
   selectedBlockId: selectedBlockIdProp,
   selectedBlockIds: selectedBlockIdsProp,
   onActivityChange,
+  onFlipCardsChange,
+  flipCardsInnerSelection,
+  onFlipCardsInnerSelectionChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1709,6 +1777,9 @@ export function SlideRenderer({
             pathPrefix={blockId}
             positionStyle={posStyle}
             onActivityChange={onActivityChange}
+            onFlipCardsChange={onFlipCardsChange}
+            flipCardsInnerSelection={flipCardsInnerSelection}
+            onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}
             onCopyBlock={editorMode ? onCopyBlock : undefined}

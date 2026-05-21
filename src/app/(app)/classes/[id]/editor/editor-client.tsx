@@ -52,6 +52,7 @@ import {
 } from '@/hooks/api/use-slide-versions';
 import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
 import {
+  appendBlockToSlideContent,
   buildContentDocumentForNewActivitySlide,
   classSlideToRendererSlide,
   getSlideContentRecord,
@@ -61,12 +62,14 @@ import {
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
+import { createDefaultFlipCardsBlock } from '@/lib/flip-cards-defaults';
 import {
   BLOCK_FALLBACKS,
   parseClassModoEntrega,
   type Activity,
   type Block,
   type ClassModoEntrega,
+  type FlipCardsWidget,
 } from '@/types/slide.types';
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
@@ -80,8 +83,8 @@ import {
   type CoreSlideLayoutKey,
   type SlidePersistedLayoutKey,
 } from './components/templates-panel';
-import type { ActivityType } from './components/panels/activities-panel';
-import { getActivityPanelItem } from './components/panels/activities-panel';
+import type { ActivityType, WidgetType } from './components/panels/activities-panel';
+import { getActivityPanelItem, getWidgetPanelItem } from './components/panels/activities-panel';
 import { EditorDndShell } from './components/editor-dnd-shell';
 import type { BlockMarco } from '@/types/slide.types';
 import type { StudentResponse } from './components/panels/live-responses-panel';
@@ -1450,6 +1453,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide, handleCommitSlideContent],
   );
 
+  const handleFlipCardsChange = useCallback(
+    (blockPath: string, widget: FlipCardsWidget) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'flip-cards') return b;
+        return widget;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
   const handleRemoveBlock = useCallback(
     (blockPath: string) => {
       if (!activeSlide) return;
@@ -1624,6 +1641,46 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     },
     [activeSlideHasActivity, handleAddActivity],
   );
+
+  const handleAddWidget = useCallback(
+    (type: WidgetType, dropMarco?: BlockMarco) => {
+      if (activeSlideHasActivity) {
+        toast.warning('No puedes agregar widgets en un slide de actividad');
+        return;
+      }
+      if (!activeSlide) {
+        toast.error('Selecciona un slide primero');
+        return;
+      }
+      if (type !== 'flip-cards') {
+        toast.info(`Widget "${type}" próximamente`);
+        return;
+      }
+
+      const block = createDefaultFlipCardsBlock(dropMarco);
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+      const newIndex = bloques.length;
+
+      handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
+      window.setTimeout(() => canvasAreaRef.current?.selectBlockByIndex(newIndex), 50);
+      toast.success('Flip Cards agregado al slide');
+    },
+    [activeSlide, activeSlideHasActivity, handleCommitSlideContent],
+  );
+
+  const handleWidgetDrop = useCallback(
+    (type: WidgetType, marco: BlockMarco) => {
+      handleAddWidget(type, marco);
+    },
+    [handleAddWidget],
+  );
+
+  const getWidgetDragOverlay = useCallback((type: WidgetType) => {
+    const item = getWidgetPanelItem(type);
+    if (!item) return null;
+    return { label: item.label, Icon: item.Icon };
+  }, []);
 
   const handleBlockDragSave = useCallback((bloques: Block[]) => {
     canvasAreaRef.current?.persistBloquesFromDrag(bloques);
@@ -2164,7 +2221,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             slide={rendererSlide}
             onBlockDragSave={handleBlockDragSave}
             onActivityDrop={handleActivityDrop}
+            onWidgetDrop={handleWidgetDrop}
             getActivityDragOverlay={getActivityDragOverlay}
+            getWidgetDragOverlay={getWidgetDragOverlay}
           >
           {/* Canvas area — flex-1 (fondo de clase en el contenedor del workspace) */}
           <div
@@ -2180,6 +2239,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               slide={rendererSlide}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}
+              onFlipCardsChange={handleFlipCardsChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}
               livePanelOpen={rightPanel === 'live'}
@@ -2195,6 +2255,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             activePanel={rightPanel}
             onClose={() => setRightPanel(null)}
             onAddActivity={handleAddActivity}
+            onAddWidget={handleAddWidget}
             activeSlide={activeSlide as ApiSlide | null}
             activeTemaId={activeTemaId}
             customThemes={customThemes}

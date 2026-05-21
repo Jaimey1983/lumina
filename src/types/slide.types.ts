@@ -443,6 +443,117 @@ export interface FormaBlock {
   zIndex?: number;
 }
 
+// ─── Widgets (Captivate-style, no evaluables) ─────────────────────────────────
+
+export interface FlipCardsCampoEstilo {
+  fontSize?: number;
+  color?: string;
+  align?: 'left' | 'center' | 'right';
+  fontFamily?: string;
+  fontWeight?: number | 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
+  /** Multiplicador (ej. 1.25) o px si > 3 */
+  lineHeight?: number;
+  /** Espaciado entre letras en px */
+  letterSpacing?: number;
+}
+
+/** Posición del texto dentro de la tarjeta (% del área útil). */
+export interface FlipCardElementPos {
+  x: number;
+  y: number;
+}
+
+export interface FlipCardCara {
+  imagen?: string;
+  imagenAlt?: string;
+  imagenObjectFit?: 'cover' | 'contain';
+  imagenObjectPosition?: string;
+  /** Altura de la imagen en px (vacío = automático) */
+  imagenAltura?: number;
+  /** Radio de esquinas de la imagen en px */
+  imagenRadio?: number;
+  /** 0–100 */
+  imagenOpacidad?: number;
+  /** Brillo 0–200, 100 = normal */
+  imagenBrillo?: number;
+  imagenEscalaDeGrises?: boolean;
+  /** Zoom de la imagen (100 = normal) */
+  imagenEscala?: number;
+  /** Desplazamiento horizontal en % */
+  imagenOffsetX?: number;
+  /** Desplazamiento vertical en % */
+  imagenOffsetY?: number;
+  /** Si se define, anula la visibilidad global del widget para esta tarjeta/cara */
+  mostrarImagen?: boolean;
+  mostrarTitulo?: boolean;
+  mostrarCuerpo?: boolean;
+  tituloPos?: FlipCardElementPos;
+  cuerpoPos?: FlipCardElementPos;
+  titulo: string;
+  cuerpo: string;
+  estiloTitulo?: FlipCardsCampoEstilo;
+  estiloCuerpo?: FlipCardsCampoEstilo;
+}
+
+export interface FlipCard {
+  id: string;
+  frente: FlipCardCara;
+  reverso: FlipCardCara;
+}
+
+export interface FlipCardsCaraVisibilidad {
+  mostrarImagen: boolean;
+  mostrarTitulo: boolean;
+  mostrarCuerpo: boolean;
+}
+
+export interface FlipCardsWidget {
+  tipo: 'flip-cards';
+  configuracion: {
+    columnas: 2 | 3 | 4;
+    colorFondoContenedor: string;
+    opacidadFondoContenedor?: number;
+    colorFrente: string;
+    colorReverso: string;
+    bordeTarjetaGrosor?: number;
+    bordeTarjetaColor?: string;
+    bordeTarjetaRadio?: number;
+    sombraTarjeta?: boolean;
+    mostrarTituloWidget: boolean;
+    mostrarSubtitulo: boolean;
+    mostrarInstruccion: boolean;
+    alineacionInstruccion?: 'izquierda' | 'centro' | 'derecha';
+    /** @deprecated Usar mostrarBotonAnterior y mostrarBotonSiguiente */
+    mostrarNavegacion?: boolean;
+    mostrarBotonAnterior?: boolean;
+    mostrarBotonSiguiente?: boolean;
+    frente?: FlipCardsCaraVisibilidad;
+    reverso?: FlipCardsCaraVisibilidad;
+    /** Id de plantilla visual aplicada (`flip-cards-templates`). */
+    plantillaId?: string;
+    /** Espacio entre tarjetas en px */
+    espacioEntreTarjetas?: number;
+    /** Padding interno del contenedor en px */
+    paddingContenedor?: number;
+  };
+  tituloWidget: string;
+  subtituloWidget: string;
+  instruccion: string;
+  estilosHeader?: {
+    tituloWidget?: FlipCardsCampoEstilo;
+    subtituloWidget?: FlipCardsCampoEstilo;
+    instruccion?: FlipCardsCampoEstilo;
+  };
+  tarjetas: FlipCard[];
+  /** Posición en el lienzo libre (% del slide). */
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
+}
+
 // ─── Block (discriminated union) ──────────────────────────────────────────────
 
 export type Block =
@@ -455,7 +566,8 @@ export type Block =
   | QuoteBlock
   | DividerBlock
   | ColumnsBlock
-  | FormaBlock;
+  | FormaBlock
+  | FlipCardsWidget;
 
 export type BlockTipo = Block['tipo'];
 
@@ -548,6 +660,7 @@ export const BLOCK_FALLBACKS = {
   image: { x: 25, y: 25, ancho: 50, alto: 50 },
   forma: { x: 10, y: 10, ancho: 30, alto: 30 },
   video: { x: 10, y: 30, ancho: 80, alto: 40 },
+  flipCards: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */
   torneo: {
     preguntas: [
