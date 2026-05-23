@@ -420,7 +420,7 @@ export function ViewerClient({ id }: { id: string }) {
 
       function pillOutcomeForActivity(): boolean | null {
         if (actividad.tipo === 'quiz_multiple') {
-          const hasDef = actividad.opciones.some((o) => o.esCorrecta);
+          const hasDef = actividad.opciones.some((o: { esCorrecta?: boolean }) => o.esCorrecta);
           return hasDef ? correct : null;
         }
         if (actividad.tipo === 'verdadero_falso') {

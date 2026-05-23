@@ -63,6 +63,8 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { createDefaultFlipCardsBlock } from '@/lib/flip-cards-defaults';
+import { createDefaultTabsBlock } from '@/lib/tabs-defaults';
+import { createDefaultCarouselBlock } from '@/lib/carousel-defaults';
 import {
   BLOCK_FALLBACKS,
   parseClassModoEntrega,
@@ -70,6 +72,8 @@ import {
   type Block,
   type ClassModoEntrega,
   type FlipCardsWidget,
+  type TabsWidget,
+  type CarouselWidget,
 } from '@/types/slide.types';
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
@@ -1467,6 +1471,34 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide, handleCommitSlideContent],
   );
 
+  const handleTabsChange = useCallback(
+    (blockPath: string, widget: TabsWidget) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'tabs') return b;
+        return widget;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
+  const handleCarouselChange = useCallback(
+    (blockPath: string, widget: CarouselWidget) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'carousel') return b;
+        return widget;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
   const handleRemoveBlock = useCallback(
     (blockPath: string) => {
       if (!activeSlide) return;
@@ -1652,19 +1684,29 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         toast.error('Selecciona un slide primero');
         return;
       }
-      if (type !== 'flip-cards') {
+      let block: Block;
+      let successLabel: string;
+      if (type === 'flip-cards') {
+        block = createDefaultFlipCardsBlock(dropMarco);
+        successLabel = 'Flip Cards agregado al slide';
+      } else if (type === 'tabs') {
+        block = createDefaultTabsBlock(dropMarco);
+        successLabel = 'Tabs agregado al slide';
+      } else if (type === 'carousel') {
+        block = createDefaultCarouselBlock(dropMarco);
+        successLabel = 'Carousel agregado al slide';
+      } else {
         toast.info(`Widget "${type}" próximamente`);
         return;
       }
 
-      const block = createDefaultFlipCardsBlock(dropMarco);
       const c = getSlideContentRecord(activeSlide as ApiSlide);
       const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
       const newIndex = bloques.length;
 
       handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
       window.setTimeout(() => canvasAreaRef.current?.selectBlockByIndex(newIndex), 50);
-      toast.success('Flip Cards agregado al slide');
+      toast.success(successLabel);
     },
     [activeSlide, activeSlideHasActivity, handleCommitSlideContent],
   );
@@ -2240,6 +2282,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               isLoading={isLoading}
               onActivityChange={handleActivityChange}
               onFlipCardsChange={handleFlipCardsChange}
+              onTabsChange={handleTabsChange}
+              onCarouselChange={handleCarouselChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}
               livePanelOpen={rightPanel === 'live'}

@@ -1,0 +1,310 @@
+.wspSlideRow {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 2px solid var(--widget-border, #93c5fd);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+}
+
+.wspPanelFill {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.wspSlideRowReverse {
+  flex-direction: row-reverse;
+}
+
+.wspSlideSoloTexto .wspTextCol {
+  flex: 1;
+  width: 100%;
+}
+
+.wspSlideOverlay {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.wspOverlayStack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 11rem;
+  overflow: hidden;
+}
+
+.wspImageCol {
+  flex: 0 0 46%;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+  max-height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #f1f5f9;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.wspImageColEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wspImageLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wspImageLayer.wspImageLayerInteractive,
+.wspImageCol.wspImageLayerInteractive {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.wspImageLayerInteractive:active,
+.wspImageCol.wspImageLayerInteractive:active {
+  cursor: grabbing;
+}
+
+.wspImageResizeHandle {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 2px solid var(--widget-accent, #2563eb);
+  background: rgba(255, 255, 255, 0.95);
+  cursor: nwse-resize;
+  pointer-events: auto;
+}
+
+.wspTextCol {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: auto;
+  padding: 2rem 2.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.wspOverlayTextEl {
+  position: absolute;
+  z-index: 2;
+  max-width: 88%;
+  min-width: 2rem;
+  pointer-events: auto;
+}
+
+.wspTextDragHandle {
+  position: absolute;
+  left: -0.35rem;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  height: 1.25rem;
+  width: 0.65rem;
+  transform: translateY(-50%);
+  cursor: grab;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 3px;
+  background: rgba(37, 99, 235, 0.9);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.wspOverlayTextEl:hover .wspTextDragHandle,
+.whInnerHighlight.wspOverlayTextEl .wspTextDragHandle {
+  opacity: 1;
+}
+
+.wspTextDragHandle:active {
+  cursor: grabbing;
+}
+
+.wspTextDragHandle::before,
+.wspTextDragHandle::after {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 0 #fff;
+}
+
+.wspHeading {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wspSubtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #475569;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wspBody {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #64748b;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wspRichText {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wspRichTextEditor {
+  min-height: 1.25em;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wspRichTextEditor:focus {
+  outline: none;
+}
+
+.wspImageCol .wspImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wspImageLayer .wspImage,
+.wspOverlayStack .wspImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wspImagePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.wspTextOnImage {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.wspEditorField {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  field-sizing: content;
+}
+
+.wspFreeBlocksLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.wspFreeBlock {
+  position: absolute;
+  pointer-events: auto;
+  margin: 0;
+}
+
+.wspFreeBlockField {
+  display: block;
+  width: 100%;
+  min-height: 1.25em;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  field-sizing: content;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+.wspFreeBlockField:focus {
+  outline: 2px dashed #2563eb;
+  outline-offset: 2px;
+}
+
+.wspFreeBlockRead {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .wspSlideRow:not(.wspSlideOverlay),
+  .wspSlideRowReverse:not(.wspSlideOverlay) {
+    flex-direction: column;
+  }
+
+  .wspImageCol {
+    flex: 0 0 auto;
+    min-height: 140px;
+    max-height: 45%;
+  }
+
+  .wspTextCol {
+    padding: 1rem;
+  }
+}

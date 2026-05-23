@@ -445,24 +445,33 @@ export interface FormaBlock {
 
 // ─── Widgets (Captivate-style, no evaluables) ─────────────────────────────────
 
-export interface FlipCardsCampoEstilo {
-  fontSize?: number;
-  color?: string;
-  align?: 'left' | 'center' | 'right';
-  fontFamily?: string;
-  fontWeight?: number | 'normal' | 'bold';
-  fontStyle?: 'normal' | 'italic';
-  /** Multiplicador (ej. 1.25) o px si > 3 */
-  lineHeight?: number;
-  /** Espaciado entre letras en px */
-  letterSpacing?: number;
-}
+export type {
+  CarouselWidget,
+  TabsWidget,
+  WidgetAlineacion,
+  WidgetCampoEstilo,
+  WidgetCanvasPosition,
+  WidgetElementPos,
+  WidgetEstilosHeader,
+  WidgetHeaderConfig,
+  WidgetHeaderFields,
+  WidgetImagenAjuste,
+  WidgetItemVisibilidad,
+  WidgetLayoutId,
+  WidgetSlideContainerConfig,
+  WidgetSlideContent,
+  WidgetSlideCount,
+  WidgetSlideVisibilidad,
+  WidgetTipo,
+} from './widget.types';
+
+import type { CarouselWidget, TabsWidget, WidgetCampoEstilo, WidgetElementPos } from './widget.types';
+
+/** @deprecated Preferir WidgetCampoEstilo */
+export type FlipCardsCampoEstilo = WidgetCampoEstilo;
 
 /** Posición del texto dentro de la tarjeta (% del área útil). */
-export interface FlipCardElementPos {
-  x: number;
-  y: number;
-}
+export type FlipCardElementPos = WidgetElementPos;
 
 export interface FlipCardCara {
   imagen?: string;
@@ -567,7 +576,9 @@ export type Block =
   | DividerBlock
   | ColumnsBlock
   | FormaBlock
-  | FlipCardsWidget;
+  | FlipCardsWidget
+  | TabsWidget
+  | CarouselWidget;
 
 export type BlockTipo = Block['tipo'];
 
@@ -661,6 +672,8 @@ export const BLOCK_FALLBACKS = {
   forma: { x: 10, y: 10, ancho: 30, alto: 30 },
   video: { x: 10, y: 30, ancho: 80, alto: 40 },
   flipCards: { x: 5, y: 5, ancho: 90, alto: 90 },
+  tabs: { x: 5, y: 5, ancho: 90, alto: 90 },
+  carousel: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */
   torneo: {
     preguntas: [

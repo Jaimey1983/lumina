@@ -1,0 +1,916 @@
+'use client';
+
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+} from 'react';
+import { Camera } from 'lucide-react';
+
+import type { WidgetSlideContent, WidgetSlideTextBlock, WidgetSlideInnerSelection, WidgetSlideTextField, WidgetSlidePanelConfig } from '@/types/widget.types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { imageElementStyle, imageWrapperStyle } from '@/components/widgets/shared/widget-image-styles';
+import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
+
+import slideStyles from './widget-slide-panel.module.css';
+import chromeStyles from './widget-chrome.module.css';
+import {
+  autoResizeWidgetTextarea,
+  stopWidgetInnerKeydown,
+  stopWidgetInnerPointer,
+  useWidgetDraftField,
+  useWidgetTextareaAutoSize,
+} from './widget-editor-utils';
+import { isOverlayLayout, isSplitLayout, resolveSlideLayoutId } from './widget-layouts';
+import {
+  clampWidgetPos,
+  resolveSlideVisibilidad,
+  resolveTextPos,
+} from './widget-slide-utils';
+import {
+  getActiveWidgetTextEditor,
+  htmlToEditableHtml,
+  looksLikeRichHtml,
+  registerWidgetTextEditor,
+  sanitizeWidgetHtml,
+} from './widget-rich-text';
+
+function slidePanelStyle(
+  slide: WidgetSlideContent,
+  vis: ReturnType<typeof resolveSlideVisibilidad>,
+): React.CSSProperties {
+  if (!vis.mostrarTarjeta) return {};
+  return {
+    backgroundColor: slide.colorFondoSlide ?? '#ffffff',
+  };
+}
+
+function TabImageLayer({
+  slide,
+  isSelected,
+  isEditing,
+  imageRadius,
+  fillOverlay,
+  onSelect,
+  onPatch,
+}: {
+  slide: WidgetSlideContent;
+  isSelected: boolean;
+  isEditing: boolean;
+  imageRadius: number;
+  fillOverlay?: boolean;
+  onSelect: () => void;
+  onPatch: (patch: Partial<WidgetSlideContent>) => void;
+}) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const panRef = useRef<{
+    startX: number;
+    startY: number;
+    ox: number;
+    oy: number;
+    w: number;
+    h: number;
+    pendingX: number;
+    pendingY: number;
+  } | null>(null);
+  const resizeRef = useRef<{ startY: number; scale: number } | null>(null);
+
+  const applyImageTransform = (offsetX: number, offsetY: number, scalePct = slide.imagenEscala ?? 100) => {
+    const img = imgRef.current;
+    if (!img) return;
+    const scale = scalePct / 100;
+    const parts: string[] = [];
+    if (offsetX !== 0 || offsetY !== 0) {
+      parts.push(`translate(${offsetX}%, ${offsetY}%)`);
+    }
+    if (scale !== 1) {
+      parts.push(`scale(${scale})`);
+    }
+    img.style.transform = parts.length ? parts.join(' ') : '';
+  };
+
+  const finishPan = (el: HTMLElement, pointerId: number) => {
+    if (panRef.current) {
+      onPatch({
+        imagenOffsetX: panRef.current.pendingX,
+        imagenOffsetY: panRef.current.pendingY,
+      });
+    }
+    panRef.current = null;
+    try {
+      el.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const finishResize = (el: HTMLElement, pointerId: number) => {
+    resizeRef.current = null;
+    try {
+      el.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (!slide.imagen) {
+    return (
+      <div
+        className={cn(
+          fillOverlay ? slideStyles.wspImageLayer : slideStyles.wspImageCol,
+          slideStyles.wspImageColEmpty,
+          isEditing && slideStyles.wspImageLayerInteractive,
+          isSelected && chromeStyles.whInnerHighlight,
+        )}
+        onPointerDown={(e) => {
+          if (!isEditing) return;
+          e.stopPropagation();
+          onSelect();
+        }}
+        onClick={stopWidgetInnerPointer}
+      >
+        <div className={slideStyles.wspImagePlaceholder}>Sin imagen</div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        fillOverlay ? slideStyles.wspImageLayer : slideStyles.wspImageCol,
+        isEditing && slideStyles.wspImageLayerInteractive,
+        isSelected && chromeStyles.whInnerHighlight,
+      )}
+      style={imageWrapperStyle(slide, imageRadius)}
+      onPointerDown={(e) => {
+        if (!isEditing) return;
+        e.stopPropagation();
+        onSelect();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const rect = e.currentTarget.getBoundingClientRect();
+        panRef.current = {
+          startX: e.clientX,
+          startY: e.clientY,
+          ox: slide.imagenOffsetX ?? 0,
+          oy: slide.imagenOffsetY ?? 0,
+          w: Math.max(rect.width, 1),
+          h: Math.max(rect.height, 1),
+          pendingX: slide.imagenOffsetX ?? 0,
+          pendingY: slide.imagenOffsetY ?? 0,
+        };
+      }}
+      onPointerMove={(e) => {
+        if (panRef.current) {
+          const dx = ((e.clientX - panRef.current.startX) / panRef.current.w) * 80;
+          const dy = ((e.clientY - panRef.current.startY) / panRef.current.h) * 80;
+          const nextX = Math.max(-40, Math.min(40, panRef.current.ox + dx));
+          const nextY = Math.max(-40, Math.min(40, panRef.current.oy + dy));
+          panRef.current.pendingX = nextX;
+          panRef.current.pendingY = nextY;
+          applyImageTransform(nextX, nextY);
+          return;
+        }
+        if (resizeRef.current) {
+          const dy = resizeRef.current.startY - e.clientY;
+          const next = Math.max(50, Math.min(200, resizeRef.current.scale + dy * 0.5));
+          onPatch({ imagenEscala: Math.round(next) });
+        }
+      }}
+      onPointerUp={(e) => {
+        if (panRef.current) finishPan(e.currentTarget, e.pointerId);
+        if (resizeRef.current) finishResize(e.currentTarget, e.pointerId);
+      }}
+      onPointerCancel={(e) => {
+        if (panRef.current) finishPan(e.currentTarget, e.pointerId);
+        if (resizeRef.current) finishResize(e.currentTarget, e.pointerId);
+      }}
+      onClick={(e) => {
+        if (!isEditing) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={slide.imagen}
+        alt={slide.imagenAlt ?? ''}
+        className={slideStyles.wspImage}
+        style={imageElementStyle(slide)}
+        draggable={false}
+      />
+      {isEditing && isSelected ? (
+        <span
+          className={slideStyles.wspImageResizeHandle}
+          title="Arrastra para cambiar el zoom"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            resizeRef.current = {
+              startY: e.clientY,
+              scale: slide.imagenEscala ?? 100,
+            };
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function WidgetSlideFreeBlocks({
+  blocks,
+  isEditing,
+  onPatchBlock,
+}: {
+  blocks: WidgetSlideTextBlock[];
+  isEditing: boolean;
+  onPatchBlock?: (blockId: string, patch: Partial<WidgetSlideTextBlock>) => void;
+}) {
+  if (!blocks.length) return null;
+
+  return (
+    <div className={slideStyles.wspFreeBlocksLayer}>
+      {blocks.map((block) => (
+        <WidgetSlideFreeBlock
+          key={block.id}
+          block={block}
+          isEditing={isEditing}
+          onPatch={onPatchBlock ? (patch) => onPatchBlock(block.id, patch) : undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WidgetSlideFreeBlock({
+  block,
+  isEditing,
+  onPatch,
+}: {
+  block: WidgetSlideTextBlock;
+  isEditing: boolean;
+  onPatch?: (patch: Partial<WidgetSlideTextBlock>) => void;
+}) {
+  const [draft, setDraft] = useWidgetDraftField(block.contenido);
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useWidgetTextareaAutoSize(ref, [draft, block.contenido, isEditing, block.tamanoFuente]);
+
+  const style: React.CSSProperties = {
+    left: `${block.x}%`,
+    top: `${block.y}%`,
+    width: `${block.ancho}%`,
+    fontSize: block.tamanoFuente ?? '16px',
+    color: block.color ?? '#334155',
+    fontWeight: block.negrita ? 700 : 400,
+    fontStyle: block.cursiva ? 'italic' : 'normal',
+    textAlign:
+      block.alineacion === 'centro'
+        ? 'center'
+        : block.alineacion === 'derecha'
+          ? 'right'
+          : block.alineacion === 'justificado'
+            ? 'justify'
+            : 'left',
+  };
+
+  if (!isEditing) {
+    if (!block.contenido.trim()) return null;
+    return (
+      <p className={cn(slideStyles.wspFreeBlock, slideStyles.wspFreeBlockRead)} style={style}>
+        {block.contenido}
+      </p>
+    );
+  }
+
+  return (
+    <div className={slideStyles.wspFreeBlock} style={style}>
+      <textarea
+        ref={ref}
+        value={draft}
+        rows={1}
+        className={slideStyles.wspFreeBlockField}
+        style={{
+          fontSize: style.fontSize,
+          color: style.color,
+          fontWeight: style.fontWeight,
+          fontStyle: style.fontStyle,
+          textAlign: style.textAlign,
+        }}
+        onPointerDown={stopWidgetInnerPointer}
+        onClick={stopWidgetInnerPointer}
+        onKeyDown={stopWidgetInnerKeydown}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          autoResizeWidgetTextarea(e.target);
+        }}
+        onBlur={() => {
+          if (draft !== block.contenido) onPatch?.({ contenido: draft });
+        }}
+      />
+    </div>
+  );
+}
+
+function TabTextElement({
+  field,
+  slide,
+  value,
+  className,
+  placeholder,
+  multiline: _multiline,
+  isEditing,
+  isSelected,
+  hasImageBg,
+  stackRef,
+  onSelect,
+  onCommit,
+  onPosChange,
+}: {
+  field: WidgetSlideTextField;
+  slide: WidgetSlideContent;
+  value: string;
+  className?: string;
+  placeholder?: string;
+  multiline?: boolean;
+  isEditing: boolean;
+  isSelected: boolean;
+  hasImageBg: boolean;
+  stackRef: React.RefObject<HTMLDivElement | null>;
+  onSelect: () => void;
+  onCommit: (v: string) => void;
+  onPosChange: (pos: { x: number; y: number }) => void;
+}) {
+  const pos = resolveTextPos(slide, field);
+  const styleKey =
+    field === 'encabezado'
+      ? 'estiloEncabezado'
+      : field === 'subtitulo'
+        ? 'estiloSubtitulo'
+        : 'estiloCuerpo';
+  const css = {
+    color:
+      slide[styleKey]?.color ??
+      (field === 'encabezado' ? '#0f172a' : field === 'subtitulo' ? '#475569' : '#64748b'),
+    ...textStyleToCss(slide[styleKey]),
+  };
+
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    ox: number;
+    oy: number;
+    w: number;
+    h: number;
+  } | null>(null);
+
+  const finishDrag = (el: HTMLElement, pointerId: number) => {
+    dragRef.current = null;
+    try {
+      el.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleDragPointerDown = (e: PointerEvent<HTMLSpanElement>) => {
+    if (!isEditing || !stackRef.current) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = stackRef.current.getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      ox: pos.x,
+      oy: pos.y,
+      w: rect.width,
+      h: rect.height,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    onSelect();
+  };
+
+  const handleDragPointerMove = (e: PointerEvent<HTMLSpanElement>) => {
+    if (!dragRef.current) return;
+    const dx = ((e.clientX - dragRef.current.startX) / dragRef.current.w) * 100;
+    const dy = ((e.clientY - dragRef.current.startY) / dragRef.current.h) * 100;
+    onPosChange(clampWidgetPos(dragRef.current.ox + dx, dragRef.current.oy + dy));
+  };
+
+  const textShadowClass = hasImageBg ? slideStyles.wspTextOnImage : undefined;
+
+  if (!isEditing) {
+    if (!value) return null;
+    const viewClass = cn(className, textShadowClass, 'm-0', slideStyles.wspRichText);
+    const overlayStyle = hasImageBg
+      ? ({ ...css, left: `${pos.x}%`, top: `${pos.y}%` } as React.CSSProperties)
+      : css;
+
+    const viewNode = looksLikeRichHtml(value) ? (
+      <div
+        className={cn(viewClass, hasImageBg && slideStyles.wspOverlayTextEl)}
+        style={overlayStyle}
+        dangerouslySetInnerHTML={{ __html: sanitizeWidgetHtml(value) }}
+      />
+    ) : (
+      (() => {
+        const Tag = field === 'encabezado' ? 'h3' : 'p';
+        return (
+          <Tag
+            className={cn(viewClass, hasImageBg && slideStyles.wspOverlayTextEl)}
+            style={overlayStyle}
+          >
+            {value}
+          </Tag>
+        );
+      })()
+    );
+
+    if (hasImageBg) return viewNode;
+    return viewNode;
+  }
+
+  const editorEl = (
+    <WidgetSlideRichTextEditor
+      field={field}
+      slideId={slide.id}
+      value={value}
+      className={cn(
+        'm-0 w-full min-w-[4rem] border-0 bg-transparent p-0 outline-none focus:ring-0',
+        className,
+        textShadowClass,
+        slideStyles.wspRichTextEditor,
+        slideStyles.wspEditorField,
+      )}
+      style={css}
+      placeholder={placeholder}
+      onSelect={onSelect}
+      onCommit={onCommit}
+    />
+  );
+
+  if (hasImageBg) {
+    return (
+      <div
+        className={cn(
+          slideStyles.wspOverlayTextEl,
+          isSelected && chromeStyles.whInnerHighlight,
+        )}
+        style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+      >
+        <span
+          className={slideStyles.wspTextDragHandle}
+          title="Arrastrar"
+          aria-label="Arrastrar texto"
+          onPointerDown={handleDragPointerDown}
+          onPointerMove={handleDragPointerMove}
+          onPointerUp={(e) => finishDrag(e.currentTarget, e.pointerId)}
+          onPointerCancel={(e) => finishDrag(e.currentTarget, e.pointerId)}
+        />
+        {editorEl}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(isSelected && 'rounded ring-2 ring-[#2563EB] ring-offset-1')}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      {editorEl}
+    </div>
+  );
+}
+
+function WidgetSlideRichTextEditor({
+  field,
+  slideId,
+  value,
+  className,
+  style,
+  placeholder,
+  onSelect,
+  onCommit,
+}: {
+  field: WidgetSlideTextField;
+  slideId: string;
+  value: string;
+  className?: string;
+  style?: React.CSSProperties;
+  placeholder?: string;
+  onSelect: () => void;
+  onCommit: (html: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const focusedRef = useRef(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!ref.current || focusedRef.current) return;
+    ref.current.innerHTML = htmlToEditableHtml(value);
+  }, [value]);
+
+  const handle = (el: HTMLDivElement) => ({
+    el,
+    slideId,
+    field,
+    getHtml: () => sanitizeWidgetHtml(el.innerHTML),
+  });
+
+  return (
+    <div
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      aria-multiline="true"
+      data-widget-text-field={field}
+      data-widget-slide-id={slideId}
+      data-placeholder={placeholder}
+      className={className}
+      style={style}
+      onPointerDown={stopWidgetInnerPointer}
+      onClick={stopWidgetInnerPointer}
+      onKeyDown={stopWidgetInnerKeydown}
+      onFocus={(e) => {
+        e.stopPropagation();
+        focusedRef.current = true;
+        registerWidgetTextEditor(handle(e.currentTarget));
+        onSelect();
+      }}
+      onBlur={(e) => {
+        focusedRef.current = false;
+        registerWidgetTextEditor(null);
+        const html = sanitizeWidgetHtml(e.currentTarget.innerHTML);
+        if (html !== value) onCommit(html);
+      }}
+      onInput={(e) => {
+        setTick((t) => t + 1);
+        if (getActiveWidgetTextEditor()?.el === e.currentTarget) {
+          registerWidgetTextEditor(handle(e.currentTarget));
+        }
+      }}
+    />
+  );
+}
+
+function SlideImageEditorPopover({
+  slide,
+  onChangeUrl,
+}: {
+  slide: WidgetSlideContent;
+  onChangeUrl: (url: string) => void;
+}) {
+  const [urlDraft, setUrlDraft] = useState(slide.imagen ?? '');
+  useEffect(() => {
+    setUrlDraft(slide.imagen ?? '');
+  }, [slide.imagen]);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="absolute bottom-2 right-2 z-[3] h-7 gap-1 px-2 text-[10px] shadow"
+          onPointerDown={stopWidgetInnerPointer}
+          onClick={stopWidgetInnerPointer}
+        >
+          <Camera className="size-3" />
+          Imagen
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" align="end" onClick={stopWidgetInnerPointer}>
+        <div className="space-y-2">
+          <p className="text-xs font-medium">URL de imagen</p>
+          <Input
+            value={urlDraft}
+            placeholder="https://..."
+            className="h-8 text-xs"
+            onChange={(e) => setUrlDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onChangeUrl(urlDraft.trim());
+            }}
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => onChangeUrl(urlDraft.trim())}
+            >
+              Aplicar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => onChangeUrl('')}
+            >
+              Quitar
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export interface WidgetSlidePanelViewProps {
+  slide: WidgetSlideContent;
+  configuracion: WidgetSlidePanelConfig;
+}
+
+export function WidgetSlidePanelView({ slide, configuracion }: WidgetSlidePanelViewProps) {
+  const vis = resolveSlideVisibilidad(configuracion.defaultsSlide, slide);
+  const layoutId = resolveSlideLayoutId(slide, configuracion.layoutId);
+  const soloTexto = layoutId === 'solo-texto';
+  const reverse = layoutId === 'texto-izq-imagen-der';
+  const overlay = isOverlayLayout(layoutId) && vis.mostrarImagen && !soloTexto;
+
+  const panelStyle: React.CSSProperties = {
+    ...slidePanelStyle(slide, vis),
+    borderColor: configuracion.colorBordeContenido,
+  };
+
+  const noopStackRef = { current: null } as React.RefObject<HTMLDivElement | null>;
+
+  const textFields = (
+    <>
+      {vis.mostrarEncabezado ? (
+        <TabTextElement
+          field="encabezado"
+          slide={slide}
+          value={slide.encabezado}
+          className={slideStyles.wspHeading}
+          isEditing={false}
+          isSelected={false}
+          hasImageBg={overlay}
+          stackRef={noopStackRef}
+          onSelect={() => {}}
+          onCommit={() => {}}
+          onPosChange={() => {}}
+        />
+      ) : null}
+      {vis.mostrarSubtitulo ? (
+        <TabTextElement
+          field="subtitulo"
+          slide={slide}
+          value={slide.subtitulo ?? ''}
+          className={slideStyles.wspSubtitle}
+          isEditing={false}
+          isSelected={false}
+          hasImageBg={overlay}
+          stackRef={noopStackRef}
+          onSelect={() => {}}
+          onCommit={() => {}}
+          onPosChange={() => {}}
+        />
+      ) : null}
+      {vis.mostrarCuerpo ? (
+        <TabTextElement
+          field="cuerpo"
+          slide={slide}
+          value={slide.cuerpo}
+          className={slideStyles.wspBody}
+          isEditing={false}
+          isSelected={false}
+          hasImageBg={overlay}
+          stackRef={noopStackRef}
+          onSelect={() => {}}
+          onCommit={() => {}}
+          onPosChange={() => {}}
+        />
+      ) : null}
+    </>
+  );
+
+  if (overlay) {
+    return (
+      <div
+        className={cn(slideStyles.wspSlideRow, slideStyles.wspSlideOverlay, slideStyles.wspPanelFill)}
+        style={panelStyle}
+        role="tabpanel"
+        data-widget-slide-panel
+      >
+        <div className={slideStyles.wspOverlayStack}>
+          <TabImageLayer
+            slide={slide}
+            isSelected={false}
+            isEditing={false}
+            imageRadius={slide.imagenRadio ?? 8}
+            fillOverlay
+            onSelect={() => {}}
+            onPatch={() => {}}
+          />
+          {textFields}
+          <WidgetSlideFreeBlocks blocks={slide.bloques ?? []} isEditing={false} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        slideStyles.wspSlideRow,
+        slideStyles.wspPanelFill,
+        reverse && slideStyles.wspSlideRowReverse,
+        soloTexto && slideStyles.wspSlideSoloTexto,
+      )}
+      style={panelStyle}
+      role="tabpanel"
+      data-widget-slide-panel
+    >
+      {vis.mostrarImagen && !soloTexto ? (
+        <TabImageLayer
+          slide={slide}
+          isSelected={false}
+          isEditing={false}
+          imageRadius={slide.imagenRadio ?? 8}
+          onSelect={() => {}}
+          onPatch={() => {}}
+        />
+      ) : null}
+      <div className={slideStyles.wspTextCol}>{textFields}</div>
+      <WidgetSlideFreeBlocks blocks={slide.bloques ?? []} isEditing={false} />
+    </div>
+  );
+}
+
+export interface WidgetSlidePanelEditorProps {
+  slide: WidgetSlideContent;
+  configuracion: WidgetSlidePanelConfig;
+  innerSelection?: WidgetSlideInnerSelection | null;
+  onPatchSlide: (patch: Partial<WidgetSlideContent>) => void;
+  onSelectText: (field: WidgetSlideTextField) => void;
+  onSelectImage: () => void;
+}
+
+export function WidgetSlidePanelEditor({
+  slide,
+  configuracion,
+  innerSelection,
+  onPatchSlide,
+  onSelectText,
+  onSelectImage,
+}: WidgetSlidePanelEditorProps) {
+  const stackRef = useRef<HTMLDivElement>(null);
+  const vis = resolveSlideVisibilidad(configuracion.defaultsSlide, slide);
+  const layoutId = resolveSlideLayoutId(slide, configuracion.layoutId);
+  const soloTexto = layoutId === 'solo-texto';
+  const reverse = layoutId === 'texto-izq-imagen-der';
+  const overlay = isOverlayLayout(layoutId) && vis.mostrarImagen && !soloTexto;
+
+  const isTextSelected = (field: WidgetSlideTextField) =>
+    innerSelection?.kind === 'slide-text' &&
+    innerSelection.slideId === slide.id &&
+    innerSelection.field === field;
+
+  const isImageSelected =
+    innerSelection?.kind === 'slide-image' && innerSelection.slideId === slide.id;
+
+  const patchPos = (field: WidgetSlideTextField, pos: { x: number; y: number }) => {
+    const key = `${field}Pos` as const;
+    onPatchSlide({ [key]: pos });
+  };
+
+  const panelStyle: React.CSSProperties = {
+    ...slidePanelStyle(slide, vis),
+    borderColor: configuracion.colorBordeContenido,
+  };
+
+  const imageLayer = vis.mostrarImagen && !soloTexto ? (
+    <>
+      <TabImageLayer
+        slide={slide}
+        isSelected={isImageSelected}
+        isEditing
+        imageRadius={slide.imagenRadio ?? 8}
+        fillOverlay={overlay}
+        onSelect={onSelectImage}
+        onPatch={onPatchSlide}
+      />
+      {overlay ? (
+        <SlideImageEditorPopover
+          slide={slide}
+          onChangeUrl={(imagen) => onPatchSlide({ imagen: imagen || undefined })}
+        />
+      ) : null}
+    </>
+  ) : null;
+
+  const textFields = (
+    <>
+      {vis.mostrarEncabezado ? (
+        <TabTextElement
+          field="encabezado"
+          slide={slide}
+          value={slide.encabezado}
+          className={slideStyles.wspHeading}
+          placeholder="Encabezado"
+          isEditing
+          isSelected={isTextSelected('encabezado')}
+          hasImageBg={overlay}
+          stackRef={stackRef}
+          onSelect={() => onSelectText('encabezado')}
+          onCommit={(encabezado) => onPatchSlide({ encabezado })}
+          onPosChange={(pos) => patchPos('encabezado', pos)}
+        />
+      ) : null}
+      {vis.mostrarSubtitulo ? (
+        <TabTextElement
+          field="subtitulo"
+          slide={slide}
+          value={slide.subtitulo ?? ''}
+          className={slideStyles.wspSubtitle}
+          placeholder="Subtítulo"
+          multiline
+          isEditing
+          isSelected={isTextSelected('subtitulo')}
+          hasImageBg={overlay}
+          stackRef={stackRef}
+          onSelect={() => onSelectText('subtitulo')}
+          onCommit={(subtitulo) => onPatchSlide({ subtitulo })}
+          onPosChange={(pos) => patchPos('subtitulo', pos)}
+        />
+      ) : null}
+      {vis.mostrarCuerpo ? (
+        <TabTextElement
+          field="cuerpo"
+          slide={slide}
+          value={slide.cuerpo}
+          className={slideStyles.wspBody}
+          placeholder="Cuerpo"
+          multiline
+          isEditing
+          isSelected={isTextSelected('cuerpo')}
+          hasImageBg={overlay}
+          stackRef={stackRef}
+          onSelect={() => onSelectText('cuerpo')}
+          onCommit={(cuerpo) => onPatchSlide({ cuerpo })}
+          onPosChange={(pos) => patchPos('cuerpo', pos)}
+        />
+      ) : null}
+    </>
+  );
+
+  const patchFreeBlock = (blockId: string, patch: Partial<WidgetSlideTextBlock>) => {
+    onPatchSlide({
+      bloques: (slide.bloques ?? []).map((b) => (b.id === blockId ? { ...b, ...patch } : b)),
+    });
+  };
+
+  const freeBlocksLayer = (
+    <WidgetSlideFreeBlocks
+      blocks={slide.bloques ?? []}
+      isEditing
+      onPatchBlock={patchFreeBlock}
+    />
+  );
+
+  if (overlay) {
+    return (
+      <div
+        className={cn(slideStyles.wspSlideRow, slideStyles.wspSlideOverlay, slideStyles.wspPanelFill)}
+        style={panelStyle}
+        data-widget-slide-panel
+      >
+        <div className={slideStyles.wspOverlayStack} ref={stackRef}>
+          {imageLayer}
+          {textFields}
+          {freeBlocksLayer}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        slideStyles.wspSlideRow,
+        slideStyles.wspPanelFill,
+        isSplitLayout(layoutId) && reverse && slideStyles.wspSlideRowReverse,
+        soloTexto && slideStyles.wspSlideSoloTexto,
+      )}
+      style={panelStyle}
+      data-widget-slide-panel
+    >
+      {imageLayer}
+      <div className={slideStyles.wspTextCol}>{textFields}</div>
+      {freeBlocksLayer}
+    </div>
+  );
+}

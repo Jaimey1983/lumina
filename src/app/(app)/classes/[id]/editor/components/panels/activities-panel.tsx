@@ -14,6 +14,8 @@ import {
   Trophy,
   Lock,
   Layers,
+  PanelTop,
+  GalleryHorizontal,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,7 +38,7 @@ export type ActivityType =
   | 'torneo'
   | 'escape_room';
 
-export type WidgetType = 'flip-cards';
+export type WidgetType = 'flip-cards' | 'tabs' | 'carousel';
 
 interface ActivityItem {
   type: ActivityType;
@@ -97,6 +99,20 @@ const WIDGETS: WidgetItem[] = [
     Icon: Layers,
     rowClassName: 'hover:bg-sky-50/90 dark:hover:bg-sky-950/25',
     iconClassName: 'text-sky-600 dark:text-sky-400',
+  },
+  {
+    type: 'tabs',
+    label: 'Tabs',
+    Icon: PanelTop,
+    rowClassName: 'hover:bg-indigo-50/90 dark:hover:bg-indigo-950/25',
+    iconClassName: 'text-indigo-600 dark:text-indigo-400',
+  },
+  {
+    type: 'carousel',
+    label: 'Carousel',
+    Icon: GalleryHorizontal,
+    rowClassName: 'hover:bg-violet-50/90 dark:hover:bg-violet-950/25',
+    iconClassName: 'text-violet-600 dark:text-violet-400',
   },
 ];
 

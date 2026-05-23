@@ -1,4 +1,7 @@
 import type { FlipCardsWidget } from '@/types/slide.types';
+import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
+
+export { alineacionToCss };
 
 export type FlipCardsCaraLado = 'frente' | 'reverso';
 
@@ -141,15 +144,4 @@ export function normalizeFlipCardsWidget(block: FlipCardsWidget): FlipCardsWidge
 
 export function flipCardsPerPage(columnas: number): number {
   return columnas * 2;
-}
-
-export function alineacionToCss(alineacion: FlipCardsAlineacion): 'left' | 'center' | 'right' {
-  switch (alineacion) {
-    case 'centro':
-      return 'center';
-    case 'derecha':
-      return 'right';
-    default:
-      return 'left';
-  }
 }

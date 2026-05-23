@@ -6,8 +6,18 @@ import type {
   FlipCardsConfiguracionCompleta,
 } from './flip-cards-config';
 
-export const DEFAULT_TITULO_POS: FlipCardElementPos = { x: 10, y: 14 };
-export const DEFAULT_CUERPO_POS: FlipCardElementPos = { x: 10, y: 42 };
+export {
+  clampCardPos,
+  clampWidgetPos,
+  DEFAULT_CUERPO_POS,
+  DEFAULT_TITULO_POS,
+  resolveItemVisibilidad,
+} from '@/components/widgets/shared/widget-slide-utils';
+
+import {
+  resolveItemVisibilidad,
+  resolveTextPos as sharedResolveTextPos,
+} from '@/components/widgets/shared/widget-slide-utils';
 
 export function resolveCaraVisibilidad(
   configuracion: FlipCardsConfiguracionCompleta,
@@ -15,27 +25,14 @@ export function resolveCaraVisibilidad(
   cara: FlipCardCara,
 ): FlipCardsCaraConfig {
   const global = lado === 'frente' ? configuracion.frente : configuracion.reverso;
-  return {
-    mostrarImagen: cara.mostrarImagen ?? global.mostrarImagen,
-    mostrarTitulo: cara.mostrarTitulo ?? global.mostrarTitulo,
-    mostrarCuerpo: cara.mostrarCuerpo ?? global.mostrarCuerpo,
-  };
+  return resolveItemVisibilidad(global, cara);
 }
 
 export function resolveTextPos(
   cara: FlipCardCara,
   field: 'titulo' | 'cuerpo',
 ): FlipCardElementPos {
-  const base = field === 'titulo' ? DEFAULT_TITULO_POS : DEFAULT_CUERPO_POS;
-  const stored = field === 'titulo' ? cara.tituloPos : cara.cuerpoPos;
-  return { x: stored?.x ?? base.x, y: stored?.y ?? base.y };
-}
-
-export function clampCardPos(x: number, y: number): FlipCardElementPos {
-  return {
-    x: Math.max(2, Math.min(92, Math.round(x * 10) / 10)),
-    y: Math.max(2, Math.min(92, Math.round(y * 10) / 10)),
-  };
+  return sharedResolveTextPos(cara, field);
 }
 
 export function cardSelectionFace(

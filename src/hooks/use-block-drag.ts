@@ -70,6 +70,24 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  block.alto  ?? fb.alto,
       };
     }
+    case 'tabs': {
+      const fb = BLOCK_FALLBACKS.tabs;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'carousel': {
+      const fb = BLOCK_FALLBACKS.carousel;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
     case 'actividad': {
       const marco = block.marco;
       if (marco) {
@@ -95,6 +113,8 @@ function withPosition(block: Block, x: number, y: number): Block {
     case 'video':       return { ...block, x, y };
     case 'forma':       return { ...block, x, y };
     case 'flip-cards':  return { ...block, x, y };
+    case 'tabs':        return { ...block, x, y };
+    case 'carousel':    return { ...block, x, y };
     default:            return block;
   }
 }

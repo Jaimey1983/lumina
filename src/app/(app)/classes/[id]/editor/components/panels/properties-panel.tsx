@@ -17,6 +17,8 @@ import type {
   FlipCardsWidget,
   FormaBlock,
   ImageBlock,
+  TabsWidget,
+  CarouselWidget,
   TextAlign,
   TextBlock,
   VideoBlock,
@@ -28,6 +30,28 @@ import {
 } from '@/components/widgets/flip-cards/flip-cards-inner-properties';
 import { FlipCardsProperties, FlipCardsWidgetComponentes } from '@/components/widgets/flip-cards/flip-cards-properties';
 import { FlipCardsCardProperties } from '@/components/widgets/flip-cards/flip-cards-card-properties';
+import {
+  getTabsPanelSlideId,
+  TabsSlideProperties,
+  TabsWidgetComponentes,
+} from '@/components/widgets/tabs/tabs-properties';
+import { TabsAppearanceProperties } from '@/components/widgets/tabs/tabs-appearance-properties';
+import {
+  TabsImageInnerProperties,
+  TabsTextInnerProperties,
+} from '@/components/widgets/tabs/tabs-inner-properties';
+import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
+import {
+  getCarouselPanelSlideId,
+  CarouselSlideProperties,
+  CarouselWidgetComponentes,
+} from '@/components/widgets/carousel/carousel-properties';
+import { CarouselAppearanceProperties } from '@/components/widgets/carousel/carousel-appearance-properties';
+import {
+  CarouselImageInnerProperties,
+  CarouselTextInnerProperties,
+} from '@/components/widgets/carousel/carousel-inner-properties';
+import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +115,8 @@ export interface PropertiesPanelProps {
   selectedBlockIds?: string[];
   onApplyBloques: (next: Block[]) => Promise<boolean>;
   flipCardsInnerSelection?: FlipCardsInnerSelection | null;
+  tabsInnerSelection?: TabsInnerSelection | null;
+  carouselInnerSelection?: CarouselInnerSelection | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -101,6 +127,8 @@ export function PropertiesPanel({
   selectedBlockIds = [],
   onApplyBloques,
   flipCardsInnerSelection = null,
+  tabsInnerSelection = null,
+  carouselInnerSelection = null,
 }: PropertiesPanelProps) {
   const bloquesRef = useRef(bloques);
   bloquesRef.current = bloques;
@@ -279,6 +307,148 @@ export function PropertiesPanel({
                   applyNow={applyNow}
                   hideComponentes
                 />
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  if (block.tipo === 'tabs') {
+    const tabsBlock = block as TabsWidget;
+    const inner = tabsInnerSelection;
+    const slideId = getTabsPanelSlideId(inner);
+    const showTextInner =
+      inner?.kind === 'header-text' || inner?.kind === 'slide-text';
+    const showImageInner = inner?.kind === 'slide-image';
+    const showSlideInner =
+      inner?.kind === 'slide' ||
+      inner?.kind === 'slide-text' ||
+      inner?.kind === 'slide-image';
+    const panelTitle = showTextInner
+      ? 'Texto'
+      : showImageInner
+        ? 'Imagen'
+        : showSlideInner
+          ? 'Ficha'
+          : 'Tabs';
+
+    return (
+      <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {panelTitle}
+          </h2>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col gap-5">
+            <TabsWidgetComponentes block={tabsBlock} applyNow={applyNow} />
+            {showSlideInner && slideId ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <TabsSlideProperties
+                  block={tabsBlock}
+                  slideId={slideId}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : null}
+            {showTextInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <p className="text-[11px] text-muted-foreground">
+                  Edición contextual del texto seleccionado en el lienzo.
+                </p>
+                <TabsTextInnerProperties
+                  block={tabsBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : showImageInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <p className="text-[11px] text-muted-foreground">
+                  Edición contextual de la imagen seleccionada en el lienzo.
+                </p>
+                <TabsImageInnerProperties
+                  block={tabsBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : showSlideInner ? null : (
+              <div className="border-t border-border pt-4">
+                <TabsAppearanceProperties block={tabsBlock} applyNow={applyNow} />
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  if (block.tipo === 'carousel') {
+    const carouselBlock = block as CarouselWidget;
+    const inner = carouselInnerSelection;
+    const slideId = getCarouselPanelSlideId(inner);
+    const showTextInner =
+      inner?.kind === 'header-text' || inner?.kind === 'slide-text';
+    const showImageInner = inner?.kind === 'slide-image';
+    const showSlideInner =
+      inner?.kind === 'slide' ||
+      inner?.kind === 'slide-text' ||
+      inner?.kind === 'slide-image';
+    const panelTitle = showTextInner
+      ? 'Texto'
+      : showImageInner
+        ? 'Imagen'
+        : showSlideInner
+          ? 'Página'
+          : 'Carousel';
+
+    return (
+      <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {panelTitle}
+          </h2>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col gap-5">
+            <CarouselWidgetComponentes block={carouselBlock} applyNow={applyNow} />
+            {showSlideInner && slideId ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <CarouselSlideProperties
+                  block={carouselBlock}
+                  slideId={slideId}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : null}
+            {showTextInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <p className="text-[11px] text-muted-foreground">
+                  Edición contextual del texto seleccionado en el lienzo.
+                </p>
+                <CarouselTextInnerProperties
+                  block={carouselBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : showImageInner && inner ? (
+              <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <p className="text-[11px] text-muted-foreground">
+                  Edición contextual de la imagen seleccionada en el lienzo.
+                </p>
+                <CarouselImageInnerProperties
+                  block={carouselBlock}
+                  selection={inner}
+                  applyNow={applyNow}
+                />
+              </div>
+            ) : showSlideInner ? null : (
+              <div className="border-t border-border pt-4">
+                <CarouselAppearanceProperties block={carouselBlock} applyNow={applyNow} />
               </div>
             )}
           </div>

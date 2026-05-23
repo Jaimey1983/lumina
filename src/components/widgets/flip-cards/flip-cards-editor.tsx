@@ -312,6 +312,8 @@ function FlipCardImageLayer({
     startY: number;
     ox: number;
     oy: number;
+    w: number;
+    h: number;
   } | null>(null);
   const resizeRef = useRef<{ startY: number; scale: number } | null>(null);
 
@@ -345,19 +347,21 @@ function FlipCardImageLayer({
         if (!isEditing) return;
         e.stopPropagation();
         onSelect();
-        if (!isSelected) return;
         e.currentTarget.setPointerCapture(e.pointerId);
+        const rect = e.currentTarget.getBoundingClientRect();
         panRef.current = {
           startX: e.clientX,
           startY: e.clientY,
           ox: data.imagenOffsetX ?? 0,
           oy: data.imagenOffsetY ?? 0,
+          w: Math.max(rect.width, 1),
+          h: Math.max(rect.height, 1),
         };
       }}
       onPointerMove={(e) => {
         if (panRef.current) {
-          const dx = ((e.clientX - panRef.current.startX) / 100) * 12;
-          const dy = ((e.clientY - panRef.current.startY) / 100) * 12;
+          const dx = ((e.clientX - panRef.current.startX) / panRef.current.w) * 80;
+          const dy = ((e.clientY - panRef.current.startY) / panRef.current.h) * 80;
           onPatch({
             imagenOffsetX: Math.max(-40, Math.min(40, panRef.current.ox + dx)),
             imagenOffsetY: Math.max(-40, Math.min(40, panRef.current.oy + dy)),
@@ -860,7 +864,10 @@ export function FlipCardsEditor({
     <div
       className={styles.fcRoot}
       style={flipCardsContainerStyle(block)}
-      onPointerDown={() => onEnsureBlockSelected?.()}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onEnsureBlockSelected?.();
+      }}
       onClick={handleRootClick}
     >
       <div className={cn(styles.fcHeader, 'mb-3 shrink-0 space-y-1')} style={headerPad}>

@@ -195,7 +195,7 @@ export function updateBlockAtPath(
     const colIdx = parts[depth + 1];
     if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return arr;
 
-    const newColumnas = block.columnas.map((col, cj) => {
+    const newColumnas = block.columnas.map((col: Block[], cj: number) => {
       if (cj !== colIdx) return col;
       return go(col, depth + 2);
     });
@@ -225,7 +225,7 @@ export function removeBlockAtPath(bloques: Block[], path: string): Block[] {
     const colIdx = parts[depth + 1];
     if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return arr;
 
-    const newColumnas = block.columnas.map((col, cj) => {
+    const newColumnas = block.columnas.map((col: Block[], cj: number) => {
       if (cj !== colIdx) return col;
       return go(col, depth + 2);
     });

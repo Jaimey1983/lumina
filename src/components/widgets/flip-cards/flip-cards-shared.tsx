@@ -1,6 +1,10 @@
 'use client';
 
 import type { FlipCardsWidget } from '@/types/slide.types';
+import {
+  widgetContainerBackgroundStyle,
+  widgetHeaderPadding,
+} from '@/components/widgets/shared/widget-container-styles';
 
 import styles from './flip-cards.module.css';
 import { textStyleToCss } from './flip-cards-text-styles';
@@ -47,24 +51,16 @@ export function mergedFlipCardsConfig(
 
 export function flipCardsContainerStyle(block: FlipCardsWidget): React.CSSProperties {
   const configuracion = mergedFlipCardsConfig(block);
-  const alpha = configuracion.opacidadFondoContenedor / 100;
-  const hex = configuracion.colorFondoContenedor;
-  if (alpha >= 1) return { backgroundColor: hex };
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return { backgroundColor: `rgba(${r}, ${g}, ${b}, ${alpha})` };
+  return widgetContainerBackgroundStyle(
+    configuracion.colorFondoContenedor,
+    configuracion.opacidadFondoContenedor,
+  );
 }
 
 export function flipCardsHeaderStyle(
   configuracion: FlipCardsConfiguracionCompleta,
 ): React.CSSProperties {
-  const pad = configuracion.paddingContenedor;
-  return {
-    paddingLeft: pad,
-    paddingRight: pad,
-    paddingTop: pad,
-  };
+  return widgetHeaderPadding(configuracion.paddingContenedor);
 }
 
 export function flipCardsGridStyle(

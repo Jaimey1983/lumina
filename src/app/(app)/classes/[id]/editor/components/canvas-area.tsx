@@ -22,6 +22,8 @@ import type {
   FlipCardsWidget,
   Slide,
   SlideGuias,
+  TabsWidget,
+  CarouselWidget,
 } from '@/types/slide.types';
 import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
 import {
@@ -36,6 +38,8 @@ import {
   type LayerReorderAction,
 } from './floating-toolbar';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
+import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
+import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
@@ -45,6 +49,11 @@ import { DroppableCanvas } from './droppable-canvas';
 import { SpacingIndicators } from '@/components/editor/spacing-indicators';
 import { CanvasGuidesChrome } from './canvas-guides';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
+import {
+  appendTextBlockToWidgetSlide,
+  createWidgetSlideTextBlock,
+  resolveWidgetSlideInsertTarget,
+} from '@/components/widgets/shared/widget-slide-blocks';
 
 const MAX_UNDO = 20;
 
@@ -159,6 +168,8 @@ export interface CanvasAreaProps {
   onBlockSelect?: (id: string) => void;
   onActivityChange?: (blockId: string, activity: Activity) => void;
   onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
+  onTabsChange?: (blockId: string, block: TabsWidget) => void;
+  onCarouselChange?: (blockId: string, block: CarouselWidget) => void;
   onRemoveBlock?: (blockId: string) => void;
   onCopyBlock?: (block: Block) => void;
   copiedBlock?: Block | null;
@@ -208,6 +219,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onBlockSelect,
     onActivityChange,
     onFlipCardsChange,
+    onTabsChange,
+    onCarouselChange,
     onRemoveBlock,
     onCopyBlock,
     copiedBlock,
@@ -256,9 +269,15 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
   const [flipCardsInnerSelection, setFlipCardsInnerSelection] =
     useState<FlipCardsInnerSelection | null>(null);
+  const [tabsInnerSelection, setTabsInnerSelection] =
+    useState<TabsInnerSelection | null>(null);
+  const [carouselInnerSelection, setCarouselInnerSelection] =
+    useState<CarouselInnerSelection | null>(null);
 
   useEffect(() => {
     setFlipCardsInnerSelection(null);
+    setTabsInnerSelection(null);
+    setCarouselInnerSelection(null);
   }, [selectedBlockId]);
   const [marqueeRect, setMarqueeRect] = useState<{
     startX: number;
@@ -408,6 +427,37 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         return;
       }
       if (!slide?.id || !classId) return;
+
+      if (block.tipo === 'texto') {
+        const widgetTarget = resolveWidgetSlideInsertTarget(
+          selectedBlockId,
+          slide.bloques ?? [],
+          tabsInnerSelection,
+          carouselInnerSelection,
+        );
+        if (widgetTarget) {
+          const textBlock = createWidgetSlideTextBlock({
+            contenido: block.contenido || 'Texto nuevo',
+            tamanoFuente: block.tamanoFuente ?? '16px',
+            color: block.color ?? '#334155',
+            negrita: block.negrita ?? false,
+            alineacion: block.alineacion ?? 'izquierda',
+          });
+          const updated = appendTextBlockToWidgetSlide(
+            widgetTarget.widget,
+            widgetTarget.slideId,
+            textBlock,
+          ) as TabsWidget | CarouselWidget;
+          if (widgetTarget.kind === 'tabs') {
+            onTabsChange?.(widgetTarget.blockPath, updated as TabsWidget);
+          } else {
+            onCarouselChange?.(widgetTarget.blockPath, updated as CarouselWidget);
+          }
+          toast.success('Texto añadido a la ficha activa');
+          return;
+        }
+      }
+
       const prev = cloneBloques(slide.bloques ?? []);
       const next = [...prev, block];
       const newIndex = next.length - 1;
@@ -427,7 +477,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         toast.error('No se pudo guardar el bloque');
       }
     },
-    [slide, classId, hasActivityBlock, persistBloques],
+    [
+      slide,
+      classId,
+      hasActivityBlock,
+      persistBloques,
+      selectedBlockId,
+      tabsInnerSelection,
+      carouselInnerSelection,
+      onTabsChange,
+      onCarouselChange,
+    ],
   );
 
   const handleDuplicateBlock = useCallback(
@@ -1038,6 +1098,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onFlipCardsChange={onFlipCardsChange}
             flipCardsInnerSelection={flipCardsInnerSelection}
             onFlipCardsInnerSelectionChange={setFlipCardsInnerSelection}
+            onTabsChange={onTabsChange}
+            tabsInnerSelection={tabsInnerSelection}
+            onTabsInnerSelectionChange={setTabsInnerSelection}
+            onCarouselChange={onCarouselChange}
+            carouselInnerSelection={carouselInnerSelection}
+            onCarouselInnerSelectionChange={setCarouselInnerSelection}
             onRemoveBlock={onRemoveBlock}
             onDuplicateBlock={handleDuplicateBlock}
             onCopyBlock={handleCopyBlock}
@@ -1146,6 +1212,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         selectedBlockIds={selectedBlockIds}
         onApplyBloques={handleApplyBloques}
         flipCardsInnerSelection={flipCardsInnerSelection}
+        tabsInnerSelection={tabsInnerSelection}
+        carouselInnerSelection={carouselInnerSelection}
       />
     </div>
     </div>

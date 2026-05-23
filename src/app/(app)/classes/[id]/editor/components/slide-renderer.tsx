@@ -38,6 +38,8 @@ import type {
   ImageBlock,
   QuoteBlock,
   Slide,
+  TabsWidget,
+  CarouselWidget,
   TextBlock,
   VideoBlock,
 } from '@/types/slide.types';
@@ -63,6 +65,12 @@ import { EscapeRoomViewer } from '@/components/viewers/escape-room-viewer';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import { FlipCardsEditor } from '@/components/widgets/flip-cards/flip-cards-editor';
 import { FlipCardsViewer } from '@/components/widgets/flip-cards/flip-cards-viewer';
+import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
+import { TabsEditor } from '@/components/widgets/tabs/tabs-editor';
+import { TabsViewer } from '@/components/widgets/tabs/tabs-viewer';
+import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
+import { CarouselEditor } from '@/components/widgets/carousel/carousel-editor';
+import { CarouselViewer } from '@/components/widgets/carousel/carousel-viewer';
 
 // ─── Modo ──────────────────────────────────────────────────────────────────────
 
@@ -206,6 +214,28 @@ function getBlockPositionStyle(block: Block): CSSProperties {
         zIndex: block.zIndex ?? 1,
       };
     }
+    case 'tabs': {
+      const fb = BLOCK_FALLBACKS.tabs;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${block.ancho ?? fb.ancho}%`,
+        height: `${block.alto ?? fb.alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
+    case 'carousel': {
+      const fb = BLOCK_FALLBACKS.carousel;
+      return {
+        position: 'absolute',
+        left: `${block.x ?? fb.x}%`,
+        top: `${block.y ?? fb.y}%`,
+        width: `${block.ancho ?? fb.ancho}%`,
+        height: `${block.alto ?? fb.alto}%`,
+        zIndex: block.zIndex ?? 1,
+      };
+    }
     case 'actividad': {
       if (block.marco) {
         return {
@@ -265,6 +295,24 @@ function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number;
     }
     case 'flip-cards': {
       const fb = BLOCK_FALLBACKS.flipCards;
+      return {
+        x: block.x ?? fb.x,
+        y: block.y ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto: block.alto ?? fb.alto,
+      };
+    }
+    case 'tabs': {
+      const fb = BLOCK_FALLBACKS.tabs;
+      return {
+        x: block.x ?? fb.x,
+        y: block.y ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto: block.alto ?? fb.alto,
+      };
+    }
+    case 'carousel': {
+      const fb = BLOCK_FALLBACKS.carousel;
       return {
         x: block.x ?? fb.x,
         y: block.y ?? fb.y,
@@ -966,6 +1014,12 @@ interface RenderColumnsProps {
   onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
   flipCardsInnerSelection?: FlipCardsInnerSelection | null;
   onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
+  onTabsChange?: (blockId: string, block: TabsWidget) => void;
+  tabsInnerSelection?: TabsInnerSelection | null;
+  onTabsInnerSelectionChange?: (selection: TabsInnerSelection | null) => void;
+  onCarouselChange?: (blockId: string, block: CarouselWidget) => void;
+  carouselInnerSelection?: CarouselInnerSelection | null;
+  onCarouselInnerSelectionChange?: (selection: CarouselInnerSelection | null) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
@@ -990,6 +1044,12 @@ function RenderColumns({
   onFlipCardsChange,
   flipCardsInnerSelection,
   onFlipCardsInnerSelectionChange,
+  onTabsChange,
+  tabsInnerSelection,
+  onTabsInnerSelectionChange,
+  onCarouselChange,
+  carouselInnerSelection,
+  onCarouselInnerSelectionChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1050,6 +1110,12 @@ function RenderColumns({
                 onFlipCardsChange={onFlipCardsChange}
                 flipCardsInnerSelection={flipCardsInnerSelection}
                 onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
+                onTabsChange={onTabsChange}
+                tabsInnerSelection={tabsInnerSelection}
+                onTabsInnerSelectionChange={onTabsInnerSelectionChange}
+                onCarouselChange={onCarouselChange}
+                carouselInnerSelection={carouselInnerSelection}
+                onCarouselInnerSelectionChange={onCarouselInnerSelectionChange}
                 onRemoveBlock={onRemoveBlock}
                 onDuplicateBlock={onDuplicateBlock}
                 onCopyBlock={onCopyBlock}
@@ -1153,6 +1219,12 @@ interface BlockNodeProps {
   onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
   flipCardsInnerSelection?: FlipCardsInnerSelection | null;
   onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
+  onTabsChange?: (blockId: string, block: TabsWidget) => void;
+  tabsInnerSelection?: TabsInnerSelection | null;
+  onTabsInnerSelectionChange?: (selection: TabsInnerSelection | null) => void;
+  onCarouselChange?: (blockId: string, block: CarouselWidget) => void;
+  carouselInnerSelection?: CarouselInnerSelection | null;
+  onCarouselInnerSelectionChange?: (selection: CarouselInnerSelection | null) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
@@ -1203,6 +1275,12 @@ function BlockNode({
   onFlipCardsChange,
   flipCardsInnerSelection,
   onFlipCardsInnerSelectionChange,
+  onTabsChange,
+  tabsInnerSelection,
+  onTabsInnerSelectionChange,
+  onCarouselChange,
+  carouselInnerSelection,
+  onCarouselInnerSelectionChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1235,6 +1313,10 @@ function BlockNode({
   const activityModo: 'editor' | 'viewer' = editorMode ? 'editor' : 'viewer';
 
   const isTextEditing = editorMode && block.tipo === 'texto' && editingId === blockId;
+  const isWidgetBlock =
+    editorMode &&
+    (block.tipo === 'tabs' || block.tipo === 'carousel' || block.tipo === 'flip-cards');
+  const isBlockButtonShell = editorMode && !isFormBlock && !isTextEditing && !isWidgetBlock;
   const blockRef = useRef<HTMLDivElement>(null);
   const showActionToolbar =
     editorMode &&
@@ -1299,6 +1381,38 @@ function BlockNode({
         ) : (
           <FlipCardsViewer block={block} />
         );
+      case 'tabs':
+        return editorMode ? (
+          <TabsEditor
+            block={block}
+            onChange={(updated) => onTabsChange?.(blockId, updated)}
+            onEnsureBlockSelected={() => onClick()}
+            innerSelection={
+              selectedId === blockId ? tabsInnerSelection ?? null : null
+            }
+            onInnerSelectionChange={
+              selectedId === blockId ? onTabsInnerSelectionChange : undefined
+            }
+          />
+        ) : (
+          <TabsViewer block={block} />
+        );
+      case 'carousel':
+        return editorMode ? (
+          <CarouselEditor
+            block={block}
+            onChange={(updated) => onCarouselChange?.(blockId, updated)}
+            onEnsureBlockSelected={() => onClick()}
+            innerSelection={
+              selectedId === blockId ? carouselInnerSelection ?? null : null
+            }
+            onInnerSelectionChange={
+              selectedId === blockId ? onCarouselInnerSelectionChange : undefined
+            }
+          />
+        ) : (
+          <CarouselViewer block={block} />
+        );
       case 'columnas':
         return (
           <RenderColumns
@@ -1313,6 +1427,12 @@ function BlockNode({
             onFlipCardsChange={onFlipCardsChange}
             flipCardsInnerSelection={flipCardsInnerSelection}
             onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
+            onTabsChange={onTabsChange}
+            tabsInnerSelection={tabsInnerSelection}
+            onTabsInnerSelectionChange={onTabsInnerSelectionChange}
+            onCarouselChange={onCarouselChange}
+            carouselInnerSelection={carouselInnerSelection}
+            onCarouselInnerSelectionChange={onCarouselInnerSelectionChange}
             onRemoveBlock={onRemoveBlock}
             onResponse={onResponse}
             variant={variant}
@@ -1338,8 +1458,8 @@ function BlockNode({
     <>
     <div
       ref={blockRef}
-      role={editorMode && !isFormBlock && !isTextEditing ? 'button' : undefined}
-      tabIndex={editorMode && !isFormBlock && !isTextEditing ? 0 : undefined}
+      role={isBlockButtonShell ? 'button' : undefined}
+      tabIndex={isBlockButtonShell ? 0 : undefined}
       aria-pressed={editorMode && !isTextEditing ? isSelected : undefined}
       data-block-id={blockId}
       style={{ ...positionStyle, ...animationStyle }}
@@ -1354,7 +1474,7 @@ function BlockNode({
           : undefined
       }
       onKeyDown={
-        editorMode && !isFormBlock && !isTextEditing
+        isBlockButtonShell
           ? (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -1365,8 +1485,8 @@ function BlockNode({
       }
       className={cn(
         editorMode && 'relative group',
-        editorMode && !isFormBlock && !isTextEditing && 'cursor-pointer outline-none rounded-sm',
-        editorMode && !isFormBlock && !isTextEditing && 'hover:ring-2 hover:ring-blue-500/40',
+        isBlockButtonShell && 'cursor-pointer outline-none rounded-sm',
+        isBlockButtonShell && 'hover:ring-2 hover:ring-blue-500/40',
         editorMode && isTextEditing && 'cursor-text outline-none rounded-sm',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
         editorMode && isSelected && !isFormBlock && 'ring-2 ring-blue-500 ring-offset-1',
@@ -1458,6 +1578,14 @@ export interface SlideRendererProps {
   /** Selección interna del widget flip-cards (texto/imagen) para el panel contextual. */
   flipCardsInnerSelection?: FlipCardsInnerSelection | null;
   onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
+  /** Persiste cambios de un widget tabs (PATCH vía el padre). */
+  onTabsChange?: (blockId: string, block: TabsWidget) => void;
+  tabsInnerSelection?: TabsInnerSelection | null;
+  onTabsInnerSelectionChange?: (selection: TabsInnerSelection | null) => void;
+  /** Persiste cambios de un widget carousel (PATCH vía el padre). */
+  onCarouselChange?: (blockId: string, block: CarouselWidget) => void;
+  carouselInnerSelection?: CarouselInnerSelection | null;
+  onCarouselInnerSelectionChange?: (selection: CarouselInnerSelection | null) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
@@ -1510,6 +1638,12 @@ export function SlideRenderer({
   onFlipCardsChange,
   flipCardsInnerSelection,
   onFlipCardsInnerSelectionChange,
+  onTabsChange,
+  tabsInnerSelection,
+  onTabsInnerSelectionChange,
+  onCarouselChange,
+  carouselInnerSelection,
+  onCarouselInnerSelectionChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1780,6 +1914,12 @@ export function SlideRenderer({
             onFlipCardsChange={onFlipCardsChange}
             flipCardsInnerSelection={flipCardsInnerSelection}
             onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
+            onTabsChange={onTabsChange}
+            tabsInnerSelection={tabsInnerSelection}
+            onTabsInnerSelectionChange={onTabsInnerSelectionChange}
+            onCarouselChange={onCarouselChange}
+            carouselInnerSelection={carouselInnerSelection}
+            onCarouselInnerSelectionChange={onCarouselInnerSelectionChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}
             onCopyBlock={editorMode ? onCopyBlock : undefined}
