@@ -27,6 +27,8 @@ import { ForumsModule } from './forums/forums.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { CurriculumModule } from './curriculum/curriculum.module';
+import { AutonomousSessionsModule } from './autonomous-sessions/autonomous-sessions.module';
+import { PptxModule } from './pptx/pptx.module';
 
 @Module({
   imports: [
@@ -75,6 +77,12 @@ import { CurriculumModule } from './curriculum/curriculum.module';
 
     // ── Fase 6 — Currículo y generación de desempeños ────────────────────
     CurriculumModule,
+
+    // ── Fase 7 — Modo autónomo ────────────────────────────────────────────
+    AutonomousSessionsModule,
+
+    // ── Fase 8 — Importación ──────────────────────────────────────────────
+    PptxModule,
   ],
 })
 export class AppModule {}

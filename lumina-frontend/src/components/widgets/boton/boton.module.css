@@ -1,0 +1,241 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.btn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn:disabled,
+.btnDisabled {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.sizeSm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.sizeMd {
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+}
+
+.sizeLg {
+  padding: 0.5rem 1rem;
+  font-size: 1.25rem;
+}
+
+.formaRedondeado {
+  border-radius: 0.375rem;
+}
+
+.formaPill {
+  border-radius: 50rem;
+}
+
+/* Solid */
+.primary {
+  color: #fff;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+.primary:hover:not(:disabled) {
+  color: #fff;
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+.secondary {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+.secondary:hover:not(:disabled) {
+  color: #fff;
+  background-color: #5c636a;
+  border-color: #565e64;
+}
+
+.success {
+  color: #fff;
+  background-color: #198754;
+  border-color: #198754;
+}
+.success:hover:not(:disabled) {
+  color: #fff;
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+.danger {
+  color: #fff;
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+.danger:hover:not(:disabled) {
+  color: #fff;
+  background-color: #bb2d3b;
+  border-color: #b02a37;
+}
+
+.warning {
+  color: #000;
+  background-color: #ffc107;
+  border-color: #ffc107;
+}
+.warning:hover:not(:disabled) {
+  color: #000;
+  background-color: #ffca2c;
+  border-color: #ffc720;
+}
+
+.info {
+  color: #000;
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+}
+.info:hover:not(:disabled) {
+  color: #000;
+  background-color: #31d2f2;
+  border-color: #25cff2;
+}
+
+.light {
+  color: #000;
+  background-color: #f8f9fa;
+  border-color: #f8f9fa;
+}
+.light:hover:not(:disabled) {
+  color: #000;
+  background-color: #d3d4d5;
+  border-color: #c6c7c8;
+}
+
+.dark {
+  color: #fff;
+  background-color: #212529;
+  border-color: #212529;
+}
+.dark:hover:not(:disabled) {
+  color: #fff;
+  background-color: #424649;
+  border-color: #373b3e;
+}
+
+.link {
+  color: #0d6efd;
+  background-color: transparent;
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link:hover:not(:disabled) {
+  color: #0a58ca;
+}
+
+/* Outline */
+.outlinePrimary {
+  color: #0d6efd;
+  background-color: transparent;
+  border-color: #0d6efd;
+}
+.outlinePrimary:hover:not(:disabled) {
+  color: #fff;
+  background-color: #0d6efd;
+}
+
+.outlineSecondary {
+  color: #6c757d;
+  background-color: transparent;
+  border-color: #6c757d;
+}
+.outlineSecondary:hover:not(:disabled) {
+  color: #fff;
+  background-color: #6c757d;
+}
+
+.outlineSuccess {
+  color: #198754;
+  background-color: transparent;
+  border-color: #198754;
+}
+.outlineSuccess:hover:not(:disabled) {
+  color: #fff;
+  background-color: #198754;
+}
+
+.outlineDanger {
+  color: #dc3545;
+  background-color: transparent;
+  border-color: #dc3545;
+}
+.outlineDanger:hover:not(:disabled) {
+  color: #fff;
+  background-color: #dc3545;
+}
+
+.outlineWarning {
+  color: #ffc107;
+  background-color: transparent;
+  border-color: #ffc107;
+}
+.outlineWarning:hover:not(:disabled) {
+  color: #000;
+  background-color: #ffc107;
+}
+
+.outlineInfo {
+  color: #0dcaf0;
+  background-color: transparent;
+  border-color: #0dcaf0;
+}
+.outlineInfo:hover:not(:disabled) {
+  color: #000;
+  background-color: #0dcaf0;
+}
+
+.outlineLight {
+  color: #f8f9fa;
+  background-color: transparent;
+  border-color: #f8f9fa;
+}
+.outlineLight:hover:not(:disabled) {
+  color: #000;
+  background-color: #f8f9fa;
+}
+
+.outlineDark {
+  color: #212529;
+  background-color: transparent;
+  border-color: #212529;
+}
+.outlineDark:hover:not(:disabled) {
+  color: #fff;
+  background-color: #212529;
+}

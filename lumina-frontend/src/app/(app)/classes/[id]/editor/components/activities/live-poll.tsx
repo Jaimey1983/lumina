@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, Trash2, Plus } from 'lucide-react';
 
 import type { LivePoll, PollOption } from '@/types/slide.types';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn, seeded01 } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 /** Alias descriptivo para props del editor (misma forma que `LivePoll`). */
@@ -71,24 +72,24 @@ function OptionBar({
           onClick={onSelect}
           className={cn(
             'flex flex-1 items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
-            interactive && !selected && 'border-border hover:border-primary/50 hover:bg-accent cursor-pointer',
-            interactive && selected  && 'border-primary bg-primary/5 cursor-pointer',
-            !interactive && isVoted  && 'border-primary/40 bg-primary/5',
-            !interactive && !isVoted && 'border-border cursor-default',
+            interactive && !selected && 'border-[#e5e7eb] hover:border-[#2563EB]/50 hover:bg-[#f9fafb] cursor-pointer',
+            interactive && selected  && 'border-[#2563EB] bg-[#dbeafe] cursor-pointer',
+            !interactive && isVoted  && 'border-[#2563EB]/40 bg-[#dbeafe]',
+            !interactive && !isVoted && 'border-[#e5e7eb] cursor-default',
           )}
         >
-          {isVoted && !interactive && <CheckCircle className="size-3.5 shrink-0 text-primary" />}
+          {isVoted && !interactive && <CheckCircle className="size-3.5 shrink-0 text-[#2563EB]" />}
           <span className="flex-1 truncate">{label}</span>
         </button>
-        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-[#9ca3af]">
           {pct}%
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
+      <div className="h-2 overflow-hidden rounded-full bg-[#f3f4f6]">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700',
-            isVoted ? 'bg-primary' : 'bg-muted-foreground/30',
+            isVoted ? 'bg-[#2563EB]' : 'bg-[#d1d5db]',
           )}
           style={{ width: `${pct}%` }}
         />
@@ -101,13 +102,13 @@ function OptionBar({
 
 function EditorView({ actividad }: { actividad: LivePoll }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-700">
           Encuesta en vivo
         </span>
         {actividad.tiempoLimiteSeg !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
             {actividad.tiempoLimiteSeg}s
           </span>
         )}
@@ -128,7 +129,7 @@ function EditorView({ actividad }: { actividad: LivePoll }) {
         ))}
       </div>
 
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-[10px] text-[#9ca3af]">
         {actividad.opciones.length} opciones · Los porcentajes se actualizan en tiempo real durante la sesión
       </p>
     </div>
@@ -137,56 +138,198 @@ function EditorView({ actividad }: { actividad: LivePoll }) {
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function ViewerView({ actividad }: { actividad: LivePoll }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const [voted, setVoted] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, number> | null>(null);
-
-  function handleVote() {
-    if (!selected) return;
-    setVoted(selected);
-    setResults(simulateResults(actividad, selected));
-  }
-
-  const hasVoted = !!voted;
-
-  return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
-      <p className="text-sm font-medium leading-snug">{actividad.pregunta}</p>
-
-      <div className="space-y-3">
-        {actividad.opciones.map((op) => (
-          <OptionBar
-            key={op.id}
-            label={op.texto}
-            pct={results?.[op.id] ?? 0}
-            isVoted={voted === op.id}
-            interactive={!hasVoted}
-            selected={selected === op.id}
-            onSelect={() => { if (!hasVoted) setSelected(op.id); }}
-          />
-        ))}
-      </div>
-
-      {!hasVoted ? (
-        <Button size="sm" onClick={handleVote} disabled={!selected}>
-          Votar
-        </Button>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Tu voto ha sido registrado. Resultados simulados localmente.
-        </p>
-      )}
-    </div>
-  );
-}
-
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export function LivePollActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} />;
+    : <EditorView actividad={actividad} />;
+}
+
+// ─── AnimatedBar: barra individual con porcentaje animado ────────────────────
+
+function AnimatedBar({
+  label,
+  pct,
+  votes,
+  isVoted,
+  isDark,
+}: {
+  label: string;
+  pct: number;
+  votes: number;
+  isVoted: boolean;
+  isDark: boolean;
+}) {
+  const animatedPct = pct;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          {isVoted && <CheckCircle className="size-3.5 shrink-0 text-[#2563EB]" />}
+          <span
+            className={cn(
+              'flex-1 truncate text-sm font-medium',
+              isDark ? 'text-white' : 'text-[#111827]',
+            )}
+          >
+            {label}
+          </span>
+        </div>
+        <span
+          className={cn(
+            'shrink-0 text-xs tabular-nums font-semibold',
+            isDark ? 'text-white/80' : 'text-[#6b7280]',
+          )}
+        >
+          {animatedPct}%
+        </span>
+      </div>
+
+      {/* Barra de progreso con CSS transition */}
+      <div
+        className={cn(
+          'h-2 overflow-hidden rounded-full',
+          isDark ? 'bg-white/15' : 'bg-[#f3f4f6]',
+        )}
+      >
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-700 ease-out',
+            isVoted
+              ? 'bg-[#2563EB]'
+              : isDark
+                ? 'bg-white/30'
+                : 'bg-[#6b7280]/40',
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Conteo de votos */}
+      <p
+        className={cn(
+          'text-[10px] tabular-nums',
+          isDark ? 'text-white/50' : 'text-[#9ca3af]',
+        )}
+      >
+        {votes} {votes === 1 ? 'voto' : 'votos'} · {animatedPct}%
+      </p>
+    </div>
+  );
+}
+
+// ─── LivePollViewer (con onResponse y answered) ───────────────────────────────
+
+export function LivePollViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  activity: LivePoll;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [answered, setAnswered] = useState(false);
+  // resultados simulados tras votar: Record<optionId, percentage>
+  const [results, setResults] = useState<Record<string, number> | null>(null);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setAnswered(false);
+    setSelected(null);
+    setResults(null);
+  }, [editorSyncKey]);
+
+  function handleVote(index: number) {
+    if (answered) return;
+    const votedId = activity.opciones[index]?.id ?? null;
+    setSelected(votedId);
+    setAnswered(true);
+    play('submit');
+    if (votedId) {
+      setResults(simulateResults(activity, votedId));
+    }
+    onResponse?.(index);
+  }
+
+  const isDark = variant === 'dark';
+
+  // ── Fase pre-voto: botones interactivos ────────────────────────────────────
+  if (!answered) {
+    return (
+      <div
+        className={cn(
+          'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+          isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+        )}
+      >
+        <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>
+          {activity.pregunta}
+        </p>
+
+        <div className="space-y-2">
+          {activity.opciones.map((op, idx) => (
+            <button
+              key={op.id}
+              type="button"
+              onClick={() => handleVote(idx)}
+              className={cn(
+                'flex w-full cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                isDark
+                  ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                  : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]',
+              )}
+            >
+              <span className="size-3.5 shrink-0" />
+              <span className="flex-1 truncate">{op.texto}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Fase post-voto: barras animadas ────────────────────────────────────────
+  // Simulamos un total de votos proporcional para mostrar conteos verosímiles
+  const SIMULATED_TOTAL = 24;
+  return (
+    <div
+      className={cn(
+        'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>
+        {activity.pregunta}
+      </p>
+
+      <div className="space-y-3">
+        {activity.opciones.map((op) => {
+          const pct = results?.[op.id] ?? 0;
+          const votes = Math.max(op.id === selected ? 1 : 0, Math.round((pct / 100) * SIMULATED_TOTAL));
+          return (
+            <AnimatedBar
+              key={op.id}
+              label={op.texto}
+              pct={pct}
+              votes={votes}
+              isVoted={op.id === selected}
+              isDark={isDark}
+            />
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <span>✓</span> ¡Voto registrado!
+      </div>
+    </div>
+  );
 }
 
 // ─── Named Export Editor ──────────────────────────────────────────────────────
@@ -257,12 +400,12 @@ export function LivePollActivityEditor({
   }
 
   return (
-    <div className="flex max-h-[min(42vh,400px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">
+    <div className="flex max-h-[min(42vh,400px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
           Encuesta en vivo
         </span>
-        <span className="text-[10px] text-muted-foreground truncate">
+        <span className="truncate text-[10px] text-[#9ca3af]">
           Editor de encuesta interactiva
         </span>
       </div>
@@ -297,7 +440,7 @@ export function LivePollActivityEditor({
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                className="size-8 shrink-0 text-[#9ca3af] hover:text-destructive"
                 onClick={() => removeOption(opt.id)}
                 disabled={local.opciones.length <= 2}
               >
@@ -317,7 +460,7 @@ export function LivePollActivityEditor({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-2">
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-2">
           <Label className="cursor-pointer text-[11px] font-medium leading-tight">
             Permitir múltiples respuestas
           </Label>

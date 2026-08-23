@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { CheckCircle, Circle, Plus, Trash2, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle, CheckCircle2, Circle, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { QuizMultiple, QuizOption } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -22,16 +23,16 @@ interface Props {
 
 function EditorView({ actividad }: { actividad: QuizMultiple }) {
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
           Quiz
         </span>
         {actividad.multipleRespuesta && (
-          <span className="text-[10px] text-muted-foreground">múltiple respuesta</span>
+          <span className="text-[10px] text-[#9ca3af]">múltiple respuesta</span>
         )}
         {actividad.puntos !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
             {actividad.puntos} pts
           </span>
         )}
@@ -46,8 +47,8 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
             className={cn(
               'flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm',
               op.esCorrecta
-                ? 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300'
-                : 'border-border bg-muted/30 text-muted-foreground',
+                ? 'border-green-300 bg-green-50 text-green-800'
+                : 'border-[#e5e7eb] bg-[#f9fafb] text-[#9ca3af]',
             )}
           >
             <span className="flex items-center gap-2">
@@ -58,7 +59,7 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
               {op.texto}
             </span>
             {op.esCorrecta && (
-              <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+              <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
                 Correcta
               </span>
             )}
@@ -67,7 +68,7 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
       </ul>
 
       {actividad.retroalimentacion?.explicacion && (
-        <p className="rounded-md bg-muted/50 px-3 py-2 text-xs italic text-muted-foreground">
+        <p className="rounded-md bg-[#f9fafb] px-3 py-2 text-xs italic text-[#9ca3af]">
           {actividad.retroalimentacion.explicacion}
         </p>
       )}
@@ -88,8 +89,8 @@ function OptionIcon({
 }) {
   if (!submitted) {
     return isSelected
-      ? <CheckCircle className="size-4 shrink-0 text-primary" />
-      : <Circle className="size-4 shrink-0 text-muted-foreground/40" />;
+      ? <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+      : <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />;
   }
   if (isSelected && op.esCorrecta)  return <CheckCircle className="size-4 shrink-0 text-green-600" />;
   if (isSelected && !op.esCorrecta) return <XCircle className="size-4 shrink-0 text-red-500" />;
@@ -117,7 +118,7 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
     selected.every((id) => correctIds.includes(id));
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
+    <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
       <p className="text-sm font-medium leading-snug">{actividad.pregunta}</p>
 
       <ul className="space-y-2">
@@ -130,13 +131,13 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
                 onClick={() => toggle(op.id)}
                 disabled={submitted}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
-                  !submitted && !isSel && 'border-border hover:border-primary/50 hover:bg-accent',
-                  !submitted && isSel  && 'border-primary bg-primary/5',
-                  submitted && isSel && op.esCorrecta  && 'border-green-400 bg-green-50 text-green-800 dark:bg-green-950/20 dark:text-green-300',
-                  submitted && isSel && !op.esCorrecta && 'border-red-400 bg-red-50 text-red-800 dark:bg-red-950/20 dark:text-red-300',
-                  submitted && !isSel && op.esCorrecta  && 'border-green-200 bg-green-50/50 opacity-80 dark:border-green-800',
-                  submitted && !isSel && !op.esCorrecta && 'border-border opacity-40',
+                  'flex w-full items-center gap-3 rounded-md border border-[#e5e7eb] px-3 py-2.5 text-left text-sm transition-colors',
+                  !submitted && !isSel && 'hover:border-[#2563EB]/50 hover:bg-[#f9fafb]',
+                  !submitted && isSel  && 'border-[#2563EB] bg-[#dbeafe]',
+                  submitted && isSel && op.esCorrecta  && 'border-green-400 bg-green-50 text-green-800',
+                  submitted && isSel && !op.esCorrecta && 'border-red-400 bg-red-50 text-red-800',
+                  submitted && !isSel && op.esCorrecta  && 'border-green-200 bg-green-50/50 opacity-80',
+                  submitted && !isSel && !op.esCorrecta && 'border-[#e5e7eb] opacity-40',
                 )}
               >
                 <OptionIcon op={op} isSelected={isSel} submitted={submitted} />
@@ -156,8 +157,8 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
           className={cn(
             'rounded-md px-3 py-2 text-sm',
             isCorrect
-              ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300'
-              : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300',
+              ? 'bg-green-50 text-green-800'
+              : 'bg-red-50 text-red-800',
           )}
         >
           {isCorrect
@@ -182,6 +183,301 @@ export function QuizMultipleActivity({ actividad, modo }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
     : <ViewerView actividad={actividad} />;
+}
+
+// ─── QuizMultipleViewer (con onResponse y answered) ───────────────────────────
+
+function isQuizSelectionCorrect(activity: QuizMultiple, selectedIds: string[]): boolean {
+  const correctIds = activity.opciones.filter((o) => o.esCorrecta).map((o) => o.id);
+  if (correctIds.length === 0) return false;
+  if (selectedIds.length !== correctIds.length) return false;
+  const set = new Set(selectedIds);
+  return correctIds.every((id) => set.has(id));
+}
+
+export function QuizMultipleViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  activity: QuizMultiple;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
+  const correctIds = useMemo(
+    () => activity.opciones.filter((o) => o.esCorrecta).map((o) => o.id),
+    [activity],
+  );
+  const isMulti = activity.multipleRespuesta === true || correctIds.length > 1;
+  const hasDefinedCorrect = correctIds.length > 0;
+
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setAnswered(false);
+    setSelected(null);
+    setSelectedIds([]);
+  }, [editorSyncKey]);
+
+  const isDark = variant === 'dark';
+
+  if (isMulti) {
+    const overallMulti =
+      answered && hasDefinedCorrect
+        ? isQuizSelectionCorrect(activity, selectedIds)
+        : false;
+
+    return (
+      <div
+        className={cn(
+          'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+          isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+        )}
+      >
+        <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>{activity.pregunta}</p>
+        <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
+          {activity.multipleRespuesta
+            ? 'Selecciona las opciones correctas y envía.'
+            : 'Varias respuestas correctas: marca todas las que apliquen y envía.'}
+        </p>
+        <ul className="space-y-2">
+          {activity.opciones.map((op) => {
+            const isSel = selectedIds.includes(op.id);
+            const showAuto = answered && hasDefinedCorrect;
+            const isCorrectOption = op.esCorrecta;
+            const showCorrectReveal = showAuto && !overallMulti && isCorrectOption;
+            const selectedWrong = showAuto && isSel && !overallMulti;
+            const selectedRight = showAuto && isSel && overallMulti;
+            return (
+              <li key={op.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (answered) return;
+                    setSelectedIds((p) =>
+                      p.includes(op.id) ? p.filter((x) => x !== op.id) : [...p, op.id],
+                    );
+                  }}
+                  disabled={answered}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
+                    !answered &&
+                      !isSel &&
+                      (isDark
+                        ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                        : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
+                    !answered &&
+                      isSel &&
+                      (isDark
+                        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                    answered &&
+                      !hasDefinedCorrect &&
+                      isSel &&
+                      (isDark
+                        ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                    answered && !hasDefinedCorrect && !isSel && (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
+                    selectedRight &&
+                      (isDark
+                        ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                        : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                    selectedWrong &&
+                      (isDark
+                        ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
+                        : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
+                    showCorrectReveal &&
+                      (isDark
+                        ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                        : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                    showAuto &&
+                      !isSel &&
+                      !showCorrectReveal &&
+                      !selectedRight &&
+                      (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
+                  )}
+                >
+                  {showAuto ? (
+                    <>
+                      <span className="flex min-w-0 flex-1 items-center gap-3">
+                        {isSel ? (
+                          selectedWrong ? (
+                            <Circle className="size-4 shrink-0 text-[#DC2626]" />
+                          ) : (
+                            <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
+                          )
+                        ) : (
+                          <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                        )}
+                        <span className="min-w-0 flex-1">{op.texto}</span>
+                      </span>
+                      {selectedRight && (
+                        <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                      )}
+                      {selectedWrong && <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />}
+                      {showCorrectReveal && !isSel && (
+                        <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {isSel ? (
+                        <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+                      ) : (
+                        <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                      )}
+                      {op.texto}
+                    </>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {!answered ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              if (selectedIds.length === 0) return;
+              setAnswered(true);
+              if (hasDefinedCorrect) {
+                play(isQuizSelectionCorrect(activity, selectedIds) ? 'correct' : 'wrong');
+              } else {
+                play('submit');
+              }
+              onResponse?.([...selectedIds]);
+            }}
+            disabled={selectedIds.length === 0}
+            className="w-full sm:w-auto"
+          >
+            Enviar respuesta
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
+  function handleSelect(index: number) {
+    if (answered) return;
+    const optionId = activity.opciones[index]?.id ?? null;
+    if (!optionId) return;
+    setSelected(optionId);
+    setAnswered(true);
+    if (hasDefinedCorrect) {
+      play(isQuizSelectionCorrect(activity, [optionId]) ? 'correct' : 'wrong');
+    } else {
+      play('submit');
+    }
+    onResponse?.(optionId);
+  }
+
+  const overallCorrect =
+    selected && hasDefinedCorrect ? isQuizSelectionCorrect(activity, [selected]) : false;
+
+  return (
+    <div
+      className={cn(
+        'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium leading-snug', isDark ? 'text-white' : 'text-[#111827]')}>{activity.pregunta}</p>
+      <ul className="space-y-2">
+        {activity.opciones.map((op, idx) => {
+          const isSel = selected === op.id;
+          const showAuto = answered && hasDefinedCorrect;
+          const isCorrectOption = op.esCorrecta;
+          const showCorrectReveal = showAuto && !overallCorrect && isCorrectOption;
+
+          const selectedWrong = showAuto && isSel && !overallCorrect;
+
+          const selectedRight = showAuto && isSel && overallCorrect;
+
+          return (
+            <li key={op.id}>
+              <button
+                type="button"
+                onClick={() => handleSelect(idx)}
+                disabled={answered}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
+                  !answered &&
+                    (isDark
+                      ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                      : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]'),
+                  answered &&
+                    !hasDefinedCorrect &&
+                    isSel &&
+                    (isDark
+                      ? 'border-[#2563EB] bg-[#2563EB]/80 text-white'
+                      : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'),
+                  answered && !hasDefinedCorrect && !isSel && (isDark ? 'border-white/20 opacity-40' : 'border-[#e5e7eb] opacity-40'),
+                  selectedRight &&
+                    (isDark
+                      ? 'origin-center border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                      : 'origin-center border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                  selectedWrong &&
+                    (isDark
+                      ? 'border-red-400 bg-red-500/30 text-red-300 lumina-viewer-shake'
+                      : 'border-[#f87171] bg-[#fee2e2] text-[#f87171] lumina-viewer-shake'),
+                  showCorrectReveal &&
+                    (isDark
+                      ? 'border-green-400 bg-green-500/30 text-green-300 animate-in zoom-in-95 duration-300'
+                      : 'border-[#16a34a] bg-[#dcfce7] text-[#16a34a] animate-in zoom-in-95 duration-300'),
+                  showAuto &&
+                    !isSel &&
+                    !showCorrectReveal &&
+                    !selectedRight &&
+                    (isDark ? 'border-white/20 opacity-50' : 'border-[#e5e7eb] opacity-50'),
+                )}
+              >
+                {showAuto ? (
+                  <>
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      {isSel ? (
+                        selectedWrong ? (
+                          <Circle className="size-4 shrink-0 text-[#DC2626]" />
+                        ) : (
+                          <CheckCircle className="size-4 shrink-0 text-[#16A34A]" />
+                        )
+                      ) : (
+                        <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                      )}
+                      <span className="min-w-0 flex-1">{op.texto}</span>
+                    </span>
+                    {selectedRight && (
+                      <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                    )}
+                    {selectedWrong && (
+                      <XCircle className="size-5 shrink-0 text-[#DC2626]" aria-hidden />
+                    )}
+                    {showCorrectReveal && !isSel && (
+                      <CheckCircle2 className="size-5 shrink-0 text-[#16A34A]" aria-hidden />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {isSel ? (
+                      <CheckCircle className="size-4 shrink-0 text-[#2563EB]" />
+                    ) : (
+                      <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
+                    )}
+                    {op.texto}
+                  </>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 // ─── Activity Editor ──────────────────────────────────────────────────────────
@@ -264,15 +560,15 @@ export function QuizMultipleActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
           Quiz
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -280,7 +576,7 @@ export function QuizMultipleActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -327,7 +623,7 @@ export function QuizMultipleActivityEditor({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
                   onClick={() => removeOption(op.id)}
                 >
                   <Trash2 className="size-3.5" />
@@ -348,7 +644,7 @@ export function QuizMultipleActivityEditor({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
           <Label className="cursor-pointer text-[11px] font-medium leading-tight">
             Mezclar opciones
           </Label>

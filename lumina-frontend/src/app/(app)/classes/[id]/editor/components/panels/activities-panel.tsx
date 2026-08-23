@@ -11,10 +11,25 @@ import {
   CircleDot,
   Video,
   Wind,
+  Trophy,
+  Lock,
+  Layers,
+  Grid2x2,
+  Grid3x3,
+  Puzzle,
+  Search,
+  Package,
+  CaseSensitive,
+  Sparkles,
+  Crosshair,
+  RotateCw,
+  Keyboard,
+  GitBranch,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
+import { DraggableActivityItem } from '../draggable-activity-item';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,7 +43,24 @@ export type ActivityType =
   | 'sort-steps'
   | 'video-interactive'
   | 'live-poll'
-  | 'word-cloud';
+  | 'word-cloud'
+  | 'torneo'
+  | 'escape_room'
+  | 'historia_ramificada'
+  | 'clasificar'
+  | 'memoria'
+  | 'puzzle_imagen'
+  | 'sopa_letras'
+  | 'crucigrama'
+  | 'abrir_caja'
+  | 'anagrama'
+  | 'ahorcado'
+  | 'puzzle_palabras'
+  | 'globos'
+  | 'topo'
+  | 'ruleta';
+
+export type WidgetType = WidgetTipo;
 
 interface ActivityItem {
   type: ActivityType;
@@ -52,10 +84,39 @@ const INTERACTION: ActivityItem[] = [
   { type: 'video-interactive', label: 'Video interactivo',   Icon: Video },
 ];
 
-const LIVE: ActivityItem[] = [
-  { type: 'live-poll',  label: 'Encuesta en vivo', Icon: Radio },
-  { type: 'word-cloud', label: 'Nube de palabras', Icon: Wind },
+const GRUPO4: ActivityItem[] = [
+  { type: 'clasificar',       label: 'Clasificar',          Icon: Layers },
+  { type: 'memoria',          label: 'Memoria',             Icon: Grid2x2 },
+  { type: 'puzzle_imagen',    label: 'Puzzle de imagen',    Icon: Puzzle },
+  { type: 'sopa_letras',      label: 'Sopa de letras',      Icon: Search },
+  { type: 'crucigrama',       label: 'Crucigrama',          Icon: Grid3x3 },
+  { type: 'abrir_caja',       label: 'Abrir caja',          Icon: Package },
+  { type: 'anagrama',         label: 'Anagrama',            Icon: CaseSensitive },
+  { type: 'ahorcado',         label: 'Ahorcado',            Icon: Keyboard },
+  { type: 'puzzle_palabras',  label: 'Puzzle de palabras',  Icon: AlignLeft },
+  { type: 'globos',           label: 'Globos',              Icon: Sparkles },
+  { type: 'topo',             label: 'Golpea al topo',      Icon: Crosshair },
+  { type: 'ruleta',           label: 'Ruleta',              Icon: RotateCw },
 ];
+
+const LIVE: ActivityItem[] = [
+  { type: 'live-poll',            label: 'Encuesta en vivo',     Icon: Radio },
+  { type: 'word-cloud',           label: 'Nube de palabras',     Icon: Wind },
+  { type: 'torneo',               label: 'Torneo de preguntas',  Icon: Trophy },
+  { type: 'escape_room',          label: 'Escape Room',          Icon: Lock },
+  { type: 'historia_ramificada',  label: 'Historia Ramificada',  Icon: GitBranch },
+];
+
+export const ALL_ACTIVITY_ITEMS: ActivityItem[] = [
+  ...EVALUATION,
+  ...INTERACTION,
+  ...LIVE,
+  ...GRUPO4,
+];
+
+export function getActivityPanelItem(type: ActivityType): ActivityItem | undefined {
+  return ALL_ACTIVITY_ITEMS.find((item) => item.type === type);
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -72,38 +133,31 @@ function ActivityGroup({
   onAdd,
   disabled,
 }: {
-  title: string;
+  title?: string;
   items: ActivityItem[];
   onAdd: (type: ActivityType) => void;
   disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </p>
-      {items.map(({ type, label, Icon }) => (
-        <button
-          key={type}
-          type="button"
+      {title ? (
+        <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </p>
+      ) : null}
+      {items.map((item) => (
+        <DraggableActivityItem
+          key={item.type}
+          type={item.type}
+          label={item.label}
+          Icon={item.Icon}
           disabled={disabled}
-          onClick={() => onAdd(type)}
-          className={cn(
-            'flex items-center gap-2.5 px-4 py-2 text-left transition-colors',
-            disabled
-              ? 'cursor-not-allowed opacity-40'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-          )}
-        >
-          <Icon className="size-4 shrink-0" />
-          <span className="text-xs">{label}</span>
-        </button>
+          onAdd={onAdd}
+        />
       ))}
     </div>
   );
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
   return (
@@ -116,6 +170,7 @@ export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
       <ActivityGroup title="Evaluación"  items={EVALUATION}  onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup title="En vivo"     items={LIVE}        onAdd={onAddActivity} disabled={hasActivity} />
+      <ActivityGroup items={GRUPO4} onAdd={onAddActivity} disabled={hasActivity} />
     </div>
   );
 }

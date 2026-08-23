@@ -1,0 +1,38 @@
+.tabsBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0.75rem;
+}
+
+.tabsBarButton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--widget-accent-muted, #2563eb);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tabsBarButton:hover {
+  color: var(--widget-accent, #2563eb);
+  filter: brightness(0.85);
+}
+
+.tabsBarButtonActive {
+  color: var(--widget-accent, #2563eb);
+  border-bottom-color: var(--widget-accent, #2563eb);
+}
+
+.tabsBarButtonSelected {
+  outline: 2px solid var(--widget-accent, #2563eb);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

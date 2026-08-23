@@ -72,11 +72,16 @@ pnpm run start:dev
 
 ## 🗄️ BASE DE DATOS
 
-**Conexión:** `postgresql://lumina:lumina1234@localhost:5432/lumina`  
+**Dos instancias PostgreSQL (desarrollo en Windows):**
+
+- **PostgreSQL local (Windows)** → host `localhost`, **puerto 5432** → es la que usa el backend por defecto (`DATABASE_URL`).
+- **Contenedor `lumina_postgres` (Docker)** → **puerto 5434** en el host (mapeo `5434:5432`) → respaldo / entorno alternativo; no está activo por defecto en la app.
+
+**Conexión habitual (local):** `postgresql://lumina:lumina1234@localhost:5432/lumina`  
 **Usuario:** lumina  
 **Contraseña:** lumina1234  
 **Base de datos:** lumina  
-**Puerto:** 5432
+**Puerto (backend / local):** 5432
 
 ### Configuración especial Prisma 7
 
@@ -380,7 +385,9 @@ model StudentBadge {
 ```env
 PORT=3000
 NODE_ENV=development
+# Local Windows (5432) por defecto; ver sección BASE DE DATOS para Docker en 5434.
 DATABASE_URL="postgresql://lumina:lumina1234@localhost:5432/lumina"
+# DATABASE_URL_DOCKER="postgresql://lumina:lumina1234@localhost:5434/lumina"
 REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=lumina_super_secret_key_2025_cambiar_en_produccion

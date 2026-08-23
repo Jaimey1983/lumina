@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useCourses, type Course } from '@/hooks/api/use-courses';
 import { useCourse } from '@/hooks/api/use-course';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 import {
   Card,
@@ -22,7 +23,6 @@ import {
   CardTitle,
   CardToolbar,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageBanner } from '@/components/ui/page-banner';
 import {
   Dialog,
   DialogBody,
@@ -277,26 +278,30 @@ export function CoursesClient() {
         accessorKey: 'code',
         header: 'Código',
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.code}</span>
+          <span className="font-mono text-sm text-[#111827]">{row.original.code}</span>
         ),
       },
       {
         accessorKey: 'isActive',
         header: 'Estado',
         cell: ({ row }) => (
-          <Badge
-            variant={row.original.isActive ? 'success' : 'secondary'}
-            appearance="light"
+          <span
+            className={cn(
+              'inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full',
+              row.original.isActive
+                ? 'bg-[#dcfce7] text-[#16a34a]'
+                : 'bg-[#f3f4f6] text-[#9ca3af]',
+            )}
           >
             {row.original.isActive ? 'Activo' : 'Inactivo'}
-          </Badge>
+          </span>
         ),
       },
       {
         accessorKey: 'createdAt',
         header: 'Fecha de creación',
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-sm">
+          <span className="text-sm text-[#111827]">
             {new Date(row.original.createdAt).toLocaleDateString('es-ES', {
               day: '2-digit',
               month: 'short',
@@ -310,37 +315,36 @@ export function CoursesClient() {
         header: '',
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#2563EB] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
               onClick={() => router.push(`/courses/${row.original.id}`)}
               title="Ver curso"
             >
-              <Eye className="size-4" />
+              <Eye className="size-4 shrink-0" />
               Ver
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6b7280] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6b7280]/30"
               onClick={() => {
                 setEditingCourseId(row.original.id);
                 setFormOpen(true);
               }}
               title="Editar curso"
             >
-              <Pencil className="size-4" />
+              <Pencil className="size-4 shrink-0" />
               Editar
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:text-destructive"
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#f87171] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f87171]/30"
               onClick={() => setDeleteDialog({ open: true, course: row.original })}
               title="Eliminar curso"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-4 shrink-0" />
               Eliminar
-            </Button>
+            </button>
           </div>
         ),
       },
@@ -354,27 +358,28 @@ export function CoursesClient() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  return (
-    <div className="container py-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Cursos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona todos tus cursos desde aquí.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingCourseId(undefined);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          Nuevo curso
-        </Button>
-      </div>
+  const coursesBannerSubtitle = `${courses.length} curso${courses.length !== 1 ? 's' : ''} · Gestiona todos tus cursos desde aquí`;
 
+  return (
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner
+        title="Cursos"
+        subtitle={coursesBannerSubtitle}
+        action={
+          <button
+            type="button"
+            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+            onClick={() => {
+              setEditingCourseId(undefined);
+              setFormOpen(true);
+            }}
+          >
+            ＋ Nuevo curso
+          </button>
+        }
+      />
+
+      <div className="px-6 pt-4 space-y-4">
       {/* Error */}
       {isError && (
         <Alert variant="destructive" appearance="light">
@@ -444,9 +449,18 @@ export function CoursesClient() {
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
-                  <TableRow key={hg.id}>
+                  <TableRow
+                    key={hg.id}
+                    className="border-b border-[#e5e7eb] bg-[#F5F5F7] hover:bg-[#F5F5F7] [&:has(td):hover]:bg-[#F5F5F7]"
+                  >
                     {hg.headers.map((header) => (
-                      <TableHead key={header.id}>
+                      <TableHead
+                        key={header.id}
+                        className={cn(
+                          'h-[50px] px-4 py-0 text-xs font-medium text-[#6b7280] uppercase tracking-wide border-[#e5e7eb] align-middle',
+                          header.column.id === 'actions' && 'text-end',
+                        )}
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -457,9 +471,18 @@ export function CoursesClient() {
               </TableHeader>
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow
+                    key={row.id}
+                    className="border-b border-[#e5e7eb] h-[50px] text-sm text-[#111827] [&:has(td):hover]:bg-[#f9fafb]"
+                  >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          'h-[50px] px-4 py-0 align-middle text-sm text-[#111827] border-[#e5e7eb]',
+                          cell.column.id === 'actions' && 'text-end',
+                        )}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -494,6 +517,7 @@ export function CoursesClient() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
       />
+      </div>
     </div>
   );
 }

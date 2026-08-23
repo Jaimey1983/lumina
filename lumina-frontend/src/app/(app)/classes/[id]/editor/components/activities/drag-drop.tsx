@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, GripVertical, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { DragDrop, DragDropItem, DragDropZone } from '@/types/slide.types';
@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
+import { wrapActivityDraftResponse } from '@/lib/activity-scoring';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -22,19 +24,22 @@ import { useActivityEditor } from './use-activity-editor';
 interface Props {
   actividad: DragDrop;
   modo: 'editor' | 'viewer';
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
 function EditorView({ actividad }: { actividad: DragDrop }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
           Arrastrar y soltar
         </span>
         {actividad.puntos !== undefined && (
-          <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-[10px] tabular-nums text-[#9ca3af]">
             {actividad.puntos} pts
           </span>
         )}
@@ -45,16 +50,16 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
       <div className="grid grid-cols-2 gap-4">
         {/* Items column */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
             Elementos
           </p>
           <div className="space-y-1.5">
             {actividad.items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-2 rounded-md bg-muted/60 px-2.5 py-1.5 text-xs"
+                className="flex items-center gap-2 rounded-md bg-[#f3f4f6] px-2.5 py-1.5 text-xs"
               >
-                <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" />
+                <GripVertical className="size-3.5 shrink-0 text-[#9ca3af]/60" />
                 {item.texto}
               </div>
             ))}
@@ -63,19 +68,19 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
 
         {/* Zones column */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
             Zonas
           </p>
           <div className="space-y-2">
             {actividad.zonas.map((zone) => (
-              <div key={zone.id} className="rounded-md border border-dashed border-border p-2.5">
+              <div key={zone.id} className="rounded-md border border-dashed border-[#e5e7eb] p-2.5">
                 <p className="mb-1.5 text-xs font-medium">{zone.etiqueta}</p>
                 {zone.itemsCorrectos.map((itemId) => {
                   const item = actividad.items.find((i) => i.id === itemId);
                   return item ? (
                     <div
                       key={itemId}
-                      className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400"
+                      className="flex items-center gap-1.5 text-xs text-green-700"
                     >
                       <CheckCircle className="size-3 shrink-0" />
                       {item.texto}
@@ -93,19 +98,45 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 
-function ViewerView({ actividad }: { actividad: DragDrop }) {
+function ViewerView({
+  actividad,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  actividad: DragDrop;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
   // placements: itemId → zoneId | null (null = unplaced)
   const [placements, setPlacements] = useState<Record<string, string | null>>(
     () => Object.fromEntries(actividad.items.map((i) => [i.id, null])),
   );
   const [dragging, setDragging] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
+  const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setPlacements(Object.fromEntries(actividad.items.map((i) => [i.id, null])));
+    setAnswered(false);
+  }, [editorSyncKey, actividad.items]);
+
+  const isDark = variant === 'dark';
 
   const unplaced = actividad.items.filter((i) => placements[i.id] === null);
 
   function itemsInZone(zoneId: string) {
     return actividad.items.filter((i) => placements[i.id] === zoneId);
+  }
+
+  /** Emit current placements snapshot so autonomo-client can capture partial state. */
+  function emitDraft(nextPlacements: Record<string, string | null>) {
+    const result = actividad.items.map((i) => ({
+      itemId: i.id,
+      zoneId: nextPlacements[i.id] ?? null,
+    }));
+    onResponse?.(wrapActivityDraftResponse(result));
   }
 
   function onDragStart(e: React.DragEvent, itemId: string) {
@@ -118,40 +149,49 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
   function onDropToZone(e: React.DragEvent, zoneId: string) {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('itemId');
-    if (!itemId || submitted) return;
+    if (!itemId || answered) return;
     const zone = actividad.zonas.find((z) => z.id === zoneId);
     if (zone?.capacidadMaxima !== undefined && itemsInZone(zoneId).length >= zone.capacidadMaxima) {
       return;
     }
-    setPlacements((p) => ({ ...p, [itemId]: zoneId }));
+    const next = { ...placements, [itemId]: zoneId };
+    setPlacements(next);
     setDragging(null);
+    // Report intermediate state so autonomo-client can capture it on advance
+    emitDraft(next);
   }
 
   function onDropToUnplaced(e: React.DragEvent) {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('itemId');
-    if (!itemId || submitted) return;
-    setPlacements((p) => ({ ...p, [itemId]: null }));
+    if (!itemId || answered) return;
+    const next = { ...placements, [itemId]: null };
+    setPlacements(next);
     setDragging(null);
+    // Report intermediate state so autonomo-client can capture it on advance
+    emitDraft(next);
   }
 
   function handleSubmit() {
-    const correct = actividad.zonas.every((zone) => {
-      const placed = actividad.items
-        .filter((i) => placements[i.id] === zone.id)
-        .map((i) => i.id);
-      return (
-        placed.length === zone.itemsCorrectos.length &&
-        placed.every((id) => zone.itemsCorrectos.includes(id))
-      );
-    });
-    setIsCorrect(correct);
-    setSubmitted(true);
+    if (answered) return;
+    // Build result: array of { itemId, zoneId }
+    const result = actividad.items.map((i) => ({
+      itemId: i.id,
+      zoneId: placements[i.id],
+    }));
+    setAnswered(true);
+    play('submit');
+    onResponse?.(result);
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-5">
-      <p className="text-sm font-medium">{actividad.instruccion}</p>
+    <div
+      className={cn(
+        'space-y-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{actividad.instruccion}</p>
 
       {/* Unplaced items pool */}
       <div
@@ -159,30 +199,40 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
         onDrop={onDropToUnplaced}
         className={cn(
           'min-h-12 rounded-md border-2 border-dashed p-3 transition-colors',
-          dragging && !submitted ? 'border-primary/50 bg-primary/5' : 'border-border',
+          dragging && !answered
+            ? isDark
+              ? 'border-[#2563EB]/60 bg-[#2563EB]/25'
+              : 'border-[#2563EB]/50 bg-[#dbeafe]'
+            : isDark
+              ? 'border-white/30'
+              : 'border-[#e5e7eb]',
         )}
       >
-        <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <p className={cn('mb-2 text-[10px] uppercase tracking-wider', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
           Elementos disponibles
         </p>
         <div className="flex flex-wrap gap-1.5">
           {unplaced.map((item) => (
             <div
               key={item.id}
-              draggable={!submitted}
+              draggable={!answered}
               onDragStart={(e) => onDragStart(e, item.id)}
               onDragEnd={onDragEnd}
               className={cn(
-                'flex cursor-grab items-center gap-1 rounded-md bg-muted px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                'flex cursor-grab items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                isDark
+                  ? 'border-white/20 bg-white/15 text-white hover:bg-white/25'
+                  : 'border-[#e5e7eb] bg-white text-[#111827] hover:bg-[#eff6ff]',
+                answered && 'cursor-default',
                 dragging === item.id && 'opacity-40',
               )}
             >
-              <GripVertical className="size-3 text-muted-foreground" />
+              <GripVertical className={cn('size-3', isDark ? 'text-white/70' : 'text-[#9ca3af]')} />
               {item.texto}
             </div>
           ))}
           {unplaced.length === 0 && (
-            <p className="text-xs text-muted-foreground/50">
+            <p className={cn('text-xs', isDark ? 'text-white/40' : 'text-[#9ca3af]/50')}>
               Todos los elementos están ubicados
             </p>
           )}
@@ -193,11 +243,8 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
       <div className="grid grid-cols-2 gap-3">
         {actividad.zonas.map((zone) => {
           const placed = itemsInZone(zone.id);
-          const zoneCorrect =
-            submitted &&
-            placed.length === zone.itemsCorrectos.length &&
-            placed.every((i) => zone.itemsCorrectos.includes(i.id));
-          const zoneWrong = submitted && !zoneCorrect;
+          const zoneCorrect = false;
+          const zoneWrong = false;
 
           return (
             <div
@@ -206,14 +253,16 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
               onDrop={(e) => onDropToZone(e, zone.id)}
               className={cn(
                 'rounded-md border-2 border-dashed p-3 transition-colors',
-                !submitted && dragging  && 'border-primary/40 bg-primary/5',
-                !submitted && !dragging && 'border-border',
-                zoneCorrect && 'border-green-400 bg-green-50 dark:bg-green-950/20',
-                zoneWrong   && 'border-red-400 bg-red-50 dark:bg-red-950/20',
+                !answered &&
+                  dragging &&
+                  (isDark ? 'border-[#2563EB]/50 bg-[#2563EB]/20' : 'border-[#2563EB]/40 bg-[#dbeafe]'),
+                !answered && !dragging && (isDark ? 'border-white/30' : 'border-[#e5e7eb]'),
+                zoneCorrect && (isDark ? 'border-green-400 bg-green-500/20' : 'border-green-400 bg-green-50'),
+                zoneWrong && (isDark ? 'border-red-400 bg-red-500/20' : 'border-red-400 bg-red-50'),
               )}
             >
               <div className="mb-2 flex items-center gap-1.5">
-                <p className="text-xs font-medium">{zone.etiqueta}</p>
+                <p className={cn('text-xs font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{zone.etiqueta}</p>
                 {zoneCorrect && <CheckCircle className="size-3.5 text-green-600" />}
                 {zoneWrong   && <XCircle className="size-3.5 text-red-500" />}
               </div>
@@ -221,21 +270,27 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
                 {placed.map((item) => (
                   <div
                     key={item.id}
-                    draggable={!submitted}
+                    draggable={!answered}
                     onDragStart={(e) => onDragStart(e, item.id)}
                     onDragEnd={onDragEnd}
                     className={cn(
-                      'flex cursor-grab items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
-                      submitted ? 'bg-white/80 dark:bg-white/10' : 'bg-background shadow-sm',
+                      'flex cursor-grab items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium select-none active:cursor-grabbing',
+                      isDark
+                        ? answered
+                          ? 'border-white/20 bg-white/10 text-white'
+                          : 'border-white/20 bg-white/15 text-white shadow-lumina-xs'
+                        : answered
+                          ? 'border-[#e5e7eb] bg-white/80 text-[#111827]'
+                          : 'border-[#e5e7eb] bg-white text-[#111827] shadow-lumina-xs',
                       dragging === item.id && 'opacity-40',
                     )}
                   >
-                    <GripVertical className="size-3 text-muted-foreground" />
+                    <GripVertical className={cn('size-3', isDark ? 'text-white/70' : 'text-[#9ca3af]')} />
                     {item.texto}
                   </div>
                 ))}
                 {placed.length === 0 && (
-                  <span className="text-xs text-muted-foreground/40">Suelta aquí</span>
+                  <span className={cn('text-xs', isDark ? 'text-white/40' : 'text-[#9ca3af]/40')}>Suelta aquí</span>
                 )}
               </div>
             </div>
@@ -243,26 +298,17 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
         })}
       </div>
 
-      {!submitted ? (
+      {!answered ? (
         <Button
           size="sm"
           onClick={handleSubmit}
           disabled={unplaced.length > 0}
         >
-          Comprobar
+          Enviar
         </Button>
       ) : (
-        <div
-          className={cn(
-            'rounded-md px-3 py-2 text-sm',
-            isCorrect
-              ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300'
-              : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300',
-          )}
-        >
-          {isCorrect
-            ? (actividad.retroalimentacion?.correcto ?? '¡Excelente! Todos los elementos están bien ubicados.')
-            : (actividad.retroalimentacion?.incorrecto ?? 'Hay errores en la distribución. Revisa las zonas marcadas en rojo.')}
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          <span>✓</span> ¡Respuesta enviada!
         </div>
       )}
     </div>
@@ -271,10 +317,10 @@ function ViewerView({ actividad }: { actividad: DragDrop }) {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export function DragDropActivity({ actividad, modo }: Props) {
+export function DragDropActivity({ actividad, modo, editorSyncKey, onResponse, variant }: Props) {
   return modo === 'editor'
     ? <EditorView actividad={actividad} />
-    : <ViewerView actividad={actividad} />;
+    : <ViewerView actividad={actividad} editorSyncKey={editorSyncKey} onResponse={onResponse} variant={variant} />;
 }
 
 // ─── Activity Editor ──────────────────────────────────────────────────────────
@@ -388,15 +434,15 @@ export function DragDropActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(60vh,400px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
           Arrastrar y soltar
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -404,7 +450,7 @@ export function DragDropActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -465,7 +511,7 @@ export function DragDropActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="size-8 shrink-0 text-[#9ca3af] hover:text-destructive"
                     onClick={() => removeItem(item.id)}
                   >
                     <Trash2 className="size-3.5" />
@@ -500,7 +546,7 @@ export function DragDropActivityEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="size-8 shrink-0 text-[#9ca3af] hover:text-destructive"
                     onClick={() => removeZone(zone.id)}
                   >
                     <Trash2 className="size-3.5" />

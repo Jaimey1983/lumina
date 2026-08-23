@@ -1,0 +1,71 @@
+{
+  "grado": "6",
+  "asignatura": "Matemáticas",
+  "pais": "Colombia",
+  "referente_normativo": "DBA v2 + EBC",
+  "version": "placeholder-1.0",
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Placeholder — reemplazar con JSON real",
+      "dba_asociados": [
+        1
+      ],
+      "dba_relacionados": [],
+      "enfoque_men": "Producción Textual",
+      "nivel_cognitivo": {
+        "nivel": "Comprender",
+        "verbo_bloom": [
+          "identificar"
+        ],
+        "nivel_numero": 2
+      },
+      "temas": [
+        "Placeholder tema"
+      ],
+      "subtemas": [
+        "Placeholder subtema"
+      ],
+      "palabras_clave": [
+        "matemáticas",
+        "grado 6",
+        "Colombia"
+      ],
+      "dba_enunciado": "Placeholder DBA — reemplazar con JSON real generado por Prompt Maestro v2",
+      "evidencias_aprendizaje": [
+        "Placeholder evidencia"
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "",
+          "basico": "",
+          "alto": "",
+          "superior": ""
+        },
+        "procedimental": {
+          "bajo": "",
+          "basico": "",
+          "alto": "",
+          "superior": ""
+        },
+        "actitudinal": {
+          "bajo": "",
+          "basico": "",
+          "alto": "",
+          "superior": ""
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Placeholder actividad",
+          "tipo": "Quiz opción múltiple"
+        }
+      ],
+      "ebc_factor": "Producción Textual",
+      "ebc_estandar": "Placeholder EBC",
+      "subprocesos_ebc": [
+        "Placeholder subproceso"
+      ]
+    }
+  ]
+}

@@ -660,7 +660,7 @@ export function CourseDetailClient({ id }: { id: string }) {
   const { data: course, isLoading } = useCourse(id);
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="w-full space-y-6 p-6">
       {/* Back + Header */}
       <div className="flex items-start gap-4">
         <Button variant="ghost" size="sm" asChild className="mt-0.5">

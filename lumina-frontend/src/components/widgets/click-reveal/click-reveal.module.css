@@ -1,0 +1,437 @@
+.revealBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0.5rem;
+}
+
+.revealStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem 0.625rem;
+  overflow: hidden;
+}
+
+.revealTriggerDeck {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.revealEditorBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--reveal-backdrop-color, #1e293b);
+  opacity: calc(var(--reveal-backdrop-opacity, 45) / 100);
+}
+
+.revealBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.revealBackdropDim {
+  position: absolute;
+  inset: 0;
+  background: var(--reveal-backdrop-color, #1e293b);
+  opacity: calc(var(--reveal-backdrop-opacity, 45) / 100);
+}
+
+.revealModal {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(96%, 44rem);
+  height: min(88%, 30rem);
+  min-height: 18rem;
+  max-height: min(92%, 32rem);
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.24);
+}
+
+.revealModalInner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.revealModalEditing {
+  outline: 2px dashed var(--widget-accent, #2563eb);
+  outline-offset: 2px;
+}
+
+.revealModalClose {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #64748b;
+  cursor: pointer;
+}
+
+.revealModalClose:hover {
+  background: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+.revealModalLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.revealModalContent {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.revealModalContentFill {
+  flex: 1;
+  min-height: 10rem;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.revealModalPanelEditor {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* En el modal, apilar imagen arriba y texto abajo (como Captivate) */
+.revealModalPanelEditor :global(.wspSlideRow:not(.wspSlideOverlay)) {
+  flex-direction: column;
+  min-height: 14rem;
+  height: 100%;
+}
+
+.revealModalPanelEditor :global(.wspImageCol) {
+  flex: 0 0 44%;
+  width: 100%;
+  max-width: 100%;
+  min-height: 8rem;
+  height: auto;
+}
+
+.revealModalPanelEditor :global(.wspTextCol) {
+  flex: 1;
+  min-height: 6rem;
+  overflow: auto;
+}
+
+.revealModalPanelEditor :global(.wspSlideOverlay .wspOverlayStack) {
+  min-height: 14rem;
+}
+
+.revealModalPanelEditor :global(.wspImagePlaceholder) {
+  min-height: 7rem;
+}
+
+.revealModalPanelEditor :global(.wspSlideRow) {
+  padding-bottom: 2.5rem;
+}
+
+.revealModalHiddenFade {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.revealModalHiddenInstant {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.revealModalHiddenSlide {
+  opacity: 0;
+  transform: translate(-50%, calc(-50% + 12px));
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.revealModalVisible {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.revealTriggerRow {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.625rem;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.revealTriggerNav {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  background: #fff;
+  color: var(--widget-nav, #0f172a);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.revealTriggerNav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.revealTriggerTrack {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--reveal-trigger-count, 4), minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.revealTriggerCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(0.5rem, 2%, 1rem) clamp(0.375rem, 1.5%, 0.75rem);
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.revealTriggerCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+}
+
+.revealTriggerCardActive {
+  border-color: var(--widget-accent, #2563eb);
+  box-shadow: 0 0 0 1px var(--widget-accent, #2563eb);
+}
+
+.revealTriggerCardSelected {
+  outline: 2px dashed var(--widget-accent, #2563eb);
+  outline-offset: -2px;
+}
+
+.revealTriggerTitle {
+  width: 100%;
+  flex-shrink: 0;
+  order: 0;
+  font-size: clamp(0.6875rem, 1.6vh, 0.9375rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.2;
+  padding: 0.25rem 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.revealTriggerImageArea {
+  flex: 1;
+  order: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  padding: 0.25rem 0;
+}
+
+.revealTriggerImage {
+  max-width: min(85%, 10rem);
+  max-height: min(50%, 9rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.revealTriggerImageBtn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.revealTriggerImagePlaceholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px dashed rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.revealTriggerImagePlaceholderSelected {
+  outline: 2px dashed #fff;
+  outline-offset: 2px;
+}
+
+.revealTriggerTitleInput {
+  width: 100%;
+  flex-shrink: 0;
+  order: 0;
+  resize: vertical;
+  border: 2px solid transparent;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: clamp(0.6875rem, 1.6vh, 0.9375rem);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.revealTriggerTitleInput:focus {
+  border-color: rgba(255, 255, 255, 0.85);
+  border-radius: 0.25rem;
+}
+
+.revealTriggerTitleInputSelected {
+  border-color: rgba(255, 255, 255, 0.85);
+  border-radius: 0.25rem;
+}
+
+.revealTriggerLabel {
+  position: absolute;
+  bottom: 0.625rem;
+  left: 50%;
+  transform: translateX(-50%);
+  order: 2;
+  display: block;
+  font-size: clamp(0.875rem, 2.5vh, 1.25rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.revealOverlayTabs {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.revealOverlayTab {
+  appearance: none;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--widget-accent-muted, #94a3b8);
+  cursor: pointer;
+}
+
+.revealOverlayTabActive {
+  color: var(--widget-accent, #2563eb);
+  border-color: var(--widget-accent, #2563eb);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+@media (max-width: 640px) {
+  .revealTriggerTrack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+  }
+
+  .revealModal {
+    width: 92%;
+  }
+}

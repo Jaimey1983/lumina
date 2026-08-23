@@ -6,7 +6,6 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
@@ -14,6 +13,8 @@ import { StudentFeedbackDto } from './dto/student-feedback.dto';
 import { ClassSummaryDto } from './dto/class-summary.dto';
 import { ContentAssistantDto } from './dto/content-assistant.dto';
 import { EvaluateResponseDto } from './dto/evaluate-response.dto';
+import { GenerateFromDocumentDto } from './dto/generate-from-document.dto';
+import { RefineStructureDto } from './dto/refine-structure.dto';
 
 // ─── Helpers ──────────────────────────────────────────────
 
@@ -33,13 +34,15 @@ function assertStaff(role: string) {
   }
 }
 
-function openAiErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : 'Error desconocido';
-}
-
-function parseOpenAiJsonObject(raw: string): Record<string, unknown> {
+function parseGeminiJsonObject(raw: string): Record<string, unknown> {
   try {
-    const v = JSON.parse(raw) as unknown;
+    // Gemini a veces envuelve el JSON en ```json ... ``` aunque se pida JSON puro
+    const cleaned = raw
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+    const v = JSON.parse(cleaned) as unknown;
     return v !== null && typeof v === 'object' && !Array.isArray(v)
       ? (v as Record<string, unknown>)
       : {};
@@ -48,55 +51,123 @@ function parseOpenAiJsonObject(raw: string): Record<string, unknown> {
   }
 }
 
+/*
+ESQUEMA DE SALIDA — contentAssistant y generateFromDocument:
+{
+  "title": "string — título atractivo de la clase",
+  "description": "string — descripción de 2-3 oraciones",
+  "learningObjectives": ["string — objetivo en infinitivo"],
+  "estimatedDuration": "string — ej: 45 minutos",
+  "slides": [
+    {
+      "order": 1,
+      "tipo": "portada | exploracion | concepto | ejemplo | estructura | comparacion | actividad | cierre",
+      "title": "string — título del slide",
+      "contenido": {
+        "texto_principal": "string — párrafo explicativo de 3-5 oraciones con el concepto central",
+        "pregunta_reflexion": "string | null — pregunta para el estudiante (obligatoria en tipo exploracion)",
+        "ejemplo": "string | null — ejemplo concreto, preferiblemente colombiano",
+        "cita": "string | null — cita o fragmento textual para analizar (tipo bloque)",
+        "tabla": {
+          "encabezados": ["string"],
+          "filas": [["string"]]
+        } | null,
+        "lista_items": ["string"] | null,
+        "imagen_sugerida": "string | null — descripción precisa de imagen: 'Fotografía de la laguna de Iguaque, Boyacá, Colombia'",
+        "instruccion_docente": "string | null — nota metodológica para el docente",
+        "conexion_dba": "string | null — solo en slide de cierre, citar el DBA textualmente"
+      },
+      "actividad_lumina": {
+        "tipo": "quiz_multiple | verdadero_falso | completar_blancos | emparejar | ordenar | sopa_letras | null",
+        "descripcion": "string — descripción breve de la actividad",
+        "preguntas_ejemplo": ["string — 2-3 preguntas de ejemplo"]
+      } | null
+    }
+  ],
+  "suggestedActivities": ["string"],
+  "dba_conexion": "string — cita literal del DBA que cubre esta clase"
+}
+*/
+
 // ─── Service ──────────────────────────────────────────────
 
 @Injectable()
 export class AiFeaturesService {
-  private readonly openai: OpenAI;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly courseAuth: CourseAuthorizationService,
     private readonly config: ConfigService,
-  ) {
-    this.openai = new OpenAI({
-      apiKey: this.config.get<string>('OPENAI_API_KEY') ?? '',
-    });
-  }
+  ) {}
 
   // ── Guard: verifica que la API key esté configurada ────────
 
   private assertApiKey() {
-    if (!this.config.get<string>('OPENAI_API_KEY')) {
+    if (!this.config.get<string>('GEMINI_API_KEY')) {
       throw new ServiceUnavailableException(
-        'OPENAI_API_KEY no está configurada en las variables de entorno',
+        'GEMINI_API_KEY no está configurada en las variables de entorno',
       );
     }
   }
 
-  // ── Wrapper seguro para llamadas a OpenAI ─────────────────
+  // ── Wrapper seguro para llamadas a Gemini (fetch directo) ──
 
-  private async callOpenAI(
-    system: string,
-    user: string,
-    jsonMode = false,
+  private async callGemini(
+    systemInstruction: string,
+    userMessage: string,
   ): Promise<string> {
     this.assertApiKey();
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+    const apiKey = this.config.get<string>('GEMINI_API_KEY')!;
+    const model = 'gemini-2.5-flash-lite';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const body = {
+      system_instruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userMessage }],
+        },
+      ],
+      generationConfig: {
         temperature: 0.7,
-        max_tokens: 2000,
+        maxOutputTokens: 4000,
+        responseMimeType: 'application/json',
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ],
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
-      return response.choices[0]?.message?.content ?? '';
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = (await response.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+        error?: { message?: string };
+      };
+
+      if (data.error) {
+        throw new Error(data.error.message ?? 'Error de Gemini');
+      }
+
+      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     } catch (err: unknown) {
       throw new ServiceUnavailableException(
-        `OpenAI no disponible: ${openAiErrorMessage(err)}`,
+        `Gemini no disponible: ${err instanceof Error ? err.message : 'Error desconocido'}`,
       );
     }
   }
@@ -130,9 +201,9 @@ Devuelve un objeto JSON con la estructura:
 Para TrueFalse, options debe ser ["Verdadero", "Falso"] con correctIndex 0 o 1.
 Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el espacio con "____".`;
 
-    const raw = await this.callOpenAI(system, user, true);
+    const raw = await this.callGemini(system, user);
     try {
-      const parsed = parseOpenAiJsonObject(raw);
+      const parsed = parseGeminiJsonObject(raw);
       const questions = parsed['questions'];
       const qList = Array.isArray(questions) ? questions : [];
       return {
@@ -142,7 +213,7 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
       };
     } catch {
       throw new ServiceUnavailableException(
-        'OpenAI devolvió una respuesta inválida',
+        'Gemini devolvió una respuesta inválida',
       );
     }
   }
@@ -273,11 +344,11 @@ Devuelve JSON con:
   "overallMessage": "string — mensaje motivador personalizado de 2-3 oraciones"
 }`;
 
-    const raw = await this.callOpenAI(system, userMsg, true);
-    const feedback = parseOpenAiJsonObject(raw);
+    const raw = await this.callGemini(system, userMsg);
+    const feedback = parseGeminiJsonObject(raw);
     if (!Object.keys(feedback).length) {
       throw new ServiceUnavailableException(
-        'OpenAI devolvió una respuesta inválida',
+        'Gemini devolvió una respuesta inválida',
       );
     }
     return {
@@ -351,11 +422,11 @@ Devuelve JSON con:
   "learningObjectives": ["array de objetivos de aprendizaje inferidos"]
 }`;
 
-    const raw = await this.callOpenAI(system, userMsg, true);
-    const summary = parseOpenAiJsonObject(raw);
+    const raw = await this.callGemini(system, userMsg);
+    const summary = parseGeminiJsonObject(raw);
     if (!Object.keys(summary).length) {
       throw new ServiceUnavailableException(
-        'OpenAI devolvió una respuesta inválida',
+        'Gemini devolvió una respuesta inválida',
       );
     }
     return { classId: dto.classId, courseId, summary };
@@ -372,39 +443,106 @@ Devuelve JSON con:
     const slideCount = dto.slideCount ?? 6;
     const level = dto.level ?? 'intermediate';
 
-    const system = `Eres un diseñador instruccional experto en educación. Creas estructuras de clases pedagógicamente sólidas en español, adaptadas al nivel del estudiante.`;
+    const system = `Eres un diseñador instruccional experto en educación colombiana.
+Creas clases interactivas pedagógicamente sólidas, contextualizadas en la realidad
+colombiana, alineadas con los DBA y EBC del Ministerio de Educación Nacional (MEN).
 
-    const userMsg = `Diseña la estructura completa de una clase educativa sobre el siguiente tema en español.
+PRINCIPIOS DIDÁCTICOS OBLIGATORIOS:
+1. Progresión inductiva: empieza con una pregunta o situación que genere curiosidad
+   ANTES de dar definiciones. El estudiante debe querer saber, no recibir pasivamente.
+2. Contenido real: cada slide tiene párrafos explicativos completos (3-5 oraciones),
+   no listas de palabras sueltas.
+3. Contextualización colombiana: usa ejemplos de Colombia — regiones, culturas,
+   personajes históricos, ecosistemas, autores, eventos. Nunca ejemplos genéricos
+   o exclusivamente europeos/norteamericanos.
+4. Fragmentos para analizar: en clases de lenguaje, ciencias sociales o humanidades,
+   incluye al menos un texto, cita o fragmento real para que el estudiante analice,
+   no solo "aprenda sobre" él.
+5. Nivel Bloom: si el contexto curricular indica el nivel Bloom del DBA, el slide
+   de actividad debe operar en ese nivel (no solo recordar si el DBA pide analizar).
+6. Imágenes precisas: cuando sugieres imagen, describe con precisión:
+   "Fotografía de la sierra nevada de Santa Marta" no "imagen de una montaña".
+7. Voz del estudiante: incluye al menos una pregunta de reflexión por slide de
+   contenido — el estudiante responde antes de recibir más información.
+8. Cierre curricular: el último slide conecta explícitamente con el DBA o EBC
+   y propone una tarea alineada a las evidencias de aprendizaje.
+
+RESTRICCIONES:
+- NUNCA generes listas de bullets como único contenido de un slide
+- NUNCA uses ejemplos de países ajenos a Colombia si existe un equivalente colombiano
+- NUNCA repitas el mismo tipo de slide dos veces seguidas
+- El slide tipo "portada" siempre es el primero
+- El slide tipo "actividad" contiene una actividad Lumina concreta, no solo descripción
+- El slide tipo "cierre" siempre es el último
+
+Responde ÚNICAMENTE con el JSON especificado. Sin texto adicional, sin markdown.`;
+
+    const nivelTexto =
+      level === 'beginner'
+        ? 'básico (educación primaria, 6-11 años)'
+        : level === 'advanced'
+          ? 'avanzado (educación media, 15-17 años)'
+          : 'intermedio (educación secundaria, 12-14 años)';
+
+    const curriculumSection = dto.curriculumContext
+      ? `\nCONTEXTO CURRICULAR DBA/EBC (MEN Colombia):\n${dto.curriculumContext}\n\nUSA este contexto para alinear objetivos, ejemplos y actividades con los DBA indicados.`
+      : '';
+
+    const plantillaSection = dto.plantillaEstructura
+      ? `\nESTRUCTURA PEDAGÓGICA REQUERIDA:\n${dto.plantillaEstructura}\nSigue este orden de tipos de slide estrictamente.`
+      : '';
+
+    const userMsg = `Diseña una clase educativa completa sobre el siguiente tema.
 
 Tema: "${dto.topic}"
-Nivel: ${level === 'beginner' ? 'principiante' : level === 'advanced' ? 'avanzado' : 'intermedio'}
-Cantidad de slides: ${slideCount}
+Nivel educativo: ${nivelTexto}
+Número de slides: ${slideCount}
+${curriculumSection}
+${plantillaSection}
 
-Devuelve JSON con:
+INSTRUCCIONES ESPECÍFICAS:
+- El primer slide es SIEMPRE tipo "portada" con título atractivo y objetivo visible
+- El segundo slide es SIEMPRE tipo "exploracion" con una pregunta detonadora potente
+  que genere curiosidad ANTES de enseñar el concepto
+- Incluye al menos UN ejemplo concreto de Colombia o latinoamérica
+- Si el tema lo permite, incluye un fragmento de texto real para analizar (tipo "cita")
+- El slide de actividad debe especificar el tipo Lumina exacto y preguntas de ejemplo
+- El último slide es SIEMPRE tipo "cierre" con síntesis, tarea y conexión DBA
+
+Devuelve ÚNICAMENTE el siguiente JSON (sin texto previo, sin markdown, sin backticks):
 {
-  "title": "string — título atractivo para la clase",
-  "description": "string — descripción de 2-3 oraciones de qué aprenderá el estudiante",
-  "learningObjectives": ["array de 3-5 objetivos de aprendizaje en infinitivo"],
+  "title": "título atractivo de la clase",
+  "description": "descripción de 2-3 oraciones de qué aprenderá el estudiante",
+  "learningObjectives": ["objetivo 1 en infinitivo", "objetivo 2", "objetivo 3"],
+  "estimatedDuration": "XX minutos",
   "slides": [
     {
       "order": 1,
-      "type": "COVER | CONTENT | ACTIVITY | VIDEO | IMAGE",
-      "title": "string — título del slide",
-      "bulletPoints": ["array de puntos clave a cubrir en este slide"],
-      "suggestedContent": "string — sugerencia de contenido o actividad"
+      "tipo": "portada",
+      "title": "título del slide",
+      "contenido": {
+        "texto_principal": "párrafo explicativo de 3-5 oraciones",
+        "pregunta_reflexion": null,
+        "ejemplo": null,
+        "cita": null,
+        "tabla": null,
+        "lista_items": null,
+        "imagen_sugerida": "descripción precisa de imagen sugerida",
+        "instruccion_docente": null,
+        "conexion_dba": null
+      },
+      "actividad_lumina": null
     }
   ],
-  "suggestedActivities": ["array de actividades complementarias sugeridas"],
-  "estimatedDuration": "string — duración estimada de la clase"
-}
+  "suggestedActivities": ["actividad complementaria 1", "actividad 2"],
+  "dba_conexion": "cita literal del DBA que cubre esta clase o null si no aplica"
+}`;
 
-El primer slide debe ser de tipo COVER. Al menos uno debe ser ACTIVITY.`;
-
-    const raw = await this.callOpenAI(system, userMsg, true);
-    const structure = parseOpenAiJsonObject(raw);
+    const raw = await this.callGemini(system, userMsg);
+    const structure = parseGeminiJsonObject(raw);
     if (!Object.keys(structure).length) {
       throw new ServiceUnavailableException(
-        'OpenAI devolvió una respuesta inválida',
+        'Gemini devolvió una respuesta inválida',
       );
     }
     return { topic: dto.topic, level, structure };
@@ -442,13 +580,176 @@ Devuelve JSON con:
 
 Sé estricto pero justo. La puntuación debe reflejar objetivamente la calidad de la respuesta.`;
 
-    const raw = await this.callOpenAI(system, userMsg, true);
-    const evaluation = parseOpenAiJsonObject(raw);
+    const raw = await this.callGemini(system, userMsg);
+    const evaluation = parseGeminiJsonObject(raw);
     if (!Object.keys(evaluation).length) {
       throw new ServiceUnavailableException(
-        'OpenAI devolvió una respuesta inválida',
+        'Gemini devolvió una respuesta inválida',
       );
     }
     return { question: dto.question, maxScore, evaluation };
+  }
+
+  // ── 6. Generación de clase desde documento ─────────────────────────────────
+
+  async generateFromDocument(
+    dto: GenerateFromDocumentDto,
+    userId: string,
+    userRole: string,
+  ) {
+    assertStaff(userRole);
+    const slideCount = dto.slideCount ?? 6;
+    const level = dto.level ?? 'intermediate';
+
+    // Truncar el texto del documento para no exceder el contexto de Gemini
+    const maxDocChars = 6000;
+    const docText =
+      dto.documentText.length > maxDocChars
+        ? dto.documentText.slice(0, maxDocChars) + '\n[... documento truncado ...]'
+        : dto.documentText;
+
+    const system = `Eres un diseñador instruccional experto en educación colombiana.
+Tu tarea es analizar un documento educativo y construir una clase interactiva
+pedagógicamente sólida a partir de su contenido.
+
+PRINCIPIOS DIDÁCTICOS OBLIGATORIOS:
+1. Extrae los conceptos clave del documento — no inventes contenido que no esté allí
+2. Reorganiza pedagógicamente: el orden del documento no es necesariamente el mejor
+   orden didáctico. Empieza con lo que genera curiosidad, no con definiciones
+3. Usa los ejemplos y datos del documento, no ejemplos genéricos externos
+4. Contextualiza en Colombia si el documento lo permite
+5. Incluye al menos un fragmento textual del documento para que el estudiante analice
+6. El slide de actividad debe derivarse del contenido real del documento
+7. Identifica y lista los conceptos clave extraídos (keyConceptsExtracted)
+
+RESTRICCIONES:
+- NUNCA inventes información que no esté en el documento
+- NUNCA generes listas de bullets como único contenido
+- Responde ÚNICAMENTE con el JSON especificado`;
+
+    const nivelTexto =
+      level === 'beginner'
+        ? 'básico (educación primaria, 6-11 años)'
+        : level === 'advanced'
+          ? 'avanzado (educación media, 15-17 años)'
+          : 'intermedio (educación secundaria, 12-14 años)';
+
+    const curriculumSection = dto.curriculumContext
+      ? `\nCONTEXTO CURRICULAR (DBA/EBC del MEN):\n${dto.curriculumContext}\n`
+      : '';
+
+    const gradeSection = dto.grade
+      ? `Grado: ${dto.grade}${dto.subject ? ` — ${dto.subject}` : ''}`
+      : '';
+
+    const userMsg = `Analiza el siguiente documento y diseña una clase educativa completa.
+${gradeSection}
+${dto.topic ? `Enfoque temático: "${dto.topic}"` : ''}
+Nivel educativo: ${nivelTexto}
+Cantidad de slides: ${slideCount}
+${curriculumSection}
+DOCUMENTO:
+---
+${docText}
+---
+
+Devuelve ÚNICAMENTE este JSON (sin texto previo, sin markdown, sin backticks):
+{
+  "title": "título atractivo basado en el documento",
+  "description": "descripción de 2-3 oraciones",
+  "learningObjectives": ["objetivo 1", "objetivo 2", "objetivo 3"],
+  "estimatedDuration": "XX minutos",
+  "keyConceptsExtracted": ["concepto 1 del documento", "concepto 2", "concepto 3"],
+  "documentSummary": "resumen de 3-4 oraciones del documento analizado",
+  "slides": [
+    {
+      "order": 1,
+      "tipo": "portada | exploracion | concepto | ejemplo | estructura | comparacion | actividad | cierre",
+      "title": "título del slide",
+      "contenido": {
+        "texto_principal": "párrafo de 3-5 oraciones con contenido real del documento",
+        "pregunta_reflexion": "pregunta para el estudiante o null",
+        "ejemplo": "ejemplo concreto del documento o null",
+        "cita": "fragmento textual del documento para analizar o null",
+        "tabla": null,
+        "lista_items": null,
+        "imagen_sugerida": "descripción precisa o null",
+        "instruccion_docente": "nota metodológica o null",
+        "conexion_dba": "solo en cierre: cita literal del DBA o null"
+      },
+      "actividad_lumina": {
+        "tipo": "quiz_multiple | verdadero_falso | completar_blancos | emparejar | ordenar | sopa_letras",
+        "descripcion": "descripción de la actividad",
+        "preguntas_ejemplo": ["pregunta 1", "pregunta 2"]
+      }
+    }
+  ],
+  "suggestedActivities": ["actividad complementaria 1"],
+  "dba_conexion": "cita literal del DBA o null"
+}`;
+
+    const raw = await this.callGemini(system, userMsg);
+    const structure = parseGeminiJsonObject(raw);
+    if (!Object.keys(structure).length) {
+      throw new ServiceUnavailableException(
+        'Gemini devolvió una respuesta inválida',
+      );
+    }
+    return {
+      topic: dto.topic ?? 'Desde documento',
+      grade: dto.grade,
+      subject: dto.subject,
+      level,
+      structure,
+    };
+  }
+
+  // ── 7. Refinamiento conversacional de estructura ────────────────────────────
+
+  async refineStructure(
+    dto: RefineStructureDto,
+    userId: string,
+    userRole: string,
+  ) {
+    assertStaff(userRole);
+
+    const system = `Eres un diseñador instruccional experto en educación colombiana.
+Tu tarea es MODIFICAR una estructura de clase existente según las instrucciones del docente.
+Responde SIEMPRE con la estructura completa actualizada en JSON — nunca solo los cambios.
+Mantén el mismo esquema JSON de la estructura original.`;
+
+    // Construir historial conversacional para Gemini (máximo 6 turnos anteriores
+    // para no exceder contexto)
+    const historyLines = dto.conversationHistory
+      .slice(-6)
+      .map((h) => `${h.role === 'user' ? 'Docente' : 'IA'}: ${h.content}`)
+      .join('\n');
+
+    const userMsg = `ESTRUCTURA ACTUAL DE LA CLASE:
+${JSON.stringify(dto.currentStructure, null, 2).slice(0, 4000)}
+${historyLines ? `HISTORIAL DE AJUSTES ANTERIORES:\n${historyLines}\n` : ''}
+NUEVA INSTRUCCIÓN DEL DOCENTE: "${dto.instruction}"
+
+Aplica la instrucción y devuelve la estructura completa actualizada con el mismo formato JSON:
+{
+  "title": "string",
+  "description": "string",
+  "learningObjectives": ["..."],
+  "slides": [{ "order": 1, "type": "...", "title": "...", "bulletPoints": ["..."], "suggestedContent": "..." }],
+  "suggestedActivities": ["..."],
+  "estimatedDuration": "string"
+}
+
+Si la instrucción es ambigua, interpreta la intención pedagógica más probable.
+Si pide eliminar slides, renumera los restantes desde 1.`;
+
+    const raw = await this.callGemini(system, userMsg);
+    const structure = parseGeminiJsonObject(raw);
+    if (!Object.keys(structure).length) {
+      throw new ServiceUnavailableException(
+        'Gemini devolvió una respuesta inválida',
+      );
+    }
+    return { structure, instruction: dto.instruction };
   }
 }

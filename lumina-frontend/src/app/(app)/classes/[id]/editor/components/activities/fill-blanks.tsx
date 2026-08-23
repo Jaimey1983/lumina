@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { FillBlanks, FillBlank } from '@/types/slide.types';
@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
+import { evaluateActivityResponse } from '@/lib/activity-scoring';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -21,6 +23,10 @@ function generateId() {
 function extractBlankIds(texto: string): string[] {
   const matches = [...texto.matchAll(/\{\{blank:([^}]+)\}\}/g)];
   return matches.map((m) => m[1]);
+}
+
+function isFillBlanksSubmissionCorrect(activity: FillBlanks, answers: Record<string, string>): boolean {
+  return evaluateActivityResponse('completar_blancos', activity, answers).correct === true;
 }
 
 function normalize(a: FillBlanks | null | undefined): FillBlanks {
@@ -117,16 +123,16 @@ export function FillBlanksActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
           Completar blancos
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Usa {'{{blank:id}}'} en el texto para marcar los huecos
         </span>
         {onRemove && (
@@ -134,7 +140,7 @@ export function FillBlanksActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -164,7 +170,7 @@ export function FillBlanksActivityEditor({
             className="min-h-[4rem] resize-none font-mono text-xs"
             placeholder="Ej: El agua hierve a {{blank:abc123}} °C."
           />
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-[#9ca3af]">
             Escribe {'{{blank:id}}'} donde quieres un hueco, o usa el botón.
           </p>
         </div>
@@ -192,7 +198,7 @@ export function FillBlanksActivityEditor({
                 const blank = local.blancos.find((b) => b.id === id);
                 return (
                   <div key={id} className="flex items-center gap-1.5">
-                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-muted-foreground">
+                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-[#9ca3af]">
                       {idx + 1}
                     </span>
                     <Input
@@ -206,7 +212,7 @@ export function FillBlanksActivityEditor({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-6 shrink-0 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
+                      className="size-6 shrink-0 text-[#9ca3af]/50 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => removeBlank(id)}
                       title="Eliminar hueco"
                     >
@@ -220,7 +226,7 @@ export function FillBlanksActivityEditor({
         )}
 
         {referencedIds.length === 0 && (
-          <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-center text-[11px] text-muted-foreground">
+          <p className="rounded-md border border-dashed border-[#e5e7eb] bg-[#f9fafb] px-3 py-4 text-center text-[11px] text-[#9ca3af]">
             Aún no hay huecos en el texto. Añade uno con el botón de arriba.
           </p>
         )}
@@ -233,13 +239,31 @@ export function FillBlanksActivityEditor({
 
 export function FillBlanksViewer({
   activity,
-  onAnswer,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
 }: {
   activity: FillBlanks;
-  onAnswer?: (answers: string[]) => void;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setAnswered(false);
+    setAnswers({});
+  }, [editorSyncKey]);
+
+  const isDark = variant === 'dark';
+  const blankInputClass = cn(
+    'mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
+    isDark
+      ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
+      : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
+  );
 
   const regex = /\{\{blank:([^}]+)\}\}/g;
   const parts: React.ReactNode[] = [];
@@ -250,23 +274,16 @@ export function FillBlanksViewer({
   matches.forEach((m) => {
     parts.push(text.slice(lastIndex, m.index));
     const id = m[1];
-    const blank = activity.blancos.find((b) => b.id === id);
-    
-    let borderClass = 'border-input';
-    if (showFeedback && blank) {
-      const isCorrect = answers[id]?.trim().toLowerCase() === blank.respuesta.trim().toLowerCase();
-      borderClass = isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
-    }
 
     parts.push(
       <input
         key={id}
         type="text"
-        className={`mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm ${borderClass} focus:outline-none focus:ring-2 focus:ring-ring`}
+        className={blankInputClass}
         value={answers[id] || ''}
+        disabled={answered}
         onChange={(e) => {
           setAnswers((prev) => ({ ...prev, [id]: e.target.value }));
-          setShowFeedback(false);
         }}
       />
     );
@@ -274,22 +291,42 @@ export function FillBlanksViewer({
   });
   parts.push(text.slice(lastIndex));
 
-  const handleCheck = () => {
-    setShowFeedback(true);
-    if (onAnswer) {
-      const orderedAnswers = matches.map((m) => answers[m[1]] || '');
-      onAnswer(orderedAnswers);
+  const handleSubmit = () => {
+    if (answered) return;
+    setAnswered(true);
+    // Emit Record<string, string>: blankId → given answer
+    const result: Record<string, string> = {};
+    matches.forEach((m) => {
+      result[m[1]] = answers[m[1]] ?? '';
+    });
+    const blanks = activity.blancos ?? [];
+    if (blanks.length > 0) {
+      play(isFillBlanksSubmissionCorrect(activity, result) ? 'correct' : 'wrong');
+    } else {
+      play('submit');
     }
+    onResponse?.(result);
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="text-base font-medium leading-relaxed text-foreground">
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <div className={cn('text-base font-medium leading-relaxed', isDark ? 'text-white' : 'text-[#111827]')}>
         {parts}
       </div>
-      <div className="flex justify-end">
-        <Button onClick={handleCheck}>Comprobar</Button>
-      </div>
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit}>Enviar</Button>
+        </div>
+      )}
     </div>
   );
 }

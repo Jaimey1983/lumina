@@ -443,4 +443,458 @@ export class AnalyticsService {
       engagement: engagement.data,
     };
   }
+
+  // ── Telemetría sesión en vivo (escritura silenciosa) ────────────────
+
+  async createSessionLog(params: {
+    sessionId: string;
+    classId: string;
+    courseId: string;
+    teacherId: string;
+    totalSlides: number;
+    startedAt: Date;
+  }): Promise<void> {
+    try {
+      await this.prisma.sessionLog.upsert({
+        where: { sessionId: params.sessionId },
+        create: {
+          sessionId: params.sessionId,
+          classId: params.classId,
+          courseId: params.courseId,
+          teacherId: params.teacherId,
+          totalSlides: params.totalSlides,
+          startedAt: params.startedAt,
+        },
+        update: {},
+      });
+    } catch {
+      /* analytics no rompe el flujo principal */
+    }
+  }
+
+  async closeSessionLog(sessionId: string, endedAt: Date): Promise<void> {
+    try {
+      const log = await this.prisma.sessionLog.findUnique({
+        where: { sessionId },
+        select: { startedAt: true },
+      });
+      if (!log) return;
+      const durationSeconds = Math.round(
+        (endedAt.getTime() - log.startedAt.getTime()) / 1000,
+      );
+      await this.prisma.sessionLog.update({
+        where: { sessionId },
+        data: { endedAt, durationSeconds },
+      });
+    } catch {
+      /* no-op */
+    }
+  }
+
+  async recordConnection(params: {
+    sessionId: string;
+    classId: string;
+    studentId: string;
+    studentName: string;
+  }): Promise<void> {
+    try {
+      await this.prisma.studentConnection.create({
+        data: {
+          sessionId: params.sessionId,
+          classId: params.classId,
+          studentId: params.studentId,
+          studentName: params.studentName,
+        },
+      });
+    } catch {
+      /* no-op */
+    }
+  }
+
+  async recordDisconnection(sessionId: string, studentId: string): Promise<void> {
+    try {
+      const open = await this.prisma.studentConnection.findFirst({
+        where: { sessionId, studentId, disconnectedAt: null },
+        orderBy: { connectedAt: 'desc' },
+      });
+      if (open) {
+        await this.prisma.studentConnection.update({
+          where: { id: open.id },
+          data: { disconnectedAt: new Date() },
+        });
+        return;
+      }
+      const previous = await this.prisma.studentConnection.findFirst({
+        where: { sessionId, studentId, disconnectedAt: { not: null } },
+        orderBy: { connectedAt: 'desc' },
+      });
+      if (previous) {
+        await this.prisma.studentConnection.update({
+          where: { id: previous.id },
+          data: { reconnections: { increment: 1 } },
+        });
+      }
+    } catch {
+      /* no-op */
+    }
+  }
+
+  async updatePeakConnections(sessionId: string): Promise<void> {
+    try {
+      const openCount = await this.prisma.studentConnection.count({
+        where: { sessionId, disconnectedAt: null },
+      });
+      const log = await this.prisma.sessionLog.findUnique({
+        where: { sessionId },
+        select: { peakConnections: true },
+      });
+      if (!log || openCount <= log.peakConnections) return;
+      await this.prisma.sessionLog.update({
+        where: { sessionId },
+        data: { peakConnections: openCount },
+      });
+    } catch {
+      /* no-op */
+    }
+  }
+
+  async recordSlideEngagement(params: {
+    sessionId: string;
+    slideId: string;
+    slideIndex: number;
+    activityType: string | null;
+    studentId: string;
+    studentName: string;
+    responded: boolean;
+    source?: 'live' | 'autonomous';
+  }): Promise<void> {
+    try {
+      const sessionLog = await this.prisma.sessionLog.findUnique({
+        where: { sessionId: params.sessionId },
+        select: { id: true },
+      });
+      if (!sessionLog) return;
+
+      const source = params.source ?? 'live';
+      const existing = await this.prisma.slideEngagement.findUnique({
+        where: {
+          sessionLogId_slideId_studentId: {
+            sessionLogId: sessionLog.id,
+            slideId: params.slideId,
+            studentId: params.studentId,
+          },
+        },
+      });
+
+      if (!existing) {
+        await this.prisma.slideEngagement.create({
+          data: {
+            sessionLogId: sessionLog.id,
+            slideId: params.slideId,
+            slideIndex: params.slideIndex,
+            activityType: params.activityType,
+            studentId: params.studentId,
+            studentName: params.studentName,
+            responded: params.responded,
+            source,
+          },
+        });
+        return;
+      }
+
+      await this.prisma.slideEngagement.update({
+        where: {
+          sessionLogId_slideId_studentId: {
+            sessionLogId: sessionLog.id,
+            slideId: params.slideId,
+            studentId: params.studentId,
+          },
+        },
+        data: {
+          slideIndex: params.slideIndex,
+          ...(params.activityType !== undefined && params.activityType !== null
+            ? { activityType: params.activityType }
+            : {}),
+          ...(params.responded ? { responded: true } : {}),
+          source,
+        },
+      });
+    } catch {
+      /* no-op */
+    }
+  }
+
+  // ── Telemetría sesión en vivo (lectura — staff) ─────────────────────
+
+  async getSessionsComparison(
+    courseId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<
+    Array<{
+      classId: string;
+      classTitle: string;
+      sessionId: string;
+      startedAt: Date;
+      endedAt: Date | null;
+      durationSeconds: number | null;
+      peakConnections: number;
+      totalSlides: number;
+      participantCount: number;
+      avgScore: number | null;
+    }>
+  > {
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
+    if (!isStaff(userRole)) {
+      throw new ForbiddenException(
+        'Solo el personal docente puede ver la comparativa de sesiones',
+      );
+    }
+
+    const logs = await this.prisma.sessionLog.findMany({
+      where: { courseId },
+      orderBy: { startedAt: 'desc' },
+      include: {
+        session: {
+          select: {
+            id: true,
+            classId: true,
+            class: { select: { title: true } },
+          },
+        },
+      },
+    });
+
+    const rows = await Promise.all(
+      logs.map(async (log) => {
+        const grouped = await this.prisma.classResult.groupBy({
+          by: ['studentId'],
+          where: { sessionId: log.sessionId },
+          _count: { _all: true },
+        });
+        const participantCount = grouped.length;
+
+        const agg = await this.prisma.classResult.aggregate({
+          where: { sessionId: log.sessionId, score: { not: null } },
+          _avg: { score: true },
+        });
+        const rawAvg = agg._avg.score;
+        const avgScore =
+          rawAvg !== null && rawAvg !== undefined
+            ? Math.round(Number(rawAvg) * 10) / 10
+            : null;
+
+        return {
+          classId: log.session.classId,
+          classTitle: log.session.class.title,
+          sessionId: log.sessionId,
+          startedAt: log.startedAt,
+          endedAt: log.endedAt,
+          durationSeconds: log.durationSeconds,
+          peakConnections: log.peakConnections,
+          totalSlides: log.totalSlides,
+          participantCount,
+          avgScore,
+        };
+      }),
+    );
+
+    return rows;
+  }
+
+  async getSessionDetail(
+    sessionId: string,
+    courseId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    const logRow = await this.prisma.sessionLog.findUnique({
+      where: { sessionId },
+      include: {
+        session: {
+          select: {
+            classId: true,
+            class: {
+              select: {
+                courseId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!logRow) {
+      throw new NotFoundException('Sesión no encontrada o sin telemetría');
+    }
+
+    if (logRow.courseId !== courseId) {
+      throw new NotFoundException('Sesión no encontrada en este curso');
+    }
+
+    await this.courseAuth.verifyCourseReadAccess(
+      logRow.session.class.courseId,
+      userId,
+      userRole,
+    );
+    if (!isStaff(userRole)) {
+      throw new ForbiddenException(
+        'Solo el personal docente puede ver el detalle de sesión',
+      );
+    }
+
+    const engagements = await this.prisma.slideEngagement.findMany({
+      where: { sessionLogId: logRow.id },
+    });
+
+    const bySlide = new Map<number, typeof engagements>();
+    for (const e of engagements) {
+      const arr = bySlide.get(e.slideIndex) ?? [];
+      arr.push(e);
+      bySlide.set(e.slideIndex, arr);
+    }
+
+    const slideHeatmap = [...bySlide.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([slideIndex, list]) => {
+        const uniqueStudents = new Set(list.map((x) => x.studentId));
+        const respondedStudents = new Set(
+          list.filter((x) => x.responded).map((x) => x.studentId),
+        );
+        const responseRate =
+          uniqueStudents.size > 0
+            ? Math.round((respondedStudents.size / uniqueStudents.size) * 100)
+            : 0;
+        const avgTimeOnSlide =
+          list.length > 0
+            ? Math.round(
+                list.reduce((s, x) => s + x.timeOnSlide, 0) / list.length,
+              )
+            : 0;
+        return {
+          slideIndex,
+          slideId: list[0].slideId,
+          activityType: list[0].activityType ?? null,
+          avgTimeOnSlide,
+          responseRate,
+          totalStudents: uniqueStudents.size,
+        };
+      });
+
+    const funnelData = [...bySlide.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([slideIndex, list]) => ({
+        slideIndex,
+        studentsReached: new Set(list.map((x) => x.studentId)).size,
+      }));
+
+    const byStudent = new Map<
+      string,
+      {
+        studentId: string;
+        studentName: string;
+        slides: Set<number>;
+        slidesAnswered: number;
+        totalTimeSeconds: number;
+      }
+    >();
+
+    for (const e of engagements) {
+      let cur = byStudent.get(e.studentId);
+      if (!cur) {
+        cur = {
+          studentId: e.studentId,
+          studentName: e.studentName,
+          slides: new Set<number>(),
+          slidesAnswered: 0,
+          totalTimeSeconds: 0,
+        };
+        byStudent.set(e.studentId, cur);
+      }
+      cur.slides.add(e.slideIndex);
+      if (e.responded) cur.slidesAnswered += 1;
+      cur.totalTimeSeconds += e.timeOnSlide;
+    }
+
+    const studentEngagement = [...byStudent.values()].map((v) => ({
+      studentId: v.studentId,
+      studentName: v.studentName,
+      slidesViewed: v.slides.size,
+      slidesAnswered: v.slidesAnswered,
+      totalTimeSeconds: v.totalTimeSeconds,
+    }));
+
+    return {
+      sessionLog: {
+        startedAt: logRow.startedAt,
+        endedAt: logRow.endedAt,
+        durationSeconds: logRow.durationSeconds,
+        peakConnections: logRow.peakConnections,
+        totalSlides: logRow.totalSlides,
+      },
+      slideHeatmap,
+      funnelData,
+      studentEngagement,
+    };
+  }
+
+  async getAutonomousTextResponses(
+    courseId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<
+    Array<{
+      sessionId: string;
+      classId: string;
+      classTitle: string;
+      studentId: string;
+      studentName: string;
+      slideId: string;
+      activityType: string;
+      response: unknown;
+      answeredAt: Date;
+      score: number | null;
+    }>
+  > {
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
+    if (!isStaff(userRole)) {
+      throw new ForbiddenException(
+        'Solo el personal docente puede ver estas respuestas',
+      );
+    }
+
+    const rows = await this.prisma.autonomousProgress.findMany({
+      where: {
+        activityType: {
+          in: ['short_answer', 'nube_palabras', 'encuesta_viva'],
+        },
+        session: {
+          class: { courseId },
+        },
+      },
+      include: {
+        session: {
+          select: {
+            id: true,
+            class: { select: { id: true, title: true } },
+          },
+        },
+      },
+      orderBy: { answeredAt: 'desc' },
+    });
+
+    return rows
+      .filter((r) => r.response !== null && r.response !== undefined)
+      .map((r) => ({
+        sessionId: r.sessionId,
+        classId: r.session.class.id,
+        classTitle: r.session.class.title,
+        studentId: r.studentId,
+        studentName: r.studentName,
+        slideId: r.slideId,
+        activityType: r.activityType ?? '',
+        response: r.response as unknown,
+        answeredAt: r.answeredAt,
+        score: r.score ?? null,
+      }));
+  }
 }

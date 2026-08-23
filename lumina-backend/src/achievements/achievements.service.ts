@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateAchievementDto } from './dto/create-achievement.dto';
@@ -27,7 +28,65 @@ export class AchievementsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly courseAuth: CourseAuthorizationService,
+    private readonly config: ConfigService,
   ) {}
+
+  private async callGemini(
+    systemInstruction: string,
+    userMessage: string,
+    maxOutputTokens = 2000,
+  ): Promise<string> {
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (!apiKey) return '';
+
+    const model = 'gemini-2.0-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const body = {
+      system_instruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userMessage }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens,
+        responseMimeType: 'application/json',
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ],
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = (await response.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      error?: { message?: string };
+    };
+
+    if (data.error) {
+      throw new Error(data.error.message ?? 'Error de Gemini');
+    }
+
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  }
 
   async create(
     courseId: string,
@@ -87,7 +146,7 @@ export class AchievementsService {
       );
     }
 
-    // Generate PI statements via OpenAI if available
+    // Generate PI statements via Gemini if available
     const piStatements = await this.generatePIStatements(dto.statement);
 
     // Create achievement + 4 PIs in a transaction
@@ -328,43 +387,23 @@ export class AchievementsService {
   private async generatePIStatements(
     achievementStatement: string,
   ): Promise<string[]> {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    if (!this.config.get<string>('GEMINI_API_KEY')) {
       return ['', '', '', ''];
     }
     try {
-      const response = await fetch(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content:
-                  'Eres un asistente pedagógico especializado en el sistema educativo colombiano. Genera indicadores de logro concisos (máximo 150 caracteres cada uno) basados en un enunciado de logro.',
-              },
-              {
-                role: 'user',
-                content: `Para el siguiente logro: "${achievementStatement}"\n\nGenera exactamente 4 indicadores de logro, uno para cada tipo de competencia. Responde SOLO con un JSON array de 4 strings en este orden: [cognitivo, metodológico, interpersonal, instrumental]. Sin explicaciones adicionales.`,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
-          }),
-        },
+      const content = await this.callGemini(
+        'Eres un asistente pedagógico especializado en el sistema educativo colombiano. Genera indicadores de logro concisos (máximo 150 caracteres cada uno) basados en un enunciado de logro.',
+        `Para el siguiente logro: "${achievementStatement}"\n\nGenera exactamente 4 indicadores de logro, uno para cada tipo de competencia. Responde SOLO con un JSON array de 4 strings en este orden: [cognitivo, metodológico, interpersonal, instrumental]. Sin explicaciones adicionales.`,
+        500,
       );
-      if (!response.ok) return ['', '', '', ''];
-      const data = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-      const content = data.choices?.[0]?.message?.content ?? '[]';
-      const parsed: unknown = JSON.parse(content);
+
+      // Gemini a veces envuelve el JSON en ```json ... ``` aunque se pida JSON puro
+      const cleaned = content
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+      const parsed: unknown = JSON.parse(cleaned || '[]');
       if (Array.isArray(parsed) && parsed.length === 4) {
         return parsed.map((s: unknown) =>
           typeof s === 'string' ? s.slice(0, 150) : '',

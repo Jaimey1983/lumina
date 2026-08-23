@@ -6,6 +6,8 @@ import { AiFeaturesService } from './ai-features.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { ContentAssistantDto } from './dto/content-assistant.dto';
 import { EvaluateResponseDto } from './dto/evaluate-response.dto';
+import { GenerateFromDocumentDto } from './dto/generate-from-document.dto';
+import { RefineStructureDto } from './dto/refine-structure.dto';
 
 /**
  * Funcionalidades de IA independientes de contexto de curso.
@@ -38,5 +40,23 @@ export class AiFeaturesController {
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.aiService.evaluateResponse(dto, user.id, user.role);
+  }
+
+  /** POST /ai/generate-from-document — Generar clase desde texto de documento */
+  @Post('generate-from-document')
+  generateFromDocument(
+    @Body() dto: GenerateFromDocumentDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.aiService.generateFromDocument(dto, user.id, user.role);
+  }
+
+  /** POST /ai/refine-structure — Ajuste conversacional de estructura de clase */
+  @Post('refine-structure')
+  refineStructure(
+    @Body() dto: RefineStructureDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.aiService.refineStructure(dto, user.id, user.role);
   }
 }

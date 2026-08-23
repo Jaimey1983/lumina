@@ -1,6 +1,39 @@
 'use client';
 
-import { ChevronDown, ChevronUp, GripVertical, Loader2, Plus, Trash2 } from 'lucide-react';
+import { memo, useMemo, useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  BarChart2,
+  ChevronDown,
+  ChevronUp,
+  Cloud,
+  Copy,
+  ClipboardPaste,
+  GitMerge,
+  GripHorizontal,
+  GripVertical,
+  HelpCircle,
+  Image as ImageIcon,
+  ListOrdered,
+  Loader2,
+  MessageSquare,
+  PenLine,
+  Plus,
+  Shapes,
+  ToggleLeft,
+  Trash2,
+  Trophy,
+  Lock,
+  Layers,
+  Grid2x2,
+  Grid3x3,
+  Puzzle,
+  Search,
+  Type,
+  Video,
+  Zap,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -17,8 +50,26 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { CORE_SLIDE_LAYOUTS, type CoreSlideLayoutKey } from './templates-panel';
+import { LayoutThumbnail } from './layout-thumbnails';
 import { SLIDE_LABELS } from '@/config/slide.constants';
+import { SlideRenderer } from './slide-renderer';
+import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import type { Block } from '@/types/slide.types';
 
 // ─── Local slide interface (compatible with API Slide type) ───────────────────
 
@@ -27,17 +78,459 @@ interface SlideItem {
   order: number;
   type: string;
   title: string;
+  content?: unknown;
 }
 
-// ─── Thumbnail colors by slide type ──────────────────────────────────────────
+// ─── Activity preview map ─────────────────────────────────────────────────────
 
-const THUMB_BG: Record<string, string> = {
-  COVER:    'bg-violet-100 dark:bg-violet-900/40',
-  CONTENT:  'bg-blue-100  dark:bg-blue-900/40',
-  ACTIVITY: 'bg-amber-100 dark:bg-amber-900/40',
-  VIDEO:    'bg-rose-100  dark:bg-rose-900/40',
-  IMAGE:    'bg-emerald-100 dark:bg-emerald-900/40',
+const ACTIVITY_PREVIEW: Record<string, { Icon: LucideIcon; label: string }> = {
+  quiz_multiple: { Icon: HelpCircle, label: 'Quiz' },
+  verdadero_falso: { Icon: ToggleLeft, label: 'V/F' },
+  short_answer: { Icon: MessageSquare, label: 'Respuesta' },
+  completar_blancos: { Icon: PenLine, label: 'Completar' },
+  arrastrar_soltar: { Icon: GripHorizontal, label: 'Arrastrar' },
+  emparejar: { Icon: GitMerge, label: 'Emparejar' },
+  ordenar_pasos: { Icon: ListOrdered, label: 'Ordenar' },
+  video_interactivo: { Icon: Video, label: 'Video' },
+  encuesta_viva: { Icon: BarChart2, label: 'Encuesta' },
+  nube_palabras: { Icon: Cloud, label: 'Nube' },
+  torneo: { Icon: Trophy, label: 'Torneo' },
+  escape_room: { Icon: Lock, label: 'Escape Room' },
+  clasificar: { Icon: Layers, label: 'Clasificar' },
+  memoria: { Icon: Grid2x2, label: 'Memoria' },
+  puzzle_imagen: { Icon: Puzzle, label: 'Puzzle' },
+  sopa_letras: { Icon: Search, label: 'Sopa' },
+  crucigrama: { Icon: Grid3x3, label: 'Crucigrama' },
 };
+
+// ─── Activity badge ───────────────────────────────────────────────────────────
+
+/**
+ * Returns the list of activity sub-types found in the slide's bloques.
+ * Each `actividad` block contributes one entry (its `actividad.tipo`).
+ */
+function getSlideActivityTypes(content: unknown): string[] {
+  const bloques = getSlideBloques(content);
+  const types: string[] = [];
+  for (const b of bloques) {
+    if (b.tipo !== 'actividad') continue;
+    const act = b.actividad;
+    if (act && typeof act === 'object' && !Array.isArray(act) && 'tipo' in act) {
+      const t = (act as { tipo?: string }).tipo;
+      if (typeof t === 'string') types.push(t);
+    }
+  }
+  return types;
+}
+
+/**
+ * Orange pill shown in the bottom-right corner of a slide thumbnail when the
+ * slide contains at least one activity block.
+ *
+ * - 1 activity  → Zap icon only
+ * - 2+ activities → Zap icon + count number
+ * - Tooltip always lists the readable activity name(s)
+ */
+function ActivityBadge({ activityTypes }: { activityTypes: string[] }) {
+  if (activityTypes.length === 0) return null;
+
+  const labels = activityTypes.map((t) => ACTIVITY_PREVIEW[t]?.label ?? t);
+  const tooltipText = labels.join(', ');
+  const showCount = activityTypes.length > 1;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* pointer-events-auto so the tooltip works even inside pointer-events-none wrappers */}
+        <div
+          className="pointer-events-auto absolute bottom-1 right-1 z-20 flex min-h-[18px] min-w-[18px] items-center gap-0.5 rounded-full bg-[#dbeafe] px-1 py-0.5 text-[#2563EB]"
+          aria-label={`Actividad: ${tooltipText}`}
+        >
+          <Zap className="size-2.5 shrink-0" aria-hidden />
+          {showCount && (
+            <span className="text-[9px] font-bold leading-none">
+              {activityTypes.length}
+            </span>
+          )}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="max-w-[160px] text-center">
+        {tooltipText}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+// ─── Content helpers ──────────────────────────────────────────────────────────
+
+function getContentRecord(content: unknown): Record<string, unknown> {
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return {};
+  }
+  return { ...(content as Record<string, unknown>) };
+}
+
+function flattenBlocks(blocks: unknown[]): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = [];
+  for (const b of blocks) {
+    if (!b || typeof b !== 'object' || Array.isArray(b)) continue;
+    const o = b as Record<string, unknown>;
+    if (o.tipo === 'columnas' && Array.isArray(o.columnas)) {
+      for (const col of o.columnas as unknown[]) {
+        if (Array.isArray(col)) {
+          out.push(...flattenBlocks(col));
+        }
+      }
+    } else {
+      out.push(o);
+    }
+  }
+  return out;
+}
+
+function getSlideBloques(content: unknown): Record<string, unknown>[] {
+  const c = getContentRecord(content);
+  const raw = c.bloques;
+  return Array.isArray(raw) ? flattenBlocks(raw) : [];
+}
+
+/** `fondo` (API) o `background` si existiera. */
+function getSlideFondo(content: unknown): unknown {
+  const c = getContentRecord(content);
+  return c.fondo ?? c.background;
+}
+
+function fondoToStyle(fondo: unknown): CSSProperties | undefined {
+  if (!fondo || typeof fondo !== 'object' || Array.isArray(fondo)) return undefined;
+  const f = fondo as Record<string, unknown>;
+  if (f.tipo === 'color' && typeof f.valor === 'string') {
+    return { backgroundColor: f.valor };
+  }
+  if (f.tipo === 'gradiente') {
+    const start = typeof f.inicio === 'string' ? f.inicio : '#000000';
+    const end = typeof f.fin === 'string' ? f.fin : '#ffffff';
+    const deg = typeof f.direccion === 'number' ? f.direccion : 180;
+    return { background: `linear-gradient(${deg}deg, ${start}, ${end})` };
+  }
+  if (f.tipo === 'imagen' && typeof f.url === 'string' && f.url.length > 0) {
+    const ajuste = f.ajuste;
+    let backgroundSize: string;
+    if (ajuste === 'cubrir') backgroundSize = 'cover';
+    else if (ajuste === 'contener') backgroundSize = 'contain';
+    else backgroundSize = 'fill';
+    const pos = typeof f.posicion === 'string' ? f.posicion : 'center';
+    return {
+      backgroundImage: `url(${f.url})`,
+      backgroundSize,
+      backgroundPosition: pos,
+      backgroundRepeat: 'no-repeat',
+    };
+  }
+  return undefined;
+}
+
+function stripToPlainText(htmlOrText: string): string {
+  return htmlOrText
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function firstImageBlockUrl(bloques: Record<string, unknown>[]): string | null {
+  for (const b of bloques) {
+    if (b.tipo !== 'imagen') continue;
+    const url = typeof b.url === 'string' ? b.url : '';
+    if (url.length > 0) return url;
+  }
+  return null;
+}
+
+function firstTextPreview(bloques: Record<string, unknown>[]): string | null {
+  for (const b of bloques) {
+    if (b.tipo !== 'texto') continue;
+    const raw = typeof b.contenido === 'string' ? b.contenido : '';
+    const plain = stripToPlainText(raw);
+    if (!plain) continue;
+    const lines = plain.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length >= 2) return `${lines[0]}\n${lines[1]}`;
+    return lines[0] ?? plain.slice(0, 80);
+  }
+  return null;
+}
+
+function firstActivityBlock(
+  bloques: Record<string, unknown>[],
+): { tipo: string } | null {
+  for (const b of bloques) {
+    if (b.tipo !== 'actividad') continue;
+    const act = b.actividad;
+    if (act && typeof act === 'object' && !Array.isArray(act) && 'tipo' in act) {
+      const t = (act as { tipo?: string }).tipo;
+      if (typeof t === 'string') return { tipo: t };
+    }
+  }
+  return null;
+}
+
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  return match ? match[1] : null;
+}
+
+function findVideoBlockPreview(
+  slide: SlideItem,
+  content: unknown,
+): { hasVideo: boolean; videoUrl: string | null } {
+  let hasVideo = false;
+
+  const readFromBlocks = (blocks: unknown[]): string | null => {
+    for (const b of flattenBlocks(blocks)) {
+      const kind =
+        typeof b.type === 'string'
+          ? b.type
+          : typeof b.tipo === 'string'
+            ? b.tipo
+            : null;
+      if (kind !== 'video') continue;
+
+      hasVideo = true;
+      const candidates = [b.url, b.src, b.videoUrl, b.valor];
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim().length > 0) {
+          return candidate.trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  const rawSlideBlocks = (slide as { blocks?: unknown }).blocks;
+  if (Array.isArray(rawSlideBlocks)) {
+    const fromSlide = readFromBlocks(rawSlideBlocks);
+    if (fromSlide) return { hasVideo: true, videoUrl: fromSlide };
+  }
+
+  const fromContent = readFromBlocks(getSlideBloques(content));
+  if (fromContent) return { hasVideo: true, videoUrl: fromContent };
+
+  return { hasVideo, videoUrl: null };
+}
+
+type CornerPick =
+  | { kind: 'actividad'; activityType: string }
+  | { kind: 'imagen' }
+  | { kind: 'video' }
+  | { kind: 'texto' }
+  | { kind: 'forma' };
+
+function pickCornerIconKind(bloques: Record<string, unknown>[]): CornerPick | null {
+  const has = (t: string) => bloques.some((b) => b.tipo === t);
+  if (has('actividad')) {
+    const act = firstActivityBlock(bloques);
+    return { kind: 'actividad', activityType: act?.tipo ?? '' };
+  }
+  if (has('imagen')) return { kind: 'imagen' };
+  if (has('video')) return { kind: 'video' };
+  if (has('texto')) return { kind: 'texto' };
+  if (has('forma')) return { kind: 'forma' };
+  return null;
+}
+
+function CornerTypeIcon({ pick }: { pick: CornerPick | null }) {
+  if (!pick) return null;
+  if (pick.kind === 'actividad') {
+    const def = ACTIVITY_PREVIEW[pick.activityType];
+    const Icon = def?.Icon ?? HelpCircle;
+    return <Icon className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  if (pick.kind === 'imagen') {
+    return <ImageIcon className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  if (pick.kind === 'video') {
+    return <Video className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  if (pick.kind === 'texto') {
+    return <Type className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+  }
+  return <Shapes className="size-2 shrink-0 text-white drop-shadow-sm" aria-hidden />;
+}
+
+export interface SlideThumbnailPreviewProps {
+  order: number;
+  content?: unknown;
+  isActive?: boolean;
+  aspectRatio?: '16/9' | '4/3';
+  /** Si es false, no se muestra ring (p. ej. miniatura dentro de tarjeta). */
+  showOuterRing?: boolean;
+  className?: string;
+}
+
+export function SlideThumbnailPreview({
+  order,
+  content,
+  isActive = false,
+  aspectRatio = '16/9',
+  showOuterRing = true,
+  className,
+}: SlideThumbnailPreviewProps) {
+  const bloques = getSlideBloques(content);
+  const fondo = getSlideFondo(content);
+  const bgStyle = fondoToStyle(fondo);
+  const hasCustomBg = !!bgStyle;
+
+  const imageBlockUrl = firstImageBlockUrl(bloques);
+  const textPreview = firstTextPreview(bloques);
+  const activity = firstActivityBlock(bloques);
+  const activityDef = activity ? ACTIVITY_PREVIEW[activity.tipo] : undefined;
+  const ActivityIcon = activityDef?.Icon ?? HelpCircle;
+  const activityLabel = activityDef?.label ?? activity?.tipo ?? '';
+
+  const cornerPick = pickCornerIconKind(bloques);
+
+  let main: ReactNode;
+  if (imageBlockUrl) {
+    main = (
+      <img
+        src={imageBlockUrl}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    );
+  } else if (textPreview) {
+    main = (
+      <p
+        className="relative z-[1] line-clamp-2 max-w-[95%] whitespace-pre-line text-center text-[6px] leading-tight text-white drop-shadow-sm"
+      >
+        {textPreview}
+      </p>
+    );
+  } else if (activity) {
+    main = (
+      <div className="relative z-[1] flex max-w-[95%] flex-col items-center gap-0.5 text-white drop-shadow-sm">
+        <ActivityIcon className="size-3 shrink-0" aria-hidden />
+        <span className="text-center text-[6px] font-medium leading-tight">{activityLabel}</span>
+      </div>
+    );
+  } else {
+    main = (
+      <span className="relative z-[1] text-sm font-bold text-white/90 drop-shadow-sm tabular-nums">
+        {order}
+      </span>
+    );
+  }
+
+  const ratio = aspectRatio === '4/3' ? '4/3' : '16/9';
+
+  return (
+    <div
+      className={cn(
+        'relative flex w-full items-center justify-center overflow-hidden rounded-md',
+        !hasCustomBg && !imageBlockUrl && 'bg-zinc-800',
+        showOuterRing &&
+          (isActive ? 'ring-2 ring-blue-500' : 'ring-1 ring-zinc-600 hover:ring-zinc-400'),
+        className,
+      )}
+      style={{ aspectRatio: ratio, ...bgStyle }}
+    >
+      {imageBlockUrl ? (
+        main
+      ) : (
+        <div className="pointer-events-none flex min-h-0 flex-1 items-center justify-center px-1 py-3">
+          {main}
+        </div>
+      )}
+      <div className="pointer-events-none absolute bottom-0.5 right-0.5 z-[1] flex items-center justify-center">
+        <CornerTypeIcon pick={cornerPick} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Canvas-based thumbnail ───────────────────────────────────────────────────
+
+/**
+ * Renders the slide using SlideRenderer so that block positions (x, y, ancho, alto)
+ * are reflected immediately after drag / resize, without waiting for the
+ * simplified SlideThumbnailPreview to receive a different text or image.
+ *
+ * `liveContent` overrides `slide.content` — used during and immediately after
+ * a drag to show committed positions before the query refetch settles.
+ */
+export const SlideCanvasThumb = memo(function SlideCanvasThumb({
+  slide,
+  isActive,
+  liveContent,
+  className,
+}: {
+  slide: SlideItem;
+  isActive: boolean;
+  liveContent?: unknown;
+  className?: string;
+}) {
+  void isActive;
+  const effectiveContent = liveContent ?? slide.content;
+  const { hasVideo, videoUrl } = useMemo(
+    () => findVideoBlockPreview(slide, effectiveContent),
+    [slide, effectiveContent],
+  );
+  const youTubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
+
+  // Include slide.content explicitly so the thumbnail re-renders after a
+  // query refetch even when only block positions (x/y/ancho/alto) changed.
+  const rendererSlide = useMemo(
+    () =>
+      classSlideToRendererSlide({
+        ...slide,
+        content: effectiveContent,
+      } as unknown as ApiSlide),
+    [slide, effectiveContent],
+  );
+
+  const activityTypes = useMemo(
+    () => getSlideActivityTypes(effectiveContent),
+    [effectiveContent],
+  );
+
+  return (
+    <div
+      className={cn('relative w-full overflow-hidden rounded-xl', className)}
+      style={{ aspectRatio: '16/9' }}
+    >
+      {hasVideo ? (
+        youTubeId ? (
+          <img
+            src={`https://img.youtube.com/vi/${youTubeId}/0.jpg`}
+            alt="preview"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ backgroundColor: '#e5e7eb' }}
+          >
+            <Video className="size-5 text-zinc-500" aria-hidden />
+          </div>
+        )
+      ) : (
+        /* pointer-events:none so click events reach the wrapping <button> */
+        <div className="pointer-events-none absolute inset-0">
+          <SlideRenderer
+            slide={rendererSlide}
+            modo="preview"
+            isThumbnail
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
+      )}
+      <span className="absolute left-0.5 top-0.5 z-[1] rounded-md bg-black/45 px-1 text-[7px] font-medium tabular-nums text-white">
+        {slide.order}
+      </span>
+      <ActivityBadge activityTypes={activityTypes} />
+    </div>
+  );
+});
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -46,12 +539,17 @@ export interface SlidesPanelProps {
   activeIndex: number;
   isLoading?: boolean;
   isAddingSlide?: boolean;
+  /** Override content for the active slide during/after drag (shows live positions). */
+  activeSlideLiveContent?: unknown;
   onSelect: (index: number) => void;
-  onAddSlide: () => void;
+  onAddSlide: (layoutKey: CoreSlideLayoutKey) => void;
   onRemoveSlide?: (slideId: string) => void;
+  onDuplicateSlide?: (slideId: string) => void;
   onMoveSlideUp?: (slideId: string) => void;
   onMoveSlideDown?: (slideId: string) => void;
   onReorderSlides?: (slideId: string, newIndex: number) => void;
+  copiedBlock?: Block | null;
+  onPasteBlockInSlide?: (slideId: string, block: Block) => void;
 }
 
 // ─── SortableSlideItem ────────────────────────────────────────────────────────
@@ -61,19 +559,27 @@ function SortableSlideItem({
   idx,
   totalSlides,
   activeIndex,
+  liveContent,
   onSelect,
   onRemoveSlide,
+  onDuplicateSlide,
   onMoveSlideUp,
   onMoveSlideDown,
+  copiedBlock,
+  onPasteBlockInSlide,
 }: {
   slide: SlideItem;
   idx: number;
   totalSlides: number;
   activeIndex: number;
+  liveContent?: unknown;
   onSelect: (idx: number) => void;
   onRemoveSlide?: (id: string) => void;
+  onDuplicateSlide?: (id: string) => void;
   onMoveSlideUp?: (id: string) => void;
   onMoveSlideDown?: (id: string) => void;
+  copiedBlock?: Block | null;
+  onPasteBlockInSlide?: (slideId: string, block: Block) => void;
 }) {
   const {
     attributes,
@@ -92,62 +598,70 @@ function SortableSlideItem({
   };
 
   const isActive = idx === activeIndex;
-  const thumbBg = THUMB_BG[slide.type] ?? 'bg-muted';
 
-  return (
-    <div ref={setNodeRef} style={style} className="relative group">
+  const triggerBody = (
+    <div className="relative w-full">
       {/* Drag handle - visible on hover */}
       <div
         {...attributes}
         {...listeners}
         className={cn(
-          'absolute left-1 top-1/2 -translate-y-1/2 z-10 size-5 cursor-grab active:cursor-grabbing',
-          'flex items-center justify-center rounded',
+          'absolute left-1 top-1/2 z-10 size-5 -translate-y-1/2 cursor-grab',
+          'flex items-center justify-center rounded active:cursor-grabbing',
           'bg-background/80 text-muted-foreground',
-          'opacity-0 group-hover:opacity-100 transition-opacity',
+          'opacity-0 transition-opacity group-hover:opacity-100',
         )}
       >
         <GripVertical className="size-3" />
       </div>
 
-      <button
-        type="button"
+      {/*
+       * div instead of <button> to avoid invalid HTML (SlideRenderer renders
+       * activity viewer components that contain their own <button> elements).
+       */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onSelect(idx)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(idx);
+          }
+        }}
         className={cn(
-          'w-full overflow-hidden rounded-md border text-left transition-all',
-          isActive
-            ? 'border-primary ring-2 ring-primary/20'
-            : 'border-border hover:border-primary/50',
+          'w-full cursor-pointer overflow-hidden rounded-xl border-2 text-left transition-colors',
+          isActive ? 'border-[#2563EB]' : 'border-transparent hover:border-[#93c5fd]',
         )}
       >
-        {/* Thumbnail — aspect ratio 16/9 */}
-        <div
-          className={cn('flex items-center justify-center', thumbBg)}
-          style={{ aspectRatio: '16/9' }}
-        >
-          <span className="font-mono text-sm font-bold text-foreground/30">
-            {slide.order}
-          </span>
-        </div>
+        <SlideCanvasThumb
+          slide={slide}
+          isActive={isActive}
+          liveContent={isActive ? liveContent : undefined}
+          className="rounded-b-none rounded-t-xl"
+        />
         {/* Label */}
-        <div className="px-2 py-1.5">
-          <p className="truncate text-[10px] font-medium leading-tight">{slide.title}</p>
-          <p className="text-[9px] text-muted-foreground">
+        <div className="border-t border-[#e5e7eb] bg-white px-2 py-1.5">
+          <p className="truncate text-[10px] font-semibold leading-tight text-[#1e1b4b]">{slide.title}</p>
+          <p className="text-[9px] text-[#6b7280]">
             {SLIDE_LABELS[slide.type] ?? slide.type}
           </p>
         </div>
-      </button>
+      </div>
 
       {onRemoveSlide && (
         <button
           type="button"
           aria-label="Eliminar slide"
-          onClick={(e) => { e.stopPropagation(); onRemoveSlide(slide.id); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveSlide(slide.id);
+          }}
           className={cn(
-            'absolute top-1 right-1 size-6 z-10',
+            'absolute right-1 top-1 z-10 size-6',
             'flex items-center justify-center rounded',
-            'bg-destructive/80 hover:bg-destructive text-white',
-            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'bg-destructive/80 text-white hover:bg-destructive',
+            'opacity-0 transition-opacity group-hover:opacity-100',
           )}
         >
           <Trash2 className="size-3.5" />
@@ -157,20 +671,22 @@ function SortableSlideItem({
       {(onMoveSlideUp || onMoveSlideDown) && (
         <div
           className={cn(
-            'absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-10',
-            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-1',
+            'opacity-0 transition-opacity group-hover:opacity-100',
           )}
         >
           <button
             type="button"
             aria-label="Mover slide arriba"
             disabled={idx === 0}
-            onClick={(e) => { e.stopPropagation(); onMoveSlideUp?.(slide.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveSlideUp?.(slide.id);
+            }}
             className={cn(
-              'size-6 flex items-center justify-center rounded',
-              'bg-background/90 hover:bg-accent border border-border',
-              'text-muted-foreground hover:text-foreground',
-              'disabled:opacity-30 disabled:cursor-not-allowed',
+              'flex size-6 items-center justify-center rounded border border-border',
+              'bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground',
+              'disabled:cursor-not-allowed disabled:opacity-30',
             )}
           >
             <ChevronUp className="size-3.5" />
@@ -179,17 +695,53 @@ function SortableSlideItem({
             type="button"
             aria-label="Mover slide abajo"
             disabled={idx === totalSlides - 1}
-            onClick={(e) => { e.stopPropagation(); onMoveSlideDown?.(slide.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveSlideDown?.(slide.id);
+            }}
             className={cn(
-              'size-6 flex items-center justify-center rounded',
-              'bg-background/90 hover:bg-accent border border-border',
-              'text-muted-foreground hover:text-foreground',
-              'disabled:opacity-30 disabled:cursor-not-allowed',
+              'flex size-6 items-center justify-center rounded border border-border',
+              'bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground',
+              'disabled:cursor-not-allowed disabled:opacity-30',
             )}
           >
             <ChevronDown className="size-3.5" />
           </button>
         </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div ref={setNodeRef} style={style} className="group relative">
+      {onDuplicateSlide || (copiedBlock && onPasteBlockInSlide) ? (
+        <ContextMenu>
+          <ContextMenuTrigger asChild>{triggerBody}</ContextMenuTrigger>
+          <ContextMenuContent>
+            {onDuplicateSlide && (
+              <ContextMenuItem
+                onSelect={() => {
+                  onDuplicateSlide(slide.id);
+                }}
+              >
+                <Copy className="size-4" aria-hidden />
+                Duplicar slide
+              </ContextMenuItem>
+            )}
+            {copiedBlock && onPasteBlockInSlide && (
+              <ContextMenuItem
+                onSelect={() => {
+                  onPasteBlockInSlide(slide.id, copiedBlock);
+                }}
+              >
+                <ClipboardPaste className="size-4" aria-hidden />
+                Pegar bloque
+              </ContextMenuItem>
+            )}
+          </ContextMenuContent>
+        </ContextMenu>
+      ) : (
+        triggerBody
       )}
     </div>
   );
@@ -202,13 +754,19 @@ export function SlidesPanel({
   activeIndex,
   isLoading,
   isAddingSlide,
+  activeSlideLiveContent,
   onSelect,
   onAddSlide,
   onRemoveSlide,
+  onDuplicateSlide,
   onMoveSlideUp,
   onMoveSlideDown,
   onReorderSlides,
+  copiedBlock,
+  onPasteBlockInSlide,
 }: SlidesPanelProps) {
+  const [addOpen, setAddOpen] = useState(false);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -226,16 +784,55 @@ export function SlidesPanel({
   }
 
   return (
-    <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-border bg-background">
-
+    <aside className="relative z-0 flex h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-hidden border-r border-[#e5e7eb] bg-white">
       {/* Header */}
-      <div className="flex h-10 shrink-0 items-center border-b border-border px-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Slides
-        </span>
-        <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-          {slides.length}
-        </span>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#e5e7eb] px-3 py-2">
+        <span className="text-xs font-bold text-[#1e1b4b]">Slides</span>
+        <Popover open={addOpen} onOpenChange={setAddOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={isAddingSlide}
+              title={isAddingSlide ? 'Creando…' : 'Agregar slide'}
+              aria-label={isAddingSlide ? 'Creando slide' : 'Agregar slide'}
+              className={cn(
+                'flex size-7 shrink-0 items-center justify-center rounded-lg text-white shadow-sm',
+                'bg-[linear-gradient(135deg,#2563EB,#60A5FA)] transition-opacity hover:opacity-95',
+                isAddingSlide && 'cursor-not-allowed opacity-50',
+              )}
+            >
+              {isAddingSlide ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Plus className="size-3.5" aria-hidden />
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="end" className="w-auto p-2">
+            <p className="mb-2 text-center text-[10px] font-medium text-muted-foreground">Layout</p>
+            <div className="grid grid-cols-2 gap-2">
+              {CORE_SLIDE_LAYOUTS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={label}
+                  disabled={isAddingSlide}
+                  onClick={() => {
+                    onAddSlide(key);
+                    setAddOpen(false);
+                  }}
+                  className={cn(
+                    'flex items-center justify-center rounded-md border border-border bg-background p-1.5',
+                    'transition-colors hover:border-primary/50 hover:bg-accent',
+                    'disabled:pointer-events-none disabled:opacity-50',
+                  )}
+                >
+                  <LayoutThumbnail layoutKey={key} compact />
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Thumbnail list */}
@@ -244,10 +841,7 @@ export function SlidesPanel({
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext
-          items={slides.map((s) => s.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={slides.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-2">
             {isLoading &&
               Array.from({ length: 4 }).map((_, i) => (
@@ -266,38 +860,19 @@ export function SlidesPanel({
                   idx={idx}
                   totalSlides={slides.length}
                   activeIndex={activeIndex}
+                  liveContent={idx === activeIndex ? activeSlideLiveContent : undefined}
                   onSelect={onSelect}
                   onRemoveSlide={onRemoveSlide}
+                  onDuplicateSlide={onDuplicateSlide}
                   onMoveSlideUp={onMoveSlideUp}
                   onMoveSlideDown={onMoveSlideDown}
+                  copiedBlock={copiedBlock}
+                  onPasteBlockInSlide={onPasteBlockInSlide}
                 />
               ))}
           </div>
         </SortableContext>
       </DndContext>
-
-      {/* Agregar slide */}
-      <div className="shrink-0 border-t border-border p-2">
-        <button
-          type="button"
-          disabled={isAddingSlide}
-          onClick={onAddSlide}
-          className={cn(
-            'flex w-full items-center justify-center gap-2 rounded-md border border-border',
-            'bg-background py-2 text-xs font-medium text-muted-foreground',
-            'transition-colors hover:border-primary/60 hover:bg-accent hover:text-primary',
-            isAddingSlide && 'cursor-not-allowed opacity-50',
-          )}
-        >
-          {isAddingSlide ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Plus className="size-3.5" />
-          )}
-          {isAddingSlide ? 'Creando…' : 'Agregar slide'}
-        </button>
-      </div>
-
     </aside>
   );
 }

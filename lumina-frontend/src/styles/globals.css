@@ -1,6 +1,8 @@
 /* Tailwind Core */
 @import 'tailwindcss';
 
+@config "../../tailwind.config.ts";
+
 @import 'tw-animate-css';
 
 /** Dark Mode Variant **/
@@ -29,7 +31,8 @@
   --chart-3: var(--color-yellow-500);
   --chart-4: var(--color-red-500);
   --chart-5: var(--color-purple-500);
-  --border: oklch(94% 0.004 286.32); /* between --color-zinc-100 and --color-zinc-200 */
+  /* Alineado con Lumina 2.1 — bordes UI (#e5e7eb), no azul pálido */
+  --border: #e5e7eb;
   --input: var(--color-zinc-200);
   --ring: var(--color-zinc-400);
   --radius: 0.5rem;
@@ -43,6 +46,62 @@
   --editor-toolbar-top-md: 9px;
   --editor-canvas-pt: 3.5rem;
   --editor-canvas-pt-md: 4rem;
+
+  /* Lumina 2.0 — Color Tokens */
+  --lumina-purple: #2563eb;
+  --lumina-purple-light: #60a5fa;
+  --lumina-purple-pale: #dbeafe;
+  --lumina-purple-soft: #f9fafb;
+  --lumina-blue: #60a5fa;
+  --lumina-blue-light: #93c5fd;
+  --lumina-blue-pale: #dbeafe;
+  --lumina-blue-soft: #f9fafb;
+  --lumina-gradient: linear-gradient(135deg, #2563eb, #60a5fa);
+  --lumina-gradient-soft: linear-gradient(135deg, #60a5fa, #93c5fd);
+  --lumina-bg: #f9fafb;
+  --lumina-surface: #ffffff;
+  --lumina-border: #e5e7eb;
+  --lumina-border-soft: #f9fafb;
+  --lumina-text-primary: #1e1b4b;
+  --lumina-text-secondary: #9ca3af;
+  --lumina-text-muted: #6b7280;
+  --lumina-success: #34d399;
+  --lumina-warning: #fbbf24;
+  --lumina-danger: #f87171;
+  --lumina-amber: #d97706;
+
+  /* Border radius — escala Materialize */
+  --lumina-radius-xs: 2px;
+  --lumina-radius-sm: 4px;
+  --lumina-radius-md: 6px;
+  --lumina-radius-lg: 10px;
+  --lumina-radius-xl: 12px;
+  --lumina-radius-2xl: 16px;
+  --lumina-radius-full: 9999px;
+
+  /* Tipografía — tamaño base */
+  --lumina-font-size-base: 15px;
+  --lumina-font-size-sm: 0.8125rem; /* 13px */
+  --lumina-font-size-md: 0.9375rem; /* 15px */
+  --lumina-font-size-lg: 1.125rem; /* 18px */
+
+  /* Divider / bordes — ultra sutiles */
+  --lumina-divider: rgba(0, 0, 0, 0.07);
+  --lumina-divider-strong: rgba(0, 0, 0, 0.12);
+
+  /* Superficies */
+  --lumina-table-header-bg: #F5F5F7;
+  --lumina-grey-light: #FAFAFA;
+
+  /* Sombras muy suaves */
+  --lumina-shadow-xs: 0px 2px 6px rgba(0, 0, 0, 0.07);
+  --lumina-shadow-sm: 0px 2px 10px rgba(0, 0, 0, 0.08);
+  --lumina-shadow-md: 0px 4px 14px rgba(0, 0, 0, 0.08);
+  --lumina-shadow-lg: 0px 6px 20px rgba(0, 0, 0, 0.1);
+
+  /* Tabla */
+  --lumina-table-header-height: 48px;
+  --lumina-table-row-height: 50px;
 }
 
 .dark {
@@ -134,6 +193,15 @@
     @apply border-border;
   }
 
+  html {
+    font-size: var(--lumina-font-size-base);
+  }
+
+  body {
+    font-family: var(--font-plus-jakarta), sans-serif;
+    font-size: 1rem;
+  }
+
   *:focus-visible {
     @apply outline-ring rounded-xs shadow-none outline-2 outline-offset-3 transition-none!;
   }
@@ -170,16 +238,46 @@ html {
 
 /** Custom Containers **/
 @utility container {
-  @apply mx-auto max-w-none px-4 lg:px-5;
-
-  @media (width >= --theme(--breakpoint-xl)) {
-    @apply max-w-(--breakpoint-xl);
-  }
+  @apply mx-auto w-full max-w-none px-4 lg:px-5;
 }
 
 @utility container-fluid {
   @apply w-full mx-auto px-4 lg:px-5;
 }
 
+/** Viewer: feedback en opciones incorrectas (quiz / V-F) **/
+@keyframes lumina-viewer-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.lumina-viewer-shake {
+  animation: lumina-viewer-shake 0.5s ease-in-out;
+}
+
+/** Viewer: entrada escalonada de bloques al cargar slide **/
+@keyframes lumina-block-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Metronic Configs */
 @import './config.metronic.css';
+
+@import './lumina-animations.css';

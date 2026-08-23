@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 
 export type LiveSocketUser = {
@@ -49,10 +50,17 @@ export class LiveSessionsService {
   /** Estado por claseId (solo esta instancia Node). */
   private readonly slideStateByClass = new Map<string, SlideStateEntry>();
 
+  /** Socket.IO client.id → sesión ClassSession activa (solo estudiantes). */
+  private readonly telemetryBySocketId = new Map<
+    string,
+    { sessionId: string; studentId: string }
+  >();
+
   constructor(
     private readonly prisma: PrismaClient,
     private readonly courseAuth: CourseAuthorizationService,
     private readonly jwtService: JwtService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async authenticateConnection(client: Socket): Promise<void> {
@@ -194,6 +202,33 @@ export class LiveSessionsService {
     const room = liveRoom(classId);
     await client.join(room);
     const currentSlide = this.getSlideState(classId);
+
+    if (!isHost && cls.status === 'LIVE') {
+      const activeSession = await this.prisma.classSession.findFirst({
+        where: { classId, endedAt: null },
+        orderBy: { startedAt: 'desc' },
+        select: { id: true },
+      });
+      if (activeSession) {
+        const studentName = `${user.name} ${user.lastName}`.trim();
+        try {
+          await this.analyticsService.recordConnection({
+            sessionId: activeSession.id,
+            classId,
+            studentId: user.id,
+            studentName,
+          });
+          await this.analyticsService.updatePeakConnections(activeSession.id);
+        } catch {
+          /* telemetría no rompe join */
+        }
+        this.telemetryBySocketId.set(client.id, {
+          sessionId: activeSession.id,
+          studentId: user.id,
+        });
+      }
+    }
+
     return { room, currentSlide, isHost };
   }
 
@@ -234,6 +269,33 @@ export class LiveSessionsService {
       });
       this.clearSlideState(classId);
       transitionedToLive = true;
+
+      const slideCount = await this.prisma.slide.count({
+        where: { classId },
+      });
+      let sessionRow = await this.prisma.classSession.findFirst({
+        where: { classId, endedAt: null },
+        orderBy: { startedAt: 'desc' },
+        select: { id: true, startedAt: true },
+      });
+      if (!sessionRow) {
+        sessionRow = await this.prisma.classSession.create({
+          data: { classId, activeSlide: 0 },
+          select: { id: true, startedAt: true },
+        });
+      }
+      try {
+        await this.analyticsService.createSessionLog({
+          sessionId: sessionRow.id,
+          classId,
+          courseId: cls.courseId,
+          teacherId: user.id,
+          totalSlides: slideCount,
+          startedAt: sessionRow.startedAt,
+        });
+      } catch {
+        /* analytics no rompe el flujo */
+      }
     }
 
     const room = liveRoom(classId);
@@ -268,6 +330,24 @@ export class LiveSessionsService {
       where: { id: classId },
       data: { status: 'PUBLISHED' },
     });
+
+    const activeSession = await this.prisma.classSession.findFirst({
+      where: { classId, endedAt: null },
+      orderBy: { startedAt: 'desc' },
+      select: { id: true },
+    });
+    if (activeSession) {
+      const endedAt = new Date();
+      await this.prisma.classSession.update({
+        where: { id: activeSession.id },
+        data: { endedAt },
+      });
+      try {
+        await this.analyticsService.closeSessionLog(activeSession.id, endedAt);
+      } catch {
+        /* no-op */
+      }
+    }
 
     this.clearSlideState(classId);
     return { room: liveRoom(classId) };
@@ -357,7 +437,27 @@ export class LiveSessionsService {
 
   async leaveLiveClass(client: Socket, classId: string): Promise<void> {
     this.getUser(client);
+    await this.flushTelemetryDisconnect(client);
     await client.leave(liveRoom(classId));
+  }
+
+  /** Desconexión abrupta del cliente (cierre de pestaña, red, etc.). */
+  async onSocketDisconnect(client: Socket): Promise<void> {
+    await this.flushTelemetryDisconnect(client);
+  }
+
+  private async flushTelemetryDisconnect(client: Socket): Promise<void> {
+    const info = this.telemetryBySocketId.get(client.id);
+    if (!info) return;
+    try {
+      await this.analyticsService.recordDisconnection(
+        info.sessionId,
+        info.studentId,
+      );
+    } catch {
+      /* no-op */
+    }
+    this.telemetryBySocketId.delete(client.id);
   }
 
   roomName(classId: string): string {

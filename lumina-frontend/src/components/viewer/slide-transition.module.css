@@ -1,0 +1,33 @@
+/* Fases de transición — se aplican al contenedor del slide */
+
+/* FADE */
+.trans-fade-exiting  { animation: lumina-trans-fade-out  var(--trans-dur, 500ms) ease forwards; }
+.trans-fade-entering { animation: lumina-trans-fade-in   var(--trans-dur, 500ms) ease forwards; }
+
+/* SLIDE LEFT */
+.trans-slide-left-exiting  { animation: lumina-trans-slide-left-out var(--trans-dur, 500ms) ease forwards; }
+.trans-slide-left-entering { animation: lumina-trans-slide-left-in  var(--trans-dur, 500ms) ease forwards; }
+
+/* SLIDE RIGHT */
+.trans-slide-right-exiting  { animation: lumina-trans-slide-right-out var(--trans-dur, 500ms) ease forwards; }
+.trans-slide-right-entering { animation: lumina-trans-slide-right-in  var(--trans-dur, 500ms) ease forwards; }
+
+/* SLIDE UP */
+.trans-slide-up-exiting  { animation: lumina-trans-slide-up-out var(--trans-dur, 500ms) ease forwards; }
+.trans-slide-up-entering { animation: lumina-trans-slide-up-in  var(--trans-dur, 500ms) ease forwards; }
+
+/* SLIDE DOWN */
+.trans-slide-down-exiting  { animation: lumina-trans-slide-down-out var(--trans-dur, 500ms) ease forwards; }
+.trans-slide-down-entering { animation: lumina-trans-slide-down-in  var(--trans-dur, 500ms) ease forwards; }
+
+/* ZOOM */
+.trans-zoom-exiting  { animation: lumina-trans-zoom-out var(--trans-dur, 500ms) ease forwards; }
+.trans-zoom-entering { animation: lumina-trans-zoom-in  var(--trans-dur, 500ms) ease forwards; }
+
+/* FLIP */
+.trans-flip-exiting  { animation: lumina-trans-flip-out var(--trans-dur, 500ms) ease forwards; }
+.trans-flip-entering { animation: lumina-trans-flip-in  var(--trans-dur, 500ms) ease forwards; }
+
+/* CUBE — usa slide-left como fallback (cube requiere 3D scene; simplificado) */
+.trans-cube-exiting  { animation: lumina-trans-slide-left-out var(--trans-dur, 500ms) ease forwards; }
+.trans-cube-entering { animation: lumina-trans-slide-left-in  var(--trans-dur, 500ms) ease forwards; }

@@ -194,6 +194,35 @@ Todos los componentes de `src/components/ui/` siguen el patrón:
 
 Ejemplo representativo — `Button` tiene variantes: `primary`, `mono`, `destructive`, `secondary`, `outline`, `dashed`, `ghost`, `dim`, `foreground`, `inverse`; y tamaños: `lg`, `md`, `sm`, `icon`.
 
+### Widgets (familias)
+
+Hay tres familias. No unificar el comportamiento entre ellas.
+
+| Familia | Widgets | Contrato |
+|---|---|---|
+| Lienzo (Captivate) | Flip Cards, Tabs, Carousel, Click to Reveal, Timeline | Header, `configuracion`, edición inline + panel, `normalize*` al hidratar el slide |
+| Overlay modal | Popup | Portal a `.canvas-slide` + backdrop. Bloquea el slide. |
+| Control / burbuja | Hotspot, Tooltip, Botón, Contador, Barra | Hit pequeño. Tooltip/Botón/Contador/Barra: texto solo en el panel derecho. Hotspot: burbuja inline con `WidgetSlideContent`. |
+
+**Overlays — tres bases, no una:**
+
+- Overlay pequeño con contenido rico → Hotspot (burbuja, `pointer-events` auto).
+- Overlay pequeño de texto → Tooltip (burbuja, `pointer-events: none`).
+- Modal a pantalla de slide → Popup (portal).
+- Click to Reveal monta el modal **dentro del bloque** porque el widget ya ocupa ~90% del slide. **No** es la base para un overlay chico.
+
+Todos los widgets (incluidos Captivate) se hidratan en `class-slide-normalize.ts` (`normalizeBlock`). JSON legado no debe llegar crudo al canvas.
+
+**Tabs / Carousel — índice de página:** en el editor el índice es local (React). Cambiar de ficha no hace PATCH. El alumno (viewer) siempre arranca en 0 (`initialWidgetViewerPageIndex`), no en la última ficha que editó el docente. Insertar texto en una ficha usa la inner selection o, si no hay, la ficha 0.
+
+**Duplicar / pegar:** `remintBlockChildIds` regenera IDs de fichas, tarjetas, overlays, nodos y bloques internos. El `id` del bloque raíz lo asigna el editor.
+
+**Flip Cards (viewer):** el clic en la tarjeta voltea (`aria-pressed`). En el editor el clic sigue siendo inner selection.
+
+**Navegación de slide (`SlideNavContext`):** preview / presentar / autónomo pasan `navigate`. En clase en vivo y en el editor `navigate` es `null` (el docente controla el avance). El Botón con acción siguiente/anterior/ir a se muestra deshabilitado; las URL siguen activas. El Contador con “al terminar → siguiente” no avanza. La barra de progreso en modo slides usa `slideIndex` / `slideCount` (incluido el detalle de clase).
+
+**Teclado / ARIA:** Popup y Click to Reveal (viewer) cierran con Escape; el modal tiene `role="dialog"` y `aria-modal`. El disparador del Tooltip es un botón, se abre con foco y se anuncia con `aria-describedby`.
+
 ---
 
 ## Convenciones de código

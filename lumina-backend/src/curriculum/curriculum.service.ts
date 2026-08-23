@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 
 // ─── Tipos ────────────────────────────────────────────────
@@ -243,12 +242,63 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
 
 @Injectable()
 export class CurriculumService {
-  private readonly openai: OpenAI;
+  constructor(private readonly config: ConfigService) {}
 
-  constructor(private readonly config: ConfigService) {
-    this.openai = new OpenAI({
-      apiKey: this.config.get<string>('OPENAI_API_KEY') ?? '',
+  private async callGemini(
+    systemInstruction: string,
+    userMessage: string,
+    maxOutputTokens = 2000,
+  ): Promise<string> {
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (!apiKey) return '';
+
+    const model = 'gemini-2.0-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const body = {
+      system_instruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userMessage }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens,
+        responseMimeType: 'application/json',
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ],
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = (await response.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      error?: { message?: string };
+    };
+
+    if (data.error) {
+      throw new Error(data.error.message ?? 'Error de Gemini');
+    }
+
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
   }
 
   // ── 1. Consultar DBA del banco ─────────────────────────────
@@ -271,10 +321,10 @@ export class CurriculumService {
     return results;
   }
 
-  // ── 2. Generar desempeño con OpenAI (con fallback) ─────────
+  // ── 2. Generar desempeño con Gemini (con fallback) ─────────
 
   async generateDesempeno(dto: GenerateDesempenoDto): Promise<DesempenoResult> {
-    const apiKey = this.config.get<string>('OPENAI_API_KEY');
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
       return buildFallbackDesempeno(dto);
     }
@@ -323,19 +373,15 @@ Ejemplo de formato correcto: "Los estudiantes identifican las partes de la célu
 No uses ningún tipo de actividad fuera de la lista anterior.`;
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-        max_tokens: 1200,
-      });
+      const raw = await this.callGemini(system, user, 1200);
 
-      const raw = response.choices[0]?.message?.content ?? '';
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      // Gemini a veces envuelve el JSON en ```json ... ``` aunque se pida JSON puro
+      const cleaned = raw
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+      const parsed = JSON.parse(cleaned) as Record<string, unknown>;
 
       const enunciado = parsed['enunciado'];
       const indicadores = parsed['indicadores'];

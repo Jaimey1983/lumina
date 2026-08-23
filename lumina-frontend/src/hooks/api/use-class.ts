@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { ClassModoEntrega } from '@/types/slide.types';
 
 export interface Slide {
   id: string;
@@ -14,16 +15,32 @@ export interface ClassDetail {
   title: string;
   description?: string;
   courseId: string;
+  codigo?: string;
+  /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
+  timerGlobal?: number;
+  modoEntrega?: ClassModoEntrega;
+  /** Id del fondo del canvas en viewer (`none`, `blanco`, …). */
+  background?: string | null;
+  /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */
+  sessionActive?: boolean;
+  /** Id de ClassSession activa (GET clase), si el backend lo expone. */
+  activeSessionId?: string;
+  liveSessionId?: string;
+  /** Alias posible para el id de sesión en curso. */
+  sessionId?: string;
   status: string;
   createdAt: string;
   slides?: Slide[];
   desempeno?: unknown;
 }
 
-export function useClass(id: string) {
+export function useClass(id: string, options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: ['classes', 'detail', id],
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchInterval: options?.refetchInterval,
     queryFn: async () => {
       const { data } = await api.get<ClassDetail>(`/classes/${id}`);
       return data ?? null;

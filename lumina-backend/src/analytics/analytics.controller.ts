@@ -80,6 +80,45 @@ export class AnalyticsController {
     );
   }
 
+  /** Comparativa de sesiones en vivo con telemetría (SessionLog). */
+  @Get('telemetry/live-sessions')
+  getSessionsTelemetryComparison(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.analyticsService.getSessionsComparison(
+      courseId,
+      user.id,
+      user.role,
+    );
+  }
+
+  @Get('telemetry/live-sessions/:sessionId/detail')
+  getLiveSessionDetail(
+    @Param('courseId') courseId: string,
+    @Param('sessionId') sessionId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.analyticsService.getSessionDetail(
+      sessionId,
+      courseId,
+      user.id,
+      user.role,
+    );
+  }
+
+  @Get('telemetry/autonomous-text-responses')
+  getAutonomousTextResponses(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.analyticsService.getAutonomousTextResponses(
+      courseId,
+      user.id,
+      user.role,
+    );
+  }
+
   @Get('engagement')
   getEngagement(
     @Param('courseId') courseId: string,

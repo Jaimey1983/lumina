@@ -1,6 +1,7 @@
 'use client';
 
 import { Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import type { ShortAnswerActivity } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -77,15 +79,15 @@ export function ShortAnswerActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(42vh,280px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(42vh,280px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
           Respuesta corta
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -93,7 +95,7 @@ export function ShortAnswerActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -167,7 +169,7 @@ export function ShortAnswerActivityEditor({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
           <Label htmlFor="sa-case" className="cursor-pointer text-[11px] font-medium leading-tight">
             Distinguir mayúsculas
           </Label>
@@ -179,6 +181,85 @@ export function ShortAnswerActivityEditor({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+export function ShortAnswerViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  activity: ShortAnswerActivity;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
+  const [text, setText] = useState('');
+  const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setAnswered(false);
+    setText('');
+  }, [editorSyncKey]);
+
+  const isDark = variant === 'dark';
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (answered || !text.trim()) return;
+    setAnswered(true);
+    play('submit');
+    onResponse?.(text.trim());
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-4 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{activity.question}</p>
+      {activity.hint && (
+        <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>💡 {activity.hint}</p>
+      )}
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <textarea
+            className={cn(
+              'min-h-[80px] w-full resize-none rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
+              isDark
+                ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
+                : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
+            )}
+            placeholder="Escribe tu respuesta aquí…"
+            maxLength={activity.maxLength ?? 200}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          {activity.maxLength && (
+            <p className={cn('text-right text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
+              {text.length}/{activity.maxLength}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={!text.trim()}
+            className="self-end rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1d4ed8] disabled:opacity-50"
+          >
+            Enviar
+          </button>
+        </form>
+      )}
     </div>
   );
 }

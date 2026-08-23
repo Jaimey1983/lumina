@@ -4,19 +4,21 @@ import { forwardRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   BookOpen,
+  Boxes,
   Layers,
   LayoutTemplate,
   Palette,
   Sparkles,
   X,
-  Zap,
 } from 'lucide-react';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FlyoutLeftPanels } from './panels/flyout-left-panels';
 import type { LeftPanelId } from './icon-rail';
+import type { SlidePersistedLayoutKey } from './templates-panel';
 
 // ─── Panel config ─────────────────────────────────────────────────────────────
 
@@ -32,10 +34,10 @@ const PANELS: Record<string, PanelConfig> = {
     Icon: Layers,
     description: 'Agrega textos, imágenes, formas y otros elementos visuales al slide.',
   },
-  actividades: {
-    label: 'Actividades',
-    Icon: Zap,
-    description: 'Inserta actividades interactivas: quizzes, encuestas, arrastrar y soltar, y más.',
+  widgets: {
+    label: 'Widgets',
+    Icon: Boxes,
+    description: 'Añade widgets al slide: tarjetas, pestañas, popups, botones y más.',
   },
   layout: {
     label: 'Layout',
@@ -75,6 +77,9 @@ export interface FlyoutPanelProps {
   desempenoEnunciado?: string;
   isSlideSaving?: boolean;
   slideHasActivity?: boolean;
+  onApplyLayout: (layoutKey: SlidePersistedLayoutKey) => void;
+  applyLayoutPending?: boolean;
+  onAddWidget?: (type: WidgetTipo) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -93,6 +98,9 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       desempenoEnunciado,
       isSlideSaving,
       slideHasActivity,
+      onApplyLayout,
+      applyLayoutPending,
+      onAddWidget,
     },
     ref,
   ) {
@@ -141,7 +149,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
               </p>
             )}
 
-            <div className="min-h-0 flex-1">
+            <div className="min-h-0 flex-1 overflow-hidden">
               <FlyoutLeftPanels
                 panel={activePanel ?? ''}
                 apiSlide={apiSlide}
@@ -153,6 +161,9 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 desempenoEnunciado={desempenoEnunciado}
                 busy={isSlideSaving}
                 slideHasActivity={slideHasActivity}
+                onApplyLayout={onApplyLayout}
+                applyLayoutPending={applyLayoutPending}
+                onAddWidget={onAddWidget}
               />
             </div>
           </div>

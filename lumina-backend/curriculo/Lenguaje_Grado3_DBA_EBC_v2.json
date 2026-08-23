@@ -1,0 +1,900 @@
+{
+  "grado": "3",
+  "asignatura": "Lenguaje",
+  "pais": "Colombia",
+  "referente_normativo": "DBA V.2 + EBC Lenguaje 1°-3°",
+  "version": "1.0",
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Los medios de comunicación en mi entorno",
+      "dba_asociados": [
+        1
+      ],
+      "dba_relacionados": [
+        5,
+        6
+      ],
+      "enfoque_men": "Medios de comunicación y otros sistemas simbólicos",
+      "nivel_cognitivo": {
+        "nivel": "Comprender",
+        "verbo_bloom": [
+          "comprende",
+          "reconoce",
+          "compara",
+          "diferencia"
+        ],
+        "nivel_numero": 2
+      },
+      "temas": [
+        "Medios de comunicación",
+        "Tipos y formatos de medios",
+        "Funciones de los medios"
+      ],
+      "subtemas": [
+        "¿Para qué sirven el periódico, la radio y la televisión?",
+        "Diferencias entre un noticiero y una revista",
+        "La publicidad: afiches y vallas",
+        "Internet como medio de comunicación",
+        "Comparar noticias de diferentes fuentes",
+        "Formatos: impreso, digital, audiovisual"
+      ],
+      "palabras_clave": [
+        "medios de comunicación",
+        "periódico",
+        "noticiero",
+        "revista",
+        "internet",
+        "valla publicitaria",
+        "afiche",
+        "radio",
+        "televisión",
+        "formato",
+        "función comunicativa",
+        "información"
+      ],
+      "dba_enunciado": "Comprende las funciones que cumplen los medios de comunicación propios de su contexto.",
+      "evidencias_aprendizaje": [
+        "Reconoce los usos de los medios de comunicación con los que se relaciona como periódicos, revistas, noticieros, vallas publicitarias, afiches e internet.",
+        "Compara la información proveniente de diferentes medios de comunicación.",
+        "Diferencia los formatos en los que se presentan los medios de comunicación a los que tiene acceso."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algunos medios de comunicación de su entorno pero no explica su función.",
+          "basico": "Identifica la función principal de medios de comunicación como el periódico, la televisión e internet.",
+          "alto": "Compara la información presentada por distintos medios y explica las diferencias de formato.",
+          "superior": "Analiza críticamente la función y el formato de diferentes medios de comunicación, argumentando sus diferencias y similitudes."
+        },
+        "procedimental": {
+          "bajo": "Señala imágenes de medios de comunicación cuando se le piden.",
+          "basico": "Diferencia entre medios impresos, digitales y audiovisuales con apoyo.",
+          "alto": "Compara de forma autónoma dos medios de comunicación, destacando formato y propósito.",
+          "superior": "Elabora un cuadro comparativo de al menos tres medios de comunicación con criterios propios."
+        },
+        "actitudinal": {
+          "bajo": "Participa esporádicamente en las actividades sobre medios de comunicación.",
+          "basico": "Muestra interés por conocer diferentes medios de comunicación.",
+          "alto": "Valora la importancia de los medios para mantenerse informado y los usa de forma reflexiva.",
+          "superior": "Asume una postura crítica frente a la información de los medios y la comparte con sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Qué medio es?",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Funciones de los medios de comunicación",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Verdadero o falso: características de medios",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Sopa de letras: tipos de medios",
+          "tipo": "Sopa de letras"
+        },
+        {
+          "descripcion": "¿Cuál es la diferencia?",
+          "tipo": "Quiz opción múltiple"
+        }
+      ],
+      "ebc_factor": "Medios de comunicación y otros sistemas simbólicos",
+      "ebc_estandar": "Reconozco los medios de comunicación masiva y caracterizo la información que difunden.",
+      "subprocesos_ebc": [
+        "Identifico los diversos medios de comunicación masiva con los que interactúo.",
+        "Caracterizo algunos medios de comunicación: radio, televisión, prensa, entre otros.",
+        "Identifico la información que emiten los medios de comunicación masiva y la forma de presentarla.",
+        "Establezco diferencias y semejanzas entre noticieros, telenovelas, anuncios comerciales, dibujos animados, caricaturas, entre otros.",
+        "Utilizo los medios de comunicación masiva para adquirir información e incorporarla de manera significativa a mis esquemas de conocimiento."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Textos, imágenes y arte: el lenguaje sin palabras",
+      "dba_asociados": [
+        2
+      ],
+      "dba_relacionados": [
+        1,
+        6
+      ],
+      "enfoque_men": "Medios de comunicación y otros sistemas simbólicos",
+      "nivel_cognitivo": {
+        "nivel": "Comprender",
+        "verbo_bloom": [
+          "comprende",
+          "identifica",
+          "interpreta",
+          "analiza",
+          "relaciona"
+        ],
+        "nivel_numero": 2
+      },
+      "temas": [
+        "Manifestaciones artísticas",
+        "Textos no verbales",
+        "Lenguaje multimodal"
+      ],
+      "subtemas": [
+        "¿Qué es una manifestación artística?",
+        "La escultura, la pintura y la danza en Colombia",
+        "Cómo leer una caricatura o historieta",
+        "Tiras cómicas y anuncios publicitarios",
+        "Textos con imágenes, esquemas y gráficos",
+        "El sonido en las artes: música y teatro"
+      ],
+      "palabras_clave": [
+        "manifestación artística",
+        "texto no verbal",
+        "caricatura",
+        "historieta",
+        "tira cómica",
+        "anuncio publicitario",
+        "imagen",
+        "sonido",
+        "escultura",
+        "pintura",
+        "danza",
+        "lenguaje gráfico",
+        "texto multimodal"
+      ],
+      "dba_enunciado": "Comprende que algunos escritos y manifestaciones artísticas pueden estar compuestos por texto, sonido e imágenes.",
+      "evidencias_aprendizaje": [
+        "Identifica diversas manifestaciones artísticas como la escultura, la pintura y la danza, y relaciona su contenido con el contexto en el que vive.",
+        "Interpreta la información difundida en textos no verbales: caricaturas, tiras cómicas, historietas, anuncios publicitarios y otros medios de expresión gráfica.",
+        "Comprende que algunos escritos están compuestos por texto y gráficos, esquemas o imágenes.",
+        "Analiza los sonidos que se emplean en diferentes manifestaciones artísticas."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce algunas manifestaciones artísticas sin explicar su contenido.",
+          "basico": "Identifica el mensaje principal de una caricatura o historieta y lo relaciona con su contexto.",
+          "alto": "Interpreta textos no verbales explicando los elementos de imagen, texto y sonido que los componen.",
+          "superior": "Analiza una manifestación artística colombiana identificando todos sus elementos comunicativos y relacionándola con su contexto cultural."
+        },
+        "procedimental": {
+          "bajo": "Señala imágenes en textos cuando se le indica.",
+          "basico": "Lee historietas y caricaturas identificando el mensaje con orientación.",
+          "alto": "Interpreta autónomamente textos multimodales (imagen + texto) y explica su sentido.",
+          "superior": "Crea un texto multimodal combinando imagen, texto y/o sonido para comunicar un mensaje."
+        },
+        "actitudinal": {
+          "bajo": "Observa las manifestaciones artísticas sin mostrar interés.",
+          "basico": "Muestra curiosidad por las expresiones artísticas de su entorno.",
+          "alto": "Valora las manifestaciones artísticas colombianas como parte de su identidad cultural.",
+          "superior": "Promueve el aprecio por el arte y los textos multimodales entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Qué tipo de texto es?",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Lee la historieta y responde",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Ordena las viñetas de la tira cómica",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Ruleta: tipos de arte colombiano",
+          "tipo": "Ruleta de palabras"
+        },
+        {
+          "descripcion": "¿Verdad o mentira sobre el lenguaje no verbal?",
+          "tipo": "Verdadero/Falso"
+        }
+      ],
+      "ebc_factor": "Medios de comunicación y otros sistemas simbólicos",
+      "ebc_estandar": "Comprendo la información que circula a través de algunos sistemas de comunicación no verbal.",
+      "subprocesos_ebc": [
+        "Entiendo el lenguaje empleado en historietas y otros tipos de textos con imágenes fijas.",
+        "Expongo oralmente lo que me dicen mensajes cifrados en pictogramas, jeroglíficos, etc.",
+        "Reconozco la temática de caricaturas, tiras cómicas, historietas, anuncios publicitarios y otros medios de expresión gráfica.",
+        "Ordeno y completo la secuencia de viñetas que conforman una historieta.",
+        "Relaciono gráficas con texto escrito, ya sea completándolas o explicándolas."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "El mundo de los textos narrativos",
+      "dba_asociados": [
+        3
+      ],
+      "dba_relacionados": [
+        4,
+        6
+      ],
+      "enfoque_men": "Literatura",
+      "nivel_cognitivo": {
+        "nivel": "Comprender",
+        "verbo_bloom": [
+          "reconoce",
+          "diferencia",
+          "identifica",
+          "verifica",
+          "comparte"
+        ],
+        "nivel_numero": 2
+      },
+      "temas": [
+        "Texto narrativo",
+        "Narrador y estructura narrativa",
+        "Ficción y no ficción"
+      ],
+      "subtemas": [
+        "¿Qué es un texto narrativo?",
+        "El narrador: ¿quién cuenta la historia?",
+        "Inicio, nudo y desenlace",
+        "Diferencia entre cuento y noticia",
+        "Textos ficcionales y no ficcionales",
+        "Cómo contar bien una historia",
+        "La entonación al leer en voz alta"
+      ],
+      "palabras_clave": [
+        "texto narrativo",
+        "narrador",
+        "estructura narrativa",
+        "inicio",
+        "nudo",
+        "desenlace",
+        "ficción",
+        "no ficción",
+        "cuento",
+        "fábula",
+        "leyenda",
+        "personajes",
+        "hipótesis de lectura",
+        "comprensión lectora"
+      ],
+      "dba_enunciado": "Reconoce algunas características de los textos narrativos, tales como el concepto de narrador y estructura narrativa, a partir de la recreación y disfrute de los mismos.",
+      "evidencias_aprendizaje": [
+        "Diferencia entre textos ficcionales y no ficcionales.",
+        "Verifica las hipótesis que plantea acerca del contenido de los textos que lee.",
+        "Afianza su capacidad de contar historias mediante la creación de textos literarios narrativos.",
+        "Identifica la voz que narra una historia.",
+        "Comparte con sus compañeros los textos con los que interactúa en clase para ello, retoma elementos como la entonación, la gesticulación y el manejo escénico."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Distingue un cuento de un texto informativo con ayuda del docente.",
+          "basico": "Identifica el narrador y la estructura básica (inicio, nudo, desenlace) de un texto narrativo.",
+          "alto": "Diferencia textos ficcionales y no ficcionales y explica las características del narrador y la estructura narrativa.",
+          "superior": "Analiza la estructura narrativa de un texto, identifica el tipo de narrador y valida o refuta hipótesis de lectura con argumentos."
+        },
+        "procedimental": {
+          "bajo": "Escucha narraciones sin responder preguntas sobre su estructura.",
+          "basico": "Responde preguntas sobre el narrador y la estructura de un cuento leído.",
+          "alto": "Narra en voz alta una historia usando entonación, gesticulación y manejo escénico.",
+          "superior": "Crea y comparte una narración propia con estructura clara, narrador definido y recursos expresivos."
+        },
+        "actitudinal": {
+          "bajo": "Participa poco en las actividades de lectura compartida.",
+          "basico": "Muestra disfrute al escuchar y leer textos narrativos.",
+          "alto": "Comparte sus opiniones sobre los textos leídos y respeta las de sus compañeros.",
+          "superior": "Promueve la lectura narrativa como fuente de disfrute y aprendizaje en su entorno."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Ficción o no ficción?",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Ordena la estructura del cuento",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "¿Quién narra la historia?",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Relaciona: tipo de texto y características",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Sopa de letras: elementos del texto narrativo",
+          "tipo": "Sopa de letras"
+        }
+      ],
+      "ebc_factor": "Literatura",
+      "ebc_estandar": "Comprendo textos literarios para propiciar el desarrollo de mi capacidad creativa y lúdica.",
+      "subprocesos_ebc": [
+        "Leo fábulas, cuentos, poemas, relatos mitológicos, leyendas, o cualquier otro texto literario.",
+        "Elaboro y socializo hipótesis predictivas acerca del contenido de los textos.",
+        "Identifico maneras de cómo se formula el inicio y el final de algunas narraciones.",
+        "Diferencio poemas, cuentos y obras de teatro.",
+        "Recreo relatos y cuentos cambiando personajes, ambientes, hechos y épocas.",
+        "Participo en la elaboración de guiones para teatro de títeres."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Creación de textos literarios: escribo mis propias historias",
+      "dba_asociados": [
+        4
+      ],
+      "dba_relacionados": [
+        3,
+        7,
+        8
+      ],
+      "enfoque_men": "Producción textual",
+      "nivel_cognitivo": {
+        "nivel": "Crear",
+        "verbo_bloom": [
+          "escribe",
+          "crea",
+          "construye",
+          "elabora",
+          "lee"
+        ],
+        "nivel_numero": 6
+      },
+      "temas": [
+        "Escritura creativa",
+        "Plan textual",
+        "Características del texto literario"
+      ],
+      "subtemas": [
+        "¿Cómo planear una historia antes de escribirla?",
+        "Creación de personajes: cómo son, dónde viven, qué problemas tienen",
+        "El conflicto y la resolución en una historia",
+        "Narrar un hecho vs. expresar sentimientos",
+        "Lectura en voz alta con cambios de entonación",
+        "Revisión y mejora del propio texto"
+      ],
+      "palabras_clave": [
+        "escritura creativa",
+        "plan textual",
+        "personaje",
+        "conflicto",
+        "resolución",
+        "narración",
+        "texto literario",
+        "coherencia",
+        "cuento",
+        "entonación",
+        "propósito comunicativo",
+        "producción escrita",
+        "borrador"
+      ],
+      "dba_enunciado": "Escribe textos literarios coherentes, atendiendo a las características textuales e integrando sus saberes e intereses.",
+      "evidencias_aprendizaje": [
+        "Comprende las características de un texto, cuyo propósito es narrar un hecho o expresar ideas, sentimientos o emociones.",
+        "Establece en los textos literarios una relación de correspondencia entre los personajes, las acciones que realizan y los contextos en que se encuentran.",
+        "Crea personajes para sus historias y describe cómo son, dónde viven, qué problemas deben enfrentar y cómo los solucionan.",
+        "Construye planes textuales para sus escribir textos literarios.",
+        "Lee en voz alta los textos que escribe, atendiendo a los cambios de entonación de acuerdo con lo comunicado por los personajes."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que un texto literario sirve para narrar o expresar sentimientos, con apoyo.",
+          "basico": "Construye un plan textual sencillo con personajes, conflicto y resolución básicos.",
+          "alto": "Escribe un texto literario coherente siguiendo un plan textual, con personajes y contexto definidos.",
+          "superior": "Escribe textos literarios con creatividad, coherencia, personajes complejos y estructura bien desarrollada; los lee en voz alta con expresividad."
+        },
+        "procedimental": {
+          "bajo": "Completa un plan textual dado con ayuda del docente.",
+          "basico": "Elabora un plan textual propio y escribe un borrador de cuento.",
+          "alto": "Escribe y revisa un texto literario siguiendo su plan, con atención a la coherencia y la expresividad oral.",
+          "superior": "Produce, revisa y comparte textos literarios propios con riqueza creativa y recursos expresivos."
+        },
+        "actitudinal": {
+          "bajo": "Realiza las actividades de escritura solo cuando se le exige.",
+          "basico": "Participa con disposición en los ejercicios de escritura creativa.",
+          "alto": "Muestra entusiasmo por crear sus propias historias y compartirlas.",
+          "superior": "Valora la escritura como medio de expresión personal y motiva a sus compañeros a escribir."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Arma el plan textual de un cuento",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "¿Cómo es el personaje?",
+          "tipo": "Llenar espacios"
+        },
+        {
+          "descripcion": "Elige el conflicto adecuado para la historia",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Escribe el final de la historia",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Emparejar: personaje con su característica",
+          "tipo": "Emparejar"
+        }
+      ],
+      "ebc_factor": "Producción textual",
+      "ebc_estandar": "Produzco textos escritos que responden a diversas necesidades comunicativas.",
+      "subprocesos_ebc": [
+        "Determino el tema, el posible lector de mi texto y el propósito comunicativo que me lleva a producirlo.",
+        "Elijo el tipo de texto que requiere mi propósito comunicativo.",
+        "Elaboro un plan para organizar mis ideas.",
+        "Desarrollo un plan textual para la producción de un texto descriptivo.",
+        "Reviso, socializo y corrijo mis escritos, teniendo en cuenta las propuestas de mis compañeros y profesor, y atendiendo algunos aspectos gramaticales (concordancia, tiempos verbales, pronombres) y ortográficos (acentuación, mayúsculas, signos de puntuación) de la lengua castellana."
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "¿Quién habla y para qué? El emisor, el receptor y los propósitos comunicativos",
+      "dba_asociados": [
+        5
+      ],
+      "dba_relacionados": [
+        6,
+        7
+      ],
+      "enfoque_men": "Ética de la comunicación",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": [
+          "identifica",
+          "infiere",
+          "asocia",
+          "organiza",
+          "deduce"
+        ],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Situación comunicativa",
+        "Emisor y receptor",
+        "Propósito comunicativo",
+        "Comprensión oral"
+      ],
+      "subtemas": [
+        "¿Quién habla, a quién le habla y para qué?",
+        "La intención del que comunica",
+        "Inferir el significado por el contexto",
+        "Organizar ideas de un texto oral",
+        "Las características de la voz: edad, actitud, sexo",
+        "Elementos de la comunicación: código, canal, mensaje"
+      ],
+      "palabras_clave": [
+        "emisor",
+        "receptor",
+        "propósito comunicativo",
+        "intención",
+        "contexto",
+        "inferencia",
+        "texto oral",
+        "interlocutor",
+        "enunciado",
+        "comunicación",
+        "situación comunicativa",
+        "código",
+        "canal"
+      ],
+      "dba_enunciado": "Identifica el papel del emisor y el receptor y sus propósitos comunicativos en una situación específica.",
+      "evidencias_aprendizaje": [
+        "Asocia la intención comunicativa con el contexto en el que se producen los enunciados y el rol que desempeñan los interlocutores.",
+        "Infiere el significado de palabras desconocidas, según el contexto donde se encuentren.",
+        "Organiza secuencialmente las ideas que comprende de un texto oral.",
+        "Deduce información de un emisor (como la edad, el sexo o la actitud) a partir de las características de su voz."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Distingue quién habla y quién escucha en una situación comunicativa concreta.",
+          "basico": "Identifica la intención del emisor y el rol del receptor en un texto oral o escrito.",
+          "alto": "Asocia la intención comunicativa con el contexto e infiere información del emisor a partir de su voz o lenguaje.",
+          "superior": "Analiza con detalle una situación comunicativa, identificando propósitos, roles, contexto e implicaciones del mensaje."
+        },
+        "procedimental": {
+          "bajo": "Escucha textos orales y señala quién habla con ayuda.",
+          "basico": "Organiza secuencialmente las ideas de un texto oral escuchado.",
+          "alto": "Infiere autónomamente el significado de palabras desconocidas usando el contexto.",
+          "superior": "Deduce información implícita del emisor a partir de características de su voz y las argumenta."
+        },
+        "actitudinal": {
+          "bajo": "Escucha con dificultad textos orales sin mostrar interés.",
+          "basico": "Presta atención a textos orales y muestra disposición para identificar propósitos.",
+          "alto": "Valora la escucha activa como habilidad para comprender mejor a los demás.",
+          "superior": "Reflexiona sobre la importancia de comunicarse con intenciones claras y responsables."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Cuál es el propósito del mensaje?",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Emisor y receptor: ¿quién es quién?",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Ordena las ideas del texto oral",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "¿Qué quiso decir con eso?",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Sopa de letras: elementos de la comunicación",
+          "tipo": "Sopa de letras"
+        }
+      ],
+      "ebc_factor": "Ética de la comunicación",
+      "ebc_estandar": "Identifico los principales elementos y roles de la comunicación para enriquecer procesos comunicativos auténticos.",
+      "subprocesos_ebc": [
+        "Reconozco los principales elementos constitutivos de un proceso de comunicación: interlocutores, código, canal, texto y situación comunicativa.",
+        "Establezco semejanzas y diferencias entre quien produce el texto y quien lo interpreta.",
+        "Identifico en situaciones comunicativas reales los roles de quien produce y de quien interpreta un texto.",
+        "Identifico la intención de quien produce un texto."
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Leo con profundidad: comprensión inferencial y crítica de textos",
+      "dba_asociados": [
+        6
+      ],
+      "dba_relacionados": [
+        3,
+        5
+      ],
+      "enfoque_men": "Comprensión e interpretación textual",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": [
+          "interpreta",
+          "ubica",
+          "utiliza",
+          "discrimina",
+          "reconoce"
+        ],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Comprensión lectora",
+        "Lectura inferencial",
+        "Lectura crítica",
+        "Tipos de texto"
+      ],
+      "subtemas": [
+        "Leer más allá de lo que dice el texto",
+        "¿Cuál es el tema principal y cuáles los secundarios?",
+        "El contexto comunicativo de un texto",
+        "Diferencias entre tipos de texto: cuento, noticia, instructivo",
+        "Inferir usando el contexto",
+        "Preguntas literales, inferenciales y críticas"
+      ],
+      "palabras_clave": [
+        "comprensión lectora",
+        "lectura inferencial",
+        "lectura crítica",
+        "tema principal",
+        "contexto",
+        "inferencia",
+        "estructura del texto",
+        "tipos de texto",
+        "idea global",
+        "situación comunicativa",
+        "información implícita",
+        "análisis de texto"
+      ],
+      "dba_enunciado": "Interpreta el contenido y la estructura del texto, respondiendo preguntas de orden inferencial y crítico.",
+      "evidencias_aprendizaje": [
+        "Ubica el contenido de un texto en relación con la situación comunicativa en que se presenta.",
+        "Utiliza el contexto para inferir información.",
+        "Discrimina los temas principales de un texto de los menos relevantes.",
+        "Reconoce las diferencias en las estructuras de diferentes tipos de escrito."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Responde preguntas literales sobre textos leídos.",
+          "basico": "Identifica el tema principal de un texto y lo diferencia de la información secundaria.",
+          "alto": "Responde preguntas inferenciales usando pistas del texto y el contexto.",
+          "superior": "Formula y responde preguntas críticas sobre textos de distintos tipos, argumentando sus interpretaciones."
+        },
+        "procedimental": {
+          "bajo": "Localiza información explícita en un texto con ayuda.",
+          "basico": "Distingue el tema central del texto de los detalles con orientación del docente.",
+          "alto": "Infiere información implícita del texto y reconoce diferencias entre estructuras textuales.",
+          "superior": "Lee de forma autónoma textos variados, elaborando interpretaciones inferenciales y críticas argumentadas."
+        },
+        "actitudinal": {
+          "bajo": "Lee textos por obligación sin reflexionar sobre su contenido.",
+          "basico": "Muestra interés por entender el significado profundo de los textos.",
+          "alto": "Valora la lectura inferencial y crítica como herramienta de aprendizaje.",
+          "superior": "Asume una postura crítica frente a los textos y la comparte con argumentos en clase."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Literal, inferencial o crítica?",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "¿Cuál es el tema principal?",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Verdadero o falso según el texto",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Completa la inferencia",
+          "tipo": "Llenar espacios"
+        },
+        {
+          "descripcion": "¿Qué tipo de texto es?",
+          "tipo": "Emparejar"
+        }
+      ],
+      "ebc_factor": "Comprensión e interpretación textual",
+      "ebc_estandar": "Comprendo textos que tienen diferentes formatos y finalidades.",
+      "subprocesos_ebc": [
+        "Leo diferentes clases de textos: manuales, tarjetas, afiches, cartas, periódicos, etc.",
+        "Reconozco la función social de los diversos tipos de textos que leo.",
+        "Identifico la silueta o el formato de los textos que leo.",
+        "Elaboro hipótesis acerca del sentido global de los textos, antes y durante el proceso de lectura; para el efecto, me apoyo en mis conocimientos previos, las imágenes y los títulos.",
+        "Identifico el propósito comunicativo y la idea global de un texto.",
+        "Elaboro resúmenes y esquemas que dan cuenta del sentido de un texto.",
+        "Comparo textos de acuerdo con sus formatos, temáticas y funciones."
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Hablo para comunicar: la expresión oral con propósito",
+      "dba_asociados": [
+        7
+      ],
+      "dba_relacionados": [
+        5,
+        8
+      ],
+      "enfoque_men": "Producción textual",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": [
+          "produce",
+          "ajusta",
+          "elige",
+          "reconoce",
+          "realiza",
+          "elabora"
+        ],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Comunicación oral",
+        "Propósitos del lenguaje oral",
+        "Recursos de expresión oral"
+      ],
+      "subtemas": [
+        "Narrar, describir, informar y argumentar oralmente",
+        "Cómo usar bien el volumen y el tono de la voz",
+        "Gestos y movimientos corporales al hablar",
+        "El diálogo: turnos y reglas de conversación",
+        "Juegos de palabras y trabalenguas",
+        "Planear lo que voy a decir"
+      ],
+      "palabras_clave": [
+        "expresión oral",
+        "comunicación oral",
+        "tono de voz",
+        "volumen",
+        "gesto",
+        "diálogo",
+        "propósito comunicativo",
+        "narrar",
+        "describir",
+        "argumentar",
+        "modulación",
+        "juego de palabras",
+        "trabalenguas",
+        "situación comunicativa"
+      ],
+      "dba_enunciado": "Produce textos orales breves de diferente tipo ajustando el volumen, el tono de la voz, los movimientos corporales y los gestos, al tema y a la situación comunicativa.",
+      "evidencias_aprendizaje": [
+        "Participa en comunicaciones orales atendiendo a diferentes propósitos comunicativos: narrar, argumentar, exponer, describir e informar.",
+        "Elige las expresiones más pertinentes para dar claridad a sus intervenciones.",
+        "Reconoce los roles de quien produce y de quien interpreta un texto en una situación comunicativa específica.",
+        "Realiza cambios en la modulación de la voz para acompañar el sentido de lo que comunica. Elabora juegos de palabras atendiendo a la pronunciación de la sílaba inicial o final de las palabras."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra los propósitos básicos del lenguaje oral (narrar, describir) con ayuda.",
+          "basico": "Reconoce la diferencia entre narrar, describir, argumentar e informar oralmente.",
+          "alto": "Identifica y usa recursos de expresión oral (tono, volumen, gestos) según el propósito comunicativo.",
+          "superior": "Planea y ejecuta una intervención oral adaptando todos los recursos expresivos al tema y la audiencia."
+        },
+        "procedimental": {
+          "bajo": "Habla en clase solo cuando se le pregunta directamente.",
+          "basico": "Participa en diálogos cortos usando un tono de voz adecuado.",
+          "alto": "Produce textos orales breves (narración, descripción) ajustando voz, gestos y movimientos corporales.",
+          "superior": "Elabora y presenta intervenciones orales variadas con fluidez, expresividad y juegos de palabras creativos."
+        },
+        "actitudinal": {
+          "bajo": "Muestra timidez o rechazo ante las actividades de expresión oral.",
+          "basico": "Participa con disposición en actividades orales del aula.",
+          "alto": "Valora la expresión oral como medio de comunicación efectiva y la practica con confianza.",
+          "superior": "Promueve el respeto y la escucha activa durante las intervenciones orales en el aula."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Qué propósito tiene este texto oral?",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Ruleta de propósitos comunicativos",
+          "tipo": "Ruleta de palabras"
+        },
+        {
+          "descripcion": "Ordena las partes del diálogo",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "¿Cuál expresión es más adecuada?",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Verdadero o falso: recursos expresivos orales",
+          "tipo": "Verdadero/Falso"
+        }
+      ],
+      "ebc_factor": "Producción textual",
+      "ebc_estandar": "Produzco textos orales que responden a distintos propósitos comunicativos.",
+      "subprocesos_ebc": [
+        "Utilizo, de acuerdo con el contexto, un vocabulario adecuado para expresar mis ideas.",
+        "Expreso en forma clara mis ideas y sentimientos, según lo amerite la situación comunicativa.",
+        "Utilizo la entonación y los matices afectivos de voz para alcanzar mi propósito en diferentes situaciones comunicativas.",
+        "Tengo en cuenta aspectos semánticos y morfosintácticos, de acuerdo con la situación comunicativa en la que intervengo.",
+        "Describo personas, objetos, lugares, etc., en forma detallada.",
+        "Describo eventos de manera secuencial.",
+        "Expongo y defiendo mis ideas en función de la situación comunicativa."
+      ]
+    },
+    {
+      "unidad_id": 7,
+      "unidad_titulo": "Escribo correctamente: gramática, ortografía y tipos de texto",
+      "dba_asociados": [
+        8
+      ],
+      "dba_relacionados": [
+        4,
+        7
+      ],
+      "enfoque_men": "Producción textual",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": [
+          "produce",
+          "escribe",
+          "selecciona",
+          "diseña",
+          "segmenta",
+          "reconoce"
+        ],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Producción escrita",
+        "Ortografía",
+        "Gramática básica",
+        "Tipos de texto escritos"
+      ],
+      "subtemas": [
+        "Cómo escribir cartas, afiches, pancartas y plegables",
+        "La concordancia verbal en mis escritos",
+        "Diptongos, triptongos e hiatos",
+        "Grafemas: C, S, Z, K, Q — ¿cuándo usar cada uno?",
+        "Uso de mayúsculas y signos de puntuación",
+        "Planear mi texto: ¿para quién escribo y por qué?",
+        "El destinatario y el tema: cómo elegir las palabras"
+      ],
+      "palabras_clave": [
+        "ortografía",
+        "gramática",
+        "concordancia verbal",
+        "diptongo",
+        "triptongo",
+        "hiato",
+        "mayúsculas",
+        "signos de puntuación",
+        "carta",
+        "afiche",
+        "pancarta",
+        "plegable",
+        "producción escrita",
+        "plan de escritura",
+        "destinatario"
+      ],
+      "dba_enunciado": "Produce textos verbales y no verbales en los que tiene en cuenta aspectos gramaticales y ortográficos.",
+      "evidencias_aprendizaje": [
+        "Escribe diversos tipos de texto (como cartas, afiches, pancartas, plegables, cuentos, entre otros) para expresar sus opiniones frente a una problemática de su entorno local.",
+        "Selecciona las palabras o expresiones más indicadas para escribir sus textos, teniendo en cuenta a quién van dirigidos y el tema a desarrollar.",
+        "Diseña un plan para comunicarse con otros teniendo en cuenta aspectos como la concordancia verbal y la ortografía.",
+        "Segmenta palabras escritas que contienen hiatos, diptongos y triptongos, apoyándose en los golpes de voz.",
+        "Reconoce que algunos sonidos se corresponden con diferentes grafemas (C, S, Z o K, Q) y lo tiene en cuenta dentro de sus elaboraciones escritas."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que existen diferentes tipos de texto escrito (carta, afiche, cuento).",
+          "basico": "Identifica diptongos y triptongos en palabras y aplica reglas ortográficas básicas en sus escritos.",
+          "alto": "Produce textos escritos de distintos tipos con atención a la concordancia, la ortografía y el destinatario.",
+          "superior": "Diseña y escribe textos variados con dominio ortográfico y gramatical, adaptados al propósito y al destinatario."
+        },
+        "procedimental": {
+          "bajo": "Copia textos con ayuda del docente sin revisar la ortografía.",
+          "basico": "Escribe textos cortos aplicando reglas ortográficas básicas (mayúsculas, puntuación) con orientación.",
+          "alto": "Produce textos escritos variados (cartas, afiches) con plan previo, revisión ortográfica y atención al destinatario.",
+          "superior": "Elabora textos creativos y funcionales con autonomía, corrigiéndolos con base en criterios gramaticales y ortográficos."
+        },
+        "actitudinal": {
+          "bajo": "Evita revisar sus escritos y no muestra interés por la ortografía.",
+          "basico": "Muestra disposición para mejorar su escritura con retroalimentación.",
+          "alto": "Valora la ortografía y la gramática como herramientas para comunicar mejor sus ideas.",
+          "superior": "Asume la corrección de sus escritos como hábito y apoya a sus compañeros en el proceso."
+        }
+      },
+      "actividades_sugeridas": [
+        {
+          "descripcion": "¿Diptongo, triptongo o hiato?",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Llena el espacio: concordancia verbal",
+          "tipo": "Llenar espacios"
+        },
+        {
+          "descripcion": "¿Qué grafema va aquí? C, S, Z, K o Q",
+          "tipo": "Llenar espacios"
+        },
+        {
+          "descripcion": "Sopa de letras: tipos de texto escrito",
+          "tipo": "Sopa de letras"
+        },
+        {
+          "descripcion": "¿Qué tipo de texto es más adecuado para esta situación?",
+          "tipo": "Quiz opción múltiple"
+        },
+        {
+          "descripcion": "Verdadero o falso: reglas de ortografía",
+          "tipo": "Verdadero/Falso"
+        }
+      ],
+      "ebc_factor": "Producción textual",
+      "ebc_estandar": "Produzco textos escritos que responden a diversas necesidades comunicativas.",
+      "subprocesos_ebc": [
+        "Determino el tema, el posible lector de mi texto y el propósito comunicativo que me lleva a producirlo.",
+        "Elijo el tipo de texto que requiere mi propósito comunicativo.",
+        "Busco información en distintas fuentes: personas, medios de comunicación y libros, entre otras.",
+        "Elaboro un plan para organizar mis ideas.",
+        "Reviso, socializo y corrijo mis escritos, teniendo en cuenta las propuestas de mis compañeros y profesor, y atendiendo algunos aspectos gramaticales (concordancia, tiempos verbales, pronombres) y ortográficos (acentuación, mayúsculas, signos de puntuación) de la lengua castellana."
+      ]
+    }
+  ]
+}

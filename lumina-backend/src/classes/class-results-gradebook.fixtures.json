@@ -1,0 +1,442 @@
+{
+  "_comment": "Fuente única de fixtures (Fase 0–2). El backend debe ser una copia byte-a-byte; scripts/check-fixtures-sync.mjs lo verifica. Claves de activityType = tipo real del slide.",
+  "requiredActivityTypes": [
+    "quiz_multiple",
+    "verdadero_falso",
+    "completar_blancos",
+    "arrastrar_soltar",
+    "emparejar",
+    "ordenar_pasos",
+    "video_interactivo",
+    "short_answer",
+    "encuesta_viva",
+    "nube_palabras",
+    "clasificar",
+    "puzzle_imagen",
+    "anagrama",
+    "puzzle_palabras",
+    "crucigrama",
+    "sopa_letras",
+    "globos",
+    "topo",
+    "abrir_caja",
+    "historia_ramificada",
+    "memoria",
+    "ahorcado",
+    "orden_rango",
+    "ruleta",
+    "torneo",
+    "escape_room"
+  ],
+  "notaCases": [
+    {
+      "case": "quiz_todas_correctas",
+      "activityType": "quiz_multiple",
+      "correctas": 5,
+      "total": 5,
+      "respondio": true,
+      "notaEsperada": 5.0
+    },
+    {
+      "case": "parcial_3_de_5",
+      "activityType": "completar_blancos",
+      "correctas": 3,
+      "total": 5,
+      "respondio": true,
+      "notaEsperada": 3.0
+    },
+    {
+      "case": "blancos_minimo_pedagogico",
+      "activityType": "completar_blancos",
+      "correctas": 0,
+      "total": 4,
+      "respondio": true,
+      "notaEsperada": 1.0
+    },
+    {
+      "case": "un_cuarto_redondeo",
+      "activityType": "emparejar",
+      "correctas": 1,
+      "total": 4,
+      "respondio": true,
+      "notaEsperada": 1.3
+    },
+    {
+      "case": "no_respondio",
+      "activityType": "quiz_multiple",
+      "correctas": 0,
+      "total": 5,
+      "respondio": false,
+      "notaEsperada": 0
+    },
+    {
+      "case": "division_por_cero",
+      "activityType": "quiz_multiple",
+      "correctas": 2,
+      "total": 0,
+      "respondio": true,
+      "notaEsperada": 0
+    }
+  ],
+  "promedioCases": [
+    {
+      "case": "fase1_torneo_no_afecta_promedio",
+      "slides": [
+        { "activityType": "quiz_multiple", "correctas": 5, "total": 5, "respondio": true },
+        { "activityType": "torneo", "respondio": true }
+      ],
+      "promedioEsperado": 5.0
+    },
+    {
+      "case": "fase4_clasificar_perfecto_ruleta_no_cuenta",
+      "slides": [
+        { "activityType": "clasificar", "correctas": 5, "total": 5, "respondio": true },
+        { "activityType": "ruleta", "respondio": true }
+      ],
+      "promedioEsperado": 5.0
+    }
+  ],
+  "evaluationCases": [
+    {
+      "case": "fase2_blancos_trim_y_mayusculas",
+      "activityType": "completar_blancos",
+      "definicion": {
+        "blancos": [
+          { "id": "b1", "respuesta": "Bogotá", "ignorarMayusculas": true }
+        ]
+      },
+      "respuesta": { "b1": "  bogotá  " },
+      "correctEsperado": true
+    },
+    {
+      "case": "fase2_video_sin_duplicados",
+      "activityType": "video_interactivo",
+      "_comment": "Clave real video_interactivo (no 'video'). Baseline 2026-08-20: el viewer evaluaba UN {questionIndex,answer}; el helper además deduplica por índice. detailsEsperados = índices únicos, no totalPreguntas.",
+      "definicion": {
+        "preguntas": [
+          { "id": "q0", "opciones": [{ "id": "a", "esCorrecta": true }, { "id": "b", "esCorrecta": false }] },
+          { "id": "q1", "opciones": [{ "id": "a", "esCorrecta": false }, { "id": "b", "esCorrecta": true }] },
+          { "id": "q2", "opciones": [{ "id": "a", "esCorrecta": true }] },
+          { "id": "q3", "opciones": [{ "id": "a", "esCorrecta": true }] }
+        ]
+      },
+      "respuesta": [
+        { "questionIndex": 0, "answer": "a" },
+        { "questionIndex": 1, "answer": "b" },
+        { "questionIndex": 0, "answer": "a" }
+      ],
+      "detailsEsperados": 2
+    },
+    {
+      "case": "fase2_respuesta_corta_no_pone_nota",
+      "activityType": "short_answer",
+      "definicion": {},
+      "respuesta": "cualquier texto",
+      "scoreEsperado": null
+    },
+    {
+      "case": "fase4_clasificar_3_de_4",
+      "activityType": "clasificar",
+      "definicion": {
+        "items": [
+          { "id": "i1", "texto": "Perro", "categoriaId": "animal" },
+          { "id": "i2", "texto": "Gato", "categoriaId": "animal" },
+          { "id": "i3", "texto": "Rosa", "categoriaId": "planta" },
+          { "id": "i4", "texto": "Mesa", "categoriaId": "objeto" }
+        ]
+      },
+      "respuesta": { "ubicaciones": { "i1": "animal", "i2": "animal", "i3": "planta", "i4": "animal" } },
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 3.8
+    },
+    {
+      "case": "fase4_puzzle_imagen_todas_piezas",
+      "activityType": "puzzle_imagen",
+      "definicion": { "configuracion": { "filas": 2, "columnas": 2 } },
+      "respuesta": { "slots": [0, 1, 2, 3] },
+      "correctEsperado": true,
+      "detailsEsperados": 4,
+      "scoreEsperado": 5.0
+    },
+    {
+      "case": "fase4_globos_puntos",
+      "activityType": "globos",
+      "definicion": { "preguntas": [{}, {}, {}, {}] },
+      "respuesta": { "puntosObtenidos": 2, "puntosMaximos": 4 },
+      "detailsEsperados": 4,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "fase4_abrir_caja_sin_criterio",
+      "activityType": "abrir_caja",
+      "definicion": { "cajas": [{ "id": "c1", "contenido": {} }] },
+      "respuesta": { "cajasAbiertas": ["c1"] },
+      "scoreEsperado": null
+    },
+    {
+      "case": "fase4_historia_sin_criterio",
+      "activityType": "historia_ramificada",
+      "definicion": { "nodos": [{ "id": "n1", "tipo": "narracion" }] },
+      "respuesta": { "historial": [{ "nodoId": "n1" }] },
+      "scoreEsperado": null
+    },
+    {
+      "case": "fase4_memoria_pares",
+      "activityType": "memoria",
+      "definicion": { "pares": [{ "id": "p1" }, { "id": "p2" }, { "id": "p3" }] },
+      "respuesta": { "paresEncontrados": ["p1", "p3"] },
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    }
+  ],
+  "expectedKinds": {
+    "quiz_multiple": "binary",
+    "verdadero_falso": "binary",
+    "completar_blancos": "partial",
+    "arrastrar_soltar": "partial",
+    "emparejar": "partial",
+    "ordenar_pasos": "partial",
+    "video_interactivo": "partial",
+    "short_answer": "manual",
+    "encuesta_viva": "participation",
+    "nube_palabras": "participation",
+    "clasificar": "partial",
+    "puzzle_imagen": "partial",
+    "anagrama": "partial",
+    "puzzle_palabras": "partial",
+    "crucigrama": "partial",
+    "sopa_letras": "partial",
+    "globos": "partial",
+    "topo": "partial",
+    "abrir_caja": "partial",
+    "historia_ramificada": "partial",
+    "memoria": "partial",
+    "ahorcado": "partial",
+    "orden_rango": "partial",
+    "ruleta": "exclude",
+    "torneo": "exclude",
+    "escape_room": "exclude"
+  },
+  "contractCases": [
+    {
+      "case": "contrato_quiz_multiple_perfecto",
+      "activityType": "quiz_multiple",
+      "definicion": {
+        "opciones": [
+          { "id": "a", "texto": "A", "esCorrecta": true },
+          { "id": "b", "texto": "B", "esCorrecta": false }
+        ]
+      },
+      "respuesta": "a"
+    },
+    {
+      "case": "contrato_verdadero_falso_perfecto",
+      "activityType": "verdadero_falso",
+      "definicion": { "respuestaCorrecta": true },
+      "respuesta": true
+    },
+    {
+      "case": "contrato_completar_blancos_perfecto",
+      "activityType": "completar_blancos",
+      "definicion": {
+        "blancos": [{ "id": "b1", "respuesta": "sol", "ignorarMayusculas": true }]
+      },
+      "respuesta": { "b1": "sol" }
+    },
+    {
+      "case": "contrato_arrastrar_soltar_perfecto",
+      "activityType": "arrastrar_soltar",
+      "definicion": {
+        "items": [{ "id": "i1", "texto": "A" }],
+        "zonas": [{ "id": "z1", "itemsCorrectos": ["i1"] }]
+      },
+      "respuesta": [{ "itemId": "i1", "zoneId": "z1" }]
+    },
+    {
+      "case": "contrato_emparejar_perfecto",
+      "activityType": "emparejar",
+      "definicion": {
+        "pares": [
+          {
+            "id": "p1",
+            "izquierda": { "texto": "A" },
+            "derecha": { "texto": "1" }
+          }
+        ]
+      },
+      "respuesta": [{ "leftId": "p1", "rightId": "p1" }]
+    },
+    {
+      "case": "contrato_ordenar_pasos_perfecto",
+      "activityType": "ordenar_pasos",
+      "definicion": {
+        "pasos": [
+          { "id": "s1", "contenido": "Uno", "ordenCorrecto": 1 },
+          { "id": "s2", "contenido": "Dos", "ordenCorrecto": 2 }
+        ]
+      },
+      "respuesta": ["s1", "s2"]
+    },
+    {
+      "case": "contrato_video_interactivo_perfecto",
+      "activityType": "video_interactivo",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q0",
+            "opciones": [
+              { "id": "a", "esCorrecta": true },
+              { "id": "b", "esCorrecta": false }
+            ]
+          }
+        ]
+      },
+      "respuesta": [{ "questionIndex": 0, "answer": "a" }]
+    },
+    {
+      "case": "contrato_short_answer_sin_nota",
+      "activityType": "short_answer",
+      "definicion": {},
+      "respuesta": "cualquier texto"
+    },
+    {
+      "case": "contrato_encuesta_viva_sin_nota",
+      "activityType": "encuesta_viva",
+      "definicion": {},
+      "respuesta": "sí"
+    },
+    {
+      "case": "contrato_nube_palabras_sin_nota",
+      "activityType": "nube_palabras",
+      "definicion": {},
+      "respuesta": "palabra"
+    },
+    {
+      "case": "contrato_clasificar_perfecto",
+      "activityType": "clasificar",
+      "definicion": {
+        "items": [
+          { "id": "i1", "texto": "Perro", "categoriaId": "animal" },
+          { "id": "i2", "texto": "Rosa", "categoriaId": "planta" }
+        ]
+      },
+      "respuesta": { "ubicaciones": { "i1": "animal", "i2": "planta" } }
+    },
+    {
+      "case": "contrato_puzzle_imagen_perfecto",
+      "activityType": "puzzle_imagen",
+      "definicion": { "configuracion": { "filas": 2, "columnas": 2 } },
+      "respuesta": { "slots": [0, 1, 2, 3] }
+    },
+    {
+      "case": "contrato_anagrama_perfecto",
+      "activityType": "anagrama",
+      "definicion": { "palabras": [{ "texto": "SOL" }] },
+      "respuesta": { "slotsPorPalabra": [["S", "O", "L"]] }
+    },
+    {
+      "case": "contrato_puzzle_palabras_perfecto",
+      "activityType": "puzzle_palabras",
+      "definicion": { "oraciones": [{ "texto": "hola mundo" }] },
+      "respuesta": { "tokensPorOracion": [["hola", "mundo"]] }
+    },
+    {
+      "case": "contrato_crucigrama_perfecto",
+      "activityType": "crucigrama",
+      "definicion": {
+        "palabras": [
+          {
+            "texto": "SOL",
+            "fila": 0,
+            "columna": 0,
+            "direccion": "horizontal"
+          }
+        ]
+      },
+      "respuesta": { "celdas": { "0-0": "S", "0-1": "O", "0-2": "L" } }
+    },
+    {
+      "case": "contrato_sopa_letras_perfecto",
+      "activityType": "sopa_letras",
+      "definicion": { "palabras": [{ "texto": "CASA" }] },
+      "respuesta": { "encontradas": ["CASA"] }
+    },
+    {
+      "case": "contrato_globos_perfecto",
+      "activityType": "globos",
+      "definicion": { "preguntas": [{}, {}] },
+      "respuesta": { "puntosObtenidos": 2, "puntosMaximos": 2 }
+    },
+    {
+      "case": "contrato_topo_perfecto",
+      "activityType": "topo",
+      "definicion": { "preguntas": [{}, {}] },
+      "respuesta": { "puntosObtenidos": 2, "puntosMaximos": 2 }
+    },
+    {
+      "case": "contrato_abrir_caja_perfecto",
+      "activityType": "abrir_caja",
+      "definicion": {
+        "cajas": [
+          { "id": "c1", "contenido": { "esCorrecta": true } },
+          { "id": "c2", "contenido": { "esCorrecta": false } }
+        ]
+      },
+      "respuesta": { "cajasAbiertas": ["c1"] }
+    },
+    {
+      "case": "contrato_historia_ramificada_perfecto",
+      "activityType": "historia_ramificada",
+      "definicion": {
+        "nodos": [
+          { "id": "n1", "tipo": "narracion" },
+          { "id": "n2", "tipo": "final_bueno" }
+        ]
+      },
+      "respuesta": { "historial": [{ "nodoId": "n2" }] }
+    },
+    {
+      "case": "contrato_memoria_perfecto",
+      "activityType": "memoria",
+      "definicion": { "pares": [{ "id": "p1" }, { "id": "p2" }] },
+      "respuesta": { "paresEncontrados": ["p1", "p2"] }
+    },
+    {
+      "case": "contrato_ahorcado_perfecto",
+      "activityType": "ahorcado",
+      "definicion": {
+        "configuracion": { "palabra": "SOL", "maxIntentos": 6 }
+      },
+      "respuesta": {
+        "ganado": true,
+        "letrasFalladas": [],
+        "letrasAdivinadas": ["S", "O", "L"]
+      }
+    },
+    {
+      "case": "contrato_orden_rango_perfecto",
+      "activityType": "orden_rango",
+      "definicion": { "ordenCorrecto": ["a", "b"] },
+      "respuesta": { "orden": ["a", "b"] }
+    },
+    {
+      "case": "contrato_ruleta_exclude",
+      "activityType": "ruleta",
+      "definicion": {},
+      "respuesta": { "resultado": "premio" }
+    },
+    {
+      "case": "contrato_torneo_exclude",
+      "activityType": "torneo",
+      "definicion": {},
+      "respuesta": { "finalNota": 5 }
+    },
+    {
+      "case": "contrato_escape_room_exclude",
+      "activityType": "escape_room",
+      "definicion": {},
+      "respuesta": { "completado": true }
+    }
+  ]
+}

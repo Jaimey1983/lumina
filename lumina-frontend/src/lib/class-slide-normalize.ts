@@ -1,5 +1,23 @@
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { ActivityBlock, Background, Block, Layout, Slide } from '@/types/slide.types';
+import type { Activity, ActivityBlock, Background, Block, Layout, Slide, SlideGuias } from '@/types/slide.types';
+import type { TransicionSlide } from '@/types/animation.types';
+import { parseSlideGuias } from '@/lib/canvas-guides';
+import { normalizarEmparejar } from '@/components/activities/emparejar/emparejar-config';
+import { normalizarAbrirCaja } from '@/components/activities/abrir-caja/abrir-caja-config';
+import { normalizarGlobos } from '@/components/activities/globos/globos-config';
+import { normalizarTopo } from '@/components/activities/topo/topo-config';
+import { normalizarAhorcado } from '@/components/activities/ahorcado/ahorcado-config';
+import { normalizePopupWidget } from '@/lib/popup-defaults';
+import { normalizeHotspotWidget } from '@/lib/hotspot-defaults';
+import { normalizeTooltipWidget } from '@/components/widgets/tooltip/tooltip-defaults';
+import { normalizeBotonWidget } from '@/components/widgets/boton/boton-defaults';
+import { normalizeContadorWidget } from '@/components/widgets/contador/contador-defaults';
+import { normalizeProgresoWidget } from '@/components/widgets/progreso/progreso-defaults';
+import { normalizeFlipCardsWidget } from '@/components/widgets/flip-cards/flip-cards-config';
+import { normalizeTabsWidget } from '@/components/widgets/tabs/tabs-config';
+import { normalizeCarouselWidget } from '@/components/widgets/carousel/carousel-config';
+import { normalizeClickRevealWidget } from '@/components/widgets/click-reveal/click-reveal-config';
+import { normalizeTimelineWidget } from '@/components/widgets/timeline/timeline-config';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -13,7 +31,15 @@ export const LAYOUT_FROM_KEY: Record<string, Layout> = {
     brecha: 16,
     relleno: 24,
   },
+  titulo_centrado_subtitulo: {
+    columnas: 1,
+    alineacionHorizontal: 'centro',
+    alineacionVertical: 'centro',
+    brecha: 12,
+    relleno: 24,
+  },
   titulo_y_contenido: { columnas: 1, brecha: 16, relleno: 24 },
+  titulo_texto_imagen: { columnas: 1, brecha: 16, relleno: 24 },
   dos_columnas: { columnas: 2, brecha: 20, relleno: 20 },
   imagen_derecha: { columnas: 2, brecha: 20, relleno: 20 },
   imagen_izquierda: { columnas: 2, brecha: 20, relleno: 20 },
@@ -41,6 +67,31 @@ function resolveDiseno(c: Record<string, unknown>): Layout | undefined {
   return LAYOUT_FROM_KEY[key] ?? LAYOUT_FROM_KEY[FALLBACK_LAYOUT_KEY];
 }
 
+const TRANSICION_TIPOS = [
+  'none',
+  'fade',
+  'slide-left',
+  'slide-right',
+  'slide-up',
+  'slide-down',
+  'zoom',
+  'flip',
+  'cube',
+] as const;
+
+function resolveTransicion(c: Record<string, unknown>): TransicionSlide | undefined {
+  const raw = c.transicion;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const tipo = o.tipo;
+  const duracion = o.duracion;
+  if (typeof tipo !== 'string' || typeof duracion !== 'number') return undefined;
+  if (!TRANSICION_TIPOS.includes(tipo as (typeof TRANSICION_TIPOS)[number])) {
+    return undefined;
+  }
+  return { tipo: tipo as TransicionSlide['tipo'], duracion };
+}
+
 function resolveFondo(c: Record<string, unknown>): Background | undefined {
   const f = c.fondo;
   if (f && typeof f === 'object' && !Array.isArray(f) && 'tipo' in f) {
@@ -49,10 +100,91 @@ function resolveFondo(c: Record<string, unknown>): Background | undefined {
   return DEFAULT_FONDO;
 }
 
+function normalizeActivity(act: Activity): Activity {
+  if (act.tipo === 'emparejar') {
+    return normalizarEmparejar(act);
+  }
+  if (act.tipo === 'abrir_caja') {
+    return normalizarAbrirCaja(act);
+  }
+  if (act.tipo === 'globos') {
+    return normalizarGlobos(act);
+  }
+  if (act.tipo === 'topo') {
+    return normalizarTopo(act);
+  }
+  if (act.tipo === 'ahorcado') {
+    return normalizarAhorcado(act);
+  }
+  return act;
+}
+
+/** Stubs del flyout “Próximamente”: cubren el lienzo (90%) y roban clics a widgets reales. */
+export function isUnimplementedInteractiveStub(block: { tipo?: unknown }): boolean {
+  return block.tipo === 'interactivo';
+}
+
+function withoutInteractiveStubs(bloques: Block[]): Block[] {
+  return bloques.filter((b) => !isUnimplementedInteractiveStub(b));
+}
+
+function normalizeBlock(block: Block): Block {
+  if (block.tipo === 'actividad') {
+    return { ...block, actividad: normalizeActivity(block.actividad) };
+  }
+  if (block.tipo === 'flip-cards') {
+    return normalizeFlipCardsWidget(block);
+  }
+  if (block.tipo === 'tabs') {
+    return normalizeTabsWidget(block);
+  }
+  if (block.tipo === 'carousel') {
+    return normalizeCarouselWidget(block);
+  }
+  if (block.tipo === 'click-reveal') {
+    return normalizeClickRevealWidget(block);
+  }
+  if (block.tipo === 'timeline') {
+    return normalizeTimelineWidget(block);
+  }
+  if (block.tipo === 'popup') {
+    return normalizePopupWidget(block);
+  }
+  if (block.tipo === 'hotspot') {
+    return normalizeHotspotWidget(block);
+  }
+  if (block.tipo === 'tooltip') {
+    return normalizeTooltipWidget(block);
+  }
+  if (block.tipo === 'boton') {
+    return normalizeBotonWidget(block);
+  }
+  if (block.tipo === 'contador') {
+    return normalizeContadorWidget(block);
+  }
+  if (block.tipo === 'progreso') {
+    return normalizeProgresoWidget(block);
+  }
+  if (block.tipo === 'columnas') {
+    return {
+      ...block,
+      columnas: block.columnas.map((col) => withoutInteractiveStubs(col).map(normalizeBlock)),
+    };
+  }
+  return block;
+}
+
+function normalizeBlocks(bloques: Block[]): Block[] {
+  return withoutInteractiveStubs(bloques).map(normalizeBlock);
+}
+
 /** Convierte el slide tal como viene del API en el tipo `Slide` que usa `SlideRenderer`. */
 export function classSlideToRendererSlide(api: ApiSlide): Slide {
   const c = getSlideContentRecord(api);
-  const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+  const rawBloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+  const bloques = normalizeBlocks(rawBloques);
+  const temaId = typeof c.temaId === 'string' && c.temaId.length > 0 ? c.temaId : undefined;
+
   return {
     id: api.id,
     order: api.order,
@@ -60,7 +192,10 @@ export function classSlideToRendererSlide(api: ApiSlide): Slide {
     title: api.title,
     bloques,
     fondo: resolveFondo(c),
+    temaId,
     diseno: resolveDiseno(c),
+    guias: parseSlideGuias(c.guias),
+    transicion: resolveTransicion(c),
     content: null,
   };
 }
@@ -73,13 +208,30 @@ export function mergeSlideContent(
   return { ...base, ...patch };
 }
 
+/** Une el estado ya normalizado del renderer (`Slide`) con un parche (p. ej. antes de PATCH). */
+export function mergeRendererSlideState(
+  slide: { bloques?: Block[]; fondo?: Background; diseno?: Layout; guias?: SlideGuias },
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    ...(Array.isArray(slide.bloques) ? { bloques: slide.bloques } : {}),
+    ...(slide.fondo ? { fondo: slide.fondo } : {}),
+    ...(slide.diseno ? { diseno: slide.diseno } : {}),
+    ...(slide.guias ? { guias: slide.guias } : {}),
+    ...patch,
+  };
+}
+
 export function appendBlockToSlideContent(
   api: ApiSlide | null,
   block: Block,
 ): Record<string, unknown> {
   const c = getSlideContentRecord(api);
   const prev = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
-  return mergeSlideContent(api, { bloques: [...prev, block] });
+  if (isUnimplementedInteractiveStub(block)) {
+    return mergeSlideContent(api, { bloques: withoutInteractiveStubs(prev) });
+  }
+  return mergeSlideContent(api, { bloques: [...withoutInteractiveStubs(prev), block] });
 }
 
 /** Una diapositiva de actividad solo contiene ese bloque (sin texto/imagen mezclado). */
@@ -87,55 +239,37 @@ export function replaceSlideContentWithSingleActivity(
   api: ApiSlide | null,
   activityBlock: Block,
 ): Record<string, unknown> {
-  let clean = activityBlock;
-  if (activityBlock.tipo === 'actividad') {
-    const ab = activityBlock as ActivityBlock;
-    if (ab.marco != null) {
-      const { marco: _m, ...rest } = ab;
-      clean = rest as Block;
-    }
-  }
   return mergeSlideContent(api, {
-    bloques: [clean],
+    bloques: [activityBlock],
     layout: 'titulo_centrado',
     diseno: LAYOUT_FROM_KEY.titulo_centrado,
   });
 }
 
-function stripMarcoDeep(block: Block): Block {
-  if (block.tipo === 'actividad') {
-    const ab = block as ActivityBlock;
-    if (ab.marco == null) return block;
-    const { marco: _m, ...rest } = ab;
-    return rest as Block;
-  }
-  if (block.tipo === 'columnas') {
-    return {
-      ...block,
-      columnas: block.columnas.map((col) => col.map(stripMarcoDeep)),
-    };
-  }
-  return block;
-}
-
 /**
- * Antes de PATCH: quita `marco` obsoleto y, si hay actividad de primer nivel,
- * deja solo esos bloques (como en el renderer) y fija layout centrado.
+ * Antes de PATCH: quita stubs `interactivo`, hidrata widgets Captivate
+ * (mismos `normalize*` que al leer) y, si hay actividad de primer nivel,
+ * deja solo esos bloques y fija layout centrado.
  */
 export function sanitizeSlideContentForPersistence(content: unknown): Record<string, unknown> | null {
   if (content === null || content === undefined) return null;
   if (typeof content !== 'object' || Array.isArray(content)) return null;
   const c = { ...(content as Record<string, unknown>) };
-  const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
-  if (bloques.length === 0) return c;
+  const bloques = withoutInteractiveStubs(
+    (Array.isArray(c.bloques) ? c.bloques : []) as Block[],
+  );
+  if (bloques.length === 0) {
+    c.bloques = bloques;
+    return c;
+  }
 
   const hasTopLevelActivity = bloques.some((b) => b.tipo === 'actividad');
   if (hasTopLevelActivity) {
-    c.bloques = bloques.filter((b) => b.tipo === 'actividad').map(stripMarcoDeep);
+    c.bloques = normalizeBlocks(bloques.filter((b) => b.tipo === 'actividad'));
     c.layout = 'titulo_centrado';
     c.diseno = LAYOUT_FROM_KEY.titulo_centrado;
   } else {
-    c.bloques = bloques.map(stripMarcoDeep);
+    c.bloques = normalizeBlocks(bloques);
   }
   return c;
 }
@@ -149,6 +283,26 @@ export function buildContentDocumentForNewActivitySlide(activityBlock: Block): R
     fondo: { tipo: 'color', valor: '#FFFFFF' },
     ...core,
   };
+}
+
+/** Obtiene un bloque por la misma ruta que `updateBlockAtPath`. */
+export function getBlockAtPath(bloques: Block[], path: string): Block | null {
+  const parts = path.split('-').map((x) => parseInt(x, 10));
+  if (parts.some((n) => Number.isNaN(n))) return null;
+
+  function go(arr: Block[], depth: number): Block | null {
+    const i = parts[depth]!;
+    if (i < 0 || i >= arr.length) return null;
+    if (depth === parts.length - 1) return arr[i]!;
+
+    const block = arr[i];
+    if (block.tipo !== 'columnas') return null;
+    const colIdx = parts[depth + 1];
+    if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return null;
+    return go(block.columnas[colIdx]!, depth + 2);
+  }
+
+  return go(bloques, 0);
 }
 
 /** Actualiza un bloque por ruta tipo `"2"` o `"5-0-1"` (columnas anidadas). */
@@ -174,7 +328,7 @@ export function updateBlockAtPath(
     const colIdx = parts[depth + 1];
     if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return arr;
 
-    const newColumnas = block.columnas.map((col, cj) => {
+    const newColumnas = block.columnas.map((col: Block[], cj: number) => {
       if (cj !== colIdx) return col;
       return go(col, depth + 2);
     });
@@ -204,7 +358,7 @@ export function removeBlockAtPath(bloques: Block[], path: string): Block[] {
     const colIdx = parts[depth + 1];
     if (colIdx === undefined || colIdx < 0 || colIdx >= block.columnas.length) return arr;
 
-    const newColumnas = block.columnas.map((col, cj) => {
+    const newColumnas = block.columnas.map((col: Block[], cj: number) => {
       if (cj !== colIdx) return col;
       return go(col, depth + 2);
     });
@@ -213,12 +367,4 @@ export function removeBlockAtPath(bloques: Block[], path: string): Block[] {
   }
 
   return go(bloques, 0);
-}
-
-export function applyLayoutPreset(
-  api: ApiSlide | null,
-  layoutKey: string,
-): Record<string, unknown> {
-  const key = layoutKey in LAYOUT_FROM_KEY ? layoutKey : FALLBACK_LAYOUT_KEY;
-  return mergeSlideContent(api, { layout: key, diseno: LAYOUT_FROM_KEY[key] });
 }

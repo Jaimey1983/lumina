@@ -1,0 +1,745 @@
+.tlRoot {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.tlBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tlStage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tlLine {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+  height: var(--tl-grosor-linea, 3px);
+  background-color: var(--tl-color-linea, #2563EB);
+  z-index: 0;
+}
+
+.tlNodesRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: stretch;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  z-index: 2;
+  padding: clamp(0.25rem, 0.75%, 0.625rem) clamp(0.75rem, 3%, 1.25rem);
+  box-sizing: border-box;
+}
+
+.tlNodeItem {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  outline: none;
+}
+
+.tlCardTop,
+.tlCardBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+.tlCardTop {
+  grid-row: 1;
+  align-self: stretch;
+  padding-bottom: 2px;
+}
+
+.tlCardBottom {
+  grid-row: 3;
+  align-self: stretch;
+  padding-top: 2px;
+}
+
+.tlCardHalfFilled {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tlCardTop.tlCardHalfFilled {
+  justify-content: flex-end;
+}
+
+.tlCardBottom.tlCardHalfFilled {
+  justify-content: flex-start;
+}
+
+.tlRegionStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-height: 0;
+  flex: 0 1 auto;
+  overflow: visible;
+}
+
+.tlRegionStackTop {
+  justify-content: flex-end;
+}
+
+.tlRegionStackBottom {
+  justify-content: flex-start;
+}
+
+/* Hueco acotado entre tarjeta y eje; el espacio libre del 1fr queda hacia arriba/abajo del slide. */
+.tlRegionGap {
+  flex: 0 0 var(--tl-card-line-gap, 22px);
+  height: var(--tl-card-line-gap, 22px);
+  min-height: var(--tl-connector-min, 6px);
+  max-height: var(--tl-card-line-gap, 22px);
+  width: 100%;
+  pointer-events: none;
+}
+
+.tlConnectorFlex {
+  flex: 0 0 auto;
+  width: var(--tl-grosor-conector, var(--tl-grosor-linea, 2px));
+  min-height: var(--tl-connector-min, 6px);
+  max-height: var(--tl-connector-max, 32px);
+  background-color: var(--tl-color-conector, var(--tl-color-linea, #2563eb));
+  align-self: center;
+  border-radius: 1px;
+}
+
+.tlCardSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Padding hacia el eje: abajo en nodos superiores, arriba en inferiores. */
+.tlRegionStackTop .tlCardSlot {
+  padding-bottom: var(--tl-card-pad-to-line, 14px);
+}
+
+.tlRegionStackBottom .tlCardSlot {
+  padding-top: var(--tl-card-pad-to-line, 14px);
+}
+
+.tlNodeDotWrap {
+  grid-row: 2;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 4;
+  align-self: center;
+}
+
+.tlNodeHalo {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--tl-node-accent, var(--tl-color-nodo, #2563eb));
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.tlNodeDot {
+  position: relative;
+  width: calc(var(--tl-radio-nodo, 10px) * 2);
+  height: calc(var(--tl-radio-nodo, 10px) * 2);
+  background-color: var(--tl-node-accent, var(--tl-color-nodo, #2563EB));
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tlNodeDotImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tlNodeActive .tlNodeHalo,
+.tlNodeSelected .tlNodeHalo {
+  opacity: var(--tl-halo-opacity, 0.4);
+  transform: scale(1);
+}
+
+.tlNodeActive .tlNodeDot,
+.tlNodeSelected .tlNodeDot {
+  transform: scale(1.08);
+}
+
+.tlStage:not([data-halo='true']) .tlNodeHalo {
+  display: none;
+}
+
+.tlStage:not([data-halo='true']) .tlNodeActive .tlNodeDot,
+.tlStage:not([data-halo='true']) .tlNodeSelected .tlNodeDot {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tl-node-accent, var(--tl-color-nodo, #2563eb)) 35%, transparent);
+  transform: scale(1.1);
+}
+
+.tlVariantSegmentada .tlConnectorFlex,
+.tlVariantCorporate .tlConnectorFlex,
+.tlVariantInfografica .tlConnectorFlex {
+  background-color: var(--tl-node-accent, var(--tl-color-conector, #94a3b8));
+}
+
+.tlCard {
+  background-color: var(--tl-color-card-fondo, #ffffff);
+  border: 1px solid var(--tl-color-card-borde, #e2e8f0);
+  border-radius: var(--tl-radio-card, 8px);
+  padding: var(--tl-padding-card, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: min(200px, 100%);
+  min-width: 0;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  height: auto;
+  max-height: none;
+}
+
+.tlNodeSelected .tlCard {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.tlCardEtiqueta {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--tl-color-etiqueta, #2563EB);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlCardCuerpo {
+  font-size: 0.875rem;
+  color: var(--tl-color-cuerpo, #334155);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlCardTextInput {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+  field-sizing: content;
+}
+
+.tlCardTitulo {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--tl-node-accent, var(--tl-color-etiqueta, #2563eb));
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlCardImagen {
+  position: relative;
+  width: 100%;
+  min-height: 56px;
+  max-height: 100px;
+  aspect-ratio: 4 / 3;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  isolation: isolate;
+}
+
+/* —— Variantes —— */
+
+.tlVariantMinimal .tlCard {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  max-width: min(220px, 100%);
+}
+
+.tlVariantMinimal .tlCardEtiqueta {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--tl-node-accent, var(--tl-color-etiqueta, #0f172a));
+}
+
+.tlVariantMinimal .tlCardCuerpo {
+  font-size: 0.8125rem;
+  color: var(--tl-color-cuerpo, #64748b);
+}
+
+.tlVariantMinimal .tlNodeActive .tlCard,
+.tlVariantMinimal .tlNodeSelected .tlCard {
+  box-shadow: none;
+  border: none;
+}
+
+.tlVariantIconos .tlNodeDotWrap {
+  --tl-dot-scale: 1.35;
+}
+
+.tlVariantIconos .tlNodeDot {
+  width: calc(var(--tl-radio-nodo, 10px) * 2.7);
+  height: calc(var(--tl-radio-nodo, 10px) * 2.7);
+}
+
+.tlVariantIconos .tlNodeHalo {
+  inset: calc(var(--tl-radio-nodo, 10px) * -1.1);
+}
+
+.tlVariantIconos .tlCard {
+  border-radius: calc(var(--tl-radio-card, 8px) + 2px);
+}
+
+.tlVariantSegmentada .tlLine {
+  display: none;
+}
+
+.tlSegmentedBar {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 20px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: row;
+  height: var(--tl-segment-height, 36px);
+  border-radius: 4px;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tlSegment {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px;
+  min-width: 0;
+}
+
+.tlSegmentLabel {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tlVariantSegmentada .tlNodeDot {
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.tlContentBlock {
+  width: 100%;
+  max-width: min(200px, 100%);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  overflow: visible;
+  height: auto;
+}
+
+.tlNodeHalo {
+  inset: calc(var(--tl-radio-nodo, 10px) * -0.95);
+}
+
+/* —— Vertical (año y título en columnas verticales, cuerpo horizontal) —— */
+
+.tlVariantVertical .tlCardTop {
+  padding-bottom: 6px;
+}
+
+.tlVariantVertical .tlCardBottom {
+  padding-top: 6px;
+}
+
+.tlVariantVertical .tlCardSlot {
+  flex: 0 1 auto;
+  max-height: 100%;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.tlVerticalInner {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  max-width: min(320px, 100%);
+  min-width: 0;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.tlVerticalYearCol,
+.tlVerticalTitleCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.tlVerticalYearCol {
+  min-width: 1.5rem;
+  max-width: 2.25rem;
+}
+
+.tlVerticalTitleCol {
+  min-width: 1.75rem;
+  max-width: 2.75rem;
+}
+
+.tlVerticalLabelWrap {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.tlVerticalLabel {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  padding: 8px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-height: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+}
+
+.tlVerticalYear {
+  font-size: 0.8125rem;
+}
+
+.tlVerticalTitle {
+  font-size: 0.875rem;
+}
+
+.tlVerticalSep {
+  width: 2px;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 2rem;
+  background: #cbd5e1;
+}
+
+.tlVerticalBodyCol {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tlVerticalBody {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--tl-color-cuerpo, #64748b);
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlVerticalTextInput {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  width: 1.35em;
+  min-width: 1.35em;
+  max-width: 2.5em;
+  height: 100%;
+  min-height: 3rem;
+  max-height: 100%;
+  resize: none;
+  overflow: hidden;
+  text-align: center;
+  white-space: nowrap;
+  field-sizing: content;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+.tlVerticalBodyInput {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+  text-align: left;
+  field-sizing: content;
+  box-sizing: border-box;
+}
+
+/* —— Corporate —— */
+
+.tlVariantCorporate .tlNodeDot {
+  width: calc(var(--tl-radio-nodo, 10px) * 1.6);
+  height: calc(var(--tl-radio-nodo, 10px) * 1.6);
+  border: 2px solid #fff;
+}
+
+.tlCorporateBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: min(180px, 100%);
+  min-width: 0;
+  width: 100%;
+  overflow: visible;
+  height: auto;
+}
+
+.tlCorporateIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.tlCorporateText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.tlCorporateTitle {
+  font-weight: 700;
+  font-size: 0.875rem;
+  width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlCorporateBody {
+  font-size: 0.75rem;
+  color: var(--tl-color-cuerpo, #64748b);
+  line-height: 1.35;
+  width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* —— Proyecto —— */
+
+.tlVariantProyecto .tlNodeDot {
+  width: calc(var(--tl-radio-nodo, 10px) * 2.4);
+  height: calc(var(--tl-radio-nodo, 10px) * 2.4);
+}
+
+.tlVariantProyecto .tlNodeHalo {
+  inset: calc(var(--tl-radio-nodo, 10px) * -1.2);
+}
+
+.tlProyectoBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: min(200px, 100%);
+  min-width: 0;
+  width: 100%;
+  text-align: center;
+  overflow: visible;
+  height: auto;
+}
+
+.tlProyectoNum {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.tlProyectoTitle {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: #0f172a;
+  width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlProyectoBody {
+  font-size: 0.75rem;
+  color: var(--tl-color-cuerpo, #64748b);
+  width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlProyectoPhoto {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid #e2e8f0;
+}
+
+.tlProyectoPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* —— Infográfica —— */
+
+.tlVariantInfografica .tlNodeDot {
+  width: calc(var(--tl-radio-nodo, 10px) * 2.5);
+  height: calc(var(--tl-radio-nodo, 10px) * 2.5);
+}
+
+.tlVariantInfografica .tlNodeHalo {
+  inset: calc(var(--tl-radio-nodo, 10px) * -1.25);
+}
+
+.tlVariantInfografica .tlNodeDot {
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tlInfograficaBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: min(200px, 100%);
+  min-width: 0;
+  width: 100%;
+  text-align: center;
+  overflow: visible;
+  height: auto;
+}
+
+.tlInfograficaTitle {
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tlInfograficaBody {
+  font-size: 0.75rem;
+  color: var(--tl-color-cuerpo, #64748b);
+  width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}

@@ -1,0 +1,45 @@
+.hueco {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  padding: 0.35rem;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.huecoVacio {
+  background-color: #d97706;
+  transform: scale(0.88);
+  cursor: default;
+}
+
+.huecoActivo {
+  background-color: #92400e;
+  transform: scale(1);
+  cursor: pointer;
+  box-shadow:
+    inset 0 4px 10px rgba(0, 0, 0, 0.22),
+    0 8px 16px rgba(146, 64, 14, 0.25);
+}
+
+.huecoActivo:active {
+  transform: scale(0.96);
+}
+
+.huecoPreview {
+  background-color: #d97706;
+  transform: scale(0.92);
+  pointer-events: none;
+}
+
+.huecoPreviewActivo {
+  background-color: #92400e;
+  transform: scale(1);
+}

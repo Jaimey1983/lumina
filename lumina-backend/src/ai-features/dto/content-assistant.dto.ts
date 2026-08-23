@@ -16,4 +16,17 @@ export class ContentAssistantDto {
   @IsOptional()
   @IsString()
   level?: 'beginner' | 'intermediate' | 'advanced';
+
+  /** Resumen DBA/EBC inyectado desde el frontend (buildCurriculumContext). */
+  @IsOptional()
+  @IsString()
+  @Transform(trimIfString)
+  curriculumContext?: string;
+
+  /** Estructura pedagógica de la plantilla seleccionada por el docente.
+   *  Ej: "Slide 1: Portada → Slide 2: Caso problema → ..." */
+  @IsOptional()
+  @IsString()
+  @Transform(trimIfString)
+  plantillaEstructura?: string;
 }

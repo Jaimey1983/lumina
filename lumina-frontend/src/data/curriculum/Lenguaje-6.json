@@ -1,0 +1,599 @@
+{
+  "grado": "6",
+  "asignatura": "Lenguaje",
+  "pais": "Colombia",
+  "referente_normativo": "DBA V.2 + EBC Lenguaje 6°-7°",
+  "version": "1.0",
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Los medios de comunicación como fuente de información y producción textual",
+      "dba_asociados": [1],
+      "dba_relacionados": [2, 8],
+      "enfoque_men": "Medios de comunicación y otros sistemas simbólicos",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["utiliza", "reconoce", "interpreta", "busca", "retoma"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Medios de comunicación",
+        "Intencionalidad y contexto de producción",
+        "Formatos mediáticos como modelos textuales"
+      ],
+      "subtemas": [
+        "¿Qué es y para qué sirve cada medio de comunicación?",
+        "El mensaje, los interlocutores y la intención en los medios",
+        "Cómo leer críticamente un periódico, una revista o un noticiero",
+        "Diferencias entre un blog, una emisora y un periódico mural",
+        "Buscar información específica en distintos medios",
+        "Usar formatos mediáticos para escribir mis propios textos",
+        "La visión de mundo en los medios: ¿quién habla y con qué propósito?"
+      ],
+      "palabras_clave": [
+        "medios de comunicación", "intencionalidad", "contexto de producción",
+        "interlocutores", "mensaje", "periódico", "revista", "blog",
+        "emisora escolar", "formato mediático", "lectura crítica", "información"
+      ],
+      "dba_enunciado": "Utiliza la información ofrecida por los medios de comunicación, teniendo en cuenta el mensaje, los interlocutores, la intencionalidad y el contexto de producción, para participar en los procesos comunicativos de su entorno.",
+      "evidencias_aprendizaje": [
+        "Reconoce una visión particular de mundo de las distintas interlocuciones a las que accede en los medios de comunicación.",
+        "Interpreta los mensajes que circulan en los medios de comunicación de su contexto.",
+        "Busca información específica en los contenidos emitidos por diversos medios de comunicación.",
+        "Retoma los formatos empleados por algunos medios de comunicación y los emplea como modelos para sus elaboraciones textuales."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Identifica algunos medios de comunicación sin explicar su intención o contexto de producción.",
+          "basico": "Interpreta mensajes de medios de comunicación reconociendo al emisor, el receptor y la intención básica.",
+          "alto": "Analiza mensajes mediáticos identificando la visión de mundo del emisor, la intención comunicativa y el contexto de producción.",
+          "superior": "Evalúa críticamente la información de distintos medios, confronta perspectivas y sustenta su postura frente al mensaje con argumentos."
+        },
+        "procedimental": {
+          "bajo": "Consulta un medio de comunicación sin criterios de selección o análisis.",
+          "basico": "Busca información en al menos dos medios distintos e identifica diferencias en el formato y el contenido.",
+          "alto": "Retoma formatos mediáticos para producir un texto propio (blog, periódico mural, emisora) con intención comunicativa definida.",
+          "superior": "Produce un texto que imita un formato mediático con dominio del género, el destinatario y el propósito comunicativo."
+        },
+        "actitudinal": {
+          "bajo": "Consume información mediática sin cuestionarla ni reflexionar sobre ella.",
+          "basico": "Muestra interés por comprender los mensajes que circulan en los medios de su entorno.",
+          "alto": "Valora la importancia de leer críticamente los medios de comunicación para formarse una opinión propia.",
+          "superior": "Asume una actitud reflexiva y responsable frente al consumo y la producción de información mediática."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "¿Qué medio es y cuál es su intención?", "tipo": "Emparejar"},
+        {"descripcion": "Identifica el propósito comunicativo del mensaje", "tipo": "Quiz opción múltiple"},
+        {"descripcion": "Verdadero o falso: características de los medios", "tipo": "Verdadero/Falso"},
+        {"descripcion": "Ordena los elementos del proceso comunicativo mediático", "tipo": "Ordenar"},
+        {"descripcion": "Ruleta: tipos de medios de comunicación", "tipo": "Ruleta de palabras"}
+      ],
+      "ebc_factor": "Medios de comunicación y otros sistemas simbólicos",
+      "ebc_estandar": "Caracterizo los medios de comunicación masiva y selecciono la información que emiten para clasificarla y almacenarla.",
+      "subprocesos_ebc": [
+        "Reconozco las características de los principales medios de comunicación masiva.",
+        "Selecciono y clasifico la información emitida por los medios de comunicación masiva.",
+        "Recopilo en fichas, mapas, gráficos y cuadros la información que he obtenido de los medios de comunicación masiva.",
+        "Organizo (mediante ordenación alfabética, temática, de autores, medio de difusión, entre muchas otras posibilidades) la información recopilada y la almaceno de tal forma que la pueda consultar cuando lo requiera."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Organizadores gráficos: signos verbales y no verbales para organizar el conocimiento",
+      "dba_asociados": [2],
+      "dba_relacionados": [1, 6],
+      "enfoque_men": "Medios de comunicación y otros sistemas simbólicos",
+      "nivel_cognitivo": {
+        "nivel": "Crear",
+        "verbo_bloom": ["crea", "utiliza", "expone", "interpreta", "reconoce"],
+        "nivel_numero": 6
+      },
+      "temas": [
+        "Organizadores gráficos",
+        "Signos verbales y no verbales",
+        "Representación visual del conocimiento"
+      ],
+      "subtemas": [
+        "¿Qué es un organizador gráfico y para qué sirve?",
+        "Tipos: mapa de ideas, cuadro sinóptico, infografía, esquema, plano",
+        "Cómo leer e interpretar una infografía",
+        "Colores, símbolos, señales e imágenes en los organizadores gráficos",
+        "Cómo pasar de un texto escrito a un mapa conceptual",
+        "Exponer ideas mediante textos visuales",
+        "Diferencias entre lenguaje verbal y no verbal en un gráfico"
+      ],
+      "palabras_clave": [
+        "organizador gráfico", "mapa de ideas", "cuadro sinóptico", "infografía",
+        "esquema", "signo no verbal", "signo verbal", "símbolo", "plano",
+        "representación visual", "lenguaje visual", "procesar información"
+      ],
+      "dba_enunciado": "Crea organizadores gráficos en los que integra signos verbales y no verbales para dar cuenta de sus conocimientos.",
+      "evidencias_aprendizaje": [
+        "Utiliza los organizadores gráficos para procesar la información que encuentra en diferentes fuentes.",
+        "Expone sus ideas en torno a un tema específico mediante organizadores gráficos.",
+        "Interpreta signos no verbales presentes en algunos textos gráficos, tales como mapas de ideas, cuadros sinópticos, planos, infografías y esquemas.",
+        "Reconoce cómo se relacionan y estructuran los símbolos, colores, señales e imágenes en los organizadores gráficos."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce algunos tipos de organizadores gráficos sin explicar su función.",
+          "basico": "Interpreta la información de organizadores gráficos sencillos identificando sus elementos verbales y no verbales.",
+          "alto": "Analiza la estructura y el sentido de organizadores gráficos complejos (infografías, mapas de ideas) explicando las relaciones entre sus elementos.",
+          "superior": "Crea organizadores gráficos originales que integran signos verbales y no verbales de forma pertinente y sistemática para comunicar conocimiento."
+        },
+        "procedimental": {
+          "bajo": "Copia o reproduce organizadores gráficos dados sin adaptarlos.",
+          "basico": "Construye un organizador gráfico sencillo a partir de información de una fuente.",
+          "alto": "Elabora organizadores gráficos propios integrando imágenes, colores y texto con sentido comunicativo.",
+          "superior": "Diseña y sustenta organizadores gráficos complejos usando múltiples fuentes y combinando recursos verbales y no verbales con creatividad."
+        },
+        "actitudinal": {
+          "bajo": "Realiza los organizadores gráficos solo por cumplir, sin interés en la organización visual.",
+          "basico": "Muestra disposición para organizar la información visualmente.",
+          "alto": "Valora los organizadores gráficos como herramienta para comprender y comunicar mejor el conocimiento.",
+          "superior": "Promueve el uso de organizadores gráficos entre sus compañeros y los usa de forma autónoma en distintas asignaturas."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "¿Qué tipo de organizador gráfico es?", "tipo": "Emparejar"},
+        {"descripcion": "Relaciona: elemento visual con su función", "tipo": "Relacionar columnas"},
+        {"descripcion": "Verdadero o falso: propiedades de los organizadores gráficos", "tipo": "Verdadero/Falso"},
+        {"descripcion": "Completa el organizador gráfico con los términos correctos", "tipo": "Llenar espacios"},
+        {"descripcion": "Sopa de letras: tipos de organizadores gráficos", "tipo": "Sopa de letras"}
+      ],
+      "ebc_factor": "Medios de comunicación y otros sistemas simbólicos",
+      "ebc_estandar": "Relaciono de manera intertextual obras que emplean el lenguaje no verbal y obras que emplean el lenguaje verbal.",
+      "subprocesos_ebc": [
+        "Caracterizo obras no verbales (pintura, escultura, arquitectura, danza, etc.), mediante producciones verbales.",
+        "Cotejo obras no verbales con las descripciones y explicaciones que se han formulado acerca de dichas obras.",
+        "Comparo el sentido que tiene el uso del espacio y de los movimientos corporales en situaciones comunicativas cotidianas, con el sentido que tienen en obras artísticas.",
+        "Propongo hipótesis de interpretación de espectáculos teatrales, obras pictóricas, escultóricas, arquitectónicas, entre otras."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Las obras literarias: conocimiento, imaginación y contexto cultural",
+      "dba_asociados": [3],
+      "dba_relacionados": [4, 5],
+      "enfoque_men": "Literatura",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["reconoce", "comprende", "interpreta", "define", "identifica"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Obra literaria",
+        "Elementos del texto literario",
+        "Contexto cultural e histórico de la literatura",
+        "Texto poético"
+      ],
+      "subtemas": [
+        "¿Qué es una obra literaria y qué tipos existen?",
+        "Personajes, lugar, tiempo y trama en una obra",
+        "El narrador y su función en el relato",
+        "El ritmo y la rima en la poesía",
+        "La literatura como reflejo de una época y una cultura",
+        "Cómo crear un nuevo texto a partir de una obra literaria",
+        "Géneros literarios: narrativo, lírico y dramático"
+      ],
+      "palabras_clave": [
+        "obra literaria", "elementos literarios", "personaje", "narrador",
+        "trama", "argumento", "ritmo", "rima", "texto poético",
+        "género literario", "contexto cultural", "imaginación", "ficción"
+      ],
+      "dba_enunciado": "Reconoce las obras literarias como una posibilidad de circulación del conocimiento y de desarrollo de su imaginación.",
+      "evidencias_aprendizaje": [
+        "Comprende que las obras literarias se enmarcan en contextos culturales e históricos que promueven la circulación de ciertos conocimientos.",
+        "Interpreta los argumentos y temáticas que se enuncian en las obras literarias para crear nuevos textos.",
+        "Define elementos literarios tales como personajes, lugar, tiempo, sentimientos acciones al interior de una obra literaria.",
+        "Reconoce que elementos como el ritmo y la rima se emplean para comunicar sentimientos o emociones cuando se declaman textos poéticos."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Identifica algunos elementos literarios (personaje, lugar) en una obra con ayuda del docente.",
+          "basico": "Define los elementos literarios de una obra (personaje, lugar, tiempo, trama) y reconoce el ritmo y la rima en textos poéticos.",
+          "alto": "Analiza los argumentos y el contexto cultural e histórico de una obra literaria, e interpreta su relación con el conocimiento que circula.",
+          "superior": "Evalúa el sentido de una obra literaria en su contexto cultural e histórico y crea un nuevo texto a partir de su interpretación crítica."
+        },
+        "procedimental": {
+          "bajo": "Lee fragmentos de obras literarias sin identificar sus elementos estructurales.",
+          "basico": "Identifica y registra los elementos literarios de una obra leída (personaje, tiempo, lugar, narrador).",
+          "alto": "Interpreta el argumento de una obra literaria y produce un texto nuevo inspirado en ella.",
+          "superior": "Declama textos poéticos con ritmo y expresividad, y crea producciones literarias propias con elementos definidos y contexto consciente."
+        },
+        "actitudinal": {
+          "bajo": "Lee obras literarias solo por obligación sin mostrar disfrute o reflexión.",
+          "basico": "Muestra interés por explorar diferentes obras literarias y géneros.",
+          "alto": "Valora la literatura como fuente de conocimiento, imaginación y comprensión del mundo.",
+          "superior": "Promueve la lectura literaria en su entorno y asume una postura crítica y creativa frente a las obras que lee."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "Identifica el elemento literario en el fragmento", "tipo": "Quiz opción múltiple"},
+        {"descripcion": "Relaciona: elemento literario con su definición", "tipo": "Relacionar columnas"},
+        {"descripcion": "Ordena los elementos del análisis literario", "tipo": "Ordenar"},
+        {"descripcion": "¿Ritmo, rima o ninguno? Clasifica el fragmento", "tipo": "Emparejar"},
+        {"descripcion": "Sopa de letras: géneros y elementos literarios", "tipo": "Sopa de letras"}
+      ],
+      "ebc_factor": "Literatura",
+      "ebc_estandar": "Comprendo obras literarias de diferentes géneros, propiciando así el desarrollo de mi capacidad crítica y creativa.",
+      "subprocesos_ebc": [
+        "Leo obras literarias de género narrativo, lírico y dramático, de diversa temática, época y región.",
+        "Comprendo elementos constitutivos de obras literarias, tales como tiempo, espacio, función de los personajes, lenguaje, atmósferas, diálogos, escenas, entre otros.",
+        "Reconozco en las obras literarias procedimientos narrativos, líricos y dramáticos.",
+        "Comparo los procedimientos narrativos, líricos o dramáticos empleados en la literatura que permiten estudiarla por géneros.",
+        "Formulo hipótesis de comprensión acerca de las obras literarias que leo teniendo en cuenta género, temática, época y región."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Expresiones regionales y populares en la literatura colombiana",
+      "dba_asociados": [4],
+      "dba_relacionados": [3, 5],
+      "enfoque_men": "Literatura",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["identifica", "reconoce", "comprende", "clasifica", "recita"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Literatura regional colombiana",
+        "Expresiones populares y formales de la lengua",
+        "Diversidad lingüística y cultural"
+      ],
+      "subtemas": [
+        "Las regiones de Colombia y su expresión literaria",
+        "¿Qué son las expresiones populares y cómo se usan en la literatura?",
+        "Lenguaje formal vs. lenguaje popular en textos literarios",
+        "Modismos, regionalismos y expresiones coloquiales",
+        "Cómo recitar un texto con diferentes matices de voz",
+        "La identidad cultural en las palabras y las obras"
+      ],
+      "palabras_clave": [
+        "expresiones populares", "regionalismos", "lenguaje formal", "lenguaje popular",
+        "literatura regional", "diversidad lingüística", "cultura regional",
+        "modismos", "identidad cultural", "declamación", "variantes lingüísticas", "Colombia"
+      ],
+      "dba_enunciado": "Identifica algunas expresiones de diferentes regiones y contextos en las obras literarias.",
+      "evidencias_aprendizaje": [
+        "Reconoce que en las obras literarias se recrea la cultura propia de diferentes regiones.",
+        "Comprende el sentido que tienen algunas expresiones populares al interior de las obras literarias.",
+        "Clasifica expresiones formales y populares de la lengua en textos literarios.",
+        "Recita textos literarios en los que se emplean expresiones populares con diferentes matices de voz."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que existen diferencias entre regiones de Colombia sin relacionarlas con la literatura.",
+          "basico": "Identifica y comprende expresiones populares en textos literarios y las diferencia de expresiones formales.",
+          "alto": "Analiza cómo las expresiones regionales reflejan la cultura de su contexto y las compara con otras regiones del país.",
+          "superior": "Evalúa la riqueza cultural y lingüística de las expresiones regionales en la literatura y sustenta su valor identitario con ejemplos concretos."
+        },
+        "procedimental": {
+          "bajo": "Lee textos literarios regionales sin identificar expresiones populares.",
+          "basico": "Clasifica expresiones formales y populares en un texto literario dado.",
+          "alto": "Recita textos literarios regionales con matices de voz apropiados, destacando las expresiones populares.",
+          "superior": "Produce un texto propio que incorpora expresiones regionales o populares con conciencia cultural y lingüística."
+        },
+        "actitudinal": {
+          "bajo": "Muestra indiferencia ante las expresiones culturales de otras regiones.",
+          "basico": "Reconoce y respeta la diversidad lingüística y cultural del país.",
+          "alto": "Valora las expresiones populares y regionales como parte fundamental de la identidad cultural colombiana.",
+          "superior": "Promueve el respeto por la diversidad lingüística y cultural en el aula y en su entorno."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "Expresión popular o formal: clasifica", "tipo": "Emparejar"},
+        {"descripcion": "¿De qué región es esta expresión?", "tipo": "Quiz opción múltiple"},
+        {"descripcion": "Ruleta de expresiones populares colombianas", "tipo": "Ruleta de palabras"},
+        {"descripcion": "Verdadero o falso: cultura y literatura regional", "tipo": "Verdadero/Falso"},
+        {"descripcion": "Sopa de letras: regiones de Colombia", "tipo": "Sopa de letras"}
+      ],
+      "ebc_factor": "Literatura",
+      "ebc_estandar": "Reconozco la tradición oral como fuente de la conformación y desarrollo de la literatura.",
+      "subprocesos_ebc": [
+        "Interpreto y clasifico textos provenientes de la tradición oral tales como coplas, leyendas, relatos mitológicos, canciones, proverbios, refranes, parábolas, entre otros.",
+        "Caracterizo rasgos específicos que consolidan la tradición oral, como: origen, autoría colectiva, función social, uso del lenguaje, evolución, recurrencias temáticas, etc.",
+        "Identifico en la tradición oral el origen de los géneros literarios fundamentales: lírico, narrativo y dramático.",
+        "Establezco relaciones entre los textos provenientes de la tradición oral y otros textos en cuanto a temas, personajes, lenguaje, entre otros aspectos."
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Literatura de tradición popular: coplas, trovas, refranes y expresiones orales",
+      "dba_asociados": [5],
+      "dba_relacionados": [3, 4],
+      "enfoque_men": "Literatura",
+      "nivel_cognitivo": {
+        "nivel": "Comprender",
+        "verbo_bloom": ["interpreta", "reconoce", "distingue", "comprende", "identifica"],
+        "nivel_numero": 2
+      },
+      "temas": [
+        "Tradición oral",
+        "Géneros de la tradición popular",
+        "Lenguaje figurado y literal"
+      ],
+      "subtemas": [
+        "¿Qué son las coplas, las trovas y los refranes?",
+        "El componente cultural de la tradición oral",
+        "Sentido literal vs. sentido figurado en expresiones populares",
+        "Elementos líricos: ritmo, musicalidad, rima en la tradición oral",
+        "La estructura de los textos de tradición oral",
+        "Semejanzas entre refranes y otros tipos de texto"
+      ],
+      "palabras_clave": [
+        "tradición oral", "copla", "trova", "refrán", "dicho popular",
+        "sentido figurado", "sentido literal", "elemento lírico", "rima",
+        "musicalidad", "cultura popular", "oralidad", "patrimonio inmaterial"
+      ],
+      "dba_enunciado": "Interpreta obras de la tradición popular propias de su entorno.",
+      "evidencias_aprendizaje": [
+        "Reconoce el componente cultural en coplas, trovas y refranes.",
+        "Distingue los sentidos de expresiones literales y figuradas que circulan en obras de la tradición popular.",
+        "Comprende los elementos líricos y las temáticas usadas en las expresiones artísticas de su entorno.",
+        "Identifica la estructura de los textos de la tradición oral y las semejanzas con otro tipo de composiciones.",
+        "Identifica los elementos líricos que acompañan la pronunciación de expresiones populares."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce coplas o refranes sin distinguir su sentido literal del figurado.",
+          "basico": "Diferencia el sentido literal y el sentido figurado en expresiones de la tradición popular e identifica sus elementos líricos.",
+          "alto": "Analiza la estructura, los elementos líricos y el componente cultural de coplas, trovas y refranes de su entorno.",
+          "superior": "Interpreta el significado profundo de obras de tradición popular, los relaciona con su contexto cultural y los compara con otras composiciones."
+        },
+        "procedimental": {
+          "bajo": "Repite refranes o coplas de memoria sin comprender su significado.",
+          "basico": "Identifica y explica el sentido de expresiones de la tradición popular con apoyo.",
+          "alto": "Recita coplas, trovas o refranes con atención a su estructura y elementos líricos.",
+          "superior": "Crea o adapta una copla, trova o refrán propio usando elementos de la tradición oral de su región."
+        },
+        "actitudinal": {
+          "bajo": "Muestra desinterés por las expresiones de la tradición oral popular.",
+          "basico": "Reconoce el valor cultural de las coplas, trovas y refranes de su entorno.",
+          "alto": "Valora la tradición oral como parte del patrimonio cultural de su región y del país.",
+          "superior": "Promueve la preservación y difusión de las expresiones de tradición popular en su comunidad."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "¿Sentido literal o figurado? Clasifica la expresión", "tipo": "Emparejar"},
+        {"descripcion": "Relaciona: tipo de texto oral con su característica", "tipo": "Relacionar columnas"},
+        {"descripcion": "Verdadero o falso: elementos de la tradición oral", "tipo": "Verdadero/Falso"},
+        {"descripcion": "Completa el refrán popular", "tipo": "Llenar espacios"},
+        {"descripcion": "Ruleta: géneros de la tradición oral colombiana", "tipo": "Ruleta de palabras"}
+      ],
+      "ebc_factor": "Literatura",
+      "ebc_estandar": "Reconozco la tradición oral como fuente de la conformación y desarrollo de la literatura.",
+      "subprocesos_ebc": [
+        "Interpreto y clasifico textos provenientes de la tradición oral tales como coplas, leyendas, relatos mitológicos, canciones, proverbios, refranes, parábolas, entre otros.",
+        "Caracterizo rasgos específicos que consolidan la tradición oral, como: origen, autoría colectiva, función social, uso del lenguaje, evolución, recurrencias temáticas, etc.",
+        "Identifico en la tradición oral el origen de los géneros literarios fundamentales: lírico, narrativo y dramático.",
+        "Establezco relaciones entre los textos provenientes de la tradición oral y otros textos en cuanto a temas, personajes, lenguaje, entre otros aspectos."
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Comprensión de textos: intención comunicativa, estructura y tipología textual",
+      "dba_asociados": [6],
+      "dba_relacionados": [7, 8],
+      "enfoque_men": "Comprensión e interpretación textual",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["comprende", "infiere", "reconoce", "interpreta"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Tipos de texto",
+        "Intención comunicativa",
+        "Estructura del texto",
+        "Signos no verbales en el texto"
+      ],
+      "subtemas": [
+        "¿Para qué se escribe un texto? Narrar, informar, exponer, argumentar, describir",
+        "Idea principal e ideas secundarias en un texto",
+        "La organización de los párrafos y su jerarquía",
+        "Conectores y cohesión textual",
+        "Signos de puntuación especiales: corchetes, comillas, guiones, negrita",
+        "Diferencias entre tipos de texto: narración, exposición, argumentación",
+        "Cómo inferir la intención de un texto según su contexto de creación"
+      ],
+      "palabras_clave": [
+        "tipología textual", "intención comunicativa", "texto narrativo", "texto expositivo",
+        "texto argumentativo", "texto descriptivo", "párrafo", "idea principal",
+        "cohesión", "coherencia", "signos no verbales", "comillas", "guion", "negrita"
+      ],
+      "dba_enunciado": "Comprende diversos tipos de texto, a partir del análisis de sus contenidos, características formales e intenciones comunicativas.",
+      "evidencias_aprendizaje": [
+        "Infiere la intención comunicativa de los textos (narrar, informar, exponer, argumentar, describir) a partir de las circunstancias en que han sido creados.",
+        "Reconoce que los textos son el resultado de un grupo de párrafos que desarrollan ideas con diferente jerarquía y que están relacionados entre sí por un contenido general.",
+        "Interpreta la función de elementos no verbales en el sentido del texto, como uso de negrita, corchetes, comillas, guiones, entre otros."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce el tipo de texto (narración, descripción) con ayuda, sin identificar la intención.",
+          "basico": "Identifica la intención comunicativa de un texto y la jerarquía de ideas en sus párrafos.",
+          "alto": "Analiza las características formales y la intención comunicativa de textos de distinto tipo, interpretando la función de elementos no verbales.",
+          "superior": "Evalúa críticamente la intención comunicativa, la estructura y los recursos formales de textos complejos de diferentes tipologías."
+        },
+        "procedimental": {
+          "bajo": "Lee textos sin identificar su tipo ni su propósito.",
+          "basico": "Clasifica textos según su intención comunicativa y señala la idea principal de cada párrafo.",
+          "alto": "Interpreta la función de comillas, guiones, negritas y corchetes en el sentido del texto y los usa correctamente.",
+          "superior": "Elabora esquemas o análisis escritos que evidencian el dominio de la estructura, intención y recursos formales de textos de distintas tipologías."
+        },
+        "actitudinal": {
+          "bajo": "Lee textos por obligación sin interés en su estructura o propósito.",
+          "basico": "Muestra disposición para analizar diferentes tipos de texto.",
+          "alto": "Valora la diversidad de tipos de texto como formas distintas de organizar y comunicar el conocimiento.",
+          "superior": "Asume una actitud analítica y crítica frente a los textos que lee, compartiendo sus interpretaciones con argumentos."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "¿Cuál es la intención comunicativa de este texto?", "tipo": "Quiz opción múltiple"},
+        {"descripcion": "Relaciona: tipo de texto con su intención", "tipo": "Relacionar columnas"},
+        {"descripcion": "¿Para qué se usa este signo en el texto?", "tipo": "Emparejar"},
+        {"descripcion": "Ordena los párrafos según la jerarquía de ideas", "tipo": "Ordenar"},
+        {"descripcion": "Verdadero o falso: características de los tipos de texto", "tipo": "Verdadero/Falso"}
+      ],
+      "ebc_factor": "Comprensión e interpretación textual",
+      "ebc_estandar": "Comprendo e interpreto diversos tipos de texto, para establecer sus relaciones internas y su clasificación en una tipología textual.",
+      "subprocesos_ebc": [
+        "Reconozco las características de los diversos tipos de texto que leo.",
+        "Propongo hipótesis de interpretación para cada uno de los tipos de texto que he leído.",
+        "Identifico las principales características formales del texto: formato de presentación, títulos, graficación, capítulos, organización, etc.",
+        "Comparo el contenido de los diferentes tipos de texto que he leído.",
+        "Relaciono la forma y el contenido de los textos que leo y muestro cómo se influyen mutuamente.",
+        "Establezco relaciones de semejanza y diferencia entre los diversos tipos de texto que he leído."
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "El discurso oral: argumentar, exponer y comunicar con eficacia",
+      "dba_asociados": [7],
+      "dba_relacionados": [5, 8],
+      "enfoque_men": "Producción textual",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["produce", "analiza", "selecciona", "ordena", "adecúa"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Discurso oral",
+        "Planeación del texto oral",
+        "Recursos de expresión oral"
+      ],
+      "subtemas": [
+        "¿Qué es un discurso oral y cómo se planea?",
+        "Análisis del público y del contexto para hablar",
+        "Selección y jerarquización de ideas para un discurso",
+        "Orden lógico del discurso: introducción, desarrollo, cierre",
+        "El tono y el volumen de la voz según la situación comunicativa",
+        "Diferencias entre exponer, argumentar y narrar oralmente",
+        "Cómo adaptar el lenguaje al interlocutor"
+      ],
+      "palabras_clave": [
+        "discurso oral", "argumentación oral", "público", "contexto comunicativo",
+        "planeación del discurso", "tono de voz", "volumen", "intención comunicativa",
+        "orden lógico", "exposición oral", "interlocutores", "expresividad"
+      ],
+      "dba_enunciado": "Produce discursos orales y los adecúa a las circunstancias del contexto: el público, la intención comunicativa y el tema a desarrollar.",
+      "evidencias_aprendizaje": [
+        "Analiza el público a quien se dirige y las exigencias propias del contexto para producir textos orales.",
+        "Selecciona las ideas que emplea en un discurso oral.",
+        "Ordena su discurso de manera lógica para facilitar la comprensión de sus interlocutores.",
+        "Adecúa las cualidades de la voz (volumen, tono) para dar expresividad a sus producciones orales."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Produce textos orales cortos sin considerar el público ni la intención comunicativa.",
+          "basico": "Identifica el público y la intención comunicativa antes de producir un texto oral, y organiza sus ideas básicamente.",
+          "alto": "Planea y produce discursos orales con estructura lógica, selección de ideas pertinentes y adecuación del tono y el volumen al contexto.",
+          "superior": "Produce discursos orales argumentativos o expositivos con dominio del tema, estructura clara, recursos expresivos y adaptación plena al público y al contexto."
+        },
+        "procedimental": {
+          "bajo": "Habla en público sin preparación ni organización de ideas.",
+          "basico": "Elabora un esquema previo y presenta oralmente un tema con orden básico.",
+          "alto": "Produce un discurso oral con introducción, desarrollo y cierre, modulando la voz según el propósito.",
+          "superior": "Presenta discursos orales complejos (exposición, debate, argumentación) con fluidez, expresividad y dominio de los recursos comunicativos."
+        },
+        "actitudinal": {
+          "bajo": "Evita participar en actividades de expresión oral por timidez o desinterés.",
+          "basico": "Participa con disposición en actividades de expresión oral del aula.",
+          "alto": "Valora la preparación previa y la adecuación al contexto como condiciones para comunicarse con eficacia.",
+          "superior": "Asume con confianza y responsabilidad su rol como orador, y retroalimenta respetuosamente las producciones orales de sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "¿Cuál es el orden correcto del discurso?", "tipo": "Ordenar"},
+        {"descripcion": "Relaciona: tipo de discurso con su propósito", "tipo": "Relacionar columnas"},
+        {"descripcion": "¿Qué tono de voz es más adecuado para esta situación?", "tipo": "Quiz opción múltiple"},
+        {"descripcion": "Verdadero o falso: características del discurso oral", "tipo": "Verdadero/Falso"},
+        {"descripcion": "Planea tu discurso: completa el esquema", "tipo": "Llenar espacios"}
+      ],
+      "ebc_factor": "Producción textual",
+      "ebc_estandar": "Conozco y utilizo algunas estrategias argumentativas que posibilitan la construcción de textos orales en situaciones comunicativas auténticas.",
+      "subprocesos_ebc": [
+        "Defino una temática para la elaboración de un texto oral con fines argumentativos.",
+        "Formulo una hipótesis para demostrarla en un texto oral con fines argumentativos.",
+        "Llevo a cabo procedimientos de búsqueda, selección y almacenamiento de información acerca de la temática que voy a tratar en un texto con fines argumentativos.",
+        "Elaboro un plan textual, jerarquizando la información que he obtenido de fuentes diversas.",
+        "Caracterizo estrategias argumentativas de tipo descriptivo.",
+        "Utilizo estrategias descriptivas para producir un texto oral con fines argumentativos."
+      ]
+    },
+    {
+      "unidad_id": 7,
+      "unidad_titulo": "Producción escrita: tipos de texto, propósito comunicativo y corrección gramatical",
+      "dba_asociados": [8],
+      "dba_relacionados": [6, 7],
+      "enfoque_men": "Producción textual",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["produce", "elige", "consulta", "tiene en cuenta"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Producción escrita",
+        "Tipología textual",
+        "Concordancia gramatical",
+        "Propósito y destinatario"
+      ],
+      "subtemas": [
+        "¿Cómo elegir el tipo de texto según lo que quiero comunicar?",
+        "El destinatario y el medio: ¿para quién y dónde escribo?",
+        "Cómo consultar fuentes para enriquecer un texto",
+        "Concordancia de género y número en la oración",
+        "Revisión y corrección del texto escrito",
+        "El diario de viaje, la crónica y otros textos descriptivos-narrativos",
+        "Planear, escribir, revisar y publicar un texto"
+      ],
+      "palabras_clave": [
+        "producción escrita", "propósito comunicativo", "destinatario", "tipo de texto",
+        "concordancia gramatical", "género", "número", "coherencia", "cohesión",
+        "fuentes de consulta", "revisión de texto", "diario de viaje", "proceso de escritura"
+      ],
+      "dba_enunciado": "Produce diversos tipos de texto atendiendo a los destinatarios, al medio en que se escribirá y a los propósitos comunicativos.",
+      "evidencias_aprendizaje": [
+        "Elige, entre diversos tipos de texto, aquel que mejor se adecúa al propósito comunicativo del texto que debe escribir.",
+        "Consulta diversas fuentes para nutrir sus textos, y comprende el sentido de lo que escribe atendiendo a factores como el contexto, la temática y el propósito comunicativo.",
+        "Tiene en cuenta las concordancias gramaticales entre los elementos de la oración (género, número) al momento de escribir textos."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Escribe textos sin considerar el tipo adecuado, el destinatario ni el propósito.",
+          "basico": "Elige el tipo de texto según el propósito comunicativo y aplica reglas básicas de concordancia gramatical.",
+          "alto": "Produce textos escritos consultando fuentes, con coherencia temática, concordancia gramatical y atención al destinatario y al medio.",
+          "superior": "Escribe textos complejos con dominio del género, el propósito, el destinatario, la concordancia y los recursos estilísticos apropiados."
+        },
+        "procedimental": {
+          "bajo": "Escribe textos cortos sin planear ni revisar.",
+          "basico": "Planea un texto escrito definiendo el tipo, el destinatario y el propósito, y lo revisa con orientación.",
+          "alto": "Produce un texto escrito consultando fuentes, corrigiéndolo en concordancia gramatical y adaptándolo al medio de publicación.",
+          "superior": "Desarrolla el proceso completo de escritura (planeación, borrador, revisión, edición) produciendo textos de alta calidad comunicativa."
+        },
+        "actitudinal": {
+          "bajo": "Escribe solo cuando se le obliga y no revisa sus textos.",
+          "basico": "Muestra disposición para escribir textos con propósito definido.",
+          "alto": "Valora la revisión y la corrección como parte fundamental del proceso de escritura.",
+          "superior": "Asume la escritura como práctica consciente y la usa como herramienta de comunicación, aprendizaje y expresión."
+        }
+      },
+      "actividades_sugeridas": [
+        {"descripcion": "¿Qué tipo de texto es el más adecuado para esta situación?", "tipo": "Quiz opción múltiple"},
+        {"descripcion": "Relaciona: tipo de texto con su destinatario y propósito", "tipo": "Relacionar columnas"},
+        {"descripcion": "Completa con el género/número correcto", "tipo": "Llenar espacios"},
+        {"descripcion": "Ordena las etapas del proceso de escritura", "tipo": "Ordenar"},
+        {"descripcion": "Verdadero o falso: concordancia gramatical", "tipo": "Verdadero/Falso"}
+      ],
+      "ebc_factor": "Producción textual",
+      "ebc_estandar": "Produzco textos escritos que responden a necesidades específicas de comunicación, a procedimientos sistemáticos de elaboración y establezco nexos intertextuales y extratextuales.",
+      "subprocesos_ebc": [
+        "Defino una temática para la producción de un texto narrativo.",
+        "Llevo a cabo procedimientos de búsqueda, selección y almacenamiento de información acerca de la temática que voy a tratar en mi texto narrativo.",
+        "Elaboro un plan textual, organizando la información en secuencias lógicas.",
+        "Produzco una primera versión del texto narrativo teniendo en cuenta personajes, espacio, tiempos y vínculos con otros textos y con mi entorno.",
+        "Reescribo un texto, teniendo en cuenta aspectos de coherencia (unidad temática, relaciones lógicas, consecutividad temporal...) y cohesión (conectores, pronombres, manejo de modos verbales, puntuación...)."
+      ]
+    }
+  ]
+}

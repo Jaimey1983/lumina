@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Layout11 } from '@/components/layout';
+import { Sidebar } from '@/components/layout/sidebar';
 import { ScreenLoader } from '@/components/screen-loader';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -12,14 +12,32 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
+  const isPresentRoute = pathname.startsWith('/classes/') && pathname.endsWith('/present');
+  const isJoinRoute = /^\/join\//.test(pathname);
+  const isClassEndedRoute = pathname === '/class-ended';
 
   useEffect(() => {
-    if (!isViewerRoute && !isLoading && !isAuthenticated) {
+    if (
+      !isViewerRoute &&
+      !isPresentRoute &&
+      !isJoinRoute &&
+      !isClassEndedRoute &&
+      !isLoading &&
+      !isAuthenticated
+    ) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router, isViewerRoute]);
+  }, [
+    isLoading,
+    isAuthenticated,
+    router,
+    isViewerRoute,
+    isPresentRoute,
+    isJoinRoute,
+    isClassEndedRoute,
+  ]);
 
-  if (isViewerRoute) {
+  if (isViewerRoute || isPresentRoute || isJoinRoute || isClassEndedRoute) {
     return <>{children}</>;
   }
 
@@ -27,7 +45,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return <ScreenLoader />;
   }
 
-  if (pathname.startsWith('/editor') || /^\/classes\/[^/]+\/editor/.test(pathname)) {
+  const isEditorFullscreen =
+    /^\/classes\/[^/]+\/editor/.test(pathname) ||
+    /^\/classes\/[^/]+\/escape-room/.test(pathname);
+
+  if (isEditorFullscreen) {
     return (
       <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background">
         {children}
@@ -35,5 +57,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <Layout11>{children}</Layout11>;
+  return (
+    <div className="flex h-screen bg-[#f9fafb] font-sans">
+      <Sidebar />
+      <main className="flex min-w-0 flex-1 overflow-y-auto bg-[#f9fafb]">{children}</main>
+    </div>
+  );
 }

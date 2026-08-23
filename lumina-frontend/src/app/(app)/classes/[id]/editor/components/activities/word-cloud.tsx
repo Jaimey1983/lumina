@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import type { WordCloud } from '@/types/slide.types';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';
 
 // Editor-only fields that ride along with the persisted activity data.
@@ -87,15 +88,15 @@ export function WordCloudActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(52vh,360px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm',
-        !canvasLayout && isSelected && 'ring-1 ring-primary/45',
+          : 'flex max-h-[min(52vh,360px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/30 px-2 py-1.5">
-        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-800">
           Nube de palabras
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
           Los cambios de texto se guardan al pausar la escritura
         </span>
         {onRemove && (
@@ -103,7 +104,7 @@ export function WordCloudActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
             title="Eliminar esta actividad"
             aria-label="Eliminar esta actividad"
             onClick={(e) => {
@@ -175,7 +176,7 @@ export function WordCloudActivityEditor({
         </div>
 
         <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
             <Label htmlFor="wc-moderate" className="cursor-pointer text-[11px] font-medium leading-tight">
               Moderar respuestas
             </Label>
@@ -187,7 +188,7 @@ export function WordCloudActivityEditor({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/15 px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
             <Label htmlFor="wc-realtime" className="cursor-pointer text-[11px] font-medium leading-tight">
               Mostrar resultados en tiempo real
             </Label>
@@ -208,20 +209,31 @@ export function WordCloudActivityEditor({
 
 export function WordCloudViewer({
   activity,
-  onAnswer,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
 }: {
   activity: WordCloudLocal;
-  onAnswer?: (word: string) => void;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
 }) {
   const [word, setWord] = useState('');
   const [submittedWords, setSubmittedWords] = useState<string[]>([]);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setSubmittedWords([]);
+    setWord('');
+  }, [editorSyncKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!word.trim()) return;
     const cleanWord = word.trim().toUpperCase();
     setSubmittedWords((prev) => [...prev, cleanWord]);
-    if (onAnswer) onAnswer(cleanWord);
+    play('submit');
+    onResponse?.(cleanWord);
     setWord('');
   };
 
@@ -232,9 +244,16 @@ export function WordCloudViewer({
 
   if (!activity) return null;
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-      <p className="text-center text-base font-medium text-foreground">
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <p className={cn('text-center text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>
         {activity.instruccion || '¿En una palabra, cómo describes el tema de hoy?'}
       </p>
 
@@ -244,7 +263,12 @@ export function WordCloudViewer({
           onChange={(e) => setWord(e.target.value)}
           placeholder="Escribe tu palabra..."
           maxLength={activity.maxCaracteresPorPalabra ?? 20}
-          className="flex-1"
+          className={cn(
+            'flex-1',
+            isDark
+              ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus-visible:border-white/60'
+              : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus-visible:border-[#2563EB]',
+          )}
         />
         <Button
           type="submit"
@@ -255,17 +279,22 @@ export function WordCloudViewer({
       </form>
 
       {activity.maxPalabrasPorUsuario && (
-        <p className="mt-[-1rem] text-center text-xs text-muted-foreground">
+        <p className={cn('mt-[-1rem] text-center text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
           {submittedWords.length} de {activity.maxPalabrasPorUsuario} palabras enviadas
         </p>
       )}
 
       {activity.mostrarTiempoReal !== false && Object.entries(wordCounts).length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t py-8">
+        <div
+          className={cn(
+            'mt-4 flex flex-wrap items-center justify-center gap-4 border-t py-8',
+            isDark ? 'border-white/20' : 'border-[#e5e7eb]',
+          )}
+        >
           {Object.entries(wordCounts).map(([w, count]) => (
             <span
               key={w}
-              className="font-bold text-primary transition-all"
+              className="font-bold text-[#2563EB] transition-all"
               style={{ fontSize: `${Math.min(3, 1 + (count - 1) * 0.2)}rem`, opacity: Math.min(1, 0.5 + count * 0.2) }}
             >
               {w}

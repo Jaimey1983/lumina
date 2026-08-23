@@ -1,0 +1,80 @@
+.whHeader {
+  flex-shrink: 0;
+}
+
+.whHeaderTitle {
+  margin: 0 0 0.25rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.whHeaderSubtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.whHeaderInstruction {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: #64748b;
+}
+
+.whContent {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.whNav {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+}
+
+.whNavButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  border: none;
+  background: var(--widget-nav, #0f172a);
+  color: #fff;
+  cursor: pointer;
+}
+
+.whNavButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.whInnerHighlight {
+  outline: 2px dashed var(--widget-accent, #2563eb);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.whRoot {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  --widget-accent: #2563eb;
+  --widget-accent-muted: #2563eb;
+  --widget-border: #93c5fd;
+  --widget-nav: #0f172a;
+}
