@@ -7,13 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { FontFamilySelect } from '@/components/editor/font-family-select';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import {
   createEmptyCustomTheme,
@@ -21,7 +15,6 @@ import {
   NO_SLIDE_THEME,
   NO_SLIDE_THEME_ID,
   PREDEFINED_SLIDE_THEMES,
-  SLIDE_THEME_FONT_OPTIONS,
 } from '@/lib/slide-themes';
 import { cn } from '@/lib/utils';
 import type { SlideTheme } from '@/types/slide.types';
@@ -277,25 +270,12 @@ function CustomThemeForm({
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Fuente</Label>
-        <Select
-          value={draft.fuente}
-          onValueChange={(v) => onChange({ ...draft, fuente: v })}
-          disabled={disabled}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SLIDE_THEME_FONT_OPTIONS.map((f) => (
-              <SelectItem key={f} value={f} className="text-xs">
-                {f}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <FontFamilySelect
+        value={draft.fuente}
+        onValueChange={(v) => onChange({ ...draft, fuente: v })}
+        disabled={disabled}
+        labelClassName="text-muted-foreground"
+      />
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">

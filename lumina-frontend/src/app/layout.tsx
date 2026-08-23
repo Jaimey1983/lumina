@@ -6,7 +6,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/auth-context';
 import { QueryProvider } from '@/providers/query-provider';
 import { ReactNode, Suspense } from 'react';
-import { buildGoogleFontsUrl } from '@/lib/font-catalog';
 
 import '@/styles/globals.css';
 
@@ -32,11 +31,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={cn('h-full', plusJakarta.variable)}
       suppressHydrationWarning
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href={buildGoogleFontsUrl()} rel="stylesheet" />
-      </head>
       <body
         className={cn(
           'antialiased flex h-full min-w-0 flex-col text-base text-foreground bg-background',

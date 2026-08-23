@@ -1,15 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Italic,
-  Underline,
-} from 'lucide-react';
 import { toast } from 'sonner';
 
 import type {
@@ -36,7 +27,6 @@ import type {
   CarouselWidget,
   ClickRevealWidget,
   TimelineWidget,
-  TextAlign,
   TextBlock,
   VideoBlock,
 } from '@/types/slide.types';
@@ -151,27 +141,17 @@ import { Switch } from '@/components/ui/switch';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import { AnimationPanel } from '@/components/animations/animation-panel';
+import { TypographyInspector } from '@/components/editor/typography-inspector';
 import type { Animacion, TransicionSlide } from '@/types/animation.types';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const FONT_OPTIONS = [
-  'Inter',
-  'Georgia',
-  'Courier New',
-  'Arial',
-  'Playfair Display',
-] as const;
+import {
+  isTypographySizeOnlyPatch,
+  textBlockPatchFromTypography,
+  typographyFromTextBlock,
+} from '@/lib/typography';
 
 const DEBOUNCE_MS = 500;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function parsePx(s?: string): number {
-  if (!s) return 24;
-  const m = String(s).match(/(\d+)/);
-  return m ? Math.min(120, Math.max(12, parseInt(m[1]!, 10))) : 24;
-}
 
 function parseBorderPx(s?: string): number {
   const m = s?.match(/(\d+)/);
@@ -1242,7 +1222,7 @@ export function PropertiesPanel({
   }
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
+    <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Propiedades
@@ -1334,155 +1314,37 @@ function TextBlockFields({
   scheduleApply: (fn: (b: Block) => Block) => void;
   clearDebounce: () => void;
 }) {
-  const [sizeDraft, setSizeDraft] = useState(() => parsePx(block.tamanoFuente));
-
-  useEffect(() => {
-    setSizeDraft(parsePx(block.tamanoFuente));
-  }, [block.tamanoFuente]);
-
-  const setAlign = (alineacion: TextAlign) => {
-    void applyNow((b) =>
-      b.tipo === 'texto' ? { ...b, alineacion } : b,
-    );
-  };
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="space-y-2">
-        <Label className="text-xs">Fuente</Label>
-        <Select
-          value={block.fuente ?? 'Inter'}
-          onValueChange={(fuente) => {
-            void applyNow((b) => (b.tipo === 'texto' ? { ...b, fuente } : b));
-          }}
-        >
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_OPTIONS.map((f) => (
-              <SelectItem key={f} value={f}>
-                {f}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs" htmlFor="prop-text-size">
-          Tamaño (px)
-        </Label>
-        <Input
-          id="prop-text-size"
-          type="number"
-          min={12}
-          max={120}
-          value={sizeDraft}
-          onChange={(e) => {
-            const v = Math.min(120, Math.max(12, Number(e.target.value) || 12));
-            setSizeDraft(v);
-            scheduleApply((b) =>
-              b.tipo === 'texto' ? { ...b, tamanoFuente: `${v}px` } : b,
-            );
-          }}
-          onBlur={() => {
-            clearDebounce();
-            void applyNow((b) =>
-              b.tipo === 'texto'
-                ? { ...b, tamanoFuente: `${sizeDraft}px` }
-                : b,
-            );
-          }}
-          className="h-8"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs" htmlFor="prop-text-color">
-          Color
-        </Label>
-        <Input
-          id="prop-text-color"
-          type="color"
-          value={toHexColor(block.color, '#000000')}
-          onChange={(e) => {
-            void applyNow((b) =>
-              b.tipo === 'texto' ? { ...b, color: e.target.value } : b,
-            );
-          }}
-          className="h-8 w-full cursor-pointer p-1"
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Toggle
-          size="sm"
-          variant="outline"
-          pressed={!!block.negrita}
-          onPressedChange={(p) => {
-            void applyNow((b) =>
-              b.tipo === 'texto' ? { ...b, negrita: p } : b,
-            );
-          }}
-          aria-label="Negrita"
-        >
-          <Bold className="size-3.5" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          variant="outline"
-          pressed={!!block.cursiva}
-          onPressedChange={(p) => {
-            void applyNow((b) =>
-              b.tipo === 'texto' ? { ...b, cursiva: p } : b,
-            );
-          }}
-          aria-label="Cursiva"
-        >
-          <Italic className="size-3.5" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          variant="outline"
-          pressed={!!block.subrayado}
-          onPressedChange={(p) => {
-            void applyNow((b) =>
-              b.tipo === 'texto' ? { ...b, subrayado: p } : b,
-            );
-          }}
-          aria-label="Subrayado"
-        >
-          <Underline className="size-3.5" />
-        </Toggle>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs">Alineación</Label>
-        <div className="flex gap-1">
-          {(
-            [
-              ['izquierda', AlignLeft],
-              ['centro', AlignCenter],
-              ['derecha', AlignRight],
-              ['justificado', AlignJustify],
-            ] as const
-          ).map(([key, Icon]) => (
-            <Button
-              key={key}
-              type="button"
-              size="icon"
-              variant={block.alineacion === key ? 'secondary' : 'outline'}
-              className="size-8"
-              title={key}
-              onClick={() => setAlign(key)}
-            >
-              <Icon className="size-3.5" />
-            </Button>
-          ))}
-        </div>
-      </div>
-    </div>
+    <TypographyInspector
+      value={typographyFromTextBlock(block)}
+      sizeMin={12}
+      sizeMax={120}
+      defaultSize={24}
+      defaultColor="#000000"
+      headingLevel={block.nivel}
+      enableList
+      onHeadingLevelChange={(nivel) => {
+        void applyNow((b) => {
+          if (b.tipo !== 'texto') return b;
+          if (nivel === undefined) {
+            const { nivel: _omit, ...rest } = b;
+            return rest;
+          }
+          return { ...b, nivel };
+        });
+      }}
+      onChange={(patch) => {
+        const mapped = textBlockPatchFromTypography(patch);
+        const apply = (b: Block): Block =>
+          b.tipo === 'texto' ? { ...b, ...mapped } : b;
+        if (isTypographySizeOnlyPatch(patch)) {
+          scheduleApply(apply);
+          return;
+        }
+        clearDebounce();
+        void applyNow(apply);
+      }}
+    />
   );
 }
 

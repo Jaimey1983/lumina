@@ -1,13 +1,5 @@
 'use client';
 
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Italic,
-} from 'lucide-react';
-
 import type {
   WidgetCampoEstilo,
   WidgetEstilosHeader,
@@ -27,45 +19,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Toggle } from '@/components/ui/toggle';
-import { FONT_CATALOG, resolveFontFamily } from '@/lib/font-catalog';
+import { WidgetTypographyFields } from '@/components/editor/typography-inspector';
 import {
   applyInlineStyleToWidgetSelection,
   getActiveWidgetTextEditor,
   sanitizeWidgetHtml,
 } from '@/components/widgets/shared/widget-rich-text';
 import { WidgetSectionTitle as SectionTitle } from '@/components/widgets/shared/widget-properties-panel';
-
-function AlignToggle({
-  value,
-  onChange,
-}: {
-  value: WidgetCampoEstilo['align'];
-  onChange: (align: WidgetCampoEstilo['align']) => void;
-}) {
-  const current = value ?? 'left';
-  return (
-    <div className="flex gap-0.5">
-      {(
-        [
-          ['left', AlignLeft],
-          ['center', AlignCenter],
-          ['right', AlignRight],
-        ] as const
-      ).map(([align, Icon]) => (
-        <Toggle
-          key={align}
-          size="sm"
-          pressed={current === align}
-          aria-label={align}
-          onPressedChange={() => onChange(align)}
-        >
-          <Icon className="size-3.5" />
-        </Toggle>
-      ))}
-    </div>
-  );
-}
 
 function patchStyleWithSelection(
   selection: { slideId: string; field: string },
@@ -86,6 +46,14 @@ function patchStyleWithSelection(
     if (applyInlineStyleToWidgetSelection({ fontWeight: fw })) appliedInline = true;
   } else if (patch.fontStyle && applyInlineStyleToWidgetSelection({ fontStyle: patch.fontStyle })) {
     appliedInline = true;
+  } else if (patch.underline !== undefined) {
+    if (
+      applyInlineStyleToWidgetSelection({
+        textDecoration: patch.underline ? 'underline' : 'none',
+      })
+    ) {
+      appliedInline = true;
+    }
   }
 
   if (!appliedInline) return false;
@@ -96,113 +64,6 @@ function patchStyleWithSelection(
   const html = sanitizeWidgetHtml(active.getHtml());
   context.patchSlide(selection.slideId, { [selection.field]: html });
   return true;
-}
-
-function TextStyleFields({
-  style,
-  onPatch,
-  sizeMax = 48,
-  defaultSize = 16,
-}: {
-  style: WidgetCampoEstilo;
-  onPatch: (patch: Partial<WidgetCampoEstilo>) => void;
-  sizeMax?: number;
-  defaultSize?: number;
-}) {
-  const fontValue = resolveFontFamily(style.fontFamily);
-
-  return (
-    <>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Fuente</Label>
-        <Select
-          value={fontValue}
-          onValueChange={(v) => onPatch({ fontFamily: v })}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_CATALOG.map((f) => (
-              <SelectItem key={f.familia} value={f.familia} className="text-xs">
-                <span style={{ fontFamily: f.familia }}>{f.nombre}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Tamaño (px)</Label>
-        <Input
-          type="number"
-          min={10}
-          max={sizeMax}
-          className="h-8 text-xs"
-          value={style.fontSize ?? defaultSize}
-          onChange={(e) =>
-            onPatch({
-              fontSize: Math.min(
-                sizeMax,
-                Math.max(10, Number(e.target.value) || defaultSize),
-              ),
-            })
-          }
-        />
-      </div>
-      <div className="flex gap-1">
-        <Toggle
-          size="sm"
-          pressed={style.fontWeight === 'bold' || style.fontWeight === 700}
-          aria-label="Negrita"
-          onPressedChange={(on) =>
-            onPatch({ fontWeight: on ? 'bold' : 'normal' })
-          }
-        >
-          <Bold className="size-3.5" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={style.fontStyle === 'italic'}
-          aria-label="Cursiva"
-          onPressedChange={(on) =>
-            onPatch({ fontStyle: on ? 'italic' : 'normal' })
-          }
-        >
-          <Italic className="size-3.5" />
-        </Toggle>
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Interlineado</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {(style.lineHeight ?? 1.35).toFixed(2)}
-          </span>
-        </div>
-        <Slider
-          value={[Math.round((style.lineHeight ?? 1.35) * 100)]}
-          min={100}
-          max={200}
-          step={5}
-          onValueChange={([v]) => onPatch({ lineHeight: v / 100 })}
-        >
-          <SliderThumb />
-        </Slider>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Color</Label>
-        <Input
-          type="color"
-          className="h-8 w-full cursor-pointer p-1"
-          value={style.color ?? '#0f172a'}
-          onChange={(e) => onPatch({ color: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Alineación</Label>
-        <AlignToggle value={style.align} onChange={(align) => onPatch({ align })} />
-      </div>
-    </>
-  );
 }
 
 export interface WidgetSlideInnerContext {
@@ -236,7 +97,7 @@ export function WidgetSlideTextInnerProperties({
     return (
       <div className="flex flex-col gap-4">
         <SectionTitle>Texto — {label}</SectionTitle>
-        <TextStyleFields
+        <WidgetTypographyFields
           style={style}
           defaultSize={selection.field === 'tituloWidget' ? 20 : 14}
           sizeMax={selection.field === 'tituloWidget' ? 48 : 32}
@@ -289,7 +150,7 @@ export function WidgetSlideTextInnerProperties({
         selección, el estilo afecta a todo el campo. En layout «Texto sobre imagen», usa el asa
         azul para arrastrar el texto.
       </p>
-      <TextStyleFields
+      <WidgetTypographyFields
         style={{
           ...style,
           color:
@@ -304,6 +165,13 @@ export function WidgetSlideTextInnerProperties({
           selection.field === 'encabezado' ? 18 : selection.field === 'subtitulo' ? 14 : 13
         }
         sizeMax={32}
+        defaultColor={
+          selection.field === 'encabezado'
+            ? '#0f172a'
+            : selection.field === 'subtitulo'
+              ? '#475569'
+              : '#64748b'
+        }
         onPatch={patchStyle}
       />
     </div>

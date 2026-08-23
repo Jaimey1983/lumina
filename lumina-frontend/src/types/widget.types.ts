@@ -8,14 +8,22 @@
 export interface WidgetCampoEstilo {
   fontSize?: number;
   color?: string;
-  align?: 'left' | 'center' | 'right';
+  align?: 'left' | 'center' | 'right' | 'justify';
   fontFamily?: string;
   fontWeight?: number | 'normal' | 'bold';
   fontStyle?: 'normal' | 'italic';
+  underline?: boolean;
   /** Multiplicador (ej. 1.25) o px si > 3 */
   lineHeight?: number;
   /** Espaciado entre letras en px */
   letterSpacing?: number;
+  textTransform?: 'none' | 'uppercase' | 'capitalize';
+  /** 0–100 */
+  opacity?: number;
+  /** Intensidad de sombra (0 = sin sombra) */
+  textShadow?: number;
+  backgroundColor?: string;
+  borderRadius?: number;
 }
 
 /** Posición de un elemento dentro del área del slide/ficha (% del contenedor). */

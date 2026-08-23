@@ -376,7 +376,10 @@ export function TimelineEditor({
     <div
       className={cn(chromeStyles.whRoot, styles.tlRoot)}
       style={TimelineContainerStyle(configuracion)}
-      onPointerDown={() => {
+      onPointerDown={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-widget-header-field]')) return;
+        if (target.closest('textarea, input')) return;
         onInnerSelectionChange?.({ kind: 'widget' });
       }}
     >

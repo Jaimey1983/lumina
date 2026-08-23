@@ -66,11 +66,7 @@ export {
   slideSelectionId,
   type WidgetTextField,
 } from './widget-slide-utils';
-export {
-  FLIP_CARDS_FONT_OPTIONS,
-  textStyleToCss,
-  WIDGET_FONT_OPTIONS,
-} from './widget-text-styles';
+export { textStyleToCss } from './widget-text-styles';
 export {
   isCaptivateWidgetBlock,
   isWidgetTipo,

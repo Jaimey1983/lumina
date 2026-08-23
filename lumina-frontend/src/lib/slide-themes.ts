@@ -2,20 +2,6 @@ import type { CSSProperties } from 'react';
 
 import type { Background, SlideTheme } from '@/types/slide.types';
 
-/** Fuentes disponibles al crear temas personalizados. */
-export const SLIDE_THEME_FONT_OPTIONS = [
-  'Inter',
-  'Georgia',
-  'Poppins',
-  'Plus Jakarta Sans',
-  'Nunito',
-  'Courier New',
-  'Arial',
-  'Playfair Display',
-] as const;
-
-export type SlideThemeFont = (typeof SLIDE_THEME_FONT_OPTIONS)[number];
-
 /** Id reservado para quitar el tema visual del slide. */
 export const NO_SLIDE_THEME_ID = 'sin_tema';
 

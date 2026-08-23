@@ -1,13 +1,5 @@
 'use client';
 
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Italic,
-} from 'lucide-react';
-
 import type {
   Block,
   FlipCardCara,
@@ -26,168 +18,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Toggle } from '@/components/ui/toggle';
 import type {
   FlipCardsCaraLado,
   FlipCardsInnerSelection,
 } from './flip-cards-config';
-import { FONT_CATALOG, resolveFontFamily } from '@/lib/font-catalog';
+import { WidgetTypographyFields } from '@/components/editor/typography-inspector';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
-
-function AlignToggle({
-  value,
-  onChange,
-}: {
-  value: FlipCardsCampoEstilo['align'];
-  onChange: (align: FlipCardsCampoEstilo['align']) => void;
-}) {
-  const current = value ?? 'left';
-  return (
-    <div className="flex gap-0.5">
-      {(
-        [
-          ['left', AlignLeft],
-          ['center', AlignCenter],
-          ['right', AlignRight],
-        ] as const
-      ).map(([align, Icon]) => (
-        <Toggle
-          key={align}
-          size="sm"
-          pressed={current === align}
-          aria-label={align}
-          onPressedChange={() => onChange(align)}
-        >
-          <Icon className="size-3.5" />
-        </Toggle>
-      ))}
-    </div>
-  );
-}
-
-function TextStyleFields({
-  style,
-  onPatch,
-  sizeMax = 48,
-  defaultSize = 16,
-}: {
-  style: FlipCardsCampoEstilo;
-  onPatch: (patch: Partial<FlipCardsCampoEstilo>) => void;
-  sizeMax?: number;
-  defaultSize?: number;
-}) {
-  const fontValue = resolveFontFamily(style.fontFamily);
-
-  return (
-    <>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Fuente</Label>
-        <Select
-          value={fontValue}
-          onValueChange={(v) => onPatch({ fontFamily: v })}
-        >
-          <SelectTrigger size="sm" className="h-8 w-full text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="max-h-72">
-            {FONT_CATALOG.map((f) => (
-              <SelectItem key={f.familia} value={f.familia} className="text-xs">
-                <span style={{ fontFamily: f.familia }}>{f.nombre}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Tamaño (px)</Label>
-        <Input
-          type="number"
-          min={10}
-          max={sizeMax}
-          className="h-8 text-xs"
-          value={style.fontSize ?? defaultSize}
-          onChange={(e) =>
-            onPatch({
-              fontSize: Math.min(
-                sizeMax,
-                Math.max(10, Number(e.target.value) || defaultSize),
-              ),
-            })
-          }
-        />
-      </div>
-      <div className="flex gap-1">
-        <Toggle
-          size="sm"
-          pressed={style.fontWeight === 'bold' || style.fontWeight === 700}
-          aria-label="Negrita"
-          onPressedChange={(on) =>
-            onPatch({ fontWeight: on ? 'bold' : 'normal' })
-          }
-        >
-          <Bold className="size-3.5" />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={style.fontStyle === 'italic'}
-          aria-label="Cursiva"
-          onPressedChange={(on) =>
-            onPatch({ fontStyle: on ? 'italic' : 'normal' })
-          }
-        >
-          <Italic className="size-3.5" />
-        </Toggle>
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Interlineado</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {(style.lineHeight ?? 1.35).toFixed(2)}
-          </span>
-        </div>
-        <Slider
-          value={[Math.round((style.lineHeight ?? 1.35) * 100)]}
-          min={100}
-          max={200}
-          step={5}
-          onValueChange={([v]) => onPatch({ lineHeight: v / 100 })}
-        >
-          <SliderThumb />
-        </Slider>
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Espaciado letras</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {style.letterSpacing ?? 0}px
-          </span>
-        </div>
-        <Slider
-          value={[style.letterSpacing ?? 0]}
-          min={-1}
-          max={8}
-          step={0.5}
-          onValueChange={([v]) => onPatch({ letterSpacing: v })}
-        >
-          <SliderThumb />
-        </Slider>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Color</Label>
-        <Input
-          type="color"
-          className="h-8 w-full cursor-pointer p-1"
-          value={style.color ?? '#0f172a'}
-          onChange={(e) => onPatch({ color: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Alineación</Label>
-        <AlignToggle value={style.align} onChange={(align) => onPatch({ align })} />
-      </div>
-    </>
-  );
-}
 
 function patchHeaderStyle(
   block: FlipCardsWidget,
@@ -249,7 +85,7 @@ export function FlipCardsTextInnerProperties({
     return (
       <div className="flex flex-col gap-4">
         <WidgetSectionTitle>Texto — {label}</WidgetSectionTitle>
-        <TextStyleFields
+        <WidgetTypographyFields
           style={style}
           defaultSize={selection.field === 'tituloWidget' ? 18 : 14}
           sizeMax={selection.field === 'tituloWidget' ? 48 : 32}
@@ -289,7 +125,7 @@ export function FlipCardsTextInnerProperties({
         Usa el asa azul a la izquierda del texto en el lienzo para arrastrarlo dentro de la
         tarjeta.
       </p>
-      <TextStyleFields
+      <WidgetTypographyFields
         style={{
           ...style,
           color:
@@ -298,6 +134,7 @@ export function FlipCardsTextInnerProperties({
         }}
         defaultSize={isTitle ? 14 : 12}
         sizeMax={32}
+        defaultColor={selection.face === 'reverso' ? '#ffffff' : '#0f172a'}
         onPatch={patchStyle}
       />
     </div>

@@ -607,6 +607,22 @@ export interface TextBlock {
   /** Subrayado (persistido; el renderer puede mostrarlo cuando lo soporte). */
   subrayado?: boolean;
   color?: string;
+  /** Multiplicador de interlineado (ej. 1.35). */
+  interlineado?: number;
+  /** Espaciado entre letras en px. */
+  espaciadoLetras?: number;
+  /** none / uppercase / capitalize. */
+  transformacion?: 'ninguna' | 'mayusculas' | 'titulo';
+  /** 0–100. */
+  opacidad?: number;
+  /** Intensidad de sombra (0 = sin sombra). */
+  sombra?: number;
+  /** Color de fondo del bloque de texto. */
+  fondoTexto?: string;
+  /** Radio del fondo en px. */
+  radioFondo?: number;
+  /** Cada salto de línea se vuelve un ítem. */
+  lista?: 'ninguna' | 'vinetas' | 'numeros';
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
   x?: number;
   y?: number;

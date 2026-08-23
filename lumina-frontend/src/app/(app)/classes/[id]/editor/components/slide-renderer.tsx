@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -52,6 +53,9 @@ import type {
 } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
+import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue, resolveFontFamily } from '@/lib/font-catalog';
+import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
+import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
 import { getSlideVariant } from '@/lib/slide-variant';
 
 import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
@@ -634,16 +638,20 @@ function emptyTextPlaceholderLabel(block: TextBlock): string {
 
 /** Estilos opcionales del JSON de texto: solo se añaden si el campo viene definido. */
 function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
-  const out: CSSProperties = {};
+  const out: CSSProperties = {
+    ...typographyToCss(typographyFromTextBlock(block)),
+  };
   if (block.fuente !== undefined && block.fuente !== '') {
-    out.fontFamily = block.fuente;
+    out.fontFamily = resolveFontFamily(block.fuente);
   }
   if (block.subrayado === true) {
     out.textDecoration = 'underline';
   }
-  const opacidad = (block as TextBlock & { opacidad?: number }).opacidad;
-  if (opacidad !== undefined && typeof opacidad === 'number') {
-    out.opacity = opacidad / 100;
+  if (block.interlineado !== undefined) {
+    out.lineHeight = block.interlineado;
+  }
+  if (block.espaciadoLetras !== undefined) {
+    out.letterSpacing = `${block.espaciadoLetras}px`;
   }
   return out;
 }
@@ -736,7 +744,6 @@ function InlineTextEditor({
           textAlign: block.alineacion
             ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
             : 'left',
-          lineHeight: 'inherit',
           overflowY: 'auto',
           boxSizing: 'border-box',
           zIndex: 1,
@@ -781,9 +788,10 @@ function RenderText({ block, modo, isEditing, onCommit, onDiscard }: RenderTextP
     );
   }
 
+  const isList = block.lista === 'vinetas' || block.lista === 'numeros';
   const style: CSSProperties = {
     margin: 0,
-    whiteSpace: 'pre-wrap',
+    whiteSpace: isList ? 'normal' : 'pre-wrap',
     wordBreak: 'break-word',
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
     fontSize: block.tamanoFuente,
@@ -791,9 +799,26 @@ function RenderText({ block, modo, isEditing, onCommit, onDiscard }: RenderTextP
     fontStyle: block.cursiva ? 'italic' : undefined,
     color: block.color,
     ...textBlockOptionalVisualStyle(block),
+    ...(isList
+      ? {
+          paddingLeft: '1.2em',
+          listStyleType: block.lista === 'numeros' ? 'decimal' : 'disc',
+        }
+      : {}),
   };
-  const tag = block.nivel ? `h${block.nivel}` : 'p';
-  return createElement(tag, { style }, block.contenido);
+  const tag = isList
+    ? block.lista === 'numeros'
+      ? 'ol'
+      : 'ul'
+    : block.nivel
+      ? `h${block.nivel}`
+      : 'p';
+  const children = isList
+    ? (block.contenido ?? '').split('\n').map((line, i) =>
+        createElement('li', { key: i }, line === '' ? '\u00a0' : line),
+      )
+    : block.contenido;
+  return createElement(tag, { style }, children);
 }
 
 function RenderImage({ block, forceFill }: { block: ImageBlock; forceFill?: boolean }) {
@@ -1937,9 +1962,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? flipCardsInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onFlipCardsInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onFlipCardsInnerSelectionChange}
           />
         ) : (
           <FlipCardsViewer block={block} isThumbnail={isThumbnail} />
@@ -1953,9 +1976,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? tabsInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onTabsInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onTabsInnerSelectionChange}
           />
         ) : (
           <TabsViewer block={block} isThumbnail={isThumbnail} />
@@ -1969,9 +1990,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? carouselInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onCarouselInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onCarouselInnerSelectionChange}
           />
         ) : (
           <CarouselViewer block={block} isThumbnail={isThumbnail} />
@@ -1985,9 +2004,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? clickRevealInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onClickRevealInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onClickRevealInnerSelectionChange}
           />
         ) : (
           <ClickRevealViewer block={block} isThumbnail={isThumbnail} />
@@ -2001,9 +2018,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? popupInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onPopupInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onPopupInnerSelectionChange}
           />
         ) : (
           <PopupViewer block={block} isThumbnail={isThumbnail} />
@@ -2017,9 +2032,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? hotspotInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onHotspotInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onHotspotInnerSelectionChange}
           />
         ) : (
           <HotspotViewer block={block} isThumbnail={isThumbnail} />
@@ -2070,9 +2083,7 @@ function BlockNode({
             innerSelection={
               selectedId === blockId ? timelineInnerSelection ?? null : null
             }
-            onInnerSelectionChange={
-              selectedId === blockId ? onTimelineInnerSelectionChange : undefined
-            }
+            onInnerSelectionChange={onTimelineInnerSelectionChange}
           />
         ) : (
           <TimelineViewer widget={block} isThumbnail={isThumbnail} />
@@ -2394,6 +2405,13 @@ export function SlideRenderer({
 }: SlideRendererProps) {
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
   const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
+  const slideFonts = useMemo(
+    () => [...FONT_CORE_FAMILIES, ...collectFontFamiliesFromValue(slide)],
+    [slide],
+  );
+  useEffect(() => {
+    ensureGoogleFonts(slideFonts);
+  }, [slideFonts]);
 
   const [editingId,     setEditingId]     = useState<string | null>(null);
   const [resizingCoords, setResizingCoords] = useState<Record<string, { x: number; y: number; ancho: number; alto: number }>>({});

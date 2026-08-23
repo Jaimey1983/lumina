@@ -2,17 +2,7 @@ import type { CSSProperties } from 'react';
 
 import type { WidgetCampoEstilo } from '@/types/widget.types';
 import { resolveFontFamily } from '@/lib/font-catalog';
-
-export const WIDGET_FONT_OPTIONS = [
-  { value: 'Inter, system-ui, sans-serif', label: 'Inter' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: '"Playfair Display", Georgia, serif', label: 'Playfair' },
-  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
-  { value: '"Courier New", monospace', label: 'Courier' },
-] as const;
-
-/** @deprecated Usar WIDGET_FONT_OPTIONS */
-export const FLIP_CARDS_FONT_OPTIONS = WIDGET_FONT_OPTIONS;
+import { typographyFromWidget, typographyToCss } from '@/lib/typography';
 
 export function textStyleToCss(estilo?: WidgetCampoEstilo): CSSProperties {
   if (!estilo) return {};
@@ -23,7 +13,9 @@ export function textStyleToCss(estilo?: WidgetCampoEstilo): CSSProperties {
     fontFamily: estilo.fontFamily ? resolveFontFamily(estilo.fontFamily) : undefined,
     fontWeight: estilo.fontWeight,
     fontStyle: estilo.fontStyle,
+    textDecoration: estilo.underline ? 'underline' : undefined,
     lineHeight: estilo.lineHeight,
     letterSpacing: estilo.letterSpacing != null ? `${estilo.letterSpacing}px` : undefined,
+    ...typographyToCss(typographyFromWidget(estilo)),
   };
 }

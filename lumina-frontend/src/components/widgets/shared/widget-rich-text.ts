@@ -95,6 +95,7 @@ export function applyInlineStyleToWidgetSelection(styles: {
   fontSize?: string;
   fontWeight?: string;
   fontStyle?: string;
+  textDecoration?: string;
 }): boolean {
   const handle = activeEditor;
   if (!handle) return false;
@@ -109,6 +110,7 @@ export function applyInlineStyleToWidgetSelection(styles: {
   if (styles.fontSize) span.style.fontSize = styles.fontSize;
   if (styles.fontWeight) span.style.fontWeight = styles.fontWeight;
   if (styles.fontStyle) span.style.fontStyle = styles.fontStyle;
+  if (styles.textDecoration) span.style.textDecoration = styles.textDecoration;
 
   try {
     range.surroundContents(span);

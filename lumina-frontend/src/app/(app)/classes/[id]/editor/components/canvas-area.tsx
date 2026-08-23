@@ -307,7 +307,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const [timelineInnerSelection, setTimelineInnerSelection] =
     useState<TimelineInnerSelection | null>(null);
 
-  useEffect(() => {
+  const clearInnerSelections = useCallback(() => {
     setFlipCardsInnerSelection(null);
     setTabsInnerSelection(null);
     setCarouselInnerSelection(null);
@@ -315,7 +315,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     setPopupInnerSelection(null);
     setHotspotInnerSelection(null);
     setTimelineInnerSelection(null);
-  }, [selectedBlockId]);
+  }, []);
+
   const [marqueeRect, setMarqueeRect] = useState<{
     startX: number;
     startY: number;
@@ -325,6 +326,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const wasDraggingRef = useRef(false);
   const onBlockSelectRef = useRef(onBlockSelect);
   onBlockSelectRef.current = onBlockSelect;
+  const selectedBlockIdRef = useRef(selectedBlockId);
+  selectedBlockIdRef.current = selectedBlockId;
 
   // Clear committed state when the user switches slides.
   useEffect(() => {
@@ -334,7 +337,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   useEffect(() => {
     setSelectedBlockId(null);
     setSelectedBlockIds([]);
-  }, [slide?.id]);
+    clearInnerSelections();
+  }, [slide?.id, clearInnerSelections]);
 
   const hasActivityBlock =
     Boolean(slide?.bloques?.some((b) => b.tipo === 'actividad'));
@@ -788,6 +792,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     if (!bloques.length) {
       setSelectedBlockId(null);
       setSelectedBlockIds([]);
+      clearInnerSelections();
       onBlockSelectRef.current?.('');
       return;
     }
@@ -795,15 +800,22 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       if (!getBlockAtPath(bloques, selectedBlockId)) {
         setSelectedBlockId(null);
         setSelectedBlockIds([]);
+        clearInnerSelections();
         onBlockSelectRef.current?.('');
       }
     } else {
       setSelectedBlockIds([]);
     }
-  }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques]);
+  }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques, clearInnerSelections]);
 
   const handleRendererBlockSelect = useCallback(
     (id: string, e?: React.MouseEvent) => {
+      // Clear other widgets' inner state only when the selected block changes.
+      // Same-click text focus then sets the field. Never do this in an effect
+      // on selectedBlockId — that wipe runs after the inner set and drops it.
+      if (selectedBlockIdRef.current !== id) {
+        clearInnerSelections();
+      }
       if (e?.shiftKey) {
         setSelectedBlockIds((prev) => {
           let next = [...prev];
@@ -823,7 +835,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         onBlockSelect?.(id);
       }
     },
-    [onBlockSelect],
+    [onBlockSelect, clearInnerSelections],
   );
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -926,11 +938,15 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             if (intersectedIds.length > 0) {
               setSelectedBlockIds(intersectedIds);
               const lastId = intersectedIds[intersectedIds.length - 1]!;
+              if (selectedBlockIdRef.current !== lastId) {
+                clearInnerSelections();
+              }
               setSelectedBlockId(lastId);
               onBlockSelect?.(lastId);
             } else {
               setSelectedBlockIds([]);
               setSelectedBlockId(null);
+              clearInnerSelections();
               onBlockSelect?.('');
             }
           }
@@ -942,7 +958,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [allBlocks, onBlockSelect]);
+  }, [allBlocks, onBlockSelect, clearInnerSelections]);
 
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
@@ -996,11 +1012,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       if (t.closest('[data-drag-handle]')) return;
       setSelectedBlockId(null);
       setSelectedBlockIds([]);
+      clearInnerSelections();
       onBlockSelectRef.current?.('');
     };
     root.addEventListener('click', onClickCapture, true);
     return () => root.removeEventListener('click', onClickCapture, true);
-  }, [slide?.id]);
+  }, [slide?.id, clearInnerSelections]);
 
   const showPropertiesPanel =
     selectedBlockId != null && selectedBlockId !== '' && !livePanelOpen;
@@ -1027,12 +1044,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         onRemoveBlock?.(selectedBlockId);
         setSelectedBlockId(null);
         setSelectedBlockIds([]);
+        clearInnerSelections();
         onBlockSelectRef.current?.('');
         return true;
       },
       clearBlockSelection: () => {
         setSelectedBlockId(null);
         setSelectedBlockIds([]);
+        clearInnerSelections();
         onBlockSelectRef.current?.('');
       },
       persistBloquesFromDrag: (bloques) => {
@@ -1040,6 +1059,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       },
       selectBlockByIndex: (index) => {
         const id = String(index);
+        if (selectedBlockIdRef.current !== id) {
+          clearInnerSelections();
+        }
         setSelectedBlockId(id);
         setSelectedBlockIds([id]);
         onBlockSelectRef.current?.(id);
@@ -1094,6 +1116,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleCopyBlock,
       onRemoveBlock,
       handleDragSave,
+      clearInnerSelections,
     ],
   );
 
@@ -1118,6 +1141,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         if (e.target === e.currentTarget) {
           setSelectedBlockId(null);
           setSelectedBlockIds([]);
+          clearInnerSelections();
           onBlockSelectRef.current?.('');
         }
       }}
