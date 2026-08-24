@@ -26,6 +26,7 @@ import {
 } from '@/lib/class-slide-normalize';
 import { ResizeHandles } from './resize-handles';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
+import { withRect } from '@/hooks/use-block-drag';
 
 import type {
   Activity,
@@ -2189,7 +2190,7 @@ function BlockNode({
         isBlockButtonShell && 'hover:ring-2 hover:ring-blue-500/40',
         editorMode && isTextEditing && 'cursor-text outline-none rounded-sm',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
-        editorMode && isSelected && !isFormBlock && 'ring-2 ring-blue-500 ring-offset-1',
+        editorMode && isSelected && 'ring-2 ring-blue-500 ring-offset-1',
         isInteractiveStub && 'pointer-events-none',
         !editorMode && block.tipo !== 'hotspot' && block.tipo !== 'tooltip' && 'overflow-hidden max-w-full max-h-full',
         !editorMode && block.tipo === 'actividad' && 'min-h-0',
@@ -2206,7 +2207,7 @@ function BlockNode({
       )}
     >
       {renderContent()}
-      {editorMode && isSelected && !isFormBlock && !popupOverlayEditing && canvasRef && currentCoords && onResize && onResizeEnd && (
+      {editorMode && isSelected && !popupOverlayEditing && canvasRef && currentCoords && onResize && onResizeEnd && (
         <ResizeHandles
           blockId={blockId}
           x={currentCoords.x}
@@ -2498,17 +2499,17 @@ export function SlideRenderer({
         });
       }
 
-      const nextBase: Block = {
-        ...b,
-        x: finalCoords.x,
-        y: finalCoords.y,
-        ancho: finalCoords.ancho,
-        alto: finalCoords.alto,
-      } as Block;
+      const resized = withRect(
+        b,
+        finalCoords.x,
+        finalCoords.y,
+        finalCoords.ancho,
+        finalCoords.alto,
+      );
       if (b.tipo === 'imagen') {
-        return { ...nextBase, ajuste: 'llenar' } as Block;
+        return { ...resized, ajuste: 'llenar' } as Block;
       }
-      return nextBase;
+      return resized;
     });
 
     const updatedContent = mergeRendererSlideState(slide, { bloques: nextBlocks });

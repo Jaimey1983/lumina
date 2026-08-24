@@ -12,6 +12,7 @@ import {
   snapPositionToGuides,
   snapThresholdPct,
   withPosition,
+  withRect,
 } from './use-block-drag';
 
 function texto(x: number, y: number, overrides?: Partial<Block>): Block {
@@ -313,5 +314,48 @@ describe('withPosition', () => {
         altoPct: 90,
       });
     }
+  });
+});
+
+describe('withRect', () => {
+  it('escribe marco completo de una actividad, no x/y/ancho/alto (C3)', () => {
+    const next = withRect(actividad(5, 5), 8, 10, 70, 60);
+    expect(next.tipo).toBe('actividad');
+    if (next.tipo === 'actividad') {
+      expect(next.marco).toEqual({
+        izquierdaPct: 8,
+        arribaPct: 10,
+        anchoPct: 70,
+        altoPct: 60,
+      });
+    }
+    expect(next).not.toHaveProperty('x');
+    expect(next).not.toHaveProperty('ancho');
+  });
+
+  it('crea marco por defecto al redimensionar una actividad sin marco', () => {
+    const block: Block = {
+      tipo: 'actividad',
+      actividad: {
+        tipo: 'quiz_multiple',
+        pregunta: '¿?',
+        opciones: [],
+      },
+    };
+    const next = withRect(block, 12, 14, 50, 40);
+    expect(next.tipo).toBe('actividad');
+    if (next.tipo === 'actividad') {
+      expect(next.marco).toEqual({
+        izquierdaPct: 12,
+        arribaPct: 14,
+        anchoPct: 50,
+        altoPct: 40,
+      });
+    }
+  });
+
+  it('escribe x/y/ancho/alto de un widget', () => {
+    const next = withRect(texto(10, 20), 1, 2, 30, 15);
+    expect(next).toMatchObject({ x: 1, y: 2, ancho: 30, alto: 15 });
   });
 });

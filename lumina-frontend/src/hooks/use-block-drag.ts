@@ -184,6 +184,17 @@ export function getBlockPos(block: Block): BlockPos {
   }
 }
 
+function activityMarcoOrFallback(block: Extract<Block, { tipo: 'actividad' }>) {
+  return (
+    block.marco ?? {
+      izquierdaPct: ACTIVITY_FALLBACK.x,
+      arribaPct: ACTIVITY_FALLBACK.y,
+      anchoPct: ACTIVITY_FALLBACK.ancho,
+      altoPct: ACTIVITY_FALLBACK.alto,
+    }
+  );
+}
+
 /** Returns a new block with updated x, y (canvas % or activity `marco`). */
 export function withPosition(block: Block, x: number, y: number): Block {
   switch (block.tipo) {
@@ -203,18 +214,59 @@ export function withPosition(block: Block, x: number, y: number): Block {
     case 'progreso':     return { ...block, x, y };
     case 'timeline':     return { ...block, x, y };
     case 'actividad': {
-      const marco = block.marco ?? {
-        izquierdaPct: ACTIVITY_FALLBACK.x,
-        arribaPct: ACTIVITY_FALLBACK.y,
-        anchoPct: ACTIVITY_FALLBACK.ancho,
-        altoPct: ACTIVITY_FALLBACK.alto,
-      };
+      const marco = activityMarcoOrFallback(block);
       return {
         ...block,
         marco: { ...marco, izquierdaPct: x, arribaPct: y },
       };
     }
     default:            return block;
+  }
+}
+
+/**
+ * Persist a full bbox after resize.
+ * Widgets / text / media → `x/y/ancho/alto`. Actividad → `marco` (C3).
+ */
+export function withRect(
+  block: Block,
+  x: number,
+  y: number,
+  ancho: number,
+  alto: number,
+): Block {
+  switch (block.tipo) {
+    case 'texto':
+    case 'imagen':
+    case 'video':
+    case 'forma':
+    case 'flip-cards':
+    case 'tabs':
+    case 'carousel':
+    case 'click-reveal':
+    case 'popup':
+    case 'hotspot':
+    case 'tooltip':
+    case 'boton':
+    case 'contador':
+    case 'progreso':
+    case 'timeline':
+      return { ...block, x, y, ancho, alto };
+    case 'actividad': {
+      const marco = activityMarcoOrFallback(block);
+      return {
+        ...block,
+        marco: {
+          ...marco,
+          izquierdaPct: x,
+          arribaPct: y,
+          anchoPct: ancho,
+          altoPct: alto,
+        },
+      };
+    }
+    default:
+      return block;
   }
 }
 
