@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef } from 'react';
 
+import { clampDragCorner } from '@/hooks/use-block-drag';
+
 export interface ResizeHandlesProps {
   blockId: string;
   x: number;
@@ -34,10 +36,6 @@ const HANDLES: { dir: HandleDir; style: React.CSSProperties; cursor: string }[] 
 ];
 
 const DEFAULT_MIN_DIM = 5;
-
-function clampPos(v: number): number {
-  return Math.max(-50, Math.min(150, v));
-}
 
 function computeNewCoords(
   dir: HandleDir,
@@ -87,10 +85,8 @@ function computeNewCoords(
     if (dir === 'NW' || dir === 'SW') x = anchorX - ancho;
     if (dir === 'NW' || dir === 'NE') y = anchorY - alto;
 
-    x = clampPos(x);
-    y = clampPos(y);
-
-    return { x, y, ancho, alto };
+    const clamped = clampDragCorner(x, y, ancho, alto);
+    return { x: clamped.x, y: clamped.y, ancho, alto };
   }
 
   let x     = origX;
@@ -151,10 +147,8 @@ function computeNewCoords(
       alto = minDim;
     }
 
-  x = clampPos(x);
-  y = clampPos(y);
-
-  return { x, y, ancho, alto };
+  const clamped = clampDragCorner(x, y, ancho, alto);
+  return { x: clamped.x, y: clamped.y, ancho, alto };
 }
 
 export function ResizeHandles({

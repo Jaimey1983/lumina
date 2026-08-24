@@ -1706,16 +1706,28 @@ function BlockActionToolbarPortal({
   const updatePosition = useCallback(() => {
     const el = blockRef.current;
     if (!el || !visible) {
-      setStyle(null);
+      setStyle((prev) => (prev === null ? prev : null));
       return;
     }
     const rect = el.getBoundingClientRect();
-    setStyle({
-      position: 'fixed',
-      top: rect.top - BLOCK_TOOLBAR_GAP_PX,
-      left: rect.left + rect.width / 2,
-      transform: 'translate(-50%, -100%)',
-      zIndex: 1000,
+    const top = rect.top - BLOCK_TOOLBAR_GAP_PX;
+    const left = rect.left + rect.width / 2;
+    setStyle((prev) => {
+      if (
+        prev &&
+        prev.top === top &&
+        prev.left === left &&
+        prev.position === 'fixed'
+      ) {
+        return prev;
+      }
+      return {
+        position: 'fixed',
+        top,
+        left,
+        transform: 'translate(-50%, -100%)',
+        zIndex: 1000,
+      };
     });
   }, [blockRef, visible]);
 

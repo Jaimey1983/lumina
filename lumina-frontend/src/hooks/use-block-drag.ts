@@ -287,10 +287,38 @@ export type SnapToGuidesOptions = {
   enabled?: boolean;
 };
 
-function clampDragCorner(x: number, y: number): { x: number; y: number } {
+/** Tope absoluto del origen (bloques grandes pueden colgarse del lienzo). */
+export const CANVAS_OVERFLOW_ORIGIN_MIN = -50;
+export const CANVAS_OVERFLOW_ORIGIN_MAX = 150;
+
+/**
+ * Mínimo del bbox (en % del lienzo) que debe intersectar 0–100.
+ * Bloques ≤ 4 % (Hotspot, Tooltip, Popup) quedan enteros; los más grandes
+ * pueden colgarse pero no desaparecer del viewer (`overflow: hidden`).
+ */
+export const MIN_VISIBLE_PCT = 4;
+
+/** Origen en un eje: -50…150 ∩ “sigue habiendo `min(size, 4 %)` dentro de 0–100”. */
+export function clampAxisOrigin(origin: number, size: number): number {
+  const span = Number.isFinite(size) ? Math.max(size, 0) : 0;
+  const visible = Math.min(span, MIN_VISIBLE_PCT);
+  const min = Math.max(CANVAS_OVERFLOW_ORIGIN_MIN, visible - span);
+  const max = Math.min(CANVAS_OVERFLOW_ORIGIN_MAX, 100 - visible);
+  if (min > max) {
+    return Math.max(CANVAS_OVERFLOW_ORIGIN_MIN, Math.min(CANVAS_OVERFLOW_ORIGIN_MAX, origin));
+  }
+  return Math.max(min, Math.min(max, origin));
+}
+
+export function clampDragCorner(
+  x: number,
+  y: number,
+  ancho: number,
+  alto: number,
+): { x: number; y: number } {
   return {
-    x: Math.max(-50, Math.min(150, x)),
-    y: Math.max(-50, Math.min(150, y)),
+    x: clampAxisOrigin(x, ancho),
+    y: clampAxisOrigin(y, alto),
   };
 }
 
@@ -310,7 +338,7 @@ export function applyNudgeToBlocks(
   return bloques.map((b, i) => {
     if (!wanted.has(i)) return b;
     const pos = getBlockPos(b);
-    const { x, y } = clampDragCorner(pos.x + dx, pos.y + dy);
+    const { x, y } = clampDragCorner(pos.x + dx, pos.y + dy, pos.ancho, pos.alto);
     return withPosition(b, x, y);
   });
 }
@@ -377,7 +405,7 @@ export function snapPositionToGuides(
   options?: SnapToGuidesOptions,
 ): { x: number; y: number; lines: SnapLine[] } {
   if (options?.enabled === false) {
-    const { x, y } = clampDragCorner(rawX, rawY);
+    const { x, y } = clampDragCorner(rawX, rawY, ancho, alto);
     return { x, y, lines: [] };
   }
 
@@ -447,7 +475,7 @@ export function snapPositionToGuides(
 
   const hitX = pickAxisSnap(rawX, ancho, xTargets, snapThresholdPct('x'));
   const hitY = pickAxisSnap(rawY, alto, yTargets, snapThresholdPct('y'));
-  const { x, y } = clampDragCorner(hitX?.snap ?? rawX, hitY?.snap ?? rawY);
+  const { x, y } = clampDragCorner(hitX?.snap ?? rawX, hitY?.snap ?? rawY, ancho, alto);
   const lines: SnapLine[] = [];
   if (hitX) {
     lines.push({ orientation: 'vertical', position: hitX.guide, kind: hitX.kind });
@@ -456,6 +484,36 @@ export function snapPositionToGuides(
     lines.push({ orientation: 'horizontal', position: hitY.guide, kind: hitY.kind });
   }
   return { x, y, lines };
+}
+
+function sameBlockOrigin(a: Block, b: Block): boolean {
+  const pa = getBlockPos(a);
+  const pb = getBlockPos(b);
+  return pa.x === pb.x && pa.y === pb.y && pa.ancho === pb.ancho && pa.alto === pb.alto;
+}
+
+function sameLivePositions(prev: Block[] | null, next: Block[]): boolean {
+  if (!prev || prev.length !== next.length) return false;
+  for (let i = 0; i < next.length; i++) {
+    if (!sameBlockOrigin(prev[i]!, next[i]!)) return false;
+  }
+  return true;
+}
+
+function sameSnapLines(a: SnapLine[], b: SnapLine[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const left = a[i]!;
+    const right = b[i]!;
+    if (
+      left.orientation !== right.orientation ||
+      left.position !== right.position ||
+      left.kind !== right.kind
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -553,11 +611,14 @@ export function useBlockDrag({
 
     const dx = (delta.x / rect.width) * 100;
     const dy = (delta.y / rect.height) * 100;
-
-    return {
-      newX: Math.max(-50, Math.min(150, originRef.current.x + dx)),
-      newY: Math.max(-50, Math.min(150, originRef.current.y + dy)),
-    };
+    const { ancho, alto } = getBlockPos(block);
+    const { x, y } = clampDragCorner(
+      originRef.current.x + dx,
+      originRef.current.y + dy,
+      ancho,
+      alto,
+    );
+    return { newX: x, newY: y };
   };
 
   // ─── handlers (react-compiler now handles memoization; evita bucles en onMove) ──
@@ -623,18 +684,19 @@ export function useBlockDrag({
       { guias: slide?.guias, enabled: !snapSuppressedRef.current },
     );
     pendingDragPosRef.current = { x: snapX, y: snapY };
-    setSnapLines(lines);
+    setSnapLines((prev) => (sameSnapLines(prev, lines) ? prev : lines));
 
-    setLiveBloques((prev) =>
-      applyLiveDragPositions({
+    setLiveBloques((prev) => {
+      const next = applyLiveDragPositions({
         bloques: prev ?? bloques,
         draggedIndex: index,
         snapX,
         snapY,
         origin: originRef.current!,
         groupOrigins: selectedOriginsRef.current,
-      }),
-    );
+      });
+      return sameLivePositions(prev, next) ? prev : next;
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {

@@ -59,13 +59,14 @@ export function HotspotParts({
       const neededW = cfg.anchoBurbuja;
       const neededH = 200;
 
-      if (bottomSpace > neededH) setAutoPos('abajo');
-      else if (topSpace > neededH) setAutoPos('arriba');
-      else if (rightSpace > neededW) setAutoPos('derecha');
-      else if (leftSpace > neededW) setAutoPos('izquierda');
-      else setAutoPos('abajo');
+      let next: 'arriba' | 'abajo' | 'izquierda' | 'derecha' = 'abajo';
+      if (bottomSpace > neededH) next = 'abajo';
+      else if (topSpace > neededH) next = 'arriba';
+      else if (rightSpace > neededW) next = 'derecha';
+      else if (leftSpace > neededW) next = 'izquierda';
+      setAutoPos((prev) => (prev === next ? prev : next));
     }
-  }, [isOpen, isEditing, cfg.posicionBurbuja, cfg.anchoBurbuja]);
+  }, [isOpen, isEditing, cfg.posicionBurbuja, cfg.anchoBurbuja, block.x, block.y]);
 
   const posBurbuja = cfg.posicionBurbuja === 'auto' ? autoPos : cfg.posicionBurbuja;
 

@@ -788,6 +788,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const activeBlock = selectedBlockId ? allBlocks[Number(selectedBlockId)] : undefined;
 
   useEffect(() => {
+    if (draggingId != null) return;
+
     const bloques = effectiveBloques ?? slide?.bloques ?? [];
     if (!bloques.length) {
       setSelectedBlockId(null);
@@ -804,9 +806,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         onBlockSelectRef.current?.('');
       }
     } else {
-      setSelectedBlockIds([]);
+      setSelectedBlockIds((prev) => (prev.length === 0 ? prev : []));
     }
-  }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques, clearInnerSelections]);
+  }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques, clearInnerSelections, draggingId]);
 
   const handleRendererBlockSelect = useCallback(
     (id: string, e?: React.MouseEvent) => {

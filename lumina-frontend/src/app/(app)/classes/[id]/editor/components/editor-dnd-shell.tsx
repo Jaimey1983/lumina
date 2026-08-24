@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
   type RefObject,
@@ -25,7 +26,9 @@ import type { Block, BlockMarco, Slide } from '@/types/slide.types';
 import { useBlockDrag } from '@/hooks/use-block-drag';
 import {
   clientPointToActivityMarco,
+  clientPointToWidgetMarco,
   getDropClientPoint,
+  getWidgetDropSizePct,
   isActivityPanelDrag,
   isWidgetPanelDrag,
 } from '../lib/activity-canvas-position';
@@ -93,55 +96,70 @@ export function EditorDndShell({
     onSave: onBlockDragSave,
   });
 
+  /**
+   * DndContext no debe recibir callbacks nuevos en cada onMove: liveBloques cambia
+   * el objeto `blockDrag` y @dnd-kit reentra en onDragMove → Maximum update depth.
+   */
+  const blockDragRef = useRef(blockDrag);
+  blockDragRef.current = blockDrag;
+  const panelDragRef = useRef(panelDrag);
+  panelDragRef.current = panelDrag;
+  const onActivityDropRef = useRef(onActivityDrop);
+  onActivityDropRef.current = onActivityDrop;
+  const onWidgetDropRef = useRef(onWidgetDrop);
+  onWidgetDropRef.current = onWidgetDrop;
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 4 },
     }),
   );
 
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      if (isActivityPanelDrag(event.active)) {
-        const data = event.active.data.current as ActivityPanelDragData;
-        setPanelDrag({ kind: 'activity', ...data });
-        return;
-      }
-      if (isWidgetPanelDrag(event.active)) {
-        const data = event.active.data.current as WidgetPanelDragData;
-        setPanelDrag({ kind: 'widget', ...data });
-        return;
-      }
-      blockDrag.handleDragStart(event);
-    },
-    [blockDrag],
-  );
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    if (isActivityPanelDrag(event.active)) {
+      const data = event.active.data.current as ActivityPanelDragData;
+      setPanelDrag({ kind: 'activity', ...data });
+      return;
+    }
+    if (isWidgetPanelDrag(event.active)) {
+      const data = event.active.data.current as WidgetPanelDragData;
+      setPanelDrag({ kind: 'widget', ...data });
+      return;
+    }
+    blockDragRef.current.handleDragStart(event);
+  }, []);
 
-  const handleDragMove = useCallback(
-    (event: DragMoveEvent) => {
-      if (panelDrag) {
-        setIsOverCanvas(event.over?.id === CANVAS_DROP_ZONE_ID);
-        return;
-      }
-      blockDrag.handleDragMove(event);
-    },
-    [blockDrag, panelDrag],
-  );
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    if (panelDragRef.current) {
+      setIsOverCanvas(event.over?.id === CANVAS_DROP_ZONE_ID);
+      return;
+    }
+    blockDragRef.current.handleDragMove(event);
+  }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      if (panelDrag) {
+      const activePanel = panelDragRef.current;
+      if (activePanel) {
         if (event.over?.id === CANVAS_DROP_ZONE_ID && canvasRef.current) {
           const point = getDropClientPoint(event);
           if (point) {
-            const marco = clientPointToActivityMarco(
-              canvasRef.current.getBoundingClientRect(),
-              point.clientX,
-              point.clientY,
-            );
-            if (panelDrag.kind === 'activity') {
-              onActivityDrop(panelDrag.tipo, marco);
-            } else if (panelDrag.kind === 'widget') {
-              onWidgetDrop?.(panelDrag.tipo, marco);
+            const rect = canvasRef.current.getBoundingClientRect();
+            if (activePanel.kind === 'activity') {
+              onActivityDropRef.current(
+                activePanel.tipo,
+                clientPointToActivityMarco(rect, point.clientX, point.clientY),
+              );
+            } else if (activePanel.kind === 'widget') {
+              onWidgetDropRef.current?.(
+                activePanel.tipo,
+                clientPointToWidgetMarco(
+                  rect,
+                  point.clientX,
+                  point.clientY,
+                  getWidgetDropSizePct(activePanel.tipo),
+                ),
+              );
             }
           }
         }
@@ -149,9 +167,9 @@ export function EditorDndShell({
         setIsOverCanvas(false);
         return;
       }
-      blockDrag.handleDragEnd(event);
+      blockDragRef.current.handleDragEnd(event);
     },
-    [blockDrag, canvasRef, onActivityDrop, onWidgetDrop, panelDrag],
+    [canvasRef],
   );
 
   const handleDragCancel = useCallback(() => {

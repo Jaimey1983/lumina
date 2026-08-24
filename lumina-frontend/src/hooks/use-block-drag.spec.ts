@@ -5,7 +5,10 @@ import type { Activity, Block } from '@/types/slide.types';
 import {
   applyLiveDragPositions,
   applyNudgeToBlocks,
+  clampAxisOrigin,
+  CANVAS_OVERFLOW_ORIGIN_MIN,
   getBlockPos,
+  MIN_VISIBLE_PCT,
   snapPositionToGuides,
   snapThresholdPct,
   withPosition,
@@ -234,6 +237,38 @@ describe('snapPositionToGuides', () => {
     expect(y).toBe(10);
     expect(lines).toEqual([]);
   });
+
+  it('con enabled false un pin 4 % no queda en -50', () => {
+    const { x, y } = snapPositionToGuides(-40, -40, 4, 4, 0, [texto(80, 80)], {
+      enabled: false,
+    });
+    expect(x).toBe(0);
+    expect(y).toBe(0);
+  });
+});
+
+describe('clampAxisOrigin', () => {
+  it('un Hotspot 4 % no puede salir de 0–100 (C2)', () => {
+    expect(clampAxisOrigin(-50, 4)).toBe(0);
+    expect(clampAxisOrigin(150, 4)).toBe(96);
+    expect(clampAxisOrigin(48, 4)).toBe(48);
+  });
+
+  it('Popup ~3.75 % tampoco desaparece', () => {
+    expect(clampAxisOrigin(-50, 3.75)).toBe(0);
+    expect(clampAxisOrigin(150, 3.75)).toBeCloseTo(96.25);
+  });
+
+  it('Progreso (alto 5 %) deja al menos 4 % visible; en X 80 % puede ir a -50', () => {
+    expect(clampAxisOrigin(-50, 5)).toBeCloseTo(-1);
+    expect(clampAxisOrigin(-50, 80)).toBe(CANVAS_OVERFLOW_ORIGIN_MIN);
+    expect(80 + CANVAS_OVERFLOW_ORIGIN_MIN).toBeGreaterThanOrEqual(MIN_VISIBLE_PCT);
+  });
+
+  it('Flip Cards 90 % a la izquierda sigue pudiendo ir a -50 (40 % visible)', () => {
+    expect(clampAxisOrigin(-80, 90)).toBe(CANVAS_OVERFLOW_ORIGIN_MIN);
+    expect(clampAxisOrigin(150, 90)).toBe(100 - MIN_VISIBLE_PCT);
+  });
 });
 
 describe('applyNudgeToBlocks', () => {
@@ -248,6 +283,13 @@ describe('applyNudgeToBlocks', () => {
     const bloques = [texto(10, 20)];
     const next = applyNudgeToBlocks(bloques, [0], 0, -10);
     expect(getBlockPos(next[0]).y).toBeCloseTo(20 - 1000 / 720, 5);
+  });
+
+  it('un pin 4×4 no se puede nudgear fuera del lienzo', () => {
+    const pin = texto(0, 0, { ancho: 4, alto: 4 });
+    const next = applyNudgeToBlocks([pin], [0], -200, -200);
+    expect(getBlockPos(next[0]).x).toBe(0);
+    expect(getBlockPos(next[0]).y).toBe(0);
   });
 });
 
