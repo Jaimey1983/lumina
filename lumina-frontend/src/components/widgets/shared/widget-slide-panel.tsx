@@ -33,11 +33,8 @@ import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
 import slideStyles from './widget-slide-panel.module.css';
 import chromeStyles from './widget-chrome.module.css';
 import {
-  autoResizeWidgetTextarea,
   stopWidgetInnerKeydown,
   stopWidgetInnerPointer,
-  useWidgetDraftField,
-  useWidgetTextareaAutoSize,
 } from './widget-editor-utils';
 import { isOverlayLayout, isSplitLayout, resolveSlideLayoutId } from './widget-layouts';
 import {
@@ -46,10 +43,7 @@ import {
   resolveTextPos,
 } from './widget-slide-utils';
 import {
-  getActiveWidgetTextEditor,
-  htmlToEditableHtml,
   looksLikeRichHtml,
-  registerWidgetTextEditor,
   sanitizeWidgetHtml,
 } from './widget-rich-text';
 
@@ -336,16 +330,13 @@ function WidgetSlideFreeBlocks({
 function WidgetSlideFreeBlock({
   block,
   isEditing,
-  onPatch,
+  onSelect,
 }: {
   block: WidgetSlideTextBlock;
   isEditing: boolean;
+  onSelect?: () => void;
   onPatch?: (patch: Partial<WidgetSlideTextBlock>) => void;
 }) {
-  const [draft, setDraft] = useWidgetDraftField(block.contenido);
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useWidgetTextareaAutoSize(ref, [draft, block.contenido, isEditing, block.tamanoFuente]);
-
   const style: React.CSSProperties = {
     left: `${block.x}%`,
     top: `${block.y}%`,
@@ -373,32 +364,37 @@ function WidgetSlideFreeBlock({
     );
   }
 
+  const empty = !block.contenido.trim();
+
   return (
-    <div className={slideStyles.wspFreeBlock} style={style}>
-      <textarea
-        ref={ref}
-        value={draft}
-        rows={1}
-        className={slideStyles.wspFreeBlockField}
-        style={{
-          fontSize: style.fontSize,
-          color: style.color,
-          fontWeight: style.fontWeight,
-          fontStyle: style.fontStyle,
-          textAlign: style.textAlign,
-        }}
-        onPointerDown={stopWidgetInnerPointer}
-        onClick={stopWidgetInnerPointer}
-        onKeyDown={stopWidgetInnerKeydown}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          autoResizeWidgetTextarea(e.target);
-        }}
-        onBlur={() => {
-          if (draft !== block.contenido) onPatch?.({ contenido: draft });
-        }}
-      />
-    </div>
+    <p
+      role="button"
+      tabIndex={0}
+      className={cn(
+        slideStyles.wspFreeBlock,
+        slideStyles.wspFreeBlockRead,
+        'cursor-text rounded border-2 border-transparent hover:border-dashed hover:border-[#2563EB]/40',
+        empty && 'text-muted-foreground/60',
+      )}
+      style={style}
+      onPointerDown={(e) => {
+        stopWidgetInnerPointer(e);
+        onSelect?.();
+      }}
+      onClick={(e) => {
+        stopWidgetInnerPointer(e);
+        onSelect?.();
+      }}
+      onKeyDown={(e) => {
+        stopWidgetInnerKeydown(e);
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect?.();
+        }
+      }}
+    >
+      {empty ? 'Clic para editar en el panel' : block.contenido}
+    </p>
   );
 }
 
@@ -414,7 +410,6 @@ function TabTextElement({
   hasImageBg,
   stackRef,
   onSelect,
-  onCommit,
   onPosChange,
 }: {
   field: WidgetSlideTextField;
@@ -428,7 +423,6 @@ function TabTextElement({
   hasImageBg: boolean;
   stackRef: React.RefObject<HTMLDivElement | null>;
   onSelect: () => void;
-  onCommit: (v: string) => void;
   onPosChange: (pos: { x: number; y: number }) => void;
 }) {
   const pos = resolveTextPos(slide, field);
@@ -520,23 +514,76 @@ function TabTextElement({
     return viewNode;
   }
 
-  const editorEl = (
-    <WidgetSlideRichTextEditor
-      field={field}
-      slideId={slide.id}
-      value={value}
+  const editorEl = looksLikeRichHtml(value) ? (
+    <div
+      role="button"
+      tabIndex={0}
       className={cn(
-        'm-0 w-full min-w-[4rem] border-0 bg-transparent p-0 outline-none focus:ring-0',
+        'm-0 w-full min-w-[4rem] cursor-text',
         className,
         textShadowClass,
-        slideStyles.wspRichTextEditor,
+        slideStyles.wspRichText,
         slideStyles.wspEditorField,
+        isSelected && 'ring-2 ring-[#2563EB] ring-offset-1',
+        !isSelected && 'rounded border-2 border-transparent hover:border-dashed hover:border-[#2563EB]/40',
       )}
       style={css}
-      placeholder={placeholder}
-      onSelect={onSelect}
-      onCommit={onCommit}
+      dangerouslySetInnerHTML={{ __html: sanitizeWidgetHtml(value) }}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          onSelect();
+        }
+      }}
     />
+  ) : (
+    (() => {
+      const Tag = field === 'encabezado' ? 'h3' : 'p';
+      const empty = !value.trim();
+      return (
+        <Tag
+          role="button"
+          tabIndex={0}
+          className={cn(
+            'm-0 w-full min-w-[4rem] cursor-text',
+            className,
+            textShadowClass,
+            slideStyles.wspEditorField,
+            isSelected && 'ring-2 ring-[#2563EB] ring-offset-1',
+            !isSelected &&
+              'rounded border-2 border-transparent hover:border-dashed hover:border-[#2563EB]/40',
+            empty && 'text-muted-foreground/60',
+          )}
+          style={css}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              onSelect();
+            }
+          }}
+        >
+          {empty ? placeholder ?? 'Clic para editar en el panel' : value}
+        </Tag>
+      );
+    })()
   );
 
   if (hasImageBg) {
@@ -572,78 +619,6 @@ function TabTextElement({
     >
       {editorEl}
     </div>
-  );
-}
-
-function WidgetSlideRichTextEditor({
-  field,
-  slideId,
-  value,
-  className,
-  style,
-  placeholder,
-  onSelect,
-  onCommit,
-}: {
-  field: WidgetSlideTextField;
-  slideId: string;
-  value: string;
-  className?: string;
-  style?: React.CSSProperties;
-  placeholder?: string;
-  onSelect: () => void;
-  onCommit: (html: string) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const focusedRef = useRef(false);
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    if (!ref.current || focusedRef.current) return;
-    ref.current.innerHTML = htmlToEditableHtml(value);
-  }, [value]);
-
-  const handle = (el: HTMLDivElement) => ({
-    el,
-    slideId,
-    field,
-    getHtml: () => sanitizeWidgetHtml(el.innerHTML),
-  });
-
-  return (
-    <div
-      ref={ref}
-      contentEditable
-      suppressContentEditableWarning
-      role="textbox"
-      aria-multiline="true"
-      data-widget-text-field={field}
-      data-widget-slide-id={slideId}
-      data-placeholder={placeholder}
-      className={className}
-      style={style}
-      onPointerDown={stopWidgetInnerPointer}
-      onClick={stopWidgetInnerPointer}
-      onKeyDown={stopWidgetInnerKeydown}
-      onFocus={(e) => {
-        e.stopPropagation();
-        focusedRef.current = true;
-        registerWidgetTextEditor(handle(e.currentTarget));
-        onSelect();
-      }}
-      onBlur={(e) => {
-        focusedRef.current = false;
-        registerWidgetTextEditor(null);
-        const html = sanitizeWidgetHtml(e.currentTarget.innerHTML);
-        if (html !== value) onCommit(html);
-      }}
-      onInput={(e) => {
-        setTick((t) => t + 1);
-        if (getActiveWidgetTextEditor()?.el === e.currentTarget) {
-          registerWidgetTextEditor(handle(e.currentTarget));
-        }
-      }}
-    />
   );
 }
 
@@ -757,7 +732,6 @@ export function WidgetSlidePanelView({
           hasImageBg={overlay}
           stackRef={noopStackRef}
           onSelect={() => {}}
-          onCommit={() => {}}
           onPosChange={() => {}}
         />
       ) : null}
@@ -772,7 +746,6 @@ export function WidgetSlidePanelView({
           hasImageBg={overlay}
           stackRef={noopStackRef}
           onSelect={() => {}}
-          onCommit={() => {}}
           onPosChange={() => {}}
         />
       ) : null}
@@ -787,7 +760,6 @@ export function WidgetSlidePanelView({
           hasImageBg={overlay}
           stackRef={noopStackRef}
           onSelect={() => {}}
-          onCommit={() => {}}
           onPosChange={() => {}}
         />
       ) : null}
@@ -937,7 +909,6 @@ export function WidgetSlidePanelEditor({
           hasImageBg={overlay}
           stackRef={stackRef}
           onSelect={() => onSelectText('encabezado')}
-          onCommit={(encabezado) => onPatchSlide({ encabezado })}
           onPosChange={(pos) => patchPos('encabezado', pos)}
         />
       ) : null}
@@ -954,7 +925,6 @@ export function WidgetSlidePanelEditor({
           hasImageBg={overlay}
           stackRef={stackRef}
           onSelect={() => onSelectText('subtitulo')}
-          onCommit={(subtitulo) => onPatchSlide({ subtitulo })}
           onPosChange={(pos) => patchPos('subtitulo', pos)}
         />
       ) : null}
@@ -971,7 +941,6 @@ export function WidgetSlidePanelEditor({
           hasImageBg={overlay}
           stackRef={stackRef}
           onSelect={() => onSelectText('cuerpo')}
-          onCommit={(cuerpo) => onPatchSlide({ cuerpo })}
           onPosChange={(pos) => patchPos('cuerpo', pos)}
         />
       ) : null}

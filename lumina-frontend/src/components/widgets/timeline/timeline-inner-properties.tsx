@@ -82,6 +82,9 @@ export function TimelineTextInnerProperties({
       context={{
         slides: pseudoSlides,
         estilosHeader: block.estilosHeader,
+        getHeaderValue: (field) => block[field],
+        patchHeaderValue: (field, value) =>
+          update((w) => ({ ...w, [field]: value })),
         patchHeaderStyle: (field, patch) =>
           update((w) => patchHeaderStyle(w, field, patch)),
         patchSlide: (slideId, patch) =>

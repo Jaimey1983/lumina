@@ -1,6 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  blockDragId,
+  parseBlockDragIndex,
+} from '@/app/(app)/classes/[id]/editor/lib/block-drag-id';
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 import type { RefObject } from 'react';
 
@@ -676,18 +680,21 @@ export function useBlockDrag({
   // ─── handlers (react-compiler now handles memoization; evita bucles en onMove) ──
 
   const handleDragStart = (event: DragStartEvent) => {
-    const id      = String(event.active.id);
+    const id = String(event.active.id);
+    const index = parseBlockDragIndex(id);
+    if (index === null) return;
+
     const bloques = slide?.bloques ?? [];
-    const block   = bloques[Number(id)];
+    const block   = bloques[index];
     if (!block) return;
 
     const { x, y } = getBlockPos(block);
     originRef.current = { x, y };
     pendingDragPosRef.current = { x, y };
 
-    // Multi-select handling: check if dragged block is in the selected set
+    const pathId = String(index);
     const selectedIds = (event.active.data.current?.selectedBlockIds as string[]) ?? [];
-    const isDraggingSelectedGroup = selectedIds.length > 1 && selectedIds.includes(id);
+    const isDraggingSelectedGroup = selectedIds.length > 1 && selectedIds.includes(pathId);
 
     if (isDraggingSelectedGroup) {
       const origins: Record<string, { x: number; y: number }> = {};
@@ -703,7 +710,7 @@ export function useBlockDrag({
     }
 
     setSnapLines([]);
-    setDraggingId(id);
+    setDraggingId(blockDragId(index));
     setLiveBloques([...bloques]);
   };
 
@@ -712,7 +719,8 @@ export function useBlockDrag({
     const rect = getRect();
     if (!rect) return;
 
-    const index   = Number(String(event.active.id));
+    const index = parseBlockDragIndex(String(event.active.id));
+    if (index === null) return;
     const bloques = slide?.bloques ?? [];
     const res     = deltaToPos(index, event.delta, rect);
     if (!res) return;
@@ -752,8 +760,17 @@ export function useBlockDrag({
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const id      = String(event.active.id);
-    const index   = Number(id);
+    const index = parseBlockDragIndex(String(event.active.id));
+    if (index === null) {
+      setDraggingId(null);
+      setSnapLines([]);
+      setLiveBloques(null);
+      originRef.current = null;
+      pendingDragPosRef.current = null;
+      selectedOriginsRef.current = null;
+      return;
+    }
+
     const bloques = slide?.bloques ?? [];
     const rect    = getRect();
 

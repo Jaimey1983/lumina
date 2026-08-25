@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -69,6 +70,8 @@ function patchStyleWithSelection(
 export interface WidgetSlideInnerContext {
   slides: WidgetSlideContent[];
   estilosHeader?: WidgetEstilosHeader;
+  getHeaderValue?: (field: WidgetHeaderTextField) => string;
+  patchHeaderValue?: (field: WidgetHeaderTextField, value: string) => void;
   patchHeaderStyle: (
     field: WidgetHeaderTextField,
     patch: Partial<WidgetCampoEstilo>,
@@ -94,9 +97,34 @@ export function WidgetSlideTextInnerProperties({
           ? 'Subtítulo'
           : 'Instrucción';
 
+    const headerValue = context.getHeaderValue?.(selection.field) ?? '';
+
     return (
       <div className="flex flex-col gap-4">
         <SectionTitle>Texto — {label}</SectionTitle>
+        {context.patchHeaderValue ? (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Contenido</Label>
+            {selection.field === 'tituloWidget' ? (
+              <Input
+                className="h-8 text-xs"
+                value={headerValue}
+                placeholder="Título del widget"
+                onChange={(e) => context.patchHeaderValue!(selection.field, e.target.value)}
+              />
+            ) : (
+              <Textarea
+                className="min-h-[72px] text-xs"
+                value={headerValue}
+                rows={3}
+                placeholder={
+                  selection.field === 'subtituloWidget' ? 'Subtítulo' : 'Instrucción'
+                }
+                onChange={(e) => context.patchHeaderValue!(selection.field, e.target.value)}
+              />
+            )}
+          </div>
+        ) : null}
         <WidgetTypographyFields
           style={style}
           defaultSize={selection.field === 'tituloWidget' ? 20 : 14}
@@ -126,6 +154,14 @@ export function WidgetSlideTextInnerProperties({
         ? 'Subtítulo'
         : 'Cuerpo';
 
+  const slideField = selection.field;
+  const slideTextValue =
+    slideField === 'encabezado'
+      ? (slide.encabezado ?? '')
+      : slideField === 'subtitulo'
+        ? (slide.subtitulo ?? '')
+        : (slide.cuerpo ?? '');
+
   const patchStyle = (patch: Partial<WidgetCampoEstilo>) => {
     if (
       patchStyleWithSelection(
@@ -145,10 +181,31 @@ export function WidgetSlideTextInnerProperties({
   return (
     <div className="flex flex-col gap-4">
       <SectionTitle>Texto — {label}</SectionTitle>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Contenido</Label>
+        {slideField === 'cuerpo' ? (
+          <Textarea
+            className="min-h-[96px] text-xs"
+            value={slideTextValue}
+            rows={4}
+            placeholder="Cuerpo de la ficha"
+            onChange={(e) =>
+              context.patchSlide(selection.slideId, { [slideField]: e.target.value })
+            }
+          />
+        ) : (
+          <Input
+            className="h-8 text-xs"
+            value={slideTextValue}
+            placeholder={slideField === 'encabezado' ? 'Encabezado' : 'Subtítulo'}
+            onChange={(e) =>
+              context.patchSlide(selection.slideId, { [slideField]: e.target.value })
+            }
+          />
+        )}
+      </div>
       <p className="text-[11px] leading-snug text-muted-foreground">
-        Selecciona texto en el lienzo para aplicar color o tamaño solo a la selección. Sin
-        selección, el estilo afecta a todo el campo. En layout «Texto sobre imagen», usa el asa
-        azul para arrastrar el texto.
+        En layout «Texto sobre imagen», usa el asa azul en el lienzo para arrastrar el texto.
       </p>
       <WidgetTypographyFields
         style={{

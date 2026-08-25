@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef } from 'react';
 import {
   AlertCircle,
   Bell,
@@ -21,6 +21,11 @@ import type { TooltipWidget } from '@/types/widget.types';
 import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
 import { mergedTooltipConfig } from './tooltip-config';
 import styles from './tooltip.module.css';
+import {
+  TOOLTIP_OVERLAY_GAP_PX,
+  overlayShiftVars,
+} from '@/components/widgets/shared/overlay-auto-position';
+import { useOverlayAutoPosition } from '@/components/widgets/shared/use-overlay-auto-position';
 
 export const TOOLTIP_TRIGGER_ICONS: { id: string; Icon: LucideIcon; label: string }[] = [
   { id: 'info', Icon: Info, label: 'Info' },
@@ -70,43 +75,25 @@ export function TooltipParts({
 }: TooltipPartsProps) {
   const cfg = mergedTooltipConfig(block);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const tooltipId = useId();
-  const [autoPos, setAutoPos] = useState<'arriba' | 'abajo' | 'izquierda' | 'derecha'>('abajo');
-
-  useEffect(() => {
-    if (!isOpen && !isEditing) return;
-    if (cfg.posicion !== 'auto') return;
-    if (!triggerRef.current) return;
-
-    const rect = triggerRef.current.getBoundingClientRect();
-    const slideRect = triggerRef.current.closest('.canvas-slide')?.getBoundingClientRect();
-
-    if (slideRect) {
-      const topSpace = rect.top - slideRect.top;
-      const bottomSpace = slideRect.bottom - rect.bottom;
-      const leftSpace = rect.left - slideRect.left;
-      const rightSpace = slideRect.right - rect.right;
-
-      const neededW = cfg.anchoBurbuja;
-      const neededH = 80;
-
-      let next: 'arriba' | 'abajo' | 'izquierda' | 'derecha' = 'abajo';
-      if (bottomSpace > neededH) next = 'abajo';
-      else if (topSpace > neededH) next = 'arriba';
-      else if (rightSpace > neededW) next = 'derecha';
-      else if (leftSpace > neededW) next = 'izquierda';
-      setAutoPos((prev) => (prev === next ? prev : next));
-    }
-  }, [isOpen, isEditing, cfg.posicion, cfg.anchoBurbuja, block.x, block.y]);
-
-  const posTooltip = cfg.posicion === 'auto' ? autoPos : cfg.posicion;
+  const showBubble = isOpen || isEditing;
+  const overlay = useOverlayAutoPosition({
+    active: showBubble,
+    configuredSide: cfg.posicion,
+    triggerRef,
+    bubbleRef,
+    gap: TOOLTIP_OVERLAY_GAP_PX,
+    fallbackSize: { width: cfg.anchoBurbuja, height: 80 },
+    layoutKey: `${block.x}-${block.y}-${cfg.anchoBurbuja}-${cfg.textoTooltip}`,
+  });
+  const posTooltip = cfg.posicion === 'auto' ? overlay.side : cfg.posicion;
 
   let posClass = styles.posBottom;
   if (posTooltip === 'arriba') posClass = styles.posTop;
   if (posTooltip === 'izquierda') posClass = styles.posLeft;
   if (posTooltip === 'derecha') posClass = styles.posRight;
 
-  const showBubble = isOpen || isEditing;
   const Icon = resolveTooltipTriggerIcon(cfg.icono);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -167,12 +154,14 @@ export function TooltipParts({
       )}
 
       <div
+        ref={bubbleRef}
         id={tooltipId}
         className={cn(
           styles.bubble,
           posClass,
           showBubble ? styles.bubbleVisible : styles.bubbleHidden,
         )}
+        style={overlayShiftVars(overlay.shiftX, overlay.shiftY)}
         role="tooltip"
       >
         {cfg.textoTooltip}

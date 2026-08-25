@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type {
@@ -12,6 +12,11 @@ import styles from './hotspot.module.css';
 import { WidgetSlidePanelEditor, WidgetSlidePanelView } from '@/components/widgets/shared/widget-slide-panel';
 import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
 import { toHotspotSlidePanelConfig } from './hotspot-config';
+import {
+  HOTSPOT_OVERLAY_GAP_PX,
+  overlayShiftVars,
+} from '@/components/widgets/shared/overlay-auto-position';
+import { useOverlayAutoPosition } from '@/components/widgets/shared/use-overlay-auto-position';
 
 interface HotspotPartsProps {
   block: HotspotWidget;
@@ -40,35 +45,18 @@ export function HotspotParts({
 }: HotspotPartsProps) {
   const cfg = mergedHotspotConfig(block);
   const markerRef = useRef<HTMLDivElement>(null);
-  const [autoPos, setAutoPos] = useState<'arriba' | 'abajo' | 'izquierda' | 'derecha'>('abajo');
-
-  useEffect(() => {
-    if (!isOpen && !isEditing) return;
-    if (cfg.posicionBurbuja !== 'auto') return;
-    if (!markerRef.current) return;
-
-    const rect = markerRef.current.getBoundingClientRect();
-    const slideRect = markerRef.current.closest('.canvas-slide')?.getBoundingClientRect();
-
-    if (slideRect) {
-      const topSpace = rect.top - slideRect.top;
-      const bottomSpace = slideRect.bottom - rect.bottom;
-      const leftSpace = rect.left - slideRect.left;
-      const rightSpace = slideRect.right - rect.right;
-
-      const neededW = cfg.anchoBurbuja;
-      const neededH = 200;
-
-      let next: 'arriba' | 'abajo' | 'izquierda' | 'derecha' = 'abajo';
-      if (bottomSpace > neededH) next = 'abajo';
-      else if (topSpace > neededH) next = 'arriba';
-      else if (rightSpace > neededW) next = 'derecha';
-      else if (leftSpace > neededW) next = 'izquierda';
-      setAutoPos((prev) => (prev === next ? prev : next));
-    }
-  }, [isOpen, isEditing, cfg.posicionBurbuja, cfg.anchoBurbuja, block.x, block.y]);
-
-  const posBurbuja = cfg.posicionBurbuja === 'auto' ? autoPos : cfg.posicionBurbuja;
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const showBubble = isOpen || isEditing;
+  const overlay = useOverlayAutoPosition({
+    active: showBubble,
+    configuredSide: cfg.posicionBurbuja,
+    triggerRef: markerRef,
+    bubbleRef,
+    gap: HOTSPOT_OVERLAY_GAP_PX,
+    fallbackSize: { width: cfg.anchoBurbuja, height: 160 },
+    layoutKey: `${block.x}-${block.y}-${cfg.anchoBurbuja}`,
+  });
+  const posBurbuja = cfg.posicionBurbuja === 'auto' ? overlay.side : cfg.posicionBurbuja;
 
   let posClass = styles.posBottom;
   if (posBurbuja === 'arriba') posClass = styles.posTop;
@@ -83,8 +71,6 @@ export function HotspotParts({
   let sizeClass = styles.sizeMedium;
   if (cfg.tamanoPunto === 'pequeno') sizeClass = styles.sizeSmall;
   if (cfg.tamanoPunto === 'grande') sizeClass = styles.sizeLarge;
-
-  const showBubble = isOpen || isEditing;
 
   const mappedSelection =
     innerSelection?.kind === 'overlay-text'
@@ -127,6 +113,7 @@ export function HotspotParts({
       </div>
 
       <div
+        ref={bubbleRef}
         className={cn(
           styles.bubbleContainer,
           posClass,
@@ -134,6 +121,7 @@ export function HotspotParts({
           showBubble ? styles.bubbleVisible : styles.bubbleHidden,
           isEditing && styles.bubbleEditing,
         )}
+        style={overlayShiftVars(overlay.shiftX, overlay.shiftY)}
         onClick={(e) => {
           stopWidgetInnerPointer(e);
         }}

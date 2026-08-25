@@ -86,7 +86,7 @@
 
 .posTop {
   bottom: calc(100% + 10px);
-  left: 50%;
+  left: calc(50% + var(--overlay-shift-x, 0px));
   transform: translateX(-50%);
 }
 .posTop::after {
@@ -102,7 +102,7 @@
 
 .posBottom {
   top: calc(100% + 10px);
-  left: 50%;
+  left: calc(50% + var(--overlay-shift-x, 0px));
   transform: translateX(-50%);
 }
 .posBottom::after {
@@ -118,7 +118,7 @@
 
 .posLeft {
   right: calc(100% + 10px);
-  top: 50%;
+  top: calc(50% + var(--overlay-shift-y, 0px));
   transform: translateY(-50%);
 }
 .posLeft::after {
@@ -134,7 +134,7 @@
 
 .posRight {
   left: calc(100% + 10px);
-  top: 50%;
+  top: calc(50% + var(--overlay-shift-y, 0px));
   transform: translateY(-50%);
 }
 .posRight::after {

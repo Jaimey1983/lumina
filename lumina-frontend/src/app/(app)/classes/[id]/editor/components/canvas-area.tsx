@@ -15,6 +15,8 @@ import { GripHorizontal, Presentation } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDraggable } from '@dnd-kit/core';
 
+import { blockDragId } from '../lib/block-drag-id';
+
 import type {
   Activity,
   Background,
@@ -114,7 +116,7 @@ function BlockDragHandle({
   draggingId: string | null;
   selectedBlockIds: string[];
 }) {
-  const id = String(index);
+  const id = blockDragId(index);
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
     data: {

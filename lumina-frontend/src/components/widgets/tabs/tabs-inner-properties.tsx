@@ -59,6 +59,9 @@ export function TabsTextInnerProperties({
       context={{
         slides: block.fichas,
         estilosHeader: block.estilosHeader,
+        getHeaderValue: (field) => block[field],
+        patchHeaderValue: (field, value) =>
+          update((w) => ({ ...w, [field]: value })),
         patchHeaderStyle: (field, patch) =>
           update((w) => patchHeaderStyle(w, field, patch)),
         patchSlide: (slideId, patch) => update((w) => patchSlide(w, slideId, patch)),

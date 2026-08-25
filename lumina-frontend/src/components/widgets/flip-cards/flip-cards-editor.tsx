@@ -4,7 +4,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FocusEvent,
   type MouseEvent,
   type PointerEvent,
 } from 'react';
@@ -28,10 +27,7 @@ import type { FlipCardsConfiguracionCompleta } from './flip-cards-config';
 import { imageElementStyle, imageWrapperStyle } from './flip-cards-image-styles';
 import { useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
 import { computeImagePanClamp, usesComputedImageLayout } from '@/components/widgets/shared/widget-image-styles';
-import {
-  autoResizeWidgetTextarea,
-  useWidgetDraftField,
-} from '@/components/widgets/shared/widget-editor-utils';
+import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
 import {
   clampCardPos,
   resolveCaraVisibilidad,
@@ -126,100 +122,33 @@ function GlobalFaceBar({
 
 function InlineHeaderField({
   value,
-  onCommit,
   field,
   className,
   style,
   placeholder,
   multiline,
+  isSelected,
   onFocusSelect,
 }: {
   value: string;
-  onCommit: (v: string) => void;
   field: 'tituloWidget' | 'subtituloWidget' | 'instruccion';
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
   multiline?: boolean;
+  isSelected?: boolean;
   onFocusSelect: (field: 'tituloWidget' | 'subtituloWidget' | 'instruccion') => void;
 }) {
-  const [draft, setDraft] = useWidgetDraftField(value);
-  const [focused, setFocused] = useState(false);
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  const commit = () => {
-    if (draft !== value) onCommit(draft);
-  };
-
-  const focusStyle = focused
-    ? { border: '2px dashed #2563EB', borderRadius: 4, padding: '2px 4px' }
-    : { border: '2px solid transparent', padding: '2px 4px' };
-
-  const handleFocus = (e: FocusEvent) => {
-    e.stopPropagation();
-    setFocused(true);
-    onFocusSelect(field);
-  };
-
-  if (multiline) {
-    return (
-      <textarea
-        ref={ref}
-        data-flip-header-field
-        value={draft}
-        rows={1}
-        placeholder={placeholder}
-        className={cn(
-          'm-0 w-full resize-none bg-transparent p-0 text-inherit outline-none',
-          className,
-        )}
-        style={{ ...style, ...focusStyle }}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          autoResizeWidgetTextarea(e.target);
-        }}
-        onFocus={(e) => {
-          handleFocus(e);
-          autoResizeWidgetTextarea(e.currentTarget);
-        }}
-        onBlur={() => {
-          setFocused(false);
-          commit();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            setDraft(value);
-            e.currentTarget.blur();
-          }
-        }}
-      />
-    );
-  }
-
   return (
-    <input
-      data-flip-header-field
-      type="text"
-      value={draft}
+    <PanelOnlyText
+      value={value}
       placeholder={placeholder}
-      className={cn('m-0 w-full bg-transparent p-0 text-inherit outline-none', className)}
-      style={{ ...style, ...focusStyle }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(e) => setDraft(e.target.value)}
-      onFocus={handleFocus}
-      onBlur={() => {
-        setFocused(false);
-        commit();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          setDraft(value);
-          e.currentTarget.blur();
-        }
-      }}
+      className={cn('block w-full', className)}
+      style={{ ...style, padding: '2px 4px' }}
+      multiline={multiline}
+      isSelected={isSelected}
+      dataAttr="data-flip-header-field"
+      onSelect={() => onFocusSelect(field)}
     />
   );
 }
@@ -425,32 +354,24 @@ function FlipCardImageLayer({
 function CardTextElement({
   pos,
   value,
-  draft,
-  setDraft,
   css,
   isEditing,
   isSelected,
   hasImageBg,
   isTitle,
-  bodyRef,
   stackRef,
   onSelect,
-  onCommit,
   onPosChange,
 }: {
   pos: FlipCardElementPos;
   value: string;
-  draft: string;
-  setDraft: (v: string) => void;
   css: React.CSSProperties;
   isEditing: boolean;
   isSelected: boolean;
   hasImageBg: boolean;
   isTitle: boolean;
-  bodyRef?: React.RefObject<HTMLTextAreaElement | null>;
   stackRef: React.RefObject<HTMLDivElement | null>;
   onSelect: () => void;
-  onCommit: (v: string) => void;
   onPosChange: (pos: FlipCardElementPos) => void;
 }) {
   const dragRef = useRef<{
@@ -519,57 +440,64 @@ function CardTextElement({
         />
       ) : null}
       {isTitle ? (
-        isEditing ? (
-          <input
-            value={draft}
-            className={cn(
-              'm-0 w-full min-w-[4rem] border-0 bg-transparent p-0 outline-none focus:ring-0',
-              textShadowClass,
-            )}
-            style={css}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onFocus={(e) => {
-              e.stopPropagation();
-              onSelect();
-            }}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              if (draft !== value) onCommit(draft);
-            }}
-          />
-        ) : (
-          <p className={cn(styles.flipTitle, 'm-0', textShadowClass)} style={css}>
-            {value}
-          </p>
-        )
-      ) : isEditing ? (
-        <textarea
-          ref={bodyRef}
-          value={draft}
-          rows={2}
+        <p
+          role="button"
+          tabIndex={0}
           className={cn(
-            'm-0 w-full min-w-[5rem] resize-none border-0 bg-transparent p-0 outline-none focus:ring-0',
+            styles.flipTitle,
+            'm-0 cursor-text',
             textShadowClass,
+            isEditing && isSelected && styles.fcInnerHighlight,
           )}
           style={css}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          onFocus={(e) => {
+          onPointerDown={(e) => {
             e.stopPropagation();
-            onSelect();
+            if (isEditing) onSelect();
           }}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            autoResizeWidgetTextarea(e.target);
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isEditing) onSelect();
           }}
-          onBlur={() => {
-            if (draft !== value) onCommit(draft);
+          onKeyDown={(e) => {
+            if (!isEditing) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              onSelect();
+            }
           }}
-        />
+        >
+          {value.trim() || (isEditing ? 'Clic para editar en el panel' : '')}
+        </p>
       ) : (
-        <p className={cn(styles.flipText, 'm-0', textShadowClass)} style={css}>
-          {value}
+        <p
+          role="button"
+          tabIndex={0}
+          className={cn(
+            styles.flipText,
+            'm-0 cursor-text',
+            textShadowClass,
+            isEditing && isSelected && styles.fcInnerHighlight,
+          )}
+          style={css}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            if (isEditing) onSelect();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isEditing) onSelect();
+          }}
+          onKeyDown={(e) => {
+            if (!isEditing) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              onSelect();
+            }
+          }}
+        >
+          {value.trim() || (isEditing ? 'Clic para editar en el panel' : '')}
         </p>
       )}
     </div>
@@ -609,26 +537,6 @@ function EditorCard({
   const stackRef = useRef<HTMLDivElement>(null);
   const titlePos = resolveTextPos(data, 'titulo');
   const bodyPos = resolveTextPos(data, 'cuerpo');
-
-  const [titleDraft, setTitleDraft] = useWidgetDraftField(data.titulo);
-  const [bodyDraft, setBodyDraft] = useWidgetDraftField(data.cuerpo);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const wasEditingRef = useRef(isEditing);
-
-  useEffect(() => {
-    if (isEditing) autoResizeWidgetTextarea(bodyRef.current);
-  }, [isEditing, bodyDraft, vistaCara]);
-
-  useEffect(() => {
-    if (wasEditingRef.current && !isEditing) {
-      const patches: Partial<FlipCardCara> = {};
-      if (titleDraft !== data.titulo) patches.titulo = titleDraft;
-      if (bodyDraft !== data.cuerpo) patches.cuerpo = bodyDraft;
-      if (Object.keys(patches).length > 0) onPatchFace(patches);
-    }
-    wasEditingRef.current = isEditing;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- commit al salir de edición
-  }, [isEditing, titleDraft, bodyDraft, data.titulo, data.cuerpo]);
 
   const chrome = flipCardsCardChromeStyle(configuracion, false);
   const titleCss = {
@@ -734,8 +642,6 @@ function EditorCard({
           <CardTextElement
             pos={titlePos}
             value={data.titulo}
-            draft={titleDraft}
-            setDraft={setTitleDraft}
             css={titleCss}
             isEditing={isEditing}
             isSelected={isInnerTextActive(innerSelection, cardId, vistaCara, 'titulo')}
@@ -743,7 +649,6 @@ function EditorCard({
             isTitle
             stackRef={stackRef}
             onSelect={() => onSelectText('titulo')}
-            onCommit={(titulo) => onPatchFace({ titulo })}
             onPosChange={(tituloPos) => onPatchFace({ tituloPos })}
           />
         ) : null}
@@ -751,17 +656,13 @@ function EditorCard({
           <CardTextElement
             pos={bodyPos}
             value={data.cuerpo}
-            draft={bodyDraft}
-            setDraft={setBodyDraft}
             css={bodyCss}
             isEditing={isEditing}
             isSelected={isInnerTextActive(innerSelection, cardId, vistaCara, 'cuerpo')}
             hasImageBg={hasImage}
             isTitle={false}
-            bodyRef={bodyRef}
             stackRef={stackRef}
             onSelect={() => onSelectText('cuerpo')}
-            onCommit={(cuerpo) => onPatchFace({ cuerpo })}
             onPosChange={(cuerpoPos) => onPatchFace({ cuerpoPos })}
           />
         ) : null}
@@ -885,12 +786,15 @@ export function FlipCardsEditor({
               value={block.tituloWidget}
               field="tituloWidget"
               placeholder="Título del widget"
+              isSelected={
+                innerSelection?.kind === 'header-text' &&
+                innerSelection.field === 'tituloWidget'
+              }
               className={cn(
                 'text-base font-bold leading-tight text-[#0f172a]',
                 headerFieldClass('tituloWidget'),
               )}
               style={headerStyle('tituloWidget')}
-              onCommit={(tituloWidget) => patchBlock((w) => ({ ...w, tituloWidget }))}
               onFocusSelect={(field) => {
                 onEnsureBlockSelected?.();
                 reportSelection({ kind: 'header-text', field });
@@ -904,10 +808,13 @@ export function FlipCardsEditor({
               value={block.subtituloWidget}
               field="subtituloWidget"
               placeholder="Subtítulo del widget"
+              multiline
+              isSelected={
+                innerSelection?.kind === 'header-text' &&
+                innerSelection.field === 'subtituloWidget'
+              }
               className={cn('text-sm leading-snug text-[#64748b]', headerFieldClass('subtituloWidget'))}
               style={headerStyle('subtituloWidget')}
-              multiline
-              onCommit={(subtituloWidget) => patchBlock((w) => ({ ...w, subtituloWidget }))}
               onFocusSelect={(field) => {
                 onEnsureBlockSelected?.();
                 reportSelection({ kind: 'header-text', field });
@@ -921,10 +828,13 @@ export function FlipCardsEditor({
               value={block.instruccion}
               field="instruccion"
               placeholder="Instrucción para el estudiante"
+              multiline
+              isSelected={
+                innerSelection?.kind === 'header-text' &&
+                innerSelection.field === 'instruccion'
+              }
               className={cn('text-xs leading-snug text-[#64748b]', headerFieldClass('instruccion'))}
               style={headerStyle('instruccion')}
-              multiline
-              onCommit={(instruccion) => patchBlock((w) => ({ ...w, instruccion }))}
               onFocusSelect={(field) => {
                 onEnsureBlockSelected?.();
                 reportSelection({ kind: 'header-text', field });

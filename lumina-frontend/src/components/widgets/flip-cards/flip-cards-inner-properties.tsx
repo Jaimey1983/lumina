@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -82,9 +83,36 @@ export function FlipCardsTextInnerProperties({
           ? 'Subtítulo'
           : 'Instrucción';
 
+    const headerValue = block[selection.field];
+
     return (
       <div className="flex flex-col gap-4">
         <WidgetSectionTitle>Texto — {label}</WidgetSectionTitle>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Contenido</Label>
+          {selection.field === 'tituloWidget' ? (
+            <Input
+              className="h-8 text-xs"
+              value={headerValue}
+              placeholder="Título del widget"
+              onChange={(e) =>
+                update((w) => ({ ...w, [selection.field]: e.target.value }))
+              }
+            />
+          ) : (
+            <Textarea
+              className="min-h-[72px] text-xs"
+              value={headerValue}
+              rows={3}
+              placeholder={
+                selection.field === 'subtituloWidget' ? 'Subtítulo' : 'Instrucción'
+              }
+              onChange={(e) =>
+                update((w) => ({ ...w, [selection.field]: e.target.value }))
+              }
+            />
+          )}
+        </div>
         <WidgetTypographyFields
           style={style}
           defaultSize={selection.field === 'tituloWidget' ? 18 : 14}
@@ -121,6 +149,33 @@ export function FlipCardsTextInnerProperties({
       <WidgetSectionTitle>
         Texto — {label} ({selection.face === 'frente' ? 'Frente' : 'Atrás'})
       </WidgetSectionTitle>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Contenido</Label>
+        {isTitle ? (
+          <Input
+            className="h-8 text-xs"
+            value={cara.titulo}
+            placeholder="Título de la tarjeta"
+            onChange={(e) =>
+              update((w) =>
+                patchCardFace(w, selection.cardId, selection.face, { titulo: e.target.value }),
+              )
+            }
+          />
+        ) : (
+          <Textarea
+            className="min-h-[96px] text-xs"
+            value={cara.cuerpo}
+            rows={4}
+            placeholder="Cuerpo de la tarjeta"
+            onChange={(e) =>
+              update((w) =>
+                patchCardFace(w, selection.cardId, selection.face, { cuerpo: e.target.value }),
+              )
+            }
+          />
+        )}
+      </div>
       <p className="text-[11px] leading-snug text-muted-foreground">
         Usa el asa azul a la izquierda del texto en el lienzo para arrastrarlo dentro de la
         tarjeta.

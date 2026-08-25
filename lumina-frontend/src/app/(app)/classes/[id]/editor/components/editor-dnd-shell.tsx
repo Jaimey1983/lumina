@@ -89,6 +89,7 @@ export function EditorDndShell({
 }: EditorDndShellProps) {
   const [panelDrag, setPanelDrag] = useState<PanelDragState | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
+  const [dropMissHint, setDropMissHint] = useState(false);
 
   const blockDrag = useBlockDrag({
     canvasRef,
@@ -141,7 +142,8 @@ export function EditorDndShell({
     (event: DragEndEvent) => {
       const activePanel = panelDragRef.current;
       if (activePanel) {
-        if (event.over?.id === CANVAS_DROP_ZONE_ID && canvasRef.current) {
+        const droppedOnCanvas = event.over?.id === CANVAS_DROP_ZONE_ID;
+        if (droppedOnCanvas && canvasRef.current) {
           const point = getDropClientPoint(event);
           if (point) {
             const rect = canvasRef.current.getBoundingClientRect();
@@ -162,6 +164,9 @@ export function EditorDndShell({
               );
             }
           }
+        } else if (!droppedOnCanvas) {
+          setDropMissHint(true);
+          window.setTimeout(() => setDropMissHint(false), 2200);
         }
         setPanelDrag(null);
         setIsOverCanvas(false);
@@ -208,6 +213,14 @@ export function EditorDndShell({
           <div className="contents">
             {children}
           </div>
+          {dropMissHint ? (
+            <div
+              className="pointer-events-none fixed bottom-20 left-1/2 z-[10000] -translate-x-1/2 rounded-md border border-border bg-background/95 px-3 py-2 text-xs text-muted-foreground shadow-md"
+              role="status"
+            >
+              Suelta sobre el lienzo para insertar el elemento
+            </div>
+          ) : null}
         </EditorDndShellContext.Provider>
       </BlockDragContext.Provider>
 

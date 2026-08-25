@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import type { TimelineWidget, TimelineNodo } from '@/types/widget.types';
 import { cn } from '@/lib/utils';
 import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
@@ -10,8 +10,8 @@ import { imageElementStyle, usesComputedImageLayout } from '@/components/widgets
 import {
   stopWidgetInnerKeydown,
   stopWidgetInnerPointer,
-  useWidgetDraftField,
 } from '@/components/widgets/shared/widget-editor-utils';
+import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
 import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,46 +49,21 @@ function InlineTextEditor({
   textStyle,
   extraClassName,
   vertical = false,
-  onCommit,
   onFocusSelect,
 }: {
   value: string;
   field: 'etiqueta' | 'cuerpo';
   textStyle?: React.CSSProperties;
   extraClassName?: string;
-  /** Texto en columna vertical (variante vertical: año / título). */
   vertical?: boolean;
-  onCommit: (v: string) => void;
   onFocusSelect: () => void;
 }) {
-  const [draft, setDraft] = useWidgetDraftField(value);
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (vertical) {
-      const wrap = el.parentElement;
-      if (wrap) {
-        el.style.height = `${Math.max(wrap.clientHeight, 48)}px`;
-      }
-      el.style.overflowY = 'auto';
-      return;
-    }
-    el.style.height = 'auto';
-    const slot = el.closest('[class*="tlCardSlot"]') as HTMLElement | null;
-    const max = slot?.clientHeight ? Math.max(slot.clientHeight - 8, 120) : 320;
-    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
-    el.style.overflowY = el.scrollHeight > max ? 'auto' : 'visible';
-  }, [draft, value, vertical]);
-
   const isVerticalBody = vertical && field === 'cuerpo';
 
   return (
-    <textarea
-      ref={ref}
-      value={draft}
-      rows={1}
+    <PanelOnlyText
+      value={value}
+      placeholder={field === 'etiqueta' ? 'Etiqueta…' : 'Cuerpo…'}
       className={cn(
         vertical
           ? isVerticalBody
@@ -99,7 +74,7 @@ function InlineTextEditor({
               field === 'etiqueta' ? styles.tlCardEtiqueta : styles.tlCardCuerpo,
               extraClassName,
             ),
-        'resize-none border-0 bg-transparent p-0 outline-none focus:ring-0',
+        'block w-full',
       )}
       style={{
         ...textStyle,
@@ -107,27 +82,8 @@ function InlineTextEditor({
           textStyle?.textAlign ??
           (vertical && !isVerticalBody ? undefined : isVerticalBody ? 'left' : 'center'),
       }}
-      onPointerDown={stopWidgetInnerPointer}
-      onClick={stopWidgetInnerPointer}
-      onKeyDown={stopWidgetInnerKeydown}
-      onFocus={(e) => {
-        e.stopPropagation();
-        onFocusSelect();
-      }}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        const el = e.target;
-        if (vertical && field !== 'cuerpo') return;
-        el.style.height = 'auto';
-        const slot = el.closest('[class*="tlCardSlot"]') as HTMLElement | null;
-        const max = slot?.clientHeight ? Math.max(slot.clientHeight - 8, 120) : 320;
-        el.style.height = `${Math.min(el.scrollHeight, max)}px`;
-        el.style.overflowY = el.scrollHeight > max ? 'auto' : 'visible';
-      }}
-      onBlur={() => {
-        if (draft !== value) onCommit(draft);
-      }}
-      placeholder={field === 'etiqueta' ? 'Etiqueta...' : 'Cuerpo...'}
+      multiline={field === 'cuerpo' || vertical}
+      onSelect={onFocusSelect}
     />
   );
 }
@@ -215,7 +171,6 @@ function TimelineEditorNode({
             field="etiqueta"
             textStyle={timelineEtiquetaTextStyle(nodo, config)}
             extraClassName={styles.tlProyectoNum}
-            onCommit={(numeroPaso) => patchNodo({ numeroPaso })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'etiqueta' });
@@ -228,7 +183,6 @@ function TimelineEditorNode({
             textStyle={timelineEtiquetaTextStyle(nodo, config)}
             vertical={isVerticalVariant}
             extraClassName={isVerticalVariant ? styles.tlVerticalYear : undefined}
-            onCommit={(etiqueta) => patchNodo({ etiqueta })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'etiqueta' });
@@ -250,7 +204,6 @@ function TimelineEditorNode({
                   ? styles.tlCardTitulo
                   : undefined
             }
-            onCommit={(tituloNodo) => patchNodo({ tituloNodo })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'titulo' });
@@ -339,7 +292,6 @@ function TimelineEditorNode({
             textStyle={timelineCuerpoTextStyle(nodo, config)}
             vertical={isVerticalVariant}
             extraClassName={isVerticalVariant ? styles.tlVerticalBody : undefined}
-            onCommit={(cuerpo) => patchNodo({ cuerpo })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'cuerpo' });
