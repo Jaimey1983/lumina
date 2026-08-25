@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef } from 'react';
 
-import { clampDragCorner } from '@/hooks/use-block-drag';
+import { computeNewCoords } from '../lib/resize-coords';
+import { DEFAULT_BLOCK_RESIZE_MIN_DIM } from '../lib/block-resize-min-dim';
 
 export interface ResizeHandlesProps {
   blockId: string;
@@ -11,7 +12,7 @@ export interface ResizeHandlesProps {
   ancho: number;
   alto: number;
   lockAspectRatio?: boolean;
-  /** Mínimo ancho/alto en % del lienzo (default 5). Popups usan ~2 (~25px). */
+  /** Mínimo ancho/alto en % del lienzo (default 5; pins/popup/progreso usan getBlockResizeMinDim). */
   minDim?: number;
   canvasRef: React.RefObject<HTMLDivElement | null>;
   onResize: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
@@ -19,10 +20,6 @@ export interface ResizeHandlesProps {
 }
 
 type HandleDir = 'NW' | 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W';
-
-function isCornerHandle(dir: HandleDir): dir is 'NW' | 'NE' | 'SE' | 'SW' {
-  return dir === 'NW' || dir === 'NE' || dir === 'SE' || dir === 'SW';
-}
 
 const HANDLES: { dir: HandleDir; style: React.CSSProperties; cursor: string }[] = [
   { dir: 'NW', style: { top: 0,    left: 0,    transform: 'translate(-50%, -50%)' }, cursor: 'nwse-resize' },
@@ -35,122 +32,6 @@ const HANDLES: { dir: HandleDir; style: React.CSSProperties; cursor: string }[] 
   { dir: 'W',  style: { top: '50%',left: 0,    transform: 'translate(-50%, -50%)' }, cursor: 'ew-resize'   },
 ];
 
-const DEFAULT_MIN_DIM = 5;
-
-function computeNewCoords(
-  dir: HandleDir,
-  origX: number,
-  origY: number,
-  origAncho: number,
-  origAlto: number,
-  dxPct: number,
-  dyPct: number,
-  lockAspectRatio = false,
-  minDim = DEFAULT_MIN_DIM,
-): { x: number; y: number; ancho: number; alto: number } {
-  if (lockAspectRatio && isCornerHandle(dir) && origAncho > 0 && origAlto > 0) {
-    const ratio = origAncho / origAlto;
-    const anchorX = origX + origAncho;
-    const anchorY = origY + origAlto;
-
-    const widthDelta = (dir === 'SE' || dir === 'NE') ? dxPct : -dxPct;
-    const heightDelta = (dir === 'SE' || dir === 'SW') ? dyPct : -dyPct;
-
-    const rawWidth = origAncho + widthDelta;
-    const rawHeight = origAlto + heightDelta;
-
-    let ancho = rawWidth;
-    let alto = rawHeight;
-
-    // Use the dominant axis as driver while preserving original ratio.
-    if (Math.abs(widthDelta) >= Math.abs(heightDelta) * ratio) {
-      alto = ancho / ratio;
-    } else {
-      ancho = alto * ratio;
-    }
-
-    // Keep dimensions positive and above the minimum while preserving ratio.
-    if (ancho < minDim) {
-      ancho = minDim;
-      alto = ancho / ratio;
-    }
-    if (alto < minDim) {
-      alto = minDim;
-      ancho = alto * ratio;
-    }
-
-    let x = origX;
-    let y = origY;
-
-    if (dir === 'NW' || dir === 'SW') x = anchorX - ancho;
-    if (dir === 'NW' || dir === 'NE') y = anchorY - alto;
-
-    const clamped = clampDragCorner(x, y, ancho, alto);
-    return { x: clamped.x, y: clamped.y, ancho, alto };
-  }
-
-  let x     = origX;
-  let y     = origY;
-  let ancho = origAncho;
-  let alto  = origAlto;
-
-  switch (dir) {
-    case 'E':
-      ancho = origAncho + dxPct;
-      break;
-    case 'W':
-      x     = origX + dxPct;
-      ancho = origAncho - dxPct;
-      break;
-    case 'S':
-      alto = origAlto + dyPct;
-      break;
-    case 'N':
-      y    = origY + dyPct;
-      alto = origAlto - dyPct;
-      break;
-    case 'SE':
-      ancho = origAncho + dxPct;
-      alto  = origAlto  + dyPct;
-      break;
-    case 'SW':
-      x     = origX + dxPct;
-      ancho = origAncho - dxPct;
-      alto  = origAlto  + dyPct;
-      break;
-    case 'NE':
-      y     = origY + dyPct;
-      alto  = origAlto  - dyPct;
-      ancho = origAncho + dxPct;
-      break;
-    case 'NW':
-      x     = origX + dxPct;
-      ancho = origAncho - dxPct;
-      y     = origY + dyPct;
-      alto  = origAlto  - dyPct;
-      break;
-  }
-
-  // Clamp minimum width: prevent x from shifting past the right edge.
-    if (ancho < minDim) {
-      if (dir === 'W' || dir === 'NW' || dir === 'SW') {
-        x = origX + origAncho - minDim;
-      }
-      ancho = minDim;
-    }
-
-    // Clamp minimum height: prevent y from shifting past the bottom edge.
-    if (alto < minDim) {
-      if (dir === 'N' || dir === 'NW' || dir === 'NE') {
-        y = origY + origAlto - minDim;
-      }
-      alto = minDim;
-    }
-
-  const clamped = clampDragCorner(x, y, ancho, alto);
-  return { x: clamped.x, y: clamped.y, ancho, alto };
-}
-
 export function ResizeHandles({
   blockId,
   x,
@@ -158,7 +39,7 @@ export function ResizeHandles({
   ancho,
   alto,
   lockAspectRatio,
-  minDim = DEFAULT_MIN_DIM,
+  minDim = DEFAULT_BLOCK_RESIZE_MIN_DIM,
   canvasRef,
   onResize,
   onResizeEnd,
@@ -168,7 +49,6 @@ export function ResizeHandles({
     propsRef.current = { blockId, x, y, ancho, alto, lockAspectRatio, minDim, canvasRef, onResize, onResizeEnd };
   });
 
-  // One ref per active drag session, reset on each mousedown.
   const dragRef = useRef<{
     dir: HandleDir;
     origX: number;
@@ -179,7 +59,6 @@ export function ResizeHandles({
     startMouseY: number;
   } | null>(null);
 
-  // Attach window-level handlers once; read live values through refs.
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
       const drag = dragRef.current;
@@ -193,14 +72,16 @@ export function ResizeHandles({
       const dxPct = ((e.clientX - drag.startMouseX) / rect.width)  * 100;
       const dyPct = ((e.clientY - drag.startMouseY) / rect.height) * 100;
 
-      const next = computeNewCoords(
-        drag.dir,
-        drag.origX, drag.origY, drag.origAncho, drag.origAlto,
-        dxPct, dyPct,
-        Boolean(keepRatio || e.shiftKey),
-        minDimPct,
+      cb(
+        bid,
+        computeNewCoords(
+          drag.dir,
+          drag.origX, drag.origY, drag.origAncho, drag.origAlto,
+          dxPct, dyPct,
+          Boolean(keepRatio || e.shiftKey),
+          minDimPct,
+        ),
       );
-      cb(bid, next);
     }
 
     function onMouseUp(e: MouseEvent) {
@@ -216,14 +97,16 @@ export function ResizeHandles({
       const dxPct = ((e.clientX - drag.startMouseX) / rect.width)  * 100;
       const dyPct = ((e.clientY - drag.startMouseY) / rect.height) * 100;
 
-      const next = computeNewCoords(
-        drag.dir,
-        drag.origX, drag.origY, drag.origAncho, drag.origAlto,
-        dxPct, dyPct,
-        Boolean(keepRatio || e.shiftKey),
-        minDimPct,
+      cb(
+        bid,
+        computeNewCoords(
+          drag.dir,
+          drag.origX, drag.origY, drag.origAncho, drag.origAlto,
+          dxPct, dyPct,
+          Boolean(keepRatio || e.shiftKey),
+          minDimPct,
+        ),
       );
-      cb(bid, next);
     }
 
     window.addEventListener('mousemove', onMouseMove);
@@ -233,12 +116,11 @@ export function ResizeHandles({
       window.removeEventListener('mouseup',   onMouseUp);
       dragRef.current = null;
     };
-  }, []); // registered once; reads current values through propsRef / dragRef
+  }, []);
 
   function handleMouseDown(e: React.MouseEvent, dir: HandleDir) {
     e.stopPropagation();
     e.preventDefault();
-    // Snapshot block position at the moment the drag starts.
     dragRef.current = {
       dir,
       origX:      propsRef.current.x,

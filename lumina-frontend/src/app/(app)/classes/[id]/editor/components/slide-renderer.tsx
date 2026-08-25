@@ -25,6 +25,7 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { ResizeHandles } from './resize-handles';
+import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
 import { withRect } from '@/hooks/use-block-drag';
 
@@ -2215,7 +2216,7 @@ function BlockNode({
           ancho={currentCoords.ancho}
           alto={currentCoords.alto}
           lockAspectRatio={block.tipo === 'imagen' ? !!block.lockAspectRatio : false}
-          minDim={block.tipo === 'popup' ? 2 : undefined}
+          minDim={getBlockResizeMinDim(block.tipo)}
           canvasRef={canvasRef}
           onResize={onResize}
           onResizeEnd={onResizeEnd}
