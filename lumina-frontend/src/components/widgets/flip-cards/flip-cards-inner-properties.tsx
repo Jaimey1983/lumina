@@ -8,9 +8,8 @@ import type {
 } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import {
   Select,
   SelectContent,
@@ -90,28 +89,23 @@ export function FlipCardsTextInnerProperties({
         <WidgetSectionTitle>Texto — {label}</WidgetSectionTitle>
         <div className="space-y-1.5">
           <Label className="text-xs">Contenido</Label>
-          {selection.field === 'tituloWidget' ? (
-            <Input
-              className="h-8 text-xs"
-              value={headerValue}
-              placeholder="Título del widget"
-              onChange={(e) =>
-                update((w) => ({ ...w, [selection.field]: e.target.value }))
-              }
-            />
-          ) : (
-            <Textarea
-              className="min-h-[72px] text-xs"
-              value={headerValue}
-              rows={3}
-              placeholder={
-                selection.field === 'subtituloWidget' ? 'Subtítulo' : 'Instrucción'
-              }
-              onChange={(e) =>
-                update((w) => ({ ...w, [selection.field]: e.target.value }))
-              }
-            />
-          )}
+            <WidgetDraftTextField
+            key={selection.field}
+            className={
+              selection.field === 'tituloWidget' ? 'h-8 text-xs' : 'min-h-[72px] text-xs'
+            }
+            value={headerValue}
+            multiline={selection.field !== 'tituloWidget'}
+            rows={3}
+            placeholder={
+              selection.field === 'tituloWidget'
+                ? 'Título del widget'
+                : selection.field === 'subtituloWidget'
+                  ? 'Subtítulo'
+                  : 'Instrucción'
+            }
+            onChange={(next) => update((w) => ({ ...w, [selection.field]: next }))}
+          />
         </div>
         <WidgetTypographyFields
           style={style}
@@ -151,30 +145,21 @@ export function FlipCardsTextInnerProperties({
       </WidgetSectionTitle>
       <div className="space-y-1.5">
         <Label className="text-xs">Contenido</Label>
-        {isTitle ? (
-          <Input
-            className="h-8 text-xs"
-            value={cara.titulo}
-            placeholder="Título de la tarjeta"
-            onChange={(e) =>
-              update((w) =>
-                patchCardFace(w, selection.cardId, selection.face, { titulo: e.target.value }),
-              )
-            }
-          />
-        ) : (
-          <Textarea
-            className="min-h-[96px] text-xs"
-            value={cara.cuerpo}
-            rows={4}
-            placeholder="Cuerpo de la tarjeta"
-            onChange={(e) =>
-              update((w) =>
-                patchCardFace(w, selection.cardId, selection.face, { cuerpo: e.target.value }),
-              )
-            }
-          />
-        )}
+        <WidgetDraftTextField
+          key={`${selection.cardId}-${selection.face}-${selection.field}`}
+          className={isTitle ? 'h-8 text-xs' : 'min-h-[96px] text-xs'}
+          value={isTitle ? cara.titulo : cara.cuerpo}
+          multiline={!isTitle}
+          rows={4}
+          placeholder={isTitle ? 'Título de la tarjeta' : 'Cuerpo de la tarjeta'}
+          onChange={(next) =>
+            update((w) =>
+              patchCardFace(w, selection.cardId, selection.face, {
+                [isTitle ? 'titulo' : 'cuerpo']: next,
+              }),
+            )
+          }
+        />
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground">
         Usa el asa azul a la izquierda del texto en el lienzo para arrastrarlo dentro de la
@@ -221,23 +206,23 @@ export function FlipCardsImageInnerProperties({
       </WidgetSectionTitle>
       <div className="space-y-1.5">
         <Label className="text-xs">URL</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           placeholder="https://…"
           value={cara.imagen ?? ''}
-          onChange={(e) => {
-            const trimmed = e.target.value.trim();
+          onChange={(next) => {
+            const trimmed = next.trim();
             update({ imagen: trimmed || undefined });
           }}
         />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Texto alternativo</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           placeholder="Descripción de la imagen"
           value={cara.imagenAlt ?? ''}
-          onChange={(e) => update({ imagenAlt: e.target.value || undefined })}
+          onChange={(next) => update({ imagenAlt: next || undefined })}
         />
       </div>
       <div className="space-y-1.5">

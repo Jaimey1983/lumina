@@ -21,6 +21,7 @@ import type {
   Activity,
   Background,
   Block,
+  ClipGroupBlock,
   FlipCardsWidget,
   Slide,
   SlideGuias,
@@ -33,6 +34,7 @@ import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
 import {
   getBlockAtPath,
   isUnimplementedInteractiveStub,
+  removeBlockAtPath,
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
@@ -41,7 +43,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   SlideEditorChrome,
   SlideInsertionToolbar,
-  type LayerReorderAction,
 } from './floating-toolbar';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
@@ -54,48 +55,63 @@ import { cn } from '@/lib/utils';
 import {
   applyNudgeToBlocks,
   getBlockPos,
+  isBlockCanvasLocked,
+  isBlockCanvasPositionable,
+  prepareBlockForPaste,
   snapLineColor,
   snapPositionToGuides,
 } from '@/hooks/use-block-drag';
 import { toggleCenterGuides } from '@/lib/canvas-guides';
+import { setSlideGrillaSize, toggleSlideGrilla } from '@/lib/canvas-grid';
+import {
+  CANVAS_ZOOM_DEFAULT,
+  stepCanvasZoom,
+  wheelDeltaToZoomStep,
+} from '@/lib/canvas-zoom';
 import { useEditorBlockDrag } from './editor-dnd-shell';
 import { DroppableCanvas } from './droppable-canvas';
 import { SpacingIndicators } from '@/components/editor/spacing-indicators';
 import { CanvasGuidesChrome } from './canvas-guides';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
+import { LayersPanel } from '@/components/editor/layers-panel';
+import {
+  applyLayerReorderAction,
+  type LayerReorderAction,
+} from '@/lib/canvas-layers';
 import {
   appendTextBlockToWidgetSlide,
   createWidgetSlideTextBlock,
   resolveWidgetSlideInsertTarget,
 } from '@/components/widgets/shared/widget-slide-blocks';
+import {
+  MAX_UNDO,
+  canRedoHistory,
+  canUndoHistory,
+  captureSlideSnapshot,
+  cloneSlideBlocks,
+  createInitialHistory,
+  historyViewItems,
+  jumpHistory,
+  pushHistoryEntry,
+  redoHistory,
+  resetSlideHistory as createFreshSlideHistory,
+  undoHistory,
+  type HistoryKind,
+  type SlideHistorySnapshot,
+  type SlideHistoryState,
+} from '../lib/canvas-history';
 
-const MAX_UNDO = 20;
+const DEFAULT_SLIDE_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
-function cloneBloques(bloques: Block[]): Block[] {
-  try {
-    return structuredClone(bloques);
-  } catch {
-    return JSON.parse(JSON.stringify(bloques)) as Block[];
-  }
-}
-
-function getBlockZ(block: Block): number {
-  const z = (block as { zIndex?: number }).zIndex;
-  return typeof z === 'number' ? z : 1;
-}
-
-function collectZIndices(blocks: Block[]): number[] {
-  const out: number[] = [];
-  function walk(arr: Block[]) {
-    for (const b of arr) {
-      out.push(getBlockZ(b));
-      if (b.tipo === 'columnas') {
-        for (const col of b.columnas) walk(col);
-      }
-    }
-  }
-  walk(blocks);
-  return out;
+function buildPastedBlock(source: Block): Block {
+  const cloned =
+    typeof structuredClone === 'function'
+      ? structuredClone(source)
+      : (JSON.parse(JSON.stringify(source)) as Block);
+  const reminted = remintBlockChildIds(cloned);
+  return prepareBlockForPaste(reminted, {
+    newId: `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+  });
 }
 
 // ─── Per-block drag handle ────────────────────────────────────────────────────
@@ -116,6 +132,10 @@ function BlockDragHandle({
   draggingId: string | null;
   selectedBlockIds: string[];
 }) {
+  if (!isBlockCanvasPositionable(block) || isBlockCanvasLocked(block)) {
+    return null;
+  }
+
   const id = blockDragId(index);
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
@@ -123,8 +143,7 @@ function BlockDragHandle({
       selectedBlockIds,
     },
   });
-  // Always use the original block position for the handle container so it
-  // doesn't double-move while SlideRenderer shows the live preview.
+  // Posición sincronizada con SlideRenderer (effectiveBloques durante drag/commit).
   const pos = getBlockPos(block);
   const isActive = draggingId === id;
 
@@ -190,20 +209,35 @@ export interface CanvasAreaProps {
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   onRemoveBlock?: (blockId: string) => void;
   onCopyBlock?: (block: Block) => void;
-  copiedBlock?: Block | null;
   /** Fired with live/committed block positions during and after drag (null when settled). */
   onEffectiveBloques?: (bloques: Block[] | null) => void;
+  /** Notifica cambios en canUndo/canRedo (p. ej. topbar del editor). */
+  onHistoryStateChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
   /** Panel «Respuestas en vivo» abierto: oculta PROPIEDADES aunque haya bloque seleccionado. */
   livePanelOpen?: boolean;
   /** Ref al marco del slide (compartido con EditorDndShell para drops del panel). */
   canvasSurfaceRef?: Ref<HTMLDivElement | null>;
   /** Muestra reglas y guías manuales (solo editor). */
   guidesVisible?: boolean;
+  /** Escala visual del lienzo (1 = 100 %). */
+  canvasZoom?: number;
+  onCanvasZoomChange?: (zoom: number) => void;
 }
 
 export type CanvasAreaHandle = {
   undo: () => void;
   redo: () => void;
+  /** Pega en el slide activo y registra el cambio en la pila de undo. */
+  pasteCopiedBlock: (block: Block) => void;
+  /**
+   * Pega en cualquier slide (cross-slide) con historial de undo por slideId.
+   * `slideMeta` debe reflejar el estado actual del slide destino en servidor.
+   */
+  pasteCopiedBlockInSlide: (
+    slideId: string,
+    block: Block,
+    slideMeta: { bloques: Block[]; fondo?: Background; guias?: SlideGuias },
+  ) => void;
   duplicateSelectedBlock: () => void;
   copySelectedBlock: () => void;
   /** Elimina el bloque seleccionado si hay uno; devuelve si se ejecutó la eliminación. */
@@ -217,6 +251,12 @@ export type CanvasAreaHandle = {
   nudgeSelectedBlocks: (dxPx: number, dyPx: number) => boolean;
   /** Añade o quita las guías centrales (640 / 360). */
   toggleCenterGuides: () => void;
+  /** Activa o desactiva la grilla de snap del slide. */
+  toggleGrid: () => void;
+  /** Cambia el tamaño de celda de la grilla (px virtuales) y la activa. */
+  setGridSize: (tamanoPx: number) => void;
+  /** Reinicia la pila Ctrl+Z del slide activo (p. ej. tras restaurar una versión). */
+  resetSlideHistory: () => void;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -226,7 +266,7 @@ export type CanvasAreaHandle = {
  * El marco interno (surface) es absolute inset-0 + overflow visible; el viewport fija el 16:9.
  */
 const SLIDE_VIEWPORT_CLASS = cn(
-  'relative aspect-video w-full max-w-[var(--editor-slide-max-w)] max-h-[var(--editor-slide-max-h)] shrink-0',
+  'relative aspect-video w-full max-w-full max-h-full shrink-0',
   'min-h-0 min-w-0',
 );
 
@@ -247,16 +287,18 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onPopupChange,
     onHotspotChange,
     onTimelineChange,
-    onRemoveBlock,
     onCopyBlock,
-    copiedBlock,
     onEffectiveBloques,
+    onHistoryStateChange,
     livePanelOpen = false,
     canvasSurfaceRef,
     guidesVisible = true,
+    canvasZoom = CANVAS_ZOOM_DEFAULT,
+    onCanvasZoomChange,
   },
   ref,
 ) {
+  const workspaceRef = useRef<HTMLDivElement>(null);
   // ── classId (for PATCH URL) ─────────────────────────────────────────────────
   const params  = useParams<{ id: string }>();
   const classId = params.id ?? '';
@@ -308,6 +350,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     useState<HotspotInnerSelection | null>(null);
   const [timelineInnerSelection, setTimelineInnerSelection] =
     useState<TimelineInnerSelection | null>(null);
+  const [clipGroupInnerEditId, setClipGroupInnerEditId] = useState<string | null>(
+    null,
+  );
 
   const clearInnerSelections = useCallback(() => {
     setFlipCardsInnerSelection(null);
@@ -317,6 +362,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     setPopupInnerSelection(null);
     setHotspotInnerSelection(null);
     setTimelineInnerSelection(null);
+    setClipGroupInnerEditId(null);
   }, []);
 
   const [marqueeRect, setMarqueeRect] = useState<{
@@ -345,31 +391,85 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const hasActivityBlock =
     Boolean(slide?.bloques?.some((b) => b.tipo === 'actividad'));
 
-  const undoRef = useRef<Block[][]>([]);
-  const redoRef = useRef<Block[][]>([]);
+  /**
+   * Pila de edición por slideId (sesión del editor). Ver `canvas-history.ts`.
+   * No se limpia al cambiar de slide; se pierde al desmontar CanvasArea.
+   */
+  const historiesRef = useRef<Map<string, SlideHistoryState>>(new Map());
   const isUndoRedoRef = useRef(false);
+  /** Metadatos del slide en pantalla (fondo/guias/transición) para snapshots coherentes. */
+  const editorMetaRef = useRef<{
+    fondo?: Background;
+    guias: SlideGuias;
+    transicion?: Slide['transicion'];
+  }>({
+    guias: EMPTY_SLIDE_GUIAS,
+  });
   const [historyTick, setHistoryTick] = useState(0);
+  const [layersPanelOpen, setLayersPanelOpen] = useState(false);
   const bumpHistory = useCallback(() => setHistoryTick((t) => t + 1), []);
 
   useEffect(() => {
-    undoRef.current = [];
-    redoRef.current = [];
+    if (!slide?.id) return;
+    if (!historiesRef.current.has(slide.id)) {
+      historiesRef.current.set(
+        slide.id,
+        createInitialHistory(captureSlideSnapshot(slide, 'inicio')),
+      );
+    }
     bumpHistory();
   }, [slide?.id, bumpHistory]);
 
-  const canUndo = undoRef.current.length > 0;
-  const canRedo = redoRef.current.length > 0;
+  const activeHistory = slide?.id
+    ? historiesRef.current.get(slide.id)
+    : undefined;
+  const canUndo = activeHistory ? canUndoHistory(activeHistory) : false;
+  const canRedo = activeHistory ? canRedoHistory(activeHistory) : false;
+  const historyItems = activeHistory ? historyViewItems(activeHistory) : [];
   void historyTick;
 
-  const patchSlideContent = useCallback(
-    async (content: Record<string, unknown>): Promise<boolean> => {
-      if (!slide?.id || !classId) return false;
+  useEffect(() => {
+    setClipGroupInnerEditId(null);
+  }, [slide?.id, selectedBlockId]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setClipGroupInnerEditId(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    onHistoryStateChange?.({ canUndo, canRedo });
+  }, [canUndo, canRedo, historyTick, onHistoryStateChange]);
+
+  const buildContentFromSnapshot = useCallback(
+    (snapshot: SlideHistorySnapshot) => {
+      return {
+        bloques: cloneSlideBlocks(snapshot.bloques),
+        fondo: snapshot.fondo ?? DEFAULT_SLIDE_FONDO,
+        ...(slide?.diseno ? { diseno: slide.diseno } : {}),
+        ...(snapshot.transicion !== undefined
+          ? { transicion: snapshot.transicion }
+          : slide?.transicion
+            ? { transicion: slide.transicion }
+            : {}),
+        guias: snapshot.guias,
+      };
+    },
+    [slide?.diseno, slide?.transicion],
+  );
+
+  const patchSlideContentById = useCallback(
+    async (slideId: string, content: Record<string, unknown>): Promise<boolean> => {
+      if (!classId) return false;
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
       const res = await fetch(
-        `${apiUrl}/classes/${classId}/slides/${slide.id}`,
+        `${apiUrl}/classes/${classId}/slides/${slideId}`,
         {
           method: 'PATCH',
           headers: {
@@ -381,7 +481,15 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       );
       return res.ok;
     },
-    [slide?.id, classId],
+    [classId],
+  );
+
+  const patchSlideContent = useCallback(
+    async (content: Record<string, unknown>): Promise<boolean> => {
+      if (!slide?.id || !classId) return false;
+      return patchSlideContentById(slide.id, content);
+    },
+    [slide?.id, classId, patchSlideContentById],
   );
 
   const buildContentPayload = useCallback(
@@ -406,31 +514,28 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     [slide?.fondo, slide?.diseno, slide?.guias, slide?.transicion],
   );
 
-  const persistGuias = useCallback(
-    async (nextGuias: SlideGuias) => {
-      if (!slide?.id || !classId) return;
-      const bloques = slide.bloques ?? [];
-      const content = buildContentPayload(bloques, undefined, nextGuias);
-      const ok = await patchSlideContent(content);
-      if (ok) {
-        await queryClient.refetchQueries({
-          queryKey: ['classes', 'detail', classId],
-        });
-      } else {
-        toast.error('No se pudieron guardar las guías');
-      }
-    },
-    [slide?.id, slide?.bloques, classId, buildContentPayload, patchSlideContent, queryClient],
-  );
-
-  const pushUndo = useCallback(
-    (prev: Block[]) => {
+  const recordAfterSuccess = useCallback(
+    (
+      slideId: string,
+      previous: SlideHistorySnapshot,
+      next: SlideHistorySnapshot,
+    ) => {
       if (isUndoRedoRef.current) return;
-      undoRef.current = [...undoRef.current, cloneBloques(prev)];
-      if (undoRef.current.length > MAX_UNDO) {
-        undoRef.current = undoRef.current.slice(-MAX_UNDO);
+      let state = historiesRef.current.get(slideId);
+      if (!state || state.entries.length === 0) {
+        state = createInitialHistory({ ...previous, kind: 'inicio' });
+      } else if (
+        state.index === 0 &&
+        state.entries.length === 1 &&
+        state.entries[0]?.kind === 'inicio'
+      ) {
+        state = {
+          entries: [{ ...previous, kind: 'inicio', at: state.entries[0].at }],
+          index: 0,
+        };
       }
-      redoRef.current = [];
+      state = pushHistoryEntry(state, next, MAX_UNDO);
+      historiesRef.current.set(slideId, state);
       bumpHistory();
     },
     [bumpHistory],
@@ -441,27 +546,180 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       nextBloques: Block[],
       previousBloques: Block[],
       recordHistory: boolean,
+      kind: HistoryKind = 'edicion',
     ): Promise<boolean> => {
-      let pushed = false;
-      if (recordHistory && !isUndoRedoRef.current) {
-        pushUndo(previousBloques);
-        pushed = true;
-      }
       const content = buildContentPayload(nextBloques);
       const ok = await patchSlideContent(content);
-      if (!ok) {
-        if (pushed && !isUndoRedoRef.current) {
-          undoRef.current = undoRef.current.slice(0, -1);
-          bumpHistory();
-        }
-        return false;
+      if (!ok) return false;
+      if (recordHistory && slide?.id && !isUndoRedoRef.current) {
+        const meta = editorMetaRef.current;
+        recordAfterSuccess(
+          slide.id,
+          captureSlideSnapshot(
+            {
+              bloques: previousBloques,
+              fondo: meta.fondo,
+              guias: meta.guias,
+              transicion: meta.transicion,
+            },
+            'edicion',
+          ),
+          captureSlideSnapshot(
+            {
+              bloques: nextBloques,
+              fondo: meta.fondo,
+              guias: meta.guias,
+              transicion: meta.transicion,
+            },
+            kind,
+          ),
+        );
       }
       await queryClient.refetchQueries({
         queryKey: ['classes', 'detail', classId],
       });
       return true;
     },
-    [buildContentPayload, patchSlideContent, pushUndo, queryClient, classId, bumpHistory],
+    [
+      buildContentPayload,
+      patchSlideContent,
+      queryClient,
+      classId,
+      slide,
+      recordAfterSuccess,
+    ],
+  );
+
+  const ensureHistoryForSlide = useCallback(
+    (
+      slideId: string,
+      snapshot: {
+        bloques: Block[];
+        fondo?: Background;
+        guias?: SlideGuias;
+      },
+    ) => {
+      if (!historiesRef.current.has(slideId)) {
+        historiesRef.current.set(
+          slideId,
+          createInitialHistory(captureSlideSnapshot(snapshot, 'inicio')),
+        );
+      }
+    },
+    [],
+  );
+
+  const persistBloquesForSlide = useCallback(
+    async (
+      slideId: string,
+      nextBloques: Block[],
+      previousBloques: Block[],
+      slideMeta: { fondo?: Background; guias?: SlideGuias; diseno?: Slide['diseno']; transicion?: Slide['transicion'] },
+      recordHistory: boolean,
+      kind: HistoryKind = 'edicion',
+    ): Promise<boolean> => {
+      const guias = slideMeta.guias ?? EMPTY_SLIDE_GUIAS;
+      const content: Record<string, unknown> = {
+        bloques: nextBloques,
+        ...(slideMeta.fondo ? { fondo: slideMeta.fondo } : {}),
+        ...(slideMeta.diseno ? { diseno: slideMeta.diseno } : {}),
+        ...(slideMeta.transicion ? { transicion: slideMeta.transicion } : {}),
+        guias,
+      };
+      const ok = await patchSlideContentById(slideId, content);
+      if (!ok) return false;
+      if (recordHistory && !isUndoRedoRef.current) {
+        ensureHistoryForSlide(slideId, {
+          bloques: previousBloques,
+          fondo: slideMeta.fondo,
+          guias,
+        });
+        recordAfterSuccess(
+          slideId,
+          captureSlideSnapshot(
+            {
+              bloques: previousBloques,
+              fondo: slideMeta.fondo,
+              guias,
+              transicion: slideMeta.transicion,
+            },
+            'edicion',
+          ),
+          captureSlideSnapshot(
+            {
+              bloques: nextBloques,
+              fondo: slideMeta.fondo,
+              guias,
+              transicion: slideMeta.transicion,
+            },
+            kind,
+          ),
+        );
+      }
+      await queryClient.refetchQueries({
+        queryKey: ['classes', 'detail', classId],
+      });
+      return true;
+    },
+    [
+      patchSlideContentById,
+      queryClient,
+      classId,
+      recordAfterSuccess,
+      ensureHistoryForSlide,
+    ],
+  );
+
+  const persistGuias = useCallback(
+    async (nextGuias: SlideGuias) => {
+      if (!slide?.id || !classId) return;
+      const bloques = liveBloques ?? committedBloques ?? slide.bloques ?? [];
+      const meta = editorMetaRef.current;
+      const previous = captureSlideSnapshot(
+        {
+          bloques,
+          fondo: meta.fondo,
+          guias: meta.guias,
+          transicion: meta.transicion,
+        },
+        'guias',
+      );
+      const content = buildContentPayload(bloques, undefined, nextGuias);
+      const ok = await patchSlideContent(content);
+      if (ok) {
+        recordAfterSuccess(
+          slide.id,
+          previous,
+          captureSlideSnapshot(
+            {
+              bloques,
+              fondo: meta.fondo,
+              guias: nextGuias,
+              transicion: meta.transicion,
+            },
+            'guias',
+          ),
+        );
+        await queryClient.refetchQueries({
+          queryKey: ['classes', 'detail', classId],
+        });
+      } else {
+        toast.error('No se pudieron guardar las guías');
+      }
+    },
+    [
+      slide?.id,
+      slide?.bloques,
+      slide?.fondo,
+      slide?.guias,
+      liveBloques,
+      committedBloques,
+      classId,
+      buildContentPayload,
+      patchSlideContent,
+      queryClient,
+      recordAfterSuccess,
+    ],
   );
 
   const handleInsertBlock = useCallback(
@@ -502,7 +760,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         }
       }
 
-      const prev = cloneBloques(slide.bloques ?? []);
+      const prev = cloneSlideBlocks(slide.bloques ?? []);
       const next = [...prev, block];
       const newIndex = next.length - 1;
       try {
@@ -537,24 +795,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const handleDuplicateBlock = useCallback(
     async (blockPath: string) => {
       if (!slide?.id || !classId) return;
-      const prev = cloneBloques(slide.bloques ?? []);
+      const prev = cloneSlideBlocks(slide.bloques ?? []);
       const b = getBlockAtPath(prev, blockPath);
       if (!b) return;
 
-      const dup = remintBlockChildIds(structuredClone(b) as Block) as Block & { id?: string };
-      dup.id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-      const dupPos = dup as { x?: number; y?: number; ancho?: number; alto?: number };
-
-      if (dupPos.x !== undefined) {
-        dupPos.x += 3;
-        const width = typeof dupPos.ancho === 'number' ? dupPos.ancho : 0;
-        if (dupPos.x + width > 100) dupPos.x -= 3;
-      }
-      if (dupPos.y !== undefined) {
-        dupPos.y += 3;
-      }
-
+      const dup = buildPastedBlock(b);
       const next = [...prev, dup];
       const newIndex = next.length - 1;
 
@@ -592,7 +837,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     async (updatedBlocks: Block[]) => {
       setCommittedBloques(updatedBlocks);
       try {
-        const prev = cloneBloques(slide?.bloques ?? []);
+        const prev = cloneSlideBlocks(slide?.bloques ?? []);
         await persistBloques(updatedBlocks, prev, true);
       } catch {
         // Silently ignore — positions will re-sync on next load.
@@ -640,99 +885,220 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const liveSlide: Slide | null =
     slide && effectiveBloques ? { ...slide, bloques: effectiveBloques } : slide;
 
+  editorMetaRef.current = {
+    fondo: liveSlide?.fondo ?? slide?.fondo,
+    guias: liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS,
+    transicion: liveSlide?.transicion ?? slide?.transicion,
+  };
+
+  const restoreSnapshot = useCallback(
+    async (
+      nextState: SlideHistoryState,
+      snapshot: SlideHistorySnapshot,
+      failMessage: string,
+    ) => {
+      if (!slide?.id) return;
+      isUndoRedoRef.current = true;
+      const ok = await patchSlideContent(buildContentFromSnapshot(snapshot));
+      isUndoRedoRef.current = false;
+      if (ok) {
+        historiesRef.current.set(slide.id, nextState);
+        bumpHistory();
+        await queryClient.refetchQueries({
+          queryKey: ['classes', 'detail', classId],
+        });
+      } else {
+        toast.error(failMessage);
+      }
+    },
+    [
+      slide?.id,
+      buildContentFromSnapshot,
+      patchSlideContent,
+      queryClient,
+      classId,
+      bumpHistory,
+    ],
+  );
+
   const handleUndo = useCallback(async () => {
-    if (!slide?.id || undoRef.current.length === 0) return;
-    const snapshot = undoRef.current.pop()!;
-    const current = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
-    isUndoRedoRef.current = true;
-    const content = buildContentPayload(snapshot);
-    const ok = await patchSlideContent(content);
-    isUndoRedoRef.current = false;
-    if (ok) {
-      redoRef.current.push(current);
-      bumpHistory();
-      await queryClient.refetchQueries({
-        queryKey: ['classes', 'detail', classId],
-      });
-    } else {
-      undoRef.current.push(snapshot);
-      bumpHistory();
-      toast.error('No se pudo deshacer');
-    }
-  }, [
-    slide?.id,
-    slide?.bloques,
-    liveSlide?.bloques,
-    buildContentPayload,
-    patchSlideContent,
-    queryClient,
-    classId,
-    bumpHistory,
-  ]);
+    if (!slide?.id) return;
+    const state = historiesRef.current.get(slide.id);
+    if (!state) return;
+    const result = undoHistory(state);
+    if (!result) return;
+    await restoreSnapshot(result.state, result.snapshot, 'No se pudo deshacer');
+  }, [slide?.id, restoreSnapshot]);
 
   const handleRedo = useCallback(async () => {
-    if (redoRef.current.length === 0) return;
-    const snapshot = redoRef.current.pop()!;
-    const current = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
-    isUndoRedoRef.current = true;
-    const content = buildContentPayload(snapshot);
-    const ok = await patchSlideContent(content);
-    isUndoRedoRef.current = false;
-    if (ok) {
-      undoRef.current.push(current);
-      if (undoRef.current.length > MAX_UNDO) {
-        undoRef.current = undoRef.current.slice(-MAX_UNDO);
-      }
-      bumpHistory();
-      await queryClient.refetchQueries({
-        queryKey: ['classes', 'detail', classId],
-      });
-    } else {
-      redoRef.current.push(snapshot);
-      bumpHistory();
-      toast.error('No se pudo rehacer');
-    }
-  }, [
-    liveSlide?.bloques,
-    slide?.bloques,
-    buildContentPayload,
-    patchSlideContent,
-    queryClient,
-    classId,
-    bumpHistory,
-  ]);
+    if (!slide?.id) return;
+    const state = historiesRef.current.get(slide.id);
+    if (!state) return;
+    const result = redoHistory(state);
+    if (!result) return;
+    await restoreSnapshot(result.state, result.snapshot, 'No se pudo rehacer');
+  }, [slide?.id, restoreSnapshot]);
 
-  const handleReorder = useCallback(
-    (action: LayerReorderAction) => {
-      if (!selectedBlockId || !liveSlide?.bloques) return;
-      const bloques = cloneBloques(liveSlide.bloques);
-      const prev = cloneBloques(liveSlide.bloques);
-      const zs = collectZIndices(bloques);
-      if (zs.length === 0) return;
-      const min = Math.min(...zs);
-      const max = Math.max(...zs);
-      const next = updateBlockAtPath(bloques, selectedBlockId, (b) => {
-        const z = getBlockZ(b);
-        let nz = z;
-        if (action === 'traer_frente') nz = max + 1;
-        else if (action === 'enviar_atras_total') nz = min - 1;
-        else if (action === 'adelante_uno') nz = z + 1;
-        else if (action === 'atras_uno') nz = z - 1;
-        return { ...b, zIndex: nz } as Block;
-      });
+  const handleJumpToHistory = useCallback(
+    async (index: number) => {
+      if (!slide?.id) return;
+      const state = historiesRef.current.get(slide.id);
+      if (!state) return;
+      const result = jumpHistory(state, index);
+      if (!result) return;
+      await restoreSnapshot(
+        result.state,
+        result.snapshot,
+        'No se pudo restaurar ese punto',
+      );
+    },
+    [slide?.id, restoreSnapshot],
+  );
+
+  const handlePasteCopiedBlock = useCallback(
+    async (block: Block) => {
+      if (!slide?.id || !classId) return;
+      const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide.bloques ?? []);
+      const dup = buildPastedBlock(block);
+      const next = [...prev, dup];
+      const ok = await persistBloques(next, prev, true, 'pegar');
+      if (ok) {
+        toast.success('Bloque pegado');
+        const newIndex = next.length - 1;
+        setTimeout(() => {
+          const el = canvasRef.current?.querySelector(
+            `[data-block-id="${String(newIndex)}"]`,
+          ) as HTMLElement | null;
+          el?.click();
+        }, 50);
+      } else {
+        toast.error('No se pudo pegar el bloque');
+      }
+    },
+    [slide?.id, slide?.bloques, liveSlide?.bloques, classId, persistBloques],
+  );
+
+  const handlePasteCopiedBlockInSlide = useCallback(
+    async (
+      slideId: string,
+      block: Block,
+      slideMeta: { bloques: Block[]; fondo?: Background; guias?: SlideGuias },
+    ) => {
+      if (!classId) return;
+      const prev = cloneSlideBlocks(slideMeta.bloques);
+      const dup = buildPastedBlock(block);
+      const next = [...prev, dup];
+      const ok = await persistBloquesForSlide(
+        slideId,
+        next,
+        prev,
+        {
+          fondo: slideMeta.fondo,
+          guias: slideMeta.guias,
+        },
+        true,
+        'pegar',
+      );
+      if (ok) {
+        toast.success('Bloque pegado');
+      } else {
+        toast.error('No se pudo pegar el bloque');
+      }
+    },
+    [classId, persistBloquesForSlide],
+  );
+
+  const handleToggleCanvasLock = useCallback(
+    async (blockPath: string) => {
+      if (!slide?.id || !classId) return;
+      const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide.bloques ?? []);
+      const block = getBlockAtPath(prev, blockPath);
+      if (!block || !isBlockCanvasPositionable(block)) return;
+      const locking = !isBlockCanvasLocked(block);
+      const next = updateBlockAtPath(prev, blockPath, (b) => ({
+        ...b,
+        canvasLocked: locking ? true : undefined,
+      }));
+      const ok = await persistBloques(next, prev, true);
+      if (ok) {
+        toast.success(
+          locking ? 'Posición y tamaño fijados' : 'Bloque desbloqueado',
+        );
+      }
+    },
+    [slide?.id, classId, slide?.bloques, liveSlide?.bloques, persistBloques],
+  );
+
+  const handleRemoveBlock = useCallback(
+    async (blockPath: string) => {
+      if (!slide?.id || !classId) return;
+      const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide.bloques ?? []);
+      const next = removeBlockAtPath(prev, blockPath);
+      if (next === prev) return;
+      setSelectedBlockId(null);
+      setSelectedBlockIds([]);
+      clearInnerSelections();
+      onBlockSelectRef.current?.('');
+      const ok = await persistBloques(next, prev, true, 'eliminar');
+      if (ok) {
+        toast.success('Actividad eliminada');
+      } else {
+        toast.error('No se pudo eliminar');
+      }
+    },
+    [
+      slide?.id,
+      classId,
+      slide?.bloques,
+      liveSlide?.bloques,
+      persistBloques,
+      clearInnerSelections,
+    ],
+  );
+
+  const handleLayerReorder = useCallback(
+    (blockPath: string, action: LayerReorderAction) => {
+      if (!liveSlide?.bloques) return;
+      const index = Number(blockPath);
+      if (!Number.isInteger(index) || index < 0) return;
+      const block = liveSlide.bloques[index];
+      if (!block || isBlockCanvasLocked(block)) return;
+      const prev = cloneSlideBlocks(liveSlide.bloques);
+      const next = applyLayerReorderAction(prev, index, action);
       void persistBloques(next, prev, true).then((ok) => {
         if (!ok) toast.error('No se pudo actualizar el orden de capas');
       });
     },
-    [selectedBlockId, liveSlide?.bloques, persistBloques],
+    [liveSlide?.bloques, persistBloques],
+  );
+
+  const handleReorder = useCallback(
+    (action: LayerReorderAction) => {
+      if (!selectedBlockId) return;
+      handleLayerReorder(selectedBlockId, action);
+    },
+    [selectedBlockId, handleLayerReorder],
   );
 
   const handleChangeFondo = useCallback(
     async (fondo: Background) => {
+      if (!slide?.id) return;
       const bloques = liveSlide?.bloques ?? slide?.bloques ?? [];
-      const content = buildContentPayload(cloneBloques(bloques), fondo);
+      const previous = captureSlideSnapshot(
+        { bloques, fondo: slide.fondo, guias: slide.guias },
+        'fondo',
+      );
+      const content = buildContentPayload(cloneSlideBlocks(bloques), fondo);
       const ok = await patchSlideContent(content);
       if (ok) {
+        recordAfterSuccess(
+          slide.id,
+          previous,
+          captureSlideSnapshot(
+            { bloques, fondo, guias: slide.guias },
+            'fondo',
+          ),
+        );
         await queryClient.refetchQueries({
           queryKey: ['classes', 'detail', classId],
         });
@@ -743,11 +1109,15 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     },
     [
       liveSlide?.bloques,
+      slide?.id,
       slide?.bloques,
+      slide?.fondo,
+      slide?.guias,
       buildContentPayload,
       patchSlideContent,
       queryClient,
       classId,
+      recordAfterSuccess,
     ],
   );
 
@@ -776,13 +1146,21 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       lastSlideIdForPushRef.current = slide?.id;
       lastPushedEffectiveBloquesRef.current = undefined;
     }
-    // Mientras DndKit mueve el puntero, actualizar el padre re-renderiza todo el árbol y
-    // @dnd-kit puede re-entrar en onMove → Maximum update depth.
-    if (draggingId != null) return;
 
-    if (Object.is(lastPushedEffectiveBloquesRef.current, effectiveBloques)) return;
-    lastPushedEffectiveBloquesRef.current = effectiveBloques;
-    onEffectiveBloquesRef.current?.(effectiveBloques);
+    const push = () => {
+      if (Object.is(lastPushedEffectiveBloquesRef.current, effectiveBloques)) return;
+      lastPushedEffectiveBloquesRef.current = effectiveBloques;
+      onEffectiveBloquesRef.current?.(effectiveBloques);
+    };
+
+    // Durante el drag, actualizar la miniatura con throttle evita re-render en cada
+    // frame (rompe dnd-kit) pero mantiene la vista lateral razonablemente sincronizada.
+    if (draggingId != null) {
+      const timer = window.setTimeout(push, 150);
+      return () => clearTimeout(timer);
+    }
+
+    push();
   }, [effectiveBloques, slide?.id, draggingId]);
 
   const blocks = slide?.bloques ?? [];
@@ -966,17 +1344,41 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
-      const prev = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
+      const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
       return persistBloques(next, prev, true);
+    },
+    [liveSlide?.bloques, slide?.bloques, persistBloques],
+  );
+
+  const handleClipGroupChange = useCallback(
+    async (blockId: string, updated: ClipGroupBlock) => {
+      const idx = Number(blockId);
+      if (!Number.isInteger(idx) || idx < 0) return;
+      const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
+      if (idx >= prev.length) return;
+      const next = prev.map((b, i) => (i === idx ? updated : b));
+      await persistBloques(next, prev, true);
     },
     [liveSlide?.bloques, slide?.bloques, persistBloques],
   );
 
   const handleApplySlide = useCallback(
     async (patch: Partial<Slide>): Promise<boolean> => {
-      const bloques = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
+      if (!slide?.id) return false;
+      const prevBloques = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
+      const meta = editorMetaRef.current;
+      const previousSnapshot = captureSlideSnapshot(
+        {
+          bloques: prevBloques,
+          fondo: meta.fondo,
+          guias: meta.guias,
+          transicion: meta.transicion,
+        },
+        'edicion',
+      );
+
       const content: Record<string, unknown> = {
-        ...buildContentPayload(bloques),
+        ...buildContentPayload(prevBloques),
       };
       if (patch.transicion !== undefined) {
         content.transicion = patch.transicion;
@@ -986,18 +1388,37 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         toast.error('No se pudo guardar');
         return false;
       }
+      if (!isUndoRedoRef.current) {
+        const nextTransicion =
+          patch.transicion !== undefined ? patch.transicion : meta.transicion;
+        recordAfterSuccess(
+          slide.id,
+          previousSnapshot,
+          captureSlideSnapshot(
+            {
+              bloques: prevBloques,
+              fondo: meta.fondo,
+              guias: meta.guias,
+              transicion: nextTransicion,
+            },
+            'edicion',
+          ),
+        );
+      }
       await queryClient.refetchQueries({
         queryKey: ['classes', 'detail', classId],
       });
       return true;
     },
     [
+      slide?.id,
       liveSlide?.bloques,
       slide?.bloques,
       buildContentPayload,
       patchSlideContent,
       queryClient,
       classId,
+      recordAfterSuccess,
     ],
   );
 
@@ -1035,6 +1456,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       redo: () => {
         void handleRedo();
       },
+      pasteCopiedBlock: (block) => {
+        void handlePasteCopiedBlock(block);
+      },
+      pasteCopiedBlockInSlide: (slideId, block, slideMeta) => {
+        void handlePasteCopiedBlockInSlide(slideId, block, slideMeta);
+      },
       duplicateSelectedBlock: () => {
         if (!selectedBlockId) return;
         void handleDuplicateBlock(selectedBlockId);
@@ -1045,11 +1472,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       },
       deleteSelectedBlock: () => {
         if (!selectedBlockId) return false;
-        onRemoveBlock?.(selectedBlockId);
-        setSelectedBlockId(null);
-        setSelectedBlockIds([]);
-        clearInnerSelections();
-        onBlockSelectRef.current?.('');
+        void handleRemoveBlock(selectedBlockId);
         return true;
       },
       clearBlockSelection: () => {
@@ -1088,7 +1511,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           .map(Number)
           .filter((n) => Number.isInteger(n) && n >= 0);
         if (indices.length === 0) return false;
-        const prev = cloneBloques(liveSlide?.bloques ?? slide?.bloques ?? []);
+        const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
         const next = applyNudgeToBlocks(prev, indices, dxPx, dyPx);
         const changed = indices.some((i) => {
           const a = getBlockPos(prev[i]!);
@@ -1103,6 +1526,30 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
         void persistGuias(toggleCenterGuides(current));
       },
+      toggleGrid: () => {
+        const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
+        void persistGuias(toggleSlideGrilla(current));
+      },
+      setGridSize: (tamanoPx: number) => {
+        const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
+        void persistGuias(setSlideGrillaSize(current, tamanoPx));
+      },
+      resetSlideHistory: () => {
+        if (!slide?.id) return;
+        const meta = editorMetaRef.current;
+        const bloques = liveSlide?.bloques ?? slide?.bloques ?? [];
+        const snapshot = captureSlideSnapshot(
+          {
+            bloques,
+            fondo: meta.fondo ?? slide.fondo,
+            guias: meta.guias,
+            transicion: meta.transicion ?? slide.transicion,
+          },
+          'inicio',
+        );
+        historiesRef.current.set(slide.id, createFreshSlideHistory(snapshot));
+        bumpHistory();
+      },
     }),
     [
       selectedBlockId,
@@ -1110,19 +1557,37 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       draggingId,
       liveSlide?.bloques,
       liveSlide?.guias,
+      slide?.id,
       slide?.bloques,
       slide?.guias,
+      slide?.fondo,
+      slide?.transicion,
       persistBloques,
       persistGuias,
       handleUndo,
       handleRedo,
+      handlePasteCopiedBlock,
+      handlePasteCopiedBlockInSlide,
       handleDuplicateBlock,
       handleCopyBlock,
-      onRemoveBlock,
+      handleRemoveBlock,
       handleDragSave,
       clearInnerSelections,
+      bumpHistory,
     ],
   );
+
+  useEffect(() => {
+    const el = workspaceRef.current;
+    if (!el || !onCanvasZoomChange) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      onCanvasZoomChange(stepCanvasZoom(canvasZoom, wheelDeltaToZoomStep(e.deltaY)));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [canvasZoom, onCanvasZoomChange]);
 
   // ── render ──────────────────────────────────────────────────────────────────
   return (
@@ -1134,12 +1599,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       * The outermost flex div keeps overflow-hidden as the final clip boundary.
       */}
     <div
+      ref={workspaceRef}
       className={cn(
         // isolate: new stacking context — blocks can't z-index-bleed into siblings.
         // overflow-visible: allows rulers and blocks dragged outside the slide
         //   frame to remain visible and interactive in the grey workspace margin.
-        'relative isolate flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end overflow-visible',
-        'bg-editor-workspace px-12 pb-12 pt-[var(--editor-canvas-pt)] md:px-12 md:pb-12 md:pt-[var(--editor-canvas-pt-md)]',
+        'relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-visible box-border bg-editor-workspace',
       )}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -1174,19 +1639,26 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           canRedo={canRedo}
           onUndo={() => void handleUndo()}
           onRedo={() => void handleRedo()}
+          historyItems={historyItems}
+          onJumpToHistory={(index) => void handleJumpToHistory(index)}
           onReorder={handleReorder}
+          layersPanelOpen={layersPanelOpen}
+          onToggleLayersPanel={() => setLayersPanelOpen((v) => !v)}
           fondo={liveSlide?.fondo}
           onChangeFondo={(f) => void handleChangeFondo(f)}
           onInsertAudio={handleInsertBlock}
         />
       </div>
 
-      {/* Floating Alignment Toolbar */}
-      {selectedBlockIds.length >= 2 && (
+      {/* Floating Alignment Toolbar — solo si hay ≥2 bloques desbloqueados */}
+      {selectedBlockIds.filter((id) => {
+        const b = liveSlide?.bloques?.[Number(id)];
+        return b && !isBlockCanvasLocked(b);
+      }).length >= 2 && (
         <div
           className="absolute left-1/2 z-50 -translate-x-1/2 animate-in fade-in slide-in-from-top-1 duration-200"
           style={{
-            top: 'calc(var(--editor-toolbar-top, 12px) + 52px)',
+            top: 'calc(var(--editor-toolbar-top, 0.5rem) + 3rem)',
           }}
         >
           <AlignmentToolbar
@@ -1197,13 +1669,42 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         </div>
       )}
 
+      <div
+        className={cn(
+          'flex min-h-0 w-full flex-1 items-center justify-center overflow-visible px-12 pb-[var(--editor-canvas-pb)] pt-[var(--editor-canvas-pt)] md:px-12 md:pt-[var(--editor-canvas-pt-md)]',
+          canvasZoom > 1 && 'overflow-auto',
+        )}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setSelectedBlockId(null);
+            setSelectedBlockIds([]);
+            clearInnerSelections();
+            onBlockSelectRef.current?.('');
+          }
+        }}
+      >
       {isLoading ? (
-        <div className={SLIDE_VIEWPORT_CLASS}>
-          <div className={SLIDE_SURFACE_CLASS}>
-            <Skeleton className="h-full w-full rounded-none" />
+        <div
+          className="mx-auto flex max-h-full w-full max-w-[var(--editor-slide-max-w)] shrink-0 justify-center"
+          style={{
+            transform: `scale(${canvasZoom})`,
+            transformOrigin: 'center center',
+          }}
+        >
+          <div className={SLIDE_VIEWPORT_CLASS}>
+            <div className={SLIDE_SURFACE_CLASS}>
+              <Skeleton className="h-full w-full rounded-none" />
+            </div>
           </div>
         </div>
       ) : liveSlide ? (
+        <div
+          className="mx-auto flex max-h-full w-full max-w-[var(--editor-slide-max-w)] shrink-0 justify-center"
+          style={{
+            transform: `scale(${canvasZoom})`,
+            transformOrigin: 'center center',
+          }}
+        >
         <CanvasGuidesChrome
           visible={guidesVisible}
           viewportClassName={SLIDE_VIEWPORT_CLASS}
@@ -1248,9 +1749,13 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onTimelineChange={onTimelineChange}
             timelineInnerSelection={timelineInnerSelection}
             onTimelineInnerSelectionChange={setTimelineInnerSelection}
-            onRemoveBlock={onRemoveBlock}
+            clipGroupInnerEditId={clipGroupInnerEditId}
+            onClipGroupInnerEditChange={setClipGroupInnerEditId}
+            onClipGroupChange={handleClipGroupChange}
+            onRemoveBlock={handleRemoveBlock}
             onDuplicateBlock={handleDuplicateBlock}
             onCopyBlock={handleCopyBlock}
+            onToggleCanvasLock={(blockPath) => void handleToggleCanvasLock(blockPath)}
             onPersistSlide={handlePersistFromRenderer}
             onResizeInteractionEnd={clearSnapLines}
             onResizeMove={handleResizeMove}
@@ -1287,8 +1792,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             />
           ) : null}
 
-          {/* Drag handles — one badge per block, overlaid above SlideRenderer */}
-          {blocks.map((block, index) =>
+          {/* Drag handles — sincronizados con effectiveBloques */}
+          {allBlocks.map((block, index) =>
             isUnimplementedInteractiveStub(block) ? null : (
             <BlockDragHandle
               key={index}
@@ -1333,6 +1838,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           )}
           </DroppableCanvas>
         </CanvasGuidesChrome>
+        </div>
       ) : (
         <div className="flex w-full max-w-[var(--editor-slide-max-w)] flex-col items-center gap-3 pb-2 text-center">
           <Presentation
@@ -1347,7 +1853,20 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           </div>
         </div>
       )}
+      </div>
     </div>
+
+    {layersPanelOpen ? (
+      <div className="h-full w-56 min-w-0 shrink-0 overflow-hidden">
+        <LayersPanel
+          bloques={liveSlide?.bloques ?? []}
+          selectedBlockIds={selectedBlockIds}
+          onSelectBlock={handleRendererBlockSelect}
+          onLayerReorder={handleLayerReorder}
+          disabled={isLoading || !liveSlide}
+        />
+      </div>
+    ) : null}
 
     <div
       className={cn(

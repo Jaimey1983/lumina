@@ -18,6 +18,7 @@ import { normalizeTabsWidget } from '@/components/widgets/tabs/tabs-config';
 import { normalizeCarouselWidget } from '@/components/widgets/carousel/carousel-config';
 import { normalizeClickRevealWidget } from '@/components/widgets/click-reveal/click-reveal-config';
 import { normalizeTimelineWidget } from '@/components/widgets/timeline/timeline-config';
+import { normalizeClipGroupBlock } from '@/lib/clip-path';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -164,6 +165,9 @@ function normalizeBlock(block: Block): Block {
   }
   if (block.tipo === 'progreso') {
     return normalizeProgresoWidget(block);
+  }
+  if (block.tipo === 'clip-group') {
+    return normalizeClipGroupBlock(block);
   }
   if (block.tipo === 'columnas') {
     return {

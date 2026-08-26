@@ -739,6 +739,157 @@ export interface FormaBlock {
   zIndex?: number;
 }
 
+// ─── Clipping masks (clip-group) ──────────────────────────────────────────────
+
+export type ClipShapeKind =
+  | 'rectangulo'
+  | 'circulo'
+  | 'elipse'
+  | 'triangulo'
+  | 'estrella'
+  | 'hexagono'
+  | 'poligono'
+  | 'svg'
+  | 'libre';
+
+/** Comportamiento de las manijas Bézier en un nodo de máscara libre. */
+export type ClipPathNodeKind = 'corner' | 'smooth' | 'symmetric';
+
+/**
+ * Nodo de path en coords objectBoundingBox (0–1), estilo Illustrator.
+ * `x`/`y` = ancla; `cpIn`/`cpOut` = manijas de entrada/salida.
+ */
+export interface ClipPathNode {
+  id?: string;
+  /** Punto ancla (posición del nodo). */
+  x: number;
+  y: number;
+  /** Manija de entrada (control point hacia el segmento anterior). */
+  cpIn?: { x: number; y: number };
+  /** Manija de salida (control point hacia el segmento siguiente). */
+  cpOut?: { x: number; y: number };
+  /** corner = manijas independientes; smooth = alineadas; symmetric = espejo. */
+  tipo?: ClipPathNodeKind;
+}
+
+export interface ClipShapeRect {
+  tipo: 'rectangulo';
+  /** Radio de esquina 0–50 (% del lado menor de la máscara). */
+  borderRadius?: number;
+}
+
+export interface ClipShapeCircle {
+  tipo: 'circulo';
+}
+
+export interface ClipShapeEllipse {
+  tipo: 'elipse';
+}
+
+export interface ClipShapeTriangle {
+  tipo: 'triangulo';
+}
+
+export interface ClipShapeStar {
+  tipo: 'estrella';
+  /** Número de puntas (3–12). Default 5. */
+  puntas?: number;
+  /** Radio interno relativo 0.1–0.9. Default 0.4. */
+  radioInterno?: number;
+}
+
+export interface ClipShapeHexagon {
+  tipo: 'hexagono';
+}
+
+export interface ClipShapePolygon {
+  tipo: 'poligono';
+  /** Lados del polígono regular (3–12). */
+  lados: number;
+}
+
+export interface ClipShapeSvg {
+  tipo: 'svg';
+  /** Atributo `d` del path en coords objectBoundingBox (0–1). */
+  path: string;
+}
+
+export interface ClipShapeLibre {
+  tipo: 'libre';
+  /** Vértices / anclas del contorno (mín. 3 para cerrar). */
+  nodos: ClipPathNode[];
+  /** Cierra el path (default true). */
+  cerrado?: boolean;
+}
+
+export type ClipShape =
+  | ClipShapeRect
+  | ClipShapeCircle
+  | ClipShapeEllipse
+  | ClipShapeTriangle
+  | ClipShapeStar
+  | ClipShapeHexagon
+  | ClipShapePolygon
+  | ClipShapeSvg
+  | ClipShapeLibre;
+
+export interface ClipContentImage {
+  tipo: 'imagen';
+  url: string;
+  alt?: string;
+  /** Desplazamiento % relativo al bbox de la máscara (pan interno). */
+  offsetX?: number;
+  offsetY?: number;
+  /** Escala del contenido (1 = cubrir el bbox). */
+  escala?: number;
+  ajuste?: 'cubrir' | 'contener' | 'llenar';
+}
+
+export interface ClipContentColor {
+  tipo: 'color';
+  valor: string;
+}
+
+export interface ClipContentGradient {
+  tipo: 'gradiente';
+  inicio: string;
+  fin: string;
+  direccion?: number;
+}
+
+export type ClipContent =
+  | ClipContentImage
+  | ClipContentColor
+  | ClipContentGradient;
+
+export interface ClipBorder {
+  color?: string;
+  grosor?: number;
+}
+
+export interface ClipShadow {
+  color?: string;
+  blur?: number;
+  offsetX?: number;
+  offsetY?: number;
+}
+
+export interface ClipGroupBlock {
+  tipo: 'clip-group';
+  id?: string;
+  clipShape: ClipShape;
+  contenido: ClipContent;
+  borde?: ClipBorder;
+  /** Opacidad del grupo 0–100. */
+  opacidad?: number;
+  sombra?: ClipShadow;
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
+}
+
 // ─── Widgets (Captivate-style, no evaluables) ─────────────────────────────────
 
 export type {
@@ -893,6 +1044,7 @@ export type Block = (
   | DividerBlock
   | ColumnsBlock
   | FormaBlock
+  | ClipGroupBlock
   | FlipCardsWidget
   | TabsWidget
   | CarouselWidget
@@ -906,6 +1058,11 @@ export type Block = (
   | ProgresoWidget
 ) & {
   animaciones?: import('@/types/animation.types').Animacion[];
+  /**
+   * En el editor: impide mover, redimensionar, alinear y desplazar con teclado.
+   * No afecta edición de contenido ni orden de capas (z-index).
+   */
+  canvasLocked?: boolean;
 };
 
 export type BlockTipo = Block['tipo'];
@@ -923,15 +1080,31 @@ export interface CanvasContent {
   fabricJSON?: object;
 }
 
+/** Grilla de snap/visual del editor (celdas en px virtuales 1280×720). */
+export interface SlideGrilla {
+  activa: boolean;
+  tamanoPx: number;
+}
+
 /** Guías de alineación manuales del editor (coordenadas virtuales 1280×720). */
 export interface SlideGuias {
   horizontales: number[];
   verticales: number[];
+  grilla?: SlideGrilla;
 }
+
+export const GRID_SIZE_PRESETS = [8, 16, 20, 32, 40, 64, 80] as const;
+export const DEFAULT_GRID_SIZE_PX = 40;
+
+export const DEFAULT_SLIDE_GRILLA: SlideGrilla = {
+  activa: false,
+  tamanoPx: DEFAULT_GRID_SIZE_PX,
+};
 
 export const EMPTY_SLIDE_GUIAS: SlideGuias = {
   horizontales: [],
   verticales: [],
+  grilla: { ...DEFAULT_SLIDE_GRILLA },
 };
 
 export interface Slide {
@@ -999,6 +1172,7 @@ export const BLOCK_FALLBACKS = {
   text:  { x: 10, y: 10, ancho: 80, alto: 20 },
   image: { x: 25, y: 25, ancho: 50, alto: 50 },
   forma: { x: 10, y: 10, ancho: 30, alto: 30 },
+  clipGroup: { x: 30, y: 25, ancho: 40, alto: 50 },
   video: { x: 10, y: 30, ancho: 80, alto: 40 },
   flipCards: { x: 5, y: 5, ancho: 90, alto: 90 },
   tabs: { x: 5, y: 5, ancho: 90, alto: 90 },

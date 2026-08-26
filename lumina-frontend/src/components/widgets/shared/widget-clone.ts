@@ -57,6 +57,17 @@ export function remintBlockChildIds(block: Block): Block {
         ...block,
         columnas: (block.columnas ?? []).map((col) => col.map(remintNestedBlock)),
       };
+    case 'clip-group':
+      if (block.clipShape.tipo === 'libre' && block.clipShape.nodos?.length) {
+        return {
+          ...block,
+          clipShape: {
+            ...block.clipShape,
+            nodos: block.clipShape.nodos.map((n) => ({ ...n, id: remintId() })),
+          },
+        };
+      }
+      return block;
     default:
       return block;
   }

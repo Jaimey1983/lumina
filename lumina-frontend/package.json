@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:visual": "vitest run --project visual",
+    "test:visual:update": "vitest run --project visual --update",
     "test:e2e": "cypress open",
     "test:e2e:ci": "cypress run --headless",
     "test:video-interactive": "cypress run --spec 'cypress/e2e/01-provider-detection.cy.ts,cypress/e2e/02-youtube-playback.cy.ts,cypress/e2e/03-vimeo-playback.cy.ts,cypress/e2e/04-html5-direct.cy.ts,cypress/e2e/05-navigation-refresh.cy.ts,cypress/e2e/06-seek-behavior-matrix.cy.ts'",
@@ -79,11 +81,15 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vitest/browser-playwright": "^4.1.11",
     "cypress": "^15.16.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "vitest-browser-react": "^2.2.0"
   }
 }

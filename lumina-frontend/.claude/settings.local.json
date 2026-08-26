@@ -17,7 +17,12 @@
       "Bash(git config:*)",
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(xargs grep:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm build:*)",
+      "Bash(powershell -Command ' *)",
+      "Bash(node -e \"require\\('@dnd-kit/sortable'\\); console.log\\('OK'\\)\")"
     ]
   }
 }

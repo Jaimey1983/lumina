@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider, SliderThumb } from '@/components/ui/slider';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-gallery';
 import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
 
@@ -191,11 +192,11 @@ export function ClickRevealOverlayProperties({
 
       <div className="space-y-1.5">
         <Label className="text-xs">URL imagen del modal</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           value={overlay.imagen ?? ''}
           placeholder="https://…"
-          onChange={(e) => updateOverlay({ imagen: e.target.value || undefined })}
+          onChange={(next) => updateOverlay({ imagen: next || undefined })}
         />
       </div>
 
@@ -307,21 +308,21 @@ export function ClickRevealTriggerProperties({
 
       <div className="space-y-1.5">
         <Label className="text-xs">Texto en tarjeta</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           value={trigger.titulo ?? ''}
           placeholder="Texto opcional"
-          onChange={(e) => updateTrigger({ titulo: e.target.value })}
+          onChange={(next) => updateTrigger({ titulo: next })}
         />
       </div>
 
       <div className="space-y-1.5">
         <Label className="text-xs">URL imagen / icono</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           value={trigger.imagen ?? ''}
           placeholder="https://…"
-          onChange={(e) => updateTrigger({ imagen: e.target.value || undefined })}
+          onChange={(next) => updateTrigger({ imagen: next || undefined })}
         />
       </div>
 

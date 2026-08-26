@@ -7,6 +7,8 @@ import { getInitials, formatDate } from '@/lib/helpers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageBanner } from '@/components/ui/page-banner';
+import { isAiStaffRole } from '@/hooks/api/use-ai-settings';
+import { AiKeysCard } from './ai-keys-card';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -192,6 +194,9 @@ export function ProfileClient() {
             </div>
           </ProfileCard>
         </div>
+
+        {/* ── IA BYOK (solo personal docente) ── */}
+        {isAiStaffRole(user?.role) && <AiKeysCard />}
 
         {/* ── Coming soon cards ── */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

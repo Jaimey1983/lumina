@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
 import { mergedContadorConfig, normalizeContadorWidget } from './contador-config';
 
@@ -33,9 +34,9 @@ function ColorField({
           onChange={(e) => onChange(e.target.value)}
           className="h-8 w-8 cursor-pointer rounded border-0 p-0"
         />
-        <Input
+        <WidgetDraftTextField
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={onChange}
           className="h-8 font-mono text-xs"
         />
       </div>
@@ -77,9 +78,9 @@ export function ContadorProperties({ block: rawBlock, applyNow }: ContadorProper
 
           <div className="space-y-2">
             <Label className="text-xs">Etiqueta</Label>
-            <Input
+            <WidgetDraftTextField
               value={cfg.etiqueta}
-              onChange={(e) => update((w) => ({ ...w, etiqueta: e.target.value }))}
+              onChange={(next) => update((w) => ({ ...w, etiqueta: next }))}
               placeholder="Tiempo"
               className="h-8 text-xs"
             />

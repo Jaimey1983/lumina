@@ -12,7 +12,6 @@ export { chromeStyles };
 
 export interface WidgetHeaderEditorFieldProps {
   value: string;
-  /** @deprecated Escritura solo desde el panel de propiedades. */
   onCommit?: (v: string) => void;
   field: WidgetHeaderTextField;
   className?: string;
@@ -24,7 +23,7 @@ export interface WidgetHeaderEditorFieldProps {
   dataAttr?: string;
 }
 
-/** Cabecera del widget en el lienzo: solo lectura; edición en el panel derecho. */
+/** Cabecera del widget en el lienzo: se escribe aquí (borrador local). */
 export function WidgetHeaderEditorField({
   value,
   field,
@@ -33,6 +32,7 @@ export function WidgetHeaderEditorField({
   placeholder,
   multiline,
   isSelected,
+  onCommit,
   onFocusSelect,
   dataAttr = 'data-widget-header-field',
 }: WidgetHeaderEditorFieldProps) {
@@ -46,6 +46,7 @@ export function WidgetHeaderEditorField({
       isSelected={isSelected}
       dataAttr={dataAttr}
       onSelect={() => onFocusSelect(field)}
+      onChange={onCommit}
     />
   );
 }

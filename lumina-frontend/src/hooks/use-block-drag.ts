@@ -16,6 +16,7 @@ import {
   virtualXToPercent,
   virtualYToPercent,
 } from '@/lib/canvas-guides';
+import { snapAxisToGridPercent } from '@/lib/canvas-grid';
 import { getEqualGapSnapTargets } from '@/lib/canvas-spacing';
 
 // ─── Position helpers ─────────────────────────────────────────────────────────
@@ -65,6 +66,15 @@ export function getBlockPos(block: Block): BlockPos {
     }
     case 'forma': {
       const fb = BLOCK_FALLBACKS.forma;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'clip-group': {
+      const fb = BLOCK_FALLBACKS.clipGroup;
       return {
         x:     block.x     ?? fb.x,
         y:     block.y     ?? fb.y,
@@ -206,6 +216,7 @@ export function withPosition(block: Block, x: number, y: number): Block {
     case 'imagen':      return { ...block, x, y };
     case 'video':       return { ...block, x, y };
     case 'forma':       return { ...block, x, y };
+    case 'clip-group':  return { ...block, x, y };
     case 'flip-cards':  return { ...block, x, y };
     case 'tabs':        return { ...block, x, y };
     case 'carousel':    return { ...block, x, y };
@@ -244,6 +255,7 @@ export function withRect(
     case 'imagen':
     case 'video':
     case 'forma':
+    case 'clip-group':
     case 'flip-cards':
     case 'tabs':
     case 'carousel':
@@ -304,16 +316,24 @@ export function applyLiveDragPositions({
     const deltaY = snapY - origin.y;
     return bloques.map((b, i) => {
       const origPos = groupOrigins[String(i)];
-      if (!origPos) return b;
+      if (!origPos || isBlockCanvasLocked(b)) return b;
       const { ancho, alto } = getBlockPos(b);
-      const newX = Math.max(0, Math.min(100 - ancho, origPos.x + deltaX));
-      const newY = Math.max(0, Math.min(100 - alto, origPos.y + deltaY));
+      const { x: newX, y: newY } = clampDragCorner(
+        origPos.x + deltaX,
+        origPos.y + deltaY,
+        ancho,
+        alto,
+      );
       return withPosition(b, newX, newY);
     });
   }
 
   return bloques.map((b, i) =>
-    i === draggedIndex ? withPosition(b, snapX, snapY) : b,
+    i === draggedIndex
+      ? isBlockCanvasLocked(b)
+        ? b
+        : withPosition(b, snapX, snapY)
+      : b,
   );
 }
 
@@ -330,11 +350,13 @@ export type SnapLine = {
   orientation: 'horizontal' | 'vertical';
   /** Porcentaje 0–100 en el eje correspondiente (igual que `left`/`top` en CSS). */
   position: number;
-  kind?: 'align' | 'gap';
+  kind?: 'align' | 'gap' | 'grid';
 };
 
 export function snapLineColor(line: SnapLine): string {
-  return line.kind === 'gap' ? '#10B981' : '#F97316';
+  if (line.kind === 'gap') return '#10B981';
+  if (line.kind === 'grid') return '#94A3B8';
+  return '#F97316';
 }
 
 export type SnapToGuidesOptions = {
@@ -378,6 +400,105 @@ export function clampDragCorner(
   };
 }
 
+/** Desplazamiento por defecto al pegar/duplicar (porcentaje del lienzo). */
+export const PASTE_OFFSET_PCT = 3;
+
+/** Bloques sin bbox en el lienzo libre (p. ej. audio embebido en layout). */
+export function isBlockCanvasPositionable(block: Block): boolean {
+  switch (block.tipo) {
+    case 'audio':
+    case 'codigo':
+    case 'cita':
+    case 'separador':
+    case 'columnas':
+      return false;
+    default:
+      return true;
+  }
+}
+
+export function isBlockCanvasLocked(block: Block): boolean {
+  return block.canvasLocked === true;
+}
+
+export function withCanvasLocked(block: Block, locked: boolean): Block {
+  if (!locked) {
+    if (!block.canvasLocked) return block;
+    const next = { ...block };
+    delete (next as Block & { canvasLocked?: boolean }).canvasLocked;
+    return next;
+  }
+  return { ...block, canvasLocked: true };
+}
+
+/** Escribe x/y (o marco) con clamp C2 sobre el bbox actual del bloque. */
+export function withClampedPosition(block: Block, x: number, y: number): Block {
+  const { ancho, alto } = getBlockPos(block);
+  const clamped = clampDragCorner(x, y, ancho, alto);
+  return withPosition(block, clamped.x, clamped.y);
+}
+
+/** Como `withClampedPosition`, indicando si el destino fue recortado por el clamp. */
+export function withClampedPositionChecked(
+  block: Block,
+  x: number,
+  y: number,
+): { block: Block; wasClamped: boolean } {
+  const { ancho, alto } = getBlockPos(block);
+  const clamped = clampDragCorner(x, y, ancho, alto);
+  const wasClamped =
+    Math.abs(clamped.x - x) > 1e-6 || Math.abs(clamped.y - y) > 1e-6;
+  return { block: withPosition(block, clamped.x, clamped.y), wasClamped };
+}
+
+/** Estilo CSS absolute (% del lienzo) derivado del contrato canónico `getBlockPos`. */
+export function blockPosToStyle(
+  block: Block,
+  zIndex = (block as { zIndex?: number }).zIndex ?? 1,
+): {
+  position: 'absolute';
+  left: string;
+  top: string;
+  width: string;
+  height: string;
+  zIndex: number;
+} {
+  const pos = getBlockPos(block);
+  return {
+    position: 'absolute',
+    left: `${pos.x}%`,
+    top: `${pos.y}%`,
+    width: `${pos.ancho}%`,
+    height: `${pos.alto}%`,
+    zIndex,
+  };
+}
+
+/**
+ * Desplaza la posición del bloque respetando el contrato 3.2 (marco en actividades,
+ * clampAxisOrigin en todos). No clona ni reminta IDs — eso lo hace el caller.
+ */
+export function offsetBlockPosition(
+  block: Block,
+  dx = PASTE_OFFSET_PCT,
+  dy = PASTE_OFFSET_PCT,
+): Block {
+  const pos = getBlockPos(block);
+  return withClampedPosition(block, pos.x + dx, pos.y + dy);
+}
+
+/** Reminta + offset + id opcional para pegar/duplicar. */
+export function prepareBlockForPaste(
+  block: Block,
+  options?: { dx?: number; dy?: number; newId?: string },
+): Block {
+  let next = offsetBlockPosition(block, options?.dx, options?.dy);
+  if (options?.newId) {
+    next = { ...next, id: options.newId } as Block;
+  }
+  return next;
+}
+
 export const NUDGE_STEP_PX = 1;
 export const NUDGE_STEP_SHIFT_PX = 10;
 
@@ -391,9 +512,10 @@ export function applyNudgeToBlocks(
   const dx = (dxPx / VIRTUAL_CANVAS_WIDTH) * 100;
   const dy = (dyPx / VIRTUAL_CANVAS_HEIGHT) * 100;
   const wanted = new Set(indices);
-  return bloques.map((b, i) => {
-    if (!wanted.has(i)) return b;
-    const pos = getBlockPos(b);
+    return bloques.map((b, i) => {
+      if (!wanted.has(i)) return b;
+      if (isBlockCanvasLocked(b)) return b;
+      const pos = getBlockPos(b);
     const { x, y } = clampDragCorner(pos.x + dx, pos.y + dy, pos.ancho, pos.alto);
     return withPosition(b, x, y);
   });
@@ -412,12 +534,12 @@ function pickAxisSnap(
   size: number,
   targets: SnapTarget[],
   thresholdPct: number,
-): { snap: number; guide: number; kind: 'align' | 'gap' } | null {
+): { snap: number; guide: number; kind: 'align' | 'gap' | 'grid' } | null {
   let bestDist = thresholdPct + 1;
   let bestPriority = -1;
   let snap = raw;
   let guide: number | null = null;
-  let kind: 'align' | 'gap' = 'align';
+  let kind: 'align' | 'gap' | 'grid' = 'align';
 
   for (const target of targets) {
     const candidates = target.edgeOnly
@@ -531,13 +653,63 @@ export function snapPositionToGuides(
 
   const hitX = pickAxisSnap(rawX, ancho, xTargets, snapThresholdPct('x'));
   const hitY = pickAxisSnap(rawY, alto, yTargets, snapThresholdPct('y'));
-  const { x, y } = clampDragCorner(hitX?.snap ?? rawX, hitY?.snap ?? rawY, ancho, alto);
-  const lines: SnapLine[] = [];
-  if (hitX) {
-    lines.push({ orientation: 'vertical', position: hitX.guide, kind: hitX.kind });
+
+  let finalHitX = hitX;
+  let finalHitY = hitY;
+
+  const grilla = options?.guias?.grilla;
+  if (grilla?.activa && grilla.tamanoPx > 0) {
+    const gridHitX = snapAxisToGridPercent(
+      rawX,
+      ancho,
+      grilla.tamanoPx,
+      'x',
+      snapThresholdPct('x'),
+    );
+    const gridHitY = snapAxisToGridPercent(
+      rawY,
+      alto,
+      grilla.tamanoPx,
+      'y',
+      snapThresholdPct('y'),
+    );
+
+    if (gridHitX) {
+      const existingDist = hitX ? Math.abs(rawX - hitX.snap) : Infinity;
+      const gridDist = Math.abs(rawX - gridHitX.snap);
+      if (!hitX || gridDist < existingDist - 1e-9) {
+        finalHitX = { snap: gridHitX.snap, guide: gridHitX.guide, kind: 'grid' };
+      }
+    }
+    if (gridHitY) {
+      const existingDist = hitY ? Math.abs(rawY - hitY.snap) : Infinity;
+      const gridDist = Math.abs(rawY - gridHitY.snap);
+      if (!hitY || gridDist < existingDist - 1e-9) {
+        finalHitY = { snap: gridHitY.snap, guide: gridHitY.guide, kind: 'grid' };
+      }
+    }
   }
-  if (hitY) {
-    lines.push({ orientation: 'horizontal', position: hitY.guide, kind: hitY.kind });
+
+  const { x, y } = clampDragCorner(
+    finalHitX?.snap ?? rawX,
+    finalHitY?.snap ?? rawY,
+    ancho,
+    alto,
+  );
+  const lines: SnapLine[] = [];
+  if (finalHitX) {
+    lines.push({
+      orientation: 'vertical',
+      position: finalHitX.guide,
+      kind: finalHitX.kind,
+    });
+  }
+  if (finalHitY) {
+    lines.push({
+      orientation: 'horizontal',
+      position: finalHitY.guide,
+      kind: finalHitY.kind,
+    });
   }
   return { x, y, lines };
 }
@@ -686,7 +858,7 @@ export function useBlockDrag({
 
     const bloques = slide?.bloques ?? [];
     const block   = bloques[index];
-    if (!block) return;
+    if (!block || isBlockCanvasLocked(block)) return;
 
     const { x, y } = getBlockPos(block);
     originRef.current = { x, y };
@@ -700,7 +872,7 @@ export function useBlockDrag({
       const origins: Record<string, { x: number; y: number }> = {};
       selectedIds.forEach((sid) => {
         const b = bloques[Number(sid)];
-        if (b) {
+        if (b && !isBlockCanvasLocked(b)) {
           origins[sid] = getBlockPos(b);
         }
       });

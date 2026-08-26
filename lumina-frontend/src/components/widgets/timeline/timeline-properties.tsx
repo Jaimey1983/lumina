@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { normalizeTimelineWidget, resizeTimelineNodos, type TimelineInnerSelection } from './timeline-config';
 import { TIMELINE_LUCIDE_OPTIONS, TimelineLucideIcon } from './timeline-icon-catalog';
 import { TIMELINE_VARIANTES, timelineUsesLucideDot } from './timeline-variant-meta';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
 
 function PanelSectionDivider() {
@@ -317,21 +318,21 @@ export function TimelineNodoProperties({
       {variante === 'proyecto' ? (
         <div className="space-y-1.5">
           <Label className="text-xs">Número de paso</Label>
-          <Input
+          <WidgetDraftTextField
             className="h-8 text-xs"
             value={nodo.numeroPaso ?? ''}
             placeholder="01"
-            onChange={(e) => updateNodo({ numeroPaso: e.target.value })}
+            onChange={(next) => updateNodo({ numeroPaso: next })}
           />
         </div>
       ) : (
         <div className="space-y-1.5">
           <Label className="text-xs">{variante === 'vertical' ? 'Año' : 'Etiqueta'}</Label>
-          <Input
+          <WidgetDraftTextField
             className="h-8 text-xs"
             value={nodo.etiqueta}
             placeholder="Ej: 2024"
-            onChange={(e) => updateNodo({ etiqueta: e.target.value })}
+            onChange={(next) => updateNodo({ etiqueta: next })}
           />
         </div>
       )}
@@ -342,31 +343,31 @@ export function TimelineNodoProperties({
         variante === 'infografica') && (
         <div className="space-y-1.5">
           <Label className="text-xs">Título del evento</Label>
-          <Input
+          <WidgetDraftTextField
             className="h-8 text-xs"
             value={nodo.tituloNodo ?? ''}
             placeholder="Ej: Lanzamiento"
-            onChange={(e) => updateNodo({ tituloNodo: e.target.value })}
+            onChange={(next) => updateNodo({ tituloNodo: next })}
           />
         </div>
       )}
 
       <div className="space-y-1.5">
         <Label className="text-xs">Descripción</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           value={nodo.cuerpo}
-          onChange={(e) => updateNodo({ cuerpo: e.target.value })}
+          onChange={(next) => updateNodo({ cuerpo: next })}
         />
       </div>
 
       <div className="space-y-1.5">
         <Label className="text-xs">URL imagen</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           value={nodo.imagen ?? ''}
           placeholder="https://…"
-          onChange={(e) => updateNodo({ imagen: e.target.value || undefined })}
+          onChange={(next) => updateNodo({ imagen: next || undefined })}
         />
       </div>
 

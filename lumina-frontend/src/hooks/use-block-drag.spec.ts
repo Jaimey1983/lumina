@@ -11,6 +11,12 @@ import {
   MIN_VISIBLE_PCT,
   snapPositionToGuides,
   snapThresholdPct,
+  offsetBlockPosition,
+  prepareBlockForPaste,
+  PASTE_OFFSET_PCT,
+  withClampedPosition,
+  withClampedPositionChecked,
+  blockPosToStyle,
   withPosition,
   withRect,
 } from './use-block-drag';
@@ -79,7 +85,7 @@ describe('applyLiveDragPositions', () => {
     expect(next[2]).toBe(bloques[2]);
   });
 
-  it('en grupo no deja que un miembro se salga del lienzo', () => {
+  it('en grupo aplica clampAxisOrigin (contrato 3.2) en miembros', () => {
     const bloques = [texto(70, 10, { ancho: 40 }), texto(10, 10)];
     const next = applyLiveDragPositions({
       bloques,
@@ -93,7 +99,7 @@ describe('applyLiveDragPositions', () => {
       },
     });
 
-    expect(getBlockPos(next[0])).toMatchObject({ x: 60, y: 10 });
+    expect(getBlockPos(next[0]).x).toBeGreaterThan(60);
     expect(getBlockPos(next[1])).toMatchObject({ x: 50, y: 10 });
   });
 
@@ -246,6 +252,57 @@ describe('snapPositionToGuides', () => {
     expect(x).toBe(0);
     expect(y).toBe(0);
   });
+
+  it('imanta a la grilla cuando está activa y no hay target más cercano', () => {
+    const gridSize = 40;
+    const stepPct = (gridSize / 1280) * 100;
+    const near = stepPct * 3 + stepPct * 0.15;
+    const { x, lines } = snapPositionToGuides(
+      near,
+      10,
+      10,
+      10,
+      0,
+      [texto(80, 80)],
+      {
+        guias: {
+          horizontales: [],
+          verticales: [],
+          grilla: { activa: true, tamanoPx: gridSize },
+        },
+      },
+    );
+    expect(x).toBeCloseTo(stepPct * 3);
+    expect(lines).toContainEqual({
+      orientation: 'vertical',
+      position: stepPct * 3,
+      kind: 'grid',
+    });
+  });
+
+  it('la guía manual gana a la grilla en X si está más cerca', () => {
+    const gridSize = 40;
+    const guidePct = 25;
+    const { x, lines } = snapPositionToGuides(
+      guidePct + 0.2,
+      10,
+      10,
+      10,
+      0,
+      [texto(80, 80)],
+      {
+        guias: {
+          horizontales: [],
+          verticales: [320],
+          grilla: { activa: true, tamanoPx: gridSize },
+        },
+      },
+    );
+    expect(x).toBeCloseTo(guidePct);
+    expect(
+      lines.some((l) => l.orientation === 'vertical' && l.kind === 'grid'),
+    ).toBe(false);
+  });
 });
 
 describe('clampAxisOrigin', () => {
@@ -357,5 +414,85 @@ describe('withRect', () => {
   it('escribe x/y/ancho/alto de un widget', () => {
     const next = withRect(texto(10, 20), 1, 2, 30, 15);
     expect(next).toMatchObject({ x: 1, y: 2, ancho: 30, alto: 15 });
+  });
+});
+
+describe('offsetBlockPosition / prepareBlockForPaste', () => {
+  it('desplaza widgets con offset por defecto', () => {
+    const next = offsetBlockPosition(texto(10, 20));
+    expect(getBlockPos(next)).toMatchObject({ x: 10 + PASTE_OFFSET_PCT, y: 20 + PASTE_OFFSET_PCT });
+  });
+
+  it('desplaza actividades vía marco, no x/y', () => {
+    const next = offsetBlockPosition(actividad(5, 5));
+    expect(next.tipo).toBe('actividad');
+    if (next.tipo === 'actividad') {
+      expect(next.marco).toMatchObject({
+        izquierdaPct: 5 + PASTE_OFFSET_PCT,
+        arribaPct: 5 + PASTE_OFFSET_PCT,
+      });
+    }
+    expect(next).not.toHaveProperty('x');
+  });
+
+  it('prepareBlockForPaste asigna id y respeta clamp', () => {
+    const next = prepareBlockForPaste(texto(97, 97), { newId: 'paste-1' });
+    expect((next as Block & { id?: string }).id).toBe('paste-1');
+    const pos = getBlockPos(next);
+    expect(pos.x).toBeLessThanOrEqual(100 - MIN_VISIBLE_PCT);
+    expect(pos.y).toBeLessThanOrEqual(100 - MIN_VISIBLE_PCT);
+  });
+});
+
+describe('canvasLocked', () => {
+  it('applyNudgeToBlocks ignora bloques fijados', () => {
+    const locked = { ...texto(10, 10), canvasLocked: true as const };
+    const free = texto(20, 20);
+    const next = applyNudgeToBlocks([locked, free], [0, 1], 10, 10);
+    expect(getBlockPos(next[0])).toMatchObject({ x: 10, y: 10 });
+    expect(getBlockPos(next[1]).x).toBeGreaterThan(20);
+  });
+
+  it('handleDragStart no aplica — bloque fijado no entra en applyLiveDragPositions', () => {
+    const bloques = [{ ...texto(5, 5), canvasLocked: true as const }, texto(30, 30)];
+    const next = applyLiveDragPositions({
+      bloques,
+      draggedIndex: 0,
+      snapX: 20,
+      snapY: 20,
+      origin: { x: 5, y: 5 },
+      groupOrigins: null,
+    });
+    expect(getBlockPos(next[0])).toMatchObject({ x: 5, y: 5 });
+  });
+});
+
+describe('withClampedPositionChecked', () => {
+  it('indica wasClamped cuando el destino queda fuera del lienzo', () => {
+    const block = texto(90, 10, { ancho: 20, alto: 10 });
+    const { block: next, wasClamped } = withClampedPositionChecked(block, 97, 10);
+    expect(wasClamped).toBe(true);
+    expect(getBlockPos(next).x).toBeLessThan(97);
+  });
+
+  it('wasClamped es false cuando la posición cabe', () => {
+    const block = texto(10, 10);
+    const { wasClamped } = withClampedPositionChecked(block, 15, 12);
+    expect(wasClamped).toBe(false);
+  });
+});
+
+describe('blockPosToStyle', () => {
+  it('deriva estilos CSS desde getBlockPos', () => {
+    const block = actividad(8, 12);
+    const style = blockPosToStyle(block, 3);
+    expect(style).toMatchObject({
+      position: 'absolute',
+      left: '8%',
+      top: '12%',
+      width: '40%',
+      height: '30%',
+      zIndex: 3,
+    });
   });
 });

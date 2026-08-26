@@ -128,6 +128,7 @@ function InlineHeaderField({
   placeholder,
   multiline,
   isSelected,
+  onChange,
   onFocusSelect,
 }: {
   value: string;
@@ -137,6 +138,7 @@ function InlineHeaderField({
   placeholder?: string;
   multiline?: boolean;
   isSelected?: boolean;
+  onChange?: (next: string) => void;
   onFocusSelect: (field: 'tituloWidget' | 'subtituloWidget' | 'instruccion') => void;
 }) {
   return (
@@ -149,6 +151,7 @@ function InlineHeaderField({
       isSelected={isSelected}
       dataAttr="data-flip-header-field"
       onSelect={() => onFocusSelect(field)}
+      onChange={onChange}
     />
   );
 }
@@ -271,9 +274,9 @@ function FlipCardImageLayer({
       )}
       style={imageWrapperStyle(data, cardRadius)}
       onPointerDown={(e) => {
-        if (!isEditing) return;
         e.stopPropagation();
         onSelect();
+        if (!isEditing) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         const rect = e.currentTarget.getBoundingClientRect();
         panRef.current = {
@@ -318,7 +321,6 @@ function FlipCardImageLayer({
         if (resizeRef.current) finishResize(e.currentTarget, e.pointerId);
       }}
       onClick={(e) => {
-        if (!isEditing) return;
         e.stopPropagation();
         onSelect();
       }}
@@ -361,6 +363,7 @@ function CardTextElement({
   isTitle,
   stackRef,
   onSelect,
+  onChange,
   onPosChange,
 }: {
   pos: FlipCardElementPos;
@@ -372,6 +375,7 @@ function CardTextElement({
   isTitle: boolean;
   stackRef: React.RefObject<HTMLDivElement | null>;
   onSelect: () => void;
+  onChange: (next: string) => void;
   onPosChange: (pos: FlipCardElementPos) => void;
 }) {
   const dragRef = useRef<{
@@ -439,67 +443,20 @@ function CardTextElement({
           onPointerCancel={(e) => finishDrag(e.currentTarget, e.pointerId)}
         />
       ) : null}
-      {isTitle ? (
-        <p
-          role="button"
-          tabIndex={0}
-          className={cn(
-            styles.flipTitle,
-            'm-0 cursor-text',
-            textShadowClass,
-            isEditing && isSelected && styles.fcInnerHighlight,
-          )}
-          style={css}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            if (isEditing) onSelect();
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isEditing) onSelect();
-          }}
-          onKeyDown={(e) => {
-            if (!isEditing) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              onSelect();
-            }
-          }}
-        >
-          {value.trim() || (isEditing ? 'Clic para editar en el panel' : '')}
-        </p>
-      ) : (
-        <p
-          role="button"
-          tabIndex={0}
-          className={cn(
-            styles.flipText,
-            'm-0 cursor-text',
-            textShadowClass,
-            isEditing && isSelected && styles.fcInnerHighlight,
-          )}
-          style={css}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            if (isEditing) onSelect();
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isEditing) onSelect();
-          }}
-          onKeyDown={(e) => {
-            if (!isEditing) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              onSelect();
-            }
-          }}
-        >
-          {value.trim() || (isEditing ? 'Clic para editar en el panel' : '')}
-        </p>
-      )}
+      <PanelOnlyText
+        value={value}
+        placeholder={isTitle ? 'Título de la tarjeta' : 'Cuerpo de la tarjeta'}
+        className={cn(
+          isTitle ? styles.flipTitle : styles.flipText,
+          'm-0 cursor-text',
+          textShadowClass,
+        )}
+        style={css}
+        multiline={!isTitle}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        onChange={onChange}
+      />
     </div>
   );
 }
@@ -649,6 +606,7 @@ function EditorCard({
             isTitle
             stackRef={stackRef}
             onSelect={() => onSelectText('titulo')}
+            onChange={(titulo) => onPatchFace({ titulo })}
             onPosChange={(tituloPos) => onPatchFace({ tituloPos })}
           />
         ) : null}
@@ -663,6 +621,7 @@ function EditorCard({
             isTitle={false}
             stackRef={stackRef}
             onSelect={() => onSelectText('cuerpo')}
+            onChange={(cuerpo) => onPatchFace({ cuerpo })}
             onPosChange={(cuerpoPos) => onPatchFace({ cuerpoPos })}
           />
         ) : null}
@@ -786,6 +745,7 @@ export function FlipCardsEditor({
               value={block.tituloWidget}
               field="tituloWidget"
               placeholder="Título del widget"
+              onChange={(tituloWidget) => patchBlock((w) => ({ ...w, tituloWidget }))}
               isSelected={
                 innerSelection?.kind === 'header-text' &&
                 innerSelection.field === 'tituloWidget'
@@ -808,6 +768,7 @@ export function FlipCardsEditor({
               value={block.subtituloWidget}
               field="subtituloWidget"
               placeholder="Subtítulo del widget"
+              onChange={(subtituloWidget) => patchBlock((w) => ({ ...w, subtituloWidget }))}
               multiline
               isSelected={
                 innerSelection?.kind === 'header-text' &&
@@ -828,6 +789,7 @@ export function FlipCardsEditor({
               value={block.instruccion}
               field="instruccion"
               placeholder="Instrucción para el estudiante"
+              onChange={(instruccion) => patchBlock((w) => ({ ...w, instruccion }))}
               multiline
               isSelected={
                 innerSelection?.kind === 'header-text' &&

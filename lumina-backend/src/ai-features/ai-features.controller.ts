@@ -2,6 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtAuthUser } from '../auth/jwt-auth-user';
+import { AiStaffGuard } from './ai-staff';
 import { AiFeaturesService } from './ai-features.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { ContentAssistantDto } from './dto/content-assistant.dto';
@@ -13,7 +14,7 @@ import { RefineStructureDto } from './dto/refine-structure.dto';
  * Funcionalidades de IA independientes de contexto de curso.
  * Solo accesibles por personal docente (TEACHER/ADMIN/SUPERADMIN/etc.).
  */
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AiStaffGuard)
 @Controller('ai')
 export class AiFeaturesController {
   constructor(private readonly aiService: AiFeaturesService) {}

@@ -10,6 +10,7 @@ import {
 import { Camera } from 'lucide-react';
 
 import type { WidgetSlideContent, WidgetSlideTextBlock, WidgetSlideInnerSelection, WidgetSlideTextField, WidgetSlidePanelConfig } from '@/types/widget.types';
+import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -33,7 +34,6 @@ import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
 import slideStyles from './widget-slide-panel.module.css';
 import chromeStyles from './widget-chrome.module.css';
 import {
-  stopWidgetInnerKeydown,
   stopWidgetInnerPointer,
 } from './widget-editor-utils';
 import { isOverlayLayout, isSplitLayout, resolveSlideLayoutId } from './widget-layouts';
@@ -331,6 +331,7 @@ function WidgetSlideFreeBlock({
   block,
   isEditing,
   onSelect,
+  onPatch,
 }: {
   block: WidgetSlideTextBlock;
   isEditing: boolean;
@@ -364,37 +365,16 @@ function WidgetSlideFreeBlock({
     );
   }
 
-  const empty = !block.contenido.trim();
-
   return (
-    <p
-      role="button"
-      tabIndex={0}
-      className={cn(
-        slideStyles.wspFreeBlock,
-        slideStyles.wspFreeBlockRead,
-        'cursor-text rounded border-2 border-transparent hover:border-dashed hover:border-[#2563EB]/40',
-        empty && 'text-muted-foreground/60',
-      )}
+    <PanelOnlyText
+      value={block.contenido}
+      placeholder="Escribe aquí"
+      className={cn(slideStyles.wspFreeBlock, slideStyles.wspFreeBlockRead)}
       style={style}
-      onPointerDown={(e) => {
-        stopWidgetInnerPointer(e);
-        onSelect?.();
-      }}
-      onClick={(e) => {
-        stopWidgetInnerPointer(e);
-        onSelect?.();
-      }}
-      onKeyDown={(e) => {
-        stopWidgetInnerKeydown(e);
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect?.();
-        }
-      }}
-    >
-      {empty ? 'Clic para editar en el panel' : block.contenido}
-    </p>
+      multiline
+      onSelect={() => onSelect?.()}
+      onChange={onPatch ? (contenido) => onPatch({ contenido }) : undefined}
+    />
   );
 }
 
@@ -411,6 +391,7 @@ function TabTextElement({
   stackRef,
   onSelect,
   onPosChange,
+  onChange,
 }: {
   field: WidgetSlideTextField;
   slide: WidgetSlideContent;
@@ -424,6 +405,7 @@ function TabTextElement({
   stackRef: React.RefObject<HTMLDivElement | null>;
   onSelect: () => void;
   onPosChange: (pos: { x: number; y: number }) => void;
+  onChange?: (next: string) => void;
 }) {
   const pos = resolveTextPos(slide, field);
   const styleKey =
@@ -545,6 +527,17 @@ function TabTextElement({
         }
       }}
     />
+  ) : onChange ? (
+    <PanelOnlyText
+      value={value}
+      placeholder={placeholder ?? 'Escribe aquí'}
+      className={cn('m-0 w-full min-w-[4rem] cursor-text', className, textShadowClass)}
+      style={css}
+      multiline={_multiline || field === 'cuerpo'}
+      isSelected={isSelected}
+      onSelect={onSelect}
+      onChange={onChange}
+    />
   ) : (
     (() => {
       const Tag = field === 'encabezado' ? 'h3' : 'p';
@@ -552,7 +545,7 @@ function TabTextElement({
       return (
         <Tag
           role="button"
-          tabIndex={0}
+          tabIndex={-1}
           className={cn(
             'm-0 w-full min-w-[4rem] cursor-text',
             className,
@@ -571,13 +564,6 @@ function TabTextElement({
           onClick={(e) => {
             e.stopPropagation();
             onSelect();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              onSelect();
-            }
           }}
         >
           {empty ? placeholder ?? 'Clic para editar en el panel' : value}
@@ -909,6 +895,7 @@ export function WidgetSlidePanelEditor({
           hasImageBg={overlay}
           stackRef={stackRef}
           onSelect={() => onSelectText('encabezado')}
+          onChange={(encabezado) => onPatchSlide({ encabezado })}
           onPosChange={(pos) => patchPos('encabezado', pos)}
         />
       ) : null}
@@ -925,6 +912,7 @@ export function WidgetSlidePanelEditor({
           hasImageBg={overlay}
           stackRef={stackRef}
           onSelect={() => onSelectText('subtitulo')}
+          onChange={(subtitulo) => onPatchSlide({ subtitulo })}
           onPosChange={(pos) => patchPos('subtitulo', pos)}
         />
       ) : null}
@@ -941,6 +929,7 @@ export function WidgetSlidePanelEditor({
           hasImageBg={overlay}
           stackRef={stackRef}
           onSelect={() => onSelectText('cuerpo')}
+          onChange={(cuerpo) => onPatchSlide({ cuerpo })}
           onPosChange={(pos) => patchPos('cuerpo', pos)}
         />
       ) : null}

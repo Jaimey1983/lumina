@@ -1,11 +1,9 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
@@ -15,41 +13,10 @@ import { ContentAssistantDto } from './dto/content-assistant.dto';
 import { EvaluateResponseDto } from './dto/evaluate-response.dto';
 import { GenerateFromDocumentDto } from './dto/generate-from-document.dto';
 import { RefineStructureDto } from './dto/refine-structure.dto';
-
-// ─── Helpers ──────────────────────────────────────────────
-
-const STAFF_ROLES = [
-  'ADMIN',
-  'SUPERADMIN',
-  'TEACHER',
-  'TEACHER_ASSISTANT',
-  'DEPARTMENT_HEAD',
-];
-
-function assertStaff(role: string) {
-  if (!STAFF_ROLES.includes(role)) {
-    throw new ForbiddenException(
-      'Solo el personal docente puede usar las funciones de IA',
-    );
-  }
-}
-
-function parseGeminiJsonObject(raw: string): Record<string, unknown> {
-  try {
-    // Gemini a veces envuelve el JSON en ```json ... ``` aunque se pida JSON puro
-    const cleaned = raw
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-    const v = JSON.parse(cleaned) as unknown;
-    return v !== null && typeof v === 'object' && !Array.isArray(v)
-      ? (v as Record<string, unknown>)
-      : {};
-  } catch {
-    return {};
-  }
-}
+import { AiKeysService } from './ai-keys.service';
+import { parseLlmJsonObject } from './ai-json';
+import { assertAiStaff } from './ai-staff';
+import { anonymizeStudentLabel } from './ai-pii';
 
 /*
 ESQUEMA DE SALIDA — contentAssistant y generateFromDocument:
@@ -96,86 +63,38 @@ export class AiFeaturesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly courseAuth: CourseAuthorizationService,
-    private readonly config: ConfigService,
+    private readonly aiKeys: AiKeysService,
   ) {}
 
-  // ── Guard: verifica que la API key esté configurada ────────
-
-  private assertApiKey() {
-    if (!this.config.get<string>('GEMINI_API_KEY')) {
-      throw new ServiceUnavailableException(
-        'GEMINI_API_KEY no está configurada en las variables de entorno',
-      );
-    }
+  private async completeParsed(
+    userId: string,
+    system: string,
+    user: string,
+  ): Promise<Record<string, unknown>> {
+    return parseLlmJsonObject(
+      await this.aiKeys.completeForUser(userId, system, user),
+    );
   }
 
-  // ── Wrapper seguro para llamadas a Gemini (fetch directo) ──
-
-  private async callGemini(
-    systemInstruction: string,
-    userMessage: string,
-  ): Promise<string> {
-    this.assertApiKey();
-    const apiKey = this.config.get<string>('GEMINI_API_KEY')!;
-    const model = 'gemini-2.5-flash-lite';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    const body = {
-      system_instruction: {
-        parts: [{ text: systemInstruction }],
-      },
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: userMessage }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 4000,
-        responseMimeType: 'application/json',
-      },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-      ],
-    };
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const data = (await response.json()) as {
-        candidates?: { content?: { parts?: { text?: string }[] } }[];
-        error?: { message?: string };
-      };
-
-      if (data.error) {
-        throw new Error(data.error.message ?? 'Error de Gemini');
-      }
-
-      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    } catch (err: unknown) {
+  /** Compleción JSON vía proveedor activo (BYOK o Gemini de plataforma). */
+  private async callLlmJson(
+    userId: string,
+    system: string,
+    user: string,
+  ): Promise<Record<string, unknown>> {
+    const parsed = await this.completeParsed(userId, system, user);
+    if (!Object.keys(parsed).length) {
       throw new ServiceUnavailableException(
-        `Gemini no disponible: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+        'La IA devolvió una respuesta inválida',
       );
     }
+    return parsed;
   }
 
   // ── 1. Generar preguntas de quiz ───────────────────────────
 
   async generateQuiz(dto: GenerateQuizDto, userId: string, userRole: string) {
-    assertStaff(userRole);
+    assertAiStaff(userRole);
     const count = dto.count ?? 5;
     const type = dto.type ?? 'MultipleChoice';
 
@@ -201,21 +120,14 @@ Devuelve un objeto JSON con la estructura:
 Para TrueFalse, options debe ser ["Verdadero", "Falso"] con correctIndex 0 o 1.
 Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el espacio con "____".`;
 
-    const raw = await this.callGemini(system, user);
-    try {
-      const parsed = parseGeminiJsonObject(raw);
-      const questions = parsed['questions'];
-      const qList = Array.isArray(questions) ? questions : [];
-      return {
-        type,
-        count: qList.length,
-        questions: qList,
-      };
-    } catch {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const parsed = await this.completeParsed(userId, system, user);
+    const questions = parsed['questions'];
+    const qList = Array.isArray(questions) ? questions : [];
+    return {
+      type,
+      count: qList.length,
+      questions: qList,
+    };
   }
 
   // ── 2. Retroalimentación personalizada por estudiante ──────
@@ -310,7 +222,7 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
         : 'sin datos';
 
     const summary = [
-      `Estudiante: ${student.name} ${student.lastName}`,
+      `Estudiante: ${anonymizeStudentLabel(student.name, student.lastName)}`,
       `Curso: ${course?.name ?? courseId}`,
       `Período: ${period.name}`,
       ``,
@@ -323,7 +235,7 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
       `Coevaluación (promedio): ${peerAvg}/5`,
     ].join('\n');
 
-    const system = `Eres un docente experto en educación personalizada. Tu rol es generar retroalimentación constructiva, motivadora y específica para cada estudiante en español. Sé empático, preciso y orientado a la mejora.`;
+    const system = `Eres un docente experto en educación personalizada. Tu rol es generar retroalimentación constructiva, motivadora y específica en español. Sé empático, preciso y orientado a la mejora. No inventes apellidos, documentos, correos ni datos de contacto.`;
 
     const userMsg = `Basándote en el siguiente desempeño del estudiante, genera una retroalimentación personalizada en español que:
 1. Resalte los puntos fuertes identificados
@@ -344,13 +256,7 @@ Devuelve JSON con:
   "overallMessage": "string — mensaje motivador personalizado de 2-3 oraciones"
 }`;
 
-    const raw = await this.callGemini(system, userMsg);
-    const feedback = parseGeminiJsonObject(raw);
-    if (!Object.keys(feedback).length) {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const feedback = await this.callLlmJson(userId, system, userMsg);
     return {
       studentId: dto.studentId,
       courseId,
@@ -422,13 +328,7 @@ Devuelve JSON con:
   "learningObjectives": ["array de objetivos de aprendizaje inferidos"]
 }`;
 
-    const raw = await this.callGemini(system, userMsg);
-    const summary = parseGeminiJsonObject(raw);
-    if (!Object.keys(summary).length) {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const summary = await this.callLlmJson(userId, system, userMsg);
     return { classId: dto.classId, courseId, summary };
   }
 
@@ -439,7 +339,7 @@ Devuelve JSON con:
     userId: string,
     userRole: string,
   ) {
-    assertStaff(userRole);
+    assertAiStaff(userRole);
     const slideCount = dto.slideCount ?? 6;
     const level = dto.level ?? 'intermediate';
 
@@ -538,13 +438,7 @@ Devuelve ÚNICAMENTE el siguiente JSON (sin texto previo, sin markdown, sin back
   "dba_conexion": "cita literal del DBA que cubre esta clase o null si no aplica"
 }`;
 
-    const raw = await this.callGemini(system, userMsg);
-    const structure = parseGeminiJsonObject(raw);
-    if (!Object.keys(structure).length) {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const structure = await this.callLlmJson(userId, system, userMsg);
     return { topic: dto.topic, level, structure };
   }
 
@@ -555,7 +449,7 @@ Devuelve ÚNICAMENTE el siguiente JSON (sin texto previo, sin markdown, sin back
     userId: string,
     userRole: string,
   ) {
-    assertStaff(userRole);
+    assertAiStaff(userRole);
     const maxScore = dto.maxScore ?? 5;
 
     const system = `Eres un evaluador educativo experto. Evalúas respuestas de estudiantes de forma objetiva, justa y constructiva en español.`;
@@ -580,13 +474,7 @@ Devuelve JSON con:
 
 Sé estricto pero justo. La puntuación debe reflejar objetivamente la calidad de la respuesta.`;
 
-    const raw = await this.callGemini(system, userMsg);
-    const evaluation = parseGeminiJsonObject(raw);
-    if (!Object.keys(evaluation).length) {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const evaluation = await this.callLlmJson(userId, system, userMsg);
     return { question: dto.question, maxScore, evaluation };
   }
 
@@ -597,7 +485,7 @@ Sé estricto pero justo. La puntuación debe reflejar objetivamente la calidad d
     userId: string,
     userRole: string,
   ) {
-    assertStaff(userRole);
+    assertAiStaff(userRole);
     const slideCount = dto.slideCount ?? 6;
     const level = dto.level ?? 'intermediate';
 
@@ -688,13 +576,7 @@ Devuelve ÚNICAMENTE este JSON (sin texto previo, sin markdown, sin backticks):
   "dba_conexion": "cita literal del DBA o null"
 }`;
 
-    const raw = await this.callGemini(system, userMsg);
-    const structure = parseGeminiJsonObject(raw);
-    if (!Object.keys(structure).length) {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const structure = await this.callLlmJson(userId, system, userMsg);
     return {
       topic: dto.topic ?? 'Desde documento',
       grade: dto.grade,
@@ -711,7 +593,7 @@ Devuelve ÚNICAMENTE este JSON (sin texto previo, sin markdown, sin backticks):
     userId: string,
     userRole: string,
   ) {
-    assertStaff(userRole);
+    assertAiStaff(userRole);
 
     const system = `Eres un diseñador instruccional experto en educación colombiana.
 Tu tarea es MODIFICAR una estructura de clase existente según las instrucciones del docente.
@@ -743,13 +625,7 @@ Aplica la instrucción y devuelve la estructura completa actualizada con el mism
 Si la instrucción es ambigua, interpreta la intención pedagógica más probable.
 Si pide eliminar slides, renumera los restantes desde 1.`;
 
-    const raw = await this.callGemini(system, userMsg);
-    const structure = parseGeminiJsonObject(raw);
-    if (!Object.keys(structure).length) {
-      throw new ServiceUnavailableException(
-        'Gemini devolvió una respuesta inválida',
-      );
-    }
+    const structure = await this.callLlmJson(userId, system, userMsg);
     return { structure, instruction: dto.instruction };
   }
 }

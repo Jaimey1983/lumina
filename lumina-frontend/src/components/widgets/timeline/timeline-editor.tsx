@@ -50,6 +50,7 @@ function InlineTextEditor({
   extraClassName,
   vertical = false,
   onFocusSelect,
+  onCommit,
 }: {
   value: string;
   field: 'etiqueta' | 'cuerpo';
@@ -57,6 +58,7 @@ function InlineTextEditor({
   extraClassName?: string;
   vertical?: boolean;
   onFocusSelect: () => void;
+  onCommit: (next: string) => void;
 }) {
   const isVerticalBody = vertical && field === 'cuerpo';
 
@@ -84,6 +86,7 @@ function InlineTextEditor({
       }}
       multiline={field === 'cuerpo' || vertical}
       onSelect={onFocusSelect}
+      onChange={onCommit}
     />
   );
 }
@@ -171,6 +174,7 @@ function TimelineEditorNode({
             field="etiqueta"
             textStyle={timelineEtiquetaTextStyle(nodo, config)}
             extraClassName={styles.tlProyectoNum}
+            onCommit={(numeroPaso) => patchNodo({ numeroPaso })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'etiqueta' });
@@ -183,6 +187,7 @@ function TimelineEditorNode({
             textStyle={timelineEtiquetaTextStyle(nodo, config)}
             vertical={isVerticalVariant}
             extraClassName={isVerticalVariant ? styles.tlVerticalYear : undefined}
+            onCommit={(etiqueta) => patchNodo({ etiqueta })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'etiqueta' });
@@ -204,6 +209,7 @@ function TimelineEditorNode({
                   ? styles.tlCardTitulo
                   : undefined
             }
+            onCommit={(tituloNodo) => patchNodo({ tituloNodo })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'titulo' });
@@ -292,6 +298,7 @@ function TimelineEditorNode({
             textStyle={timelineCuerpoTextStyle(nodo, config)}
             vertical={isVerticalVariant}
             extraClassName={isVerticalVariant ? styles.tlVerticalBody : undefined}
+            onCommit={(cuerpo) => patchNodo({ cuerpo })}
             onFocusSelect={() => {
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'texto', nodoIndex: index, field: 'cuerpo' });

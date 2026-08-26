@@ -3,9 +3,8 @@
 import type { Block } from '@/types/slide.types';
 import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@/types/widget.types';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
 import { mergedTooltipConfig, normalizeTooltipWidget, tooltipFallbackSize } from './tooltip-config';
@@ -93,9 +92,9 @@ export function TooltipProperties({ block: rawBlock, applyNow }: TooltipProperti
           {configuracion.triggerTipo === 'texto_subrayado' ? (
             <div className="space-y-2">
               <Label className="text-xs">Texto subrayado</Label>
-              <Input
+              <WidgetDraftTextField
                 value={configuracion.textoTrigger}
-                onChange={(e) => update((w) => ({ ...w, textoTrigger: e.target.value }))}
+                onChange={(next) => update((w) => ({ ...w, textoTrigger: next }))}
                 className="h-8 text-xs"
               />
             </div>
@@ -107,9 +106,10 @@ export function TooltipProperties({ block: rawBlock, applyNow }: TooltipProperti
         <WidgetSectionTitle>Tooltip</WidgetSectionTitle>
         <div className="space-y-2 pt-2">
           <Label className="text-xs">Texto del tooltip</Label>
-          <Textarea
+          <WidgetDraftTextField
             value={configuracion.textoTooltip}
-            onChange={(e) => update((w) => ({ ...w, textoTooltip: e.target.value }))}
+            onChange={(next) => update((w) => ({ ...w, textoTooltip: next }))}
+            multiline
             className="min-h-20 text-xs"
           />
         </div>
@@ -143,9 +143,9 @@ export function TooltipProperties({ block: rawBlock, applyNow }: TooltipProperti
               onChange={(e) => update((w) => ({ ...w, colorFondo: e.target.value }))}
               className="h-8 w-8 cursor-pointer rounded border-0 p-0"
             />
-            <Input
+            <WidgetDraftTextField
               value={configuracion.colorFondo}
-              onChange={(e) => update((w) => ({ ...w, colorFondo: e.target.value }))}
+              onChange={(next) => update((w) => ({ ...w, colorFondo: next }))}
               className="h-8 font-mono text-xs"
             />
           </div>
@@ -160,9 +160,9 @@ export function TooltipProperties({ block: rawBlock, applyNow }: TooltipProperti
               onChange={(e) => update((w) => ({ ...w, colorTexto: e.target.value }))}
               className="h-8 w-8 cursor-pointer rounded border-0 p-0"
             />
-            <Input
+            <WidgetDraftTextField
               value={configuracion.colorTexto}
-              onChange={(e) => update((w) => ({ ...w, colorTexto: e.target.value }))}
+              onChange={(next) => update((w) => ({ ...w, colorTexto: next }))}
               className="h-8 font-mono text-xs"
             />
           </div>

@@ -70,6 +70,7 @@ import { SlideRenderer } from './slide-renderer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block } from '@/types/slide.types';
+import { useLazyInView } from '@/hooks/use-lazy-in-view';
 
 // ─── Local slide interface (compatible with API Slide type) ───────────────────
 
@@ -272,52 +273,6 @@ function firstActivityBlock(
   return null;
 }
 
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-  );
-  return match ? match[1] : null;
-}
-
-function findVideoBlockPreview(
-  slide: SlideItem,
-  content: unknown,
-): { hasVideo: boolean; videoUrl: string | null } {
-  let hasVideo = false;
-
-  const readFromBlocks = (blocks: unknown[]): string | null => {
-    for (const b of flattenBlocks(blocks)) {
-      const kind =
-        typeof b.type === 'string'
-          ? b.type
-          : typeof b.tipo === 'string'
-            ? b.tipo
-            : null;
-      if (kind !== 'video') continue;
-
-      hasVideo = true;
-      const candidates = [b.url, b.src, b.videoUrl, b.valor];
-      for (const candidate of candidates) {
-        if (typeof candidate === 'string' && candidate.trim().length > 0) {
-          return candidate.trim();
-        }
-      }
-    }
-    return null;
-  };
-
-  const rawSlideBlocks = (slide as { blocks?: unknown }).blocks;
-  if (Array.isArray(rawSlideBlocks)) {
-    const fromSlide = readFromBlocks(rawSlideBlocks);
-    if (fromSlide) return { hasVideo: true, videoUrl: fromSlide };
-  }
-
-  const fromContent = readFromBlocks(getSlideBloques(content));
-  if (fromContent) return { hasVideo: true, videoUrl: fromContent };
-
-  return { hasVideo, videoUrl: null };
-}
-
 type CornerPick =
   | { kind: 'actividad'; activityType: string }
   | { kind: 'imagen' }
@@ -469,16 +424,9 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
   liveContent?: unknown;
   className?: string;
 }) {
-  void isActive;
   const effectiveContent = liveContent ?? slide.content;
-  const { hasVideo, videoUrl } = useMemo(
-    () => findVideoBlockPreview(slide, effectiveContent),
-    [slide, effectiveContent],
-  );
-  const youTubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
+  const { ref, visible } = useLazyInView({ enabled: isActive });
 
-  // Include slide.content explicitly so the thumbnail re-renders after a
-  // query refetch even when only block positions (x/y/ancho/alto) changed.
   const rendererSlide = useMemo(
     () =>
       classSlideToRendererSlide({
@@ -493,28 +441,16 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
     [effectiveContent],
   );
 
+  const fondo = getSlideFondo(effectiveContent);
+  const bgStyle = fondoToStyle(fondo);
+
   return (
     <div
+      ref={ref}
       className={cn('relative w-full overflow-hidden rounded-xl', className)}
-      style={{ aspectRatio: '16/9' }}
+      style={{ aspectRatio: '16/9', ...bgStyle }}
     >
-      {hasVideo ? (
-        youTubeId ? (
-          <img
-            src={`https://img.youtube.com/vi/${youTubeId}/0.jpg`}
-            alt="preview"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ backgroundColor: '#e5e7eb' }}
-          >
-            <Video className="size-5 text-zinc-500" aria-hidden />
-          </div>
-        )
-      ) : (
-        /* pointer-events:none so click events reach the wrapping <button> */
+      {visible ? (
         <div className="pointer-events-none absolute inset-0">
           <SlideRenderer
             slide={rendererSlide}
@@ -523,6 +459,8 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
             className="absolute inset-0 h-full w-full"
           />
         </div>
+      ) : (
+        <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
       )}
       <span className="absolute left-0.5 top-0.5 z-[1] rounded-md bg-black/45 px-1 text-[7px] font-medium tabular-nums text-white">
         {slide.order}

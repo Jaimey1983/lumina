@@ -1,0 +1,158 @@
+---
+description: Contratos obligatorios del editor de slides/canvas en lumina-frontend (posición, historial, drag, render).
+globs: lumina-frontend/**/*
+alwaysApply: false
+---
+
+# Lumina — Contratos del editor de canvas (frontend)
+
+**Obligatorio en todo cambio** en el editor de clases, canvas, bloques, capas, alineación, historial y render de slides.
+
+Ruta del proyecto frontend: `lumina-frontend/`  
+Documentación extendida: `lumina-frontend/.cursorrules` (sección «Contratos del editor»).
+
+---
+
+## Regla de oro
+
+Toda operación nueva o existente sigue el mismo flujo:
+
+**leer (contrato canónico) → transformar → clamp → persistir → historial (si aplica)**
+
+No duplicar lógica de posición, permisos de edición ni snapshots fuera de los helpers establecidos.
+
+---
+
+## 1. Posicionamiento (contrato 3.2)
+
+| Función | Rol |
+|---|---|
+| `getBlockPos(block)` | **Única fuente de verdad** para leer bbox en % del lienzo |
+| `withPosition(block, x, y)` | Escribir posición en bloques normales (`x`/`y`) |
+| `withRect(block, x, y, ancho, alto)` | Escribir tamaño + posición en bloques con rect |
+| `blockPosToStyle(block, zIndex?)` | Derivar estilos CSS `absolute` desde `getBlockPos` |
+| `clampAxisOrigin` / `clampDragCorner` | Límite C2: origen + mínimo visible dentro del lienzo |
+| `withClampedPosition` | Aplicar posición ya clampeada |
+| `withClampedPositionChecked` | Igual + flag `wasClamped` (avisos UX) |
+
+### Actividades (`tipo: 'actividad'`)
+
+- Posición **solo** vía `marco`: `{ izquierdaPct, arribaPct, anchoPct, altoPct }`.
+- **Nunca** escribir `x`/`y`/`ancho`/`alto` sueltos en actividades.
+- `getBlockPos` ya resuelve `marco` → no reimplementar en renderer.
+
+### Prohibido
+
+- Switches por `block.tipo` duplicando fallbacks de posición (usar `getBlockPos`).
+- Mover bloques sin pasar por `clampDragCorner`.
+- Ignorar `zIndex` en actividades (`block.zIndex ?? 1`).
+
+**Archivo canónico:** `src/hooks/use-block-drag.ts`
+
+---
+
+## 2. Render vs edición
+
+- `slide-renderer.tsx`: estilos y coords **delegados** a `getBlockPos` / `blockPosToStyle`.
+- Textos de widgets interactivos: edición **solo desde el panel lateral**, no inline en el lienzo.
+- Handles de drag/resize y capas iteran `effectiveBloques` (estado en vivo), no solo `slide.bloques` del servidor.
+
+---
+
+## 3. Drag y selección (dnd-kit)
+
+- Preview en vivo: `applyLiveDragPositions` con clamp grupal (`groupOrigins`).
+- Arrastre grupal: cada miembro pasa por `clampDragCorner` con su propio tamaño.
+- **Miniatura lateral:** sync al padre con **debounce ~150 ms** durante drag; nunca `setState` en cada frame (rompe dnd-kit).
+- Snap: `snapPositionToGuides` (guías centrales + grilla); kind `'grid'` para grilla.
+- Bloques con `canvasLocked: true` no se mueven ni entran en alineación/nudge.
+
+---
+
+## 4. Historial undo/redo (Ctrl+Z)
+
+**Snapshot completo** (`SlideHistorySnapshot`):
+
+```typescript
+{ bloques, fondo?, guias, transicion?, kind, at }
+```
+
+| Regla | Detalle |
+|---|---|
+| Captura | `captureSlideSnapshot(slide, kind)` — incluir meta actual (`editorMetaRef`) |
+| Restauración | `buildContentFromSnapshot(snapshot)` — restaurar transición del snapshot |
+| Ancla | Índice 0 conserva kind `'inicio'` al truncar (`MAX_UNDO`) |
+| Restore versión servidor | Tras éxito → `CanvasAreaHandle.resetSlideHistory()` |
+| Transición de slide | `handleApplySlide` registra en historial |
+| Flag | `isUndoRedoRef` evita re-registrar durante undo/redo |
+
+**Archivo canónico:** `src/app/(app)/classes/[id]/editor/lib/canvas-history.ts`
+
+---
+
+## 5. Alineación y distribución
+
+- Toolbar usa `getBlockPos` + `withClampedPosition` / `withClampedPositionChecked`.
+- Distribuir H/V: si `wasClamped` → toast de advertencia (espaciado puede variar).
+- Mínimo 2 bloques para alinear; mínimo 3 para distribuir.
+- Respetar `isBlockCanvasLocked`.
+
+**Archivo:** `src/components/editor/alignment-toolbar.tsx`
+
+---
+
+## 6. Grilla y zoom
+
+- Grilla: `SlideGuias.grilla` (`activa`, `tamanoPx`); normalizar con `canvas-grid.ts`.
+- Zoom: `canvas-zoom.ts` (50–200 %, persistencia localStorage, Ctrl+rueda).
+- Transform `scale()` en wrapper del viewport, no en bloques individuales.
+
+---
+
+## 7. Persistencia de slides
+
+- PATCH vía `patchSlideContent` / `sanitizeSlideContentForPersistence`.
+- Tras éxito: `queryClient.refetchQueries(['classes', 'detail', classId])`.
+- Optimistic bridge: `committedBloques` post-drag hasta refetch.
+- Prioridad de bloques en canvas: `liveBloques` → `committedBloques` → servidor.
+
+---
+
+## 8. Checklist para funciones nuevas
+
+Antes de mergear cualquier feature del editor:
+
+- [ ] ¿Lee posición con `getBlockPos`?
+- [ ] ¿Escribe con `withPosition` / `withRect` / `marco`?
+- [ ] ¿Aplica clamp antes de persistir?
+- [ ] ¿Registra historial si el cambio es deshacible?
+- [ ] ¿Snapshot incluye `fondo`, `guias`, `transicion` cuando aplica?
+- [ ] ¿Evita re-render agresivo durante drag?
+- [ ] ¿Tests en `*.spec.ts` del módulo tocado?
+
+---
+
+## 9. Archivos de referencia
+
+| Área | Ruta |
+|---|---|
+| Posición / drag | `src/hooks/use-block-drag.ts` |
+| Historial | `src/app/(app)/classes/[id]/editor/lib/canvas-history.ts` |
+| Orquestación canvas | `src/app/(app)/classes/[id]/editor/components/canvas-area.tsx` |
+| Render | `src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx` |
+| Alineación | `src/components/editor/alignment-toolbar.tsx` |
+| Capas | `src/lib/canvas-layers.ts`, `src/components/editor/layers-panel.tsx` |
+| Grilla / guías | `src/lib/canvas-grid.ts`, `src/lib/canvas-guides.ts` |
+| Zoom | `src/lib/canvas-zoom.ts` |
+| Tipos slide | `src/types/slide.types.ts` |
+
+`canvas-editor.tsx` está **deprecado** — no extender; usar `editor-client` + `CanvasArea`.
+
+### 10. Clipping masks (`clip-group`)
+
+- Bloque `tipo: 'clip-group'` con bbox estándar `x/y/ancho/alto` (contrato 3.2).
+- Forma en `clipShape`; relleno en `contenido` (color, gradiente o imagen).
+- Paths SVG vía `generarClipPath()` en `src/lib/clip-path.ts` (`clipPathUnits="objectBoundingBox"`).
+- Clic = mover/redimensionar el grupo; doble clic (contenido imagen) = edición interna (pan + rueda escala).
+- Forma libre: clic selecciona anclas/manijas; doble clic en bloque con imagen entra a pan (mutuamente excluyente con edición de nodos).
+- Pan/escala: clamp vía `clampClipContentImageOffsets` / `clampClipImageOffsetsForBlock` en panel y post-zoom.

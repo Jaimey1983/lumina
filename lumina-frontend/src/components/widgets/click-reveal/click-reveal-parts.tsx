@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FocusEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Camera, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import type {
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { imageFilterStyle } from '@/components/widgets/shared/widget-image-styles';
 import { TabsSlidePanelEditor } from '@/components/widgets/tabs/tabs-slide-panel';
 import { TabsSlidePanelView } from '@/components/widgets/tabs/tabs-slide-panel';
+import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
 import { stopWidgetInnerPointer, useEscapeToClose } from '@/components/widgets/shared/widget-editor-utils';
 
 import styles from './click-reveal.module.css';
@@ -114,36 +115,18 @@ function TriggerTitleField({
   onCommit: (value: string) => void;
   onFocusSelect: () => void;
 }) {
-  const [draft, setDraft] = useState(value);
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  const commit = () => {
-    if (draft !== value) onCommit(draft);
-  };
-
   return (
-    <textarea
-      value={draft}
-      rows={2}
+    <PanelOnlyText
+      value={value}
       placeholder="Texto de la tarjeta"
       className={cn(
         styles.revealTriggerTitleInput,
         selected && styles.revealTriggerTitleInputSelected,
       )}
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(e) => setDraft(e.target.value)}
-      onFocus={(e: FocusEvent<HTMLTextAreaElement>) => {
-        e.stopPropagation();
-        onFocusSelect();
-      }}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-      }}
-      onBlur={commit}
+      multiline
+      isSelected={selected}
+      onSelect={onFocusSelect}
+      onChange={onCommit}
     />
   );
 }

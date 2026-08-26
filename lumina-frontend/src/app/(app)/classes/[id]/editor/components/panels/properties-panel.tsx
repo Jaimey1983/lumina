@@ -117,6 +117,7 @@ import {
 } from '@/components/widgets/timeline/timeline-properties';
 import { TimelineAppearanceProperties } from '@/components/widgets/timeline/timeline-appearance-properties';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
+import { ClipGroupBlockFields } from './clip-group-properties';
 import {
   WIDGET_CONTEXT_IMAGE_HINT,
   WIDGET_CONTEXT_TEXT_HINT,
@@ -126,6 +127,7 @@ import {
   WidgetPropertiesPanelStack,
 } from '@/components/widgets/shared/widget-properties-panel';
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
+import { isBlockCanvasLocked, isBlockCanvasPositionable } from '@/hooks/use-block-drag';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -282,6 +284,22 @@ export function PropertiesPanel({
   );
 
   if (selectedBlockIds.length > 1) {
+    const setLockForSelection = async (locked: boolean) => {
+      let next = bloques;
+      for (const id of selectedBlockIds) {
+        const b = getBlockAtPath(next, id);
+        if (!b || !isBlockCanvasPositionable(b)) continue;
+        next = updateBlockAtPath(next, id, (block) => ({
+          ...block,
+          canvasLocked: locked ? true : undefined,
+        }));
+      }
+      const ok = await onApplyBloques(next);
+      if (ok) {
+        toast.success(locked ? 'Bloques fijados' : 'Bloques desbloqueados');
+      }
+    };
+
     return (
       <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
         <div className="border-b border-border px-4 py-3">
@@ -289,10 +307,30 @@ export function PropertiesPanel({
             Propiedades
           </h2>
         </div>
-        <div className="flex flex-1 items-start p-4">
+        <div className="flex flex-1 flex-col gap-3 p-4">
           <p className="text-sm font-medium text-muted-foreground">
             {selectedBlockIds.length} bloques seleccionados
           </p>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => void setLockForSelection(true)}
+            >
+              Fijar posición y tamaño
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => void setLockForSelection(false)}
+            >
+              Desbloquear
+            </Button>
+          </div>
         </div>
       </aside>
     );
@@ -1203,6 +1241,7 @@ export function PropertiesPanel({
     block.tipo !== 'texto' &&
     block.tipo !== 'imagen' &&
     block.tipo !== 'forma' &&
+    block.tipo !== 'clip-group' &&
     block.tipo !== 'video'
   ) {
     return (
@@ -1277,6 +1316,14 @@ export function PropertiesPanel({
                 block={block}
                 applyNow={applyNow}
                 scheduleApply={scheduleApply}
+              />
+            )}
+            {block.tipo === 'clip-group' && (
+              <ClipGroupBlockFields
+                block={block}
+                applyNow={applyNow}
+                scheduleApply={scheduleApply}
+                clearDebounce={clearDebounce}
               />
             )}
             {block.tipo === 'video' && (

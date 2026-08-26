@@ -41,11 +41,12 @@
   --editor-shell-bg: var(--color-zinc-100);
   --editor-workspace-bg: var(--color-zinc-200);
   --editor-slide-max-w: 96%;
-  --editor-slide-max-h: calc(98% + 3px);
-  --editor-toolbar-top: 5px;
-  --editor-toolbar-top-md: 9px;
+  --editor-slide-max-h: 100%;
+  --editor-toolbar-top: 0.5rem;
+  --editor-toolbar-top-md: 0.75rem;
   --editor-canvas-pt: 3.5rem;
-  --editor-canvas-pt-md: 4rem;
+  --editor-canvas-pt-md: 3.75rem;
+  --editor-canvas-pb: 2rem;
 
   /* Lumina 2.0 — Color Tokens */
   --lumina-purple: #2563eb;

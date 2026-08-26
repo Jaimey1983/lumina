@@ -32,8 +32,26 @@ model User {
   studentBadges           StudentBadge[]
   studentPoints           StudentPoints[]
   workGroupMemberships    WorkGroupMember[]
+  preferredAiProvider     AiProvider?
+  teacherAiKeys           TeacherAiKey[]
 
   @@map("users")
+}
+
+/// Clave BYOK de un docente (cifrada). Nunca se expone en claro por la API.
+model TeacherAiKey {
+  id             String     @id @default(cuid())
+  userId         String
+  provider       AiProvider
+  encryptedKey   String
+  keyHint        String
+  lastVerifiedAt DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("teacher_ai_keys")
 }
 
 model Course {
@@ -689,6 +707,12 @@ enum Role {
   STUDENT
   PARENT
   GUEST
+}
+
+enum AiProvider {
+  GEMINI
+  OPENAI
+  CLAUDE
 }
 
 enum ClassStatus {

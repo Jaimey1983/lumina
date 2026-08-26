@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Crosshair,
   Eye,
+  Grid3x3,
   History,
   Loader2,
   Lock,
@@ -25,6 +26,8 @@ import {
   Trophy,
   EyeOff,
   FileText,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es as esLocale } from 'date-fns/locale';
@@ -66,7 +69,6 @@ import {
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
-import { remintBlockChildIds } from '@/components/widgets/shared/widget-clone';
 import { createDefaultFlipCardsBlock } from '@/lib/flip-cards-defaults';
 import { createDefaultTabsBlock } from '@/lib/tabs-defaults';
 import { createDefaultCarouselBlock } from '@/lib/carousel-defaults';
@@ -98,15 +100,29 @@ import {
   parseClassModoEntrega,
   type Activity,
   type Block,
+  type Background,
   type ClassModoEntrega,
   type FlipCardsWidget,
+  type SlideGuias,
   type TabsWidget,
   type CarouselWidget,
   type ClickRevealWidget,
   type PopupWidget,
   type TimelineWidget,
   type HotspotWidget,
+  EMPTY_SLIDE_GUIAS,
+  GRID_SIZE_PRESETS,
 } from '@/types/slide.types';
+import { normalizeSlideGrilla } from '@/lib/canvas-grid';
+import {
+  CANVAS_ZOOM_DEFAULT,
+  CANVAS_ZOOM_STEP,
+  clampCanvasZoom,
+  formatCanvasZoom,
+  readStoredCanvasZoom,
+  stepCanvasZoom,
+  writeStoredCanvasZoom,
+} from '@/lib/canvas-zoom';
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
@@ -402,8 +418,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
   const [guidesVisible,      setGuidesVisible]      = useState(true);
+  const [canvasZoom,         setCanvasZoom]         = useState(CANVAS_ZOOM_DEFAULT);
+  const [canvasHistory,      setCanvasHistory]      = useState({ canUndo: false, canRedo: false });
   const [copiedBlock,        setCopiedBlock]        = useState<Block | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
+
+  useEffect(() => {
+    setCanvasZoom(readStoredCanvasZoom());
+  }, []);
+
+  const handleCanvasZoomChange = useCallback((next: number) => {
+    const z = clampCanvasZoom(next);
+    setCanvasZoom(z);
+    writeStoredCanvasZoom(z);
+  }, []);
   const [saveError, setSaveError] = useState(false);
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
   const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
@@ -713,6 +741,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [sortedSlides.length, activeSlideIndex]);
 
   const activeSlide = sortedSlides[resolvedSlideIndex] ?? null;
+  const activeGrid = normalizeSlideGrilla(
+    activeSlide
+      ? (getSlideContentRecord(activeSlide as ApiSlide).guias as SlideGuias | undefined)?.grilla
+      : undefined,
+  );
 
   const createSlideVersion = useCreateSlideVersion(classId, activeSlide?.id);
   const restoreSlideVersion = useRestoreSlideVersion(classId, activeSlide?.id);
@@ -1046,26 +1079,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       const targetSlide = sortedSlides.find((s) => s.id === slideId);
       if (!targetSlide) return;
       const c = getSlideContentRecord(targetSlide as ApiSlide);
-      const prevBloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
-      
-      const cloned = (typeof structuredClone === 'function' ? structuredClone(block) : JSON.parse(JSON.stringify(block))) as Block;
-      const dup = remintBlockChildIds(cloned) as Block & { id?: string; x?: number; y?: number; ancho?: number };
-      dup.id = `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      if (typeof dup.x === 'number') {
-        dup.x += 3;
-        const w = typeof dup.ancho === 'number' ? dup.ancho : 0;
-        if (dup.x + w > 100) dup.x -= 3;
+      const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+      const slideMeta = {
+        bloques,
+        fondo: c.fondo as Background | undefined,
+        guias: (c.guias as SlideGuias | undefined) ?? EMPTY_SLIDE_GUIAS,
+      };
+      if (slideId === activeSlide?.id) {
+        canvasAreaRef.current?.pasteCopiedBlock(block);
+        return;
       }
-      if (typeof dup.y === 'number') {
-        dup.y += 3;
-      }
-
-      const nextContent = { ...c, bloques: [...prevBloques, dup] };
-      const sanitized = sanitizeSlideContentForPersistence(nextContent) ?? nextContent;
-      updateSlide.mutate({ slideId: targetSlide.id, content: sanitized });
-      toast.success('Bloque pegado');
+      canvasAreaRef.current?.pasteCopiedBlockInSlide(slideId, block, slideMeta);
     },
-    [sortedSlides, updateSlide],
+    [sortedSlides, activeSlide?.id],
   );
 
   const handleRefreshDesempeno = useCallback(() => {
@@ -1160,8 +1186,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
       if (mod && (e.key === 'v' || e.key === 'V')) {
         e.preventDefault();
-        if (copiedBlock && activeSlide?.id) {
-          handlePasteBlockInSlide(activeSlide.id, copiedBlock);
+        if (copiedBlock) {
+          canvas?.pasteCopiedBlock(copiedBlock);
         }
         return;
       }
@@ -1208,7 +1234,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     rightPanel,
     copiedBlock,
     activeSlide?.id,
-    handlePasteBlockInSlide,
   ]);
 
   const handleStartSession = useCallback(async () => {
@@ -2153,7 +2178,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               type="button"
               title="Deshacer"
               aria-label="Deshacer"
-              className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+              disabled={!canvasHistory.canUndo}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors',
+                canvasHistory.canUndo
+                  ? 'text-white/60 hover:bg-white/15 hover:text-white'
+                  : 'cursor-not-allowed text-white/30',
+              )}
               onClick={() => {
                 canvasAreaRef.current?.undo();
               }}
@@ -2164,7 +2195,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               type="button"
               title="Rehacer"
               aria-label="Rehacer"
-              className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+              disabled={!canvasHistory.canRedo}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors',
+                canvasHistory.canRedo
+                  ? 'text-white/60 hover:bg-white/15 hover:text-white'
+                  : 'cursor-not-allowed text-white/30',
+              )}
               onClick={() => {
                 canvasAreaRef.current?.redo();
               }}
@@ -2195,6 +2232,74 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             >
               <Crosshair className="size-4 shrink-0" aria-hidden />
             </button>
+            <button
+              type="button"
+              title={activeGrid.activa ? 'Ocultar grilla' : 'Mostrar grilla'}
+              aria-label={activeGrid.activa ? 'Ocultar grilla' : 'Mostrar grilla'}
+              aria-pressed={activeGrid.activa}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors',
+                activeGrid.activa
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/60 hover:bg-white/15 hover:text-white',
+              )}
+              onClick={() => canvasAreaRef.current?.toggleGrid()}
+            >
+              <Grid3x3 className="size-4 shrink-0" aria-hidden />
+            </button>
+            {activeGrid.activa && (
+              <label className="inline-flex items-center gap-1">
+                <span className="sr-only">Tamaño de grilla</span>
+                <select
+                  value={activeGrid.tamanoPx}
+                  title="Tamaño de celda de la grilla"
+                  aria-label="Tamaño de celda de la grilla"
+                  className="h-7 rounded-md border border-white/20 bg-white/10 px-1.5 text-xs text-white outline-none hover:bg-white/15 focus:border-white/40"
+                  onChange={(e) => {
+                    canvasAreaRef.current?.setGridSize(Number(e.target.value));
+                  }}
+                >
+                  {GRID_SIZE_PRESETS.map((px) => (
+                    <option key={px} value={px} className="text-foreground">
+                      {px}px
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="flex items-center gap-0.5" title="Zoom del lienzo (Ctrl + rueda)">
+              <button
+                type="button"
+                title="Alejar"
+                aria-label="Alejar lienzo"
+                className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+                onClick={() =>
+                  handleCanvasZoomChange(stepCanvasZoom(canvasZoom, -CANVAS_ZOOM_STEP))
+                }
+              >
+                <ZoomOut className="size-4 shrink-0" aria-hidden />
+              </button>
+              <button
+                type="button"
+                title="Restablecer zoom al 100 %"
+                aria-label="Restablecer zoom"
+                className="min-w-[2.75rem] rounded-lg px-1 py-1.5 text-xs tabular-nums text-white/80 hover:bg-white/15 hover:text-white"
+                onClick={() => handleCanvasZoomChange(CANVAS_ZOOM_DEFAULT)}
+              >
+                {formatCanvasZoom(canvasZoom)}
+              </button>
+              <button
+                type="button"
+                title="Acercar"
+                aria-label="Acercar lienzo"
+                className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+                onClick={() =>
+                  handleCanvasZoomChange(stepCanvasZoom(canvasZoom, CANVAS_ZOOM_STEP))
+                }
+              >
+                <ZoomIn className="size-4 shrink-0" aria-hidden />
+              </button>
+            </div>
             <div className="h-5 w-px shrink-0 bg-white/20" aria-hidden />
             <span className="inline-flex items-center gap-1.5 text-xs text-white/60">
               {saveError ? (
@@ -2507,7 +2612,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
               onReorderSlides={handleReorderSlides}
               copiedBlock={copiedBlock}
-              onPasteBlockInSlide={handlePasteBlockInSlide}
+              onPasteBlockInSlide={(slideId, block) => {
+                if (slideId === activeSlide?.id) {
+                  canvasAreaRef.current?.pasteCopiedBlock(block);
+                  return;
+                }
+                handlePasteBlockInSlide(slideId, block);
+              }}
             />
             <FlyoutPanel
               ref={flyoutPanelRef}
@@ -2563,10 +2674,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onTimelineChange={handleTimelineChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}
+              onHistoryStateChange={setCanvasHistory}
               livePanelOpen={rightPanel === 'live'}
               onCopyBlock={setCopiedBlock}
-              copiedBlock={copiedBlock}
               guidesVisible={guidesVisible}
+              canvasZoom={canvasZoom}
+              onCanvasZoomChange={handleCanvasZoomChange}
             />
             </SlideNavContext.Provider>
           </div>
@@ -2721,6 +2834,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                     toast.success('Versión restaurada');
                     setVersionPendingRestore(null);
                     setHistorySheetOpen(false);
+                    canvasAreaRef.current?.resetSlideHistory();
                   },
                   onError: () => {
                     toast.error('No se pudo restaurar la versión');

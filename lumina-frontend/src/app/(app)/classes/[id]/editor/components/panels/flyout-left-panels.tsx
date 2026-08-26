@@ -11,6 +11,7 @@ import {
   Video,
   Volume2,
 } from 'lucide-react';
+import Link from 'next/link';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block } from '@/types/slide.types';
@@ -45,12 +46,22 @@ import {
   type ContentAssistantResult,
   type GeneratedSlideStructure,
 } from '@/hooks/api/use-ai';
+import { apiErrorMessage } from '@/lib/api-error-message';
+import {
+  useAiSettings,
+  useSetPreferredAiProvider,
+} from '@/hooks/api/use-ai-settings';
+import {
+  AiPreferredProviderSelect,
+  describeAiResolvedStatus,
+} from '@/components/ai/ai-preferred-select';
 import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@/data/curriculum/index';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@/types/curriculum.types';
 import { ImagesElementPanel } from './images-element-panel';
 import { ShapesPanel } from './shapes-panel';
+import { ClipMasksPanel } from './clip-masks-panel';
 import { WidgetsInsertPanel } from './widgets-insert-panel';
 import { LayoutPanel } from '../layout-panel';
 import {
@@ -155,6 +166,7 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
           disabled={disabledNonText}
         />
         <ShapesPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
+        <ClipMasksPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
         <PanelSection title="Multimedia">
           <InsertBtn
             label="Video (YouTube)"
@@ -582,6 +594,41 @@ function buildBloquesDesdeSlideIA(slide: GeneratedSlideStructure): Block[] {
   return bloques;
 }
 
+function IaProviderBar() {
+  const { data } = useAiSettings();
+  const setPreferred = useSetPreferredAiProvider();
+  if (!data) return null;
+
+  return (
+    <div className="mb-3 space-y-1.5 rounded-md border border-border bg-muted/30 px-2 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          {data.resolvedProvider
+            ? `Usando ${describeAiResolvedStatus(data)}`
+            : 'Sin proveedor disponible'}
+        </p>
+        <Link
+          href="/profile#ai-keys"
+          className="shrink-0 text-[10px] font-medium text-primary hover:underline"
+        >
+          Claves
+        </Link>
+      </div>
+      <AiPreferredProviderSelect
+        settings={data}
+        size="sm"
+        disabled={setPreferred.isPending}
+        onChange={(provider) => {
+          setPreferred.mutate(provider, {
+            onError: (err) =>
+              toast.error(apiErrorMessage(err, 'No se pudo cambiar el proveedor.')),
+          });
+        }}
+      />
+    </div>
+  );
+}
+
 function IaPanel({
   desempenoEnunciado,
   onCreateActivitySlide,
@@ -742,7 +789,7 @@ function IaPanel({
           setResultado(data);
           setUltimaFuente('clase');
         },
-        onError: () => toast.error('Error al generar. Verifica tu conexión.'),
+        onError: (err) => toast.error(apiErrorMessage(err, 'Error al generar. Verifica tu conexión.')),
       },
     );
   };
@@ -766,7 +813,7 @@ function IaPanel({
           setResultado(data);
           setUltimaFuente('documento');
         },
-        onError: () => toast.error('Error al generar desde el documento.'),
+        onError: (err) => toast.error(apiErrorMessage(err, 'Error al generar desde el documento.')),
       },
     );
   };
@@ -801,8 +848,8 @@ function IaPanel({
             },
           ]);
         },
-        onError: () => {
-          toast.error('No se pudo aplicar el ajuste. Intenta de nuevo.');
+        onError: (err) => {
+          toast.error(apiErrorMessage(err, 'No se pudo aplicar el ajuste. Intenta de nuevo.'));
           // Revertir el mensaje del usuario del historial
           setConversationHistory((prev) => prev.slice(0, -1));
         },
@@ -953,6 +1000,7 @@ function IaPanel({
     <div className="h-full flex flex-col">
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-2">
+        <IaProviderBar />
         <Tabs defaultValue="clase">
           <TabsList className="w-full mb-3 h-auto">
             <TabsTrigger value="clase" className="flex-1 text-[11px] px-1 py-1.5 truncate">

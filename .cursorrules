@@ -1,7 +1,20 @@
 # 🎓 LUMINA — Plataforma Educativa Interactiva
 # Archivo de contexto para Cursor AI
-# Última actualización: 26/03/2026 (Correcciones Postman: GamificationModule + MessagingModule)
+# Última actualización: 25/08/2026 (Contratos editor canvas frontend)
 # Revisión de código y correcciones documentadas: 24/03/2026, 25/03/2026 y 26/03/2026 (ver sección al final del archivo)
+
+---
+
+## 🖥️ FRONTEND (lumina-frontend)
+
+El monorepo incluye el frontend Next.js en `lumina-frontend/`. **Contratos obligatorios del editor de canvas** (posición 3.2, historial, drag, render):
+
+| Recurso | Ruta |
+|---|---|
+| Reglas completas frontend | `lumina-frontend/.cursorrules` |
+| Regla Cursor (auto al editar frontend) | `.cursor/rules/lumina-canvas-editor-contracts.mdc` |
+
+Regla de oro del editor: **leer (`getBlockPos`) → transformar → clamp → persistir → historial**. Toda función nueva debe seguir los mismos contratos que las existentes.
 
 ---
 

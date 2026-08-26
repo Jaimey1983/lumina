@@ -23,6 +23,7 @@ import {
   virtualXToPercent,
   virtualYToPercent,
 } from '@/lib/canvas-guides';
+import { gridOverlayStyle, normalizeSlideGrilla } from '@/lib/canvas-grid';
 
 type GuideOrientation = 'horizontal' | 'vertical';
 
@@ -374,6 +375,16 @@ function VerticalGuideLine({
   );
 }
 
+function CanvasGridOverlay({ tamanoPx }: { tamanoPx: number }) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-[10]"
+      style={gridOverlayStyle(tamanoPx)}
+      aria-hidden
+    />
+  );
+}
+
 function CanvasGuidesOverlay({
   active,
   guias,
@@ -480,12 +491,15 @@ export function CanvasGuidesChrome({
     enabled: visible,
   });
 
+  const grilla = normalizeSlideGrilla(guias.grilla);
+
   return (
     <div
       data-canvas-viewport
       className={cn(viewportClassName, 'overflow-visible')}
     >
       {children}
+      {grilla.activa && <CanvasGridOverlay tamanoPx={grilla.tamanoPx} />}
       <CanvasGuidesOverlay
         active={visible}
         guias={guias}

@@ -1,5 +1,6 @@
 import type { SlideGuias } from '@/types/slide.types';
 import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+import { parseSlideGrilla } from '@/lib/canvas-grid';
 
 export const VIRTUAL_CANVAS_WIDTH = 1280;
 export const VIRTUAL_CANVAS_HEIGHT = 720;
@@ -28,7 +29,12 @@ export function parseSlideGuias(raw: unknown): SlideGuias {
         .filter((n): n is number => typeof n === 'number' && Number.isFinite(n))
         .map(clampVirtualX)
     : [];
-  return { horizontales, verticales };
+  const grilla = parseSlideGrilla(o.grilla);
+  return {
+    horizontales,
+    verticales,
+    ...(grilla ? { grilla } : {}),
+  };
 }
 
 export function clientToVirtual(
@@ -86,10 +92,12 @@ export function toggleCenterGuides(guias: SlideGuias): SlideGuias {
     return {
       verticales: guias.verticales.filter((x) => x !== CENTER_GUIDE_X),
       horizontales: guias.horizontales.filter((y) => y !== CENTER_GUIDE_Y),
+      ...(guias.grilla ? { grilla: guias.grilla } : {}),
     };
   }
   return {
     verticales: hasV ? guias.verticales : [...guias.verticales, CENTER_GUIDE_X],
     horizontales: hasH ? guias.horizontales : [...guias.horizontales, CENTER_GUIDE_Y],
+    ...(guias.grilla ? { grilla: guias.grilla } : {}),
   };
 }

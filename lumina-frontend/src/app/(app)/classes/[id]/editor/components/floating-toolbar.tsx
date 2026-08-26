@@ -8,14 +8,18 @@ import {
   ArrowUp,
   Copy,
   Film,
+  History,
   ImageIcon,
+  Layers,
   Mic,
+  Redo2,
   Send,
   Share2,
   Shapes,
   Table,
   Trash2,
   Type,
+  Undo2,
   Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -37,6 +41,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -45,6 +50,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import {
+  formatHistoryWhen,
+  type HistoryViewItem,
+} from '../lib/canvas-history';
+import type { LayerReorderAction } from '@/lib/canvas-layers';
+
+export type { LayerReorderAction };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -520,12 +532,6 @@ function ToolBtn({
   );
 }
 
-export type LayerReorderAction =
-  | 'traer_frente'
-  | 'enviar_atras_total'
-  | 'adelante_uno'
-  | 'atras_uno';
-
 export interface SlideEditorChromeProps {
   disabled?: boolean;
   restrictToTextOnly?: boolean;
@@ -534,7 +540,11 @@ export interface SlideEditorChromeProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  historyItems: HistoryViewItem[];
+  onJumpToHistory: (index: number) => void;
   onReorder: (action: LayerReorderAction) => void;
+  layersPanelOpen?: boolean;
+  onToggleLayersPanel?: () => void;
   fondo?: Background;
   onChangeFondo: (fondo: Background) => void | Promise<void>;
   onInsertAudio: (block: Block) => void | Promise<void>;
@@ -548,15 +558,15 @@ export function SlideEditorChrome({
   canRedo,
   onUndo,
   onRedo,
+  historyItems,
+  onJumpToHistory,
   onReorder,
+  layersPanelOpen = false,
+  onToggleLayersPanel,
   fondo,
   onChangeFondo,
   onInsertAudio,
 }: SlideEditorChromeProps) {
-  void canUndo;
-  void canRedo;
-  void onUndo;
-  void onRedo;
   const params = useParams();
   const classId = typeof params?.id === 'string' ? params.id : '';
   const queryClient = useQueryClient();
@@ -685,6 +695,70 @@ export function SlideEditorChrome({
 
       <div className="flex h-9 w-full min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+        <ToolBtn
+          label="Deshacer (Ctrl+Z)"
+          disabled={disabled || !canUndo}
+          onClick={onUndo}
+        >
+          <Undo2 className="size-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Rehacer (Ctrl+Y)"
+          disabled={disabled || !canRedo}
+          onClick={onRedo}
+        >
+          <Redo2 className="size-4" />
+        </ToolBtn>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled || historyItems.length === 0}
+              title="Historial de edición"
+              aria-label="Historial de edición"
+              className={cn(
+                'flex items-center justify-center rounded-lg p-1.5 outline-none',
+                'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+                'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1',
+                'disabled:pointer-events-none disabled:opacity-40',
+              )}
+            >
+              <History className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>Historial de edición</DropdownMenuLabel>
+            {historyItems.length === 0 ? (
+              <DropdownMenuItem disabled>Sin cambios aún</DropdownMenuItem>
+            ) : (
+              historyItems.map((item) => (
+                <DropdownMenuItem
+                  key={`${item.index}-${item.at}`}
+                  disabled={item.isCurrent}
+                  onClick={() => onJumpToHistory(item.index)}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <span>{item.label}</span>
+                  <span className="text-[10px] text-[#9ca3af]">
+                    {item.isCurrent ? 'actual' : formatHistoryWhen(item.at)}
+                  </span>
+                </DropdownMenuItem>
+              ))
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <ToolSep />
+
+        <ToolBtn
+          label={layersPanelOpen ? 'Ocultar panel de capas' : 'Mostrar panel de capas'}
+          active={layersPanelOpen}
+          disabled={disabled}
+          onClick={onToggleLayersPanel}
+        >
+          <Layers className="size-4" />
+        </ToolBtn>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

@@ -1,0 +1,169 @@
+# 🎓 LUMINA FRONTEND — Reglas para Cursor AI
+# Última actualización: 25/08/2026
+# Stack: Next.js 16 + React 19 + TypeScript + TanStack Query + Tailwind 4
+
+---
+
+## 👤 ROL
+
+Eres el programador líder del frontend de Lumina. Escribes código production-ready en Next.js + TypeScript, mantienes consistencia con la arquitectura y **preservas los contratos del editor** documentados abajo en toda operación — existente o nueva.
+
+**Ruta del proyecto:** `C:\Users\Jaime\proyectos\lumina\lumina-frontend`
+
+---
+
+## 🔧 STACK
+
+| Capa | Tecnología |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19, Tailwind 4, Radix UI, CVA |
+| Datos | TanStack Query v5, axios |
+| Formularios | React Hook Form + Zod |
+| Drag canvas | @dnd-kit/core |
+| Toasts | Sonner |
+| Gestor | pnpm |
+
+**API:** `NEXT_PUBLIC_API_URL` (default `http://localhost:3000`)  
+**Auth:** JWT en `localStorage` clave `'token'`
+
+---
+
+## 📐 CONVENCIONES GENERALES
+
+- Archivos: `kebab-case.tsx`; hooks: `use-kebab-case.ts`
+- Páginas Server Components; lógica interactiva en `*-client.tsx` con `'use client'`
+- Imports con alias `@/` → `src/`
+- Hooks API: un archivo por recurso en `src/hooks/api/`, `queryKey` consistente
+- Componentes UI: variantes CVA + `cn()` (clsx + tailwind-merge)
+- Responder al usuario en **español**
+
+---
+
+## ⚠️ CONTRATOS DEL EDITOR DE CANVAS (OBLIGATORIOS)
+
+> **Regla de oro:** toda operación sigue  
+> **leer (canónico) → transformar → clamp → persistir → historial (si aplica)**  
+> Sin atajos que dupliquen lógica de posición, edición o snapshots.
+
+Cursor también carga la regla en `.cursor/rules/lumina-canvas-editor-contracts.mdc` al trabajar archivos bajo `lumina-frontend/`.
+
+### 1. Posicionamiento (contrato 3.2)
+
+**Archivo canónico:** `src/hooks/use-block-drag.ts`
+
+| API | Uso |
+|---|---|
+| `getBlockPos(block)` | Única fuente de verdad para bbox (% lienzo) |
+| `withPosition(block, x, y)` | Escribir x/y en bloques normales |
+| `withRect(block, x, y, w, h)` | Escribir rect completo |
+| `blockPosToStyle(block, zIndex?)` | CSS absolute desde `getBlockPos` |
+| `clampAxisOrigin` / `clampDragCorner` | Límite C2 (origen + mín. 4 % visible) |
+| `withClampedPosition` | Posición final clampeada |
+| `withClampedPositionChecked` | + flag `wasClamped` para UX |
+
+**Actividades:** posición **solo** en `marco` (`izquierdaPct`, `arribaPct`, `anchoPct`, `altoPct`). Nunca `x`/`y`/`ancho`/`alto` sueltos.
+
+**Prohibido:** switches por `tipo` duplicando fallbacks; mover sin clamp; ignorar `zIndex` en actividades.
+
+### 2. Render vs edición
+
+- `slide-renderer.tsx` delega en `getBlockPos` / `blockPosToStyle` — no reimplementar.
+- Textos de widgets: edición **solo panel lateral**, no inline en lienzo.
+- Handles y capas usan `effectiveBloques`, no solo estado del servidor.
+
+### 3. Drag (dnd-kit)
+
+- Live: `applyLiveDragPositions` + clamp grupal.
+- Miniatura lateral: debounce **~150 ms** durante drag (no setState por frame).
+- Snap: `snapPositionToGuides` (guías + grilla kind `'grid'`).
+- `canvasLocked: true` → no mover, no alinear, no nudge.
+
+### 4. Historial undo/redo
+
+**Archivo canónico:** `src/app/(app)/classes/[id]/editor/lib/canvas-history.ts`
+
+Snapshot = `{ bloques, fondo?, guias, transicion?, kind, at }`
+
+- Capturar con `captureSlideSnapshot` + meta de `editorMetaRef`.
+- Restaurar con `buildContentFromSnapshot` (incluye transición).
+- Índice 0 = `'inicio'` al truncar (`MAX_UNDO`).
+- Restore versión servidor → `resetSlideHistory()` en `CanvasAreaHandle`.
+- Cambios de transición → historial vía `handleApplySlide`.
+- `isUndoRedoRef` evita re-registrar en undo/redo.
+
+### 5. Alineación
+
+- `alignment-toolbar.tsx`: `getBlockPos` + clamp; toast si distribución H/V fue recortada.
+- Mín. 2 bloques alinear; mín. 3 distribuir.
+
+### 6. Grilla y zoom
+
+- Grilla: `SlideGuias.grilla` + `src/lib/canvas-grid.ts`
+- Zoom: `src/lib/canvas-zoom.ts` (50–200 %, Ctrl+rueda, localStorage)
+- `scale()` en viewport wrapper, no en bloques.
+
+### 7. Persistencia
+
+- PATCH + `sanitizeSlideContentForPersistence`
+- Refetch `['classes', 'detail', classId]` tras éxito
+- Prioridad bloques: `liveBloques` → `committedBloques` → servidor
+
+### 8. Checklist feature nueva del editor
+
+- [ ] `getBlockPos` para leer
+- [ ] `withPosition` / `withRect` / `marco` para escribir
+- [ ] clamp antes de persistir
+- [ ] historial si es deshacible (snapshot completo)
+- [ ] sin re-render agresivo en drag
+- [ ] tests en `*.spec.ts`
+
+### 9. Archivos clave
+
+| Área | Ruta |
+|---|---|
+| Posición/drag | `src/hooks/use-block-drag.ts` |
+| Historial | `src/app/(app)/classes/[id]/editor/lib/canvas-history.ts` |
+| Canvas | `src/app/(app)/classes/[id]/editor/components/canvas-area.tsx` |
+| Render | `src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx` |
+| Editor shell | `src/app/(app)/classes/[id]/editor/editor-client.tsx` |
+| Alineación | `src/components/editor/alignment-toolbar.tsx` |
+| Capas | `src/lib/canvas-layers.ts` |
+| Tipos | `src/types/slide.types.ts` |
+
+`canvas-editor.tsx` → **deprecado**; no extender.
+
+---
+
+## 🧪 TESTS DEL CANVAS
+
+Ejecutar tras cambios en editor (PowerShell):
+
+```powershell
+cd lumina-frontend
+pnpm exec vitest run "src/app/(app)/classes/[id]/editor/lib/canvas-history.spec.ts" "src/hooks/use-block-drag.spec.ts" "src/lib/canvas-grid.spec.ts" "src/lib/canvas-zoom.spec.ts" "src/lib/canvas-layers.spec.ts"
+```
+
+---
+
+## 📁 ESTRUCTURA RELEVANTE
+
+```
+src/app/(app)/classes/[id]/editor/
+├── editor-client.tsx          # Orquestación del editor
+├── components/
+│   ├── canvas-area.tsx        # Canvas + historial + drag
+│   ├── slide-renderer.tsx     # Render de bloques
+│   └── slides-panel.tsx       # Miniaturas
+└── lib/
+    └── canvas-history.ts      # Undo/redo
+
+src/hooks/use-block-drag.ts    # Contrato 3.2 posición
+src/components/editor/         # Toolbar alineación, capas, etc.
+```
+
+---
+
+## 🔗 BACKEND
+
+Contratos de dominio (notas, roles, API REST): ver `.cursorrules` en la raíz del monorepo (`lumina/.cursorrules`) y `lumina-backend/.cursorrules`.

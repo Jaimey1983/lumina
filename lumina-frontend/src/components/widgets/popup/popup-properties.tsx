@@ -35,6 +35,7 @@ import { resolveSlideLayoutId, WIDGET_LAYOUTS } from '@/components/widgets/share
 import { WidgetLayoutThumb } from '@/components/widgets/shared/widget-layout-thumb';
 
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 
 import {
 
@@ -212,13 +213,13 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
               <Label className="text-xs">Texto del botón</Label>
 
-              <Input
+              <WidgetDraftTextField
 
                 className="h-8 text-xs"
 
                 value={configuracion.triggerTexto ?? ''}
 
-                onChange={(e) => patchConfig({ triggerTexto: e.target.value })}
+                onChange={(next) => patchConfig({ triggerTexto: next })}
 
               />
 
@@ -434,7 +435,7 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
               <Label className="text-xs">URL imagen del trigger</Label>
 
-              <Input
+              <WidgetDraftTextField
 
                 className="h-8 text-xs"
 
@@ -442,7 +443,7 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
                 placeholder="https://…"
 
-                onChange={(e) => patchConfig({ triggerImagen: e.target.value || undefined })}
+                onChange={(next) => patchConfig({ triggerImagen: next || undefined })}
 
               />
 
@@ -518,13 +519,13 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
               <Label className="text-xs">Texto del enlace</Label>
 
-              <Input
+              <WidgetDraftTextField
 
                 className="h-8 text-xs"
 
                 value={configuracion.triggerTexto ?? ''}
 
-                onChange={(e) => patchConfig({ triggerTexto: e.target.value })}
+                onChange={(next) => patchConfig({ triggerTexto: next })}
 
               />
 
@@ -950,7 +951,7 @@ export function PopupOverlayProperties({ block: rawBlock, applyNow }: PopupOverl
 
           <Label className="text-xs">URL imagen del contenido</Label>
 
-          <Input
+          <WidgetDraftTextField
 
             className="h-8 text-xs"
 
@@ -958,7 +959,7 @@ export function PopupOverlayProperties({ block: rawBlock, applyNow }: PopupOverl
 
             placeholder="https://…"
 
-            onChange={(e) => updateOverlay({ imagen: e.target.value || undefined })}
+            onChange={(next) => updateOverlay({ imagen: next || undefined })}
 
           />
 

@@ -5,6 +5,7 @@ import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget }
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
@@ -41,9 +42,9 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
         <div className="space-y-4 pt-2">
           <div className="space-y-2">
             <Label className="text-xs">Texto del botón</Label>
-            <Input
+            <WidgetDraftTextField
               value={cfg.texto}
-              onChange={(e) => update((w) => ({ ...w, texto: e.target.value }))}
+              onChange={(next) => update((w) => ({ ...w, texto: next }))}
               className="h-8 text-xs"
             />
           </div>
@@ -170,10 +171,10 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
           {cfg.accion === 'url' ? (
             <div className="space-y-2">
               <Label className="text-xs">URL</Label>
-              <Input
+              <WidgetDraftTextField
                 value={cfg.url}
                 placeholder="https://…"
-                onChange={(e) => update((w) => ({ ...w, url: e.target.value }))}
+                onChange={(next) => update((w) => ({ ...w, url: next }))}
                 className="h-8 text-xs"
               />
             </div>

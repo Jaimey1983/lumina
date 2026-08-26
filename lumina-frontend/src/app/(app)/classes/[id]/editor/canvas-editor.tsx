@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * @deprecated Prototipo anterior al editor actual (`editor-client` + `CanvasArea`).
+ * No está montado en ninguna ruta; conservado como referencia de integración Fabric.js.
+ * Preferir `components/canvas-area.tsx` y `components/slide-renderer.tsx`.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LAYOUT_FROM_KEY, removeBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';

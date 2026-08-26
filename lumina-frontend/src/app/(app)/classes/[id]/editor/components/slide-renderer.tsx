@@ -13,7 +13,7 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Copy, Pencil } from 'lucide-react';
+import { Trash2, Copy, Pencil, Lock, LockOpen } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
 
@@ -25,9 +25,10 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { ResizeHandles } from './resize-handles';
+import { RenderClipGroup } from './render-clip-group';
 import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
-import { withRect } from '@/hooks/use-block-drag';
+import { withRect, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
 
 import type {
   Activity,
@@ -37,6 +38,8 @@ import type {
   Block,
   CodeBlock,
   ColumnsBlock,
+  ClipGroupBlock,
+  ClipContentImage,
   DividerBlock,
   FlipCardsWidget,
   FormaBlock,
@@ -55,6 +58,7 @@ import type {
 } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
+import { hasMediaSrc } from '@/lib/media-url';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue, resolveFontFamily } from '@/lib/font-catalog';
 import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
 import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
@@ -246,352 +250,12 @@ function buildBackgroundStyle(fondo?: Background): CSSProperties {
 
 // ─── Canvas positioning ───────────────────────────────────────────────────────
 
-const ACTIVITY_POSITION_FALLBACK = { x: 5, y: 5, ancho: 90, alto: 90 };
-
 function getBlockPositionStyle(block: Block): CSSProperties {
-  switch (block.tipo) {
-    case 'texto': {
-      const fb = BLOCK_FALLBACKS.text;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'imagen': {
-      const fb = BLOCK_FALLBACKS.image;
-      const ancho = typeof block.ancho === 'number' ? block.ancho : fb.ancho;
-      const alto = typeof block.alto === 'number' ? block.alto : fb.alto;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${ancho}%`,
-        height: `${alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'video': {
-      const fb = BLOCK_FALLBACKS.video;
-      const ancho = typeof block.ancho === 'number' ? block.ancho : fb.ancho;
-      const alto = typeof block.alto === 'number' ? block.alto : fb.alto;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${ancho}%`,
-        height: `${alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'forma': {
-      const fb = BLOCK_FALLBACKS.forma;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'flip-cards': {
-      const fb = BLOCK_FALLBACKS.flipCards;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'tabs': {
-      const fb = BLOCK_FALLBACKS.tabs;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'carousel': {
-      const fb = BLOCK_FALLBACKS.carousel;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'click-reveal': {
-      const fb = BLOCK_FALLBACKS.clickReveal;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'popup': {
-      const fb = BLOCK_FALLBACKS.popup;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'hotspot': {
-      const fb = BLOCK_FALLBACKS.hotspot;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'tooltip': {
-      const fb = BLOCK_FALLBACKS.tooltip;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'boton': {
-      const fb = BLOCK_FALLBACKS.boton;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'contador': {
-      const fb = BLOCK_FALLBACKS.contador;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'progreso': {
-      const fb = BLOCK_FALLBACKS.progreso;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'timeline': {
-      const fb = BLOCK_FALLBACKS.timeline;
-      return {
-        position: 'absolute',
-        left: `${block.x ?? fb.x}%`,
-        top: `${block.y ?? fb.y}%`,
-        width: `${block.ancho ?? fb.ancho}%`,
-        height: `${block.alto ?? fb.alto}%`,
-        zIndex: block.zIndex ?? 1,
-      };
-    }
-    case 'actividad': {
-      if (block.marco) {
-        return {
-          position: 'absolute',
-          left: `${block.marco.izquierdaPct}%`,
-          top: `${block.marco.arribaPct}%`,
-          width: `${block.marco.anchoPct}%`,
-          height: `${block.marco.altoPct}%`,
-          zIndex: 1,
-        };
-      }
-      const fb = ACTIVITY_POSITION_FALLBACK;
-      return {
-        position: 'absolute',
-        left: `${fb.x}%`,
-        top: `${fb.y}%`,
-        width: `${fb.ancho}%`,
-        height: `${fb.alto}%`,
-        zIndex: 1,
-      };
-    }
-    default:
-      return {
-        position: 'absolute',
-        left: '5%',
-        top: '5%',
-        width: '90%',
-        height: '90%',
-        zIndex: 1,
-      };
-  }
+  return blockPosToStyle(block);
 }
 
 function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number; alto: number } {
-  switch (block.tipo) {
-    case 'texto': {
-      const fb = BLOCK_FALLBACKS.text;
-      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
-               ancho: block.ancho ?? fb.ancho, alto: block.alto ?? fb.alto };
-    }
-    case 'imagen': {
-      const fb = BLOCK_FALLBACKS.image;
-      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
-               ancho: typeof block.ancho === 'number' ? block.ancho : fb.ancho,
-               alto: typeof block.alto === 'number' ? block.alto : fb.alto };
-    }
-    case 'video': {
-      const fb = BLOCK_FALLBACKS.video;
-      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
-               ancho: typeof block.ancho === 'number' ? block.ancho : fb.ancho,
-               alto: typeof block.alto === 'number' ? block.alto : fb.alto };
-    }
-    case 'forma': {
-      const fb = BLOCK_FALLBACKS.forma;
-      return { x: block.x ?? fb.x, y: block.y ?? fb.y,
-               ancho: block.ancho ?? fb.ancho, alto: block.alto ?? fb.alto };
-    }
-    case 'flip-cards': {
-      const fb = BLOCK_FALLBACKS.flipCards;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'tabs': {
-      const fb = BLOCK_FALLBACKS.tabs;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'carousel': {
-      const fb = BLOCK_FALLBACKS.carousel;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'click-reveal': {
-      const fb = BLOCK_FALLBACKS.clickReveal;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'popup': {
-      const fb = BLOCK_FALLBACKS.popup;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'hotspot': {
-      const fb = BLOCK_FALLBACKS.hotspot;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'tooltip': {
-      const fb = BLOCK_FALLBACKS.tooltip;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'boton': {
-      const fb = BLOCK_FALLBACKS.boton;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'contador': {
-      const fb = BLOCK_FALLBACKS.contador;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'progreso': {
-      const fb = BLOCK_FALLBACKS.progreso;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'timeline': {
-      const fb = BLOCK_FALLBACKS.timeline;
-      return {
-        x: block.x ?? fb.x,
-        y: block.y ?? fb.y,
-        ancho: block.ancho ?? fb.ancho,
-        alto: block.alto ?? fb.alto,
-      };
-    }
-    case 'actividad': {
-      if (block.marco) {
-        return {
-          x: block.marco.izquierdaPct,
-          y: block.marco.arribaPct,
-          ancho: block.marco.anchoPct,
-          alto: block.marco.altoPct,
-        };
-      }
-      const fb = ACTIVITY_POSITION_FALLBACK;
-      return { x: fb.x, y: fb.y, ancho: fb.ancho, alto: fb.alto };
-    }
-    default: {
-      const fb = ACTIVITY_POSITION_FALLBACK;
-      return { x: fb.x, y: fb.y, ancho: fb.ancho, alto: fb.alto };
-    }
-  }
+  return getBlockPos(block);
 }
 
 // ─── YouTube embed URL ────────────────────────────────────────────────────────
@@ -830,6 +494,28 @@ function RenderImage({ block, forceFill }: { block: ImageBlock; forceFill?: bool
     llenar: 'fill',
   };
 
+  if (!hasMediaSrc(block.url)) {
+    return (
+      <figure
+        style={{
+          margin: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#e2e8f0',
+          color: '#64748b',
+          fontSize: '0.75rem',
+          textAlign: 'center',
+          padding: '0.5rem',
+        }}
+      >
+        Sin imagen
+      </figure>
+    );
+  }
+
   return (
     <figure style={{ margin: 0, width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -857,8 +543,61 @@ function RenderImage({ block, forceFill }: { block: ImageBlock; forceFill?: bool
   );
 }
 
-function RenderVideo({ block }: { block: VideoBlock }) {
+function RenderVideo({
+  block,
+  isThumbnail = false,
+}: {
+  block: VideoBlock;
+  isThumbnail?: boolean;
+}) {
   const isYoutube = block.url.includes('youtube') || block.url.includes('youtu.be');
+
+  if (isThumbnail) {
+    if (isYoutube) {
+      const ytMatch = block.url.match(
+        /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+      );
+      const videoId = ytMatch?.[1];
+      if (videoId) {
+        return (
+          <img
+            src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
+            alt=""
+            style={{
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        );
+      }
+    }
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: '#111827',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        aria-hidden
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="28%"
+          height="28%"
+          fill="white"
+          opacity={0.85}
+          aria-hidden
+        >
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </div>
+    );
+  }
 
   if (isYoutube) {
     const src = buildEmbedUrl(block.url, block.autoplay);
@@ -1552,6 +1291,7 @@ interface RenderColumnsProps {
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
+  onToggleCanvasLock?: (blockId: string) => void;
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
   liveSocket?: Socket | null;
@@ -1595,6 +1335,7 @@ function RenderColumns({
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
+  onToggleCanvasLock,
   onResponse,
   variant = 'light',
   liveSocket,
@@ -1674,6 +1415,7 @@ function RenderColumns({
                 onRemoveBlock={onRemoveBlock}
                 onDuplicateBlock={onDuplicateBlock}
                 onCopyBlock={onCopyBlock}
+                onToggleCanvasLock={onToggleCanvasLock}
                 onResponse={onResponse}
                 variant={variant}
                 liveSocket={liveSocket}
@@ -1808,6 +1550,7 @@ interface BlockNodeProps {
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
+  onToggleCanvasLock?: (blockId: string) => void;
   /** Slide dedicado a actividad(es): el editor de respuesta corta usa layout de lienzo acotado. */
   activityCanvasLayout?: boolean;
   /** Callback emitido por el estudiante al responder (solo modo viewer). */
@@ -1839,6 +1582,10 @@ interface BlockNodeProps {
   blockIndex?: number;
   /** Miniatura del panel lateral: render simplificado de widgets e imágenes. */
   isThumbnail?: boolean;
+  /** Bloque clip-group en modo edición interna (pan/escala de imagen). */
+  clipGroupInnerEditId?: string | null;
+  onClipGroupInnerEditChange?: (blockId: string | null) => void;
+  onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
 }
 
 function BlockNode({
@@ -1878,6 +1625,7 @@ function BlockNode({
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
+  onToggleCanvasLock,
   activityCanvasLayout,
   onResponse,
   variant = 'light',
@@ -1897,6 +1645,9 @@ function BlockNode({
   isResizing,
   blockIndex,
   isThumbnail = false,
+  clipGroupInnerEditId = null,
+  onClipGroupInnerEditChange,
+  onClipGroupChange,
 }: BlockNodeProps) {
   const isViewerMode = modo === 'viewer' || modo === 'preview';
   const activityBlockForRender: ActivityBlock | null =
@@ -1910,6 +1661,8 @@ function BlockNode({
   const isTextEditing = editorMode && block.tipo === 'texto' && editingId === blockId;
   const isWidgetBlock = editorMode && isWidgetTipo(block.tipo);
   const isInteractiveStub = isUnimplementedInteractiveStub(block);
+  const canvasLocked = isBlockCanvasLocked(block);
+  const canvasPositionable = isBlockCanvasPositionable(block);
   const isBlockButtonShell =
     editorMode && !isFormBlock && !isTextEditing && !isWidgetBlock && !isInteractiveStub;
   const blockRef = useRef<HTMLDivElement>(null);
@@ -1918,12 +1671,19 @@ function BlockNode({
     isSelected &&
     !isFormBlock &&
     !isTextEditing &&
-    (!!onRemoveBlock || !!onDuplicateBlock || !!onCopyBlock || block.tipo === 'popup');
+    (!!onRemoveBlock ||
+      !!onDuplicateBlock ||
+      !!onCopyBlock ||
+      !!onToggleCanvasLock ||
+      block.tipo === 'popup');
 
   const popupOverlayEditing =
     block.tipo === 'popup' &&
     isSelected &&
     isEditingPopupOverlay(popupInnerSelection ?? null);
+
+  const clipInnerEdit =
+    block.tipo === 'clip-group' && clipGroupInnerEditId === blockId;
 
   useBlockAnimations(blockRef, block.animaciones, isViewerMode);
 
@@ -1940,7 +1700,7 @@ function BlockNode({
           />
         );
       case 'imagen':    return <RenderImage block={block} forceFill={isResizing} />;
-      case 'video':     return <RenderVideo block={block} />;
+      case 'video':     return <RenderVideo block={block} isThumbnail={isThumbnail} />;
       case 'audio':     return <RenderAudio block={block} />;
       case 'actividad':
         return activityBlockForRender ? (
@@ -1967,6 +1727,43 @@ function BlockNode({
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
       case 'forma':     return <RenderForma block={block} />;
+      case 'clip-group':
+        return (
+          <RenderClipGroup
+            block={block}
+            editorMode={editorMode}
+            isSelected={isSelected}
+            innerEdit={clipInnerEdit}
+            onEnterInnerEdit={
+              editorMode && block.contenido.tipo === 'imagen'
+                ? () => onClipGroupInnerEditChange?.(blockId)
+                : undefined
+            }
+            onContentCommit={
+              onClipGroupChange && block.contenido.tipo === 'imagen'
+                ? (patch) => {
+                    onClipGroupChange(blockId, {
+                      ...block,
+                      contenido: {
+                        ...block.contenido,
+                        ...patch,
+                      } as ClipContentImage,
+                    });
+                  }
+                : undefined
+            }
+            onShapeCommit={
+              onClipGroupChange
+                ? (clipShape) => {
+                    onClipGroupChange(blockId, {
+                      ...block,
+                      clipShape,
+                    });
+                  }
+                : undefined
+            }
+          />
+        );
       case 'flip-cards':
         return editorMode ? (
           <FlipCardsEditor
@@ -2192,6 +1989,7 @@ function BlockNode({
         editorMode && isTextEditing && 'cursor-text outline-none rounded-sm',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
         editorMode && isSelected && 'ring-2 ring-blue-500 ring-offset-1',
+        editorMode && canvasLocked && isSelected && 'ring-amber-500/90',
         isInteractiveStub && 'pointer-events-none',
         !editorMode && block.tipo !== 'hotspot' && block.tipo !== 'tooltip' && 'overflow-hidden max-w-full max-h-full',
         !editorMode && block.tipo === 'actividad' && 'min-h-0',
@@ -2208,7 +2006,15 @@ function BlockNode({
       )}
     >
       {renderContent()}
-      {editorMode && isSelected && !popupOverlayEditing && canvasRef && currentCoords && onResize && onResizeEnd && (
+      {editorMode &&
+        isSelected &&
+        !clipInnerEdit &&
+        !popupOverlayEditing &&
+        !canvasLocked &&
+        canvasRef &&
+        currentCoords &&
+        onResize &&
+        onResizeEnd && (
         <ResizeHandles
           blockId={blockId}
           x={currentCoords.x}
@@ -2238,6 +2044,29 @@ function BlockNode({
           <Pencil className="size-3.5" />
         </button>
       ) : null}
+      {!!onToggleCanvasLock && canvasPositionable && (
+        <button
+          type="button"
+          aria-label={canvasLocked ? 'Desbloquear posición' : 'Fijar posición y tamaño'}
+          title={canvasLocked ? 'Desbloquear posición' : 'Fijar posición y tamaño'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCanvasLock(blockId);
+          }}
+          className={cn(
+            'flex size-7 items-center justify-center rounded-lg p-1.5',
+            canvasLocked
+              ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+              : 'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
+          )}
+        >
+          {canvasLocked ? (
+            <Lock className="size-3.5" />
+          ) : (
+            <LockOpen className="size-3.5" />
+          )}
+        </button>
+      )}
       {!!onCopyBlock && block.tipo !== 'actividad' && (
         <button
           type="button"
@@ -2332,6 +2161,7 @@ export interface SlideRendererProps {
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
+  onToggleCanvasLock?: (blockId: string) => void;
   /** Callback emitido por el estudiante al responder una actividad (solo modo viewer). */
   onResponse?: (response: unknown) => void;
   className?: string;
@@ -2369,6 +2199,9 @@ export interface SlideRendererProps {
   viewerClassId?: string;
   /** Miniatura del panel lateral (SlideCanvasThumb). No confundir con modo preview escalado. */
   isThumbnail?: boolean;
+  clipGroupInnerEditId?: string | null;
+  onClipGroupInnerEditChange?: (blockId: string | null) => void;
+  onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
 }
 
 export function SlideRenderer({
@@ -2403,6 +2236,7 @@ export function SlideRenderer({
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
+  onToggleCanvasLock,
   onResponse,
   className,
   onPersistSlide,
@@ -2416,6 +2250,9 @@ export function SlideRenderer({
   viewerStudentName,
   viewerClassId: viewerClassIdProp,
   isThumbnail = false,
+  clipGroupInnerEditId = null,
+  onClipGroupInnerEditChange,
+  onClipGroupChange,
 }: SlideRendererProps) {
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
   const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
@@ -2451,11 +2288,23 @@ export function SlideRenderer({
   const editorMode = modo === 'editor';
 
   const handleResize = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
+    const blocks = slide.bloques ?? [];
+    const block = blocks[Number(blockId)];
+    if (block && isBlockCanvasLocked(block)) return;
     const snapped = onResizeMove ? onResizeMove(blockId, coords) : coords;
     setResizingCoords((prev) => ({ ...prev, [blockId]: snapped }));
-  }, [onResizeMove]);
+  }, [onResizeMove, slide.bloques]);
 
   const handleResizeEnd = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
+    const block = (slide.bloques ?? [])[Number(blockId)];
+    if (block && isBlockCanvasLocked(block)) {
+      setResizingCoords((prev) => {
+        const next = { ...prev };
+        delete next[blockId];
+        return next;
+      });
+      return;
+    }
     // Apply snap to the final commit coords so the saved position matches the guide.
     const finalCoords = onResizeMove ? onResizeMove(blockId, coords) : coords;
 
@@ -2466,8 +2315,7 @@ export function SlideRenderer({
     });
 
     const previousBloques = slide.bloques ? [...slide.bloques] : [];
-    const blocks = slide.bloques ? [...slide.bloques] : [];
-    const nextBlocks = updateBlockAtPath(blocks, blockId, (b) => {
+    const nextBlocks = updateBlockAtPath(previousBloques, blockId, (b) => {
       if (b.tipo === 'popup') {
         const popupBlock = b as PopupWidget;
         const canvas = measureCanvasRef.current;
@@ -2642,9 +2490,12 @@ export function SlideRenderer({
                   torneoSocket={torneoSocket}
                   viewerStudentId={viewerStudentId}
                   viewerStudentName={viewerStudentName}
-                  viewerClassId={viewerClassIdResolved}
-                  isThumbnail={isThumbnail}
-                />
+            viewerClassId={viewerClassIdResolved}
+            isThumbnail={isThumbnail}
+            clipGroupInnerEditId={clipGroupInnerEditId}
+            onClipGroupInnerEditChange={onClipGroupInnerEditChange}
+            onClipGroupChange={onClipGroupChange}
+          />
               );
             })}
           </div>
@@ -2747,6 +2598,7 @@ export function SlideRenderer({
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}
             onCopyBlock={editorMode ? onCopyBlock : undefined}
+            onToggleCanvasLock={editorMode ? onToggleCanvasLock : undefined}
             onResponse={onResponse}
             canvasRef={measureCanvasRef}
             currentCoords={currentCoords}
@@ -2764,6 +2616,10 @@ export function SlideRenderer({
             viewerStudentId={viewerStudentId}
             viewerStudentName={viewerStudentName}
             viewerClassId={viewerClassIdResolved}
+            isThumbnail={isThumbnail}
+            clipGroupInnerEditId={clipGroupInnerEditId}
+            onClipGroupInnerEditChange={onClipGroupInnerEditChange}
+            onClipGroupChange={editorMode ? onClipGroupChange : undefined}
           />
         );
       })}

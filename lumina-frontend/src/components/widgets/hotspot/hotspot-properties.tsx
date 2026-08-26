@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
 import { WIDGET_LAYOUTS } from '@/components/widgets/shared/widget-layouts';
 import { WidgetLayoutThumb } from '@/components/widgets/shared/widget-layout-thumb';
@@ -60,9 +61,9 @@ export function HotspotWidgetComponentes({ block: rawBlock, applyNow }: HotspotW
                 onChange={(e) => updateConfig({ colorPulso: e.target.value })}
                 className="w-8 h-8 p-0 border-0 rounded cursor-pointer"
               />
-              <Input
+              <WidgetDraftTextField
                 value={configuracion.colorPulso}
-                onChange={(e) => updateConfig({ colorPulso: e.target.value })}
+                onChange={(next) => updateConfig({ colorPulso: next })}
                 className="font-mono text-xs h-8"
               />
             </div>
@@ -165,9 +166,9 @@ export function HotspotWidgetComponentes({ block: rawBlock, applyNow }: HotspotW
               onChange={(e) => updateConfig({ colorFondoBurbuja: e.target.value })}
               className="w-8 h-8 p-0 border-0 rounded cursor-pointer"
             />
-            <Input
+            <WidgetDraftTextField
               value={configuracion.colorFondoBurbuja}
-              onChange={(e) => updateConfig({ colorFondoBurbuja: e.target.value })}
+              onChange={(next) => updateConfig({ colorFondoBurbuja: next })}
               className="font-mono text-xs h-8"
             />
           </div>

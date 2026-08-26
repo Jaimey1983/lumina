@@ -9,9 +9,8 @@ import type {
 } from '@/types/widget.types';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import {
   Select,
   SelectContent,
@@ -105,24 +104,23 @@ export function WidgetSlideTextInnerProperties({
         {context.patchHeaderValue ? (
           <div className="space-y-1.5">
             <Label className="text-xs">Contenido</Label>
-            {selection.field === 'tituloWidget' ? (
-              <Input
-                className="h-8 text-xs"
-                value={headerValue}
-                placeholder="Título del widget"
-                onChange={(e) => context.patchHeaderValue!(selection.field, e.target.value)}
-              />
-            ) : (
-              <Textarea
-                className="min-h-[72px] text-xs"
-                value={headerValue}
-                rows={3}
-                placeholder={
-                  selection.field === 'subtituloWidget' ? 'Subtítulo' : 'Instrucción'
-                }
-                onChange={(e) => context.patchHeaderValue!(selection.field, e.target.value)}
-              />
-            )}
+            <WidgetDraftTextField
+              key={selection.field}
+              className={
+                selection.field === 'tituloWidget' ? 'h-8 text-xs' : 'min-h-[72px] text-xs'
+              }
+              value={headerValue}
+              multiline={selection.field !== 'tituloWidget'}
+              rows={3}
+              placeholder={
+                selection.field === 'tituloWidget'
+                  ? 'Título del widget'
+                  : selection.field === 'subtituloWidget'
+                    ? 'Subtítulo'
+                    : 'Instrucción'
+              }
+              onChange={(next) => context.patchHeaderValue!(selection.field, next)}
+            />
           </div>
         ) : null}
         <WidgetTypographyFields
@@ -183,26 +181,23 @@ export function WidgetSlideTextInnerProperties({
       <SectionTitle>Texto — {label}</SectionTitle>
       <div className="space-y-1.5">
         <Label className="text-xs">Contenido</Label>
-        {slideField === 'cuerpo' ? (
-          <Textarea
-            className="min-h-[96px] text-xs"
-            value={slideTextValue}
-            rows={4}
-            placeholder="Cuerpo de la ficha"
-            onChange={(e) =>
-              context.patchSlide(selection.slideId, { [slideField]: e.target.value })
-            }
-          />
-        ) : (
-          <Input
-            className="h-8 text-xs"
-            value={slideTextValue}
-            placeholder={slideField === 'encabezado' ? 'Encabezado' : 'Subtítulo'}
-            onChange={(e) =>
-              context.patchSlide(selection.slideId, { [slideField]: e.target.value })
-            }
-          />
-        )}
+        <WidgetDraftTextField
+          key={`${selection.slideId}-${slideField}`}
+          className={slideField === 'cuerpo' ? 'min-h-[96px] text-xs' : 'h-8 text-xs'}
+          value={slideTextValue}
+          multiline={slideField === 'cuerpo'}
+          rows={4}
+          placeholder={
+            slideField === 'cuerpo'
+              ? 'Cuerpo de la ficha'
+              : slideField === 'encabezado'
+                ? 'Encabezado'
+                : 'Subtítulo'
+          }
+          onChange={(next) =>
+            context.patchSlide(selection.slideId, { [slideField]: next })
+          }
+        />
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground">
         En layout «Texto sobre imagen», usa el asa azul en el lienzo para arrastrar el texto.
@@ -253,23 +248,23 @@ export function WidgetSlideImageInnerProperties({
       <SectionTitle>Imagen de ficha</SectionTitle>
       <div className="space-y-1.5">
         <Label className="text-xs">URL</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           placeholder="https://…"
           value={slide.imagen ?? ''}
-          onChange={(e) => {
-            const trimmed = e.target.value.trim();
+          onChange={(next) => {
+            const trimmed = next.trim();
             update({ imagen: trimmed || undefined });
           }}
         />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Texto alternativo</Label>
-        <Input
+        <WidgetDraftTextField
           className="h-8 text-xs"
           placeholder="Descripción de la imagen"
           value={slide.imagenAlt ?? ''}
-          onChange={(e) => update({ imagenAlt: e.target.value || undefined })}
+          onChange={(next) => update({ imagenAlt: next || undefined })}
         />
       </div>
       <div className="space-y-1.5">
