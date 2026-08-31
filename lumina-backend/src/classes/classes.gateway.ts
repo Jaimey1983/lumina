@@ -1,3 +1,4 @@
+import { HttpException } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,7 +9,19 @@ import {
 import { Server, Socket } from 'socket.io';
 import { TorneoService } from '../torneo/torneo.service';
 import { SessionGamificationService } from '../gamification/session-gamification.service';
+import { EscapeRoomLiveService } from '../escape-room/escape-room-live.service';
 import { ClassesService } from './classes.service';
+
+function errorMessage(e: unknown): string {
+  if (e instanceof HttpException) {
+    const r = e.getResponse();
+    if (typeof r === 'string') return r;
+    const msg = (r as { message?: string | string[] }).message;
+    if (Array.isArray(msg)) return msg[0] ?? e.message;
+    return msg ?? e.message;
+  }
+  return e instanceof Error ? e.message : 'Error inesperado';
+}
 
 @WebSocketGateway({
   cors: {
@@ -24,10 +37,20 @@ export class ClassesGateway {
     private readonly torneoService: TorneoService,
     private readonly sessionGamification: SessionGamificationService,
     private readonly classesService: ClassesService,
+    private readonly escapeRoom: EscapeRoomLiveService,
   ) {}
 
   private classRoom(classId: string) {
     return `class-${classId}`;
+  }
+
+  /**
+   * Los viewers viven en `class-${id}` (namespace `/`) y el docente en
+   * `live:${id}` (namespace `/live`), así que el progreso se emite a ambos.
+   */
+  private broadcastToClass(classId: string, event: string, payload: unknown) {
+    this.server.to(this.classRoom(classId)).emit(event, payload);
+    this.server.of('/live').to(`live:${classId}`).emit(event, payload);
   }
 
   @SubscribeMessage('join-class')
@@ -45,6 +68,47 @@ export class ClassesGateway {
     @MessageBody() payload: { slideIndex: number; classId: string },
   ) {
     client.to(`class-${payload.classId}`).emit('slide-change', payload);
+  }
+
+  @SubscribeMessage('timer-start')
+  handleTimerStart(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { classId: string; slideId: string; duration: number },
+  ) {
+    if (!payload?.classId || !payload?.slideId) {
+      return { ok: false as const };
+    }
+    const duration = Math.max(0, Math.floor(Number(payload.duration) || 0));
+    client.to(this.classRoom(payload.classId)).emit('timer-start', {
+      classId: payload.classId,
+      slideId: payload.slideId,
+      duration,
+    });
+    return { ok: true as const };
+  }
+
+  @SubscribeMessage('lock-responses')
+  handleLockResponses(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { classId: string; slideId?: string },
+  ) {
+    if (!payload?.classId) {
+      return { ok: false as const };
+    }
+    client.to(this.classRoom(payload.classId)).emit('lock-responses', payload);
+    return { ok: true as const };
+  }
+
+  @SubscribeMessage('unlock-responses')
+  handleUnlockResponses(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { classId: string; slideId?: string },
+  ) {
+    if (!payload?.classId) {
+      return { ok: false as const };
+    }
+    client.to(this.classRoom(payload.classId)).emit('unlock-responses', payload);
+    return { ok: true as const };
   }
 
   /** Estudiante (viewer autónomo): el docente recibe progreso por diapositiva. */
@@ -290,5 +354,204 @@ export class ClassesGateway {
     });
 
     return { ok: true as const, visible: Boolean(data.visible) };
+  }
+
+  // ── Escape Room por equipos ───────────────────────────────────────────────
+  // El `studentId` lo declara el cliente, igual que en `student-response`: este
+  // namespace admite invitados sin JWT. Lo que sí es autoritativo del servidor
+  // es la corrección de la respuesta, los intentos y el avance del equipo.
+
+  private escapeRoomProgress(
+    classId: string,
+    slideId: string,
+    state: {
+      runId: string;
+      totalSalas: number;
+      team: {
+        id: string;
+        name: string;
+        salaIndex: number;
+        points: number;
+        finished: boolean;
+        rooms: unknown[];
+      } | null;
+    },
+  ) {
+    if (!state.team) return null;
+    return {
+      classId,
+      slideId,
+      runId: state.runId,
+      totalSalas: state.totalSalas,
+      teamId: state.team.id,
+      teamName: state.team.name,
+      salaIndex: state.team.salaIndex,
+      points: state.team.points,
+      finished: state.team.finished,
+      rooms: state.team.rooms,
+    };
+  }
+
+  @SubscribeMessage('escape-room:join-team')
+  async handleEscapeRoomJoinTeam(
+    @MessageBody()
+    data: {
+      classId: string;
+      slideId: string;
+      studentId: string;
+      studentName?: string;
+      teamName?: string;
+    },
+  ) {
+    try {
+      const state = await this.escapeRoom.joinTeam(data);
+      const progress = this.escapeRoomProgress(
+        data.classId,
+        data.slideId,
+        state,
+      );
+      if (state.team) {
+        this.broadcastToClass(data.classId, 'escape-room:team-assigned', {
+          ...progress,
+          studentId: data.studentId,
+          studentName: data.studentName ?? null,
+          members: state.team.members,
+        });
+      }
+      return { ok: true as const, state };
+    } catch (e) {
+      return { ok: false as const, error: errorMessage(e) };
+    }
+  }
+
+  @SubscribeMessage('escape-room:answer')
+  async handleEscapeRoomAnswer(
+    @MessageBody()
+    data: {
+      classId: string;
+      slideId: string;
+      studentId: string;
+      studentName?: string;
+      salaId: string;
+      answer: string;
+    },
+  ) {
+    try {
+      const result = await this.escapeRoom.answer(data);
+      const progress = this.escapeRoomProgress(
+        data.classId,
+        data.slideId,
+        result.state,
+      );
+
+      if (progress && result.outcome === 'correcto') {
+        this.broadcastToClass(data.classId, 'escape-room:room-unlocked', {
+          ...progress,
+          salaId: data.salaId,
+          intento: result.intento,
+          puntos: result.puntos,
+          solvedByStudentId: data.studentId,
+          solvedByStudentName: data.studentName ?? null,
+        });
+      }
+      if (progress) {
+        this.broadcastToClass(data.classId, 'escape-room:team-progress', {
+          ...progress,
+          outcome: result.outcome,
+        });
+      }
+      // Cierre de equipo por evento propio: los puntos del escape room no son
+      // nota académica, así que nunca viajan por `activity:complete`.
+      if (progress && result.state.team?.finished) {
+        this.broadcastToClass(data.classId, 'escape-room:finished', {
+          ...progress,
+          finishedAtMs: Date.now(),
+        });
+      }
+
+      return {
+        ok: true as const,
+        outcome: result.outcome,
+        intento: result.intento,
+        puntos: result.puntos,
+        pistas: result.pistas,
+        state: result.state,
+      };
+    } catch (e) {
+      return { ok: false as const, error: errorMessage(e) };
+    }
+  }
+
+  @SubscribeMessage('escape-room:hint-request')
+  async handleEscapeRoomHint(
+    @MessageBody()
+    data: {
+      classId: string;
+      slideId: string;
+      studentId: string;
+      salaId: string;
+    },
+  ) {
+    try {
+      const result = await this.escapeRoom.requestHint(data);
+      const progress = this.escapeRoomProgress(
+        data.classId,
+        data.slideId,
+        result.state,
+      );
+      if (progress) {
+        this.broadcastToClass(data.classId, 'escape-room:team-progress', {
+          ...progress,
+          outcome: 'pista' as const,
+        });
+      }
+      return {
+        ok: true as const,
+        pistas: result.pistas,
+        reveladas: result.reveladas,
+        total: result.total,
+      };
+    } catch (e) {
+      return { ok: false as const, error: errorMessage(e) };
+    }
+  }
+
+  /** Hidratación tras recarga o reconexión: el estado vive en el servidor. */
+  @SubscribeMessage('escape-room:state')
+  async handleEscapeRoomState(
+    @MessageBody()
+    data: {
+      classId: string;
+      slideId: string;
+      studentId: string;
+    },
+  ) {
+    try {
+      const state = await this.escapeRoom.getStateForStudent(data);
+      return { ok: true as const, state };
+    } catch (e) {
+      return { ok: false as const, error: errorMessage(e) };
+    }
+  }
+
+  /**
+   * Podio de cierre. El servicio devuelve vacío si el equipo aún juega o si el
+   * autor desactivó `mostrarRanking`.
+   */
+  @SubscribeMessage('escape-room:ranking')
+  async handleEscapeRoomRanking(
+    @MessageBody()
+    data: {
+      classId: string;
+      slideId: string;
+      studentId: string;
+    },
+  ) {
+    try {
+      const ranking = await this.escapeRoom.getRankingForStudent(data);
+      return { ok: true as const, ranking };
+    } catch (e) {
+      return { ok: false as const, error: errorMessage(e) };
+    }
   }
 }

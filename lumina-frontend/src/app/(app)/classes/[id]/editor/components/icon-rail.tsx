@@ -138,9 +138,14 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
               type="button"
               title={userName}
               aria-label={userName}
-              className="flex size-9 items-center justify-center rounded-full bg-[#2563EB] text-[11px] font-semibold text-white transition-opacity hover:opacity-80 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-[#2563EB] text-[11px] font-semibold text-white transition-opacity hover:opacity-80 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             >
-              {userInitials}
+              {user?.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatar} alt="" className="size-9 rounded-full object-cover" />
+              ) : (
+                userInitials
+              )}
             </button>
           </DropdownMenuTrigger>
 

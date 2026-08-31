@@ -19,9 +19,13 @@ import {
   blockPosToStyle,
   withPosition,
   withRect,
+  withRotation,
 } from './use-block-drag';
 
 function texto(x: number, y: number, overrides?: Partial<Block>): Block {
+  // `Partial<Block>` es una unión: al hacer spread ensancha `contenido`/`ancho`
+  // (p. ej. a `ClipContent`) y rompe la discriminación por `tipo`. El cast fija
+  // el fixture como TextBlock — no hay cambio en runtime.
   return {
     tipo: 'texto',
     contenido: 'Bloque',
@@ -30,7 +34,7 @@ function texto(x: number, y: number, overrides?: Partial<Block>): Block {
     ancho: 20,
     alto: 10,
     ...overrides,
-  };
+  } as Block;
 }
 
 function actividad(x: number, y: number): Block {
@@ -101,6 +105,39 @@ describe('applyLiveDragPositions', () => {
 
     expect(getBlockPos(next[0]).x).toBeGreaterThan(60);
     expect(getBlockPos(next[1])).toMatchObject({ x: 50, y: 10 });
+  });
+
+  it('no acumula delta si el array ya tiene la posición live (prev ≠ origen)', () => {
+    const origin = texto(10, 20);
+    const alreadyLive = texto(18, 24);
+    const next = applyLiveDragPositions({
+      bloques: [alreadyLive, texto(50, 20)],
+      draggedIndex: 0,
+      snapX: 30,
+      snapY: 40,
+      origin: { x: 10, y: 20 },
+      groupOrigins: null,
+    });
+
+    expect(getBlockPos(next[0])).toMatchObject({ x: 30, y: 40 });
+    expect(getBlockPos(origin)).toMatchObject({ x: 10, y: 20 });
+  });
+
+  it('en grupo tampoco acumula si prev ya se desplazó', () => {
+    const next = applyLiveDragPositions({
+      bloques: [texto(25, 15), texto(55, 15), texto(80, 80)],
+      draggedIndex: 0,
+      snapX: 25,
+      snapY: 15,
+      origin: { x: 10, y: 10 },
+      groupOrigins: {
+        '0': { x: 10, y: 10 },
+        '1': { x: 40, y: 10 },
+      },
+    });
+
+    expect(getBlockPos(next[0])).toMatchObject({ x: 25, y: 15 });
+    expect(getBlockPos(next[1])).toMatchObject({ x: 55, y: 15 });
   });
 
   it('escribe marco de una actividad en drag simple', () => {
@@ -482,6 +519,31 @@ describe('withClampedPositionChecked', () => {
   });
 });
 
+describe('diagrama y grafico — contratos 3.2', () => {
+  it('withPosition y withRect actualizan bbox de diagrama', () => {
+    const block = {
+      id: 'diag-1',
+      tipo: 'diagrama',
+      subtipo: 'venn',
+      modo: 'contenido',
+      soloLecturaEnViewer: true,
+      conjuntos: 2,
+      regiones: [],
+      elementos: [],
+      x: 10,
+      y: 10,
+      ancho: 80,
+      alto: 75,
+    } as Block;
+
+    const moved = withPosition(block, 20, 18);
+    expect(getBlockPos(moved)).toMatchObject({ x: 20, y: 18, ancho: 80, alto: 75 });
+
+    const resized = withRect(block, 12, 14, 50, 40);
+    expect(getBlockPos(resized)).toMatchObject({ x: 12, y: 14, ancho: 50, alto: 40 });
+  });
+});
+
 describe('blockPosToStyle', () => {
   it('deriva estilos CSS desde getBlockPos', () => {
     const block = actividad(8, 12);
@@ -495,4 +557,41 @@ describe('blockPosToStyle', () => {
       zIndex: 3,
     });
   });
+
+  it('incluye transform y transformOrigin cuando el bloque tiene rotacion', () => {
+    const block = texto(10, 20, { rotacion: 45 });
+    const style = blockPosToStyle(block);
+    expect(style.transform).toBe('rotate(45deg)');
+    expect(style.transformOrigin).toBe('center center');
+  });
+
+  it('no define transform si rotacion es 0 o indefinida', () => {
+    const block = texto(10, 20);
+    const style = blockPosToStyle(block);
+    expect(style.transform).toBeUndefined();
+  });
 });
+
+describe('withRotation', () => {
+  it('aplica rotacion normalizada a un bloque de texto', () => {
+    const block = texto(10, 20);
+    const rotated = withRotation(block, 90);
+    expect(rotated.rotacion).toBe(90);
+  });
+
+  it('aplica rotacion normalizada en grados [0, 360) a un bloque de actividad', () => {
+    const block = actividad(10, 20);
+    const rotated = withRotation(block, -45);
+    expect(rotated.rotacion).toBe(315);
+    if (rotated.tipo === 'actividad') {
+      expect(rotated.marco?.rotacion).toBe(315);
+    }
+  });
+
+  it('normaliza vueltas mayores a 360', () => {
+    const block = texto(10, 20);
+    const rotated = withRotation(block, 450);
+    expect(rotated.rotacion).toBe(90);
+  });
+});
+

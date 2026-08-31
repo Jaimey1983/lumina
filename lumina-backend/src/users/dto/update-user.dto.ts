@@ -27,8 +27,11 @@ export class UpdateUserDto {
   @Transform(({ value }: { value: string }) => value?.trim())
   institution?: string;
 
+  // Data URL de la imagen de perfil (o '' para quitarla). El frontend la recorta
+  // y comprime a WebP/JPEG ~256px (≈15–40 KB); este tope solo evita abusos.
   @IsString()
   @IsOptional()
+  @MaxLength(700_000)
   avatar?: string;
 
   @IsEnum(Role)

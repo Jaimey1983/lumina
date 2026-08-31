@@ -507,6 +507,7 @@ export function ClassesClient() {
       <PageBanner
         title="Mis Clases"
         subtitle={bannerSubtitle}
+        backHref="/dashboard"
         action={
           <button
             type="button"

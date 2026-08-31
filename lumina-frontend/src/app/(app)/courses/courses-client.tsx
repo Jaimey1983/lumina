@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -271,7 +272,12 @@ export function CoursesClient() {
         accessorKey: 'name',
         header: 'Nombre',
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.name}</span>
+          <Link
+            href={`/courses/${row.original.id}`}
+            className="font-medium text-[#2563EB] hover:underline"
+          >
+            {row.original.name}
+          </Link>
         ),
       },
       {
@@ -365,6 +371,7 @@ export function CoursesClient() {
       <PageBanner
         title="Cursos"
         subtitle={coursesBannerSubtitle}
+        backHref="/dashboard"
         action={
           <button
             type="button"

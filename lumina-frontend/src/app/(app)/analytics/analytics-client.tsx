@@ -1060,7 +1060,7 @@ export function AnalyticsClient() {
 
   return (
     <div className="w-full flex flex-col gap-0 pb-6">
-      <PageBanner title="Analytics" subtitle={bannerSubtitle} />
+      <PageBanner title="Analytics" subtitle={bannerSubtitle} backHref="/dashboard" />
 
       <div className="px-6 pt-4 space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -1113,7 +1113,12 @@ export function AnalyticsClient() {
         </div>
       </div>
 
-      {!selectedCourseId ? (
+      {coursesLoading ? (
+        <div className="flex items-center justify-center gap-2 py-24 text-sm text-[#6b7280]">
+          <Clock className="size-4 animate-spin" />
+          Cargando cursos…
+        </div>
+      ) : !selectedCourseId ? (
         <div className="flex flex-col items-center py-24 gap-3 text-center">
           <BarChart2 className="size-12 text-[#6b7280]" />
           <p className="text-sm text-[#6b7280]">Selecciona un curso para ver sus analytics.</p>

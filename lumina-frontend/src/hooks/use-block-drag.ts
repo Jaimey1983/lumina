@@ -172,8 +172,35 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  block.alto  ?? fb.alto,
       };
     }
+    case 'ruleta': {
+      const fb = BLOCK_FALLBACKS.ruleta;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
     case 'timeline': {
       const fb = BLOCK_FALLBACKS.timeline;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'grafico': {
+      const fb = BLOCK_FALLBACKS.grafico;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'diagrama': {
+      const fb = BLOCK_FALLBACKS.diagrama;
       return {
         x:     block.x     ?? fb.x,
         y:     block.y     ?? fb.y,
@@ -227,7 +254,10 @@ export function withPosition(block: Block, x: number, y: number): Block {
     case 'boton':        return { ...block, x, y };
     case 'contador':     return { ...block, x, y };
     case 'progreso':     return { ...block, x, y };
+    case 'ruleta':       return { ...block, x, y };
     case 'timeline':     return { ...block, x, y };
+    case 'grafico':      return { ...block, x, y };
+    case 'diagrama':     return { ...block, x, y };
     case 'actividad': {
       const marco = activityMarcoOrFallback(block);
       return {
@@ -266,7 +296,10 @@ export function withRect(
     case 'boton':
     case 'contador':
     case 'progreso':
+    case 'ruleta':
     case 'timeline':
+    case 'grafico':
+    case 'diagrama':
       return { ...block, x, y, ancho, alto };
     case 'actividad': {
       const marco = activityMarcoOrFallback(block);
@@ -292,9 +325,13 @@ export type GroupDragOrigins = Record<string, { x: number; y: number }>;
  * Preview/persist writer for canvas drag.
  *
  * Contrato: SlideRenderer pinta left/top % desde el bloque. El handle no aplica
- * transform de dnd-kit y DragOverlay no clona bloques del lienzo. Este writer
- * tiene que actualizar el índice arrastrado en cada move — también sin grupo —
- * o el bloque queda congelado en el origen.
+ * transform de dnd-kit y DragOverlay no clona el bloque (el overlay del shell
+ * solo cubre el rail de actividades/widgets). Este writer actualiza el índice
+ * arrastrado en cada move — también sin grupo — o el bloque queda congelado.
+ *
+ * `snapX`/`snapY` son absolutos respecto a `origin` / `groupOrigins` del
+ * drag-start. Llamar dos veces con el mismo snap no acumula delta (el `prev`
+ * live no se usa como origen).
  */
 export function applyLiveDragPositions({
   bloques,
@@ -451,6 +488,23 @@ export function withClampedPositionChecked(
   return { block: withPosition(block, clamped.x, clamped.y), wasClamped };
 }
 
+/** Returns a new block with updated rotation in degrees (0–360). */
+export function withRotation(block: Block, rotacion: number): Block {
+  const normRot = Math.round(((rotacion % 360 + 360) % 360) * 10) / 10;
+  if (block.tipo === 'actividad') {
+    const marco = activityMarcoOrFallback(block);
+    return {
+      ...block,
+      rotacion: normRot,
+      marco: {
+        ...marco,
+        rotacion: normRot,
+      },
+    };
+  }
+  return { ...block, rotacion: normRot };
+}
+
 /** Estilo CSS absolute (% del lienzo) derivado del contrato canónico `getBlockPos`. */
 export function blockPosToStyle(
   block: Block,
@@ -462,8 +516,11 @@ export function blockPosToStyle(
   width: string;
   height: string;
   zIndex: number;
+  transform?: string;
+  transformOrigin?: string;
 } {
   const pos = getBlockPos(block);
+  const rotacion = (block as { rotacion?: number }).rotacion ?? (block.tipo === 'actividad' ? block.marco?.rotacion : undefined);
   return {
     position: 'absolute',
     left: `${pos.x}%`,
@@ -471,6 +528,8 @@ export function blockPosToStyle(
     width: `${pos.ancho}%`,
     height: `${pos.alto}%`,
     zIndex,
+    transform: rotacion ? `rotate(${rotacion}deg)` : undefined,
+    transformOrigin: rotacion ? 'center center' : undefined,
   };
 }
 
@@ -759,6 +818,8 @@ export interface BlockDragResult {
   handleDragStart: (event: DragStartEvent) => void;
   handleDragEnd:   (event: DragEndEvent)   => void;
   handleDragMove:  (event: DragMoveEvent)  => void;
+  /** Escape / unmount: revierte el preview live sin persistir. */
+  handleDragCancel: () => void;
   /** Index string of the block currently being dragged, or null. */
   draggingId:  string | null;
   /** Live block array with updated x/y during drag (null when not dragging). */
@@ -806,20 +867,27 @@ export function useBlockDrag({
   const pendingDragPosRef = useRef<{ x: number; y: number } | null>(null);
   /** Original positions of all selected blocks at drag start. */
   const selectedOriginsRef = useRef<Record<string, { x: number; y: number }> | null>(null);
+  /** Snapshot de bloques al iniciar el drag — única base de applyLiveDragPositions. */
+  const dragBaseBloquesRef = useRef<Block[] | null>(null);
 
   const clearSnapLines = useCallback(() => {
     setSnapLines([]);
   }, []);
 
-  // Reset drag state when the active slide changes.
-  useEffect(() => {
+  const resetDragSession = useCallback(() => {
     setDraggingId(null);
     setLiveBloques(null);
     setSnapLines([]);
     originRef.current = null;
     pendingDragPosRef.current = null;
     selectedOriginsRef.current = null;
-  }, [slide?.id]);
+    dragBaseBloquesRef.current = null;
+  }, []);
+
+  // Reset drag state when the active slide changes.
+  useEffect(() => {
+    resetDragSession();
+  }, [slide?.id, resetDragSession]);
 
   // ─── helpers (react-compiler now handles memoization) ──
 
@@ -882,6 +950,7 @@ export function useBlockDrag({
     }
 
     setSnapLines([]);
+    dragBaseBloquesRef.current = [...bloques];
     setDraggingId(blockDragId(index));
     setLiveBloques([...bloques]);
   };
@@ -918,9 +987,10 @@ export function useBlockDrag({
     pendingDragPosRef.current = { x: snapX, y: snapY };
     setSnapLines((prev) => (sameSnapLines(prev, lines) ? prev : lines));
 
+    const base = dragBaseBloquesRef.current ?? bloques;
     setLiveBloques((prev) => {
       const next = applyLiveDragPositions({
-        bloques: prev ?? bloques,
+        bloques: base,
         draggedIndex: index,
         snapX,
         snapY,
@@ -934,16 +1004,11 @@ export function useBlockDrag({
   const handleDragEnd = (event: DragEndEvent) => {
     const index = parseBlockDragIndex(String(event.active.id));
     if (index === null) {
-      setDraggingId(null);
-      setSnapLines([]);
-      setLiveBloques(null);
-      originRef.current = null;
-      pendingDragPosRef.current = null;
-      selectedOriginsRef.current = null;
+      resetDragSession();
       return;
     }
 
-    const bloques = slide?.bloques ?? [];
+    const bloques = dragBaseBloquesRef.current ?? slide?.bloques ?? [];
     const rect    = getRect();
 
     if (rect && originRef.current) {
@@ -974,18 +1039,18 @@ export function useBlockDrag({
       );
     }
 
-    setSnapLines([]);
-    setDraggingId(null);
-    setLiveBloques(null);
-    originRef.current = null;
-    pendingDragPosRef.current = null;
-    selectedOriginsRef.current = null;
+    resetDragSession();
+  };
+
+  const handleDragCancel = () => {
+    resetDragSession();
   };
 
   return {
     handleDragStart,
     handleDragEnd,
     handleDragMove,
+    handleDragCancel,
     draggingId,
     liveBloques,
     snapLines,

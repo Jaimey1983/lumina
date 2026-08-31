@@ -16,6 +16,9 @@ import {
   Shapes,
   Square,
   Target,
+  RotateCw,
+  CircleDot,
+  BarChart2,
   Timer,
   Video,
 } from 'lucide-react';
@@ -130,6 +133,10 @@ export function getBlockLayerKind(block: Block): string {
     const t = block.actividad?.tipo;
     return (t && ACTIVITY_LABELS[t]) || 'Actividad';
   }
+  if (block.tipo === 'diagrama') {
+    return block.subtipo === 'venn' ? 'Diagrama de Venn' : 'Diagrama';
+  }
+  if (block.tipo === 'grafico') return 'Gráfico';
   if (BASIC_KIND[block.tipo]) return BASIC_KIND[block.tipo]!;
   const widget = getWidgetPanelItem(block.tipo as Parameters<typeof getWidgetPanelItem>[0]);
   if (widget) return widget.label;
@@ -163,6 +170,12 @@ export function getBlockLayerIcon(block: Block): LucideIcon {
       return Timer;
     case 'progreso':
       return Columns2;
+    case 'ruleta':
+      return RotateCw;
+    case 'grafico':
+      return BarChart2;
+    case 'diagrama':
+      return CircleDot;
     default:
       return Shapes;
   }
@@ -217,6 +230,15 @@ export function getBlockLayerLabel(block: Block): string {
       return truncate(block.etiqueta || 'Contador');
     case 'progreso':
       return truncate(block.etiqueta || 'Barra de progreso');
+    case 'ruleta':
+      return 'Ruleta';
+    case 'grafico':
+      return truncate(block.titulo || 'Gráfico');
+    case 'diagrama':
+      return truncate(
+        block.titulo ||
+          (block.subtipo === 'venn' ? 'Diagrama de Venn' : 'Diagrama'),
+      );
     default:
       return getBlockLayerKind(block);
   }

@@ -259,7 +259,7 @@ export function useCourseAnalytics(courseId: string) {
   // Step 2: for each class, fetch the gradebook in parallel.
   const gradebookQueries = useQueries({
     queries: classes.map((cls) => ({
-      queryKey: ['gradebook', cls.id],
+      queryKey: ['class-gradebook-rows', cls.id],
       enabled: !!cls.id,
       queryFn: async () => {
         const { data } = await api.get<unknown>(`/classes/${cls.id}/gradebook`);
@@ -269,20 +269,24 @@ export function useCourseAnalytics(courseId: string) {
   });
 
   const isLoading =
-    classesQuery.isLoading ||
-    (classes.length > 0 && gradebookQueries.some((q) => q.isLoading));
+    !courseId ||
+    classesQuery.isPending ||
+    (classes.length > 0 && gradebookQueries.some((q) => q.isPending));
 
   const isError =
-    classesQuery.isError || gradebookQueries.some((q) => q.isError);
+    Boolean(courseId) &&
+    (classesQuery.isError || gradebookQueries.some((q) => q.isError));
 
   const allLoaded =
-    !classesQuery.isLoading &&
+    Boolean(courseId) &&
+    !classesQuery.isPending &&
     !classesQuery.isError &&
-    gradebookQueries.every((q) => !q.isLoading && !q.isError);
+    (classes.length === 0 ||
+      gradebookQueries.every((q) => !q.isPending && !q.isError));
 
   let analytics: CourseAnalyticsData | null = null;
 
-  if (allLoaded && classes.length >= 0) {
+  if (allLoaded) {
     const gradebooksByClassId = new Map<string, ApiGradebookRow[]>();
     for (const q of gradebookQueries) {
       if (q.data) {

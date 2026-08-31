@@ -56,6 +56,7 @@ export class UsersService {
         email: true,
         role: true,
         avatar: true,
+        institution: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -75,6 +76,17 @@ export class UsersService {
     dto: UpdateUserDto,
     requestingUser: { id: string; role: Role },
   ) {
+    const isSelf = requestingUser.id === id;
+    const isAdmin =
+      requestingUser.role === Role.ADMIN ||
+      requestingUser.role === Role.SUPERADMIN;
+
+    if (!isSelf && !isAdmin) {
+      throw new ForbiddenException(
+        'No puedes editar el perfil de otro usuario',
+      );
+    }
+
     // Solo ADMIN puede cambiar roles o activar/desactivar usuarios
     if (
       (dto.role || dto.isActive !== undefined) &&
@@ -94,8 +106,8 @@ export class UsersService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.lastName && { lastName: dto.lastName }),
-        ...(dto.institution && { institution: dto.institution }),
-        ...(dto.avatar && { avatar: dto.avatar }),
+        ...(dto.institution !== undefined && { institution: dto.institution }),
+        ...(dto.avatar !== undefined && { avatar: dto.avatar }),
         ...(dto.role && { role: dto.role }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
@@ -106,6 +118,7 @@ export class UsersService {
         email: true,
         role: true,
         avatar: true,
+        institution: true,
         isActive: true,
         updatedAt: true,
       },

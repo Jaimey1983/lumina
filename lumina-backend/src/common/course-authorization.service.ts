@@ -16,7 +16,8 @@ export type CourseManageScope =
   | 'h5pActivities'
   | 'gamification'
   | 'classEditor'
-  | 'reports';
+  | 'reports'
+  | 'progressMap';
 
 const MANAGE_SCOPE_MESSAGES: Record<
   CourseManageScope,
@@ -69,6 +70,11 @@ const MANAGE_SCOPE_MESSAGES: Record<
   reports: {
     wrongCourse: 'No tienes permiso para ver reportes de este curso',
     notStaff: 'No tienes permiso para ver reportes de calificaciones',
+  },
+  progressMap: {
+    wrongCourse:
+      'No tienes permiso para gestionar el mapa de progreso de este curso',
+    notStaff: 'No tienes permiso para gestionar el mapa de progreso',
   },
 };
 

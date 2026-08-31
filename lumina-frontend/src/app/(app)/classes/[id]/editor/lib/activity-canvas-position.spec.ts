@@ -62,7 +62,7 @@ describe('getWidgetDropSizePct', () => {
     });
   });
 
-  it('cubre los 11 widgets del catálogo', () => {
+  it('cubre los 12 widgets del catálogo', () => {
     for (const tipo of WIDGET_TIPOS) {
       const size = getWidgetDropSizePct(tipo);
       expect(size.anchoPct).toBeGreaterThan(0);

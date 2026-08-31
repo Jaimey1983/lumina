@@ -22,7 +22,6 @@ import {
   CaseSensitive,
   Sparkles,
   Crosshair,
-  RotateCw,
   Keyboard,
   GitBranch,
 } from 'lucide-react';
@@ -57,8 +56,7 @@ export type ActivityType =
   | 'ahorcado'
   | 'puzzle_palabras'
   | 'globos'
-  | 'topo'
-  | 'ruleta';
+  | 'topo';
 
 export type WidgetType = WidgetTipo;
 
@@ -96,7 +94,6 @@ const GRUPO4: ActivityItem[] = [
   { type: 'puzzle_palabras',  label: 'Puzzle de palabras',  Icon: AlignLeft },
   { type: 'globos',           label: 'Globos',              Icon: Sparkles },
   { type: 'topo',             label: 'Golpea al topo',      Icon: Crosshair },
-  { type: 'ruleta',           label: 'Ruleta',              Icon: RotateCw },
 ];
 
 const LIVE: ActivityItem[] = [

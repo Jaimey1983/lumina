@@ -28,7 +28,7 @@ import { ResizeHandles } from './resize-handles';
 import { RenderClipGroup } from './render-clip-group';
 import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
-import { withRect, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
+import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
 
 import type {
   Activity,
@@ -51,6 +51,7 @@ import type {
   ClickRevealWidget,
   PopupWidget,
   TimelineWidget,
+  DiagramaBlock,
   HotspotWidget,
   TooltipWidget,
   TextBlock,
@@ -79,7 +80,10 @@ import { TorneoActivityEditor } from './activities/torneo-activity';
 import type { Socket } from 'socket.io-client';
 import { TorneoViewer } from '@/components/viewers/torneo-viewer';
 import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
-import { EscapeRoomViewer } from '@/components/viewers/escape-room-viewer';
+import {
+  EscapeRoomViewer,
+  bloquesVisiblesDeSala,
+} from '@/components/viewers/escape-room-viewer';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import { FlipCardsEditor } from '@/components/widgets/flip-cards/flip-cards-editor';
 import { FlipCardsViewer } from '@/components/widgets/flip-cards/flip-cards-viewer';
@@ -146,15 +150,19 @@ import type {
   MatchPairs,
   GlobosActivity,
   TopoActivity,
-  RuletaActivity,
 } from '@/types/slide.types';
 
 import { GlobosEditor } from '@/components/activities/globos/globos-editor';
 import { GlobosViewer } from '@/components/activities/globos/globos-viewer';
 import { TopoEditor } from '@/components/activities/topo/topo-editor';
 import { TopoViewer } from '@/components/activities/topo/topo-viewer';
-import { RuletaEditor } from '@/components/activities/ruleta/ruleta-editor';
-import { RuletaViewer } from '@/components/activities/ruleta/ruleta-viewer';
+import { RuletaEditor } from '@/components/widgets/ruleta/ruleta-editor';
+import { RuletaViewer } from '@/components/widgets/ruleta/ruleta-viewer';
+import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
+import { GraficoEditor } from '@/components/graficos/grafico-editor';
+import { GraficoViewer } from '@/components/graficos/grafico-viewer';
+import { DiagramaEditor } from '@/components/diagramas/diagrama-editor';
+import { DiagramaViewer } from '@/components/diagramas/diagrama-viewer';
 import { HistoriaRamificadaEditor } from '@/components/activities/historia-ramificada/historia-ramificada-editor';
 import { HistoriaRamificadaViewer } from '@/components/activities/historia-ramificada/historia-ramificada-viewer';
 
@@ -546,9 +554,13 @@ function RenderImage({ block, forceFill }: { block: ImageBlock; forceFill?: bool
 function RenderVideo({
   block,
   isThumbnail = false,
+  editorMode = false,
 }: {
   block: VideoBlock;
   isThumbnail?: boolean;
+  /** En el editor, el `<iframe>`/`<video>` no debe capturar el pointer: si no,
+   *  el bloque nunca se selecciona (ni aparece la barra flotante) ni se arrastra. */
+  editorMode?: boolean;
 }) {
   const isYoutube = block.url.includes('youtube') || block.url.includes('youtu.be');
 
@@ -608,21 +620,41 @@ function RenderVideo({
           title="Video YouTube"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            pointerEvents: editorMode ? 'none' : undefined,
+          }}
         />
+        {editorMode && (
+          <div aria-hidden style={{ position: 'absolute', inset: 0, cursor: 'inherit' }} />
+        )}
       </div>
     );
   }
 
   return (
-    <video
-      src={block.url}
-      controls={block.controles ?? true}
-      autoPlay={block.autoplay}
-      loop={block.bucle}
-      muted={block.silenciado}
-      style={{ display: 'block', width: '100%', height: '100%' }}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <video
+        src={block.url}
+        controls={block.controles ?? true}
+        autoPlay={block.autoplay}
+        loop={block.bucle}
+        muted={block.silenciado}
+        style={{
+          display: 'block',
+          width: '100%',
+          height: '100%',
+          pointerEvents: editorMode ? 'none' : undefined,
+        }}
+      />
+      {editorMode && (
+        <div aria-hidden style={{ position: 'absolute', inset: 0, cursor: 'inherit' }} />
+      )}
+    </div>
   );
 }
 
@@ -761,6 +793,9 @@ function RenderForma({ block }: { block: FormaBlock }) {
 
   return <div style={baseStyle} />;
 }
+
+/** Mismo fondo que aplica `EscapeRoomSalaCanvas` cuando el autor no elige uno. */
+const ESCAPE_ROOM_SALA_FONDO_DEFAULT = { tipo: 'color', valor: '#1e1b4b' } as const;
 
 function RenderActivity({
   block,
@@ -994,10 +1029,36 @@ function RenderActivity({
         studentId={viewerStudentId ?? ''}
         studentName={viewerStudentName ?? ''}
         classId={viewerClassId ?? ''}
+        slideId={slideId}
         editorSyncKey={syncKey}
         liveSocket={liveSocket}
-        onComplete={undefined}
-        onAnswer={(roomId, answer) => onResponse?.({ roomId, answer })}
+        onComplete={(puntos, timeMs) =>
+          // Canal propio de cierre: estos puntos son gamificación narrativa, no
+          // una nota 0–5, así que nunca deben alimentar `activity:complete`.
+          onResponse?.({ tipo: 'escape_room:finished', puntos, timeMs })
+        }
+        onAnswer={(roomId, answer, correct, intento) =>
+          onResponse?.({ roomId, answer, correct, intento })
+        }
+        renderSalaCanvas={(sala) => (
+          <SlideRenderer
+            slide={{
+              id: `${slideId}-sala-${sala.id}`,
+              order: 0,
+              type: 'CONTENT',
+              title: sala.nombre,
+              bloques: bloquesVisiblesDeSala(sala),
+              fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
+              content: null,
+            }}
+            modo="viewer"
+            viewerStudentId={viewerStudentId}
+            viewerStudentName={viewerStudentName}
+            viewerClassId={viewerClassId}
+            liveSocket={liveSocket}
+            className="h-full w-full"
+          />
+        )}
       />
     );
   }
@@ -1217,20 +1278,11 @@ function RenderActivity({
   }
 
   if (act.tipo === 'ruleta') {
-    const ruletaAct = act as RuletaActivity;
+    const widget = normalizeRuletaBlock(block);
     if (modo === 'editor') {
-      return (
-        <RuletaEditor
-          actividad={ruletaAct}
-          isSelected={isSelected}
-        />
-      );
+      return <RuletaEditor block={widget} />;
     }
-    return (
-      <RuletaViewer
-        actividad={ruletaAct}
-      />
-    );
+    return <RuletaViewer block={widget} />;
   }
 
   const label = ACTIVITY_LABELS[(act as { tipo: keyof typeof ACTIVITY_LABELS }).tipo];
@@ -1288,6 +1340,7 @@ interface RenderColumnsProps {
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   timelineInnerSelection?: TimelineInnerSelection | null;
   onTimelineInnerSelectionChange?: (selection: TimelineInnerSelection | null) => void;
+  onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
@@ -1332,6 +1385,7 @@ function RenderColumns({
   onTimelineChange,
   timelineInnerSelection,
   onTimelineInnerSelectionChange,
+  onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1412,6 +1466,7 @@ function RenderColumns({
                 onTimelineChange={onTimelineChange}
                 timelineInnerSelection={timelineInnerSelection}
                 onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
+                onDiagramaChange={onDiagramaChange}
                 onRemoveBlock={onRemoveBlock}
                 onDuplicateBlock={onDuplicateBlock}
                 onCopyBlock={onCopyBlock}
@@ -1547,6 +1602,7 @@ interface BlockNodeProps {
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   timelineInnerSelection?: TimelineInnerSelection | null;
   onTimelineInnerSelectionChange?: (selection: TimelineInnerSelection | null) => void;
+  onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
   onCopyBlock?: (blockId: string) => void;
@@ -1586,6 +1642,10 @@ interface BlockNodeProps {
   clipGroupInnerEditId?: string | null;
   onClipGroupInnerEditChange?: (blockId: string | null) => void;
   onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
+  isLiveDragging?: boolean;
+  rotacion?: number;
+  onRotate?: (blockId: string, angle: number) => void;
+  onRotateEnd?: (blockId: string, angle: number) => void;
 }
 
 function BlockNode({
@@ -1622,6 +1682,7 @@ function BlockNode({
   onTimelineChange,
   timelineInnerSelection,
   onTimelineInnerSelectionChange,
+  onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -1648,6 +1709,10 @@ function BlockNode({
   clipGroupInnerEditId = null,
   onClipGroupInnerEditChange,
   onClipGroupChange,
+  isLiveDragging = false,
+  rotacion,
+  onRotate,
+  onRotateEnd,
 }: BlockNodeProps) {
   const isViewerMode = modo === 'viewer' || modo === 'preview';
   const activityBlockForRender: ActivityBlock | null =
@@ -1700,7 +1765,7 @@ function BlockNode({
           />
         );
       case 'imagen':    return <RenderImage block={block} forceFill={isResizing} />;
-      case 'video':     return <RenderVideo block={block} isThumbnail={isThumbnail} />;
+      case 'video':     return <RenderVideo block={block} isThumbnail={isThumbnail} editorMode={editorMode} />;
       case 'audio':     return <RenderAudio block={block} />;
       case 'actividad':
         return activityBlockForRender ? (
@@ -1885,6 +1950,36 @@ function BlockNode({
         ) : (
           <ProgresoViewer block={block} isThumbnail={isThumbnail} />
         );
+      case 'ruleta':
+        return editorMode ? (
+          <RuletaEditor
+            block={block}
+            onEnsureBlockSelected={() => onClick()}
+          />
+        ) : (
+          <RuletaViewer block={block} />
+        );
+      case 'grafico':
+        return editorMode ? (
+          <GraficoEditor
+            block={block}
+            isSelected={selectedId === blockId}
+            onEnsureBlockSelected={() => onClick()}
+          />
+        ) : (
+          <GraficoViewer block={block} isThumbnail={isThumbnail} />
+        );
+      case 'diagrama':
+        return editorMode ? (
+          <DiagramaEditor
+            block={block}
+            isSelected={selectedId === blockId}
+            onEnsureBlockSelected={() => onClick()}
+            onChange={(updated) => onDiagramaChange?.(blockId, updated)}
+          />
+        ) : (
+          <DiagramaViewer block={block} isThumbnail={isThumbnail} />
+        );
       case 'timeline':
         return editorMode ? (
           <TimelineEditor
@@ -1931,6 +2026,7 @@ function BlockNode({
             onTimelineChange={onTimelineChange}
             timelineInnerSelection={timelineInnerSelection}
             onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
+            onDiagramaChange={onDiagramaChange}
             onRemoveBlock={onRemoveBlock}
             onResponse={onResponse}
             variant={variant}
@@ -1961,7 +2057,12 @@ function BlockNode({
       tabIndex={isBlockButtonShell ? 0 : undefined}
       aria-pressed={editorMode && !isTextEditing ? isSelected : undefined}
       data-block-id={blockId}
-      style={{ ...positionStyle, ...animationStyle }}
+      data-live-dragging={isLiveDragging ? 'true' : undefined}
+      style={{
+        ...positionStyle,
+        ...animationStyle,
+        ...(isLiveDragging ? { opacity: 1, visibility: 'visible' as const } : {}),
+      }}
       onClick={
         editorMode && !isTextEditing && !isInteractiveStub
           ? (e) => { e.stopPropagation(); onClick(e); }
@@ -1990,6 +2091,7 @@ function BlockNode({
         isFormBlock && 'min-h-0 max-w-full cursor-default',
         editorMode && isSelected && 'ring-2 ring-blue-500 ring-offset-1',
         editorMode && canvasLocked && isSelected && 'ring-amber-500/90',
+        editorMode && isLiveDragging && 'z-20 opacity-100 shadow-lg ring-2 ring-[#2563EB]/50',
         isInteractiveStub && 'pointer-events-none',
         !editorMode && block.tipo !== 'hotspot' && block.tipo !== 'tooltip' && 'overflow-hidden max-w-full max-h-full',
         !editorMode && block.tipo === 'actividad' && 'min-h-0',
@@ -2001,7 +2103,10 @@ function BlockNode({
             block.tipo === 'flip-cards' ||
             block.tipo === 'tabs' ||
             block.tipo === 'carousel' ||
-            block.tipo === 'contador') &&
+            block.tipo === 'contador' ||
+            block.tipo === 'ruleta' ||
+            block.tipo === 'grafico' ||
+            block.tipo === 'diagrama') &&
           'flex h-full min-h-0 w-full flex-col',
       )}
     >
@@ -2021,11 +2126,14 @@ function BlockNode({
           y={currentCoords.y}
           ancho={currentCoords.ancho}
           alto={currentCoords.alto}
+          rotacion={rotacion}
           lockAspectRatio={block.tipo === 'imagen' ? !!block.lockAspectRatio : false}
           minDim={getBlockResizeMinDim(block.tipo)}
           canvasRef={canvasRef}
           onResize={onResize}
           onResizeEnd={onResizeEnd}
+          onRotate={onRotate}
+          onRotateEnd={onRotateEnd}
         />
       )}
     </div>
@@ -2157,6 +2265,7 @@ export interface SlideRendererProps {
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   timelineInnerSelection?: TimelineInnerSelection | null;
   onTimelineInnerSelectionChange?: (selection: TimelineInnerSelection | null) => void;
+  onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
@@ -2199,6 +2308,8 @@ export interface SlideRendererProps {
   viewerClassId?: string;
   /** Miniatura del panel lateral (SlideCanvasThumb). No confundir con modo preview escalado. */
   isThumbnail?: boolean;
+  /** Id de índice (`"0"`) del bloque en drag live — preview visible, sin opacity 0. */
+  draggingBlockId?: string | null;
   clipGroupInnerEditId?: string | null;
   onClipGroupInnerEditChange?: (blockId: string | null) => void;
   onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
@@ -2233,6 +2344,7 @@ export function SlideRenderer({
   onTimelineChange,
   timelineInnerSelection,
   onTimelineInnerSelectionChange,
+  onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
   onCopyBlock,
@@ -2250,6 +2362,7 @@ export function SlideRenderer({
   viewerStudentName,
   viewerClassId: viewerClassIdProp,
   isThumbnail = false,
+  draggingBlockId = null,
   clipGroupInnerEditId = null,
   onClipGroupInnerEditChange,
   onClipGroupChange,
@@ -2266,6 +2379,7 @@ export function SlideRenderer({
 
   const [editingId,     setEditingId]     = useState<string | null>(null);
   const [resizingCoords, setResizingCoords] = useState<Record<string, { x: number; y: number; ancho: number; alto: number }>>({});
+  const [rotatingAngles, setRotatingAngles] = useState<Record<string, number>>({});
   const [slideCanvasRoot, setSlideCanvasRoot] = useState<HTMLElement | null>(null);
   const internalCanvasRef = useRef<HTMLDivElement | null>(null);
   const measureCanvasRef = canvasRefProp ?? internalCanvasRef;
@@ -2286,6 +2400,37 @@ export function SlideRenderer({
   const variant =
     variantProp ?? getSlideVariant(slideBackgroundString(slide.fondo));
   const editorMode = modo === 'editor';
+
+  const handleRotate = useCallback((blockId: string, angle: number) => {
+    const blocks = slide.bloques ?? [];
+    const block = blocks[Number(blockId)];
+    if (block && isBlockCanvasLocked(block)) return;
+    setRotatingAngles((prev) => ({ ...prev, [blockId]: angle }));
+  }, [slide.bloques]);
+
+  const handleRotateEnd = useCallback((blockId: string, angle: number) => {
+    const previousBloques = slide.bloques ? [...slide.bloques] : [];
+    const block = (slide.bloques ?? [])[Number(blockId)];
+    setRotatingAngles((prev) => {
+      const next = { ...prev };
+      delete next[blockId];
+      return next;
+    });
+    if (!block || isBlockCanvasLocked(block)) return;
+
+    const nextBlocks = updateBlockAtPath(previousBloques, blockId, (b) => {
+      return withRotation(b, angle);
+    });
+
+    const updatedContent = mergeRendererSlideState(slide, { bloques: nextBlocks });
+    const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
+
+    if (onPersistSlide) {
+      void onPersistSlide({ previousBloques, content: sanitized });
+    } else {
+      updateSlide.mutate({ slideId: slide.id, content: sanitized });
+    }
+  }, [slide, updateSlide, onPersistSlide]);
 
   const handleResize = useCallback((blockId: string, coords: { x: number; y: number; ancho: number; alto: number }) => {
     const blocks = slide.bloques ?? [];
@@ -2543,6 +2688,9 @@ export function SlideRenderer({
         const blockId = String(index);
         const posStyleObj = getBlockPositionStyle(block);
         const currentCoords = resizingCoords[blockId] ?? getBlockRawCoords(block);
+        const currentRot = rotatingAngles[blockId] !== undefined
+          ? rotatingAngles[blockId]
+          : (block as { rotacion?: number }).rotacion ?? (block.tipo === 'actividad' ? block.marco?.rotacion : undefined);
 
         const posStyle = resizingCoords[blockId] ? {
           position: 'absolute' as const,
@@ -2551,6 +2699,12 @@ export function SlideRenderer({
           width: `${currentCoords.ancho}%`,
           height: `${currentCoords.alto}%`,
           zIndex: (block as { zIndex?: number }).zIndex ?? 1,
+          transform: currentRot ? `rotate(${currentRot}deg)` : undefined,
+          transformOrigin: currentRot ? 'center center' : undefined,
+        } : rotatingAngles[blockId] !== undefined ? {
+          ...posStyleObj,
+          transform: `rotate(${rotatingAngles[blockId]}deg)`,
+          transformOrigin: 'center center',
         } : posStyleObj;
 
         const isBlockSelected = editorMode && (
@@ -2573,6 +2727,9 @@ export function SlideRenderer({
             onBlockClick={(id, e) => handleBlockClick(id, e)}
             pathPrefix={blockId}
             positionStyle={posStyle}
+            rotacion={currentRot}
+            onRotate={handleRotate}
+            onRotateEnd={handleRotateEnd}
             onActivityChange={onActivityChange}
             onFlipCardsChange={onFlipCardsChange}
             flipCardsInnerSelection={flipCardsInnerSelection}
@@ -2595,6 +2752,7 @@ export function SlideRenderer({
             onTimelineChange={onTimelineChange}
             timelineInnerSelection={timelineInnerSelection}
             onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
+            onDiagramaChange={onDiagramaChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}
             onCopyBlock={editorMode ? onCopyBlock : undefined}
@@ -2620,6 +2778,7 @@ export function SlideRenderer({
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={onClipGroupInnerEditChange}
             onClipGroupChange={editorMode ? onClipGroupChange : undefined}
+            isLiveDragging={draggingBlockId === blockId}
           />
         );
       })}

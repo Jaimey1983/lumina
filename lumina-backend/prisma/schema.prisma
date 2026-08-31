@@ -23,6 +23,7 @@ model User {
   teacherCourses          Course[]          @relation("TeacherCourses")
   enrollments             Enrollment[]
   gradebookEntries        GradeEntry[]
+  classProgress           StudentClassProgress[]
   messageReads            MessageRead[]
   receivedMessages        Message[]         @relation("ReceivedMessages")
   sentMessages            Message[]         @relation("SentMessages")
@@ -74,6 +75,9 @@ model Course {
   periods            Period[]
   studentPoints      StudentPoints[]
   workGroups         WorkGroup[]
+  /** Grafo del mapa de progreso (edges). Layout de nodos es v2. */
+  progressMap        Json?
+  classProgress      StudentClassProgress[]
 
   @@map("courses")
 }
@@ -105,6 +109,36 @@ model Enrollment {
   @@map("enrollments")
 }
 
+enum ProgressStatus {
+  LOCKED
+  UNLOCKED
+  IN_PROGRESS
+  COMPLETED
+}
+
+/** Completitud canónica por estudiante × clase (mapa de progreso Edu). */
+model StudentClassProgress {
+  id          String         @id @default(cuid())
+  userId      String
+  classId     String
+  courseId    String
+  status      ProgressStatus @default(COMPLETED)
+  completedAt DateTime?
+  unlockedAt  DateTime?
+  score       Float?
+  source      String         @default("manual_teacher")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, classId])
+  @@index([userId, courseId])
+  @@map("student_class_progress")
+}
+
 model Class {
   id                 String              @id @default(cuid())
   title              String
@@ -113,6 +147,8 @@ model Class {
   status             ClassStatus         @default(DRAFT)
   /** `clase` = docente controla diapositivas; `presentacion` = estudiante a su ritmo sin telemetría; `autonomo` = ritmo propio con progreso en vivo. */
   modoEntrega        String              @default("clase")
+  /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
+  timerGlobal        Int                 @default(0)
   courseId           String
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -129,6 +165,7 @@ model Class {
   whiteboardSessions  WhiteboardSession[]
   autonomousSessions  AutonomousSession[]
   autonomousGrades    AutonomousGrade[]
+  studentProgress     StudentClassProgress[]
 
   @@map("classes")
 }
@@ -696,6 +733,87 @@ model TorneoAnswer {
   createdAt     DateTime @default(now())
 
   @@map("torneo_answers")
+}
+
+// ─── ESCAPE ROOM — ESTADO DE EJECUCIÓN EN VIVO ────────────────────────────
+// El DISEÑO (salas, desafíos, pistas) vive en `Slide.content` como contenido de
+// autoría. Estas tablas solo guardan la PARTIDA: equipos y su progreso.
+// `studentId` no lleva FK a User a propósito, igual que TorneoAnswer: así sirve
+// tanto a estudiantes matriculados como a invitados del join.
+
+model EscapeRoomRun {
+  id        String    @id @default(cuid())
+  classId   String
+  /** ClassSession.id — la partida vive dentro de una sesión en vivo. */
+  sessionId String
+  slideId   String
+  status    String    @default("running")
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  teams EscapeRoomTeam[]
+
+  @@unique([sessionId, slideId])
+  @@index([classId])
+  @@map("escape_room_runs")
+}
+
+model EscapeRoomTeam {
+  id         String    @id @default(cuid())
+  runId      String
+  name       String
+  /** Índice de la sala en la que va el equipo (avance compartido). */
+  salaIndex  Int       @default(0)
+  points     Int       @default(0)
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  run     EscapeRoomRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  members EscapeRoomTeamMember[]
+  rooms   EscapeRoomTeamRoom[]
+
+  @@unique([runId, name])
+  @@map("escape_room_teams")
+}
+
+model EscapeRoomTeamMember {
+  id          String   @id @default(cuid())
+  teamId      String
+  /** Denormalizado para garantizar un solo equipo por partida. */
+  runId       String
+  studentId   String
+  studentName String
+  joinedAt    DateTime @default(now())
+
+  team EscapeRoomTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, studentId])
+  @@index([teamId])
+  @@map("escape_room_team_members")
+}
+
+model EscapeRoomTeamRoom {
+  id                  String   @id @default(cuid())
+  teamId              String
+  salaId              String
+  salaIndex           Int
+  /** abierta | superada | agotada */
+  status              String   @default("abierta")
+  intentos            Int      @default(0)
+  pistasReveladas     Int      @default(0)
+  points              Int      @default(0)
+  solvedByStudentId   String?
+  solvedByStudentName String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  team EscapeRoomTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, salaId])
+  @@map("escape_room_team_rooms")
 }
 
 enum Role {

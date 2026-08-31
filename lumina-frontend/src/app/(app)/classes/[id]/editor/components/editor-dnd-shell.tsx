@@ -36,6 +36,7 @@ import { CANVAS_DROP_ZONE_ID } from './droppable-canvas';
 import type { ActivityPanelDragData } from './draggable-activity-item';
 import type { WidgetPanelDragData } from './draggable-widget-item';
 import type { ActivityType, WidgetType } from './panels/activities-panel';
+import { resolveCanvasBlockOverlayLabel } from '../lib/editor-dnd-overlay';
 import { cn } from '@/lib/utils';
 
 export interface ActivityDragOverlayState {
@@ -180,6 +181,7 @@ export function EditorDndShell({
   const handleDragCancel = useCallback(() => {
     setPanelDrag(null);
     setIsOverCanvas(false);
+    blockDragRef.current.handleDragCancel();
   }, []);
 
   const overlay =
@@ -188,6 +190,9 @@ export function EditorDndShell({
       : panelDrag?.kind === 'widget' && getWidgetDragOverlay
         ? getWidgetDragOverlay(panelDrag.tipo)
         : null;
+  const canvasBlockLabel = overlay
+    ? null
+    : resolveCanvasBlockOverlayLabel(slide, blockDrag.draggingId);
 
   useEffect(() => {
     if (!panelDrag) return;
@@ -224,9 +229,15 @@ export function EditorDndShell({
         </EditorDndShellContext.Provider>
       </BlockDragContext.Provider>
 
+      {/*
+        Rail: chip con icono. Lienzo: chip de tipo (no clona el bloque).
+        El preview alineado al drop es applyLiveDragPositions → liveSlide.
+        Un clon a tamaño real en el overlay se desfasa con scale() del canvas.
+      */}
       <DragOverlay dropAnimation={null}>
         {panelDrag && overlay ? (
           <div
+            aria-hidden
             className={cn(
               'flex items-center gap-2 rounded-md border border-[#2563EB]/40 bg-white/95 px-3 py-2 shadow-md',
               'pointer-events-none cursor-grabbing',
@@ -234,6 +245,16 @@ export function EditorDndShell({
           >
             <overlay.Icon className="size-4 shrink-0 text-[#2563EB]" />
             <span className="text-xs font-medium text-foreground">{overlay.label}</span>
+          </div>
+        ) : canvasBlockLabel ? (
+          <div
+            aria-hidden
+            className={cn(
+              'flex items-center rounded-md border border-[#2563EB]/40 bg-white/95 px-2.5 py-1 shadow-md',
+              'pointer-events-none cursor-grabbing',
+            )}
+          >
+            <span className="text-[11px] font-medium text-foreground">{canvasBlockLabel}</span>
           </div>
         ) : null}
       </DragOverlay>

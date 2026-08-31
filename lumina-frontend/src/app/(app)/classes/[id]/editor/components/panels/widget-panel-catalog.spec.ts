@@ -15,7 +15,7 @@ describe('widget-panel-catalog', () => {
     expect(new Set(types).size).toBe(WIDGET_TIPOS.length);
   });
 
-  it('agrupa los 11 widgets en lienzo, overlay y control', () => {
+  it('agrupa los 12 widgets en lienzo, overlay y control', () => {
     const grouped = WIDGET_PANEL_GROUP_ORDER.flatMap((group) =>
       getWidgetPanelItemsByGroup(group).map((item) => item.type),
     );
@@ -26,6 +26,7 @@ describe('widget-panel-catalog', () => {
       'carousel',
       'click-reveal',
       'timeline',
+      'ruleta',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

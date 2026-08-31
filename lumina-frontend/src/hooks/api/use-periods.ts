@@ -14,8 +14,16 @@ export function useCoursePeriods(courseId: string) {
     queryKey: ['courses', courseId, 'periods'],
     enabled: !!courseId,
     queryFn: async () => {
-      const { data } = await api.get<Period[]>(`/courses/${courseId}/periods`);
-      return data ?? [];
+      const { data } = await api.get(`/courses/${courseId}/periods`);
+      if (Array.isArray(data)) return data as Period[];
+      if (
+        data &&
+        typeof data === 'object' &&
+        Array.isArray((data as { data?: unknown }).data)
+      ) {
+        return (data as { data: Period[] }).data;
+      }
+      return [];
     },
   });
 }

@@ -1,18 +1,31 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Socket } from 'socket.io-client';
 import { CheckCircle2, Clock, Eye, Lock, Trophy, XCircle } from 'lucide-react';
 
+import {
+  historialFromTeam,
+  tiempoRestanteLive,
+  useEscapeRoomSession,
+} from '@/hooks/use-escape-room-session';
+import {
+  calcularPuntos,
+  esCorrecta,
+  intentosMaximosDeSala,
+  pistasDeSala,
+  pistasReveladasPorIntentos,
+} from '@/lib/escape-room-logic';
+import type { EscapeRoomRankingRow } from '@/lib/escape-room-live.types';
 import { useSound } from '@/hooks/use-sound';
 import { cn } from '@/lib/utils';
-import type { EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
+import type { Block, EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
 import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
 import { Button } from '@/components/ui/button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Phase = 'intro' | 'sala' | 'victoria' | 'derrota';
+type Phase = 'intro' | 'sala' | 'victoria' | 'derrota' | 'cerrado';
 type FeedbackState = 'none' | 'correcto' | 'incorrecto' | 'bloqueada';
 
 interface SalaHistorial {
@@ -28,34 +41,42 @@ export interface EscapeRoomViewerProps {
   studentId: string;
   studentName: string;
   classId?: string;
+  slideId?: string;
   editorSyncKey?: string;
   liveSocket?: Socket | null;
   onComplete?: (points: number, timeMs?: number) => void;
   onAnswer?: (salaId: string, answer: string, correct?: boolean, intento?: number) => void;
+  /**
+   * Pinta el lienzo visual de una sala (`bloques` / `fondo`) cuando el autor lo
+   * diseñó. Lo inyecta `SlideRenderer`, que es quien sabe renderizar bloques: así
+   * el viewer no importa el renderer y no se crea un ciclo de módulos.
+   * Si falta, la sala cae a la tarjeta de texto de siempre.
+   */
+  renderSalaCanvas?: (sala: EscapeRoomSala) => ReactNode;
+  /** Se llama al pulsar "Finalizar" en la pantalla de cierre. */
+  onExit?: () => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function esCorrecta(sala: EscapeRoomSala, respuesta: string): boolean {
-  const r = respuesta.trim();
-  const c = sala.respuestaCorrecta.trim();
-  if (!r) return false;
-  return sala.ignorarMayusculas
-    ? r.toLowerCase() === c.toLowerCase()
-    : r === c;
-}
-
-function calcularPuntos(intento: number, puntosBase: number): number {
-  if (intento <= 1) return puntosBase;
-  if (intento === 2) return Math.round(puntosBase * (150 / 300));
-  return Math.round(puntosBase * (50 / 300));
-}
 
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}m ${s}s`;
+}
+
+/**
+ * Bloques del lienzo de una sala que el estudiante puede ver.
+ * Se descartan los de tipo `actividad`: el acertijo lo sirve el propio viewer y
+ * el diseñador tampoco los deja insertar (`EscapeRoomSalaCanvas`).
+ */
+export function bloquesVisiblesDeSala(sala: EscapeRoomSala): Block[] {
+  return (sala.bloques ?? []).filter((b) => b.tipo !== 'actividad');
+}
+
+export function salaTieneLienzo(sala: EscapeRoomSala): boolean {
+  return bloquesVisiblesDeSala(sala).length > 0;
 }
 
 function formatSeg(seg: number): string {
@@ -149,13 +170,16 @@ function SalaProgress({
 export function EscapeRoomViewer({
   activity,
   variant = 'light',
-  studentId: _studentId,
+  studentId,
   studentName,
-  classId: _classId,
+  classId,
+  slideId,
   editorSyncKey,
-  liveSocket: _liveSocket,
+  liveSocket,
   onComplete,
   onAnswer,
+  renderSalaCanvas,
+  onExit,
 }: EscapeRoomViewerProps) {
   const { play } = useSound();
   const isDark = variant === 'dark';
@@ -165,6 +189,18 @@ export function EscapeRoomViewer({
   const totalSalas = Math.max(1, salas.length);
   const tiempoLimiteSeg =
     (act.tiempoLimiteMinutos ?? 0) > 0 ? act.tiempoLimiteMinutos! * 60 : 0;
+
+  const session = useEscapeRoomSession({
+    liveSocket,
+    classId,
+    slideId,
+    studentId,
+    studentName,
+    editorSyncKey,
+  });
+  const isLive = session.mode === 'live';
+  const { requestRanking } = session;
+  const mostrarRanking = act.mostrarRanking !== false;
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -180,17 +216,26 @@ export function EscapeRoomViewer({
   const [historial, setHistorial] = useState<SalaHistorial[]>([]);
   const [tiempoFinal, setTiempoFinal] = useState(0);
   const [advancing, setAdvancing] = useState(false);
+  const [ranking, setRanking] = useState<EscapeRoomRankingRow[]>([]);
+  const [livePistaTexts, setLivePistaTexts] = useState<string[]>([]);
+  const [mostrarPistasLive, setMostrarPistasLive] = useState(false);
+  const [joiningTeam, setJoiningTeam] = useState(false);
 
   // ── Refs ───────────────────────────────────────────────────────────────────
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tiempoInicioRef = useRef(0);
   const puntosRef = useRef(0);
+  const prevLiveSalaRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const onAnswerRef = useRef(onAnswer);
   onAnswerRef.current = onAnswer;
+  /** El cierre en vivo llega por estado del servidor: notificar una sola vez. */
+  const cierreNotificadoRef = useRef(false);
   puntosRef.current = puntosAcumulados;
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
   function stopTimer() {
     if (timerRef.current) {
@@ -199,8 +244,9 @@ export function EscapeRoomViewer({
     }
   }
 
-  // Reset cuando cambia el slide en la previsualización del editor
+  // Reset cuando cambia el slide en previsualización (modo local únicamente)
   useEffect(() => {
+    if (isLive && session.team) return;
     stopTimer();
     setPhase('intro');
     setSalaActual(0);
@@ -208,15 +254,117 @@ export function EscapeRoomViewer({
     setPuntosAcumulados(0);
     setTiempoRestante(tiempoLimiteSeg);
     setMostrarPista(false);
+    setLivePistaTexts([]);
+    setMostrarPistasLive(false);
     setInputValue('');
     setSelectedOption(null);
     setFeedback('none');
     setHistorial([]);
     setTiempoFinal(0);
     setAdvancing(false);
-  // editorSyncKey + tiempoLimiteSeg estables para el lint
+    setRanking([]);
+    prevLiveSalaRef.current = 0;
+    cierreNotificadoRef.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorSyncKey]);
+
+  // Sincronizar progreso del equipo desde el servidor (reconexión + compañeros)
+  useEffect(() => {
+    if (!isLive || !session.team) return;
+
+    const team = session.team;
+    const historialLive = historialFromTeam(team, salas);
+    const salaIdx = Math.min(team.salaIndex, totalSalas - 1);
+    const currentRoom = team.rooms.find((r) => r.salaIndex === team.salaIndex);
+
+    if (team.finished || team.salaIndex >= totalSalas) {
+      stopTimer();
+      const elapsed = session.startedAtMs
+        ? Date.now() - session.startedAtMs
+        : Date.now() - tiempoInicioRef.current;
+      setTiempoFinal(elapsed);
+      setPuntosAcumulados(team.points);
+      setHistorial(historialLive);
+      if (phaseRef.current !== 'cerrado') setPhase('victoria');
+      if (!cierreNotificadoRef.current) {
+        cierreNotificadoRef.current = true;
+        onCompleteRef.current?.(team.points, elapsed);
+      }
+      return;
+    }
+
+    const hadProgress =
+      team.salaIndex > 0 ||
+      team.rooms.some((r) => r.status === 'superada' || r.status === 'agotada');
+
+    if (hadProgress && phaseRef.current === 'intro') {
+      tiempoInicioRef.current = session.startedAtMs ?? Date.now();
+      setPhase('sala');
+    }
+
+    if (
+      team.salaIndex > prevLiveSalaRef.current &&
+      phaseRef.current === 'sala' &&
+      !advancing
+    ) {
+      const prevRoom = team.rooms.find(
+        (r) => r.salaIndex === prevLiveSalaRef.current,
+      );
+      setAdvancing(true);
+      setFeedback(prevRoom?.status === 'agotada' ? 'bloqueada' : 'correcto');
+      window.setTimeout(() => {
+        setAdvancing(false);
+        setFeedback('none');
+        setInputValue('');
+        setSelectedOption(null);
+        setMostrarPista(false);
+        setMostrarPistasLive(false);
+        setLivePistaTexts([]);
+      }, 1500);
+    }
+
+    prevLiveSalaRef.current = team.salaIndex;
+    setSalaActual(salaIdx);
+    setPuntosAcumulados(team.points);
+    setHistorial(historialLive);
+    setIntentos(currentRoom?.intentos ?? 0);
+  }, [
+    advancing,
+    isLive,
+    salas,
+    session.startedAtMs,
+    session.team,
+    totalSalas,
+  ]);
+
+  // Reloj compartido en vivo (arranque del docente)
+  useEffect(() => {
+    if (!isLive || phase === 'intro' || phase === 'victoria' || phase === 'derrota') {
+      return undefined;
+    }
+    if (tiempoLimiteSeg <= 0 || session.startedAtMs == null) return undefined;
+
+    const tick = () => {
+      const rest = tiempoRestanteLive(session.startedAtMs, tiempoLimiteSeg);
+      if (rest != null) setTiempoRestante(rest);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [isLive, phase, session.startedAtMs, tiempoLimiteSeg]);
+
+  // Podio de cierre: solo en vivo y solo cuando la partida terminó para el equipo
+  useEffect(() => {
+    if (!isLive || !mostrarRanking) return;
+    if (phase !== 'victoria' && phase !== 'derrota') return;
+    let cancelado = false;
+    void requestRanking().then((rows) => {
+      if (!cancelado) setRanking(rows);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [isLive, mostrarRanking, phase, requestRanking]);
 
   // Cleanup on unmount
   useEffect(() => () => stopTimer(), []);
@@ -270,20 +418,35 @@ export function EscapeRoomViewer({
   // ── Comenzar ───────────────────────────────────────────────────────────────
 
   function comenzar() {
-    const now = Date.now();
-    tiempoInicioRef.current = now;
-    setTiempoRestante(tiempoLimiteSeg);
-    setPhase('sala');
+    void (async () => {
+      if (isLive && !session.team) {
+        setJoiningTeam(true);
+        const ok = await session.joinTeam();
+        setJoiningTeam(false);
+        if (!ok) return;
+      }
 
-    if (tiempoLimiteSeg > 0) {
-      stopTimer();
-      timerRef.current = setInterval(() => {
-        setTiempoRestante((prev) => {
-          if (prev <= 1) { stopTimer(); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+      const now = session.startedAtMs ?? Date.now();
+      tiempoInicioRef.current = now;
+      if (isLive && session.startedAtMs != null && tiempoLimiteSeg > 0) {
+        setTiempoRestante(
+          tiempoRestanteLive(session.startedAtMs, tiempoLimiteSeg) ?? tiempoLimiteSeg,
+        );
+      } else {
+        setTiempoRestante(tiempoLimiteSeg);
+      }
+      setPhase('sala');
+
+      if (!isLive && tiempoLimiteSeg > 0) {
+        stopTimer();
+        timerRef.current = setInterval(() => {
+          setTiempoRestante((prev) => {
+            if (prev <= 1) { stopTimer(); return 0; }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    })();
   }
 
   // ── Confirmar respuesta ────────────────────────────────────────────────────
@@ -299,6 +462,59 @@ export function EscapeRoomViewer({
         : inputValue;
 
     if (!respuesta.trim()) return;
+
+    if (isLive && session.team) {
+      void (async () => {
+        const ack = await session.submitAnswer(sala.id, respuesta);
+        onAnswerRef.current?.(
+          sala.id,
+          respuesta,
+          ack.outcome === 'correcto',
+          ack.intento,
+        );
+
+        if (!ack.ok) return;
+
+        if (ack.outcome === 'correcto') {
+          play('correct');
+          setFeedback('correcto');
+          setAdvancing(true);
+          window.setTimeout(() => {
+            setAdvancing(false);
+            setFeedback('none');
+            setInputValue('');
+            setSelectedOption(null);
+            setMostrarPista(false);
+            setMostrarPistasLive(false);
+            setLivePistaTexts([]);
+          }, 1500);
+        } else if (ack.outcome === 'incorrecto') {
+          play('wrong');
+          setFeedback('incorrecto');
+          setIntentos(ack.intento ?? intentos + 1);
+          if (ack.pistas && ack.pistas.length > 0) {
+            setLivePistaTexts(ack.pistas);
+            setMostrarPistasLive(true);
+          }
+        } else if (ack.outcome === 'bloqueada') {
+          play('wrong');
+          setFeedback('bloqueada');
+          setAdvancing(true);
+          window.setTimeout(() => {
+            setAdvancing(false);
+            setFeedback('none');
+          }, 1500);
+        } else if (
+          ack.outcome === 'ya_resuelta' ||
+          ack.outcome === 'sala_no_activa'
+        ) {
+          setFeedback('none');
+          setInputValue('');
+          setSelectedOption(null);
+        }
+      })();
+      return;
+    }
 
     const intentoActual = intentos + 1;
     const correcto = esCorrecta(sala, respuesta);
@@ -320,8 +536,7 @@ export function EscapeRoomViewer({
       setIntentos(newIntentos);
       setFeedback('incorrecto');
 
-      const maxIntentos =
-        sala.intentosMaximos === -1 ? Infinity : sala.intentosMaximos;
+      const maxIntentos = intentosMaximosDeSala(sala);
       if (newIntentos >= maxIntentos) {
         setFeedback('bloqueada');
         const newHistorial = [
@@ -350,6 +565,73 @@ export function EscapeRoomViewer({
   const shell = cn(
     'relative flex h-full min-h-0 w-full max-w-full flex-col rounded-xl border p-4 shadow-lumina-sm sm:p-5',
     isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/95',
+  );
+
+  // Podio: solo en vivo, solo al cerrar y solo si el autor lo dejó activo.
+  const podio =
+    mostrarRanking && ranking.length > 0 ? (
+      <div className="w-full max-w-xs space-y-1">
+        <p
+          className={cn(
+            'text-[10px] font-semibold uppercase tracking-wider',
+            isDark ? 'text-white/50' : 'text-[#9ca3af]',
+          )}
+        >
+          Ranking de equipos
+        </p>
+        {ranking.map((r) => {
+          const propio = session.team?.id === r.teamId;
+          return (
+            <div
+              key={r.teamId}
+              className={cn(
+                'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs',
+                propio
+                  ? isDark
+                    ? 'bg-[#2563EB]/30 text-white'
+                    : 'bg-[#dbeafe] text-[#1d4ed8]'
+                  : isDark
+                    ? 'bg-white/10 text-white/90'
+                    : 'bg-[#f9fafb] text-[#111827]',
+              )}
+            >
+              <span className="w-4 shrink-0 text-center font-bold tabular-nums">
+                {r.position}
+              </span>
+              <span className="min-w-0 flex-1 truncate font-medium">{r.name}</span>
+              {!r.finished && (
+                <span
+                  className={cn(
+                    'shrink-0 text-[10px]',
+                    isDark ? 'text-white/50' : 'text-[#9ca3af]',
+                  )}
+                >
+                  en juego
+                </span>
+              )}
+              <span className="shrink-0 font-semibold tabular-nums">{r.points} pts</span>
+            </div>
+          );
+        })}
+      </div>
+    ) : null;
+
+  const botonFinalizar = (
+    <button
+      type="button"
+      onClick={() => {
+        setPhase('cerrado');
+        onExit?.();
+      }}
+      className={cn(
+        'mt-1 rounded-lg px-5 py-2 text-sm font-semibold transition-colors',
+        isDark
+          ? 'bg-white/15 text-white hover:bg-white/25'
+          : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]',
+      )}
+    >
+      Finalizar
+    </button>
   );
 
   // ─── INTRO ─────────────────────────────────────────────────────────────────
@@ -416,14 +698,44 @@ export function EscapeRoomViewer({
                 {act.tiempoLimiteMinutos} min
               </span>
             )}
+            {isLive && (
+              <span
+                className={cn(
+                  'rounded-full px-3 py-1 text-xs font-medium',
+                  isDark ? 'bg-emerald-500/20 text-emerald-200' : 'bg-emerald-50 text-emerald-700',
+                )}
+              >
+                Modo equipos
+              </span>
+            )}
           </div>
+
+          {isLive && session.team && (
+            <div
+              className={cn(
+                'w-full max-w-xs rounded-lg border px-3 py-2 text-left text-xs',
+                isDark ? 'border-white/20 bg-white/10 text-white/90' : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827]',
+              )}
+            >
+              <p className="font-semibold">{session.team.name}</p>
+              <p className={cn('mt-1', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+                {session.team.members.map((m) => m.studentName).join(' · ') ||
+                  'Esperando compañeros…'}
+              </p>
+            </div>
+          )}
+
+          {isLive && session.joinError && (
+            <p className="text-xs font-medium text-red-500">{session.joinError}</p>
+          )}
 
           <Button
             type="button"
+            disabled={joiningTeam || session.hydrating}
             className="mt-2 gap-2 bg-[#2563EB] px-6 text-white hover:bg-[#1d4ed8]"
             onClick={comenzar}
           >
-            ▶ Comenzar
+            {joiningTeam ? 'Uniéndote al equipo…' : '▶ Comenzar'}
           </Button>
         </div>
 
@@ -530,6 +842,9 @@ export function EscapeRoomViewer({
               ))}
             </div>
           )}
+
+          {podio}
+          {botonFinalizar}
         </div>
       </div>
     );
@@ -571,6 +886,27 @@ export function EscapeRoomViewer({
               puntos acumulados
             </p>
           </div>
+
+          {podio}
+          {botonFinalizar}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── CERRADO ───────────────────────────────────────────────────────────────
+
+  if (phase === 'cerrado') {
+    return (
+      <div className={shell}>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
+          <p className={cn('text-sm font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+            Actividad finalizada
+          </p>
+          <p className={cn('text-xs', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+            <span className="font-semibold tabular-nums">{puntosAcumulados}</span> puntos
+            {tiempoFinal > 0 ? ` · ${formatMs(tiempoFinal)}` : ''}
+          </p>
         </div>
       </div>
     );
@@ -582,10 +918,13 @@ export function EscapeRoomViewer({
 
   const inputDisabled = advancing || feedback === 'correcto' || feedback === 'bloqueada';
   const confirmDisabled = inputDisabled || !puedeConfirmar;
-  const intentosRestantes =
-    sala.intentosMaximos === -1
-      ? null
-      : sala.intentosMaximos - intentos;
+  // Salas legacy no traen `bloques`: sin lienzo, la tarjeta de texto queda igual.
+  const salaCanvas =
+    renderSalaCanvas && salaTieneLienzo(sala) ? renderSalaCanvas(sala) : null;
+  const maxIntentosSala = intentosMaximosDeSala(sala);
+  const intentosRestantes = Number.isFinite(maxIntentosSala) ? maxIntentosSala - intentos : null;
+  /** Pistas desbloqueadas en modo local: la n-ésima se revela tras el n-ésimo fallo. */
+  const pistasLocales = pistasDeSala(sala).slice(0, pistasReveladasPorIntentos(sala, intentos));
 
   return (
     <div className={shell}>
@@ -597,6 +936,11 @@ export function EscapeRoomViewer({
             className={cn('text-xs font-semibold', isDark ? 'text-white/70' : 'text-[#6b7280]')}
           >
             Sala {salaActual + 1} de {totalSalas}
+            {isLive && session.team ? (
+              <span className={cn('ml-2 font-normal', isDark ? 'text-white/50' : 'text-[#9ca3af]')}>
+                · {session.team.name}
+              </span>
+            ) : null}
           </span>
           {tiempoLimiteSeg > 0 && (
             <span
@@ -693,6 +1037,18 @@ export function EscapeRoomViewer({
           </p>
         )}
 
+        {/* Lienzo visual de la sala — solo si el autor lo diseñó */}
+        {salaCanvas && (
+          <div
+            className={cn(
+              'shrink-0 overflow-hidden rounded-lg border',
+              isDark ? 'border-white/15' : 'border-[#e5e7eb]',
+            )}
+          >
+            {salaCanvas}
+          </div>
+        )}
+
         <div className={cn('h-px shrink-0', isDark ? 'bg-white/15' : 'bg-[#e5e7eb]')} />
 
         {/* Desafío */}
@@ -778,8 +1134,51 @@ export function EscapeRoomViewer({
           </div>
         )}
 
-        {/* Botón pista — aparece tras el primer fallo */}
-        {sala.pista?.trim() && intentos >= 1 && feedback !== 'correcto' && !advancing && (
+        {/* Botón pista — aparece tras el primer fallo (local) o vía servidor (vivo) */}
+        {isLive && session.team && intentos >= 1 && feedback !== 'correcto' && !advancing ? (
+          !mostrarPistasLive ? (
+            <button
+              type="button"
+              onClick={() => {
+                void session.requestHint(sala.id).then((pistas) => {
+                  if (pistas.length > 0) {
+                    setLivePistaTexts(pistas);
+                    setMostrarPistasLive(true);
+                  }
+                });
+              }}
+              className={cn(
+                'flex items-center gap-1.5 self-start rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                isDark
+                  ? 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
+                  : 'border-[#e5e7eb] bg-[#f9fafb] text-[#6b7280] hover:bg-[#f3f4f6]',
+              )}
+            >
+              <Eye className="size-3.5" aria-hidden />
+              Pedir pista
+            </button>
+          ) : (
+            <div
+              className={cn(
+                'space-y-1.5 rounded-lg border px-3 py-2 text-xs animate-in fade-in duration-200',
+                isDark
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+                  : 'border-amber-200 bg-[#fef3c7] text-[#92400e]',
+              )}
+            >
+              {(livePistaTexts.length > 0 ? livePistaTexts : session.livePistas.map((_, i) => `Pista ${i + 1}`)).map(
+                (text, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <Eye className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                    <span>{text}</span>
+                  </div>
+                ),
+              )}
+            </div>
+          )
+        ) : null}
+
+        {!isLive && pistasLocales.length > 0 && feedback !== 'correcto' && !advancing && (
           !mostrarPista ? (
             <button
               type="button"
@@ -792,19 +1191,23 @@ export function EscapeRoomViewer({
               )}
             >
               <Eye className="size-3.5" aria-hidden />
-              Ver pista
+              {pistasLocales.length > 1 ? `Ver pistas (${pistasLocales.length})` : 'Ver pista'}
             </button>
           ) : (
             <div
               className={cn(
-                'flex items-start gap-2 rounded-lg border px-3 py-2 text-xs animate-in fade-in duration-200',
+                'space-y-1.5 rounded-lg border px-3 py-2 text-xs animate-in fade-in duration-200',
                 isDark
                   ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
                   : 'border-amber-200 bg-[#fef3c7] text-[#92400e]',
               )}
             >
-              <Eye className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-              <span>{sala.pista}</span>
+              {pistasLocales.map((texto, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Eye className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                  <span>{texto}</span>
+                </div>
+              ))}
             </div>
           )
         )}

@@ -280,7 +280,11 @@ export interface EscapeRoomSala {
   opciones?: string[];
   respuestaCorrecta: string;
   ignorarMayusculas: boolean;
+  /** Pistas en orden de revelado. Formato canónico desde Fase 5. */
+  pistas?: string[];
+  /** Legado: una sola pista. Solo lectura — `normalizeSala` lo migra a `pistas`. */
   pista?: string;
+  /** Entero ≥ 1, o −1 para intentos ilimitados. */
   intentosMaximos: number;
   /** Contenido visual del canvas de esta sala (bloques posicionados). */
   bloques?: Block[];
@@ -685,6 +689,7 @@ export interface BlockMarco {
   arribaPct: number;
   anchoPct: number;
   altoPct: number;
+  rotacion?: number;
 }
 
 export interface ActivityBlock {
@@ -903,6 +908,7 @@ export type {
   BotonWidget,
   ContadorWidget,
   ProgresoWidget,
+  RuletaWidget,
   WidgetAlineacion,
   WidgetCampoEstilo,
   WidgetCanvasPosition,
@@ -931,6 +937,7 @@ import type {
   BotonWidget,
   ContadorWidget,
   ProgresoWidget,
+  RuletaWidget,
   WidgetCampoEstilo,
   WidgetElementPos,
 } from './widget.types';
@@ -1031,6 +1038,130 @@ export interface FlipCardsWidget {
   zIndex?: number;
 }
 
+// ─── Bloque Gráfico ─────────────────────────────────────────────────────────
+
+/**
+ * Tipos de gráficos soportados.
+ * `bar` = BarChart horizontal; `column` = BarChart vertical (columnas).
+ */
+export type GraficoChartType =
+  | 'bar'
+  | 'column'
+  | 'line'
+  | 'area'
+  | 'pie'
+  | 'donut'
+  | 'radialBar';
+
+export interface GraficoSerie {
+  nombre: string;
+  valores: number[];
+  color?: string;
+}
+
+export interface GraficoDatosBlock {
+  id: string;
+  tipo: 'grafico';
+  modo: 'contenido';
+  soloLecturaEnViewer: true;
+  chartType: GraficoChartType;
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
+  categorias: string[];
+  series: GraficoSerie[];
+  colorPaleta?: string;
+  titulo?: string;
+  descripcionAccesible?: string;
+  mostrarLeyenda?: boolean;
+}
+
+// ─── Bloque Diagrama (Grafos y Geometrías) ──────────────────────────────────
+
+export type DiagramaSubtipo =
+  | 'mapa_mental'
+  | 'organigrama'
+  | 'mapa_conceptual'
+  | 'flujo'
+  | 'cronologia'
+  | 'venn';
+
+export interface DiagramaNodo {
+  id: string;
+  etiqueta: string;
+  cuerpo?: string;
+  x: number;
+  y: number;
+  estilo?: Record<string, unknown>;
+}
+
+export interface DiagramaArista {
+  id: string;
+  desdeId: string;
+  haciaId: string;
+  etiqueta?: string;
+  dirigida?: boolean;
+}
+
+export interface DiagramaGrafoBlock {
+  id: string;
+  tipo: 'diagrama';
+  subtipo: Exclude<DiagramaSubtipo, 'venn'>;
+  modo: 'contenido';
+  soloLecturaEnViewer: true;
+  titulo?: string;
+  descripcionAccesible?: string;
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
+  nodos: DiagramaNodo[];
+  aristas: DiagramaArista[];
+  layout?: 'libre' | 'jerarquico' | 'lineal';
+}
+
+export interface DiagramaVennRegion {
+  id: string;
+  etiqueta?: string;
+}
+
+export interface DiagramaVennElemento {
+  id: string;
+  texto: string;
+  /** `null` = fuera de los conjuntos. Queda desde v1 para evaluación futura. */
+  regionId: string | null;
+}
+
+export interface DiagramaVennBlock {
+  id: string;
+  tipo: 'diagrama';
+  subtipo: 'venn';
+  modo: 'contenido';
+  soloLecturaEnViewer: true;
+  titulo?: string;
+  descripcionAccesible?: string;
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
+  conjuntos: 2 | 3;
+  regiones: DiagramaVennRegion[];
+  elementos: DiagramaVennElemento[];
+}
+
+export type DiagramaBlock = DiagramaGrafoBlock | DiagramaVennBlock;
+
+// ─── Misión / Quest (Metadatos Narrativos) ───────────────────────────────────
+
+export interface ClassNarrativeMeta {
+  nombreMision?: string;
+  fragmentosHistoria?: string[];
+}
+
 // ─── Block (discriminated union) ──────────────────────────────────────────────
 
 export type Block = (
@@ -1045,6 +1176,8 @@ export type Block = (
   | ColumnsBlock
   | FormaBlock
   | ClipGroupBlock
+  | GraficoDatosBlock
+  | DiagramaBlock
   | FlipCardsWidget
   | TabsWidget
   | CarouselWidget
@@ -1056,6 +1189,7 @@ export type Block = (
   | BotonWidget
   | ContadorWidget
   | ProgresoWidget
+  | RuletaWidget
 ) & {
   animaciones?: import('@/types/animation.types').Animacion[];
   /**
@@ -1063,6 +1197,8 @@ export type Block = (
    * No afecta edición de contenido ni orden de capas (z-index).
    */
   canvasLocked?: boolean;
+  /** Ángulo de rotación en grados (0–360). */
+  rotacion?: number;
 };
 
 export type BlockTipo = Block['tipo'];
@@ -1184,6 +1320,9 @@ export const BLOCK_FALLBACKS = {
   boton: { x: 40, y: 80, ancho: 20, alto: 8 },
   contador: { x: 36, y: 6, ancho: 28, alto: 16 },
   progreso: { x: 10, y: 4, ancho: 80, alto: 5 },
+  ruleta: { x: 15, y: 8, ancho: 70, alto: 78 },
+  grafico: { x: 15, y: 15, ancho: 70, alto: 65 },
+  diagrama: { x: 10, y: 10, ancho: 80, alto: 75 },
   timeline: { x: 5, y: 5, ancho: 90, alto: 90 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
@@ -1228,7 +1367,7 @@ export const BLOCK_FALLBACKS = {
         tipoRespuesta: 'texto',
         respuestaCorrecta: 'H2O',
         ignorarMayusculas: true,
-        pista: 'Dos hidrógenos y un oxígeno',
+        pistas: ['Dos hidrógenos y un oxígeno'],
         intentosMaximos: 3,
       },
       {
@@ -1239,7 +1378,7 @@ export const BLOCK_FALLBACKS = {
         tipoRespuesta: 'codigo',
         respuestaCorrecta: '100',
         ignorarMayusculas: false,
-        pista: 'Es un número redondo',
+        pistas: ['Es un número redondo'],
         intentosMaximos: 2,
       },
       {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { FlipCardsWidget } from '@/types/slide.types';
-import type { ClickRevealWidget, TabsWidget, TimelineWidget } from '@/types/widget.types';
+import type { ClickRevealWidget, RuletaWidget, TabsWidget, TimelineWidget } from '@/types/widget.types';
 import {
   classSlideToRendererSlide,
   sanitizeSlideContentForPersistence,
@@ -118,5 +118,120 @@ describe('widget hydrate + persist (PR A)', () => {
     const tlSaved = persistedBloques[1] as TimelineWidget;
     expect(tlSaved.configuracion.numeroNodos).toBe(2);
     expect(tlSaved.nodos).toHaveLength(2);
+  });
+
+  it('convierte ruleta G4 legado a widget en lectura y persistencia', () => {
+    const legado = {
+      tipo: 'actividad',
+      actividad: {
+        tipo: 'ruleta',
+        configuracion: {
+          colores: ['#111111', '#222222'],
+          sonido: false,
+          duracionGiro: 2000,
+          mostrarGanador: true,
+        },
+        items: [
+          { id: 'a', texto: 'Rojo' },
+          { id: 'b', texto: 'Azul' },
+        ],
+      },
+      marco: { izquierdaPct: 8, arribaPct: 12, anchoPct: 70, altoPct: 60 },
+    };
+    const rendered = classSlideToRendererSlide(apiSlide([legado]));
+    const widget = (rendered.bloques ?? [])[0] as RuletaWidget;
+    expect(widget.tipo).toBe('ruleta');
+    expect(widget.items.map((i) => i.texto)).toEqual(['Rojo', 'Azul']);
+    expect(widget.x).toBe(8);
+
+    const persisted = sanitizeSlideContentForPersistence({ bloques: [legado] });
+    const saved = ((persisted?.bloques ?? []) as RuletaWidget[])[0];
+    expect(saved.tipo).toBe('ruleta');
+    expect(saved.items.map((i) => i.texto)).toEqual(['Rojo', 'Azul']);
+  });
+
+  it('normaliza bloque grafico asegurando modo contenido y soloLectura', () => {
+    const rawGrafico = {
+      tipo: 'grafico',
+      chartType: 'column',
+      categorias: ['Ene', 'Feb'],
+      series: [{ nombre: 'Ventas', valores: [100, 200] }],
+    };
+
+    const rendered = classSlideToRendererSlide(apiSlide([rawGrafico]));
+    const grafico = (rendered.bloques ?? [])[0] as import('@/types/slide.types').GraficoDatosBlock;
+
+    expect(grafico.tipo).toBe('grafico');
+    expect(grafico.modo).toBe('contenido');
+    expect(grafico.soloLecturaEnViewer).toBe(true);
+    expect(grafico.chartType).toBe('column');
+    expect(grafico.categorias).toEqual(['Ene', 'Feb']);
+    expect(grafico.series[0].valores).toEqual([100, 200]);
+
+    const persisted = sanitizeSlideContentForPersistence({ bloques: [rawGrafico] });
+    const saved = ((persisted?.bloques ?? []) as import('@/types/slide.types').GraficoDatosBlock[])[0];
+    expect(saved.tipo).toBe('grafico');
+    expect(saved.modo).toBe('contenido');
+    expect(saved.soloLecturaEnViewer).toBe(true);
+  });
+
+  it('normaliza bloque diagrama asegurando modo contenido, soloLectura y aristas válidas', () => {
+    const rawDiagrama = {
+      tipo: 'diagrama',
+      subtipo: 'mapa_mental',
+      nodos: [
+        { id: 'raiz', etiqueta: 'Raíz', x: 200, y: 100 },
+        { id: 'hijo', etiqueta: 'Hijo', x: 100, y: 50 },
+      ],
+      aristas: [
+        { id: 'a1', desdeId: 'raiz', haciaId: 'hijo' },
+        { id: 'a2', desdeId: 'raiz', haciaId: 'inexistente' },
+      ],
+    };
+
+    const rendered = classSlideToRendererSlide(apiSlide([rawDiagrama]));
+    const diagrama = (rendered.bloques ?? [])[0] as import('@/types/slide.types').DiagramaGrafoBlock;
+
+    expect(diagrama.tipo).toBe('diagrama');
+    expect(diagrama.subtipo).toBe('mapa_mental');
+    expect(diagrama.modo).toBe('contenido');
+    expect(diagrama.soloLecturaEnViewer).toBe(true);
+    expect(diagrama.nodos).toHaveLength(2);
+    expect(diagrama.aristas).toHaveLength(1);
+
+    const persisted = sanitizeSlideContentForPersistence({ bloques: [rawDiagrama] });
+    const saved = ((persisted?.bloques ?? []) as import('@/types/slide.types').DiagramaGrafoBlock[])[0];
+    expect(saved.tipo).toBe('diagrama');
+    expect(saved.modo).toBe('contenido');
+    expect(saved.soloLecturaEnViewer).toBe(true);
+  });
+
+  it('normaliza bloque Venn asegurando modo contenido, soloLectura y regiones canónicas', () => {
+    const rawVenn = {
+      tipo: 'diagrama',
+      subtipo: 'venn',
+      conjuntos: 2,
+      elementos: [
+        { id: 'e1', texto: 'Murciélago', regionId: 'ab' },
+        { id: 'e2', texto: 'Ruido', regionId: 'zona-falsa' },
+      ],
+    };
+
+    const rendered = classSlideToRendererSlide(apiSlide([rawVenn]));
+    const venn = (rendered.bloques ?? [])[0] as import('@/types/slide.types').DiagramaVennBlock;
+
+    expect(venn.tipo).toBe('diagrama');
+    expect(venn.subtipo).toBe('venn');
+    expect(venn.modo).toBe('contenido');
+    expect(venn.soloLecturaEnViewer).toBe(true);
+    expect(venn.elementos.find((el) => el.id === 'e1')?.regionId).toBe('ab');
+    expect(venn.elementos.find((el) => el.id === 'e2')?.regionId).toBeNull();
+
+    const persisted = sanitizeSlideContentForPersistence({ bloques: [rawVenn] });
+    const saved = ((persisted?.bloques ?? []) as import('@/types/slide.types').DiagramaVennBlock[])[0];
+    expect(saved.tipo).toBe('diagrama');
+    expect(saved.subtipo).toBe('venn');
+    expect(saved.modo).toBe('contenido');
+    expect(saved.soloLecturaEnViewer).toBe(true);
   });
 });

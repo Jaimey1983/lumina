@@ -20,6 +20,7 @@ import {
 import { GamificationLeaderboard } from '@/components/gamification/gamification-leaderboard';
 import type { EstudianteLeaderboard } from '@/hooks/use-gamification';
 import { TorneoPanel } from '@/components/editor/panels/torneo-panel';
+import { EscapeRoomLiveDashboard } from '@/components/editor/panels/escape-room-live-dashboard';
 import type { Activity } from '@/types/slide.types';
 
 // ─── Panel labels ─────────────────────────────────────────────────────────────
@@ -169,6 +170,17 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 <TorneoPanel
                   classId={classId}
                   sessionId={liveSessionId ?? classId}
+                  activity={activeActivity}
+                  socket={liveSocket}
+                />
+              ) : activePanel === 'live' &&
+                activeActivity?.tipo === 'escape_room' &&
+                liveSocket &&
+                classId &&
+                activeSlideId ? (
+                <EscapeRoomLiveDashboard
+                  classId={classId}
+                  slideId={activeSlideId}
                   activity={activeActivity}
                   socket={liveSocket}
                 />

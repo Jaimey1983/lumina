@@ -13,12 +13,15 @@ import { normalizeTooltipWidget } from '@/components/widgets/tooltip/tooltip-def
 import { normalizeBotonWidget } from '@/components/widgets/boton/boton-defaults';
 import { normalizeContadorWidget } from '@/components/widgets/contador/contador-defaults';
 import { normalizeProgresoWidget } from '@/components/widgets/progreso/progreso-defaults';
+import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
 import { normalizeFlipCardsWidget } from '@/components/widgets/flip-cards/flip-cards-config';
 import { normalizeTabsWidget } from '@/components/widgets/tabs/tabs-config';
 import { normalizeCarouselWidget } from '@/components/widgets/carousel/carousel-config';
 import { normalizeClickRevealWidget } from '@/components/widgets/click-reveal/click-reveal-config';
 import { normalizeTimelineWidget } from '@/components/widgets/timeline/timeline-config';
 import { normalizeClipGroupBlock } from '@/lib/clip-path';
+import { normalizeGraficoBlock } from '@/components/graficos/grafico-defaults';
+import { normalizeDiagramaBlock } from '@/components/diagramas/diagrama-defaults';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -130,8 +133,14 @@ function withoutInteractiveStubs(bloques: Block[]): Block[] {
 }
 
 function normalizeBlock(block: Block): Block {
+  if (block.tipo === 'actividad' && block.actividad.tipo === 'ruleta') {
+    return normalizeRuletaBlock(block);
+  }
   if (block.tipo === 'actividad') {
     return { ...block, actividad: normalizeActivity(block.actividad) };
+  }
+  if (block.tipo === 'ruleta') {
+    return normalizeRuletaBlock(block);
   }
   if (block.tipo === 'flip-cards') {
     return normalizeFlipCardsWidget(block);
@@ -168,6 +177,12 @@ function normalizeBlock(block: Block): Block {
   }
   if (block.tipo === 'clip-group') {
     return normalizeClipGroupBlock(block);
+  }
+  if (block.tipo === 'grafico') {
+    return normalizeGraficoBlock(block);
+  }
+  if (block.tipo === 'diagrama') {
+    return normalizeDiagramaBlock(block);
   }
   if (block.tipo === 'columnas') {
     return {

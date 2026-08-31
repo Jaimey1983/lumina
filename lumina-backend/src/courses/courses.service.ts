@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -144,15 +145,33 @@ export class CoursesService {
 
   async enrollStudent(courseId: string, dto: EnrollStudentDto) {
     await this.findOne(courseId);
+
+    let userId = dto.userId?.trim() || '';
+    if (!userId && dto.email) {
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+        select: { id: true, isActive: true },
+      });
+      if (!user || !user.isActive) {
+        throw new NotFoundException('No hay un usuario activo con ese correo');
+      }
+      userId = user.id;
+    }
+    if (!userId) {
+      throw new BadRequestException(
+        'Indica el usuario o el correo del estudiante',
+      );
+    }
+
     const existing = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId: dto.userId, courseId } },
+      where: { userId_courseId: { userId, courseId } },
     });
     if (existing)
       throw new ConflictException(
         'El estudiante ya está matriculado en este curso',
       );
     return this.prisma.enrollment.create({
-      data: { userId: dto.userId, courseId },
+      data: { userId, courseId },
       select: { id: true, userId: true, courseId: true, createdAt: true },
     });
   }

@@ -197,7 +197,7 @@ export type WidgetSlideInnerSelection =
 
 // ─── Familia de widgets ─────────────────────────────────────────────────────────
 
-export type WidgetTipo = 'flip-cards' | 'tabs' | 'carousel' | 'click-reveal' | 'timeline' | 'popup' | 'hotspot' | 'tooltip' | 'boton' | 'contador' | 'progreso';
+export type WidgetTipo = 'flip-cards' | 'tabs' | 'carousel' | 'click-reveal' | 'timeline' | 'popup' | 'hotspot' | 'tooltip' | 'boton' | 'contador' | 'progreso' | 'ruleta';
 
 /** Configuración compartida del contenedor (Tabs + Carousel). */
 export interface WidgetSlideContainerConfig extends WidgetHeaderConfig {
@@ -527,6 +527,17 @@ export interface ContadorWidget extends WidgetCanvasPosition {
 
 export type ProgresoModo = 'manual' | 'slides';
 
+export interface RuletaWidget extends WidgetCanvasPosition {
+  tipo: 'ruleta';
+  configuracion: {
+    colores: string[];
+    sonido: boolean;
+    duracionGiro: number;
+    mostrarGanador: boolean;
+  };
+  items: { id: string; texto: string }[];
+}
+
 export interface ProgresoWidget extends WidgetCanvasPosition {
   tipo: 'progreso';
   modo: ProgresoModo;
@@ -640,4 +651,5 @@ export type CaptivateWidget =
   | TooltipWidget
   | BotonWidget
   | ContadorWidget
-  | ProgresoWidget;
+  | ProgresoWidget
+  | RuletaWidget;

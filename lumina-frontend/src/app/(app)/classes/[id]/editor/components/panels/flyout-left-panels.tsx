@@ -3,18 +3,38 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import {
+  AreaChart,
+  BarChart2,
+  BarChartHorizontal,
   BookOpen,
+  Brain,
+  CircleDot,
   Columns2,
+  GitMerge,
+  LineChart,
+  Milestone,
   Minus,
+  Network,
+  PieChart,
   Quote,
   Sparkles,
   Video,
   Volume2,
+  Workflow,
 } from 'lucide-react';
 import Link from 'next/link';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block } from '@/types/slide.types';
+import { createDefaultGraficoBlock } from '@/components/graficos/grafico-defaults';
+import {
+  createDefaultCronologiaBlock,
+  createDefaultFlujoBlock,
+  createDefaultMapaConceptualBlock,
+  createDefaultMapaMentalBlock,
+  createDefaultOrganigramaBlock,
+  createDefaultVennBlock,
+} from '@/components/diagramas/diagrama-defaults';
 import {
   appendBlockToSlideContent,
   getSlideContentRecord,
@@ -167,6 +187,130 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
         />
         <ShapesPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
         <ClipMasksPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
+        <PanelSection title="Gráficos de Datos">
+          <div className="grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Columnas"
+              icon={BarChart2}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'column',
+                    titulo: 'Gráfico de Columnas',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Barras"
+              icon={BarChartHorizontal}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'bar',
+                    titulo: 'Gráfico de Barras',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Líneas"
+              icon={LineChart}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'line',
+                    titulo: 'Tendencia en Líneas',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Área"
+              icon={AreaChart}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'area',
+                    titulo: 'Gráfico de Área',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Circular"
+              icon={PieChart}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'pie',
+                    titulo: 'Distribución Circular',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Dona"
+              icon={CircleDot}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'donut',
+                    titulo: 'Gráfico de Dona',
+                  }),
+                )
+              }
+            />
+          </div>
+        </PanelSection>
+        <PanelSection title="Diagramas">
+          <div className="grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Mapa Mental"
+              icon={Brain}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultMapaMentalBlock())}
+            />
+            <InsertBtn
+              label="Organigrama"
+              icon={Network}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultOrganigramaBlock())}
+            />
+            <InsertBtn
+              label="Mapa Conceptual"
+              icon={Workflow}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultMapaConceptualBlock())}
+            />
+            <InsertBtn
+              label="Flujo de Procesos"
+              icon={GitMerge}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultFlujoBlock())}
+            />
+          </div>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Diagrama de Venn"
+              icon={CircleDot}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultVennBlock())}
+            />
+            <InsertBtn
+              label="Cronología pedagógica"
+              icon={Milestone}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultCronologiaBlock())}
+            />
+          </div>
+        </PanelSection>
         <PanelSection title="Multimedia">
           <InsertBtn
             label="Video (YouTube)"

@@ -2,12 +2,14 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 function isPrismaUniqueConstraintError(err: unknown): boolean {
   return (
@@ -124,6 +126,7 @@ export class AuthService {
         email: true,
         role: true,
         avatar: true,
+        institution: true,
         createdAt: true,
       },
     });
@@ -133,6 +136,34 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true, isActive: true },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    const validPassword = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!validPassword) {
+      throw new UnauthorizedException('La contraseña actual no es correcta');
+    }
+
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException('La nueva contraseña debe ser distinta a la actual');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: 'Contraseña actualizada' };
   }
 
   // ─── GENERAR TOKEN ────────────────────────────────────

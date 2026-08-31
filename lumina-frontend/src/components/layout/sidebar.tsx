@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
@@ -14,7 +13,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useCourses } from '@/hooks/api/use-courses';
 import { getInitials } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +44,15 @@ function userInitials(user: { name: string; lastName?: string } | null) {
   const initials = getInitials(full, 2);
   return initials || '?';
 }
+
+const NAV_ITEMS = [
+  { label: 'Inicio', href: '/dashboard', icon: 'home' as const },
+  { label: 'Cursos', href: '/courses', icon: 'courses' as const },
+  { label: 'Mis Clases', href: '/classes', icon: 'classes' as const },
+  { label: 'Lumina Edu', href: '/edu', icon: 'edu' as const },
+  { label: 'Analytics', href: '/analytics', icon: 'analytics' as const },
+  { label: 'Perfil', href: '/profile', icon: 'profile' as const },
+] as const;
 
 function NavLink({
   href,
@@ -89,25 +96,6 @@ export function Sidebar() {
     logout();
     router.replace('/login');
   };
-  const { data: courses } = useCourses();
-
-  const eduHref = useMemo(() => {
-    const first = courses?.[0];
-    return first?.id ? `/edu/${first.id}` : '/edu';
-  }, [courses]);
-
-  const navItems = useMemo(
-    () =>
-      [
-        { label: 'Inicio', href: '/dashboard', icon: 'home' as const },
-        { label: 'Cursos', href: '/courses', icon: 'courses' as const },
-        { label: 'Mis Clases', href: '/classes', icon: 'classes' as const },
-        { label: 'Lumina Edu', href: eduHref, icon: 'edu' as const },
-        { label: 'Analytics', href: '/analytics', icon: 'analytics' as const },
-        { label: 'Perfil', href: '/profile', icon: 'profile' as const },
-      ] as const,
-    [eduHref],
-  );
 
   const displayName = userDisplayName(user) || '?';
   const initials = userInitials(user);
@@ -134,7 +122,7 @@ export function Sidebar() {
           Menú
         </p>
         <nav className="flex flex-col gap-0.5">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <NavLink
               key={`${item.label}-${item.href}`}
               href={item.href}
@@ -148,24 +136,33 @@ export function Sidebar() {
 
       <div className="shrink-0 border-t border-[#e5e7eb]">
         <div className="flex items-center gap-3 p-3">
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: '#2563EB',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-            aria-hidden
-          >
-            {initials}
-          </div>
+          {user?.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatar}
+              alt={displayName}
+              className="size-9 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: '#2563EB',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                flexShrink: 0,
+              }}
+              aria-hidden
+            >
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-[#111827]">{displayName}</p>
             <p className="text-xs text-[#6b7280]">Docente</p>

@@ -59,7 +59,7 @@ describe('generarClipPath', () => {
   });
 
   it('forma libre genera path cerrado con nodos', () => {
-    const shape = createDefaultLibreShape();
+    const shape = createDefaultLibreShape() as Extract<ClipShape, { tipo: 'libre' }>;
     const { d } = generarClipPath(shape);
     expect(d.startsWith('M ')).toBe(true);
     expect(shape.nodos.length).toBeGreaterThanOrEqual(3);
@@ -276,7 +276,7 @@ describe('clampClipContentImageOffsets', () => {
       ajuste: 'cubrir',
     });
     const clamped = clampClipContentImageOffsets(content, 400, 300, 1600, 900);
-    expect(Math.abs(clamped.offsetX)).toBeLessThan(80);
+    expect(Math.abs(clamped.offsetX ?? 0)).toBeLessThan(80);
     expect(clamped.offsetY).toBe(0);
   });
 
@@ -290,7 +290,7 @@ describe('clampClipContentImageOffsets', () => {
       ajuste: 'cubrir',
     });
     const clamped = clampClipImageOffsetsForBlock(content, 40, 50, 1600, 900);
-    expect(Math.abs(clamped.offsetX)).toBeLessThan(100);
-    expect(Math.abs(clamped.offsetY)).toBeLessThan(100);
+    expect(Math.abs(clamped.offsetX ?? 0)).toBeLessThan(100);
+    expect(Math.abs(clamped.offsetY ?? 0)).toBeLessThan(100);
   });
 });

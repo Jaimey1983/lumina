@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import {
   AlertCircle,
@@ -15,6 +15,7 @@ import {
   GraduationCap,
   LayoutGrid,
   ListTree,
+  Pencil,
   Plus,
   Search,
   Users,
@@ -23,11 +24,19 @@ import { toast } from 'sonner';
 
 import { useCourse } from '@/hooks/api/use-course';
 import { useCourseStudents, type Student } from '@/hooks/api/use-students';
-import { useClasses, type Class } from '@/hooks/api/use-classes';
+import {
+  useClasses,
+  useCreateClass,
+  usePublishClass,
+  type Class,
+} from '@/hooks/api/use-classes';
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import { useUsers } from '@/hooks/api/use-users';
+import { useGradeCalculation } from '@/hooks/api/use-grade-calculation';
 import { api } from '@/lib/api';
+import { apiErrorMessage } from '@/lib/api-error-message';
 import { GradebookStructureTab } from './gradebook-structure-tab';
+import { STATUS_LABELS } from '@/app/(app)/classes/class-status-badge-styles';
 
 import { Card, CardContent, CardHeader, CardHeading, CardTable, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,16 +49,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-
-// ─── Grade calculation types ──────────────────────────────────────────────────
-
-interface GradeEntry {
-  studentId?: string;
-  userId?: string;
-  studentName: string;
-  finalGrade: number;
-  status: 'complete' | 'partial';
-}
 
 // ─── Info Tab ─────────────────────────────────────────────────────────────────
 
@@ -130,27 +129,33 @@ function EnrollModal({
 }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [email, setEmail] = useState('');
   const { data: users = [], isLoading } = useUsers();
+  const { data: enrolled = [] } = useCourseStudents(courseId);
+  const enrolledIds = new Set(enrolled.map((s) => s.user.id));
 
   const filtered = search.trim()
     ? users.filter(
         (u) =>
-          u.name.toLowerCase().includes(search.toLowerCase()) ||
-          u.email.toLowerCase().includes(search.toLowerCase()),
+          !enrolledIds.has(u.id) &&
+          (u.role === 'STUDENT' || !u.role) &&
+          (u.name.toLowerCase().includes(search.toLowerCase()) ||
+            u.email.toLowerCase().includes(search.toLowerCase())),
       )
-    : users;
+    : users.filter((u) => !enrolledIds.has(u.id) && (u.role === 'STUDENT' || !u.role));
 
   const mutation = useMutation({
-    mutationFn: async (userId: string) => {
-      return api.post(`/courses/${courseId}/students`, { userId });
+    mutationFn: async (payload: { userId?: string; email?: string }) => {
+      return api.post(`/courses/${courseId}/enroll`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses', courseId, 'students'] });
       toast.success('Estudiante matriculado');
+      setEmail('');
       onOpenChange(false);
     },
-    onError: () => {
-      toast.error('Error al matricular el estudiante');
+    onError: (err) => {
+      toast.error(apiErrorMessage(err, 'Error al matricular el estudiante'));
     },
   });
 
@@ -161,6 +166,26 @@ function EnrollModal({
           <DialogTitle>Matricular estudiante</DialogTitle>
         </DialogHeader>
         <DialogBody className="space-y-3">
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const value = email.trim().toLowerCase();
+              if (!value) return;
+              mutation.mutate({ email: value });
+            }}
+          >
+            <Input
+              type="email"
+              placeholder="Correo del estudiante"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={mutation.isPending}
+            />
+            <Button type="submit" disabled={mutation.isPending || !email.trim()}>
+              Matricular
+            </Button>
+          </form>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
@@ -179,7 +204,9 @@ function EnrollModal({
               </div>
             ) : filtered.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
-                No se encontraron usuarios.
+                {users.length === 0
+                  ? 'Escribe el correo del estudiante para matricularlo.'
+                  : 'No se encontraron usuarios disponibles.'}
               </p>
             ) : (
               filtered.slice(0, 20).map((user) => (
@@ -194,7 +221,7 @@ function EnrollModal({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => mutation.mutate(user.id)}
+                    onClick={() => mutation.mutate({ userId: user.id })}
                     disabled={mutation.isPending}
                   >
                     Matricular
@@ -333,7 +360,7 @@ function StudentsTab({ courseId }: { courseId: string }) {
 // ─── New Class Modal ──────────────────────────────────────────────────────────
 
 const classSchema = z.object({
-  title: z.string().min(1, 'El título es obligatorio'),
+  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
   status: z.enum(['draft', 'published']),
 });
 type ClassFormData = z.infer<typeof classSchema>;
@@ -347,26 +374,28 @@ function NewClassModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const queryClient = useQueryClient();
+  const createClass = useCreateClass(courseId);
+  const publishClass = usePublishClass(courseId);
   const form = useForm<ClassFormData>({
     resolver: zodResolver(classSchema),
     defaultValues: { title: '', status: 'draft' },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: ClassFormData) => {
-      return api.post('/classes', { ...data, courseId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+  const isPending = createClass.isPending || publishClass.isPending;
+
+  async function onSubmit(data: ClassFormData) {
+    try {
+      const created = await createClass.mutateAsync({ title: data.title, courseId });
+      if (data.status === 'published' && created?.id) {
+        await publishClass.mutateAsync(created.id);
+      }
       toast.success('Clase creada');
       form.reset();
       onOpenChange(false);
-    },
-    onError: () => {
-      toast.error('Error al crear la clase');
-    },
-  });
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al crear la clase'));
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -375,7 +404,7 @@ function NewClassModal({
           <DialogTitle>Nueva clase</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogBody className="space-y-4">
               <FormField
                 control={form.control}
@@ -414,8 +443,8 @@ function NewClassModal({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Creando...' : 'Crear clase'}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Creando...' : 'Crear clase'}
               </Button>
             </DialogFooter>
           </form>
@@ -435,17 +464,24 @@ function ClassesTab({ courseId }: { courseId: string }) {
     {
       accessorKey: 'title',
       header: 'Título',
-      cell: ({ row }) => <span className="font-medium">{row.original.title}</span>,
+      cell: ({ row }) => (
+        <Link
+          href={`/classes/${row.original.id}`}
+          className="font-medium text-[#2563EB] hover:underline"
+        >
+          {row.original.title}
+        </Link>
+      ),
     },
     {
       accessorKey: 'status',
       header: 'Estado',
       cell: ({ row }) => {
-        const published =
-          row.original.status?.toLowerCase() === 'published';
+        const status = row.original.status?.toUpperCase() ?? 'DRAFT';
+        const published = status === 'PUBLISHED' || status === 'LIVE';
         return (
           <Badge variant={published ? 'success' : 'secondary'} appearance="light">
-            {published ? 'Publicada' : 'Borrador'}
+            {STATUS_LABELS[status] ?? status}
           </Badge>
         );
       },
@@ -461,6 +497,20 @@ function ClassesTab({ courseId }: { courseId: string }) {
             year: 'numeric',
           })}
         </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/classes/${row.original.id}/editor`}>
+              <Pencil className="size-3.5" />
+              Editar
+            </Link>
+          </Button>
+        </div>
       ),
     },
   ];
@@ -546,24 +596,15 @@ function ClassesTab({ courseId }: { courseId: string }) {
 // ─── Grades Tab ───────────────────────────────────────────────────────────────
 
 function GradesTab({ courseId }: { courseId: string }) {
-  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const [periodPick, setPeriodPick] = useState<string | null>(null);
   const { data: periods = [], isLoading: periodsLoading } = useCoursePeriods(courseId);
 
-  const gradeQuery = useQuery({
-    queryKey: ['grade-calculation', courseId, selectedPeriodId],
-    enabled: !!selectedPeriodId,
-    queryFn: async () => {
-      const { data } = await api.get(
-        `/courses/${courseId}/grade-calculation`,
-        { params: { periodId: selectedPeriodId } },
-      );
-      // Backend returns { data: [...], meta: {} } or plain array
-      if (Array.isArray(data)) return data as GradeEntry[];
-      const inner = (data as { data?: unknown })?.data;
-      return Array.isArray(inner) ? (inner as GradeEntry[]) : [];
-    },
-  });
+  const selectedPeriodId =
+    periodPick != null && periods.some((p) => p.id === periodPick)
+      ? periodPick
+      : (periods.find((p) => p.isActive)?.id ?? periods[0]?.id ?? '');
 
+  const gradeQuery = useGradeCalculation(courseId, selectedPeriodId);
   const grades = gradeQuery.data ?? [];
 
   return (
@@ -579,7 +620,7 @@ function GradesTab({ courseId }: { courseId: string }) {
             ) : (
               <select
                 value={selectedPeriodId}
-                onChange={(e) => setSelectedPeriodId(e.target.value)}
+                onChange={(e) => setPeriodPick(e.target.value)}
                 className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground"
               >
                 <option value="">Seleccionar período</option>
@@ -630,17 +671,19 @@ function GradesTab({ courseId }: { courseId: string }) {
               </TableHeader>
               <TableBody>
                 {grades.map((entry, index) => (
-                  <TableRow key={entry.studentId ?? entry.userId ?? index}>
+                  <TableRow key={entry.studentId || index}>
                     <TableCell className="font-medium">{entry.studentName}</TableCell>
                     <TableCell>
-                      <span className="font-semibold">{entry.finalGrade.toFixed(1)}</span>
+                      <span className="font-semibold">
+                        {entry.finalGrade !== null ? entry.finalGrade.toFixed(1) : '—'}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={entry.status === 'complete' ? 'success' : 'warning'}
+                        variant={entry.isComplete ? 'success' : 'warning'}
                         appearance="light"
                       >
-                        {entry.status === 'complete' ? 'Completo' : 'Parcial'}
+                        {entry.isComplete ? 'Completo' : 'Parcial'}
                       </Badge>
                     </TableCell>
                   </TableRow>

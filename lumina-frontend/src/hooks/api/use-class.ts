@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { ClassModoEntrega } from '@/types/slide.types';
+import type { ClassModoEntrega, ClassNarrativeMeta } from '@/types/slide.types';
 
 export interface Slide {
   id: string;
@@ -32,6 +32,7 @@ export interface ClassDetail {
   createdAt: string;
   slides?: Slide[];
   desempeno?: unknown;
+  narrativa?: ClassNarrativeMeta;
 }
 
 export function useClass(id: string, options?: { refetchInterval?: number }) {

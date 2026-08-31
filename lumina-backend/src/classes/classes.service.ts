@@ -227,6 +227,7 @@ export class ClassesService {
         codigo: true,
         status: true,
         modoEntrega: true,
+        timerGlobal: true,
         background: true,
         courseId: true,
         desempeno: true,
@@ -280,6 +281,7 @@ export class ClassesService {
         description: true,
         desempeno: true,
         background: true,
+        timerGlobal: true,
         status: true,
         updatedAt: true,
       },
@@ -687,7 +689,9 @@ export class ClassesService {
     const studentId = data.studentId?.trim();
     const activityType = data.activityType?.trim();
     if (!classId || !slideId || !studentId || !activityType) return;
-    if (activityType === 'torneo') return;
+    // Torneo y Escape Room son gamificación narrativa (`exclude` en activity-scoring):
+    // persistirlos aquí solo crearía filas con score/correct null en class_results.
+    if (activityType === 'torneo' || activityType === 'escape_room') return;
     if (isActivityDraftResponse(data.response)) return;
 
     const [active, user] = await Promise.all([

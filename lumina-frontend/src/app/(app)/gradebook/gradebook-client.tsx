@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { AlertCircle, BookOpen, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { PageBanner } from '@/components/ui/page-banner';
 import { useCourses } from '@/hooks/api/use-courses';
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import {
@@ -414,7 +415,13 @@ export function GradebookClient() {
   const entries = gradebook?.entries ?? [];
 
   return (
-    <div className="w-full p-6">
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner
+        title="Calificaciones"
+        subtitle="Registra y gestiona las notas de los estudiantes por período"
+        backHref="/dashboard"
+      />
+      <div className="px-4 pt-4">
       <div className="flex gap-0 overflow-hidden rounded-lg border border-border bg-background">
         {/* ── Filtros: 240px expandido / 48px contraído (mismo patrón que el editor) ── */}
         <aside
@@ -518,13 +525,6 @@ export function GradebookClient() {
         </aside>
 
         <div className="min-w-0 flex-1 space-y-6 p-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Calificaciones</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Registra y gestiona las notas de los estudiantes por período.
-            </p>
-          </div>
-
           {gradebookError && (
             <Alert variant="destructive" appearance="light">
               <AlertIcon>
@@ -600,6 +600,7 @@ export function GradebookClient() {
             existingEntry={modalEntry}
           />
         </div>
+      </div>
       </div>
     </div>
   );

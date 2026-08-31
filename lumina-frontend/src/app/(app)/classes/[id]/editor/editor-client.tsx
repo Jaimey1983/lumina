@@ -37,6 +37,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '@/hooks/use-auth';
 import { useSlideTimer } from '@/hooks/use-slide-timer';
+import { SlideCountdownOverlay } from '../viewer/slide-countdown-overlay';
 import {
   getEffectiveTimerForApiSlide,
   SLIDE_TIMER_GLOBAL_OPTIONS,
@@ -79,6 +80,7 @@ import { createDefaultTooltipBlock } from '@/components/widgets/tooltip/tooltip-
 import { createDefaultBotonBlock } from '@/components/widgets/boton/boton-defaults';
 import { createDefaultContadorBlock } from '@/components/widgets/contador/contador-defaults';
 import { createDefaultProgresoBlock } from '@/components/widgets/progreso/progreso-defaults';
+import { createDefaultRuletaWidget } from '@/components/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@/components/widgets/shared/slide-nav-context';
 import { createDefaultTimelineBlock } from '@/lib/timeline-defaults';
 import { createDefaultClasificar } from '@/lib/clasificar-defaults';
@@ -93,7 +95,6 @@ import { createDefaultPuzzlePalabras } from '@/lib/puzzle-palabras-defaults';
 import { createDefaultEmparejar } from '@/lib/emparejar-defaults';
 import { createDefaultGlobos } from '@/lib/globos-defaults';
 import { createDefaultTopo } from '@/lib/topo-defaults';
-import { createDefaultRuleta } from '@/lib/ruleta-defaults';
 import { createDefaultHistoriaRamificada } from '@/lib/historia-ramificada-defaults';
 import {
   BLOCK_FALLBACKS,
@@ -109,6 +110,7 @@ import {
   type ClickRevealWidget,
   type PopupWidget,
   type TimelineWidget,
+  type DiagramaBlock,
   type HotspotWidget,
   EMPTY_SLIDE_GUIAS,
   GRID_SIZE_PRESETS,
@@ -841,7 +843,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const editorTimerRunning =
     sessionActive && !previewOpen && editorLiveTimerSeconds > 0 && Boolean(activeSlide?.id);
 
-  useSlideTimer({
+  const { timeLeft: editorTimeLeft } = useSlideTimer({
     duration: editorLiveTimerSeconds,
     isActive: editorTimerRunning,
     resetKey: activeSlide?.id ?? null,
@@ -1031,7 +1033,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const rightFlyoutLiveSocket = useMemo(
     () => {
-      if (activeActivity?.tipo === 'torneo') return torneoSocketRef.current;
+      // Torneo y Escape Room hablan con gateways del namespace `/live` (staff);
+      // el resto del panel usa el socket por defecto de `ClassesGateway`.
+      if (activeActivity?.tipo === 'torneo' || activeActivity?.tipo === 'escape_room') {
+        return torneoSocketRef.current;
+      }
       return socketRef.current;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- torneoSocketRevision sincroniza el ref de /live
@@ -1650,6 +1656,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide, handleCommitSlideContent],
   );
 
+  const handleDiagramaChange = useCallback(
+    (blockPath: string, diagrama: DiagramaBlock) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'diagrama') return b;
+        return diagrama;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
   const handleRemoveBlock = useCallback(
     (blockPath: string) => {
       if (!activeSlide) return;
@@ -1768,7 +1788,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         puzzle_palabras:    createDefaultPuzzlePalabras,
         globos:             createDefaultGlobos,
         topo:               createDefaultTopo,
-        ruleta:             createDefaultRuleta,
         historia_ramificada: createDefaultHistoriaRamificada,
       };
       const titles: Record<ActivityType, string> = {
@@ -1795,7 +1814,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         puzzle_palabras:    'Puzzle de palabras',
         globos:             'Globos',
         topo:               'Golpea al topo',
-        ruleta:             'Ruleta',
         historia_ramificada: 'Historia ramificada',
       };
       const templateFn = templates[type];
@@ -1925,6 +1943,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       } else if (type === 'progreso') {
         block = createDefaultProgresoBlock(dropMarco);
         successLabel = 'Barra de progreso agregada al slide';
+      } else if (type === 'ruleta') {
+        block = createDefaultRuletaWidget(dropMarco);
+        successLabel = 'Ruleta agregada al slide';
       } else if (type === 'timeline') {
         block = createDefaultTimelineBlock(dropMarco);
         successLabel = 'Línea de tiempo agregada al slide';
@@ -2166,6 +2187,14 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                     {cls.codigo.toUpperCase().startsWith('LUM')
                       ? cls.codigo.toUpperCase()
                       : `LUM-${cls.codigo.toUpperCase()}`}
+                  </span>
+                ) : null}
+                {cls?.narrativa?.nombreMision ? (
+                  <span
+                    title={`Misión: ${cls.narrativa.nombreMision}`}
+                    className="shrink-0 flex items-center gap-1 rounded-lg bg-amber-400/20 px-2 py-0.5 text-xs font-semibold text-amber-100 border border-amber-400/40"
+                  >
+                    🎯 {cls.narrativa.nombreMision}
                   </span>
                 ) : null}
               </>
@@ -2647,7 +2676,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           {/* Canvas area — flex-1 (fondo de clase en el contenedor del workspace) */}
           <div
             className={cn(
-              'flex min-h-0 min-w-0 flex-1 overflow-hidden',
+              'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
               '[&_.bg-editor-workspace]:bg-transparent',
             )}
             style={classBackground.style}
@@ -2672,6 +2701,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onPopupChange={handlePopupChange}
               onHotspotChange={handleHotspotChange}
               onTimelineChange={handleTimelineChange}
+              onDiagramaChange={handleDiagramaChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}
               onHistoryStateChange={setCanvasHistory}
@@ -2682,6 +2712,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onCanvasZoomChange={handleCanvasZoomChange}
             />
             </SlideNavContext.Provider>
+            <SlideCountdownOverlay
+              timeLeft={editorTimeLeft}
+              duration={editorLiveTimerSeconds}
+              visible={editorTimerRunning}
+            />
           </div>
 
           {/* Flyout panel derecho */}

@@ -1,5 +1,5 @@
 # LUMINA — ROADMAP DETALLADO
-> Vigente: 22/08/2026 | Reemplaza LUMINA_ROADMAP_CHECKLIST.md
+> Vigente: 27/08/2026 | Reemplaza LUMINA_ROADMAP_CHECKLIST.md
 > Reordenado según prioridad oficial. Los ítems ya completados se omiten —
 > solo aparece un resumen de una línea por bloque para contexto.
 > `orden_rango` fue eliminada (duplicaba "Ordenar") — no aparece en este documento.
@@ -7,23 +7,22 @@
 ---
 
 ## ✅ COMPLETADO (resumen, sin detalle)
-Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Niveles 1–2 · Sesiones/Gamificación base · Join/Guest · Editor drag/snap/guías base · 14 actividades Grupo 4 (editor+viewer+scoring)
+Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Niveles 1–2 · **AI Nivel 3 BYOK multi-proveedor** · Sesiones/Gamificación base · Join/Guest · Editor drag/snap/guías base · 14 actividades Grupo 4 (editor+viewer+scoring) · **Fase 5 Escape Room 2.0**
 
 ---
 
 # FASE 1 — AI NIVEL 3: BYOK MULTI-PROVEEDOR
-> 🔜 Siguiente en curso — diseño en progreso
+> Completada — `AiKeysService` + `ai-providers.ts` + `GET/PATCH /ai/settings`. Requiere `AI_KEYS_MASTER_SECRET` (cifrado) y opcional `GEMINI_API_KEY` (fallback plataforma).
 
-- [ ] Definir comportamiento sin clave propia configurada (fallback a Gemini gratuita vs. bloqueo del módulo)
-- [ ] Selector de proveedor por docente: Claude, Gemini, OpenAI
-- [ ] Modelo de datos: tabla/campo para clave cifrada por docente y proveedor
-- [ ] Método de cifrado de claves en BD (definir: AES-256 + clave maestra en env, u otro)
-- [ ] Endpoint backend para guardar/actualizar/eliminar clave de proveedor
-- [ ] UI de settings: formulario para ingresar/editar clave por proveedor, con opción de "probar conexión"
-- [ ] Lógica de selección de proveedor activo en `ai-features.service.ts` (reemplaza el `callGemini` fijo actual)
-- [ ] Manejo de error si la clave configurada falla (mensaje claro al docente, no crash silencioso)
-- [ ] Migrar los 7 métodos existentes de `ai-features.service.ts` para que funcionen con cualquiera de los 3 proveedores
-- [ ] Tests de contrato para verificar que el prompt v2 produce output compatible sin importar el proveedor
+- [x] Sin clave propia: fallback a Gemini de plataforma; si no hay BYOK ni fallback, `ServiceUnavailableException` con mensaje claro (no crash silencioso).
+- [x] Selector de proveedor por docente: Claude, Gemini, OpenAI (`User.preferredAiProvider` + UI perfil/editor).
+- [x] Modelo de datos: `TeacherAiKey` (clave cifrada por usuario/proveedor) + preferencia en `User`.
+- [x] Cifrado AES-256-GCM con clave maestra en env (`AI_KEYS_MASTER_SECRET`, `ai-crypto.ts`).
+- [x] Endpoints guardar/actualizar/eliminar clave y probar conexión (`AiKeysController` → `/ai/settings`).
+- [x] UI Mi perfil (`AiKeysCard`): ingresar/editar clave por proveedor + botón probar conexión.
+- [x] Resolución de proveedor activo en `AiKeysService.completeForUser` (BYOK → preferido → Gemini plataforma); `ai-features.service.ts` ya no usa `callGemini` fijo.
+- [x] Errores explícitos al docente (clave inválida, decrypt fallido, proveedor caído).
+- [x] Los 7 métodos de `ai-features.service.ts` migrados vía `callLlmJson` → `completeForUser` (quiz, feedback, summary, content assistant, evaluate, from document, refine structure).
 
 ---
 
@@ -95,13 +94,16 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 ---
 
 # FASE 5 — ESCAPE ROOM 2.0
-- [ ] Rediseño completo del flujo de habitaciones/salas
-- [ ] Sistema de pistas (hints) configurable por sala — array `pistas?: string[]`
-- [ ] Modo por equipos — progreso independiente por equipo, no solo individual
-- [ ] Dashboard del docente en tiempo real — avance de cada equipo vía Socket.IO (`room-unlocked`, `team-progress`)
-- [ ] Intentos máximos configurables por sala (`intentosMaximos?: number`)
-- [ ] Pantalla de victoria / cierre de escape room
-- [ ] Mantener distinción clara: Escape Room (narrativa, candados) vs. Evaluación autónoma (sin narrativa) — no fusionar lógicas
+> Completada 26/08/2026 — capas 0–6 de `PLAN_ACCION_ESCAPE_ROOM_2.0.md`. Ver `LUMINA_CONTEXT_V41.md` §12.
+> El flujo 1.0 (`intro → sala → victoria | derrota`) se conserva: preview y autónomo siguen locales.
+
+- [x] Lienzo visual de sala en el viewer (`renderSalaCanvas` → `SlideRenderer` modo viewer). Salas sin `bloques` siguen en tarjeta 1.0. No se rediseñó la máquina de estados.
+- [x] Sistema de pistas configurable — `pistas?: string[]`; legado `pista` se hidrata; revelado progresivo (D3), sin penalización.
+- [x] Modo por equipos — solo en sesión en vivo (D1). Tablas `EscapeRoomRun` / `Team` / `Member` / `TeamRoom`. Preview/autónomo = 1.0 local.
+- [x] Dashboard docente `EscapeRoomLiveDashboard` — matriz equipos × salas; eventos `team-progress`, `room-unlocked`, `finished`.
+- [x] Intentos máximos flexibles por sala (≥ 1 o −1 ilimitados; default 3). Agotar = 0 pts + avance (D2).
+- [x] Cierre: victoria 1.0 + podio si `mostrarRanking`; evento `escape-room:finished` (no `activity:complete` / XP).
+- [x] Distinción Escape Room vs evaluación autónoma: `escape_room: 'exclude'`; filtro en `upsertLiveStudentResponse`; puntos narrativos no van a planilla.
 
 ---
 
@@ -117,6 +119,56 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 ---
 
 # BACKLOG — SIN FASE ASIGNADA TODAVÍA
+
+> Plan de ejecución: `PLAN_ACCION_DIAGRAMAS_GRAFICOS.md` — **CERRADO 30/08/2026** (capas 0–10). Capa 11 (ruleta roster) eliminada.
+
+## Editor y canvas (prerrequisitos)
+- [x] P0 — Preview visible al arrastrar bloques en el canvas (`applyLiveDragPositions` + chip overlay; cancel sin persistir). Bloqueante resuelto 30/08/2026.
+- [x] Capa interna `src/lib/graph-editor/` — extraída de Historia ramificada (`@xyflow/react`); reutilizada por diagramas y mapa de progreso (Capa 1 + 9, 30/08/2026).
+
+## Widgets y refactor de actividades
+- [x] Ruleta → widget Grupo 9 (modo opciones estáticas) — cerrado 30/08/2026; `ruleta` sigue `exclude` en scoring
+- ~~Ruleta — modo "estudiante al azar"~~ — **descartado** (Capa 11 eliminada; no hay segundo producto)
+
+## Diagramas pedagógicos
+> Stack **cerrado:** `@xyflow/react` (ya usado en `historia_ramificada`). **Mermaid descartado** (solo texto→estático; no cumple editor interactivo).
+> Bloque `tipo: 'diagrama'` en el canvas (contenido docente, v1 sin evaluación). Modelo: separar `estructura` vs `modo: 'contenido' | 'plantilla_evaluable'` (v1 solo contenido).
+> Convivencia canvas: grafo captura pointer solo con bloque seleccionado; drag del bloque usa handle externo (mismo patrón widgets G9).
+
+Orden sugerido de implementación:
+- [x] Diagrama de Venn — **aparte** del motor de grafos (SVG + regiones + drag a zonas) — **Capa 5 30/08/2026**
+- [x] Cronología pedagógica (`diagrama` subtipo) — **no confundir** con widget `timeline` (Grupo 9) — **Capa 6 30/08/2026**
+- [x] Mapa mental — primer subtipo sobre capa graph compartida — **Capa 7 30/08/2026**
+- [x] Organigrama — mismo motor, layout jerárquico — **Capa 8 30/08/2026**
+- [x] Mapa conceptual — aristas con etiquetas semánticas — **Capa 8 30/08/2026**
+- [x] Diagrama de flujo — flechas direccionales / secuencia — **Capa 8 30/08/2026**
+
+## Gráficos de datos en slides
+> Fusionado con bloque nativo de gráficos. **v1 recomendada: Recharts** (ya en analytics + `components/ui/chart.tsx`). ApexCharts ya está instalado — solo si un spike visual exige look Materialize.
+- [x] Bloque `tipo: 'grafico'` — subconjunto pedagógico v1: barras, columnas, línea, área, pastel, dona, radialBar — **Capa 4 30/08/2026**
+- [x] Panel de propiedades: mini-tabla editable (categorías × series); sin import CSV
+- [x] Carga perezosa (`dynamic import`) — no inflar bundle base del editor
+- [x] v1 = contenido (`soloLecturaEnViewer: true`); evaluación futura = composición con quiz/respuesta abierta en el mismo slide
+
+## Lumina Edu — mapa de progreso (curso)
+> Distinto de Escape Room. Nivel **curso completo**: nodos = clases, edges = orden/desbloqueo. Requiere **backend** (reglas + estado por matrícula), no solo renderer de grafo.
+- [x] Layout automático por orden de creación de clases (v1); reposición manual (v2)
+- [x] Vista docente: editar mapa y conexiones; vista estudiante: solo su avance (bloqueado / activo / completado)
+- [x] Reutilizar capa graph interna para el lienzo; lógica de desbloqueo propia del dominio LMS — **Capa 9 30/08/2026**
+
+## Narrativa ligera (clase)
+- [x] Misión / Quest acotada — campos opcionales a nivel clase: `nombreMision`, `fragmentosHistoria[]` (texto entre slides). Sin ramificación ni scoring. — **Capa 10 30/08/2026**
+
+## Generador de ejercicios matemáticos
+> **Secuencia:** reglas determinísticas primero (no depende de BYOK). IA después solo para variar enunciados, no para generar la lógica numérica.
+- [x] Por tema (suma, resta, fracciones, ecuaciones simples) y grado — rangos numéricos ajustados
+- [x] Salida como ítems `quiz_multiple` / `short_answer` compatibles con `evaluateActivityResponse`
+- [x] Diferenciado del generador IA genérico (`useGenerateQuiz`) — este es plantilla determinística testeable
+
+## Escape Room (deuda diferida de Fase 5)
+- [ ] DT-ER-08: unificar persistencia del editor dedicado `/classes/:id/escape-room` con el auto-save del editor principal
+- [ ] Varios Escape Rooms en la ruta dedicada
+- [ ] Penalización de pistas o candado que atasque al equipo (explícitamente fuera de 2.0)
 
 ## Scoring y Lumina Edu
 - [ ] Paquete compartido `@lumina/scoring` — elimina espejo manual ~1000 líneas frontend/backend
@@ -140,6 +192,7 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 - [ ] Modo offline para sesión autónoma (PWA/caché)
 
 ## IA (más allá de BYOK — Fase 1)
+- [ ] Tests de contrato multi-proveedor — salida JSON del prompt v2 compatible entre Gemini, OpenAI y Claude (deuda BYOK; hoy hay unit tests de crypto/providers/keys)
 - [ ] 51 JSONs DBA reales pendientes (grados 1-11, 5 áreas; van 2/53 hechos: lenguaje-3, lenguaje-6)
 - [ ] Generador de rúbricas — IA sugiere rúbrica a partir del DBA seleccionado
 - [ ] Retroalimentación automática IA para `respuesta_corta`
@@ -157,15 +210,6 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 - [ ] Lógica de planes/límites (free/pro/institucional)
 - [ ] Multi-tenancy institucional (una institución, múltiples docentes, mismo tenant)
 - [ ] Empaquetar Lumina como app de escritorio con Tauri (solo si surge demanda real de uso offline en PC)
-
-## Diagramas pedagógicos
-- [ ] Bloque `tipo: 'diagrama'` con subtipos (decisión de stack primero: React Flow vs. mermaid.js)
-- [ ] Mapa mental
-- [ ] Diagrama de flujo
-- [ ] Organigrama
-- [ ] Mapa conceptual
-- [ ] Línea de tiempo editable por el docente (distinto del widget Timeline narrativo ya existente)
-- [ ] Diagrama de Venn
 
 ## Viewer inmersivo y fondos
 - [ ] Viewer 100dvh fullscreen real (wrapper + fondo + topbar + cuerpo centrado)
@@ -197,7 +241,7 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 - [ ] Integración Desmos (matemáticas)
 - [ ] Integración PhET (simulaciones física/química)
 - [ ] Integración Padlet embebido
-- [ ] Gráfico de barras/línea/pastel editable nativo (sin herramienta externa)
+- [ ] ~~Gráfico de barras/línea/pastel editable nativo~~ → ver **Gráficos de datos en slides** (backlog)
 - [ ] Acordeón (widget de contenido colapsable)
 - [ ] Tarjeta de perfil / info card
 - [ ] Embed de contenido externo (YouTube, Padlet, Maps)
@@ -242,14 +286,24 @@ Grupos 1–5 · Grupo 9 (11 widgets) · Scoring unificado Fases 0–7 · AI Nive
 
 ## PRIORIZACIÓN DE REFERENCIA (backlog, no oficial)
 
+Orden sugerido tras análisis 27/08/2026 (diagramas, gráficos, widgets):
+
 | Tema | Esfuerzo | Impacto | Nota |
 |---|---|---|---|
-| Modo sin conexión (estudiante) | Alto | Alto (contexto rural CO) | Requiere PWA/service worker |
-| Accesibilidad del viewer | Medio | Alto | Cero deuda previa, terreno limpio |
-| Exportar planilla a Excel | Bajo | Alto | Quick win cuando toque Edu |
-| Periodos académicos en gradebook | Medio | Alto | Alineado a Decreto 1290 |
-| Viewer fullscreen + 12 fondos SVG | Medio | Alto | Impacto visual inmediato, baja complejidad lógica |
-| Diagramas pedagógicos | Alto | Medio-Alto | Decisión de stack (React Flow/mermaid) primero |
-| Gamificación global | Alto | Medio | Requiere modelo de datos nuevo |
-| Duplicar clase | Bajo | Medio | Quick win cuando toque Grupo 8 |
+| P0 preview al arrastrar bloques canvas | Bajo–Medio | Alto | Confirmar bug; bloqueante para diagramas embebidos |
+| Ruleta → widget (modo opciones) | Bajo | Medio | Quick win; scoring ya `exclude` |
+| Generador matemáticas (reglas) | Medio | Medio-Alto | No depende de BYOK |
+| Bloque `grafico` en slides (Recharts v1) | Medio | Medio-Alto | Lazy load; ver backlog Gráficos |
+| Diagrama Venn | Bajo–Medio | Medio | SVG aparte, no React Flow |
+| Cronología / mapa mental / organigrama | Medio–Alto | Medio-Alto | Tras capa graph + P0 drag |
+| Mapa de progreso (curso, Edu) | Alto | Alto | UI graph + backend LMS desbloqueo |
+| Modo sin conexión (estudiante) | Alto | Alto (contexto rural CO) | PWA/service worker |
+| Accesibilidad del viewer | Medio | Alto | Terreno limpio |
+| Exportar planilla a Excel | Bajo | Alto | Quick win Edu |
+| Periodos académicos en gradebook | Medio | Alto | Decreto 1290 |
+| Viewer fullscreen + 12 fondos SVG | Medio | Alto | Impacto visual, baja lógica |
+| Misión/Quest (2 campos) | Bajo | Bajo | Capa 10 ✅ |
+| ~~Ruleta modo estudiantes~~ | — | — | **Eliminada** (no hay producto) |
+| Gamificación global | Alto | Medio | Modelo de datos nuevo |
+| Duplicar clase | Bajo | Medio | Quick win Grupo 8 |
 | App de escritorio (Tauri) | Alto | Bajo (nicho) | Solo si hay demanda real |

@@ -18,7 +18,6 @@ import type {
   MatchPairs,
   GlobosActivity,
   TopoActivity,
-  RuletaActivity,
   HistoriaRamificadaActivity,
   FlipCardsWidget,
   FormaBlock,
@@ -42,7 +41,8 @@ import { PuzzlePalabrasProperties } from '@/components/activities/puzzle-palabra
 import { EmparejarProperties } from '@/components/activities/emparejar/emparejar-properties';
 import { GlobosProperties } from '@/components/activities/globos/globos-properties';
 import { TopoProperties } from '@/components/activities/topo/topo-properties';
-import { RuletaProperties } from '@/components/activities/ruleta/ruleta-properties';
+import { RuletaProperties } from '@/components/widgets/ruleta/ruleta-properties';
+import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
 import { HistoriaRamificadaProperties } from '@/components/activities/historia-ramificada/historia-ramificada-properties';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import {
@@ -85,7 +85,7 @@ import {
   ClickRevealImageInnerProperties,
   ClickRevealTextInnerProperties,
 } from '@/components/widgets/click-reveal/click-reveal-inner-properties';
-import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, PopupInnerSelection, PopupWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget } from '@/types/widget.types';
+import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, PopupInnerSelection, PopupWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget, RuletaWidget } from '@/types/widget.types';
 import {
   HotspotOverlayProperties,
   HotspotProperties,
@@ -118,6 +118,8 @@ import {
 import { TimelineAppearanceProperties } from '@/components/widgets/timeline/timeline-appearance-properties';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
 import { ClipGroupBlockFields } from './clip-group-properties';
+import { GraficoProperties } from '@/components/graficos/grafico-properties';
+import { DiagramaProperties } from '@/components/diagramas/diagrama-properties';
 import {
   WIDGET_CONTEXT_IMAGE_HINT,
   WIDGET_CONTEXT_TEXT_HINT,
@@ -127,7 +129,8 @@ import {
   WidgetPropertiesPanelStack,
 } from '@/components/widgets/shared/widget-properties-panel';
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
-import { isBlockCanvasLocked, isBlockCanvasPositionable } from '@/hooks/use-block-drag';
+import { isBlockCanvasLocked, isBlockCanvasPositionable, withRotation } from '@/hooks/use-block-drag';
+import { RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -643,24 +646,22 @@ export function PropertiesPanel({
 
     if (act.tipo === 'ruleta') {
       return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Ruleta
-            </h2>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+        <WidgetPropertiesPanelShell title="Ruleta">
+          <WidgetPropertiesPanelStack>
             <RuletaProperties
-              actividad={act as RuletaActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
+              block={normalizeRuletaBlock(block)}
+              applyNow={applyNow}
             />
-          </div>
-        </aside>
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
       );
     }
 
@@ -1101,6 +1102,26 @@ export function PropertiesPanel({
     );
   }
 
+  if (block.tipo === 'ruleta') {
+    const ruletaBlock = block as RuletaWidget;
+
+    return (
+      <WidgetPropertiesPanelShell title="Ruleta">
+        <WidgetPropertiesPanelStack>
+          <RuletaProperties block={ruletaBlock} applyNow={applyNow} />
+          <WidgetPropertiesPanelBlock>
+            <AnimationPanel
+              block={ruletaBlock}
+              slide={slide}
+              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+            />
+          </WidgetPropertiesPanelBlock>
+        </WidgetPropertiesPanelStack>
+      </WidgetPropertiesPanelShell>
+    );
+  }
+
   if (block.tipo === 'popup') {
     const popupBlock = block as PopupWidget;
     const inner = popupInnerSelection;
@@ -1242,7 +1263,9 @@ export function PropertiesPanel({
     block.tipo !== 'imagen' &&
     block.tipo !== 'forma' &&
     block.tipo !== 'clip-group' &&
-    block.tipo !== 'video'
+    block.tipo !== 'video' &&
+    block.tipo !== 'grafico' &&
+    block.tipo !== 'diagrama'
   ) {
     return (
       <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
@@ -1332,6 +1355,29 @@ export function PropertiesPanel({
                 applyNow={applyNow}
                 scheduleApply={scheduleApply}
                 clearDebounce={clearDebounce}
+              />
+            )}
+            {block.tipo === 'grafico' && (
+              <GraficoProperties
+                block={block}
+                applyNow={applyNow}
+                scheduleApply={scheduleApply}
+                clearDebounce={clearDebounce}
+              />
+            )}
+            {block.tipo === 'diagrama' && (
+              <DiagramaProperties
+                block={block}
+                applyNow={applyNow}
+                scheduleApply={scheduleApply}
+                clearDebounce={clearDebounce}
+              />
+            )}
+            {isBlockCanvasPositionable(block) && (
+              <BlockRotationSection
+                rotacion={(block as { rotacion?: number }).rotacion ?? 0}
+                applyNow={applyNow}
+                scheduleApply={scheduleApply}
               />
             )}
           </>
@@ -1668,6 +1714,111 @@ function VideoBlockFields({
             }}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BlockRotationSection({
+  rotacion = 0,
+  applyNow,
+  scheduleApply,
+}: {
+  rotacion?: number;
+  applyNow: (fn: (b: Block) => Block) => Promise<void>;
+  scheduleApply: (fn: (b: Block) => Block) => void;
+}) {
+  const [localAngle, setLocalAngle] = useState(rotacion);
+
+  useEffect(() => {
+    setLocalAngle(rotacion);
+  }, [rotacion]);
+
+  const updateAngle = (angle: number, immediate = false) => {
+    const normalized = Math.round((((angle % 360) + 360) % 360) * 10) / 10;
+    setLocalAngle(normalized);
+    if (immediate) {
+      void applyNow((b) => withRotation(b, normalized));
+    } else {
+      scheduleApply((b) => withRotation(b, normalized));
+    }
+  };
+
+  return (
+    <div className="mt-4 space-y-2 border-t border-border pt-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-medium">Rotación</Label>
+        <span className="text-xs tabular-nums text-muted-foreground">{Math.round(localAngle)}°</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Slider
+          value={[localAngle]}
+          min={0}
+          max={360}
+          step={1}
+          onValueChange={([v]) => updateAngle(v ?? 0)}
+          className="flex-1"
+        >
+          <SliderThumb />
+        </Slider>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min={0}
+            max={360}
+            value={Math.round(localAngle)}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              if (!isNaN(val)) updateAngle(val);
+            }}
+            onBlur={() => updateAngle(localAngle, true)}
+            className="h-7 w-14 px-1 text-center text-xs tabular-nums"
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-1 pt-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-6 flex-1 px-1 text-[10px]"
+          onClick={() => updateAngle(localAngle - 90, true)}
+          title="Girar -90°"
+        >
+          <RotateCcw className="mr-0.5 size-3" />
+          -90°
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-6 flex-1 px-1 text-[10px]"
+          onClick={() => updateAngle(0, true)}
+          title="Restablecer a 0°"
+        >
+          0°
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-6 flex-1 px-1 text-[10px]"
+          onClick={() => updateAngle(localAngle + 90, true)}
+          title="Girar +90°"
+        >
+          <RotateCw className="mr-0.5 size-3" />
+          +90°
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-6 flex-1 px-1 text-[10px]"
+          onClick={() => updateAngle(localAngle + 180, true)}
+          title="Girar 180°"
+        >
+          180°
+        </Button>
       </div>
     </div>
   );

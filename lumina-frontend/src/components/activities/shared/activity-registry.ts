@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Grid2x2, Grid3x3, Layers, Puzzle, Package, CaseSensitive, AlignLeft, Search, Sparkles, Crosshair, RotateCw, GitBranch, Keyboard } from 'lucide-react';
+import { Grid2x2, Grid3x3, Layers, Puzzle, Package, CaseSensitive, AlignLeft, Search, Sparkles, Crosshair, GitBranch, Keyboard } from 'lucide-react';
 
 import type {
   Activity,
@@ -15,7 +15,6 @@ import type {
   PuzzlePalabrasActivity,
   GlobosActivity,
   TopoActivity,
-  RuletaActivity,
   HistoriaRamificadaActivity,
 } from '@/types/slide.types';
 import { createDefaultClasificar } from '@/lib/clasificar-defaults';
@@ -29,7 +28,6 @@ import { createDefaultAhorcado } from '@/lib/ahorcado-defaults';
 import { createDefaultPuzzlePalabras } from '@/lib/puzzle-palabras-defaults';
 import { createDefaultGlobos } from '@/lib/globos-defaults';
 import { createDefaultTopo } from '@/lib/topo-defaults';
-import { createDefaultRuleta } from '@/lib/ruleta-defaults';
 import { HistoriaRamificadaEditor } from '@/components/activities/historia-ramificada/historia-ramificada-editor';
 import { HistoriaRamificadaViewer } from '@/components/activities/historia-ramificada/historia-ramificada-viewer';
 import { HistoriaRamificadaProperties } from '@/components/activities/historia-ramificada/historia-ramificada-properties';
@@ -69,10 +67,6 @@ import { GlobosProperties } from '@/components/activities/globos/globos-properti
 import { TopoEditor } from '@/components/activities/topo/topo-editor'
 import { TopoViewer } from '@/components/activities/topo/topo-viewer'
 import { TopoProperties } from '@/components/activities/topo/topo-properties'
-
-import { RuletaEditor } from '@/components/activities/ruleta/ruleta-editor'
-import { RuletaViewer } from '@/components/activities/ruleta/ruleta-viewer'
-import { RuletaProperties } from '@/components/activities/ruleta/ruleta-properties'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -250,19 +244,6 @@ const TOPO_ENTRY: ActivityRegistryEntry<TopoActivity> = {
   createDefault: createDefaultTopo,
 };
 
-const RULETA_ENTRY: ActivityRegistryEntry<RuletaActivity> = {
-  tipo: 'ruleta',
-  panelType: 'ruleta',
-  nombre: 'Ruleta',
-  descripcion: 'Gira la ruleta para seleccionar un elemento al azar',
-  icono: RotateCw,
-  evaluable: false,
-  editor: RuletaEditor,
-  viewer: RuletaViewer,
-  properties: RuletaProperties,
-  createDefault: createDefaultRuleta,
-};
-
 const HISTORIA_RAMIFICADA_ENTRY: ActivityRegistryEntry<HistoriaRamificadaActivity> = {
   tipo: 'historia_ramificada',
   panelType: 'historia_ramificada',
@@ -289,7 +270,6 @@ export const ACTIVITY_REGISTRY: ActivityRegistryEntry<Activity>[] = [
   PUZZLE_PALABRAS_ENTRY as ActivityRegistryEntry<Activity>,
   GLOBOS_ENTRY as ActivityRegistryEntry<Activity>,
   TOPO_ENTRY as ActivityRegistryEntry<Activity>,
-  RULETA_ENTRY as ActivityRegistryEntry<Activity>,
   HISTORIA_RAMIFICADA_ENTRY as ActivityRegistryEntry<Activity>,
 ];
 
@@ -305,7 +285,6 @@ const GRUPO4_TIPOS = new Set([
   'puzzle_palabras',
   'globos',
   'topo',
-  'ruleta',
 ]);
 
 export const GRUPO4_REGISTRY_ENTRIES = ACTIVITY_REGISTRY.filter((e) =>

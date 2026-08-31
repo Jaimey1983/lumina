@@ -15,7 +15,7 @@ import { GripHorizontal, Presentation } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDraggable } from '@dnd-kit/core';
 
-import { blockDragId } from '../lib/block-drag-id';
+import { blockDragId, parseBlockDragIndex } from '../lib/block-drag-id';
 
 import type {
   Activity,
@@ -29,6 +29,7 @@ import type {
   CarouselWidget,
   ClickRevealWidget,
   TimelineWidget,
+  DiagramaBlock,
 } from '@/types/slide.types';
 import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
 import {
@@ -164,6 +165,7 @@ function BlockDragHandle({
       <div
         ref={setNodeRef}
         data-drag-handle
+        data-canvas-dragging={isActive ? 'true' : undefined}
         {...attributes}
         {...listeners}
         title="Arrastrar bloque"
@@ -182,7 +184,7 @@ function BlockDragHandle({
           background:      'rgba(59, 130, 246, 0.85)',
           borderRadius:    '3px 3px 4px 4px',
           zIndex:          26,
-          opacity:         isActive ? 0.4 : 1,
+          opacity:         1,
           transition:      'opacity 150ms',
           userSelect:      'none',
         }}
@@ -207,6 +209,7 @@ export interface CanvasAreaProps {
   onPopupChange?: (blockId: string, block: PopupWidget) => void;
   onHotspotChange?: (blockId: string, block: HotspotWidget) => void;
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
+  onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onCopyBlock?: (block: Block) => void;
   /** Fired with live/committed block positions during and after drag (null when settled). */
@@ -287,6 +290,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onPopupChange,
     onHotspotChange,
     onTimelineChange,
+    onDiagramaChange,
     onCopyBlock,
     onEffectiveBloques,
     onHistoryStateChange,
@@ -1749,6 +1753,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onTimelineChange={onTimelineChange}
             timelineInnerSelection={timelineInnerSelection}
             onTimelineInnerSelectionChange={setTimelineInnerSelection}
+            onDiagramaChange={onDiagramaChange}
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={setClipGroupInnerEditId}
             onClipGroupChange={handleClipGroupChange}
@@ -1759,6 +1764,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onPersistSlide={handlePersistFromRenderer}
             onResizeInteractionEnd={clearSnapLines}
             onResizeMove={handleResizeMove}
+            draggingBlockId={
+              draggingId ? String(parseBlockDragIndex(draggingId) ?? '') || null : null
+            }
             className="absolute inset-0 h-full w-full min-h-0 min-w-0"
           />
 

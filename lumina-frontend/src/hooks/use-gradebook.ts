@@ -232,7 +232,7 @@ function normalizeResponse(data: unknown): ClassGradebookData {
  */
 export function useGradebook(classId: string | undefined) {
   return useQuery({
-    queryKey: ['gradebook', classId],
+    queryKey: ['class-gradebook', classId],
     enabled: !!classId,
     queryFn: async () => {
       const { data } = await api.get<unknown>(`/classes/${classId}/gradebook`);

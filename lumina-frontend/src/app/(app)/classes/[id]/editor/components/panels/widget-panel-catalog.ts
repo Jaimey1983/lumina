@@ -9,6 +9,7 @@ import {
   MessageSquare,
   MousePointer2,
   PanelTop,
+  RotateCw,
   Target,
   Timer,
 } from 'lucide-react';
@@ -66,6 +67,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: GitCommitHorizontal,
     rowClassName: 'hover:bg-emerald-50/90 dark:hover:bg-emerald-950/25',
     iconClassName: 'text-emerald-600 dark:text-emerald-400',
+  },
+  ruleta: {
+    group: 'lienzo',
+    Icon: RotateCw,
+    rowClassName: 'hover:bg-fuchsia-50/90 dark:hover:bg-fuchsia-950/25',
+    iconClassName: 'text-fuchsia-600 dark:text-fuchsia-400',
   },
   popup: {
     group: 'overlay',

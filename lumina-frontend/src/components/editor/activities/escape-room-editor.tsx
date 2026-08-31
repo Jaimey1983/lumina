@@ -18,13 +18,17 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus, Trash2 } from 'lucide-react';
 
 import type { Background, Block, EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  ESCAPE_ROOM_INTENTOS_DEFAULT,
+  ESCAPE_ROOM_INTENTOS_ILIMITADOS,
+} from '@/lib/escape-room-logic';
 import { uid } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 
@@ -58,7 +62,46 @@ export function tipoRespuestaLabel(t: EscapeRoomSala['tipoRespuesta']) {
   }
 }
 
-export function normalizeSala(raw: Partial<EscapeRoomSala> | undefined, fallbackId?: string): EscapeRoomSala {
+/**
+ * Entrada tolerante de `normalizeSala`: acepta arrays de solo lectura, porque
+ * `BLOCK_FALLBACKS` está declarado `as const`.
+ */
+export type EscapeRoomSalaInput = Omit<
+  Partial<EscapeRoomSala>,
+  'opciones' | 'pistas' | 'bloques'
+> & {
+  opciones?: readonly string[];
+  pistas?: readonly string[];
+  bloques?: readonly Block[];
+};
+
+/** Entero ≥ 1 o −1 (ilimitado). Cualquier otra cosa cae al default de 3. */
+export function normalizeIntentosMaximos(raw: unknown): number {
+  if (raw === ESCAPE_ROOM_INTENTOS_ILIMITADOS) return ESCAPE_ROOM_INTENTOS_ILIMITADOS;
+  const n = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(n) || n < 1) return ESCAPE_ROOM_INTENTOS_DEFAULT;
+  return Math.floor(n);
+}
+
+/**
+ * Lee `pistas` y migra el legado `pista: string`.
+ *
+ * Conserva las entradas vacías del array: el editor necesita poder renderizar un
+ * campo recién añadido y todavía sin texto (mismo criterio que `opciones`).
+ * Quien lee las pistas descarta los blancos vía `pistasDeSala`.
+ */
+function normalizePistas(raw: EscapeRoomSalaInput | undefined): string[] {
+  if (Array.isArray(raw?.pistas)) {
+    return raw.pistas.map((p) => String(p ?? ''));
+  }
+  const legado = typeof raw?.pista === 'string' ? raw.pista.trim() : '';
+  return legado ? [legado] : [];
+}
+
+export function normalizeSala(
+  raw: EscapeRoomSalaInput | undefined,
+  fallbackId?: string,
+): EscapeRoomSala {
   const id = raw?.id?.trim() || fallbackId || uid();
   const tipo =
     raw?.tipoRespuesta === 'opcion_multiple' || raw?.tipoRespuesta === 'codigo'
@@ -77,10 +120,8 @@ export function normalizeSala(raw: Partial<EscapeRoomSala> | undefined, fallback
       respuestaCorrecta = opciones.find((o) => o.trim()) ?? '';
     }
   }
-  let intentos = raw?.intentosMaximos ?? 3;
-  if (intentos !== -1 && intentos !== 1 && intentos !== 2 && intentos !== 3) {
-    intentos = 3;
-  }
+  const intentos = normalizeIntentosMaximos(raw?.intentosMaximos);
+  const pistas = normalizePistas(raw);
   return {
     id,
     nombre: raw?.nombre ?? '',
@@ -90,7 +131,7 @@ export function normalizeSala(raw: Partial<EscapeRoomSala> | undefined, fallback
     ...(tipo === 'opcion_multiple' ? { opciones } : {}),
     respuestaCorrecta,
     ignorarMayusculas: raw?.ignorarMayusculas !== false,
-    pista: raw?.pista,
+    ...(pistas.length > 0 ? { pistas } : {}),
     intentosMaximos: intentos,
     ...(Array.isArray(raw?.bloques) ? { bloques: raw.bloques as Block[] } : {}),
     ...(raw?.fondo ? { fondo: raw.fondo as Background } : {}),
@@ -183,6 +224,16 @@ class EscapeRoomPointerSensor extends PointerSensor {
 
 // ─── Campos de configuración lógica de una sala ───────────────────────────────
 
+const MAX_PISTAS_POR_SALA = 5;
+
+function movePista(pistas: string[], from: number, to: number): string[] {
+  if (to < 0 || to >= pistas.length) return pistas;
+  const next = [...pistas];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 export interface EscapeRoomSalaConfigFieldsProps {
   sala: EscapeRoomSala;
   onUpdate: (patch: Partial<EscapeRoomSala>) => void;
@@ -202,6 +253,9 @@ export function EscapeRoomSalaConfigFields({
           return o.slice(0, 12);
         })()
       : [];
+
+  const pistas = sala.pistas ?? (sala.pista?.trim() ? [sala.pista] : []);
+  const ilimitado = sala.intentosMaximos === ESCAPE_ROOM_INTENTOS_ILIMITADOS;
 
   return (
     <div className="space-y-2">
@@ -347,29 +401,115 @@ export function EscapeRoomSalaConfigFields({
       </label>
 
       <div className="space-y-1">
-        <Label className="text-[11px]">Pista (opcional)</Label>
-        <textarea
-          value={sala.pista ?? ''}
-          onChange={(e) => onUpdate({ pista: e.target.value || undefined })}
-          onBlur={onBlurFlush}
-          rows={2}
-          className={cn(INPUT_BASE, 'min-h-[48px] resize-y')}
-          placeholder="Ayuda para el estudiante"
-        />
+        <Label className="text-[11px]">Pistas (opcional)</Label>
+        <p className="text-[10px] leading-snug text-[#6b7280]">
+          Se revelan en orden: la primera tras el primer fallo, la segunda tras el segundo, y así
+          sucesivamente. No restan puntos.
+        </p>
+        {pistas.length > 0 && (
+          <div className="space-y-1.5">
+            {pistas.map((p, pi) => (
+              <div key={pi} className="flex items-start gap-1.5">
+                <span className="mt-2 w-4 shrink-0 text-[10px] font-semibold text-[#6b7280]">
+                  {pi + 1}
+                </span>
+                <textarea
+                  value={p}
+                  onChange={(e) => {
+                    const next = [...pistas];
+                    next[pi] = e.target.value;
+                    onUpdate({ pistas: next });
+                  }}
+                  onBlur={onBlurFlush}
+                  rows={2}
+                  className={cn(INPUT_BASE, 'min-h-[48px] flex-1 resize-y')}
+                  placeholder={`Pista ${pi + 1}`}
+                />
+                <div className="flex shrink-0 flex-col gap-0.5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                    disabled={pi === 0}
+                    aria-label={`Subir pista ${pi + 1}`}
+                    onClick={() => onUpdate({ pistas: movePista(pistas, pi, pi - 1) })}
+                  >
+                    <ArrowUp className="size-3" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                    disabled={pi === pistas.length - 1}
+                    aria-label={`Bajar pista ${pi + 1}`}
+                    onClick={() => onUpdate({ pistas: movePista(pistas, pi, pi + 1) })}
+                  >
+                    <ArrowDown className="size-3" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-[#ef4444] hover:text-[#dc2626]"
+                    aria-label={`Eliminar pista ${pi + 1}`}
+                    onClick={() => onUpdate({ pistas: pistas.filter((_, i) => i !== pi) })}
+                  >
+                    <Trash2 className="size-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-1 h-7 w-full gap-1 text-[10px]"
+          disabled={pistas.length >= MAX_PISTAS_POR_SALA}
+          onClick={() => onUpdate({ pistas: [...pistas, ''] })}
+        >
+          <Plus className="size-3" />
+          Agregar pista
+        </Button>
       </div>
 
       <div className="space-y-1">
         <Label className="text-[11px]">Intentos máximos</Label>
-        <select
-          value={String(sala.intentosMaximos)}
-          onChange={(e) => onUpdate({ intentosMaximos: Number(e.target.value) })}
-          className={SELECT_BASE}
-        >
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="-1">Ilimitado</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={99}
+            step={1}
+            value={ilimitado ? '' : String(sala.intentosMaximos)}
+            disabled={ilimitado}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (Number.isFinite(v) && v >= 1) onUpdate({ intentosMaximos: Math.floor(v) });
+            }}
+            onBlur={onBlurFlush}
+            className="h-8 w-20 text-xs"
+            placeholder={ilimitado ? '∞' : String(ESCAPE_ROOM_INTENTOS_DEFAULT)}
+          />
+          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#374151]">
+            <input
+              type="checkbox"
+              checked={ilimitado}
+              onChange={(e) =>
+                onUpdate({
+                  intentosMaximos: e.target.checked
+                    ? ESCAPE_ROOM_INTENTOS_ILIMITADOS
+                    : ESCAPE_ROOM_INTENTOS_DEFAULT,
+                })
+              }
+              className="size-3.5 accent-[#2563EB]"
+            />
+            Ilimitados
+          </label>
+        </div>
       </div>
     </div>
   );

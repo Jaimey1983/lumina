@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { useSlideTimer } from '@/hooks/use-slide-timer';
+import { getEffectiveTimerForApiSlide } from '@/lib/slide-timer-resolve';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideNavContext, type SlideNavAction } from '@/components/widgets/shared/slide-nav-context';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
+import { SlideCountdownOverlay } from './slide-countdown-overlay';
 import { parseClassModoEntrega, type Activity, type Block } from '@/types/slide.types';
 import styles from '@/components/viewer/slide-transition.module.css';
 import { useSlideTransition } from '@/hooks/use-slide-transition';
@@ -204,8 +206,17 @@ export function ViewerClient({ id }: { id: string }) {
     studentName: guestIdentity.studentName || undefined,
   });
 
+  const viewerFallbackSeconds = getEffectiveTimerForApiSlide(
+    ((classData?.slides ?? []).find((s) => s.id === activeSlide?.id) as ApiSlide | undefined) ??
+      null,
+    classData?.timerGlobal,
+  );
   const viewerTimerDuration =
-    socketTimer && activeSlide?.id === socketTimer.slideId ? socketTimer.duration : 0;
+    socketTimer && activeSlide?.id === socketTimer.slideId
+      ? socketTimer.duration
+      : modoEntrega === 'clase' && liveTeacherSynced && viewerFallbackSeconds > 0
+        ? viewerFallbackSeconds
+        : 0;
   const viewerTimerActive = viewerTimerDuration > 0;
 
   const { timeLeft: viewerTimeLeft } = useSlideTimer({
@@ -688,6 +699,11 @@ export function ViewerClient({ id }: { id: string }) {
                   />
                   </SlideNavContext.Provider>
                 </div>
+                <SlideCountdownOverlay
+                  timeLeft={viewerTimeLeft}
+                  duration={viewerTimerDuration}
+                  visible={viewerTimerActive}
+                />
               </div>
             ) : (
               <div className="flex flex-1 items-center justify-center py-12">

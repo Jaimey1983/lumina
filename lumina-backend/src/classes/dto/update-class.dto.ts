@@ -1,5 +1,5 @@
-import { IsString, IsOptional, MinLength, IsObject, IsIn } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, IsOptional, MinLength, IsObject, IsIn, IsInt, Min, Max } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { trimIfString } from '../../common/trim-if-string';
 
 export class UpdateClassDto {
@@ -35,4 +35,12 @@ export class UpdateClassDto {
   @IsOptional()
   @IsString()
   background?: string;
+
+  /** Segundos del temporizador global en vivo. 0 = desactivado. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(600)
+  timerGlobal?: number;
 }

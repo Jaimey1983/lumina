@@ -1,11 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
-  ArrowLeft,
   BookOpen,
   Calculator,
   Loader2,
@@ -627,6 +626,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [gradeSheetTab, setGradeSheetTab] = useState<GradeSheetTab>('live');
   const [selectedAutonomousSessionId, setSelectedAutonomousSessionId] = useState('');
+  const lastClassStorageKey = `lumina:edu:last-class:${courseId}`;
 
   useEffect(() => {
     if (classes.length === 0) {
@@ -635,9 +635,17 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
     }
     setSelectedClassId((prev) => {
       if (prev && classes.some((c) => c.id === prev)) return prev;
+      const stored =
+        typeof window !== 'undefined' ? window.localStorage.getItem(lastClassStorageKey) : null;
+      if (stored && classes.some((c) => c.id === stored)) return stored;
       return classes[0]!.id;
     });
-  }, [classes]);
+  }, [classes, lastClassStorageKey]);
+
+  useEffect(() => {
+    if (!selectedClassId) return;
+    window.localStorage.setItem(lastClassStorageKey, selectedClassId);
+  }, [lastClassStorageKey, selectedClassId]);
 
   const { data: classDetail } = useClass(selectedClassId);
 
@@ -721,7 +729,7 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
     [classDetail?.slides],
   );
 
-  const showClassSelect = classes.length > 1;
+  const showClassSelect = classes.length > 0;
   const gradebookReady = !gradebookLoading && !gradebookError && !!gradebook;
   const noHayResultados = gradebookReady && estudiantes.length === 0;
   const showFullGrid = gradebookReady && estudiantes.length > 0 && actividades.length > 0;
@@ -741,26 +749,26 @@ export function GradeBookClient({ courseId }: { courseId: string }) {
 
   return (
     <div className="w-full flex flex-col gap-0 pb-6">
-      <div className="px-6 pt-4">
-        <Link
-          href="/edu"
-          className="mb-4 inline-flex w-fit items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#6b7280] no-underline transition-all duration-150 ease-in-out hover:bg-[#eff6ff] hover:text-[#2563EB]"
-        >
-          <ArrowLeft className="size-4 shrink-0" />
-          Volver a cursos
-        </Link>
-      </div>
-
       <PageBanner
         title="Lumina Edu — Planilla"
         subtitle={`${nombreCurso} · Escala colombiana 1.0–5.0`}
+        backHref="/edu"
+        backLabel="Volver a cursos"
         action={
-          <button
-            type="button"
-            className="rounded-lg border border-white/50 bg-transparent px-4 py-1.5 text-[0.75rem] font-extrabold text-white hover:bg-white/10"
-          >
-            Exportar
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/edu/${courseId}/progress`}
+              className="rounded-lg border border-white/50 bg-transparent px-4 py-1.5 text-[0.75rem] font-extrabold text-white hover:bg-white/10"
+            >
+              Mapa
+            </Link>
+            <button
+              type="button"
+              className="rounded-lg border border-white/50 bg-transparent px-4 py-1.5 text-[0.75rem] font-extrabold text-white hover:bg-white/10"
+            >
+              Exportar
+            </button>
+          </div>
         }
       />
 

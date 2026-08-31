@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { normalizeGradebookPayload } from '@/hooks/api/use-gradebook';
 
 export interface GradeCalculationRow {
   studentId: string;
@@ -43,26 +44,21 @@ export interface SaveGradeSheetEntryInput {
   feedback?: string;
 }
 
-function normalizeCalculationRows(
-  data: { data?: GradeCalculationRow[] } | GradeCalculationRow[] | null | undefined,
-) {
-  const rows = Array.isArray(data) ? data : data?.data;
-  return (Array.isArray(rows) ? rows : []) as GradeCalculationRow[];
-}
-
-function normalizeGradeSheet(
-  data: GradeSheetResponse | { data?: GradeSheetResponse } | null | undefined,
-) {
-  if (!data) {
-    return { activities: [], students: [], entries: [] } as GradeSheetResponse;
-  }
-
-  const payload = ('data' in data && data.data ? data.data : data) as Partial<GradeSheetResponse>;
-  return {
-    activities: Array.isArray(payload.activities) ? payload.activities : [],
-    students: Array.isArray(payload.students) ? payload.students : [],
-    entries: Array.isArray(payload.entries) ? payload.entries : [],
-  } as GradeSheetResponse;
+function normalizeCalculationRows(data: unknown): GradeCalculationRow[] {
+  const envelope =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as { data?: unknown }).data
+      : data;
+  const rows = Array.isArray(envelope) ? envelope : [];
+  return rows.map((item) => {
+    const r = item as Record<string, unknown>;
+    return {
+      studentId: String(r.studentId ?? r.userId ?? ''),
+      studentName: String(r.studentName ?? ''),
+      finalGrade: typeof r.finalGrade === 'number' ? r.finalGrade : null,
+      isComplete: r.isComplete === true || r.status === 'complete',
+    };
+  });
 }
 
 export function useGradeCalculation(courseId: string, periodId: string) {
@@ -74,13 +70,7 @@ export function useGradeCalculation(courseId: string, periodId: string) {
         `/courses/${courseId}/grade-calculation`,
         { params: { periodId } },
       );
-      return normalizeCalculationRows(
-        responseData as
-          | { data?: GradeCalculationRow[] }
-          | GradeCalculationRow[]
-          | null
-          | undefined,
-      );
+      return normalizeCalculationRows(responseData);
     },
   });
 }
@@ -93,9 +83,7 @@ export function useGradeSheet(courseId: string, periodId: string) {
       const { data } = await api.get(`/courses/${courseId}/grades`, {
         params: { periodId },
       });
-      return normalizeGradeSheet(
-        data as GradeSheetResponse | { data?: GradeSheetResponse } | null | undefined,
-      );
+      return normalizeGradebookPayload(data);
     },
   });
 }
@@ -113,8 +101,9 @@ export function useSaveGradeSheetEntry(courseId: string, periodId: string) {
       }
 
       const { data } = await api.post(`/courses/${courseId}/grade-entries`, {
-        studentId,
+        userId: studentId,
         activityId,
+        periodId,
         score,
         feedback,
       });
@@ -122,7 +111,7 @@ export function useSaveGradeSheetEntry(courseId: string, periodId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grade-sheet', courseId, periodId] });
-      queryClient.invalidateQueries({ queryKey: ['gradebook', courseId, periodId] });
+      queryClient.invalidateQueries({ queryKey: ['course-gradebook', courseId, periodId] });
       queryClient.invalidateQueries({ queryKey: ['grade-calculation', courseId, periodId] });
     },
   });

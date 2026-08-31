@@ -1,9 +1,9 @@
 import type { FlipCardsWidget } from '@/types/slide.types';
-import type { CarouselWidget, ClickRevealWidget, PopupWidget, TabsWidget, TimelineWidget, HotspotWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget, WidgetTipo } from '@/types/widget.types';
+import type { CarouselWidget, ClickRevealWidget, PopupWidget, TabsWidget, TimelineWidget, HotspotWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget, RuletaWidget, WidgetTipo } from '@/types/widget.types';
 
 export type { WidgetTipo };
 
-export const WIDGET_TIPOS: WidgetTipo[] = ['flip-cards', 'tabs', 'carousel', 'click-reveal', 'timeline', 'popup', 'hotspot', 'tooltip', 'boton', 'contador', 'progreso'];
+export const WIDGET_TIPOS: WidgetTipo[] = ['flip-cards', 'tabs', 'carousel', 'click-reveal', 'timeline', 'popup', 'hotspot', 'tooltip', 'boton', 'contador', 'progreso', 'ruleta'];
 
 export const WIDGET_LABELS: Record<WidgetTipo, string> = {
   'flip-cards': 'Flip Cards',
@@ -17,6 +17,7 @@ export const WIDGET_LABELS: Record<WidgetTipo, string> = {
   boton: 'Botón',
   contador: 'Contador / temporizador',
   progreso: 'Barra de progreso',
+  ruleta: 'Ruleta',
 };
 
 export type WidgetBlock =
@@ -30,7 +31,8 @@ export type WidgetBlock =
   | TooltipWidget
   | BotonWidget
   | ContadorWidget
-  | ProgresoWidget;
+  | ProgresoWidget
+  | RuletaWidget;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {
   return WIDGET_TIPOS.includes(value as WidgetTipo);

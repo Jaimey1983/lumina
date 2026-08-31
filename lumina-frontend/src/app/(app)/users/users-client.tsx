@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { AlertCircle, Pencil, Plus, PowerOff, Search, ShieldOff, Users } from 'lucide-react';
+import { AlertCircle, Pencil, PowerOff, Search, ShieldOff, Users } from 'lucide-react';
 
+import { PageBanner } from '@/components/ui/page-banner';
 import { useAuth } from '@/hooks/use-auth';
 import {
   useUsers,
@@ -511,20 +512,22 @@ export function UsersClient() {
   }
 
   return (
-    <div className="w-full space-y-4 p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Usuarios</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona los usuarios de la plataforma.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          Nuevo usuario
-        </Button>
-      </div>
+    <div className="w-full flex flex-col gap-0 pb-6">
+      <PageBanner
+        title="Usuarios"
+        subtitle="Gestiona los usuarios de la plataforma"
+        backHref="/dashboard"
+        action={
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+          >
+            ＋ Nuevo usuario
+          </button>
+        }
+      />
+      <div className="space-y-4 px-6 pt-4">
 
       {/* Search */}
       <div className="relative max-w-sm">
@@ -589,6 +592,7 @@ export function UsersClient() {
           if (!open) setEditUser(null);
         }}
       />
+      </div>
     </div>
   );
 }

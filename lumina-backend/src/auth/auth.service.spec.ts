@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Role } from './dto/register.dto';
 
@@ -28,6 +28,7 @@ describe('AuthService', () => {
             user: {
               findUnique: jest.fn(),
               create: jest.fn(),
+              update: jest.fn(),
             },
           },
         },
@@ -144,5 +145,59 @@ describe('AuthService', () => {
         email: 'ada@example.com',
       }),
     );
+  });
+
+  it('deberia cambiar la contraseña con la actual correcta', async () => {
+    (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
+      id: 'u1',
+      password: 'hashed-old',
+      isActive: true,
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+    (bcrypt.hash as jest.Mock).mockResolvedValueOnce('hashed-new');
+    (prisma.user.update as jest.Mock).mockResolvedValueOnce({ id: 'u1' });
+
+    await expect(
+      service.changePassword('u1', {
+        currentPassword: 'password123',
+        newPassword: 'password456',
+      }),
+    ).resolves.toEqual({ message: 'Contraseña actualizada' });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'u1' },
+      data: { password: 'hashed-new' },
+    });
+  });
+
+  it('deberia rechazar cambio de contraseña si la actual es inválida', async () => {
+    (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
+      id: 'u1',
+      password: 'hashed-old',
+      isActive: true,
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
+
+    await expect(
+      service.changePassword('u1', {
+        currentPassword: 'wrong-password',
+        newPassword: 'password456',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('deberia rechazar si la nueva contraseña es igual a la actual', async () => {
+    (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
+      id: 'u1',
+      password: 'hashed-old',
+      isActive: true,
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+
+    await expect(
+      service.changePassword('u1', {
+        currentPassword: 'password123',
+        newPassword: 'password123',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

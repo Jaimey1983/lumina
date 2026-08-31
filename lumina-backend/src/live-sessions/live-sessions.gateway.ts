@@ -13,6 +13,8 @@ import { Namespace, Socket } from 'socket.io';
 import { LiveSessionsService } from './live-sessions.service';
 import { TorneoService } from '../torneo/torneo.service';
 import type { RankingEntry } from '../torneo/torneo.service';
+import { EscapeRoomLiveService } from '../escape-room/escape-room-live.service';
+import { EscapeRoomInitDto } from './dto/escape-room-init.dto';
 import { JoinLiveDto } from './dto/join-live.dto';
 import { SlideSyncDto } from './dto/slide-sync.dto';
 
@@ -74,6 +76,7 @@ export class LiveSessionsGateway
   constructor(
     private readonly liveSessions: LiveSessionsService,
     private readonly torneoService: TorneoService,
+    private readonly escapeRoom: EscapeRoomLiveService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -334,6 +337,75 @@ export class LiveSessionsGateway
       this.server.server.to(classRoom).emit('torneo:end', endPayload);
 
       return { ok: true };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  /**
+   * Docente: abre la partida por equipos del Escape Room de un slide.
+   * Idempotente — reabrir devuelve la partida existente sin perder progreso.
+   */
+  @SubscribeMessage('escape-room:init')
+  async handleEscapeRoomInit(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: EscapeRoomInitDto,
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      // Misma guarda que `slide:sync`: staff del curso + clase LIVE + slide de la clase.
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
+
+      const state = await this.escapeRoom.initRun({
+        classId: body.classId,
+        slideId: body.slideId,
+        teamCount: body.teamCount,
+        teamNames: body.teamNames,
+      });
+
+      const payload = {
+        classId: body.classId,
+        slideId: body.slideId,
+        runId: state.runId,
+        totalSalas: state.totalSalas,
+        tiempoLimiteMinutos: state.tiempoLimiteMinutos,
+        startedAtMs: state.startedAtMs,
+      };
+      this.server
+        .to(this.liveSessions.roomName(body.classId))
+        .emit('escape-room:started', payload);
+      this.server.server
+        .to(classJoinRoom(body.classId))
+        .emit('escape-room:started', payload);
+
+      return { ok: true as const, ...state };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  /** Docente: matriz de equipos × salas para el panel en vivo. */
+  @SubscribeMessage('escape-room:dashboard')
+  async handleEscapeRoomDashboard(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: SlideSyncDto,
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
+      const dashboard = await this.escapeRoom.getDashboard({
+        classId: body.classId,
+        slideId: body.slideId,
+      });
+      return { ok: true as const, dashboard };
     } catch (e) {
       rethrowAsWs(e);
     }

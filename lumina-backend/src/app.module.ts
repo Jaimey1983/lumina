@@ -29,6 +29,7 @@ import { AchievementsModule } from './achievements/achievements.module';
 import { CurriculumModule } from './curriculum/curriculum.module';
 import { AutonomousSessionsModule } from './autonomous-sessions/autonomous-sessions.module';
 import { PptxModule } from './pptx/pptx.module';
+import { ProgressMapModule } from './progress-map/progress-map.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { PptxModule } from './pptx/pptx.module';
 
     // ── Fase 8 — Importación ──────────────────────────────────────────────
     PptxModule,
+    ProgressMapModule,
   ],
 })
 export class AppModule {}
