@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+
+/** App Next independiente: no usar el lockfile residual de la raíz del monorepo. */
+const frontendRoot = path.resolve(__dirname);
+
 const nextConfig: NextConfig = {
   devIndicators: false,
-  turbopack: {},
+  outputFileTracingRoot: frontendRoot,
+  turbopack: {
+    root: frontendRoot,
+  },
   eslint: {
     // `next build` no bloquea por lint: hay violaciones pre-existentes en el
     // repo (react-hooks/purity, static-components, no-img-element…). ESLint

@@ -35,6 +35,9 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Visual Studio
+.vs/
+
 # dotenv environment variable files
 .env
 .env.development.local
@@ -55,10 +58,19 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# Prisma generated client — se regenera con `pnpm prisma generate`
 /generated/prisma
-
-# Prisma generated client
 src/generated/
-prisma/generated/Nueva carpeta/
+prisma/generated/
+
+# npm leftover (este repo usa pnpm)
+package-lock.json
+
+# test / diagnostic dumps
+**/.vitest-attachments/
+**/build_log.txt
+**/lint-output.txt
+**/lint2.txt
+
 lumina-backup/
 *- copia/
