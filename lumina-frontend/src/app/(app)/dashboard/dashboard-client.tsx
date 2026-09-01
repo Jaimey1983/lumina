@@ -815,7 +815,8 @@ export function DashboardClient() {
 
   if (!user) return null;
 
-  switch (user.role) {
+  switch (user.role?.toUpperCase()) {
+    case 'SUPERADMIN':
     case 'ADMIN':
       return <AdminDashboard user={user} />;
     case 'TEACHER':

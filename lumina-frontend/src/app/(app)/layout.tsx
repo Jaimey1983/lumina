@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { ScreenLoader } from '@/components/screen-loader';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -60,7 +61,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen bg-[#f9fafb] font-sans">
       <Sidebar />
-      <main className="flex min-w-0 flex-1 overflow-y-auto bg-[#f9fafb]">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#f9fafb]">
+        <ImpersonationBanner />
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      </main>
     </div>
   );
 }

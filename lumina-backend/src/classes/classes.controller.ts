@@ -27,6 +27,7 @@ import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { TeacherVerifiedGuard } from '../verification/teacher-verified.guard';
 
 @Controller('classes')
 export class ClassesController {
@@ -91,7 +92,7 @@ export class ClassesController {
   }
 
   @Post(':id/publish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, TeacherVerifiedGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   publish(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.publish(id, user.id);
@@ -108,7 +109,7 @@ export class ClassesController {
   // ─── SESIONES ──────────────────────────────────────────
 
   @Post(':id/sessions/start')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, TeacherVerifiedGuard)
   @Roles('TEACHER')
   startSession(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.startSession(id, user.id);

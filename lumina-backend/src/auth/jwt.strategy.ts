@@ -22,6 +22,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     sub: string;
     email: string;
     role: string;
+    /** Sesión de soporte. */
+    imp?: boolean;
+    /** Admin que impersona. */
+    act?: string;
+    /** `jti` de `AdminImpersonationSession`. */
+    jti?: string;
   }): Promise<JwtAuthUser> {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -32,13 +38,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         role: true,
         isActive: true,
+        deletedAt: true,
+        verificationStatus: true,
+        verificationMethod: true,
+        verificationExpiresAt: true,
       },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.deletedAt) {
       throw new UnauthorizedException('Token inválido');
     }
 
-    return user;
+    let impersonatedBy: string | null = null;
+    let impersonationJti: string | null = null;
+
+    if (payload.imp) {
+      if (!payload.jti || !payload.act) {
+        throw new UnauthorizedException('Token de soporte inválido');
+      }
+      const session = await this.prisma.adminImpersonationSession.findUnique({
+        where: { jti: payload.jti },
+      });
+      if (
+        !session ||
+        session.endedAt !== null ||
+        session.targetUserId !== payload.sub
+      ) {
+        throw new UnauthorizedException('Sesión de soporte finalizada');
+      }
+      impersonatedBy = payload.act;
+      impersonationJti = payload.jti;
+    }
+
+    return { ...user, impersonatedBy, impersonationJti };
   }
 }

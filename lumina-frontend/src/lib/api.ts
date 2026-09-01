@@ -20,5 +20,21 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error),
+  (error) => {
+    // Si el token de soporte (impersonación) expiró o fue revocado, restaurar
+    // automáticamente la sesión del admin en vez de dejarlo deslogueado.
+    if (
+      error?.response?.status === 401 &&
+      typeof window !== 'undefined' &&
+      sessionStorage.getItem('lumina_admin_token')
+    ) {
+      const adminToken = sessionStorage.getItem('lumina_admin_token');
+      if (adminToken) {
+        localStorage.setItem('token', adminToken);
+        sessionStorage.removeItem('lumina_admin_token');
+        window.location.href = '/admin';
+      }
+    }
+    return Promise.reject(error);
+  },
 );

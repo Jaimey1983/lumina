@@ -30,6 +30,8 @@ import { CurriculumModule } from './curriculum/curriculum.module';
 import { AutonomousSessionsModule } from './autonomous-sessions/autonomous-sessions.module';
 import { PptxModule } from './pptx/pptx.module';
 import { ProgressMapModule } from './progress-map/progress-map.module';
+import { VerificationModule } from './verification/verification.module';
+import { SuperadminModule } from './superadmin/superadmin.module';
 
 @Module({
   imports: [
@@ -85,6 +87,10 @@ import { ProgressMapModule } from './progress-map/progress-map.module';
     // ── Fase 8 — Importación ──────────────────────────────────────────────
     PptxModule,
     ProgressMapModule,
+
+    // ── SUPERADMIN — verificación docente + gestión (PR2) ─────────────────
+    VerificationModule,
+    SuperadminModule,
   ],
 })
 export class AppModule {}

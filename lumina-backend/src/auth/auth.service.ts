@@ -6,7 +6,9 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { Role, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { isTeacherRole } from '../verification/verification.util';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -50,6 +52,15 @@ export class AuthService {
       role: string;
       createdAt: Date;
     };
+    const role: Role = (dto.role ?? 'STUDENT') as Role;
+    // Los roles docentes arrancan sin verificar (PENDING): pueden editar
+    // borradores pero no publicar ni invitar hasta canjear un código de
+    // invitación o adjuntar un correo institucional de dominio confiable (PR2).
+    // El resto de roles quedan en NULL = "la verificación no aplica".
+    const verificationStatus = isTeacherRole(role)
+      ? VerificationStatus.PENDING
+      : null;
+
     let user!: CreatedUser;
     try {
       user = await this.prisma.user.create({
@@ -58,7 +69,8 @@ export class AuthService {
           lastName: dto.lastName,
           email: dto.email,
           password: hashedPassword,
-          role: dto.role ?? 'STUDENT',
+          role,
+          verificationStatus,
         },
         select: {
           id: true,
@@ -89,7 +101,7 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.deletedAt) {
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 

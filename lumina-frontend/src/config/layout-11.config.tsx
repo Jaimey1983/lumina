@@ -5,6 +5,7 @@ import {
   GraduationCap,
   ClipboardList,
   BarChart3,
+  ShieldCheck,
   Users,
   User,
 } from 'lucide-react';
@@ -53,6 +54,12 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Administración',
     children: [
+      {
+        title: 'Panel Admin',
+        path: '/admin',
+        icon: ShieldCheck,
+        roles: ['ADMIN', 'SUPERADMIN'],
+      },
       {
         title: 'Usuarios',
         path: '/users',

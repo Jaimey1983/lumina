@@ -10,6 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TeacherVerifiedGuard } from '../verification/teacher-verified.guard';
 import { AutonomousSessionsService } from './autonomous-sessions.service';
 import { CreateAutonomousSessionDto } from './dto/create-autonomous-session.dto';
 import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto';
@@ -23,7 +24,7 @@ export class ClassAutonomousSessionsController {
   constructor(private readonly service: AutonomousSessionsService) {}
 
   @Post(':classId/autonomous-sessions')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, TeacherVerifiedGuard)
   create(
     @Param('classId') classId: string,
     @Body() dto: CreateAutonomousSessionDto,

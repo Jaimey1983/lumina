@@ -8,6 +8,7 @@ import {
   Star,
   ClipboardList,
   BarChart2,
+  ShieldCheck,
   User,
   LogOut,
   type LucideIcon,
@@ -16,7 +17,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 
-type IconKey = 'home' | 'courses' | 'classes' | 'edu' | 'analytics' | 'profile';
+type IconKey =
+  | 'home'
+  | 'courses'
+  | 'classes'
+  | 'edu'
+  | 'analytics'
+  | 'admin'
+  | 'profile';
 
 const icons: Record<IconKey, LucideIcon> = {
   home: Home,
@@ -24,7 +32,24 @@ const icons: Record<IconKey, LucideIcon> = {
   classes: Star,
   edu: ClipboardList,
   analytics: BarChart2,
+  admin: ShieldCheck,
   profile: User,
+};
+
+function isAdminRole(role?: string) {
+  const r = role?.toUpperCase();
+  return r === 'ADMIN' || r === 'SUPERADMIN';
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  SUPERADMIN: 'Superadministrador',
+  ADMIN: 'Administrador',
+  DEPARTMENT_HEAD: 'Jefe de área',
+  TEACHER: 'Docente',
+  TEACHER_ASSISTANT: 'Auxiliar docente',
+  STUDENT: 'Estudiante',
+  PARENT: 'Acudiente',
+  GUEST: 'Invitado',
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -45,14 +70,25 @@ function userInitials(user: { name: string; lastName?: string } | null) {
   return initials || '?';
 }
 
-const NAV_ITEMS = [
-  { label: 'Inicio', href: '/dashboard', icon: 'home' as const },
-  { label: 'Cursos', href: '/courses', icon: 'courses' as const },
-  { label: 'Mis Clases', href: '/classes', icon: 'classes' as const },
-  { label: 'Lumina Edu', href: '/edu', icon: 'edu' as const },
-  { label: 'Analytics', href: '/analytics', icon: 'analytics' as const },
-  { label: 'Perfil', href: '/profile', icon: 'profile' as const },
-] as const;
+type NavItem = {
+  label: string;
+  href: string;
+  icon: IconKey;
+  /** Sólo visible para ADMIN / SUPERADMIN. */
+  adminOnly?: boolean;
+  /** Oculto para ADMIN / SUPERADMIN (contenido docente/estudiante). */
+  hideForAdmin?: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Inicio', href: '/dashboard', icon: 'home' },
+  { label: 'Cursos', href: '/courses', icon: 'courses', hideForAdmin: true },
+  { label: 'Mis Clases', href: '/classes', icon: 'classes', hideForAdmin: true },
+  { label: 'Lumina Edu', href: '/edu', icon: 'edu', hideForAdmin: true },
+  { label: 'Analytics', href: '/analytics', icon: 'analytics', hideForAdmin: true },
+  { label: 'Panel Admin', href: '/admin', icon: 'admin', adminOnly: true },
+  { label: 'Perfil', href: '/profile', icon: 'profile' },
+];
 
 function NavLink({
   href,
@@ -99,6 +135,15 @@ export function Sidebar() {
 
   const displayName = userDisplayName(user) || '?';
   const initials = userInitials(user);
+  const roleLabel = user?.role
+    ? ROLE_LABELS[user.role.toUpperCase()] ?? user.role
+    : '';
+  const admin = isAdminRole(user?.role);
+  const navItems = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly && !admin) return false;
+    if (item.hideForAdmin && admin) return false;
+    return true;
+  });
 
   return (
     <aside className="flex h-full w-52 shrink-0 flex-col border-r border-[#e5e7eb] bg-[#ffffff]">
@@ -122,7 +167,7 @@ export function Sidebar() {
           Menú
         </p>
         <nav className="flex flex-col gap-0.5">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={`${item.label}-${item.href}`}
               href={item.href}
@@ -165,7 +210,7 @@ export function Sidebar() {
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-[#111827]">{displayName}</p>
-            <p className="text-xs text-[#6b7280]">Docente</p>
+            <p className="truncate text-xs text-[#6b7280]">{roleLabel || 'Usuario'}</p>
           </div>
           <button
             type="button"

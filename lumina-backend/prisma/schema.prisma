@@ -7,28 +7,28 @@ datasource db {
 }
 
 model User {
-  id                      String            @id @default(cuid())
-  email                   String            @unique
+  id                      String                 @id @default(cuid())
+  email                   String                 @unique
   password                String
   name                    String
   lastName                String
-  role                    Role              @default(STUDENT)
+  role                    Role                   @default(STUDENT)
   avatar                  String?
-  isActive                Boolean           @default(true)
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  isActive                Boolean                @default(true)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
   institution             String?
   classResults            ClassResult[]
   classGuests             ClassGuest[]
-  teacherCourses          Course[]          @relation("TeacherCourses")
+  teacherCourses          Course[]               @relation("TeacherCourses")
   enrollments             Enrollment[]
   gradebookEntries        GradeEntry[]
   classProgress           StudentClassProgress[]
   messageReads            MessageRead[]
-  receivedMessages        Message[]         @relation("ReceivedMessages")
-  sentMessages            Message[]         @relation("SentMessages")
-  peerEvaluationsReceived PeerEvaluation[]  @relation("EvaluatedUser")
-  peerEvaluationsGiven    PeerEvaluation[]  @relation("EvaluatorUser")
+  receivedMessages        Message[]              @relation("ReceivedMessages")
+  sentMessages            Message[]              @relation("SentMessages")
+  peerEvaluationsReceived PeerEvaluation[]       @relation("EvaluatedUser")
+  peerEvaluationsGiven    PeerEvaluation[]       @relation("EvaluatorUser")
   selfEvaluations         SelfEvaluation[]
   studentBadges           StudentBadge[]
   studentPoints           StudentPoints[]
@@ -36,6 +36,41 @@ model User {
   preferredAiProvider     AiProvider?
   teacherAiKeys           TeacherAiKey[]
 
+  // ─── SUPERADMIN / verificación docente (PR1: solo estructura) ──────────────
+  // Soft delete. Requiere filtrar `deletedAt: null` en TODAS las queries de
+  // usuario del backend (cambio transversal — se aplica en PR3).
+  deletedAt             DateTime?
+  // Verificación: aplica sólo a TEACHER / TEACHER_ASSISTANT. Sin `@default` a
+  // propósito — se setea en el registro para roles docentes (PR2); un
+  // STUDENT/PARENT/ADMIN queda en NULL = "no aplica".
+  verificationStatus    VerificationStatus?
+  verificationMethod    VerificationMethod?
+  verificationExpiresAt DateTime?
+  institutionalEmail    String?
+  verifiedAt            DateTime?
+  verifiedById          String?
+  verifiedBy            User?               @relation("UserVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedUsers         User[]              @relation("UserVerifiedBy")
+  rejectionReason       String?
+  // Documento manual: reservado para fase 2. `documentUrl` guardará la CLAVE de
+  // almacenamiento / referencia a URL firmada — nunca el archivo en base64.
+  documentType          String?
+  documentUrl           String?
+  documentIssuedAt      DateTime?
+
+  invitationCodesCreated  InvitationCode[]            @relation("InvitationCreatedBy")
+  invitationCodesUsed     InvitationCode[]            @relation("InvitationUsedBy")
+  adminAuditLogsMade      AdminAuditLog[]             @relation("AuditAdmin")
+  adminAuditLogsReceived  AdminAuditLog[]             @relation("AuditTarget")
+  impersonationsMade      AdminImpersonationSession[] @relation("ImpersonationAdmin")
+  impersonationsReceived  AdminImpersonationSession[] @relation("ImpersonationTarget")
+  learningEventsAsActor   LearningEvent[]             @relation("LearningEventActor")
+  learningEventsAsStudent LearningEvent[]             @relation("LearningEventStudent")
+  learningEventsAsTeacher LearningEvent[]             @relation("LearningEventTeacher")
+  researchConsent         ResearchConsent?
+
+  @@index([deletedAt])
+  @@index([role, verificationStatus])
   @@map("users")
 }
 
@@ -56,18 +91,18 @@ model TeacherAiKey {
 }
 
 model Course {
-  id                 String              @id @default(cuid())
+  id                 String                 @id @default(cuid())
   name               String
   description        String?
-  code               String              @unique
-  isActive           Boolean             @default(true)
+  code               String                 @unique
+  isActive           Boolean                @default(true)
   teacherId          String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
   achievements       Achievement[]
   badges             Badge[]
   classes            Class[]
-  teacher            User                @relation("TeacherCourses", fields: [teacherId], references: [id])
+  teacher            User                   @relation("TeacherCourses", fields: [teacherId], references: [id])
   enrollments        Enrollment[]
   forums             Forum[]
   gradebookStructure GradebookStructure?
@@ -75,7 +110,9 @@ model Course {
   periods            Period[]
   studentPoints      StudentPoints[]
   workGroups         WorkGroup[]
-  /** Grafo del mapa de progreso (edges). Layout de nodos es v2. */
+  /**
+   * Grafo del mapa de progreso (edges). Layout de nodos es v2.
+   */
   progressMap        Json?
   classProgress      StudentClassProgress[]
 
@@ -116,7 +153,9 @@ enum ProgressStatus {
   COMPLETED
 }
 
-/** Completitud canónica por estudiante × clase (mapa de progreso Edu). */
+/**
+ * Completitud canónica por estudiante × clase (mapa de progreso Edu).
+ */
 model StudentClassProgress {
   id          String         @id @default(cuid())
   userId      String
@@ -140,32 +179,38 @@ model StudentClassProgress {
 }
 
 model Class {
-  id                 String              @id @default(cuid())
+  id                 String                 @id @default(cuid())
   title              String
   description        String?
-  code               String              @unique
-  status             ClassStatus         @default(DRAFT)
-  /** `clase` = docente controla diapositivas; `presentacion` = estudiante a su ritmo sin telemetría; `autonomo` = ritmo propio con progreso en vivo. */
-  modoEntrega        String              @default("clase")
-  /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
-  timerGlobal        Int                 @default(0)
+  code               String                 @unique
+  status             ClassStatus            @default(DRAFT)
+  /**
+   * `clase` = docente controla diapositivas; `presentacion` = estudiante a su ritmo sin telemetría; `autonomo` = ritmo propio con progreso en vivo.
+   */
+  modoEntrega        String                 @default("clase")
+  /**
+   * Segundos por defecto del temporizador en vivo (0 = desactivado).
+   */
+  timerGlobal        Int                    @default(0)
   courseId           String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
   desempeno          Json?
-  codigo             String              @unique @default(cuid())
-  /** Id del fondo del canvas en viewer (`none`, `blanco`, …). */
-  background         String?             @default("none")
-  results             ClassResult[]
-  guests              ClassGuest[]
-  sessions            ClassSession[]
-  course              Course               @relation(fields: [courseId], references: [id])
-  collabNotes         CollabNote[]
-  slides              Slide[]
-  whiteboardSessions  WhiteboardSession[]
-  autonomousSessions  AutonomousSession[]
-  autonomousGrades    AutonomousGrade[]
-  studentProgress     StudentClassProgress[]
+  codigo             String                 @unique @default(cuid())
+  /**
+   * Id del fondo del canvas en viewer (`none`, `blanco`, …).
+   */
+  background         String?                @default("none")
+  results            ClassResult[]
+  guests             ClassGuest[]
+  sessions           ClassSession[]
+  course             Course                 @relation(fields: [courseId], references: [id])
+  collabNotes        CollabNote[]
+  slides             Slide[]
+  whiteboardSessions WhiteboardSession[]
+  autonomousSessions AutonomousSession[]
+  autonomousGrades   AutonomousGrade[]
+  studentProgress    StudentClassProgress[]
 
   @@map("classes")
 }
@@ -183,7 +228,9 @@ model AutonomousSession {
   requireManualStart Boolean              @default(false)
   pin                String               @default("")
   status             String               @default("scheduled")
-  /** "recovery" | "independent" */
+  /**
+   * "recovery" | "independent"
+   */
   purpose            String               @default("independent")
   createdAt          DateTime             @default(now())
   progress           AutonomousProgress[]
@@ -356,7 +403,9 @@ model ClassResult {
   @@map("class_results")
 }
 
-/** Vínculo guest ↔ clase al hacer joinAsGuest (Fase 7.3). No es matrícula de curso. */
+/**
+ * Vínculo guest ↔ clase al hacer joinAsGuest (Fase 7.3). No es matrícula de curso.
+ */
 model ClassGuest {
   id        String   @id @default(cuid())
   classId   String
@@ -710,12 +759,12 @@ model GroupActivity {
 }
 
 model TorneoSession {
-  id            String   @id @default(cuid())
-  classId       String
-  sessionId     String
-  status        String   @default("waiting")
-  currentQ      Int      @default(0)
-  createdAt     DateTime @default(now())
+  id        String   @id @default(cuid())
+  classId   String
+  sessionId String
+  status    String   @default("waiting")
+  currentQ  Int      @default(0)
+  createdAt DateTime @default(now())
 
   @@map("torneo_sessions")
 }
@@ -744,7 +793,9 @@ model TorneoAnswer {
 model EscapeRoomRun {
   id        String    @id @default(cuid())
   classId   String
-  /** ClassSession.id — la partida vive dentro de una sesión en vivo. */
+  /**
+   * ClassSession.id — la partida vive dentro de una sesión en vivo.
+   */
   sessionId String
   slideId   String
   status    String    @default("running")
@@ -764,7 +815,9 @@ model EscapeRoomTeam {
   id         String    @id @default(cuid())
   runId      String
   name       String
-  /** Índice de la sala en la que va el equipo (avance compartido). */
+  /**
+   * Índice de la sala en la que va el equipo (avance compartido).
+   */
   salaIndex  Int       @default(0)
   points     Int       @default(0)
   finishedAt DateTime?
@@ -782,7 +835,9 @@ model EscapeRoomTeam {
 model EscapeRoomTeamMember {
   id          String   @id @default(cuid())
   teamId      String
-  /** Denormalizado para garantizar un solo equipo por partida. */
+  /**
+   * Denormalizado para garantizar un solo equipo por partida.
+   */
   runId       String
   studentId   String
   studentName String
@@ -800,7 +855,9 @@ model EscapeRoomTeamRoom {
   teamId              String
   salaId              String
   salaIndex           Int
-  /** abierta | superada | agotada */
+  /**
+   * abierta | superada | agotada
+   */
   status              String   @default("abierta")
   intentos            Int      @default(0)
   pistasReveladas     Int      @default(0)
@@ -814,6 +871,174 @@ model EscapeRoomTeamRoom {
 
   @@unique([teamId, salaId])
   @@map("escape_room_team_rooms")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUPERADMIN — PR1: solo estructura, sin lógica de negocio todavía.
+// Ver SUPERADMIN_CONTEXT (v2). `role` usa el enum `Role` YA EXISTENTE — no tocar.
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Código que da acceso docente completo pero temporal (30 días) hasta verificar
+/// por otra vía. `revokedAt` desactiva un código filtrado sin perder la traza.
+model InvitationCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  targetRole  Role      @default(TEACHER)
+  createdById String
+  createdBy   User      @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  usedById    String?
+  usedBy      User?     @relation("InvitationUsedBy", fields: [usedById], references: [id], onDelete: SetNull)
+  expiresAt   DateTime?
+  maxUses     Int       @default(1)
+  usedCount   Int       @default(0)
+  revokedAt   DateTime?
+  note        String?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdById])
+  @@map("invitation_codes")
+}
+
+/// Dominio de correo que auto-verifica (vía rápida, no requisito).
+model TrustedDomain {
+  id         String   @id @default(cuid())
+  domain     String   @unique
+  autoVerify Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@map("trusted_domains")
+}
+
+/// Log inmutable de toda acción SUPERADMIN sensible. `action` sigue un catálogo
+/// versionado documentado en código (`src/superadmin/audit.constants.ts`).
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  admin        User     @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  action       String
+  targetUserId String?
+  targetUser   User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  metadata     Json?
+  timestamp    DateTime @default(now())
+
+  @@index([adminId, timestamp])
+  @@index([targetUserId, timestamp])
+  @@index([action, timestamp])
+  @@map("admin_audit_logs")
+}
+
+/// Sesión de impersonación: fuente de verdad de revocación (guard: `endedAt IS
+/// NULL AND jti` coincide) y registro de auditoría. Usada por PR4. `targetUserId`
+/// opcional para permitir hard-delete del usuario (Habeas Data) sin perder la fila.
+model AdminImpersonationSession {
+  id           String    @id @default(cuid())
+  jti          String    @unique
+  adminId      String
+  admin        User      @relation("ImpersonationAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  targetUserId String?
+  targetUser   User?     @relation("ImpersonationTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  ip           String?
+  userAgent    String?
+
+  @@index([adminId, startedAt])
+  @@index([targetUserId])
+  @@map("admin_impersonation_sessions")
+}
+
+/// Event sourcing ligero para learning analytics doctoral. Log inmutable; se
+/// agrega al CONSULTAR. `eventType` sigue un catálogo versionado; `payloadVersion`
+/// versiona `payload`. FK a User con `onDelete: SetNull` (no borrar la historia
+/// al borrar el usuario; el hard-delete por Habeas Data es ruta aparte).
+/// `classId`/`courseId`/`activityId` son dimensiones analíticas, no FK enforced.
+model LearningEvent {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+  eventType      String
+  payloadVersion Int      @default(1)
+  actorUserId    String?
+  actorUser      User?    @relation("LearningEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  studentId      String?
+  student        User?    @relation("LearningEventStudent", fields: [studentId], references: [id], onDelete: SetNull)
+  teacherId      String?
+  teacher        User?    @relation("LearningEventTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  classId        String?
+  courseId       String?
+  activityId     String?
+  activityType   String?
+  subjectArea    String?
+  gradeLevel     String?
+  payload        Json
+  aiProvider     String?
+  aiEdited       Boolean?
+  studyPhase     String?
+
+  @@index([eventType, timestamp])
+  @@index([actorUserId, timestamp])
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([activityId])
+  @@index([teacherId, eventType, timestamp])
+  @@map("learning_events")
+}
+
+/// Agregados diarios (job cron de fase posterior) para que el dashboard no
+/// recalcule sobre eventos crudos.
+model DailyMetricSnapshot {
+  id         String   @id @default(cuid())
+  date       DateTime
+  scope      String
+  metricKey  String
+  value      Float
+  sampleSize Int?
+
+  @@unique([date, scope, metricKey])
+  @@map("daily_metric_snapshots")
+}
+
+/// Consentimiento opt-in explícito por usuario. Si `consentStatus != "granted"`
+/// el usuario queda excluido de todo export. `consentVersion` referencia el
+/// texto/URL inmutable de esa versión.
+model ResearchConsent {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userType       String
+  consentStatus  String
+  consentDate    DateTime?
+  revokedDate    DateTime?
+  scope          String
+  consentVersion String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("research_consents")
+}
+
+/// Job de export filtrado por consentimiento y anonimizado. Funcional en fase posterior.
+model ResearchExportJob {
+  id            String   @id @default(cuid())
+  requestedAt   DateTime @default(now())
+  filters       Json
+  anonymization String
+  status        String
+  fileUrl       String?
+
+  @@map("research_export_jobs")
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  REJECTED
+}
+
+enum VerificationMethod {
+  INVITATION_CODE
+  MANUAL_DOCUMENT // reservado para fase 2; no usado en el MVP
+  INSTITUTIONAL_EMAIL
 }
 
 enum Role {

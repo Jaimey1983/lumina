@@ -4,6 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { ImpersonationBlockedGuard } from './impersonation-blocked.guard';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CurrentUser } from './current-user.decorator';
 import type { JwtAuthUser } from './jwt-auth-user';
@@ -34,7 +35,7 @@ export class AuthController {
 
   // PATCH /auth/change-password
   @Patch('change-password')
-  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @UseGuards(JwtAuthGuard, ImpersonationBlockedGuard, ThrottlerGuard)
   changePassword(
     @CurrentUser() user: JwtAuthUser,
     @Body() dto: ChangePasswordDto,
