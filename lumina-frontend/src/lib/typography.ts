@@ -26,6 +26,10 @@ export interface TypographyValue {
   list?: TypographyList;
 }
 
+/** Rango del inspector de texto de lienzo (px virtuales del slide 1280×720). */
+export const TEXT_BLOCK_FONT_SIZE_MIN = 8;
+export const TEXT_BLOCK_FONT_SIZE_MAX = 400;
+
 const ALIGN_TO_BLOCK: Record<TypographyAlign, TextAlign> = {
   left: 'izquierda',
   center: 'centro',
@@ -75,6 +79,42 @@ export function parseFontSizePx(raw?: string, fallback = 24): number {
   if (!Number.isFinite(n)) return fallback;
   if (/rem\s*$/i.test(raw.trim())) return Math.round(n * 16);
   return Math.round(n);
+}
+
+export function clampFontSize(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+/** Entero completo del input. Vacío o incompleto → null (aún no persistir). */
+export function parseFontSizeDraft(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed || !/^\d+$/.test(trimmed)) return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Confirma el borrador: vacío/inválido vuelve al valor actual; si no, clampa. */
+export function commitFontSizeDraft(
+  raw: string,
+  current: number,
+  min: number,
+  max: number,
+): number {
+  const parsed = parseFontSizeDraft(raw);
+  if (parsed === null) return clampFontSize(current, min, max);
+  return clampFontSize(parsed, min, max);
+}
+
+/** Valor listo para aplicar en vivo (flechas o número ya dentro del rango). */
+export function liveFontSizeDraft(
+  raw: string,
+  min: number,
+  max: number,
+): number | null {
+  const parsed = parseFontSizeDraft(raw);
+  if (parsed === null || parsed < min || parsed > max) return null;
+  return parsed;
 }
 
 export function isBoldWeight(weight?: number | 'normal' | 'bold'): boolean {
@@ -249,7 +289,7 @@ export function applyTypographyPreset(
   const size = style.fontSize ?? sizeMin;
   return {
     ...style,
-    fontSize: Math.min(sizeMax, Math.max(sizeMin, size)),
+    fontSize: clampFontSize(size, sizeMin, sizeMax),
   };
 }
 

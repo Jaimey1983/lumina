@@ -1349,7 +1349,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
       const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
-      return persistBloques(next, prev, true);
+      setCommittedBloques(next);
+      try {
+        return await persistBloques(next, prev, true);
+      } finally {
+        setCommittedBloques(null);
+      }
     },
     [liveSlide?.bloques, slide?.bloques, persistBloques],
   );

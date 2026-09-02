@@ -3,8 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { TextBlock } from '@/types/slide.types';
 import {
   applyTypographyPreset,
+  clampFontSize,
+  commitFontSizeDraft,
   isTypographySizeOnlyPatch,
+  liveFontSizeDraft,
   matchTypographyPreset,
+  parseFontSizeDraft,
   parseFontSizePx,
   textBlockPatchFromTypography,
   typographyFromTextBlock,
@@ -24,6 +28,35 @@ describe('parseFontSizePx', () => {
 
   it('usa fallback si está vacío', () => {
     expect(parseFontSizePx(undefined, 16)).toBe(16);
+  });
+});
+
+describe('borrador de tamaño de fuente', () => {
+  it('clampa y redondea', () => {
+    expect(clampFontSize(8, 12, 120)).toBe(12);
+    expect(clampFontSize(200, 12, 120)).toBe(120);
+    expect(clampFontSize(24.6, 12, 120)).toBe(25);
+  });
+
+  it('permite vacío o dígitos incompletos sin persistir', () => {
+    expect(parseFontSizeDraft('')).toBeNull();
+    expect(parseFontSizeDraft('  ')).toBeNull();
+    expect(parseFontSizeDraft('12.')).toBeNull();
+    expect(parseFontSizeDraft('24')).toBe(24);
+  });
+
+  it('no aplica en vivo un número fuera de rango (permite escribir 32)', () => {
+    expect(liveFontSizeDraft('', 12, 120)).toBeNull();
+    expect(liveFontSizeDraft('3', 12, 120)).toBeNull();
+    expect(liveFontSizeDraft('32', 12, 120)).toBe(32);
+    expect(liveFontSizeDraft('200', 12, 120)).toBeNull();
+  });
+
+  it('al confirmar, clampa o restaura el valor actual', () => {
+    expect(commitFontSizeDraft('', 24, 12, 120)).toBe(24);
+    expect(commitFontSizeDraft('3', 24, 12, 120)).toBe(12);
+    expect(commitFontSizeDraft('200', 24, 12, 120)).toBe(120);
+    expect(commitFontSizeDraft('36', 24, 12, 120)).toBe(36);
   });
 });
 

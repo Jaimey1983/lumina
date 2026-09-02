@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { FontFamilySelect } from '@/components/editor/font-family-select';
+import { FontSizeInput } from '@/components/editor/font-size-input';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
@@ -206,21 +207,12 @@ export function TypographyInspector({
 
         <div className="space-y-1.5">
           <Label className="text-xs">Tamaño (px)</Label>
-          <Input
-            type="number"
+          <FontSizeInput
+            value={size}
             min={sizeMin}
             max={sizeMax}
-            className="h-8 text-xs"
             disabled={disabled}
-            value={size}
-            onChange={(e) =>
-              onChange({
-                fontSize: Math.min(
-                  sizeMax,
-                  Math.max(sizeMin, Number(e.target.value) || defaultSize),
-                ),
-              })
-            }
+            onChange={(fontSize) => onChange({ fontSize })}
           />
         </div>
 

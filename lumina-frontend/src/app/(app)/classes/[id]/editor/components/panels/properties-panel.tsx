@@ -150,6 +150,8 @@ import { TypographyInspector } from '@/components/editor/typography-inspector';
 import type { Animacion, TransicionSlide } from '@/types/animation.types';
 import {
   isTypographySizeOnlyPatch,
+  TEXT_BLOCK_FONT_SIZE_MAX,
+  TEXT_BLOCK_FONT_SIZE_MIN,
   textBlockPatchFromTypography,
   typographyFromTextBlock,
 } from '@/lib/typography';
@@ -1410,8 +1412,8 @@ function TextBlockFields({
   return (
     <TypographyInspector
       value={typographyFromTextBlock(block)}
-      sizeMin={12}
-      sizeMax={120}
+      sizeMin={TEXT_BLOCK_FONT_SIZE_MIN}
+      sizeMax={TEXT_BLOCK_FONT_SIZE_MAX}
       defaultSize={24}
       defaultColor="#000000"
       headingLevel={block.nivel}
