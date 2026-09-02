@@ -29,13 +29,12 @@ interface Props {
 function buildQuizMultipleActivity(
   questions: GeneratedQuestion[],
 ): Record<string, unknown> {
-  const q = questions[0];
-  return {
-    tipo: 'quiz_multiple',
-    pregunta: q?.question ?? '',
+  const preguntas = questions.map((q, qi) => ({
+    id: `q-${qi}`,
+    texto: q?.question ?? '',
     opciones:
       q?.options?.map((texto, i) => ({
-        id: `op-${i}`,
+        id: `op-${qi}-${i}`,
         texto,
         esCorrecta: i === q.correctIndex,
       })) ?? [],
@@ -43,6 +42,12 @@ function buildQuizMultipleActivity(
     ...(q?.explanation
       ? { retroalimentacion: { explicacion: q.explanation, mostrarExplicacion: true } }
       : {}),
+  }));
+  return {
+    tipo: 'quiz_multiple',
+    preguntas: preguntas.length > 0 ? preguntas : [{ id: 'q-0', texto: '', opciones: [] }],
+    deliveryMode: 'AUTONOMOUS',
+    layoutVariant: 'classic-list',
   };
 }
 

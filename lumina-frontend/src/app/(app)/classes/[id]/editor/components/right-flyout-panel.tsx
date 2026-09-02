@@ -20,6 +20,7 @@ import {
 import { GamificationLeaderboard } from '@/components/gamification/gamification-leaderboard';
 import type { EstudianteLeaderboard } from '@/hooks/use-gamification';
 import { TorneoPanel } from '@/components/editor/panels/torneo-panel';
+import { QuizSyncedPanel } from './activities/quiz/quiz-synced-panel';
 import { EscapeRoomLiveDashboard } from '@/components/editor/panels/escape-room-live-dashboard';
 import type { Activity } from '@/types/slide.types';
 
@@ -53,6 +54,7 @@ export interface RightFlyoutPanelProps {
   activeSlideId?: string;
   activeSlideIndex?: number;
   activeActivity?: Activity | null;
+  activeBlockId?: string;
   showAutonomousSlideProgress?: boolean;
   autonomousStudentsPerSlide?: number[];
   /** Socket de la sesión en vivo — requerido para TorneoPanel. */
@@ -87,6 +89,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       activeSlideId,
       activeSlideIndex,
       activeActivity,
+      activeBlockId,
       showAutonomousSlideProgress,
       autonomousStudentsPerSlide,
       liveSocket,
@@ -170,6 +173,20 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 <TorneoPanel
                   classId={classId}
                   sessionId={liveSessionId ?? classId}
+                  activity={activeActivity}
+                  socket={liveSocket}
+                />
+              ) : activePanel === 'live' &&
+                activeActivity?.tipo === 'quiz_multiple' &&
+                activeActivity.deliveryMode === 'SYNCED' &&
+                liveSocket &&
+                classId &&
+                activeSlideId &&
+                activeBlockId ? (
+                <QuizSyncedPanel
+                  classId={classId}
+                  slideId={activeSlideId}
+                  quizBlockId={activeBlockId}
                   activity={activeActivity}
                   socket={liveSocket}
                 />

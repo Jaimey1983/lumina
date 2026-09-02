@@ -84,15 +84,40 @@ export interface QuizOption {
   retroalimentacion?: string;
 }
 
-export interface QuizMultiple {
-  tipo: 'quiz_multiple';
-  pregunta: string;
+export interface QuizPregunta {
+  id: string;
+  texto: string;
+  /** Solo se renderiza en layouts con soporte de imagen (Etapa 5). */
+  imagenUrl?: string;
   opciones: QuizOption[];
-  /** Allow selecting more than one correct option. */
+  /** Varias correctas en esta pregunta. */
   multipleRespuesta?: boolean;
+  /** Reservado; sin valor = peso uniforme (v1). */
   puntos?: number;
   retroalimentacion?: Feedback;
+}
+
+export type QuizLayoutVariant =
+  | 'classic-list'
+  | 'color-grid'
+  | 'icon-cards'
+  | 'pills-horizontal'
+  | 'two-col-color-list'
+  | 'two-col-neutral-grid'
+  | 'two-col-image-pills';
+
+export interface QuizMultiple {
+  tipo: 'quiz_multiple';
+  preguntas: QuizPregunta[];
+  deliveryMode: 'AUTONOMOUS' | 'SYNCED';
+  /** Solo aplica si deliveryMode === 'SYNCED'. */
+  timePerQuestion?: number;
+  allowTeacherPause?: boolean;
+  allowTeacherSkip?: boolean;
+  autoAdvanceOnAllAnswered?: boolean;
+  layoutVariant: QuizLayoutVariant;
   shuffleOptions?: boolean;
+  shufflePreguntas?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

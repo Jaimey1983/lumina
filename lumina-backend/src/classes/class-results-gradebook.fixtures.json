@@ -188,10 +188,101 @@
       "respuesta": { "paresEncontrados": ["p1", "p3"] },
       "detailsEsperados": 3,
       "scoreEsperado": 3.3
+    },
+    {
+      "case": "quiz_legacy_una_pregunta_correcta",
+      "activityType": "quiz_multiple",
+      "definicion": {
+        "pregunta": "¿Capital?",
+        "opciones": [
+          { "id": "a", "texto": "A", "esCorrecta": true },
+          { "id": "b", "texto": "B", "esCorrecta": false }
+        ]
+      },
+      "respuesta": "a",
+      "correctEsperado": true,
+      "detailsEsperados": 1,
+      "scoreEsperado": 5.0
+    },
+    {
+      "case": "quiz_nuevo_una_pregunta_correcta",
+      "activityType": "quiz_multiple",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q-1",
+            "texto": "¿Capital?",
+            "opciones": [
+              { "id": "a", "texto": "A", "esCorrecta": true },
+              { "id": "b", "texto": "B", "esCorrecta": false }
+            ]
+          }
+        ]
+      },
+      "respuesta": "a",
+      "correctEsperado": true,
+      "detailsEsperados": 1,
+      "scoreEsperado": 5.0
+    },
+    {
+      "case": "quiz_una_pregunta_incorrecta",
+      "activityType": "quiz_multiple",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q-1",
+            "texto": "¿Capital?",
+            "opciones": [
+              { "id": "a", "texto": "A", "esCorrecta": true },
+              { "id": "b", "texto": "B", "esCorrecta": false }
+            ]
+          }
+        ]
+      },
+      "respuesta": "b",
+      "correctEsperado": false,
+      "detailsEsperados": 1,
+      "scoreEsperado": 1.0
+    },
+    {
+      "case": "quiz_parcial_2_de_3",
+      "activityType": "quiz_multiple",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q-1",
+            "texto": "Uno",
+            "opciones": [
+              { "id": "a", "esCorrecta": true },
+              { "id": "b", "esCorrecta": false }
+            ]
+          },
+          {
+            "id": "q-2",
+            "texto": "Dos",
+            "opciones": [
+              { "id": "a", "esCorrecta": true },
+              { "id": "b", "esCorrecta": false }
+            ]
+          },
+          {
+            "id": "q-3",
+            "texto": "Tres",
+            "opciones": [
+              { "id": "a", "esCorrecta": true },
+              { "id": "b", "esCorrecta": false }
+            ]
+          }
+        ]
+      },
+      "respuesta": { "answers": { "q-1": "a", "q-2": "a", "q-3": "b" } },
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
     }
   ],
   "expectedKinds": {
-    "quiz_multiple": "binary",
+    "quiz_multiple": "partial",
     "verdadero_falso": "binary",
     "completar_blancos": "partial",
     "arrastrar_soltar": "partial",

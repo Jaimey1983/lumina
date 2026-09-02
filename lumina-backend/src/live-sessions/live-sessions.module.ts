@@ -6,9 +6,10 @@ import { LiveSessionsService } from './live-sessions.service';
 
 import { EscapeRoomModule } from '../escape-room/escape-room.module';
 import { TorneoModule } from '../torneo/torneo.module';
+import { QuizLiveModule } from '../quiz-live/quiz-live.module';
 
 @Module({
-  imports: [AuthModule, AnalyticsModule, TorneoModule, EscapeRoomModule],
+  imports: [AuthModule, AnalyticsModule, TorneoModule, EscapeRoomModule, QuizLiveModule],
   providers: [LiveSessionsGateway, LiveSessionsService],
   exports: [LiveSessionsService],
 })

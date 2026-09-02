@@ -208,14 +208,21 @@ function shortAnswerTemplate(): Activity {
 function quizMultipleTemplate(): Activity {
   return {
     tipo: 'quiz_multiple',
-    pregunta: '¿Nueva pregunta?',
-    opciones: [
-      { id: 'a', texto: 'Opción A', esCorrecta: true },
-      { id: 'b', texto: 'Opción B', esCorrecta: false },
-      { id: 'c', texto: 'Opción C', esCorrecta: false },
-      { id: 'd', texto: 'Opción D', esCorrecta: false },
+    preguntas: [
+      {
+        id: 'q-1',
+        texto: '¿Nueva pregunta?',
+        opciones: [
+          { id: 'a', texto: 'Opción A', esCorrecta: true },
+          { id: 'b', texto: 'Opción B', esCorrecta: false },
+          { id: 'c', texto: 'Opción C', esCorrecta: false },
+          { id: 'd', texto: 'Opción D', esCorrecta: false },
+        ],
+        puntos: 10,
+      },
     ],
-    puntos: 10,
+    deliveryMode: 'AUTONOMOUS',
+    layoutVariant: 'classic-list',
   };
 }
 
@@ -1029,13 +1036,26 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     const actBlock = bloques.find((b) => b.tipo === 'actividad');
     return (actBlock?.actividad as Activity) ?? null;
   }, [activeSlide]);
+
+  const activeBlockId = useMemo(() => {
+    if (!activeSlide) return '';
+    const c = getSlideContentRecord(activeSlide as ApiSlide);
+    const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
+    const actBlock = bloques.find((b) => b.tipo === 'actividad');
+    return actBlock?.id ?? '';
+  }, [activeSlide]);
   const activeSlideHasActivity = !!activeActivity;
 
   const rightFlyoutLiveSocket = useMemo(
     () => {
       // Torneo y Escape Room hablan con gateways del namespace `/live` (staff);
       // el resto del panel usa el socket por defecto de `ClassesGateway`.
-      if (activeActivity?.tipo === 'torneo' || activeActivity?.tipo === 'escape_room') {
+      if (
+        activeActivity?.tipo === 'torneo' ||
+        activeActivity?.tipo === 'escape_room' ||
+        (activeActivity?.tipo === 'quiz_multiple' &&
+          activeActivity.deliveryMode === 'SYNCED')
+      ) {
         return torneoSocketRef.current;
       }
       return socketRef.current;
@@ -1875,9 +1895,18 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     (activityContent: Record<string, unknown>) => {
       const activity = activityContent as unknown as Activity;
       const block: Block = { tipo: 'actividad', actividad: activity };
+      const firstPregunta = Array.isArray(activityContent.preguntas)
+        ? (activityContent.preguntas[0] as { texto?: unknown } | undefined)
+        : undefined;
+      const preguntaTexto =
+        typeof firstPregunta?.texto === 'string'
+          ? firstPregunta.texto
+          : typeof activityContent.pregunta === 'string'
+            ? activityContent.pregunta
+            : '';
       const title =
-        typeof activityContent.pregunta === 'string' && activityContent.pregunta.trim()
-          ? activityContent.pregunta.trim().slice(0, 60)
+        preguntaTexto.trim()
+          ? preguntaTexto.trim().slice(0, 60)
           : typeof activityContent.afirmacion === 'string' && activityContent.afirmacion.trim()
             ? activityContent.afirmacion.trim().slice(0, 60)
             : 'Actividad (IA)';
@@ -2739,6 +2768,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             activeSlideId={activeSlide?.id ?? ''}
             activeSlideIndex={resolvedSlideIndex}
             activeActivity={activeActivity}
+            activeBlockId={activeBlockId}
             showAutonomousSlideProgress={
               sessionActive && modoEntrega === 'autonomo'
             }

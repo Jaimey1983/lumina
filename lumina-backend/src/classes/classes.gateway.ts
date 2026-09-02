@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { TorneoService } from '../torneo/torneo.service';
 import { SessionGamificationService } from '../gamification/session-gamification.service';
 import { EscapeRoomLiveService } from '../escape-room/escape-room-live.service';
+import { QuizLiveService } from '../quiz-live/quiz-live.service';
 import { ClassesService } from './classes.service';
 
 function errorMessage(e: unknown): string {
@@ -38,6 +39,7 @@ export class ClassesGateway {
     private readonly sessionGamification: SessionGamificationService,
     private readonly classesService: ClassesService,
     private readonly escapeRoom: EscapeRoomLiveService,
+    private readonly quizLive: QuizLiveService,
   ) {}
 
   private classRoom(classId: string) {
@@ -197,6 +199,95 @@ export class ClassesGateway {
     }
 
     return { ok: true as const };
+  }
+
+  @SubscribeMessage('quiz:answer')
+  async handleQuizAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      classId: string;
+      quizBlockId: string;
+      studentId: string;
+      studentName?: string;
+      questionId: string;
+      optionIds: string[];
+    },
+  ) {
+    const classId = typeof data.classId === 'string' ? data.classId.trim() : '';
+    const quizBlockId = typeof data.quizBlockId === 'string' ? data.quizBlockId.trim() : '';
+    const studentId = typeof data.studentId === 'string' ? data.studentId.trim() : '';
+    const questionId = typeof data.questionId === 'string' ? data.questionId.trim() : '';
+    const optionIds = Array.isArray(data.optionIds)
+      ? data.optionIds.filter((id): id is string => typeof id === 'string')
+      : [];
+
+    if (!classId || !quizBlockId || !studentId || !questionId) {
+      return { ok: false as const };
+    }
+
+    const result = this.quizLive.saveAnswer({
+      classId,
+      quizBlockId,
+      studentId,
+      studentName: typeof data.studentName === 'string' ? data.studentName : studentId,
+      questionId,
+      optionIds,
+      opciones: [],
+    });
+
+    if (result) {
+      client.to(this.classRoom(classId)).emit('response-update', {
+        classId,
+        activityType: 'quiz_multiple',
+        studentId,
+        studentName: data.studentName ?? studentId,
+        correct: result.correct,
+        response: { quizBlockId, questionId, optionIds },
+      });
+
+      const session = this.quizLive.getSession(classId, quizBlockId);
+      if (
+        session?.autoAdvanceOnAllAnswered &&
+        session.questionId === questionId &&
+        !result.alreadyAnswered
+      ) {
+        try {
+          const sockets = await this.server.in(this.classRoom(classId)).fetchSockets();
+          const expected = Math.max(1, sockets.length);
+          if (result.answeredCount >= expected) {
+            const advancePayload = {
+              quizBlockId,
+              questionId,
+              answeredCount: result.answeredCount,
+            };
+            client.to(this.classRoom(classId)).emit('quiz:auto-advance-ready', advancePayload);
+            this.server.of('/live').to(`live:${classId}`).emit('quiz:auto-advance-ready', advancePayload);
+          }
+        } catch {
+          /* no-op */
+        }
+      }
+    }
+
+    return { ok: true as const, ...(result ?? {}) };
+  }
+
+  @SubscribeMessage('quiz:sync-state')
+  handleQuizSyncState(
+    @MessageBody()
+    data: { classId: string; quizBlockId: string; studentId?: string },
+  ) {
+    const classId = typeof data.classId === 'string' ? data.classId.trim() : '';
+    const quizBlockId = typeof data.quizBlockId === 'string' ? data.quizBlockId.trim() : '';
+    const studentId = typeof data.studentId === 'string' ? data.studentId.trim() : '';
+
+    if (!classId || !quizBlockId) {
+      return { ok: false as const, state: null };
+    }
+
+    const state = this.quizLive.getClientSyncState(classId, quizBlockId, studentId);
+    return { ok: true as const, state };
   }
 
   @SubscribeMessage('end-session')

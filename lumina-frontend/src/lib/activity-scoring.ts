@@ -56,8 +56,8 @@ export function notaColombiana(
  * - `orden_rango`: clave reservada (partial). No hay viewer en esta fase.
  */
 export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
-  // Evaluación — binary
-  quiz_multiple: 'binary',
+  // Evaluación — quiz N preguntas = crédito parcial; V/F sigue binary
+  quiz_multiple: 'partial',
   verdadero_falso: 'binary',
 
   // Interacción — partial
@@ -116,6 +116,7 @@ export function esEvaluable(activityType: string): boolean {
  * Debe coincidir con el espejo backend — NO reinterpretar al portar.
  */
 const GRADEBOOK_CONNECTED_PARTIAL = new Set([
+  'quiz_multiple',
   'completar_blancos',
   'arrastrar_soltar',
   'emparejar',
@@ -327,6 +328,79 @@ function quizSelectedIds(respuesta: unknown): string[] {
   return [];
 }
 
+function quizPreguntasFromDef(
+  def: Record<string, unknown>,
+): { id: string; texto: string; opciones: unknown[] }[] {
+  if (Array.isArray(def.preguntas) && def.preguntas.length > 0) {
+    return def.preguntas.map((raw, i) => {
+      const rec = asRecord(raw) ?? {};
+      return {
+        id: String(rec.id ?? `q-${i}`),
+        texto: String(rec.texto ?? rec.pregunta ?? ''),
+        opciones: Array.isArray(rec.opciones) ? rec.opciones : [],
+      };
+    });
+  }
+  if (typeof def.pregunta === 'string' || Array.isArray(def.opciones)) {
+    return [
+      {
+        id: 'q-legacy-0',
+        texto: String(def.pregunta ?? ''),
+        opciones: Array.isArray(def.opciones) ? def.opciones : [],
+      },
+    ];
+  }
+  return [];
+}
+
+function quizAnswersByQuestion(
+  respuesta: unknown,
+  preguntas: { id: string }[],
+): string[][] {
+  const rec = asRecord(respuesta);
+  if (rec && rec.answers && typeof rec.answers === 'object' && !Array.isArray(rec.answers)) {
+    const answers = rec.answers as Record<string, unknown>;
+    return preguntas.map((p) => quizSelectedIds(answers[p.id]));
+  }
+  const selected = quizSelectedIds(respuesta);
+  return preguntas.map((_, i) => (i === 0 ? selected : []));
+}
+
+function isQuizOptionSetCorrect(opciones: unknown[], selected: string[]): boolean {
+  const correctIds = opciones
+    .filter((o) => asRecord(o)?.esCorrecta === true)
+    .map((o) => String(asRecord(o)?.id ?? ''))
+    .filter((id) => id !== '');
+  if (correctIds.length === 0) return false;
+  return selected.length === correctIds.length && selected.every((id) => correctIds.includes(id));
+}
+
+/** Una pregunta = misma nota que el evaluador binary legado. N preguntas = crédito parcial. */
+function evaluateQuizMultiple(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const preguntas = quizPreguntasFromDef(def);
+  if (preguntas.length === 0) return UNEVALUABLE;
+  const anyEvaluable = preguntas.some((p) =>
+    p.opciones.some((o) => asRecord(o)?.esCorrecta === true),
+  );
+  if (!anyEvaluable) return UNEVALUABLE;
+  const selections = quizAnswersByQuestion(respuesta, preguntas);
+  const details = preguntas.map((p, i) => ({
+    index: i,
+    correct: isQuizOptionSetCorrect(p.opciones, selections[i] ?? []),
+    label: preguntas.length === 1 ? 'Quiz' : p.texto.trim() || `Pregunta ${i + 1}`,
+  }));
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, preguntas.length, true),
+  };
+}
+
 /**
  * Video — clave real `video_interactivo` (el prompt de Fase 2 decía `video`).
  *
@@ -376,21 +450,6 @@ function evaluateBinary(
   respuesta: unknown,
 ): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  if (activityType === 'quiz_multiple') {
-    const opciones = Array.isArray(def.opciones) ? def.opciones : [];
-    const correctIds = opciones
-      .filter((o) => asRecord(o)?.esCorrecta === true)
-      .map((o) => String(asRecord(o)?.id ?? ''));
-    if (correctIds.length === 0) return UNEVALUABLE;
-    const selected = quizSelectedIds(respuesta);
-    const allCorrect =
-      selected.length === correctIds.length && selected.every((id) => correctIds.includes(id));
-    return {
-      correct: allCorrect,
-      details: [{ index: 0, correct: allCorrect, label: 'Quiz' }],
-      score: notaColombiana(allCorrect ? 1 : 0, 1, true),
-    };
-  }
   if (activityType === 'verdadero_falso') {
     if (typeof def.respuestaCorrecta !== 'boolean') return UNEVALUABLE;
     const ok = respuesta === def.respuestaCorrecta;
@@ -896,6 +955,8 @@ function evaluatePartial(
   respuesta: unknown,
 ): ActivityEvaluationResult {
   switch (activityType) {
+    case 'quiz_multiple':
+      return evaluateQuizMultiple(definicion, respuesta);
     case 'completar_blancos':
       return evaluateBlancos(definicion, respuesta);
     case 'arrastrar_soltar':

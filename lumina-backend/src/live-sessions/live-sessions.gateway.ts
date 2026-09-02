@@ -14,6 +14,7 @@ import { LiveSessionsService } from './live-sessions.service';
 import { TorneoService } from '../torneo/torneo.service';
 import type { RankingEntry } from '../torneo/torneo.service';
 import { EscapeRoomLiveService } from '../escape-room/escape-room-live.service';
+import { QuizLiveService } from '../quiz-live/quiz-live.service';
 import { EscapeRoomInitDto } from './dto/escape-room-init.dto';
 import { JoinLiveDto } from './dto/join-live.dto';
 import { SlideSyncDto } from './dto/slide-sync.dto';
@@ -77,6 +78,7 @@ export class LiveSessionsGateway
     private readonly liveSessions: LiveSessionsService,
     private readonly torneoService: TorneoService,
     private readonly escapeRoom: EscapeRoomLiveService,
+    private readonly quizLive: QuizLiveService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -342,8 +344,183 @@ export class LiveSessionsGateway
     }
   }
 
+  /** Emite eventos de quiz synced a docente (`/live`) y estudiantes (`/`). */
+  private broadcastQuiz(classId: string, event: string, payload: unknown) {
+    const room = this.liveSessions.roomName(classId);
+    const classRoom = classJoinRoom(classId);
+    this.server.to(room).emit(event, payload);
+    this.server.server.to(classRoom).emit(event, payload);
+  }
+
+  private wireQuizRankingPayload(
+    rows: ReturnType<QuizLiveService['getRanking']>,
+  ) {
+    return {
+      ranking: rows.map((r) => ({
+        studentId: r.studentId,
+        studentName: r.studentName,
+        points: r.points,
+        correctCount: r.correctCount,
+        position: r.position,
+      })),
+    };
+  }
+
+  @SubscribeMessage('quiz:launch')
+  async handleQuizLaunch(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    body: {
+      classId: string;
+      quizBlockId: string;
+      slideId: string;
+      questionIndex: number;
+      question: { id: string; texto?: string; opciones?: { id: string; esCorrecta?: boolean }[] };
+      totalQuestions: number;
+      timePerQuestion?: number;
+      layoutVariant?: string;
+      shuffleOptions?: boolean;
+      autoAdvanceOnAllAnswered?: boolean;
+    },
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
+
+      this.quizLive.initSession({
+        classId: body.classId,
+        quizBlockId: body.quizBlockId,
+        slideId: body.slideId,
+        totalQuestions: body.totalQuestions,
+        timePerQuestion: body.timePerQuestion,
+        autoAdvanceOnAllAnswered: body.autoAdvanceOnAllAnswered,
+      });
+
+      const questionId = body.question?.id ?? `q-${body.questionIndex}`;
+      const opciones = Array.isArray(body.question?.opciones) ? body.question.opciones : [];
+
+      const session = this.quizLive.launchQuestion(
+        body.classId,
+        body.quizBlockId,
+        body.questionIndex,
+        questionId,
+        opciones,
+        body.timePerQuestion,
+        {
+          onTick: ({ quizBlockId, secondsLeft }) => {
+            this.broadcastQuiz(body.classId, 'timer:tick', {
+              quizBlockId,
+              secondsLeft,
+            });
+          },
+          onEnd: ({ quizBlockId, questionId: qid }) => {
+            this.broadcastQuiz(body.classId, 'timer:end', {
+              quizBlockId,
+              questionId: qid,
+            });
+            const ranking = this.quizLive.getRanking(body.classId, body.quizBlockId);
+            this.broadcastQuiz(body.classId, 'quiz:ranking', {
+              quizBlockId,
+              ...this.wireQuizRankingPayload(ranking),
+            });
+          },
+        },
+      );
+
+      if (!session) throw new WsException('No se pudo lanzar la pregunta del quiz');
+
+      const launchPayload = {
+        quizBlockId: body.quizBlockId,
+        questionIndex: body.questionIndex,
+        questionId,
+        question: body.question,
+        totalQuestions: body.totalQuestions,
+        timePerQuestion: session.timePerQuestion,
+        layoutVariant: body.layoutVariant,
+        shuffleOptions: body.shuffleOptions,
+      };
+      this.broadcastQuiz(body.classId, 'quiz:launch', launchPayload);
+
+      return { ok: true as const };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('quiz:pause')
+  async handleQuizPause(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      this.quizLive.pause(body.classId, body.quizBlockId);
+      this.broadcastQuiz(body.classId, 'quiz:pause', { quizBlockId: body.quizBlockId });
+      return { ok: true as const };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('quiz:resume')
+  async handleQuizResume(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      this.quizLive.resume(body.classId, body.quizBlockId);
+      this.broadcastQuiz(body.classId, 'quiz:resume', { quizBlockId: body.quizBlockId });
+      return { ok: true as const };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('quiz:skip')
+  async handleQuizSkip(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      this.quizLive.skip(body.classId, body.quizBlockId);
+      this.broadcastQuiz(body.classId, 'quiz:skip', { quizBlockId: body.quizBlockId });
+      return { ok: true as const };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
+  @SubscribeMessage('quiz:finish')
+  async handleQuizFinish(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+  ) {
+    try {
+      const user = this.liveSessions.getUser(client);
+      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      this.quizLive.finish(body.classId, body.quizBlockId);
+      const ranking = this.quizLive.getRanking(body.classId, body.quizBlockId);
+      const payload = {
+        quizBlockId: body.quizBlockId,
+        ...this.wireQuizRankingPayload(ranking),
+      };
+      this.broadcastQuiz(body.classId, 'quiz:ranking', payload);
+      return { ok: true as const };
+    } catch (e) {
+      rethrowAsWs(e);
+    }
+  }
+
   /**
-   * Docente: abre la partida por equipos del Escape Room de un slide.
    * Idempotente — reabrir devuelve la partida existente sin perder progreso.
    */
   @SubscribeMessage('escape-room:init')

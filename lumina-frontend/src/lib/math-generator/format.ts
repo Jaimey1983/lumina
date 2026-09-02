@@ -63,9 +63,16 @@ export function toQuiz(
   ]);
   return {
     tipo: 'quiz_multiple',
-    pregunta: problem.enunciado,
-    opciones,
-    puntos: 10,
+    preguntas: [
+      {
+        id: 'q-1',
+        texto: problem.enunciado,
+        opciones,
+        puntos: 10,
+      },
+    ],
+    deliveryMode: 'AUTONOMOUS',
+    layoutVariant: 'classic-list',
     ...meta,
   };
 }
@@ -94,7 +101,7 @@ export function formatProblem(
 }
 
 export function quizCorrectOptionId(activity: GeneratedMathQuiz): string {
-  const hit = activity.opciones.find((o) => o.esCorrecta);
+  const hit = activity.preguntas[0]?.opciones.find((o) => o.esCorrecta);
   if (!hit) throw new Error('quiz sin opción correcta');
   return hit.id;
 }

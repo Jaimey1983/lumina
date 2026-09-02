@@ -121,7 +121,12 @@ describe('canvas-history', () => {
   it('preserva marco de una actividad (C3) al clonar el snapshot', () => {
     const activity = {
       tipo: 'actividad' as const,
-      actividad: { tipo: 'quiz_multiple' as const, pregunta: '¿?', opciones: [] },
+      actividad: {
+        tipo: 'quiz_multiple' as const,
+        preguntas: [{ id: 'q-1', texto: '¿?', opciones: [] }],
+        deliveryMode: 'AUTONOMOUS' as const,
+        layoutVariant: 'classic-list' as const,
+      },
       marco: {
         izquierdaPct: 8,
         arribaPct: 10,

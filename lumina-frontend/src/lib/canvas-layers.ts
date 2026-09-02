@@ -202,10 +202,11 @@ export function getBlockLayerLabel(block: Block): string {
             : 'Máscara',
       );
     case 'actividad': {
-      const q =
-        'pregunta' in block.actividad
-          ? String((block.actividad as { pregunta?: string }).pregunta ?? '')
-          : '';
+      const act = block.actividad as {
+        pregunta?: string;
+        preguntas?: { texto?: string }[];
+      };
+      const q = act.preguntas?.[0]?.texto ?? act.pregunta ?? '';
       return truncate(q || getBlockLayerKind(block));
     }
     case 'flip-cards':

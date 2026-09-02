@@ -42,8 +42,9 @@ function actividad(x: number, y: number): Block {
     tipo: 'actividad',
     actividad: {
       tipo: 'quiz_multiple',
-      pregunta: '¿?',
-      opciones: [],
+      preguntas: [{ id: 'q-1', texto: '¿?', opciones: [] }],
+      deliveryMode: 'AUTONOMOUS',
+      layoutVariant: 'classic-list',
     } satisfies Activity,
     marco: {
       izquierdaPct: x,
@@ -394,8 +395,9 @@ describe('withPosition', () => {
       tipo: 'actividad',
       actividad: {
         tipo: 'quiz_multiple',
-        pregunta: '¿?',
-        opciones: [],
+        preguntas: [{ id: 'q-1', texto: '¿?', opciones: [] }],
+        deliveryMode: 'AUTONOMOUS',
+        layoutVariant: 'classic-list',
       },
     };
     const next = withPosition(block, 7, 9);
@@ -432,8 +434,9 @@ describe('withRect', () => {
       tipo: 'actividad',
       actividad: {
         tipo: 'quiz_multiple',
-        pregunta: '¿?',
-        opciones: [],
+        preguntas: [{ id: 'q-1', texto: '¿?', opciones: [] }],
+        deliveryMode: 'AUTONOMOUS',
+        layoutVariant: 'classic-list',
       },
     };
     const next = withRect(block, 12, 14, 50, 40);

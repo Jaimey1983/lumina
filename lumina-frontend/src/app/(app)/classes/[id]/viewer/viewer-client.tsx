@@ -37,7 +37,7 @@ import {
 
 function pillOutcomeForActivity(actividad: Activity, correct: boolean | null): boolean | null {
   if (actividad.tipo === 'quiz_multiple') {
-    const hasDef = actividad.opciones.some((o) => o.esCorrecta);
+    const hasDef = (actividad.preguntas[0]?.opciones ?? []).some((o) => o.esCorrecta);
     return hasDef ? correct : null;
   }
   if (actividad.tipo === 'verdadero_falso') {

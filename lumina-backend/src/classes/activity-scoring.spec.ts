@@ -106,7 +106,7 @@ describe('ACTIVITY_SCORING', () => {
   });
 
   it('kinds canónicos', () => {
-    expect(getActivityScoringKind('quiz_multiple')).toBe('binary');
+    expect(getActivityScoringKind('quiz_multiple')).toBe('partial');
     expect(getActivityScoringKind('completar_blancos')).toBe('partial');
     expect(getActivityScoringKind('short_answer')).toBe('manual');
     expect(getActivityScoringKind('encuesta_viva')).toBe('participation');
@@ -120,6 +120,7 @@ describe('ACTIVITY_SCORING', () => {
 
   it('Grupo 4 connected no queda diferido; orden_rango sí', () => {
     expect(isGradebookScoringDeferred('clasificar')).toBe(false);
+    expect(isGradebookScoringDeferred('quiz_multiple')).toBe(false);
     expect(isGradebookScoringDeferred('sopa_letras')).toBe(false);
     expect(isGradebookScoringDeferred('orden_rango')).toBe(true);
     expect(isGradebookScoringDeferred('ruleta')).toBe(false);

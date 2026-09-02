@@ -27,6 +27,12 @@ function asQuiz(item: { tipo: string }): GeneratedMathQuiz {
   return item as GeneratedMathQuiz;
 }
 
+function quizP0(quiz: GeneratedMathQuiz) {
+  const p = quiz.preguntas[0];
+  if (!p) throw new Error('quiz sin preguntas');
+  return p;
+}
+
 describe('generateMathActivities — suma grado 2 sin llevar', () => {
   const items = generateMathActivities({
     tema: 'suma',
@@ -42,15 +48,15 @@ describe('generateMathActivities — suma grado 2 sin llevar', () => {
       expect(quiz.generador).toBe('matematicas');
       expect(quiz.tema).toBe('suma');
       expect(quiz.grado).toBe(2);
-      expect(quiz.pregunta).toMatch(/^¿Cuánto es \d+ \+ \d+\?$/);
-      expect(quiz.opciones).toHaveLength(4);
-      expect(quiz.opciones.filter((o) => o.esCorrecta)).toHaveLength(1);
+      expect(quizP0(quiz).texto).toMatch(/^¿Cuánto es \d+ \+ \d+\?$/);
+      expect(quizP0(quiz).opciones).toHaveLength(4);
+      expect(quizP0(quiz).opciones.filter((o) => o.esCorrecta)).toHaveLength(1);
     }
   });
 
   it('ninguna suma reagrupa las unidades (sin llevar)', () => {
     for (const item of items) {
-      const { a, b } = parseSuma(asQuiz(item).pregunta);
+      const { a, b } = parseSuma(quizP0(asQuiz(item)).texto);
       expect(onesSumCarries(a, b)).toBe(false);
     }
   });
@@ -58,16 +64,17 @@ describe('generateMathActivities — suma grado 2 sin llevar', () => {
   it('evaluateActivityResponse marca bien la opción correcta e incorrecta', () => {
     for (const item of items) {
       const quiz = asQuiz(item);
-      const { a, b } = parseSuma(quiz.pregunta);
+      const q0 = quizP0(quiz);
+      const { a, b } = parseSuma(q0.texto);
       const correctId = quizCorrectOptionId(quiz);
-      const correctOpt = quiz.opciones.find((o) => o.id === correctId);
+      const correctOpt = q0.opciones.find((o) => o.id === correctId);
       expect(correctOpt?.texto).toBe(String(a + b));
 
       const ok = evaluateActivityResponse('quiz_multiple', quiz, correctId);
       expect(ok.correct).toBe(true);
       expect(ok.score).toBe(5.0);
 
-      const wrongId = quiz.opciones.find((o) => !o.esCorrecta)?.id;
+      const wrongId = q0.opciones.find((o) => !o.esCorrecta)?.id;
       const bad = evaluateActivityResponse('quiz_multiple', quiz, wrongId);
       expect(bad.correct).toBe(false);
       expect(bad.score).toBe(1.0);
@@ -118,11 +125,12 @@ describe('generateMathActivities — otros temas v1', () => {
     });
     for (const item of items) {
       const quiz = asQuiz(item);
-      const { a, b } = parseResta(quiz.pregunta);
+      const q0 = quizP0(quiz);
+      const { a, b } = parseResta(q0.texto);
       expect(a).toBeGreaterThanOrEqual(b);
       const ok = evaluateActivityResponse('quiz_multiple', quiz, quizCorrectOptionId(quiz));
       expect(ok.score).toBe(5.0);
-      expect(quiz.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(a - b));
+      expect(q0.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(a - b));
     }
   });
 
@@ -135,7 +143,8 @@ describe('generateMathActivities — otros temas v1', () => {
     });
     for (const item of items) {
       const quiz = asQuiz(item);
-      const m = quiz.pregunta.match(/¿Cuánto es (\d+) × (\d+)\?/);
+      const q0 = quizP0(quiz);
+      const m = q0.texto.match(/¿Cuánto es (\d+) × (\d+)\?/);
       expect(m).not.toBeNull();
       const a = Number(m![1]);
       const b = Number(m![2]);
@@ -143,7 +152,7 @@ describe('generateMathActivities — otros temas v1', () => {
       expect(a).toBeLessThanOrEqual(5);
       expect(b).toBeGreaterThanOrEqual(1);
       expect(b).toBeLessThanOrEqual(5);
-      expect(quiz.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(a * b));
+      expect(q0.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(a * b));
       expect(evaluateActivityResponse('quiz_multiple', quiz, quizCorrectOptionId(quiz)).score).toBe(
         5.0,
       );
@@ -159,11 +168,12 @@ describe('generateMathActivities — otros temas v1', () => {
     });
     for (const item of items) {
       const quiz = asQuiz(item);
-      const m = quiz.pregunta.match(/¿Cuánto es 1\/2 de (\d+)\?/);
+      const q0 = quizP0(quiz);
+      const m = q0.texto.match(/¿Cuánto es 1\/2 de (\d+)\?/);
       expect(m).not.toBeNull();
       const n = Number(m![1]);
       expect(n % 2).toBe(0);
-      expect(quiz.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(n / 2));
+      expect(q0.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(n / 2));
       expect(evaluateActivityResponse('quiz_multiple', quiz, quizCorrectOptionId(quiz)).correct).toBe(
         true,
       );
@@ -179,11 +189,12 @@ describe('generateMathActivities — otros temas v1', () => {
     });
     for (const item of items) {
       const quiz = asQuiz(item);
-      const m = quiz.pregunta.match(/x \+ (\d+) = (\d+)/);
+      const q0 = quizP0(quiz);
+      const m = q0.texto.match(/x \+ (\d+) = (\d+)/);
       expect(m).not.toBeNull();
       const a = Number(m![1]);
       const b = Number(m![2]);
-      expect(quiz.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(b - a));
+      expect(q0.opciones.find((o) => o.esCorrecta)?.texto).toBe(String(b - a));
       expect(evaluateActivityResponse('quiz_multiple', quiz, quizCorrectOptionId(quiz)).score).toBe(
         5.0,
       );

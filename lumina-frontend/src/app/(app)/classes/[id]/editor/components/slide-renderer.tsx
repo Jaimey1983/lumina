@@ -865,7 +865,19 @@ function RenderActivity({
         />
       );
     }
-    return <QuizMultipleViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
+    return (
+      <QuizMultipleViewer
+        activity={act}
+        editorSyncKey={syncKey}
+        onResponse={onResponse}
+        variant={variant}
+        liveSocket={torneoSocket ?? liveSocket}
+        quizBlockId={blockId}
+        classId={viewerClassId}
+        studentId={viewerStudentId}
+        studentName={viewerStudentName}
+      />
+    );
   }
 
   if (act.tipo === 'verdadero_falso') {

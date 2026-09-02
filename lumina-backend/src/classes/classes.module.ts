@@ -5,6 +5,7 @@ import { ClassesController } from './classes.controller';
 import { ClassesService } from './classes.service';
 import { ClassesGateway } from './classes.gateway';
 import { EscapeRoomModule } from '../escape-room/escape-room.module';
+import { QuizLiveModule } from '../quiz-live/quiz-live.module';
 import { TorneoModule } from '../torneo/torneo.module';
 import { VerificationModule } from '../verification/verification.module';
 
@@ -14,6 +15,7 @@ import { VerificationModule } from '../verification/verification.module';
     TorneoModule,
     GamificationModule,
     EscapeRoomModule,
+    QuizLiveModule,
     VerificationModule,
   ],
   controllers: [ClassesController],
