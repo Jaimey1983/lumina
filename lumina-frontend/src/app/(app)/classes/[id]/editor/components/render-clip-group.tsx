@@ -4,12 +4,13 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
+import dynamic from 'next/dynamic';
 
-import { ClipPathNodeEditor } from './clip-path-node-editor';
 import {
   clampClipImageOffsetPct,
   clipContentBackground,
@@ -17,11 +18,24 @@ import {
   formatClipDropShadow,
   generarClipPath,
   getClipImageStyle,
-  librePathFromNodes,
   normalizeClipContentImage,
 } from '@/lib/clip-path';
+import { freeformPathToSvgD, resolveFreeformPath } from '@/lib/freeform-mask';
 import { hasMediaSrc } from '@/lib/media-url';
-import type { ClipGroupBlock, ClipPathNode, ClipShapeLibre } from '@/types/slide.types';
+import type {
+  ClipGroupBlock,
+  ClipShapeLibre,
+  FreeformMaskPath,
+} from '@/types/slide.types';
+
+/** Editor Paper.js: solo se carga al entrar en modo edición de forma libre. */
+const ClipPathNodeEditorPaper = dynamic(
+  () =>
+    import('./clip-path-node-editor-paper').then(
+      (m) => m.ClipPathNodeEditorPaper,
+    ),
+  { ssr: false },
+);
 
 export interface RenderClipGroupProps {
   block: ClipGroupBlock;
@@ -46,19 +60,21 @@ export function RenderClipGroup({
   const uid = useId().replace(/:/g, '');
   const clipId = `clip-${uid}`;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [liveLibreNodes, setLiveLibreNodes] = useState<ClipPathNode[] | null>(null);
-  const [selectedLibreNode, setSelectedLibreNode] = useState<number | null>(null);
+  const [liveFreeform, setLiveFreeform] = useState<FreeformMaskPath | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const [imgNaturalSize, setImgNaturalSize] = useState({ w: 0, h: 0 });
 
   const isLibreShape = block.clipShape.tipo === 'libre';
   const libreShape = isLibreShape ? (block.clipShape as ClipShapeLibre) : null;
   const shapeEditing = editorMode && isSelected && isLibreShape && !innerEdit;
+  const freeformPath = useMemo(
+    () => (libreShape ? resolveFreeformPath(libreShape) : null),
+    [libreShape],
+  );
   const imageUrl = block.contenido.tipo === 'imagen' ? block.contenido.url : null;
 
   useEffect(() => {
-    setSelectedLibreNode(null);
-    setLiveLibreNodes(null);
+    setLiveFreeform(null);
     setImgNaturalSize({ w: 0, h: 0 });
   }, [block.id]);
 
@@ -82,8 +98,8 @@ export function RenderClipGroup({
   }, []);
 
   const clipPathD = (() => {
-    if (liveLibreNodes && libreShape) {
-      return librePathFromNodes(liveLibreNodes, libreShape.cerrado !== false);
+    if (liveFreeform && libreShape) {
+      return freeformPathToSvgD(liveFreeform);
     }
     return generarClipPath(block.clipShape).d;
   })();
@@ -307,19 +323,16 @@ export function RenderClipGroup({
   );
 
   const handleShapeCommit = useCallback(
-    (nodos: ClipPathNode[]) => {
-      if (!onShapeCommit || !libreShape) return;
-      setLiveLibreNodes(null);
-      onShapeCommit({
-        ...libreShape,
-        nodos,
-      });
+    (next: FreeformMaskPath) => {
+      if (!onShapeCommit) return;
+      setLiveFreeform(null);
+      onShapeCommit({ tipo: 'libre', path: next });
     },
-    [libreShape, onShapeCommit],
+    [onShapeCommit],
   );
 
   return (
-    <div className="relative h-full w-full" style={{ opacity }}>
+    <div className="relative h-full w-full">
       <svg width="0" height="0" className="pointer-events-none absolute" aria-hidden>
         <defs>
           <clipPath id={clipId} clipPathUnits="objectBoundingBox">
@@ -328,74 +341,77 @@ export function RenderClipGroup({
         </defs>
       </svg>
 
-      <div
-        className="relative h-full w-full"
-        style={dropShadowFilter ? { filter: dropShadowFilter } : undefined}
-      >
+      {/* Todo lo visible (relleno + borde) hereda la opacidad del elemento; los
+          controles de edición quedan fuera para seguir viéndose al 0 %. */}
+      <div className="absolute inset-0" style={{ opacity }}>
         <div
           className="relative h-full w-full"
-          style={{
-            clipPath: `url(#${clipId})`,
-            WebkitClipPath: `url(#${clipId})`,
-          }}
-          onDoubleClick={
-            editorMode && canEditImage && onEnterInnerEdit
-              ? (e) => {
-                  e.stopPropagation();
-                  onEnterInnerEdit();
-                }
-              : undefined
-          }
-          onWheel={handleWheel}
+          style={dropShadowFilter ? { filter: dropShadowFilter } : undefined}
         >
           <div
-            ref={containerRef}
-            className="relative h-full w-full overflow-hidden"
-            onPointerDown={imagePanActive ? handleImagePointerDown : undefined}
-            onPointerMove={imagePanActive ? handleImagePointerMove : undefined}
-            onPointerUp={imagePanActive ? handleImagePointerUp : undefined}
-            onPointerCancel={imagePanActive ? handleImagePointerUp : undefined}
+            className="relative h-full w-full"
             style={{
-              outline: innerEdit ? '2px dashed rgba(249,115,22,0.85)' : undefined,
-              outlineOffset: innerEdit ? 2 : undefined,
+              clipPath: `url(#${clipId})`,
+              WebkitClipPath: `url(#${clipId})`,
             }}
+            onDoubleClick={
+              editorMode && canEditImage && onEnterInnerEdit
+                ? (e) => {
+                    e.stopPropagation();
+                    onEnterInnerEdit();
+                  }
+                : undefined
+            }
+            onWheel={handleWheel}
           >
-            {renderFill()}
+            <div
+              ref={containerRef}
+              className="relative h-full w-full overflow-hidden"
+              onPointerDown={imagePanActive ? handleImagePointerDown : undefined}
+              onPointerMove={imagePanActive ? handleImagePointerMove : undefined}
+              onPointerUp={imagePanActive ? handleImagePointerUp : undefined}
+              onPointerCancel={imagePanActive ? handleImagePointerUp : undefined}
+              style={{
+                outline: innerEdit ? '2px dashed rgba(249,115,22,0.85)' : undefined,
+                outlineOffset: innerEdit ? 2 : undefined,
+              }}
+            >
+              {renderFill()}
+            </div>
           </div>
         </div>
+
+        {border?.grosor ? (
+          <svg
+            viewBox="0 0 1 1"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-0 h-full w-full"
+            aria-hidden
+          >
+            <path
+              d={clipPathD}
+              fill="none"
+              stroke={border.color ?? '#475569'}
+              strokeWidth={(border.grosor / 100) * 2}
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        ) : null}
       </div>
 
-      {shapeEditing && libreShape && onShapeCommit ? (
-        <ClipPathNodeEditor
-          nodos={libreShape.nodos}
-          cerrado={libreShape.cerrado !== false}
-          selectedNodeIndex={selectedLibreNode}
-          onSelectNode={setSelectedLibreNode}
+      {shapeEditing && freeformPath && onShapeCommit ? (
+        <ClipPathNodeEditorPaper
+          path={freeformPath}
           onCommit={handleShapeCommit}
-          onLiveChange={setLiveLibreNodes}
+          onLiveChange={setLiveFreeform}
         />
-      ) : null}
-
-      {border?.grosor ? (
-        <svg
-          viewBox="0 0 1 1"
-          preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          aria-hidden
-        >
-          <path
-            d={clipPathD}
-            fill="none"
-            stroke={border.color ?? '#475569'}
-            strokeWidth={(border.grosor / 100) * 2}
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
       ) : null}
 
       {editorMode && (imagePanActive || shapeEditing) ? (
         <div className="pointer-events-none absolute bottom-1 left-1 max-w-[95%] rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-          {shapeEditing ? 'Anclas: arrastra · doble clic = curva Bézier · Supr = eliminar' : ''}
+          {shapeEditing
+            ? 'Arrastra nodos · doble clic / Alt+arrastra = curvar · tirador verde = redondear esquina · clic en el borde = añadir · Alt+clic/Supr = eliminar'
+            : ''}
           {imagePanActive ? 'Arrastra imagen · Rueda = escala' : ''}
         </div>
       ) : null}

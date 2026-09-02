@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 
-import { createDefaultLibreShape } from '@/lib/clip-path';
+import { createDefaultLibreShape } from '@/lib/freeform-mask';
 
 import {
   CLIP_TEST_IMAGE_URL,

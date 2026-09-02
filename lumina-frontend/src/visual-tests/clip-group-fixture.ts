@@ -1,4 +1,4 @@
-import { createDefaultClipGroupBlock, createDefaultLibreShape } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock } from '@/lib/clip-path';
 import type { ClipGroupBlock, ClipContent } from '@/types/slide.types';
 
 /** Lienzo fijo para snapshots deterministas (320×240). */

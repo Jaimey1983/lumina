@@ -17,10 +17,14 @@ import { Switch } from '@/components/ui/switch';
 import {
   clipShapeLabel,
   clampClipImageOffsetsForBlock,
-  createClipPathNodeId,
-  createDefaultLibreShape,
   normalizeClipContentImage,
 } from '@/lib/clip-path';
+import {
+  appendMaskNode,
+  createDefaultLibreShape,
+  removeLastMaskNode,
+  resolveFreeformPath,
+} from '@/lib/freeform-mask';
 import type {
   Block,
   ClipContent,
@@ -262,53 +266,50 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
         </>
       ) : null}
 
-      {block.clipShape.tipo === 'libre' ? (
-        <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2">
-          <p className="text-[11px] text-muted-foreground">
-            Arrastra los nodos azules. Doble clic alterna esquina ↔ curva (manijas naranjas).
-            Alt + arrastrar manija rompe la simetría. Supr para eliminar nodo seleccionado (mín. 3).
-          </p>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => {
-                const shape = block.clipShape as ClipShapeLibre;
-                const nodos = shape.nodos ?? [];
-                const last = nodos[nodos.length - 1] ?? { x: 0.5, y: 0.5 };
-                const first = nodos[0] ?? { x: 0.5, y: 0.5 };
-                const nx = (last.x + first.x) / 2;
-                const ny = (last.y + first.y) / 2;
-                patchShape({
-                  ...shape,
-                  nodos: [...nodos, { id: createClipPathNodeId(), x: nx, y: ny, tipo: 'corner' }],
-                });
-              }}
-            >
-              Añadir nodo
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs"
-              disabled={(block.clipShape as ClipShapeLibre).nodos.length <= 3}
-              onClick={() => {
-                const shape = block.clipShape as ClipShapeLibre;
-                if (shape.nodos.length <= 3) return;
-                patchShape({
-                  ...shape,
-                  nodos: shape.nodos.slice(0, -1),
-                });
-              }}
-            >
-              Quitar nodo
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      {block.clipShape.tipo === 'libre'
+        ? (() => {
+            const freeform = resolveFreeformPath(block.clipShape as ClipShapeLibre);
+            return (
+              <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2">
+                <p className="text-[11px] text-muted-foreground">
+                  Arrastra los nodos azules. Doble clic en un nodo (o Alt+arrastrarlo)
+                  saca las manijas naranjas, que luego se mueven independientes.
+                  El tirador verde de cada esquina la redondea (esquina viva).
+                  Clic sobre el borde añade un nodo; Alt+clic o Supr lo elimina.
+                  Shift al mover una manija ajusta el ángulo.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() =>
+                      patchShape({ tipo: 'libre', path: appendMaskNode(freeform) })
+                    }
+                  >
+                    Añadir nodo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    disabled={freeform.nodes.length <= 3}
+                    onClick={() =>
+                      patchShape({
+                        tipo: 'libre',
+                        path: removeLastMaskNode(freeform),
+                      })
+                    }
+                  >
+                    Quitar nodo
+                  </Button>
+                </div>
+              </div>
+            );
+          })()
+        : null}
 
       {block.clipShape.tipo === 'svg' ? (
         <div className="space-y-2">
@@ -330,6 +331,42 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
           />
         </div>
       ) : null}
+
+      <div className="space-y-2 border-t border-border pt-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Opacidad ({opLocal}%)</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 px-2 text-[10px]"
+            onClick={() => {
+              const n = opLocal > 0 ? 0 : 100;
+              setOpLocal(n);
+              void applyNow((b) =>
+                b.tipo === 'clip-group' ? { ...b, opacidad: n } : b,
+              );
+            }}
+          >
+            {opLocal > 0 ? 'Transparente' : 'Restaurar'}
+          </Button>
+        </div>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={[opLocal]}
+          onValueChange={([v]) => {
+            const n = Math.round(v!);
+            setOpLocal(n);
+            scheduleApply((b) =>
+              b.tipo === 'clip-group' ? { ...b, opacidad: n } : b,
+            );
+          }}
+        >
+          <SliderThumb />
+        </Slider>
+      </div>
 
       <div className="space-y-2 border-t border-border pt-3">
         <Label className="text-xs">Contenido</Label>
@@ -578,25 +615,6 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
           </div>
         </div>
       ) : null}
-
-      <div className="space-y-2 border-t border-border pt-3">
-        <Label className="text-xs">Opacidad ({opLocal}%)</Label>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={[opLocal]}
-          onValueChange={([v]) => {
-            const n = Math.round(v!);
-            setOpLocal(n);
-            scheduleApply((b) =>
-              b.tipo === 'clip-group' ? { ...b, opacidad: n } : b,
-            );
-          }}
-        >
-          <SliderThumb />
-        </Slider>
-      </div>
 
       <div className="space-y-2">
         <Label className="text-xs" htmlFor="clip-border-color">

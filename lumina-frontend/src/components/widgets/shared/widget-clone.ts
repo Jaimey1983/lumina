@@ -1,5 +1,6 @@
 import type { Block } from '@/types/slide.types';
 import type { WidgetSlideContent } from '@/types/widget.types';
+import { resolveFreeformPath } from '@/lib/freeform-mask';
 
 function remintId(): string {
   return crypto.randomUUID();
@@ -58,12 +59,16 @@ export function remintBlockChildIds(block: Block): Block {
         columnas: (block.columnas ?? []).map((col) => col.map(remintNestedBlock)),
       };
     case 'clip-group':
-      if (block.clipShape.tipo === 'libre' && block.clipShape.nodos?.length) {
+      if (block.clipShape.tipo === 'libre') {
+        const src = resolveFreeformPath(block.clipShape);
         return {
           ...block,
           clipShape: {
-            ...block.clipShape,
-            nodos: block.clipShape.nodos.map((n) => ({ ...n, id: remintId() })),
+            tipo: 'libre',
+            path: {
+              closed: src.closed,
+              nodes: src.nodes.map((n) => ({ ...n, id: remintId() })),
+            },
           },
         };
       }

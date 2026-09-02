@@ -819,11 +819,47 @@ export interface ClipShapeSvg {
   path: string;
 }
 
+/**
+ * Nodo del path libre en el modelo persistido nuevo (motor de edición Paper.js).
+ * `point` = ancla en coords objectBoundingBox (0–1).
+ * `handleIn` / `handleOut` = manijas Bézier **relativas al punto** (convención
+ * `paper.Segment`), o `null` si el nodo no tiene esa manija. No hay campo de tipo
+ * de nodo: cada manija se mueve de forma independiente.
+ */
+export interface MaskNode {
+  id: string;
+  point: { x: number; y: number };
+  handleIn: { x: number; y: number } | null;
+  handleOut: { x: number; y: number } | null;
+  /**
+   * Redondeo de esquina viva (estilo Illustrator), en unidades normalizadas:
+   * distancia de recorte a cada arista incidente. Solo se aplica en el render
+   * cuando el nodo es una esquina (sin manijas) de un contorno cerrado con
+   * aristas rectas a ambos lados. Ausente / 0 = esquina en pico.
+   */
+  cornerRadius?: number;
+}
+
+/** Contorno freeform persistido como lista de nodos + flag de cierre. */
+export interface FreeformMaskPath {
+  nodes: MaskNode[];
+  closed: boolean;
+}
+
 export interface ClipShapeLibre {
   tipo: 'libre';
-  /** Vértices / anclas del contorno (mín. 3 para cerrar). */
-  nodos: ClipPathNode[];
-  /** Cierra el path (default true). */
+  /**
+   * Contorno editable (modelo nuevo basado en `MaskNode`). Opcional solo para
+   * tolerar data anterior sin hidratar: `normalizeClipGroupBlock` siempre lo
+   * rellena a partir de `nodos`/`cerrado`.
+   */
+  path?: FreeformMaskPath;
+  /**
+   * @deprecated Modelo anterior (lista de `ClipPathNode` con `cpIn`/`cpOut`
+   * absolutos y `tipo`). Se migra a `path` en `normalizeClipGroupBlock`.
+   */
+  nodos?: ClipPathNode[];
+  /** @deprecated Sustituido por `path.closed`. */
   cerrado?: boolean;
 }
 

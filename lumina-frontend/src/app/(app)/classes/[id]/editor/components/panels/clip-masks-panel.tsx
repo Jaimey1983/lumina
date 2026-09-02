@@ -5,7 +5,11 @@ import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import { createDefaultClipGroupBlock, createDefaultLibreShape } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock } from '@/lib/clip-path';
+import {
+  createDefaultLibreShape,
+  createEmptyFreeformPath,
+} from '@/lib/freeform-mask';
 import { appendBlockToSlideContent } from '@/lib/class-slide-normalize';
 import type { Block, ClipShape } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
@@ -60,6 +64,12 @@ const MASK_ITEMS: MaskItem[] = [
     Icon: PenLine,
     shape: createDefaultLibreShape(),
   },
+  {
+    id: 'libre-draw',
+    label: 'Forma libre (dibujar)',
+    Icon: PenLine,
+    shape: { tipo: 'libre', path: createEmptyFreeformPath() },
+  },
 ];
 
 interface Props {
@@ -81,7 +91,7 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
         Máscaras de recorte
       </p>
       <p className="px-1 text-[11px] leading-snug text-muted-foreground">
-        Recorta imagen o color. Forma libre: nodos con manijas Bézier (doble clic = curva; Alt = esquina libre).
+        Recorta imagen o color. Forma libre: arrastra nodos; doble clic o Alt+arrastra un nodo para sacar manijas Bézier; clic en el borde añade nodo; Alt+clic/Supr elimina.
       </p>
       <div className="grid grid-cols-2 gap-1.5 px-1">
         {MASK_ITEMS.map(({ id, label, Icon, shape }) => (

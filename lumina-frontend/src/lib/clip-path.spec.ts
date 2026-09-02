@@ -2,20 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createDefaultClipGroupBlock,
-  createDefaultLibreShape,
-  applyHandleDrag,
-  toggleClipPathNodeKind,
   clampClipContentImageOffsets,
   clampClipImageOffsetsForBlock,
   formatClipDropShadow,
   generarClipPath,
   getClipImageStyle,
   computeClipImagePanClamp,
-  librePathFromNodes,
   normalizeClipContentImage,
   normalizeClipGroupBlock,
 } from './clip-path';
-import type { ClipPathNode, ClipShape } from '@/types/slide.types';
+import { createDefaultLibreShape } from './freeform-mask';
+import type { ClipShape } from '@/types/slide.types';
 import { remintBlockChildIds } from '@/components/widgets/shared/widget-clone';
 
 describe('generarClipPath', () => {
@@ -58,60 +55,25 @@ describe('generarClipPath', () => {
     expect(hex.d).toBe(tri.d);
   });
 
-  it('forma libre genera path cerrado con nodos', () => {
-    const shape = createDefaultLibreShape() as Extract<ClipShape, { tipo: 'libre' }>;
+  it('forma libre (modelo nuevo `path`) genera contorno cerrado', () => {
+    const shape = createDefaultLibreShape();
     const { d } = generarClipPath(shape);
     expect(d.startsWith('M ')).toBe(true);
-    expect(shape.nodos.length).toBeGreaterThanOrEqual(3);
+    expect(d.endsWith(' Z')).toBe(true);
+    expect(shape.path?.nodes.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('libre con curvas Bézier usa comandos C', () => {
-    const nodos: ClipPathNode[] = [
-      { x: 0, y: 0.5, cpOut: { x: 0.3, y: 0 }, tipo: 'corner' },
-      { x: 1, y: 0.5, cpIn: { x: 0.7, y: 1 }, tipo: 'corner' },
-    ];
-    const d = librePathFromNodes(nodos, false);
+  it('forma libre legada (`nodos` + `cpOut`) se migra y usa comandos C', () => {
+    const { d } = generarClipPath({
+      tipo: 'libre',
+      nodos: [
+        { id: 'a', x: 0, y: 0.5, cpOut: { x: 0.3, y: 0.5 } },
+        { id: 'b', x: 1, y: 0.5, cpIn: { x: 0.7, y: 0.5 } },
+        { id: 'c', x: 0.5, y: 1 },
+      ],
+      cerrado: false,
+    });
     expect(d).toContain('C ');
-  });
-
-  it('symmetric refleja la manija opuesta al arrastrar', () => {
-    const node: ClipPathNode = {
-      x: 0.5,
-      y: 0.5,
-      cpIn: { x: 0.42, y: 0.5 },
-      cpOut: { x: 0.58, y: 0.5 },
-      tipo: 'symmetric',
-    };
-    const moved = applyHandleDrag(node, 'cpOut', { x: 0.7, y: 0.55 });
-    expect(moved.cpOut).toEqual({ x: 0.7, y: 0.55 });
-    expect(moved.cpIn?.x).toBeCloseTo(0.3, 2);
-    expect(moved.cpIn?.y).toBeCloseTo(0.45, 2);
-  });
-
-  it('Alt rompe simetría → corner independiente', () => {
-    const node: ClipPathNode = {
-      x: 0.5,
-      y: 0.5,
-      cpIn: { x: 0.42, y: 0.5 },
-      cpOut: { x: 0.58, y: 0.5 },
-      tipo: 'symmetric',
-    };
-    const moved = applyHandleDrag(node, 'cpOut', { x: 0.72, y: 0.6 }, { breakSymmetry: true });
-    expect(moved.tipo).toBe('corner');
-    expect(moved.cpOut).toEqual({ x: 0.72, y: 0.6 });
-    expect(moved.cpIn).toEqual({ x: 0.42, y: 0.5 });
-  });
-
-  it('toggle corner ↔ smooth añade manijas al activar curva', () => {
-    const corner: ClipPathNode = { x: 0.5, y: 0.2, tipo: 'corner' };
-    const prev: ClipPathNode = { x: 0.2, y: 0.5, tipo: 'corner' };
-    const next: ClipPathNode = { x: 0.8, y: 0.5, tipo: 'corner' };
-    const curved = toggleClipPathNodeKind(corner, prev, next);
-    expect(curved.cpIn).toBeDefined();
-    expect(curved.cpOut).toBeDefined();
-    expect(curved.tipo).toBe('symmetric');
-    const back = toggleClipPathNodeKind(curved, prev, next);
-    expect(back.tipo).toBe('corner');
   });
 
   it.each([
@@ -147,16 +109,16 @@ describe('formatClipDropShadow', () => {
 });
 
 describe('remintBlockChildIds clip-group', () => {
-  it('forma libre: reminta ids de nodos; el id del bloque no cambia aquí', () => {
+  it('forma libre: reminta ids de los nodos del path; el id del bloque no cambia aquí', () => {
     const block = createDefaultClipGroupBlock(createDefaultLibreShape());
     const originalIds =
-      block.clipShape.tipo === 'libre'
-        ? block.clipShape.nodos.map((n) => n.id)
+      block.clipShape.tipo === 'libre' && block.clipShape.path
+        ? block.clipShape.path.nodes.map((n) => n.id)
         : [];
     const reminted = remintBlockChildIds(structuredClone(block));
     expect(reminted.tipo).toBe('clip-group');
     if (reminted.tipo === 'clip-group' && reminted.clipShape.tipo === 'libre') {
-      const newIds = reminted.clipShape.nodos.map((n) => n.id);
+      const newIds = reminted.clipShape.path?.nodes.map((n) => n.id) ?? [];
       expect(newIds).toHaveLength(originalIds.length);
       newIds.forEach((id, i) => {
         expect(id).not.toBe(originalIds[i]);
@@ -201,13 +163,26 @@ describe('normalizeClipGroupBlock', () => {
     expect(n.borde?.grosor).toBe(2);
   });
 
-  it('normaliza nodos de forma libre con id y tipo', () => {
-    const block = createDefaultClipGroupBlock(createDefaultLibreShape());
-    const n = normalizeClipGroupBlock(block);
+  it('forma libre: migra `nodos` legado a `path` y descarta campos deprecados', () => {
+    const n = normalizeClipGroupBlock({
+      ...createDefaultClipGroupBlock({ tipo: 'circulo' }),
+      clipShape: {
+        tipo: 'libre',
+        nodos: [
+          { id: 'a', x: 0.1, y: 0.1, tipo: 'corner' },
+          { id: 'b', x: 0.9, y: 0.1, cpIn: { x: 0.8, y: 0.05 }, tipo: 'smooth' },
+          { id: 'c', x: 0.5, y: 0.9, tipo: 'corner' },
+        ],
+        cerrado: true,
+      },
+    });
     expect(n.clipShape.tipo).toBe('libre');
     if (n.clipShape.tipo === 'libre') {
-      expect(n.clipShape.nodos.every((node) => node.id)).toBe(true);
-      expect(n.clipShape.nodos[0]?.tipo).toBeDefined();
+      expect(n.clipShape.path?.closed).toBe(true);
+      expect(n.clipShape.path?.nodes).toHaveLength(3);
+      expect(n.clipShape.path?.nodes[1].handleIn).toEqual({ x: -0.1, y: -0.05 });
+      expect(n.clipShape.nodos).toBeUndefined();
+      expect(n.clipShape.cerrado).toBeUndefined();
     }
   });
 });

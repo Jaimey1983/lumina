@@ -5,13 +5,16 @@ import { VIRTUAL_CANVAS_HEIGHT, VIRTUAL_CANVAS_WIDTH } from '@/lib/canvas-guides
 import type {
   ClipContent,
   ClipContentImage,
-  ClipPathNode,
-  ClipPathNodeKind,
   ClipShadow,
   ClipShape,
   ClipGroupBlock,
 } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import {
+  freeformPathToSvgD,
+  normalizeFreeformPath,
+  resolveFreeformPath,
+} from '@/lib/freeform-mask';
 
 export type ClipImageAjuste = NonNullable<ClipContentImage['ajuste']>;
 
@@ -20,244 +23,12 @@ export interface GeneratedClipPath {
   d: string;
 }
 
-const HANDLE_EPS = 1e-5;
-const DEFAULT_HANDLE_ARM = 0.08;
-
-let clipNodeIdCounter = 0;
-
-export function createClipPathNodeId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  clipNodeIdCounter += 1;
-  return `cpn_${Date.now()}_${clipNodeIdCounter}`;
-}
-
-export function defaultClipPathNodeKind(node: ClipPathNode): ClipPathNodeKind {
-  if (node.tipo) return node.tipo;
-  return node.cpIn || node.cpOut ? 'smooth' : 'corner';
-}
-
-function dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function handleActive(
-  handle: { x: number; y: number } | undefined,
-  anchor: { x: number; y: number },
-): boolean {
-  if (!handle) return false;
-  return dist(handle, anchor) > HANDLE_EPS;
-}
-
-/** Contorno inicial para forma libre (hexágono irregular). */
-export const DEFAULT_LIBRE_NODES: ClipPathNode[] = [
-  { id: 'libre-0', x: 0.5, y: 0.05, tipo: 'corner' },
-  { id: 'libre-1', x: 0.92, y: 0.28, tipo: 'corner' },
-  { id: 'libre-2', x: 0.92, y: 0.72, tipo: 'corner' },
-  { id: 'libre-3', x: 0.5, y: 0.95, tipo: 'corner' },
-  { id: 'libre-4', x: 0.08, y: 0.72, tipo: 'corner' },
-  { id: 'libre-5', x: 0.08, y: 0.28, tipo: 'corner' },
-];
-
-export function clampNorm(n: number): number {
-  return Math.max(0, Math.min(1, n));
-}
-
-export function normalizeClipPathNode(node: ClipPathNode): ClipPathNode {
-  const out: ClipPathNode = {
-    id: node.id ?? createClipPathNodeId(),
-    x: clampNorm(node.x),
-    y: clampNorm(node.y),
-    tipo: defaultClipPathNodeKind(node),
-  };
-  if (node.cpIn) {
-    out.cpIn = { x: clampNorm(node.cpIn.x), y: clampNorm(node.cpIn.y) };
-  }
-  if (node.cpOut) {
-    out.cpOut = { x: clampNorm(node.cpOut.x), y: clampNorm(node.cpOut.y) };
-  }
-  return out;
-}
-
-export function normalizeLibreNodes(nodos: ClipPathNode[]): ClipPathNode[] {
-  return nodos.map(normalizeClipPathNode);
-}
-
-function hasCurve(prev: ClipPathNode, curr: ClipPathNode): boolean {
-  const prevAnchor = { x: prev.x, y: prev.y };
-  const currAnchor = { x: curr.x, y: curr.y };
-  return handleActive(prev.cpOut, prevAnchor) && handleActive(curr.cpIn, currAnchor);
-}
-
-/** Crea manijas alineadas a partir de vecinos (estilo Illustrator). */
-export function createSmoothHandlesForNode(
-  node: ClipPathNode,
-  prev?: ClipPathNode,
-  next?: ClipPathNode,
-  arm = DEFAULT_HANDLE_ARM,
-): Pick<ClipPathNode, 'cpIn' | 'cpOut' | 'tipo'> {
-  const vx = (next?.x ?? node.x) - (prev?.x ?? node.x);
-  const vy = (next?.y ?? node.y) - (prev?.y ?? node.y);
-  const len = Math.hypot(vx, vy) || 1;
-  const ux = vx / len;
-  const uy = vy / len;
-  return {
-    cpIn: { x: clampNorm(node.x - ux * arm), y: clampNorm(node.y - uy * arm) },
-    cpOut: { x: clampNorm(node.x + ux * arm), y: clampNorm(node.y + uy * arm) },
-    tipo: 'symmetric',
-  };
-}
-
-/** Alterna corner ↔ smooth (añade manijas al activar curva). */
-export function toggleClipPathNodeKind(
-  node: ClipPathNode,
-  prev?: ClipPathNode,
-  next?: ClipPathNode,
-): ClipPathNode {
-  const kind = defaultClipPathNodeKind(node);
-  if (kind === 'corner') {
-    return { ...node, ...createSmoothHandlesForNode(node, prev, next) };
-  }
-  return { ...node, tipo: 'corner' };
-}
-
-export interface ApplyHandleDragOptions {
-  /** Alt/Option durante el arrastre → esquina independiente. */
-  breakSymmetry?: boolean;
-}
-
 /**
- * Mueve una manija respetando corner / smooth / symmetric.
- * corner: solo la manija arrastrada; smooth: colineal; symmetric: espejo.
+ * La edición del contorno freeform vive en `@/lib/freeform-mask`
+ * (`FreeformMaskPath` / `MaskNode`) y en el editor Paper.js; aquí solo se
+ * consume `freeformPathToSvgD` para el render y `resolveFreeformPath` /
+ * `normalizeFreeformPath` para migrar y sanear la forma `libre`.
  */
-export function applyHandleDrag(
-  node: ClipPathNode,
-  handle: 'cpIn' | 'cpOut',
-  pos: { x: number; y: number },
-  options: ApplyHandleDragOptions = {},
-): ClipPathNode {
-  const anchor = { x: node.x, y: node.y };
-  const posN = { x: clampNorm(pos.x), y: clampNorm(pos.y) };
-  const kind: ClipPathNodeKind = options.breakSymmetry
-    ? 'corner'
-    : defaultClipPathNodeKind(node);
-
-  const next: ClipPathNode = {
-    ...node,
-    tipo: options.breakSymmetry ? 'corner' : node.tipo ?? kind,
-  };
-
-  if (handle === 'cpOut') {
-    next.cpOut = posN;
-    const vx = posN.x - anchor.x;
-    const vy = posN.y - anchor.y;
-    const vLen = Math.hypot(vx, vy) || 1;
-    if (kind === 'symmetric') {
-      next.cpIn = {
-        x: clampNorm(anchor.x - vx),
-        y: clampNorm(anchor.y - vy),
-      };
-    } else if (kind === 'smooth') {
-      const inLen = node.cpIn ? dist(anchor, node.cpIn) : DEFAULT_HANDLE_ARM;
-      next.cpIn = {
-        x: clampNorm(anchor.x - (vx / vLen) * inLen),
-        y: clampNorm(anchor.y - (vy / vLen) * inLen),
-      };
-    }
-    return next;
-  }
-
-  next.cpIn = posN;
-  const vx = posN.x - anchor.x;
-  const vy = posN.y - anchor.y;
-  const vLen = Math.hypot(vx, vy) || 1;
-  if (kind === 'symmetric') {
-    next.cpOut = {
-      x: clampNorm(anchor.x - vx),
-      y: clampNorm(anchor.y - vy),
-    };
-  } else if (kind === 'smooth') {
-    const outLen = node.cpOut ? dist(anchor, node.cpOut) : DEFAULT_HANDLE_ARM;
-    next.cpOut = {
-      x: clampNorm(anchor.x - (vx / vLen) * outLen),
-      y: clampNorm(anchor.y - (vy / vLen) * outLen),
-    };
-  }
-  return next;
-}
-
-/** Mueve el ancla y arrastra las manijas con el mismo delta. */
-export function applyAnchorDrag(
-  node: ClipPathNode,
-  pos: { x: number; y: number },
-): ClipPathNode {
-  const dx = pos.x - node.x;
-  const dy = pos.y - node.y;
-  const next: ClipPathNode = {
-    ...node,
-    x: clampNorm(pos.x),
-    y: clampNorm(pos.y),
-  };
-  if (node.cpIn) {
-    next.cpIn = { x: clampNorm(node.cpIn.x + dx), y: clampNorm(node.cpIn.y + dy) };
-  }
-  if (node.cpOut) {
-    next.cpOut = { x: clampNorm(node.cpOut.x + dx), y: clampNorm(node.cpOut.y + dy) };
-  }
-  return next;
-}
-
-export function nodeShowsHandles(node: ClipPathNode, selected: boolean): boolean {
-  if (!selected) return false;
-  const anchor = { x: node.x, y: node.y };
-  const kind = defaultClipPathNodeKind(node);
-  if (kind === 'corner') {
-    return handleActive(node.cpIn, anchor) || handleActive(node.cpOut, anchor);
-  }
-  return true;
-}
-
-/** Genera `d` a partir de nodos libres (segmentos L o C). */
-export function librePathFromNodes(
-  nodos: ClipPathNode[],
-  cerrado = true,
-): string {
-  if (nodos.length < 2) {
-    return 'M 0,0 H 1 V 1 H 0 Z';
-  }
-  const pts = normalizeLibreNodes(nodos);
-  const first = pts[0]!;
-  let d = `M ${first.x},${first.y}`;
-
-  for (let i = 1; i < pts.length; i++) {
-    const prev = pts[i - 1]!;
-    const curr = pts[i]!;
-    if (hasCurve(prev, curr)) {
-      d += ` C ${prev.cpOut!.x},${prev.cpOut!.y} ${curr.cpIn!.x},${curr.cpIn!.y} ${curr.x},${curr.y}`;
-    } else {
-      d += ` L ${curr.x},${curr.y}`;
-    }
-  }
-
-  if (cerrado && pts.length >= 3) {
-    const last = pts[pts.length - 1]!;
-    if (hasCurve(last, first)) {
-      d += ` C ${last.cpOut!.x},${last.cpOut!.y} ${first.cpIn!.x},${first.cpIn!.y} ${first.x},${first.y}`;
-    } else {
-      d += ' Z';
-    }
-  }
-  return d;
-}
-
-export function createDefaultLibreShape(): ClipShape {
-  return {
-    tipo: 'libre',
-    nodos: DEFAULT_LIBRE_NODES.map((n) => ({ ...n })),
-    cerrado: true,
-  };
-}
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -336,9 +107,7 @@ export function generarClipPath(shape: ClipShape): GeneratedClipPath {
     case 'svg':
       return { d: shape.path.trim() || 'M 0,0 H 1 V 1 H 0 Z' };
     case 'libre':
-      return {
-        d: librePathFromNodes(shape.nodos ?? DEFAULT_LIBRE_NODES, shape.cerrado !== false),
-      };
+      return { d: freeformPathToSvgD(resolveFreeformPath(shape)) };
     default:
       return { d: 'M 0,0 H 1 V 1 H 0 Z' };
   }
@@ -363,7 +132,7 @@ export function clipShapeLabel(shape: ClipShape): string {
     case 'svg':
       return 'SVG personalizado';
     case 'libre':
-      return `Forma libre (${shape.nodos?.length ?? 0} nodos)`;
+      return `Forma libre (${shape.path?.nodes?.length ?? shape.nodos?.length ?? 0} nodos)`;
     default:
       return 'Máscara';
   }
@@ -400,12 +169,10 @@ export function formatClipDropShadow(shadow?: ClipShadow): string | undefined {
 export function normalizeClipGroupBlock(block: ClipGroupBlock): ClipGroupBlock {
   let clipShape = block.clipShape;
   if (clipShape.tipo === 'libre') {
+    // Migra el formato anterior (`nodos`/`cerrado`) al modelo nuevo `path`.
     clipShape = {
-      ...clipShape,
-      nodos: normalizeLibreNodes(
-        clipShape.nodos?.length ? clipShape.nodos : DEFAULT_LIBRE_NODES,
-      ),
-      cerrado: clipShape.cerrado !== false,
+      tipo: 'libre',
+      path: normalizeFreeformPath(resolveFreeformPath(clipShape)),
     };
   }
 
