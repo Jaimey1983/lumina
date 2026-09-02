@@ -1,18 +1,30 @@
 'use client';
 
-import { Circle, Hexagon, PenLine, Sparkles, Square, Star, Triangle } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Circle,
+  Hexagon,
+  PenLine,
+  Sparkles,
+  Square,
+  Star,
+  Triangle,
+  Type,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import { createDefaultClipGroupBlock } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock, createTextClipGroupBlock } from '@/lib/clip-path';
 import {
   createDefaultLibreShape,
   createEmptyFreeformPath,
 } from '@/lib/freeform-mask';
 import { appendBlockToSlideContent } from '@/lib/class-slide-normalize';
-import type { Block, ClipShape } from '@/types/slide.types';
+import type { Block, ClipShape, ClipShapeTexto } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
+
+import { TextMaskDialog } from './text-mask-dialog';
 
 interface MaskItem {
   id: string;
@@ -79,10 +91,18 @@ interface Props {
 }
 
 export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+
   const addMask = (shape: ClipShape) => {
     const block: Block = createDefaultClipGroupBlock(shape);
     onCommitContent(appendBlockToSlideContent(apiSlide, block));
     toast.success('Máscara añadida al slide');
+  };
+
+  const addTextMask = (shape: ClipShapeTexto) => {
+    const block: Block = createTextClipGroupBlock(shape);
+    onCommitContent(appendBlockToSlideContent(apiSlide, block));
+    toast.success('Máscara de texto añadida al slide');
   };
 
   return (
@@ -111,7 +131,27 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
             {label}
           </button>
         ))}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setTextDialogOpen(true)}
+          className={cn(
+            'col-span-2 flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted/30 px-2 py-2.5 text-[10px] transition-colors',
+            disabled
+              ? 'cursor-not-allowed opacity-40'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+          )}
+        >
+          <Type className="size-5 shrink-0" aria-hidden />
+          Texto
+        </button>
       </div>
+
+      <TextMaskDialog
+        open={textDialogOpen}
+        onOpenChange={setTextDialogOpen}
+        onConfirm={addTextMask}
+      />
     </div>
   );
 }

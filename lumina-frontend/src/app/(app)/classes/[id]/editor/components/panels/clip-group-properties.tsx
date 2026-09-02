@@ -33,8 +33,13 @@ import type {
   ClipShape,
   ClipShapeKind,
   ClipShapeLibre,
+  ClipShapeTexto,
 } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import { FONT_DEFAULT } from '@/lib/font-catalog';
+import { TEXT_MASK_DEFAULT_WEIGHT } from '@/lib/text-mask';
+
+import { TextMaskDialog } from './text-mask-dialog';
 
 interface Props {
   block: ClipGroupBlock;
@@ -52,8 +57,21 @@ const SHAPE_OPTIONS: { value: ClipShapeKind; label: string }[] = [
   { value: 'hexagono', label: 'Hexágono' },
   { value: 'poligono', label: 'Polígono' },
   { value: 'libre', label: 'Forma libre' },
+  { value: 'texto', label: 'Texto' },
   { value: 'svg', label: 'SVG personalizado' },
 ];
+
+/** Máscara de texto vacía: el render cae a la caja completa hasta que se edita. */
+function emptyTextShape(): ClipShapeTexto {
+  return {
+    tipo: 'texto',
+    text: '',
+    fontFamily: FONT_DEFAULT,
+    fontWeight: TEXT_MASK_DEFAULT_WEIGHT,
+    pathData: '',
+    fillRule: 'nonzero',
+  };
+}
 
 function defaultShape(kind: ClipShapeKind, prev?: ClipShape): ClipShape {
   switch (kind) {
@@ -93,6 +111,8 @@ function defaultShape(kind: ClipShapeKind, prev?: ClipShape): ClipShape {
       };
     case 'libre':
       return prev?.tipo === 'libre' ? prev : createDefaultLibreShape();
+    case 'texto':
+      return prev?.tipo === 'texto' ? prev : emptyTextShape();
     default:
       return { tipo: 'rectangulo' };
   }
@@ -107,6 +127,7 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
   const [urlDraft, setUrlDraft] = useState(() =>
     block.contenido.tipo === 'imagen' ? block.contenido.url : '',
   );
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
 
   useEffect(() => {
     setOpLocal(block.opacidad ?? 100);
@@ -328,6 +349,31 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
                   : b,
               );
             }}
+          />
+        </div>
+      ) : null}
+
+      {block.clipShape.tipo === 'texto' ? (
+        <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2">
+          <p className="text-[11px] text-muted-foreground">
+            {block.clipShape.text?.trim()
+              ? `“${block.clipShape.text.replace(/\r?\n/g, ' / ')}” · ${block.clipShape.fontFamily} ${block.clipShape.fontWeight}`
+              : 'Sin texto — la máscara no recorta todavía.'}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            onClick={() => setTextDialogOpen(true)}
+          >
+            Editar texto…
+          </Button>
+          <TextMaskDialog
+            open={textDialogOpen}
+            onOpenChange={setTextDialogOpen}
+            initial={block.clipShape}
+            onConfirm={patchShape}
           />
         </div>
       ) : null}

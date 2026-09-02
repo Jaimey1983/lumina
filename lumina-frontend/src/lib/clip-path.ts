@@ -7,9 +7,12 @@ import type {
   ClipContentImage,
   ClipShadow,
   ClipShape,
+  ClipShapeTexto,
   ClipGroupBlock,
 } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import { resolveFontFamily } from '@/lib/font-catalog';
+import { normalizeTypography } from '@/lib/text-mask';
 import {
   freeformPathToSvgD,
   normalizeFreeformPath,
@@ -106,6 +109,10 @@ export function generarClipPath(shape: ClipShape): GeneratedClipPath {
       return { d: regularPolygonPath(shape.lados) };
     case 'svg':
       return { d: shape.path.trim() || 'M 0,0 H 1 V 1 H 0 Z' };
+    case 'texto':
+      // `pathData` ya viene en coords objectBoundingBox (0–1) con las curvas
+      // del glifo preservadas. Sin contorno todavía → caja completa (no recorta).
+      return { d: shape.pathData.trim() || 'M 0,0 H 1 V 1 H 0 Z' };
     case 'libre':
       return { d: freeformPathToSvgD(resolveFreeformPath(shape)) };
     default:
@@ -131,6 +138,10 @@ export function clipShapeLabel(shape: ClipShape): string {
       return `Polígono (${shape.lados})`;
     case 'svg':
       return 'SVG personalizado';
+    case 'texto':
+      return shape.text?.trim()
+        ? `Texto: "${shape.text.trim().replace(/\r?\n/g, ' / ')}"`
+        : 'Texto';
     case 'libre':
       return `Forma libre (${shape.path?.nodes?.length ?? shape.nodos?.length ?? 0} nodos)`;
     default:
@@ -165,6 +176,40 @@ export function formatClipDropShadow(shadow?: ClipShadow): string | undefined {
   return `drop-shadow(${offsetX}px ${offsetY}px ${blur}px ${color})`;
 }
 
+/** Sanea un `ClipShapeTexto` hidratado desde JSON (campos ausentes / tipos sucios). */
+export function normalizeTextClipShape(shape: ClipShapeTexto): ClipShapeTexto {
+  const typo = normalizeTypography({
+    fontScale: shape.fontScale,
+    letterSpacing: shape.letterSpacing,
+    lineHeight: shape.lineHeight,
+    scaleX: shape.scaleX,
+    scaleY: shape.scaleY,
+    align: shape.align,
+  });
+  return {
+    tipo: 'texto',
+    text: typeof shape.text === 'string' ? shape.text : '',
+    fontFamily: resolveFontFamily(
+      typeof shape.fontFamily === 'string' ? shape.fontFamily : undefined,
+    ),
+    fontWeight:
+      typeof shape.fontWeight === 'number' || typeof shape.fontWeight === 'string'
+        ? shape.fontWeight
+        : 400,
+    pathData: typeof shape.pathData === 'string' ? shape.pathData : '',
+    fillRule: 'nonzero',
+    ...(typeof shape.aspect === 'number' && Number.isFinite(shape.aspect) && shape.aspect > 0
+      ? { aspect: shape.aspect }
+      : {}),
+    fontScale: typo.fontScale,
+    letterSpacing: typo.letterSpacing,
+    lineHeight: typo.lineHeight,
+    scaleX: typo.scaleX,
+    scaleY: typo.scaleY,
+    align: typo.align,
+  };
+}
+
 /** Normaliza bbox, forma libre, contenido imagen y defaults de máscara. */
 export function normalizeClipGroupBlock(block: ClipGroupBlock): ClipGroupBlock {
   let clipShape = block.clipShape;
@@ -174,6 +219,8 @@ export function normalizeClipGroupBlock(block: ClipGroupBlock): ClipGroupBlock {
       tipo: 'libre',
       path: normalizeFreeformPath(resolveFreeformPath(clipShape)),
     };
+  } else if (clipShape.tipo === 'texto') {
+    clipShape = normalizeTextClipShape(clipShape);
   }
 
   const contenido =
@@ -418,6 +465,33 @@ export function createDefaultClipGroupBlock(
     y: fb.y,
     ancho: fb.ancho,
     alto: fb.alto,
+  };
+}
+
+/**
+ * Crea un `clip-group` con máscara de texto, dimensionando el bloque a la
+ * proporción del contorno para que las letras no se estiren (con
+ * `clipPathUnits="objectBoundingBox"` el path se escala al bbox del bloque).
+ */
+export function createTextClipGroupBlock(
+  shape: ClipShapeTexto,
+  contenido?: ClipContent,
+): ClipGroupBlock {
+  // Relleno azul de marca por defecto (más útil que el gris genérico para texto).
+  const base = createDefaultClipGroupBlock(shape, contenido ?? { tipo: 'color', valor: '#2563EB' });
+  const aspect = shape.aspect && shape.aspect > 0 ? shape.aspect : 4;
+  const anchoPct = 55;
+  const canvasRatio = VIRTUAL_CANVAS_WIDTH / VIRTUAL_CANVAS_HEIGHT;
+  // visualAspect = (anchoPct·CANVAS_W) / (altoPct·CANVAS_H) = aspect  ⟹  altoPct
+  const altoPct = clamp((anchoPct * canvasRatio) / aspect, 8, 80);
+  return {
+    ...base,
+    // El contorno de texto fino se ve mejor sin trazo de borde.
+    borde: undefined,
+    ancho: anchoPct,
+    alto: altoPct,
+    x: (100 - anchoPct) / 2,
+    y: (100 - altoPct) / 2,
   };
 }
 

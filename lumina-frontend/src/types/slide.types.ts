@@ -780,7 +780,8 @@ export type ClipShapeKind =
   | 'hexagono'
   | 'poligono'
   | 'svg'
-  | 'libre';
+  | 'libre'
+  | 'texto';
 
 /** Comportamiento de las manijas Bézier en un nodo de máscara libre. */
 export type ClipPathNodeKind = 'corner' | 'smooth' | 'symmetric';
@@ -888,6 +889,46 @@ export interface ClipShapeLibre {
   cerrado?: boolean;
 }
 
+/**
+ * Máscara basada en texto vectorizado. El contorno real de la fuente se extrae
+ * con `opentype.js` (ver `@/lib/text-mask`) y se persiste ya como `pathData` en
+ * coords `objectBoundingBox` (0–1), con las curvas Bézier (`Q`/`C`) del glifo
+ * preservadas. El render final es SVG puro: no depende de opentype.js ni de
+ * volver a descargar la fuente fuera del modo edición.
+ */
+export interface ClipShapeTexto {
+  tipo: 'texto';
+  /** Texto (una o varias líneas separadas por `\n`). */
+  text: string;
+  /** Familia del catálogo de Google Fonts de la plataforma. */
+  fontFamily: string;
+  fontWeight: number | string;
+  /** Atributo `d` del contorno en coords objectBoundingBox (0–1). Fuente de verdad del render. */
+  pathData: string;
+  /** Regla de relleno para resolver los huecos de las letras (O, A, B…). */
+  fillRule: 'nonzero';
+  /**
+   * Relación ancho/alto del contorno generado. La usa el editor para crear el
+   * bloque `clip-group` con esa proporción y evitar que las letras se estiren.
+   */
+  aspect?: number;
+  /**
+   * Tamaño de letra: escala del contorno respecto al recuadro (0–3).
+   * Ausente = 1 (las letras tocan los bordes); >1 sobresale y el bloque recorta.
+   */
+  fontScale?: number;
+  /** Espaciado entre letras (tracking) en em. Ausente = 0. */
+  letterSpacing?: number;
+  /** Interlineado como múltiplo de la altura de línea de la fuente. Ausente = 1. */
+  lineHeight?: number;
+  /** Ancho de letra (escala horizontal relativa del glifo). Ausente = 1. */
+  scaleX?: number;
+  /** Alto de letra (escala vertical relativa del glifo). Ausente = 1. */
+  scaleY?: number;
+  /** Alineación de líneas en texto multilínea. Ausente = 'center'. */
+  align?: 'left' | 'center' | 'right';
+}
+
 export type ClipShape =
   | ClipShapeRect
   | ClipShapeCircle
@@ -897,7 +938,8 @@ export type ClipShape =
   | ClipShapeHexagon
   | ClipShapePolygon
   | ClipShapeSvg
-  | ClipShapeLibre;
+  | ClipShapeLibre
+  | ClipShapeTexto;
 
 export interface ClipContentImage {
   tipo: 'imagen';

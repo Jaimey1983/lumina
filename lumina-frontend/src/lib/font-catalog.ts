@@ -160,7 +160,7 @@ export function allGoogleFontFamilies(): string[] {
   )
 }
 
-function weightsForFamily(familia: string): number[] {
+export function weightsForFamily(familia: string): number[] {
   const entry = FONT_CATALOG.find((f) => f.familia === familia)
   if (!entry || entry.categoria === 'system' || familia === FONT_DEFAULT) return []
   if (LIMITED_WEIGHT_FAMILIES.has(familia)) return [400]
