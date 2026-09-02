@@ -2,18 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isAxiosError } from 'axios';
-import { Eye, EyeOff, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
 
 const loginSchema = z.object({
   email: z.string().email('Ingresa un email válido'),
@@ -54,98 +60,95 @@ export function LoginClient() {
   };
 
   return (
-    <Card
-      variant="default"
-      className={cn(
-        'w-full max-w-md border-border/80 shadow-md shadow-black/5',
-        'dark:shadow-black/20',
+    <div className="flex flex-col gap-6">
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          ¡Bienvenido a Lumina! <span aria-hidden>👋</span>
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Inicia sesión en tu cuenta para continuar.
+        </p>
+      </div>
+
+      {serverError && (
+        <Alert variant="destructive" appearance="light">
+          <AlertDescription>{serverError}</AlertDescription>
+        </Alert>
       )}
-    >
-      <CardHeader className="flex flex-col items-center gap-4 pb-2 pt-8 text-center">
-        <div className="flex size-14 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-          <GraduationCap className="size-8" strokeWidth={1.75} aria-hidden />
-        </div>
-        <div className="space-y-1">
-          <span className="text-2xl font-bold tracking-tight text-foreground">Lumina</span>
-          <CardTitle className="text-base font-medium text-muted-foreground">
-            Plataforma educativa
-          </CardTitle>
-          <CardDescription>Ingresa tus credenciales para continuar</CardDescription>
-        </div>
-      </CardHeader>
 
-      <CardContent className="space-y-6 px-6 pb-8 pt-2">
-        {serverError && (
-          <Alert variant="destructive" appearance="light">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
-        )}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="usuario@ejemplo.com"
+                    autoComplete="email"
+                    autoFocus
+                    variant="lg"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Contraseña</FormLabel>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+                <FormControl>
+                  <div className="relative">
                     <Input
-                      type="email"
-                      placeholder="usuario@ejemplo.com"
-                      autoComplete="email"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
                       variant="lg"
+                      className="pr-10"
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contraseña</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        autoComplete="current-password"
-                        variant="lg"
-                        className="pr-10"
-                        {...field}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      >
-                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full"
-              size="lg"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+            size="lg"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 }
