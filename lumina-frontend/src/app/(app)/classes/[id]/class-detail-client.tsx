@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   AlertCircle,
@@ -27,14 +28,28 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { SlideNavContext } from '@/components/widgets/shared/slide-nav-context';
-import { SlideRenderer } from './editor/components/slide-renderer';
-import { SlideCanvasThumb } from './editor/components/slides-panel';
 import {
   STATUS_BADGE_STYLE,
   STATUS_LABELS,
 } from '@/app/(app)/classes/class-status-badge-styles';
 import { EditAutonomousModal } from './components/edit-autonomous-modal';
 import { LaunchAutonomousModal } from './components/launch-autonomous-modal';
+
+const SlideRenderer = dynamic(
+  () => import('./editor/components/slide-renderer').then((mod) => mod.SlideRenderer),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="aspect-video w-full rounded-lg" />,
+  },
+);
+
+const SlideCanvasThumb = dynamic(
+  () => import('./editor/components/slides-panel').then((mod) => mod.SlideCanvasThumb),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-16 w-full" />,
+  },
+);
 
 function statusLabel(status: string) {
   return STATUS_LABELS[status?.toUpperCase()] ?? status;

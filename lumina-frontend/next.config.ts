@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: frontendRoot,
   },
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+  },
   eslint: {
     // `next build` no bloquea por lint: hay violaciones pre-existentes en el
     // repo (react-hooks/purity, static-components, no-img-element…). ESLint

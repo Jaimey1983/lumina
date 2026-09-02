@@ -447,7 +447,7 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
   return (
     <div
       ref={ref}
-      className={cn('relative w-full overflow-hidden rounded-xl', className)}
+      className={cn('relative w-full overflow-hidden rounded-sm', className)}
       style={{ aspectRatio: '16/9', ...bgStyle }}
     >
       {visible ? (
@@ -568,7 +568,7 @@ function SortableSlideItem({
           }
         }}
         className={cn(
-          'w-full cursor-pointer overflow-hidden rounded-xl border-2 text-left transition-colors',
+          'w-full cursor-pointer overflow-hidden rounded-sm border-2 text-left transition-colors',
           isActive ? 'border-[#2563EB]' : 'border-transparent hover:border-[#93c5fd]',
         )}
       >
@@ -576,7 +576,7 @@ function SortableSlideItem({
           slide={slide}
           isActive={isActive}
           liveContent={isActive ? liveContent : undefined}
-          className="rounded-b-none rounded-t-xl"
+          className="rounded-t-sm"
         />
         {/* Label */}
         <div className="border-t border-[#e5e7eb] bg-white px-2 py-1.5">

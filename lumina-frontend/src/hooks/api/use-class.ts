@@ -39,8 +39,6 @@ export function useClass(id: string, options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: ['classes', 'detail', id],
     enabled: !!id,
-    staleTime: 0,
-    refetchOnMount: 'always',
     refetchInterval: options?.refetchInterval,
     queryFn: async () => {
       const { data } = await api.get<ClassDetail>(`/classes/${id}`);

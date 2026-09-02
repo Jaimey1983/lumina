@@ -325,34 +325,26 @@ function ClassCard({
   });
 
   const published = isPublishedStatus(cls.status);
-
   const emptyGradient = EMPTY_GRADIENTS[index % EMPTY_GRADIENTS.length];
   const badgeStyle = STATUS_BADGE_STYLE[cls.status?.toUpperCase()] ?? STATUS_BADGE_STYLE.DRAFT;
+  const slideCount = cls._count?.slides;
 
   return (
-    <div
-      role="link"
-      tabIndex={0}
-      aria-label={`Abrir clase: ${cls.title}`}
-      className="group cursor-pointer overflow-hidden bg-white"
+    <article
+      className="group relative overflow-hidden bg-white"
       style={{
         border: '1px solid #e5e7eb',
         borderRadius: '10px',
         boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.06)',
         transition: 'all 200ms ease',
       }}
-      onClick={() => router.push(`/classes/${cls.id}`)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          router.push(`/classes/${cls.id}`);
-        }
-      }}
       onMouseEnter={(e) => {
         const el = e.currentTarget;
         el.style.borderColor = '#d1d5db';
         el.style.boxShadow = '0px 6px 20px rgba(0, 0, 0, 0.10)';
         el.style.transform = 'translateY(-2px)';
+        router.prefetch(`/classes/${cls.id}`);
+        router.prefetch(`/classes/${cls.id}/editor`);
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
@@ -361,7 +353,12 @@ function ClassCard({
         el.style.transform = 'translateY(0)';
       }}
     >
-      {/* Thumbnail */}
+      <Link
+        href={`/classes/${cls.id}`}
+        className="absolute inset-0 z-0"
+        aria-label={`Abrir clase: ${cls.title}`}
+      />
+
       <div className="relative w-full overflow-hidden" style={{ height: '180px' }}>
         {detailLoading ? (
           <Skeleton className="absolute inset-0 size-full rounded-none" />
@@ -372,7 +369,7 @@ function ClassCard({
             isActive={false}
             aspectRatio="4/3"
             showOuterRing={false}
-            className="rounded-none"
+            className="h-full rounded-none"
           />
         ) : (
           <div
@@ -387,7 +384,6 @@ function ClassCard({
           </div>
         )}
 
-        {/* Hover actions */}
         <div
           className={cn(
             'absolute bottom-2 right-2 z-10 flex items-center gap-2',
@@ -399,7 +395,7 @@ function ClassCard({
             href={`/classes/${cls.id}/editor`}
             onClick={(e) => e.stopPropagation()}
             aria-label="Abrir editor"
-            className="inline-flex text-white/70 transition-colors hover:text-blue-400"
+            className="relative z-10 inline-flex text-white/70 transition-colors hover:text-blue-400"
           >
             <Pencil size={18} className="cursor-pointer" aria-hidden />
           </Link>
@@ -413,7 +409,7 @@ function ClassCard({
               }}
               aria-label="Publicar clase"
               className={cn(
-                'inline-flex border-0 bg-transparent p-0 text-white/70 transition-colors',
+                'relative z-10 inline-flex border-0 bg-transparent p-0 text-white/70 transition-colors',
                 'hover:text-blue-400 disabled:pointer-events-none disabled:opacity-40',
               )}
             >
@@ -427,15 +423,14 @@ function ClassCard({
               onDelete(cls);
             }}
             aria-label="Eliminar clase"
-            className="inline-flex border-0 bg-transparent p-0 text-red-400 transition-colors hover:text-red-300"
+            className="relative z-10 inline-flex border-0 bg-transparent p-0 text-red-400 transition-colors hover:text-red-300"
           >
             <Trash2 size={18} className="cursor-pointer" aria-hidden />
           </button>
         </div>
       </div>
 
-      {/* Card info */}
-      <div className="p-3">
+      <div className="relative z-[1] pointer-events-none p-3">
         <p className="truncate text-sm font-semibold text-[#111827]">{cls.title}</p>
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span
@@ -445,15 +440,17 @@ function ClassCard({
             {statusLabel(cls.status)}
           </span>
           <span className="text-xs text-[#9ca3af] shrink-0">
-            {new Date(cls.createdAt).toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
+            {typeof slideCount === 'number'
+              ? `${slideCount} slide${slideCount !== 1 ? 's' : ''}`
+              : new Date(cls.createdAt).toLocaleDateString('es-ES', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                })}
           </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 

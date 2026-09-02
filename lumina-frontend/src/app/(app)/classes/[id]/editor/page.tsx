@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { SlideEditorClient } from './editor-client';
+import { SlideEditorClient } from './editor-client-loader';
 
 interface Props {
   params: Promise<{ id: string }>;

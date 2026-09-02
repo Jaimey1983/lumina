@@ -47,6 +47,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const USER_CACHE_KEY = 'lumina_user';
+
+function readCachedUser(): AuthUser | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(USER_CACHE_KEY);
+  if (!raw) return null;
+  try {
+    return normalizeUser(JSON.parse(raw));
+  } catch {
+    localStorage.removeItem(USER_CACHE_KEY);
+    return null;
+  }
+}
+
+function persistUser(user: AuthUser) {
+  localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -56,24 +74,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queueMicrotask(() => {
       const storedToken = localStorage.getItem('token');
       if (!storedToken) {
+        localStorage.removeItem(USER_CACHE_KEY);
         setIsLoading(false);
         return;
       }
 
+      const cached = readCachedUser();
       setToken(storedToken);
+      if (cached) setUser(cached);
+      setIsLoading(false);
+
       api
         .get<unknown>('/auth/me', {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then(({ data }) => {
-          setUser(normalizeUser(data));
+          const next = normalizeUser(data);
+          setUser(next);
+          persistUser(next);
         })
         .catch(() => {
           localStorage.removeItem('token');
+          localStorage.removeItem(USER_CACHE_KEY);
           setToken(null);
           setUser(null);
-        })
-        .finally(() => setIsLoading(false));
+        });
     });
   }, []);
 
@@ -87,24 +112,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(jwt);
 
     if (data.user != null) {
-      setUser(normalizeUser(data.user));
+      const next = normalizeUser(data.user);
+      setUser(next);
+      persistUser(next);
       return;
     }
 
     const { data: me } = await api.get<unknown>('/auth/me', {
       headers: { Authorization: `Bearer ${jwt}` },
     });
-    setUser(normalizeUser(me));
+    const next = normalizeUser(me);
+    setUser(next);
+    persistUser(next);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem(USER_CACHE_KEY);
     setToken(null);
     setUser(null);
   }, []);
 
   const updateUser = useCallback((partial: Partial<AuthUser>) => {
-    setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...partial };
+      persistUser(next);
+      return next;
+    });
   }, []);
 
   return (

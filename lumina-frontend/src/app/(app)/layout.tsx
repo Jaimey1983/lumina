@@ -5,11 +5,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { ScreenLoader } from '@/components/screen-loader';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
+import { NavigationProgress } from '@/components/navigation-progress';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading, token } = useAuth();
   const router = useRouter();
 
   const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
@@ -24,13 +25,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       !isJoinRoute &&
       !isClassEndedRoute &&
       !isLoading &&
-      !isAuthenticated
+      !token
     ) {
       router.replace('/login');
     }
   }, [
     isLoading,
-    isAuthenticated,
+    token,
     router,
     isViewerRoute,
     isPresentRoute,
@@ -42,7 +43,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !token) {
     return <ScreenLoader />;
   }
 
@@ -53,6 +54,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   if (isEditorFullscreen) {
     return (
       <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-background">
+        <NavigationProgress />
         {children}
       </div>
     );
@@ -60,6 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-[#f9fafb] font-sans">
+      <NavigationProgress />
       <Sidebar />
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#f9fafb]">
         <ImpersonationBanner />
