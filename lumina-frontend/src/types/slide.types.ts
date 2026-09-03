@@ -741,9 +741,15 @@ export interface QuoteBlock {
 
 export interface DividerBlock {
   tipo: 'separador';
+  id?: string;
   estilo?: 'solido' | 'punteado' | 'guionado';
   color?: string;
   grosor?: number;
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
 }
 
 export interface ColumnsBlock {
@@ -751,22 +757,6 @@ export interface ColumnsBlock {
   /** Each inner array is the blocks for one column. */
   columnas: Block[][];
   proporcion?: string;
-}
-
-export interface FormaBlock {
-  tipo: 'forma';
-  id: string;
-  forma: 'rectangulo' | 'circulo' | 'triangulo' | 'linea';
-  color: string;
-  /** Opacidad del relleno 0–100. */
-  opacidad?: number;
-  colorBorde?: string;
-  grosorBorde?: number;
-  ancho?: number;
-  alto?: number;
-  x?: number;
-  y?: number;
-  zIndex?: number;
 }
 
 // ─── Clipping masks (clip-group) ──────────────────────────────────────────────
@@ -1307,7 +1297,6 @@ export type Block = (
   | QuoteBlock
   | DividerBlock
   | ColumnsBlock
-  | FormaBlock
   | ClipGroupBlock
   | GraficoDatosBlock
   | DiagramaBlock
@@ -1440,7 +1429,7 @@ export interface SlideClass {
 export const BLOCK_FALLBACKS = {
   text:  { x: 10, y: 10, ancho: 80, alto: 20 },
   image: { x: 25, y: 25, ancho: 50, alto: 50 },
-  forma: { x: 10, y: 10, ancho: 30, alto: 30 },
+  separador: { x: 15, y: 48, ancho: 70, alto: 3 },
   clipGroup: { x: 30, y: 25, ancho: 40, alto: 50 },
   video: { x: 10, y: 30, ancho: 80, alto: 40 },
   flipCards: { x: 5, y: 5, ancho: 90, alto: 90 },

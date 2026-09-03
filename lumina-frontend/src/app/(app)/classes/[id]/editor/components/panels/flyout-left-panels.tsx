@@ -79,8 +79,8 @@ import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@/data/curriculum/index';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@/types/curriculum.types';
+import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
 import { ImagesElementPanel } from './images-element-panel';
-import { ShapesPanel } from './shapes-panel';
 import { ClipMasksPanel } from './clip-masks-panel';
 import { WidgetsInsertPanel } from './widgets-insert-panel';
 import { LayoutPanel } from '../layout-panel';
@@ -185,7 +185,14 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
           onCommitContent={onCommitContent}
           disabled={disabledNonText}
         />
-        <ShapesPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
+        <PanelSection title="Línea">
+          <InsertBtn
+            label="Separador"
+            icon={Minus}
+            disabled={disabledNonText}
+            onClick={() => add(createDefaultSeparadorBlock())}
+          />
+        </PanelSection>
         <ClipMasksPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
         <PanelSection title="Gráficos de Datos">
           <div className="grid grid-cols-2 gap-1.5">
@@ -343,7 +350,7 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
             label="Separador"
             icon={Minus}
             disabled={disabledNonText}
-            onClick={() => add({ tipo: 'separador' })}
+            onClick={() => add(createDefaultSeparadorBlock())}
           />
           <InsertBtn
             label="Cita"

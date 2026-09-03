@@ -278,7 +278,7 @@ type CornerPick =
   | { kind: 'imagen' }
   | { kind: 'video' }
   | { kind: 'texto' }
-  | { kind: 'forma' };
+  | { kind: 'separador' };
 
 function pickCornerIconKind(bloques: Record<string, unknown>[]): CornerPick | null {
   const has = (t: string) => bloques.some((b) => b.tipo === t);
@@ -289,7 +289,7 @@ function pickCornerIconKind(bloques: Record<string, unknown>[]): CornerPick | nu
   if (has('imagen')) return { kind: 'imagen' };
   if (has('video')) return { kind: 'video' };
   if (has('texto')) return { kind: 'texto' };
-  if (has('forma')) return { kind: 'forma' };
+  if (has('separador')) return { kind: 'separador' };
   return null;
 }
 

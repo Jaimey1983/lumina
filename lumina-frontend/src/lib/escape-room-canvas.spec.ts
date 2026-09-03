@@ -19,7 +19,7 @@ const base = {
 };
 
 const texto: Block = { tipo: 'texto', contenido: 'Pista visual' } as Block;
-const forma: Block = { tipo: 'forma', forma: 'circulo' } as unknown as Block;
+const imagen: Block = { tipo: 'imagen', url: 'https://example.com/p.png' } as Block;
 
 function sala(over: Partial<EscapeRoomSala> = {}): EscapeRoomSala {
   return normalizeSala({ ...base, ...over });
@@ -32,7 +32,7 @@ describe('lienzo de sala en el viewer', () => {
   });
 
   it('una sala con bloques visuales sí lo tiene', () => {
-    const conLienzo = sala({ bloques: [texto, forma] });
+    const conLienzo = sala({ bloques: [texto, imagen] });
 
     expect(salaTieneLienzo(conLienzo)).toBe(true);
     expect(bloquesVisiblesDeSala(conLienzo)).toHaveLength(2);

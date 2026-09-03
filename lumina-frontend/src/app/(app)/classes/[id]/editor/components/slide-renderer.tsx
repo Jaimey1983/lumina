@@ -41,7 +41,6 @@ import type {
   ClipGroupBlock,
   DividerBlock,
   FlipCardsWidget,
-  FormaBlock,
   ImageBlock,
   QuoteBlock,
   Slide,
@@ -731,66 +730,24 @@ function RenderDivider({ block }: { block: DividerBlock }) {
     guionado: 'dashed',
   };
   return (
-    <hr
+    <div
       style={{
-        border: 'none',
-        borderTop: `${block.grosor ?? 1}px ${styleMap[block.estilo ?? 'solido'] ?? 'solid'} ${block.color ?? '#e5e7eb'}`,
-        margin: 0,
+        display: 'flex',
+        alignItems: 'center',
         width: '100%',
+        height: '100%',
       }}
-    />
-  );
-}
-
-function RenderForma({ block }: { block: FormaBlock }) {
-  const formaOpacity =
-    block.opacidad !== undefined ? block.opacidad / 100 : 1;
-
-  if (block.forma === 'linea') {
-    return (
+    >
       <hr
         style={{
           border: 'none',
-          borderTop: `${block.grosorBorde ?? 2}px solid ${block.color}`,
+          borderTop: `${block.grosor ?? 2}px ${styleMap[block.estilo ?? 'solido'] ?? 'solid'} ${block.color ?? '#64748b'}`,
           margin: 0,
           width: '100%',
-          opacity: formaOpacity,
         }}
       />
-    );
-  }
-
-  if (block.forma === 'triangulo') {
-    return (
-      <svg
-        viewBox="0 0 100 100"
-        style={{ width: '100%', height: '100%', opacity: formaOpacity }}
-        preserveAspectRatio="none"
-      >
-        <polygon
-          points="50,0 100,100 0,100"
-          fill={block.color}
-          stroke={block.colorBorde ?? 'none'}
-          strokeWidth={block.grosorBorde ?? 0}
-        />
-      </svg>
-    );
-  }
-
-  const baseStyle: CSSProperties = {
-    width: '100%',
-    height: '100%',
-    backgroundColor: block.color,
-    border: block.grosorBorde ? `${block.grosorBorde}px solid ${block.colorBorde || '#000'}` : 'none',
-    boxSizing: 'border-box',
-    opacity: formaOpacity,
-  };
-
-  if (block.forma === 'circulo') {
-    baseStyle.borderRadius = '50%';
-  }
-
-  return <div style={baseStyle} />;
+    </div>
+  );
 }
 
 /** Mismo fondo que aplica `EscapeRoomSalaCanvas` cuando el autor no elige uno. */
@@ -1805,7 +1762,6 @@ function BlockNode({
       case 'codigo':    return <RenderCode block={block} />;
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
-      case 'forma':     return <RenderForma block={block} />;
       case 'clip-group':
         return (
           <RenderClipGroup

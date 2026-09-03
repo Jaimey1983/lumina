@@ -20,7 +20,7 @@ import type {
   TopoActivity,
   HistoriaRamificadaActivity,
   FlipCardsWidget,
-  FormaBlock,
+  DividerBlock,
   ImageBlock,
   TabsWidget,
   CarouselWidget,
@@ -1263,7 +1263,7 @@ export function PropertiesPanel({
   if (
     block.tipo !== 'texto' &&
     block.tipo !== 'imagen' &&
-    block.tipo !== 'forma' &&
+    block.tipo !== 'separador' &&
     block.tipo !== 'clip-group' &&
     block.tipo !== 'video' &&
     block.tipo !== 'grafico' &&
@@ -1336,8 +1336,8 @@ export function PropertiesPanel({
                 scheduleApply={scheduleApply}
               />
             )}
-            {block.tipo === 'forma' && (
-              <FormaBlockFields
+            {block.tipo === 'separador' && (
+              <SeparadorBlockFields
                 block={block}
                 applyNow={applyNow}
                 scheduleApply={scheduleApply}
@@ -1562,34 +1562,34 @@ function ImageBlockFields({
   );
 }
 
-function FormaBlockFields({
+function SeparadorBlockFields({
   block,
   applyNow,
   scheduleApply,
 }: {
-  block: FormaBlock;
+  block: DividerBlock;
   applyNow: (fn: (b: Block) => Block) => Promise<void>;
   scheduleApply: (fn: (b: Block) => Block) => void;
 }) {
-  const [opLocal, setOpLocal] = useState(() => block.opacidad ?? 100);
+  const [grosorLocal, setGrosorLocal] = useState(() => block.grosor ?? 2);
 
   useEffect(() => {
-    setOpLocal(block.opacidad ?? 100);
-  }, [block.opacidad]);
+    setGrosorLocal(block.grosor ?? 2);
+  }, [block.grosor]);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-2">
-        <Label className="text-xs" htmlFor="prop-forma-color">
-          Color de relleno
+        <Label className="text-xs" htmlFor="prop-separador-color">
+          Color
         </Label>
         <Input
-          id="prop-forma-color"
+          id="prop-separador-color"
           type="color"
-          value={toHexColor(block.color, '#6366f1')}
+          value={toHexColor(block.color, '#64748b')}
           onChange={(e) => {
             void applyNow((b) =>
-              b.tipo === 'forma' ? { ...b, color: e.target.value } : b,
+              b.tipo === 'separador' ? { ...b, color: e.target.value } : b,
             );
           }}
           className="h-8 w-full cursor-pointer p-1"
@@ -1597,13 +1597,13 @@ function FormaBlockFields({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs">Tipo de forma</Label>
+        <Label className="text-xs">Estilo</Label>
         <Select
-          value={block.forma}
+          value={block.estilo ?? 'solido'}
           onValueChange={(v) => {
-            const forma = v as FormaBlock['forma'];
+            const estilo = v as NonNullable<DividerBlock['estilo']>;
             void applyNow((b) =>
-              b.tipo === 'forma' ? { ...b, forma } : b,
+              b.tipo === 'separador' ? { ...b, estilo } : b,
             );
           }}
         >
@@ -1611,29 +1611,28 @@ function FormaBlockFields({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="rectangulo">Rectángulo</SelectItem>
-            <SelectItem value="circulo">Círculo</SelectItem>
-            <SelectItem value="triangulo">Triángulo</SelectItem>
-            <SelectItem value="linea">Línea</SelectItem>
+            <SelectItem value="solido">Sólido</SelectItem>
+            <SelectItem value="punteado">Punteado</SelectItem>
+            <SelectItem value="guionado">Guionado</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
         <div className="flex justify-between">
-          <Label className="text-xs">Opacidad</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">{opLocal}%</span>
+          <Label className="text-xs">Grosor</Label>
+          <span className="text-xs tabular-nums text-muted-foreground">{grosorLocal}px</span>
         </div>
         <Slider
-          value={[opLocal]}
-          min={0}
-          max={100}
+          value={[grosorLocal]}
+          min={1}
+          max={16}
           step={1}
           onValueChange={([v]) => {
             const n = Math.round(v!);
-            setOpLocal(n);
+            setGrosorLocal(n);
             scheduleApply((b) =>
-              b.tipo === 'forma' ? { ...b, opacidad: n } : b,
+              b.tipo === 'separador' ? { ...b, grosor: n } : b,
             );
           }}
         >

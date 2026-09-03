@@ -15,7 +15,7 @@ import {
   Redo2,
   Send,
   Share2,
-  Shapes,
+  Minus,
   Table,
   Trash2,
   Type,
@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 
 import type { Background, Block } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';
 import { Button } from '@/components/ui/button';
@@ -175,18 +176,8 @@ export function SlideInsertionToolbar({
     void onInsert(block);
   }, [onInsert]);
 
-  const insertForma = useCallback(() => {
-    const block: Block = {
-      tipo: 'forma',
-      id: crypto.randomUUID(),
-      forma: 'rectangulo',
-      color: '#6366f1',
-      x: 30,
-      y: 30,
-      ancho: 40,
-      alto: 30,
-    };
-    void onInsert(block);
+  const insertSeparador = useCallback(() => {
+    void onInsert(createDefaultSeparadorBlock());
   }, [onInsert]);
 
   const commitImageUrl = useCallback(async () => {
@@ -424,12 +415,12 @@ export function SlideInsertionToolbar({
           variant="ghost"
           size="icon"
           className="size-8 shrink-0 rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
-          title={restrictToTextOnly ? 'Solo texto en slides de actividad' : 'Forma'}
-          aria-label="Insertar forma"
+          title={restrictToTextOnly ? 'Solo texto en slides de actividad' : 'Línea'}
+          aria-label="Insertar línea"
           disabled={mediaLocked}
-          onClick={insertForma}
+          onClick={insertSeparador}
         >
-          <Shapes className="size-4" />
+          <Minus className="size-4" />
         </Button>
 
         <Popover open={gifOpen} onOpenChange={setGifOpen}>

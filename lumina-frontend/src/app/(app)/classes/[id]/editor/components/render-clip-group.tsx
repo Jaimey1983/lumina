@@ -58,14 +58,10 @@ function windowBaseStyle(fill: ClipCompositionFill): CSSProperties {
 /**
  * Silueta de la ventana de un hijo, como atributo `d` en coords
  * `objectBoundingBox` (0–1). `null` = ventana rectangular (bbox).
- * Cubre `clip-group` (hexágono, estrella, freeform, texto…) y `forma`.
+ * Cubre `clip-group` (hexágono, estrella, freeform, texto…).
  */
 function childWindowPath(block: Block): string | null {
   if (block.tipo === 'clip-group') return generarClipPath(block.clipShape).d;
-  if (block.tipo === 'forma') {
-    if (block.forma === 'circulo') return generarClipPath({ tipo: 'circulo' }).d;
-    if (block.forma === 'triangulo') return generarClipPath({ tipo: 'triangulo' }).d;
-  }
   return null;
 }
 

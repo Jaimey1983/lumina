@@ -17,6 +17,8 @@ export function getBlockResizeMinDim(tipo: Block['tipo']): number {
       return 2;
     case 'progreso':
       return 2;
+    case 'separador':
+      return 1;
     default:
       return DEFAULT_BLOCK_RESIZE_MIN_DIM;
   }

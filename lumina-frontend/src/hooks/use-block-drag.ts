@@ -64,8 +64,8 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  typeof block.alto  === 'number' ? block.alto  : fb.alto,
       };
     }
-    case 'forma': {
-      const fb = BLOCK_FALLBACKS.forma;
+    case 'separador': {
+      const fb = BLOCK_FALLBACKS.separador;
       return {
         x:     block.x     ?? fb.x,
         y:     block.y     ?? fb.y,
@@ -242,7 +242,7 @@ export function withPosition(block: Block, x: number, y: number): Block {
     case 'texto':       return { ...block, x, y };
     case 'imagen':      return { ...block, x, y };
     case 'video':       return { ...block, x, y };
-    case 'forma':       return { ...block, x, y };
+    case 'separador':   return { ...block, x, y };
     case 'clip-group':  return { ...block, x, y };
     case 'flip-cards':  return { ...block, x, y };
     case 'tabs':        return { ...block, x, y };
@@ -284,7 +284,7 @@ export function withRect(
     case 'texto':
     case 'imagen':
     case 'video':
-    case 'forma':
+    case 'separador':
     case 'clip-group':
     case 'flip-cards':
     case 'tabs':
@@ -446,7 +446,6 @@ export function isBlockCanvasPositionable(block: Block): boolean {
     case 'audio':
     case 'codigo':
     case 'cita':
-    case 'separador':
     case 'columnas':
       return false;
     default:

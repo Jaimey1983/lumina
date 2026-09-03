@@ -10,11 +10,11 @@ import {
   Image as ImageIcon,
   Layers,
   MessageSquare,
+  Minus,
   MousePointer2,
   PanelTop,
   ScanFace,
   Shapes,
-  Square,
   Target,
   RotateCw,
   CircleDot,
@@ -96,7 +96,6 @@ const BASIC_KIND: Partial<Record<BlockTipo, string>> = {
   imagen: 'Imagen',
   video: 'Video',
   audio: 'Audio',
-  forma: 'Forma',
   'clip-group': 'Máscara',
   codigo: 'Código',
   cita: 'Cita',
@@ -110,11 +109,10 @@ const BASIC_ICON: Partial<Record<BlockTipo, LucideIcon>> = {
   imagen: ImageIcon,
   video: Video,
   audio: Activity,
-  forma: Square,
   'clip-group': ScanFace,
   codigo: FileText,
   cita: MessageSquare,
-  separador: Columns2,
+  separador: Minus,
   columnas: Columns2,
   actividad: Activity,
 };
@@ -191,8 +189,8 @@ export function getBlockLayerLabel(block: Block): string {
       return truncate(block.alt || block.caption || 'Imagen');
     case 'video':
       return truncate(block.url || 'Video');
-    case 'forma':
-      return truncate(block.forma || 'Forma');
+    case 'separador':
+      return 'Línea';
     case 'clip-group':
       return truncate(
         block.contenido.tipo === 'imagen'

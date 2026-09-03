@@ -32,7 +32,7 @@ const PANELS: Record<string, PanelConfig> = {
   elementos: {
     label: 'Elementos',
     Icon: Layers,
-    description: 'Agrega textos, imágenes, formas y otros elementos visuales al slide.',
+    description: 'Agrega textos, imágenes, líneas, máscaras y otros elementos visuales al slide.',
   },
   widgets: {
     label: 'Widgets',

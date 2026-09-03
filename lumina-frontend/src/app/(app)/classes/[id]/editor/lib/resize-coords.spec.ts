@@ -13,6 +13,10 @@ describe('getBlockResizeMinDim', () => {
     expect(getBlockResizeMinDim('popup')).toBe(2);
     expect(getBlockResizeMinDim('progreso')).toBe(2);
   });
+
+  it('el separador puede ser una línea del 1 %', () => {
+    expect(getBlockResizeMinDim('separador')).toBe(1);
+  });
 });
 
 describe('computeNewCoords — M1', () => {
