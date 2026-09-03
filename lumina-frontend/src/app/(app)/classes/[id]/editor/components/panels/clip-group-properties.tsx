@@ -27,6 +27,7 @@ import {
 } from '@/lib/freeform-mask';
 import type {
   Block,
+  ClipCompositionFill,
   ClipContent,
   ClipContentImage,
   ClipGroupBlock,
@@ -118,22 +119,106 @@ function defaultShape(kind: ClipShapeKind, prev?: ClipShape): ClipShape {
   }
 }
 
+/** URL de imagen del contenido o del relleno compartido, o '' si no aplica. */
+function getFillUrl(block: ClipGroupBlock): string {
+  const c = block.contenido;
+  if (c.tipo === 'imagen') return c.url;
+  if (c.tipo === 'composicion' && c.fill?.tipo === 'imagen') return c.fill.url;
+  return '';
+}
+
+type ImageAdjust = Pick<
+  ClipContentImage,
+  'ajuste' | 'escala' | 'offsetX' | 'offsetY'
+>;
+
+/** Controles compartidos de ajuste/escala/pan de una imagen de máscara o relleno. */
+function ImageAdjustControls({
+  value,
+  onChange,
+  hint,
+}: {
+  value: ImageAdjust;
+  onChange: (patch: Partial<ClipContentImage>) => void;
+  hint?: string;
+}) {
+  return (
+    <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2">
+      {hint ? <p className="text-[10px] text-muted-foreground">{hint}</p> : null}
+      <Label className="text-xs">Ajuste</Label>
+      <Select
+        value={value.ajuste ?? 'cubrir'}
+        onValueChange={(v) =>
+          onChange({ ajuste: v as 'cubrir' | 'contener' | 'llenar' })
+        }
+      >
+        <SelectTrigger size="sm" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="cubrir">Cubrir</SelectItem>
+          <SelectItem value="contener">Contener</SelectItem>
+          <SelectItem value="llenar">Llenar (estirar)</SelectItem>
+        </SelectContent>
+      </Select>
+      <Label className="text-xs">
+        Escala ({Math.round((value.escala ?? 1) * 100)}%)
+      </Label>
+      <Slider
+        min={0.25}
+        max={4}
+        step={0.05}
+        value={[value.escala ?? 1]}
+        onValueChange={([v]) => onChange({ escala: v! })}
+      >
+        <SliderThumb />
+      </Slider>
+      <Label className="text-xs">
+        Desplazamiento X ({Math.round(value.offsetX ?? 0)}%)
+      </Label>
+      <Slider
+        min={-100}
+        max={100}
+        step={1}
+        value={[value.offsetX ?? 0]}
+        onValueChange={([v]) => onChange({ offsetX: Math.round(v!) })}
+      >
+        <SliderThumb />
+      </Slider>
+      <Label className="text-xs">
+        Desplazamiento Y ({Math.round(value.offsetY ?? 0)}%)
+      </Label>
+      <Slider
+        min={-100}
+        max={100}
+        step={1}
+        value={[value.offsetY ?? 0]}
+        onValueChange={([v]) => onChange({ offsetY: Math.round(v!) })}
+      >
+        <SliderThumb />
+      </Slider>
+    </div>
+  );
+}
+
 export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebounce }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [opLocal, setOpLocal] = useState(() => block.opacidad ?? 100);
+  const isComposicion = block.contenido.tipo === 'composicion';
   const [contentKind, setContentKind] = useState<'color' | 'gradiente' | 'imagen'>(
-    block.contenido.tipo,
+    block.contenido.tipo === 'composicion' ? 'color' : block.contenido.tipo,
   );
-  const [urlDraft, setUrlDraft] = useState(() =>
-    block.contenido.tipo === 'imagen' ? block.contenido.url : '',
-  );
+  const [urlDraft, setUrlDraft] = useState(() => getFillUrl(block));
   const [textDialogOpen, setTextDialogOpen] = useState(false);
 
+  // Resincroniza los borradores locales cuando cambia el bloque seleccionado.
   useEffect(() => {
     setOpLocal(block.opacidad ?? 100);
-    setContentKind(block.contenido.tipo);
-    setUrlDraft(block.contenido.tipo === 'imagen' ? block.contenido.url : '');
-  }, [block.opacidad, block.contenido]);
+    setContentKind(
+      block.contenido.tipo === 'composicion' ? 'color' : block.contenido.tipo,
+    );
+    setUrlDraft(getFillUrl(block));
+  }, [block]);
 
   const patchShape = (shape: ClipShape) => {
     void applyNow((b) =>
@@ -146,6 +231,39 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
       b.tipo === 'clip-group' ? { ...b, contenido: content } : b,
     );
   };
+
+  const patchCompositionFill = (fill: ClipCompositionFill | undefined) => {
+    void applyNow((b) =>
+      b.tipo === 'clip-group' && b.contenido.tipo === 'composicion'
+        ? { ...b, contenido: { ...b.contenido, fill } }
+        : b,
+    );
+  };
+
+  /** Merge parcial sobre el relleno de imagen de una composición. */
+  const mergeCompositionFillImage =
+    (commit: (fn: (b: Block) => Block) => unknown) =>
+    (patch: Partial<ClipContentImage>) => {
+      commit((b) =>
+        b.tipo === 'clip-group' &&
+        b.contenido.tipo === 'composicion' &&
+        b.contenido.fill?.tipo === 'imagen'
+          ? {
+              ...b,
+              contenido: {
+                ...b.contenido,
+                fill: { ...b.contenido.fill, ...patch },
+              },
+            }
+          : b,
+      );
+    };
+  const scheduleCompositionFillImage = mergeCompositionFillImage(scheduleApply);
+  const applyCompositionFillImage = mergeCompositionFillImage(applyNow);
+
+  const compositionFill =
+    block.contenido.tipo === 'composicion' ? block.contenido.fill : undefined;
+  const compositionFillKind = compositionFill?.tipo ?? 'ninguno';
 
   const clampImageContent = (
     b: ClipGroupBlock,
@@ -161,13 +279,17 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
     return { ...merged, ...clamped };
   };
 
-  const scheduleImagePatch = (patch: Partial<ClipContentImage>) => {
-    scheduleApply((b) =>
-      b.tipo === 'clip-group' && b.contenido.tipo === 'imagen'
-        ? { ...b, contenido: clampImageContent(b, patch) }
-        : b,
-    );
-  };
+  const patchImage =
+    (commit: (fn: (b: Block) => Block) => unknown) =>
+    (patch: Partial<ClipContentImage>) => {
+      commit((b) =>
+        b.tipo === 'clip-group' && b.contenido.tipo === 'imagen'
+          ? { ...b, contenido: clampImageContent(b, patch) }
+          : b,
+      );
+    };
+  const scheduleImagePatch = patchImage(scheduleApply);
+  const applyImagePatch = patchImage(applyNow);
 
   return (
     <div className="flex flex-col gap-4">
@@ -414,6 +536,128 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
         </Slider>
       </div>
 
+      {isComposicion ? (
+        <div className="space-y-2 border-t border-border pt-3">
+          <Label className="text-xs">Contenido</Label>
+          <p className="text-[11px] text-muted-foreground">
+            Grupo de {block.contenido.tipo === 'composicion' ? block.contenido.bloques.length : 0}{' '}
+            elemento(s) recortado como capa única. Usa «Desagrupar máscara» en la
+            barra del bloque para volver a editarlos por separado.
+          </p>
+
+          <Label className="text-xs">Relleno compartido</Label>
+          <Select
+            value={compositionFillKind}
+            onValueChange={(v) => {
+              if (v === 'ninguno') return patchCompositionFill(undefined);
+              if (v === 'color') {
+                return patchCompositionFill({ tipo: 'color', valor: '#2563EB' });
+              }
+              if (v === 'gradiente') {
+                return patchCompositionFill({
+                  tipo: 'gradiente',
+                  inicio: '#6366f1',
+                  fin: '#ec4899',
+                  direccion: 135,
+                });
+              }
+              setUrlDraft('');
+              patchCompositionFill({
+                tipo: 'imagen',
+                url: '',
+                offsetX: 0,
+                offsetY: 0,
+                escala: 1,
+                ajuste: 'cubrir',
+              });
+            }}
+          >
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ninguno">Independiente (cada elemento)</SelectItem>
+              <SelectItem value="imagen">Imagen repartida</SelectItem>
+              <SelectItem value="color">Color</SelectItem>
+              <SelectItem value="gradiente">Gradiente</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            «Imagen repartida»: una sola imagen se ve a través de todos los
+            elementos como una imagen partida entre ellos.
+          </p>
+
+          {compositionFill?.tipo === 'color' ? (
+            <Input
+              type="color"
+              value={compositionFill.valor}
+              className="h-8 w-full cursor-pointer p-1"
+              onChange={(e) =>
+                patchCompositionFill({ tipo: 'color', valor: e.target.value })
+              }
+            />
+          ) : null}
+
+          {compositionFill?.tipo === 'gradiente' ? (
+            <div className="flex gap-2">
+              <Input
+                type="color"
+                value={compositionFill.inicio}
+                className="h-8 flex-1 cursor-pointer p-1"
+                onChange={(e) =>
+                  patchCompositionFill({
+                    tipo: 'gradiente',
+                    inicio: e.target.value,
+                    fin: compositionFill.fin,
+                    direccion: compositionFill.direccion,
+                  })
+                }
+              />
+              <Input
+                type="color"
+                value={compositionFill.fin}
+                className="h-8 flex-1 cursor-pointer p-1"
+                onChange={(e) =>
+                  patchCompositionFill({
+                    tipo: 'gradiente',
+                    inicio: compositionFill.inicio,
+                    fin: e.target.value,
+                    direccion: compositionFill.direccion,
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          {compositionFill?.tipo === 'imagen' ? (
+            <div className="space-y-2">
+              <Input
+                type="url"
+                value={urlDraft}
+                placeholder="https://…"
+                onChange={(e) => setUrlDraft(e.target.value)}
+                onBlur={() => {
+                  clearDebounce();
+                  applyCompositionFillImage({ url: urlDraft.trim() });
+                }}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData('text').trim();
+                  if (!pasted) return;
+                  e.preventDefault();
+                  setUrlDraft(pasted);
+                  clearDebounce();
+                  applyCompositionFillImage({ url: pasted });
+                }}
+              />
+              <ImageAdjustControls
+                value={compositionFill}
+                onChange={scheduleCompositionFillImage}
+                hint="Doble clic en el grupo para arrastrar la imagen; rueda del ratón para escalar. O usa los controles:"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : (
       <div className="space-y-2 border-t border-border pt-3">
         <Label className="text-xs">Contenido</Label>
         <Select
@@ -453,6 +697,7 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
           </SelectContent>
         </Select>
       </div>
+      )}
 
       {block.contenido.tipo === 'color' ? (
         <div className="space-y-2">
@@ -525,27 +770,12 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
             value={urlDraft}
             placeholder="https://…"
             onChange={(e) => {
-              const v = e.target.value;
-              setUrlDraft(v);
-              scheduleApply((b) =>
-                b.tipo === 'clip-group' && b.contenido.tipo === 'imagen'
-                  ? {
-                      ...b,
-                      contenido: { ...b.contenido, url: v },
-                    }
-                  : b,
-              );
+              setUrlDraft(e.target.value);
+              scheduleImagePatch({ url: e.target.value });
             }}
             onBlur={() => {
               clearDebounce();
-              void applyNow((b) =>
-                b.tipo === 'clip-group' && b.contenido.tipo === 'imagen'
-                  ? {
-                      ...b,
-                      contenido: { ...b.contenido, url: urlDraft.trim() },
-                    }
-                  : b,
-              );
+              applyImagePatch({ url: urlDraft.trim() });
             }}
             onPaste={(e) => {
               const pasted = e.clipboardData.getData('text').trim();
@@ -553,14 +783,7 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
               e.preventDefault();
               setUrlDraft(pasted);
               clearDebounce();
-              void applyNow((b) =>
-                b.tipo === 'clip-group' && b.contenido.tipo === 'imagen'
-                  ? {
-                      ...b,
-                      contenido: { ...b.contenido, url: pasted },
-                    }
-                  : b,
-              );
+              applyImagePatch({ url: pasted });
             }}
           />
           <input
@@ -576,11 +799,7 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
                 const url = String(reader.result ?? '').trim();
                 if (!url) return;
                 setUrlDraft(url);
-                void applyNow((b) =>
-                  b.tipo === 'clip-group' && b.contenido.tipo === 'imagen'
-                    ? { ...b, contenido: { ...b.contenido, url } }
-                    : b,
-                );
+                applyImagePatch({ url });
               };
               reader.readAsDataURL(file);
             }}
@@ -594,71 +813,11 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
           >
             Subir imagen
           </Button>
-          <p className="text-[10px] text-muted-foreground">
-            Selecciona la máscara en el lienzo para arrastrar la imagen o usa la rueda para escalar.
-          </p>
-          <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2">
-            <Label className="text-xs">Ajuste</Label>
-            <Select
-              value={block.contenido.ajuste ?? 'cubrir'}
-              onValueChange={(v) => {
-                if (block.contenido.tipo !== 'imagen') return;
-                const ajuste = v as 'cubrir' | 'contener' | 'llenar';
-                patchContent(clampImageContent(block, { ajuste }));
-              }}
-            >
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cubrir">Cubrir</SelectItem>
-                <SelectItem value="contener">Contener</SelectItem>
-                <SelectItem value="llenar">Llenar (estirar)</SelectItem>
-              </SelectContent>
-            </Select>
-            <Label className="text-xs">
-              Escala ({Math.round((block.contenido.escala ?? 1) * 100)}%)
-            </Label>
-            <Slider
-              min={0.25}
-              max={4}
-              step={0.05}
-              value={[block.contenido.escala ?? 1]}
-              onValueChange={([v]) => {
-                scheduleImagePatch({ escala: v! });
-              }}
-            >
-              <SliderThumb />
-            </Slider>
-            <Label className="text-xs">
-              Desplazamiento X ({Math.round(block.contenido.offsetX ?? 0)}%)
-            </Label>
-            <Slider
-              min={-100}
-              max={100}
-              step={1}
-              value={[block.contenido.offsetX ?? 0]}
-              onValueChange={([v]) => {
-                scheduleImagePatch({ offsetX: Math.round(v!) });
-              }}
-            >
-              <SliderThumb />
-            </Slider>
-            <Label className="text-xs">
-              Desplazamiento Y ({Math.round(block.contenido.offsetY ?? 0)}%)
-            </Label>
-            <Slider
-              min={-100}
-              max={100}
-              step={1}
-              value={[block.contenido.offsetY ?? 0]}
-              onValueChange={([v]) => {
-                scheduleImagePatch({ offsetY: Math.round(v!) });
-              }}
-            >
-              <SliderThumb />
-            </Slider>
-          </div>
+          <ImageAdjustControls
+            value={block.contenido}
+            onChange={scheduleImagePatch}
+            hint="Selecciona la máscara en el lienzo para arrastrar la imagen o usa la rueda para escalar."
+          />
         </div>
       ) : null}
 

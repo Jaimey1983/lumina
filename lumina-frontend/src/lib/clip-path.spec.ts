@@ -195,6 +195,42 @@ describe('createDefaultClipGroupBlock', () => {
     expect(block.contenido.tipo).toBe('color');
     expect(block.ancho).toBe(40);
   });
+
+  it('acepta contenido de composición', () => {
+    const block = createDefaultClipGroupBlock(
+      { tipo: 'circulo' },
+      { tipo: 'composicion', bloques: [] },
+    );
+    expect(block.contenido.tipo).toBe('composicion');
+  });
+});
+
+describe('normalizeClipGroupBlock — composición', () => {
+  it('conserva el contenido de composición y sanea bloques ausentes', () => {
+    const n = normalizeClipGroupBlock({
+      ...createDefaultClipGroupBlock({ tipo: 'rectangulo' }),
+      contenido: { tipo: 'composicion' } as never,
+    });
+    expect(n.contenido.tipo).toBe('composicion');
+    if (n.contenido.tipo !== 'composicion') throw new Error('tipo');
+    expect(n.contenido.bloques).toEqual([]);
+  });
+
+  it('normaliza el relleno compartido de imagen (pan/escala/ajuste)', () => {
+    const n = normalizeClipGroupBlock({
+      ...createDefaultClipGroupBlock({ tipo: 'rectangulo' }),
+      contenido: {
+        tipo: 'composicion',
+        bloques: [],
+        fill: { tipo: 'imagen', url: 'https://x/a.png' },
+      } as never,
+    });
+    if (n.contenido.tipo !== 'composicion' || n.contenido.fill?.tipo !== 'imagen') {
+      throw new Error('fill');
+    }
+    expect(n.contenido.fill.escala).toBe(1);
+    expect(n.contenido.fill.ajuste).toBe('cubrir');
+  });
 });
 
 describe('normalizeClipContentImage', () => {

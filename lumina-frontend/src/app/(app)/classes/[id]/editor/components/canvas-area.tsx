@@ -62,6 +62,10 @@ import {
   snapLineColor,
   snapPositionToGuides,
 } from '@/hooks/use-block-drag';
+import {
+  groupBlocksIntoClipMask,
+  ungroupClipMask,
+} from '@/lib/clip-composition';
 import { toggleCenterGuides } from '@/lib/canvas-guides';
 import { setSlideGrillaSize, toggleSlideGrilla } from '@/lib/canvas-grid';
 import {
@@ -1371,6 +1375,74 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     [liveSlide?.bloques, slide?.bloques, persistBloques],
   );
 
+  const handleGroupIntoClipMask = useCallback(async () => {
+    if (!slide?.id || !classId) return;
+    const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
+    const indices = selectedBlockIds
+      .map((id) => Number(id))
+      .filter(
+        (i) =>
+          Number.isInteger(i) &&
+          i >= 0 &&
+          i < prev.length &&
+          !isBlockCanvasLocked(prev[i]!),
+      );
+    if (indices.length < 2) {
+      toast.error('Selecciona 2 o más elementos');
+      return;
+    }
+    const result = groupBlocksIntoClipMask(prev, indices, {
+      tipo: 'rectangulo',
+      borderRadius: 0,
+    });
+    if (!result) return;
+    const ok = await persistBloques(result.next, prev, true);
+    if (ok) {
+      setSelectedBlockId(String(result.newIndex));
+      setSelectedBlockIds([String(result.newIndex)]);
+      onBlockSelectRef.current?.(String(result.newIndex));
+      toast.success('Máscara aplicada al grupo — edita la forma en el panel derecho');
+    } else {
+      toast.error('No se pudo aplicar la máscara');
+    }
+  }, [
+    slide?.id,
+    classId,
+    liveSlide?.bloques,
+    slide?.bloques,
+    selectedBlockIds,
+    persistBloques,
+  ]);
+
+  const handleUngroupClipMask = useCallback(
+    async (blockId: string) => {
+      if (!slide?.id || !classId) return;
+      const idx = Number(blockId);
+      const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= prev.length) return;
+      const next = ungroupClipMask(prev, idx);
+      if (!next) return;
+      const ok = await persistBloques(next, prev, true);
+      if (ok) {
+        setSelectedBlockId(null);
+        setSelectedBlockIds([]);
+        clearInnerSelections();
+        onBlockSelectRef.current?.('');
+        toast.success('Máscara de grupo deshecha');
+      } else {
+        toast.error('No se pudo desagrupar');
+      }
+    },
+    [
+      slide?.id,
+      classId,
+      liveSlide?.bloques,
+      slide?.bloques,
+      persistBloques,
+      clearInnerSelections,
+    ],
+  );
+
   const handleApplySlide = useCallback(
     async (patch: Partial<Slide>): Promise<boolean> => {
       if (!slide?.id) return false;
@@ -1674,6 +1746,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             selectedIds={selectedBlockIds}
             bloques={liveSlide?.bloques ?? []}
             onApplyBloques={handleApplyBloques}
+            onGroupIntoClipMask={handleGroupIntoClipMask}
           />
         </div>
       )}
@@ -1762,6 +1835,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={setClipGroupInnerEditId}
             onClipGroupChange={handleClipGroupChange}
+            onUngroupClipGroup={handleUngroupClipMask}
             onRemoveBlock={handleRemoveBlock}
             onDuplicateBlock={handleDuplicateBlock}
             onCopyBlock={handleCopyBlock}

@@ -1,7 +1,6 @@
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type {
   Activity,
-  ActivityBlock,
   Background,
   Block,
   Layout,
@@ -232,7 +231,17 @@ function normalizeBlock(block: Block): Block {
     return normalizeProgresoWidget(block);
   }
   if (block.tipo === 'clip-group') {
-    return normalizeClipGroupBlock(block);
+    const n = normalizeClipGroupBlock(block);
+    if (n.contenido.tipo === 'composicion') {
+      return {
+        ...n,
+        contenido: {
+          ...n.contenido,
+          bloques: withoutInteractiveStubs(n.contenido.bloques).map(normalizeBlock),
+        },
+      };
+    }
+    return n;
   }
   if (block.tipo === 'grafico') {
     return normalizeGraficoBlock(block);

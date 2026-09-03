@@ -7,7 +7,9 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -22,7 +24,11 @@ import {
 } from '@/lib/clip-path';
 import { freeformPathToSvgD, resolveFreeformPath } from '@/lib/freeform-mask';
 import { hasMediaSrc } from '@/lib/media-url';
+import { getBlockPos } from '@/hooks/use-block-drag';
 import type {
+  Block,
+  ClipCompositionFill,
+  ClipContentImage,
   ClipGroupBlock,
   ClipShapeLibre,
   FreeformMaskPath,
@@ -37,15 +43,169 @@ const ClipPathNodeEditorPaper = dynamic(
   { ssr: false },
 );
 
+/** Fondo CSS (longhand) de la capa base de cada ventana según el relleno. */
+function windowBaseStyle(fill: ClipCompositionFill): CSSProperties {
+  if (fill.tipo === 'gradiente') {
+    return { backgroundImage: clipContentBackground(fill) };
+  }
+  if (fill.tipo === 'color') {
+    return { backgroundColor: clipContentBackground(fill) };
+  }
+  // Imagen: gris de marcador de posición mientras no haya URL válida.
+  return hasMediaSrc(fill.url) ? {} : { backgroundColor: '#cbd5e1' };
+}
+
+/**
+ * Silueta de la ventana de un hijo, como atributo `d` en coords
+ * `objectBoundingBox` (0–1). `null` = ventana rectangular (bbox).
+ * Cubre `clip-group` (hexágono, estrella, freeform, texto…) y `forma`.
+ */
+function childWindowPath(block: Block): string | null {
+  if (block.tipo === 'clip-group') return generarClipPath(block.clipShape).d;
+  if (block.tipo === 'forma') {
+    if (block.forma === 'circulo') return generarClipPath({ tipo: 'circulo' }).d;
+    if (block.forma === 'triangulo') return generarClipPath({ tipo: 'triangulo' }).d;
+  }
+  return null;
+}
+
+/**
+ * Cada bloque de la composición se vuelve una ventana que revela su porción
+ * del `fill` compartido, alineado al bbox del grupo — igual que una imagen
+ * repartida entre las letras de una máscara de texto. La ventana conserva la
+ * silueta del bloque (hexágono, estrella, forma libre, círculo…).
+ *
+ * El relleno de imagen se pinta como un `<img>` posicionado con
+ * `getClipImageStyle` respecto al bbox del **grupo** (no de cada ventana), con
+ * el mismo pan/escala/ajuste que una máscara de imagen normal → todas las
+ * ventanas muestran la misma imagen continua y se puede arrastrar/escalar.
+ */
+function CompositionFillWindows({
+  bloques,
+  fill,
+  groupSize,
+  imgNaturalSize,
+}: {
+  bloques: Block[];
+  fill: ClipCompositionFill;
+  groupSize: { w: number; h: number };
+  imgNaturalSize: { w: number; h: number };
+}) {
+  const baseId = useId().replace(/:/g, '');
+  const baseStyle = windowBaseStyle(fill);
+  const imgFill =
+    fill.tipo === 'imagen' && hasMediaSrc(fill.url)
+      ? normalizeClipContentImage(fill)
+      : null;
+  const windows = bloques.map((child, i) => ({
+    child,
+    i,
+    pos: getBlockPos(child),
+    d: childWindowPath(child),
+    clipId: `cfw-${baseId}-${i}`,
+  }));
+
+  return (
+    <div className="absolute inset-0 h-full w-full">
+      <svg
+        width="0"
+        height="0"
+        className="pointer-events-none absolute"
+        aria-hidden
+      >
+        <defs>
+          {windows
+            .filter((wnd) => wnd.d)
+            .map((wnd) => (
+              <clipPath
+                key={wnd.clipId}
+                id={wnd.clipId}
+                clipPathUnits="objectBoundingBox"
+              >
+                <path d={wnd.d!} />
+              </clipPath>
+            ))}
+        </defs>
+      </svg>
+
+      {windows.map(({ child, i, pos, d, clipId }) => {
+        const w = Math.max(0.001, pos.ancho);
+        const h = Math.max(0.001, pos.alto);
+        const rot = (child as { rotacion?: number }).rotacion;
+        return (
+          <div
+            key={(child as { id?: string }).id ?? i}
+            style={{
+              position: 'absolute',
+              left: `${pos.x}%`,
+              top: `${pos.y}%`,
+              width: `${w}%`,
+              height: `${h}%`,
+              overflow: 'hidden',
+              transform: rot ? `rotate(${rot}deg)` : undefined,
+              transformOrigin: 'center center',
+              ...(d
+                ? { clipPath: `url(#${clipId})`, WebkitClipPath: `url(#${clipId})` }
+                : {}),
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: `${(-pos.x / w) * 100}%`,
+                top: `${(-pos.y / h) * 100}%`,
+                width: `${(100 / w) * 100}%`,
+                height: `${(100 / h) * 100}%`,
+                overflow: 'hidden',
+                ...baseStyle,
+              }}
+            >
+              {imgFill ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imgFill.url}
+                  alt=""
+                  draggable={false}
+                  aria-hidden
+                  style={getClipImageStyle(
+                    imgNaturalSize.w,
+                    imgNaturalSize.h,
+                    groupSize.w,
+                    groupSize.h,
+                    imgFill.escala,
+                    imgFill.offsetX,
+                    imgFill.offsetY,
+                    imgFill.ajuste,
+                    { pointerEvents: 'none', userSelect: 'none' },
+                  )}
+                />
+              ) : null}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export interface RenderClipGroupProps {
   block: ClipGroupBlock;
   editorMode?: boolean;
   isSelected?: boolean;
   /** Modo edición interna explícito (legacy / doble clic). */
   innerEdit?: boolean;
-  onContentCommit?: (patch: Partial<ClipGroupBlock['contenido']>) => void;
+  /** Persiste pan/escala de la máscara de imagen individual (`contenido`). */
+  onContentCommit?: (patch: Partial<ClipContentImage>) => void;
+  /** Persiste pan/escala del relleno de imagen compartido de una composición. */
+  onFillCommit?: (patch: Partial<ClipContentImage>) => void;
   onShapeCommit?: (clipShape: ClipGroupBlock['clipShape']) => void;
   onEnterInnerEdit?: () => void;
+  /**
+   * Render del contenido cuando `contenido.tipo === 'composicion'`. Lo provee
+   * `slide-renderer` con un `<SlideRenderer>` anidado (evita el ciclo de
+   * imports). Recibe los bloques hijos en coords relativas al bbox del grupo.
+   */
+  renderComposicion?: (bloques: Block[]) => ReactNode;
 }
 
 export function RenderClipGroup({
@@ -54,8 +214,10 @@ export function RenderClipGroup({
   isSelected = false,
   innerEdit = false,
   onContentCommit,
+  onFillCommit,
   onShapeCommit,
   onEnterInnerEdit,
+  renderComposicion,
 }: RenderClipGroupProps) {
   const uid = useId().replace(/:/g, '');
   const clipId = `clip-${uid}`;
@@ -71,16 +233,26 @@ export function RenderClipGroup({
     () => (libreShape ? resolveFreeformPath(libreShape) : null),
     [libreShape],
   );
-  const imageUrl = block.contenido.tipo === 'imagen' ? block.contenido.url : null;
+  // Imagen "activa" para pan/escala: el contenido si es imagen, o el relleno
+  // compartido de una composición si es imagen. Misma UX en ambos casos.
+  const { contenido } = block;
+  const rawImg: ClipContentImage | null =
+    contenido.tipo === 'imagen'
+      ? contenido
+      : contenido.tipo === 'composicion' && contenido.fill?.tipo === 'imagen'
+        ? contenido.fill
+        : null;
+  const isCompFillImage = contenido.tipo === 'composicion' && !!rawImg;
+  const activeImg = useMemo(
+    () => (rawImg ? normalizeClipContentImage(rawImg) : null),
+    [rawImg],
+  );
+  const imageUrl = activeImg?.url ?? null;
 
   useEffect(() => {
     setLiveFreeform(null);
     setImgNaturalSize({ w: 0, h: 0 });
-  }, [block.id]);
-
-  useEffect(() => {
-    setImgNaturalSize({ w: 0, h: 0 });
-  }, [imageUrl]);
+  }, [block.id, imageUrl]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -110,26 +282,13 @@ export function RenderClipGroup({
 
   const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const livePatchRef = useRef<Partial<ClipGroupBlock['contenido']> | null>(null);
   const [livePan, setLivePan] = useState<{ offsetX: number; offsetY: number } | null>(null);
   const [liveScale, setLiveScale] = useState<number | null>(null);
 
+  const commitImg = isCompFillImage ? onFillCommit : onContentCommit;
   const canEditImage =
-    editorMode &&
-    block.contenido.tipo === 'imagen' &&
-    hasMediaSrc(block.contenido.tipo === 'imagen' ? block.contenido.url : undefined);
-
+    editorMode && !!activeImg && hasMediaSrc(activeImg.url) && !!commitImg;
   const imagePanActive = canEditImage && innerEdit;
-
-  const commitPatch = useCallback(
-    (patch: Partial<ClipGroupBlock['contenido']>) => {
-      if (!onContentCommit) return;
-      livePatchRef.current = { ...(livePatchRef.current ?? {}), ...patch };
-      onContentCommit(livePatchRef.current);
-      livePatchRef.current = null;
-    },
-    [onContentCommit],
-  );
 
   const dropShadowFilter = formatClipDropShadow(shadow);
 
@@ -140,11 +299,35 @@ export function RenderClipGroup({
     }
   }, []);
 
+  // Imagen activa con el pan/escala en vivo del gesto en curso aplicado.
+  const liveImg = activeImg && {
+    ...activeImg,
+    offsetX: livePan?.offsetX ?? activeImg.offsetX,
+    offsetY: livePan?.offsetY ?? activeImg.offsetY,
+    escala: liveScale ?? activeImg.escala,
+  };
+
   const renderFill = () => {
-    const { contenido } = block;
+    if (contenido.tipo === 'composicion') {
+      if (!contenido.fill) {
+        return (
+          <div className="absolute inset-0 h-full w-full">
+            {renderComposicion?.(contenido.bloques) ?? null}
+          </div>
+        );
+      }
+      return (
+        <CompositionFillWindows
+          bloques={contenido.bloques}
+          fill={contenido.fill.tipo === 'imagen' && liveImg ? liveImg : contenido.fill}
+          groupSize={containerSize}
+          imgNaturalSize={imgNaturalSize}
+        />
+      );
+    }
+
     if (contenido.tipo === 'imagen') {
-      const img = normalizeClipContentImage(contenido);
-      if (!hasMediaSrc(img.url)) {
+      if (!liveImg || !hasMediaSrc(liveImg.url)) {
         return (
           <div
             style={{
@@ -164,16 +347,11 @@ export function RenderClipGroup({
           </div>
         );
       }
-
-      const offsetX = livePan?.offsetX ?? img.offsetX;
-      const offsetY = livePan?.offsetY ?? img.offsetY;
-      const escala = liveScale ?? img.escala;
-
       return (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={img.url}
-          alt={img.alt ?? ''}
+          src={liveImg.url}
+          alt={liveImg.alt ?? ''}
           draggable={false}
           onLoad={handleImageLoad}
           style={getClipImageStyle(
@@ -181,10 +359,10 @@ export function RenderClipGroup({
             imgNaturalSize.h,
             containerSize.w,
             containerSize.h,
-            escala,
-            offsetX,
-            offsetY,
-            img.ajuste,
+            liveImg.escala,
+            liveImg.offsetX,
+            liveImg.offsetY,
+            liveImg.ajuste,
             {
               pointerEvents: imagePanActive ? 'auto' : 'none',
               cursor: imagePanActive ? 'grab' : undefined,
@@ -194,6 +372,7 @@ export function RenderClipGroup({
         />
       );
     }
+
     return (
       <div
         style={{
@@ -207,31 +386,29 @@ export function RenderClipGroup({
 
   const handleImagePointerDown = useCallback(
     (e: ReactPointerEvent) => {
-      if (!imagePanActive || block.contenido.tipo !== 'imagen' || !onContentCommit) return;
+      if (!imagePanActive || !activeImg) return;
       e.stopPropagation();
       e.preventDefault();
-      const img = normalizeClipContentImage(block.contenido);
       dragRef.current = {
         x: e.clientX,
         y: e.clientY,
-        ox: img.offsetX,
-        oy: img.offsetY,
+        ox: activeImg.offsetX,
+        oy: activeImg.offsetY,
       };
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [imagePanActive, block.contenido, onContentCommit],
+    [imagePanActive, activeImg],
   );
 
   const handleImagePointerMove = useCallback(
     (e: ReactPointerEvent) => {
-      if (!dragRef.current || block.contenido.tipo !== 'imagen') return;
+      if (!dragRef.current || !activeImg) return;
       const host = containerRef.current;
       if (!host) return;
       const rect = host.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
 
-      const img = normalizeClipContentImage(block.contenido);
-      const escala = liveScale ?? img.escala;
+      const escala = liveScale ?? activeImg.escala;
       const dxPct = ((e.clientX - dragRef.current.x) / rect.width) * 100;
       const dyPct = ((e.clientY - dragRef.current.y) / rect.height) * 100;
 
@@ -241,34 +418,25 @@ export function RenderClipGroup({
         rect.width,
         rect.height,
         escala,
-        img.ajuste,
+        activeImg.ajuste,
       );
-      const clamped = clampClipImageOffsetPct(
-        dragRef.current.ox + dxPct,
-        dragRef.current.oy + dyPct,
-        rect.width,
-        rect.height,
-        maxPanX,
-        maxPanY,
+      setLivePan(
+        clampClipImageOffsetPct(
+          dragRef.current.ox + dxPct,
+          dragRef.current.oy + dyPct,
+          rect.width,
+          rect.height,
+          maxPanX,
+          maxPanY,
+        ),
       );
-
-      livePatchRef.current = {
-        offsetX: clamped.offsetX,
-        offsetY: clamped.offsetY,
-      };
-      setLivePan({
-        offsetX: clamped.offsetX,
-        offsetY: clamped.offsetY,
-      });
     },
-    [block.contenido, imgNaturalSize, liveScale],
+    [activeImg, imgNaturalSize, liveScale],
   );
 
   const handleImagePointerUp = useCallback(
     (e: ReactPointerEvent) => {
-      if (dragRef.current && livePatchRef.current) {
-        commitPatch(livePatchRef.current);
-      }
+      if (dragRef.current && livePan) commitImg?.(livePan);
       dragRef.current = null;
       setLivePan(null);
       try {
@@ -277,49 +445,47 @@ export function RenderClipGroup({
         /* noop */
       }
     },
-    [commitPatch],
+    [commitImg, livePan],
   );
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      if (!imagePanActive || block.contenido.tipo !== 'imagen' || !onContentCommit) return;
+      if (!imagePanActive || !activeImg) return;
       e.stopPropagation();
       e.preventDefault();
-      const img = normalizeClipContentImage(block.contenido);
       const delta = e.deltaY > 0 ? -0.05 : 0.05;
-      const next = Math.max(0.25, Math.min(4, img.escala + delta));
+      const next = Math.max(0.25, Math.min(4, activeImg.escala + delta));
       setLiveScale(next);
       if (wheelTimerRef.current) clearTimeout(wheelTimerRef.current);
       wheelTimerRef.current = setTimeout(() => {
         const host = containerRef.current;
-        if (!host || block.contenido.tipo !== 'imagen') {
-          commitPatch({ escala: next });
+        if (!host) {
+          commitImg?.({ escala: next });
           setLiveScale(null);
           return;
         }
         const rect = host.getBoundingClientRect();
-        const img = normalizeClipContentImage(block.contenido);
         const { maxPanX, maxPanY } = computeClipImagePanClamp(
           imgNaturalSize.w,
           imgNaturalSize.h,
           rect.width,
           rect.height,
           next,
-          img.ajuste,
+          activeImg.ajuste,
         );
         const clamped = clampClipImageOffsetPct(
-          img.offsetX,
-          img.offsetY,
+          activeImg.offsetX,
+          activeImg.offsetY,
           rect.width,
           rect.height,
           maxPanX,
           maxPanY,
         );
-        commitPatch({ escala: next, offsetX: clamped.offsetX, offsetY: clamped.offsetY });
+        commitImg?.({ escala: next, ...clamped });
         setLiveScale(null);
       }, 200);
     },
-    [imagePanActive, block.contenido, onContentCommit, commitPatch, imgNaturalSize],
+    [imagePanActive, activeImg, commitImg, imgNaturalSize],
   );
 
   const handleShapeCommit = useCallback(
@@ -374,8 +540,30 @@ export function RenderClipGroup({
               style={{
                 outline: innerEdit ? '2px dashed rgba(249,115,22,0.85)' : undefined,
                 outlineOffset: innerEdit ? 2 : undefined,
+                cursor: imagePanActive
+                  ? dragRef.current
+                    ? 'grabbing'
+                    : 'grab'
+                  : undefined,
               }}
             >
+              {/* Sonda para medir el tamaño natural del relleno compartido. */}
+              {isCompFillImage && imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageUrl}
+                  alt=""
+                  aria-hidden
+                  onLoad={handleImageLoad}
+                  style={{
+                    position: 'absolute',
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: 'none',
+                  }}
+                />
+              ) : null}
               {renderFill()}
             </div>
           </div>

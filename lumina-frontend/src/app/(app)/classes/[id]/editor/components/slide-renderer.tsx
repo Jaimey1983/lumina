@@ -13,7 +13,7 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Copy, Pencil, Lock, LockOpen } from 'lucide-react';
+import { Trash2, Copy, Pencil, Lock, LockOpen, Ungroup } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
 
@@ -39,7 +39,6 @@ import type {
   CodeBlock,
   ColumnsBlock,
   ClipGroupBlock,
-  ClipContentImage,
   DividerBlock,
   FlipCardsWidget,
   FormaBlock,
@@ -1654,6 +1653,7 @@ interface BlockNodeProps {
   clipGroupInnerEditId?: string | null;
   onClipGroupInnerEditChange?: (blockId: string | null) => void;
   onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
+  onUngroupClipGroup?: (blockId: string) => void;
   isLiveDragging?: boolean;
   rotacion?: number;
   onRotate?: (blockId: string, angle: number) => void;
@@ -1721,6 +1721,7 @@ function BlockNode({
   clipGroupInnerEditId = null,
   onClipGroupInnerEditChange,
   onClipGroupChange,
+  onUngroupClipGroup,
   isLiveDragging = false,
   rotacion,
   onRotate,
@@ -1752,6 +1753,7 @@ function BlockNode({
       !!onDuplicateBlock ||
       !!onCopyBlock ||
       !!onToggleCanvasLock ||
+      !!onUngroupClipGroup ||
       block.tipo === 'popup');
 
   const popupOverlayEditing =
@@ -1811,20 +1813,60 @@ function BlockNode({
             editorMode={editorMode}
             isSelected={isSelected}
             innerEdit={clipInnerEdit}
+            renderComposicion={(bloques) => (
+              <SlideRenderer
+                slide={{
+                  id: `${slideId}-clip-${blockId}`,
+                  order: 0,
+                  type: 'CONTENT',
+                  title: '',
+                  bloques,
+                  content: null,
+                }}
+                modo="viewer"
+                viewerFill
+                variant={variant}
+                liveSocket={liveSocket}
+                torneoSocket={torneoSocket}
+                viewerStudentId={viewerStudentId}
+                viewerStudentName={viewerStudentName}
+                viewerClassId={viewerClassId}
+                isThumbnail={isThumbnail}
+                className="h-full w-full"
+              />
+            )}
             onEnterInnerEdit={
-              editorMode && block.contenido.tipo === 'imagen'
+              editorMode &&
+              (block.contenido.tipo === 'imagen' ||
+                (block.contenido.tipo === 'composicion' &&
+                  block.contenido.fill?.tipo === 'imagen'))
                 ? () => onClipGroupInnerEditChange?.(blockId)
                 : undefined
             }
             onContentCommit={
               onClipGroupChange && block.contenido.tipo === 'imagen'
                 ? (patch) => {
+                    const c = block.contenido;
+                    if (c.tipo !== 'imagen') return;
                     onClipGroupChange(blockId, {
                       ...block,
-                      contenido: {
-                        ...block.contenido,
-                        ...patch,
-                      } as ClipContentImage,
+                      contenido: { ...c, ...patch },
+                    });
+                  }
+                : undefined
+            }
+            onFillCommit={
+              onClipGroupChange &&
+              block.contenido.tipo === 'composicion' &&
+              block.contenido.fill?.tipo === 'imagen'
+                ? (patch) => {
+                    const c = block.contenido;
+                    if (c.tipo !== 'composicion' || c.fill?.tipo !== 'imagen') {
+                      return;
+                    }
+                    onClipGroupChange(blockId, {
+                      ...block,
+                      contenido: { ...c, fill: { ...c.fill, ...patch } },
                     });
                   }
                 : undefined
@@ -2215,6 +2257,22 @@ function BlockNode({
           <Copy className="size-3.5" />
         </button>
       )}
+      {!!onUngroupClipGroup &&
+        block.tipo === 'clip-group' &&
+        block.contenido.tipo === 'composicion' && (
+          <button
+            type="button"
+            aria-label="Desagrupar máscara"
+            title="Desagrupar máscara — devuelve los elementos al lienzo"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUngroupClipGroup(blockId);
+            }}
+            className="flex size-7 items-center justify-center rounded-lg p-1.5 text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]"
+          >
+            <Ungroup className="size-3.5" />
+          </button>
+        )}
       {!!onRemoveBlock && (
         <button
           type="button"
@@ -2325,6 +2383,8 @@ export interface SlideRendererProps {
   clipGroupInnerEditId?: string | null;
   onClipGroupInnerEditChange?: (blockId: string | null) => void;
   onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
+  /** Desagrupa un `clip-group` de composición (reemplaza el bloque por sus hijos). */
+  onUngroupClipGroup?: (blockId: string) => void;
 }
 
 export function SlideRenderer({
@@ -2378,6 +2438,7 @@ export function SlideRenderer({
   clipGroupInnerEditId = null,
   onClipGroupInnerEditChange,
   onClipGroupChange,
+  onUngroupClipGroup,
 }: SlideRendererProps) {
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
   const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
@@ -2790,6 +2851,7 @@ export function SlideRenderer({
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={onClipGroupInnerEditChange}
             onClipGroupChange={editorMode ? onClipGroupChange : undefined}
+            onUngroupClipGroup={editorMode ? onUngroupClipGroup : undefined}
             isLiveDragging={draggingBlockId === blockId}
           />
         );

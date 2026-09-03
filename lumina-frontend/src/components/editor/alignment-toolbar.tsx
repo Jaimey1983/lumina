@@ -2,10 +2,10 @@
 
 import { Block } from '@/types/slide.types';
 import { toast } from 'sonner';
+import { Scissors } from 'lucide-react';
 import {
   getBlockPos,
   isBlockCanvasLocked,
-  isBlockCanvasPositionable,
   withClampedPosition,
   withClampedPositionChecked,
 } from '@/hooks/use-block-drag';
@@ -14,12 +14,19 @@ interface AlignmentToolbarProps {
   selectedIds: string[];
   bloques: Block[];
   onApplyBloques: (next: Block[]) => Promise<boolean>;
+  /**
+   * Envuelve la selección en un `clip-group` de composición (máscara de
+   * recorte sobre el grupo como capa única). La forma inicial es un
+   * rectángulo; se edita luego desde el panel de propiedades.
+   */
+  onGroupIntoClipMask?: () => void;
 }
 
 export function AlignmentToolbar({
   selectedIds,
   bloques,
   onApplyBloques,
+  onGroupIntoClipMask,
 }: AlignmentToolbarProps) {
   if (selectedIds.length < 2) return null;
 
@@ -282,6 +289,20 @@ export function AlignmentToolbar({
           </svg>
         </button>
       </div>
+
+      {onGroupIntoClipMask && (
+        <>
+          <div className="h-4 w-px bg-neutral-200" />
+          <button
+            onClick={() => onGroupIntoClipMask()}
+            className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-neutral-600 hover:bg-neutral-100/80 active:scale-95 transition-all"
+            title="Recortar la selección con una máscara (grupo como capa única)"
+          >
+            <Scissors className="h-4 w-4" />
+            <span className="text-xs font-medium">Máscara</span>
+          </button>
+        </>
+      )}
     </div>
   );
 }

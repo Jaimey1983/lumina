@@ -965,10 +965,40 @@ export interface ClipContentGradient {
   direccion?: number;
 }
 
-export type ClipContent =
+/** Relleno compartido de una composición (no lleva `tipo: 'composicion'`). */
+export type ClipCompositionFill =
   | ClipContentImage
   | ClipContentColor
   | ClipContentGradient;
+
+/**
+ * Contenido = una composición de bloques recortada como una sola capa
+ * (clipping mask sobre grupo, estilo Illustrator/Figma). El `clipShape` del
+ * `clip-group` recorta el resultado visual combinado de todos los `bloques`,
+ * no cada uno por separado.
+ *
+ * Coordenadas de los hijos: `x`/`y`/`ancho`/`alto` (y `marco` en actividades)
+ * van en **% relativo al bbox del `clip-group`** (0–100), no al lienzo. Al
+ * desagrupar se re-basan a coordenadas absolutas de lienzo.
+ */
+export interface ClipContentComposicion {
+  tipo: 'composicion';
+  bloques: Block[];
+  /**
+   * Relleno único revelado a través de la silueta combinada de los `bloques`
+   * (efecto "una imagen repartida entre todos los elementos", igual que la
+   * imagen dentro de las letras de una máscara de texto). Cada bloque muestra
+   * su porción del mismo relleno, alineada al bbox del grupo. Ausente = cada
+   * bloque muestra su propio contenido.
+   */
+  fill?: ClipCompositionFill;
+}
+
+export type ClipContent =
+  | ClipContentImage
+  | ClipContentColor
+  | ClipContentGradient
+  | ClipContentComposicion;
 
 export interface ClipBorder {
   color?: string;

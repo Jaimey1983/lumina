@@ -226,7 +226,22 @@ export function normalizeClipGroupBlock(block: ClipGroupBlock): ClipGroupBlock {
   const contenido =
     block.contenido.tipo === 'imagen'
       ? normalizeClipContentImage(block.contenido)
-      : block.contenido;
+      : block.contenido.tipo === 'composicion'
+        ? {
+            ...block.contenido,
+            bloques: Array.isArray(block.contenido.bloques)
+              ? block.contenido.bloques
+              : [],
+            ...(block.contenido.fill
+              ? {
+                  fill:
+                    block.contenido.fill.tipo === 'imagen'
+                      ? normalizeClipContentImage(block.contenido.fill)
+                      : block.contenido.fill,
+                }
+              : {}),
+          }
+        : block.contenido;
 
   return {
     ...block,
@@ -515,6 +530,9 @@ export function clipContentBackground(content: ClipContent): string {
       const dir = content.direccion ?? 180;
       return `linear-gradient(${dir}deg, ${content.inicio}, ${content.fin})`;
     }
+    case 'composicion':
+      // La composición se pinta con un SlideRenderer anidado, no con background.
+      return 'transparent';
     default:
       return '#94a3b8';
   }
