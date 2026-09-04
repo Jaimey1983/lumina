@@ -7,6 +7,10 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
+import {
+  GenerateActivityDto,
+  type AiActivityType,
+} from './dto/generate-activity.dto';
 import { StudentFeedbackDto } from './dto/student-feedback.dto';
 import { ClassSummaryDto } from './dto/class-summary.dto';
 import { ContentAssistantDto } from './dto/content-assistant.dto';
@@ -118,7 +122,7 @@ Devuelve un objeto JSON con la estructura:
 }
 
 Para TrueFalse, options debe ser ["Verdadero", "Falso"] con correctIndex 0 o 1.
-Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el espacio con "____".`;
+Para FillInTheBlanks, marca cada hueco con "____" en question y pon las respuestas en options, en el mismo orden.`;
 
     const parsed = await this.completeParsed(userId, system, user);
     const questions = parsed['questions'];
@@ -127,6 +131,49 @@ Para FillInTheBlanks, options es [] y correctIndex es -1; incluye en question el
       type,
       count: qList.length,
       questions: qList,
+    };
+  }
+
+  // ── 1b. Generar actividad Lumina tipada ────────────────────
+
+  async generateActivity(
+    dto: GenerateActivityDto,
+    userId: string,
+    userRole: string,
+  ) {
+    assertAiStaff(userRole);
+    const count = dto.count ?? defaultActivityCount(dto.type);
+    const spec = ACTIVITY_GENERATION_SPECS[dto.type];
+
+    const system = `Eres un asistente educativo experto en diseñar actividades interactivas para el aula.
+Responde SIEMPRE en español. Devuelve ÚNICAMENTE JSON válido con el objeto de la actividad.
+No envuelvas el resultado en { "activity": ... } ni agregues texto fuera del JSON.`;
+
+    const user = `Genera una actividad Lumina de tipo "${dto.type}" basada en este tema o texto:
+
+"${dto.text}"
+
+${spec.instruccion(count)}
+
+El JSON debe cumplir EXACTAMENTE este esquema:
+${spec.schema}
+
+Reglas:
+- Usa ids cortos y únicos (q-0, op-0-1, b1, i1, z1, par-1, s1).
+- Contenido pedagógico, claro y adecuado para clase.
+- No inventes URLs de imágenes.
+- tipo debe ser exactamente "${dto.type}".`;
+
+    const parsed = await this.callLlmJson(userId, system, user);
+    const nested = parsed['activity'];
+    const activity =
+      nested && typeof nested === 'object' && !Array.isArray(nested)
+        ? (nested as Record<string, unknown>)
+        : parsed;
+
+    return {
+      tipo: dto.type,
+      activity: { ...activity, tipo: dto.type },
     };
   }
 
@@ -629,3 +676,121 @@ Si pide eliminar slides, renumera los restantes desde 1.`;
     return { structure, instruction: dto.instruction };
   }
 }
+
+function defaultActivityCount(type: AiActivityType): number {
+  switch (type) {
+    case 'quiz_multiple':
+      return 5;
+    case 'verdadero_falso':
+    case 'short_answer':
+      return 1;
+    case 'completar_blancos':
+      return 4;
+    case 'arrastrar_soltar':
+      return 6;
+    case 'emparejar':
+      return 4;
+    case 'ordenar_pasos':
+      return 5;
+  }
+}
+
+const ACTIVITY_GENERATION_SPECS: Record<
+  AiActivityType,
+  { instruccion: (count: number) => string; schema: string }
+> = {
+  quiz_multiple: {
+    instruccion: (count) =>
+      `Crea un quiz de ${count} pregunta(s) de opción múltiple. Cada pregunta tiene 4 opciones y exactamente una correcta.`,
+    schema: `{
+  "tipo": "quiz_multiple",
+  "preguntas": [
+    {
+      "id": "q-0",
+      "texto": "pregunta",
+      "opciones": [
+        { "id": "op-0-0", "texto": "A", "esCorrecta": true },
+        { "id": "op-0-1", "texto": "B", "esCorrecta": false },
+        { "id": "op-0-2", "texto": "C", "esCorrecta": false },
+        { "id": "op-0-3", "texto": "D", "esCorrecta": false }
+      ],
+      "puntos": 10,
+      "retroalimentacion": { "explicacion": "por qué es correcta", "mostrarExplicacion": true }
+    }
+  ],
+  "deliveryMode": "AUTONOMOUS",
+  "layoutVariant": "classic-list"
+}`,
+  },
+  verdadero_falso: {
+    instruccion: () =>
+      'Crea UNA afirmación evaluable de verdadero o falso, no ambigua.',
+    schema: `{
+  "tipo": "verdadero_falso",
+  "afirmacion": "afirmación completa",
+  "respuestaCorrecta": true,
+  "puntos": 5,
+  "retroalimentacion": { "explicacion": "por qué es verdadero o falso", "mostrarExplicacion": true }
+}`,
+  },
+  completar_blancos: {
+    instruccion: (count) =>
+      `Crea UN texto coherente con exactamente ${count} hueco(s). Cada hueco usa el marcador {{blank:id}} y tiene su respuesta en blancos[].`,
+    schema: `{
+  "tipo": "completar_blancos",
+  "texto": "El {{blank:b1}} es el órgano que bombea la sangre.",
+  "blancos": [
+    { "id": "b1", "respuesta": "corazón", "ignorarMayusculas": true }
+  ],
+  "puntos": 10,
+  "retroalimentacion": { "explicacion": "breve", "mostrarExplicacion": true }
+}`,
+  },
+  short_answer: {
+    instruccion: () =>
+      'Crea UNA pregunta de respuesta corta con la respuesta esperada y una pista opcional.',
+    schema: `{
+  "tipo": "short_answer",
+  "question": "pregunta",
+  "expectedAnswer": "respuesta breve",
+  "caseSensitive": false,
+  "maxLength": 200,
+  "hint": "pista opcional"
+}`,
+  },
+  arrastrar_soltar: {
+    instruccion: (count) =>
+      `Crea una actividad de arrastrar y soltar con ${count} elementos y 2 o 3 zonas. Cada item debe pertenecer a exactamente una zona.`,
+    schema: `{
+  "tipo": "arrastrar_soltar",
+  "instruccion": "Arrastra cada elemento a la categoría correcta.",
+  "items": [{ "id": "i1", "texto": "elemento" }],
+  "zonas": [{ "id": "z1", "etiqueta": "categoría", "itemsCorrectos": ["i1"] }],
+  "puntos": 10
+}`,
+  },
+  emparejar: {
+    instruccion: (count) =>
+      `Crea ${count} pares concepto-definición (o término-ejemplo) para emparejar.`,
+    schema: `{
+  "tipo": "emparejar",
+  "instruccion": "Empareja cada concepto con su definición.",
+  "pares": [
+    { "id": "par-1", "izquierda": { "texto": "concepto" }, "derecha": { "texto": "definición" } }
+  ],
+  "puntos": 10
+}`,
+  },
+  ordenar_pasos: {
+    instruccion: (count) =>
+      `Crea ${count} pasos de un proceso en el orden correcto. ordenCorrecto es 1-based.`,
+    schema: `{
+  "tipo": "ordenar_pasos",
+  "instruccion": "Ordena los pasos del proceso.",
+  "pasos": [
+    { "id": "s1", "contenido": "primer paso", "ordenCorrecto": 1 }
+  ],
+  "puntos": 10
+}`,
+  },
+};

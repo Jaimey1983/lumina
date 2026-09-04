@@ -29,6 +29,7 @@ import { normalizeCarouselWidget } from '@/components/widgets/carousel/carousel-
 import { normalizeClickRevealWidget } from '@/components/widgets/click-reveal/click-reveal-config';
 import { normalizeTimelineWidget } from '@/components/widgets/timeline/timeline-config';
 import { normalizeClipGroupBlock } from '@/lib/clip-path';
+import { normalizeBackground } from '@/lib/slide-background';
 import { normalizeGraficoBlock } from '@/components/graficos/grafico-defaults';
 import { normalizeDiagramaBlock } from '@/components/diagramas/diagrama-defaults';
 
@@ -108,7 +109,7 @@ function resolveTransicion(c: Record<string, unknown>): TransicionSlide | undefi
 function resolveFondo(c: Record<string, unknown>): Background | undefined {
   const f = c.fondo;
   if (f && typeof f === 'object' && !Array.isArray(f) && 'tipo' in f) {
-    return f as Background;
+    return normalizeBackground(f) ?? DEFAULT_FONDO;
   }
   return DEFAULT_FONDO;
 }

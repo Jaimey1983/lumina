@@ -40,7 +40,7 @@ const ITEMS: RailItem[] = [
   { id: 'elementos',   label: 'Elementos',   Icon: Shapes },
   { id: 'widgets', label: 'Widgets', Icon: Boxes },
   { id: 'layout',      label: 'Layout',      Icon: LayoutTemplate },
-  { id: 'fondo',       label: 'Fondo',       Icon: Palette },
+  { id: 'fondo',       label: 'Diseño',      Icon: Palette },
   { id: 'ia',          label: 'IA',          Icon: Sparkles },
   { id: 'paginas',     label: 'Páginas',     Icon: Layers },
 ];

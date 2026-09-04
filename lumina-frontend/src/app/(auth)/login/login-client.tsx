@@ -62,8 +62,8 @@ export function LoginClient() {
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-1.5">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          ¡Bienvenido a Lumina! <span aria-hidden>👋</span>
+        <h1 className="text-3xl font-bold tracking-tight text-[#2563EB]">
+          ¡Bienvenido a Lumina!
         </h1>
         <p className="text-sm text-muted-foreground">
           Inicia sesión en tu cuenta para continuar.

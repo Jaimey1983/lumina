@@ -283,7 +283,7 @@ export function DiagramaProperties({
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="text-[11px] leading-tight truncate">{label}</span>
+                <span className="min-w-0 text-[11px] leading-tight break-words">{label}</span>
               </button>
             );
           })}

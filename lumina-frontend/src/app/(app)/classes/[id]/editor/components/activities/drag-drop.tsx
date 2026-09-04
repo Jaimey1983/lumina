@@ -33,7 +33,7 @@ interface Props {
 
 function EditorView({ actividad }: { actividad: DragDrop }) {
   return (
-    <div className="space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
+    <div className="@container/dd space-y-4 rounded-lg border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
       <div className="flex items-center gap-2">
         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
           Arrastrar y soltar
@@ -47,7 +47,7 @@ function EditorView({ actividad }: { actividad: DragDrop }) {
 
       <p className="text-sm">{actividad.instruccion}</p>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 @lg/dd:grid-cols-2">
         {/* Items column */}
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
@@ -462,7 +462,7 @@ export function DragDropActivityEditor({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-2.5 pr-1">
+      <div className="@container/dd min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden p-2.5 pr-1">
         <div className="space-y-1">
           <Label className="text-[11px] font-medium">Instrucción</Label>
           <Input
@@ -474,7 +474,7 @@ export function DragDropActivityEditor({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 @lg/dd:grid-cols-2">
           <div className="space-y-2">
             <Label className="text-[11px] font-medium">Elementos</Label>
             <div className="space-y-1.5">

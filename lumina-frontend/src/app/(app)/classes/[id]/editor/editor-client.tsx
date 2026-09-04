@@ -14,13 +14,12 @@ import {
   Lock,
   LockOpen,
   Monitor,
+  MoreHorizontal,
   Palette,
-  Redo2,
   Ruler,
   Save,
+  Settings2,
   Share2,
-  Timer,
-  Undo2,
   Users,
   Zap,
   Trophy,
@@ -96,6 +95,7 @@ import { createDefaultEmparejar } from '@/lib/emparejar-defaults';
 import { createDefaultGlobos } from '@/lib/globos-defaults';
 import { createDefaultTopo } from '@/lib/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@/lib/historia-ramificada-defaults';
+import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
 import {
   BLOCK_FALLBACKS,
   parseClassModoEntrega,
@@ -152,6 +152,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogBody,
@@ -428,7 +436,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
   const [guidesVisible,      setGuidesVisible]      = useState(true);
   const [canvasZoom,         setCanvasZoom]         = useState(CANVAS_ZOOM_DEFAULT);
-  const [canvasHistory,      setCanvasHistory]      = useState({ canUndo: false, canRedo: false });
   const [copiedBlock,        setCopiedBlock]        = useState<Block | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
 
@@ -1042,7 +1049,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     const c = getSlideContentRecord(activeSlide as ApiSlide);
     const bloques = Array.isArray(c.bloques) ? (c.bloques as Block[]) : [];
     const actBlock = bloques.find((b) => b.tipo === 'actividad');
-    return actBlock?.id ?? '';
+    return (actBlock as { id?: string })?.id ?? '';
   }, [activeSlide]);
   const activeSlideHasActivity = !!activeActivity;
 
@@ -1895,21 +1902,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     (activityContent: Record<string, unknown>) => {
       const activity = activityContent as unknown as Activity;
       const block: Block = { tipo: 'actividad', actividad: activity };
-      const firstPregunta = Array.isArray(activityContent.preguntas)
-        ? (activityContent.preguntas[0] as { texto?: unknown } | undefined)
-        : undefined;
-      const preguntaTexto =
-        typeof firstPregunta?.texto === 'string'
-          ? firstPregunta.texto
-          : typeof activityContent.pregunta === 'string'
-            ? activityContent.pregunta
-            : '';
-      const title =
-        preguntaTexto.trim()
-          ? preguntaTexto.trim().slice(0, 60)
-          : typeof activityContent.afirmacion === 'string' && activityContent.afirmacion.trim()
-            ? activityContent.afirmacion.trim().slice(0, 60)
-            : 'Actividad (IA)';
+      const title = activityTitleFromContent(activityContent);
 
       if (activeSlide) {
         const c = getSlideContentRecord(activeSlide as ApiSlide);
@@ -2186,10 +2179,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         {/* ── TOPBAR Lumina 2.0 ── */}
         <header
           ref={editorHeaderRef}
-          className="flex h-14 shrink-0 items-center gap-3 border-b border-[#1d4ed8] bg-[#2563EB] px-4"
+          className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-b border-[#1d4ed8] bg-[#2563EB] px-4"
         >
-          {/* Izquierda: marca + título + código */}
-          <div className="flex min-w-0 shrink-0 items-center gap-3">
+          {/* ── Izquierda: marca + título + código + misión ── */}
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
               <img
                 src="/LM-ffffff.svg"
@@ -2197,11 +2190,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 className="h-8 w-auto shrink-0"
                 draggable={false}
               />
-              <span className="text-[1rem] font-extrabold text-white">Lumina</span>
+              <span className="hidden text-[1rem] font-extrabold text-white lg:inline">
+                Lumina
+              </span>
             </Link>
-            <div className="h-5 w-px shrink-0 bg-white/20" aria-hidden />
+            <div className="hidden h-5 w-px shrink-0 bg-white/20 sm:block" aria-hidden />
             {isLoading ? (
-              <Skeleton className="h-4 w-48 max-w-[12rem]" />
+              <Skeleton className="h-4 w-40 max-w-[12rem]" />
             ) : (
               <>
                 <input
@@ -2209,10 +2204,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   value={cls?.title ?? 'Editor'}
                   title={desempeno ? desempeno.enunciado : (cls?.title ?? undefined)}
                   aria-label="Título de la clase"
-                  className="w-48 max-w-[12rem] truncate border-none bg-transparent text-sm font-bold text-white outline-none"
+                  className="min-w-0 flex-1 truncate border-none bg-transparent text-sm font-bold text-white outline-none"
                 />
                 {cls?.codigo?.trim() ? (
-                  <span className="shrink-0 rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold text-white">
+                  <span className="hidden shrink-0 rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold text-white sm:inline">
                     {cls.codigo.toUpperCase().startsWith('LUM')
                       ? cls.codigo.toUpperCase()
                       : `LUM-${cls.codigo.toUpperCase()}`}
@@ -2221,7 +2216,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 {cls?.narrativa?.nombreMision ? (
                   <span
                     title={`Misión: ${cls.narrativa.nombreMision}`}
-                    className="shrink-0 flex items-center gap-1 rounded-lg bg-amber-400/20 px-2 py-0.5 text-xs font-semibold text-amber-100 border border-amber-400/40"
+                    className="hidden shrink-0 items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-400/20 px-2 py-0.5 text-xs font-semibold text-amber-100 xl:flex"
                   >
                     🎯 {cls.narrativa.nombreMision}
                   </span>
@@ -2230,211 +2225,236 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             )}
           </div>
 
-          {/* Centro: deshacer / rehacer + autoguardado */}
-          <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
-            <button
-              type="button"
-              title="Deshacer"
-              aria-label="Deshacer"
-              disabled={!canvasHistory.canUndo}
-              className={cn(
-                'rounded-lg p-1.5 transition-colors',
-                canvasHistory.canUndo
-                  ? 'text-white/60 hover:bg-white/15 hover:text-white'
-                  : 'cursor-not-allowed text-white/30',
-              )}
-              onClick={() => {
-                canvasAreaRef.current?.undo();
-              }}
-            >
-              <Undo2 className="size-4 shrink-0" aria-hidden />
-            </button>
-            <button
-              type="button"
-              title="Rehacer"
-              aria-label="Rehacer"
-              disabled={!canvasHistory.canRedo}
-              className={cn(
-                'rounded-lg p-1.5 transition-colors',
-                canvasHistory.canRedo
-                  ? 'text-white/60 hover:bg-white/15 hover:text-white'
-                  : 'cursor-not-allowed text-white/30',
-              )}
-              onClick={() => {
-                canvasAreaRef.current?.redo();
-              }}
-            >
-              <Redo2 className="size-4 shrink-0" aria-hidden />
-            </button>
-            <button
-              type="button"
-              title={guidesVisible ? 'Ocultar guías' : 'Mostrar guías'}
-              aria-label={guidesVisible ? 'Ocultar guías' : 'Mostrar guías'}
-              aria-pressed={guidesVisible}
-              className={cn(
-                'rounded-lg p-1.5 transition-colors',
-                guidesVisible
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/60 hover:bg-white/15 hover:text-white',
-              )}
-              onClick={() => setGuidesVisible((v) => !v)}
-            >
-              <Ruler className="size-4 shrink-0" aria-hidden />
-            </button>
-            <button
-              type="button"
-              title="Guías centrales"
-              aria-label="Añadir o quitar guías centrales"
-              className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
-              onClick={() => canvasAreaRef.current?.toggleCenterGuides()}
-            >
-              <Crosshair className="size-4 shrink-0" aria-hidden />
-            </button>
-            <button
-              type="button"
-              title={activeGrid.activa ? 'Ocultar grilla' : 'Mostrar grilla'}
-              aria-label={activeGrid.activa ? 'Ocultar grilla' : 'Mostrar grilla'}
-              aria-pressed={activeGrid.activa}
-              className={cn(
-                'rounded-lg p-1.5 transition-colors',
-                activeGrid.activa
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/60 hover:bg-white/15 hover:text-white',
-              )}
-              onClick={() => canvasAreaRef.current?.toggleGrid()}
-            >
-              <Grid3x3 className="size-4 shrink-0" aria-hidden />
-            </button>
-            {activeGrid.activa && (
-              <label className="inline-flex items-center gap-1">
-                <span className="sr-only">Tamaño de grilla</span>
-                <select
-                  value={activeGrid.tamanoPx}
-                  title="Tamaño de celda de la grilla"
-                  aria-label="Tamaño de celda de la grilla"
-                  className="h-7 rounded-md border border-white/20 bg-white/10 px-1.5 text-xs text-white outline-none hover:bg-white/15 focus:border-white/40"
-                  onChange={(e) => {
-                    canvasAreaRef.current?.setGridSize(Number(e.target.value));
-                  }}
-                >
-                  {GRID_SIZE_PRESETS.map((px) => (
-                    <option key={px} value={px} className="text-foreground">
-                      {px}px
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <div className="flex items-center gap-0.5" title="Zoom del lienzo (Ctrl + rueda)">
-              <button
-                type="button"
-                title="Alejar"
-                aria-label="Alejar lienzo"
-                className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
-                onClick={() =>
-                  handleCanvasZoomChange(stepCanvasZoom(canvasZoom, -CANVAS_ZOOM_STEP))
-                }
-              >
-                <ZoomOut className="size-4 shrink-0" aria-hidden />
-              </button>
-              <button
-                type="button"
-                title="Restablecer zoom al 100 %"
-                aria-label="Restablecer zoom"
-                className="min-w-[2.75rem] rounded-lg px-1 py-1.5 text-xs tabular-nums text-white/80 hover:bg-white/15 hover:text-white"
-                onClick={() => handleCanvasZoomChange(CANVAS_ZOOM_DEFAULT)}
-              >
-                {formatCanvasZoom(canvasZoom)}
-              </button>
-              <button
-                type="button"
-                title="Acercar"
-                aria-label="Acercar lienzo"
-                className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
-                onClick={() =>
-                  handleCanvasZoomChange(stepCanvasZoom(canvasZoom, CANVAS_ZOOM_STEP))
-                }
-              >
-                <ZoomIn className="size-4 shrink-0" aria-hidden />
-              </button>
-            </div>
-            <div className="h-5 w-px shrink-0 bg-white/20" aria-hidden />
-            <span className="inline-flex items-center gap-1.5 text-xs text-white/60">
-              {saveError ? (
-                <span className="text-destructive">Error al guardar</span>
-              ) : autosaveIsSaving || updateSlide.isPending ? (
-                <>
-                  <Loader2 className="size-3.5 shrink-0 animate-spin text-white/80" aria-hidden />
-                  <span>Guardando…</span>
-                </>
-              ) : autosaveDirty ? (
-                <span>Cambios pendientes…</span>
-              ) : (
-                <>
-                  <Check className="size-3.5 shrink-0 text-white/80" aria-hidden />
-                  <span>Guardado</span>
-                </>
-              )}
-            </span>
-          </div>
+          {/* ── Derecha: lienzo / clase en vivo / configuración / acciones ── */}
+          <div className="flex shrink-0 items-center gap-1.5">
 
-          {/* Derecha: modo, timer, compartir, sesión, pill, utilidades */}
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            {canConfigureLiveTimer ? (
-              <div className="flex flex-wrap items-center gap-1.5">
+            {/* Herramientas de lienzo — solo en edición */}
+            {sortedSlides.length > 0 && !sessionActive ? (
+              <>
                 <div
-                  className="flex rounded-xl border border-white/20 bg-white/10 p-0.5"
-                  role="group"
-                  aria-label="Modo de clase"
+                  className="hidden items-center gap-0.5 md:flex"
+                  title="Zoom del lienzo (Ctrl + rueda)"
                 >
-                  {(
-                    [
-                      { value: 'clase' as const, label: 'clase' },
-                      { value: 'presentacion' as const, label: 'presentacion' },
-                      { value: 'autonomo' as const, label: 'autonomo' },
-                    ] as const
-                  ).map(({ value, label }) => (
+                  <button
+                    type="button"
+                    title="Alejar"
+                    aria-label="Alejar lienzo"
+                    className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+                    onClick={() =>
+                      handleCanvasZoomChange(stepCanvasZoom(canvasZoom, -CANVAS_ZOOM_STEP))
+                    }
+                  >
+                    <ZoomOut className="size-4 shrink-0" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    title="Restablecer zoom al 100 %"
+                    aria-label="Restablecer zoom"
+                    className="min-w-[2.75rem] rounded-lg px-1 py-1.5 text-xs tabular-nums text-white/80 hover:bg-white/15 hover:text-white"
+                    onClick={() => handleCanvasZoomChange(CANVAS_ZOOM_DEFAULT)}
+                  >
+                    {formatCanvasZoom(canvasZoom)}
+                  </button>
+                  <button
+                    type="button"
+                    title="Acercar"
+                    aria-label="Acercar lienzo"
+                    className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+                    onClick={() =>
+                      handleCanvasZoomChange(stepCanvasZoom(canvasZoom, CANVAS_ZOOM_STEP))
+                    }
+                  >
+                    <ZoomIn className="size-4 shrink-0" aria-hidden />
+                  </button>
+                </div>
+
+                <Popover>
+                  <PopoverTrigger asChild>
                     <button
-                      key={value}
                       type="button"
-                      disabled={isLoading || sessionLoading || sessionActive}
-                      onClick={() => void handleModoEntregaChange(value)}
+                      title="Vista del lienzo"
+                      aria-label="Vista del lienzo"
                       className={cn(
-                        'rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors',
-                        modoEntrega === value
-                          ? 'bg-white/20 text-white shadow-sm'
-                          : 'text-white/50 hover:text-white',
-                        (isLoading || sessionLoading || sessionActive) &&
-                          'pointer-events-none opacity-50',
+                        'rounded-lg p-1.5 transition-colors',
+                        guidesVisible || activeGrid.activa
+                          ? 'bg-white/20 text-white'
+                          : 'text-white/60 hover:bg-white/15 hover:text-white',
                       )}
                     >
-                      {label}
+                      <Ruler className="size-4 shrink-0" aria-hidden />
                     </button>
-                  ))}
-                </div>
-                <Timer className="size-4 shrink-0 text-white/60" aria-hidden />
-                <Select
-                  value={String(cls?.timerGlobal ?? 0)}
-                  disabled={timerGlobalSaving || isLoading}
-                  onValueChange={handleTimerGlobalChange}
-                >
-                  <SelectTrigger className="h-8 w-[7.25rem] border-white/20 bg-white/10 text-white text-xs" size="sm">
-                    <SelectValue placeholder="Timer global" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SLIDE_TIMER_GLOBAL_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={String(o.value)} className="text-xs">
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-56 p-1.5">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                      aria-pressed={guidesVisible}
+                      onClick={() => setGuidesVisible((v) => !v)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Ruler className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        Guías
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {guidesVisible ? 'On' : 'Off'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                      onClick={() => canvasAreaRef.current?.toggleCenterGuides()}
+                    >
+                      <Crosshair className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      Guías centrales
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                      aria-pressed={activeGrid.activa}
+                      onClick={() => canvasAreaRef.current?.toggleGrid()}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Grid3x3 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        Grilla
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {activeGrid.activa ? 'On' : 'Off'}
+                      </span>
+                    </button>
+                    {activeGrid.activa ? (
+                      <label className="flex items-center justify-between gap-2 px-2 py-1.5 text-sm">
+                        <span className="text-muted-foreground">Tamaño de celda</span>
+                        <select
+                          value={activeGrid.tamanoPx}
+                          aria-label="Tamaño de celda de la grilla"
+                          className="h-7 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
+                          onChange={(e) => {
+                            canvasAreaRef.current?.setGridSize(Number(e.target.value));
+                          }}
+                        >
+                          {GRID_SIZE_PRESETS.map((px) => (
+                            <option key={px} value={px}>
+                              {px}px
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : null}
+                  </PopoverContent>
+                </Popover>
+              </>
             ) : null}
 
+            {/* Clúster de clase en vivo */}
+            {sessionActive ? (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!activeSlide?.id || !isConnected}
+                  onClick={handleToggleResponsesLocked}
+                  className={cn(
+                    'shrink-0 rounded-xl border-0 text-xs shadow-none',
+                    responsesLocked
+                      ? 'bg-white/90 text-[#DC2626] hover:bg-white/90 hover:text-[#DC2626]'
+                      : 'bg-white/15 text-white hover:bg-white/25',
+                  )}
+                >
+                  {responsesLocked ? (
+                    <Lock className="size-3.5 shrink-0" aria-hidden />
+                  ) : (
+                    <LockOpen className="size-3.5 shrink-0" aria-hidden />
+                  )}
+                  <span className="hidden sm:inline">
+                    {responsesLocked ? 'Desbloquear' : 'Bloquear'}
+                  </span>
+                </Button>
+
+                {!gamificacionActiva ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!sessionId || !isConnected}
+                    onClick={iniciarGamificacion}
+                    title="Activar gamificación"
+                    className="shrink-0 rounded-xl border border-amber-300/40 bg-amber-400/20 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-400/30"
+                  >
+                    <Trophy className="size-3.5 shrink-0" aria-hidden />
+                    <span className="hidden lg:inline">Activar gamificación</span>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!sessionId || !isConnected}
+                    onClick={() => toggleLeaderboardVisible(!leaderboardVisible)}
+                    className="shrink-0 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 hover:bg-white/20"
+                    title={
+                      leaderboardVisible
+                        ? 'Ocultar ranking a estudiantes'
+                        : 'Mostrar ranking a estudiantes'
+                    }
+                  >
+                    {leaderboardVisible ? (
+                      <Eye className="size-3.5 shrink-0" aria-hidden />
+                    ) : (
+                      <EyeOff className="size-3.5 shrink-0" aria-hidden />
+                    )}
+                    <span className="hidden lg:inline">
+                      Ranking {leaderboardVisible ? 'visible' : 'oculto'}
+                    </span>
+                  </Button>
+                )}
+
+                {showLiveResponsesTopbar ? (
+                  <span
+                    className="hidden shrink-0 items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold tabular-nums text-white lg:inline-flex"
+                    title="Respuestas en este slide vs. estudiantes conectados en la sala"
+                  >
+                    <Users className="size-3.5 shrink-0" aria-hidden />
+                    {liveSlideRespondedCount}/{roomStudentCount} respondieron
+                  </span>
+                ) : null}
+              </>
+            ) : null}
+
+            {/* Autoguardado — compacto (el texto completo vive en el status bar) */}
+            <span
+              className="hidden items-center gap-1.5 text-xs text-white/60 sm:inline-flex"
+              title={
+                saveError
+                  ? 'Error al guardar'
+                  : autosaveIsSaving || updateSlide.isPending
+                    ? 'Guardando…'
+                    : autosaveDirty
+                      ? 'Cambios pendientes'
+                      : 'Todos los cambios guardados'
+              }
+            >
+              {saveError ? (
+                <span className="size-2 shrink-0 rounded-full bg-destructive" aria-hidden />
+              ) : autosaveIsSaving || updateSlide.isPending ? (
+                <Loader2 className="size-3.5 shrink-0 animate-spin text-white/80" aria-hidden />
+              ) : autosaveDirty ? (
+                <span className="size-2 shrink-0 rounded-full bg-white/40" aria-hidden />
+              ) : (
+                <Check className="size-3.5 shrink-0 text-white/80" aria-hidden />
+              )}
+              <span className="hidden lg:inline">
+                {saveError
+                  ? 'Error'
+                  : autosaveIsSaving || updateSlide.isPending
+                    ? 'Guardando…'
+                    : autosaveDirty
+                      ? 'Sin guardar'
+                      : 'Guardado'}
+              </span>
+            </span>
+
+            {/* Estado de conexión en tiempo real */}
             <span
               title={isConnected ? 'Conectado en tiempo real' : 'Sin conexión en tiempo real'}
-              className="flex items-center gap-1.5 text-xs text-white/50"
+              className="flex shrink-0 items-center gap-1.5 text-xs text-white/50"
             >
               <span
                 className={cn(
@@ -2442,19 +2462,88 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   isConnected ? 'bg-green-500' : 'bg-white/30',
                 )}
               />
+              <span className="hidden xl:inline">
+                {isConnected ? 'En vivo' : 'Sin conexión'}
+              </span>
             </span>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => toast.info('Compartir próximamente disponible')}
-              className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
-            >
-              <Share2 className="size-3.5" aria-hidden />
-              Compartir
-            </Button>
+            {/* Configuración de clase (modo + timer) — antes de iniciar */}
+            {canConfigureLiveTimer && !sessionActive ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    title="Configuración de clase"
+                    aria-label="Configuración de clase"
+                    className="rounded-lg p-1.5 text-white/60 hover:bg-white/15 hover:text-white"
+                  >
+                    <Settings2 className="size-4 shrink-0" aria-hidden />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 space-y-3">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground">
+                      Modo de entrega
+                    </p>
+                    <div
+                      className="flex rounded-xl border border-border bg-muted/40 p-0.5"
+                      role="group"
+                      aria-label="Modo de clase"
+                    >
+                      {(
+                        [
+                          { value: 'clase' as const, label: 'Clase' },
+                          { value: 'presentacion' as const, label: 'Presentación' },
+                          { value: 'autonomo' as const, label: 'Autónomo' },
+                        ] as const
+                      ).map(({ value, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          disabled={isLoading || sessionLoading || sessionActive}
+                          onClick={() => void handleModoEntregaChange(value)}
+                          className={cn(
+                            'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors',
+                            modoEntrega === value
+                              ? 'bg-background text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground',
+                            (isLoading || sessionLoading || sessionActive) &&
+                              'pointer-events-none opacity-50',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground">Timer global</p>
+                    <Select
+                      value={String(cls?.timerGlobal ?? 0)}
+                      disabled={timerGlobalSaving || isLoading}
+                      onValueChange={handleTimerGlobalChange}
+                    >
+                      <SelectTrigger className="h-8 w-full text-xs" size="sm">
+                        <SelectValue placeholder="Timer global" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SLIDE_TIMER_GLOBAL_OPTIONS.map((o) => (
+                          <SelectItem
+                            key={o.value}
+                            value={String(o.value)}
+                            className="text-xs"
+                          >
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : null}
 
+            {/* CTA principal: iniciar / finalizar clase */}
             {sessionId === null ? (
               <Button
                 type="button"
@@ -2462,8 +2551,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!classId || sessionLoading}
                 onClick={handleStartSession}
                 className={cn(
-                  'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-[#2563EB] shadow-sm',
-                  'hover:opacity-95 disabled:pointer-events-none disabled:opacity-50',
+                  'shrink-0 rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-[#2563EB] shadow-sm transition-all duration-200',
+                  'hover:bg-emerald-600 hover:text-white hover:shadow-md disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
                 {sessionLoading ? (
@@ -2478,8 +2567,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 disabled={!classId || sessionLoading}
                 onClick={handleEndSession}
                 className={cn(
-                  'rounded-xl bg-white/90 px-4 py-1.5 text-xs font-bold text-[#f87171] shadow-sm',
-                  'hover:opacity-95 disabled:pointer-events-none disabled:opacity-50',
+                  'shrink-0 rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200',
+                  'hover:bg-red-600 hover:text-white hover:shadow-md disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
                 {sessionLoading ? (
@@ -2489,144 +2578,59 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               </Button>
             )}
 
-            {sessionActive ? (
-              <Button
-                type="button"
-                size="sm"
-                disabled={!activeSlide?.id || !isConnected}
-                onClick={handleToggleResponsesLocked}
-                className={cn(
-                  'shrink-0 rounded-xl border-0 text-xs shadow-none',
-                  responsesLocked
-                    ? 'bg-white/90 text-[#DC2626] hover:bg-white/90 hover:text-[#DC2626]'
-                    : 'bg-white/15 text-white hover:bg-white/25',
-                )}
-              >
-                {responsesLocked ? (
-                  <Lock className="size-3.5 shrink-0" aria-hidden />
-                ) : (
-                  <LockOpen className="size-3.5 shrink-0" aria-hidden />
-                )}
-                {responsesLocked ? 'Desbloquear' : 'Bloquear'}
-              </Button>
-            ) : null}
-
-            {sessionActive && !gamificacionActiva ? (
-              <Button
-                type="button"
-                size="sm"
-                disabled={!sessionId || !isConnected}
-                onClick={iniciarGamificacion}
-                className="shrink-0 rounded-xl border border-amber-300/40 bg-amber-400/20 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-400/30"
-              >
-                <Trophy className="size-3.5 shrink-0" aria-hidden />
-                Activar gamificación
-              </Button>
-            ) : null}
-
-            {sessionActive && gamificacionActiva ? (
-              <Button
-                type="button"
-                size="sm"
-                disabled={!sessionId || !isConnected}
-                onClick={() => toggleLeaderboardVisible(!leaderboardVisible)}
-                className="shrink-0 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 hover:bg-white/20"
-                title={
-                  leaderboardVisible
-                    ? 'Ocultar ranking a estudiantes'
-                    : 'Mostrar ranking a estudiantes'
-                }
-              >
-                {leaderboardVisible ? (
-                  <Eye className="size-3.5 shrink-0" aria-hidden />
-                ) : (
-                  <EyeOff className="size-3.5 shrink-0" aria-hidden />
-                )}
-                Ranking {leaderboardVisible ? 'visible' : 'oculto'}
-              </Button>
-            ) : null}
-
-            {showLiveResponsesTopbar ? (
-              <span
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold tabular-nums text-white"
-                title="Respuestas en este slide vs. estudiantes conectados en la sala"
-              >
-                <Users className="size-3.5 shrink-0" aria-hidden />
-                {liveSlideRespondedCount}/{roomStudentCount} respondieron
-              </span>
-            ) : null}
-
-            {sortedSlides.length > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  'rounded-xl border px-3 py-1.5 text-xs font-semibold',
-                  rightPanel === 'themes'
-                    ? 'border-white/40 bg-white/25 text-white'
-                    : 'border-white/20 bg-white/10 text-white/80 hover:bg-white/20',
-                )}
-                onClick={() => toggleRightPanel('themes')}
-                aria-pressed={rightPanel === 'themes'}
-              >
-                <Palette className="size-3.5" />
-                Temas
-              </Button>
-            ) : null}
-
-            {sortedSlides.length > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
-                onClick={() => setPptxModalOpen(true)}
-              >
-                <FileText className="size-3.5" />
-                Importar PPT
-              </Button>
-            ) : null}
-
-            {sortedSlides.length > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
-                onClick={() => {
-                  window.open(`/classes/${classId}/preview`, '_blank');
-                }}
-              >
-                <Eye className="size-3.5" />
-                Vista previa
-              </Button>
-            ) : null}
-
-            {!sessionActive && sortedSlides.length > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
-                onClick={() => setHistorySheetOpen(true)}
-                aria-label="Historial de versiones"
-              >
-                <History className="size-3.5" />
-                Historial
-              </Button>
-            ) : null}
-
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!activeSlide || updateSlide.isPending}
-              className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/20"
-              onClick={handleSave}
-            >
-              <Save className="size-3.5" />
-              {updateSlide.isPending ? 'Guardando…' : 'Guardar'}
-            </Button>
+            {/* Menú "Más" — acciones secundarias */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  title="Más opciones"
+                  aria-label="Más opciones"
+                  className="rounded-lg p-1.5 text-white/70 hover:bg-white/15 hover:text-white"
+                >
+                  <MoreHorizontal className="size-4 shrink-0" aria-hidden />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {sortedSlides.length > 0 ? (
+                  <DropdownMenuItem onClick={() => toggleRightPanel('themes')}>
+                    <Palette className="size-4" />
+                    Temas
+                  </DropdownMenuItem>
+                ) : null}
+                {sortedSlides.length > 0 ? (
+                  <DropdownMenuItem onClick={() => setPptxModalOpen(true)}>
+                    <FileText className="size-4" />
+                    Importar PPT
+                  </DropdownMenuItem>
+                ) : null}
+                {sortedSlides.length > 0 ? (
+                  <DropdownMenuItem
+                    onClick={() => window.open(`/classes/${classId}/preview`, '_blank')}
+                  >
+                    <Eye className="size-4" />
+                    Vista previa
+                  </DropdownMenuItem>
+                ) : null}
+                {!sessionActive && sortedSlides.length > 0 ? (
+                  <DropdownMenuItem onClick={() => setHistorySheetOpen(true)}>
+                    <History className="size-4" />
+                    Historial de versiones
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={!activeSlide || updateSlide.isPending}
+                  onClick={handleSave}
+                >
+                  <Save className="size-4" />
+                  {updateSlide.isPending ? 'Guardando…' : 'Guardar ahora'}
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <Share2 className="size-4" />
+                  Compartir · pronto
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -2733,7 +2737,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onDiagramaChange={handleDiagramaChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}
-              onHistoryStateChange={setCanvasHistory}
               livePanelOpen={rightPanel === 'live'}
               onCopyBlock={setCopiedBlock}
               guidesVisible={guidesVisible}
@@ -2924,10 +2927,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         <DialogContent
           className={cn(
             'flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-5xl flex-col gap-0 overflow-hidden p-0',
-            'border-border bg-[#fff8f3] sm:w-full',
+            'border-border bg-muted/30 sm:w-full',
           )}
         >
-          <DialogHeader className="mb-0 shrink-0 space-y-0 border-b border-border/60 bg-white px-6 py-4 text-start">
+          <DialogHeader className="mb-0 shrink-0 space-y-0 border-b border-border/60 bg-card px-6 py-4 text-start">
             <DialogTitle className="text-lg font-semibold text-foreground">
               Vista previa de la clase
             </DialogTitle>
@@ -2939,7 +2942,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="size-9 shrink-0 rounded-full border-border bg-white shadow-sm hover:border-[#F97316]/40"
+                  className="size-9 shrink-0 rounded-full border-border bg-card shadow-sm hover:border-[#2563EB]/40"
                   disabled={previewResolvedIndex <= 0}
                   aria-label="Diapositiva anterior"
                   onClick={() =>
@@ -2949,10 +2952,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   <ChevronLeft className="size-5" />
                 </Button>
 
-                <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-white shadow-sm">
+                <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
                   {previewHasActivity ? (
                     <span
-                      className="absolute right-2 top-2 z-10 inline-flex items-center rounded-md bg-white/95 px-1.5 py-1 text-[#F97316] shadow-sm ring-1 ring-border/60"
+                      className="absolute right-2 top-2 z-10 inline-flex items-center rounded-md bg-card/95 px-1.5 py-1 text-[#2563EB] shadow-sm ring-1 ring-border/60"
                       title="Incluye actividad"
                     >
                       <Zap className="size-4 shrink-0" aria-hidden />
@@ -2982,7 +2985,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="size-9 shrink-0 rounded-full border-border bg-white shadow-sm hover:border-[#F97316]/40"
+                  className="size-9 shrink-0 rounded-full border-border bg-card shadow-sm hover:border-[#2563EB]/40"
                   disabled={
                     sortedSlides.length === 0 ||
                     previewResolvedIndex >= sortedSlides.length - 1
@@ -3006,7 +3009,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 border-[#F97316]/35 bg-white text-xs text-foreground hover:border-[#F97316]/60 hover:bg-[#fff8f3]"
+                  className="h-8 border-[#2563EB]/35 bg-card text-xs text-foreground hover:border-[#2563EB]/60 hover:bg-[#2563EB]/5"
                   onClick={() => {
                     setPreviewOpen(false);
                     setActiveSlideIndex(previewResolvedIndex);

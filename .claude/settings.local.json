@@ -13,7 +13,9 @@
       "Bash(echo \"EXIT: $?\")",
       "Bash(npx tsc:*)",
       "Bash(npx jest *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx next *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

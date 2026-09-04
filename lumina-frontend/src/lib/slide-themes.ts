@@ -1,6 +1,6 @@
-import type { CSSProperties } from 'react';
-
 import type { Background, SlideTheme } from '@/types/slide.types';
+
+export { backgroundToCssStyle } from '@/lib/slide-background';
 
 /** Id reservado para quitar el tema visual del slide. */
 export const NO_SLIDE_THEME_ID = 'sin_tema';
@@ -112,24 +112,6 @@ export function findSlideThemeById(
 ): SlideTheme | undefined {
   if (!id) return undefined;
   return getPredefinedSlideTheme(id) ?? customThemes.find((t) => t.id === id);
-}
-
-export function backgroundToCssStyle(fondo: Background): CSSProperties {
-  if (fondo.tipo === 'color') {
-    return { backgroundColor: fondo.valor };
-  }
-  if (fondo.tipo === 'gradiente') {
-    const deg = fondo.direccion ?? 180;
-    return {
-      background: `linear-gradient(${deg}deg, ${fondo.inicio}, ${fondo.fin})`,
-    };
-  }
-  return {
-    backgroundImage: `url(${fondo.url})`,
-    backgroundSize: fondo.ajuste === 'contener' ? 'contain' : 'cover',
-    backgroundPosition: fondo.posicion ?? 'center',
-    backgroundRepeat: 'no-repeat',
-  };
 }
 
 /** Parche de `content` al aplicar un tema (solo fondo + temaId; no toca bloques). */

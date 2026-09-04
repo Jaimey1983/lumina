@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { GraduationCap } from 'lucide-react';
+import Image from 'next/image';
+import { Sparkles } from 'lucide-react';
 import { AuthRouteGuard } from './auth-route-guard';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
@@ -11,7 +12,19 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           className="relative hidden w-1/2 overflow-hidden lg:flex xl:w-[58%]"
           aria-hidden
         >
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,#2563EB_0%,#60A5FA_100%)]" />
+          {/* Foto de fondo */}
+          <Image
+            src="/images/auth/lumina_login.jpg"
+            alt=""
+            fill
+            priority
+            sizes="(min-width: 1280px) 58vw, 50vw"
+            className="object-cover"
+          />
+
+          {/* Tinte azul + degradado lateral para legibilidad del texto */}
+          <div className="absolute inset-0 bg-[#2563EB]/30" />
+          <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(30,58,138,0.85)_0%,rgba(30,64,175,0.45)_45%,rgba(37,99,235,0.1)_100%)]" />
 
           {/* Trama de puntos */}
           <svg className="absolute inset-0 h-full w-full text-white opacity-[0.12]">
@@ -37,19 +50,29 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           {/* Contenido */}
           <div className="relative z-10 flex flex-col justify-between p-12 text-white">
             <div className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/25">
-                <GraduationCap className="size-5" strokeWidth={2} />
-              </span>
+              <img
+                src="/lumina-logo-white.svg"
+                alt="Lumina"
+                className="h-7 w-auto"
+              />
               <span className="text-lg font-bold tracking-tight">Lumina</span>
             </div>
 
-            <div className="max-w-md space-y-4">
-              <h2 className="text-3xl font-bold leading-tight">
-                Crea clases interactivas que enganchan.
+            <div className="max-w-lg space-y-6">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider ring-1 ring-white/25">
+                <Sparkles className="size-3.5" strokeWidth={2.5} />
+                Aprender ya no es aburrido
+              </span>
+              <h2
+                className="font-display text-[2.75rem] font-extrabold uppercase leading-[0.95] tracking-tight xl:text-[3.25rem]"
+                style={{ fontFamily: 'var(--font-display), sans-serif' }}
+              >
+                Convierte cada clase en una experiencia
               </h2>
-              <p className="text-white/80">
-                Diseña, presenta y evalúa en un mismo lugar: actividades,
-                gamificación y analítica para tu aula.
+              <p className="max-w-md text-lg leading-relaxed text-white/85">
+                Diseña, presenta y evalúa en un solo lugar. Actividades
+                interactivas, gamificación y analítica en vivo que mantienen a
+                tus estudiantes despiertos.
               </p>
             </div>
 
@@ -63,8 +86,12 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <main className="relative flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-12">
           {/* Logo (solo cuando el panel izquierdo está oculto) */}
           <div className="absolute left-6 top-6 flex items-center gap-2 sm:left-10 sm:top-10 lg:hidden">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
-              <GraduationCap className="size-4" strokeWidth={2} />
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[#2563EB] ring-1 ring-[#2563EB]/20">
+              <img
+                src="/lumina-logo-white.svg"
+                alt="Lumina"
+                className="h-4 w-auto"
+              />
             </span>
             <span className="text-base font-bold text-foreground">Lumina</span>
           </div>

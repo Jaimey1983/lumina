@@ -41,9 +41,9 @@ export interface TemplatesPanelProps {
   isInserting?: boolean;
 }
 
-const THUMB_STROKE = '#ccc';
+const THUMB_STROKE = 'var(--color-border)';
 const THUMB_DASH = '4 2';
-const THUMB_TEXT = '#999';
+const THUMB_TEXT = 'var(--color-muted-foreground)';
 
 // ─── Thumbnails (SVG, 16:9 — estilo layout PowerPoint) ───────────────────────
 
@@ -55,7 +55,7 @@ function ThumbBlank({ className }: { className?: string }) {
         y="4"
         width="152"
         height="82"
-        fill="#fff"
+        fill="var(--color-card)"
         stroke={THUMB_STROKE}
         strokeWidth="1"
         strokeDasharray={THUMB_DASH}
@@ -75,13 +75,13 @@ function ThumbTitleContent({ className }: { className?: string }) {
   const yContent = padY + hTitle + gap;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0" y="0" width="160" height="90" fill="#fff" />
+      <rect x="0" y="0" width="160" height="90" fill="var(--color-card)" />
       <rect
         x={padX}
         y={yTitle}
         width={innerW}
         height={hTitle}
-        fill="#fff"
+        fill="var(--color-card)"
         stroke={THUMB_STROKE}
         strokeWidth="1"
         strokeDasharray={THUMB_DASH}
@@ -102,7 +102,7 @@ function ThumbTitleContent({ className }: { className?: string }) {
         y={yContent}
         width={innerW}
         height={hContent}
-        fill="#fff"
+        fill="var(--color-card)"
         stroke={THUMB_STROKE}
         strokeWidth="1"
         strokeDasharray={THUMB_DASH}
@@ -133,13 +133,13 @@ function ThumbTwoColumns({ className }: { className?: string }) {
   const yCol = (90 - hCol) / 2;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0" y="0" width="160" height="90" fill="#fff" />
+      <rect x="0" y="0" width="160" height="90" fill="var(--color-card)" />
       <rect
         x={x1}
         y={yCol}
         width={wEach}
         height={hCol}
-        fill="#fff"
+        fill="var(--color-card)"
         stroke={THUMB_STROKE}
         strokeWidth="1"
         strokeDasharray={THUMB_DASH}
@@ -160,7 +160,7 @@ function ThumbTwoColumns({ className }: { className?: string }) {
         y={yCol}
         width={wEach}
         height={hCol}
-        fill="#fff"
+        fill="var(--color-card)"
         stroke={THUMB_STROKE}
         strokeWidth="1"
         strokeDasharray={THUMB_DASH}
@@ -199,9 +199,9 @@ interface TemplateRowProps {
 function TemplateRow({ kind, name, withExampleContent, onInsert, disabled }: TemplateRowProps) {
   const Thumb = THUMBS[kind];
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-white p-2 shadow-sm">
-      <div className="flex size-14 shrink-0 items-center justify-center rounded-md bg-[#fff8f3] p-1">
-        <Thumb className="h-9 w-16" />
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-2 shadow-sm">
+      <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 bg-muted/40 p-1">
+        <Thumb className="h-auto w-full" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-medium text-foreground">{name}</p>
@@ -211,7 +211,7 @@ function TemplateRow({ kind, name, withExampleContent, onInsert, disabled }: Tem
         size="sm"
         disabled={disabled}
         onClick={() => onInsert(kind, withExampleContent)}
-        className="h-8 shrink-0 bg-[#F97316] px-2.5 text-xs font-medium text-white hover:bg-[#ea580c]"
+        className="h-8 shrink-0 bg-[#2563EB] px-2.5 text-xs font-medium text-white hover:bg-[#1d4ed8]"
       >
         Insertar
       </Button>
@@ -413,7 +413,7 @@ export function buildTemplateBloques(kind: TemplateSlideKind, withExample: boole
 
 export function TemplatesPanel({ onInsert, isInserting }: TemplatesPanelProps) {
   return (
-    <div className="flex flex-col gap-4 bg-[#fff8f3]/50 p-3">
+    <div className="flex flex-col gap-4 bg-muted/30 p-3">
       <p className="text-[11px] leading-snug text-muted-foreground">
         Inserta un slide nuevo después del activo con un layout listo o con texto de ejemplo.
       </p>

@@ -5,6 +5,26 @@ import { api } from '@/lib/api';
 
 export type QuizType = 'MultipleChoice' | 'TrueFalse' | 'FillInTheBlanks';
 
+export type AiActivityType =
+  | 'quiz_multiple'
+  | 'verdadero_falso'
+  | 'completar_blancos'
+  | 'short_answer'
+  | 'arrastrar_soltar'
+  | 'emparejar'
+  | 'ordenar_pasos';
+
+export interface GenerateActivityInput {
+  text: string;
+  type: AiActivityType;
+  count?: number;
+}
+
+export interface GenerateActivityResult {
+  tipo: AiActivityType;
+  activity: Record<string, unknown>;
+}
+
 export interface GenerateQuizInput {
   text: string;
   count?: number; // default 5, max 20
@@ -109,6 +129,18 @@ export function useGenerateQuiz() {
       input: GenerateQuizInput,
     ): Promise<GenerateQuizResult> => {
       const { data } = await api.post('/ai/quiz', input);
+      return data;
+    },
+  });
+}
+
+/** POST /ai/activity — genera una actividad Lumina tipada lista para insertar */
+export function useGenerateActivity() {
+  return useMutation({
+    mutationFn: async (
+      input: GenerateActivityInput,
+    ): Promise<GenerateActivityResult> => {
+      const { data } = await api.post('/ai/activity', input);
       return data;
     },
   });

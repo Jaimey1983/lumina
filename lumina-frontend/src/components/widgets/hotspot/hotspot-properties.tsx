@@ -246,7 +246,7 @@ export function HotspotOverlayProperties({
 
       <div className="space-y-4">
         <WidgetSectionTitle>Diseño del Contenido</WidgetSectionTitle>
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 gap-2 pt-2">
           {HOTSPOT_CONTENT_LAYOUTS.map((layout) => {
             const selected = overlay.layoutId === layout.id;
             return (

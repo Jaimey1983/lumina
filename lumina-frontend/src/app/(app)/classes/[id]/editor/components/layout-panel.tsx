@@ -37,19 +37,20 @@ export function LayoutPanel({
               type="button"
               disabled={disabled || !!applyLayoutPending}
               onClick={() => onApplyLayout(key)}
+              aria-pressed={current === key}
               className={cn(
-                'flex w-full cursor-pointer flex-col items-center gap-1.5 rounded-lg border bg-white p-2 shadow-sm',
-                'transition-colors hover:bg-gray-50',
+                'flex w-full cursor-pointer flex-col gap-1.5 rounded-lg border bg-card p-1.5 text-left',
+                'transition-colors hover:border-primary/40 hover:bg-accent',
                 current === key
-                  ? 'border-primary ring-1 ring-primary/30'
-                  : 'border-border/80',
+                  ? 'border-primary ring-1 ring-primary/20'
+                  : 'border-border',
                 'disabled:pointer-events-none disabled:opacity-50',
               )}
             >
-              <div className="flex w-full items-center justify-center rounded-md bg-[#fff8f3] p-1">
+              <div className="aspect-video w-full overflow-hidden rounded-md border border-border/60 bg-muted/40">
                 <LayoutThumbnail layoutKey={key} />
               </div>
-              <p className="w-full min-w-0 truncate text-center text-[10px] font-medium leading-tight text-foreground">
+              <p className="min-w-0 truncate px-0.5 text-center text-[10px] font-medium leading-tight text-foreground">
                 {label}
               </p>
             </button>

@@ -62,6 +62,7 @@ import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue, resolveFontFamily } f
 import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
 import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
 import { getSlideVariant } from '@/lib/slide-variant';
+import { backgroundColorSample, backgroundToCssStyle } from '@/lib/slide-background';
 
 import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
 import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
@@ -209,50 +210,7 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   historia_ramificada: 'Actividad · Historia ramificada',
 };
 
-// ─── Background → CSS ─────────────────────────────────────────────────────────
-
-function slideBackgroundString(fondo?: Background): string | undefined {
-  if (!fondo) return undefined;
-  switch (fondo.tipo) {
-    case 'color':
-      return fondo.valor;
-    case 'gradiente':
-      return `${fondo.inicio} ${fondo.fin}`;
-    case 'imagen':
-      return fondo.url;
-    default:
-      return undefined;
-  }
-}
-
-function buildBackgroundStyle(fondo?: Background): CSSProperties {
-  if (!fondo) return { backgroundColor: '#ffffff' };
-
-  switch (fondo.tipo) {
-    case 'color':
-      return { backgroundColor: fondo.valor };
-
-    case 'gradiente': {
-      const deg = fondo.direccion ?? 135;
-      return { background: `linear-gradient(${deg}deg, ${fondo.inicio}, ${fondo.fin})` };
-    }
-
-    case 'imagen': {
-      const sizeMap: Record<string, string> = {
-        cubrir: 'cover',
-        contener: 'contain',
-        llenar: '100% 100%',
-        ninguno: 'auto',
-      };
-      return {
-        backgroundImage: `url(${JSON.stringify(fondo.url)})`,
-        backgroundSize: sizeMap[fondo.ajuste ?? 'cubrir'] ?? 'cover',
-        backgroundPosition: fondo.posicion ?? 'center',
-        backgroundRepeat: 'no-repeat',
-      };
-    }
-  }
-}
+// ─── Background → CSS (see `@/lib/slide-background`) ─────────────────────────
 
 // ─── Canvas positioning ───────────────────────────────────────────────────────
 
@@ -2425,9 +2383,9 @@ export function SlideRenderer({
   const viewerClassIdResolved = viewerClassIdProp ?? classId;
   const updateSlide = useUpdateSlide(classId);
 
-  const bgStyle = buildBackgroundStyle(slide.fondo);
+  const bgStyle = backgroundToCssStyle(slide.fondo);
   const variant =
-    variantProp ?? getSlideVariant(slideBackgroundString(slide.fondo));
+    variantProp ?? getSlideVariant(backgroundColorSample(slide.fondo));
   const editorMode = modo === 'editor';
 
   const handleRotate = useCallback((blockId: string, angle: number) => {

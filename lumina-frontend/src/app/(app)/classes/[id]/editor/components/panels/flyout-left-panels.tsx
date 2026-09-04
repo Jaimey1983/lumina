@@ -25,7 +25,8 @@ import {
 import Link from 'next/link';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Block } from '@/types/slide.types';
+import type { Block, Background } from '@/types/slide.types';
+import { DesignBackgroundPopover } from '../design-background-popover';
 import { createDefaultGraficoBlock } from '@/components/graficos/grafico-defaults';
 import {
   createDefaultCronologiaBlock,
@@ -124,12 +125,12 @@ function InsertBtn({
       type="button"
       variant="outline"
       size="sm"
-      className="h-auto w-full justify-start gap-2 py-2 text-left text-xs font-normal"
+      className="h-auto w-full items-start justify-start gap-2 py-2 text-left text-xs font-normal whitespace-normal"
       onClick={onClick}
       disabled={disabled}
     >
-      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-      {label}
+      <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1">{label}</span>
     </Button>
   );
 }
@@ -378,96 +379,21 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
 
 function FondoPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
   const c = getSlideContentRecord(apiSlide);
-  const fondo = c.fondo as { tipo?: string; valor?: string; inicio?: string; fin?: string; url?: string } | undefined;
-  const [hex, setHex] = useState(
-    fondo?.tipo === 'color' && fondo.valor ? fondo.valor : '#ffffff',
-  );
-  const [imgUrl, setImgUrl] = useState(fondo?.tipo === 'imagen' && fondo.url ? fondo.url : '');
+  const fondo = (c.fondo as Background) ?? undefined;
+
+  const handleApply = (nextFondo: Background) => {
+    onCommitContent(mergeSlideContent(apiSlide, { fondo: nextFondo }));
+    toast.success('Fondo guardado');
+  };
 
   return (
     <ScrollArea className="h-full min-h-0">
-      <div className="space-y-4 p-3 pr-2">
-        <PanelSection title="Color sólido">
-          <div className="flex gap-2">
-            <Input
-              type="color"
-              className="h-9 w-14 cursor-pointer p-1"
-              value={hex.startsWith('#') ? hex : `#${hex}`}
-              onChange={(e) => setHex(e.target.value)}
-              disabled={disabled}
-            />
-            <Button
-              type="button"
-              size="sm"
-              className="flex-1"
-              disabled={disabled}
-              onClick={() => {
-                onCommitContent(mergeSlideContent(apiSlide, { fondo: { tipo: 'color', valor: hex } }));
-                toast.success('Fondo actualizado');
-              }}
-            >
-              Aplicar color
-            </Button>
-          </div>
-        </PanelSection>
-        <PanelSection title="Gradiente rápido">
-          <div className="grid grid-cols-2 gap-1.5">
-            {[
-              { inicio: '#0ea5e9', fin: '#6366f1', label: 'Azul' },
-              { inicio: '#f97316', fin: '#ec4899', label: 'Atardecer' },
-              { inicio: '#22c55e', fin: '#14b8a6', label: 'Verde' },
-              { inicio: '#18181b', fin: '#3f3f46', label: 'Oscuro' },
-            ].map((g) => (
-              <Button
-                key={g.label}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                disabled={disabled}
-                onClick={() => {
-                  onCommitContent(
-                    mergeSlideContent(apiSlide, {
-                      fondo: { tipo: 'gradiente', inicio: g.inicio, fin: g.fin, direccion: 135 },
-                    }),
-                  );
-                  toast.success('Gradiente aplicado');
-                }}
-              >
-                {g.label}
-              </Button>
-            ))}
-          </div>
-        </PanelSection>
-        <PanelSection title="Imagen de fondo">
-          <Label htmlFor="fondo-url" className="text-xs text-muted-foreground">
-            URL
-          </Label>
-          <Input
-            id="fondo-url"
-            placeholder="https://…"
-            value={imgUrl}
-            onChange={(e) => setImgUrl(e.target.value)}
-            disabled={disabled}
-            className="text-xs"
-          />
-          <Button
-            type="button"
-            size="sm"
-            className="w-full"
-            disabled={disabled || !imgUrl.trim()}
-            onClick={() => {
-              onCommitContent(
-                mergeSlideContent(apiSlide, {
-                  fondo: { tipo: 'imagen', url: imgUrl.trim(), ajuste: 'cubrir' },
-                }),
-              );
-              toast.success('Imagen de fondo aplicada');
-            }}
-          >
-            Aplicar imagen
-          </Button>
-        </PanelSection>
+      <div className="p-3">
+        <DesignBackgroundPopover
+          fondo={fondo}
+          disabled={disabled}
+          onApply={handleApply}
+        />
       </div>
     </ScrollArea>
   );

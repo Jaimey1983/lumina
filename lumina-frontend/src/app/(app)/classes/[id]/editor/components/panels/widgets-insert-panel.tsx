@@ -34,12 +34,12 @@ function UpcomingBtn({
       type="button"
       variant="outline"
       size="sm"
-      className="h-auto w-full justify-start gap-2 py-2 text-left text-xs font-normal"
+      className="h-auto w-full items-start justify-start gap-2 py-2 text-left text-xs font-normal whitespace-normal"
       disabled={disabled}
       onClick={() => toast.info('Próximamente')}
     >
-      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-      {label}
+      <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1">{label}</span>
     </Button>
   );
 }

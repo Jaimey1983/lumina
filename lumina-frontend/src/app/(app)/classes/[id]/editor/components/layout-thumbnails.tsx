@@ -15,14 +15,14 @@ function pctRect(x: number, y: number, w: number, h: number) {
 function ThumbEnBlanco({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x="8"
         y="8"
         width="144"
         height="74"
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -37,14 +37,14 @@ function ThumbTituloCentrado({ className }: { className?: string }) {
   const y = (90 - h) / 2;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={padX}
         y={y}
         width={innerW}
         height={h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -53,7 +53,7 @@ function ThumbTituloCentrado({ className }: { className?: string }) {
         y={y + h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -70,14 +70,14 @@ function ThumbTituloTextoImagen({ className }: { className?: string }) {
   const img = pctRect(52, 20, 43, 72);
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={title.x}
         y={title.y}
         width={title.w}
         height={title.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -86,7 +86,7 @@ function ThumbTituloTextoImagen({ className }: { className?: string }) {
         y={title.y + title.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -97,8 +97,8 @@ function ThumbTituloTextoImagen({ className }: { className?: string }) {
         y={text.y}
         width={text.w}
         height={text.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -107,7 +107,7 @@ function ThumbTituloTextoImagen({ className }: { className?: string }) {
         y={text.y + text.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -118,8 +118,8 @@ function ThumbTituloTextoImagen({ className }: { className?: string }) {
         y={img.y}
         width={img.w}
         height={img.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -128,7 +128,7 @@ function ThumbTituloTextoImagen({ className }: { className?: string }) {
         y={img.y + img.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -150,14 +150,14 @@ function ThumbTituloCentradoSubtitulo({ className }: { className?: string }) {
   const ySub = yTitle + hTitle + 5;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={xTitle}
         y={yTitle}
         width={wTitle}
         height={hTitle}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -166,7 +166,7 @@ function ThumbTituloCentradoSubtitulo({ className }: { className?: string }) {
         y={yTitle + hTitle / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -177,8 +177,8 @@ function ThumbTituloCentradoSubtitulo({ className }: { className?: string }) {
         y={ySub}
         width={wSub}
         height={hSub}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -187,7 +187,7 @@ function ThumbTituloCentradoSubtitulo({ className }: { className?: string }) {
         y={ySub + hSub / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -208,14 +208,14 @@ function ThumbTituloContenido({ className }: { className?: string }) {
   const yContent = padY + hTitle + gap;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={padX}
         y={yTitle}
         width={innerW}
         height={hTitle}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -224,7 +224,7 @@ function ThumbTituloContenido({ className }: { className?: string }) {
         y={yTitle + hTitle / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -235,8 +235,8 @@ function ThumbTituloContenido({ className }: { className?: string }) {
         y={yContent}
         width={innerW}
         height={hContent}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -245,7 +245,7 @@ function ThumbTituloContenido({ className }: { className?: string }) {
         y={yContent + hContent / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -261,14 +261,14 @@ function ThumbDosColumnas({ className }: { className?: string }) {
   const midY = (y: number, h: number) => y + h / 2;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={left.x}
         y={left.y}
         width={left.w}
         height={left.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -277,7 +277,7 @@ function ThumbDosColumnas({ className }: { className?: string }) {
         y={midY(left.y, left.h)}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -288,8 +288,8 @@ function ThumbDosColumnas({ className }: { className?: string }) {
         y={right.y}
         width={right.w}
         height={right.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -298,7 +298,7 @@ function ThumbDosColumnas({ className }: { className?: string }) {
         y={midY(right.y, right.h)}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -315,14 +315,14 @@ function ThumbImagenDerecha({ className }: { className?: string }) {
   const img = pctRect(55, 10, 40, 80);
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={title.x}
         y={title.y}
         width={title.w}
         height={title.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -331,8 +331,8 @@ function ThumbImagenDerecha({ className }: { className?: string }) {
         y={body.y}
         width={body.w}
         height={body.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -341,7 +341,7 @@ function ThumbImagenDerecha({ className }: { className?: string }) {
         y={title.y + title.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="6"
         fontFamily="system-ui, sans-serif"
       >
@@ -352,7 +352,7 @@ function ThumbImagenDerecha({ className }: { className?: string }) {
         y={body.y + body.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -363,8 +363,8 @@ function ThumbImagenDerecha({ className }: { className?: string }) {
         y={img.y}
         width={img.w}
         height={img.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -373,7 +373,7 @@ function ThumbImagenDerecha({ className }: { className?: string }) {
         y={img.y + img.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -390,14 +390,14 @@ function ThumbImagenIzquierda({ className }: { className?: string }) {
   const body = pctRect(47, 26, 48, 64);
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={img.x}
         y={img.y}
         width={img.w}
         height={img.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -406,7 +406,7 @@ function ThumbImagenIzquierda({ className }: { className?: string }) {
         y={img.y + img.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -417,8 +417,8 @@ function ThumbImagenIzquierda({ className }: { className?: string }) {
         y={title.y}
         width={title.w}
         height={title.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -427,8 +427,8 @@ function ThumbImagenIzquierda({ className }: { className?: string }) {
         y={body.y}
         width={body.w}
         height={body.h}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -437,7 +437,7 @@ function ThumbImagenIzquierda({ className }: { className?: string }) {
         y={title.y + title.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="6"
         fontFamily="system-ui, sans-serif"
       >
@@ -448,7 +448,7 @@ function ThumbImagenIzquierda({ className }: { className?: string }) {
         y={body.y + body.h / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -463,7 +463,7 @@ function ThumbTresColumnas({ className }: { className?: string }) {
   const labels = ['1', '2', '3'];
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       {cols.map((r, i) => (
         <g key={i}>
           <rect
@@ -471,8 +471,8 @@ function ThumbTresColumnas({ className }: { className?: string }) {
             y={r.y}
             width={r.w}
             height={r.h}
-            fill="#fff"
-            stroke="#aaa"
+            fill="var(--color-card)"
+            stroke="var(--color-muted-foreground)"
             strokeWidth="1"
             strokeDasharray={DASH}
           />
@@ -481,7 +481,7 @@ function ThumbTresColumnas({ className }: { className?: string }) {
             y={r.y + r.h / 2}
             textAnchor="middle"
             dominantBaseline="middle"
-            fill="#bbb"
+            fill="var(--color-muted-foreground)"
             fontSize="7"
             fontFamily="system-ui, sans-serif"
           >
@@ -497,14 +497,14 @@ function ThumbPantallaCompleta({ className }: { className?: string }) {
   const pad = 8;
   return (
     <svg viewBox="0 0 160 90" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="0.5" y="0.5" width="159" height="89" fill="#fff" stroke="#ddd" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="159" height="89" fill="var(--color-card)" stroke="var(--color-border)" strokeWidth="1" />
       <rect
         x={pad}
         y={pad}
         width={160 - pad * 2}
         height={90 - pad * 2}
-        fill="#fff"
-        stroke="#aaa"
+        fill="var(--color-card)"
+        stroke="var(--color-muted-foreground)"
         strokeWidth="1"
         strokeDasharray={DASH}
       />
@@ -513,7 +513,7 @@ function ThumbPantallaCompleta({ className }: { className?: string }) {
         y={45}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#bbb"
+        fill="var(--color-muted-foreground)"
         fontSize="7"
         fontFamily="system-ui, sans-serif"
       >
@@ -546,5 +546,5 @@ export function LayoutThumbnail({
   className?: string;
 }) {
   const Cmp = THUMB_BY_KEY[layoutKey];
-  return <Cmp className={cn(compact ? 'h-8 w-14' : 'h-9 w-16', className)} />;
+  return <Cmp className={cn(compact ? 'h-8 w-14' : 'block h-full w-full', className)} />;
 }

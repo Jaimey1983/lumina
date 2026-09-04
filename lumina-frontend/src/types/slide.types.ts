@@ -9,10 +9,24 @@ export interface BackgroundColor {
   valor: string;
 }
 
+export interface GradientColorStop {
+  color: string;
+  /** 0–100 along the gradient axis. */
+  position: number;
+  /**
+   * Punto medio de mezcla hacia el siguiente stop (13–87, default 50).
+   * Controla qué tan difuminada es la transición — estilo Illustrator.
+   */
+  puntoMedio?: number;
+}
+
 export interface BackgroundGradient {
   tipo: 'gradiente';
-  inicio: string;
-  fin: string;
+  /** Preferred: two or more color stops. */
+  stops?: GradientColorStop[];
+  /** Legacy fields — used when `stops` is absent; also written for backward compat. */
+  inicio?: string;
+  fin?: string;
   /** Angle in degrees (0 = top→bottom). */
   direccion?: number;
 }

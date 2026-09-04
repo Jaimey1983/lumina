@@ -56,6 +56,8 @@ import {
   type HistoryViewItem,
 } from '../lib/canvas-history';
 import type { LayerReorderAction } from '@/lib/canvas-layers';
+import { backgroundToCssStyle } from '@/lib/slide-background';
+import { DesignBackgroundPopover } from './design-background-popover';
 
 export type { LayerReorderAction };
 
@@ -94,43 +96,6 @@ function makeVideoBlockFromUrl(url: string): Block {
     ancho: v.ancho,
     alto: v.alto,
   };
-}
-
-function gradientDirectionToDeg(dir: string): number {
-  switch (dir) {
-    case 'horizontal':
-      return 90;
-    case 'vertical':
-      return 180;
-    case 'diagonal':
-    default:
-      return 135;
-  }
-}
-
-function defaultSolidFromFondo(f?: Background): string {
-  if (f?.tipo === 'color') return f.valor;
-  return '#ffffff';
-}
-
-function defaultGradientFromFondo(f?: Background): {
-  desde: string;
-  hasta: string;
-  direccion: string;
-} {
-  if (f?.tipo === 'gradiente') {
-    return {
-      desde: f.inicio,
-      hasta: f.fin,
-      direccion:
-        f.direccion === 90
-          ? 'horizontal'
-          : f.direccion === 180
-            ? 'vertical'
-            : 'diagonal',
-    };
-  }
-  return { desde: '#6366f1', hasta: '#ec4899', direccion: 'diagonal' };
 }
 
 // ─── Insert toolbar (lienzo) ─────────────────────────────────────────────────
@@ -568,13 +533,6 @@ export function SlideEditorChrome({
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [designOpen, setDesignOpen] = useState(false);
-  const [solidColor, setSolidColor] = useState(() => defaultSolidFromFondo(fondo));
-  const [grad, setGrad] = useState(() => defaultGradientFromFondo(fondo));
-
-  useEffect(() => {
-    setSolidColor(defaultSolidFromFondo(fondo));
-    setGrad(defaultGradientFromFondo(fondo));
-  }, [fondo, designOpen]);
 
   useEffect(() => {
     return () => {
@@ -631,20 +589,13 @@ export function SlideEditorChrome({
     }
   }, [shareUrl]);
 
-  const applySolidFondo = useCallback(() => {
-    onChangeFondo({ tipo: 'color', valor: solidColor });
-    setDesignOpen(false);
-  }, [onChangeFondo, solidColor]);
-
-  const applyGradientFondo = useCallback(() => {
-    onChangeFondo({
-      tipo: 'gradiente',
-      inicio: grad.desde,
-      fin: grad.hasta,
-      direccion: gradientDirectionToDeg(grad.direccion),
-    });
-    setDesignOpen(false);
-  }, [onChangeFondo, grad]);
+  const handleApplyFondo = useCallback(
+    async (next: Background) => {
+      await onChangeFondo(next);
+      setDesignOpen(false);
+    },
+    [onChangeFondo],
+  );
 
   const onAudioFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -800,69 +751,27 @@ export function SlideEditorChrome({
               type="button"
               disabled={disabled}
               className={cn(
-                'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium outline-none',
+                'flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium outline-none',
                 'text-[#9ca3af] hover:bg-[#f9fafb] hover:text-[#2563EB]',
                 'focus-visible:ring-2 focus-visible:ring-[#93c5fd] focus-visible:ring-offset-1',
                 'disabled:pointer-events-none disabled:opacity-40',
               )}
             >
+              <span
+                className="size-3 shrink-0 rounded-sm border border-border shadow-xs"
+                style={backgroundToCssStyle(fondo)}
+                aria-hidden
+              />
               Diseño
               <span className="text-[10px] opacity-70">▾</span>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 space-y-4 p-3" align="start">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#111827]">Color sólido</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={solidColor}
-                  onChange={(ev) => setSolidColor(ev.target.value)}
-                  className="h-9 w-14 cursor-pointer rounded border border-[#e5e7eb] bg-transparent"
-                  aria-label="Color de fondo"
-                />
-                <Button type="button" size="sm" onClick={applySolidFondo}>
-                  Aplicar color
-                </Button>
-              </div>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#111827]">Gradiente</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="color"
-                  value={grad.desde}
-                  onChange={(ev) => setGrad((g) => ({ ...g, desde: ev.target.value }))}
-                  className="h-8 w-12 cursor-pointer rounded border border-[#e5e7eb]"
-                  aria-label="Color inicial"
-                />
-                <input
-                  type="color"
-                  value={grad.hasta}
-                  onChange={(ev) => setGrad((g) => ({ ...g, hasta: ev.target.value }))}
-                  className="h-8 w-12 cursor-pointer rounded border border-[#e5e7eb]"
-                  aria-label="Color final"
-                />
-              </div>
-              <label className="flex flex-col gap-1 text-xs text-[#6b7280]">
-                Dirección
-                <select
-                  className="rounded-md border border-[#e5e7eb] bg-white px-2 py-1.5 text-sm text-[#111827]"
-                  value={grad.direccion}
-                  onChange={(ev) =>
-                    setGrad((g) => ({ ...g, direccion: ev.target.value }))
-                  }
-                >
-                  <option value="horizontal">Horizontal</option>
-                  <option value="vertical">Vertical</option>
-                  <option value="diagonal">Diagonal</option>
-                </select>
-              </label>
-              <Button type="button" size="sm" className="w-full" onClick={applyGradientFondo}>
-                Aplicar gradiente
-              </Button>
-            </div>
+          <PopoverContent className="w-[22rem] p-3" align="start">
+            <DesignBackgroundPopover
+              fondo={fondo}
+              disabled={disabled}
+              onApply={handleApplyFondo}
+            />
           </PopoverContent>
         </Popover>
 

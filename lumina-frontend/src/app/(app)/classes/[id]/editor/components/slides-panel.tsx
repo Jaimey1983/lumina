@@ -63,6 +63,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { backgroundToCssStyle, normalizeBackground } from '@/lib/slide-background';
 import { CORE_SLIDE_LAYOUTS, type CoreSlideLayoutKey } from './templates-panel';
 import { LayoutThumbnail } from './layout-thumbnails';
 import { SLIDE_LABELS } from '@/config/slide.constants';
@@ -202,32 +203,9 @@ function getSlideFondo(content: unknown): unknown {
 }
 
 function fondoToStyle(fondo: unknown): CSSProperties | undefined {
-  if (!fondo || typeof fondo !== 'object' || Array.isArray(fondo)) return undefined;
-  const f = fondo as Record<string, unknown>;
-  if (f.tipo === 'color' && typeof f.valor === 'string') {
-    return { backgroundColor: f.valor };
-  }
-  if (f.tipo === 'gradiente') {
-    const start = typeof f.inicio === 'string' ? f.inicio : '#000000';
-    const end = typeof f.fin === 'string' ? f.fin : '#ffffff';
-    const deg = typeof f.direccion === 'number' ? f.direccion : 180;
-    return { background: `linear-gradient(${deg}deg, ${start}, ${end})` };
-  }
-  if (f.tipo === 'imagen' && typeof f.url === 'string' && f.url.length > 0) {
-    const ajuste = f.ajuste;
-    let backgroundSize: string;
-    if (ajuste === 'cubrir') backgroundSize = 'cover';
-    else if (ajuste === 'contener') backgroundSize = 'contain';
-    else backgroundSize = 'fill';
-    const pos = typeof f.posicion === 'string' ? f.posicion : 'center';
-    return {
-      backgroundImage: `url(${f.url})`,
-      backgroundSize,
-      backgroundPosition: pos,
-      backgroundRepeat: 'no-repeat',
-    };
-  }
-  return undefined;
+  const normalized = normalizeBackground(fondo);
+  if (!normalized) return undefined;
+  return backgroundToCssStyle(normalized);
 }
 
 function stripToPlainText(htmlOrText: string): string {

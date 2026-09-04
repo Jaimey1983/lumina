@@ -45,9 +45,9 @@ const PANELS: Record<string, PanelConfig> = {
     description: 'Elige la distribución del slide: columnas, centrado, título + contenido, etc.',
   },
   fondo: {
-    label: 'Fondo',
+    label: 'Diseño',
     Icon: Palette,
-    description: 'Cambia el fondo del slide con un color sólido, gradiente o imagen.',
+    description: 'Personaliza el diseño y fondo del slide con color sólido, gradiente o imagen.',
   },
   ia: {
     label: 'Inteligencia Artificial',
@@ -114,7 +114,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
           'motion-safe:transition-[width,box-shadow,opacity] motion-safe:duration-200 motion-safe:ease-out',
           'motion-reduce:transition-none',
           config
-            ? 'pointer-events-auto w-56 opacity-100'
+            ? 'pointer-events-auto w-80 opacity-100'
             : 'pointer-events-none w-0 border-transparent opacity-0 shadow-none',
         )}
         aria-hidden={!config}
@@ -122,7 +122,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
         {config && (
           <div
             className={cn(
-              'flex h-full w-56 min-w-56 shrink-0 flex-col',
+              'flex h-full w-80 min-w-80 shrink-0 flex-col',
               'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-left-2 motion-safe:duration-200',
               'motion-reduce:animate-none',
             )}

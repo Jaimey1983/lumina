@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, Bricolage_Grotesque } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
@@ -16,6 +16,13 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: {
     template: '%s | Lumina',
@@ -28,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="es"
-      className={cn('h-full', plusJakarta.variable)}
+      className={cn('h-full', plusJakarta.variable, bricolage.variable)}
       suppressHydrationWarning
     >
       <body
