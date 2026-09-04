@@ -62,7 +62,12 @@ import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue, resolveFontFamily } f
 import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
 import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
 import { getSlideVariant } from '@/lib/slide-variant';
-import { backgroundColorSample, backgroundToCssStyle } from '@/lib/slide-background';
+import {
+  backgroundColorSample,
+  backgroundToCssStyle,
+  backgroundRotatedLayerSize,
+  backgroundAjusteToObjectFit,
+} from '@/lib/slide-background';
 
 import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
 import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
@@ -2596,6 +2601,30 @@ export function SlideRenderer({
               transformOrigin: 'top left',
             }}
           >
+            {slide.fondo?.tipo === 'imagen' && typeof slide.fondo.rotacion === 'number' && slide.fondo.rotacion % 360 !== 0 && (
+              <div
+                className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+                aria-hidden="true"
+              >
+                <div
+                  className="absolute left-1/2 top-1/2"
+                  style={{
+                    ...backgroundRotatedLayerSize(slide.fondo.rotacion),
+                    transform: `translate(-50%, -50%) rotate(${slide.fondo.rotacion}deg)`,
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={slide.fondo.url}
+                    alt=""
+                    className="size-full"
+                    style={{
+                      objectFit: backgroundAjusteToObjectFit(slide.fondo.ajuste),
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             {blocks.map((block, index) => {
               const blockId = String(index);
               return (
@@ -2647,6 +2676,7 @@ export function SlideRenderer({
         ...bgStyle,
         ...(editorMode
           ? {
+              position: 'relative',
               width: '100%',
               height: '100%',
               minHeight: 0,
@@ -2670,6 +2700,30 @@ export function SlideRenderer({
       onClick={handleCanvasClick}
       ref={bindSlideRootRef}
     >
+      {slide.fondo?.tipo === 'imagen' && typeof slide.fondo.rotacion === 'number' && slide.fondo.rotacion % 360 !== 0 && (
+        <div
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-md"
+          aria-hidden="true"
+        >
+          <div
+            className="absolute left-1/2 top-1/2"
+            style={{
+              ...backgroundRotatedLayerSize(slide.fondo.rotacion),
+              transform: `translate(-50%, -50%) rotate(${slide.fondo.rotacion}deg)`,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.fondo.url}
+              alt=""
+              className="size-full"
+              style={{
+                objectFit: backgroundAjusteToObjectFit(slide.fondo.ajuste),
+              }}
+            />
+          </div>
+        </div>
+      )}
       {/* key={slide.id} forces full remount of blocks on slide change → re-triggers entry animation */}
       {blocks.map((block, index) => {
         const blockId = String(index);

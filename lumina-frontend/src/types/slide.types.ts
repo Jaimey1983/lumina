@@ -37,6 +37,8 @@ export interface BackgroundImage {
   /** CSS object-fit equivalent. */
   ajuste?: 'cubrir' | 'contener' | 'llenar' | 'ninguno';
   posicion?: string;
+  /** Rotation in degrees: 0, 90, 180, 270. */
+  rotacion?: number;
 }
 
 export type Background = BackgroundColor | BackgroundGradient | BackgroundImage;

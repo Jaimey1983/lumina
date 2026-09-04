@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import type { Background, Block } from '@/types/slide.types';
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
+import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';
 import { Button } from '@/components/ui/button';
@@ -70,19 +71,6 @@ function readFileAsDataURL(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error ?? new Error('read'));
     reader.readAsDataURL(file);
   });
-}
-
-function makeImageBlockFromUrl(url: string): Block {
-  return {
-    tipo: 'imagen',
-    id: crypto.randomUUID(),
-    url,
-    x: 25,
-    y: 25,
-    ancho: 50,
-    alto: 50,
-    ajuste: 'llenar',
-  };
 }
 
 function makeVideoBlockFromUrl(url: string): Block {

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+import type { Block } from '@/types/slide.types';
 import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -80,6 +81,8 @@ export interface FlyoutPanelProps {
   onApplyLayout: (layoutKey: SlidePersistedLayoutKey) => void;
   applyLayoutPending?: boolean;
   onAddWidget?: (type: WidgetTipo) => void;
+  /** Inserta un bloque vía CanvasArea (historial undo). */
+  onInsertBlock?: (block: Block) => Promise<boolean>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -101,6 +104,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       onApplyLayout,
       applyLayoutPending,
       onAddWidget,
+      onInsertBlock,
     },
     ref,
   ) {
@@ -164,6 +168,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 onApplyLayout={onApplyLayout}
                 applyLayoutPending={applyLayoutPending}
                 onAddWidget={onAddWidget}
+                onInsertBlock={onInsertBlock}
               />
             </div>
           </div>

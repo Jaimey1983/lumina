@@ -154,6 +154,8 @@ export interface FlyoutLeftPanelsProps {
   applyLayoutPending?: boolean;
   /** Inserta widgets desde el flyout izquierdo. */
   onAddWidget?: (type: WidgetTipo) => void;
+  /** Inserta un bloque vía CanvasArea (historial undo). */
+  onInsertBlock?: (block: Block) => Promise<boolean>;
 }
 
 type ContentPanelProps = {
@@ -161,15 +163,34 @@ type ContentPanelProps = {
   onCommitContent: (content: Record<string, unknown>) => void;
   disabled?: boolean;
   slideHasActivity?: boolean;
+  onInsertBlock?: (block: Block) => Promise<boolean>;
 };
 
 // ─── Panels ───────────────────────────────────────────────────────────────────
 
-function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity }: ContentPanelProps) {
+function ElementosPanel({
+  apiSlide,
+  onCommitContent,
+  disabled,
+  slideHasActivity,
+  onInsertBlock,
+}: ContentPanelProps) {
   const add = (block: Block) => {
+    if (onInsertBlock) {
+      void onInsertBlock(block).then((ok) => {
+        if (ok) toast.success('Elemento añadido');
+      });
+      return;
+    }
     onCommitContent(appendBlockToSlideContent(apiSlide, block));
     toast.success('Elemento añadido');
   };
+
+  const insertImage = onInsertBlock
+    ?? (async (block: Block) => {
+      onCommitContent(appendBlockToSlideContent(apiSlide, block));
+      return true;
+    });
 
   const disabledNonText = disabled || !!slideHasActivity;
 
@@ -182,18 +203,9 @@ function ElementosPanel({ apiSlide, onCommitContent, disabled, slideHasActivity 
           </p>
         )}
         <ImagesElementPanel
-          apiSlide={apiSlide}
-          onCommitContent={onCommitContent}
+          onInsert={insertImage}
           disabled={disabledNonText}
         />
-        <PanelSection title="Línea">
-          <InsertBtn
-            label="Separador"
-            icon={Minus}
-            disabled={disabledNonText}
-            onClick={() => add(createDefaultSeparadorBlock())}
-          />
-        </PanelSection>
         <ClipMasksPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
         <PanelSection title="Gráficos de Datos">
           <div className="grid grid-cols-2 gap-1.5">
@@ -1424,12 +1436,21 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     onApplyLayout,
     applyLayoutPending,
     onAddWidget,
+    onInsertBlock,
   } = props;
   const disabled = !apiSlide || busy;
 
   switch (panel) {
     case 'elementos':
-      return <ElementosPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabled} slideHasActivity={slideHasActivity} />;
+      return (
+        <ElementosPanel
+          apiSlide={apiSlide}
+          onCommitContent={onCommitContent}
+          disabled={disabled}
+          slideHasActivity={slideHasActivity}
+          onInsertBlock={onInsertBlock}
+        />
+      );
     case 'widgets':
       return (
         <WidgetsInsertPanel

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ImageIcon, Paintbrush, Sparkles } from 'lucide-react';
+import { ImageIcon, Paintbrush, RotateCw, Sparkles } from 'lucide-react';
 
 import type { Background, GradientColorStop } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -13,13 +13,18 @@ import { cn } from '@/lib/utils';
 import {
   GRADIENT_BACKGROUND_PRESETS,
   SOLID_BACKGROUND_PRESETS,
+  backgroundAjusteToObjectFit,
+  backgroundRotatedLayerSize,
   backgroundToCssStyle,
   buildLinearGradientCss,
   createGradientBackground,
   defaultGradientDraftFromFondo,
+  defaultImageAjusteFromFondo,
+  defaultImageRotationFromFondo,
   defaultImageUrlFromFondo,
   defaultSolidFromFondo,
   gradientDirectionLabel,
+  type BackgroundImageAjuste,
 } from '@/lib/slide-background';
 import { GradientStopBarEditor } from './gradient-stop-bar-editor';
 
@@ -28,6 +33,13 @@ export interface DesignBackgroundPopoverProps {
   disabled?: boolean;
   onApply: (fondo: Background) => void | Promise<void>;
 }
+
+const AJUSTE_OPTIONS: { value: BackgroundImageAjuste; label: string; desc: string }[] = [
+  { value: 'cubrir', label: 'Cubrir', desc: 'Rellena el lienzo recortando excedentes' },
+  { value: 'contener', label: 'Contener', desc: 'Muestra la imagen completa sin recortar' },
+  { value: 'llenar', label: 'Estirar', desc: 'Estira al 100% de ancho y alto' },
+  { value: 'ninguno', label: 'Original', desc: 'Tamaño original 1:1' },
+];
 
 function draftTabFromFondo(f?: Background): 'solid' | 'gradient' | 'image' {
   if (f?.tipo === 'gradiente') return 'gradient';
@@ -77,6 +89,8 @@ export function DesignBackgroundPopover({
   );
   const [selectedStopIndex, setSelectedStopIndex] = useState(0);
   const [imgUrl, setImgUrl] = useState(() => defaultImageUrlFromFondo(fondo));
+  const [imgRotacion, setImgRotacion] = useState(() => defaultImageRotationFromFondo(fondo));
+  const [imgAjuste, setImgAjuste] = useState<BackgroundImageAjuste>(() => defaultImageAjusteFromFondo(fondo));
 
   useEffect(() => {
     setTab(draftTabFromFondo(fondo));
@@ -86,6 +100,8 @@ export function DesignBackgroundPopover({
     setGradAngle(grad.direccion);
     setSelectedStopIndex(0);
     setImgUrl(defaultImageUrlFromFondo(fondo));
+    setImgRotacion(defaultImageRotationFromFondo(fondo));
+    setImgAjuste(defaultImageAjusteFromFondo(fondo));
   }, [fondo]);
 
   const previewFondo = useMemo((): Background => {
@@ -94,9 +110,10 @@ export function DesignBackgroundPopover({
     return {
       tipo: 'imagen',
       url: imgUrl.trim() || 'about:blank',
-      ajuste: 'cubrir',
+      ajuste: imgAjuste,
+      rotacion: imgRotacion,
     };
-  }, [tab, solidColor, gradStops, gradAngle, imgUrl]);
+  }, [tab, solidColor, gradStops, gradAngle, imgUrl, imgAjuste, imgRotacion]);
 
   const previewStyle = useMemo(() => {
     if (tab === 'image' && !imgUrl.trim()) {
@@ -122,8 +139,13 @@ export function DesignBackgroundPopover({
   const applyImage = useCallback(() => {
     const url = imgUrl.trim();
     if (!url) return;
-    void onApply({ tipo: 'imagen', url, ajuste: 'cubrir' });
-  }, [onApply, imgUrl]);
+    void onApply({
+      tipo: 'imagen',
+      url,
+      ajuste: imgAjuste,
+      rotacion: imgRotacion,
+    });
+  }, [onApply, imgUrl, imgAjuste, imgRotacion]);
 
   const handleStopsChange = useCallback((next: GradientColorStop[]) => {
     setGradStops(next);
@@ -143,9 +165,30 @@ export function DesignBackgroundPopover({
           Vista previa
         </p>
         <div
-          className="aspect-video w-full overflow-hidden rounded-lg border border-border shadow-sm"
-          style={previewStyle}
-        />
+          className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-[#f1f5f9] shadow-sm"
+        >
+          {tab === 'image' && imgUrl.trim() ? (
+            <div
+              className="absolute left-1/2 top-1/2"
+              style={{
+                ...backgroundRotatedLayerSize(imgRotacion),
+                transform: `translate(-50%, -50%) rotate(${imgRotacion}deg)`,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imgUrl.trim()}
+                alt="Vista previa fondo"
+                className="size-full"
+                style={{
+                  objectFit: backgroundAjusteToObjectFit(imgAjuste),
+                }}
+              />
+            </div>
+          ) : (
+            <div className="size-full" style={previewStyle} />
+          )}
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
@@ -310,9 +353,67 @@ export function DesignBackgroundPopover({
               className="text-xs"
             />
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              La imagen cubrirá el lienzo (1280×720). Usa URLs públicas HTTPS.
+              La imagen se ajusta al lienzo (1280×720). Usa URLs públicas HTTPS.
             </p>
           </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Ajuste al lienzo</Label>
+            <div className="grid grid-cols-4 gap-1">
+              {AJUSTE_OPTIONS.map(({ value, label, desc }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  title={desc}
+                  variant={imgAjuste === value ? 'primary' : 'outline'}
+                  size="sm"
+                  className="h-7 px-1 text-[10px]"
+                  disabled={disabled}
+                  onClick={() => setImgAjuste(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Orientación / Giro</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-[11px] font-semibold text-[#2563EB] hover:bg-blue-50"
+                disabled={disabled}
+                onClick={() => setImgRotacion((prev) => (prev + 90) % 360)}
+              >
+                <RotateCw className="mr-1 size-3" />
+                Girar +90°
+              </Button>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              {[
+                { deg: 0, label: '0°' },
+                { deg: 90, label: '90°' },
+                { deg: 180, label: '180°' },
+                { deg: 270, label: '270°' },
+              ].map(({ deg, label }) => (
+                <Button
+                  key={deg}
+                  type="button"
+                  variant={imgRotacion === deg ? 'primary' : 'outline'}
+                  size="sm"
+                  className="h-7 px-1 text-[10px]"
+                  disabled={disabled}
+                  onClick={() => setImgRotacion(deg)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <Button
             type="button"
             size="sm"

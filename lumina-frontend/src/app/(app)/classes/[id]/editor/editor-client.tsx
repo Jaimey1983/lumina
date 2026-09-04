@@ -1511,7 +1511,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         }
         if (b.tipo === 'imagen') {
           const u = b.url;
-          return typeof u === 'string' && u.trim() !== '';
+          // El placeholder de los layouts (placehold.co) no cuenta como
+          // contenido real → permite cambiar entre estructuras libremente.
+          return typeof u === 'string' && u.trim() !== '' && !u.includes('placehold.co');
         }
         return false;
       });
@@ -1524,11 +1526,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       if (!tieneContenidoReal) {
         const resolvedKey =
           layoutKey in LAYOUT_FROM_KEY ? layoutKey : 'titulo_y_contenido';
+        const existingFondo = (c.fondo as Background) ?? { tipo: 'color' as const, valor: '#ffffff' };
         const nextContent = mergeSlideContent(slideActivo as ApiSlide, {
           layout: resolvedKey,
           diseno: LAYOUT_FROM_KEY[resolvedKey],
           bloques: bloquesNew,
-          fondo,
+          fondo: existingFondo,
         });
         const sanitized =
           sanitizeSlideContentForPersistence(nextContent) ?? nextContent;
@@ -2003,6 +2006,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleBlockDragSave = useCallback((bloques: Block[]) => {
     canvasAreaRef.current?.persistBloquesFromDrag(bloques);
   }, []);
+
+  const handleInsertCanvasBlock = useCallback(async (block: Block) => {
+    if (!activeSlide) return false;
+    handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
+    return true;
+  }, [activeSlide, handleCommitSlideContent]);
 
   const getActivityDragOverlay = useCallback((type: ActivityType) => {
     const item = getActivityPanelItem(type);
@@ -2703,6 +2712,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onApplyLayout={handleApplyLayout}
               applyLayoutPending={insertSlide.isPending || updateSlide.isPending}
               onAddWidget={handleAddWidget}
+              onInsertBlock={handleInsertCanvasBlock}
             />
           </div>
           <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">

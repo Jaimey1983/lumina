@@ -315,6 +315,9 @@ export function normalizeBackground(fondo: unknown): Background | undefined {
           : 'cubrir',
     };
     if (typeof f.posicion === 'string') img.posicion = f.posicion;
+    if (typeof f.rotacion === 'number') {
+      img.rotacion = ((f.rotacion % 360) + 360) % 360;
+    }
     return img;
   }
   return undefined;
@@ -334,6 +337,9 @@ export function backgroundToCssStyle(fondo?: Background): CSSProperties {
     }
 
     case 'imagen': {
+      if (typeof fondo.rotacion === 'number' && fondo.rotacion % 360 !== 0) {
+        return { backgroundColor: '#ffffff' };
+      }
       const sizeMap: Record<string, string> = {
         cubrir: 'cover',
         contener: 'contain',
@@ -391,6 +397,49 @@ export function defaultGradientDraftFromFondo(f?: Background): {
 export function defaultImageUrlFromFondo(f?: Background): string {
   if (f?.tipo === 'imagen') return f.url;
   return '';
+}
+
+export function defaultImageRotationFromFondo(f?: Background): number {
+  if (f?.tipo === 'imagen' && typeof f.rotacion === 'number') {
+    return ((f.rotacion % 360) + 360) % 360;
+  }
+  return 0;
+}
+
+export type BackgroundImageAjuste = NonNullable<BackgroundImage['ajuste']>;
+
+export function defaultImageAjusteFromFondo(f?: Background): BackgroundImageAjuste {
+  if (f?.tipo === 'imagen' && f.ajuste) {
+    return f.ajuste;
+  }
+  return 'cubrir';
+}
+
+export function backgroundAjusteToObjectFit(
+  ajuste?: string,
+): 'cover' | 'contain' | 'fill' | 'none' {
+  switch (ajuste) {
+    case 'contener':
+      return 'contain';
+    case 'llenar':
+      return 'fill';
+    case 'ninguno':
+      return 'none';
+    case 'cubrir':
+    default:
+      return 'cover';
+  }
+}
+
+export function backgroundRotatedLayerSize(rotacion = 0): {
+  width: string;
+  height: string;
+} {
+  const norm = ((rotacion % 360) + 360) % 360;
+  if (norm === 90 || norm === 270) {
+    return { width: '56.25%', height: '177.777778%' };
+  }
+  return { width: '100%', height: '100%' };
 }
 
 export function gradientDirectionLabel(deg: number): string {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import type { ComponentProps } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
@@ -205,7 +206,7 @@ export function ClassDetailClient({ id }: { id: string }) {
                       className="group w-24 shrink-0 snap-start cursor-pointer focus:outline-none sm:w-28 xl:w-32"
                     >
                       <div className="relative w-full overflow-hidden rounded-md transition-transform group-hover:scale-105">
-                        <SlideCanvasThumb slide={slide as unknown as Parameters<typeof SlideCanvasThumb>[0]['slide']} isActive={i === activeIndex} />
+                        <SlideCanvasThumb slide={slide as unknown as ComponentProps<typeof SlideCanvasThumb>['slide']} isActive={i === activeIndex} />
                       </div>
                     </div>
                   ))}

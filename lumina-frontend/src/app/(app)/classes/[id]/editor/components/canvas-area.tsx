@@ -178,8 +178,8 @@ function BlockDragHandle({
           top:             0,
           left:            '50%',
           transform:       'translate(-50%, -40%)',
-          width:           36,
-          height:          16,
+          width:           20,
+          height:          10,
           pointerEvents:   'auto',
           cursor:          isActive ? 'grabbing' : 'grab',
           display:         'flex',
@@ -193,7 +193,7 @@ function BlockDragHandle({
           userSelect:      'none',
         }}
       >
-        <GripHorizontal size={10} color="white" />
+        <GripHorizontal size={8} color="white" />
       </div>
     </div>
   );
