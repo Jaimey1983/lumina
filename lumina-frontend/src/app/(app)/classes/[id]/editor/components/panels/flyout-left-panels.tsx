@@ -39,7 +39,6 @@ import {
 import {
   appendBlockToSlideContent,
   getSlideContentRecord,
-  mergeSlideContent,
   sanitizeSlideContentForPersistence,
 } from '@/lib/class-slide-normalize';
 import { SLIDE_TIMER_PER_SLIDE_OPTIONS } from '@/lib/slide-timer-resolve';
@@ -156,6 +155,8 @@ export interface FlyoutLeftPanelsProps {
   onAddWidget?: (type: WidgetTipo) => void;
   /** Inserta un bloque vía CanvasArea (historial undo). */
   onInsertBlock?: (block: Block) => Promise<boolean>;
+  /** Aplica el fondo del slide vía CanvasArea (mismo contrato que la barra flotante: historial undo). */
+  onChangeFondo: (fondo: Background) => Promise<void>;
 }
 
 type ContentPanelProps = {
@@ -389,13 +390,18 @@ function ElementosPanel({
   );
 }
 
-function FondoPanel({ apiSlide, onCommitContent, disabled }: ContentPanelProps) {
+function FondoPanel({
+  apiSlide,
+  disabled,
+  onChangeFondo,
+}: ContentPanelProps & { onChangeFondo: (fondo: Background) => Promise<void> }) {
   const c = getSlideContentRecord(apiSlide);
   const fondo = (c.fondo as Background) ?? undefined;
 
+  // Misma vía que la barra flotante (CanvasArea.changeFondo): snapshot →
+  // PATCH → historial Ctrl+Z. `handleChangeFondo` ya hace el toast.
   const handleApply = (nextFondo: Background) => {
-    onCommitContent(mergeSlideContent(apiSlide, { fondo: nextFondo }));
-    toast.success('Fondo guardado');
+    void onChangeFondo(nextFondo);
   };
 
   return (
@@ -1437,6 +1443,7 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     applyLayoutPending,
     onAddWidget,
     onInsertBlock,
+    onChangeFondo,
   } = props;
   const disabled = !apiSlide || busy;
 
@@ -1475,6 +1482,7 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
           apiSlide={apiSlide}
           onCommitContent={onCommitContent}
           disabled={disabled}
+          onChangeFondo={onChangeFondo}
         />
       );
     case 'ia':

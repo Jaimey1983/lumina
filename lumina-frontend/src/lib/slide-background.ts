@@ -415,6 +415,45 @@ export function defaultImageAjusteFromFondo(f?: Background): BackgroundImageAjus
   return 'cubrir';
 }
 
+export const DEFAULT_IMAGE_POSICION = '50% 50%';
+
+export function defaultImagePosicionFromFondo(f?: Background): string {
+  if (f?.tipo === 'imagen' && typeof f.posicion === 'string' && f.posicion.trim()) {
+    return f.posicion.trim();
+  }
+  return DEFAULT_IMAGE_POSICION;
+}
+
+/** Formatea un punto de foco (0–100, 0–100) como `background-position` / `object-position`. */
+export function formatImagePosicion(x: number, y: number): string {
+  return `${clampPosition(x)}% ${clampPosition(y)}%`;
+}
+
+/** Inversa de `formatImagePosicion` — tolera keywords (`center`, `left`, …) por compatibilidad. */
+export function parseImagePosicion(pos?: string): { x: number; y: number } {
+  const KEYWORDS: Record<string, number> = { left: 0, top: 0, center: 50, right: 100, bottom: 100 };
+  const parsePart = (token: string | undefined): number => {
+    if (!token) return 50;
+    if (token in KEYWORDS) return KEYWORDS[token];
+    const match = token.match(/^(-?\d+(?:\.\d+)?)%$/);
+    return match ? clampPosition(parseFloat(match[1])) : 50;
+  };
+  const parts = (pos ?? '').trim().split(/\s+/).filter(Boolean);
+  return { x: parsePart(parts[0]), y: parsePart(parts[1] ?? parts[0]) };
+}
+
+/** Punto de foco (%) desde coordenadas de puntero — misma lógica que `positionFromPointer`, en 2 ejes. */
+export function positionFromPointer2D(
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+): { x: number; y: number } {
+  return {
+    x: clampPositionFloat(((clientX - rect.left) / rect.width) * 100),
+    y: clampPositionFloat(((clientY - rect.top) / rect.height) * 100),
+  };
+}
+
 export function backgroundAjusteToObjectFit(
   ajuste?: string,
 ): 'cover' | 'contain' | 'fill' | 'none' {

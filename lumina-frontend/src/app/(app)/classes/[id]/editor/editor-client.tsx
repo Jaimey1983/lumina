@@ -2713,6 +2713,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               applyLayoutPending={insertSlide.isPending || updateSlide.isPending}
               onAddWidget={handleAddWidget}
               onInsertBlock={handleInsertCanvasBlock}
+              onChangeFondo={(fondo) =>
+                canvasAreaRef.current?.changeFondo(fondo) ?? Promise.resolve()
+              }
             />
           </div>
           <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">

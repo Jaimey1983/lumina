@@ -1,7 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ImageIcon, Paintbrush, RotateCw, Sparkles } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
+import { Crosshair, ImageIcon, Paintbrush, RotateCw, Sparkles } from 'lucide-react';
 
 import type { Background, GradientColorStop } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
@@ -13,20 +20,23 @@ import { cn } from '@/lib/utils';
 import {
   GRADIENT_BACKGROUND_PRESETS,
   SOLID_BACKGROUND_PRESETS,
-  backgroundAjusteToObjectFit,
-  backgroundRotatedLayerSize,
   backgroundToCssStyle,
   buildLinearGradientCss,
   createGradientBackground,
   defaultGradientDraftFromFondo,
   defaultImageAjusteFromFondo,
+  defaultImagePosicionFromFondo,
   defaultImageRotationFromFondo,
   defaultImageUrlFromFondo,
   defaultSolidFromFondo,
+  formatImagePosicion,
   gradientDirectionLabel,
+  parseImagePosicion,
+  positionFromPointer2D,
   type BackgroundImageAjuste,
 } from '@/lib/slide-background';
 import { GradientStopBarEditor } from './gradient-stop-bar-editor';
+import { BackgroundImageLayer } from './background-image-layer';
 
 export interface DesignBackgroundPopoverProps {
   fondo?: Background;
@@ -91,6 +101,8 @@ export function DesignBackgroundPopover({
   const [imgUrl, setImgUrl] = useState(() => defaultImageUrlFromFondo(fondo));
   const [imgRotacion, setImgRotacion] = useState(() => defaultImageRotationFromFondo(fondo));
   const [imgAjuste, setImgAjuste] = useState<BackgroundImageAjuste>(() => defaultImageAjusteFromFondo(fondo));
+  const [imgPosicion, setImgPosicion] = useState(() => defaultImagePosicionFromFondo(fondo));
+  const previewBoxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTab(draftTabFromFondo(fondo));
@@ -102,7 +114,33 @@ export function DesignBackgroundPopover({
     setImgUrl(defaultImageUrlFromFondo(fondo));
     setImgRotacion(defaultImageRotationFromFondo(fondo));
     setImgAjuste(defaultImageAjusteFromFondo(fondo));
+    setImgPosicion(defaultImagePosicionFromFondo(fondo));
   }, [fondo]);
+
+  const imgPosPoint = useMemo(() => parseImagePosicion(imgPosicion), [imgPosicion]);
+
+  const handlePositionPointer = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const rect = previewBoxRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const { x, y } = positionFromPointer2D(e.clientX, e.clientY, rect);
+    setImgPosicion(formatImagePosicion(x, y));
+  }, []);
+
+  const handlePositionPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLDivElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      handlePositionPointer(e);
+    },
+    [handlePositionPointer],
+  );
+
+  const handlePositionPointerMove = useCallback(
+    (e: ReactPointerEvent<HTMLDivElement>) => {
+      if (e.buttons !== 1) return;
+      handlePositionPointer(e);
+    },
+    [handlePositionPointer],
+  );
 
   const previewFondo = useMemo((): Background => {
     if (tab === 'solid') return { tipo: 'color', valor: solidColor };
@@ -112,8 +150,9 @@ export function DesignBackgroundPopover({
       url: imgUrl.trim() || 'about:blank',
       ajuste: imgAjuste,
       rotacion: imgRotacion,
+      posicion: imgPosicion,
     };
-  }, [tab, solidColor, gradStops, gradAngle, imgUrl, imgAjuste, imgRotacion]);
+  }, [tab, solidColor, gradStops, gradAngle, imgUrl, imgAjuste, imgRotacion, imgPosicion]);
 
   const previewStyle = useMemo(() => {
     if (tab === 'image' && !imgUrl.trim()) {
@@ -144,8 +183,9 @@ export function DesignBackgroundPopover({
       url,
       ajuste: imgAjuste,
       rotacion: imgRotacion,
+      posicion: imgPosicion,
     });
-  }, [onApply, imgUrl, imgAjuste, imgRotacion]);
+  }, [onApply, imgUrl, imgAjuste, imgRotacion, imgPosicion]);
 
   const handleStopsChange = useCallback((next: GradientColorStop[]) => {
     setGradStops(next);
@@ -165,26 +205,25 @@ export function DesignBackgroundPopover({
           Vista previa
         </p>
         <div
-          className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-[#f1f5f9] shadow-sm"
+          ref={previewBoxRef}
+          className={cn(
+            'relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-[#f1f5f9] shadow-sm',
+            tab === 'image' && imgUrl.trim() && 'cursor-crosshair',
+          )}
+          onPointerDown={tab === 'image' && imgUrl.trim() ? handlePositionPointerDown : undefined}
+          onPointerMove={tab === 'image' && imgUrl.trim() ? handlePositionPointerMove : undefined}
         >
           {tab === 'image' && imgUrl.trim() ? (
-            <div
-              className="absolute left-1/2 top-1/2"
-              style={{
-                ...backgroundRotatedLayerSize(imgRotacion),
-                transform: `translate(-50%, -50%) rotate(${imgRotacion}deg)`,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imgUrl.trim()}
-                alt="Vista previa fondo"
-                className="size-full"
-                style={{
-                  objectFit: backgroundAjusteToObjectFit(imgAjuste),
-                }}
+            <>
+              <BackgroundImageLayer
+                fondo={{ url: imgUrl.trim(), ajuste: imgAjuste, rotacion: imgRotacion, posicion: imgPosicion }}
               />
-            </div>
+              <div
+                className="pointer-events-none absolute z-10 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#2563eb] shadow"
+                style={{ left: `${imgPosPoint.x}%`, top: `${imgPosPoint.y}%` }}
+                aria-hidden
+              />
+            </>
           ) : (
             <div className="size-full" style={previewStyle} />
           )}
@@ -375,6 +414,26 @@ export function DesignBackgroundPopover({
                 </Button>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Posición (arrastra la vista previa)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-[11px] font-semibold text-[#2563EB] hover:bg-blue-50"
+                disabled={disabled || !imgUrl.trim()}
+                onClick={() => setImgPosicion('50% 50%')}
+              >
+                <Crosshair className="mr-1 size-3" />
+                Centrar
+              </Button>
+            </div>
+            <p className="text-[10px] tabular-nums text-muted-foreground">
+              X: {imgPosPoint.x}% · Y: {imgPosPoint.y}%
+            </p>
           </div>
 
           <div className="space-y-2">

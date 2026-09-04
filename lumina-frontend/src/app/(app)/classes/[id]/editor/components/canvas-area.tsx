@@ -264,6 +264,13 @@ export type CanvasAreaHandle = {
   setGridSize: (tamanoPx: number) => void;
   /** Reinicia la pila Ctrl+Z del slide activo (p. ej. tras restaurar una versión). */
   resetSlideHistory: () => void;
+  /**
+   * Aplica un fondo de slide (color/gradiente/imagen) con el mismo contrato que
+   * el resto de ediciones del lienzo: snapshot → PATCH → historial Ctrl+Z.
+   * Única vía de escritura de `fondo` — usada por la barra flotante y por el
+   * panel izquierdo "Diseño" (`DesignBackgroundPopover` en ambos casos).
+   */
+  changeFondo: (fondo: Background) => Promise<void>;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -1138,7 +1145,16 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       content: Record<string, unknown>;
     }) => {
       const nextBloques = (content.bloques as Block[]) ?? [];
-      return persistBloques(nextBloques, previousBloques, true);
+      // Puente optimista (mismo que handleDragSave/handleApplyBloques): sin esto,
+      // el panel de propiedades lee `liveSlide.bloques` obsoleto mientras el PATCH +
+      // refetch de handleEditCommit/resize están en vuelo, y pisa la edición recién
+      // confirmada (texto escrito, tamaño arrastrado) con la versión previa.
+      setCommittedBloques(nextBloques);
+      try {
+        return await persistBloques(nextBloques, previousBloques, true);
+      } finally {
+        setCommittedBloques(null);
+      }
     },
     [persistBloques],
   );
@@ -1631,6 +1647,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         historiesRef.current.set(slide.id, createFreshSlideHistory(snapshot));
         bumpHistory();
       },
+      changeFondo: (fondo) => handleChangeFondo(fondo),
     }),
     [
       selectedBlockId,
@@ -1653,6 +1670,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleCopyBlock,
       handleRemoveBlock,
       handleDragSave,
+      handleChangeFondo,
       clearInnerSelections,
       bumpHistory,
     ],

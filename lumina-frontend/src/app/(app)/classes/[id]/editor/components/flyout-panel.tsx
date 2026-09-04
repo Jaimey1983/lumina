@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Block } from '@/types/slide.types';
+import type { Background, Block } from '@/types/slide.types';
 import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -83,6 +83,8 @@ export interface FlyoutPanelProps {
   onAddWidget?: (type: WidgetTipo) => void;
   /** Inserta un bloque vía CanvasArea (historial undo). */
   onInsertBlock?: (block: Block) => Promise<boolean>;
+  /** Aplica el fondo del slide vía CanvasArea (mismo contrato que la barra flotante: historial undo). */
+  onChangeFondo: (fondo: Background) => Promise<void>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -105,6 +107,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       applyLayoutPending,
       onAddWidget,
       onInsertBlock,
+      onChangeFondo,
     },
     ref,
   ) {
@@ -169,6 +172,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 applyLayoutPending={applyLayoutPending}
                 onAddWidget={onAddWidget}
                 onInsertBlock={onInsertBlock}
+                onChangeFondo={onChangeFondo}
               />
             </div>
           </div>

@@ -65,9 +65,8 @@ import { getSlideVariant } from '@/lib/slide-variant';
 import {
   backgroundColorSample,
   backgroundToCssStyle,
-  backgroundRotatedLayerSize,
-  backgroundAjusteToObjectFit,
 } from '@/lib/slide-background';
+import { BackgroundImageLayer } from './background-image-layer';
 
 import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
 import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
@@ -2602,28 +2601,7 @@ export function SlideRenderer({
             }}
           >
             {slide.fondo?.tipo === 'imagen' && typeof slide.fondo.rotacion === 'number' && slide.fondo.rotacion % 360 !== 0 && (
-              <div
-                className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
-                aria-hidden="true"
-              >
-                <div
-                  className="absolute left-1/2 top-1/2"
-                  style={{
-                    ...backgroundRotatedLayerSize(slide.fondo.rotacion),
-                    transform: `translate(-50%, -50%) rotate(${slide.fondo.rotacion}deg)`,
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={slide.fondo.url}
-                    alt=""
-                    className="size-full"
-                    style={{
-                      objectFit: backgroundAjusteToObjectFit(slide.fondo.ajuste),
-                    }}
-                  />
-                </div>
-              </div>
+              <BackgroundImageLayer fondo={slide.fondo} />
             )}
             {blocks.map((block, index) => {
               const blockId = String(index);
@@ -2701,28 +2679,7 @@ export function SlideRenderer({
       ref={bindSlideRootRef}
     >
       {slide.fondo?.tipo === 'imagen' && typeof slide.fondo.rotacion === 'number' && slide.fondo.rotacion % 360 !== 0 && (
-        <div
-          className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-md"
-          aria-hidden="true"
-        >
-          <div
-            className="absolute left-1/2 top-1/2"
-            style={{
-              ...backgroundRotatedLayerSize(slide.fondo.rotacion),
-              transform: `translate(-50%, -50%) rotate(${slide.fondo.rotacion}deg)`,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={slide.fondo.url}
-              alt=""
-              className="size-full"
-              style={{
-                objectFit: backgroundAjusteToObjectFit(slide.fondo.ajuste),
-              }}
-            />
-          </div>
-        </div>
+        <BackgroundImageLayer fondo={slide.fondo} className="rounded-md" />
       )}
       {/* key={slide.id} forces full remount of blocks on slide change → re-triggers entry animation */}
       {blocks.map((block, index) => {
