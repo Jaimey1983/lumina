@@ -83,3 +83,6 @@ lumina-backup/
 
 # Plantilla de referencia (Materialize NextJS) — no forma parte del producto
 nextjs-version/
+
+# Claude Code — allowlist local de permisos (por máquina, no versionar)
+.claude/settings.local.json
