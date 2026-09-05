@@ -241,7 +241,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.2 — Scaffold `packages/element-kit` con el contrato `ElementDefinition`
 - **Operador:** Claude Code
-- **Estado:** pendiente (E1.1 hecho — desbloqueado)
+- **Estado:** [en curso: Codex]
 - **Precondición:** E1.1 `hecho`.
 - **Alcance — PUEDE tocar:** solo `packages/element-kit/**` y la entrada correspondiente en el `pnpm-lock.yaml` de la raíz + un job/paso `packages` en `.github/workflows/ci.yml`.
 - **Contenido mínimo:**
