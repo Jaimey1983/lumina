@@ -257,7 +257,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.3 — Scaffold `packages/scoring` (stub, sin portar todavía)
 - **Operador:** Codex
-- **Estado:** [en curso: Codex] — iniciado después de dejar E1.2 en revisión.
+- **Estado:** en revisión — Codex creó el stub de las 15 funciones públicas y sus tipos; pruebas de firmas contra los AST de frontend/backend, sin portar lógica ni modificar consumidores. Verificado: `pnpm --filter @lumina/scoring build && pnpm --filter @lumina/scoring test && pnpm --filter @lumina/scoring lint`: build OK, 19/19 tests + chequeo de tipos, lint sin errores ni warnings. Job `packages` ampliado; CI remoto pendiente de push/revisión.
 - **Precondición:** E1.1 `hecho`.
 - **Contexto:** `activity-scoring.ts` está hoy duplicado a mano en `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados por fixtures (`activity-scoring.fixtures.json`). `@lumina/scoring` será la fuente única — pero **E1.3 solo crea el paquete y fija su superficie de API**; portar la implementación y migrar consumidores es E2 (frontend) / E6 (backend).
 - **Alcance — PUEDE tocar:** solo `packages/scoring/**` + su entrada en el lockfile raíz y en el job `packages` de CI.

@@ -27,6 +27,9 @@ jobs:
       - run: pnpm --filter @lumina/element-kit build
       - run: pnpm --filter @lumina/element-kit test
       - run: pnpm --filter @lumina/element-kit lint
+      - run: pnpm --filter @lumina/scoring build
+      - run: pnpm --filter @lumina/scoring test
+      - run: pnpm --filter @lumina/scoring lint
 
   backend:
     name: Backend (lint + test + build)
