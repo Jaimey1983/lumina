@@ -330,7 +330,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.5 — Registrar la familia "clásica" (quiz / V-F / blancos / … ) como `ElementDefinition`
 - **Operador:** Claude Code + Cursor · puede ir **en paralelo con E2.4**
-- **Estado:** pendiente (E2.3 hecho — desbloqueado)
+- **Estado:** [en curso: Claude Code]
 - **Contexto:** estas actividades **no tienen registro** hoy — las despacha el `switch` de `slide-renderer.tsx` (congelado E5). E2.5 crea sus `ElementDefinition` en el kit **sin reescribir el switch**; conectarlas al canvas es E5.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras` (adapters de los componentes en `.../editor/components/activities/*.tsx`, `puntuacion` → `@lumina/scoring`); registro en `elementRegistry`; exports internos de esos componentes si hace falta.
 - **Alcance — NO toca:** `slide-renderer.tsx` ni su `switch` (E5), `canvas-area.tsx`, backend.
