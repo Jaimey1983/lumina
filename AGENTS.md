@@ -241,7 +241,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.2 — Scaffold `packages/element-kit` con el contrato `ElementDefinition`
 - **Operador:** Codex
-- **Estado:** en revisión — Codex creó contrato, registro tipado con rechazo de duplicados y job `packages` de CI. Verificado: `pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`: build OK, 4/4 tests + chequeo de tipos, lint sin errores ni warnings. CI remoto pendiente de push/revisión.
+- **Estado:** **hecho** (commit `fef649b`) — verificado por Claude Code: contrato cumple Regla 2 (`tipo`/`crearPorDefecto`/`Editor`/`Viewer`/`Propiedades`/`apariencia`/`puntuacion?`), `ElementRegistry` con `registrar`/`obtener`/`listar` + error en `tipo` duplicado, job `packages` en CI. `build` OK, `test` 4/4, `lint` 0.
 - **Precondición:** E1.1 `hecho`.
 - **Alcance — PUEDE tocar:** solo `packages/element-kit/**` y la entrada correspondiente en el `pnpm-lock.yaml` de la raíz + un job/paso `packages` en `.github/workflows/ci.yml`.
 - **Contenido mínimo:**
@@ -257,7 +257,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.3 — Scaffold `packages/scoring` (stub, sin portar todavía)
 - **Operador:** Codex
-- **Estado:** en revisión — Codex creó el stub de las 15 funciones públicas y sus tipos; pruebas de firmas contra los AST de frontend/backend, sin portar lógica ni modificar consumidores. Verificado: `pnpm --filter @lumina/scoring build && pnpm --filter @lumina/scoring test && pnpm --filter @lumina/scoring lint`: build OK, 19/19 tests + chequeo de tipos, lint sin errores ni warnings. Job `packages` ampliado; CI remoto pendiente de push/revisión.
+- **Estado:** **hecho** (commit `8b6e338`) — verificado por Claude Code: stub de las 15 funciones públicas + tipos, placeholders que lanzan, `types.spec.ts` contra las firmas de frontend/backend; no toca los `activity-scoring.ts` viejos ni consumidores. `build` OK, `test` 19/19, `lint` 0.
 - **Precondición:** E1.1 `hecho`.
 - **Contexto:** `activity-scoring.ts` está hoy duplicado a mano en `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados por fixtures (`activity-scoring.fixtures.json`). `@lumina/scoring` será la fuente única — pero **E1.3 solo crea el paquete y fija su superficie de API**; portar la implementación y migrar consumidores es E2 (frontend) / E6 (backend).
 - **Alcance — PUEDE tocar:** solo `packages/scoring/**` + su entrada en el lockfile raíz y en el job `packages` de CI.
@@ -267,8 +267,8 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 - **Cierre:** no aplica Regla 4 en E1 (los `TODO(migración-etapa-2/6)` en los `activity-scoring.ts` viejos se ponen en E2/E6, no acá).
 
 ##### E1.4 — Piloto: Botón como `ElementDefinition`
-- **Operador:** Cursor (dueño del canvas / widgets) · puede ir en paralelo con F1.4 (conjuntos disjuntos)
-- **Estado:** bloqueado por E1.2
+- **Operador:** Cursor (dueño del canvas / widgets)
+- **Estado:** pendiente (E1.2 y E1.3 `hecho` — desbloqueado). **Es lo único que falta para cerrar E1.**
 - **Precondición:** E1.2 `hecho`.
 - **Alcance — PUEDE tocar:**
   - `packages/element-kit/src/elements/boton/**` — la `ElementDefinition` del Botón: `crearPorDefecto` (envuelve `createDefaultBoton` de `boton-defaults.ts`), `Editor` / `Viewer` / `Propiedades` (adaptan los componentes existentes de `lumina-frontend/src/components/widgets/boton/` a las props del contrato), `apariencia`; **sin** `puntuacion` (el Botón no puntúa). Registro vía `ElementRegistry.registrar(botonDefinition)` en el arranque del paquete.
