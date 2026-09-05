@@ -311,7 +311,9 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.3 — Piloto: Anagrama como `ElementDefinition` (con `puntuacion`)
 - **Operador:** Cursor (dueño del editor / actividades)
-- **Estado:** en revisión — `anagramaDefinition` con `crearPorDefecto` → `createDefaultAnagrama`; adapters Editor/Viewer/Propiedades (legacy intacto); `puntuacion` → `evaluateActivityResponse('anagrama', …)` (`score` ya es `notaColombiana`). Registro en `elementRegistry`. Paridad `anagrama.parity.spec.tsx`. `TODO(migración-etapa-5)` en `activity-registry.ts` (ticket `LUM-E5-ANAGRAMA`, 2026-11-30). Desvío menor: `PuntuacionDelegate` ahora acepta `respuesta?` (el stub E1.2 no podía puntuar una respuesta). Verif: `pnpm --filter @lumina/element-kit test` → **14/14** (5 de Anagrama) · lint 0 · `pnpm --filter lumina-frontend build` OK.
+- **Estado:** **hecho** (commit `a6522c9`) — verificado por Claude Code. `anagramaDefinition satisfies ElementDefinition` (Regla 2 completa, con `puntuacion`); adapters legacy→contrato (Editor/Viewer/Propiedades sin cambio de comportamiento); `puntuacion` = `evaluateActivityResponse('anagrama', estado, respuesta).score ?? 0` de `@lumina/scoring`. Registro único en `elementRegistry`. `anagrama.parity.spec.tsx`: 4 casos de scoring comparan `correct`/`score`/`details` contra `evaluateActivityResponse` + paridad de DOM de Editor/Viewer (`withFixedRandom`). Verif: `@lumina/element-kit` build/lint OK · test **14/14** · `@lumina/scoring` 93/93 · `lumina-frontend` lint 0 / test:unit 446/446 / build OK.
+- **Cambio de contrato (aceptado, avisar):** `PuntuacionDelegate<TState>` pasó de `(estado) => number` a `(estado, respuesta?: unknown) => number` en `packages/element-kit/src/contract.ts`. Es la extensión mínima correcta — puntuar una actividad necesita la respuesta del alumno, no solo el estado; `respuesta?` es opcional (el Botón no la usa). `registry.spec.ts` actualizado. Fuera del alcance declarado de E2.3 (`elements/anagrama/**`) pero necesario y aditivo.
+- **Plumbing (patrón E1.4):** `packages/element-kit/{tsconfig*,vitest.config.ts,src/index.ts}` + `src/shims/lumina-frontend-anagrama.d.ts` para enganchar el elemento; `packages/element-kit/package.json` dep `@lumina/scoring`; `lumina-frontend/package.json` subpath `./activities/anagrama`; `lumina-frontend/src/components/activities/anagrama/index.ts` (re-export puro).
 - **Contexto:** primer elemento **evaluable** sobre el contrato — ejercita el delegado `puntuacion` que el piloto Botón (E1.4) no usó. `Anagrama` es la actividad evaluable más simple (`AnagramaActivity`, `createDefaultAnagrama` en `lumina-frontend/src/lib/anagrama-defaults.ts`, componentes en `lumina-frontend/src/components/activities/anagrama/`). Piloto provisional salvo que el informe «Plano Lumina» (Etapa 2) indique otro.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/anagrama/**` (definición + adapters `AnagramaEditor/Viewer/Properties` → props del contrato + `puntuacion` que llama a `evaluateActivityResponse`/`notaColombiana` de `@lumina/scoring`), su `parity.spec.tsx`, registro en `elementRegistry`. `lumina-frontend/src/components/activities/anagrama/**` **solo** si hay que exportar algo interno (sin cambiar comportamiento). `lumina-frontend/package.json` `exports` si hace falta el subpath (como el Botón en E1.4).
 - **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, Timeline (congelados E5); `activity-registry.ts` salvo su `TODO` de cierre; `slides-panel.tsx`; el backend.
@@ -320,7 +322,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.4 — Migrar el resto de Grupo 4 (11 actividades) a `ElementDefinition`
 - **Operador:** Cursor · puede ir **en paralelo con E2.5**
-- **Estado:** bloqueado por E2.3
+- **Estado:** pendiente (E2.3 hecho — desbloqueado)
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `clasificar`, `memoria`, `puzzle_imagen`, `sopa_letras`, `crucigrama`, `abrir_caja`, `ahorcado`, `puzzle_palabras`, `globos`, `topo`, `historia_ramificada` (mismo patrón que E2.3, reutilizando adapters); registro de cada una en `elementRegistry`; `lumina-frontend/src/components/activities/<tipo>/**` solo para exports internos.
 - **Alcance — NO toca:** `slide-renderer.tsx`, `slides-panel.tsx`, `activity-registry.ts` (salvo `TODO` de cierre por fila), backend, cluster congelado E5.
 - **Entregable:** `pnpm --filter @lumina/element-kit test` — una prueba de paridad por actividad (respuesta → `correct`/`score` idénticos; DOM visible idéntico). `pnpm --filter lumina-frontend build` verde.
@@ -328,7 +330,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.5 — Registrar la familia "clásica" (quiz / V-F / blancos / … ) como `ElementDefinition`
 - **Operador:** Claude Code + Cursor · puede ir **en paralelo con E2.4**
-- **Estado:** bloqueado por E2.3
+- **Estado:** pendiente (E2.3 hecho — desbloqueado)
 - **Contexto:** estas actividades **no tienen registro** hoy — las despacha el `switch` de `slide-renderer.tsx` (congelado E5). E2.5 crea sus `ElementDefinition` en el kit **sin reescribir el switch**; conectarlas al canvas es E5.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras` (adapters de los componentes en `.../editor/components/activities/*.tsx`, `puntuacion` → `@lumina/scoring`); registro en `elementRegistry`; exports internos de esos componentes si hace falta.
 - **Alcance — NO toca:** `slide-renderer.tsx` ni su `switch` (E5), `canvas-area.tsx`, backend.
