@@ -381,7 +381,7 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 
 ##### E3.4 — Overlay Popup
 - **Operador:** Cursor
-- **Estado:** pendiente (E3.3 hecho — desbloqueado)
+- **Estado:** [en curso: Cursor]
 - **Contexto:** Popup hace portal a `.canvas-slide` + backdrop y bloquea el slide (`lumina-frontend/CLAUDE.md` §widgets). El adapter lo envuelve tal cual; para la parity spec puede requerir montar un `.canvas-slide` de prueba o un render-smoke.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/popup/**`; shim + alias + `src/index.ts`; `lumina-frontend/src/components/widgets/popup/index.ts` barrel + subpath.
 - **Alcance — NO toca:** el motor del canvas / paneles congelados; `widget-registry.ts` salvo el `TODO`; backend. (Ojo: `popup-parts.tsx` tuvo un fix de `react-hooks/static-components` en L.2 — no re-tocar esa parte.)
