@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
     root: workspaceRoot,
   },
   serverExternalPackages: ['paper'],
+  // Paquetes internos del workspace que se consumen desde fuente TS (E2).
+  transpilePackages: ['@lumina/scoring'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
   },

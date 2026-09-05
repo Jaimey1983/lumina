@@ -119,11 +119,23 @@ function superficiePublica(path: string): Record<string, string> {
   return surface;
 }
 
-it.each([
-  "../../../lumina-frontend/src/lib/activity-scoring.ts",
-  "../../../lumina-backend/src/classes/activity-scoring.ts",
-])("conserva todas las declaraciones públicas de %s", (path) => {
-  expect(superficiePublica("./index.ts")).toEqual(superficiePublica(path));
+// E2.2: `lumina-frontend/src/lib/activity-scoring.ts` pasa a ser una fachada
+// (`export * from '@lumina/scoring'`) — ya no es fuente de verdad. El único
+// espejo manual que queda es el backend (se reapunta en E6).
+it("conserva todas las declaraciones públicas del espejo backend", () => {
+  expect(superficiePublica("./index.ts")).toEqual(
+    superficiePublica("../../../lumina-backend/src/classes/activity-scoring.ts"),
+  );
+});
+
+it("la fachada del frontend es un re-export puro de @lumina/scoring", () => {
+  const text = readFileSync(
+    new URL("../../../lumina-frontend/src/lib/activity-scoring.ts", import.meta.url),
+    "utf8",
+  );
+  expect(text).toMatch(/export \* from ['"]@lumina\/scoring['"]/);
+  // No debe re-aparecer lógica: la fachada no declara sus propios exports.
+  expect(superficiePublica("../../../lumina-frontend/src/lib/activity-scoring.ts")).toEqual({});
 });
 
 // E2.1: la implementación ya está portada — el comportamiento se valida en
