@@ -1938,6 +1938,9 @@ function BlockNode({
         ) : (
           <RuletaViewer block={block} />
         );
+      // TODO(migración-etapa-5): reconectar `grafico` desde ElementRegistry
+      // (`graficoDefinition` en @lumina/element-kit) y borrar este case.
+      // Ticket: LUM-E5-CANVAS-BLOCKS · 2026-12-31.
       case 'grafico':
         return editorMode ? (
           <GraficoEditor

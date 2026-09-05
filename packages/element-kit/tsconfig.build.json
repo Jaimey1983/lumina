@@ -27,6 +27,9 @@
       "lumina-frontend/widgets/popup": [
         "./src/shims/lumina-frontend-popup.d.ts"
       ],
+      "lumina-frontend/blocks/grafico": [
+        "./src/shims/lumina-frontend-grafico.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
       ],
