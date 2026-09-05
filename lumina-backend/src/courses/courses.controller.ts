@@ -45,8 +45,8 @@ export class CoursesController {
 
   // GET /courses/:id
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.coursesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
+    return this.coursesService.findOneForUser(id, user.id, user.role);
   }
 
   // PATCH /courses/:id
@@ -71,8 +71,12 @@ export class CoursesController {
   // POST /courses/:id/enroll
   @Post(':id/enroll')
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
-  enrollStudent(@Param('id') courseId: string, @Body() dto: EnrollStudentDto) {
-    return this.coursesService.enrollStudent(courseId, dto);
+  enrollStudent(
+    @Param('id') courseId: string,
+    @Body() dto: EnrollStudentDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.coursesService.enrollStudent(courseId, dto, user.id, user.role);
   }
 
   // GET /courses/:id/students
@@ -82,7 +86,14 @@ export class CoursesController {
     @Param('id') courseId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.coursesService.findStudents(courseId, +page, +limit);
+    return this.coursesService.findStudents(
+      courseId,
+      +page,
+      +limit,
+      user.id,
+      user.role,
+    );
   }
 }

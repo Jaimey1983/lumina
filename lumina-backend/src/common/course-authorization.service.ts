@@ -17,7 +17,9 @@ export type CourseManageScope =
   | 'gamification'
   | 'classEditor'
   | 'reports'
-  | 'progressMap';
+  | 'progressMap'
+  | 'courseSettings'
+  | 'enrollment';
 
 const MANAGE_SCOPE_MESSAGES: Record<
   CourseManageScope,
@@ -75,6 +77,14 @@ const MANAGE_SCOPE_MESSAGES: Record<
     wrongCourse:
       'No tienes permiso para gestionar el mapa de progreso de este curso',
     notStaff: 'No tienes permiso para gestionar el mapa de progreso',
+  },
+  courseSettings: {
+    wrongCourse: 'No tienes permisos para modificar este curso',
+    notStaff: 'No tienes permisos para modificar cursos',
+  },
+  enrollment: {
+    wrongCourse: 'No tienes permiso para gestionar la matrícula de este curso',
+    notStaff: 'No tienes permiso para gestionar matrículas',
   },
 };
 

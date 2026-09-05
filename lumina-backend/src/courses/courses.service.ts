@@ -2,17 +2,20 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
 
 @Injectable()
 export class CoursesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private courseAuth: CourseAuthorizationService,
+  ) {}
 
   async create(dto: CreateCourseDto, teacherId: string) {
     const existing = await this.prisma.course.findUnique({
@@ -96,17 +99,20 @@ export class CoursesService {
     return course;
   }
 
+  /** Detalle de curso para el endpoint público — exige acceso de lectura real. */
+  async findOneForUser(id: string, userId: string, role: string) {
+    await this.courseAuth.verifyCourseReadAccess(id, userId, role);
+    return this.findOne(id);
+  }
+
   async update(id: string, dto: UpdateCourseDto, userId: string, role: string) {
-    const course = await this.findOne(id);
-    if (
-      role !== 'ADMIN' &&
-      role !== 'SUPERADMIN' &&
-      course.teacher.id !== userId
-    ) {
-      throw new ForbiddenException(
-        'No tienes permisos para modificar este curso',
-      );
-    }
+    await this.courseAuth.assertStaffCanManageCourse(
+      id,
+      userId,
+      role,
+      'courseSettings',
+    );
+    await this.courseAuth.assertCourseExists(id);
     return this.prisma.course.update({
       where: { id },
       data: {
@@ -126,16 +132,13 @@ export class CoursesService {
   }
 
   async remove(id: string, userId: string, role: string) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      id,
+      userId,
+      role,
+      'courseSettings',
+    );
     const course = await this.findOne(id);
-    if (
-      role !== 'ADMIN' &&
-      role !== 'SUPERADMIN' &&
-      course.teacher.id !== userId
-    ) {
-      throw new ForbiddenException(
-        'No tienes permisos para eliminar este curso',
-      );
-    }
     await this.prisma.course.update({
       where: { id },
       data: { isActive: false },
@@ -143,8 +146,19 @@ export class CoursesService {
     return { message: `Curso ${course.name} desactivado correctamente` };
   }
 
-  async enrollStudent(courseId: string, dto: EnrollStudentDto) {
-    await this.findOne(courseId);
+  async enrollStudent(
+    courseId: string,
+    dto: EnrollStudentDto,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'enrollment',
+    );
+    await this.courseAuth.assertCourseExists(courseId);
 
     let userId = dto.userId?.trim() || '';
     if (!userId && dto.email) {
@@ -176,8 +190,20 @@ export class CoursesService {
     });
   }
 
-  async findStudents(courseId: string, page = 1, limit = 20) {
-    await this.findOne(courseId);
+  async findStudents(
+    courseId: string,
+    page = 1,
+    limit = 20,
+    requesterId: string,
+    requesterRole: string,
+  ) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      requesterId,
+      requesterRole,
+      'enrollment',
+    );
+    await this.courseAuth.assertCourseExists(courseId);
     const skip = (page - 1) * limit;
     const [enrollments, total] = await Promise.all([
       this.prisma.enrollment.findMany({
