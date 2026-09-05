@@ -436,7 +436,8 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 
 ##### E4.3 — Forma vectorial: `clip-group` (recorte/máscara) como `ElementDefinition`, **sin** el editor Paper.js
 - **Operador:** Cursor
-- **Estado:** pendiente · **Precondición:** E4.2 `hecho`.
+- **Estado:** asignada a Cursor con el prompt canónico. Cursor marca `[en curso: Cursor]` + commit antes de empezar (Regla 10). Recordatorio E4.1/E4.2: correr la verificación en aislamiento (no en paralelo con el build del frontend — da timeouts espurios); dejar el árbol **commiteado** al pasar a `en revisión`.
+- **Precondición:** E4.2 `hecho`.
 - **Contexto:** `ClipGroupBlock` (`slide.types.ts:1021`). Render en `render-clip-group.tsx` (610 líneas). E4.3 migra el **bloque** (Editor sin el editor de nodos, Viewer, Propiedades) y deja el editor Paper.js para E4.4. `crearPorDefecto` desde el fallback de `BLOCK_FALLBACKS['clip-group']` / el default que use `render-clip-group.tsx`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/clip-group/**`; shim + alias ×3 + `src/index.ts`; barrel para `render-clip-group.tsx` (extraer a `src/components/.../clip-group/index.ts` o exponer desde donde vive hoy, **sin** moverlo a `slide-renderer`), subpath `./blocks/clip-group`. `src/lib/freeform-mask.ts` solo lectura / export.
 - **Alcance — NO toca:** `clip-path-node-editor-paper.tsx` (es E4.4), `slide-renderer.tsx`, `canvas-area.tsx`, paneles congelados; backend.
