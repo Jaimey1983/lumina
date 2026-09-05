@@ -21,6 +21,18 @@ export {
 } from "./elements/boton/index.js";
 
 export {
+  ruletaDefinition,
+  registrarRuleta,
+  RULETA_TIPO,
+  RuletaEditor,
+  RuletaViewer,
+  RuletaPropiedades,
+  type RuletaConfig,
+  type RuletaEstado,
+  type RuletaDefinition,
+} from "./elements/ruleta/index.js";
+
+export {
   anagramaDefinition,
   registrarAnagrama,
   evaluarAnagrama,
@@ -311,6 +323,7 @@ import { abrirCajaDefinition } from "./elements/abrir_caja/abrir_caja-definition
 import { ahorcadoDefinition } from "./elements/ahorcado/ahorcado-definition.js";
 import { anagramaDefinition } from "./elements/anagrama/anagrama-definition.js";
 import { botonDefinition } from "./elements/boton/boton-definition.js";
+import { ruletaDefinition } from "./elements/ruleta/ruleta-definition.js";
 import { clasificarDefinition } from "./elements/clasificar/clasificar-definition.js";
 import { crucigramaDefinition } from "./elements/crucigrama/crucigrama-definition.js";
 import { globosDefinition } from "./elements/globos/globos-definition.js";
@@ -334,6 +347,7 @@ import { nubePalabrasDefinition } from "./elements/nube_palabras/nube_palabras-d
 /** Catálogo único — Botón (E1.4) + Anagrama (E2.3) + Grupo 4 (E2.4) + familia clásica (E2.5). */
 export const elementRegistry = new ElementRegistry<{
   boton: typeof botonDefinition;
+  ruleta: typeof ruletaDefinition;
   anagrama: typeof anagramaDefinition;
   clasificar: typeof clasificarDefinition;
   memoria: typeof memoriaDefinition;
@@ -358,6 +372,7 @@ export const elementRegistry = new ElementRegistry<{
   nube_palabras: typeof nubePalabrasDefinition;
 }>();
 elementRegistry.registrar(botonDefinition);
+elementRegistry.registrar(ruletaDefinition);
 elementRegistry.registrar(anagramaDefinition);
 elementRegistry.registrar(clasificarDefinition);
 elementRegistry.registrar(memoriaDefinition);

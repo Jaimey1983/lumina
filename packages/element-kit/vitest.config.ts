@@ -26,6 +26,10 @@ export default defineConfig({
         frontendSrc,
         "components/widgets/boton/index.ts",
       ),
+      "lumina-frontend/widgets/ruleta": path.resolve(
+        frontendSrc,
+        "components/widgets/ruleta/index.ts",
+      ),
       "lumina-frontend/activities/anagrama": path.resolve(
         frontendSrc,
         "components/activities/anagrama/index.ts",

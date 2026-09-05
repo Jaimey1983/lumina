@@ -354,7 +354,7 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 
 ##### E3.1 — Piloto: Ruleta como `ElementDefinition` (sin `puntuacion`)
 - **Operador:** Cursor (dueño del canvas / widgets)
-- **Estado:** [en curso: Cursor]
+- **Estado:** en revisión — Ruleta migrada a `ElementDefinition` sin `puntuacion`, con adapters legacy, factory existente, registro único, barrel/subpath, shim/aliases y paridad exacta de DOM en Editor/Viewer. Verificado: `pnpm --filter @lumina/element-kit test` → 113/113; `pnpm --filter lumina-frontend build` → 17/17 páginas; lint del kit y frontend → 0 errores.
 - **Precondición:** E2 cerrada.
 - **Contexto:** Ruleta espeja al Botón — `RuletaWidget` en `@/types/widget.types`, `createDefaultRuletaWidget(marco?)` + `normalizeRuletaBlock` en `lumina-frontend/src/components/widgets/ruleta/ruleta-defaults.ts`, componentes `ruleta-editor.tsx` / `ruleta-viewer.tsx` / `ruleta-properties.tsx` (+ `ruleta-wheel.tsx`). `ruleta` sigue `exclude` en scoring.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/ruleta/**` (definición + adapters + parity spec + registro en `elementRegistry`), su shim `src/shims/lumina-frontend-ruleta.d.ts`, el alias `lumina-frontend/widgets/ruleta` en `tsconfig.json` / `tsconfig.build.json` / `vitest.config.ts`, `packages/element-kit/src/index.ts`. Crear `lumina-frontend/src/components/widgets/ruleta/index.ts` (barrel, re-export puro, como el del Botón) + subpath `./widgets/ruleta` en `lumina-frontend/package.json`.

@@ -17,6 +17,8 @@ export const WIDGET_LABELS: Record<WidgetTipo, string> = {
   boton: 'Botón',
   contador: 'Contador / temporizador',
   progreso: 'Barra de progreso',
+  // TODO(migración-etapa-5): retirar la fila `ruleta` de este registro cuando
+  // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.
   ruleta: 'Ruleta',
 };
 

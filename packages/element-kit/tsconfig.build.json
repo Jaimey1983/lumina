@@ -4,6 +4,9 @@
     "rootDir": "src",
     "paths": {
       "lumina-frontend/widgets/boton": ["./src/shims/lumina-frontend-boton.d.ts"],
+      "lumina-frontend/widgets/ruleta": [
+        "./src/shims/lumina-frontend-ruleta.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
       ],
