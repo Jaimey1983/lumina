@@ -98,7 +98,7 @@ El trabajo se reparte entre tres operadores — **Claude Code**, **Cursor**, **A
 
 ### Prompt canónico del operador
 
-> Realizá el paso `<ID>` del Tablero de pasos de `AGENTS.md`. Leé la ficha completa y las Reglas 0–10. No te salgas del alcance declarado en la ficha (archivos que puede tocar / que no). Corré el comando de verificación de la ficha; no lo des por terminado si algo falla. Al terminar dejá el estado en `en revisión` con una línea de qué hiciste y qué comando corriste.
+> Realizá el paso `<ID>` del Tablero de pasos de `AGENTS.md`. Leé la ficha completa y las Reglas 0–11. No te salgas del alcance declarado en la ficha (archivos que puede tocar / que no). Corré el comando de verificación de la ficha; no lo des por terminado si algo falla. Al terminar dejá el estado en `en revisión` con una línea de qué hiciste y qué comando corriste.
 
 Nada más. Si el operador necesita algo que **no** está en la ficha, no improvisa: pide que se complete la ficha primero y espera.
 
@@ -126,6 +126,20 @@ Nada más. Si el operador necesita algo que **no** está en la ficha, no improvi
 - Un operador toma **una** ficha a la vez, salvo que dos fichas sean independientes y toquen conjuntos de archivos **disjuntos**.
 - Si dos fichas activas podrían tocar el mismo archivo, **no** corren en paralelo — la segunda espera.
 - `[en curso: <op>]` + commit **antes** de empezar. Sin ese commit, otro operador puede reclamar la misma ficha.
+
+## Regla 11 — Antigravity ejecuta sin pedir permiso paso a paso
+
+Antigravity interrumpe pidiendo confirmación por cada acción (hasta ~3 prompts por minuto). Eso frena el trabajo sin sumar seguridad real: el alcance ya está acotado por la ficha (Regla 10) y la red de seguridad es el CI + los tests (Regla 7).
+
+- Antigravity ejecuta **todas las acciones de su ficha sin pedir confirmación**: leer y escribir archivos, correr `pnpm` / `npx` / tests / lint, `git add` de sus propios archivos, `git commit`, crear ramas locales.
+- El permiso es **por adelantado y para todo el ciclo de la ficha** — no se pregunta comando por comando. Si el cliente tiene un modo "auto-run / ejecutar sin confirmar", se deja activado para este repo.
+- Sigue acotado por: el **alcance declarado en la ficha** (archivos que puede / no puede tocar) y las Reglas 0–11. "Sin preguntar" **no** habilita salir del alcance, tomar otra ficha, ni saltarse un paso del protocolo.
+- **Sí** se para y se avisa antes de:
+  - operaciones destructivas irreversibles sobre historia o estado compartido: `git push --force`, `git reset --hard` sobre commits ya empujados, borrar ramas remotas, reescribir historia, `git clean -fdx`;
+  - `git add -A` / `git add .` (siempre se stagean rutas explícitas — el árbol tiene trabajo sin commitear de otros operadores);
+  - cualquier cosa fuera del alcance de la ficha (ahí aplica `bloqueado`, Regla 10).
+
+Aplica solo a Antigravity. Los demás operadores mantienen su propio criterio de confirmación.
 
 ## Definition of Done por elemento migrado
 
