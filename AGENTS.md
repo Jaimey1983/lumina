@@ -178,7 +178,7 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 
 #### F1.4 — Concurrencia de guardado de slide y de juegos en vivo
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Cursor]
 - **Precondición:** ninguna — es un riesgo de Fase 1, corre en paralelo a la migración.
 - **Alcance — PUEDE tocar:** `lumina-backend/src/classes/` (persistencia de slide: transacción / control de versión optimista), `lumina-backend/src/classes/classes.gateway.ts`, `lumina-backend/src/live-sessions/`, `lumina-backend/src/torneo/`, `lumina-backend/src/gamification/session-gamification.service.ts`, `lumina-backend/src/quiz-live/`, y sus `*.spec.ts`.
 - **Alcance — NO toca:** el motor React del canvas (`lumina-frontend/src/**/canvas-*`, `slide-renderer.tsx`, componentes de Timeline) — es el cluster `react-hooks` congelado para E5. Si el fix necesitara tocarlo, se para y se deja el estado en `bloqueado por E5`.
