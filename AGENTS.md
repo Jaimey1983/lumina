@@ -301,7 +301,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.2 — El frontend consume `@lumina/scoring`
 - **Operador:** Claude Code
-- **Estado:** bloqueado por E2.1
+- **Estado:** [en curso: Claude Code]
 - **Alcance — PUEDE tocar:** `lumina-frontend/src/lib/activity-scoring.ts` (+ su `package.json` para la dep `@lumina/scoring`), y los imports internos que lo usen **solo si** hace falta reapuntarlos.
 - **Contenido:** `lumina-frontend/src/lib/activity-scoring.ts` pasa a **re-exportar** desde `@lumina/scoring` (API pública idéntica — mismos nombres, mismas firmas). No se borra el archivo: queda como fachada + `TODO(migración-etapa-2)`… no — **`TODO(migración-etapa-5)`** (se elimina la fachada cuando E5 termine de reapuntar consumidores) con ticket y fecha.
 - **Alcance — NO toca:** `lumina-backend/src/classes/activity-scoring.ts` (es E6), `slide-renderer.tsx`, cualquier componente de actividad.
