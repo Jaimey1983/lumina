@@ -491,12 +491,24 @@ function buildSlideContextoCurricular(
   };
 }
 
+/**
+ * Forma legada de un slide devuelto por el asistente de IA, previa al esquema
+ * `GeneratedSlideStructure` (`contenido`/`tipo`). Se conserva para hidratar
+ * respuestas viejas del endpoint.
+ */
+type LegacySlideIA = {
+  tipo?: string;
+  type?: string;
+  title?: string;
+  bulletPoints?: string[];
+};
+
 function layoutDesdeSlideIA(
-  slide: GeneratedSlideStructure | { tipo?: string; type?: string },
+  slide: GeneratedSlideStructure | LegacySlideIA,
 ): SlidePersistedLayoutKey {
   // Esquema nuevo: usa campo `tipo`
   const tipo = ((slide as GeneratedSlideStructure).tipo
-    ?? (slide as any).type
+    ?? (slide as LegacySlideIA).type
     ?? '') as string;
 
   switch (tipo) {
@@ -828,17 +840,17 @@ function IaPanel({
         if (esEsquemaNuevo) {
           bloques = buildBloquesDesdeSlideIA(slide as GeneratedSlideStructure);
         } else {
-          const s = slide as any;
+          const s = slide as LegacySlideIA;
           bloques = [
             buildTemplateTextBlock(s.title ?? '', 5, 3, 90, 15, 32),
             buildTemplateTextBlock(
-              (s.bulletPoints ?? []).map((bp: string) => `• ${bp}`).join('\n'),
+              (s.bulletPoints ?? []).map((bp) => `• ${bp}`).join('\n'),
               5, 20, 90, 72, 18,
             ),
           ];
         }
 
-        const titulo = (slide as any).title ?? 'Slide';
+        const titulo = (slide as LegacySlideIA).title ?? 'Slide';
         const layoutKey = layoutDesdeSlideIA(slide);
         const content: Record<string, unknown> = { bloques, layout: layoutKey };
         onCreateActivitySlide?.(content, titulo);

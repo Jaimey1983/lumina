@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { createElement, type CSSProperties } from 'react';
 import {
   AlertCircle,
   Bell,
@@ -140,7 +140,15 @@ export function PopupTriggerButton({
           color: configuracion.triggerColorTexto,
         };
 
-  const Icon = resolvePopupTriggerIcon(configuracion.triggerIcono);
+  // `resolvePopupTriggerIcon` devuelve siempre un componente Lucide de nivel de
+  // módulo; usamos `createElement` (no un binding con mayúscula + JSX) para no
+  // disparar `react-hooks/static-components` del React Compiler.
+  const triggerIconNode = isIconOnly
+    ? createElement(resolvePopupTriggerIcon(configuracion.triggerIcono), {
+        className: iconSizeClass(configuracion.triggerTamano),
+        'aria-hidden': true,
+      })
+    : null;
 
   const handleClick = (e: React.MouseEvent) => {
     if (editable) {
@@ -204,12 +212,7 @@ export function PopupTriggerButton({
           Sin imagen
         </span>
       ) : null}
-      {isIconOnly ? (
-        <Icon
-          className={iconSizeClass(configuracion.triggerTamano)}
-          aria-hidden
-        />
-      ) : null}
+      {triggerIconNode}
       {(triggerVisual === 'boton' || triggerVisual === 'texto') && (
         <span>{configuracion.triggerTexto ?? 'Ver más'}</span>
       )}

@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react';
+import { createElement, useId, useRef } from 'react';
 import {
   AlertCircle,
   Bell,
@@ -94,7 +94,13 @@ export function TooltipParts({
   if (posTooltip === 'izquierda') posClass = styles.posLeft;
   if (posTooltip === 'derecha') posClass = styles.posRight;
 
-  const Icon = resolveTooltipTriggerIcon(cfg.icono);
+  // `createElement` en vez de un binding con mayúscula + JSX: evita
+  // `react-hooks/static-components` del React Compiler (el ícono ya es un
+  // componente Lucide de nivel de módulo).
+  const triggerIconNode = createElement(resolveTooltipTriggerIcon(cfg.icono), {
+    size: 18,
+    'aria-hidden': true,
+  });
 
   const handleClick = (e: React.MouseEvent) => {
     if (isEditing || onSelectTrigger) {
@@ -114,9 +120,7 @@ export function TooltipParts({
     ) : cfg.triggerTipo === 'texto_subrayado' ? (
       <span className={styles.triggerText}>{cfg.textoTrigger}</span>
     ) : (
-      <span className={styles.triggerIcon}>
-        <Icon size={18} aria-hidden />
-      </span>
+      <span className={styles.triggerIcon}>{triggerIconNode}</span>
     );
 
   const triggerLabel =

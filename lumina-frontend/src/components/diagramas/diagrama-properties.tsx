@@ -168,7 +168,14 @@ export function DiagramaProperties({
     if (!grafoBlock) return;
 
     const count = grafoBlock.nodos.length + 1;
-    const newNodeId = `nodo-${currentSubtipo}-${Date.now()}`;
+    // Sufijo determinista: mayor secuencia numérica ya usada + 1 (evita
+    // colisión tras borrar un nodo). Sin `Date.now()` — impuro en render para
+    // el React Compiler y colisionable en dos altas dentro del mismo ms.
+    const maxSeq = grafoBlock.nodos.reduce((max, n) => {
+      const seq = Number(n.id.split('-').pop());
+      return Number.isFinite(seq) && seq > max ? seq : max;
+    }, 0);
+    const newNodeId = `nodo-${currentSubtipo}-${Math.max(count, maxSeq + 1)}`;
     const rootNode = grafoBlock.nodos[0] || { x: 200, y: 150 };
 
     let newX = 200;
