@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: frontendRoot,
   },
+  serverExternalPackages: ['paper'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
   },

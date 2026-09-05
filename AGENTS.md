@@ -225,7 +225,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.1 — Workspace pnpm real en la raíz
 - **Operador:** Antigravity
-- **Estado:** [en curso: Antigravity]
+- **Estado:** en revisión — workspace pnpm consolidado en raíz con lockfile único; scripts verificados con pnpm --filter en ambos paquetes (backend 243 tests, frontend 446, 0 lint error, builds pasando).
 - **Precondición:** L.1 + L.2 `hecho` (CI verde con lint estricto) — cumplida.
 - **Alcance — PUEDE tocar (solo infraestructura de workspace, NADA bajo `src/` ni `prisma/`):**
   - Raíz: crear `package.json` (`"private": true`, `"packageManager": "pnpm@11.25.0"` — igual que CI); ampliar `pnpm-workspace.yaml` con `packages: ['packages/*', 'lumina-frontend', 'lumina-backend']` y consolidar ahí los `overrides` / `allowBuilds` / `ignoredBuiltDependencies` que hoy están repartidos en `lumina-frontend/pnpm-workspace.yaml` y en el `pnpm-workspace.yaml` de la raíz.
