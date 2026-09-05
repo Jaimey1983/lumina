@@ -392,6 +392,9 @@ importers:
 
   packages/element-kit:
     dependencies:
+      '@lumina/scoring':
+        specifier: workspace:*
+        version: link:../scoring
       lumina-frontend:
         specifier: workspace:*
         version: link:../../lumina-frontend

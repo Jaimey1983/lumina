@@ -19,6 +19,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@lumina/scoring": "workspace:*",
     "lumina-frontend": "workspace:*"
   },
   "devDependencies": {

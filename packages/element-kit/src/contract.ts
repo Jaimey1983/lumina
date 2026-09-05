@@ -22,8 +22,14 @@ export interface ElementPropsPanelProps<TState, TConfig>
   onConfigChange(config: TConfig): void;
 }
 
-/** El consumidor conecta el motor de scoring; el contrato no calcula puntajes. */
-export type PuntuacionDelegate<TState> = (estado: TState) => number;
+/**
+ * El consumidor conecta el motor de scoring; el contrato no calcula puntajes.
+ * `respuesta` es la respuesta del alumno (E2.3+). El Botón no declara `puntuacion`.
+ */
+export type PuntuacionDelegate<TState> = (
+  estado: TState,
+  respuesta?: unknown,
+) => number;
 
 export interface ElementDefinition<TState, TConfig> {
   readonly tipo: string;

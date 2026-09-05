@@ -44,7 +44,7 @@ describe("ElementRegistry", () => {
 
 it("fija el estado, las props y el delegado de puntuación", () => {
   expectTypeOf(definicion.crearPorDefecto).returns.toEqualTypeOf<{ texto: string }>();
-  expectTypeOf<NonNullable<ElementDefinition<number, object>["puntuacion"]>>().toEqualTypeOf<(estado: number) => number>();
+  expectTypeOf<NonNullable<ElementDefinition<number, object>["puntuacion"]>>().toEqualTypeOf<(estado: number, respuesta?: unknown) => number>();
   expectTypeOf<ElementEditorProps<number, string>["onChange"]>().toEqualTypeOf<(estado: number) => void>();
   expectTypeOf<ElementPropsPanelProps<number, string>["onConfigChange"]>().toEqualTypeOf<(config: string) => void>();
   // @ts-expect-error El contrato exige todos los componentes y la apariencia.

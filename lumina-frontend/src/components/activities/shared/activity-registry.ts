@@ -179,6 +179,10 @@ const ABRIR_CAJA_ENTRY: ActivityRegistryEntry<AbrirCajaActivity> = {
   createDefault: createDefaultAbrirCaja,
 };
 
+// TODO(migración-etapa-5): retirar la fila `anagrama` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. El piloto E2.3 ya registra
+// `anagramaDefinition` en @lumina/element-kit; slides-panel sigue leyendo
+// de aquí hasta E5. Ticket: LUM-E5-ANAGRAMA · fecha objetivo: 2026-11-30.
 const ANAGRAMA_ENTRY: ActivityRegistryEntry<AnagramaActivity> = {
   tipo: 'anagrama',
   panelType: 'anagrama',

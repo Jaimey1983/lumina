@@ -13,6 +13,9 @@
       "@/*": ["../../lumina-frontend/src/*"],
       "lumina-frontend/widgets/boton": [
         "../../lumina-frontend/src/components/widgets/boton/index.ts"
+      ],
+      "lumina-frontend/activities/anagrama": [
+        "../../lumina-frontend/src/components/activities/anagrama/index.ts"
       ]
     }
   },
