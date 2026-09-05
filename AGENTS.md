@@ -192,7 +192,7 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 
 #### L.2 — Cerrar los 6 errores de lint fuera del cluster congelado + degradar `canvas-area.tsx`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar (solo estos archivos):**
   - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/panels/flyout-left-panels.tsx` — 3× `@typescript-eslint/no-explicit-any` (líneas ~499, ~831, ~841): tipar el esquema legado de slide IA (`{ type?: string; title?: string; bulletPoints?: string[] }`), sin `any`.
