@@ -372,7 +372,7 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 
 ##### E3.3 — Familia Lienzo/Captivate (Flip Cards, Tabs, Carousel, Click to Reveal, Timeline)
 - **Operador:** Cursor
-- **Estado:** en revisión — flip-cards/tabs/carousel/click-reveal/timeline como ElementDefinition sin puntuacion; adapters con edición inline y normalizadores re-exportados, barrels/subpaths/shims/aliases ×3 y registro único. Timeline sin editar sus componentes; paridad completa de DOM (Editor/Viewer/miniatura), edición inline y puente de Propiedades. TODO(migración-etapa-5) por fila (LUM-E5-WIDGETS, 2026-12-31). Verificación: `pnpm --filter @lumina/element-kit test` **164/164** (25 suites), `build` y `lint` OK; `pnpm --filter lumina-frontend build` OK (17/17 páginas, con advertencias de imports en tablas/gráficos fuera de E3.3); `pnpm --filter lumina-backend test` **243/243**.
+- **Estado:** **hecho** (commit `c657d65`) — verificado por Claude Code. flip-cards/tabs/carousel/click-reveal/timeline como `ElementDefinition` sin `puntuacion` (parity specs lo asertan). **Timeline: componentes `.tsx` NO editados** — solo barrel `timeline/index.ts` + adapter que envuelve (constraint E5 respetada); su parity spec es DOM real (defaults + normalización + edición inline + Propiedades), no render-smoke. Barrels/subpaths/shims/aliases ×3 + registro único. `TODO(migración-etapa-5)` por fila en `widget-registry.ts` (10 filas). Verif: `@lumina/element-kit` build/lint OK · test **164/164** (25 files) · `lumina-frontend` lint 0 / build OK (los "Attempted import error" de `victory-vendor/d3-shape` son pre-existentes, no de E3.3).
 - **Contexto:** widgets con header + `configuracion` + edición inline + `normalize*` al hidratar el slide (`class-slide-normalize.ts`). **Timeline** está en el cluster congelado E5 (`react-hooks` del canvas): se **envuelve sin editar** sus componentes (como E2.5 con el `switch`); si el wrap necesita tocarlos, se para y se deja `bloqueado por E5`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `flip_cards`/`flip-cards`, `tabs`, `carousel`, `click_reveal`/`click-reveal`, `timeline`; shims + aliases + `src/index.ts`; barrels `lumina-frontend/src/components/widgets/<tipo>/index.ts` + subpaths. **No** editar los `.tsx` de Timeline.
 - **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, `flyout-left-panels.tsx`, la lógica interna de los componentes de Timeline (solo re-export); backend.
@@ -381,7 +381,7 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 
 ##### E3.4 — Overlay Popup
 - **Operador:** Cursor
-- **Estado:** bloqueado por E3.3
+- **Estado:** pendiente (E3.3 hecho — desbloqueado)
 - **Contexto:** Popup hace portal a `.canvas-slide` + backdrop y bloquea el slide (`lumina-frontend/CLAUDE.md` §widgets). El adapter lo envuelve tal cual; para la parity spec puede requerir montar un `.canvas-slide` de prueba o un render-smoke.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/popup/**`; shim + alias + `src/index.ts`; `lumina-frontend/src/components/widgets/popup/index.ts` barrel + subpath.
 - **Alcance — NO toca:** el motor del canvas / paneles congelados; `widget-registry.ts` salvo el `TODO`; backend. (Ojo: `popup-parts.tsx` tuvo un fix de `react-hooks/static-components` en L.2 — no re-tocar esa parte.)
