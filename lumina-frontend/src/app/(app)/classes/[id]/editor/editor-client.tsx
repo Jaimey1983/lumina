@@ -198,7 +198,6 @@ import {
   extractActivityDefinition,
 } from '@/lib/activity-scoring';
 import { useGamification } from '@/hooks/use-gamification';
-import { GamificationLeaderboard } from '@/components/gamification/gamification-leaderboard';
 import type { SlideTheme } from '@/types/slide.types';
 import { useAutosave } from '@/hooks/use-autosave';
 import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
@@ -1071,12 +1070,13 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeActivity?.tipo, torneoSocketRevision],
   );
 
+  const activeSlideId = activeSlide?.id;
   const liveSlideRespondedCount = useMemo(() => {
-    if (!activeSlide?.id) return 0;
-    const list = liveResponses.get(activeSlide.id)?.responses;
+    if (!activeSlideId) return 0;
+    const list = liveResponses.get(activeSlideId)?.responses;
     if (!list?.length) return 0;
     return new Set(list.map((r) => r.studentId).filter(Boolean)).size;
-  }, [activeSlide?.id, liveResponses]);
+  }, [activeSlideId, liveResponses]);
 
   const showLiveResponsesTopbar =
     sessionActive && activeSlideHasActivity && roomStudentCount > 0;

@@ -169,6 +169,7 @@ describe('canvas-history', () => {
     let state = createInitialHistory(snap(0, 'inicio'));
     state = pushHistoryEntry(state, snap(1));
     state = pushHistoryEntry(state, snap(2));
+    expect(state.entries).toHaveLength(3);
     const fresh = resetSlideHistory(snap(9, 'inicio'));
     expect(fresh.entries).toHaveLength(1);
     expect(fresh.index).toBe(0);

@@ -14,7 +14,6 @@ import {
   offsetBlockPosition,
   prepareBlockForPaste,
   PASTE_OFFSET_PCT,
-  withClampedPosition,
   withClampedPositionChecked,
   blockPosToStyle,
   withPosition,

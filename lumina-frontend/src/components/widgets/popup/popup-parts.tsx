@@ -38,7 +38,6 @@ import { useSlideCanvasRoot } from '@/components/widgets/shared/slide-canvas-roo
 import styles from './popup.module.css';
 import { PopupModalResizeHandles } from './popup-modal-resize-handles';
 import {
-  mergedPopupConfig,
   resolvePopupOverlayVisibilidad,
   toPopupSlidePanelConfig,
 } from './popup-config';

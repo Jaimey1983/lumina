@@ -12,7 +12,6 @@ import {
   AlertCircle,
   Award,
   BookOpen,
-  Plus,
   Users,
 } from 'lucide-react';
 

@@ -5,7 +5,6 @@ import { AhorcadoActivity } from '@/types/slide.types'
 import {
   AHORCADO_MAX_INTENTOS,
   AHORCADO_MIN_INTENTOS,
-  ahorcadoFingerprint,
   esPalabraAhorcadoValida,
   normalizarAhorcado,
   normalizarPalabraAhorcado,
@@ -19,7 +18,7 @@ interface AhorcadoPropertiesProps {
 export function AhorcadoProperties({ actividad, onChange }: AhorcadoPropertiesProps) {
   const { configuracion } = useMemo(
     () => normalizarAhorcado(actividad),
-    [ahorcadoFingerprint(actividad)],
+    [actividad],
   )
 
   const updateConfig = useCallback(

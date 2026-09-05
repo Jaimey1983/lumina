@@ -60,7 +60,7 @@ function parseRanking(payload: unknown): RankingEntry[] {
   return out.sort((a, b) => a.position - b.position);
 }
 
-function downloadCSV(ranking: RankingEntry[], _activity: TorneoActivity) {
+function downloadCSV(ranking: RankingEntry[]) {
   const header = 'Posición,Nombre,Puntos\n';
   const rows = ranking
     .map((r) => `${r.position},"${r.studentName.replace(/"/g, '""')}",${Math.round(r.points)}`)
@@ -227,7 +227,7 @@ export function TorneoPanel({ classId, sessionId, activity, socket }: TorneoPane
             variant="outline"
             size="sm"
             className="h-7 gap-1.5 text-xs border-[#e5e7eb]"
-            onClick={() => downloadCSV(ranking, activity)}
+            onClick={() => downloadCSV(ranking)}
           >
             <Download className="size-3.5" />
             CSV

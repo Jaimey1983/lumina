@@ -148,7 +148,9 @@ function migrateLegacyClickReveal(block: ClickRevealWidget & Record<string, unkn
       imagenAlt: legacyBase.imagenAlt,
     };
   }
-  const { base: _b, overlay: _o, ...rest } = block;
+  const rest = { ...block };
+  delete (rest as { base?: unknown }).base;
+  delete (rest as { overlay?: unknown }).overlay;
   return { ...rest, triggers, overlays } as ClickRevealWidget;
 }
 

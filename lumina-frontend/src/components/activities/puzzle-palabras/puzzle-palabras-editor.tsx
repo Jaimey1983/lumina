@@ -10,7 +10,7 @@ interface PuzzlePalabrasEditorProps {
 }
 
 export function PuzzlePalabrasEditor({ actividad }: PuzzlePalabrasEditorProps) {
-  const { configuracion, oraciones } = actividad
+  const { oraciones } = actividad
 
   return (
     <div className="w-full p-4 bg-white rounded-lg border border-gray-200">

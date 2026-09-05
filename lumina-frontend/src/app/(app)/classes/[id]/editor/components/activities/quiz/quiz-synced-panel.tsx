@@ -12,7 +12,6 @@ import {
 
 import type { QuizMultiple, QuizPregunta } from '@/types/slide.types';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 export interface QuizSyncedPanelProps {
   classId: string;

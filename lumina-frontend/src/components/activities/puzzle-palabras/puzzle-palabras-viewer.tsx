@@ -68,7 +68,6 @@ export function PuzzlePalabrasViewer({ actividad, onComplete }: PuzzlePalabrasVi
 
   const oracionActual = oraciones[indiceOracion]
   const estadoActual = estados[indiceOracion]
-  const todosEnDestino = estadoActual.tokensOrigen.length === 0
 
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveDragId(e.active.id as string)
@@ -165,7 +164,7 @@ export function PuzzlePalabrasViewer({ actividad, onComplete }: PuzzlePalabrasVi
       {configuracion.mostrarPista && oracionActual.pista && (
         <div className="bg-blue-50 border border-blue-200 rounded p-3">
           <p className="text-sm text-blue-900">
-            💡 "{oracionActual.pista}"
+            💡 &quot;{oracionActual.pista}&quot;
           </p>
         </div>
       )}

@@ -36,6 +36,7 @@ export function stableWidgetChildId(block: WidgetIdentity, kind: string, index: 
  * Índice inicial del visor (alumno). Ignora el índice persistido del docente
  * (`fichaActiva` / `slideActivo`).
  */
-export function initialWidgetViewerPageIndex(_persistedActive?: number): number {
+export function initialWidgetViewerPageIndex(persistedActive?: number): number {
+  void persistedActive;
   return 0;
 }

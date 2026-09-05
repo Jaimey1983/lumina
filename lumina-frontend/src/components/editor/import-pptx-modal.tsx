@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Upload, FileText, X, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FileUpload } from '@/components/ui/file-upload'
 import { useImportPptx, type SlideImportado } from '@/hooks/api/use-import-pptx'

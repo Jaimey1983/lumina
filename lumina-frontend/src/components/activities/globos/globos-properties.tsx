@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 import { GlobosActivity, GlobosPregunta } from '@/types/slide.types'
 import {
   generarIdGlobos,

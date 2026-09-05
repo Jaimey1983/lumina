@@ -46,7 +46,11 @@ export function HistoriaRamificadaProperties({ actividad, onChange }: HistoriaRa
             <span className="text-gray-600">Tema visual</span>
             <select
               value={configuracion.tema}
-              onChange={e => updateConfig({ tema: e.target.value as any })}
+              onChange={e =>
+                updateConfig({
+                  tema: e.target.value as HistoriaRamificadaActivity['configuracion']['tema'],
+                })
+              }
               className="rounded border border-gray-300 px-2 py-1 text-xs"
             >
               <option value="neutro">Neutro</option>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { HotspotWidget } from '@/types/widget.types';
 import { HotspotParts } from './hotspot-parts';
-import { hotspotChromeStyle, mergedHotspotConfig } from './hotspot-config';
+import { hotspotChromeStyle } from './hotspot-config';
 
 interface HotspotViewerProps {
   block: HotspotWidget;
@@ -10,7 +10,6 @@ interface HotspotViewerProps {
 
 export function HotspotViewer({ block, isThumbnail = false }: HotspotViewerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const cfg = mergedHotspotConfig(block);
 
   const handleToggle = () => {
     if (!isThumbnail) {

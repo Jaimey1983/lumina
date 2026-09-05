@@ -1,4 +1,4 @@
-import type { TimelineConfiguracion, TimelineVariante } from '@/types/widget.types';
+import type { TimelineVariante } from '@/types/widget.types';
 
 import styles from './timeline.module.css';
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 
 interface ActivityTimerProps {
   segundos: number           // segundos restantes (controlado externamente)

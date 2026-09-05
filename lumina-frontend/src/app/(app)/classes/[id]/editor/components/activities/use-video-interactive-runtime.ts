@@ -165,7 +165,7 @@ export function useVideoInteractiveRuntime({
         if (result.cueEntered.pausarVideo !== false) controls.pause();
       }
     },
-    [source.provider],
+    [source.provider, setActiveQ],
   );
 
   const onDirectVideoSeeking = useCallback(() => {
@@ -286,7 +286,7 @@ export function useVideoInteractiveRuntime({
     if (isDirect) logVideoEvent('info', 'playback-resume', { provider: 'directo' });
     if (isYouTube) logVideoEvent('info', 'playback-resume', { provider: 'youtube' });
     if (isVimeo) logVideoEvent('info', 'playback-resume', { provider: 'vimeo' });
-  }, [hasStarted, runtimePolicy.resumeOnDismiss, source.provider, isDirect, isYouTube, isVimeo]);
+  }, [hasStarted, runtimePolicy.resumeOnDismiss, source.provider, isDirect, isYouTube, isVimeo, setActiveQ]);
 
   const handleOverlayAnswer = useCallback((answer: unknown) => {
     const question = activeQRef.current;
@@ -297,7 +297,7 @@ export function useVideoInteractiveRuntime({
       setAnsweredQIds((prev) => new Set(prev).add(question.id));
       onResponse?.({ questionIndex: qIndex, answer });
     }
-  }, [answeredQIds, actividad.preguntas, onResponse]);
+  }, [answeredQIds, actividad.preguntas, onResponse, setAnsweredQIds]);
 
   return {
     source,

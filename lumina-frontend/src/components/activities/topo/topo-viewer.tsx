@@ -53,6 +53,7 @@ export function TopoViewer({ actividad, onComplete }: TopoViewerProps) {
   const onCompleteRef = useRef(onComplete)
   const completedRef = useRef(false)
   const terminadoRef = useRef(false)
+  const lanzarToposRef = useRef<(idx: number) => void>(() => {})
 
   const cellSize = useTopoCellSize(gridAreaRef, filas, columnas)
   const labelSize = tamanoTextoTopo(cellSize || 48, 'Ejemplo')
@@ -130,7 +131,7 @@ export function TopoViewer({ actividad, onComplete }: TopoViewerProps) {
         } else {
           const t2 = window.setTimeout(() => {
             setIndicePregunta(nextIdx)
-            lanzarTopos(nextIdx)
+            lanzarToposRef.current(nextIdx)
           }, 400)
           timeoutRefs.current.push(t2)
         }
@@ -140,6 +141,10 @@ export function TopoViewer({ actividad, onComplete }: TopoViewerProps) {
     },
     [preguntas, totalHuecos, tiempoVisible, finalizarJuego],
   )
+
+  useEffect(() => {
+    lanzarToposRef.current = lanzarTopos
+  }, [lanzarTopos])
 
   useEffect(() => {
     lanzarTopos(0)

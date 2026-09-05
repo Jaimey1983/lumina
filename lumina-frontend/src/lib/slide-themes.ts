@@ -1,4 +1,4 @@
-import type { Background, SlideTheme } from '@/types/slide.types';
+import type { SlideTheme } from '@/types/slide.types';
 
 export { backgroundToCssStyle } from '@/lib/slide-background';
 

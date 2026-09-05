@@ -30,7 +30,7 @@ export function AnagramaEditor({ actividad }: AnagramaEditorProps) {
             {/* Pista */}
             {configuracion.mostrarPista && p.pista && (
               <div className="text-xs text-gray-600 italic">
-                "{p.pista}"
+                &quot;{p.pista}&quot;
               </div>
             )}
             {/* Letras mezcladas */}

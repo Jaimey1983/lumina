@@ -196,7 +196,8 @@ export function TrueFalseActivityEditor({
   }
 
   function updateExplanation(explicacion: string) {
-    const { explicacion: _, ...resto } = local.retroalimentacion || {};
+    const resto = { ...(local.retroalimentacion || {}) };
+    delete resto.explicacion;
     const newRetro = explicacion ? { ...resto, explicacion } : resto;
     const finalRetro = Object.keys(newRetro).length > 0 ? newRetro : undefined;
     updateImmediate({ retroalimentacion: finalRetro });

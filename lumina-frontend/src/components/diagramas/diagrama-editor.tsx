@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@/types/slide.types';
-import { applyGraphModelToDiagrama, diagramaToGraphModel } from './diagrama-bridge';
+import { diagramaToGraphModel } from './diagrama-bridge';
 import { normalizeDiagramaBlock } from './diagrama-defaults';
 import { assignElementoRegion, regionAtPoint } from './diagrama-regions';
 import { VennSvg } from './venn-svg';

@@ -40,7 +40,6 @@ import {
   CardTitle,
   CardToolbar,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
@@ -72,22 +71,8 @@ const STATUS_LABELS: Record<string, string> = {
   ARCHIVED: 'Archivada',
 };
 
-const STATUS_VARIANTS: Record<
-  string,
-  'secondary' | 'success' | 'warning' | 'destructive' | 'primary'
-> = {
-  DRAFT: 'secondary',
-  PUBLISHED: 'success',
-  LIVE: 'primary',
-  ARCHIVED: 'destructive',
-};
-
 function statusLabel(status: string) {
   return STATUS_LABELS[status?.toUpperCase()] ?? status;
-}
-
-function statusVariant(status: string) {
-  return STATUS_VARIANTS[status?.toUpperCase()] ?? 'secondary';
 }
 
 function isPublishedStatus(status: string) {

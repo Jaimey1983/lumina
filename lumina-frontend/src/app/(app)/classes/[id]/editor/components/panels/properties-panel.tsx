@@ -129,7 +129,7 @@ import {
   WidgetPropertiesPanelStack,
 } from '@/components/widgets/shared/widget-properties-panel';
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
-import { isBlockCanvasLocked, isBlockCanvasPositionable, withRotation } from '@/hooks/use-block-drag';
+import { isBlockCanvasPositionable, withRotation } from '@/hooks/use-block-drag';
 import { RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1422,7 +1422,8 @@ function TextBlockFields({
         void applyNow((b) => {
           if (b.tipo !== 'texto') return b;
           if (nivel === undefined) {
-            const { nivel: _omit, ...rest } = b;
+            const rest = { ...b };
+            delete rest.nivel;
             return rest;
           }
           return { ...b, nivel };

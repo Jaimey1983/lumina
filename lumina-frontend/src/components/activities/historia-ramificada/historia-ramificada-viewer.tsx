@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { HistoriaRamificadaActivity, HistoriaNodo } from '@/types/slide.types'
+import { HistoriaRamificadaActivity } from '@/types/slide.types'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'
 import { esNodoFinal, COLORES_NODO } from './historia-ramificada-config'

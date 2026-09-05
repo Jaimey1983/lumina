@@ -183,7 +183,7 @@ export function AnagramaViewer({ actividad, onComplete }: AnagramaViewerProps) {
       {configuracion.mostrarPista && palabraActual.pista && (
         <div className="bg-blue-50 border border-blue-200 rounded p-3">
           <p className="text-sm text-blue-900">
-            💡 "{palabraActual.pista}"
+            💡 &quot;{palabraActual.pista}&quot;
           </p>
         </div>
       )}

@@ -6,7 +6,7 @@ import type {
   WidgetSlideContent,
   WidgetSlidePanelConfig,
 } from '@/types/widget.types';
-import { coerceWidgetLayoutId, resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
 import {
   DEFAULT_HOTSPOT_CONFIG,
   normalizeHotspotWidget,
