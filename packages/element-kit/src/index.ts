@@ -8,6 +8,8 @@ export * from "./elements/tabs/index.js";
 import { tabsDefinition } from "./elements/tabs/tabs-definition.js";
 export * from "./elements/flip-cards/index.js";
 import { flipCardsDefinition } from "./elements/flip-cards/flip-cards-definition.js";
+export * from "./elements/popup/index.js";
+import { popupDefinition } from "./elements/popup/popup-definition.js";
 export type {
   AparienciaSpec,
   ElementDefinition,
@@ -413,6 +415,7 @@ export const elementRegistry = new ElementRegistry<{
   "carousel": typeof carouselDefinition;
   "tabs": typeof tabsDefinition;
   "flip-cards": typeof flipCardsDefinition;
+  popup: typeof popupDefinition;
   boton: typeof botonDefinition;
   ruleta: typeof ruletaDefinition;
   hotspot: typeof hotspotDefinition;
@@ -480,3 +483,5 @@ elementRegistry.registrar(carouselDefinition);
 elementRegistry.registrar(clickRevealDefinition);
 
 elementRegistry.registrar(timelineDefinition);
+
+elementRegistry.registrar(popupDefinition);

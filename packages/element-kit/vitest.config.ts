@@ -51,6 +51,10 @@ export default defineConfig({
         frontendSrc,
         "components/widgets/progreso/index.ts",
       ),
+      "lumina-frontend/widgets/popup": path.resolve(
+        frontendSrc,
+        "components/widgets/popup/index.ts",
+      ),
       "lumina-frontend/activities/anagrama": path.resolve(
         frontendSrc,
         "components/activities/anagrama/index.ts",

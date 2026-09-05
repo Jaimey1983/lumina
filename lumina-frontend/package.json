@@ -14,6 +14,7 @@
     "./widgets/tooltip": "./src/components/widgets/tooltip/index.ts",
     "./widgets/contador": "./src/components/widgets/contador/index.ts",
     "./widgets/progreso": "./src/components/widgets/progreso/index.ts",
+    "./widgets/popup": "./src/components/widgets/popup/index.ts",
     "./activities/anagrama": "./src/components/activities/anagrama/index.ts",
     "./activities/clasificar": "./src/components/activities/clasificar/index.ts",
     "./activities/memoria": "./src/components/activities/memoria/index.ts",

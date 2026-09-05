@@ -24,6 +24,9 @@
       "lumina-frontend/widgets/progreso": [
         "./src/shims/lumina-frontend-progreso.d.ts"
       ],
+      "lumina-frontend/widgets/popup": [
+        "./src/shims/lumina-frontend-popup.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
       ],

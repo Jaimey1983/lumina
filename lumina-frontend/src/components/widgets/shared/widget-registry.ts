@@ -21,6 +21,8 @@ export const WIDGET_LABELS: Record<WidgetTipo, string> = {
   // TODO(migración-etapa-5): retirar la fila timeline de widget-registry.ts al conectar ElementRegistry al canvas.
   // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   timeline: 'Línea de tiempo',
+  // TODO(migración-etapa-5): retirar la fila popup de widget-registry.ts al conectar ElementRegistry al canvas.
+  // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   popup: 'Popup',
   // TODO(migración-etapa-5): retirar la fila `hotspot` de este registro cuando
   // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.
