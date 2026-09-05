@@ -150,7 +150,7 @@ Aplica a **Antigravity, Cursor, Codex y Claude Code**. Interrumpir pidiendo conf
 
 ## Fase 1 de la hoja de ruta — riesgos urgentes
 
-- [x] **IDOR en cursos** — `GET /courses/:id`, `POST /courses/:id/enroll`, `GET /courses/:id/students` no verificaban dueño del curso. Cerrado por Claude Code: los tres pasan ahora por `CourseAuthorizationService` (`courseSettings`/`enrollment`), con test de regresión en `courses.service.spec.ts`. Ver commit correspondiente.
+- [x] **IDOR en cursos** — `GET /courses/:id`, `POST /courses/:id/enroll`, `GET /courses/:id/students` no verificaban dueño del curso. Cerrado por Claude Code: los tres pasan ahora por `CourseAuthorizationService` (`courseSettings`/`enrollment`), con test de regresión en `courses.service.spec.ts`. Commit `eef4470` (el cambio había quedado sin commitear hasta la consolidación de higiene del 2026-09-05).
 - [x] **"Olvidé mi contraseña"** — el frontend prometía `POST /auth/forgot-password` y `POST /auth/reset-password` y el backend no los tenía. Cerrado por Claude Code:
   - Modelo `PasswordResetToken` (`prisma/migrations/20260905120000_add_password_reset_token/`): guarda sólo el hash SHA-256 del token, `expiresAt` (30 min), `usedAt` (un solo uso). Pedir un token nuevo invalida los anteriores; al restablecer se marcan usados todos los tokens vivos del usuario en la misma transacción que el cambio de contraseña.
   - `AuthService.forgotPassword` / `resetPassword`; endpoints con `@Throttle({ limit: 5, ttl: 60_000 })` + `ThrottlerGuard`. La respuesta de `forgot-password` es idéntica exista o no el correo (no enumera cuentas). Hash de contraseña con bcryptjs costo 12, igual que el resto de auth.
