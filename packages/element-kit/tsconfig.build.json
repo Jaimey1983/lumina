@@ -1,5 +1,10 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "rootDir": "src" },
-  "exclude": ["src/**/*.spec.ts", "src/**/*.spec.tsx"]
+  "compilerOptions": {
+    "rootDir": "src",
+    "paths": {
+      "lumina-frontend/widgets/boton": ["./src/shims/lumina-frontend-boton.d.ts"]
+    }
+  },
+  "exclude": ["src/**/*.spec.ts", "src/**/*.spec.tsx", "src/shims/**"]
 }

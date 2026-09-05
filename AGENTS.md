@@ -218,9 +218,9 @@ Antigravity bajó 120→76 problemas sobre los 53 archivos; los 6 `error` restan
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
 
-#### E1 — `@lumina/element-kit` + piloto Botón · **activo** (sub-fichas E1.1–E1.4 redactadas)
+#### E1 — `@lumina/element-kit` + piloto Botón · **pendiente de cierre** (E1.1–E1.3 `hecho`; E1.4 `en revisión`)
 Precondición global cumplida: `pnpm lint` estricto en verde en ambos paquetes (`canvas-area.tsx` degradado a `warning` hasta E5).
-Orden: **E1.1 → (E1.2 ∥ E1.3) → E1.4**. E1 se cierra cuando las cuatro están `hecho` y la prueba de paridad del Botón pasa.
+Orden: **E1.1 → (E1.2 ∥ E1.3) → E1.4**. E1 se cierra cuando las cuatro están `hecho` y la prueba de paridad del Botón pasa (E1.4 listo para peer review).
 Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packages:` (la raíz tiene un `pnpm-workspace.yaml` solo con `allowBuilds:`); `lumina-frontend` y `lumina-backend` se instalan por separado, cada uno con su `pnpm-lock.yaml` y su `pnpm-workspace.yaml`. El widget Botón ya está partido en `lumina-frontend/src/components/widgets/boton/` (`boton-defaults.ts`, `boton-editor.tsx`, `boton-viewer.tsx`, `boton-properties.tsx`, `boton-config.ts`, `boton-parts.tsx`). El dispatch de widgets vive en `slide-renderer.tsx` — **congelado para E5**.
 
 ##### E1.1 — Workspace pnpm real en la raíz · **hecho** (commit `43cbfca`)
@@ -268,7 +268,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.4 — Piloto: Botón como `ElementDefinition`
 - **Operador:** Cursor (dueño del canvas / widgets)
-- **Estado:** [en curso: Cursor]
+- **Estado:** en revisión — `botonDefinition` en `packages/element-kit/src/elements/boton/**` (adapters + registro en `elementRegistry`); paridad 9/9; `TODO(migración-etapa-3)` LUM-E3-BOTON · 2026-10-31 en `widget-registry.ts`. Verif: `pnpm --filter @lumina/element-kit test` 9/9 + `build` OK; `pnpm --filter lumina-frontend build` OK (17 páginas). Canvas viejo intacto.
 - **Precondición:** E1.2 `hecho`.
 - **Alcance — PUEDE tocar:**
   - `packages/element-kit/src/elements/boton/**` — la `ElementDefinition` del Botón: `crearPorDefecto` (envuelve `createDefaultBoton` de `boton-defaults.ts`), `Editor` / `Viewer` / `Propiedades` (adaptan los componentes existentes de `lumina-frontend/src/components/widgets/boton/` a las props del contrato), `apariencia`; **sin** `puntuacion` (el Botón no puntúa). Registro vía `ElementRegistry.registrar(botonDefinition)` en el arranque del paquete.

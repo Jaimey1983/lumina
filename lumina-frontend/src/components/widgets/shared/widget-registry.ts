@@ -41,3 +41,8 @@ export function isWidgetTipo(value: string): value is WidgetTipo {
 export function isCaptivateWidgetBlock(block: { tipo: string }): block is WidgetBlock {
   return isWidgetTipo(block.tipo);
 }
+
+// TODO(migración-etapa-3): retirar el Botón viejo de este registro cuando E3
+// migre el resto de widgets a ElementRegistry (@lumina/element-kit). El piloto
+// E1.4 ya registra `botonDefinition` en el kit; el canvas sigue despachando
+// desde aquí hasta E3/E5. Ticket: LUM-E3-BOTON · fecha objetivo: 2026-10-31.

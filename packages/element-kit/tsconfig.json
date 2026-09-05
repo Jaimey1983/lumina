@@ -7,7 +7,14 @@
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "declaration": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../lumina-frontend/src/*"],
+      "lumina-frontend/widgets/boton": [
+        "../../lumina-frontend/src/components/widgets/boton/index.ts"
+      ]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]
 }
