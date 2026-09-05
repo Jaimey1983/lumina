@@ -268,7 +268,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.4 — Piloto: Botón como `ElementDefinition`
 - **Operador:** Cursor (dueño del canvas / widgets)
-- **Estado:** pendiente (E1.2 y E1.3 `hecho` — desbloqueado). **Es lo único que falta para cerrar E1.**
+- **Estado:** [en curso: Cursor]
 - **Precondición:** E1.2 `hecho`.
 - **Alcance — PUEDE tocar:**
   - `packages/element-kit/src/elements/boton/**` — la `ElementDefinition` del Botón: `crearPorDefecto` (envuelve `createDefaultBoton` de `boton-defaults.ts`), `Editor` / `Viewer` / `Propiedades` (adaptan los componentes existentes de `lumina-frontend/src/components/widgets/boton/` a las props del contrato), `apariencia`; **sin** `puntuacion` (el Botón no puntúa). Registro vía `ElementRegistry.registrar(botonDefinition)` en el arranque del paquete.
