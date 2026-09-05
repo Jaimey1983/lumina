@@ -414,7 +414,7 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 
 ##### E4.1 — Piloto: Gráfico de datos (`grafico`) como `ElementDefinition`
 - **Operador:** Cursor (dueño del editor / canvas)
-- **Estado:** asignada a Cursor con el prompt canónico. «Tensión declarada §2» resuelta por el redactor del tablero: cierre por Regla 4 (TODO + ticket) basta para arrancar E4; el borrado del `switch` sigue siendo E5. Cursor marca `[en curso: Cursor]` + commit antes de empezar (Regla 10).
+- **Estado:** [en curso: Cursor]
 - **Precondición:** E3 cerrada.
 - **Contexto:** `GraficoDatosBlock` (`slide.types.ts:1201`), componentes en `lumina-frontend/src/components/graficos/` (`grafico-editor.tsx`, `grafico-viewer.tsx`, `grafico-properties.tsx`, `grafico-chart-renderer.tsx`, `grafico-color-palettes.ts`), defaults en `grafico-defaults.ts` + `grafico-defaults.spec.ts`. Renderiza con Recharts. `tipo: 'grafico'`, `case 'grafico'` en `slide-renderer.tsx:1941`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/grafico/**` (definición + adapters + parity spec + registro en `elementRegistry`), su shim `src/shims/lumina-frontend-grafico.d.ts`, alias `lumina-frontend/blocks/grafico` en `tsconfig.json` / `tsconfig.build.json` / `vitest.config.ts`, `packages/element-kit/src/index.ts`. Crear `lumina-frontend/src/components/graficos/index.ts` (barrel, re-export puro) + subpath `./blocks/grafico` en `lumina-frontend/package.json`. `lumina-frontend/src/components/graficos/**` solo para exports internos (sin cambiar comportamiento).
