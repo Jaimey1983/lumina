@@ -112,7 +112,7 @@ Estado de partida: `lumina-backend` 219 problemas (209 errores/10 warnings) — 
 | Overrides de seguridad silenciados | `lumina-frontend/package.json` → `pnpm-workspace.yaml` | Claude Code | **[hecho]** — lodash/ws/qs/etc. no se estaban aplicando |
 | `pptx.service.ts` (xml2js sin tipar) | `lumina-backend/src/pptx/pptx.service.ts` | Claude Code | **[hecho]** — 117→0. Tipos OOXML en el propio archivo + `src/types/pizzip.d.ts` nuevo (sin `@types/pizzip` disponible) |
 | Scoring + sesiones autónomas | `lumina-backend/src/classes/activity-scoring.ts` + `lumina-backend/src/autonomous-sessions/*` | Cursor | **[en curso: Cursor]** — 68 casos (41+27). Código sensible de notas: revisar con cuidado extra (Regla 9, pasos 1-3) antes de tipar |
-| Cola larga backend | 17 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | pendiente — ~34 casos |
+| Cola larga backend | 17 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[en curso: Antigravity]** — ~34 casos |
 | Cola larga frontend (`no-unused-vars` / `no-explicit-any` restante) | 53 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | pendiente — ~43 casos |
 | `react-hooks/*` del motor del canvas | `canvas-area.tsx`, componentes de Timeline, `slide-renderer.tsx` | **Nadie todavía** | **Deliberadamente en espera** — se corrige en la Etapa 5 (unificación de estado del editor), no antes: tocar el motor del canvas ahora es más riesgo que beneficio |
 
