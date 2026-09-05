@@ -165,7 +165,8 @@ export function countsTowardClassGradebookAverage(
   if (isGradebookScoringDeferred(entry.activityType)) return false;
   if (entry.score === null || entry.score === undefined) return false;
   if (!Number.isFinite(entry.score)) return false;
-  if (entry.activityType === 'short_answer' && entry.isManual !== true) return false;
+  if (entry.activityType === 'short_answer' && entry.isManual !== true)
+    return false;
   return true;
 }
 
@@ -181,7 +182,7 @@ export function computeClassGradebookPromedio(
   for (const entry of entries) {
     if (!countsTowardClassGradebookAverage(entry)) continue;
     const max = entry.maxScore && entry.maxScore > 0 ? entry.maxScore : 5;
-    sum += ((entry.score as number) / max) * 5;
+    sum += (entry.score / max) * 5;
     denominator += 1;
   }
   if (denominator === 0) return null;
@@ -291,6 +292,23 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
+/**
+ * Coerce JSON scalars to string for keys/labels in scoring.
+ * Objects/arrays/null/undefined → fallback (nunca `[object Object]`).
+ */
+function asString(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return fallback;
+}
+
+/** `Array.isArray` sobre `unknown` estrecha a `any[]` en TS — forzar `unknown[]`. */
+function asUnknownArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? (value as unknown[]) : [];
+}
+
 function textEq(given: string, expected: string, ignoreCase: boolean): boolean {
   const a = given.trim();
   const b = expected.trim();
@@ -303,11 +321,20 @@ function quizSelectedIds(respuesta: unknown): string[] {
     return t ? [t] : [];
   }
   if (Array.isArray(respuesta)) {
-    return [...new Set(respuesta.filter((x): x is string => typeof x === 'string' && x.trim() !== ''))];
+    return [
+      ...new Set(
+        respuesta.filter(
+          (x): x is string => typeof x === 'string' && x.trim() !== '',
+        ),
+      ),
+    ];
   }
   const rec = asRecord(respuesta);
   if (!rec) return [];
-  if (typeof rec.opcionSeleccionada === 'string' && rec.opcionSeleccionada.trim()) {
+  if (
+    typeof rec.opcionSeleccionada === 'string' &&
+    rec.opcionSeleccionada.trim()
+  ) {
     return [rec.opcionSeleccionada];
   }
   if (typeof rec.selectedId === 'string' && rec.selectedId.trim()) {
@@ -329,12 +356,12 @@ function quizPreguntasFromDef(
   def: Record<string, unknown>,
 ): { id: string; texto: string; opciones: unknown[] }[] {
   if (Array.isArray(def.preguntas) && def.preguntas.length > 0) {
-    return def.preguntas.map((raw, i) => {
+    return asUnknownArray(def.preguntas).map((raw, i) => {
       const rec = asRecord(raw) ?? {};
       return {
-        id: String(rec.id ?? `q-${i}`),
-        texto: String(rec.texto ?? rec.pregunta ?? ''),
-        opciones: Array.isArray(rec.opciones) ? rec.opciones : [],
+        id: asString(rec.id, `q-${i}`),
+        texto: asString(rec.texto ?? rec.pregunta),
+        opciones: asUnknownArray(rec.opciones),
       };
     });
   }
@@ -342,8 +369,8 @@ function quizPreguntasFromDef(
     return [
       {
         id: 'q-legacy-0',
-        texto: String(def.pregunta ?? ''),
-        opciones: Array.isArray(def.opciones) ? def.opciones : [],
+        texto: asString(def.pregunta),
+        opciones: asUnknownArray(def.opciones),
       },
     ];
   }
@@ -355,7 +382,12 @@ function quizAnswersByQuestion(
   preguntas: { id: string }[],
 ): string[][] {
   const rec = asRecord(respuesta);
-  if (rec && rec.answers && typeof rec.answers === 'object' && !Array.isArray(rec.answers)) {
+  if (
+    rec &&
+    rec.answers &&
+    typeof rec.answers === 'object' &&
+    !Array.isArray(rec.answers)
+  ) {
     const answers = rec.answers as Record<string, unknown>;
     return preguntas.map((p) => quizSelectedIds(answers[p.id]));
   }
@@ -363,13 +395,19 @@ function quizAnswersByQuestion(
   return preguntas.map((_, i) => (i === 0 ? selected : []));
 }
 
-function isQuizOptionSetCorrect(opciones: unknown[], selected: string[]): boolean {
+function isQuizOptionSetCorrect(
+  opciones: unknown[],
+  selected: string[],
+): boolean {
   const correctIds = opciones
     .filter((o) => asRecord(o)?.esCorrecta === true)
-    .map((o) => String(asRecord(o)?.id ?? ''))
+    .map((o) => asString(asRecord(o)?.id))
     .filter((id) => id !== '');
   if (correctIds.length === 0) return false;
-  return selected.length === correctIds.length && selected.every((id) => correctIds.includes(id));
+  return (
+    selected.length === correctIds.length &&
+    selected.every((id) => correctIds.includes(id))
+  );
 }
 
 /** Una pregunta = misma nota que el evaluador binary legado. N preguntas = crédito parcial. */
@@ -388,7 +426,8 @@ function evaluateQuizMultiple(
   const details = preguntas.map((p, i) => ({
     index: i,
     correct: isQuizOptionSetCorrect(p.opciones, selections[i] ?? []),
-    label: preguntas.length === 1 ? 'Quiz' : p.texto.trim() || `Pregunta ${i + 1}`,
+    label:
+      preguntas.length === 1 ? 'Quiz' : p.texto.trim() || `Pregunta ${i + 1}`,
   }));
   const correctas = details.filter((d) => d.correct).length;
   return {
@@ -411,13 +450,16 @@ function evaluateQuizMultiple(
  * Formas reales aceptadas: `{ questionIndex, answer }`, `{ historial: [...] }`,
  * `{ correct, historial }` (emit del viewer) o `{ questionIndex, answer }[]`.
  */
-export function normalizeVideoAnswers(respuesta: unknown): { questionIndex: number; answer: string }[] {
+export function normalizeVideoAnswers(
+  respuesta: unknown,
+): { questionIndex: number; answer: string }[] {
   const byIndex = new Map<number, string>();
   const push = (item: unknown) => {
     const rec = asRecord(item);
     if (!rec) return;
     const questionIndex =
-      typeof rec.questionIndex === 'number' && Number.isFinite(rec.questionIndex)
+      typeof rec.questionIndex === 'number' &&
+      Number.isFinite(rec.questionIndex)
         ? Math.max(0, Math.floor(rec.questionIndex))
         : NaN;
     const answer = typeof rec.answer === 'string' ? rec.answer : '';
@@ -459,26 +501,31 @@ function evaluateBinary(
   return UNEVALUABLE;
 }
 
-function evaluateBlancos(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateBlancos(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const blancos = Array.isArray(def.blancos) ? def.blancos : [];
+  const blancos = asUnknownArray(def.blancos);
   if (blancos.length === 0) return UNEVALUABLE;
   const answers = asRecord(respuesta);
   if (!answers) {
     return {
       correct: false,
-      details: blancos.map((_, i) => ({ index: i, correct: false, label: `Hueco ${i + 1}` })),
+      details: blancos.map((_, i) => ({
+        index: i,
+        correct: false,
+        label: `Hueco ${i + 1}`,
+      })),
       score: notaColombiana(0, blancos.length, true),
     };
   }
   const details: ActivityEvaluationDetail[] = blancos.map((raw, i) => {
     const blank = asRecord(raw) ?? {};
-    const given = String(answers[String(blank.id ?? '')] ?? '');
+    const given = asString(answers[asString(blank.id)]);
     const ignoreCase = blank.ignorarMayusculas !== false;
-    const expected = String(blank.respuesta ?? '');
-    const alts = Array.isArray(blank.alternativas)
-      ? blank.alternativas.map((a) => String(a))
-      : [];
+    const expected = asString(blank.respuesta);
+    const alts = asUnknownArray(blank.alternativas).map((a) => asString(a));
     const isCorrect =
       textEq(given, expected, ignoreCase) ||
       alts.some((alt) => textEq(given, alt, ignoreCase));
@@ -492,16 +539,19 @@ function evaluateBlancos(definicion: unknown, respuesta: unknown): ActivityEvalu
   };
 }
 
-function evaluateDragDrop(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateDragDrop(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const items = Array.isArray(def.items) ? def.items : [];
-  const zonas = Array.isArray(def.zonas) ? def.zonas : [];
+  const items = asUnknownArray(def.items);
+  const zonas = asUnknownArray(def.zonas);
   if (items.length === 0) return UNEVALUABLE;
-  const placements = Array.isArray(respuesta) ? respuesta : [];
+  const placements = asUnknownArray(respuesta);
   const details: ActivityEvaluationDetail[] = items.map((raw, i) => {
     const item = asRecord(raw) ?? {};
-    const itemId = String(item.id ?? '');
-    const label = String(item.texto ?? `Ítem ${i + 1}`);
+    const itemId = asString(item.id);
+    const label = asString(item.texto, `Ítem ${i + 1}`);
     const placement = placements.find((p) => asRecord(p)?.itemId === itemId);
     const zoneId = asRecord(placement)?.zoneId;
     if (typeof zoneId !== 'string') {
@@ -520,14 +570,17 @@ function evaluateDragDrop(definicion: unknown, respuesta: unknown): ActivityEval
   };
 }
 
-function evaluateEmparejar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateEmparejar(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const pares = Array.isArray(def.pares) ? def.pares : [];
+  const pares = asUnknownArray(def.pares);
   if (pares.length === 0) return UNEVALUABLE;
-  const matches = Array.isArray(respuesta) ? respuesta : [];
+  const matches = asUnknownArray(respuesta);
   const details: ActivityEvaluationDetail[] = pares.map((raw, i) => {
     const par = asRecord(raw) ?? {};
-    const parId = String(par.id ?? '');
+    const parId = asString(par.id);
     const izq = asRecord(par.izquierda);
     const label =
       (typeof izq?.texto === 'string' && izq.texto) ||
@@ -543,23 +596,32 @@ function evaluateEmparejar(definicion: unknown, respuesta: unknown): ActivityEva
   };
 }
 
-function evaluateOrdenar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateOrdenar(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const pasos = Array.isArray(def.pasos) ? def.pasos : [];
+  const pasos = asUnknownArray(def.pasos);
   if (pasos.length === 0) return UNEVALUABLE;
-  const ordered = Array.isArray(respuesta) ? respuesta.map(String) : [];
+  const ordered = asUnknownArray(respuesta).map((x) => asString(x));
   const correctOrder = [...pasos]
     .sort(
       (a, b) =>
-        Number(asRecord(a)?.ordenCorrecto ?? 0) - Number(asRecord(b)?.ordenCorrecto ?? 0),
+        Number(asRecord(a)?.ordenCorrecto ?? 0) -
+        Number(asRecord(b)?.ordenCorrecto ?? 0),
     )
-    .map((p) => String(asRecord(p)?.id ?? ''));
-  const details: ActivityEvaluationDetail[] = correctOrder.map((stepId, pos) => {
-    const paso = pasos.find((p) => asRecord(p)?.id === stepId);
-    const contenido = String(asRecord(paso)?.contenido ?? '');
-    const label = contenido.length > 30 ? `${contenido.slice(0, 30)}…` : contenido || `Paso ${pos + 1}`;
-    return { index: pos, correct: ordered[pos] === stepId, label };
-  });
+    .map((p) => asString(asRecord(p)?.id));
+  const details: ActivityEvaluationDetail[] = correctOrder.map(
+    (stepId, pos) => {
+      const paso = pasos.find((p) => asRecord(p)?.id === stepId);
+      const contenido = asString(asRecord(paso)?.contenido);
+      const label =
+        contenido.length > 30
+          ? `${contenido.slice(0, 30)}…`
+          : contenido || `Paso ${pos + 1}`;
+      return { index: pos, correct: ordered[pos] === stepId, label };
+    },
+  );
   const correctas = details.filter((d) => d.correct).length;
   return {
     correct: details.every((d) => d.correct),
@@ -568,9 +630,12 @@ function evaluateOrdenar(definicion: unknown, respuesta: unknown): ActivityEvalu
   };
 }
 
-function evaluateVideo(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateVideo(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const preguntas = Array.isArray(def.preguntas) ? def.preguntas : [];
+  const preguntas = asUnknownArray(def.preguntas);
   const totalPreguntas =
     preguntas.length > 0
       ? preguntas.length
@@ -581,9 +646,7 @@ function evaluateVideo(definicion: unknown, respuesta: unknown): ActivityEvaluat
   if (totalPreguntas <= 0 || answers.length === 0) return UNEVALUABLE;
   const details: ActivityEvaluationDetail[] = answers.map((a) => {
     const question = preguntas[a.questionIndex];
-    const opciones = Array.isArray(asRecord(question)?.opciones)
-      ? (asRecord(question)?.opciones as unknown[])
-      : [];
+    const opciones = asUnknownArray(asRecord(question)?.opciones);
     const isCorrect = opciones.some((op) => {
       const o = asRecord(op);
       return o?.id === a.answer && o?.esCorrecta === true;
@@ -596,13 +659,16 @@ function evaluateVideo(definicion: unknown, respuesta: unknown): ActivityEvaluat
   });
   const correctas = details.filter((d) => d.correct).length;
   return {
-    correct: details.length === totalPreguntas && details.every((d) => d.correct),
+    correct:
+      details.length === totalPreguntas && details.every((d) => d.correct),
     details,
     score: notaColombiana(correctas, totalPreguntas, true),
   };
 }
 
-function resultFromDetails(details: ActivityEvaluationDetail[]): ActivityEvaluationResult {
+function resultFromDetails(
+  details: ActivityEvaluationDetail[],
+): ActivityEvaluationResult {
   if (details.length === 0) return UNEVALUABLE;
   const correctas = details.filter((d) => d.correct).length;
   return {
@@ -617,40 +683,55 @@ function stringList(value: unknown): string[] {
   return value.filter((x): x is string => typeof x === 'string');
 }
 
-function evaluateClasificar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateClasificar(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const items = Array.isArray(def.items) ? def.items : [];
+  const items = asUnknownArray(def.items);
   if (items.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta) ?? {};
   const ubicaciones = asRecord(rec.ubicaciones) ?? rec;
   const details: ActivityEvaluationDetail[] = items.map((raw, i) => {
     const item = asRecord(raw) ?? {};
-    const id = String(item.id ?? '');
-    const expected = String(item.categoriaId ?? '');
+    const id = asString(item.id);
+    const expected = asString(item.categoriaId);
     const placed = ubicaciones[id];
     const ok = typeof placed === 'string' && placed === expected;
-    return { index: i, correct: ok, label: String(item.texto ?? `Ítem ${i + 1}`) };
+    return {
+      index: i,
+      correct: ok,
+      label: asString(item.texto, `Ítem ${i + 1}`),
+    };
   });
   return resultFromDetails(details);
 }
 
-function evaluateMemoria(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateMemoria(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const pares = Array.isArray(def.pares) ? def.pares : [];
+  const pares = asUnknownArray(def.pares);
   if (pares.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta) ?? {};
   const found = new Set(
-    stringList(rec.paresEncontrados).concat(Array.isArray(respuesta) ? stringList(respuesta) : []),
+    stringList(rec.paresEncontrados).concat(
+      Array.isArray(respuesta) ? stringList(respuesta) : [],
+    ),
   );
   const details: ActivityEvaluationDetail[] = pares.map((raw, i) => {
     const par = asRecord(raw) ?? {};
-    const id = String(par.id ?? i);
+    const id = asString(par.id, String(i));
     return { index: i, correct: found.has(id), label: `Par ${i + 1}` };
   });
   return resultFromDetails(details);
 }
 
-function evaluatePuzzleImagen(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluatePuzzleImagen(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const cfg = asRecord(def.configuracion) ?? {};
   const filas = Number(cfg.filas ?? 0);
@@ -658,40 +739,44 @@ function evaluatePuzzleImagen(definicion: unknown, respuesta: unknown): Activity
   const total = filas > 0 && columnas > 0 ? filas * columnas : 0;
   const rec = asRecord(respuesta) ?? {};
   const slots = Array.isArray(rec.slots)
-    ? rec.slots
+    ? asUnknownArray(rec.slots)
     : Array.isArray(respuesta)
-      ? respuesta
+      ? asUnknownArray(respuesta)
       : [];
   const n = total > 0 ? total : slots.length;
   if (n <= 0) return UNEVALUABLE;
-  const details: ActivityEvaluationDetail[] = Array.from({ length: n }, (_, i) => ({
-    index: i,
-    correct: slots[i] === i,
-    label: `Pieza ${i + 1}`,
-  }));
+  const details: ActivityEvaluationDetail[] = Array.from(
+    { length: n },
+    (_, i) => ({
+      index: i,
+      correct: slots[i] === i,
+      label: `Pieza ${i + 1}`,
+    }),
+  );
   return resultFromDetails(details);
 }
 
-function evaluateAnagrama(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateAnagrama(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const palabras = Array.isArray(def.palabras) ? def.palabras : [];
+  const palabras = asUnknownArray(def.palabras);
   if (palabras.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta) ?? {};
-  const slotsPorPalabra = Array.isArray(rec.slotsPorPalabra) ? rec.slotsPorPalabra : [];
+  const slotsPorPalabra = asUnknownArray(rec.slotsPorPalabra);
   const details: ActivityEvaluationDetail[] = palabras.map((raw, i) => {
     const palabra = asRecord(raw) ?? {};
-    const expected = String(palabra.texto ?? '')
-      .toUpperCase()
-      .replace(/\s+/g, '');
-    const slots = Array.isArray(slotsPorPalabra[i]) ? slotsPorPalabra[i] : [];
+    const expected = asString(palabra.texto).toUpperCase().replace(/\s+/g, '');
+    const slots = asUnknownArray(slotsPorPalabra[i]);
     const given = slots
-      .map((s) => (s == null ? '' : String(s)))
+      .map((s) => (s == null ? '' : asString(s)))
       .join('')
       .toUpperCase();
     return {
       index: i,
       correct: expected.length > 0 && given === expected,
-      label: String(palabra.texto ?? `Palabra ${i + 1}`),
+      label: asString(palabra.texto, `Palabra ${i + 1}`),
     };
   });
   return resultFromDetails(details);
@@ -702,15 +787,18 @@ function evaluatePuzzlePalabras(
   respuesta: unknown,
 ): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const oraciones = Array.isArray(def.oraciones) ? def.oraciones : [];
+  const oraciones = asUnknownArray(def.oraciones);
   if (oraciones.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta) ?? {};
-  const tokensPorOracion = Array.isArray(rec.tokensPorOracion) ? rec.tokensPorOracion : [];
+  const tokensPorOracion = asUnknownArray(rec.tokensPorOracion);
   const details: ActivityEvaluationDetail[] = oraciones.map((raw, i) => {
     const oracion = asRecord(raw) ?? {};
-    const expected = String(oracion.texto ?? '').trim();
-    const tokens = Array.isArray(tokensPorOracion[i]) ? tokensPorOracion[i] : [];
-    const given = tokens.map((t) => String(t)).join(' ').trim();
+    const expected = asString(oracion.texto).trim();
+    const tokens = asUnknownArray(tokensPorOracion[i]);
+    const given = tokens
+      .map((t) => asString(t))
+      .join(' ')
+      .trim();
     return {
       index: i,
       correct: expected.length > 0 && given === expected,
@@ -720,17 +808,22 @@ function evaluatePuzzlePalabras(
   return resultFromDetails(details);
 }
 
-function evaluateSopaLetras(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateSopaLetras(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const palabras = Array.isArray(def.palabras) ? def.palabras : [];
+  const palabras = asUnknownArray(def.palabras);
   if (palabras.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta) ?? {};
   const encontradas = new Set(
-    stringList(rec.encontradas).map((t) => t.trim().toUpperCase()).filter(Boolean),
+    stringList(rec.encontradas)
+      .map((t) => t.trim().toUpperCase())
+      .filter(Boolean),
   );
   const details: ActivityEvaluationDetail[] = palabras.map((raw, i) => {
     const palabra = asRecord(raw) ?? {};
-    const texto = String(palabra.texto ?? '').trim().toUpperCase();
+    const texto = asString(palabra.texto).trim().toUpperCase();
     return {
       index: i,
       correct: texto.length > 0 && encontradas.has(texto),
@@ -740,28 +833,37 @@ function evaluateSopaLetras(definicion: unknown, respuesta: unknown): ActivityEv
   return resultFromDetails(details);
 }
 
-function evaluateCrucigrama(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateCrucigrama(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const palabras = Array.isArray(def.palabras) ? def.palabras : [];
+  const palabras = asUnknownArray(def.palabras);
   if (palabras.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta) ?? {};
   const celdas = asRecord(rec.celdas) ?? asRecord(rec.respuestas) ?? rec;
   const details: ActivityEvaluationDetail[] = palabras.map((raw, i) => {
     const palabra = asRecord(raw) ?? {};
-    const texto = String(palabra.texto ?? '').toUpperCase();
+    const texto = asString(palabra.texto).toUpperCase();
     const fila = Number(palabra.fila ?? 0);
     const columna = Number(palabra.columna ?? 0);
     const horizontal = palabra.direccion !== 'vertical';
     let ok = texto.length > 0;
     for (let c = 0; c < texto.length; c++) {
-      const key = horizontal ? `${fila}-${columna + c}` : `${fila + c}-${columna}`;
-      const given = String(celdas[key] ?? '').toUpperCase();
+      const key = horizontal
+        ? `${fila}-${columna + c}`
+        : `${fila + c}-${columna}`;
+      const given = asString(celdas[key]).toUpperCase();
       if (given !== texto[c]) {
         ok = false;
         break;
       }
     }
-    return { index: i, correct: ok, label: String(palabra.pista ?? `Palabra ${i + 1}`) };
+    return {
+      index: i,
+      correct: ok,
+      label: asString(palabra.pista, `Palabra ${i + 1}`),
+    };
   });
   return resultFromDetails(details);
 }
@@ -771,37 +873,49 @@ function evaluateGlobosOTopo(
   respuesta: unknown,
 ): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const preguntas = Array.isArray(def.preguntas) ? def.preguntas : [];
+  const preguntas = asUnknownArray(def.preguntas);
   const rec = asRecord(respuesta) ?? {};
   const maxFromDef = preguntas.length;
   if (Array.isArray(rec.aciertos)) {
-    const aciertos = rec.aciertos;
+    const aciertos = asUnknownArray(rec.aciertos);
     const total = maxFromDef > 0 ? maxFromDef : aciertos.length;
     if (total <= 0) return UNEVALUABLE;
-    const details: ActivityEvaluationDetail[] = Array.from({ length: total }, (_, i) => ({
-      index: i,
-      correct: aciertos[i] === true,
-      label: `Pregunta ${i + 1}`,
-    }));
+    const details: ActivityEvaluationDetail[] = Array.from(
+      { length: total },
+      (_, i) => ({
+        index: i,
+        correct: aciertos[i] === true,
+        label: `Pregunta ${i + 1}`,
+      }),
+    );
     return resultFromDetails(details);
   }
   const maximos = Number(
-    rec.puntosMaximos ?? (maxFromDef > 0 ? maxFromDef : rec.total ?? 0),
+    rec.puntosMaximos ?? (maxFromDef > 0 ? maxFromDef : (rec.total ?? 0)),
   );
   const obtenidos = Number(rec.puntosObtenidos ?? rec.puntaje ?? 0);
   if (!Number.isFinite(maximos) || maximos <= 0) return UNEVALUABLE;
-  const got = Math.max(0, Math.min(maximos, Number.isFinite(obtenidos) ? obtenidos : 0));
-  const details: ActivityEvaluationDetail[] = Array.from({ length: maximos }, (_, i) => ({
-    index: i,
-    correct: i < got,
-    label: `Punto ${i + 1}`,
-  }));
+  const got = Math.max(
+    0,
+    Math.min(maximos, Number.isFinite(obtenidos) ? obtenidos : 0),
+  );
+  const details: ActivityEvaluationDetail[] = Array.from(
+    { length: maximos },
+    (_, i) => ({
+      index: i,
+      correct: i < got,
+      label: `Punto ${i + 1}`,
+    }),
+  );
   return resultFromDetails(details);
 }
 
-function evaluateAbrirCaja(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateAbrirCaja(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const cajas = Array.isArray(def.cajas) ? def.cajas : [];
+  const cajas = asUnknownArray(def.cajas);
   const evaluables = cajas.filter((raw) => {
     const contenido = asRecord(asRecord(raw)?.contenido);
     return contenido?.esCorrecta !== undefined;
@@ -817,11 +931,11 @@ function evaluateAbrirCaja(definicion: unknown, respuesta: unknown): ActivityEva
   if (total === 0) return UNEVALUABLE;
   const details: ActivityEvaluationDetail[] = correctBoxes.map((raw, i) => {
     const caja = asRecord(raw) ?? {};
-    const id = String(caja.id ?? '');
+    const id = asString(caja.id);
     return {
       index: i,
       correct: abiertas.has(id),
-      label: String(caja.etiqueta ?? `Caja ${i + 1}`),
+      label: asString(caja.etiqueta, `Caja ${i + 1}`),
     };
   });
   return resultFromDetails(details);
@@ -832,15 +946,17 @@ function evaluateHistoriaRamificada(
   respuesta: unknown,
 ): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
-  const nodos = Array.isArray(def.nodos) ? def.nodos : [];
+  const nodos = asUnknownArray(def.nodos);
   const rec = asRecord(respuesta) ?? {};
-  const historial = Array.isArray(rec.historial) ? rec.historial : [];
+  const historial = asUnknownArray(rec.historial);
   const tienePreguntas = nodos.some((raw) => {
     const n = asRecord(raw) ?? {};
     return (
       n.tipo === 'pregunta' &&
       Array.isArray(n.opciones) &&
-      n.opciones.some((op) => asRecord(op)?.esCorrecta !== undefined)
+      asUnknownArray(n.opciones).some(
+        (op) => asRecord(op)?.esCorrecta !== undefined,
+      )
     );
   });
   const tieneFinales = nodos.some((raw) => {
@@ -854,18 +970,22 @@ function evaluateHistoriaRamificada(
     for (let i = 1; i < historial.length; i++) {
       const prev = asRecord(historial[i - 1]) ?? {};
       const step = asRecord(historial[i]) ?? {};
-      const fromId = String(prev.nodoId ?? '');
-      const optionId = String(step.opcionElegida ?? '');
-      const fromNode = nodos.find((raw) => String(asRecord(raw)?.id ?? '') === fromId);
+      const fromId = asString(prev.nodoId);
+      const optionId = asString(step.opcionElegida);
+      const fromNode = nodos.find(
+        (raw) => asString(asRecord(raw)?.id) === fromId,
+      );
       const node = asRecord(fromNode) ?? {};
       if (node.tipo !== 'pregunta' || !Array.isArray(node.opciones)) continue;
-      const opt = node.opciones.find((op) => String(asRecord(op)?.id ?? '') === optionId);
+      const opt = asUnknownArray(node.opciones).find(
+        (op) => asString(asRecord(op)?.id) === optionId,
+      );
       const recOpt = asRecord(opt);
       if (recOpt?.esCorrecta === undefined) continue;
       details.push({
         index: details.length,
         correct: recOpt.esCorrecta === true,
-        label: String(node.titulo ?? `Pregunta ${details.length + 1}`),
+        label: asString(node.titulo, `Pregunta ${details.length + 1}`),
       });
     }
     if (details.length > 0) return resultFromDetails(details);
@@ -873,8 +993,10 @@ function evaluateHistoriaRamificada(
   }
 
   const last = asRecord(historial[historial.length - 1]) ?? {};
-  const lastId = String(last.nodoId ?? rec.nodoFinal ?? '');
-  const lastNode = asRecord(nodos.find((raw) => String(asRecord(raw)?.id ?? '') === lastId));
+  const lastId = asString(last.nodoId ?? rec.nodoFinal);
+  const lastNode = asRecord(
+    nodos.find((raw) => asString(asRecord(raw)?.id) === lastId),
+  );
   if (lastNode?.tipo === 'final_bueno' || lastNode?.tipo === 'final_malo') {
     const ok = lastNode.tipo === 'final_bueno';
     return {
@@ -886,17 +1008,20 @@ function evaluateHistoriaRamificada(
   return UNEVALUABLE;
 }
 
-function evaluateAhorcado(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateAhorcado(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const cfg = asRecord(def.configuracion) ?? def;
   const maxIntentos = Number(cfg.maxIntentos ?? 0);
   const rec = asRecord(respuesta) ?? {};
   const fallos = Array.isArray(rec.letrasFalladas)
-    ? rec.letrasFalladas.length
+    ? asUnknownArray(rec.letrasFalladas).length
     : Number(rec.fallos ?? 0);
-  const adivinadas = Array.isArray(rec.letrasAdivinadas)
-    ? rec.letrasAdivinadas.map(String)
-    : [];
+  const adivinadas = asUnknownArray(rec.letrasAdivinadas).map((x) =>
+    asString(x),
+  );
   const letrasPalabra =
     typeof cfg.palabra === 'string'
       ? cfg.palabra
@@ -906,7 +1031,8 @@ function evaluateAhorcado(definicion: unknown, respuesta: unknown): ActivityEval
       : [];
   const ganado =
     rec.ganado === true ||
-    (letrasPalabra.length > 0 && letrasPalabra.every((ch) => adivinadas.includes(ch)));
+    (letrasPalabra.length > 0 &&
+      letrasPalabra.every((ch) => adivinadas.includes(ch)));
   if (!ganado) {
     return {
       correct: false,
@@ -916,27 +1042,35 @@ function evaluateAhorcado(definicion: unknown, respuesta: unknown): ActivityEval
   }
   const total = maxIntentos > 0 ? maxIntentos : 1;
   const correctas = Math.max(0, total - (Number.isFinite(fallos) ? fallos : 0));
-  const details: ActivityEvaluationDetail[] = Array.from({ length: total }, (_, i) => ({
-    index: i,
-    correct: i < correctas,
-    label: `Intento ${i + 1}`,
-  }));
+  const details: ActivityEvaluationDetail[] = Array.from(
+    { length: total },
+    (_, i) => ({
+      index: i,
+      correct: i < correctas,
+      label: `Intento ${i + 1}`,
+    }),
+  );
   return resultFromDetails(details);
 }
 
-function evaluateOrdenRango(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+function evaluateOrdenRango(
+  definicion: unknown,
+  respuesta: unknown,
+): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const expected = Array.isArray(def.ordenCorrecto)
-    ? def.ordenCorrecto.map((x) => String(x))
+    ? asUnknownArray(def.ordenCorrecto).map((x) => asString(x))
     : Array.isArray(def.items)
-      ? def.items.map((raw, i) => String(asRecord(raw)?.id ?? i))
+      ? asUnknownArray(def.items).map((raw, i) =>
+          asString(asRecord(raw)?.id, String(i)),
+        )
       : [];
   if (expected.length === 0) return UNEVALUABLE;
   const rec = asRecord(respuesta);
   const given = Array.isArray(respuesta)
-    ? respuesta.map((x) => String(x))
+    ? asUnknownArray(respuesta).map((x) => asString(x))
     : Array.isArray(rec?.orden)
-      ? rec.orden.map((x) => String(x))
+      ? asUnknownArray(rec.orden).map((x) => asString(x))
       : [];
   const details: ActivityEvaluationDetail[] = expected.map((id, i) => ({
     index: i,
@@ -957,7 +1091,10 @@ function evaluatePartial(
     case 'completar_blancos':
       return evaluateBlancos(definicion, respuesta);
     case 'arrastrar_soltar':
-      return evaluateDragDrop(definicion, unwrapActivityDraftResponse(respuesta));
+      return evaluateDragDrop(
+        definicion,
+        unwrapActivityDraftResponse(respuesta),
+      );
     case 'emparejar':
       return evaluateEmparejar(definicion, respuesta);
     case 'ordenar_pasos':
@@ -965,11 +1102,20 @@ function evaluatePartial(
     case 'video_interactivo':
       return evaluateVideo(definicion, respuesta);
     case 'clasificar':
-      return evaluateClasificar(definicion, unwrapActivityDraftResponse(respuesta));
+      return evaluateClasificar(
+        definicion,
+        unwrapActivityDraftResponse(respuesta),
+      );
     case 'memoria':
-      return evaluateMemoria(definicion, unwrapActivityDraftResponse(respuesta));
+      return evaluateMemoria(
+        definicion,
+        unwrapActivityDraftResponse(respuesta),
+      );
     case 'puzzle_imagen':
-      return evaluatePuzzleImagen(definicion, unwrapActivityDraftResponse(respuesta));
+      return evaluatePuzzleImagen(
+        definicion,
+        unwrapActivityDraftResponse(respuesta),
+      );
     case 'anagrama':
       return evaluateAnagrama(definicion, respuesta);
     case 'puzzle_palabras':
@@ -1022,7 +1168,9 @@ export function evaluateActivityResponse(
 }
 
 /** Recorre bloques/columnas y devuelve el objeto `actividad` del slide. */
-export function extractActivityDefinition(content: unknown): Record<string, unknown> | null {
+export function extractActivityDefinition(
+  content: unknown,
+): Record<string, unknown> | null {
   const walk = (node: unknown): Record<string, unknown> | null => {
     if (!node || typeof node !== 'object') return null;
     if (Array.isArray(node)) {
@@ -1033,7 +1181,11 @@ export function extractActivityDefinition(content: unknown): Record<string, unkn
       return null;
     }
     const o = node as Record<string, unknown>;
-    if (o.tipo === 'actividad' && o.actividad && typeof o.actividad === 'object') {
+    if (
+      o.tipo === 'actividad' &&
+      o.actividad &&
+      typeof o.actividad === 'object'
+    ) {
       return o.actividad as Record<string, unknown>;
     }
     if ('bloques' in o) {

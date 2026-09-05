@@ -7,10 +7,11 @@ import {
   Param,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TeacherVerifiedGuard } from '../verification/teacher-verified.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { AutonomousSessionsService } from './autonomous-sessions.service';
 import { CreateAutonomousSessionDto } from './dto/create-autonomous-session.dto';
 import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto';
@@ -28,9 +29,9 @@ export class ClassAutonomousSessionsController {
   create(
     @Param('classId') classId: string,
     @Body() dto: CreateAutonomousSessionDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.service.create(classId, req.user.id, dto);
+    return this.service.create(classId, user.id, dto);
   }
 
   @Get(':classId/autonomous-sessions')
@@ -72,9 +73,14 @@ export class AutonomousSessionsController {
     @Param('sessionId') sessionId: string,
     @Param('progressId') progressId: string,
     @Body() dto: UpdateAutonomousProgressScoreDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.service.updateProgressScore(sessionId, progressId, req.user.id, dto.score);
+    return this.service.updateProgressScore(
+      sessionId,
+      progressId,
+      user.id,
+      dto.score,
+    );
   }
 
   @Post(':sessionId/complete')
@@ -90,26 +96,26 @@ export class AutonomousSessionsController {
   update(
     @Param('sessionId') sessionId: string,
     @Body() dto: UpdateAutonomousSessionDto,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.service.update(sessionId, req.user.id, dto);
+    return this.service.update(sessionId, user.id, dto);
   }
 
   @Delete(':sessionId')
   @UseGuards(JwtAuthGuard)
   remove(
     @Param('sessionId') sessionId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.service.remove(sessionId, req.user.id);
+    return this.service.remove(sessionId, user.id);
   }
 
   @Get(':sessionId/results')
   @UseGuards(JwtAuthGuard)
   getResults(
     @Param('sessionId') sessionId: string,
-    @Request() req: any,
+    @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.service.getResults(sessionId, req.user.id);
+    return this.service.getResults(sessionId, user.id);
   }
 }

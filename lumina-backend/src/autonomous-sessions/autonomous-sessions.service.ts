@@ -11,7 +11,11 @@ import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto'
 import { JoinAutonomousSessionDto } from './dto/join-autonomous-session.dto';
 import { SaveProgressDto, CompleteSessionDto } from './dto/save-progress.dto';
 import { namesMatch } from './name-matcher.helper';
-import { scoreActivityResponse } from '../classes/class-results-gradebook.helper';
+import {
+  extractActivityDefinition,
+  scoreActivityResponse,
+} from '../classes/class-results-gradebook.helper';
+import { toPrismaJsonValue } from '../classes/class-result-persist.helper';
 
 function getDesempeno(score: number): string {
   if (score >= 4.7) return 'Superior';
@@ -35,7 +39,8 @@ function extractVideoAnswerEntries(response: unknown): VideoAnswerEntry[] {
       .map((item) => {
         if (!item || typeof item !== 'object') return null;
         const o = item as Record<string, unknown>;
-        const questionIndex = typeof o.questionIndex === 'number' ? o.questionIndex : NaN;
+        const questionIndex =
+          typeof o.questionIndex === 'number' ? o.questionIndex : NaN;
         const answer = typeof o.answer === 'string' ? o.answer : '';
         if (!Number.isFinite(questionIndex) || !answer.trim()) return null;
         return { questionIndex, answer };
@@ -50,7 +55,10 @@ function extractVideoAnswerEntries(response: unknown): VideoAnswerEntry[] {
   return [{ questionIndex, answer }];
 }
 
-function mergeVideoInteractiveResponse(existing: unknown, incoming: unknown): unknown {
+function mergeVideoInteractiveResponse(
+  existing: unknown,
+  incoming: unknown,
+): unknown {
   const mergedByQuestion = new Map<number, string>();
   for (const entry of extractVideoAnswerEntries(existing)) {
     mergedByQuestion.set(entry.questionIndex, entry.answer);
@@ -69,13 +77,21 @@ function mergeVideoInteractiveResponse(existing: unknown, incoming: unknown): un
 export class AutonomousSessionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(classId: string, teacherId: string, dto: CreateAutonomousSessionDto) {
-    const cls = await this.prisma.class.findUnique({ where: { id: classId }, select: { id: true } });
+  async create(
+    classId: string,
+    teacherId: string,
+    dto: CreateAutonomousSessionDto,
+  ) {
+    const cls = await this.prisma.class.findUnique({
+      where: { id: classId },
+      select: { id: true },
+    });
     if (!cls) throw new NotFoundException('Clase no encontrada');
 
     const opensAt = new Date(dto.opensAt);
     const closesAt = new Date(dto.closesAt);
-    if (opensAt >= closesAt) throw new BadRequestException('opensAt debe ser anterior a closesAt');
+    if (opensAt >= closesAt)
+      throw new BadRequestException('opensAt debe ser anterior a closesAt');
 
     const pin = dto.pin ?? generatePin();
 
@@ -216,13 +232,19 @@ export class AutonomousSessionsService {
       where: { sessionId },
     });
 
-    const matchedResult = allResults.find((r) => namesMatch(dto.studentName, r.studentName));
+    const matchedResult = allResults.find((r) =>
+      namesMatch(dto.studentName, r.studentName),
+    );
 
     if (matchedResult) {
       const studentId = matchedResult.studentId;
-      const studentResults = allResults.filter((r) => r.studentId === studentId);
+      const studentResults = allResults.filter(
+        (r) => r.studentId === studentId,
+      );
 
-      const completedCount = studentResults.filter((r) => r.status === 'completed').length;
+      const completedCount = studentResults.filter(
+        (r) => r.status === 'completed',
+      ).length;
       if (session.maxAttempts !== -1 && completedCount >= session.maxAttempts) {
         throw new ForbiddenException('Ya completaste esta tarea');
       }
@@ -230,13 +252,26 @@ export class AutonomousSessionsService {
       const inProgress = studentResults.find((r) => r.status === 'in_progress');
       if (inProgress) {
         const existingProgress = await this.prisma.autonomousProgress.findMany({
-          where: { sessionId, studentId, attemptNumber: inProgress.attemptNumber },
+          where: {
+            sessionId,
+            studentId,
+            attemptNumber: inProgress.attemptNumber,
+          },
           orderBy: { answeredAt: 'asc' },
         });
-        return { session, studentId, attemptNumber: inProgress.attemptNumber, existingProgress, resuming: true };
+        return {
+          session,
+          studentId,
+          attemptNumber: inProgress.attemptNumber,
+          existingProgress,
+          resuming: true,
+        };
       }
 
-      const maxAttemptNumber = Math.max(...studentResults.map((r) => r.attemptNumber), 0);
+      const maxAttemptNumber = Math.max(
+        ...studentResults.map((r) => r.attemptNumber),
+        0,
+      );
       const attemptNumber = maxAttemptNumber + 1;
 
       await this.prisma.autonomousResult.create({
@@ -249,7 +284,13 @@ export class AutonomousSessionsService {
         },
       });
 
-      return { session, studentId, attemptNumber, existingProgress: [], resuming: false };
+      return {
+        session,
+        studentId,
+        attemptNumber,
+        existingProgress: [],
+        resuming: false,
+      };
     }
 
     const studentId = nanoid();
@@ -263,7 +304,13 @@ export class AutonomousSessionsService {
       },
     });
 
-    return { session, studentId, attemptNumber: 1, existingProgress: [], resuming: false };
+    return {
+      session,
+      studentId,
+      attemptNumber: 1,
+      existingProgress: [],
+      resuming: false,
+    };
   }
 
   async saveProgress(sessionId: string, dto: SaveProgressDto) {
@@ -279,8 +326,15 @@ export class AutonomousSessionsService {
     });
 
     let responseToStore: unknown = dto.response;
-    if (dto.activityType === 'video_interactivo' && dto.response !== null && dto.response !== undefined) {
-      responseToStore = mergeVideoInteractiveResponse(existing?.response, dto.response);
+    if (
+      dto.activityType === 'video_interactivo' &&
+      dto.response !== null &&
+      dto.response !== undefined
+    ) {
+      responseToStore = mergeVideoInteractiveResponse(
+        existing?.response,
+        dto.response,
+      );
     }
 
     // Compute score immediately when activityType is provided (never on drafts)
@@ -291,41 +345,46 @@ export class AutonomousSessionsService {
         select: { content: true },
       });
       if (slide) {
-        const content = slide.content as any;
-        const bloques: any[] = content?.bloques ?? [];
-        const actBlock = bloques.find((b: any) => b.tipo === 'actividad');
+        const actividad = extractActivityDefinition(slide.content);
         computedScore = scoreActivityResponse(
           dto.activityType,
           responseToStore ?? null,
-          actBlock?.actividad,
+          actividad,
         );
       }
     }
 
     // Si ya existe con score calculado y la nueva response es null → no actualizar
-    if (existing?.score !== null && existing?.score !== undefined && dto.response === null) {
+    if (
+      existing?.score !== null &&
+      existing?.score !== undefined &&
+      dto.response === null
+    ) {
       return { saved: true };
     }
 
     if (existing) {
       // Only overwrite activityType/score when activityType is explicitly provided
-      const updateData: Record<string, unknown> = {
-        response: responseToStore as any,
-        answeredAt: new Date(),
-      };
-      if (dto.activityType !== undefined) {
-        updateData.activityType = dto.activityType;
-        if (dto.draft !== true) {
-          updateData.score = computedScore;
-        }
-      }
       await this.prisma.autonomousProgress.update({
         where: { id: existing.id },
-        data: updateData,
+        data: {
+          response: toPrismaJsonValue(responseToStore),
+          answeredAt: new Date(),
+          ...(dto.activityType !== undefined
+            ? {
+                activityType: dto.activityType,
+                ...(dto.draft !== true ? { score: computedScore } : {}),
+              }
+            : {}),
+        },
       });
     } else {
       const result = await this.prisma.autonomousResult.findFirst({
-        where: { sessionId, studentId: dto.studentId, attemptNumber: dto.attemptNumber },
+        where: {
+          sessionId,
+          studentId: dto.studentId,
+          attemptNumber: dto.attemptNumber,
+        },
         select: { studentName: true },
       });
       await this.prisma.autonomousProgress.create({
@@ -334,7 +393,7 @@ export class AutonomousSessionsService {
           studentId: dto.studentId,
           studentName: result?.studentName ?? '',
           slideId: dto.slideId,
-          response: responseToStore as any,
+          response: toPrismaJsonValue(responseToStore),
           attemptNumber: dto.attemptNumber,
           activityType: dto.activityType,
           score: computedScore,
@@ -353,12 +412,20 @@ export class AutonomousSessionsService {
     if (!session) throw new NotFoundException('Sesión no encontrada');
 
     const result = await this.prisma.autonomousResult.findFirst({
-      where: { sessionId, studentId: dto.studentId, attemptNumber: dto.attemptNumber },
+      where: {
+        sessionId,
+        studentId: dto.studentId,
+        attemptNumber: dto.attemptNumber,
+      },
     });
     if (!result) throw new NotFoundException('Resultado no encontrado');
 
     const progressEntries = await this.prisma.autonomousProgress.findMany({
-      where: { sessionId, studentId: dto.studentId, attemptNumber: dto.attemptNumber },
+      where: {
+        sessionId,
+        studentId: dto.studentId,
+        attemptNumber: dto.attemptNumber,
+      },
     });
 
     // Prefer pre-computed per-slide scores (saved at saveProgress time)
@@ -378,26 +445,40 @@ export class AutonomousSessionsService {
         include: { slides: { orderBy: { order: 'asc' } } },
       });
 
-      const progressBySlide = new Map(progressEntries.map((p) => [p.slideId, p]));
-      const activitySlides: { slideId: string; activityType: string; activityDef: unknown }[] = [];
+      const progressBySlide = new Map(
+        progressEntries.map((p) => [p.slideId, p]),
+      );
+      const activitySlides: {
+        slideId: string;
+        activityType: string;
+        activityDef: unknown;
+      }[] = [];
 
       for (const slide of classData?.slides ?? []) {
-        const content = slide.content as any;
-        const bloques: any[] = content?.bloques ?? [];
-        const actBlock = bloques.find((b: any) => b.tipo === 'actividad');
-        if (!actBlock) continue;
-        const actividad = actBlock.actividad as any;
-        if (!actividad?.tipo) continue;
-        activitySlides.push({ slideId: slide.id, activityType: actividad.tipo, activityDef: actividad });
+        const actividad = extractActivityDefinition(slide.content);
+        if (!actividad) continue;
+        const tipo = actividad.tipo;
+        if (typeof tipo !== 'string' || !tipo.trim()) continue;
+        activitySlides.push({
+          slideId: slide.id,
+          activityType: tipo,
+          activityDef: actividad,
+        });
       }
 
       if (activitySlides.length === 0) {
         finalScore = 1.0;
       } else {
-        const scores = activitySlides.map(({ slideId, activityType, activityDef }) => {
-          const entry = progressBySlide.get(slideId);
-          return scoreActivityResponse(activityType, entry?.response ?? null, activityDef);
-        });
+        const scores = activitySlides.map(
+          ({ slideId, activityType, activityDef }) => {
+            const entry = progressBySlide.get(slideId);
+            return scoreActivityResponse(
+              activityType,
+              entry?.response ?? null,
+              activityDef,
+            );
+          },
+        );
         const total = scores.reduce((acc, s) => acc + s, 0);
         finalScore = Math.round((total / scores.length) * 100) / 100;
       }
@@ -427,19 +508,32 @@ export class AutonomousSessionsService {
     return { finalScore, desempeno };
   }
 
-  async update(sessionId: string, teacherId: string, dto: UpdateAutonomousSessionDto) {
+  async update(
+    sessionId: string,
+    teacherId: string,
+    dto: UpdateAutonomousSessionDto,
+  ) {
     const session = await this.prisma.autonomousSession.findUnique({
       where: { id: sessionId },
-      select: { id: true, teacherId: true, status: true, opensAt: true, closesAt: true },
+      select: {
+        id: true,
+        teacherId: true,
+        status: true,
+        opensAt: true,
+        closesAt: true,
+      },
     });
     if (!session) throw new NotFoundException('Sesi?n aut?noma no encontrada');
-    if (session.teacherId !== teacherId) throw new ForbiddenException('Sin permiso');
+    if (session.teacherId !== teacherId)
+      throw new ForbiddenException('Sin permiso');
 
     const data: Record<string, unknown> = {};
 
     if (dto.opensAt !== undefined) {
       if (session.status !== 'scheduled') {
-        throw new BadRequestException('Solo se puede cambiar la apertura mientras la tarea est? programada');
+        throw new BadRequestException(
+          'Solo se puede cambiar la apertura mientras la tarea est? programada',
+        );
       }
       data.opensAt = new Date(dto.opensAt);
     }
@@ -448,8 +542,10 @@ export class AutonomousSessionsService {
     }
 
     if (dto.opensAt !== undefined || dto.closesAt !== undefined) {
-      const nextOpens = dto.opensAt !== undefined ? new Date(dto.opensAt) : session.opensAt;
-      const nextCloses = dto.closesAt !== undefined ? new Date(dto.closesAt) : session.closesAt;
+      const nextOpens =
+        dto.opensAt !== undefined ? new Date(dto.opensAt) : session.opensAt;
+      const nextCloses =
+        dto.closesAt !== undefined ? new Date(dto.closesAt) : session.closesAt;
       if (nextCloses <= nextOpens) {
         throw new BadRequestException('closesAt debe ser posterior a opensAt');
       }
@@ -471,7 +567,8 @@ export class AutonomousSessionsService {
       select: { id: true, teacherId: true, status: true },
     });
     if (!session) throw new NotFoundException('Sesi?n aut?noma no encontrada');
-    if (session.teacherId !== teacherId) throw new ForbiddenException('Sin permiso');
+    if (session.teacherId !== teacherId)
+      throw new ForbiddenException('Sin permiso');
 
     if (session.status === 'open') {
       throw new BadRequestException('No se puede cancelar una tarea abierta');
@@ -490,7 +587,8 @@ export class AutonomousSessionsService {
       select: { teacherId: true },
     });
     if (!session) throw new NotFoundException('Sesión no encontrada');
-    if (session.teacherId !== teacherId) throw new ForbiddenException('Sin permiso');
+    if (session.teacherId !== teacherId)
+      throw new ForbiddenException('Sin permiso');
 
     const [results, progress] = await Promise.all([
       this.prisma.autonomousResult.findMany({
@@ -505,7 +603,8 @@ export class AutonomousSessionsService {
 
     return results.map((r) => {
       const studentProgress = progress.filter(
-        (p) => p.studentId === r.studentId && p.attemptNumber === r.attemptNumber,
+        (p) =>
+          p.studentId === r.studentId && p.attemptNumber === r.attemptNumber,
       );
 
       const resultados = studentProgress
@@ -513,8 +612,8 @@ export class AutonomousSessionsService {
         .map((p) => ({
           id: p.id,
           slideId: p.slideId,
-          activityType: p.activityType as string,
-          score: p.score as number,
+          activityType: p.activityType,
+          score: p.score,
           maxScore: 5,
           isManual:
             p.activityType === 'short_answer' ||
@@ -525,7 +624,9 @@ export class AutonomousSessionsService {
       const promedioFromProgress =
         resultados.length > 0
           ? Math.round(
-              (resultados.reduce((acc, item) => acc + item.score, 0) / resultados.length) * 100,
+              (resultados.reduce((acc, item) => acc + item.score, 0) /
+                resultados.length) *
+                100,
             ) / 100
           : null;
 
@@ -551,7 +652,8 @@ export class AutonomousSessionsService {
       select: { id: true, teacherId: true },
     });
     if (!session) throw new NotFoundException('Sesión no encontrada');
-    if (session.teacherId !== teacherId) throw new ForbiddenException('Sin permiso');
+    if (session.teacherId !== teacherId)
+      throw new ForbiddenException('Sin permiso');
 
     const progress = await this.prisma.autonomousProgress.findUnique({
       where: { id: progressId },
