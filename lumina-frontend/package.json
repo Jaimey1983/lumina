@@ -4,7 +4,18 @@
   "private": true,
   "exports": {
     "./widgets/boton": "./src/components/widgets/boton/index.ts",
-    "./activities/anagrama": "./src/components/activities/anagrama/index.ts"
+    "./activities/anagrama": "./src/components/activities/anagrama/index.ts",
+    "./activities/clasificar": "./src/components/activities/clasificar/index.ts",
+    "./activities/memoria": "./src/components/activities/memoria/index.ts",
+    "./activities/puzzle-imagen": "./src/components/activities/puzzle-imagen/index.ts",
+    "./activities/sopa-letras": "./src/components/activities/sopa-letras/index.ts",
+    "./activities/crucigrama": "./src/components/activities/crucigrama/index.ts",
+    "./activities/abrir-caja": "./src/components/activities/abrir-caja/index.ts",
+    "./activities/ahorcado": "./src/components/activities/ahorcado/index.ts",
+    "./activities/puzzle-palabras": "./src/components/activities/puzzle-palabras/index.ts",
+    "./activities/globos": "./src/components/activities/globos/index.ts",
+    "./activities/topo": "./src/components/activities/topo/index.ts",
+    "./activities/historia-ramificada": "./src/components/activities/historia-ramificada/index.ts"
   },
   "scripts": {
     "dev": "next dev --turbopack --port 3001",

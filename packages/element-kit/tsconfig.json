@@ -16,6 +16,39 @@
       ],
       "lumina-frontend/activities/anagrama": [
         "../../lumina-frontend/src/components/activities/anagrama/index.ts"
+      ],
+      "lumina-frontend/activities/clasificar": [
+        "../../lumina-frontend/src/components/activities/clasificar/index.ts"
+      ],
+      "lumina-frontend/activities/memoria": [
+        "../../lumina-frontend/src/components/activities/memoria/index.ts"
+      ],
+      "lumina-frontend/activities/puzzle-imagen": [
+        "../../lumina-frontend/src/components/activities/puzzle-imagen/index.ts"
+      ],
+      "lumina-frontend/activities/sopa-letras": [
+        "../../lumina-frontend/src/components/activities/sopa-letras/index.ts"
+      ],
+      "lumina-frontend/activities/crucigrama": [
+        "../../lumina-frontend/src/components/activities/crucigrama/index.ts"
+      ],
+      "lumina-frontend/activities/abrir-caja": [
+        "../../lumina-frontend/src/components/activities/abrir-caja/index.ts"
+      ],
+      "lumina-frontend/activities/ahorcado": [
+        "../../lumina-frontend/src/components/activities/ahorcado/index.ts"
+      ],
+      "lumina-frontend/activities/puzzle-palabras": [
+        "../../lumina-frontend/src/components/activities/puzzle-palabras/index.ts"
+      ],
+      "lumina-frontend/activities/globos": [
+        "../../lumina-frontend/src/components/activities/globos/index.ts"
+      ],
+      "lumina-frontend/activities/topo": [
+        "../../lumina-frontend/src/components/activities/topo/index.ts"
+      ],
+      "lumina-frontend/activities/historia-ramificada": [
+        "../../lumina-frontend/src/components/activities/historia-ramificada/index.ts"
       ]
     }
   },

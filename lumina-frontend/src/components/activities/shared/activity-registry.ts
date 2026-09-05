@@ -101,6 +101,9 @@ export interface ActivityRegistryEntry<T extends Activity = Activity> {
 
 // ─── GRUPO 4 ──────────────────────────────────────────────────────────────────
 
+// TODO(migración-etapa-5): retirar la fila `clasificar` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const CLASIFICAR_ENTRY: ActivityRegistryEntry<ClasificarActivity> = {
   tipo: 'clasificar',
   panelType: 'clasificar',
@@ -114,6 +117,9 @@ const CLASIFICAR_ENTRY: ActivityRegistryEntry<ClasificarActivity> = {
   createDefault: createDefaultClasificar,
 };
 
+// TODO(migración-etapa-5): retirar la fila `memoria` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const MEMORIA_ENTRY: ActivityRegistryEntry<MemoriaActivity> = {
   tipo: 'memoria',
   panelType: 'memoria',
@@ -127,6 +133,9 @@ const MEMORIA_ENTRY: ActivityRegistryEntry<MemoriaActivity> = {
   createDefault: createDefaultMemoria,
 };
 
+// TODO(migración-etapa-5): retirar la fila `puzzle_imagen` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const PUZZLE_IMAGEN_ENTRY: ActivityRegistryEntry<PuzzleImagenActivity> = {
   tipo: 'puzzle_imagen',
   panelType: 'puzzle_imagen',
@@ -140,6 +149,9 @@ const PUZZLE_IMAGEN_ENTRY: ActivityRegistryEntry<PuzzleImagenActivity> = {
   createDefault: createDefaultPuzzleImagen,
 };
 
+// TODO(migración-etapa-5): retirar la fila `sopa_letras` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const SOPA_LETRAS_ENTRY: ActivityRegistryEntry<SopaLetrasActivity> = {
   tipo: 'sopa_letras',
   panelType: 'sopa_letras',
@@ -153,6 +165,9 @@ const SOPA_LETRAS_ENTRY: ActivityRegistryEntry<SopaLetrasActivity> = {
   createDefault: createDefaultSopaLetras,
 };
 
+// TODO(migración-etapa-5): retirar la fila `crucigrama` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const CRUCIGRAMA_ENTRY: ActivityRegistryEntry<CrucigramaActivity> = {
   tipo: 'crucigrama',
   panelType: 'crucigrama',
@@ -166,6 +181,9 @@ const CRUCIGRAMA_ENTRY: ActivityRegistryEntry<CrucigramaActivity> = {
   createDefault: createDefaultCrucigrama,
 };
 
+// TODO(migración-etapa-5): retirar la fila `abrir_caja` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const ABRIR_CAJA_ENTRY: ActivityRegistryEntry<AbrirCajaActivity> = {
   tipo: 'abrir_caja',
   panelType: 'abrir_caja',
@@ -196,6 +214,9 @@ const ANAGRAMA_ENTRY: ActivityRegistryEntry<AnagramaActivity> = {
   createDefault: createDefaultAnagrama,
 };
 
+// TODO(migración-etapa-5): retirar la fila `ahorcado` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const AHORCADO_ENTRY: ActivityRegistryEntry<AhorcadoActivity> = {
   tipo: 'ahorcado',
   panelType: 'ahorcado',
@@ -209,6 +230,9 @@ const AHORCADO_ENTRY: ActivityRegistryEntry<AhorcadoActivity> = {
   createDefault: createDefaultAhorcado,
 };
 
+// TODO(migración-etapa-5): retirar la fila `puzzle_palabras` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const PUZZLE_PALABRAS_ENTRY: ActivityRegistryEntry<PuzzlePalabrasActivity> = {
   tipo: 'puzzle_palabras',
   panelType: 'puzzle_palabras',
@@ -222,6 +246,9 @@ const PUZZLE_PALABRAS_ENTRY: ActivityRegistryEntry<PuzzlePalabrasActivity> = {
   createDefault: createDefaultPuzzlePalabras,
 };
 
+// TODO(migración-etapa-5): retirar la fila `globos` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const GLOBOS_ENTRY: ActivityRegistryEntry<GlobosActivity> = {
   tipo: 'globos',
   panelType: 'globos',
@@ -235,6 +262,9 @@ const GLOBOS_ENTRY: ActivityRegistryEntry<GlobosActivity> = {
   createDefault: createDefaultGlobos,
 };
 
+// TODO(migración-etapa-5): retirar la fila `topo` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const TOPO_ENTRY: ActivityRegistryEntry<TopoActivity> = {
   tipo: 'topo',
   panelType: 'topo',
@@ -248,6 +278,9 @@ const TOPO_ENTRY: ActivityRegistryEntry<TopoActivity> = {
   createDefault: createDefaultTopo,
 };
 
+// TODO(migración-etapa-5): retirar la fila `historia_ramificada` de ACTIVITY_REGISTRY
+// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
+// · fecha objetivo: 2026-11-30.
 const HISTORIA_RAMIFICADA_ENTRY: ActivityRegistryEntry<HistoriaRamificadaActivity> = {
   tipo: 'historia_ramificada',
   panelType: 'historia_ramificada',

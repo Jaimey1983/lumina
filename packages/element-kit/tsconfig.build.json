@@ -6,8 +6,46 @@
       "lumina-frontend/widgets/boton": ["./src/shims/lumina-frontend-boton.d.ts"],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
+      ],
+      "lumina-frontend/activities/clasificar": [
+        "./src/shims/lumina-frontend-clasificar.d.ts"
+      ],
+      "lumina-frontend/activities/memoria": [
+        "./src/shims/lumina-frontend-memoria.d.ts"
+      ],
+      "lumina-frontend/activities/puzzle-imagen": [
+        "./src/shims/lumina-frontend-puzzle-imagen.d.ts"
+      ],
+      "lumina-frontend/activities/sopa-letras": [
+        "./src/shims/lumina-frontend-sopa-letras.d.ts"
+      ],
+      "lumina-frontend/activities/crucigrama": [
+        "./src/shims/lumina-frontend-crucigrama.d.ts"
+      ],
+      "lumina-frontend/activities/abrir-caja": [
+        "./src/shims/lumina-frontend-abrir-caja.d.ts"
+      ],
+      "lumina-frontend/activities/ahorcado": [
+        "./src/shims/lumina-frontend-ahorcado.d.ts"
+      ],
+      "lumina-frontend/activities/puzzle-palabras": [
+        "./src/shims/lumina-frontend-puzzle-palabras.d.ts"
+      ],
+      "lumina-frontend/activities/globos": [
+        "./src/shims/lumina-frontend-globos.d.ts"
+      ],
+      "lumina-frontend/activities/topo": [
+        "./src/shims/lumina-frontend-topo.d.ts"
+      ],
+      "lumina-frontend/activities/historia-ramificada": [
+        "./src/shims/lumina-frontend-historia-ramificada.d.ts"
       ]
     }
   },
-  "exclude": ["src/**/*.spec.ts", "src/**/*.spec.tsx", "src/shims/**"]
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/shims/**",
+    "src/vitest-setup.ts"
+  ]
 }

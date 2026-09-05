@@ -11,6 +11,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],
+    setupFiles: ["./src/vitest-setup.ts"],
+    testTimeout: 15_000,
   },
   css: {
     modules: {
@@ -27,6 +29,50 @@ export default defineConfig({
       "lumina-frontend/activities/anagrama": path.resolve(
         frontendSrc,
         "components/activities/anagrama/index.ts",
+      ),
+      "lumina-frontend/activities/clasificar": path.resolve(
+        frontendSrc,
+        "components/activities/clasificar/index.ts",
+      ),
+      "lumina-frontend/activities/memoria": path.resolve(
+        frontendSrc,
+        "components/activities/memoria/index.ts",
+      ),
+      "lumina-frontend/activities/puzzle-imagen": path.resolve(
+        frontendSrc,
+        "components/activities/puzzle-imagen/index.ts",
+      ),
+      "lumina-frontend/activities/sopa-letras": path.resolve(
+        frontendSrc,
+        "components/activities/sopa-letras/index.ts",
+      ),
+      "lumina-frontend/activities/crucigrama": path.resolve(
+        frontendSrc,
+        "components/activities/crucigrama/index.ts",
+      ),
+      "lumina-frontend/activities/abrir-caja": path.resolve(
+        frontendSrc,
+        "components/activities/abrir-caja/index.ts",
+      ),
+      "lumina-frontend/activities/ahorcado": path.resolve(
+        frontendSrc,
+        "components/activities/ahorcado/index.ts",
+      ),
+      "lumina-frontend/activities/puzzle-palabras": path.resolve(
+        frontendSrc,
+        "components/activities/puzzle-palabras/index.ts",
+      ),
+      "lumina-frontend/activities/globos": path.resolve(
+        frontendSrc,
+        "components/activities/globos/index.ts",
+      ),
+      "lumina-frontend/activities/topo": path.resolve(
+        frontendSrc,
+        "components/activities/topo/index.ts",
+      ),
+      "lumina-frontend/activities/historia-ramificada": path.resolve(
+        frontendSrc,
+        "components/activities/historia-ramificada/index.ts",
       ),
     },
   },
