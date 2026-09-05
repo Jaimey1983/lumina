@@ -364,7 +364,7 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 
 ##### E3.2 — Familia Control/burbuja (Hotspot, Tooltip, Contador, Barra)
 - **Operador:** Cursor
-- **Estado:** pendiente (E3.1 hecho — desbloqueado)
+- **Estado:** [en curso: Cursor]
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `hotspot`, `tooltip`, `contador`, `progreso` (mismo patrón que E3.1, sin `puntuacion`); sus shims + aliases + `src/index.ts`; `lumina-frontend/src/components/widgets/<tipo>/index.ts` barrels + subpaths en `package.json`. El Botón ya está (E1.4).
 - **Alcance — NO toca:** el motor del canvas / paneles congelados E5; `widget-registry.ts` salvo los `TODO`; backend.
 - **Entregable:** `pnpm --filter @lumina/element-kit test` — una paridad de DOM por widget. `pnpm --filter lumina-frontend build` verde.
