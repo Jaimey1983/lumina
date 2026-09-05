@@ -1,8 +1,12 @@
 # compiled output
 /dist
+dist/
 packages/*/dist
-/node_modules
+node_modules/
 /build
+
+# pnpm store local (fallback cuando el store global está en otra unidad)
+.pnpm-store/
 
 # Logs
 logs
@@ -72,6 +76,7 @@ package-lock.json
 **/build_log.txt
 **/lint-output.txt
 **/lint2.txt
+**/test-f14*.txt
 
 lumina-backup/
 *- copia/
