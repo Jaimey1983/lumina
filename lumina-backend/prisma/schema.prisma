@@ -35,6 +35,7 @@ model User {
   workGroupMemberships    WorkGroupMember[]
   preferredAiProvider     AiProvider?
   teacherAiKeys           TeacherAiKey[]
+  passwordResetTokens     PasswordResetToken[]
 
   // ─── SUPERADMIN / verificación docente (PR1: solo estructura) ──────────────
   // Soft delete. Requiere filtrar `deletedAt: null` en TODAS las queries de
@@ -72,6 +73,23 @@ model User {
   @@index([deletedAt])
   @@index([role, verificationStatus])
   @@map("users")
+}
+
+/// Token de restablecimiento de contraseña ("olvidé mi contraseña").
+/// Se guarda sólo el hash SHA-256 del token; el valor en claro viaja una única
+/// vez al usuario (por correo en producción). Un solo uso (`usedAt`) y
+/// expiración corta (`expiresAt`). Pedir un token nuevo invalida los anteriores.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 /// Clave BYOK de un docente (cifrada). Nunca se expone en claro por la API.
@@ -288,15 +306,20 @@ model AutonomousResult {
 }
 
 model Slide {
-  id        String         @id @default(cuid())
-  order     Int
-  type      SlideType
-  title     String
-  content   Json?
-  classId   String
-  createdAt DateTime       @default(now())
-  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
-  versions  SlideVersion[]
+  id             String         @id @default(cuid())
+  order          Int
+  type           SlideType
+  title          String
+  content        Json?
+  classId        String
+  /**
+   * Versión monotónica del contenido. Cada update exitoso hace increment 1.
+   * Clientes que envían `expectedVersion` obtienen 409 si no coincide (optimistic locking).
+   */
+  contentVersion Int            @default(0)
+  createdAt      DateTime       @default(now())
+  class          Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  versions       SlideVersion[]
 
   @@map("slides")
 }
@@ -781,6 +804,7 @@ model TorneoAnswer {
   points        Int
   createdAt     DateTime @default(now())
 
+  @@unique([torneoId, questionIndex, studentId])
   @@map("torneo_answers")
 }
 

@@ -1,6 +1,7 @@
 // nanoid@5 es ESM puro y Jest corre en CJS — mock obligatorio para evitar SyntaxError
 jest.mock('nanoid', () => ({ nanoid: jest.fn(() => 'mock-nanoid-id') }));
 
+import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClassesService } from './classes.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -231,5 +232,156 @@ describe('ClassesService — endSession — atomicidad de la transacción (Test 
     });
     expect(upsertedSlideIds).toContain(RESULTADO_A.slideId);
     expect(upsertedSlideIds).toContain(RESULTADO_B.slideId);
+  });
+});
+
+// ─── F1.4: optimistic locking de updateSlide ─────────────────────────────────
+
+describe('ClassesService — updateSlide — optimistic locking (F1.4)', () => {
+  let service: ClassesService;
+  let slideFindUnique: jest.Mock;
+  let slideFindFirst: jest.Mock;
+  let slideUpdateMany: jest.Mock;
+  let slideUpdate: jest.Mock;
+  let slideFindUniqueOrThrow: jest.Mock;
+
+  const SLIDE_ID = 'slide-ol-1';
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    slideFindUnique = jest.fn().mockResolvedValue({
+      id: SLIDE_ID,
+      classId: CLASS_ID,
+      contentVersion: 3,
+      content: { bloques: [] },
+    });
+    slideFindFirst = jest.fn().mockResolvedValue({ contentVersion: 4 });
+    slideUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+    slideUpdate = jest.fn().mockResolvedValue({
+      id: SLIDE_ID,
+      contentVersion: 4,
+    });
+    slideFindUniqueOrThrow = jest.fn().mockResolvedValue({
+      id: SLIDE_ID,
+      contentVersion: 4,
+      content: { v: 'ok' },
+    });
+
+    const mockPrisma = {
+      class: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: CLASS_ID,
+          courseId: COURSE_ID,
+          status: 'DRAFT',
+        }),
+      },
+      course: {
+        findUnique: jest.fn().mockResolvedValue({ teacherId: TEACHER_ID }),
+      },
+      slide: {
+        findUnique: slideFindUnique,
+        findFirst: slideFindFirst,
+        updateMany: slideUpdateMany,
+        update: slideUpdate,
+        findUniqueOrThrow: slideFindUniqueOrThrow,
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      classResult: { upsert: jest.fn(), findUnique: jest.fn() },
+      classSession: { findFirst: jest.fn() },
+      user: { findMany: jest.fn(), findUnique: jest.fn() },
+      $transaction: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ClassesService,
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: CourseAuthorizationService, useValue: {} },
+        {
+          provide: AnalyticsService,
+          useValue: {
+            closeSessionLog: jest.fn(),
+            recordSlideEngagement: jest.fn(),
+          },
+        },
+        {
+          provide: SessionGamificationService,
+          useValue: { terminarSesion: jest.fn() },
+        },
+      ],
+    }).compile();
+
+    service = module.get(ClassesService);
+  });
+
+  it('con expectedVersion coincidente: updateMany + incrementa versión', async () => {
+    const result = await service.updateSlide(
+      CLASS_ID,
+      SLIDE_ID,
+      { content: { bloques: [1] }, expectedVersion: 3 },
+      TEACHER_ID,
+    );
+
+    expect(slideUpdateMany).toHaveBeenCalledTimes(1);
+    const updateManyCalls = slideUpdateMany.mock.calls as unknown as Array<
+      [{ where: unknown; data: { contentVersion: { increment: number } } }]
+    >;
+    const callArg = updateManyCalls[0][0];
+    expect(callArg.where).toEqual({
+      id: SLIDE_ID,
+      classId: CLASS_ID,
+      contentVersion: 3,
+    });
+    expect(callArg.data.contentVersion).toEqual({ increment: 1 });
+    expect(result.contentVersion).toBe(4);
+    expect(slideUpdate).not.toHaveBeenCalled();
+  });
+
+  it('con expectedVersion desfasada: 409 ConflictException (no pisa)', async () => {
+    slideUpdateMany.mockResolvedValue({ count: 0 });
+
+    const err = await service
+      .updateSlide(
+        CLASS_ID,
+        SLIDE_ID,
+        { content: { bloques: [2] }, expectedVersion: 3 },
+        TEACHER_ID,
+      )
+      .catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ConflictException);
+    const body = (err as ConflictException).getResponse() as {
+      message: string;
+      currentVersion: number;
+      expectedVersion: number;
+    };
+    expect(body.message).toContain('Conflicto de versión');
+    expect(body.currentVersion).toBe(4);
+    expect(body.expectedVersion).toBe(3);
+    expect(slideFindUniqueOrThrow).not.toHaveBeenCalled();
+  });
+
+  it('sin expectedVersion: compat last-write-wins pero igual incrementa versión', async () => {
+    await service.updateSlide(
+      CLASS_ID,
+      SLIDE_ID,
+      { content: { bloques: [3] } },
+      TEACHER_ID,
+    );
+
+    expect(slideUpdate).toHaveBeenCalledTimes(1);
+    const updateCalls = slideUpdate.mock.calls as unknown as Array<
+      [
+        {
+          where: { id: string };
+          data: { contentVersion: { increment: number } };
+        },
+      ]
+    >;
+    const callArg = updateCalls[0][0];
+    expect(callArg.where).toEqual({ id: SLIDE_ID });
+    expect(callArg.data.contentVersion).toEqual({ increment: 1 });
+    expect(slideUpdateMany).not.toHaveBeenCalled();
   });
 });

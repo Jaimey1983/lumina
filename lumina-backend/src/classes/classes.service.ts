@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,7 +12,11 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
-import { GuardarResultadosDto, EndSessionDto, StudentResultDto } from './dto/save-results.dto';
+import {
+  GuardarResultadosDto,
+  EndSessionDto,
+  StudentResultDto,
+} from './dto/save-results.dto';
 import { NotaManualDto } from './dto/save-manual-grade.dto';
 import { JoinAsGuestDto } from './dto/join-as-guest.dto';
 import {
@@ -123,6 +128,7 @@ export class ClassesService {
             type: true,
             title: true,
             content: true,
+            contentVersion: true,
           },
           orderBy: { order: 'asc' },
         },
@@ -240,6 +246,7 @@ export class ClassesService {
             type: true,
             title: true,
             content: true,
+            contentVersion: true,
             createdAt: true,
           },
           orderBy: { order: 'asc' },
@@ -410,12 +417,7 @@ export class ClassesService {
     const updated = await this.prisma.$transaction(
       async (tx) => {
         if (resultados.length > 0) {
-          await this.persistClassResults(
-            tx,
-            id,
-            activeSession.id,
-            resultados,
-          );
+          await this.persistClassResults(tx, id, activeSession.id, resultados);
         }
         return tx.classSession.update({
           where: { id: activeSession.id },
@@ -571,7 +573,12 @@ export class ClassesService {
         });
       }
 
-      for (const { studentId, nombre, resultados, resultBySlideId } of byStudent.values()) {
+      for (const {
+        studentId,
+        nombre,
+        resultados,
+        resultBySlideId,
+      } of byStudent.values()) {
         const entries = evaluableSlides.map((slide) => {
           const row = resultBySlideId.get(slide.slideId);
           return {
@@ -595,7 +602,10 @@ export class ClassesService {
     const liveNames = liveRows.map((r) => r.nombre);
 
     const autonomousRows: GradebookRow[] = autonomousGrades
-      .filter((grade) => !liveNames.some((name) => namesMatch(grade.studentName, name)))
+      .filter(
+        (grade) =>
+          !liveNames.some((name) => namesMatch(grade.studentName, name)),
+      )
       .map((grade) => ({
         studentId: grade.studentId,
         nombre: grade.studentName,
@@ -724,7 +734,9 @@ export class ClassesService {
       maxScore: CLASS_RESULT_MAX_SCORE_DEFAULT,
       response: data.response,
     };
-    const responseValue = toPrismaJsonValue(toPersistedResponseJson(persistItem));
+    const responseValue = toPrismaJsonValue(
+      toPersistedResponseJson(persistItem),
+    );
     const score = resolvePersistedClassResultScore(persistItem);
     const maxScore = resolvePersistedMaxScore(persistItem);
 
@@ -884,6 +896,7 @@ export class ClassesService {
         type: true,
         title: true,
         content: true,
+        contentVersion: true,
         createdAt: true,
       },
     });
@@ -905,13 +918,47 @@ export class ClassesService {
       throw new NotFoundException('Slide no encontrado');
     }
 
+    const data: Prisma.SlideUpdateManyMutationInput = {
+      contentVersion: { increment: 1 },
+    };
+    if (dto.type !== undefined) data.type = dto.type;
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.content !== undefined) {
+      data.content = dto.content as Prisma.InputJsonValue;
+    }
+
+    // Optimistic locking: updateMany con where de versión → 0 filas = conflicto
+    if (dto.expectedVersion !== undefined) {
+      const result = await this.prisma.slide.updateMany({
+        where: {
+          id: slideId,
+          classId,
+          contentVersion: dto.expectedVersion,
+        },
+        data,
+      });
+      if (result.count === 0) {
+        const current = await this.prisma.slide.findFirst({
+          where: { id: slideId, classId },
+          select: { contentVersion: true },
+        });
+        if (!current) {
+          throw new NotFoundException('Slide no encontrado');
+        }
+        throw new ConflictException({
+          message:
+            'Conflicto de versión: el slide fue modificado por otra sesión',
+          currentVersion: current.contentVersion,
+          expectedVersion: dto.expectedVersion,
+        });
+      }
+      return this.prisma.slide.findUniqueOrThrow({ where: { id: slideId } });
+    }
+
+    // Compat: sin expectedVersion sigue last-write-wins, pero incrementa versión
     return this.prisma.slide.update({
       where: { id: slideId },
-      data: {
-        type: dto.type,
-        title: dto.title,
-        content: dto.content as Prisma.InputJsonValue,
-      },
+      data,
     });
   }
 
@@ -1102,7 +1149,10 @@ export class ClassesService {
 
     return this.prisma.slide.update({
       where: { id: slideId },
-      data: { content: version.content as Prisma.InputJsonValue },
+      data: {
+        content: version.content as Prisma.InputJsonValue,
+        contentVersion: { increment: 1 },
+      },
     });
   }
 

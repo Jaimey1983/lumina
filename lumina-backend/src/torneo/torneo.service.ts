@@ -9,6 +9,10 @@ export interface RankingEntry {
   position: number;
 }
 
+function isUniqueViolation(err: unknown): boolean {
+  return (err as { code?: unknown }).code === 'P2002';
+}
+
 @Injectable()
 export class TorneoService {
   private readonly redis: Redis;
@@ -33,7 +37,7 @@ export class TorneoService {
   async startQuestion(
     torneoId: string,
     index: number,
-    question: any,
+    question: unknown,
     timeLimit: number,
   ) {
     await this.prisma.torneoSession.update({
@@ -42,11 +46,21 @@ export class TorneoService {
     });
 
     const pipeline = this.redis.pipeline();
-    pipeline.set(`torneo:${torneoId}:q${index}:startTime`, Date.now(), 'EX', 60);
+    pipeline.set(
+      `torneo:${torneoId}:q${index}:startTime`,
+      Date.now(),
+      'EX',
+      60,
+    );
     pipeline.set(`torneo:${torneoId}:q${index}:timeLimit`, timeLimit, 'EX', 60);
     await pipeline.exec();
   }
 
+  /**
+   * Idempotente bajo concurrencia: unique (torneoId, questionIndex, studentId)
+   * + catch P2002. El check findFirst es fast-path; la constraint es la fuente
+   * de verdad ante carrera check-then-insert.
+   */
   async saveAnswer(
     torneoId: string,
     questionIndex: number,
@@ -64,7 +78,7 @@ export class TorneoService {
 
     let responseMs = 0;
     let timeLimit = 30000;
-    
+
     if (startTimeStr) {
       responseMs = Date.now() - parseInt(startTimeStr, 10);
     }
@@ -77,31 +91,35 @@ export class TorneoService {
 
     if (correct) {
       const p = Math.round(1000 + 500 * (1 - responseMs / timeLimit));
-      // clamp entre 0 y 1500
       points = Math.max(0, Math.min(1500, p));
     }
 
-    // Check if already answered
     const existing = await this.prisma.torneoAnswer.findFirst({
       where: { torneoId, questionIndex, studentId },
     });
-
     if (existing) {
       return null;
     }
 
-    return this.prisma.torneoAnswer.create({
-      data: {
-        torneoId,
-        studentId,
-        studentName,
-        questionIndex,
-        answer,
-        correct,
-        responseMs,
-        points,
-      },
-    });
+    try {
+      return await this.prisma.torneoAnswer.create({
+        data: {
+          torneoId,
+          studentId,
+          studentName,
+          questionIndex,
+          answer,
+          correct,
+          responseMs,
+          points,
+        },
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        return null;
+      }
+      throw err;
+    }
   }
 
   async getRanking(torneoId: string): Promise<RankingEntry[]> {

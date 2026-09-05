@@ -156,7 +156,11 @@ Aplica a **Antigravity, Cursor, Codex y Claude Code**. Interrumpir pidiendo conf
   - `AuthService.forgotPassword` / `resetPassword`; endpoints con `@Throttle({ limit: 5, ttl: 60_000 })` + `ThrottlerGuard`. La respuesta de `forgot-password` es idéntica exista o no el correo (no enumera cuentas). Hash de contraseña con bcryptjs costo 12, igual que el resto de auth.
   - Prueba de paridad: `src/auth/auth.service.password-reset.spec.ts` (token inválido/expirado/ya usado, no filtra si el email existe, no reutilización, no `devToken` en producción).
   - **PENDIENTE antes de producción — decisión aparte (`TODO(email-provider)` en `auth.service.ts`):** hoy NO se envía correo. En `NODE_ENV !== 'production'` el token en claro se loguea (`console.warn` marcado "DEV ONLY — no enviar así a producción") y se devuelve en `devToken`. Antes de ir a producción hay que conectar un proveedor real de email (SES / Resend / SMTP), enviar el enlace por correo y eliminar tanto el log como el campo `devToken` de la respuesta.
-- [ ] Concurrencia de guardado de slide y de juegos en vivo (torneo/gamificación de sesión).
+- [x] **Concurrencia de guardado de slide y de juegos en vivo** — Cerrado por Cursor (F1.4, pendiente de revisión):
+  - `Slide.contentVersion` (migración `20260905140000_f1_4_slide_version_torneo_unique`) + `UpdateSlideDto.expectedVersion` → `updateMany` condicional; mismatch → `409 ConflictException` con `currentVersion`.
+  - Torneo: `@@unique([torneoId, questionIndex, studentId])` + catch `P2002` en `saveAnswer` (idempotente bajo carrera).
+  - Gamificación de sesión: lock Redis `SET NX` por `sessionId` alrededor del get→mutate→set del blob JSON.
+  - Specs: `classes.service.transaction.spec.ts` (optimistic locking) + `session-gamification.concurrency.spec.ts` + `torneo.service.concurrency.spec.ts`.
 - [x] **Rate limiting y timeout en llamadas de IA** — Cerrado por Claude Code:
   - Timeout: `completeJson`/`postJson` en `src/ai-features/ai-providers.ts` ahora pasan `AbortSignal.timeout()` a `fetch` (60 s en generación, 20 s en el ping de verificación de clave). Un timeout se traduce a `503` con mensaje claro y sin filtrar la clave.
   - Rate limiting: `AiFeaturesController` (`/ai/quiz|activity|content-assistant|evaluate-response|generate-from-document|refine-structure`) y `CourseAiController` (`/courses/:courseId/ai/student-feedback|class-summary`) no tenían ningún `@Throttle` — cada endpoint dispara una llamada de generación cara. Ahora ambos con `@UseGuards(ThrottlerGuard)` + `@Throttle({ limit: 20, ttl: 60_000 })`. `AiKeysController` ya lo tenía.
@@ -191,7 +195,7 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 
 #### F1.4 — Concurrencia de guardado de slide y de juegos en vivo
 - **Operador:** Cursor
-- **Estado:** [en curso: Cursor]
+- **Estado:** en revisión — optimistic locking `contentVersion`+409; unique+P2002 en torneo; lock Redis en session-gamification. Verif: `npx tsc --noEmit` OK, `pnpm lint` 0, Jest **243/243** (vía `node node_modules/jest/bin/jest.js`; `pnpm test` hoy falla por install del workspace E1.1/`allowBuilds` incompleto — fuera de alcance F1.4).
 - **Precondición:** ninguna — es un riesgo de Fase 1, corre en paralelo a la migración.
 - **Alcance — PUEDE tocar:** `lumina-backend/src/classes/` (persistencia de slide: transacción / control de versión optimista), `lumina-backend/src/classes/classes.gateway.ts`, `lumina-backend/src/live-sessions/`, `lumina-backend/src/torneo/`, `lumina-backend/src/gamification/session-gamification.service.ts`, `lumina-backend/src/quiz-live/`, y sus `*.spec.ts`.
 - **Alcance — NO toca:** el motor React del canvas (`lumina-frontend/src/**/canvas-*`, `slide-renderer.tsx`, componentes de Timeline) — es el cluster `react-hooks` congelado para E5. Si el fix necesitara tocarlo, se para y se deja el estado en `bloqueado por E5`.

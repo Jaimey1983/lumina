@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
+import { randomUUID } from 'crypto';
 import {
   xpFromEvaluation,
   type ActivityEvaluationResult,
@@ -61,15 +62,31 @@ const BADGES_AUTO = [
   },
 ];
 
+const LOCK_TTL_SEC = 5;
+const LOCK_RETRY_MS = 25;
+const LOCK_MAX_ATTEMPTS = 80;
+
 @Injectable()
 export class SessionGamificationService implements OnModuleDestroy {
-  private readonly redis: Redis;
+  private redis: Redis;
 
   constructor() {
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT) || 6379,
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
     });
+  }
+
+  /** Solo tests de concurrencia: sustituye ioredis por un fake en memoria. */
+  replaceRedisForTests(redis: Redis): void {
+    try {
+      this.redis.disconnect();
+    } catch {
+      /* ignore */
+    }
+    this.redis = redis;
   }
 
   onModuleDestroy() {
@@ -80,6 +97,45 @@ export class SessionGamificationService implements OnModuleDestroy {
     return `gamif:${sessionId}`;
   }
 
+  private lockKey(sessionId: string) {
+    return `gamif:lock:${sessionId}`;
+  }
+
+  /**
+   * Serializa mutaciones del blob JSON de sesión (get→mutate→set).
+   * Sin este lock, dos `registrarActividad` concurrentes pierden XP (LWW).
+   */
+  private async withSessionLock<T>(
+    sessionId: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    const token = randomUUID();
+    const key = this.lockKey(sessionId);
+    for (let attempt = 0; attempt < LOCK_MAX_ATTEMPTS; attempt++) {
+      const acquired = await this.redis.set(
+        key,
+        token,
+        'EX',
+        LOCK_TTL_SEC,
+        'NX',
+      );
+      if (acquired === 'OK') {
+        try {
+          return await fn();
+        } finally {
+          const current = await this.redis.get(key);
+          if (current === token) {
+            await this.redis.del(key);
+          }
+        }
+      }
+      await new Promise((r) => setTimeout(r, LOCK_RETRY_MS));
+    }
+    throw new Error(
+      `Timeout adquiriendo lock de gamificación para sesión ${sessionId}`,
+    );
+  }
+
   async iniciarSesion(sessionId: string): Promise<void> {
     const sesion: SesionGamificacion = {
       sessionId,
@@ -87,7 +143,12 @@ export class SessionGamificationService implements OnModuleDestroy {
       iniciada: Date.now(),
       leaderboardVisible: true,
     };
-    await this.redis.set(this.key(sessionId), JSON.stringify(sesion), 'EX', 86400);
+    await this.redis.set(
+      this.key(sessionId),
+      JSON.stringify(sesion),
+      'EX',
+      86400,
+    );
   }
 
   async registrarEstudiante(
@@ -95,21 +156,23 @@ export class SessionGamificationService implements OnModuleDestroy {
     studentId: string,
     nombre: string,
   ): Promise<void> {
-    const sesion = await this.getSesion(sessionId);
-    if (!sesion) return;
-    if (!sesion.estudiantes[studentId]) {
-      sesion.estudiantes[studentId] = {
-        studentId,
-        nombre,
-        xp: 0,
-        racha: 0,
-        maxRacha: 0,
-        actividades: 0,
-        badges: [],
-        ultimaNota: null,
-      };
-      await this.saveSesion(sessionId, sesion);
-    }
+    await this.withSessionLock(sessionId, async () => {
+      const sesion = await this.getSesion(sessionId);
+      if (!sesion) return;
+      if (!sesion.estudiantes[studentId]) {
+        sesion.estudiantes[studentId] = {
+          studentId,
+          nombre,
+          xp: 0,
+          racha: 0,
+          maxRacha: 0,
+          actividades: 0,
+          badges: [],
+          ultimaNota: null,
+        };
+        await this.saveSesion(sessionId, sesion);
+      }
+    });
   }
 
   async registrarActividad(
@@ -122,50 +185,52 @@ export class SessionGamificationService implements OnModuleDestroy {
     badgesNuevos: string[];
     xpGanado: number;
   } | null> {
-    const sesion = await this.getSesion(sessionId);
-    if (!sesion) return null;
+    return this.withSessionLock(sessionId, async () => {
+      const sesion = await this.getSesion(sessionId);
+      if (!sesion) return null;
 
-    let e = sesion.estudiantes[studentId];
-    if (!e) {
-      e = {
-        studentId,
-        nombre: nombre?.trim() || studentId,
-        xp: 0,
-        racha: 0,
-        maxRacha: 0,
-        actividades: 0,
-        badges: [],
-        ultimaNota: null,
-      };
-    } else if (nombre?.trim()) {
-      e.nombre = nombre.trim();
-    }
-
-    const xpGanado = xpFromEvaluation(evaluation);
-    const notaClamped =
-      evaluation.score !== null && Number.isFinite(evaluation.score)
-        ? Math.min(5, Math.max(1, evaluation.score))
-        : null;
-    const aprobado = notaClamped !== null && notaClamped >= 3.0;
-
-    e.xp += xpGanado;
-    e.actividades += 1;
-    e.ultimaNota = notaClamped;
-    e.racha = aprobado ? e.racha + 1 : 0;
-    e.maxRacha = Math.max(e.maxRacha, e.racha);
-
-    const badgesNuevos: string[] = [];
-    for (const badge of BADGES_AUTO) {
-      if (!e.badges.includes(badge.id) && badge.condicion(e)) {
-        e.badges.push(badge.id);
-        badgesNuevos.push(badge.nombre);
+      let e = sesion.estudiantes[studentId];
+      if (!e) {
+        e = {
+          studentId,
+          nombre: nombre?.trim() || studentId,
+          xp: 0,
+          racha: 0,
+          maxRacha: 0,
+          actividades: 0,
+          badges: [],
+          ultimaNota: null,
+        };
+      } else if (nombre?.trim()) {
+        e.nombre = nombre.trim();
       }
-    }
 
-    sesion.estudiantes[studentId] = e;
-    await this.saveSesion(sessionId, sesion);
+      const xpGanado = xpFromEvaluation(evaluation);
+      const notaClamped =
+        evaluation.score !== null && Number.isFinite(evaluation.score)
+          ? Math.min(5, Math.max(1, evaluation.score))
+          : null;
+      const aprobado = notaClamped !== null && notaClamped >= 3.0;
 
-    return { estudiante: e, badgesNuevos, xpGanado };
+      e.xp += xpGanado;
+      e.actividades += 1;
+      e.ultimaNota = notaClamped;
+      e.racha = aprobado ? e.racha + 1 : 0;
+      e.maxRacha = Math.max(e.maxRacha, e.racha);
+
+      const badgesNuevos: string[] = [];
+      for (const badge of BADGES_AUTO) {
+        if (!e.badges.includes(badge.id) && badge.condicion(e)) {
+          e.badges.push(badge.id);
+          badgesNuevos.push(badge.nombre);
+        }
+      }
+
+      sesion.estudiantes[studentId] = e;
+      await this.saveSesion(sessionId, sesion);
+
+      return { estudiante: e, badgesNuevos, xpGanado };
+    });
   }
 
   async getLeaderboard(sessionId: string): Promise<EstudianteGamificacion[]> {
@@ -183,11 +248,13 @@ export class SessionGamificationService implements OnModuleDestroy {
     sessionId: string,
     visible: boolean,
   ): Promise<boolean> {
-    const sesion = await this.getSesion(sessionId);
-    if (!sesion) return false;
-    sesion.leaderboardVisible = visible;
-    await this.saveSesion(sessionId, sesion);
-    return true;
+    return this.withSessionLock(sessionId, async () => {
+      const sesion = await this.getSesion(sessionId);
+      if (!sesion) return false;
+      sesion.leaderboardVisible = visible;
+      await this.saveSesion(sessionId, sesion);
+      return true;
+    });
   }
 
   async sesionActiva(sessionId: string): Promise<boolean> {
@@ -195,14 +262,19 @@ export class SessionGamificationService implements OnModuleDestroy {
   }
 
   async terminarSesion(sessionId: string): Promise<void> {
-    await this.redis.del(this.key(sessionId));
+    await this.redis.del(this.key(sessionId), this.lockKey(sessionId));
   }
 
   private async saveSesion(
     sessionId: string,
     sesion: SesionGamificacion,
   ): Promise<void> {
-    await this.redis.set(this.key(sessionId), JSON.stringify(sesion), 'EX', 86400);
+    await this.redis.set(
+      this.key(sessionId),
+      JSON.stringify(sesion),
+      'EX',
+      86400,
+    );
   }
 
   private async getSesion(
