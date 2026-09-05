@@ -342,7 +342,10 @@ Orden ejecutado: **E2.1 → E2.2 → E2.3 → E2.4 → E2.5** (E2.4 ∥ E2.5 se 
 - **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `slide-renderer.tsx` (junto al `switch`) enumerando los tipos ya disponibles en `ElementRegistry` para que E5 los reconecte y borre el `switch`. Ticket + fecha.
 </details>
 
-#### E3 — Migrar widgets · **activa** (E2 cerrada) — sub-fichas E3.1–E3.4 redactadas
+#### E3 — Migrar widgets · **CERRADA** — commits `2ba8e93` (E3.1) / `0b45e11` (E3.2) / `c657d65` (E3.3) / `a39f2af` (E3.4)
+Las 4 sub-fichas en `hecho`. Los **12 widgets** (11 + Botón de E1.4) son `ElementDefinition` en `elementRegistry`, todos **sin `puntuacion`**, con prueba de paridad de DOM (Regla 7). `widget-registry.ts` sigue vivo (lo consumen paneles y el `switch` de `slide-renderer.tsx`, congelados E5) con `TODO(migración-etapa-5)` por fila (ticket `LUM-E5-WIDGETS`, 2026-12-31) — se retira en E5/E7 (Regla 4). El motor del canvas (`slide-renderer.tsx` / `canvas-area.tsx` / Timeline `.tsx`) quedó intacto.
+<details><summary>Contexto histórico de E3</summary>
+
 Objetivo (Regla 1): migrar los widgets del sistema viejo a `ElementDefinition` del kit, piloto **Ruleta**. El **Botón ya se migró en E1.4** — quedan **11**.
 Estado real del repo a tener a la vista:
 - **`widget-registry.ts`** (`lumina-frontend/src/components/widgets/shared/widget-registry.ts`) es fino: `WIDGET_TIPOS` (12: `flip-cards`, `tabs`, `carousel`, `click-reveal`, `timeline`, `popup`, `hotspot`, `tooltip`, `boton`, `contador`, `progreso`, `ruleta`), `WIDGET_LABELS`, el union `WidgetBlock` y guards. **No** tiene Editor/Viewer por widget — el dispatch está en el `switch` de `slide-renderer.tsx` (**congelado E5**).
@@ -381,12 +384,13 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 
 ##### E3.4 — Overlay Popup
 - **Operador:** Cursor
-- **Estado:** en revisión (commit `a39f2af`) — `popupDefinition satisfies ElementDefinition` sin `puntuacion` (patrón Ruleta E3.1); adapters legacy→contrato (`innerSelection` local, `onEnsureBlockSelected` no-op, `applyNow`→`onChange`); `crearPorDefecto = createDefaultPopupBlock`. Barrel `widgets/popup/index.ts` (re-export puro) + subpath `./widgets/popup`; shim + alias ×3 (tsconfig / tsconfig.build / vitest) + registro único en `elementRegistry`. `popup.parity.spec.tsx`: `crearPorDefecto` == legacy y DOM visible idéntico en Editor / Viewer / Viewer thumbnail — el portal a `.canvas-slide` no monta sin `SlideCanvasRoot`, el trigger cerrado (default `triggerEvento: 'click'`) rinde igual en jsdom; se asserta sin `puntuacion`. Regla 4: `TODO(migración-etapa-5)` en `widget-registry.ts` fila `popup` (`LUM-E5-WIDGETS`, 2026-12-31). Verif: `pnpm --filter @lumina/element-kit build` OK · `lint` 0 · `test` **169/169** (26 files) · `pnpm --filter lumina-frontend build` OK · `lint` 0 err (70 warnings). Con E3.4 en revisión, **E3 queda lista para cerrar** (los 12 widgets con su `TODO`).
+- **Estado:** **hecho** (commit `a39f2af`) — `popupDefinition satisfies ElementDefinition` sin `puntuacion` (patrón Ruleta E3.1); adapters legacy→contrato (`innerSelection` local, `onEnsureBlockSelected` no-op, `applyNow`→`onChange`); `crearPorDefecto = createDefaultPopupBlock`. Barrel `widgets/popup/index.ts` (re-export puro) + subpath `./widgets/popup`; shim + alias ×3 (tsconfig / tsconfig.build / vitest) + registro único en `elementRegistry`. `popup.parity.spec.tsx`: `crearPorDefecto` == legacy y DOM visible idéntico en Editor / Viewer / Viewer thumbnail — el portal a `.canvas-slide` no monta sin `SlideCanvasRoot`, el trigger cerrado (default `triggerEvento: 'click'`) rinde igual en jsdom; se asserta sin `puntuacion`. Regla 4: `TODO(migración-etapa-5)` en `widget-registry.ts` fila `popup` (`LUM-E5-WIDGETS`, 2026-12-31). Verif: `pnpm --filter @lumina/element-kit build` OK · `lint` 0 · `test` **169/169** (26 files) · `pnpm --filter lumina-frontend build` OK · `lint` 0 err (70 warnings). Con E3.4 `hecho` y los 12 widgets con su `TODO`, **E3 queda cerrada**.
 - **Contexto:** Popup hace portal a `.canvas-slide` + backdrop y bloquea el slide (`lumina-frontend/CLAUDE.md` §widgets). El adapter lo envuelve tal cual; para la parity spec puede requerir montar un `.canvas-slide` de prueba o un render-smoke.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/popup/**`; shim + alias + `src/index.ts`; `lumina-frontend/src/components/widgets/popup/index.ts` barrel + subpath.
 - **Alcance — NO toca:** el motor del canvas / paneles congelados; `widget-registry.ts` salvo el `TODO`; backend. (Ojo: `popup-parts.tsx` tuvo un fix de `react-hooks/static-components` en L.2 — no re-tocar esa parte.)
 - **Entregable:** `pnpm --filter @lumina/element-kit test` con Popup en verde (render-smoke aceptable si el portal no rinde en jsdom). `pnpm --filter lumina-frontend build` verde.
 - **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `widget-registry.ts` fila `popup`. Con E3.4 `hecho` y los 12 widgets con su `TODO`, **E3 queda cerrada**.
+</details>
 
 #### E4 — Migrar bloques de canvas y formas vectoriales (editor Paper.js) · bloqueado por E2 y E3 **cerradas con el código viejo borrado**
 Ficha raíz: **Cursor**, al cerrar E3.
