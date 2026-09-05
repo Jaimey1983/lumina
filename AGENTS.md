@@ -218,9 +218,9 @@ Antigravity bajó 120→76 problemas sobre los 53 archivos; los 6 `error` restan
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
 
-#### E1 — `@lumina/element-kit` + piloto Botón · **pendiente de cierre** (E1.1–E1.3 `hecho`; E1.4 `en revisión`)
+#### E1 — `@lumina/element-kit` + piloto Botón · **CERRADA** — commits `43cbfca` / `fef649b` / `8b6e338` / `1fcc157`
 Precondición global cumplida: `pnpm lint` estricto en verde en ambos paquetes (`canvas-area.tsx` degradado a `warning` hasta E5).
-Orden: **E1.1 → (E1.2 ∥ E1.3) → E1.4**. E1 se cierra cuando las cuatro están `hecho` y la prueba de paridad del Botón pasa (E1.4 listo para peer review).
+Etapa 1 completa: existe el workspace pnpm real, el contrato `ElementDefinition` + `ElementRegistry`, el stub `@lumina/scoring`, y el Botón migrado con prueba de paridad (Regla 7). El canvas viejo sigue despachando el Botón hasta E3/E5 (Regla 4: `TODO(migración-etapa-3)` en `widget-registry.ts`).
 Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packages:` (la raíz tiene un `pnpm-workspace.yaml` solo con `allowBuilds:`); `lumina-frontend` y `lumina-backend` se instalan por separado, cada uno con su `pnpm-lock.yaml` y su `pnpm-workspace.yaml`. El widget Botón ya está partido en `lumina-frontend/src/components/widgets/boton/` (`boton-defaults.ts`, `boton-editor.tsx`, `boton-viewer.tsx`, `boton-properties.tsx`, `boton-config.ts`, `boton-parts.tsx`). El dispatch de widgets vive en `slide-renderer.tsx` — **congelado para E5**.
 
 ##### E1.1 — Workspace pnpm real en la raíz · **hecho** (commit `43cbfca`)
@@ -268,7 +268,9 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.4 — Piloto: Botón como `ElementDefinition`
 - **Operador:** Cursor (dueño del canvas / widgets)
-- **Estado:** en revisión — `botonDefinition` en `packages/element-kit/src/elements/boton/**` (adapters + registro en `elementRegistry`); paridad 9/9; `TODO(migración-etapa-3)` LUM-E3-BOTON · 2026-10-31 en `widget-registry.ts`. Verif: `pnpm --filter @lumina/element-kit test` 9/9 + `build` OK; `pnpm --filter lumina-frontend build` OK (17 páginas). Canvas viejo intacto.
+- **Estado:** **hecho** (commit `1fcc157`) — verificado por Claude Code. `botonDefinition` con `satisfies ElementDefinition` (Regla 2 completa, sin `puntuacion`), adapters legacy→contrato, registro único en `elementRegistry`. Paridad `boton.parity.spec.tsx` cubre `crearPorDefecto` == legacy, DOM visible idéntico y acciones siguiente/anterior/ir_a/URL. `pnpm --filter @lumina/element-kit build` OK · `test` 9/9 · `lint` 0; `pnpm --filter lumina-frontend lint` 0 err · `build` OK; `install --frozen-lockfile` consistente. `widget-registry.ts`: solo el `TODO(migración-etapa-3)` (ticket LUM-E3-BOTON, fecha 2026-10-31). Motor del canvas (`slide-renderer.tsx`/`canvas-area.tsx`/Timeline) intacto.
+- **Desvíos de alcance (menores, aceptados):** (1) `lumina-frontend/package.json` — se añadió `exports["./widgets/boton"]` (necesario para el import cross-package) y se quitó el bloque `pnpm.overrides` (limpieza de E1.1, no de E1.4, pero correcta). (2) `lumina-frontend/src/types/css-modules.d.ts` nuevo (+4) para que `tsc` resuelva imports `.module.css` transitivos.
+- **Nota arquitectónica para E2/E3:** `packages/element-kit` quedó con `dependencies: { "lumina-frontend": "workspace:*" }` — el kit depende del frontend entero. Válido para el piloto (adapta componentes existentes); en E3/E5 la dependencia debe **invertirse** (frontend → kit) para no dejar el grafo circular.
 - **Precondición:** E1.2 `hecho`.
 - **Alcance — PUEDE tocar:**
   - `packages/element-kit/src/elements/boton/**` — la `ElementDefinition` del Botón: `crearPorDefecto` (envuelve `createDefaultBoton` de `boton-defaults.ts`), `Editor` / `Viewer` / `Propiedades` (adaptan los componentes existentes de `lumina-frontend/src/components/widgets/boton/` a las props del contrato), `apariencia`; **sin** `puntuacion` (el Botón no puntúa). Registro vía `ElementRegistry.registrar(botonDefinition)` en el arranque del paquete.
@@ -278,7 +280,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 - **Entregable:** `pnpm --filter @lumina/element-kit test` incluye la prueba de paridad del Botón en verde (misma entrada → misma salida visible, Regla 7). `pnpm --filter lumina-frontend build` sigue verde. El Botón viejo sigue funcionando en el canvas sin cambios.
 - **Cierre (Regla 4):** `TODO(migración-etapa-3)` en `lumina-frontend/src/components/widgets/shared/widget-registry.ts` — el Botón viejo se retira al migrar el resto de widgets (E3) — con issue/ticket y fecha. Con E1.4 `hecho` y la paridad en verde, **E1 queda cerrado**.
 
-#### E2 — Migrar actividades · bloqueado por E1
+#### E2 — Migrar actividades · **desbloqueada** (E1 cerrada) — pendiente de redactar sub-fichas
 Ficha raíz la redactan **Claude Code + Cursor** al cerrar E1. Objetivo: fusionar `lumina-frontend/src/components/activities/shared/activity-registry.ts` dentro de `ElementRegistry`; **portar** la implementación real a `@lumina/scoring` (stub creado en E1.3) y hacer que el frontend la consuma, dejando `TODO(migración-etapa-2)` en `lumina-frontend/src/lib/activity-scoring.ts`. Piloto y orden de actividades: informe «Plano Lumina», Etapa 2.
 
 #### E3 — Migrar widgets (piloto Ruleta) · bloqueado por E2
