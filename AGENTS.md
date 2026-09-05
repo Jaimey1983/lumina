@@ -280,8 +280,59 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 - **Entregable:** `pnpm --filter @lumina/element-kit test` incluye la prueba de paridad del Botón en verde (misma entrada → misma salida visible, Regla 7). `pnpm --filter lumina-frontend build` sigue verde. El Botón viejo sigue funcionando en el canvas sin cambios.
 - **Cierre (Regla 4):** `TODO(migración-etapa-3)` en `lumina-frontend/src/components/widgets/shared/widget-registry.ts` — el Botón viejo se retira al migrar el resto de widgets (E3) — con issue/ticket y fecha. Con E1.4 `hecho` y la paridad en verde, **E1 queda cerrado**.
 
-#### E2 — Migrar actividades · **desbloqueada** (E1 cerrada) — pendiente de redactar sub-fichas
-Ficha raíz la redactan **Claude Code + Cursor** al cerrar E1. Objetivo: fusionar `lumina-frontend/src/components/activities/shared/activity-registry.ts` dentro de `ElementRegistry`; **portar** la implementación real a `@lumina/scoring` (stub creado en E1.3) y hacer que el frontend la consuma, dejando `TODO(migración-etapa-2)` en `lumina-frontend/src/lib/activity-scoring.ts`. Piloto y orden de actividades: informe «Plano Lumina», Etapa 2.
+#### E2 — Migrar actividades · **activa** (E1 cerrada) — sub-fichas E2.1–E2.5 redactadas
+Objetivo (Regla 1): fusionar en `ElementRegistry` los **dos** sistemas de actividad que hoy conviven, y conectar `@lumina/scoring`.
+Estado real del repo a tener a la vista:
+- **Familia A — "clásicas"** (`lumina-frontend/src/app/(app)/classes/[id]/editor/components/activities/*.tsx`): `quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras`, + escape-room / torneo. **No tienen registro**: las despacha un `switch` en `slide-renderer.tsx` — **congelado para E5**.
+- **Familia B — "Grupo 4"** (`lumina-frontend/src/components/activities/*`): `clasificar`, `memoria`, `puzzle_imagen`, `sopa_letras`, `crucigrama`, `abrir_caja`, `anagrama`, `ahorcado`, `puzzle_palabras`, `globos`, `topo`, `historia_ramificada`. Registradas en `ACTIVITY_REGISTRY` (`lumina-frontend/src/components/activities/shared/activity-registry.ts`, 12 entradas con `tipo/panelType/nombre/…/editor/viewer/properties/createDefault/evaluable`).
+- **Scoring duplicado a mano**: `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados byte-a-byte por `activity-scoring.fixtures.json`. `@lumina/scoring` (stub de E1.3) declara las 15 firmas públicas.
+- **`activity-registry.ts` lo consume `slides-panel.tsx`** (el panel de drag&drop) → no se puede borrar en E2; su retiro es E5. Cierre E2 (Regla 4) = `TODO(migración-etapa-5)` en `activity-registry.ts` + ticket.
+Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `hecho`, las 12 de Grupo 4 + las "clásicas" registradas como `ElementDefinition`, y `@lumina/scoring` como fuente única del frontend.
+
+##### E2.1 — Portar la implementación real a `@lumina/scoring`
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** E1 cerrada.
+- **Alcance — PUEDE tocar:** solo `packages/scoring/**`.
+- **Contenido:** reemplazar los `noImplementado()` de `packages/scoring/src/index.ts` por la implementación real, **portada tal cual** desde `lumina-frontend/src/lib/activity-scoring.ts` (ya está lint-limpio y con tests). Traer `activity-scoring.fixtures.json` (o un import) como suite del paquete. Mantener exactamente las 15 firmas ya declaradas.
+- **Alcance — NO toca:** los dos `activity-scoring.ts` existentes (siguen vivos), frontend, backend, `slide-renderer.tsx`.
+- **Entregable:** `pnpm --filter @lumina/scoring build && test && lint` verdes; los fixtures de paridad pasan **dentro** del paquete (mismos casos que `lumina-frontend/src/lib/activity-scoring.spec.ts`, 31+). Sin consumidores todavía.
+- **Cierre:** no aplica Regla 4.
+
+##### E2.2 — El frontend consume `@lumina/scoring`
+- **Operador:** Claude Code
+- **Estado:** bloqueado por E2.1
+- **Alcance — PUEDE tocar:** `lumina-frontend/src/lib/activity-scoring.ts` (+ su `package.json` para la dep `@lumina/scoring`), y los imports internos que lo usen **solo si** hace falta reapuntarlos.
+- **Contenido:** `lumina-frontend/src/lib/activity-scoring.ts` pasa a **re-exportar** desde `@lumina/scoring` (API pública idéntica — mismos nombres, mismas firmas). No se borra el archivo: queda como fachada + `TODO(migración-etapa-2)`… no — **`TODO(migración-etapa-5)`** (se elimina la fachada cuando E5 termine de reapuntar consumidores) con ticket y fecha.
+- **Alcance — NO toca:** `lumina-backend/src/classes/activity-scoring.ts` (es E6), `slide-renderer.tsx`, cualquier componente de actividad.
+- **Entregable:** `pnpm --filter lumina-frontend lint` 0 err · `test:unit` sin bajar el conteo (la suite `activity-scoring.spec.ts` sigue verde apuntando a la fachada) · `build` OK. `pnpm --filter lumina-backend test` intacto (243).
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `lumina-frontend/src/lib/activity-scoring.ts` — fachada a borrar cuando no queden imports directos — + ticket con fecha.
+
+##### E2.3 — Piloto: Anagrama como `ElementDefinition` (con `puntuacion`)
+- **Operador:** Cursor (dueño del editor / actividades)
+- **Estado:** bloqueado por E2.2
+- **Contexto:** primer elemento **evaluable** sobre el contrato — ejercita el delegado `puntuacion` que el piloto Botón (E1.4) no usó. `Anagrama` es la actividad evaluable más simple (`AnagramaActivity`, `createDefaultAnagrama` en `lumina-frontend/src/lib/anagrama-defaults.ts`, componentes en `lumina-frontend/src/components/activities/anagrama/`). Piloto provisional salvo que el informe «Plano Lumina» (Etapa 2) indique otro.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/anagrama/**` (definición + adapters `AnagramaEditor/Viewer/Properties` → props del contrato + `puntuacion` que llama a `evaluateActivityResponse`/`notaColombiana` de `@lumina/scoring`), su `parity.spec.tsx`, registro en `elementRegistry`. `lumina-frontend/src/components/activities/anagrama/**` **solo** si hay que exportar algo interno (sin cambiar comportamiento). `lumina-frontend/package.json` `exports` si hace falta el subpath (como el Botón en E1.4).
+- **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, Timeline (congelados E5); `activity-registry.ts` salvo su `TODO` de cierre; `slides-panel.tsx`; el backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` incluye la paridad de Anagrama en verde — misma actividad + misma respuesta → **mismo `correct` y mismo `score`** que hoy (Regla 7), y editor/viewer con el mismo DOM visible. `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-3)`… **`etapa-5`** en `activity-registry.ts` para la fila `anagrama` (se retira cuando E5 conecte `ElementRegistry` al canvas) + ticket.
+
+##### E2.4 — Migrar el resto de Grupo 4 (11 actividades) a `ElementDefinition`
+- **Operador:** Cursor · puede ir **en paralelo con E2.5**
+- **Estado:** bloqueado por E2.3
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `clasificar`, `memoria`, `puzzle_imagen`, `sopa_letras`, `crucigrama`, `abrir_caja`, `ahorcado`, `puzzle_palabras`, `globos`, `topo`, `historia_ramificada` (mismo patrón que E2.3, reutilizando adapters); registro de cada una en `elementRegistry`; `lumina-frontend/src/components/activities/<tipo>/**` solo para exports internos.
+- **Alcance — NO toca:** `slide-renderer.tsx`, `slides-panel.tsx`, `activity-registry.ts` (salvo `TODO` de cierre por fila), backend, cluster congelado E5.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` — una prueba de paridad por actividad (respuesta → `correct`/`score` idénticos; DOM visible idéntico). `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** cada fila migrada de `ACTIVITY_REGISTRY` queda con su `TODO(migración-etapa-5)` (retiro al conectar el registro al canvas) o, si `slides-panel.tsx` ya puede leer del `ElementRegistry`, se borra la fila. Ticket paraguas + fecha.
+
+##### E2.5 — Registrar la familia "clásica" (quiz / V-F / blancos / … ) como `ElementDefinition`
+- **Operador:** Claude Code + Cursor · puede ir **en paralelo con E2.4**
+- **Estado:** bloqueado por E2.3
+- **Contexto:** estas actividades **no tienen registro** hoy — las despacha el `switch` de `slide-renderer.tsx` (congelado E5). E2.5 crea sus `ElementDefinition` en el kit **sin reescribir el switch**; conectarlas al canvas es E5.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras` (adapters de los componentes en `.../editor/components/activities/*.tsx`, `puntuacion` → `@lumina/scoring`); registro en `elementRegistry`; exports internos de esos componentes si hace falta.
+- **Alcance — NO toca:** `slide-renderer.tsx` ni su `switch` (E5), `canvas-area.tsx`, backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` — paridad por actividad (`correct`/`score` y DOM). `pnpm --filter lumina-frontend build` verde. El `switch` de `slide-renderer.tsx` sigue despachando sin cambios.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `slide-renderer.tsx` (junto al `switch`) enumerando los tipos ya disponibles en `ElementRegistry` para que E5 los reconecte y borre el `switch`. Ticket + fecha.
 
 #### E3 — Migrar widgets (piloto Ruleta) · bloqueado por E2
 Ficha raíz: **Cursor**, al cerrar E2. Retira de `widget-registry.ts` cada widget migrado (Regla 4).
