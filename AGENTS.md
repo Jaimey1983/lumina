@@ -201,16 +201,67 @@ Antigravity bajó 120→76 problemas sobre los 53 archivos; los 6 `error` restan
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
 
-#### E1 — `@lumina/element-kit` + piloto Botón · **desbloqueado — pendiente de redactar sub-fichas**
-Precondición cumplida: `pnpm lint` estricto en verde en ambos paquetes (`canvas-area.tsx` degradado a `warning` hasta E5). Redacta las sub-fichas E1.1–E1.4: **Claude Code** (commit `chore(tablero): …` antes de asignarlas).
+#### E1 — `@lumina/element-kit` + piloto Botón · **activo** (sub-fichas E1.1–E1.4 redactadas)
+Precondición global cumplida: `pnpm lint` estricto en verde en ambos paquetes (`canvas-area.tsx` degradado a `warning` hasta E5).
+Orden: **E1.1 → (E1.2 ∥ E1.3) → E1.4**. E1 se cierra cuando las cuatro están `hecho` y la prueba de paridad del Botón pasa.
+Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packages:` (la raíz tiene un `pnpm-workspace.yaml` solo con `allowBuilds:`); `lumina-frontend` y `lumina-backend` se instalan por separado, cada uno con su `pnpm-lock.yaml` y su `pnpm-workspace.yaml`. El widget Botón ya está partido en `lumina-frontend/src/components/widgets/boton/` (`boton-defaults.ts`, `boton-editor.tsx`, `boton-viewer.tsx`, `boton-properties.tsx`, `boton-config.ts`, `boton-parts.tsx`). El dispatch de widgets vive en `slide-renderer.tsx` — **congelado para E5**.
 
-- **E1.1 — Crear el workspace de paquetes.** Op: Claude Code. Alcance: `pnpm-workspace.yaml` en la **raíz** (crear con `packages:` → `packages/*`) + carpeta `packages/`. No toca `lumina-backend/` ni `lumina-frontend/` salvo enganchar el nuevo paquete. Entregable: `pnpm -w install` resuelve, CI sigue verde.
-- **E1.2 — Scaffold `packages/element-kit` con el contrato.** Op: Claude Code. Alcance: solo `packages/element-kit/`. Entregable: tipos de `ElementDefinition` según Regla 2 (`tipo`, `crearPorDefecto()`, `Editor`, `Viewer`, `Propiedades`, `apariencia`, `puntuacion?`), `ElementRegistry.registrar()`, build + test del paquete en CI.
-- **E1.3 — Scaffold `packages/scoring`.** Op: Claude Code. Alcance: solo `packages/scoring/`. Entregable: API mínima equivalente a la que hoy usa `lumina-backend/src/classes/activity-scoring.ts`, **sin** migrar consumidores todavía.
-- **E1.4 — Piloto: Botón como `ElementDefinition`.** Op: Cursor (dueño del canvas). Alcance: `packages/element-kit/` (definición del Botón) + punto de montaje en `lumina-frontend`. NO borra el Botón viejo de `widget-registry.ts`. Entregable: prueba de paridad — misma entrada → misma salida visible que el Botón actual (Regla 7). Cierre: `TODO(migración-etapa-1)` en `lumina-frontend/src/components/widgets/shared/widget-registry.ts` apuntando al Botón viejo + ticket con fecha.
+##### E1.1 — Workspace pnpm real en la raíz
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** L.1 + L.2 `hecho` (CI verde con lint estricto) — cumplida.
+- **Alcance — PUEDE tocar (solo infraestructura de workspace, NADA bajo `src/` ni `prisma/`):**
+  - Raíz: crear `package.json` (`"private": true`, `"packageManager": "pnpm@11.25.0"` — igual que CI); ampliar `pnpm-workspace.yaml` con `packages: ['packages/*', 'lumina-frontend', 'lumina-backend']` y consolidar ahí los `overrides` / `allowBuilds` / `ignoredBuiltDependencies` que hoy están repartidos en `lumina-frontend/pnpm-workspace.yaml` y en el `pnpm-workspace.yaml` de la raíz.
+  - Borrar `lumina-frontend/pnpm-workspace.yaml` (queda fusionado en la raíz).
+  - Regenerar **un único** `pnpm-lock.yaml` en la raíz; borrar `lumina-frontend/pnpm-lock.yaml` y `lumina-backend/pnpm-lock.yaml`.
+  - `.github/workflows/ci.yml`: un `pnpm install --frozen-lockfile` en la raíz; los jobs `backend` y `frontend` (que siguen separados) pasan a `pnpm --filter lumina-backend <script>` / `pnpm --filter lumina-frontend <script>`. `prisma generate` sigue corriendo en el job backend.
+  - Crear `packages/.gitkeep`. `.gitignore`: añadir `packages/*/dist`.
+- **Alcance — NO toca:** ningún archivo bajo `lumina-frontend/src/`, `lumina-backend/src/`, `lumina-backend/prisma/`; ni `next.config`, `nest-cli.json`, `docker-compose.yml`, `.claude/launch.json`. No sube ni baja versiones de dependencias a propósito — solo mueve dónde viven lockfile/overrides.
+- **Entregable:** desde la raíz, `pnpm install --frozen-lockfile` resuelve. `pnpm --filter lumina-backend lint && pnpm --filter lumina-backend test && pnpm --filter lumina-backend build` y `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit && pnpm --filter lumina-frontend build` pasan **igual que antes** (backend 238 tests, frontend 446, 0 errores de lint). CI verde en los dos jobs.
+- **Riesgo declarado:** consolidar los dos lockfiles en uno puede hacer que pnpm deduplique y cambie alguna versión resuelta. Si eso rompe un build o un test, **parar** (`bloqueado`), no forzar: reescribir la ficha con un enfoque más angosto.
+- **Cierre:** no aplica Regla 4. El commit deja explícito que a partir de acá se instala desde la raíz con `pnpm --filter`.
+
+##### E1.2 — Scaffold `packages/element-kit` con el contrato `ElementDefinition`
+- **Operador:** Claude Code
+- **Estado:** bloqueado por E1.1
+- **Precondición:** E1.1 `hecho`.
+- **Alcance — PUEDE tocar:** solo `packages/element-kit/**` y la entrada correspondiente en el `pnpm-lock.yaml` de la raíz + un job/paso `packages` en `.github/workflows/ci.yml`.
+- **Contenido mínimo:**
+  - `package.json` — `"name": "@lumina/element-kit"`, `"private": true`, `"type": "module"`, `exports` desde `dist/`; scripts `build` (tsc), `test` (**vitest**, igual que el frontend), `lint` (hereda la config base). `react` / `react-dom` como `peerDependencies` (no se bundlean).
+  - `tsconfig.json` propio (`strict: true`), `eslint.config.mjs` que extienda la base.
+  - `src/contract.ts` — los tipos del contrato (Regla 2), sin implementación concreta: `ElementDefinition<TState, TConfig>` con `tipo`, `crearPorDefecto()`, `Editor`, `Viewer`, `Propiedades`, `apariencia` (`AparienciaSpec` = color / tipografía / animación) y `puntuacion?` (`PuntuacionDelegate<TState>`); más `ElementEditorProps`, `ElementViewerProps`, `ElementPropsPanelProps`.
+  - `src/registry.ts` — `ElementRegistry` con `registrar(def)`, `obtener(tipo)`, `listar()`; error explícito si se registra un `tipo` duplicado. **Único** punto de registro (Regla 2).
+  - `src/index.ts` — API pública.
+  - Tests: `registry.spec.ts` (registrar / obtener / duplicado) + chequeo de tipos del contrato (`expect-type` o `tsd`).
+- **Alcance — NO toca:** ningún elemento concreto (eso es E1.4), ni `lumina-frontend/`, ni `lumina-backend/`.
+- **Entregable:** `pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint` verdes en local y en CI. Sin consumidores todavía.
+- **Cierre:** no aplica Regla 4.
+
+##### E1.3 — Scaffold `packages/scoring` (stub, sin portar todavía)
+- **Operador:** Claude Code
+- **Estado:** bloqueado por E1.1 · puede ir **en paralelo con E1.2** (conjuntos de archivos disjuntos)
+- **Precondición:** E1.1 `hecho`.
+- **Contexto:** `activity-scoring.ts` está hoy duplicado a mano en `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados por fixtures (`activity-scoring.fixtures.json`). `@lumina/scoring` será la fuente única — pero **E1.3 solo crea el paquete y fija su superficie de API**; portar la implementación y migrar consumidores es E2 (frontend) / E6 (backend).
+- **Alcance — PUEDE tocar:** solo `packages/scoring/**` + su entrada en el lockfile raíz y en el job `packages` de CI.
+- **Contenido mínimo:** `package.json` (`"name": "@lumina/scoring"`, mismos scripts que E1.2), tsconfig, eslint. `src/index.ts` que **declara** las firmas públicas que hoy exponen ambos `activity-scoring.ts` (funciones `calcular…` / `puntuar…` por tipo de actividad) y las exporta con una implementación placeholder que lanza `Error('no implementado — ver E2')`. Un `types.spec.ts` que fije las firmas.
+- **Alcance — NO toca:** los dos `activity-scoring.ts` existentes (siguen vivos y funcionando), frontend, backend.
+- **Entregable:** `pnpm --filter @lumina/scoring build && test && lint` verdes. Nada más consume el paquete todavía.
+- **Cierre:** no aplica Regla 4 en E1 (los `TODO(migración-etapa-2/6)` en los `activity-scoring.ts` viejos se ponen en E2/E6, no acá).
+
+##### E1.4 — Piloto: Botón como `ElementDefinition`
+- **Operador:** Cursor (dueño del canvas / widgets) · puede ir en paralelo con F1.4 (conjuntos disjuntos)
+- **Estado:** bloqueado por E1.2
+- **Precondición:** E1.2 `hecho`.
+- **Alcance — PUEDE tocar:**
+  - `packages/element-kit/src/elements/boton/**` — la `ElementDefinition` del Botón: `crearPorDefecto` (envuelve `createDefaultBoton` de `boton-defaults.ts`), `Editor` / `Viewer` / `Propiedades` (adaptan los componentes existentes de `lumina-frontend/src/components/widgets/boton/` a las props del contrato), `apariencia`; **sin** `puntuacion` (el Botón no puntúa). Registro vía `ElementRegistry.registrar(botonDefinition)` en el arranque del paquete.
+  - `packages/element-kit/src/elements/boton/boton.parity.spec.tsx` — vitest + testing-library: renderiza el Botón **viejo** y el **nuevo** con el mismo estado y compara la salida visible (DOM, `aria-*`, y las acciones siguiente / anterior / ir-a / URL). Reutiliza los specs actuales del Botón si existen.
+  - `lumina-frontend/src/components/widgets/boton/**` — **solo** si hay que exportar algo hoy interno para que el paquete lo consuma; sin cambiar comportamiento.
+- **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, componentes de Timeline (congelados E5); `widget-registry.ts` salvo el `TODO` de cierre; el backend. **No** desconecta el Botón viejo del canvas.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` incluye la prueba de paridad del Botón en verde (misma entrada → misma salida visible, Regla 7). `pnpm --filter lumina-frontend build` sigue verde. El Botón viejo sigue funcionando en el canvas sin cambios.
+- **Cierre (Regla 4):** `TODO(migración-etapa-3)` en `lumina-frontend/src/components/widgets/shared/widget-registry.ts` — el Botón viejo se retira al migrar el resto de widgets (E3) — con issue/ticket y fecha. Con E1.4 `hecho` y la paridad en verde, **E1 queda cerrado**.
 
 #### E2 — Migrar actividades · bloqueado por E1
-Ficha raíz la redactan **Claude Code + Cursor** al cerrar E1. Objetivo: fusionar `lumina-frontend/src/components/activities/shared/activity-registry.ts` dentro de `ElementRegistry` y conectar `@lumina/scoring`. Piloto y orden de actividades: informe «Plano Lumina», Etapa 2.
+Ficha raíz la redactan **Claude Code + Cursor** al cerrar E1. Objetivo: fusionar `lumina-frontend/src/components/activities/shared/activity-registry.ts` dentro de `ElementRegistry`; **portar** la implementación real a `@lumina/scoring` (stub creado en E1.3) y hacer que el frontend la consuma, dejando `TODO(migración-etapa-2)` en `lumina-frontend/src/lib/activity-scoring.ts`. Piloto y orden de actividades: informe «Plano Lumina», Etapa 2.
 
 #### E3 — Migrar widgets (piloto Ruleta) · bloqueado por E2
 Ficha raíz: **Cursor**, al cerrar E2. Retira de `widget-registry.ts` cada widget migrado (Regla 4).
