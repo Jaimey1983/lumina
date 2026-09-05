@@ -207,8 +207,8 @@ Orden: **E1.1 → (E1.2 ∥ E1.3) → E1.4**. E1 se cierra cuando las cuatro est
 Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packages:` (la raíz tiene un `pnpm-workspace.yaml` solo con `allowBuilds:`); `lumina-frontend` y `lumina-backend` se instalan por separado, cada uno con su `pnpm-lock.yaml` y su `pnpm-workspace.yaml`. El widget Botón ya está partido en `lumina-frontend/src/components/widgets/boton/` (`boton-defaults.ts`, `boton-editor.tsx`, `boton-viewer.tsx`, `boton-properties.tsx`, `boton-config.ts`, `boton-parts.tsx`). El dispatch de widgets vive en `slide-renderer.tsx` — **congelado para E5**.
 
 ##### E1.1 — Workspace pnpm real en la raíz
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Antigravity
+- **Estado:** [en curso: Antigravity]
 - **Precondición:** L.1 + L.2 `hecho` (CI verde con lint estricto) — cumplida.
 - **Alcance — PUEDE tocar (solo infraestructura de workspace, NADA bajo `src/` ni `prisma/`):**
   - Raíz: crear `package.json` (`"private": true`, `"packageManager": "pnpm@11.25.0"` — igual que CI); ampliar `pnpm-workspace.yaml` con `packages: ['packages/*', 'lumina-frontend', 'lumina-backend']` y consolidar ahí los `overrides` / `allowBuilds` / `ignoredBuiltDependencies` que hoy están repartidos en `lumina-frontend/pnpm-workspace.yaml` y en el `pnpm-workspace.yaml` de la raíz.
