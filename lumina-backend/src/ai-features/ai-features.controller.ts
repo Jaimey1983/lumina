@@ -1,4 +1,5 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtAuthUser } from '../auth/jwt-auth-user';
@@ -14,8 +15,13 @@ import { RefineStructureDto } from './dto/refine-structure.dto';
 /**
  * Funcionalidades de IA independientes de contexto de curso.
  * Solo accesibles por personal docente (TEACHER/ADMIN/SUPERADMIN/etc.).
+ *
+ * Rate limit por debajo del global (10/min): cada endpoint dispara una llamada
+ * de generación cara a un proveedor externo. 20/min deja margen para autoría
+ * normal y frena bucles o abuso.
  */
-@UseGuards(JwtAuthGuard, AiStaffGuard)
+@UseGuards(JwtAuthGuard, AiStaffGuard, ThrottlerGuard)
+@Throttle({ default: { limit: 20, ttl: 60_000 } })
 @Controller('ai')
 export class AiFeaturesController {
   constructor(private readonly aiService: AiFeaturesService) {}

@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { Role, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,6 +13,18 @@ import { isTeacherRole } from '../verification/verification.util';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+
+/** Vida útil del token de restablecimiento: corta a propósito (30 min). */
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Respuesta única de `forgotPassword`: idéntica exista o no el correo, para no
+ * filtrar qué cuentas están registradas (enumeración de usuarios).
+ */
+const FORGOT_PASSWORD_GENERIC_MESSAGE =
+  'Si el correo está registrado, enviaremos instrucciones para restablecer la contraseña.';
 
 function isPrismaUniqueConstraintError(err: unknown): boolean {
   return (
@@ -160,13 +173,18 @@ export class AuthService {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    const validPassword = await bcrypt.compare(dto.currentPassword, user.password);
+    const validPassword = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
     if (!validPassword) {
       throw new UnauthorizedException('La contraseña actual no es correcta');
     }
 
     if (dto.currentPassword === dto.newPassword) {
-      throw new BadRequestException('La nueva contraseña debe ser distinta a la actual');
+      throw new BadRequestException(
+        'La nueva contraseña debe ser distinta a la actual',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
@@ -176,6 +194,102 @@ export class AuthService {
     });
 
     return { message: 'Contraseña actualizada' };
+  }
+
+  // ─── OLVIDÉ MI CONTRASEÑA ─────────────────────────────
+  /**
+   * Genera un token de restablecimiento de un solo uso y expiración corta.
+   * Pedir uno nuevo invalida los anteriores del mismo usuario.
+   *
+   * La respuesta es siempre la misma exista o no el correo (Regla 5: no
+   * filtrar qué cuentas existen).
+   *
+   * TODO(email-provider): hoy NO se envía correo. En desarrollo el token en
+   * claro se loguea y se devuelve en `devToken` para poder probar el flujo.
+   * Antes de ir a producción hay que conectar un proveedor real de email
+   * (SES / Resend / SMTP), enviar el enlace por correo y ELIMINAR tanto el log
+   * como el campo `devToken` de la respuesta. Es una decisión aparte pendiente.
+   */
+  async forgotPassword(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string; devToken?: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user || !user.isActive || user.deletedAt) {
+      return { message: FORGOT_PASSWORD_GENERIC_MESSAGE };
+    }
+
+    // Un solo token vivo por usuario: invalidar los pendientes antes de emitir.
+    await this.prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    const rawToken = randomBytes(32).toString('hex');
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: this.hashResetToken(rawToken),
+        expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+      },
+    });
+
+    // TODO(email-provider): reemplazar este bloque por el envío real del correo.
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[DEV ONLY — no enviar así a producción] Token de restablecimiento para ${user.email}: ${rawToken}`,
+      );
+      return { message: FORGOT_PASSWORD_GENERIC_MESSAGE, devToken: rawToken };
+    }
+
+    return { message: FORGOT_PASSWORD_GENERIC_MESSAGE };
+  }
+
+  // ─── RESTABLECER CONTRASEÑA ───────────────────────────
+  /**
+   * Valida el token (existe / no expiró / no se usó) y fija la contraseña
+   * nueva. El token se marca usado en la misma transacción que el cambio de
+   * contraseña, junto con cualquier otro token vivo del usuario.
+   */
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash: this.hashResetToken(dto.token) },
+      include: { user: true },
+    });
+
+    const invalid =
+      !record ||
+      record.usedAt !== null ||
+      record.expiresAt.getTime() <= Date.now() ||
+      !record.user.isActive ||
+      record.user.deletedAt !== null;
+
+    if (invalid) {
+      throw new BadRequestException(
+        'El enlace de restablecimiento no es válido o expiró',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 12);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { password: hashedPassword },
+      }),
+      // Marca usado el token actual y cualquier otro pendiente del usuario.
+      this.prisma.passwordResetToken.updateMany({
+        where: { userId: record.userId, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return { message: 'Contraseña actualizada' };
+  }
+
+  private hashResetToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   // ─── GENERAR TOKEN ────────────────────────────────────

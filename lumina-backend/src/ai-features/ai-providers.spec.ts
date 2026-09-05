@@ -87,6 +87,44 @@ describe('completeJson — adaptadores por proveedor', () => {
     expect(init.headers['x-api-key']).toBe('claude-key');
   });
 
+  it('pasa un AbortSignal a fetch (timeout de la llamada)', async () => {
+    mockFetchOk({ choices: [{ message: { content: '{"ok":true}' } }] });
+    const creds: LlmCredentials = {
+      provider: 'OPENAI',
+      apiKey: 'sk-test',
+      source: 'byok',
+    };
+    await completeJson(creds, 'sys', 'user');
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { signal?: unknown },
+    ];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('un timeout del proveedor se traduce a 503 sin filtrar la clave', async () => {
+    (global.fetch as jest.Mock).mockImplementationOnce(() => {
+      const err = new Error('The operation timed out');
+      err.name = 'TimeoutError';
+      return Promise.reject(err);
+    });
+    const creds: LlmCredentials = {
+      provider: 'CLAUDE',
+      apiKey: 'claude-secret',
+      source: 'byok',
+    };
+    let thrownError: Error | undefined;
+    try {
+      await completeJson(creds, 'sys', 'user');
+    } catch (err) {
+      thrownError = err as Error;
+    }
+    expect(thrownError).toBeInstanceOf(ServiceUnavailableException);
+    expect(thrownError?.message).toMatch(/Claude/);
+    expect(thrownError?.message).toMatch(/no respondió en \d+s/);
+    expect(thrownError?.message).not.toContain('claude-secret');
+  });
+
   it('401 no incluye el cuerpo del proveedor en el mensaje', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,

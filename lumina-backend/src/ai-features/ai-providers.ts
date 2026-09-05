@@ -9,6 +9,23 @@ import {
 const DEFAULT_MAX_TOKENS = 4000;
 const PING_MAX_TOKENS = 64;
 
+/**
+ * Timeout de la llamada HTTP a un proveedor de IA. La generación con `maxTokens`
+ * altos es lenta de por sí, pero sin tope una conexión colgada bloquea el
+ * request indefinidamente. Pasado este límite se aborta y se responde 503.
+ */
+const AI_REQUEST_TIMEOUT_MS = 60_000;
+
+/** El ping de verificación de clave pide muy pocos tokens: tope más corto. */
+const AI_PING_TIMEOUT_MS = 20_000;
+
+/** `AbortSignal.timeout` aborta con un `TimeoutError`; un abort manual, con `AbortError`. */
+function isAbortTimeout(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null || !('name' in err)) return false;
+  const name = (err as { name: unknown }).name;
+  return name === 'TimeoutError' || name === 'AbortError';
+}
+
 function unavailable(provider: AiProviderId, extra?: string): never {
   const label = AI_PROVIDER_LABELS[provider];
   throw new ServiceUnavailableException(
@@ -38,6 +55,7 @@ async function postJson(
   headers: Record<string, string>,
   body: unknown,
   provider: AiProviderId,
+  timeoutMs: number,
 ): Promise<unknown> {
   let response: Response;
   try {
@@ -45,8 +63,15 @@ async function postJson(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
     });
-  } catch {
+  } catch (err) {
+    if (isAbortTimeout(err)) {
+      unavailable(
+        provider,
+        `no respondió en ${Math.round(timeoutMs / 1000)}s. Intenta de nuevo más tarde.`,
+      );
+    }
     unavailable(provider);
   }
 
@@ -112,6 +137,7 @@ export async function completeJson(
   systemInstruction: string,
   userMessage: string,
   maxTokens = DEFAULT_MAX_TOKENS,
+  timeoutMs = AI_REQUEST_TIMEOUT_MS,
 ): Promise<string> {
   const { provider, apiKey } = creds;
 
@@ -143,6 +169,7 @@ export async function completeJson(
           ],
         },
         provider,
+        timeoutMs,
       ),
     );
   }
@@ -163,6 +190,7 @@ export async function completeJson(
           ],
         },
         provider,
+        timeoutMs,
       ),
     );
   }
@@ -180,6 +208,7 @@ export async function completeJson(
           messages: [{ role: 'user', content: userMessage }],
         },
         provider,
+        timeoutMs,
       ),
     );
   }
@@ -196,6 +225,7 @@ export async function pingProvider(creds: LlmCredentials): Promise<void> {
     'Responde SIEMPRE con JSON válido. Sin markdown.',
     'Devuelve exactamente {"ok":true}',
     PING_MAX_TOKENS,
+    AI_PING_TIMEOUT_MS,
   );
   if (!raw.trim()) {
     unavailable(
