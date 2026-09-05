@@ -311,7 +311,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.3 — Piloto: Anagrama como `ElementDefinition` (con `puntuacion`)
 - **Operador:** Cursor (dueño del editor / actividades)
-- **Estado:** bloqueado por E2.2
+- **Estado:** [en curso: Cursor]
 - **Contexto:** primer elemento **evaluable** sobre el contrato — ejercita el delegado `puntuacion` que el piloto Botón (E1.4) no usó. `Anagrama` es la actividad evaluable más simple (`AnagramaActivity`, `createDefaultAnagrama` en `lumina-frontend/src/lib/anagrama-defaults.ts`, componentes en `lumina-frontend/src/components/activities/anagrama/`). Piloto provisional salvo que el informe «Plano Lumina» (Etapa 2) indique otro.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/anagrama/**` (definición + adapters `AnagramaEditor/Viewer/Properties` → props del contrato + `puntuacion` que llama a `evaluateActivityResponse`/`notaColombiana` de `@lumina/scoring`), su `parity.spec.tsx`, registro en `elementRegistry`. `lumina-frontend/src/components/activities/anagrama/**` **solo** si hay que exportar algo interno (sin cambiar comportamiento). `lumina-frontend/package.json` `exports` si hace falta el subpath (como el Botón en E1.4).
 - **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, Timeline (congelados E5); `activity-registry.ts` salvo su `TODO` de cierre; `slides-panel.tsx`; el backend.
