@@ -34,9 +34,7 @@ function deriveKeyV1(masterSecret: string): Buffer {
 }
 
 function deriveKeyV2(masterSecret: string, salt: Buffer): Buffer {
-  return Buffer.from(
-    hkdfSync('sha256', masterSecret, salt, HKDF_INFO, 32),
-  );
+  return Buffer.from(hkdfSync('sha256', masterSecret, salt, HKDF_INFO, 32));
 }
 
 /** Hint para UI: no revela sufijo si la clave es corta (evitar filtrar la mitad). */
@@ -47,8 +45,11 @@ export function apiKeyHint(plainKey: string): string {
 }
 
 export function assertSafeApiKey(plainKey: string): void {
-  if (/[\u0000-\u001F\u007F]/.test(plainKey)) {
-    throw new Error('La clave contiene caracteres no permitidos');
+  for (let i = 0; i < plainKey.length; i++) {
+    const code = plainKey.charCodeAt(i);
+    if ((code >= 0 && code <= 0x1f) || code === 0x7f) {
+      throw new Error('La clave contiene caracteres no permitidos');
+    }
   }
   if (/\s/.test(plainKey)) {
     throw new Error('La clave no debe contener espacios');
@@ -56,7 +57,10 @@ export function assertSafeApiKey(plainKey: string): void {
 }
 
 /** Quita secretos de mensajes de error / logs. */
-export function redactSecrets(text: string, secrets: Array<string | undefined>): string {
+export function redactSecrets(
+  text: string,
+  secrets: Array<string | undefined>,
+): string {
   let out = text;
   for (const secret of secrets) {
     if (!secret || secret.length < 4) continue;

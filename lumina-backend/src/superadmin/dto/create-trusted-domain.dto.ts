@@ -4,7 +4,7 @@ import { IsBoolean, IsOptional, Matches } from 'class-validator';
 const DOMAIN_RE = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 
 export class CreateTrustedDomainDto {
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string'
       ? value.trim().toLowerCase().replace(/^@/, '')
       : value,

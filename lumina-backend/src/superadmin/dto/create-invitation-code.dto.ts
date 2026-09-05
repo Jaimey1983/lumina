@@ -11,7 +11,9 @@ import {
 
 export class CreateInvitationCodeDto {
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }): unknown =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString()
   @MaxLength(200)
   note?: string;
@@ -29,7 +31,7 @@ export class CreateInvitationCodeDto {
   expiresInDays?: number;
 
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
   @IsIn(['TEACHER', 'TEACHER_ASSISTANT'])

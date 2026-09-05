@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  ConflictException,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Role } from './dto/register.dto';
 
@@ -16,6 +20,7 @@ describe('AuthService', () => {
   let prisma: PrismaService;
   let jwt: JwtService;
   let signMock: jest.Mock;
+  let userUpdateMock: jest.Mock;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -28,7 +33,7 @@ describe('AuthService', () => {
             user: {
               findUnique: jest.fn(),
               create: jest.fn(),
-              update: jest.fn(),
+              update: (userUpdateMock = jest.fn()),
             },
           },
         },
@@ -163,7 +168,7 @@ describe('AuthService', () => {
         newPassword: 'password456',
       }),
     ).resolves.toEqual({ message: 'Contraseña actualizada' });
-    expect(prisma.user.update).toHaveBeenCalledWith({
+    expect(userUpdateMock).toHaveBeenCalledWith({
       where: { id: 'u1' },
       data: { password: 'hashed-new' },
     });

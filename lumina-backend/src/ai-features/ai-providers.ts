@@ -98,7 +98,8 @@ function extractClaude(data: unknown): string {
   const rec = asRecord(data);
   const content = rec.content;
   if (!Array.isArray(content)) return '';
-  const block = content.find((c) => {
+  const blocks: unknown[] = content;
+  const block: unknown = blocks.find((c: unknown) => {
     const item = asRecord(c);
     return item.type === 'text' || typeof item.text === 'string';
   });
@@ -131,8 +132,14 @@ export async function completeJson(
           safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
             { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
           ],
         },
         provider,
@@ -178,7 +185,9 @@ export async function completeJson(
   }
 
   const _never: never = provider;
-  throw new ServiceUnavailableException(`Proveedor no soportado: ${_never}`);
+  throw new ServiceUnavailableException(
+    `Proveedor no soportado: ${String(_never)}`,
+  );
 }
 
 export async function pingProvider(creds: LlmCredentials): Promise<void> {
@@ -189,6 +198,9 @@ export async function pingProvider(creds: LlmCredentials): Promise<void> {
     PING_MAX_TOKENS,
   );
   if (!raw.trim()) {
-    unavailable(creds.provider, 'respondió vacío. La clave puede ser inválida.');
+    unavailable(
+      creds.provider,
+      'respondió vacío. La clave puede ser inválida.',
+    );
   }
 }

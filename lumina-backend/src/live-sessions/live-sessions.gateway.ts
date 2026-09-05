@@ -25,7 +25,12 @@ function classJoinRoom(classId: string): string {
 }
 
 function wireTorneoRankingPayload(rows: RankingEntry[]): {
-  ranking: { studentId: string; studentName: string; points: number; position: number }[];
+  ranking: {
+    studentId: string;
+    studentName: string;
+    points: number;
+    position: number;
+  }[];
 } {
   return {
     ranking: rows.map((r) => ({
@@ -231,10 +236,14 @@ export class LiveSessionsGateway
   @SubscribeMessage('torneo:init')
   async handleTorneoInit(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { classId: string; sessionId: string; totalQuestions?: number },
+    @MessageBody()
+    body: { classId: string; sessionId: string; totalQuestions?: number },
   ) {
     try {
-      const session = await this.torneoService.createSession(body.classId, body.sessionId);
+      const session = await this.torneoService.createSession(
+        body.classId,
+        body.sessionId,
+      );
       const room = this.liveSessions.roomName(body.classId);
       const classRoom = classJoinRoom(body.classId);
       const startPayload = {
@@ -252,11 +261,20 @@ export class LiveSessionsGateway
   @SubscribeMessage('torneo:launch-question')
   async handleTorneoLaunch(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { torneoId: string; index: number; question: any; timeLimit: number },
+    @MessageBody()
+    body: {
+      torneoId: string;
+      index: number;
+      question: { options?: unknown; [key: string]: unknown };
+      timeLimit: number;
+    },
   ) {
     try {
       // `timeLimit` viene en segundos desde el panel; setTimeout y TorneoService usan ms.
-      const timeLimitSec = Math.max(1, Math.floor(Number(body.timeLimit ?? 30) || 1));
+      const timeLimitSec = Math.max(
+        1,
+        Math.floor(Number(body.timeLimit ?? 30) || 1),
+      );
       const timeLimitMs = timeLimitSec * 1000;
       await this.torneoService.startQuestion(
         body.torneoId,
@@ -280,15 +298,19 @@ export class LiveSessionsGateway
       this.server.to(room).emit('torneo:question', questionPayload);
       this.server.server.to(classRoom).emit('torneo:question', questionPayload);
 
-      setTimeout(async () => {
-        try {
-          const ranking = await this.torneoService.getRanking(body.torneoId);
-          const rankingPayload = wireTorneoRankingPayload(ranking);
-          this.server.to(room).emit('torneo:ranking', rankingPayload);
-          this.server.server.to(classRoom).emit('torneo:ranking', rankingPayload);
-        } catch (err) {
-          // ignore
-        }
+      setTimeout(() => {
+        void (async () => {
+          try {
+            const ranking = await this.torneoService.getRanking(body.torneoId);
+            const rankingPayload = wireTorneoRankingPayload(ranking);
+            this.server.to(room).emit('torneo:ranking', rankingPayload);
+            this.server.server
+              .to(classRoom)
+              .emit('torneo:ranking', rankingPayload);
+          } catch {
+            // ignore
+          }
+        })();
       }, timeLimitMs);
 
       return { ok: true };
@@ -300,7 +322,15 @@ export class LiveSessionsGateway
   @SubscribeMessage('torneo:answer')
   async handleTorneoAnswer(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { torneoId: string; questionIndex: number; answer: string; correctAnswer: string; studentId: string; studentName: string },
+    @MessageBody()
+    body: {
+      torneoId: string;
+      questionIndex: number;
+      answer: string;
+      correctAnswer: string;
+      studentId: string;
+      studentName: string;
+    },
   ) {
     try {
       await this.torneoService.saveAnswer(
@@ -375,7 +405,11 @@ export class LiveSessionsGateway
       quizBlockId: string;
       slideId: string;
       questionIndex: number;
-      question: { id: string; texto?: string; opciones?: { id: string; esCorrecta?: boolean }[] };
+      question: {
+        id: string;
+        texto?: string;
+        opciones?: { id: string; esCorrecta?: boolean }[];
+      };
       totalQuestions: number;
       timePerQuestion?: number;
       layoutVariant?: string;
@@ -401,7 +435,9 @@ export class LiveSessionsGateway
       });
 
       const questionId = body.question?.id ?? `q-${body.questionIndex}`;
-      const opciones = Array.isArray(body.question?.opciones) ? body.question.opciones : [];
+      const opciones = Array.isArray(body.question?.opciones)
+        ? body.question.opciones
+        : [];
 
       const session = this.quizLive.launchQuestion(
         body.classId,
@@ -422,7 +458,10 @@ export class LiveSessionsGateway
               quizBlockId,
               questionId: qid,
             });
-            const ranking = this.quizLive.getRanking(body.classId, body.quizBlockId);
+            const ranking = this.quizLive.getRanking(
+              body.classId,
+              body.quizBlockId,
+            );
             this.broadcastQuiz(body.classId, 'quiz:ranking', {
               quizBlockId,
               ...this.wireQuizRankingPayload(ranking),
@@ -431,7 +470,8 @@ export class LiveSessionsGateway
         },
       );
 
-      if (!session) throw new WsException('No se pudo lanzar la pregunta del quiz');
+      if (!session)
+        throw new WsException('No se pudo lanzar la pregunta del quiz');
 
       const launchPayload = {
         quizBlockId: body.quizBlockId,
@@ -454,13 +494,20 @@ export class LiveSessionsGateway
   @SubscribeMessage('quiz:pause')
   async handleQuizPause(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+    @MessageBody()
+    body: { classId: string; quizBlockId: string; slideId: string },
   ) {
     try {
       const user = this.liveSessions.getUser(client);
-      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
       this.quizLive.pause(body.classId, body.quizBlockId);
-      this.broadcastQuiz(body.classId, 'quiz:pause', { quizBlockId: body.quizBlockId });
+      this.broadcastQuiz(body.classId, 'quiz:pause', {
+        quizBlockId: body.quizBlockId,
+      });
       return { ok: true as const };
     } catch (e) {
       rethrowAsWs(e);
@@ -470,13 +517,20 @@ export class LiveSessionsGateway
   @SubscribeMessage('quiz:resume')
   async handleQuizResume(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+    @MessageBody()
+    body: { classId: string; quizBlockId: string; slideId: string },
   ) {
     try {
       const user = this.liveSessions.getUser(client);
-      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
       this.quizLive.resume(body.classId, body.quizBlockId);
-      this.broadcastQuiz(body.classId, 'quiz:resume', { quizBlockId: body.quizBlockId });
+      this.broadcastQuiz(body.classId, 'quiz:resume', {
+        quizBlockId: body.quizBlockId,
+      });
       return { ok: true as const };
     } catch (e) {
       rethrowAsWs(e);
@@ -486,13 +540,20 @@ export class LiveSessionsGateway
   @SubscribeMessage('quiz:skip')
   async handleQuizSkip(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+    @MessageBody()
+    body: { classId: string; quizBlockId: string; slideId: string },
   ) {
     try {
       const user = this.liveSessions.getUser(client);
-      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
       this.quizLive.skip(body.classId, body.quizBlockId);
-      this.broadcastQuiz(body.classId, 'quiz:skip', { quizBlockId: body.quizBlockId });
+      this.broadcastQuiz(body.classId, 'quiz:skip', {
+        quizBlockId: body.quizBlockId,
+      });
       return { ok: true as const };
     } catch (e) {
       rethrowAsWs(e);
@@ -502,11 +563,16 @@ export class LiveSessionsGateway
   @SubscribeMessage('quiz:finish')
   async handleQuizFinish(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { classId: string; quizBlockId: string; slideId: string },
+    @MessageBody()
+    body: { classId: string; quizBlockId: string; slideId: string },
   ) {
     try {
       const user = this.liveSessions.getUser(client);
-      await this.liveSessions.assertSlideSyncAllowed(user, body.classId, body.slideId);
+      await this.liveSessions.assertSlideSyncAllowed(
+        user,
+        body.classId,
+        body.slideId,
+      );
       this.quizLive.finish(body.classId, body.quizBlockId);
       const ranking = this.quizLive.getRanking(body.classId, body.quizBlockId);
       const payload = {

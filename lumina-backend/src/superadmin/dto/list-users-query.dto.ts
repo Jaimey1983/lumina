@@ -32,20 +32,22 @@ const VERIFICATION_STATUSES = [
 
 export class ListUsersQueryDto {
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }): unknown =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString()
   @MaxLength(120)
   search?: string;
 
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
   @IsIn(ROLES as unknown as string[])
   role?: string;
 
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
   @IsIn(VERIFICATION_STATUSES as unknown as string[])

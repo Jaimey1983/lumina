@@ -56,11 +56,11 @@ export class ClassesGateway {
   }
 
   @SubscribeMessage('join-class')
-  handleJoinClass(
+  async handleJoinClass(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { classId: string },
   ) {
-    client.join(`class-${payload.classId}`);
+    await client.join(`class-${payload.classId}`);
     return { ok: true };
   }
 
@@ -75,7 +75,8 @@ export class ClassesGateway {
   @SubscribeMessage('timer-start')
   handleTimerStart(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { classId: string; slideId: string; duration: number },
+    @MessageBody()
+    payload: { classId: string; slideId: string; duration: number },
   ) {
     if (!payload?.classId || !payload?.slideId) {
       return { ok: false as const };
@@ -109,7 +110,9 @@ export class ClassesGateway {
     if (!payload?.classId) {
       return { ok: false as const };
     }
-    client.to(this.classRoom(payload.classId)).emit('unlock-responses', payload);
+    client
+      .to(this.classRoom(payload.classId))
+      .emit('unlock-responses', payload);
     return { ok: true as const };
   }
 
@@ -120,7 +123,11 @@ export class ClassesGateway {
     @MessageBody()
     payload: { classId: string; studentId: string; slideIndex: number },
   ) {
-    if (!payload?.classId || typeof payload.studentId !== 'string' || !payload.studentId.trim()) {
+    if (
+      !payload?.classId ||
+      typeof payload.studentId !== 'string' ||
+      !payload.studentId.trim()
+    ) {
       return { ok: false as const };
     }
     const slideIndex = Math.max(0, Math.floor(Number(payload.slideIndex)));
@@ -174,7 +181,8 @@ export class ClassesGateway {
         ? Math.max(0, Math.floor(questionIndexRaw))
         : -1;
     const answer = typeof r.answer === 'string' ? r.answer : '';
-    const correctAnswer = typeof r.correctAnswer === 'string' ? r.correctAnswer : '';
+    const correctAnswer =
+      typeof r.correctAnswer === 'string' ? r.correctAnswer : '';
     const sid = typeof data.studentId === 'string' ? data.studentId.trim() : '';
 
     if (!torneoId || questionIndex < 0 || !sid) {
@@ -190,7 +198,8 @@ export class ClassesGateway {
         torneoId,
         questionIndex,
         sid,
-        (typeof data.studentName === 'string' ? data.studentName.trim() : '') || sid,
+        (typeof data.studentName === 'string' ? data.studentName.trim() : '') ||
+          sid,
         answer,
         correctAnswer,
       );
@@ -215,9 +224,12 @@ export class ClassesGateway {
     },
   ) {
     const classId = typeof data.classId === 'string' ? data.classId.trim() : '';
-    const quizBlockId = typeof data.quizBlockId === 'string' ? data.quizBlockId.trim() : '';
-    const studentId = typeof data.studentId === 'string' ? data.studentId.trim() : '';
-    const questionId = typeof data.questionId === 'string' ? data.questionId.trim() : '';
+    const quizBlockId =
+      typeof data.quizBlockId === 'string' ? data.quizBlockId.trim() : '';
+    const studentId =
+      typeof data.studentId === 'string' ? data.studentId.trim() : '';
+    const questionId =
+      typeof data.questionId === 'string' ? data.questionId.trim() : '';
     const optionIds = Array.isArray(data.optionIds)
       ? data.optionIds.filter((id): id is string => typeof id === 'string')
       : [];
@@ -230,7 +242,8 @@ export class ClassesGateway {
       classId,
       quizBlockId,
       studentId,
-      studentName: typeof data.studentName === 'string' ? data.studentName : studentId,
+      studentName:
+        typeof data.studentName === 'string' ? data.studentName : studentId,
       questionId,
       optionIds,
       opciones: [],
@@ -253,7 +266,9 @@ export class ClassesGateway {
         !result.alreadyAnswered
       ) {
         try {
-          const sockets = await this.server.in(this.classRoom(classId)).fetchSockets();
+          const sockets = await this.server
+            .in(this.classRoom(classId))
+            .fetchSockets();
           const expected = Math.max(1, sockets.length);
           if (result.answeredCount >= expected) {
             const advancePayload = {
@@ -261,8 +276,13 @@ export class ClassesGateway {
               questionId,
               answeredCount: result.answeredCount,
             };
-            client.to(this.classRoom(classId)).emit('quiz:auto-advance-ready', advancePayload);
-            this.server.of('/live').to(`live:${classId}`).emit('quiz:auto-advance-ready', advancePayload);
+            client
+              .to(this.classRoom(classId))
+              .emit('quiz:auto-advance-ready', advancePayload);
+            this.server
+              .of('/live')
+              .to(`live:${classId}`)
+              .emit('quiz:auto-advance-ready', advancePayload);
           }
         } catch {
           /* no-op */
@@ -276,17 +296,27 @@ export class ClassesGateway {
   @SubscribeMessage('quiz:sync-state')
   handleQuizSyncState(
     @MessageBody()
-    data: { classId: string; quizBlockId: string; studentId?: string },
+    data: {
+      classId: string;
+      quizBlockId: string;
+      studentId?: string;
+    },
   ) {
     const classId = typeof data.classId === 'string' ? data.classId.trim() : '';
-    const quizBlockId = typeof data.quizBlockId === 'string' ? data.quizBlockId.trim() : '';
-    const studentId = typeof data.studentId === 'string' ? data.studentId.trim() : '';
+    const quizBlockId =
+      typeof data.quizBlockId === 'string' ? data.quizBlockId.trim() : '';
+    const studentId =
+      typeof data.studentId === 'string' ? data.studentId.trim() : '';
 
     if (!classId || !quizBlockId) {
       return { ok: false as const, state: null };
     }
 
-    const state = this.quizLive.getClientSyncState(classId, quizBlockId, studentId);
+    const state = this.quizLive.getClientSyncState(
+      classId,
+      quizBlockId,
+      studentId,
+    );
     return { ok: true as const, state };
   }
 
@@ -411,7 +441,11 @@ export class ClassesGateway {
   ) {
     const sessionId = data.sessionId?.trim();
     if (!sessionId) {
-      return { leaderboard: [] as const, leaderboardVisible: false, active: false };
+      return {
+        leaderboard: [] as const,
+        leaderboardVisible: false,
+        active: false,
+      };
     }
     const [leaderboard, leaderboardVisible, active] = await Promise.all([
       this.sessionGamification.getLeaderboard(sessionId),
@@ -424,7 +458,11 @@ export class ClassesGateway {
   @SubscribeMessage('gamification:toggle-visibility')
   async handleGamificationToggleVisibility(
     @MessageBody()
-    data: { sessionId: string; classId: string; visible: boolean },
+    data: {
+      sessionId: string;
+      classId: string;
+      visible: boolean;
+    },
   ) {
     const sessionId = data.sessionId?.trim();
     const classId = data.classId?.trim();

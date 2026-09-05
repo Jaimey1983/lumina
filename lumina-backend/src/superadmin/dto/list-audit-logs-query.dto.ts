@@ -10,7 +10,7 @@ import {
 
 export class ListAuditLogsQueryDto {
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
   @IsString()

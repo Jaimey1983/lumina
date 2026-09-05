@@ -100,6 +100,13 @@ Aplica a cualquier error preexistente que se decida corregir (empezando por los 
 - [ ] Código/registro viejo borrado o `TODO` con ticket vinculado (Regla 4).
 - [ ] CI verde.
 
+## Fase 1 de la hoja de ruta — riesgos urgentes
+
+- [x] **IDOR en cursos** — `GET /courses/:id`, `POST /courses/:id/enroll`, `GET /courses/:id/students` no verificaban dueño del curso. Cerrado por Claude Code: los tres pasan ahora por `CourseAuthorizationService` (`courseSettings`/`enrollment`), con test de regresión en `courses.service.spec.ts`. Ver commit correspondiente.
+- [ ] "Olvidé mi contraseña" roto (frontend lo promete, backend no existe).
+- [ ] Concurrencia de guardado de slide y de juegos en vivo (torneo/gamificación de sesión).
+- [ ] Rate limiting y timeout en llamadas de IA.
+
 ## Reparto activo — limpieza de lint (Regla 9)
 
 **Antes de tomar un ítem: marcarlo `[en curso: <herramienta>]` en este mismo archivo y hacer commit de ese cambio primero.** Así ninguna de las tres herramientas pisa el trabajo de otra. Al terminar un ítem: correr `pnpm lint` en el paquete correspondiente, confirmar que el conteo bajó (no subió), y marcarlo `[hecho]`.
@@ -112,7 +119,7 @@ Estado de partida: `lumina-backend` 219 problemas (209 errores/10 warnings) — 
 | Overrides de seguridad silenciados | `lumina-frontend/package.json` → `pnpm-workspace.yaml` | Claude Code | **[hecho]** — lodash/ws/qs/etc. no se estaban aplicando |
 | `pptx.service.ts` (xml2js sin tipar) | `lumina-backend/src/pptx/pptx.service.ts` | Claude Code | **[hecho]** — 117→0. Tipos OOXML en el propio archivo + `src/types/pizzip.d.ts` nuevo (sin `@types/pizzip` disponible) |
 | Scoring + sesiones autónomas | `lumina-backend/src/classes/activity-scoring.ts` + `lumina-backend/src/autonomous-sessions/*` | Cursor | **[hecho]** — 68→0. `asString`/`asUnknownArray` en scoring; `extractActivityDefinition` + `CurrentUser`/`JwtAuthUser` en autonomous-sessions |
-| Cola larga backend | 17 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[en curso: Antigravity]** — ~34 casos |
+| Cola larga backend | 17 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[hecho]** — 35→0. Tipado DTOs @Transform, mocks en specs, tipado seguro en AI/gateway |
 | Cola larga frontend (`no-unused-vars` / `no-explicit-any` restante) | 53 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | pendiente — ~43 casos |
 | `react-hooks/*` del motor del canvas | `canvas-area.tsx`, componentes de Timeline, `slide-renderer.tsx` | **Nadie todavía** | **Deliberadamente en espera** — se corrige en la Etapa 5 (unificación de estado del editor), no antes: tocar el motor del canvas ahora es más riesgo que beneficio |
 

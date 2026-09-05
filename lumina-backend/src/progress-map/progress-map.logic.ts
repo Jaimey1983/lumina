@@ -1,4 +1,8 @@
-export type ProgressNodeStatus = 'locked' | 'available' | 'in_progress' | 'completed';
+export type ProgressNodeStatus =
+  | 'locked'
+  | 'available'
+  | 'in_progress'
+  | 'completed';
 
 export interface ProgressEdge {
   fromClassId: string;
@@ -16,12 +20,12 @@ const LAYOUT_DX = 220;
 export function defaultSequentialEdges(classIds: string[]): ProgressEdge[] {
   const edges: ProgressEdge[] = [];
   for (let i = 0; i < classIds.length - 1; i++) {
-    edges.push({ fromClassId: classIds[i]!, toClassId: classIds[i + 1]! });
+    edges.push({ fromClassId: classIds[i], toClassId: classIds[i + 1] });
   }
   return edges;
 }
 
-export function parseProgressMapJson(raw: unknown): ProgressEdge[] | null {
+export function parseProgressMapJson(raw: unknown): unknown[] | null {
   if (!raw || typeof raw !== 'object') return null;
   const edges = (raw as { edges?: unknown }).edges;
   if (!Array.isArray(edges)) return null;
@@ -68,13 +72,13 @@ export function edgesHaveCycle(
   }
   for (const e of edges) {
     if (!indegree.has(e.fromClassId) || !indegree.has(e.toClassId)) continue;
-    outgoing.get(e.fromClassId)!.push(e.toClassId);
+    outgoing.get(e.fromClassId).push(e.toClassId);
     indegree.set(e.toClassId, (indegree.get(e.toClassId) ?? 0) + 1);
   }
   const queue = classIds.filter((id) => (indegree.get(id) ?? 0) === 0);
   let seen = 0;
   while (queue.length) {
-    const id = queue.shift()!;
+    const id = queue.shift();
     seen += 1;
     for (const next of outgoing.get(id) ?? []) {
       const n = (indegree.get(next) ?? 0) - 1;
@@ -127,5 +131,9 @@ export function mergeCompletedIds(
   liveCompleted: Iterable<string>,
   autonomousCompleted: Iterable<string>,
 ): Set<string> {
-  return new Set([...manualCompleted, ...liveCompleted, ...autonomousCompleted]);
+  return new Set([
+    ...manualCompleted,
+    ...liveCompleted,
+    ...autonomousCompleted,
+  ]);
 }

@@ -6,7 +6,7 @@ function mockFetchOk(payload: unknown) {
   (global.fetch as jest.Mock).mockResolvedValueOnce({
     ok: true,
     status: 200,
-    text: async () => JSON.stringify(payload),
+    text: () => Promise.resolve(JSON.stringify(payload)),
   });
 }
 
@@ -30,7 +30,9 @@ describe('completeJson — adaptadores por proveedor', () => {
       apiKey: 'gem-key',
       source: 'platform',
     };
-    await expect(completeJson(creds, 'sys', 'user')).resolves.toBe('{"ok":true}');
+    await expect(completeJson(creds, 'sys', 'user')).resolves.toBe(
+      '{"ok":true}',
+    );
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0] as [
       string,
       { method: string; headers: Record<string, string> },
@@ -54,7 +56,9 @@ describe('completeJson — adaptadores por proveedor', () => {
       apiKey: 'sk-test',
       source: 'byok',
     };
-    await expect(completeJson(creds, 'sys', 'user')).resolves.toBe('{"ok":true}');
+    await expect(completeJson(creds, 'sys', 'user')).resolves.toBe(
+      '{"ok":true}',
+    );
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0] as [
       string,
       { headers: Record<string, string> },
@@ -72,7 +76,9 @@ describe('completeJson — adaptadores por proveedor', () => {
       apiKey: 'claude-key',
       source: 'byok',
     };
-    await expect(completeJson(creds, 'sys', 'user')).resolves.toBe('{"ok":true}');
+    await expect(completeJson(creds, 'sys', 'user')).resolves.toBe(
+      '{"ok":true}',
+    );
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0] as [
       string,
       { headers: Record<string, string> },
@@ -85,21 +91,22 @@ describe('completeJson — adaptadores por proveedor', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 401,
-      text: async () => '{"error":"invalid_api_key sk-leaked-secret"}',
+      text: () =>
+        Promise.resolve('{"error":"invalid_api_key sk-leaked-secret"}'),
     });
     const creds: LlmCredentials = {
       provider: 'OPENAI',
       apiKey: 'sk-leaked-secret',
       source: 'byok',
     };
-    await expect(completeJson(creds, 'sys', 'user')).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
-    await expect(completeJson(creds, 'sys', 'user')).rejects.toThrow(
-      /clave de OpenAI no es válida/,
-    );
-    await expect(completeJson(creds, 'sys', 'user')).rejects.toMatchObject({
-      message: expect.not.stringContaining('sk-leaked-secret'),
-    });
+    let thrownError: Error | undefined;
+    try {
+      await completeJson(creds, 'sys', 'user');
+    } catch (err) {
+      thrownError = err as Error;
+    }
+    expect(thrownError).toBeInstanceOf(ServiceUnavailableException);
+    expect(thrownError?.message).toMatch(/clave de OpenAI no es válida/);
+    expect(thrownError?.message).not.toContain('sk-leaked-secret');
   });
 });

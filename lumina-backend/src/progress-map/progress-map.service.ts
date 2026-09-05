@@ -12,7 +12,6 @@ import {
   mergeCompletedIds,
   resolveEdges,
   sanitizeEdges,
-  type ProgressEdge,
   type ProgressNodeStatus,
 } from './progress-map.logic';
 import type { MarkClassProgressDto } from './dto/mark-class-progress.dto';
@@ -110,7 +109,12 @@ export class ProgressMapService {
     const [manualRows, liveClassIds, autoClassIds, inProgressAuto] =
       targetUserId
         ? await this.loadSignals(courseId, targetUserId, valid)
-        : [new Map<string, string>(), new Set<string>(), new Set<string>(), new Set<string>()];
+        : [
+            new Map<string, string>(),
+            new Set<string>(),
+            new Set<string>(),
+            new Set<string>(),
+          ];
 
     const completed = targetUserId
       ? mergeCompletedIds(manualRows.keys(), liveClassIds, autoClassIds)
@@ -256,9 +260,7 @@ export class ProgressMapService {
     courseId: string,
     userId: string,
     validClassIds: Set<string>,
-  ): Promise<
-    [Map<string, string>, Set<string>, Set<string>, Set<string>]
-  > {
+  ): Promise<[Map<string, string>, Set<string>, Set<string>, Set<string>]> {
     const [manual, liveResults, autoResults] = await Promise.all([
       this.prisma.studentClassProgress.findMany({
         where: { courseId, userId, status: 'COMPLETED' },

@@ -91,7 +91,11 @@ describe('ClassesService — endSession — atomicidad de la transacción (Test 
         findMany: jest.fn().mockResolvedValue([]),
         findFirst: jest.fn().mockResolvedValue({ content: null }),
       },
-      $transaction: jest.fn().mockImplementation(async (fn: Function) => fn(txMock)),
+      $transaction: jest
+        .fn()
+        .mockImplementation((fn: (tx: typeof txMock) => Promise<unknown>) =>
+          fn(txMock),
+        ),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -120,8 +124,8 @@ describe('ClassesService — endSession — atomicidad de la transacción (Test 
 
   it('Assertion 1: propaga el error si una escritura dentro de $transaction falla (no lo traga)', async () => {
     txUpsert
-      .mockResolvedValueOnce({ id: 'result-a' })            // resultadoA: OK
-      .mockRejectedValueOnce(new Error('DB write simulado'));  // resultadoB: falla
+      .mockResolvedValueOnce({ id: 'result-a' }) // resultadoA: OK
+      .mockRejectedValueOnce(new Error('DB write simulado')); // resultadoB: falla
 
     await expect(
       service.endSession(CLASS_ID, TEACHER_ID, {
@@ -211,9 +215,20 @@ describe('ClassesService — endSession — atomicidad de la transacción (Test 
     expect(txUpsert).toHaveBeenCalledTimes(2);
 
     // Verifica que los slideIds correctos fueron procesados (A y B, sin extras)
-    const upsertedSlideIds = txUpsert.mock.calls.map(
-      (call: any[]) => call[0]?.create?.slideId ?? call[0]?.where?.classId_studentId_slideId_sessionId?.slideId,
-    );
+    const upsertedSlideIds = txUpsert.mock.calls.map((call: unknown[]) => {
+      const arg = call[0] as
+        | {
+            create?: { slideId?: string };
+            where?: {
+              classId_studentId_slideId_sessionId?: { slideId?: string };
+            };
+          }
+        | undefined;
+      return (
+        arg?.create?.slideId ??
+        arg?.where?.classId_studentId_slideId_sessionId?.slideId
+      );
+    });
     expect(upsertedSlideIds).toContain(RESULTADO_A.slideId);
     expect(upsertedSlideIds).toContain(RESULTADO_B.slideId);
   });
