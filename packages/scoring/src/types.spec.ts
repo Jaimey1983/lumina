@@ -126,21 +126,19 @@ it.each([
   expect(superficiePublica("./index.ts")).toEqual(superficiePublica(path));
 });
 
-for (const [nombre, valor] of Object.entries(scoring)) {
-  if (typeof valor === "function") {
-    it(`${nombre} falla explícitamente mientras no se porte E2`, () => {
-      expect(() => Reflect.apply(valor, undefined, [])).toThrow(
-        "no implementado — ver E2",
-      );
-    });
-  }
-}
+// E2.1: la implementación ya está portada — el comportamiento se valida en
+// `scoring.spec.ts` (fixtures de paridad). Aquí solo un par de anclas rápidas.
+it("ACTIVITY_SCORING es una tabla real (no un placeholder que lanza)", () => {
+  expect(scoring.ACTIVITY_SCORING.quiz_multiple).toBe("partial");
+  expect(Object.keys(scoring.ACTIVITY_SCORING).length).toBeGreaterThan(20);
+});
 
-it("no presenta una tabla vacía como si fuera una clasificación real", () => {
-  expect(() => scoring.ACTIVITY_SCORING.quiz_multiple).toThrow(
-    "no implementado — ver E2",
+it("evaluateActivityResponse puntúa sin lanzar", () => {
+  const r = scoring.evaluateActivityResponse(
+    "verdadero_falso",
+    { respuestaCorrecta: true },
+    true,
   );
-  expect(() => Object.keys(scoring.ACTIVITY_SCORING)).toThrow(
-    "no implementado — ver E2",
-  );
+  expect(r.score).toBe(5);
+  expect(r.correct).toBe(true);
 });
