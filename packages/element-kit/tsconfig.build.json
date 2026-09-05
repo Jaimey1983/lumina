@@ -33,6 +33,9 @@
       "lumina-frontend/blocks/diagrama": [
         "./src/shims/lumina-frontend-diagrama.d.ts"
       ],
+      "lumina-frontend/blocks/clip-group": [
+        "./src/shims/lumina-frontend-clip-group.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
       ],

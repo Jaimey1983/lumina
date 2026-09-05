@@ -17,6 +17,7 @@
     "./widgets/popup": "./src/components/widgets/popup/index.ts",
     "./blocks/grafico": "./src/components/graficos/index.ts",
     "./blocks/diagrama": "./src/components/diagramas/index.ts",
+    "./blocks/clip-group": "./src/components/clip-group/index.ts",
     "./activities/anagrama": "./src/components/activities/anagrama/index.ts",
     "./activities/clasificar": "./src/components/activities/clasificar/index.ts",
     "./activities/memoria": "./src/components/activities/memoria/index.ts",

@@ -12,8 +12,10 @@ export * from "./elements/popup/index.js";
 import { popupDefinition } from "./elements/popup/popup-definition.js";
 export * from "./elements/grafico/index.js";
 export * from "./elements/diagrama/index.js";
+export * from "./elements/clip-group/index.js";
 import { graficoDefinition } from "./elements/grafico/grafico-definition.js";
 import { diagramaDefinition } from "./elements/diagrama/diagrama-definition.js";
+import { clipGroupDefinition } from "./elements/clip-group/clip-group-definition.js";
 export type {
   AparienciaSpec,
   ElementDefinition,
@@ -422,6 +424,7 @@ export const elementRegistry = new ElementRegistry<{
   popup: typeof popupDefinition;
   grafico: typeof graficoDefinition;
   diagrama: typeof diagramaDefinition;
+  "clip-group": typeof clipGroupDefinition;
   boton: typeof botonDefinition;
   ruleta: typeof ruletaDefinition;
   hotspot: typeof hotspotDefinition;
@@ -493,3 +496,4 @@ elementRegistry.registrar(timelineDefinition);
 elementRegistry.registrar(popupDefinition);
 elementRegistry.registrar(graficoDefinition);
 elementRegistry.registrar(diagramaDefinition);
+elementRegistry.registrar(clipGroupDefinition);

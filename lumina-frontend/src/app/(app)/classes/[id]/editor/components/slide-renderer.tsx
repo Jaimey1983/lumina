@@ -1731,6 +1731,8 @@ function BlockNode({
       case 'codigo':    return <RenderCode block={block} />;
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
+      // TODO(migración-etapa-5): retirar el dispatch legacy de clip-group en slide-renderer.tsx
+      // al conectar ElementRegistry. Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
       case 'clip-group':
         return (
           <RenderClipGroup
