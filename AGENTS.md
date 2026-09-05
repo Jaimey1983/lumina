@@ -291,7 +291,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.1 — Portar la implementación real a `@lumina/scoring`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** E1 cerrada.
 - **Alcance — PUEDE tocar:** solo `packages/scoring/**`.
 - **Contenido:** reemplazar los `noImplementado()` de `packages/scoring/src/index.ts` por la implementación real, **portada tal cual** desde `lumina-frontend/src/lib/activity-scoring.ts` (ya está lint-limpio y con tests). Traer `activity-scoring.fixtures.json` (o un import) como suite del paquete. Mantener exactamente las 15 firmas ya declaradas.
