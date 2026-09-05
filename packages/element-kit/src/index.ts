@@ -11,7 +11,9 @@ import { flipCardsDefinition } from "./elements/flip-cards/flip-cards-definition
 export * from "./elements/popup/index.js";
 import { popupDefinition } from "./elements/popup/popup-definition.js";
 export * from "./elements/grafico/index.js";
+export * from "./elements/diagrama/index.js";
 import { graficoDefinition } from "./elements/grafico/grafico-definition.js";
+import { diagramaDefinition } from "./elements/diagrama/diagrama-definition.js";
 export type {
   AparienciaSpec,
   ElementDefinition,
@@ -419,6 +421,7 @@ export const elementRegistry = new ElementRegistry<{
   "flip-cards": typeof flipCardsDefinition;
   popup: typeof popupDefinition;
   grafico: typeof graficoDefinition;
+  diagrama: typeof diagramaDefinition;
   boton: typeof botonDefinition;
   ruleta: typeof ruletaDefinition;
   hotspot: typeof hotspotDefinition;
@@ -489,3 +492,4 @@ elementRegistry.registrar(timelineDefinition);
 
 elementRegistry.registrar(popupDefinition);
 elementRegistry.registrar(graficoDefinition);
+elementRegistry.registrar(diagramaDefinition);

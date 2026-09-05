@@ -30,6 +30,9 @@
       "lumina-frontend/blocks/grafico": [
         "./src/shims/lumina-frontend-grafico.d.ts"
       ],
+      "lumina-frontend/blocks/diagrama": [
+        "./src/shims/lumina-frontend-diagrama.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
       ],

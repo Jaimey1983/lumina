@@ -1951,6 +1951,8 @@ function BlockNode({
         ) : (
           <GraficoViewer block={block} isThumbnail={isThumbnail} />
         );
+      // TODO(migración-etapa-5): retirar el dispatch legacy de diagrama en slide-renderer.tsx
+      // al conectar ElementRegistry. Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
       case 'diagrama':
         return editorMode ? (
           <DiagramaEditor
