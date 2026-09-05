@@ -392,8 +392,73 @@ Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packa
 - **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `widget-registry.ts` fila `popup`. Con E3.4 `hecho` y los 12 widgets con su `TODO`, **E3 queda cerrada**.
 </details>
 
-#### E4 — Migrar bloques de canvas y formas vectoriales (editor Paper.js) · bloqueado por E2 y E3 **cerradas con el código viejo borrado**
-Ficha raíz: **Cursor**, al cerrar E3.
+#### E4 — Migrar bloques de canvas y formas vectoriales (editor Paper.js) · **activa** (E3 cerrada) — sub-fichas E4.1–E4.6 redactadas
+Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas** que todavía no son elementos, y el **editor vectorial Paper.js**. Piloto: **Gráfico de datos** (`grafico`) — es el bloque no-widget con el split editor/viewer/properties/defaults ya hecho, como los widgets de E3.
+
+**Estado real del repo a tener a la vista (relevado al cerrar E3):**
+
+- **El `Block` union viejo** (`lumina-frontend/src/types/slide.types.ts:1306`) tiene 24 miembros. Ya son `ElementDefinition` (E1–E3, aún despachados por el `switch` congelado): los 12 widgets (`flip-cards`, `tabs`, `carousel`, `click-reveal`, `popup`, `timeline`, `hotspot`, `tooltip`, `boton`, `contador`, `progreso`, `ruleta`) y, vía `ActivityBlock` (`tipo: 'actividad'`), las 23 actividades de E2. **Faltan migrar en E4** estos 11 `tipo`:
+  - **Con componente propio ya separado** (patrón E3, migración directa): `grafico` (`src/components/graficos/` — `grafico-editor/viewer/properties/defaults.ts` + `grafico-defaults.spec.ts`), `diagrama` (`src/components/diagramas/` — `diagrama-editor/viewer/properties`, `diagrama-defaults.ts` + specs, `diagrama-bridge.ts`, `venn-svg.tsx`; el `Block` es `DiagramaBlock` = union de `DiagramaGrafoBlock` | `DiagramaVennBlock`).
+  - **Forma vectorial**: `clip-group` (`ClipGroupBlock`, `slide.types.ts:1021`) — máscara/recorte libre. Render en `src/app/(app)/classes/[id]/editor/components/render-clip-group.tsx` (610 líneas); editor de nodos en **`clip-path-node-editor-paper.tsx`** (591 líneas, **único consumidor de `paper` 0.12.18**, `dynamic()` desde `render-clip-group.tsx`); lógica pura en `src/lib/freeform-mask.ts` (331 líneas).
+  - **Primitivos sin split** — hoy son funciones `RenderText` / `RenderImage` / `RenderVideo` / `RenderAudio` / `RenderCode` / `RenderQuote` / `RenderDivider` / `RenderColumns` **dentro de `slide-renderer.tsx`** (2800 líneas, **congelado para E5**): `texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`. No tienen `-defaults.ts` público ni panel separado (el panel vive en `panels/properties-panel.tsx`).
+- **No hay `block-registry`** — el dispatch es el `switch (block.tipo)` de `slide-renderer.tsx:1696` (mismo switch que ya despacha widgets y actividades; **congelado E5**). Reconectar el canvas al `ElementRegistry` es E5.
+- **Contrato del editor de canvas vigente** (Regla 0 §2): `.cursorrules` + `.cursor/rules/lumina-canvas-editor-contracts.mdc` — `getBlockPos` → transformar → `clamp` → persistir → historial. Ningún paso de E4 reimplementa posicionamiento; los adapters envuelven editor/viewer tal como E3.
+- Los bloques de canvas **no puntúan** → sus `ElementDefinition` van **sin `puntuacion`** (como los widgets).
+
+**Tensión declarada — a resolver ANTES de asignar E4.4 y E4.5 (no la decide el operador, Regla 10):**
+
+1. **`slide-renderer.tsx` está congelado para E5** (cluster `react-hooks` del React Compiler). Los primitivos (`texto`…`columnas`) viven *dentro* de ese archivo. Dos caminos: **(a)** E4 migra solo lo que ya tiene componente propio (`grafico`, `diagrama`, `clip-group` + Paper.js) y **difiere los 8 primitivos a E5**, que los extrae al descongelar el switch; **(b)** se abre un carve-out explícito del freeze para extraer los `Render*` primitivos a archivos propios sin tocar los hooks del canvas. **Recomendación de la ficha raíz: (a)** — mantiene E4 acotada y no pelea con el freeze. Bajo (a), E4.6 abajo no existe hasta E5.
+2. **Regla 1 dice "cerradas *con el código viejo borrado*"** para E2/E3, pero E2/E3 cerraron con `TODO(migración-etapa-5)` (el `switch` es de E5). Si se exige el borrado literal, E4 está bloqueada por E5 y E5 por E4 (deadlock). **Lectura de la ficha raíz:** "cerrada" = cierre por Regla 4 (TODO + ticket) es suficiente para empezar E4; el borrado real del `switch` sigue siendo E5. Confirmar esta lectura al activar E4.
+
+**Orden (secuencial — todas escriben `packages/element-kit/src/index.ts` + `tsconfig*` + `vitest.config.ts`; un operador):** E4.1 → E4.2 → E4.3 → E4.4 → E4.5. Patrón por bloque = el de E3: `<tipo>-definition.ts` (`satisfies ElementDefinition`, **sin** `puntuacion`), `<tipo>-adapters.tsx` (legacy→contrato: `block`→`estado`, `onEnsureBlockSelected` no-op, `applyNow`→`onChange`), `<tipo>-types.ts` (`Estado` = el `Block`, `Config` de runtime con `isThumbnail?`), `register.ts`, `index.ts`, `<tipo>.parity.spec.tsx` (DOM visible idéntico legacy vs kit, Regla 7), shim `.d.ts`, alias en los 3 configs, barrel `index.ts` + subpath en `lumina-frontend/package.json`. Cierre por bloque (Regla 4): `TODO(migración-etapa-5)` junto al `case` correspondiente del `switch` de `slide-renderer.tsx` (ticket paraguas `LUM-E5-CANVAS-BLOCKS` + fecha). E4 cierra con E4.1–E4.5 en `hecho` y los 4 `tipo` (`grafico`, `diagrama`, `clip-group`, + Paper.js) con su `TODO`.
+
+##### E4.1 — Piloto: Gráfico de datos (`grafico`) como `ElementDefinition`
+- **Operador:** Cursor (dueño del editor / canvas)
+- **Estado:** pendiente (E3 cerrada — desbloqueado; confirmar la lectura de la «Tensión declarada §2» antes de arrancar)
+- **Precondición:** E3 cerrada.
+- **Contexto:** `GraficoDatosBlock` (`slide.types.ts:1201`), componentes en `lumina-frontend/src/components/graficos/` (`grafico-editor.tsx`, `grafico-viewer.tsx`, `grafico-properties.tsx`, `grafico-chart-renderer.tsx`, `grafico-color-palettes.ts`), defaults en `grafico-defaults.ts` + `grafico-defaults.spec.ts`. Renderiza con Recharts. `tipo: 'grafico'`, `case 'grafico'` en `slide-renderer.tsx:1941`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/grafico/**` (definición + adapters + parity spec + registro en `elementRegistry`), su shim `src/shims/lumina-frontend-grafico.d.ts`, alias `lumina-frontend/blocks/grafico` en `tsconfig.json` / `tsconfig.build.json` / `vitest.config.ts`, `packages/element-kit/src/index.ts`. Crear `lumina-frontend/src/components/graficos/index.ts` (barrel, re-export puro) + subpath `./blocks/grafico` en `lumina-frontend/package.json`. `lumina-frontend/src/components/graficos/**` solo para exports internos (sin cambiar comportamiento).
+- **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, `panels/properties-panel.tsx`, componentes de Timeline (congelados E5); el `switch` salvo el `TODO` de cierre del `case 'grafico'`; el backend; `@lumina/scoring`.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` con la paridad de Gráfico en verde (mismo `GraficoDatosBlock` → mismo DOM visible que el bloque legacy en Editor y Viewer, Regla 7; sin `puntuacion`). `pnpm --filter lumina-frontend build` verde. Verif: `pnpm --filter @lumina/element-kit build && lint && test && pnpm --filter lumina-frontend build`.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` junto al `case 'grafico'` de `slide-renderer.tsx` (ticket `LUM-E5-CANVAS-BLOCKS` + fecha).
+
+##### E4.2 — Diagrama (`diagrama`: grafo + Venn) como `ElementDefinition`
+- **Operador:** Cursor
+- **Estado:** pendiente · **Precondición:** E4.1 `hecho`.
+- **Contexto:** `DiagramaBlock` = `DiagramaGrafoBlock` (`slide.types.ts:1247`) | `DiagramaVennBlock` (`:1277`). Componentes en `src/components/diagramas/` (`diagrama-editor.tsx`, `diagrama-viewer.tsx`, `diagrama-properties.tsx`, `venn-svg.tsx`), lógica en `diagrama-defaults.ts`, `diagrama-regions.ts`, `diagrama-bridge.ts` (+ `diagrama-defaults.spec.ts`, `diagrama-regions.spec.ts`). `case 'diagrama'` en `slide-renderer.tsx:1951`. **Ojo:** `diagrama-properties.tsx` tuvo el fix `react-hooks/purity` de L.2 — no re-tocar esa parte.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/diagrama/**`; shim + alias ×3 + `src/index.ts`; `src/components/diagramas/index.ts` barrel + subpath `./blocks/diagrama`.
+- **Alcance — NO toca:** el motor del canvas / paneles congelados E5; el `switch` salvo el `TODO`; backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` — paridad de DOM para grafo y para Venn (dos casos). `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` junto al `case 'diagrama'`.
+
+##### E4.3 — Forma vectorial: `clip-group` (recorte/máscara) como `ElementDefinition`, **sin** el editor Paper.js
+- **Operador:** Cursor
+- **Estado:** pendiente · **Precondición:** E4.2 `hecho`.
+- **Contexto:** `ClipGroupBlock` (`slide.types.ts:1021`). Render en `render-clip-group.tsx` (610 líneas). E4.3 migra el **bloque** (Editor sin el editor de nodos, Viewer, Propiedades) y deja el editor Paper.js para E4.4. `crearPorDefecto` desde el fallback de `BLOCK_FALLBACKS['clip-group']` / el default que use `render-clip-group.tsx`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/clip-group/**`; shim + alias ×3 + `src/index.ts`; barrel para `render-clip-group.tsx` (extraer a `src/components/.../clip-group/index.ts` o exponer desde donde vive hoy, **sin** moverlo a `slide-renderer`), subpath `./blocks/clip-group`. `src/lib/freeform-mask.ts` solo lectura / export.
+- **Alcance — NO toca:** `clip-path-node-editor-paper.tsx` (es E4.4), `slide-renderer.tsx`, `canvas-area.tsx`, paneles congelados; backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` — paridad de DOM del Viewer y del Editor-sin-nodos. `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` junto al `case 'clip-group'`.
+
+##### E4.4 — Editor vectorial Paper.js (`clip-path-node-editor-paper.tsx`) sobre el contrato
+- **Operador:** Cursor
+- **Estado:** pendiente · **Precondición:** E4.3 `hecho`.
+- **Contexto:** `clip-path-node-editor-paper.tsx` (591 líneas) — único consumidor de `paper` 0.12.18, cargado con `dynamic()` desde `render-clip-group.tsx`. Es el editor de nodos de la máscara libre. Antigravity/Cursor tienen contrato específico en `.cursor/rules/lumina-canvas-editor-contracts.mdc`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/clip-group/paper-editor/**` (adapter del editor de nodos a las props del contrato / a un sub-panel del `Editor` de `clip-group`), su parity/render-smoke spec; `clip-path-node-editor-paper.tsx` **solo** para exports internos, sin cambiar comportamiento ni la carga `dynamic()`. `next.config.ts` ya tiene `serverExternalPackages: ['paper']` (E1.1) — no re-tocar.
+- **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, la lógica de `freeform-mask.ts`; backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` con el editor Paper.js integrado al `Editor` de `clip-group` — **render-smoke aceptable** (Paper.js necesita `<canvas>` real; si jsdom no basta, smoke + prueba de la lógica pura de `freeform-mask.ts`). `pnpm --filter lumina-frontend build` verde (el `dynamic()` sigue resolviendo `paper`).
+- **Cierre (Regla 4):** actualizar el `TODO(migración-etapa-5)` del `case 'clip-group'` para incluir el editor de nodos.
+
+##### E4.5 — `@lumina/scoring`: confirmar `exclude` de los bloques de canvas + limpieza de tipos
+- **Operador:** Claude Code
+- **Estado:** pendiente · **Precondición:** E4.1–E4.4 `hecho`.
+- **Contexto:** ninguno de `grafico` / `diagrama` / `clip-group` puntúa. Verificar que `@lumina/scoring` los trata como `exclude` (como `ruleta`) y que no quedó ninguna firma pública declarada de más para ellos. Sin cambios de runtime esperados — es una ficha de red de seguridad (Regla 7).
+- **Alcance — PUEDE tocar:** solo `packages/scoring/**` (tests / tipos), y `packages/element-kit/src/elements/*/‌*-definition.ts` solo si algún `apariencia` quedó inconsistente.
+- **Entregable:** `pnpm --filter @lumina/scoring build && test && lint` verdes; `pnpm --filter @lumina/element-kit test` verde. Con E4.1–E4.5 `hecho`, **E4 queda cerrada** y se redacta la ficha raíz de E5 (Cursor).
+- **Cierre:** no aplica Regla 4.
+
+##### E4.6 — Primitivos de canvas (`texto`…`columnas`) — **NO en E4** bajo la recomendación (a)
+Los 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven dentro de `slide-renderer.tsx` (congelado E5). Se migran en **E5**, que los extrae al descongelar el `switch` y reconectar el canvas al `ElementRegistry`. Si al activar E4 se resuelve la «Tensión declarada §1» por el camino (b), esta ficha se reescribe como E4.6–E4.13 (una por primitivo) con el carve-out del freeze explícito.
 
 #### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · bloqueado por E4 y por tener un elemento migrado de cada categoría
 Ficha raíz: **Cursor**. Acá entra el cluster `react-hooks` congelado del Tablero de lint.
