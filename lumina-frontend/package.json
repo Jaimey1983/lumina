@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "exports": {
+    "./widgets/timeline": "./src/components/widgets/timeline/index.ts",
+    "./widgets/click-reveal": "./src/components/widgets/click-reveal/index.ts",
+    "./widgets/carousel": "./src/components/widgets/carousel/index.ts",
+    "./widgets/tabs": "./src/components/widgets/tabs/index.ts",
+    "./widgets/flip-cards": "./src/components/widgets/flip-cards/index.ts",
     "./widgets/boton": "./src/components/widgets/boton/index.ts",
     "./widgets/ruleta": "./src/components/widgets/ruleta/index.ts",
     "./widgets/hotspot": "./src/components/widgets/hotspot/index.ts",

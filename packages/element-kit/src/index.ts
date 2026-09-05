@@ -1,3 +1,13 @@
+export * from "./elements/timeline/index.js";
+import { timelineDefinition } from "./elements/timeline/timeline-definition.js";
+export * from "./elements/click-reveal/index.js";
+import { clickRevealDefinition } from "./elements/click-reveal/click-reveal-definition.js";
+export * from "./elements/carousel/index.js";
+import { carouselDefinition } from "./elements/carousel/carousel-definition.js";
+export * from "./elements/tabs/index.js";
+import { tabsDefinition } from "./elements/tabs/tabs-definition.js";
+export * from "./elements/flip-cards/index.js";
+import { flipCardsDefinition } from "./elements/flip-cards/flip-cards-definition.js";
 export type {
   AparienciaSpec,
   ElementDefinition,
@@ -398,6 +408,11 @@ import { nubePalabrasDefinition } from "./elements/nube_palabras/nube_palabras-d
 
 /** Catálogo único — Botón (E1.4) + Ruleta (E3.1) + Control/burbuja (E3.2) + actividades E2. */
 export const elementRegistry = new ElementRegistry<{
+  "timeline": typeof timelineDefinition;
+  "click-reveal": typeof clickRevealDefinition;
+  "carousel": typeof carouselDefinition;
+  "tabs": typeof tabsDefinition;
+  "flip-cards": typeof flipCardsDefinition;
   boton: typeof botonDefinition;
   ruleta: typeof ruletaDefinition;
   hotspot: typeof hotspotDefinition;
@@ -455,3 +470,13 @@ elementRegistry.registrar(shortAnswerDefinition);
 elementRegistry.registrar(encuestaVivaDefinition);
 elementRegistry.registrar(nubePalabrasDefinition);
 elementRegistry.registrar(historiaRamificadaDefinition);
+
+elementRegistry.registrar(flipCardsDefinition);
+
+elementRegistry.registrar(tabsDefinition);
+
+elementRegistry.registrar(carouselDefinition);
+
+elementRegistry.registrar(clickRevealDefinition);
+
+elementRegistry.registrar(timelineDefinition);

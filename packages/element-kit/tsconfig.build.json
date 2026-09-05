@@ -3,6 +3,11 @@
   "compilerOptions": {
     "rootDir": "src",
     "paths": {
+      "lumina-frontend/widgets/timeline": ["./src/shims/lumina-frontend-timeline.d.ts"],
+      "lumina-frontend/widgets/click-reveal": ["./src/shims/lumina-frontend-click-reveal.d.ts"],
+      "lumina-frontend/widgets/carousel": ["./src/shims/lumina-frontend-carousel.d.ts"],
+      "lumina-frontend/widgets/tabs": ["./src/shims/lumina-frontend-tabs.d.ts"],
+      "lumina-frontend/widgets/flip-cards": ["./src/shims/lumina-frontend-flip-cards.d.ts"],
       "lumina-frontend/widgets/boton": ["./src/shims/lumina-frontend-boton.d.ts"],
       "lumina-frontend/widgets/ruleta": [
         "./src/shims/lumina-frontend-ruleta.d.ts"

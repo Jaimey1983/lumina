@@ -6,10 +6,20 @@ export type { WidgetTipo };
 export const WIDGET_TIPOS: WidgetTipo[] = ['flip-cards', 'tabs', 'carousel', 'click-reveal', 'timeline', 'popup', 'hotspot', 'tooltip', 'boton', 'contador', 'progreso', 'ruleta'];
 
 export const WIDGET_LABELS: Record<WidgetTipo, string> = {
+  // TODO(migración-etapa-5): retirar la fila flip-cards de widget-registry.ts al conectar ElementRegistry al canvas.
+  // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   'flip-cards': 'Flip Cards',
+  // TODO(migración-etapa-5): retirar la fila tabs de widget-registry.ts al conectar ElementRegistry al canvas.
+  // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   tabs: 'Tabs',
+  // TODO(migración-etapa-5): retirar la fila carousel de widget-registry.ts al conectar ElementRegistry al canvas.
+  // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   carousel: 'Carousel',
+  // TODO(migración-etapa-5): retirar la fila click-reveal de widget-registry.ts al conectar ElementRegistry al canvas.
+  // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   'click-reveal': 'Click to Reveal',
+  // TODO(migración-etapa-5): retirar la fila timeline de widget-registry.ts al conectar ElementRegistry al canvas.
+  // Ticket: LUM-E5-WIDGETS · 2026-12-31.
   timeline: 'Línea de tiempo',
   popup: 'Popup',
   // TODO(migración-etapa-5): retirar la fila `hotspot` de este registro cuando

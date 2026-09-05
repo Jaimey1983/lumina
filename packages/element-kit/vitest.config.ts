@@ -21,6 +21,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "lumina-frontend/widgets/timeline": path.resolve(frontendSrc, "components/widgets/timeline/index.ts"),
+      "lumina-frontend/widgets/click-reveal": path.resolve(frontendSrc, "components/widgets/click-reveal/index.ts"),
+      "lumina-frontend/widgets/carousel": path.resolve(frontendSrc, "components/widgets/carousel/index.ts"),
+      "lumina-frontend/widgets/tabs": path.resolve(frontendSrc, "components/widgets/tabs/index.ts"),
+      "lumina-frontend/widgets/flip-cards": path.resolve(frontendSrc, "components/widgets/flip-cards/index.ts"),
       "@": frontendSrc,
       "lumina-frontend/widgets/boton": path.resolve(
         frontendSrc,
