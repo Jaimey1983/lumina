@@ -280,14 +280,17 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 - **Entregable:** `pnpm --filter @lumina/element-kit test` incluye la prueba de paridad del Botón en verde (misma entrada → misma salida visible, Regla 7). `pnpm --filter lumina-frontend build` sigue verde. El Botón viejo sigue funcionando en el canvas sin cambios.
 - **Cierre (Regla 4):** `TODO(migración-etapa-3)` en `lumina-frontend/src/components/widgets/shared/widget-registry.ts` — el Botón viejo se retira al migrar el resto de widgets (E3) — con issue/ticket y fecha. Con E1.4 `hecho` y la paridad en verde, **E1 queda cerrado**.
 
-#### E2 — Migrar actividades · **activa** (E1 cerrada) — sub-fichas E2.1–E2.5 redactadas
+#### E2 — Migrar actividades · **CERRADA** — commits `95d10b2` (E2.1) / `159c6af` (E2.2) / `a6522c9` (E2.3) / `30ed4e5` (E2.4) / `dfae1fc` (E2.5)
+Las 5 sub-fichas en `hecho`. `@lumina/scoring` es la fuente única del frontend (fachada + `TODO(mig-etapa-5)`); `elementRegistry` tiene **23 elementos** (Botón + Anagrama + 12 Grupo 4 + 10 clásicas). Los dos sistemas viejos siguen vivos con `TODO(migración-etapa-5)` en cada fila de `ACTIVITY_REGISTRY` y junto al `switch` de `slide-renderer.tsx` — se retiran en E5 (Regla 4). El espejo `lumina-backend/src/classes/activity-scoring.ts` se reapunta en E6.
+<details><summary>Contexto histórico de E2</summary>
+
 Objetivo (Regla 1): fusionar en `ElementRegistry` los **dos** sistemas de actividad que hoy conviven, y conectar `@lumina/scoring`.
 Estado real del repo a tener a la vista:
 - **Familia A — "clásicas"** (`lumina-frontend/src/app/(app)/classes/[id]/editor/components/activities/*.tsx`): `quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras`, + escape-room / torneo. **No tienen registro**: las despacha un `switch` en `slide-renderer.tsx` — **congelado para E5**.
 - **Familia B — "Grupo 4"** (`lumina-frontend/src/components/activities/*`): `clasificar`, `memoria`, `puzzle_imagen`, `sopa_letras`, `crucigrama`, `abrir_caja`, `anagrama`, `ahorcado`, `puzzle_palabras`, `globos`, `topo`, `historia_ramificada`. Registradas en `ACTIVITY_REGISTRY` (`lumina-frontend/src/components/activities/shared/activity-registry.ts`, 12 entradas con `tipo/panelType/nombre/…/editor/viewer/properties/createDefault/evaluable`).
 - **Scoring duplicado a mano**: `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados byte-a-byte por `activity-scoring.fixtures.json`. `@lumina/scoring` (stub de E1.3) declara las 15 firmas públicas.
 - **`activity-registry.ts` lo consume `slides-panel.tsx`** (el panel de drag&drop) → no se puede borrar en E2; su retiro es E5. Cierre E2 (Regla 4) = `TODO(migración-etapa-5)` en `activity-registry.ts` + ticket.
-Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `hecho`, las 12 de Grupo 4 + las "clásicas" registradas como `ElementDefinition`, y `@lumina/scoring` como fuente única del frontend.
+Orden ejecutado: **E2.1 → E2.2 → E2.3 → E2.4 → E2.5** (E2.4 ∥ E2.5 se intentó en paralelo y colisionó en el plumbing del kit — Regla 10, ver E2.5).
 
 ##### E2.1 — Portar la implementación real a `@lumina/scoring`
 - **Operador:** Claude Code
@@ -330,16 +333,60 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.5 — Registrar la familia "clásica" (quiz / V-F / blancos / … ) como `ElementDefinition`
 - **Operador:** Claude Code + Cursor · puede ir **en paralelo con E2.4**
-- **Estado:** en revisión — hecho en 2 tranches. **T1** (frontend): `activity-templates.ts` (10 plantillas de "actividad nueva" extraídas de `editor-client.tsx`), `element-kit-classic.ts` (barrel: 10 plantillas + 10 pares Editor/Viewer + tipo `Activity`), subpath `./editor-activities` en `package.json`, `editor-client.tsx` importa las plantillas (−132 líneas). **T2** (element-kit): `_shared/classic-adapters.tsx` (`crearAdaptadoresClasicos` — `Propiedades` = el editor legacy, estas actividades editan inline), 10 `ElementDefinition` (`quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras`) con `puntuacion` → `evaluateActivityResponse` (para `short_answer`/`encuesta_viva`/`nube_palabras` el score es `null` → `puntuacion` devuelve 0), registro en `elementRegistry` (23 elementos), 1 shim + 1 alias (×3 configs), `clasicas.parity.spec.tsx` parametrizado (delegado del kit == scoring + render smoke de Editor/Viewer/Propiedades). **Regla 4:** `TODO(migración-etapa-5)` (comentario) junto al `switch` de `slide-renderer.tsx` — ticket `LUM-E5-CLASICAS`, 2026-11-30. Verif: `@lumina/element-kit` build/lint OK · test **109/109** (15 files) · `lumina-frontend` lint 0 / test:unit 446/446 / build OK · `@lumina/scoring` 93/93.
+- **Estado:** **hecho** (commit `dfae1fc`) — hecho en 2 tranches. **T1** (frontend): `activity-templates.ts` (10 plantillas de "actividad nueva" extraídas de `editor-client.tsx`), `element-kit-classic.ts` (barrel: 10 plantillas + 10 pares Editor/Viewer + tipo `Activity`), subpath `./editor-activities` en `package.json`, `editor-client.tsx` importa las plantillas (−132 líneas). **T2** (element-kit): `_shared/classic-adapters.tsx` (`crearAdaptadoresClasicos` — `Propiedades` = el editor legacy, estas actividades editan inline), 10 `ElementDefinition` (`quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras`) con `puntuacion` → `evaluateActivityResponse` (para `short_answer`/`encuesta_viva`/`nube_palabras` el score es `null` → `puntuacion` devuelve 0), registro en `elementRegistry` (23 elementos), 1 shim + 1 alias (×3 configs), `clasicas.parity.spec.tsx` parametrizado (delegado del kit == scoring + render smoke de Editor/Viewer/Propiedades). **Regla 4:** `TODO(migración-etapa-5)` (comentario) junto al `switch` de `slide-renderer.tsx` — ticket `LUM-E5-CLASICAS`, 2026-11-30. Verif: `@lumina/element-kit` build/lint OK · test **109/109** (15 files) · `lumina-frontend` lint 0 / test:unit 446/446 / build OK · `@lumina/scoring` 93/93.
 - **Aprendizaje (Regla 10):** E2.4 ∥ E2.5 NO eran disjuntas — comparten `packages/element-kit/src/index.ts`, `tsconfig*`, `vitest.config.ts`, `lumina-frontend/package.json`. Cuando dos fichas escriben en el mismo kit van **secuenciales**, salvo que el registro se auto-colecte (cada `elements/<tipo>/register.ts` importado dinámicamente en vez de listado a mano). A evaluar para E3+.
 - **Contexto:** estas actividades **no tienen registro** hoy — las despacha el `switch` de `slide-renderer.tsx` (congelado E5). E2.5 crea sus `ElementDefinition` en el kit **sin reescribir el switch**; conectarlas al canvas es E5.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `quiz_multiple`, `verdadero_falso`, `completar_blancos`, `arrastrar_soltar`, `emparejar`, `ordenar_pasos`, `video_interactivo`, `short_answer`, `encuesta_viva`, `nube_palabras` (adapters de los componentes en `.../editor/components/activities/*.tsx`, `puntuacion` → `@lumina/scoring`); registro en `elementRegistry`; exports internos de esos componentes si hace falta.
 - **Alcance — NO toca:** `slide-renderer.tsx` ni su `switch` (E5), `canvas-area.tsx`, backend.
 - **Entregable:** `pnpm --filter @lumina/element-kit test` — paridad por actividad (`correct`/`score` y DOM). `pnpm --filter lumina-frontend build` verde. El `switch` de `slide-renderer.tsx` sigue despachando sin cambios.
 - **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `slide-renderer.tsx` (junto al `switch`) enumerando los tipos ya disponibles en `ElementRegistry` para que E5 los reconecte y borre el `switch`. Ticket + fecha.
+</details>
 
-#### E3 — Migrar widgets (piloto Ruleta) · bloqueado por E2
-Ficha raíz: **Cursor**, al cerrar E2. Retira de `widget-registry.ts` cada widget migrado (Regla 4).
+#### E3 — Migrar widgets · **activa** (E2 cerrada) — sub-fichas E3.1–E3.4 redactadas
+Objetivo (Regla 1): migrar los widgets del sistema viejo a `ElementDefinition` del kit, piloto **Ruleta**. El **Botón ya se migró en E1.4** — quedan **11**.
+Estado real del repo a tener a la vista:
+- **`widget-registry.ts`** (`lumina-frontend/src/components/widgets/shared/widget-registry.ts`) es fino: `WIDGET_TIPOS` (12: `flip-cards`, `tabs`, `carousel`, `click-reveal`, `timeline`, `popup`, `hotspot`, `tooltip`, `boton`, `contador`, `progreso`, `ruleta`), `WIDGET_LABELS`, el union `WidgetBlock` y guards. **No** tiene Editor/Viewer por widget — el dispatch está en el `switch` de `slide-renderer.tsx` (**congelado E5**).
+- Cada widget vive en `lumina-frontend/src/components/widgets/<tipo>/` con `*-editor.tsx` / `*-viewer.tsx` / `*-properties.tsx` / `*-config.ts` / `*-defaults.ts` (`createDefault<Tipo>Widget(marco?)` + `normalize<Tipo>Block`). El Botón (E1.4) ya expone `lumina-frontend/src/components/widgets/boton/index.ts` + subpath `./widgets/boton`.
+- **Consumidores de `widget-registry.ts`**: `flyout-panel.tsx`, `panels/activities-panel.tsx`, `panels/flyout-left-panels.tsx` (**congelado E5**), `panels/widget-panel-catalog.ts`, `panels/widgets-insert-panel.tsx`, `slide-renderer.tsx` (**congelado E5**), `lib/activity-canvas-position.ts`, `widgets/shared/index.ts` → no se puede borrar `widget-registry.ts` en E3; su retiro es E5/E7. Cierre E3 (Regla 4) = `TODO(migración-etapa-5)` por fila de widget migrado + ticket.
+- **Los widgets no puntúan** — sus `ElementDefinition` van **sin `puntuacion`** (igual que el Botón en E1.4). `ruleta` es `exclude` en scoring.
+- **Familias** (no unificar el comportamiento entre ellas, ver `lumina-frontend/CLAUDE.md`): Lienzo/Captivate (Flip Cards, Tabs, Carousel, Click to Reveal, Timeline), Overlay modal (Popup), Control/burbuja (Hotspot, Tooltip, Botón✅, Contador, Barra=`progreso`).
+Orden: **E3.1 → E3.2 → E3.3 → E3.4** (secuencial — todas escriben `packages/element-kit/src/index.ts` + `tsconfig*`/`vitest.config.ts`; un solo operador). Patrón por widget = el del Botón (E1.4): `<tipo>-definition.ts` (`satisfies ElementDefinition`, **sin** `puntuacion`), `<tipo>-adapters.tsx` (legacy→contrato), `<tipo>-types.ts` (`Estado` = el bloque de widget, `Config` de runtime), `register.ts`, `index.ts`, `<tipo>.parity.spec.tsx` (DOM visible idéntico legacy vs kit, Regla 7), shim `.d.ts`, alias en los 3 configs, entrada en `src/index.ts`. E3 cierra con las 4 en `hecho` y los 12 widgets (11 + Botón) con `TODO(migración-etapa-5)` en `widget-registry.ts`.
+
+##### E3.1 — Piloto: Ruleta como `ElementDefinition` (sin `puntuacion`)
+- **Operador:** Cursor (dueño del canvas / widgets)
+- **Estado:** pendiente
+- **Precondición:** E2 cerrada.
+- **Contexto:** Ruleta espeja al Botón — `RuletaWidget` en `@/types/widget.types`, `createDefaultRuletaWidget(marco?)` + `normalizeRuletaBlock` en `lumina-frontend/src/components/widgets/ruleta/ruleta-defaults.ts`, componentes `ruleta-editor.tsx` / `ruleta-viewer.tsx` / `ruleta-properties.tsx` (+ `ruleta-wheel.tsx`). `ruleta` sigue `exclude` en scoring.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/ruleta/**` (definición + adapters + parity spec + registro en `elementRegistry`), su shim `src/shims/lumina-frontend-ruleta.d.ts`, el alias `lumina-frontend/widgets/ruleta` en `tsconfig.json` / `tsconfig.build.json` / `vitest.config.ts`, `packages/element-kit/src/index.ts`. Crear `lumina-frontend/src/components/widgets/ruleta/index.ts` (barrel, re-export puro, como el del Botón) + subpath `./widgets/ruleta` en `lumina-frontend/package.json`.
+- **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, `flyout-left-panels.tsx`, componentes de Timeline (congelados E5); `widget-registry.ts` salvo el `TODO` de cierre de la fila `ruleta`; el backend; `@lumina/scoring`.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` con la paridad de Ruleta en verde (mismo estado → mismo DOM visible que el widget legacy en Editor y Viewer, Regla 7; sin `puntuacion`). `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `widget-registry.ts` para la fila `ruleta` (se retira cuando E5 conecte `ElementRegistry` al canvas) + ticket con fecha.
+
+##### E3.2 — Familia Control/burbuja (Hotspot, Tooltip, Contador, Barra)
+- **Operador:** Cursor
+- **Estado:** bloqueado por E3.1
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `hotspot`, `tooltip`, `contador`, `progreso` (mismo patrón que E3.1, sin `puntuacion`); sus shims + aliases + `src/index.ts`; `lumina-frontend/src/components/widgets/<tipo>/index.ts` barrels + subpaths en `package.json`. El Botón ya está (E1.4).
+- **Alcance — NO toca:** el motor del canvas / paneles congelados E5; `widget-registry.ts` salvo los `TODO`; backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` — una paridad de DOM por widget. `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` por fila en `widget-registry.ts` (ticket paraguas `LUM-E5-WIDGETS` + fecha 2026-12-31).
+
+##### E3.3 — Familia Lienzo/Captivate (Flip Cards, Tabs, Carousel, Click to Reveal, Timeline)
+- **Operador:** Cursor
+- **Estado:** bloqueado por E3.2
+- **Contexto:** widgets con header + `configuracion` + edición inline + `normalize*` al hidratar el slide (`class-slide-normalize.ts`). **Timeline** está en el cluster congelado E5 (`react-hooks` del canvas): se **envuelve sin editar** sus componentes (como E2.5 con el `switch`); si el wrap necesita tocarlos, se para y se deja `bloqueado por E5`.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `flip_cards`/`flip-cards`, `tabs`, `carousel`, `click_reveal`/`click-reveal`, `timeline`; shims + aliases + `src/index.ts`; barrels `lumina-frontend/src/components/widgets/<tipo>/index.ts` + subpaths. **No** editar los `.tsx` de Timeline.
+- **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, `flyout-left-panels.tsx`, la lógica interna de los componentes de Timeline (solo re-export); backend.
+- **Entregable:** `pnpm --filter @lumina/element-kit test` — paridad de DOM por widget (para Timeline, al menos render-smoke si el DOM completo no es estable en jsdom). `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` por fila en `widget-registry.ts`.
+
+##### E3.4 — Overlay Popup
+- **Operador:** Cursor
+- **Estado:** bloqueado por E3.3
+- **Contexto:** Popup hace portal a `.canvas-slide` + backdrop y bloquea el slide (`lumina-frontend/CLAUDE.md` §widgets). El adapter lo envuelve tal cual; para la parity spec puede requerir montar un `.canvas-slide` de prueba o un render-smoke.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/popup/**`; shim + alias + `src/index.ts`; `lumina-frontend/src/components/widgets/popup/index.ts` barrel + subpath.
+- **Alcance — NO toca:** el motor del canvas / paneles congelados; `widget-registry.ts` salvo el `TODO`; backend. (Ojo: `popup-parts.tsx` tuvo un fix de `react-hooks/static-components` en L.2 — no re-tocar esa parte.)
+- **Entregable:** `pnpm --filter @lumina/element-kit test` con Popup en verde (render-smoke aceptable si el portal no rinde en jsdom). `pnpm --filter lumina-frontend build` verde.
+- **Cierre (Regla 4):** `TODO(migración-etapa-5)` en `widget-registry.ts` fila `popup`. Con E3.4 `hecho` y los 12 widgets con su `TODO`, **E3 queda cerrada**.
 
 #### E4 — Migrar bloques de canvas y formas vectoriales (editor Paper.js) · bloqueado por E2 y E3 **cerradas con el código viejo borrado**
 Ficha raíz: **Cursor**, al cerrar E3.
