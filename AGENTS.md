@@ -92,6 +92,41 @@ Aplica a cualquier error preexistente que se decida corregir (empezando por los 
 
 **Decisión tomada:** el CI nace estricto desde el día uno — `pnpm lint` es bloqueante en el workflow, sin `continue-on-error`. Eso significa que el CI va a estar en rojo hasta que este protocolo termine de limpiar los 209 errores de `lumina-backend` y los 165 de `lumina-frontend`. Es intencional: no se avanza a la Etapa 1 del `element-kit` mientras el CI no esté verde con lint estricto. Cada tanda de corrección se verifica corriendo `pnpm lint` localmente antes de subir el cambio, para confirmar que el conteo de errores baja y no sube.
 
+## Regla 10 — Tablero de pasos y órdenes de trabajo
+
+El trabajo se reparte entre tres operadores — **Claude Code**, **Cursor**, **Antigravity** — en pasos atómicos (un paso = un PR). Cada paso vive como una **ficha** en la sección **«Tablero de pasos»** (al final de este archivo). El prompt que recibe un operador es corto **a propósito**: todo el detalle está en la ficha.
+
+### Prompt canónico del operador
+
+> Realizá el paso `<ID>` del Tablero de pasos de `AGENTS.md`. Leé la ficha completa y las Reglas 0–10. No te salgas del alcance declarado en la ficha (archivos que puede tocar / que no). Corré el comando de verificación de la ficha; no lo des por terminado si algo falla. Al terminar dejá el estado en `en revisión` con una línea de qué hiciste y qué comando corriste.
+
+Nada más. Si el operador necesita algo que **no** está en la ficha, no improvisa: pide que se complete la ficha primero y espera.
+
+### Anatomía de una ficha (todos los campos obligatorios)
+
+| Campo | Qué es |
+|---|---|
+| **ID** | `E<etapa>.<n>` migración · `F1.<n>` riesgo de Fase 1 · `L.<n>` lint · `X.<n>` fuera de hoja de ruta |
+| **Título** | Una línea imperativa ("Realizá X"). |
+| **Operador** | Claude Code · Cursor · Antigravity. |
+| **Estado** | `pendiente` → `[en curso: <op>]` → `en revisión` → `hecho`; o `bloqueado por <ID>`. |
+| **Precondición** | Qué fichas deben estar `hecho` antes. Si la Regla 1 lo impide, se dice acá. |
+| **Alcance** | Carpetas/archivos que el paso PUEDE tocar y los que NO. Un cambio fuera de esto = rechazo en revisión. |
+| **Entregable** | Qué existe al terminar: código + prueba (paridad si aplica, Regla 7) + el **comando de verificación exacto**. |
+| **Cierre** | Regla 4 si aplica: qué código viejo se borra, o qué `TODO(migración-etapa-N)` queda con ticket y fecha. |
+
+### Quién redacta las fichas
+
+- Las fichas de la **etapa activa** se redactan **antes** de asignarlas. Una ficha incompleta no se asigna — se completa primero (commit `chore(tablero): …`), después se reparte.
+- Las fichas de una etapa futura se redactan **al cerrar la etapa previa** (Regla 1), no antes: así reflejan el estado real del código. La ficha «raíz» de cada etapa dice quién la redacta.
+- Si al ejecutar un paso el alcance resulta mal estimado, el operador **para**, deja el estado en `bloqueado por <ID>` o pide reescribir la ficha — no la amplía por su cuenta (Regla 9 §2, Regla 4).
+
+### Concurrencia
+
+- Un operador toma **una** ficha a la vez, salvo que dos fichas sean independientes y toquen conjuntos de archivos **disjuntos**.
+- Si dos fichas activas podrían tocar el mismo archivo, **no** corren en paralelo — la segunda espera.
+- `[en curso: <op>]` + commit **antes** de empezar. Sin ese commit, otro operador puede reclamar la misma ficha.
+
 ## Definition of Done por elemento migrado
 
 - [ ] Implementa `ElementDefinition` completo (editor, viewer, propiedades, apariencia, puntuación si aplica).
@@ -131,3 +166,58 @@ Estado de partida: `lumina-backend` 219 problemas (209 errores/10 warnings) — 
 | `react-hooks/*` del motor del canvas | `canvas-area.tsx`, componentes de Timeline, `slide-renderer.tsx` | **Nadie todavía** | **Deliberadamente en espera** — se corrige en la Etapa 5 (unificación de estado del editor), no antes: tocar el motor del canvas ahora es más riesgo que beneficio |
 
 Cuando los tres clusters "pendiente" estén en `[hecho]` y el de `react-hooks` siga reservado para la Etapa 5, `pnpm lint` pasa a ser bloqueante de verdad en el CI (cerrar la decisión de la Regla 9).
+
+---
+
+## Tablero de pasos
+
+Formato y protocolo: **Regla 10**. Estados: `pendiente` · `[en curso: <op>]` · `en revisión` · `hecho` · `bloqueado por <ID>`.
+El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y «Reparto activo — lint»; acá van solo los abiertos y las fichas de la migración.
+
+### Abiertos ahora
+
+#### F1.4 — Concurrencia de guardado de slide y de juegos en vivo
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** ninguna — es un riesgo de Fase 1, corre en paralelo a la migración.
+- **Alcance — PUEDE tocar:** `lumina-backend/src/classes/` (persistencia de slide: transacción / control de versión optimista), `lumina-backend/src/classes/classes.gateway.ts`, `lumina-backend/src/live-sessions/`, `lumina-backend/src/torneo/`, `lumina-backend/src/gamification/session-gamification.service.ts`, `lumina-backend/src/quiz-live/`, y sus `*.spec.ts`.
+- **Alcance — NO toca:** el motor React del canvas (`lumina-frontend/src/**/canvas-*`, `slide-renderer.tsx`, componentes de Timeline) — es el cluster `react-hooks` congelado para E5. Si el fix necesitara tocarlo, se para y se deja el estado en `bloqueado por E5`.
+- **Entregable:** (1) guardado de slide concurrente sin "última escritura gana" silenciosa — versión / `updatedAt` con rechazo `409` o merge explícito; (2) actualización de puntaje en vivo (torneo/gamificación de sesión) sin condición de carrera — transacción o lock por sesión en Redis. Prueba: ampliar `classes.service.transaction.spec.ts` + un spec nuevo de carrera sobre el servicio/gateway de sesión. Verificación: `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test` (sin bajar el conteo de tests).
+- **Cierre:** no aplica Regla 4 (no es migración). Marcar el ítem en «Fase 1 — riesgos urgentes» como `[x]` con el resumen.
+
+#### L.1 — Cola larga de lint del frontend
+- **Operador:** Antigravity
+- **Estado:** en revisión — confirmar cuántos de los 76 problemas restantes son `error` y cuántos `warning`.
+- **Alcance:** los 53 archivos de `LINT_CLEANUP_BACKLOG.md`. NO el cluster `react-hooks` del canvas.
+- **Entregable:** `cd lumina-frontend && pnpm lint` sin `error` (los `warning` del cluster `react-hooks` se permiten). El conteo baja, nunca sube.
+- **Cierre:** cuando `pnpm lint` esté sin errores en **los dos** paquetes salvo el cluster congelado → se cierra la decisión de Regla 9 (lint bloqueante real) y se desbloquea `E1`.
+
+### Migración a Estructura Única — fichas por etapa
+
+Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
+
+#### E1 — `@lumina/element-kit` + piloto Botón · **bloqueado por L.1**
+Redacta las sub-fichas: **Claude Code**. Precondición global: CI verde con `pnpm lint` estricto en ambos paquetes (salvo cluster `react-hooks`).
+
+- **E1.1 — Crear el workspace de paquetes.** Op: Claude Code. Alcance: `pnpm-workspace.yaml` en la **raíz** (crear con `packages:` → `packages/*`) + carpeta `packages/`. No toca `lumina-backend/` ni `lumina-frontend/` salvo enganchar el nuevo paquete. Entregable: `pnpm -w install` resuelve, CI sigue verde.
+- **E1.2 — Scaffold `packages/element-kit` con el contrato.** Op: Claude Code. Alcance: solo `packages/element-kit/`. Entregable: tipos de `ElementDefinition` según Regla 2 (`tipo`, `crearPorDefecto()`, `Editor`, `Viewer`, `Propiedades`, `apariencia`, `puntuacion?`), `ElementRegistry.registrar()`, build + test del paquete en CI.
+- **E1.3 — Scaffold `packages/scoring`.** Op: Claude Code. Alcance: solo `packages/scoring/`. Entregable: API mínima equivalente a la que hoy usa `lumina-backend/src/classes/activity-scoring.ts`, **sin** migrar consumidores todavía.
+- **E1.4 — Piloto: Botón como `ElementDefinition`.** Op: Cursor (dueño del canvas). Alcance: `packages/element-kit/` (definición del Botón) + punto de montaje en `lumina-frontend`. NO borra el Botón viejo de `widget-registry.ts`. Entregable: prueba de paridad — misma entrada → misma salida visible que el Botón actual (Regla 7). Cierre: `TODO(migración-etapa-1)` en `lumina-frontend/src/components/widgets/shared/widget-registry.ts` apuntando al Botón viejo + ticket con fecha.
+
+#### E2 — Migrar actividades · bloqueado por E1
+Ficha raíz la redactan **Claude Code + Cursor** al cerrar E1. Objetivo: fusionar `lumina-frontend/src/components/activities/shared/activity-registry.ts` dentro de `ElementRegistry` y conectar `@lumina/scoring`. Piloto y orden de actividades: informe «Plano Lumina», Etapa 2.
+
+#### E3 — Migrar widgets (piloto Ruleta) · bloqueado por E2
+Ficha raíz: **Cursor**, al cerrar E2. Retira de `widget-registry.ts` cada widget migrado (Regla 4).
+
+#### E4 — Migrar bloques de canvas y formas vectoriales (editor Paper.js) · bloqueado por E2 y E3 **cerradas con el código viejo borrado**
+Ficha raíz: **Cursor**, al cerrar E3.
+
+#### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · bloqueado por E4 y por tener un elemento migrado de cada categoría
+Ficha raíz: **Cursor**. Acá entra el cluster `react-hooks` congelado del Tablero de lint.
+
+#### E6 — Conectar Lumina Core con Lumina Edu sobre el mismo motor de puntuación · bloqueado por E5
+Ficha raíz: **Claude Code**, al cerrar E5.
+
+#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · bloqueado por E6
+Ficha raíz: quien cierre E6.
