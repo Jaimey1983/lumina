@@ -49,6 +49,9 @@
       ],
       "lumina-frontend/activities/historia-ramificada": [
         "../../lumina-frontend/src/components/activities/historia-ramificada/index.ts"
+      ],
+      "lumina-frontend/editor-activities": [
+        "../../lumina-frontend/src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
       ]
     }
   },

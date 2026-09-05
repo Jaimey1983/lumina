@@ -754,6 +754,13 @@ function RenderActivity({
   const act = block.actividad;
   const syncKey = `${slideId}-${blockId}`;
 
+  // TODO(migración-etapa-5): este `switch` por `act.tipo` es el "segundo registro"
+  // de actividades. E2.5 ya publicó estas 10 como `ElementDefinition` en
+  // `@lumina/element-kit` (quiz_multiple, verdadero_falso, completar_blancos,
+  // arrastrar_soltar, emparejar, ordenar_pasos, video_interactivo, short_answer,
+  // encuesta_viva, nube_palabras). E5 debe reemplazar todo este bloque por un
+  // dispatch desde `elementRegistry` y borrarlo. Ticket: LUM-E5-CLASICAS ·
+  // fecha objetivo: 2026-11-30.
   if (act.tipo === 'short_answer') {
     if (modo === 'editor') {
       return (

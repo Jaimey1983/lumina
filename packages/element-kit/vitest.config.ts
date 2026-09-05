@@ -74,6 +74,10 @@ export default defineConfig({
         frontendSrc,
         "components/activities/historia-ramificada/index.ts",
       ),
+      "lumina-frontend/editor-activities": path.resolve(
+        frontendSrc,
+        "app/(app)/classes/[id]/editor/element-kit-classic.ts",
+      ),
     },
   },
 });

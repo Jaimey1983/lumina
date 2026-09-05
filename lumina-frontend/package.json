@@ -15,7 +15,8 @@
     "./activities/puzzle-palabras": "./src/components/activities/puzzle-palabras/index.ts",
     "./activities/globos": "./src/components/activities/globos/index.ts",
     "./activities/topo": "./src/components/activities/topo/index.ts",
-    "./activities/historia-ramificada": "./src/components/activities/historia-ramificada/index.ts"
+    "./activities/historia-ramificada": "./src/components/activities/historia-ramificada/index.ts",
+    "./editor-activities": "./src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
   },
   "scripts": {
     "dev": "next dev --turbopack --port 3001",
