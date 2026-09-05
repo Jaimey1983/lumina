@@ -1,14 +1,20 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
-/** App Next independiente: no usar el lockfile residual de la raíz del monorepo. */
-const frontendRoot = path.resolve(__dirname);
+/**
+ * Raíz del workspace pnpm real (E1.1). El `next.config` vivía apuntando a
+ * `__dirname` porque antes la raíz solo tenía un `pnpm-workspace.yaml` residual;
+ * hoy la raíz ES el workspace (único `pnpm-lock.yaml`) y `next` está hoisteado
+ * ahí. Turbopack con `root` en `lumina-frontend/` no podía resolver `next`
+ * fuera de ese `root` → "Next.js package not found". Debe apuntar a la raíz.
+ */
+const workspaceRoot = path.resolve(__dirname, "..");
 
 const nextConfig: NextConfig = {
   devIndicators: false,
-  outputFileTracingRoot: frontendRoot,
+  outputFileTracingRoot: workspaceRoot,
   turbopack: {
-    root: frontendRoot,
+    root: workspaceRoot,
   },
   serverExternalPackages: ['paper'],
   experimental: {
