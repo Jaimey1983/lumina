@@ -162,10 +162,10 @@ Estado de partida: `lumina-backend` 219 problemas (209 errores/10 warnings) — 
 | `pptx.service.ts` (xml2js sin tipar) | `lumina-backend/src/pptx/pptx.service.ts` | Claude Code | **[hecho]** — 117→0. Tipos OOXML en el propio archivo + `src/types/pizzip.d.ts` nuevo (sin `@types/pizzip` disponible) |
 | Scoring + sesiones autónomas | `lumina-backend/src/classes/activity-scoring.ts` + `lumina-backend/src/autonomous-sessions/*` | Cursor | **[hecho]** — 68→0. `asString`/`asUnknownArray` en scoring; `extractActivityDefinition` + `CurrentUser`/`JwtAuthUser` en autonomous-sessions |
 | Cola larga backend | 17 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[hecho]** — 35→0. Tipado DTOs @Transform, mocks en specs, tipado seguro en AI/gateway |
-| Cola larga frontend (`no-unused-vars` / `no-explicit-any` restante) | 53 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[hecho]** — 120→76 problemas (limpieza total de unused-vars, any, entidades y memoizaciones en los 53 archivos) |
-| `react-hooks/*` del motor del canvas | `canvas-area.tsx`, componentes de Timeline, `slide-renderer.tsx` | **Nadie todavía** | **Deliberadamente en espera** — se corrige en la Etapa 5 (unificación de estado del editor), no antes: tocar el motor del canvas ahora es más riesgo que beneficio |
+| Cola larga frontend (`no-unused-vars` / `no-explicit-any` restante) | 53 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[en revisión]** — 120→76 problemas, pero `pnpm lint` **sigue en rojo**: 24 `error` (52 `warning`). ~19 son legítimos del cluster congelado (`canvas-area.tsx`); ~6 quedaron fuera de ese cluster y siguen abiertos → ficha **L.2** |
+| `react-hooks/*` + React Compiler del motor del canvas (**cluster congelado E5**) | **Exactamente `canvas-area.tsx`** (y `slide-renderer.tsx` si reaparece). NO están congelados: `flyout-left-panels.tsx`, `popup-parts.tsx`, `tooltip-parts.tsx`, `diagrama-properties.tsx`, componentes de Timeline (solo `warning`) | **Nadie** | **En espera hasta E5** — `canvas-area.tsx` concentra errores de `react-hooks/rules-of-hooks` + React Compiler ("memoization could not be preserved", "cannot modify local variables after render"): son exactamente el problema que E5 resuelve al centralizar el estado del editor. Tocarlos ahora = más riesgo que beneficio. Para que el CI pase mientras tanto → override eslint en L.2 |
 
-Cuando los tres clusters "pendiente" estén en `[hecho]` y el de `react-hooks` siga reservado para la Etapa 5, `pnpm lint` pasa a ser bloqueante de verdad en el CI (cerrar la decisión de la Regla 9).
+Para cerrar la decisión de Regla 9 (lint bloqueante real en CI) falta **L.2**: `pnpm lint` sin `error` en los dos paquetes, con `canvas-area.tsx` degradado a `warning` vía override eslint + `TODO(migración-etapa-5)`.
 
 ---
 
@@ -187,17 +187,28 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 
 #### L.1 — Cola larga de lint del frontend
 - **Operador:** Antigravity
-- **Estado:** en revisión — confirmar cuántos de los 76 problemas restantes son `error` y cuántos `warning`.
-- **Alcance:** los 53 archivos de `LINT_CLEANUP_BACKLOG.md`. NO el cluster `react-hooks` del canvas.
-- **Entregable:** `cd lumina-frontend && pnpm lint` sin `error` (los `warning` del cluster `react-hooks` se permiten). El conteo baja, nunca sube.
-- **Cierre:** cuando `pnpm lint` esté sin errores en **los dos** paquetes salvo el cluster congelado → se cierra la decisión de Regla 9 (lint bloqueante real) y se desbloquea `E1`.
+- **Estado:** en revisión — bajó 120→76 problemas (44 menos) sobre los 53 archivos, pero **no cerró**: `pnpm lint` sigue con 24 `error` (exit 1). De esos, ~19 son del cluster congelado E5 (`canvas-area.tsx`) y ~6 quedaron fuera de él marcados como "intocables" sin base en la tabla de lint.
+- **Pendiente para cerrar:** ver ficha **L.2**. L.1 se marca `hecho` recién cuando L.2 deja el `pnpm lint` del frontend en 0 `error`.
+
+#### L.2 — Cerrar los 6 errores de lint fuera del cluster congelado + degradar `canvas-area.tsx`
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** ninguna.
+- **Alcance — PUEDE tocar (solo estos archivos):**
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/panels/flyout-left-panels.tsx` — 3× `@typescript-eslint/no-explicit-any` (líneas ~499, ~831, ~841): tipar el esquema legado de slide IA (`{ type?: string; title?: string; bulletPoints?: string[] }`), sin `any`.
+  - `lumina-frontend/src/components/widgets/popup/popup-parts.tsx` y `.../widgets/tooltip/tooltip-parts.tsx` — 1× cada uno `react-hooks/static-components` ("component created during render" por `const Icon = resolve…Icon(cfg)`): resolver el ícono fuera del render (mapa de componentes a nivel de módulo) o renderizarlo sin crear un componente en cada render. Widget-local, no toca el motor del canvas.
+  - `lumina-frontend/src/components/diagramas/diagrama-properties.tsx` — 1× `react-hooks` "impure function during render": mover el `Date.now()` / valor impuro fuera de la ruta de render.
+  - `lumina-frontend/eslint.config.*` — añadir un bloque `overrides` para el glob `**/editor/components/canvas-area.tsx` que baje `react-hooks/rules-of-hooks` y las reglas del React Compiler a `warn`, con comentario `// TODO(migración-etapa-5): quitar este override al centralizar el estado del editor (E5)`.
+- **Alcance — NO toca:** `canvas-area.tsx` en sí, `slide-renderer.tsx`, cualquier componente de Timeline, ni ningún otro archivo. Nada de backend.
+- **Entregable:** `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit` — `pnpm lint` en **0 error** (warnings permitidos), `tsc` limpio, `test:unit` 446/446 sin bajar. Verificar además `cd lumina-backend && pnpm lint` sigue en 0.
+- **Cierre:** marcar L.1 y L.2 como `hecho` en la tabla de lint; el CI queda verde con lint estricto → se desbloquea `E1` y se cierra la decisión de Regla 9.
 
 ### Migración a Estructura Única — fichas por etapa
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
 
-#### E1 — `@lumina/element-kit` + piloto Botón · **bloqueado por L.1**
-Redacta las sub-fichas: **Claude Code**. Precondición global: CI verde con `pnpm lint` estricto en ambos paquetes (salvo cluster `react-hooks`).
+#### E1 — `@lumina/element-kit` + piloto Botón · **bloqueado por L.2**
+Redacta las sub-fichas: **Claude Code**. Precondición global: CI verde con `pnpm lint` estricto en ambos paquetes (con `canvas-area.tsx` degradado a `warning` vía el override de L.2).
 
 - **E1.1 — Crear el workspace de paquetes.** Op: Claude Code. Alcance: `pnpm-workspace.yaml` en la **raíz** (crear con `packages:` → `packages/*`) + carpeta `packages/`. No toca `lumina-backend/` ni `lumina-frontend/` salvo enganchar el nuevo paquete. Entregable: `pnpm -w install` resuelve, CI sigue verde.
 - **E1.2 — Scaffold `packages/element-kit` con el contrato.** Op: Claude Code. Alcance: solo `packages/element-kit/`. Entregable: tipos de `ElementDefinition` según Regla 2 (`tipo`, `crearPorDefecto()`, `Editor`, `Viewer`, `Propiedades`, `apariencia`, `puntuacion?`), `ElementRegistry.registrar()`, build + test del paquete en CI.
