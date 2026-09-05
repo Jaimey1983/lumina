@@ -426,7 +426,7 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 
 ##### E4.2 — Diagrama (`diagrama`: grafo + Venn) como `ElementDefinition`
 - **Operador:** Cursor
-- **Estado:** pendiente · **Precondición:** E4.1 `hecho`.
+- **Estado:** [en curso: Cursor] · **Precondición:** E4.1 `hecho`.
 - **Contexto:** `DiagramaBlock` = `DiagramaGrafoBlock` (`slide.types.ts:1247`) | `DiagramaVennBlock` (`:1277`). Componentes en `src/components/diagramas/` (`diagrama-editor.tsx`, `diagrama-viewer.tsx`, `diagrama-properties.tsx`, `venn-svg.tsx`), lógica en `diagrama-defaults.ts`, `diagrama-regions.ts`, `diagrama-bridge.ts` (+ `diagrama-defaults.spec.ts`, `diagrama-regions.spec.ts`). `case 'diagrama'` en `slide-renderer.tsx:1951`. **Ojo:** `diagrama-properties.tsx` tuvo el fix `react-hooks/purity` de L.2 — no re-tocar esa parte.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/diagrama/**`; shim + alias ×3 + `src/index.ts`; `src/components/diagramas/index.ts` barrel + subpath `./blocks/diagrama`.
 - **Alcance — NO toca:** el motor del canvas / paneles congelados E5; el `switch` salvo el `TODO`; backend.
