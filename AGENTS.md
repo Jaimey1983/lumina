@@ -189,7 +189,7 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 Antigravity bajó 120→76 problemas sobre los 53 archivos; los 6 `error` restantes fuera del cluster congelado los cerró Claude Code en **L.2**. Detalle en la tabla «Reparto activo — lint».
 
 #### L.2 — Cerrar los 6 errores fuera del cluster congelado + degradar `canvas-area.tsx` · **hecho**
-- **Operador:** Claude Code · commit `<pendiente>`
+- **Operador:** Claude Code · commit `7cbbae4`
 - **Qué se hizo:**
   - `flyout-left-panels.tsx` — 3× `no-explicit-any` → tipo `LegacySlideIA` (`{ tipo?; type?; title?; bulletPoints? }`) en `layoutDesdeSlideIA` y en el branch de esquema legado.
   - `popup-parts.tsx` / `tooltip-parts.tsx` — `react-hooks/static-components` → el ícono Lucide se instancia con `createElement(resolve…Icon(cfg), props)` en vez de `const Icon = …` + `<Icon/>`.
