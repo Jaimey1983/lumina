@@ -322,7 +322,7 @@ Orden: **E2.1 → E2.2 → E2.3 → (E2.4 ∥ E2.5)**. E2 cierra con las 5 en `h
 
 ##### E2.4 — Migrar el resto de Grupo 4 (11 actividades) a `ElementDefinition`
 - **Operador:** Cursor · puede ir **en paralelo con E2.5**
-- **Estado:** pendiente (E2.3 hecho — desbloqueado)
+- **Estado:** [en curso: Cursor]
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/<tipo>/**` para `clasificar`, `memoria`, `puzzle_imagen`, `sopa_letras`, `crucigrama`, `abrir_caja`, `ahorcado`, `puzzle_palabras`, `globos`, `topo`, `historia_ramificada` (mismo patrón que E2.3, reutilizando adapters); registro de cada una en `elementRegistry`; `lumina-frontend/src/components/activities/<tipo>/**` solo para exports internos.
 - **Alcance — NO toca:** `slide-renderer.tsx`, `slides-panel.tsx`, `activity-registry.ts` (salvo `TODO` de cierre por fila), backend, cluster congelado E5.
 - **Entregable:** `pnpm --filter @lumina/element-kit test` — una prueba de paridad por actividad (respuesta → `correct`/`score` idénticos; DOM visible idéntico). `pnpm --filter lumina-frontend build` verde.
