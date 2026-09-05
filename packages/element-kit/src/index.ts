@@ -33,6 +33,54 @@ export {
 } from "./elements/ruleta/index.js";
 
 export {
+  hotspotDefinition,
+  registrarHotspot,
+  HOTSPOT_TIPO,
+  HotspotEditor,
+  HotspotViewer,
+  HotspotPropiedades,
+  type HotspotConfig,
+  type HotspotEstado,
+  type HotspotDefinition,
+} from "./elements/hotspot/index.js";
+
+export {
+  tooltipDefinition,
+  registrarTooltip,
+  TOOLTIP_TIPO,
+  TooltipEditor,
+  TooltipViewer,
+  TooltipPropiedades,
+  type TooltipConfig,
+  type TooltipEstado,
+  type TooltipDefinition,
+} from "./elements/tooltip/index.js";
+
+export {
+  contadorDefinition,
+  registrarContador,
+  CONTADOR_TIPO,
+  ContadorEditor,
+  ContadorViewer,
+  ContadorPropiedades,
+  type ContadorConfig,
+  type ContadorEstado,
+  type ContadorDefinition,
+} from "./elements/contador/index.js";
+
+export {
+  progresoDefinition,
+  registrarProgreso,
+  PROGRESO_TIPO,
+  ProgresoEditor,
+  ProgresoViewer,
+  ProgresoPropiedades,
+  type ProgresoConfig,
+  type ProgresoEstado,
+  type ProgresoDefinition,
+} from "./elements/progreso/index.js";
+
+export {
   anagramaDefinition,
   registrarAnagrama,
   evaluarAnagrama,
@@ -324,6 +372,10 @@ import { ahorcadoDefinition } from "./elements/ahorcado/ahorcado-definition.js";
 import { anagramaDefinition } from "./elements/anagrama/anagrama-definition.js";
 import { botonDefinition } from "./elements/boton/boton-definition.js";
 import { ruletaDefinition } from "./elements/ruleta/ruleta-definition.js";
+import { hotspotDefinition } from "./elements/hotspot/hotspot-definition.js";
+import { tooltipDefinition } from "./elements/tooltip/tooltip-definition.js";
+import { contadorDefinition } from "./elements/contador/contador-definition.js";
+import { progresoDefinition } from "./elements/progreso/progreso-definition.js";
 import { clasificarDefinition } from "./elements/clasificar/clasificar-definition.js";
 import { crucigramaDefinition } from "./elements/crucigrama/crucigrama-definition.js";
 import { globosDefinition } from "./elements/globos/globos-definition.js";
@@ -344,10 +396,14 @@ import { shortAnswerDefinition } from "./elements/short_answer/short_answer-defi
 import { encuestaVivaDefinition } from "./elements/encuesta_viva/encuesta_viva-definition.js";
 import { nubePalabrasDefinition } from "./elements/nube_palabras/nube_palabras-definition.js";
 
-/** Catálogo único — Botón (E1.4) + Anagrama (E2.3) + Grupo 4 (E2.4) + familia clásica (E2.5). */
+/** Catálogo único — Botón (E1.4) + Ruleta (E3.1) + Control/burbuja (E3.2) + actividades E2. */
 export const elementRegistry = new ElementRegistry<{
   boton: typeof botonDefinition;
   ruleta: typeof ruletaDefinition;
+  hotspot: typeof hotspotDefinition;
+  tooltip: typeof tooltipDefinition;
+  contador: typeof contadorDefinition;
+  progreso: typeof progresoDefinition;
   anagrama: typeof anagramaDefinition;
   clasificar: typeof clasificarDefinition;
   memoria: typeof memoriaDefinition;
@@ -373,6 +429,10 @@ export const elementRegistry = new ElementRegistry<{
 }>();
 elementRegistry.registrar(botonDefinition);
 elementRegistry.registrar(ruletaDefinition);
+elementRegistry.registrar(hotspotDefinition);
+elementRegistry.registrar(tooltipDefinition);
+elementRegistry.registrar(contadorDefinition);
+elementRegistry.registrar(progresoDefinition);
 elementRegistry.registrar(anagramaDefinition);
 elementRegistry.registrar(clasificarDefinition);
 elementRegistry.registrar(memoriaDefinition);

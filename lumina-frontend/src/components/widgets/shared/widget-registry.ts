@@ -12,10 +12,18 @@ export const WIDGET_LABELS: Record<WidgetTipo, string> = {
   'click-reveal': 'Click to Reveal',
   timeline: 'Línea de tiempo',
   popup: 'Popup',
+  // TODO(migración-etapa-5): retirar la fila `hotspot` de este registro cuando
+  // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.
   hotspot: 'Hotspot',
+  // TODO(migración-etapa-5): retirar la fila `tooltip` de este registro cuando
+  // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.
   tooltip: 'Tooltip emergente',
   boton: 'Botón',
+  // TODO(migración-etapa-5): retirar la fila `contador` de este registro cuando
+  // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.
   contador: 'Contador / temporizador',
+  // TODO(migración-etapa-5): retirar la fila `progreso` de este registro cuando
+  // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.
   progreso: 'Barra de progreso',
   // TODO(migración-etapa-5): retirar la fila `ruleta` de este registro cuando
   // E5 conecte ElementRegistry al canvas. Ticket: LUM-E5-WIDGETS · 2026-12-31.

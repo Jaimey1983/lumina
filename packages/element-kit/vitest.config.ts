@@ -30,6 +30,22 @@ export default defineConfig({
         frontendSrc,
         "components/widgets/ruleta/index.ts",
       ),
+      "lumina-frontend/widgets/hotspot": path.resolve(
+        frontendSrc,
+        "components/widgets/hotspot/index.ts",
+      ),
+      "lumina-frontend/widgets/tooltip": path.resolve(
+        frontendSrc,
+        "components/widgets/tooltip/index.ts",
+      ),
+      "lumina-frontend/widgets/contador": path.resolve(
+        frontendSrc,
+        "components/widgets/contador/index.ts",
+      ),
+      "lumina-frontend/widgets/progreso": path.resolve(
+        frontendSrc,
+        "components/widgets/progreso/index.ts",
+      ),
       "lumina-frontend/activities/anagrama": path.resolve(
         frontendSrc,
         "components/activities/anagrama/index.ts",

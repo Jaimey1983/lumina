@@ -17,6 +17,18 @@
       "lumina-frontend/widgets/ruleta": [
         "../../lumina-frontend/src/components/widgets/ruleta/index.ts"
       ],
+      "lumina-frontend/widgets/hotspot": [
+        "../../lumina-frontend/src/components/widgets/hotspot/index.ts"
+      ],
+      "lumina-frontend/widgets/tooltip": [
+        "../../lumina-frontend/src/components/widgets/tooltip/index.ts"
+      ],
+      "lumina-frontend/widgets/contador": [
+        "../../lumina-frontend/src/components/widgets/contador/index.ts"
+      ],
+      "lumina-frontend/widgets/progreso": [
+        "../../lumina-frontend/src/components/widgets/progreso/index.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "../../lumina-frontend/src/components/activities/anagrama/index.ts"
       ],

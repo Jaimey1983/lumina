@@ -5,6 +5,10 @@
   "exports": {
     "./widgets/boton": "./src/components/widgets/boton/index.ts",
     "./widgets/ruleta": "./src/components/widgets/ruleta/index.ts",
+    "./widgets/hotspot": "./src/components/widgets/hotspot/index.ts",
+    "./widgets/tooltip": "./src/components/widgets/tooltip/index.ts",
+    "./widgets/contador": "./src/components/widgets/contador/index.ts",
+    "./widgets/progreso": "./src/components/widgets/progreso/index.ts",
     "./activities/anagrama": "./src/components/activities/anagrama/index.ts",
     "./activities/clasificar": "./src/components/activities/clasificar/index.ts",
     "./activities/memoria": "./src/components/activities/memoria/index.ts",

@@ -7,6 +7,18 @@
       "lumina-frontend/widgets/ruleta": [
         "./src/shims/lumina-frontend-ruleta.d.ts"
       ],
+      "lumina-frontend/widgets/hotspot": [
+        "./src/shims/lumina-frontend-hotspot.d.ts"
+      ],
+      "lumina-frontend/widgets/tooltip": [
+        "./src/shims/lumina-frontend-tooltip.d.ts"
+      ],
+      "lumina-frontend/widgets/contador": [
+        "./src/shims/lumina-frontend-contador.d.ts"
+      ],
+      "lumina-frontend/widgets/progreso": [
+        "./src/shims/lumina-frontend-progreso.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "./src/shims/lumina-frontend-anagrama.d.ts"
       ],
