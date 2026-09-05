@@ -240,7 +240,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 - **Cierre:** no aplica Regla 4. El commit deja explícito que a partir de acá se instala desde la raíz con `pnpm --filter`.
 
 ##### E1.2 — Scaffold `packages/element-kit` con el contrato `ElementDefinition`
-- **Operador:** Claude Code
+- **Operador:** Codex
 - **Estado:** [en curso: Codex]
 - **Precondición:** E1.1 `hecho`.
 - **Alcance — PUEDE tocar:** solo `packages/element-kit/**` y la entrada correspondiente en el `pnpm-lock.yaml` de la raíz + un job/paso `packages` en `.github/workflows/ci.yml`.
@@ -256,8 +256,8 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 - **Cierre:** no aplica Regla 4.
 
 ##### E1.3 — Scaffold `packages/scoring` (stub, sin portar todavía)
-- **Operador:** Claude Code
-- **Estado:** pendiente (E1.1 hecho) · puede ir **en paralelo con E1.2** (conjuntos de archivos disjuntos)
+- **Operador:** Codex
+- **Estado:** pendiente (E1.1 hecho) — asignada a Codex junto con E1.2; Codex reclama `[en curso: Codex]` con su propio commit al arrancarla. Archivos disjuntos de E1.2 → puede ir en paralelo.
 - **Precondición:** E1.1 `hecho`.
 - **Contexto:** `activity-scoring.ts` está hoy duplicado a mano en `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados por fixtures (`activity-scoring.fixtures.json`). `@lumina/scoring` será la fuente única — pero **E1.3 solo crea el paquete y fija su superficie de API**; portar la implementación y migrar consumidores es E2 (frontend) / E6 (backend).
 - **Alcance — PUEDE tocar:** solo `packages/scoring/**` + su entrada en el lockfile raíz y en el job `packages` de CI.
