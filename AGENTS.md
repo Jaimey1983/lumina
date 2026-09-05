@@ -241,7 +241,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.2 — Scaffold `packages/element-kit` con el contrato `ElementDefinition`
 - **Operador:** Codex
-- **Estado:** [en curso: Codex]
+- **Estado:** en revisión — Codex creó contrato, registro tipado con rechazo de duplicados y job `packages` de CI. Verificado: `pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`: build OK, 4/4 tests + chequeo de tipos, lint sin errores ni warnings. CI remoto pendiente de push/revisión.
 - **Precondición:** E1.1 `hecho`.
 - **Alcance — PUEDE tocar:** solo `packages/element-kit/**` y la entrada correspondiente en el `pnpm-lock.yaml` de la raíz + un job/paso `packages` en `.github/workflows/ci.yml`.
 - **Contenido mínimo:**

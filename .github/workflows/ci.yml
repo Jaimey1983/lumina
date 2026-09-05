@@ -10,6 +10,24 @@ env:
   PNPM_VERSION: "11.25.0"
 
 jobs:
+  packages:
+    name: Packages (build + test + lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lumina/element-kit build
+      - run: pnpm --filter @lumina/element-kit test
+      - run: pnpm --filter @lumina/element-kit lint
+
   backend:
     name: Backend (lint + test + build)
     runs-on: ubuntu-latest
