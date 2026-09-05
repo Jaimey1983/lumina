@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
-import { YOUTUBE_PROVIDERS, MOCK_QUESTIONS, NAVIGATION_SCENARIOS } from '../fixtures/video-interactive';
+import { YOUTUBE_PROVIDERS } from '../fixtures/video-interactive';
+import { asTestWindow } from '../support/test-window';
 
 /**
  * Capa 4: Navigation and Refresh Tests
@@ -91,14 +92,12 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
     it('should maintain player state consistency on refresh (deterministic timeline - Capa 3)', () => {
       cy.visit(ACTIVITY_PATH);
 
-      cy.window().then((win) => {
-        const beforeRefreshLogs = (win as any).__videoEventLogs || [];
-
+      cy.window().then(() => {
         cy.reload();
         cy.wait(500);
 
         cy.window().then((win2) => {
-          const afterRefreshLogs = (win2 as any).__videoEventLogs || [];
+          const afterRefreshLogs = asTestWindow(win2).__videoEventLogs || [];
           // Logs should be fresh after reload
           expect(afterRefreshLogs.length).to.be.gte(0);
         });
@@ -150,7 +149,7 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
       cy.visit('/dashboard');
 
       cy.window().then((win) => {
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         expect(errors.length).to.equal(0, 'Should have no critical errors');
       });
     });
@@ -160,9 +159,7 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
       cy.get('[data-testid="video-start-button"]').click();
       cy.wait(1000);
 
-      cy.window().then((win) => {
-        const beforeCleanup = Object.keys(win).filter((k) => k.includes('Timeout') || k.includes('Interval')).length;
-
+      cy.window().then(() => {
         cy.visit('/dashboard');
 
         cy.wait(500);
@@ -186,7 +183,7 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
 
       cy.window().then((win) => {
         // After 5 cycles, should still be functional
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         expect(errors.length).to.be.lessThan(5, 'Should have minimal errors after repeated cycles');
       });
     });
@@ -196,7 +193,7 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
     it('should switch providers cleanly (YouTube → Vimeo)', () => {
       // Start with YouTube
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = YOUTUBE_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = YOUTUBE_PROVIDERS[0].url;
       });
       cy.visit(ACTIVITY_PATH);
       cy.get('[data-testid="video-start-button"]').click();
@@ -204,15 +201,14 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
 
       // Navigate to another activity (Vimeo)
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = 'https://vimeo.com/90509568';
+        asTestWindow(win).__testVideoUrl = 'https://vimeo.com/90509568';
       });
       cy.visit('/dashboard');
       cy.wait(300);
       cy.visit(ACTIVITY_PATH);
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         expect(errors.length).to.equal(0, 'Should switch providers without errors');
       });
     });
@@ -223,14 +219,14 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
       cy.wait(1000);
 
       cy.window().then((win) => {
-        const playerBefore = (win as any).currentYouTubePlayer || (win as any).currentVimeoPlayer;
+        const playerBefore = asTestWindow(win).currentYouTubePlayer || asTestWindow(win).currentVimeoPlayer;
         expect(playerBefore).to.exist;
 
         cy.visit('/dashboard');
         cy.wait(500);
 
         cy.window().then((win2) => {
-          const playerAfter = (win2 as any).currentYouTubePlayer || (win2 as any).currentVimeoPlayer;
+          const playerAfter = asTestWindow(win2).currentYouTubePlayer || asTestWindow(win2).currentVimeoPlayer;
           // Player should be cleaned up
           expect(playerAfter).to.be.undefined;
         });
@@ -247,7 +243,7 @@ describe('Video Interactivo: Navigation y Refresh Behavior', () => {
       cy.wait(2000);
 
       cy.window().then((win) => {
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         // Should have logged error or fallback
         expect(errors.length).to.be.gte(0);
       });

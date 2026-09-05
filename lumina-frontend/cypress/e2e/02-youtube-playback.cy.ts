@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 import { YOUTUBE_PROVIDERS, MOCK_QUESTIONS } from '../fixtures/video-interactive';
+import { asTestWindow } from '../support/test-window';
 
 /**
  * Capa 4: YouTube Playback Tests
@@ -13,7 +14,7 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
   before(() => {
     // Mock: Setup clase de test con actividad de video YouTube
     cy.window().then((win) => {
-      (win as any).testSetup = {
+      asTestWindow(win).testSetup = {
         classId: TEST_CLASS_ID,
         activityId: ACTIVITY_ID,
         videoUrl: YOUTUBE_PROVIDERS[0].url,
@@ -50,11 +51,11 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
 
     it('should initialize YouTube API only once (singleton pattern - Capa 1)', () => {
       cy.window().then((win) => {
-        const countBefore = (win as any).__youtubeApiLoadCount || 0;
+        const countBefore = asTestWindow(win).__youtubeApiLoadCount || 0;
         cy.get('[data-testid="video-start-button"]').click();
         cy.wait(500); // Esperar inicialización
         cy.window().then((win2) => {
-          const countAfter = (win2 as any).__youtubeApiLoadCount || 0;
+          const countAfter = asTestWindow(win2).__youtubeApiLoadCount || 0;
           // No debería haber incrementado más de una vez
           expect(countAfter - countBefore).to.be.lte(1);
         });
@@ -89,18 +90,18 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
   describe('Player Adapter Lifecycle', () => {
     it('should initialize YouTube player adapter without callback collisions (Capa 1)', () => {
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
+        const logs = asTestWindow(win).__videoEventLogs || [];
         const beforeCount = logs.length;
 
         cy.get('[data-testid="video-start-button"]').click();
         cy.wait(1000);
 
         cy.window().then((win2) => {
-          const logsAfter = (win2 as any).__videoEventLogs || [];
+          const logsAfter = asTestWindow(win2).__videoEventLogs || [];
           const newLogs = logsAfter.slice(beforeCount);
 
           // Debería haber eventos sin duplicados
-          const readyEvents = newLogs.filter((e: any) => e.event === 'player-ready');
+          const readyEvents = newLogs.filter((e) => e.event === 'player-ready');
           expect(readyEvents.length).to.equal(1); // Solo uno debería estar
         });
       });
@@ -116,7 +117,7 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
 
       // No debería tener errores en consola
       cy.window().then((win) => {
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         expect(errors.length).to.equal(0);
       });
     });
@@ -151,13 +152,13 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
 
       // Calcular un seek forward que viole la política
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player) {
           player.seekTo(20); // Forward seek
           cy.wait(500);
 
-          const logs = (win as any).__videoEventLogs || [];
-          const seekBlockedEvents = logs.filter((e: any) => e.event === 'seek-blocked');
+          const logs = asTestWindow(win).__videoEventLogs || [];
+          const seekBlockedEvents = logs.filter((e) => e.event === 'seek-blocked');
           // Debería haber un evento de seek bloqueado
           expect(seekBlockedEvents.length).to.be.greaterThan(0);
         }
@@ -174,7 +175,7 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
 
       // Hacer seek backward
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(3); // Antes de Q1
           cy.wait(1000);
@@ -196,8 +197,8 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
       cy.get('[data-testid="question-overlay"]', { timeout: 15000 }).should('be.visible');
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const eventNames = logs.map((l: any) => l.event);
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const eventNames = logs.map((l) => l.event);
 
         // Debería haber los eventos clave
         expect(eventNames).to.include('provider-detected');
@@ -210,15 +211,14 @@ describe('Video Interactivo: YouTube Playback y Timeline', () => {
     it('should capture errors in observability logs', () => {
       // Intentar cargar video con URL inválida
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = 'https://www.youtube.com/watch?v=INVALID_VIDEO_ID';
+        asTestWindow(win).__testVideoUrl = 'https://www.youtube.com/watch?v=INVALID_VIDEO_ID';
       });
 
       cy.get('[data-testid="video-start-button"]').click();
       cy.wait(2000);
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const errorLogs = logs.filter((l: any) => l.level === 'error');
+        const logs = asTestWindow(win).__videoEventLogs || [];
         // Puede o no haber error dependiendo de YouTube API, pero logs deben existir
         expect(logs.length).to.be.greaterThan(0);
       });

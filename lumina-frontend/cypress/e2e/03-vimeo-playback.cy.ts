@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 import { VIMEO_PROVIDERS, MOCK_QUESTIONS } from '../fixtures/video-interactive';
+import { asTestWindow } from '../support/test-window';
 
 /**
  * Capa 4: Vimeo Playback Tests
@@ -23,22 +24,22 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
     it('should detect and initialize Vimeo provider', () => {
       // Setup: navegar a actividad con Vimeo video
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
       });
 
       cy.get('[data-testid="video-interactive-viewer"]').should('exist');
       cy.get('[data-testid="video-start-button"]').click();
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const providerLogs = logs.filter((l: any) => l.event === 'provider-detected');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const providerLogs = logs.filter((l) => l.event === 'provider-detected');
         expect(providerLogs[0]?.payload?.provider).to.equal('vimeo');
       });
     });
 
     it('should initialize Vimeo iframe safely', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
       });
 
       cy.get('[data-testid="video-start-button"]').click();
@@ -49,15 +50,15 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
   describe('Vimeo TimeUpdates (Event-driven, not polling)', () => {
     it('should receive timeupdate events from Vimeo (not polling)', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
       });
 
       cy.get('[data-testid="video-start-button"]').click();
       cy.wait(3000);
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const timeUpdateLogs = logs.filter((l: any) => l.event === 'time-update');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const timeUpdateLogs = logs.filter((l) => l.event === 'time-update');
         // Debería haber recibido al menos algunos time-update eventos
         expect(timeUpdateLogs.length).to.be.greaterThan(0);
       });
@@ -65,8 +66,8 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
 
     it('should trigger questions at correct Vimeo timeline points', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
-        (win as any).__testQuestions = MOCK_QUESTIONS;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testQuestions = MOCK_QUESTIONS;
       });
 
       cy.get('[data-testid="video-start-button"]').click();
@@ -78,7 +79,7 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
   describe('Vimeo Seek Behavior', () => {
     it('should handle Vimeo seek events via postMessage', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
       });
 
       cy.get('[data-testid="video-start-button"]').click();
@@ -86,7 +87,7 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
 
       // Simular seek via postMessage (VimeoAdapter debería recibir seeked event)
       cy.window().then((win) => {
-        const player = (win as any).currentVimeoPlayer;
+        const player = asTestWindow(win).currentVimeoPlayer;
         if (player && player.postMessage) {
           // postMessage para seek
           player.postMessage({ method: 'setCurrentTime', value: 10 });
@@ -94,7 +95,7 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
       });
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
+        const logs = asTestWindow(win).__videoEventLogs || [];
         // Debería haber recibido evento de seek
         expect(logs.length).to.be.greaterThan(0);
       });
@@ -102,15 +103,15 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
 
     it('should enforce seek policy on Vimeo (forward seek blocking)', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
-        (win as any).__testSeekPolicy = { allowForwardSeek: false };
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testSeekPolicy = { allowForwardSeek: false };
       });
 
       cy.get('[data-testid="video-start-button"]').click();
       cy.wait(1000);
 
       cy.window().then((win) => {
-        const player = (win as any).currentVimeoPlayer;
+        const player = asTestWindow(win).currentVimeoPlayer;
         if (player && player.postMessage) {
           // Intentar forward seek
           player.postMessage({ method: 'setCurrentTime', value: 30 });
@@ -119,8 +120,8 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
       });
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const seekBlockedLogs = logs.filter((l: any) => l.event === 'seek-blocked');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const seekBlockedLogs = logs.filter((l) => l.event === 'seek-blocked');
         // Debería haber un evento de seek bloqueado
         expect(seekBlockedLogs.length).to.be.greaterThan(0);
       });
@@ -130,7 +131,7 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
   describe('Vimeo Cross-Origin Safety (Capa 2)', () => {
     it('should handle postMessage without timing issues', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
       });
 
       cy.get('[data-testid="video-start-button"]').click();
@@ -138,7 +139,7 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
 
       // Pausa y reanuda rapidamente
       cy.window().then((win) => {
-        const player = (win as any).currentVimeoPlayer;
+        const player = asTestWindow(win).currentVimeoPlayer;
         if (player && player.postMessage) {
           player.postMessage({ method: 'pause' });
           cy.wait(100);
@@ -147,30 +148,30 @@ describe('Video Interactivo: Vimeo Playback y Control', () => {
       });
 
       cy.window().then((win) => {
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         expect(errors.length).to.equal(0);
       });
     });
 
     it('should recover from postMessage failures gracefully', () => {
       cy.window().then((win) => {
-        (win as any).__testVideoUrl = VIMEO_PROVIDERS[0].url;
+        asTestWindow(win).__testVideoUrl = VIMEO_PROVIDERS[0].url;
       });
 
       cy.get('[data-testid="video-start-button"]').click();
       cy.wait(1000);
 
       // Simulate postMessage failure
-      cy.window().then((win) => {
+      cy.window().then(() => {
         const originalPostMessage = window.parent.postMessage;
-        (window.parent.postMessage as any) = () => {
+        (window.parent.postMessage as unknown as () => void) = () => {
           throw new Error('postMessage failed');
         };
 
         cy.wait(500);
 
         // Restore
-        (window.parent.postMessage as any) = originalPostMessage;
+        window.parent.postMessage = originalPostMessage;
       });
 
       // Should still be playable

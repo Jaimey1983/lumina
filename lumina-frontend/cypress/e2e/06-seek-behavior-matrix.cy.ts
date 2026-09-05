@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
-import { SEEK_BEHAVIOR_MATRIX, MOCK_QUESTIONS } from '../fixtures/video-interactive';
+import { MOCK_QUESTIONS } from '../fixtures/video-interactive';
+import { asTestWindow } from '../support/test-window';
 
 /**
  * Capa 4: Seek Behavior Matrix Tests
@@ -10,7 +11,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
     cy.visit('/dashboard');
     cy.window().then((win) => {
       win.localStorage.setItem('lumina:video:debug', '1');
-      (win as any).__testQuestions = MOCK_QUESTIONS;
+      asTestWindow(win).__testQuestions = MOCK_QUESTIONS;
     });
   });
 
@@ -23,7 +24,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
   describe('SeekPolicy: allowForwardSeek = false (por defecto)', () => {
     beforeEach(() => {
       cy.window().then((win) => {
-        (win as any).__testSeekPolicy = { allowForwardSeek: false, replayOnSeekBack: true };
+        asTestWindow(win).__testSeekPolicy = { allowForwardSeek: false, replayOnSeekBack: true };
       });
     });
 
@@ -34,7 +35,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Intentar seek forward más allá de Q2 (15s)
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(30);
           cy.wait(500);
@@ -42,8 +43,8 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       });
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const seekBlockedLogs = logs.filter((l: any) => l.event === 'seek-blocked');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const seekBlockedLogs = logs.filter((l) => l.event === 'seek-blocked');
         expect(seekBlockedLogs.length).to.be.greaterThan(0, 'Forward seek should be blocked');
       });
     });
@@ -54,7 +55,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Seek forward pero dentro del rango desbloqueado (antes de Q2 @ 15s)
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(10);
           cy.wait(500);
@@ -62,8 +63,8 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       });
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const seekBlockedLogs = logs.filter((l: any) => l.event === 'seek-blocked');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const seekBlockedLogs = logs.filter((l) => l.event === 'seek-blocked');
         // No debería estar bloqueado dentro del rango
         expect(seekBlockedLogs.length).to.equal(0, 'Forward seek within range should not be blocked');
       });
@@ -79,7 +80,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Backward seek
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(3);
           cy.wait(500);
@@ -87,8 +88,8 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       });
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const seekBlockedLogs = logs.filter((l: any) => l.event === 'seek-blocked');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const seekBlockedLogs = logs.filter((l) => l.event === 'seek-blocked');
         expect(seekBlockedLogs.length).to.equal(0, 'Backward seek should never be blocked');
       });
     });
@@ -97,7 +98,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
   describe('SeekPolicy: replayOnSeekBack = true (por defecto)', () => {
     beforeEach(() => {
       cy.window().then((win) => {
-        (win as any).__testSeekPolicy = { allowForwardSeek: false, replayOnSeekBack: true };
+        asTestWindow(win).__testSeekPolicy = { allowForwardSeek: false, replayOnSeekBack: true };
       });
     });
 
@@ -111,7 +112,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Backward seek a antes de Q1
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(3);
           cy.wait(500);
@@ -124,7 +125,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
     it('should NOT replay if replayOnSeekBack = false', () => {
       cy.window().then((win) => {
-        (win as any).__testSeekPolicy = { allowForwardSeek: false, replayOnSeekBack: false };
+        asTestWindow(win).__testSeekPolicy = { allowForwardSeek: false, replayOnSeekBack: false };
       });
 
       cy.get('[data-testid="video-start-button"]').click();
@@ -136,7 +137,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Backward seek
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(3);
           cy.wait(500);
@@ -156,8 +157,8 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       cy.get('[data-testid="question-overlay"]', { timeout: 15000 }).should('be.visible');
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const cueEnterLogs = logs.filter((l: any) => l.event === 'cue-enter');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const cueEnterLogs = logs.filter((l) => l.event === 'cue-enter');
         expect(cueEnterLogs.length).to.be.greaterThan(0, 'Should detect cue enter');
       });
     });
@@ -167,12 +168,11 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       cy.get('[data-testid="question-overlay"]', { timeout: 15000 }).should('be.visible');
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const firstCueEnterTime = logs.find((l: any) => l.event === 'cue-enter')?.timestamp;
+        const logs = asTestWindow(win).__videoEventLogs || [];
 
         cy.wait(2000);
 
-        const secondCueEnterTime = logs.slice(logs.length / 2).find((l: any) => l.event === 'cue-enter')?.timestamp;
+        const secondCueEnterTime = logs.slice(logs.length / 2).find((l) => l.event === 'cue-enter')?.timestamp;
         // Should not have duplicate cue-enter for same Q1
         expect(secondCueEnterTime).to.be.undefined;
       });
@@ -183,14 +183,14 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Simular acceso a timeline en diferentes frame rates
       cy.window().then((win) => {
-        const engine = (win as any).timelineEngine;
+        const engine = asTestWindow(win).timelineEngine;
         if (engine) {
           // Simular actualización en 30fps vs 60fps vs 24fps
           const times = [4.95, 5.0, 5.05]; // Todos dentro de epsilon
           const results = times.map((t) => engine.update(t));
 
           // Solo el primero debería entrar en la Q
-          const cueEnters = results.filter((r: any) => r.cueEntered);
+          const cueEnters = results.filter((r) => r.cueEntered);
           expect(cueEnters.length).to.equal(1, 'Should trigger cue only once despite frame rate variations');
         }
       });
@@ -208,7 +208,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Backward seek to replay
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(4);
           cy.wait(500);
@@ -223,8 +223,8 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       cy.wait(500);
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const responses = logs.filter((l: any) => l.event === 'answer-submitted');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const responses = logs.filter((l) => l.event === 'answer-submitted');
         expect(responses.length).to.equal(2, 'Should have recorded both answer attempts');
       });
     });
@@ -234,7 +234,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       cy.wait(1000);
 
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(20); // Forward - should block
           cy.wait(200);
@@ -247,7 +247,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Should still be functional
       cy.window().then((win) => {
-        const errors = (win as any).__videoErrors || [];
+        const errors = asTestWindow(win).__videoErrors || [];
         expect(errors.length).to.equal(0, 'Rapid seeks should not cause errors');
       });
     });
@@ -265,13 +265,13 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
       // Seek backward to Q1
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(5);
           cy.wait(500);
         }
 
-        const engine = (win as any).timelineEngine;
+        const engine = asTestWindow(win).timelineEngine;
         if (engine) {
           const maxTime = engine.getMaxUnlockedTime?.();
           // maxUnlockedTime should reflect progress so far
@@ -284,7 +284,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
   describe('Edge Cases and Boundary Conditions', () => {
     it('should handle question at time 0', () => {
       cy.window().then((win) => {
-        (win as any).__testQuestions = [
+        asTestWindow(win).__testQuestions = [
           {
             id: 'q0',
             text: '¿Comenzamos?',
@@ -302,7 +302,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
     it('should handle question near video end', () => {
       cy.window().then((win) => {
-        (win as any).__testQuestions = [
+        asTestWindow(win).__testQuestions = [
           {
             id: 'qend',
             text: '¿Fin del video?',
@@ -318,7 +318,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       cy.wait(500);
 
       cy.window().then((win) => {
-        const player = (win as any).currentYouTubePlayer;
+        const player = asTestWindow(win).currentYouTubePlayer;
         if (player && player.seekTo) {
           player.seekTo(54);
         }
@@ -329,7 +329,7 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
 
     it('should handle back-to-back questions with small interval', () => {
       cy.window().then((win) => {
-        (win as any).__testQuestions = [
+        asTestWindow(win).__testQuestions = [
           MOCK_QUESTIONS[0],
           { ...MOCK_QUESTIONS[1], startTime: 6 }, // Only 1s apart
         ];
@@ -346,8 +346,8 @@ describe('Video Interactivo: Seek Behavior Matrix (Capa 2-3)', () => {
       cy.get('[data-testid="question-overlay"]', { timeout: 5000 }).should('be.visible');
 
       cy.window().then((win) => {
-        const logs = (win as any).__videoEventLogs || [];
-        const cueEnters = logs.filter((l: any) => l.event === 'cue-enter');
+        const logs = asTestWindow(win).__videoEventLogs || [];
+        const cueEnters = logs.filter((l) => l.event === 'cue-enter');
         expect(cueEnters.length).to.equal(2, 'Should trigger both questions');
       });
     });
