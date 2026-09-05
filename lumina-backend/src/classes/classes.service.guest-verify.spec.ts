@@ -53,7 +53,9 @@ describe('ClassesService.verifyGuestStudent', () => {
     classResultFindFirst.mockResolvedValue(null);
     classGuestFindUnique.mockResolvedValue({ id: 'join-1' });
 
-    await expect(service.verifyGuestStudent(CLASS_A, GUEST_ID)).resolves.toEqual({
+    await expect(
+      service.verifyGuestStudent(CLASS_A, GUEST_ID),
+    ).resolves.toEqual({
       valid: true,
       studentName: 'Ana Pérez',
     });
@@ -73,7 +75,9 @@ describe('ClassesService.verifyGuestStudent', () => {
     classResultFindFirst.mockResolvedValue(null);
     classGuestFindUnique.mockResolvedValue(null);
 
-    await expect(service.verifyGuestStudent(CLASS_B, GUEST_ID)).resolves.toEqual({
+    await expect(
+      service.verifyGuestStudent(CLASS_B, GUEST_ID),
+    ).resolves.toEqual({
       valid: false,
     });
   });

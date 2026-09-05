@@ -1,8 +1,4 @@
-import {
-  createCipheriv,
-  createHash,
-  randomBytes,
-} from 'crypto';
+import { createCipheriv, createHash, randomBytes } from 'crypto';
 import {
   apiKeyHint,
   assertSafeApiKey,

@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common'
-import { PptxController } from './pptx.controller'
-import { PptxService } from './pptx.service'
+import { Module } from '@nestjs/common';
+import { PptxController } from './pptx.controller';
+import { PptxService } from './pptx.service';
 
 @Module({
   controllers: [PptxController],

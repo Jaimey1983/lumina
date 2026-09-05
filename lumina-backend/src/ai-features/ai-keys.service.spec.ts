@@ -72,10 +72,7 @@ describe('AiKeysService.resolveCredentials', () => {
   });
 
   it('cae a plataforma si hay BYOK pero el secreto de cifrado no está listo', async () => {
-    const service = await createService(
-      { GEMINI_API_KEY: PLATFORM },
-      prisma,
-    );
+    const service = await createService({ GEMINI_API_KEY: PLATFORM }, prisma);
     userFindUnique.mockResolvedValueOnce({
       preferredAiProvider: 'OPENAI',
       teacherAiKeys: [{ provider: 'OPENAI', encryptedKey: 'v2:opaque' }],

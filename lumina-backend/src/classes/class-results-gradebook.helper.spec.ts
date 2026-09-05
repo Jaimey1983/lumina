@@ -21,7 +21,10 @@ interface PromedioCase {
 }
 
 const fixtures = JSON.parse(
-  readFileSync(join(__dirname, 'class-results-gradebook.fixtures.json'), 'utf8'),
+  readFileSync(
+    join(__dirname, 'class-results-gradebook.fixtures.json'),
+    'utf8',
+  ),
 ) as { promedioCases: PromedioCase[] };
 
 describe('sumAndDenominatorForClassGradebook', () => {
@@ -33,7 +36,10 @@ describe('sumAndDenominatorForClassGradebook', () => {
     const results = new Map([
       ['quiz', { activityType: 'quiz_multiple', score: 5, maxScore: 5 }],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(1);
     expect(sum / denominator).toBe(5);
   });
@@ -46,7 +52,10 @@ describe('sumAndDenominatorForClassGradebook', () => {
     const results = new Map([
       ['vf', { activityType: 'verdadero_falso', score: 5, maxScore: 5 }],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(1);
     expect(sum / denominator).toBe(5);
   });
@@ -62,7 +71,10 @@ describe('sumAndDenominatorForClassGradebook', () => {
       ['enc', { activityType: 'encuesta_viva', score: 1, maxScore: 5 }],
       ['nube', { activityType: 'nube_palabras', score: 1, maxScore: 5 }],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(1);
     expect(sum / denominator).toBe(5);
   });
@@ -76,7 +88,10 @@ describe('sumAndDenominatorForClassGradebook', () => {
       ['clasificar', { activityType: 'clasificar', score: 5, maxScore: 5 }],
       ['ruleta', { activityType: 'ruleta', score: 1, maxScore: 5 }],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(1);
     expect(sum / denominator).toBe(5);
   });
@@ -90,7 +105,10 @@ describe('sumAndDenominatorForClassGradebook', () => {
       ['quiz', { activityType: 'quiz_multiple', score: 5, maxScore: 5 }],
       ['sopa', { activityType: 'sopa_letras', score: 4, maxScore: 5 }],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(2);
     expect(sum / denominator).toBe(4.5);
   });
@@ -104,7 +122,10 @@ describe('sumAndDenominatorForClassGradebook', () => {
       ['quiz', { activityType: 'quiz_multiple', score: 5, maxScore: 5 }],
       ['sa', { activityType: 'short_answer', score: null, maxScore: 5 }],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(1);
     expect(sum / denominator).toBe(5);
   });
@@ -115,10 +136,29 @@ describe('sumAndDenominatorForClassGradebook', () => {
       { slideId: 'sa', activityType: 'short_answer' },
     ];
     const results = new Map([
-      ['quiz', { activityType: 'quiz_multiple', score: 5, maxScore: 5, isManual: false }],
-      ['sa', { activityType: 'short_answer', score: 1, maxScore: 5, isManual: false }],
+      [
+        'quiz',
+        {
+          activityType: 'quiz_multiple',
+          score: 5,
+          maxScore: 5,
+          isManual: false,
+        },
+      ],
+      [
+        'sa',
+        {
+          activityType: 'short_answer',
+          score: 1,
+          maxScore: 5,
+          isManual: false,
+        },
+      ],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(1);
     expect(sum / denominator).toBe(5);
   });
@@ -130,9 +170,15 @@ describe('sumAndDenominatorForClassGradebook', () => {
     ];
     const results = new Map([
       ['quiz', { activityType: 'quiz_multiple', score: 5, maxScore: 5 }],
-      ['sa', { activityType: 'short_answer', score: 3, maxScore: 5, isManual: true }],
+      [
+        'sa',
+        { activityType: 'short_answer', score: 3, maxScore: 5, isManual: true },
+      ],
     ]);
-    const { sum, denominator } = sumAndDenominatorForClassGradebook(slides, results);
+    const { sum, denominator } = sumAndDenominatorForClassGradebook(
+      slides,
+      results,
+    );
     expect(denominator).toBe(2);
     expect(sum / denominator).toBe(4);
   });
@@ -188,7 +234,9 @@ describe('fixture promedio', () => {
 
 describe('scoreActivityResponse (Fase 2 — delega en evaluateActivityResponse)', () => {
   it('short_answer nunca fabrica nota', () => {
-    expect(scoreActivityResponse('short_answer', 'cualquier texto', {})).toBeNull();
+    expect(
+      scoreActivityResponse('short_answer', 'cualquier texto', {}),
+    ).toBeNull();
   });
 
   it('blancos trim + mayúsculas → 5.0', () => {
@@ -196,7 +244,9 @@ describe('scoreActivityResponse (Fase 2 — delega en evaluateActivityResponse)'
       scoreActivityResponse(
         'completar_blancos',
         { b1: '  bogotá  ' },
-        { blancos: [{ id: 'b1', respuesta: 'Bogotá', ignorarMayusculas: true }] },
+        {
+          blancos: [{ id: 'b1', respuesta: 'Bogotá', ignorarMayusculas: true }],
+        },
       ),
     ).toBe(5);
   });
@@ -204,8 +254,20 @@ describe('scoreActivityResponse (Fase 2 — delega en evaluateActivityResponse)'
   it('video deduplica por questionIndex', () => {
     const definicion = {
       preguntas: [
-        { id: 'q0', opciones: [{ id: 'a', esCorrecta: true }, { id: 'b', esCorrecta: false }] },
-        { id: 'q1', opciones: [{ id: 'a', esCorrecta: false }, { id: 'b', esCorrecta: true }] },
+        {
+          id: 'q0',
+          opciones: [
+            { id: 'a', esCorrecta: true },
+            { id: 'b', esCorrecta: false },
+          ],
+        },
+        {
+          id: 'q1',
+          opciones: [
+            { id: 'a', esCorrecta: false },
+            { id: 'b', esCorrecta: true },
+          ],
+        },
         { id: 'q2', opciones: [{ id: 'a', esCorrecta: true }] },
         { id: 'q3', opciones: [{ id: 'a', esCorrecta: true }] },
       ],
@@ -215,6 +277,8 @@ describe('scoreActivityResponse (Fase 2 — delega en evaluateActivityResponse)'
       { questionIndex: 1, answer: 'b' },
       { questionIndex: 0, answer: 'a' },
     ];
-    expect(scoreActivityResponse('video_interactivo', respuesta, definicion)).toBe(2.5);
+    expect(
+      scoreActivityResponse('video_interactivo', respuesta, definicion),
+    ).toBe(2.5);
   });
 });

@@ -668,10 +668,7 @@ describe('EscapeRoomLiveService — motor de equipos', () => {
 
   describe('cierre y podio', () => {
     /** Resuelve las dos salas del fixture con el equipo del estudiante dado. */
-    async function terminar(
-      service: EscapeRoomLiveService,
-      studentId: string,
-    ) {
+    async function terminar(service: EscapeRoomLiveService, studentId: string) {
       await service.answer({
         ...base,
         studentId,

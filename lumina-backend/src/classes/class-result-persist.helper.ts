@@ -41,8 +41,12 @@ export function toPrismaJsonValue(
   return value as Prisma.InputJsonValue;
 }
 
-export function resolvePersistedMaxScore(item: PersistableStudentResult): number {
-  return typeof item.maxScore === 'number' && Number.isFinite(item.maxScore) && item.maxScore > 0
+export function resolvePersistedMaxScore(
+  item: PersistableStudentResult,
+): number {
+  return typeof item.maxScore === 'number' &&
+    Number.isFinite(item.maxScore) &&
+    item.maxScore > 0
     ? item.maxScore
     : CLASS_RESULT_MAX_SCORE_DEFAULT;
 }

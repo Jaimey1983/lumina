@@ -1,4 +1,12 @@
-import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, Min, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateAutonomousSessionDto {
   /** Solo permitido mientras la tarea está `scheduled` (el servicio lo comprueba). */

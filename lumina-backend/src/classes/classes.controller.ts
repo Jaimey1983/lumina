@@ -60,10 +60,7 @@ export class ClassesController {
   }
 
   @Post('join/:codigo/guest')
-  joinAsGuest(
-    @Param('codigo') codigo: string,
-    @Body() dto: JoinAsGuestDto,
-  ) {
+  joinAsGuest(@Param('codigo') codigo: string, @Body() dto: JoinAsGuestDto) {
     return this.classesService.joinAsGuest(codigo, dto);
   }
 
@@ -137,10 +134,7 @@ export class ClassesController {
   @Post(':id/results')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'STUDENT')
-  saveResults(
-    @Param('id') id: string,
-    @Body() dto: GuardarResultadosDto,
-  ) {
+  saveResults(@Param('id') id: string, @Body() dto: GuardarResultadosDto) {
     return this.classesService.saveResults(id, dto);
   }
 

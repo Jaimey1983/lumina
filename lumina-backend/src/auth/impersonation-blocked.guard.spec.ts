@@ -13,7 +13,9 @@ describe('ImpersonationBlockedGuard', () => {
   const guard = new ImpersonationBlockedGuard();
 
   it('permite sesiones normales (sin impersonatedBy)', () => {
-    expect(guard.canActivate(ctx({ id: 'u1', impersonatedBy: null }))).toBe(true);
+    expect(guard.canActivate(ctx({ id: 'u1', impersonatedBy: null }))).toBe(
+      true,
+    );
     expect(guard.canActivate(ctx(undefined))).toBe(true);
   });
 

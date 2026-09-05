@@ -1,4 +1,13 @@
-import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Min, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateAutonomousSessionDto {
   @IsDateString()

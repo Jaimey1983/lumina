@@ -39,7 +39,11 @@ export function scoreActivityResponse(
   activityDef: unknown,
 ): number | null {
   if (response === null || response === undefined) return 0.0;
-  const evaluated = evaluateActivityResponse(activityType, activityDef, response);
+  const evaluated = evaluateActivityResponse(
+    activityType,
+    activityDef,
+    response,
+  );
   return evaluated.score;
 }
 
@@ -69,7 +73,11 @@ function findActivityTipo(node: unknown): string | null {
     return null;
   }
   const o = node as Record<string, unknown>;
-  if (o.tipo === 'actividad' && o.actividad && typeof o.actividad === 'object') {
+  if (
+    o.tipo === 'actividad' &&
+    o.actividad &&
+    typeof o.actividad === 'object'
+  ) {
     const tipo = (o.actividad as { tipo?: unknown }).tipo;
     if (typeof tipo === 'string' && tipo.trim()) return tipo;
   }
@@ -108,7 +116,7 @@ export function contributionOnFivePointScale(
     return null;
   }
   const max = maxScore > 0 ? maxScore : GRADEBOOK_SCORE_SCALE;
-  return ((score as number) / max) * GRADEBOOK_SCORE_SCALE;
+  return (score / max) * GRADEBOOK_SCORE_SCALE;
 }
 
 export interface GradebookSlideRef {

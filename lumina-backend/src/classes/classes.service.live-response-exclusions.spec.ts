@@ -52,7 +52,10 @@ describe('ClassesService.upsertLiveStudentResponse — exclusiones de class_resu
     service = module.get<ClassesService>(ClassesService);
   });
 
-  function responder(activityType: string, response: unknown = { answer: 'a' }) {
+  function responder(
+    activityType: string,
+    response: unknown = { answer: 'a' },
+  ) {
     return service.upsertLiveStudentResponse({
       classId: CLASS_ID,
       slideId: SLIDE_ID,
@@ -82,7 +85,10 @@ describe('ClassesService.upsertLiveStudentResponse — exclusiones de class_resu
   });
 
   it('un draft sigue sin persistir', async () => {
-    await responder('quiz_multiple', wrapActivityDraftResponse({ answer: 'a' }));
+    await responder(
+      'quiz_multiple',
+      wrapActivityDraftResponse({ answer: 'a' }),
+    );
 
     expect(classResultUpsert).not.toHaveBeenCalled();
   });

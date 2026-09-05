@@ -1,110 +1,199 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
-const PizZip = require('pizzip');
-import { parseStringPromise } from 'xml2js'
+import { Injectable, BadRequestException } from '@nestjs/common';
+import PizZip from 'pizzip';
+import { parseStringPromise } from 'xml2js';
 
 // ── Constantes de conversión ──────────────────────────────────────────────────
 
 // Dimensiones estándar de un slide PowerPoint en EMU
-const PPT_WIDTH_EMU  = 9144000   // 10 pulgadas = 1280px en Lumina
-const PPT_HEIGHT_EMU = 5143500   // 7.5 pulgadas = 720px en Lumina
+const PPT_WIDTH_EMU = 9144000; // 10 pulgadas = 1280px en Lumina
+const PPT_HEIGHT_EMU = 5143500; // 7.5 pulgadas = 720px en Lumina
 
 // Convierte EMU a porcentaje del slide (0-100)
 function emuToXPct(emu: number): number {
-  return Math.round((emu / PPT_WIDTH_EMU)  * 100 * 10) / 10
+  return Math.round((emu / PPT_WIDTH_EMU) * 100 * 10) / 10;
 }
 function emuToYPct(emu: number): number {
-  return Math.round((emu / PPT_HEIGHT_EMU) * 100 * 10) / 10
+  return Math.round((emu / PPT_HEIGHT_EMU) * 100 * 10) / 10;
 }
 
-// Extrae número de una cadena EMU (puede venir como string o number)
-function parseEmu(val: unknown): number {
-  const n = parseInt(String(val ?? '0'), 10)
-  return isNaN(n) ? 0 : n
+// Extrae número de un atributo XML EMU (xml2js entrega atributos como string)
+function parseEmu(val: string | undefined): number {
+  const n = parseInt(val ?? '0', 10);
+  return isNaN(n) ? 0 : n;
 }
 
 // Convierte puntos (pt) a px aproximado para fontSize de Lumina
 function ptToPx(pt: number): number {
-  return Math.round(pt * 1.333)
+  return Math.round(pt * 1.333);
 }
 
 // Extrae tamaño de fuente en pt desde el XML (viene como centésimas de punto)
-function parseFontSize(val: unknown): number {
-  const n = parseInt(String(val ?? '1800'), 10)
-  return Math.round(n / 100)  // centésimas de punto → puntos
+function parseFontSize(val: string | undefined): number {
+  const n = parseInt(val ?? '1800', 10);
+  return Math.round(n / 100); // centésimas de punto → puntos
 }
 
 // Extrae color hex desde atributo XML (ej: "FF0000" → "#FF0000")
-function parseColor(val: unknown): string {
-  const s = String(val ?? '').replace('#', '')
-  return s.length === 6 ? `#${s}` : '#1a1a1a'
+function parseColor(val: string | undefined): string {
+  const s = (val ?? '').replace('#', '');
+  return s.length === 6 ? `#${s}` : '#1a1a1a';
 }
 
 // ── Tipos de salida ───────────────────────────────────────────────────────────
 
 interface LuminaBlock {
-  tipo: 'texto' | 'imagen'
-  contenido?: string
-  url?: string
-  x: number
-  y: number
-  ancho: number
-  alto: number
-  tamanoFuente?: string
-  negrita?: boolean
-  cursiva?: boolean
-  color?: string
-  alineacion?: 'izquierda' | 'centro' | 'derecha'
-  ajuste?: string
-  zIndex: number
+  tipo: 'texto' | 'imagen';
+  contenido?: string;
+  url?: string;
+  x: number;
+  y: number;
+  ancho: number;
+  alto: number;
+  tamanoFuente?: string;
+  negrita?: boolean;
+  cursiva?: boolean;
+  color?: string;
+  alineacion?: 'izquierda' | 'centro' | 'derecha';
+  ajuste?: string;
+  zIndex: number;
 }
 
 export interface LuminaSlideImportado {
-  titulo: string
-  bloques: LuminaBlock[]
-  fondo: { tipo: 'color'; valor: string }
-  layout: string
+  titulo: string;
+  bloques: LuminaBlock[];
+  fondo: { tipo: 'color'; valor: string };
+  layout: string;
+}
+
+// ── Formas XML de xml2js (explicitArray: true) ─────────────────────────────────
+// xml2js envuelve todo elemento en un array y pone los atributos bajo `$`.
+// Estas interfaces cubren únicamente el subconjunto de OOXML PresentationML
+// que este parser lee — no son el esquema PPTX completo.
+
+type XmlAttrs = Record<string, string | undefined>;
+
+interface XmlOffExt {
+  $: XmlAttrs;
+}
+
+interface XmlXfrm {
+  'a:off'?: XmlOffExt[];
+  'a:ext'?: XmlOffExt[];
+}
+
+interface XmlSpPr {
+  'a:xfrm'?: XmlXfrm[];
+}
+
+interface XmlSolidFill {
+  'a:srgbClr'?: { $: XmlAttrs }[];
+}
+
+interface XmlRunProps {
+  $?: XmlAttrs;
+  'a:solidFill'?: XmlSolidFill[];
+}
+
+interface XmlRun {
+  'a:rPr'?: XmlRunProps[];
+  'a:t'?: string[];
+}
+
+interface XmlParagraphProps {
+  $?: XmlAttrs;
+}
+
+interface XmlParagraph {
+  'a:pPr'?: XmlParagraphProps[];
+  'a:r'?: XmlRun[];
+}
+
+interface XmlTxBody {
+  'a:p'?: XmlParagraph[];
+}
+
+interface XmlShape {
+  'p:spPr'?: XmlSpPr[];
+  'p:txBody'?: XmlTxBody[];
+}
+
+interface XmlBlipFill {
+  'a:blip'?: { $: XmlAttrs }[];
+}
+
+interface XmlPic {
+  'p:spPr'?: XmlSpPr[];
+  'p:blipFill'?: XmlBlipFill[];
+}
+
+interface XmlBg {
+  'p:bgPr'?: { 'a:solidFill'?: XmlSolidFill[] }[];
+}
+
+interface XmlSpTree {
+  'p:sp'?: XmlShape[];
+  'p:pic'?: XmlPic[];
+}
+
+interface XmlCSld {
+  'p:spTree'?: XmlSpTree[];
+  'p:bg'?: XmlBg[];
+}
+
+interface XmlSlideRoot {
+  'p:sld'?: { 'p:cSld'?: XmlCSld[] };
+}
+
+interface XmlContentTypesRoot {
+  Types?: { Override?: { $: XmlAttrs }[] };
+}
+
+interface XmlRelationshipsRoot {
+  Relationships?: { Relationship?: { $: XmlAttrs }[] };
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
 @Injectable()
 export class PptxService {
-
   async importPptx(buffer: Buffer): Promise<LuminaSlideImportado[]> {
-    let zip: any
+    let zip: PizZip;
     try {
-      zip = new PizZip(buffer)
+      zip = new PizZip(buffer);
     } catch {
-      throw new BadRequestException('El archivo no es un .pptx válido')
+      throw new BadRequestException('El archivo no es un .pptx válido');
     }
 
     // Leer el número de slides desde [Content_Types].xml
-    const contentTypesXml = zip.file('[Content_Types].xml')?.asText()
-    if (!contentTypesXml) throw new BadRequestException('Archivo .pptx corrupto')
+    const contentTypesXml = zip.file('[Content_Types].xml')?.asText();
+    if (!contentTypesXml)
+      throw new BadRequestException('Archivo .pptx corrupto');
 
-    const contentTypes = await parseStringPromise(contentTypesXml)
-    const overrides: any[] = contentTypes?.Types?.Override ?? []
+    const contentTypes = (await parseStringPromise(
+      contentTypesXml,
+    )) as XmlContentTypesRoot;
+    const overrides = contentTypes?.Types?.Override ?? [];
     const slidePartNames = overrides
-      .filter((o: any) => (o?.$?.ContentType ?? '').includes('slide+xml'))
-      .map((o: any) => o?.$?.PartName ?? '')
+      .filter((o) => (o?.$?.ContentType ?? '').includes('slide+xml'))
+      .map((o) => o?.$?.PartName ?? '')
       .filter(Boolean)
-      .sort()  // ppt/slides/slide1.xml, slide2.xml, etc.
+      .sort(); // ppt/slides/slide1.xml, slide2.xml, etc.
 
     if (!slidePartNames.length) {
-      throw new BadRequestException('No se encontraron slides en el archivo')
+      throw new BadRequestException('No se encontraron slides en el archivo');
     }
 
-    const slides: LuminaSlideImportado[] = []
+    const slides: LuminaSlideImportado[] = [];
 
     for (const partName of slidePartNames) {
       // partName = "/ppt/slides/slide1.xml" → "ppt/slides/slide1.xml"
-      const relativePath = partName.replace(/^\//, '')
-      const slideXml = zip.file(relativePath)?.asText()
-      if (!slideXml) continue
+      const relativePath = partName.replace(/^\//, '');
+      const slideXml = zip.file(relativePath)?.asText();
+      if (!slideXml) continue;
 
       try {
-        const slide = await this.parseSlide(slideXml, zip, relativePath)
-        slides.push(slide)
+        const slide = await this.parseSlide(slideXml, zip, relativePath);
+        slides.push(slide);
       } catch {
         // Si un slide falla, continuar con los demás
         slides.push({
@@ -112,85 +201,90 @@ export class PptxService {
           bloques: [],
           fondo: { tipo: 'color', valor: '#ffffff' },
           layout: 'en_blanco',
-        })
+        });
       }
     }
 
-    return slides
+    return slides;
   }
 
   private async parseSlide(
     slideXml: string,
-    zip: any,
+    zip: PizZip,
     slidePath: string,
   ): Promise<LuminaSlideImportado> {
-    const parsed = await parseStringPromise(slideXml, { explicitArray: true })
-    const spTree = parsed?.['p:sld']?.['p:cSld']?.[0]?.['p:spTree']?.[0]
+    const parsed = (await parseStringPromise(slideXml, {
+      explicitArray: true,
+    })) as XmlSlideRoot;
+    const spTree = parsed?.['p:sld']?.['p:cSld']?.[0]?.['p:spTree']?.[0];
 
-    const bloques: LuminaBlock[] = []
-    let zIndex = 1
+    const bloques: LuminaBlock[] = [];
+    let zIndex = 1;
 
     // ── Extraer formas de texto (sp) ─────────────────────────────────────────
-    const shapes: any[] = spTree?.['p:sp'] ?? []
+    const shapes = spTree?.['p:sp'] ?? [];
     for (const sp of shapes) {
-      const spPr = sp?.['p:spPr']?.[0]
-      const txBody = sp?.['p:txBody']?.[0]
+      const spPr = sp?.['p:spPr']?.[0];
+      const txBody = sp?.['p:txBody']?.[0];
 
-      if (!spPr || !txBody) continue
+      if (!spPr || !txBody) continue;
 
       // Posición y tamaño
-      const xfrm = spPr?.['a:xfrm']?.[0]
-      if (!xfrm) continue
+      const xfrm = spPr?.['a:xfrm']?.[0];
+      if (!xfrm) continue;
 
-      const offX = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.x)
-      const offY = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.y)
-      const extCx = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cx)
-      const extCy = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cy)
+      const offX = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.x);
+      const offY = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.y);
+      const extCx = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cx);
+      const extCy = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cy);
 
-      const x = emuToXPct(offX)
-      const y = emuToYPct(offY)
-      const ancho = emuToXPct(extCx)
-      const alto = emuToYPct(extCy)
+      const x = emuToXPct(offX);
+      const y = emuToYPct(offY);
+      const ancho = emuToXPct(extCx);
+      const alto = emuToYPct(extCy);
 
       // Ignorar bloques fuera del slide o de tamaño cero
-      if (ancho < 1 || alto < 1) continue
-      if (x > 100 || y > 100) continue
+      if (ancho < 1 || alto < 1) continue;
+      if (x > 100 || y > 100) continue;
 
       // Extraer texto de todos los párrafos
-      const parrafos: any[] = txBody?.['a:p'] ?? []
-      const lineas: string[] = []
-      let tamanoFuente = 18
-      let negrita = false
-      let cursiva = false
-      let color = '#1a1a1a'
-      let alineacion: 'izquierda' | 'centro' | 'derecha' = 'izquierda'
+      const parrafos = txBody?.['a:p'] ?? [];
+      const lineas: string[] = [];
+      let tamanoFuente = 18;
+      let negrita = false;
+      let cursiva = false;
+      let color = '#1a1a1a';
+      let alineacion: 'izquierda' | 'centro' | 'derecha' = 'izquierda';
 
       for (const p of parrafos) {
         // Alineación del párrafo
-        const pPr = p?.['a:pPr']?.[0]
-        const algn = pPr?.['$']?.algn
-        if (algn === 'ctr') alineacion = 'centro'
-        else if (algn === 'r') alineacion = 'derecha'
+        const pPr = p?.['a:pPr']?.[0];
+        const algn = pPr?.['$']?.algn;
+        if (algn === 'ctr') alineacion = 'centro';
+        else if (algn === 'r') alineacion = 'derecha';
 
-        const runs: any[] = p?.['a:r'] ?? []
-        const textoDePar = runs.map((r: any) => {
-          const rPr = r?.['a:rPr']?.[0]
-          if (rPr) {
-            const sz = rPr?.['$']?.sz
-            if (sz) tamanoFuente = ptToPx(parseFontSize(sz))
-            if (rPr?.['$']?.b === '1') negrita = true
-            if (rPr?.['$']?.i === '1') cursiva = true
-            const solidFill = rPr?.['a:solidFill']?.[0]?.['a:srgbClr']?.[0]?.['$']?.val
-            if (solidFill) color = parseColor(solidFill)
-          }
-          return r?.['a:t']?.[0] ?? ''
-        }).join('')
+        const runs = p?.['a:r'] ?? [];
+        const textoDePar = runs
+          .map((r) => {
+            const rPr = r?.['a:rPr']?.[0];
+            if (rPr) {
+              const sz = rPr?.['$']?.sz;
+              if (sz) tamanoFuente = ptToPx(parseFontSize(sz));
+              if (rPr?.['$']?.b === '1') negrita = true;
+              if (rPr?.['$']?.i === '1') cursiva = true;
+              const solidFill =
+                rPr?.['a:solidFill']?.[0]?.['a:srgbClr']?.[0]?.['$']?.val;
+              if (solidFill) color = parseColor(solidFill);
+            }
+            return r?.['a:t']?.[0] ?? '';
+          })
+          .join('');
 
-        if (textoDePar.trim()) lineas.push(textoDePar)
+        if (textoDePar.trim()) lineas.push(textoDePar);
       }
 
-      const contenido = lineas.join('\n')
-      if (!contenido.trim()) continue
+      const contenido = lineas.join('\n');
+      if (!contenido.trim()) continue;
 
       bloques.push({
         tipo: 'texto',
@@ -205,66 +299,70 @@ export class PptxService {
         color,
         alineacion,
         zIndex: zIndex++,
-      })
+      });
     }
 
     // ── Extraer imágenes (pic) ────────────────────────────────────────────────
-    const pics: any[] = spTree?.['p:pic'] ?? []
+    const pics = spTree?.['p:pic'] ?? [];
     for (const pic of pics) {
-      const spPr = pic?.['p:spPr']?.[0]
-      const blipFill = pic?.['p:blipFill']?.[0]
+      const spPr = pic?.['p:spPr']?.[0];
+      const blipFill = pic?.['p:blipFill']?.[0];
 
-      if (!spPr || !blipFill) continue
+      if (!spPr || !blipFill) continue;
 
-      const xfrm = spPr?.['a:xfrm']?.[0]
-      if (!xfrm) continue
+      const xfrm = spPr?.['a:xfrm']?.[0];
+      if (!xfrm) continue;
 
-      const offX = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.x)
-      const offY = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.y)
-      const extCx = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cx)
-      const extCy = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cy)
+      const offX = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.x);
+      const offY = parseEmu(xfrm?.['a:off']?.[0]?.['$']?.y);
+      const extCx = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cx);
+      const extCy = parseEmu(xfrm?.['a:ext']?.[0]?.['$']?.cy);
 
-      const x = emuToXPct(offX)
-      const y = emuToYPct(offY)
-      const ancho = emuToXPct(extCx)
-      const alto = emuToYPct(extCy)
+      const x = emuToXPct(offX);
+      const y = emuToYPct(offY);
+      const ancho = emuToXPct(extCx);
+      const alto = emuToYPct(extCy);
 
-      if (ancho < 1 || alto < 1) continue
+      if (ancho < 1 || alto < 1) continue;
 
       // Obtener referencia a la imagen en el zip
-      const rId = blipFill?.['a:blip']?.[0]?.['$']?.['r:embed']
-      if (!rId) continue
+      const rId = blipFill?.['a:blip']?.[0]?.['$']?.['r:embed'];
+      if (!rId) continue;
 
       // Resolver la ruta de la imagen desde el archivo .rels
-      const slideDir = slidePath.substring(0, slidePath.lastIndexOf('/'))
-      const relsPath = `${slideDir}/_rels/${slidePath.substring(slidePath.lastIndexOf('/') + 1)}.rels`
-      const relsXml = zip.file(relsPath)?.asText()
-      if (!relsXml) continue
+      const slideDir = slidePath.substring(0, slidePath.lastIndexOf('/'));
+      const relsPath = `${slideDir}/_rels/${slidePath.substring(slidePath.lastIndexOf('/') + 1)}.rels`;
+      const relsXml = zip.file(relsPath)?.asText();
+      if (!relsXml) continue;
 
-      const rels = await parseStringPromise(relsXml)
-      const relationships: any[] = rels?.Relationships?.Relationship ?? []
-      const rel = relationships.find((r: any) => r?.['$']?.Id === rId)
-      if (!rel) continue
+      const rels = (await parseStringPromise(relsXml)) as XmlRelationshipsRoot;
+      const relationships = rels?.Relationships?.Relationship ?? [];
+      const rel = relationships.find((r) => r?.['$']?.Id === rId);
+      if (!rel) continue;
 
-      const targetRel = rel?.['$']?.Target ?? ''
+      const targetRel = rel?.['$']?.Target ?? '';
       // Target puede ser relativo: "../media/image1.png"
       const imagePath = targetRel.startsWith('/')
         ? targetRel.replace(/^\//, '')
-        : `ppt/slides/${targetRel}`.replace(/\/[^/]+\/\.\.\//g, '/')
+        : `ppt/slides/${targetRel}`.replace(/\/[^/]+\/\.\.\//g, '/');
 
-      const imageFile = zip.file(imagePath)
-      if (!imageFile) continue
+      const imageFile = zip.file(imagePath);
+      if (!imageFile) continue;
 
       // Convertir imagen a base64 data URL
-      const imageBuffer = imageFile.asNodeBuffer()
-      const ext = imagePath.split('.').pop()?.toLowerCase() ?? 'png'
+      const imageBuffer = imageFile.asNodeBuffer();
+      const ext = imagePath.split('.').pop()?.toLowerCase() ?? 'png';
       const mimeMap: Record<string, string> = {
-        png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-        gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
-      }
-      const mime = mimeMap[ext] ?? 'image/png'
-      const base64 = imageBuffer.toString('base64')
-      const dataUrl = `data:${mime};base64,${base64}`
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        gif: 'image/gif',
+        webp: 'image/webp',
+        svg: 'image/svg+xml',
+      };
+      const mime = mimeMap[ext] ?? 'image/png';
+      const base64 = imageBuffer.toString('base64');
+      const dataUrl = `data:${mime};base64,${base64}`;
 
       bloques.push({
         tipo: 'imagen',
@@ -275,43 +373,46 @@ export class PptxService {
         alto: Math.min(100, alto),
         ajuste: 'contener',
         zIndex: zIndex++,
-      })
+      });
     }
 
     // ── Fondo ─────────────────────────────────────────────────────────────────
-    const bg = parsed?.['p:sld']?.['p:cSld']?.[0]?.['p:bg']?.[0]
-    let fondoColor = '#ffffff'
-    const solidFillBg = bg?.['p:bgPr']?.[0]?.['a:solidFill']?.[0]?.['a:srgbClr']?.[0]?.['$']?.val
-    if (solidFillBg) fondoColor = parseColor(solidFillBg)
+    const bg = parsed?.['p:sld']?.['p:cSld']?.[0]?.['p:bg']?.[0];
+    let fondoColor = '#ffffff';
+    const solidFillBg =
+      bg?.['p:bgPr']?.[0]?.['a:solidFill']?.[0]?.['a:srgbClr']?.[0]?.['$']?.val;
+    if (solidFillBg) fondoColor = parseColor(solidFillBg);
 
     // ── Determinar layout ─────────────────────────────────────────────────────
     // Heurística: si hay 1 bloque de texto grande → titulo_centrado
     // Si hay texto izq + imagen der → imagen_derecha
     // Si hay 2 columnas de texto → dos_columnas
     // Por defecto → en_blanco (posicionamiento libre)
-    let layout = 'en_blanco'
-    const textBloques = bloques.filter(b => b.tipo === 'texto')
-    const imgBloques  = bloques.filter(b => b.tipo === 'imagen')
+    let layout = 'en_blanco';
+    const textBloques = bloques.filter((b) => b.tipo === 'texto');
+    const imgBloques = bloques.filter((b) => b.tipo === 'imagen');
 
     if (textBloques.length === 1 && imgBloques.length === 0) {
-      layout = 'titulo_centrado'
+      layout = 'titulo_centrado';
     } else if (textBloques.length >= 1 && imgBloques.length >= 1) {
-      const img = imgBloques[0]!
-      layout = img.x > 50 ? 'imagen_derecha' : 'imagen_izquierda'
+      const img = imgBloques[0];
+      layout = img.x > 50 ? 'imagen_derecha' : 'imagen_izquierda';
     } else if (textBloques.length === 2 && imgBloques.length === 0) {
-      layout = 'dos_columnas'
+      layout = 'dos_columnas';
     } else if (textBloques.length >= 2) {
-      layout = 'titulo_y_contenido'
+      layout = 'titulo_y_contenido';
     }
 
     // Título del slide: primer bloque de texto más grande o el de y más pequeño
-    const titulo = textBloques.sort((a, b) => a.y - b.y)[0]?.contenido?.split('\n')[0] ?? 'Slide importado'
+    const titulo =
+      textBloques.sort((a, b) => a.y - b.y)[0]?.contenido?.split('\n')[0] ??
+      'Slide importado';
 
     return {
       titulo: titulo.slice(0, 80),
       bloques,
       fondo: { tipo: 'color', valor: fondoColor },
       layout,
-    }
+    };
   }
 }

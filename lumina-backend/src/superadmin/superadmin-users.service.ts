@@ -107,7 +107,9 @@ export class SuperadminUsersService {
 
   private async loadTarget(adminId: string, id: string) {
     if (adminId === id) {
-      throw new ForbiddenException('No puedes ejecutar esta acción sobre tu propia cuenta.');
+      throw new ForbiddenException(
+        'No puedes ejecutar esta acción sobre tu propia cuenta.',
+      );
     }
     const target = await this.prisma.user.findUnique({
       where: { id },
@@ -115,7 +117,9 @@ export class SuperadminUsersService {
     });
     if (!target) throw new NotFoundException('Usuario no encontrado.');
     if (target.role === Role.SUPERADMIN) {
-      throw new ForbiddenException('No se puede operar sobre una cuenta SUPERADMIN.');
+      throw new ForbiddenException(
+        'No se puede operar sobre una cuenta SUPERADMIN.',
+      );
     }
     return target;
   }
@@ -127,7 +131,9 @@ export class SuperadminUsersService {
       data: { isActive: false },
       select: USER_LIST_SELECT,
     });
-    await this.audit.record(adminId, AUDIT_ACTIONS.USER_SUSPEND, { targetUserId: id });
+    await this.audit.record(adminId, AUDIT_ACTIONS.USER_SUSPEND, {
+      targetUserId: id,
+    });
     return updated;
   }
 
@@ -138,7 +144,9 @@ export class SuperadminUsersService {
       data: { isActive: true },
       select: USER_LIST_SELECT,
     });
-    await this.audit.record(adminId, AUDIT_ACTIONS.USER_REACTIVATE, { targetUserId: id });
+    await this.audit.record(adminId, AUDIT_ACTIONS.USER_REACTIVATE, {
+      targetUserId: id,
+    });
     return updated;
   }
 
@@ -152,7 +160,9 @@ export class SuperadminUsersService {
       data: { deletedAt: new Date(), isActive: false },
       select: USER_LIST_SELECT,
     });
-    await this.audit.record(adminId, AUDIT_ACTIONS.USER_SOFT_DELETE, { targetUserId: id });
+    await this.audit.record(adminId, AUDIT_ACTIONS.USER_SOFT_DELETE, {
+      targetUserId: id,
+    });
     return updated;
   }
 
@@ -166,7 +176,9 @@ export class SuperadminUsersService {
       data: { deletedAt: null, isActive: true },
       select: USER_LIST_SELECT,
     });
-    await this.audit.record(adminId, AUDIT_ACTIONS.USER_RESTORE, { targetUserId: id });
+    await this.audit.record(adminId, AUDIT_ACTIONS.USER_RESTORE, {
+      targetUserId: id,
+    });
     return updated;
   }
 
@@ -177,7 +189,9 @@ export class SuperadminUsersService {
       where: { id },
       data: { password: await bcrypt.hash(temporaryPassword, 12) },
     });
-    await this.audit.record(adminId, AUDIT_ACTIONS.USER_PASSWORD_RESET, { targetUserId: id });
+    await this.audit.record(adminId, AUDIT_ACTIONS.USER_PASSWORD_RESET, {
+      targetUserId: id,
+    });
     // Se devuelve en claro UNA sola vez — el admin la comunica al docente.
     return { temporaryPassword };
   }
@@ -187,7 +201,9 @@ export class SuperadminUsersService {
   async approveVerification(adminId: string, id: string) {
     const target = await this.loadTarget(adminId, id);
     if (!isTeacherRole(target.role)) {
-      throw new BadRequestException('La verificación sólo aplica a cuentas docentes.');
+      throw new BadRequestException(
+        'La verificación sólo aplica a cuentas docentes.',
+      );
     }
     const updated = await this.prisma.user.update({
       where: { id },
@@ -200,14 +216,18 @@ export class SuperadminUsersService {
       },
       select: USER_LIST_SELECT,
     });
-    await this.audit.record(adminId, AUDIT_ACTIONS.VERIFICATION_APPROVE, { targetUserId: id });
+    await this.audit.record(adminId, AUDIT_ACTIONS.VERIFICATION_APPROVE, {
+      targetUserId: id,
+    });
     return updated;
   }
 
   async rejectVerification(adminId: string, id: string, reason: string) {
     const target = await this.loadTarget(adminId, id);
     if (!isTeacherRole(target.role)) {
-      throw new BadRequestException('La verificación sólo aplica a cuentas docentes.');
+      throw new BadRequestException(
+        'La verificación sólo aplica a cuentas docentes.',
+      );
     }
     const updated = await this.prisma.user.update({
       where: { id },

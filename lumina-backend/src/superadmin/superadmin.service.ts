@@ -31,7 +31,9 @@ export class SuperadminService {
       orderBy: { createdAt: 'desc' },
       include: {
         createdBy: { select: { id: true, name: true, lastName: true } },
-        usedBy: { select: { id: true, name: true, lastName: true, email: true } },
+        usedBy: {
+          select: { id: true, name: true, lastName: true, email: true },
+        },
       },
     });
   }
@@ -118,7 +120,9 @@ export class SuperadminService {
   }
 
   async deleteTrustedDomain(adminId: string, id: string) {
-    const domain = await this.prisma.trustedDomain.findUnique({ where: { id } });
+    const domain = await this.prisma.trustedDomain.findUnique({
+      where: { id },
+    });
     if (!domain) throw new NotFoundException('Dominio no encontrado.');
 
     await this.prisma.trustedDomain.delete({ where: { id } });
@@ -147,7 +151,9 @@ export class SuperadminService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
-          admin: { select: { id: true, name: true, lastName: true, email: true } },
+          admin: {
+            select: { id: true, name: true, lastName: true, email: true },
+          },
           targetUser: {
             select: { id: true, name: true, lastName: true, email: true },
           },

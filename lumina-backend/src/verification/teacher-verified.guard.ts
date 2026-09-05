@@ -8,7 +8,10 @@ import {
 import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { VERIFICATION_REQUIRED_MESSAGE } from './verification.constants';
 import { VerificationService } from './verification.service';
-import { canPublishOrInvite, resolveEffectiveStatus } from './verification.util';
+import {
+  canPublishOrInvite,
+  resolveEffectiveStatus,
+} from './verification.util';
 
 /**
  * Bloquea publicar clases / iniciar sesión en vivo / abrir sesión autónoma a
@@ -23,9 +26,7 @@ export class TeacherVerifiedGuard implements CanActivate {
   constructor(private readonly verification: VerificationService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context
-      .switchToHttp()
-      .getRequest<{ user?: JwtAuthUser }>();
+    const req = context.switchToHttp().getRequest<{ user?: JwtAuthUser }>();
     const user = req.user;
     if (!user) return true; // JwtAuthGuard ya habría rechazado; no es cosa de este guard.
 

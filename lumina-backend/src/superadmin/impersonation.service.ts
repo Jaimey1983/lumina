@@ -64,7 +64,9 @@ export class ImpersonationService {
     });
     if (!target) throw new NotFoundException('Usuario no encontrado.');
     if (target.role === Role.SUPERADMIN) {
-      throw new ForbiddenException('No se puede impersonar una cuenta SUPERADMIN.');
+      throw new ForbiddenException(
+        'No se puede impersonar una cuenta SUPERADMIN.',
+      );
     }
     if (target.deletedAt || !target.isActive) {
       throw new BadRequestException(
@@ -131,10 +133,14 @@ export class ImpersonationService {
       });
     }
 
-    await this.audit.record(user.impersonatedBy, AUDIT_ACTIONS.IMPERSONATE_END, {
-      targetUserId: user.id,
-      metadata: { jti: user.impersonationJti },
-    });
+    await this.audit.record(
+      user.impersonatedBy,
+      AUDIT_ACTIONS.IMPERSONATE_END,
+      {
+        targetUserId: user.id,
+        metadata: { jti: user.impersonationJti },
+      },
+    );
 
     return { ended: true };
   }

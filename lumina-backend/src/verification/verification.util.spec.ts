@@ -94,7 +94,9 @@ describe('resolveEffectiveStatus (expiración perezosa)', () => {
 
 describe('canPublishOrInvite', () => {
   it('roles no docentes siempre pueden (guard no aplica)', () => {
-    expect(canPublishOrInvite(Role.ADMIN, VerificationStatus.PENDING)).toBe(true);
+    expect(canPublishOrInvite(Role.ADMIN, VerificationStatus.PENDING)).toBe(
+      true,
+    );
     expect(canPublishOrInvite(Role.SUPERADMIN, null)).toBe(true);
     expect(canPublishOrInvite(Role.STUDENT, VerificationStatus.REJECTED)).toBe(
       true,

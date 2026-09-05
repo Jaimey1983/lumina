@@ -20,7 +20,10 @@ interface EvaluationCase {
 }
 
 const fixtures = JSON.parse(
-  readFileSync(join(__dirname, 'class-results-gradebook.fixtures.json'), 'utf8'),
+  readFileSync(
+    join(__dirname, 'class-results-gradebook.fixtures.json'),
+    'utf8',
+  ),
 ) as { evaluationCases: EvaluationCase[] };
 
 describe('resolvePersistedMaxScore', () => {
@@ -94,15 +97,21 @@ describe('resolvePersistedClassResultScore', () => {
 describe('toPersistedResponseJson', () => {
   it('guarda response tal cual, sin envolver ni transformar', () => {
     const raw = { b1: '  bogotá  ' };
-    expect(toPersistedResponseJson({ activityType: 'completar_blancos', response: raw })).toBe(
-      raw,
-    );
+    expect(
+      toPersistedResponseJson({
+        activityType: 'completar_blancos',
+        response: raw,
+      }),
+    ).toBe(raw);
     const video = [
       { questionIndex: 0, answer: 'a' },
       { questionIndex: 1, answer: 'b' },
     ];
     expect(
-      toPersistedResponseJson({ activityType: 'video_interactivo', response: video }),
+      toPersistedResponseJson({
+        activityType: 'video_interactivo',
+        response: video,
+      }),
     ).toBe(video);
   });
 });
@@ -111,9 +120,10 @@ describe('reconstrucción Fase 3 (response + definición → mismo score)', () =
   it.each(
     fixtures.evaluationCases
       .filter((c) =>
-        ['fase2_blancos_trim_y_mayusculas', 'fase2_video_sin_duplicados'].includes(
-          c.case,
-        ),
+        [
+          'fase2_blancos_trim_y_mayusculas',
+          'fase2_video_sin_duplicados',
+        ].includes(c.case),
       )
       .map((c) => [c.case, c]),
   )('%s', (_name, c: EvaluationCase) => {

@@ -273,8 +273,14 @@ export class CurriculumService {
       safetySettings: [
         { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
         { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_NONE',
+        },
       ],
     };
 
@@ -401,7 +407,9 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
       let actividadesSugeridas: string[] = buildActividadesFallback(dto);
       if (Array.isArray(actRaw)) {
         const fromAi = actRaw
-          .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+          .filter(
+            (x): x is string => typeof x === 'string' && x.trim().length > 0,
+          )
           .map((s) => s.trim())
           .slice(0, 5);
         if (fromAi.length >= 3) {

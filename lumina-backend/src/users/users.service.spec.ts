@@ -58,7 +58,11 @@ describe('UsersService', () => {
     });
 
     await expect(
-      service.update('u1', { institution: 'Nueva' }, { id: 'u1', role: Role.TEACHER }),
+      service.update(
+        'u1',
+        { institution: 'Nueva' },
+        { id: 'u1', role: Role.TEACHER },
+      ),
     ).resolves.toEqual(expect.objectContaining({ institution: 'Nueva' }));
   });
 

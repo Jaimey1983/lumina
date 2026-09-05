@@ -9,7 +9,13 @@ import { TorneoModule } from '../torneo/torneo.module';
 import { QuizLiveModule } from '../quiz-live/quiz-live.module';
 
 @Module({
-  imports: [AuthModule, AnalyticsModule, TorneoModule, EscapeRoomModule, QuizLiveModule],
+  imports: [
+    AuthModule,
+    AnalyticsModule,
+    TorneoModule,
+    EscapeRoomModule,
+    QuizLiveModule,
+  ],
   providers: [LiveSessionsGateway, LiveSessionsService],
   exports: [LiveSessionsService],
 })

@@ -61,7 +61,10 @@ function isOptionSetCorrect(
 export class QuizLiveService {
   private readonly sessions = new Map<string, QuizLiveSession>();
 
-  getSession(classId: string, quizBlockId: string): QuizLiveSession | undefined {
+  getSession(
+    classId: string,
+    quizBlockId: string,
+  ): QuizLiveSession | undefined {
     return this.sessions.get(sessionKey(classId, quizBlockId));
   }
 
@@ -199,7 +202,11 @@ export class QuizLiveService {
     questionId: string;
     optionIds: string[];
     opciones: { id: string; esCorrecta?: boolean }[];
-  }): { correct: boolean; alreadyAnswered: boolean; answeredCount: number } | null {
+  }): {
+    correct: boolean;
+    alreadyAnswered: boolean;
+    answeredCount: number;
+  } | null {
     const session = this.getSession(input.classId, input.quizBlockId);
     if (!session || session.status === 'finished' || !session.questionId) {
       return null;
@@ -219,7 +226,7 @@ export class QuizLiveService {
 
     if (byQuestion.has(input.questionId)) {
       return {
-        correct: byQuestion.get(input.questionId)!.correct,
+        correct: byQuestion.get(input.questionId).correct,
         alreadyAnswered: true,
         answeredCount: this.countAnswersForQuestion(session, input.questionId),
       };
@@ -228,7 +235,9 @@ export class QuizLiveService {
     const started = session.questionStartedAt ?? Date.now();
     const responseMs = Math.max(0, Date.now() - started);
     const opciones =
-      input.opciones.length > 0 ? input.opciones : session.currentQuestionOpciones;
+      input.opciones.length > 0
+        ? input.opciones
+        : session.currentQuestionOpciones;
     const correct = isOptionSetCorrect(opciones, input.optionIds);
     byQuestion.set(input.questionId, {
       optionIds: [...input.optionIds],
@@ -244,7 +253,10 @@ export class QuizLiveService {
     };
   }
 
-  countAnswersForQuestion(session: QuizLiveSession, questionId: string): number {
+  countAnswersForQuestion(
+    session: QuizLiveSession,
+    questionId: string,
+  ): number {
     let n = 0;
     for (const byQ of session.answersByStudent.values()) {
       if (byQ.has(questionId)) n++;
@@ -325,7 +337,11 @@ export class QuizLiveService {
         if (ans.correct) {
           correctCount++;
           const speedBonus = Math.round(
-            500 * Math.max(0, 1 - ans.responseMs / (session.timePerQuestion * 1000)),
+            500 *
+              Math.max(
+                0,
+                1 - ans.responseMs / (session.timePerQuestion * 1000),
+              ),
           );
           points += 1000 + speedBonus;
         }

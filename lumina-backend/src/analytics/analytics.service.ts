@@ -511,7 +511,10 @@ export class AnalyticsService {
     }
   }
 
-  async recordDisconnection(sessionId: string, studentId: string): Promise<void> {
+  async recordDisconnection(
+    sessionId: string,
+    studentId: string,
+  ): Promise<void> {
     try {
       const open = await this.prisma.studentConnection.findFirst({
         where: { sessionId, studentId, disconnectedAt: null },

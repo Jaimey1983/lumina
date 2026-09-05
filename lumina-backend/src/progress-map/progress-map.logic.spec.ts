@@ -64,7 +64,9 @@ describe('progress-map.logic', () => {
 
   it('desbloqueo topológico: raíz available, sucesor locked hasta completar', () => {
     const edges = defaultSequentialEdges(['a', 'b']);
-    expect(deriveNodeStatus('a', new Set(), new Set(), edges)).toBe('available');
+    expect(deriveNodeStatus('a', new Set(), new Set(), edges)).toBe(
+      'available',
+    );
     expect(deriveNodeStatus('b', new Set(), new Set(), edges)).toBe('locked');
     expect(deriveNodeStatus('b', new Set(['a']), new Set(), edges)).toBe(
       'available',

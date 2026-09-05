@@ -160,8 +160,12 @@ describe('evaluateActivityResponse (Fase 2)', () => {
   );
 
   it('encuesta_viva y nube_palabras no se puntúan', () => {
-    expect(evaluateActivityResponse('encuesta_viva', {}, 'sí').score).toBeNull();
-    expect(evaluateActivityResponse('nube_palabras', {}, 'palabra').score).toBeNull();
+    expect(
+      evaluateActivityResponse('encuesta_viva', {}, 'sí').score,
+    ).toBeNull();
+    expect(
+      evaluateActivityResponse('nube_palabras', {}, 'palabra').score,
+    ).toBeNull();
   });
 });
 
@@ -178,12 +182,11 @@ describe('contrato único (Fase 6)', () => {
     );
   });
 
-  it.each(Object.entries(fixtures.expectedKinds).map(([tipo, kind]) => [tipo, kind]))(
-    '%s → %s',
-    (tipo: string, kind: ActivityScoringKind) => {
-      expect(getActivityScoringKind(tipo)).toBe(kind);
-    },
-  );
+  it.each(
+    Object.entries(fixtures.expectedKinds).map(([tipo, kind]) => [tipo, kind]),
+  )('%s → %s', (tipo: string, kind: ActivityScoringKind) => {
+    expect(getActivityScoringKind(tipo)).toBe(kind);
+  });
 
   it('hay un contractCase por cada activityType requerido', () => {
     const covered = new Set(fixtures.contractCases.map((c) => c.activityType));
@@ -215,13 +218,19 @@ describe('contrato único (Fase 6)', () => {
 
 describe('xpFromEvaluation (Fase 6)', () => {
   it('score 5.0 → 100 XP; score 1.0 → 0 XP; score 3.0 → 50 XP', () => {
-    expect(xpFromEvaluation({ score: 5, correct: true, details: [] })).toBe(100);
+    expect(xpFromEvaluation({ score: 5, correct: true, details: [] })).toBe(
+      100,
+    );
     expect(xpFromEvaluation({ score: 1, correct: false, details: [] })).toBe(0);
-    expect(xpFromEvaluation({ score: 3, correct: false, details: [] })).toBe(50);
+    expect(xpFromEvaluation({ score: 3, correct: false, details: [] })).toBe(
+      50,
+    );
   });
 
   it('score null (exclude / manual / participation) → 0 XP', () => {
-    expect(xpFromEvaluation({ score: null, correct: null, details: [] })).toBe(0);
+    expect(xpFromEvaluation({ score: null, correct: null, details: [] })).toBe(
+      0,
+    );
   });
 
   it('XP se deriva del score de evaluateActivityResponse, no de un recálculo crudo', () => {

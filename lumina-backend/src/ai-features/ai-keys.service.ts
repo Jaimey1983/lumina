@@ -224,7 +224,10 @@ export class AiKeysService {
     return this.getSettings(userId);
   }
 
-  async deleteKey(userId: string, provider: AiProvider): Promise<AiSettingsDto> {
+  async deleteKey(
+    userId: string,
+    provider: AiProvider,
+  ): Promise<AiSettingsDto> {
     const result = await this.prisma.teacherAiKey.deleteMany({
       where: { userId, provider },
     });

@@ -540,7 +540,8 @@ Sé estricto pero justo. La puntuación debe reflejar objetivamente la calidad d
     const maxDocChars = 6000;
     const docText =
       dto.documentText.length > maxDocChars
-        ? dto.documentText.slice(0, maxDocChars) + '\n[... documento truncado ...]'
+        ? dto.documentText.slice(0, maxDocChars) +
+          '\n[... documento truncado ...]'
         : dto.documentText;
 
     const system = `Eres un diseñador instruccional experto en educación colombiana.

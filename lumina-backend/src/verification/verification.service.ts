@@ -44,7 +44,10 @@ export class VerificationService {
    * gracia, para que el estado almacenado (y el dashboard futuro) queden al día.
    * No lanza — es un efecto secundario best-effort.
    */
-  async persistLazyExpiry(userId: string, snap: VerificationSnapshot): Promise<void> {
+  async persistLazyExpiry(
+    userId: string,
+    snap: VerificationSnapshot,
+  ): Promise<void> {
     if (
       snap.verificationStatus === VerificationStatus.VERIFIED &&
       resolveEffectiveStatus(snap) === VerificationStatus.EXPIRED
@@ -92,7 +95,10 @@ export class VerificationService {
     if (invitation.revokedAt) {
       throw new ForbiddenException('Este código de invitación fue revocado.');
     }
-    if (invitation.expiresAt && invitation.expiresAt.getTime() <= now.getTime()) {
+    if (
+      invitation.expiresAt &&
+      invitation.expiresAt.getTime() <= now.getTime()
+    ) {
       throw new ForbiddenException('Este código de invitación expiró.');
     }
     if (invitation.usedCount >= invitation.maxUses) {

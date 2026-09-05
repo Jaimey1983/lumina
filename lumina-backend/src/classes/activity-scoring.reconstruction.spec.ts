@@ -30,7 +30,11 @@ const DEFINICION_LIMPIA = {
           texto: 'Opción UUID correcta',
           esCorrecta: true,
         },
-        { id: 'otro-uuid-incorrecto', texto: 'Opción incorrecta', esCorrecta: false },
+        {
+          id: 'otro-uuid-incorrecto',
+          texto: 'Opción incorrecta',
+          esCorrecta: false,
+        },
       ],
     },
   ],
@@ -94,7 +98,7 @@ describe('Fase 3 — Test 1: reconstrucción con dato limpio (nuevo formato)', (
     );
     const detail = result.details.find((d) => d.index === 0);
     expect(detail).toBeDefined();
-    expect(detail!.correct).toBe(false);
+    expect(detail.correct).toBe(false);
   });
 
   it('detail de questionIndex:1 es correct=true (respondió el UUID correcto)', () => {
@@ -105,7 +109,7 @@ describe('Fase 3 — Test 1: reconstrucción con dato limpio (nuevo formato)', (
     );
     const detail = result.details.find((d) => d.index === 1);
     expect(detail).toBeDefined();
-    expect(detail!.correct).toBe(true);
+    expect(detail.correct).toBe(true);
   });
 });
 
@@ -117,13 +121,21 @@ describe('Fase 3 — Test 2: reconstrucción con dato sucio histórico (formato 
     correct: true,
     historial: [
       { answer: 'a', correct: true, questionIndex: 0 },
-      { answer: 'd67d15fb-3647-4e40-95e5-d205cc5496ec', correct: true, questionIndex: 1 },
+      {
+        answer: 'd67d15fb-3647-4e40-95e5-d205cc5496ec',
+        correct: true,
+        questionIndex: 1,
+      },
     ],
   };
 
   it('no lanza error — normalizeVideoAnswers ignora el campo correct embebido (workaround sigue vivo)', () => {
     expect(() =>
-      evaluateActivityResponse('video_interactivo', DEFINICION_HISTORICA, RESPONSE_SUCIA),
+      evaluateActivityResponse(
+        'video_interactivo',
+        DEFINICION_HISTORICA,
+        RESPONSE_SUCIA,
+      ),
     ).not.toThrow();
   });
 
