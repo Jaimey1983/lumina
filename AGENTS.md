@@ -223,9 +223,10 @@ Precondición global cumplida: `pnpm lint` estricto en verde en ambos paquetes (
 Orden: **E1.1 → (E1.2 ∥ E1.3) → E1.4**. E1 se cierra cuando las cuatro están `hecho` y la prueba de paridad del Botón pasa.
 Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packages:` (la raíz tiene un `pnpm-workspace.yaml` solo con `allowBuilds:`); `lumina-frontend` y `lumina-backend` se instalan por separado, cada uno con su `pnpm-lock.yaml` y su `pnpm-workspace.yaml`. El widget Botón ya está partido en `lumina-frontend/src/components/widgets/boton/` (`boton-defaults.ts`, `boton-editor.tsx`, `boton-viewer.tsx`, `boton-properties.tsx`, `boton-config.ts`, `boton-parts.tsx`). El dispatch de widgets vive en `slide-renderer.tsx` — **congelado para E5**.
 
-##### E1.1 — Workspace pnpm real en la raíz
+##### E1.1 — Workspace pnpm real en la raíz · **hecho** (commit `43cbfca`)
 - **Operador:** Antigravity
-- **Estado:** en revisión — workspace pnpm consolidado en raíz con lockfile único; scripts verificados con pnpm --filter en ambos paquetes (backend 243 tests, frontend 446, 0 lint error, builds pasando).
+- **Estado:** hecho — verificado por Claude Code: `pnpm install --frozen-lockfile` desde la raíz resuelve (3 proyectos); `pnpm --filter lumina-backend lint/test/build` → 0 lint, **243/243** tests (238 base + 5 de F1.4), build OK; `pnpm --filter lumina-frontend lint/test:unit/build` → 0 errores (70 warnings), **446/446**, build OK (17/17 páginas). `ci.yml`: ambos jobs instalan en la raíz y usan `pnpm --filter`. No se tocó nada bajo `src/` ni `prisma/`.
+- **Desvío de alcance (menor, aceptado):** se añadió `serverExternalPackages: ['paper']` a `lumina-frontend/next.config.ts` — la ficha decía "NO toca `next.config`". Es necesario para que `paper` resuelva bajo el `node_modules` hoisteado del workspace; el build pasa. Antigravity debió marcar `bloqueado` y pedir ampliar la ficha en vez de tocarlo directo (Regla 10). Queda registrado, no se revierte.
 - **Precondición:** L.1 + L.2 `hecho` (CI verde con lint estricto) — cumplida.
 - **Alcance — PUEDE tocar (solo infraestructura de workspace, NADA bajo `src/` ni `prisma/`):**
   - Raíz: crear `package.json` (`"private": true`, `"packageManager": "pnpm@11.25.0"` — igual que CI); ampliar `pnpm-workspace.yaml` con `packages: ['packages/*', 'lumina-frontend', 'lumina-backend']` y consolidar ahí los `overrides` / `allowBuilds` / `ignoredBuiltDependencies` que hoy están repartidos en `lumina-frontend/pnpm-workspace.yaml` y en el `pnpm-workspace.yaml` de la raíz.
@@ -240,7 +241,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.2 — Scaffold `packages/element-kit` con el contrato `ElementDefinition`
 - **Operador:** Claude Code
-- **Estado:** bloqueado por E1.1
+- **Estado:** pendiente (E1.1 hecho — desbloqueado)
 - **Precondición:** E1.1 `hecho`.
 - **Alcance — PUEDE tocar:** solo `packages/element-kit/**` y la entrada correspondiente en el `pnpm-lock.yaml` de la raíz + un job/paso `packages` en `.github/workflows/ci.yml`.
 - **Contenido mínimo:**
@@ -256,7 +257,7 @@ Estado actual del repo a tener a la vista: **no hay** workspace pnpm con `packag
 
 ##### E1.3 — Scaffold `packages/scoring` (stub, sin portar todavía)
 - **Operador:** Claude Code
-- **Estado:** bloqueado por E1.1 · puede ir **en paralelo con E1.2** (conjuntos de archivos disjuntos)
+- **Estado:** pendiente (E1.1 hecho) · puede ir **en paralelo con E1.2** (conjuntos de archivos disjuntos)
 - **Precondición:** E1.1 `hecho`.
 - **Contexto:** `activity-scoring.ts` está hoy duplicado a mano en `lumina-frontend/src/lib/activity-scoring.ts` y `lumina-backend/src/classes/activity-scoring.ts` (~1000 líneas c/u), sincronizados por fixtures (`activity-scoring.fixtures.json`). `@lumina/scoring` será la fuente única — pero **E1.3 solo crea el paquete y fija su superficie de API**; portar la implementación y migrar consumidores es E2 (frontend) / E6 (backend).
 - **Alcance — PUEDE tocar:** solo `packages/scoring/**` + su entrada en el lockfile raíz y en el job `packages` de CI.
