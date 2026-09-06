@@ -193,6 +193,16 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 
 ### Abiertos ahora
 
+#### X.1 — Borrar `canvas-editor.tsx` (código muerto, 0 referencias)
+- **Operador:** Antigravity
+- **Estado:** pendiente
+- **Precondición:** ninguna — disjunto de E5 (E5 no toca este archivo; no está en ninguna sub-ficha E5.x).
+- **Contexto:** `lumina-frontend/src/app/(app)/classes/[id]/editor/canvas-editor.tsx` (21 KB, `export default CanvasEditor`) no lo importa nadie — `grep -rn "canvas-editor\|CanvasEditor" src/` solo devuelve auto-referencias dentro del propio archivo. Es un editor `EditorDoc` (`parseEditorContent`/`serializeDoc`) que quedó huérfano; el editor real es `editor-client.tsx` + `components/canvas-area.tsx`. No tiene spec.
+- **Alcance — PUEDE tocar:** borrar `lumina-frontend/src/app/(app)/classes/[id]/editor/canvas-editor.tsx` y **solo** eso. Si `tsc`/lint/build señalan un import roto tras borrarlo (no debería), se **para** y se deja `bloqueado` — no se borra nada más ni se toca otro archivo.
+- **Alcance — NO toca:** cualquier otro archivo. Nada de `canvas-area.tsx`, `slide-renderer.tsx`, `editor-client.tsx`.
+- **Entregable:** el archivo no existe. Verificación: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm build && pnpm test:unit` — 0 error de lint (70 warnings), tsc limpio, build OK, `test:unit` 446/446 (sin cambio de conteo).
+- **Cierre:** no aplica Regla 4 (no es migración; es un archivo huérfano, adelanto de E7). Commit `chore: borrar canvas-editor.tsx huérfano`.
+
 #### F1.4 — Concurrencia de guardado de slide y de juegos en vivo
 - **Operador:** Cursor
 - **Estado:** **hecho** — verificado por Claude Code (E4.1 en curso en paralelo, alcance disjunto: F1.4 es backend puro). Revisado contra la ficha: (1) `Slide.contentVersion` + `UpdateSlideDto.expectedVersion` → `updateMany` condicional atómico; `count === 0` → 404 si no existe, si no `409 ConflictException` con `currentVersion` + `expectedVersion`; sin `expectedVersion` sigue LWW pero incrementa versión (compat documentada). (2) `saveAnswer`: fast-path `findFirst` + `create` en try/catch → P2002 ⇒ `null` (la unique DB es la fuente de verdad ante check-then-insert). (3) `withSessionLock`: `SET key token EX ttl NX` + retry acotado + release solo si el token coincide; las 3 mutaciones del blob pasan por él. Migración aditiva y segura (dedup conserva la respuesta más antigua antes del índice único). Specs de carrera reales (no verdes triviales): `session-gamification.concurrency.spec.ts` retrasa `redis.get` para forzar solape; `torneo.service.concurrency.spec.ts` usa un gate sobre `create` + Prisma fake con la unique. Verif (`cd lumina-backend`): `npx tsc --noEmit` OK · `pnpm lint` 0 · `pnpm test` **243/243** (28 suites; 238 base + 5 de F1.4 — `pnpm test` ya corre, el bloqueo de install se resolvió al cerrar E1.1). Sin archivos fuera de alcance; motor React del canvas intacto.
@@ -508,6 +518,15 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 - **E5.5** — Reconectar el canvas: el `switch (block.tipo)` → `elementRegistry.obtener(tipo)` para los ~34 tipos con paridad de DOM probada (12 widgets + 22 actividades). Se **borran** esos `case` + las filas de `activity-registry.ts` / `widget-registry.ts` y se reapuntan sus consumidores. Los 3 `case` con `RIESGO ACEPTADO` quedan fuera (→ E5.7).
 - **E5.6** — Primitivos (E4.6): `texto/imagen/video/audio/codigo/cita/separador/columnas` → `ElementDefinition` sin `puntuacion`, registrados, `switch` borrado, `properties-panel.tsx` reapuntado.
 - **E5.7 (condicional)** — Cobertura de integración real para `grafico`/`diagrama`/`clip-group`+Paper.js (deuda E4.5 §2) y borrado de sus 3 `case`. Si no es viable en E5, se difiere a E7 con su `RIESGO ACEPTADO` intacto — pero **no** se marca E5 cerrada sin decidirlo explícito.
+
+**Reparto de ejecución E5 (definido por el dueño del tablero 2026-09-06, trabajo paralelo entre los 4 operadores):**
+
+- **Cursor** — redacta ahora las 7 sub-fichas E5.1–E5.7 (una por commit `chore(tablero): …`); luego **ejecuta E5.2–E5.6** (motor del canvas, secuencial, un operador). Es el camino crítico: nada de E5 se ejecuta hasta que las fichas estén revisadas.
+- **GPT Codex** — **ejecuta E5.1** (`@lumina/element-kit-core`: contrato + `ElementRegistry`, sin React ni `lumina-frontend`). Depende solo de que la sub-ficha E5.1 esté redactada y revisada; corre en paralelo mientras Cursor redacta E5.2–E5.7. Alcance disjunto: solo `packages/**` + lockfile raíz + job `packages` de CI. Encaja con E1.2/E1.3 (mismos scaffolds).
+- **Claude Code** — **revisa** cada sub-ficha E5.x contra esta ficha raíz según Cursor las va dejando en `en revisión` (redactó la raíz); luego **ejecuta E5.7** (cobertura de integración de `grafico`/`diagrama`/`clip-group`+Paper.js — encaja con E4.5). Sin tocar archivos de E5.1–E5.6.
+- **Antigravity** (lo menos demandante) — **X.1** arriba: borrar el archivo muerto `canvas-editor.tsx`. Un archivo, cero dependencias, verificación clara. Disjunto de todo E5.
+
+Colisiones: ninguna — Codex en `packages/`, Antigravity borra un archivo huérfano en `editor/`, Cursor redacta y luego toca `canvas-area.tsx`/`slide-renderer.tsx`, Claude Code revisa y luego toca specs de `packages/element-kit`. La única dependencia de orden es Codex↔ficha E5.1 (Regla 10: dos fichas disjuntas pueden ir en paralelo).
 
 **Cierre de E5:** E5.1–E5.6 en `hecho`; los dos `switch` de `slide-renderer.tsx` borrados (salvo los 3 `case` de Tensión 4 si E5.7 se difiere); `activity-registry.ts` y `widget-registry.ts` borrados o reducidos a lo que barre E7, con consumidores reapuntados; fachada `lib/activity-scoring.ts` borrada y los 24 imports a `@lumina/scoring` (`LUM-E5-SCORING-FACADE` cerrado); override de `canvas-area.tsx` fuera de `eslint.config.mjs` con `pnpm lint` en 0 `error`; reducer central + persistencia por diferencia + historial por diferencia operativos con paridad probada (Regla 7). Verif global: `pnpm -r build && pnpm -r test && pnpm -r lint` verde; `pnpm --filter lumina-frontend test:unit` sin bajar el conteo. Al cerrar E5 se redacta la ficha raíz de E6 (Claude Code).
 
