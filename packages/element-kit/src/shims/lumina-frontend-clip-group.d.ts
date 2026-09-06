@@ -205,3 +205,13 @@ export declare function createDefaultClipGroup(
   shape?: ClipShape,
   contenido?: ClipContent,
 ): ClipGroupBlock;
+
+// ── Lógica pura del contorno freeform (E4.4) ────────────────────────────────
+// El editor de nodos Paper.js va en el shim aparte `lumina-frontend-clip-group-paper.d.ts`.
+
+export declare function createDefaultFreeformPath(): FreeformMaskPath;
+export declare function createDefaultLibreShape(): ClipShapeLibre;
+export declare function createMaskNodeId(): string;
+export declare function freeformPathToSvgD(path: FreeformMaskPath): string;
+export declare function normalizeFreeformPath(path: FreeformMaskPath): FreeformMaskPath;
+export declare function resolveFreeformPath(shape: ClipShapeLibre): FreeformMaskPath;

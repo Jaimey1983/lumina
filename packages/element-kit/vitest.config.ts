@@ -63,6 +63,10 @@ export default defineConfig({
         frontendSrc,
         "components/diagramas/index.ts",
       ),
+      "lumina-frontend/blocks/clip-group/paper": path.resolve(
+        frontendSrc,
+        "components/clip-group/paper.ts",
+      ),
       "lumina-frontend/blocks/clip-group": path.resolve(
         frontendSrc,
         "components/clip-group/index.ts",

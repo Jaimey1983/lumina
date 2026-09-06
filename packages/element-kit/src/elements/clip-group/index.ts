@@ -13,3 +13,10 @@ export {
   type ClipGroupEstado,
 } from "./clip-group-types.js";
 export { registrarClipGroup } from "./register.js";
+export {
+  PaperNodeEditor,
+  esFormaLibre,
+  estadoAContornoFreeform,
+  contornoFreeformAEstado,
+  type PaperNodeEditorProps,
+} from "./paper-editor/index.js";

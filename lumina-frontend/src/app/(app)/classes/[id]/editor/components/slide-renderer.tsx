@@ -1732,7 +1732,11 @@ function BlockNode({
       case 'cita':      return <RenderQuote block={block} />;
       case 'separador': return <RenderDivider block={block} />;
       // TODO(migración-etapa-5): retirar el dispatch legacy de clip-group en slide-renderer.tsx
-      // al conectar ElementRegistry. Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
+      // al conectar ElementRegistry. El bloque está en `@lumina/element-kit`
+      // (`clipGroupDefinition`, E4.3) y el editor de nodos Paper.js en
+      // `elements/clip-group/paper-editor` (`PaperNodeEditor`, E4.4) — E5 monta
+      // ese sub-panel sin envolver `RenderClipGroup`.
+      // Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
       case 'clip-group':
         return (
           <RenderClipGroup
