@@ -74,6 +74,19 @@ describe('ACTIVITY_SCORING', () => {
     expect(getActivityScoringKind('tipo_inventado')).toBeUndefined();
   });
 
+  // E4.5 — los bloques de canvas migrados en E4 (`grafico` / `diagrama` /
+  // `clip-group`) NO son actividades: no entran a `ACTIVITY_SCORING`, nunca
+  // llegan a `evaluateActivityResponse` y su `ElementDefinition` no declara
+  // `puntuacion` (se asegura en cada `*.parity.spec.tsx` del kit). Aquí solo se
+  // fija que el mapa de scoring los ignora — si alguien los agregara por error,
+  // este test lo caza.
+  it('los bloques de canvas de E4 no son actividades puntuables', () => {
+    for (const tipo of ['grafico', 'diagrama', 'clip-group']) {
+      expect(getActivityScoringKind(tipo), `${tipo} no debe tener kind`).toBeUndefined();
+      expect(ACTIVITY_SCORING).not.toHaveProperty(tipo);
+    }
+  });
+
   it('Grupo 4 connected no queda diferido; orden_rango sí', () => {
     expect(isGradebookScoringDeferred('clasificar')).toBe(false);
     expect(isGradebookScoringDeferred('quiz_multiple')).toBe(false);

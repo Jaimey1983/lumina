@@ -38,12 +38,18 @@ function bloqueLibre(): ClipGroupEstado {
   return createDefaultClipGroup(createDefaultLibreShape()) as ClipGroupEstado;
 }
 
-/** Espera a que el editor perezoso resuelva dentro de `container`. */
+/**
+ * Espera a que el editor perezoso (`React.lazy`) resuelva dentro de `container`.
+ * Timeout holgado: bajo la suite completa la resolución del `lazy` compite con
+ * ~30 archivos de test y el default de 1 s se queda corto.
+ */
 async function esperarEditor(container: HTMLElement): Promise<void> {
-  await waitFor(() =>
-    expect(
-      container.querySelector('[data-testid="paper-node-editor-stub"]'),
-    ).not.toBeNull(),
+  await waitFor(
+    () =>
+      expect(
+        container.querySelector('[data-testid="paper-node-editor-stub"]'),
+      ).not.toBeNull(),
+    { timeout: 5000 },
   );
 }
 

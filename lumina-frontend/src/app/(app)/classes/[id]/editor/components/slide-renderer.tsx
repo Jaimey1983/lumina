@@ -1736,6 +1736,10 @@ function BlockNode({
       // (`clipGroupDefinition`, E4.3) y el editor de nodos Paper.js en
       // `elements/clip-group/paper-editor` (`PaperNodeEditor`, E4.4) — E5 monta
       // ese sub-panel sin envolver `RenderClipGroup`.
+      // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `clip-group` es
+      // render-smoke — jsdom no rinde el `<canvas>` de Paper.js. E5 NO borra este
+      // case sin cobertura de integración real (Playwright CT o similar) que
+      // compare la salida visible legacy vs kit del editor de nodos.
       // Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
       case 'clip-group':
         return (
@@ -1946,6 +1950,10 @@ function BlockNode({
         );
       // TODO(migración-etapa-5): reconectar `grafico` desde ElementRegistry
       // (`graficoDefinition` en @lumina/element-kit) y borrar este case.
+      // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `grafico` es
+      // render-smoke — el chart Recharts se carga con `next/dynamic` y en jsdom
+      // rinde `null`. E5 NO borra este case sin cobertura de integración real
+      // que compare el chart legacy vs kit.
       // Ticket: LUM-E5-CANVAS-BLOCKS · 2026-12-31.
       case 'grafico':
         return editorMode ? (
@@ -1958,7 +1966,12 @@ function BlockNode({
           <GraficoViewer block={block} isThumbnail={isThumbnail} />
         );
       // TODO(migración-etapa-5): retirar el dispatch legacy de diagrama en slide-renderer.tsx
-      // al conectar ElementRegistry. Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
+      // al conectar ElementRegistry.
+      // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `diagrama` cubre el
+      // Venn (SVG real) pero el grafo usa `GraphCanvas` vía `next/dynamic` →
+      // render-smoke en jsdom. E5 NO borra este case sin cobertura de
+      // integración real del grafo legacy vs kit.
+      // Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
       case 'diagrama':
         return editorMode ? (
           <DiagramaEditor
