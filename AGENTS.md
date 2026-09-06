@@ -573,7 +573,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 
 ##### E5.4 — Persistencia con `expectedVersion` y descongelar `canvas-area.tsx` en lint
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Cursor]
 - **Precondición:** E5.3 `hecho`.
 - **Contexto (decisión raíz §3 — opción **(a)**):** F1.4 dejó en backend `Slide.contentVersion` + `UpdateSlideDto.expectedVersion` → `409 ConflictException` con `currentVersion` (`classes.service.ts`). El frontend hoy manda `{ content }` entero sin versión (`patchSlideContentById` en `canvas-area.tsx:479`). E5.4 serializa el `content` **desde el estado del reducer** (única fuente de verdad post-E5.2) y adjunta `expectedVersion`; **no** se cambia el DTO ni `lumina-backend`. Autosave sigue siendo debounce sobre el payload derivado (`use-autosave.ts` o equivalente cableado al reducer).
 - **Alcance — PUEDE tocar:**
