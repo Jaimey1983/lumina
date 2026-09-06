@@ -211,7 +211,7 @@ import {
   detailsForLivePanel,
   evaluateActivityResponse,
   extractActivityDefinition,
-} from '@/lib/activity-scoring';
+} from '@lumina/scoring';
 import { useGamification } from '@/hooks/use-gamification';
 import type { SlideTheme } from '@/types/slide.types';
 import { useAutosave } from '@/hooks/use-autosave';

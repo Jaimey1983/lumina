@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@/components/widgets/shared/slide-nav-context';
 import type { Activity, Block } from '@/types/slide.types';
-import { evaluateActivityResponse, isActivityDraftResponse } from '@/lib/activity-scoring';
+import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
 
 // ─── Local response evaluation (no socket, no backend) ────────────────────────
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { MemoriaActivity } from '@/types/slide.types';
-import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring';
+import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import { calcularFilasMemoria } from './memoria-config';
 import {

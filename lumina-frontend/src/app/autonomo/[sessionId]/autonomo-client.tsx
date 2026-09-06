@@ -25,7 +25,7 @@ import {
   evaluateActivityResponse,
   isActivityDraftResponse,
   unwrapActivityDraftResponse,
-} from '@/lib/activity-scoring';
+} from '@lumina/scoring';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { AbrirCajaActivity } from '@/types/slide.types'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring'
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'
 import {
   abrirCajaFingerprint,

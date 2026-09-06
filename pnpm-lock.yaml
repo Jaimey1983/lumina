@@ -220,6 +220,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.9.1(@sinclair/typebox@0.34.49)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.18.0))(ajv@8.18.0)(class-transformer@0.5.1)(class-validator@0.15.1)(effect@3.20.0)(joi@18.1.2)(react-hook-form@7.87.0(react@19.2.4))(valibot@1.2.0(typescript@5.9.3))(zod@4.5.4)
+      '@lumina/element-kit':
+        specifier: workspace:*
+        version: link:../packages/element-kit
+      '@lumina/element-kit-core':
+        specifier: workspace:*
+        version: link:../packages/element-kit-core
       '@lumina/scoring':
         specifier: workspace:*
         version: link:../packages/scoring

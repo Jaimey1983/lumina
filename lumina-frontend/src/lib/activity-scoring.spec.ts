@@ -9,7 +9,7 @@ import {
   promedioFromFixtureSlides,
   xpFromEvaluation,
   type ActivityScoringKind,
-} from './activity-scoring';
+} from '@lumina/scoring';
 import fixtures from './activity-scoring.fixtures.json';
 
 interface NotaCase {

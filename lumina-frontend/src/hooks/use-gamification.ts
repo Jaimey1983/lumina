@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
-import type { ActivityEvaluationResult } from '@/lib/activity-scoring';
+import type { ActivityEvaluationResult } from '@lumina/scoring';
 
 export interface EstudianteLeaderboard {
   studentId: string;

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { SopaLetrasActivity } from '@/types/slide.types';
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring';
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import { generarGrid, seleccionEsPalabra, PalabraColocada } from './sopa-letras-config';
 import { SOPA_LETRAS_GAP_PX, tamanoFuenteCeldaSopa, useSopaGridCellSize } from './sopa-letras-shared';

@@ -1,6 +1,18 @@
-import type { ComponentType } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { Grid2x2, Grid3x3, Layers, Puzzle, Package, CaseSensitive, AlignLeft, Search, Sparkles, Crosshair, GitBranch, Keyboard } from 'lucide-react';
+﻿import type { LucideIcon } from 'lucide-react';
+import {
+  Grid2x2,
+  Grid3x3,
+  Layers,
+  Puzzle,
+  Package,
+  CaseSensitive,
+  AlignLeft,
+  Search,
+  Sparkles,
+  Crosshair,
+  GitBranch,
+  Keyboard,
+} from 'lucide-react';
 
 import type {
   Activity,
@@ -17,73 +29,8 @@ import type {
   TopoActivity,
   HistoriaRamificadaActivity,
 } from '@/types/slide.types';
-import { createDefaultClasificar } from '@/lib/clasificar-defaults';
-import { createDefaultMemoria } from '@/lib/memoria-defaults';
-import { createDefaultPuzzleImagen } from '@/lib/puzzle-imagen-defaults';
-import { createDefaultSopaLetras } from '@/lib/sopa-letras-defaults';
-import { createDefaultCrucigrama } from '@/lib/crucigrama-defaults';
-import { createDefaultAbrirCaja } from '@/lib/abrir-caja-defaults';
-import { createDefaultAnagrama } from '@/lib/anagrama-defaults';
-import { createDefaultAhorcado } from '@/lib/ahorcado-defaults';
-import { createDefaultPuzzlePalabras } from '@/lib/puzzle-palabras-defaults';
-import { createDefaultGlobos } from '@/lib/globos-defaults';
-import { createDefaultTopo } from '@/lib/topo-defaults';
-import { HistoriaRamificadaEditor } from '@/components/activities/historia-ramificada/historia-ramificada-editor';
-import { HistoriaRamificadaViewer } from '@/components/activities/historia-ramificada/historia-ramificada-viewer';
-import { HistoriaRamificadaProperties } from '@/components/activities/historia-ramificada/historia-ramificada-properties';
-import { createDefaultHistoriaRamificada } from '@/lib/historia-ramificada-defaults';
-import { ClasificarEditor } from '@/components/activities/clasificar/clasificar-editor';
-import { ClasificarViewer } from '@/components/activities/clasificar/clasificar-viewer';
-import { ClasificarProperties } from '@/components/activities/clasificar/clasificar-properties';
-import { MemoriaEditor } from '@/components/activities/memoria/memoria-editor';
-import { MemoriaViewer } from '@/components/activities/memoria/memoria-viewer';
-import { MemoriaProperties } from '@/components/activities/memoria/memoria-properties';
-import { PuzzleImagenEditor } from '@/components/activities/puzzle-imagen/puzzle-imagen-editor';
-import { PuzzleImagenViewer } from '@/components/activities/puzzle-imagen/puzzle-imagen-viewer';
-import { PuzzleImagenProperties } from '@/components/activities/puzzle-imagen/puzzle-imagen-properties';
-import { AbrirCajaEditor } from '@/components/activities/abrir-caja/abrir-caja-editor';
-import { AbrirCajaViewer } from '@/components/activities/abrir-caja/abrir-caja-viewer';
-import { AbrirCajaProperties } from '@/components/activities/abrir-caja/abrir-caja-properties';
-import { AnagramaEditor } from '@/components/activities/anagrama/anagrama-editor';
-import { AnagramaViewer } from '@/components/activities/anagrama/anagrama-viewer';
-import { AnagramaProperties } from '@/components/activities/anagrama/anagrama-properties';
-import { AhorcadoEditor } from '@/components/activities/ahorcado/ahorcado-editor';
-import { AhorcadoViewer } from '@/components/activities/ahorcado/ahorcado-viewer';
-import { AhorcadoProperties } from '@/components/activities/ahorcado/ahorcado-properties';
-import { PuzzlePalabrasEditor } from '@/components/activities/puzzle-palabras/puzzle-palabras-editor';
-import { PuzzlePalabrasViewer } from '@/components/activities/puzzle-palabras/puzzle-palabras-viewer';
-import { PuzzlePalabrasProperties } from '@/components/activities/puzzle-palabras/puzzle-palabras-properties';
-import { SopaLetrasEditor } from '@/components/activities/sopa-letras/sopa-letras-editor';
-import { SopaLetrasViewer } from '@/components/activities/sopa-letras/sopa-letras-viewer';
-import { SopaLetrasProperties } from '@/components/activities/sopa-letras/sopa-letras-properties';
-import { CrucigramaEditor } from '@/components/activities/crucigrama/crucigrama-editor';
-import { CrucigramaViewer } from '@/components/activities/crucigrama/crucigrama-viewer';
-import { CrucigramaProperties } from '@/components/activities/crucigrama/crucigrama-properties';
-
-import { GlobosEditor } from '@/components/activities/globos/globos-editor'
-import { GlobosViewer } from '@/components/activities/globos/globos-viewer'
-import { GlobosProperties } from '@/components/activities/globos/globos-properties'
-
-import { TopoEditor } from '@/components/activities/topo/topo-editor'
-import { TopoViewer } from '@/components/activities/topo/topo-viewer'
-import { TopoProperties } from '@/components/activities/topo/topo-properties'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface ActivityEditorProps<T extends Activity = Activity> {
-  actividad: T;
-  isSelected?: boolean;
-}
-
-export interface ActivityViewerProps<T extends Activity = Activity> {
-  actividad: T;
-  onComplete?: (response: unknown) => void;
-}
-
-export interface ActivityPropertiesProps<T extends Activity = Activity> {
-  actividad: T;
-  onChange: (actividad: T) => void;
-}
 
 export interface ActivityRegistryEntry<T extends Activity = Activity> {
   tipo: T['tipo'];
@@ -93,17 +40,13 @@ export interface ActivityRegistryEntry<T extends Activity = Activity> {
   descripcion: string;
   icono: LucideIcon;
   evaluable: boolean;
-  editor: ComponentType<ActivityEditorProps<T>>;
-  viewer: ComponentType<ActivityViewerProps<T>>;
-  properties: ComponentType<ActivityPropertiesProps<T>>;
-  createDefault: () => T;
 }
 
 // ─── GRUPO 4 ──────────────────────────────────────────────────────────────────
 
-// TODO(migración-etapa-5): retirar la fila `clasificar` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `clasificar` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const CLASIFICAR_ENTRY: ActivityRegistryEntry<ClasificarActivity> = {
   tipo: 'clasificar',
   panelType: 'clasificar',
@@ -111,15 +54,11 @@ const CLASIFICAR_ENTRY: ActivityRegistryEntry<ClasificarActivity> = {
   descripcion: 'Arrastra cada elemento a su categoría correcta',
   icono: Layers,
   evaluable: true,
-  editor: ClasificarEditor,
-  viewer: ClasificarViewer,
-  properties: ClasificarProperties,
-  createDefault: createDefaultClasificar,
 };
 
-// TODO(migración-etapa-5): retirar la fila `memoria` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `memoria` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const MEMORIA_ENTRY: ActivityRegistryEntry<MemoriaActivity> = {
   tipo: 'memoria',
   panelType: 'memoria',
@@ -127,15 +66,11 @@ const MEMORIA_ENTRY: ActivityRegistryEntry<MemoriaActivity> = {
   descripcion: 'Encuentra todos los pares de cartas iguales',
   icono: Grid2x2,
   evaluable: true,
-  editor: MemoriaEditor,
-  viewer: MemoriaViewer,
-  properties: MemoriaProperties,
-  createDefault: createDefaultMemoria,
 };
 
-// TODO(migración-etapa-5): retirar la fila `puzzle_imagen` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `puzzle_imagen` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const PUZZLE_IMAGEN_ENTRY: ActivityRegistryEntry<PuzzleImagenActivity> = {
   tipo: 'puzzle_imagen',
   panelType: 'puzzle_imagen',
@@ -143,15 +78,11 @@ const PUZZLE_IMAGEN_ENTRY: ActivityRegistryEntry<PuzzleImagenActivity> = {
   descripcion: 'Arrastra las piezas para armar la imagen',
   icono: Puzzle,
   evaluable: true,
-  editor: PuzzleImagenEditor,
-  viewer: PuzzleImagenViewer,
-  properties: PuzzleImagenProperties,
-  createDefault: createDefaultPuzzleImagen,
 };
 
-// TODO(migración-etapa-5): retirar la fila `sopa_letras` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `sopa_letras` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const SOPA_LETRAS_ENTRY: ActivityRegistryEntry<SopaLetrasActivity> = {
   tipo: 'sopa_letras',
   panelType: 'sopa_letras',
@@ -159,15 +90,11 @@ const SOPA_LETRAS_ENTRY: ActivityRegistryEntry<SopaLetrasActivity> = {
   descripcion: 'Encuentra las palabras escondidas en el grid',
   icono: Search,
   evaluable: true,
-  editor: SopaLetrasEditor,
-  viewer: SopaLetrasViewer,
-  properties: SopaLetrasProperties,
-  createDefault: createDefaultSopaLetras,
 };
 
-// TODO(migración-etapa-5): retirar la fila `crucigrama` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `crucigrama` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const CRUCIGRAMA_ENTRY: ActivityRegistryEntry<CrucigramaActivity> = {
   tipo: 'crucigrama',
   panelType: 'crucigrama',
@@ -175,15 +102,11 @@ const CRUCIGRAMA_ENTRY: ActivityRegistryEntry<CrucigramaActivity> = {
   descripcion: 'Completa las palabras siguiendo las pistas',
   icono: Grid3x3,
   evaluable: true,
-  editor: CrucigramaEditor,
-  viewer: CrucigramaViewer,
-  properties: CrucigramaProperties,
-  createDefault: createDefaultCrucigrama,
 };
 
-// TODO(migración-etapa-5): retirar la fila `abrir_caja` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `abrir_caja` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const ABRIR_CAJA_ENTRY: ActivityRegistryEntry<AbrirCajaActivity> = {
   tipo: 'abrir_caja',
   panelType: 'abrir_caja',
@@ -191,16 +114,11 @@ const ABRIR_CAJA_ENTRY: ActivityRegistryEntry<AbrirCajaActivity> = {
   descripcion: 'Haz clic en las cajas para descubrir su contenido',
   icono: Package,
   evaluable: true,
-  editor: AbrirCajaEditor,
-  viewer: AbrirCajaViewer,
-  properties: AbrirCajaProperties,
-  createDefault: createDefaultAbrirCaja,
 };
 
-// TODO(migración-etapa-5): retirar la fila `anagrama` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. El piloto E2.3 ya registra
-// `anagramaDefinition` en @lumina/element-kit; slides-panel sigue leyendo
-// de aquí hasta E5. Ticket: LUM-E5-ANAGRAMA · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `anagrama` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const ANAGRAMA_ENTRY: ActivityRegistryEntry<AnagramaActivity> = {
   tipo: 'anagrama',
   panelType: 'anagrama',
@@ -208,15 +126,11 @@ const ANAGRAMA_ENTRY: ActivityRegistryEntry<AnagramaActivity> = {
   descripcion: 'Ordena las letras para formar la palabra correcta',
   icono: CaseSensitive,
   evaluable: true,
-  editor: AnagramaEditor,
-  viewer: AnagramaViewer,
-  properties: AnagramaProperties,
-  createDefault: createDefaultAnagrama,
 };
 
-// TODO(migración-etapa-5): retirar la fila `ahorcado` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `ahorcado` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const AHORCADO_ENTRY: ActivityRegistryEntry<AhorcadoActivity> = {
   tipo: 'ahorcado',
   panelType: 'ahorcado',
@@ -224,15 +138,11 @@ const AHORCADO_ENTRY: ActivityRegistryEntry<AhorcadoActivity> = {
   descripcion: 'Adivina la palabra letra por letra antes de quedarte sin intentos',
   icono: Keyboard,
   evaluable: true,
-  editor: AhorcadoEditor,
-  viewer: AhorcadoViewer,
-  properties: AhorcadoProperties,
-  createDefault: createDefaultAhorcado,
 };
 
-// TODO(migración-etapa-5): retirar la fila `puzzle_palabras` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `puzzle_palabras` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const PUZZLE_PALABRAS_ENTRY: ActivityRegistryEntry<PuzzlePalabrasActivity> = {
   tipo: 'puzzle_palabras',
   panelType: 'puzzle_palabras',
@@ -240,15 +150,11 @@ const PUZZLE_PALABRAS_ENTRY: ActivityRegistryEntry<PuzzlePalabrasActivity> = {
   descripcion: 'Ordena las palabras para formar la oración correcta',
   icono: AlignLeft,
   evaluable: true,
-  editor: PuzzlePalabrasEditor,
-  viewer: PuzzlePalabrasViewer,
-  properties: PuzzlePalabrasProperties,
-  createDefault: createDefaultPuzzlePalabras,
 };
 
-// TODO(migración-etapa-5): retirar la fila `globos` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `globos` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const GLOBOS_ENTRY: ActivityRegistryEntry<GlobosActivity> = {
   tipo: 'globos',
   panelType: 'globos',
@@ -256,15 +162,11 @@ const GLOBOS_ENTRY: ActivityRegistryEntry<GlobosActivity> = {
   descripcion: 'Pincha el globo con la respuesta correcta antes de que escapen',
   icono: Sparkles,
   evaluable: true,
-  editor: GlobosEditor,
-  viewer: GlobosViewer,
-  properties: GlobosProperties,
-  createDefault: createDefaultGlobos,
 };
 
-// TODO(migración-etapa-5): retirar la fila `topo` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `topo` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const TOPO_ENTRY: ActivityRegistryEntry<TopoActivity> = {
   tipo: 'topo',
   panelType: 'topo',
@@ -272,15 +174,11 @@ const TOPO_ENTRY: ActivityRegistryEntry<TopoActivity> = {
   descripcion: 'Golpea el topo con la respuesta correcta',
   icono: Crosshair,
   evaluable: true,
-  editor: TopoEditor,
-  viewer: TopoViewer,
-  properties: TopoProperties,
-  createDefault: createDefaultTopo,
 };
 
-// TODO(migración-etapa-5): retirar la fila `historia_ramificada` de ACTIVITY_REGISTRY
-// cuando E5 conecte ElementRegistry al canvas. Ticket paraguas: LUM-E5-GRUPO4
-// · fecha objetivo: 2026-11-30.
+// TODO(migración-etapa-7): retirar la fila `historia_ramificada` de ACTIVITY_REGISTRY
+// y borrar este archivo al completar la migración de elementos en E7.
+// Ticket: LUM-E7-GRUPO4 · fecha objetivo: 2027-01-31.
 const HISTORIA_RAMIFICADA_ENTRY: ActivityRegistryEntry<HistoriaRamificadaActivity> = {
   tipo: 'historia_ramificada',
   panelType: 'historia_ramificada',
@@ -288,10 +186,6 @@ const HISTORIA_RAMIFICADA_ENTRY: ActivityRegistryEntry<HistoriaRamificadaActivit
   descripcion: 'Crea una historia interactiva con decisiones y ramificaciones',
   icono: GitBranch,
   evaluable: true,
-  editor: HistoriaRamificadaEditor,
-  viewer: HistoriaRamificadaViewer,
-  properties: HistoriaRamificadaProperties,
-  createDefault: createDefaultHistoriaRamificada,
 };
 
 /** Actividades registradas del Grupo 4 y futuros grupos unificados. */

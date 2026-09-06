@@ -88,29 +88,9 @@ import {
   bloquesVisiblesDeSala,
 } from '@/components/viewers/escape-room-viewer';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
-import { FlipCardsEditor } from '@/components/widgets/flip-cards/flip-cards-editor';
-import { FlipCardsViewer } from '@/components/widgets/flip-cards/flip-cards-viewer';
 import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
-import { TabsEditor } from '@/components/widgets/tabs/tabs-editor';
-import { TabsViewer } from '@/components/widgets/tabs/tabs-viewer';
 import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
-import { CarouselEditor } from '@/components/widgets/carousel/carousel-editor';
-import { CarouselViewer } from '@/components/widgets/carousel/carousel-viewer';
 import type { ClickRevealInnerSelection, PopupInnerSelection, HotspotInnerSelection } from '@/types/widget.types';
-import { ClickRevealEditor } from '@/components/widgets/click-reveal/click-reveal-editor';
-import { ClickRevealViewer } from '@/components/widgets/click-reveal/click-reveal-viewer';
-import { PopupEditor } from '@/components/widgets/popup/popup-editor';
-import { PopupViewer } from '@/components/widgets/popup/popup-viewer';
-import { HotspotEditor } from '@/components/widgets/hotspot/hotspot-editor';
-import { HotspotViewer } from '@/components/widgets/hotspot/hotspot-viewer';
-import { TooltipEditor } from '@/components/widgets/tooltip/tooltip-editor';
-import { TooltipViewer } from '@/components/widgets/tooltip/tooltip-viewer';
-import { BotonEditor } from '@/components/widgets/boton/boton-editor';
-import { BotonViewer } from '@/components/widgets/boton/boton-viewer';
-import { ContadorEditor } from '@/components/widgets/contador/contador-editor';
-import { ContadorViewer } from '@/components/widgets/contador/contador-viewer';
-import { ProgresoEditor } from '@/components/widgets/progreso/progreso-editor';
-import { ProgresoViewer } from '@/components/widgets/progreso/progreso-viewer';
 import {
   isEditingPopupOverlay,
   mergedPopupConfig,
@@ -118,10 +98,9 @@ import {
 import { syncPopupBlockSizeFromTriggerPx } from '@/lib/popup-defaults';
 import { clampPopupTriggerPx, POPUP_TRIGGER_PX_MAX, POPUP_TRIGGER_PX_MIN } from '@/lib/popup-trigger-size';
 import { SlideCanvasRootContext } from '@/components/widgets/shared/slide-canvas-root-context';
-import { isWidgetTipo } from '@/components/widgets/shared/widget-registry';
+import { isWidgetTipo, type WidgetBlock } from '@/components/widgets/shared/widget-registry';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
-import { TimelineEditor } from '@/components/widgets/timeline/timeline-editor';
-import { TimelineViewer } from '@/components/widgets/timeline/timeline-viewer';
+import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import { ClasificarEditor } from '@/components/activities/clasificar/clasificar-editor';
 import { ClasificarViewer } from '@/components/activities/clasificar/clasificar-viewer';
 import { MemoriaEditor } from '@/components/activities/memoria/memoria-editor';
@@ -159,8 +138,6 @@ import { GlobosEditor } from '@/components/activities/globos/globos-editor';
 import { GlobosViewer } from '@/components/activities/globos/globos-viewer';
 import { TopoEditor } from '@/components/activities/topo/topo-editor';
 import { TopoViewer } from '@/components/activities/topo/topo-viewer';
-import { RuletaEditor } from '@/components/widgets/ruleta/ruleta-editor';
-import { RuletaViewer } from '@/components/widgets/ruleta/ruleta-viewer';
 import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
 import { GraficoEditor } from '@/components/graficos/grafico-editor';
 import { GraficoViewer } from '@/components/graficos/grafico-viewer';
@@ -754,6 +731,43 @@ function RenderActivity({
   const act = block.actividad;
   const syncKey = `${slideId}-${blockId}`;
 
+  const def = elementRegistry.obtener<Activity, Record<string, unknown>>(act.tipo);
+  if (def) {
+    if (modo === 'editor') {
+      return (
+        <def.Editor
+          estado={act}
+          config={{
+            onResponse,
+            onComplete: onResponse,
+            variant,
+            editorSyncKey: syncKey,
+            isSelected,
+            activityCanvasLayout,
+          }}
+          onChange={(updatedAct: Activity) => onActivityChange?.(blockId, updatedAct)}
+        />
+      );
+    }
+    return (
+      <def.Viewer
+        estado={act}
+        config={{
+          onResponse,
+          onComplete: onResponse,
+          variant,
+          editorSyncKey: syncKey,
+          liveSocket,
+          torneoSocket,
+          viewerStudentId,
+          viewerStudentName,
+          viewerClassId,
+          blockId,
+        }}
+      />
+    );
+  }
+
   // TODO(migración-etapa-5): este `switch` por `act.tipo` es el "segundo registro"
   // de actividades. E2.5 ya publicó estas 10 como `ElementDefinition` en
   // `@lumina/element-kit` (quiz_multiple, verdadero_falso, completar_blancos,
@@ -1215,11 +1229,15 @@ function RenderActivity({
   }
 
   if (act.tipo === 'ruleta') {
-    const widget = normalizeRuletaBlock(block);
-    if (modo === 'editor') {
-      return <RuletaEditor block={widget} />;
+    const defRuleta = elementRegistry.obtener<WidgetBlock, { isThumbnail?: boolean }>('ruleta');
+    if (defRuleta) {
+      const widget = normalizeRuletaBlock(block);
+      return modo === 'editor' ? (
+        <defRuleta.Editor estado={widget} config={{}} onChange={() => {}} />
+      ) : (
+        <defRuleta.Viewer estado={widget} config={{}} />
+      );
     }
-    return <RuletaViewer block={widget} />;
   }
 
   const label = ACTIVITY_LABELS[(act as { tipo: keyof typeof ACTIVITY_LABELS }).tipo];
@@ -1819,135 +1837,61 @@ function BlockNode({
           />
         );
       case 'flip-cards':
-        return editorMode ? (
-          <FlipCardsEditor
-            block={block}
-            onChange={(updated) => onFlipCardsChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? flipCardsInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onFlipCardsInnerSelectionChange}
-          />
-        ) : (
-          <FlipCardsViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'tabs':
-        return editorMode ? (
-          <TabsEditor
-            block={block}
-            onChange={(updated) => onTabsChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? tabsInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onTabsInnerSelectionChange}
-          />
-        ) : (
-          <TabsViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'carousel':
-        return editorMode ? (
-          <CarouselEditor
-            block={block}
-            onChange={(updated) => onCarouselChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? carouselInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onCarouselInnerSelectionChange}
-          />
-        ) : (
-          <CarouselViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'click-reveal':
-        return editorMode ? (
-          <ClickRevealEditor
-            block={block}
-            onChange={(updated) => onClickRevealChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? clickRevealInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onClickRevealInnerSelectionChange}
-          />
-        ) : (
-          <ClickRevealViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'popup':
-        return editorMode ? (
-          <PopupEditor
-            block={block}
-            onChange={(updated) => onPopupChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? popupInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onPopupInnerSelectionChange}
-          />
-        ) : (
-          <PopupViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'hotspot':
-        return editorMode ? (
-          <HotspotEditor
-            block={block}
-            onChange={(updated) => onHotspotChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? hotspotInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onHotspotInnerSelectionChange}
-          />
-        ) : (
-          <HotspotViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'tooltip':
-        return editorMode ? (
-          <TooltipEditor
-            block={block}
-            onEnsureBlockSelected={() => onClick()}
-            isSelected={selectedId === blockId}
-          />
-        ) : (
-          <TooltipViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'boton':
-        return editorMode ? (
-          <BotonEditor
-            block={block}
-            onEnsureBlockSelected={() => onClick()}
-          />
-        ) : (
-          <BotonViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'contador':
-        return editorMode ? (
-          <ContadorEditor
-            block={block}
-            onEnsureBlockSelected={() => onClick()}
-          />
-        ) : (
-          <ContadorViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'progreso':
-        return editorMode ? (
-          <ProgresoEditor
-            block={block}
-            onEnsureBlockSelected={() => onClick()}
-          />
-        ) : (
-          <ProgresoViewer block={block} isThumbnail={isThumbnail} />
-        );
       case 'ruleta':
-        return editorMode ? (
-          <RuletaEditor
-            block={block}
-            onEnsureBlockSelected={() => onClick()}
-          />
-        ) : (
-          <RuletaViewer block={block} />
-        );
+      case 'timeline': {
+        const def = elementRegistry.obtener<WidgetBlock, { isThumbnail?: boolean }>(block.tipo);
+        if (def) {
+          const handleWidgetChange = (updated: WidgetBlock) => {
+            switch (block.tipo) {
+              case 'flip-cards':
+                onFlipCardsChange?.(blockId, updated as FlipCardsWidget);
+                break;
+              case 'tabs':
+                onTabsChange?.(blockId, updated as TabsWidget);
+                break;
+              case 'carousel':
+                onCarouselChange?.(blockId, updated as CarouselWidget);
+                break;
+              case 'click-reveal':
+                onClickRevealChange?.(blockId, updated as ClickRevealWidget);
+                break;
+              case 'popup':
+                onPopupChange?.(blockId, updated as PopupWidget);
+                break;
+              case 'hotspot':
+                onHotspotChange?.(blockId, updated as HotspotWidget);
+                break;
+              case 'timeline':
+                onTimelineChange?.(blockId, updated as TimelineWidget);
+                break;
+              default:
+                break;
+            }
+          };
+          return editorMode ? (
+            <def.Editor
+              estado={block}
+              config={{ isThumbnail }}
+              onChange={handleWidgetChange}
+            />
+          ) : (
+            <def.Viewer
+              estado={block}
+              config={{ isThumbnail }}
+            />
+          );
+        }
+        break;
+      }
       // TODO(migración-etapa-5): reconectar `grafico` desde ElementRegistry
       // (`graficoDefinition` en @lumina/element-kit) y borrar este case.
       // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `grafico` es
@@ -1982,20 +1926,6 @@ function BlockNode({
           />
         ) : (
           <DiagramaViewer block={block} isThumbnail={isThumbnail} />
-        );
-      case 'timeline':
-        return editorMode ? (
-          <TimelineEditor
-            block={block}
-            onChange={(updated) => onTimelineChange?.(blockId, updated)}
-            onEnsureBlockSelected={() => onClick()}
-            innerSelection={
-              selectedId === blockId ? timelineInnerSelection ?? null : null
-            }
-            onInnerSelectionChange={onTimelineInnerSelectionChange}
-          />
-        ) : (
-          <TimelineViewer widget={block} isThumbnail={isThumbnail} />
         );
       case 'columnas':
         return (

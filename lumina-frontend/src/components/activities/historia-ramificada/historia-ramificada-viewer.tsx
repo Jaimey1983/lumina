@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { HistoriaRamificadaActivity } from '@/types/slide.types'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring'
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'
 import { esNodoFinal, COLORES_NODO } from './historia-ramificada-config'
 

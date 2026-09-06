@@ -6,7 +6,7 @@ import {
   esEvaluable,
   isGradebookScoringDeferred,
   type GradebookAverageEntry,
-} from '@/lib/activity-scoring';
+} from '@lumina/scoring';
 
 /** Actividad evaluable asociada a un slide (columna de la planilla). */
 export interface ClassGradebookActividad {

@@ -13,7 +13,7 @@ import {
   useDraggable,
 } from '@dnd-kit/core';
 import { ClasificarActivity, ClasificarItem } from '@/types/slide.types';
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring';
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 
 // ── Draggable Item ────────────────────────────────────────────────────────────

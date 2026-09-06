@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
-import { evaluateActivityResponse } from '@/lib/activity-scoring';
+import { evaluateActivityResponse } from '@lumina/scoring';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

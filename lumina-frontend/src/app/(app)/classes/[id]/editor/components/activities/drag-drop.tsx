@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
-import { wrapActivityDraftResponse } from '@/lib/activity-scoring';
+import { wrapActivityDraftResponse } from '@lumina/scoring';
 import { useActivityEditor } from './use-activity-editor';
 
 // ─── Props ────────────────────────────────────────────────────────────────────

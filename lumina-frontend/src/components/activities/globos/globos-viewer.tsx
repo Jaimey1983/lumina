@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { GlobosActivity } from '@/types/slide.types'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring'
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityTimer } from '../shared/activity-timer'
 import { ActivityLives } from '../shared/activity-lives'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'

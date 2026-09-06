@@ -18,7 +18,16 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['paper'],
   // Paquetes internos del workspace que se consumen desde fuente TS (E2).
-  transpilePackages: ['@lumina/scoring'],
+  transpilePackages: ['@lumina/scoring', '@lumina/element-kit-core', '@lumina/element-kit'],
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.extensionAlias = {
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+      '.mjs': ['.mts', '.mjs'],
+      '.cjs': ['.cts', '.cjs'],
+    };
+    return config;
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
   },

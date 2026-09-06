@@ -4,7 +4,7 @@ import React from 'react';
 import {
   notaColombiana,
   type ActivityEvaluationResult,
-} from '@/lib/activity-scoring';
+} from '@lumina/scoring';
 
 interface ActivityResultOverlayProps {
   correctas?: number;

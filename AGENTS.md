@@ -486,7 +486,7 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 ##### E4.6 — Primitivos de canvas (`texto`…`columnas`) — **NO en E4** bajo la recomendación (a)
 Los 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven dentro de `slide-renderer.tsx` (congelado E5). Se migran en **E5**, que los extrae al descongelar el `switch` y reconectar el canvas al `ElementRegistry`. Si al activar E4 se resuelve la «Tensión declarada §1» por el camino (b), esta ficha se reescribe como E4.6–E4.13 (una por primitivo) con el carve-out del freeze explícito.
 
-#### E5 — Unificar estado del editor · **RAÍZ REDACTADA** · sub-fichas E5.1–E5.7 redactadas (Cursor) y **revisadas por Claude Code**. **E5.1 hecho** (`3713276`) · **E5.2 hecho** (`7a252c2`) · **E5.3 hecho** (`ca56829`) · **E5.4 hecho** (`293d5f1`) · E5.5 lista para Cursor (siguiente) · E5.7 lista · E5.5/E5.6 con correcciones incorporadas (opción 2 para el hueco de metadata: registros viejos se adelgazan en E5.5, borrado completo → E7). Fuera de E5: **X.1 hecho** (`canvas-editor.tsx` borrado).
+#### E5 — Unificar estado del editor · **RAÍZ REDACTADA** · sub-fichas E5.1–E5.7 redactadas (Cursor) y **revisadas por Claude Code**. **E5.1 hecho** (`3713276`) · **E5.2 hecho** (`7a252c2`) · **E5.3 hecho** (`ca56829`) · **E5.4 hecho** (`293d5f1`) · **E5.5 en revisión** · E5.6 siguiente · E5.7 lista · E5.5/E5.6 con correcciones incorporadas (opción 2 para el hueco de metadata: registros viejos se adelgazan en E5.5, borrado completo → E7). Fuera de E5: **X.1 hecho** (`canvas-editor.tsx` borrado).
 
 Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** para el slide en edición, **persistencia por diferencia** (mandar el bloque cambiado + `expectedVersion` de F1.4, no el blob entero) e **historial por diferencia** (undo/redo guarda diffs, no 20 `Block[]` completos). E5 es además la etapa que **descongela** el cluster `react-hooks`/React-Compiler (`canvas-area.tsx`), **reconecta el canvas al `elementRegistry`** (retira el `switch` de `slide-renderer.tsx`), **migra los 8 primitivos** (E4.6) y **retira** los dos registros viejos + la fachada de scoring. El barrido de todo lo que quede sin referencias es E7 — E5 retira solo lo acoplado a la unificación del estado.
 
@@ -594,8 +594,8 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): expectedVersion en autosave y lint estricto en canvas-area`.
 
 ##### E5.5 — Reconectar canvas: `switch` → `elementRegistry` (~34 tipos) + adelgazar registros viejos (dispatch fuera; borrado completo → E7)
-- **Operador:** Cursor
-- **Estado:** [en curso: Cursor]
+- **Operador:** Antigravity
+- **Estado:** en revisión — canvas despacha widgets y actividades vía elementRegistry; registros viejos adelgazados a metadata; fachada scoring eliminada. Verif: npx tsc --noEmit && pnpm lint && pnpm test:unit (473/473) && pnpm build && pnpm --filter @lumina/element-kit test (266/266).
 - **Precondición:** E5.4 `hecho` · E5.1 `hecho` (frontend consume `@lumina/element-kit-core` sin ciclo).
 - **Contexto:** 37 `ElementDefinition` ya registradas en `@lumina/element-kit` (12 widgets + 22 actividades + 3 bloques canvas). E5.5 cubre los **~34 con paridad DOM probada** (12 widgets + 22 actividades). Los **3 bloques canvas** (`grafico`, `diagrama`, `clip-group`) llevan `RIESGO ACEPTADO (E4.5 §2)` en `slide-renderer.tsx` — **sus `case` NO se borran** (E5.7). Dispatch unificado: `elementRegistry.obtener(tipo)` → `Editor` / `Viewer` / `Propiedades` con adapters del kit. Side-effect: import bootstrap `@lumina/element-kit` (registra elementos) + consultas vía `@lumina/element-kit-core`.
 - **Alcance — PUEDE tocar:**

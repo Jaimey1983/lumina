@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react'
 import { useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { PuzzlePalabrasActivity } from '@/types/slide.types'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring'
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityDragWord } from '../shared/activity-drag-word'
 import { ActivityDndRoot } from '../shared/activity-dnd-root'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'

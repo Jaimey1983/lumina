@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AhorcadoActivity } from '@/types/slide.types'
-import { evaluateActivityResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring'
+import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'
 import {
   TECLADO_AHORCADO,

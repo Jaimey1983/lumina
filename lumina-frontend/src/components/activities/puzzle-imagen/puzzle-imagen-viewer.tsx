@@ -13,7 +13,7 @@ import {
   useDraggable,
 } from '@dnd-kit/core';
 import { PuzzleImagenActivity } from '@/types/slide.types';
-import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@/lib/activity-scoring';
+import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import {
   calcularTamanoCeldaPuzzle,

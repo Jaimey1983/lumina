@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateActivityResponse } from '@/lib/activity-scoring';
+import { evaluateActivityResponse } from '@lumina/scoring';
 
 import {
   generateMathActivities,

@@ -33,7 +33,7 @@ import {
   detailsForLivePanel,
   evaluateActivityResponse,
   isActivityDraftResponse,
-} from '@/lib/activity-scoring';
+} from '@lumina/scoring';
 
 function pillOutcomeForActivity(actividad: Activity, correct: boolean | null): boolean | null {
   if (actividad.tipo === 'quiz_multiple') {
