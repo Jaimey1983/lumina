@@ -486,7 +486,7 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 ##### E4.6 — Primitivos de canvas (`texto`…`columnas`) — **NO en E4** bajo la recomendación (a)
 Los 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven dentro de `slide-renderer.tsx` (congelado E5). Se migran en **E5**, que los extrae al descongelar el `switch` y reconectar el canvas al `ElementRegistry`. Si al activar E4 se resuelve la «Tensión declarada §1» por el camino (b), esta ficha se reescribe como E4.6–E4.13 (una por primitivo) con el carve-out del freeze explícito.
 
-#### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · **RAÍZ REDACTADA** (Claude Code) · precondición cumplida (E4 cerrada + un elemento migrado por categoría) · sub-ficha E5.1 **en revisión** · E5.2–E5.7 pendientes de redactar (Cursor)
+#### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · **RAÍZ REDACTADA** (Claude Code) · precondición cumplida · sub-fichas E5.1 **en revisión** · E5.2 redactada · E5.3–E5.7 pendientes (Cursor)
 
 Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** para el slide en edición, **persistencia por diferencia** (mandar el bloque cambiado + `expectedVersion` de F1.4, no el blob entero) e **historial por diferencia** (undo/redo guarda diffs, no 20 `Block[]` completos). E5 es además la etapa que **descongela** el cluster `react-hooks`/React-Compiler (`canvas-area.tsx`), **reconecta el canvas al `elementRegistry`** (retira el `switch` de `slide-renderer.tsx`), **migra los 8 primitivos** (E4.6) y **retira** los dos registros viejos + la fachada de scoring. El barrido de todo lo que quede sin referencias es E7 — E5 retira solo lo acoplado a la unificación del estado.
 
@@ -532,8 +532,27 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
   Conteos de referencia al cerrar E4: `@lumina/element-kit` test **270/270** (31 files); `lumina-frontend` test:unit **446/446**; lint 0 `error` en ambos paquetes.
 - **Cierre:** no aplica Regla 4 (refactor estructural; los registros viejos del canvas se retiran en E5.5/E5.6). Commit sugerido: `refactor(element-kit): extraer @lumina/element-kit-core`.
 
-- **E5.1** — *(redactada arriba)* · **E5.2–E5.7** — pendientes de redactar (Cursor).
-- **E5.2** — `editorSlideReducer`: acciones `seleccionar/mover/redimensionar/rotar/editarBloque/añadir/eliminar/pegar/fondo/guías`, absorbe el estado disperso de `canvas-area.tsx`. Sin tocar persistencia ni historial; paridad de comportamiento (specs de `lib/` reusados).
+- **E5.1** — *(redactada arriba)* · **E5.2** — *(redactada abajo)* · **E5.3–E5.7** — pendientes de redactar (Cursor).
+
+##### E5.2 — Introducir `editorSlideReducer` (estado central del slide en edición)
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** E5.1 `hecho` (Codex cierra el desacople `@lumina/element-kit-core`).
+- **Contexto (decisión raíz §2):** el reducer gobierna **un solo slide en edición** — bloques, fondo, guías, selección e inner-selection — no el mazo completo (react-query sigue siendo la fuente de `cls.slides`). Hoy `canvas-area.tsx` (~2002 líneas) concentra: `committedBloques` + `liveBloques` (ref), ~10 `useState` de selección (`selectedBlockId`, `selectedBlockIds`, inner-selection de flip-cards/tabs/carousel/click-reveal/popup/hotspot/timeline, `clipGroupInnerEditId`), `marqueeRect`, `layersPanelOpen`, `historyTick`; la persistencia (`patchSlideContentById`) y el historial (`historiesRef` + `canvas-history.ts`) **siguen como están** en este paso.
+- **Alcance — PUEDE tocar:**
+  - **Nuevo** `lumina-frontend/src/app/(app)/classes/[id]/editor/lib/editor-slide-state.ts` — tipos del estado del reducer: `bloques`, `fondo?`, `guias`, `transicion?`, selección (bloque único / multi / inner-selection tipada), `marqueeRect?`, flags de UI del lienzo que hoy viven en `useState` y deben sobrevivir undo/redo futuro (E5.3).
+  - **Nuevo** `lumina-frontend/src/app/(app)/classes/[id]/editor/lib/editor-slide-reducer.ts` — `editorSlideReducer(state, action)` puro + factory `createInitialEditorSlideState(slide)`; acciones mínimas (nombres orientativos, pueden agruparse): `SELECCIONAR`, `SELECCIONAR_MULTIPLE`, `INNER_SELECTION`, `MOVER`, `REDIMENSIONAR`, `ROTAR`, `EDITAR_BLOQUE`, `AÑADIR_BLOQUE`, `ELIMINAR_BLOQUE`, `PEGAR`, `FONDO`, `GUIAS`, `RESETEAR_DESDE_SLIDE`, `APLICAR_SNAPSHOT` (puente temporal con historial actual). Reutilizar funciones puras existentes: `resize-coords.ts`, `rotate-coords.ts`, `block-resize-min-dim.ts`, `block-drag-id.ts`, `getBlockPos` / contratos de `.cursor/rules/lumina-canvas-editor-contracts.mdc` (leer → transformar → clamp → persistir — aquí solo hasta clamp en memoria).
+  - **Nuevo** `lumina-frontend/src/app/(app)/classes/[id]/editor/lib/editor-slide-reducer.spec.ts` — paridad de comportamiento: secuencias representativas (mover+undo manual comparando bloques finales, selección, pegar, fondo/guías) contra la lógica que hoy está inline en `canvas-area.tsx`.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/canvas-area.tsx` — sustituir el estado disperso de bloques/selección por `useReducer(editorSlideReducer, …)` + derivados; **mantener** `historiesRef`, `patchSlideContentById`, `useAutosave` sin cambiar semántica (E5.3/E5.4). Los handlers de drag/resize/rotate delegan al reducer en lugar de mutar refs/`setCommittedBloques` directo.
+  - Specs existentes en `editor/lib/*.spec.ts` — solo si hace falta actualizar imports/helpers compartidos (sin cambiar expectativas).
+- **Alcance — NO toca:** `canvas-history.ts` (E5.3), `use-autosave.ts` / `patchSlideContentById` / `expectedVersion` (E5.4), `slide-renderer.tsx` y su `switch` (E5.5+), `packages/**`, `lumina-backend/**`, `eslint.config.mjs` (override congelado hasta E5.4), `activity-registry.ts`, `widget-registry.ts`, `lib/activity-scoring.ts`.
+- **Entregable:** el editor se comporta igual a ojos del docente (mover, redimensionar, rotar, pegar, selección simple/múltiple/inner, fondo, guías) pero el estado vive en el reducer. Verificación exacta:
+  ```bash
+  cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build
+  ```
+  Conteo de referencia: test:unit **446/446** (o superior si el spec nuevo suma casos); lint 0 `error` (70 warnings, override de `canvas-area.tsx` sigue activo).
+- **Cierre:** no aplica Regla 4. Commit sugerido: `refactor(editor): editorSlideReducer centraliza estado del slide`.
+
 - **E5.3** — Historial por diferencia: `canvas-history.ts` pasa de `Block[]` completo a `patch`/`inverse-patch` por entrada. Paridad contra `canvas-history.spec.ts` ampliado (misma secuencia → mismo estado visible, menos memoria).
 - **E5.4** — Persistencia por diferencia: autosave serializa `content` mínimo desde el reducer y **manda `expectedVersion`**; manejo del `409` (rebase o aviso). Se quita el override de `canvas-area.tsx` de `eslint.config.mjs` y `pnpm lint` queda en 0 `error` sin él.
 - **E5.5** — Reconectar el canvas: el `switch (block.tipo)` → `elementRegistry.obtener(tipo)` para los ~34 tipos con paridad de DOM probada (12 widgets + 22 actividades). Se **borran** esos `case` + las filas de `activity-registry.ts` / `widget-registry.ts` y se reapuntan sus consumidores. Los 3 `case` con `RIESGO ACEPTADO` quedan fuera (→ E5.7).
