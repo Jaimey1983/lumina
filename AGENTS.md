@@ -555,7 +555,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 
 ##### E5.3 — Historial por diferencia (undo/redo con patch, no snapshots completos)
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** **[en curso: Cursor]**
 - **Precondición:** E5.2 `hecho`.
 - **Contexto:** `canvas-history.ts` guarda hasta `MAX_UNDO = 20` entradas con `bloques: Block[]` clonado completo por snapshot (`captureSlideSnapshot` → `structuredClone`). Con 20+ bloques por slide esto escala mal. E5.3 pasa a **patch + inverse-patch** (o diff estructural equivalente) por entrada, manteniendo fondo/guias/transicion en el snapshot o en el diff según convenga, pero **sin** clonar el array entero de bloques en cada paso salvo el snapshot inicial (`kind: 'inicio'`).
 - **Alcance — PUEDE tocar:**
