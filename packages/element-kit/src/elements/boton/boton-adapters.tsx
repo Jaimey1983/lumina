@@ -13,13 +13,12 @@ import type { BotonConfig, BotonEstado } from "./boton-types.js";
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function BotonEditor({
   estado,
+  config,
 }: ElementEditorProps<BotonEstado, BotonConfig>) {
   return (
     <LegacyBotonEditor
       block={estado}
-      onEnsureBlockSelected={() => {
-        /* la selección vive en el canvas (E5); aquí no-op */
-      }}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

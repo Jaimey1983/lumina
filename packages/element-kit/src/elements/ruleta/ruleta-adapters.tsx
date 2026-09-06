@@ -13,13 +13,12 @@ import type { RuletaConfig, RuletaEstado } from "./ruleta-types.js";
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function RuletaEditor({
   estado,
+  config,
 }: ElementEditorProps<RuletaEstado, RuletaConfig>) {
   return (
     <LegacyRuletaEditor
       block={estado}
-      onEnsureBlockSelected={() => {
-        /* la selección vive en el canvas (E5); aquí no-op */
-      }}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

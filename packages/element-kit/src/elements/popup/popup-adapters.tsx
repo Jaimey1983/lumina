@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from "react";
+import { type ComponentProps } from "react";
 import {
   PopupEditor as LegacyPopupEditor,
   PopupProperties as LegacyPopupProperties,
@@ -9,30 +9,28 @@ import type {
   ElementPropsPanelProps,
   ElementViewerProps,
 } from "@lumina/element-kit-core";
+import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
 import type { PopupConfig, PopupEstado } from "./popup-types.js";
 
 /**
- * Adapta el Editor legacy a las props del contrato. La selección interna
- * (trigger / overlay / texto) es local aquí; la selección del bloque en el
- * canvas se centraliza en E5, así que `onEnsureBlockSelected` es no-op.
- * El portal del modal (`.canvas-slide`) sigue intacto: sin `SlideCanvasRoot`
- * no monta, con él se comporta igual que en el canvas.
+ * Adapta el Editor legacy. Inner-selection y `onEnsureBlockSelected` llegan
+ * por `config` desde el canvas (E5.5); sin ellos el adapter usa estado local.
  */
 export function PopupEditor({
   estado,
   onChange,
+  config,
 }: ElementEditorProps<PopupEstado, PopupConfig>) {
-  const [innerSelection, setInnerSelection] =
-    useState<ComponentProps<typeof LegacyPopupEditor>["innerSelection"]>(null);
+  const [innerSelection, setInnerSelection] = useLiftedInnerSelection<
+    ComponentProps<typeof LegacyPopupEditor>["innerSelection"]
+  >(config);
   return (
     <LegacyPopupEditor
       block={estado}
       onChange={onChange}
       innerSelection={innerSelection}
       onInnerSelectionChange={setInnerSelection}
-      onEnsureBlockSelected={() => {
-        /* la selección vive en el canvas (E5); aquí no-op */
-      }}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

@@ -34,7 +34,6 @@ import type {
   Activity,
   ActivityBlock,
   AudioBlock,
-  Background,
   Block,
   CodeBlock,
   ColumnsBlock,
@@ -51,11 +50,9 @@ import type {
   TimelineWidget,
   DiagramaBlock,
   HotspotWidget,
-  TooltipWidget,
   TextBlock,
   VideoBlock,
 } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
 import { hasMediaSrc } from '@/lib/media-url';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue, resolveFontFamily } from '@/lib/font-catalog';
@@ -96,11 +93,12 @@ import {
   mergedPopupConfig,
 } from '@/components/widgets/popup/popup-config';
 import { syncPopupBlockSizeFromTriggerPx } from '@/lib/popup-defaults';
-import { clampPopupTriggerPx, POPUP_TRIGGER_PX_MAX, POPUP_TRIGGER_PX_MIN } from '@/lib/popup-trigger-size';
+import { clampPopupTriggerPx } from '@/lib/popup-trigger-size';
 import { SlideCanvasRootContext } from '@/components/widgets/shared/slide-canvas-root-context';
 import { isWidgetTipo, type WidgetBlock } from '@/components/widgets/shared/widget-registry';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
+import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';
 import { ClasificarEditor } from '@/components/activities/clasificar/clasificar-editor';
 import { ClasificarViewer } from '@/components/activities/clasificar/clasificar-viewer';
 import { MemoriaEditor } from '@/components/activities/memoria/memoria-editor';
@@ -152,8 +150,9 @@ type Modo = 'editor' | 'viewer' | 'preview';
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
   if (!block.marco) return block;
-  const { marco: _, ...rest } = block;
-  return rest as ActivityBlock;
+  const rest = { ...block };
+  delete rest.marco;
+  return rest;
 }
 
 function blockForActivityRender(block: Block): Block {
@@ -731,7 +730,7 @@ function RenderActivity({
   const act = block.actividad;
   const syncKey = `${slideId}-${blockId}`;
 
-  const def = elementRegistry.obtener<Activity, Record<string, unknown>>(act.tipo);
+  const def = elementRegistry.obtener<Activity, ActivityRuntimeConfig>(act.tipo);
   if (def) {
     if (modo === 'editor') {
       return (
@@ -1848,8 +1847,13 @@ function BlockNode({
       case 'progreso':
       case 'ruleta':
       case 'timeline': {
-        const def = elementRegistry.obtener<WidgetBlock, { isThumbnail?: boolean }>(block.tipo);
+        const def = elementRegistry.obtener<
+          WidgetBlock,
+          { isThumbnail?: boolean; onEnsureBlockSelected?: () => void }
+        >(block.tipo);
         if (def) {
+          // boton/contador/progreso/tooltip/ruleta: sus Editors no llaman onChange
+          // (editan solo por properties-panel.applyNow). default:break es correcto.
           const handleWidgetChange = (updated: WidgetBlock) => {
             switch (block.tipo) {
               case 'flip-cards':
@@ -1877,10 +1881,56 @@ function BlockNode({
                 break;
             }
           };
+          const widgetInnerConfig = (() => {
+            switch (block.tipo) {
+              case 'flip-cards':
+                return {
+                  innerSelection: flipCardsInnerSelection ?? null,
+                  onInnerSelectionChange: onFlipCardsInnerSelectionChange,
+                };
+              case 'tabs':
+                return {
+                  innerSelection: tabsInnerSelection ?? null,
+                  onInnerSelectionChange: onTabsInnerSelectionChange,
+                };
+              case 'carousel':
+                return {
+                  innerSelection: carouselInnerSelection ?? null,
+                  onInnerSelectionChange: onCarouselInnerSelectionChange,
+                };
+              case 'click-reveal':
+                return {
+                  innerSelection: clickRevealInnerSelection ?? null,
+                  onInnerSelectionChange: onClickRevealInnerSelectionChange,
+                };
+              case 'popup':
+                return {
+                  innerSelection: popupInnerSelection ?? null,
+                  onInnerSelectionChange: onPopupInnerSelectionChange,
+                };
+              case 'hotspot':
+                return {
+                  innerSelection: hotspotInnerSelection ?? null,
+                  onInnerSelectionChange: onHotspotInnerSelectionChange,
+                };
+              case 'timeline':
+                return {
+                  innerSelection: timelineInnerSelection ?? null,
+                  onInnerSelectionChange: onTimelineInnerSelectionChange,
+                };
+              default:
+                return {};
+            }
+          })();
+          const widgetConfig = {
+            isThumbnail,
+            onEnsureBlockSelected: () => onClick(),
+            ...widgetInnerConfig,
+          };
           return editorMode ? (
             <def.Editor
               estado={block}
-              config={{ isThumbnail }}
+              config={widgetConfig}
               onChange={handleWidgetChange}
             />
           ) : (

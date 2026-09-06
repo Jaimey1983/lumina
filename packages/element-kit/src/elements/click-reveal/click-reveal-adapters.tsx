@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from "react";
+import { type ComponentProps } from "react";
 import {
   ClickRevealEditor as LegacyEditor,
   ClickRevealViewer as LegacyViewer,
@@ -9,25 +9,28 @@ import type {
   ElementViewerProps,
   ElementPropsPanelProps,
 } from "@lumina/element-kit-core";
+import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
 import type {
   ClickRevealEstado,
   ClickRevealConfig,
 } from "./click-reveal-types.js";
 
-/** La selección interna es local; la persistencia sigue delegada al consumidor. */
+/** Inner-selection: config del canvas si viene; si no, estado local (parity). */
 export function ClickRevealEditor({
   estado,
   onChange,
+  config,
 }: ElementEditorProps<ClickRevealEstado, ClickRevealConfig>) {
-  const [innerSelection, setInnerSelection] =
-    useState<ComponentProps<typeof LegacyEditor>["innerSelection"]>(null);
+  const [innerSelection, setInnerSelection] = useLiftedInnerSelection<
+    ComponentProps<typeof LegacyEditor>["innerSelection"]
+  >(config);
   return (
     <LegacyEditor
       block={estado}
       onChange={onChange}
       innerSelection={innerSelection}
       onInnerSelectionChange={setInnerSelection}
-      onEnsureBlockSelected={() => undefined}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

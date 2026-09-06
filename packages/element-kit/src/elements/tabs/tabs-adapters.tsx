@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from "react";
+import { type ComponentProps } from "react";
 import {
   TabsEditor as LegacyEditor,
   TabsViewer as LegacyViewer,
@@ -9,22 +9,25 @@ import type {
   ElementViewerProps,
   ElementPropsPanelProps,
 } from "@lumina/element-kit-core";
+import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
 import type { TabsEstado, TabsConfig } from "./tabs-types.js";
 
-/** La selección interna es local; la persistencia sigue delegada al consumidor. */
+/** Inner-selection: config del canvas si viene; si no, estado local (parity). */
 export function TabsEditor({
   estado,
   onChange,
+  config,
 }: ElementEditorProps<TabsEstado, TabsConfig>) {
-  const [innerSelection, setInnerSelection] =
-    useState<ComponentProps<typeof LegacyEditor>["innerSelection"]>(null);
+  const [innerSelection, setInnerSelection] = useLiftedInnerSelection<
+    ComponentProps<typeof LegacyEditor>["innerSelection"]
+  >(config);
   return (
     <LegacyEditor
       block={estado}
       onChange={onChange}
       innerSelection={innerSelection}
       onInnerSelectionChange={setInnerSelection}
-      onEnsureBlockSelected={() => undefined}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

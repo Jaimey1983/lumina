@@ -13,13 +13,12 @@ import type { ContadorConfig, ContadorEstado } from "./contador-types.js";
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function ContadorEditor({
   estado,
+  config,
 }: ElementEditorProps<ContadorEstado, ContadorConfig>) {
   return (
     <LegacyContadorEditor
       block={estado}
-      onEnsureBlockSelected={() => {
-        /* la selección vive en el canvas (E5); aquí no-op */
-      }}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

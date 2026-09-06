@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Bootstrap de ElementRegistry para lumina-frontend (E5.5).
  *
  * El side-effect import de `@lumina/element-kit` registra las 37 `ElementDefinition`
