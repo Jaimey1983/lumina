@@ -623,8 +623,8 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 - **Cierre (Regla 4):** el acoplamiento de dispatch sale de `widget-registry.ts` y `activity-registry.ts`; el `TODO(migración-etapa-5)` **sobre el dispatch** se elimina de esas filas, pero se **deja** un `TODO(migración-etapa-7)` nuevo por fila apuntando al borrado del archivo + tipo (tickets `LUM-E5-WIDGETS` / `LUM-E5-GRUPO4` **re-etiquetados a E7**, no cerrados en E5.5). Sí se cierra `LUM-E5-SCORING-FACADE`: fachada `lib/activity-scoring.ts` borrada y los 24 imports a `@lumina/scoring` directo. Los `TODO`/`RIESGO ACEPTADO` de los 3 bloques canvas **permanecen** hasta E5.7. Commit sugerido: `refactor(element-kit): canvas despacha widgets y actividades vía elementRegistry`.
 
 ##### E5.6 — Primitivos de canvas (E4.6) + eliminar segundo `switch` por `act.tipo`
-- **Operador:** Cursor
-- **Estado:** **[en curso: Cursor]** (asignada 2026-09-06; precondición cumplida — E5.5 `hecho` + CI verde en `7740c35`).
+- **Operador:** Antigravity
+- **Estado:** **[en curso: Antigravity]**
 - **Precondición:** E5.5 `hecho`.
 - **Contexto (decisión raíz §5):** 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven como funciones `Render*` dentro de `slide-renderer.tsx` (~2824 líneas); panel en `panels/properties-panel.tsx` (~1827 líneas). El **segundo `switch` por `act.tipo`** (`slide-renderer.tsx:757`, 10 clásicas — ticket `LUM-E5-CLASICAS`): E5.5 lo deja como **código muerto** al enrutar las actividades por `elementRegistry`; **E5.6 lo borra entero** (no "si queda"). Patrón E3: `ElementDefinition` **sin** `puntuacion`, adapters, parity spec DOM, registro en `elementRegistry`.
 - **Alcance — PUEDE tocar:**
