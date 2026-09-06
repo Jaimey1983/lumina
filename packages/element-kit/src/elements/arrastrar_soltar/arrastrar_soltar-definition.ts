@@ -4,7 +4,7 @@ import {
   DragDropActivityEditor,
   DragDropActivity,
 } from "lumina-frontend/editor-activities";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
 import {
   ARRASTRAR_SOLTAR_TIPO,

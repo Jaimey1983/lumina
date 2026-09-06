@@ -1,5 +1,5 @@
 import { createDefaultGraficoBlock } from "lumina-frontend/blocks/grafico";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   GraficoEditor,
   GraficoPropiedades,

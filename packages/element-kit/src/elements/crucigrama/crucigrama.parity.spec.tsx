@@ -7,7 +7,7 @@ import {
   createDefaultCrucigrama,
 } from "lumina-frontend/activities/crucigrama";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crucigramaDefinition, evaluarCrucigrama } from "./crucigrama-definition.js";
 import type { CrucigramaConfig, CrucigramaEstado } from "./crucigrama-types.js";
 

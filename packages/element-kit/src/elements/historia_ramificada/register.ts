@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { historiaRamificadaDefinition } from "./historia_ramificada-definition.js";
 
 /** Registra HistoriaRamificada en el catálogo único (Regla 2). */

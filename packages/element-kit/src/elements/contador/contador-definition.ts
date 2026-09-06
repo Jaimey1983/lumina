@@ -1,5 +1,5 @@
 import { createDefaultContadorBlock } from "lumina-frontend/widgets/contador";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ContadorEditor,
   ContadorPropiedades,

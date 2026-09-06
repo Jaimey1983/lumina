@@ -7,7 +7,7 @@ import {
   createDefaultPuzzlePalabras,
 } from "lumina-frontend/activities/puzzle-palabras";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { puzzlePalabrasDefinition, evaluarPuzzlePalabras } from "./puzzle_palabras-definition.js";
 import type { PuzzlePalabrasConfig, PuzzlePalabrasEstado } from "./puzzle_palabras-types.js";
 

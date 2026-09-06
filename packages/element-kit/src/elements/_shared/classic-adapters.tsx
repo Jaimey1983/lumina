@@ -4,7 +4,7 @@ import type {
   ElementEditorProps,
   ElementPropsPanelProps,
   ElementViewerProps,
-} from "../../contract.js";
+} from "@lumina/element-kit-core";
 
 /**
  * Config de runtime compartida por la familia "clásica" (E2.5). No es apariencia

@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { verdaderoFalsoDefinition } from "./verdadero_falso-definition.js";
 
 /** Registra verdadero_falso en el catálogo único (Regla 2). */

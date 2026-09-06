@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultTopo } from "lumina-frontend/activities/topo";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TopoEditor,
   TopoPropiedades,

@@ -8,7 +8,7 @@ import type {
   ElementEditorProps,
   ElementViewerProps,
   ElementPropsPanelProps,
-} from "../../contract.js";
+} from "@lumina/element-kit-core";
 import type { CarouselEstado, CarouselConfig } from "./carousel-types.js";
 
 /** La selección interna es local; la persistencia sigue delegada al consumidor. */

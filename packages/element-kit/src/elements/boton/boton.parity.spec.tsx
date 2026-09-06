@@ -8,7 +8,7 @@ import {
   type BotonWidget,
   type SlideNavAction,
 } from "lumina-frontend/widgets/boton";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { botonDefinition } from "./boton-definition.js";
 import type { BotonConfig, BotonEstado } from "./boton-types.js";
 

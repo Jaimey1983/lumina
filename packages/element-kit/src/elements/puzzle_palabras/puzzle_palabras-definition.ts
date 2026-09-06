@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultPuzzlePalabras } from "lumina-frontend/activities/puzzle-palabras";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   PuzzlePalabrasEditor,
   PuzzlePalabrasPropiedades,

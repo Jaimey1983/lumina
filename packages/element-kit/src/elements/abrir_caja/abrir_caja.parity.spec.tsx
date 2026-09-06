@@ -7,7 +7,7 @@ import {
   createDefaultAbrirCaja,
 } from "lumina-frontend/activities/abrir-caja";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { abrirCajaDefinition, evaluarAbrirCaja } from "./abrir_caja-definition.js";
 import type { AbrirCajaConfig, AbrirCajaEstado } from "./abrir_caja-types.js";
 

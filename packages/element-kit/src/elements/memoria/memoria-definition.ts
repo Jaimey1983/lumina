@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultMemoria } from "lumina-frontend/activities/memoria";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   MemoriaEditor,
   MemoriaPropiedades,

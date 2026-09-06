@@ -7,7 +7,7 @@ import type {
   ElementEditorProps,
   ElementPropsPanelProps,
   ElementViewerProps,
-} from "../../contract.js";
+} from "@lumina/element-kit-core";
 import type { GlobosConfig, GlobosEstado } from "./globos-types.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */

@@ -1,5 +1,5 @@
 import { createDefaultRuletaWidget } from "lumina-frontend/widgets/ruleta";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   RuletaEditor,
   RuletaPropiedades,

@@ -1,0 +1,28 @@
+{
+  "name": "@lumina/element-kit-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Paquete interno: el monorepo lo consume desde fuente; build conserva dist para CI y publicación futura.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "eslint": "^9",
+    "react": "19.2.4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,5 +1,5 @@
 import { createDefaultClipGroup } from "lumina-frontend/blocks/clip-group";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ClipGroupEditor,
   ClipGroupPropiedades,

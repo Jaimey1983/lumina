@@ -1,5 +1,11 @@
-import { describe, expect, it, expectTypeOf } from "vitest";
-import { ElementRegistry, type ElementDefinition, type ElementEditorProps, type ElementPropsPanelProps } from "./index.js";
+import { describe, expect, expectTypeOf, it } from "vitest";
+import {
+  ElementRegistry,
+  elementRegistry,
+  type ElementDefinition,
+  type ElementEditorProps,
+  type ElementPropsPanelProps,
+} from "./index.js";
 
 const definicion = {
   tipo: "prueba" as const,
@@ -11,10 +17,16 @@ const definicion = {
 } satisfies ElementDefinition<{ texto: string }, { color: string }>;
 
 const numero = {
-  ...definicion, tipo: "numero" as const, crearPorDefecto: () => 0,
+  ...definicion,
+  tipo: "numero" as const,
+  crearPorDefecto: () => 0,
 } satisfies ElementDefinition<number, { color: string }>;
 
-type Catalogo = { prueba: typeof definicion; numero: typeof numero; inexistente: never };
+type Catalogo = {
+  prueba: typeof definicion;
+  numero: typeof numero;
+  inexistente: never;
+};
 
 describe("ElementRegistry", () => {
   it("registra y obtiene una definición sin copiarla", () => {
@@ -22,13 +34,17 @@ describe("ElementRegistry", () => {
     registry.registrar(definicion);
     expect(registry.obtener("prueba")).toBe(definicion);
     expect(registry.obtener("inexistente")).toBeUndefined();
-    expectTypeOf(registry.obtener("prueba")).toEqualTypeOf<typeof definicion | undefined>();
+    expectTypeOf(registry.obtener("prueba")).toEqualTypeOf<
+      typeof definicion | undefined
+    >();
   });
 
   it("rechaza duplicados y conserva el original", () => {
     const registry = new ElementRegistry<Catalogo>();
     registry.registrar(definicion);
-    expect(() => registry.registrar({ ...definicion })).toThrow("Elemento duplicado: prueba");
+    expect(() => registry.registrar({ ...definicion })).toThrow(
+      "Elemento duplicado: prueba",
+    );
     expect(registry.obtener("prueba")).toBe(definicion);
   });
 
@@ -38,15 +54,33 @@ describe("ElementRegistry", () => {
     const anterior = registry.listar();
     registry.registrar(numero);
     expect(anterior).toHaveLength(1);
-    expect(registry.listar().map(({ tipo }) => tipo)).toEqual(["prueba", "numero"]);
+    expect(registry.listar().map(({ tipo }) => tipo)).toEqual([
+      "prueba",
+      "numero",
+    ]);
   });
 });
 
+it("exporta un singleton vacío y débilmente tipado", () => {
+  expect(elementRegistry.listar()).toEqual([]);
+  expectTypeOf(elementRegistry).toEqualTypeOf<
+    ElementRegistry<Record<string, unknown>>
+  >();
+});
+
 it("fija el estado, las props y el delegado de puntuación", () => {
-  expectTypeOf(definicion.crearPorDefecto).returns.toEqualTypeOf<{ texto: string }>();
-  expectTypeOf<NonNullable<ElementDefinition<number, object>["puntuacion"]>>().toEqualTypeOf<(estado: number, respuesta?: unknown) => number>();
-  expectTypeOf<ElementEditorProps<number, string>["onChange"]>().toEqualTypeOf<(estado: number) => void>();
-  expectTypeOf<ElementPropsPanelProps<number, string>["onConfigChange"]>().toEqualTypeOf<(config: string) => void>();
+  expectTypeOf(definicion.crearPorDefecto).returns.toEqualTypeOf<{
+    texto: string;
+  }>();
+  expectTypeOf<
+    NonNullable<ElementDefinition<number, object>["puntuacion"]>
+  >().toEqualTypeOf<(estado: number, respuesta?: unknown) => number>();
+  expectTypeOf<
+    ElementEditorProps<number, string>["onChange"]
+  >().toEqualTypeOf<(estado: number) => void>();
+  expectTypeOf<
+    ElementPropsPanelProps<number, string>["onConfigChange"]
+  >().toEqualTypeOf<(config: string) => void>();
   // @ts-expect-error El contrato exige todos los componentes y la apariencia.
   const incompleta: ElementDefinition<number, object> = { tipo: "incompleta" };
   expect(incompleta.tipo).toBe("incompleta");

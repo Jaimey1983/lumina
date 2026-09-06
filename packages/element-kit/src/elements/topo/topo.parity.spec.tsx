@@ -7,7 +7,7 @@ import {
   createDefaultTopo,
 } from "lumina-frontend/activities/topo";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { topoDefinition, evaluarTopo } from "./topo-definition.js";
 import type { TopoConfig, TopoEstado } from "./topo-types.js";
 

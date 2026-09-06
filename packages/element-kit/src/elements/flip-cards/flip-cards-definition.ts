@@ -1,5 +1,5 @@
 import { createDefaultFlipCardsBlock } from "lumina-frontend/widgets/flip-cards";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   FlipCardsEditor,
   FlipCardsViewer,

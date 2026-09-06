@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { globosDefinition } from "./globos-definition.js";
 
 /** Registra Globos en el catálogo único (Regla 2). */

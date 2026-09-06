@@ -7,7 +7,7 @@ import {
   createDefaultMemoria,
 } from "lumina-frontend/activities/memoria";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { memoriaDefinition, evaluarMemoria } from "./memoria-definition.js";
 import type { MemoriaConfig, MemoriaEstado } from "./memoria-types.js";
 

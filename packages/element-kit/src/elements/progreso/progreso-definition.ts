@@ -1,5 +1,5 @@
 import { createDefaultProgresoBlock } from "lumina-frontend/widgets/progreso";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ProgresoEditor,
   ProgresoPropiedades,

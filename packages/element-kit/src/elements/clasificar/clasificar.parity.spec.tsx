@@ -7,7 +7,7 @@ import {
   createDefaultClasificar,
 } from "lumina-frontend/activities/clasificar";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { clasificarDefinition, evaluarClasificar } from "./clasificar-definition.js";
 import type { ClasificarConfig, ClasificarEstado } from "./clasificar-types.js";
 

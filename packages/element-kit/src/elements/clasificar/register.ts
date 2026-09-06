@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { clasificarDefinition } from "./clasificar-definition.js";
 
 /** Registra Clasificar en el catálogo único (Regla 2). */

@@ -1,5 +1,5 @@
 import { createDefaultTimelineBlock } from "lumina-frontend/widgets/timeline";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TimelineEditor,
   TimelineViewer,

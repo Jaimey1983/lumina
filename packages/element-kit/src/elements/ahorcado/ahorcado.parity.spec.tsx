@@ -7,7 +7,7 @@ import {
   createDefaultAhorcado,
 } from "lumina-frontend/activities/ahorcado";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { ahorcadoDefinition, evaluarAhorcado } from "./ahorcado-definition.js";
 import type { AhorcadoConfig, AhorcadoEstado } from "./ahorcado-types.js";
 

@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { contadorDefinition } from "./contador-definition.js";
 
 /** Registra Contador en el catálogo único (Regla 2). */

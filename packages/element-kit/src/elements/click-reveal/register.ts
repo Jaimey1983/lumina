@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { clickRevealDefinition } from "./click-reveal-definition.js";
 
 export function registrarClickReveal(

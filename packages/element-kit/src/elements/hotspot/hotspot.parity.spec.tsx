@@ -5,7 +5,7 @@ import {
   HotspotViewer as LegacyHotspotViewer,
   createDefaultHotspotBlock,
 } from "lumina-frontend/widgets/hotspot";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { hotspotDefinition } from "./hotspot-definition.js";
 import type { HotspotConfig, HotspotEstado } from "./hotspot-types.js";
 

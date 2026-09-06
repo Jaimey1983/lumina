@@ -7,7 +7,7 @@ import {
   createDefaultSopaLetras,
 } from "lumina-frontend/activities/sopa-letras";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { sopaLetrasDefinition, evaluarSopaLetras } from "./sopa_letras-definition.js";
 import type { SopaLetrasConfig, SopaLetrasEstado } from "./sopa_letras-types.js";
 

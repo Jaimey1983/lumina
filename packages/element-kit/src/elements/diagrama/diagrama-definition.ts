@@ -1,5 +1,5 @@
 import { createDefaultMapaMentalBlock } from "lumina-frontend/blocks/diagrama";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   DiagramaEditor,
   DiagramaPropiedades,

@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { memoriaDefinition } from "./memoria-definition.js";
 
 /** Registra Memoria en el catálogo único (Regla 2). */

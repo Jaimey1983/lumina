@@ -5,7 +5,7 @@ import {
   TooltipViewer as LegacyTooltipViewer,
   createDefaultTooltipBlock,
 } from "lumina-frontend/widgets/tooltip";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { tooltipDefinition } from "./tooltip-definition.js";
 import type { TooltipConfig, TooltipEstado } from "./tooltip-types.js";
 

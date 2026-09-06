@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultAhorcado } from "lumina-frontend/activities/ahorcado";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   AhorcadoEditor,
   AhorcadoPropiedades,

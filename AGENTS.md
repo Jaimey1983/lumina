@@ -513,7 +513,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 
 ##### E5.1 — Crear `@lumina/element-kit-core` y desacoplar el registry del frontend
 - **Operador:** GPT Codex
-- **Estado:** **[en curso: Codex]** — revisión de Claude Code incorporada; toma confirmada antes de implementar.
+- **Estado:** **en revisión** — Codex extrajo contrato, `ElementRegistry` y singleton compartido a `@lumina/element-kit-core`; `@lumina/element-kit` re-exporta y puebla esa misma instancia con 37 definiciones. Verificación: `pnpm install --frozen-lockfile`; `pnpm -r build`; `pnpm -r test` (core 5/5, scoring 94/94, backend 243/243, kit 266/266); `pnpm -r lint` (0 errores); `pnpm --filter lumina-frontend test:unit` (446/446).
 - **Precondición:** E4 cerrada (cumplida). Ninguna otra sub-ficha E5.x.
 - **Contexto (decisión raíz §1 — opción **(b)**):** hoy `@lumina/element-kit` depende de `lumina-frontend` (`package.json` → `"lumina-frontend": "workspace:*"`), mientras el canvas (E5.5+) necesitará consultar el catálogo sin crear ciclo. El contrato vive en `packages/element-kit/src/contract.ts` (usa `ComponentType` de React solo como tipo); el registry en `packages/element-kit/src/registry.ts`; la instancia poblada `elementRegistry` + 37 `registrar(...)` en `packages/element-kit/src/index.ts`. El frontend **aún no** declara dependencia de `@lumina/element-kit` — solo `@lumina/scoring`. Este paso prepara el grafo; el consumo desde el canvas llega en E5.5.
 - **Alcance — PUEDE tocar:**

@@ -5,7 +5,7 @@ import {
   RuletaViewer as LegacyRuletaViewer,
   createDefaultRuletaWidget,
 } from "lumina-frontend/widgets/ruleta";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { ruletaDefinition } from "./ruleta-definition.js";
 import type { RuletaConfig, RuletaEstado } from "./ruleta-types.js";
 

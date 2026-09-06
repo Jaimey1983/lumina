@@ -7,7 +7,7 @@ import {
   createDefaultPuzzleImagen,
 } from "lumina-frontend/activities/puzzle-imagen";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { puzzleImagenDefinition, evaluarPuzzleImagen } from "./puzzle_imagen-definition.js";
 import type { PuzzleImagenConfig, PuzzleImagenEstado } from "./puzzle_imagen-types.js";
 

@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultPuzzleImagen } from "lumina-frontend/activities/puzzle-imagen";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   PuzzleImagenEditor,
   PuzzleImagenPropiedades,

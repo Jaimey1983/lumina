@@ -7,7 +7,7 @@ import {
   createDefaultGlobos,
 } from "lumina-frontend/activities/globos";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { globosDefinition, evaluarGlobos } from "./globos-definition.js";
 import type { GlobosConfig, GlobosEstado } from "./globos-types.js";
 

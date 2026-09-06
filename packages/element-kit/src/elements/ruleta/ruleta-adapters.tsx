@@ -7,7 +7,7 @@ import type {
   ElementEditorProps,
   ElementPropsPanelProps,
   ElementViewerProps,
-} from "../../contract.js";
+} from "@lumina/element-kit-core";
 import type { RuletaConfig, RuletaEstado } from "./ruleta-types.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */

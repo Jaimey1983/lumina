@@ -1,5 +1,5 @@
 import { createDefaultTooltipBlock } from "lumina-frontend/widgets/tooltip";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TooltipEditor,
   TooltipPropiedades,

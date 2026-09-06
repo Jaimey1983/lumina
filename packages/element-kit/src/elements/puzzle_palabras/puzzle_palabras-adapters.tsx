@@ -7,7 +7,7 @@ import type {
   ElementEditorProps,
   ElementPropsPanelProps,
   ElementViewerProps,
-} from "../../contract.js";
+} from "@lumina/element-kit-core";
 import type { PuzzlePalabrasConfig, PuzzlePalabrasEstado } from "./puzzle_palabras-types.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */

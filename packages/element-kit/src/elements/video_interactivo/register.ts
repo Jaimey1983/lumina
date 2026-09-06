@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { videoInteractivoDefinition } from "./video_interactivo-definition.js";
 
 /** Registra video_interactivo en el catálogo único (Regla 2). */

@@ -7,7 +7,7 @@ import {
   createDefaultHistoriaRamificada,
 } from "lumina-frontend/activities/historia-ramificada";
 import { elementRegistry } from "../../index.js";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { historiaRamificadaDefinition, evaluarHistoriaRamificada } from "./historia_ramificada-definition.js";
 import type { HistoriaRamificadaConfig, HistoriaRamificadaEstado } from "./historia_ramificada-types.js";
 

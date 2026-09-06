@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { emparejarDefinition } from "./emparejar-definition.js";
 
 /** Registra emparejar en el catálogo único (Regla 2). */

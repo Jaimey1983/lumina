@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { arrastrarSoltarDefinition } from "./arrastrar_soltar-definition.js";
 
 /** Registra arrastrar_soltar en el catálogo único (Regla 2). */

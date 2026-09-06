@@ -5,7 +5,7 @@ import {
   GraficoViewer as LegacyGraficoViewer,
   createDefaultGraficoBlock,
 } from "lumina-frontend/blocks/grafico";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { graficoDefinition } from "./grafico-definition.js";
 import type { GraficoConfig, GraficoEstado } from "./grafico-types.js";
 

@@ -1,5 +1,5 @@
 import { createDefaultPopupBlock } from "lumina-frontend/widgets/popup";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   PopupEditor,
   PopupPropiedades,

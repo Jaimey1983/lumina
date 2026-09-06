@@ -1,5 +1,5 @@
 import { createDefaultCarouselBlock } from "lumina-frontend/widgets/carousel";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   CarouselEditor,
   CarouselViewer,

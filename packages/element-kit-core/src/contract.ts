@@ -24,7 +24,7 @@ export interface ElementPropsPanelProps<TState, TConfig>
 
 /**
  * El consumidor conecta el motor de scoring; el contrato no calcula puntajes.
- * `respuesta` es la respuesta del alumno (E2.3+). El Botón no declara `puntuacion`.
+ * `respuesta` es la respuesta del alumno. Los elementos no puntuables lo omiten.
  */
 export type PuntuacionDelegate<TState> = (
   estado: TState,

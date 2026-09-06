@@ -1,5 +1,5 @@
 import { createDefaultHotspotBlock } from "lumina-frontend/widgets/hotspot";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   HotspotEditor,
   HotspotPropiedades,

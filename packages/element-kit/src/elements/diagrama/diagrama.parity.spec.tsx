@@ -15,7 +15,13 @@ describe("Diagrama — paridad legacy / ElementDefinition (E4.2)", () => {
       .toEqual({ ...createDefaultMapaMentalBlock(), id: "" });
     const { elementRegistry } = await import("../../index.js");
     expect(elementRegistry.obtener("diagrama")).toBe(diagramaDefinition);
-    expect(elementRegistry.listar().filter((def) => def.tipo === "diagrama")).toHaveLength(1);
+    expect(
+      elementRegistry
+        .listar()
+        .filter(
+          (def) => (def as { readonly tipo?: unknown }).tipo === "diagrama",
+        ),
+    ).toHaveLength(1);
     expect(diagramaDefinition).not.toHaveProperty("puntuacion");
   });
 

@@ -5,6 +5,7 @@ import { defineConfig } from "vitest/config";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const frontendSrc = path.resolve(root, "../../lumina-frontend/src");
+const elementKitCoreSrc = path.resolve(root, "../element-kit-core/src/index.ts");
 
 export default defineConfig({
   plugins: [react()],
@@ -21,6 +22,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@lumina/element-kit-core": elementKitCoreSrc,
       "lumina-frontend/widgets/timeline": path.resolve(frontendSrc, "components/widgets/timeline/index.ts"),
       "lumina-frontend/widgets/click-reveal": path.resolve(frontendSrc, "components/widgets/click-reveal/index.ts"),
       "lumina-frontend/widgets/carousel": path.resolve(frontendSrc, "components/widgets/carousel/index.ts"),

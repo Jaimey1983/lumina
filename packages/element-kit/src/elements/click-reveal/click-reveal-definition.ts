@@ -1,5 +1,5 @@
 import { createDefaultClickRevealBlock } from "lumina-frontend/widgets/click-reveal";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ClickRevealEditor,
   ClickRevealViewer,

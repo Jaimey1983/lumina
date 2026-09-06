@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { tabsDefinition } from "./tabs-definition.js";
 
 export function registrarTabs(

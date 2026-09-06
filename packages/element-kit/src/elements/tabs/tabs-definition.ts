@@ -1,5 +1,5 @@
 import { createDefaultTabsBlock } from "lumina-frontend/widgets/tabs";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
 import { TABS_TIPO, type TabsEstado, type TabsConfig } from "./tabs-types.js";
 

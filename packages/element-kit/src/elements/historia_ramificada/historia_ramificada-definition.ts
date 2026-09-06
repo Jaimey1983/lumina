@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultHistoriaRamificada } from "lumina-frontend/activities/historia-ramificada";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   HistoriaRamificadaEditor,
   HistoriaRamificadaPropiedades,

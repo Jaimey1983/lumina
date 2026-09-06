@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { completarBlancosDefinition } from "./completar_blancos-definition.js";
 
 /** Registra completar_blancos en el catálogo único (Regla 2). */

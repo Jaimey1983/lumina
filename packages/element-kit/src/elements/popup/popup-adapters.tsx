@@ -8,7 +8,7 @@ import type {
   ElementEditorProps,
   ElementPropsPanelProps,
   ElementViewerProps,
-} from "../../contract.js";
+} from "@lumina/element-kit-core";
 import type { PopupConfig, PopupEstado } from "./popup-types.js";
 
 /**

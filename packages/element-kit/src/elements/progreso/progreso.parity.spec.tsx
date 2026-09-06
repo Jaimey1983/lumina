@@ -5,7 +5,7 @@ import {
   ProgresoViewer as LegacyProgresoViewer,
   createDefaultProgresoBlock,
 } from "lumina-frontend/widgets/progreso";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { progresoDefinition } from "./progreso-definition.js";
 import type { ProgresoConfig, ProgresoEstado } from "./progreso-types.js";
 

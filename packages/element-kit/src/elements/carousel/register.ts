@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { carouselDefinition } from "./carousel-definition.js";
 
 export function registrarCarousel(

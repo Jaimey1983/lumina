@@ -1,6 +1,6 @@
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultAnagrama } from "lumina-frontend/activities/anagrama";
-import type { ElementDefinition } from "../../contract.js";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   AnagramaEditor,
   AnagramaPropiedades,

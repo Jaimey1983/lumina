@@ -23,8 +23,8 @@ export type {
   ElementViewerProps,
   ElementPropsPanelProps,
   PuntuacionDelegate,
-} from "./contract.js";
-export { ElementRegistry } from "./registry.js";
+} from "@lumina/element-kit-core";
+export { ElementRegistry, elementRegistry } from "@lumina/element-kit-core";
 
 export {
   botonDefinition,
@@ -384,7 +384,7 @@ export {
   type NubePalabrasDefinition,
 } from "./elements/nube_palabras/index.js";
 
-import { ElementRegistry } from "./registry.js";
+import { elementRegistry } from "@lumina/element-kit-core";
 import { abrirCajaDefinition } from "./elements/abrir_caja/abrir_caja-definition.js";
 import { ahorcadoDefinition } from "./elements/ahorcado/ahorcado-definition.js";
 import { anagramaDefinition } from "./elements/anagrama/anagrama-definition.js";
@@ -415,7 +415,7 @@ import { encuestaVivaDefinition } from "./elements/encuesta_viva/encuesta_viva-d
 import { nubePalabrasDefinition } from "./elements/nube_palabras/nube_palabras-definition.js";
 
 /** Catálogo único — Botón (E1.4) + Ruleta (E3.1) + Control/burbuja (E3.2) + actividades E2. */
-export const elementRegistry = new ElementRegistry<{
+export type ElementCatalog = {
   "timeline": typeof timelineDefinition;
   "click-reveal": typeof clickRevealDefinition;
   "carousel": typeof carouselDefinition;
@@ -453,7 +453,7 @@ export const elementRegistry = new ElementRegistry<{
   short_answer: typeof shortAnswerDefinition;
   encuesta_viva: typeof encuestaVivaDefinition;
   nube_palabras: typeof nubePalabrasDefinition;
-}>();
+};
 elementRegistry.registrar(botonDefinition);
 elementRegistry.registrar(ruletaDefinition);
 elementRegistry.registrar(hotspotDefinition);

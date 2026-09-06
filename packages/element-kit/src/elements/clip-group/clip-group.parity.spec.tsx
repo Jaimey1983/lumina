@@ -31,7 +31,13 @@ describe("ClipGroup — paridad legacy / ElementDefinition (E4.3)", () => {
 
     const { elementRegistry } = await import("../../index.js");
     expect(elementRegistry.obtener("clip-group")).toBe(clipGroupDefinition);
-    expect(elementRegistry.listar().filter((def) => def.tipo === "clip-group")).toHaveLength(1);
+    expect(
+      elementRegistry
+        .listar()
+        .filter(
+          (def) => (def as { readonly tipo?: unknown }).tipo === "clip-group",
+        ),
+    ).toHaveLength(1);
     expect(clipGroupDefinition).not.toHaveProperty("puntuacion");
   });
 

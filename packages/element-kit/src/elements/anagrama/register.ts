@@ -1,4 +1,4 @@
-import type { ElementRegistry } from "../../registry.js";
+import type { ElementRegistry } from "@lumina/element-kit-core";
 import { anagramaDefinition } from "./anagrama-definition.js";
 
 /** Registra el piloto Anagrama en el catálogo único (Regla 2). */
