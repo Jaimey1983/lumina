@@ -195,7 +195,7 @@ El historial de los pasos ya cerrados vive en «Fase 1 — riesgos urgentes» y 
 
 #### X.1 — Borrar `canvas-editor.tsx` (código muerto, 0 referencias)
 - **Operador:** Antigravity
-- **Estado:** [en curso: Antigravity]
+- **Estado:** en revisión — archivo huérfano borrado (eliminación en commit 8342910b). Verificación: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm build && pnpm test:unit` → tsc limpio, 0 error lint (70 warnings), build OK (17/17 páginas), test:unit 446/446.
 - **Precondición:** ninguna — disjunto de E5 (E5 no toca este archivo; no está en ninguna sub-ficha E5.x).
 - **Contexto:** `lumina-frontend/src/app/(app)/classes/[id]/editor/canvas-editor.tsx` (21 KB, `export default CanvasEditor`) no lo importa nadie — `grep -rn "canvas-editor\|CanvasEditor" src/` solo devuelve auto-referencias dentro del propio archivo. Es un editor `EditorDoc` (`parseEditorContent`/`serializeDoc`) que quedó huérfano; el editor real es `editor-client.tsx` + `components/canvas-area.tsx`. No tiene spec.
 - **Alcance — PUEDE tocar:** borrar `lumina-frontend/src/app/(app)/classes/[id]/editor/canvas-editor.tsx` y **solo** eso. Si `tsc`/lint/build señalan un import roto tras borrarlo (no debería), se **para** y se deja `bloqueado` — no se borra nada más ni se toca otro archivo.
