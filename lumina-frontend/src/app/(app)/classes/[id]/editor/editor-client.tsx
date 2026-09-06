@@ -44,6 +44,10 @@ import {
 
 import { useClass, type ClassDetail, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import {
+  isAxiosSlideVersionConflict,
+  SLIDE_VERSION_CONFLICT_MESSAGE,
+} from './lib/build-slide-content-payload';
+import {
   useCreateSlide,
   useInsertSlide,
   useRemoveSlide,
@@ -279,6 +283,10 @@ function countBloquesInSlideContent(content: unknown): number {
   if (content === null || typeof content !== 'object' || Array.isArray(content)) return 0;
   const bloques = (content as { bloques?: unknown }).bloques;
   return Array.isArray(bloques) ? bloques.length : 0;
+}
+
+function expectedVersionOf(slide: ApiSlide | null | undefined): number {
+  return typeof slide?.contentVersion === 'number' ? slide.contentVersion : 0;
 }
 
 function parseRoomStudentCount(payload: unknown): number | null {
@@ -706,6 +714,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [timerGlobalSaving, setTimerGlobalSaving] = useState(false);
   const [themeApplyBusy, setThemeApplyBusy] = useState(false);
   const [contentSaveEpoch, setContentSaveEpoch] = useState(0);
+  /** Payload persistible emitido por el reducer del lienzo (E5.4). */
+  const [reducerPersistPayload, setReducerPersistPayload] = useState<
+    Record<string, unknown> | null
+  >(null);
 
   const previewOpenRef = useRef(false);
   const sortedSlidesLengthRef = useRef(0);
@@ -830,26 +842,45 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [classId, queryClient, sessionActive],
   );
 
+  const notifySlideVersionConflict = useCallback(() => {
+    toast.error(SLIDE_VERSION_CONFLICT_MESSAGE);
+    void queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+  }, [classId, queryClient]);
+
   const autosaveSaveFn = useCallback(
     (latest: unknown) => {
       const slideId = activeSlideIdRef.current;
       if (!slideId || sessionActiveRef.current) return;
       const payload = buildSlidePayload(latest);
+      const detail = queryClient.getQueryData<ClassDetail | null>([
+        'classes',
+        'detail',
+        classId,
+      ]);
+      const cached = detail?.slides?.find((s) => s.id === slideId);
       updateSlide.mutate(
-        { slideId, content: payload },
+        {
+          slideId,
+          content: payload,
+          expectedVersion: expectedVersionOf(cached as ApiSlide | undefined),
+        },
         {
           onSuccess: () => setSaveError(false),
-          onError: () => {
+          onError: (err) => {
             setSaveError(true);
+            if (isAxiosSlideVersionConflict(err)) {
+              notifySlideVersionConflict();
+              return;
+            }
             toast.error('Error al guardar');
           },
         },
       );
     },
-    [buildSlidePayload, updateSlide],
+    [buildSlidePayload, updateSlide, queryClient, classId, notifySlideVersionConflict],
   );
 
-  const autosaveValue = activeSlide?.content ?? null;
+  const autosaveValue = reducerPersistPayload ?? activeSlide?.content ?? null;
 
   const { isDirty: autosaveDirty, isSaving: autosaveIsSaving } = useAutosave(
     autosaveValue,
@@ -1015,9 +1046,15 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const handleSave = useCallback(() => {
     if (!activeSlide) return;
-    const payload = buildSlidePayload(activeSlide.content ?? null);
+    const payload = buildSlidePayload(
+      reducerPersistPayload ?? activeSlide.content ?? null,
+    );
     updateSlide.mutate(
-      { slideId: activeSlide.id, content: payload },
+      {
+        slideId: activeSlide.id,
+        content: payload,
+        expectedVersion: expectedVersionOf(activeSlide as ApiSlide),
+      },
       {
         onSuccess: () => {
           setSaveError(false);
@@ -1037,13 +1074,24 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             );
           }
         },
-        onError: () => {
+        onError: (err) => {
           setSaveError(true);
+          if (isAxiosSlideVersionConflict(err)) {
+            notifySlideVersionConflict();
+            return;
+          }
           toast.error('Error al guardar');
         },
       },
     );
-  }, [activeSlide, buildSlidePayload, updateSlide, createSlideVersion]);
+  }, [
+    activeSlide,
+    reducerPersistPayload,
+    buildSlidePayload,
+    updateSlide,
+    createSlideVersion,
+    notifySlideVersionConflict,
+  ]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -1418,10 +1466,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         const sanitized =
           sanitizeSlideContentForPersistence(nextContent) ?? nextContent;
         updateSlide.mutate(
-          { slideId: slideActivo.id, content: sanitized },
+          {
+            slideId: slideActivo.id,
+            content: sanitized,
+            expectedVersion: expectedVersionOf(slideActivo as ApiSlide),
+          },
           {
             onSuccess: () => toast.success('Layout aplicado'),
-            onError: () => toast.error('No se pudo aplicar el layout'),
+            onError: (err) => {
+              if (isAxiosSlideVersionConflict(err)) {
+                notifySlideVersionConflict();
+                return;
+              }
+              toast.error('No se pudo aplicar el layout');
+            },
           },
         );
         return;
@@ -1431,7 +1489,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         description: 'Solo se puede aplicar un layout a slides vacíos.',
       });
     },
-    [sortedSlides, resolvedSlideIndex, insertSlide, updateSlide],
+    [sortedSlides, resolvedSlideIndex, insertSlide, updateSlide, notifySlideVersionConflict],
   );
 
   const handleCommitSlideContent = useCallback(
@@ -1447,13 +1505,23 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       }
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
       updateSlide.mutate(
-        { slideId: activeSlide.id, content: sanitized },
         {
-          onError: () => toast.error('No se pudo guardar el slide'),
+          slideId: activeSlide.id,
+          content: sanitized,
+          expectedVersion: expectedVersionOf(activeSlide as ApiSlide),
+        },
+        {
+          onError: (err) => {
+            if (isAxiosSlideVersionConflict(err)) {
+              notifySlideVersionConflict();
+              return;
+            }
+            toast.error('No se pudo guardar el slide');
+          },
         },
       );
     },
-    [activeSlide, activeSlideHasActivity, updateSlide],
+    [activeSlide, activeSlideHasActivity, updateSlide, notifySlideVersionConflict],
   );
 
   const handleActivityChange = useCallback(
@@ -1934,13 +2002,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       const sanitized = sanitizeSlideContentForPersistence(updated) ?? updated;
 
       try {
-        await api.patch(`/classes/${classId}/slides/${slideId}`, { content: sanitized });
+        await api.patch(`/classes/${classId}/slides/${slideId}`, {
+          content: sanitized,
+          expectedVersion: expectedVersionOf(slide as ApiSlide),
+        });
         return true;
-      } catch {
+      } catch (err) {
+        if (isAxiosSlideVersionConflict(err)) {
+          notifySlideVersionConflict();
+        }
         return false;
       }
     },
-    [classId, queryClient],
+    [classId, queryClient, notifySlideVersionConflict],
   );
 
   const finishThemeApply = useCallback(
@@ -2619,6 +2693,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <CanvasArea
               ref={canvasAreaRef}
               canvasSurfaceRef={canvasSurfaceRef}
+              onPersistPayloadChange={setReducerPersistPayload}
               slide={rendererSlide}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}

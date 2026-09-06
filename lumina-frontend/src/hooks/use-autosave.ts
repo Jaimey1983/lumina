@@ -24,6 +24,9 @@ export type UseAutosaveOptions = {
 /**
  * Dispara `saveFn` automáticamente tras `delay` ms sin cambios en `value`
  * (debounce con `setTimeout` + `clearTimeout`).
+ *
+ * E5.4: `value` debe ser el payload persistible derivado del reducer
+ * (`buildSlideContentPayload`), no un snapshot paralelo del slide de la query.
  */
 export function useAutosave<T>(
   value: T,

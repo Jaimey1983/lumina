@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useReducer,
   useRef,
   useState,
@@ -17,11 +18,18 @@ import { toast } from 'sonner';
 import { useDraggable } from '@dnd-kit/core';
 
 import { blockDragId, parseBlockDragIndex } from '../lib/block-drag-id';
+import {
+  buildSlideContentPayload,
+  parseContentVersion,
+  parseSlideVersionConflict,
+  SLIDE_VERSION_CONFLICT_MESSAGE,
+} from '../lib/build-slide-content-payload';
 import { editorSlideReducer } from '../lib/editor-slide-reducer';
 import {
   createInitialEditorSlideState,
   editorBloquesOverride,
 } from '../lib/editor-slide-state';
+import type { ClassDetail } from '@/hooks/api/use-class';
 
 import type {
   Activity,
@@ -163,7 +171,27 @@ function BlockDragHandle({
   if (!isBlockCanvasPositionable(block) || isBlockCanvasLocked(block)) {
     return null;
   }
+  return (
+    <BlockDragHandleInner
+      block={block}
+      index={index}
+      draggingId={draggingId}
+      selectedBlockIds={selectedBlockIds}
+    />
+  );
+}
 
+function BlockDragHandleInner({
+  block,
+  index,
+  draggingId,
+  selectedBlockIds,
+}: {
+  block: Block;
+  index: number;
+  draggingId: string | null;
+  selectedBlockIds: string[];
+}) {
   const id = blockDragId(index);
   const { attributes, listeners, setNodeRef } = useDraggable({
     id,
@@ -247,6 +275,11 @@ export interface CanvasAreaProps {
   livePanelOpen?: boolean;
   /** Ref al marco del slide (compartido con EditorDndShell para drops del panel). */
   canvasSurfaceRef?: Ref<HTMLDivElement | null>;
+  /**
+   * Payload persistible derivado del reducer (bloques/fondo/guías/transición).
+   * El autosave de `editor-client` observa este valor, no el blob de la query.
+   */
+  onPersistPayloadChange?: (payload: Record<string, unknown>) => void;
   /** Muestra reglas y guías manuales (solo editor). */
   guidesVisible?: boolean;
   /** Escala visual del lienzo (1 = 100 %). */
@@ -330,6 +363,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onHistoryStateChange,
     livePanelOpen = false,
     canvasSurfaceRef,
+    onPersistPayloadChange,
     guidesVisible = true,
     canvasZoom = CANVAS_ZOOM_DEFAULT,
     onCanvasZoomChange,
@@ -345,17 +379,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   // ── canvasRef — points at the slide frame div ───────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  const setCanvasSurfaceRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      canvasRef.current = node;
-      if (typeof canvasSurfaceRef === 'function') {
-        canvasSurfaceRef(node);
-      } else if (canvasSurfaceRef && 'current' in canvasSurfaceRef) {
-        (canvasSurfaceRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [canvasSurfaceRef],
-  );
+  const parentSurfaceRef = useRef(canvasSurfaceRef);
+  parentSurfaceRef.current = canvasSurfaceRef;
+  const setCanvasSurfaceRef = useCallback((node: HTMLDivElement | null) => {
+    canvasRef.current = node;
+    const parent = parentSurfaceRef.current;
+    if (typeof parent === 'function') {
+      parent(node);
+    } else if (parent && 'current' in parent) {
+      parent.current = node;
+    }
+  }, []);
 
   const {
     draggingId,
@@ -407,6 +441,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   selectedBlockIdRef.current = selectedBlockId;
   const slideRef = useRef(slide);
   slideRef.current = slide;
+  const editorStateRef = useRef(editorState);
+  editorStateRef.current = editorState;
+  /** `contentVersion` local por slideId — se hidrata desde la query y se avanza tras PATCH OK. */
+  const contentVersionBySlideRef = useRef<Map<string, number>>(new Map());
 
   // Al cambiar de slide: overlay + selección + inner (conserva layersPanelOpen).
   useEffect(() => {
@@ -471,52 +509,152 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onHistoryStateChange?.({ canUndo, canRedo });
   }, [canUndo, canRedo, historyTick, onHistoryStateChange]);
 
+  const slideId = slide?.id ?? null;
+  const slideDiseno = slide?.diseno;
+  const slideTransicion = slide?.transicion;
+
+  const readCachedContentVersion = useCallback(
+    (targetSlideId: string): number => {
+      const remembered = contentVersionBySlideRef.current.get(targetSlideId);
+      if (remembered !== undefined) return remembered;
+      const detail = queryClient.getQueryData<ClassDetail>([
+        'classes',
+        'detail',
+        classId,
+      ]);
+      const fromQuery = detail?.slides?.find((s) => s.id === targetSlideId)
+        ?.contentVersion;
+      return typeof fromQuery === 'number' ? fromQuery : 0;
+    },
+    [classId, queryClient],
+  );
+
+  const slideContentVersion = slide?.contentVersion;
+  useEffect(() => {
+    if (!slideId) return;
+    if (typeof slideContentVersion === 'number') {
+      contentVersionBySlideRef.current.set(slideId, slideContentVersion);
+      return;
+    }
+    const detail = queryClient.getQueryData<ClassDetail>([
+      'classes',
+      'detail',
+      classId,
+    ]);
+    const fromQuery = detail?.slides?.find((s) => s.id === slideId)
+      ?.contentVersion;
+    if (typeof fromQuery === 'number') {
+      contentVersionBySlideRef.current.set(slideId, fromQuery);
+    }
+  }, [slideId, slideContentVersion, classId, queryClient]);
+
+  const persistBloquesState = editorState.bloques;
+  const persistFondoState = editorState.fondo;
+  const persistGuiasState = editorState.guias;
+  const persistTransicionState = editorState.transicion;
+  const persistPayload = useMemo(
+    () =>
+      buildSlideContentPayload(
+        {
+          bloques: persistBloquesState,
+          fondo: persistFondoState,
+          guias: persistGuiasState,
+          transicion: persistTransicionState,
+        },
+        { diseno: slideDiseno },
+      ),
+    [
+      persistBloquesState,
+      persistFondoState,
+      persistGuiasState,
+      persistTransicionState,
+      slideDiseno,
+    ],
+  );
+
+  useEffect(() => {
+    onPersistPayloadChange?.(persistPayload);
+  }, [persistPayload, onPersistPayloadChange]);
+
   const buildContentFromSnapshot = useCallback(
     (snapshot: SlideHistorySnapshot) => {
       return {
         bloques: cloneSlideBlocks(snapshot.bloques),
         fondo: snapshot.fondo ?? DEFAULT_SLIDE_FONDO,
-        ...(slide?.diseno ? { diseno: slide.diseno } : {}),
+        ...(slideDiseno ? { diseno: slideDiseno } : {}),
         ...(snapshot.transicion !== undefined
           ? { transicion: snapshot.transicion }
-          : slide?.transicion
-            ? { transicion: slide.transicion }
+          : slideTransicion
+            ? { transicion: slideTransicion }
             : {}),
         guias: snapshot.guias,
       };
     },
-    [slide?.diseno, slide?.transicion],
+    [slideDiseno, slideTransicion],
+  );
+
+  const handleVersionConflict = useCallback(
+    async (targetSlideId: string, body: unknown) => {
+      toast.error(SLIDE_VERSION_CONFLICT_MESSAGE);
+      dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+      const conflict = parseSlideVersionConflict(body);
+      if (conflict?.currentVersion !== undefined) {
+        contentVersionBySlideRef.current.set(
+          targetSlideId,
+          conflict.currentVersion,
+        );
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ['classes', 'detail', classId],
+      });
+    },
+    [classId, queryClient],
   );
 
   const patchSlideContentById = useCallback(
-    async (slideId: string, content: Record<string, unknown>): Promise<boolean> => {
+    async (targetSlideId: string, content: Record<string, unknown>): Promise<boolean> => {
       if (!classId) return false;
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
+      const expectedVersion = readCachedContentVersion(targetSlideId);
       const res = await fetch(
-        `${apiUrl}/classes/${classId}/slides/${slideId}`,
+        `${apiUrl}/classes/${classId}/slides/${targetSlideId}`,
         {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ content: sanitized }),
+          body: JSON.stringify({ content: sanitized, expectedVersion }),
         },
       );
-      return res.ok;
+      let body: unknown = null;
+      try {
+        body = await res.json();
+      } catch {
+        body = null;
+      }
+      if (res.status === 409) {
+        await handleVersionConflict(targetSlideId, body);
+        return false;
+      }
+      if (!res.ok) return false;
+      const nextVersion =
+        parseContentVersion(body) ?? expectedVersion + 1;
+      contentVersionBySlideRef.current.set(targetSlideId, nextVersion);
+      return true;
     },
-    [classId],
+    [classId, readCachedContentVersion, handleVersionConflict],
   );
 
   const patchSlideContent = useCallback(
     async (content: Record<string, unknown>): Promise<boolean> => {
-      if (!slide?.id || !classId) return false;
-      return patchSlideContentById(slide.id, content);
+      if (!slideId || !classId) return false;
+      return patchSlideContentById(slideId, content);
     },
-    [slide?.id, classId, patchSlideContentById],
+    [slideId, classId, patchSlideContentById],
   );
 
   const buildContentPayload = useCallback(
@@ -525,20 +663,18 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       fondoOverride?: Background,
       guiasOverride?: SlideGuias,
     ) => {
-      const guias = guiasOverride ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
-      return {
-        bloques,
-        ...(fondoOverride !== undefined
-          ? { fondo: fondoOverride }
-          : slide?.fondo
-            ? { fondo: slide.fondo }
-            : {}),
-        ...(slide?.diseno ? { diseno: slide.diseno } : {}),
-        ...(slide?.transicion ? { transicion: slide.transicion } : {}),
-        guias,
-      };
+      const current = editorStateRef.current;
+      return buildSlideContentPayload(
+        {
+          bloques,
+          fondo: fondoOverride !== undefined ? fondoOverride : current.fondo,
+          guias: guiasOverride ?? current.guias,
+          transicion: current.transicion,
+        },
+        { diseno: slideDiseno },
+      );
     },
-    [slide?.fondo, slide?.diseno, slide?.guias, slide?.transicion],
+    [slideDiseno],
   );
 
   const recordAfterSuccess = useCallback(
@@ -737,10 +873,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [
-      slide?.id,
-      slide?.bloques,
-      slide?.fondo,
-      slide?.guias,
+      slide,
       liveBloques,
       committedBloques,
       classId,
@@ -848,7 +981,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         toast.error('No se pudo duplicar el bloque');
       }
     },
-    [slide?.id, classId, slide?.bloques, persistBloques],
+    [slide, classId, persistBloques],
   );
 
   const handleCopyBlock = useCallback(
@@ -859,7 +992,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         toast.success('Bloque copiado');
       }
     },
-    [slide?.bloques, onCopyBlock],
+    [slide, onCopyBlock],
   );
 
   const handleDragSave = useCallback(
@@ -874,7 +1007,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       }
     },
-    [persistBloques, slide?.bloques],
+    [persistBloques, slide],
   );
 
   // ── snap during resize ──────────────────────────────────────────────────────
@@ -905,7 +1038,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       setSnapLines(lines);
       return { x, y, ancho: rawCoords.ancho, alto: rawCoords.alto };
     },
-    [slide?.bloques, slide?.guias, setSnapLines, snapSuppressedRef],
+    [slide, setSnapLines, snapSuppressedRef],
   );
 
   // ── live slide: inject updated positions during drag for real-time preview ──
@@ -956,7 +1089,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [
-      slide?.id,
+      slide,
       buildContentFromSnapshot,
       patchSlideContent,
       queryClient,
@@ -972,7 +1105,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     const result = undoHistory(state);
     if (!result) return;
     await restoreSnapshot(result.state, result.snapshot, 'No se pudo deshacer');
-  }, [slide?.id, restoreSnapshot]);
+  }, [slide, restoreSnapshot]);
 
   const handleRedo = useCallback(async () => {
     if (!slide?.id) return;
@@ -981,7 +1114,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     const result = redoHistory(state);
     if (!result) return;
     await restoreSnapshot(result.state, result.snapshot, 'No se pudo rehacer');
-  }, [slide?.id, restoreSnapshot]);
+  }, [slide, restoreSnapshot]);
 
   const handleJumpToHistory = useCallback(
     async (index: number) => {
@@ -996,7 +1129,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         'No se pudo restaurar ese punto',
       );
     },
-    [slide?.id, restoreSnapshot],
+    [slide, restoreSnapshot],
   );
 
   const handlePasteCopiedBlock = useCallback(
@@ -1019,7 +1152,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         toast.error('No se pudo pegar el bloque');
       }
     },
-    [slide?.id, slide?.bloques, liveSlide?.bloques, classId, persistBloques],
+    [slide, liveSlide, classId, persistBloques],
   );
 
   const handlePasteCopiedBlockInSlide = useCallback(
@@ -1070,7 +1203,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         );
       }
     },
-    [slide?.id, classId, slide?.bloques, liveSlide?.bloques, persistBloques],
+    [slide, classId, liveSlide, persistBloques],
   );
 
   const handleRemoveBlock = useCallback(
@@ -1089,10 +1222,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [
-      slide?.id,
+      slide,
       classId,
-      slide?.bloques,
-      liveSlide?.bloques,
+      liveSlide,
       persistBloques,
     ],
   );
@@ -1110,7 +1242,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         if (!ok) toast.error('No se pudo actualizar el orden de capas');
       });
     },
-    [liveSlide?.bloques, persistBloques],
+    [liveSlide, persistBloques],
   );
 
   const handleReorder = useCallback(
@@ -1150,11 +1282,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [
-      liveSlide?.bloques,
-      slide?.id,
-      slide?.bloques,
-      slide?.fondo,
-      slide?.guias,
+      liveSlide,
+      slide,
       buildContentPayload,
       patchSlideContent,
       queryClient,
@@ -1385,7 +1514,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       }
     },
-    [liveSlide?.bloques, slide?.bloques, persistBloques],
+    [liveSlide, slide, persistBloques],
   );
 
   const handleClipGroupChange = useCallback(
@@ -1397,7 +1526,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       const next = prev.map((b, i) => (i === idx ? updated : b));
       await persistBloques(next, prev, true);
     },
-    [liveSlide?.bloques, slide?.bloques, persistBloques],
+    [liveSlide, slide, persistBloques],
   );
 
   const handleGroupIntoClipMask = useCallback(async () => {
@@ -1430,10 +1559,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       toast.error('No se pudo aplicar la máscara');
     }
   }, [
-    slide?.id,
+    slide,
     classId,
-    liveSlide?.bloques,
-    slide?.bloques,
+    liveSlide,
     selectedBlockIds,
     persistBloques,
   ]);
@@ -1456,10 +1584,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [
-      slide?.id,
+      slide,
       classId,
-      liveSlide?.bloques,
-      slide?.bloques,
+      liveSlide,
       persistBloques,
     ],
   );
@@ -1513,9 +1640,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       return true;
     },
     [
-      slide?.id,
-      liveSlide?.bloques,
-      slide?.bloques,
+      slide,
+      liveSlide,
       buildContentPayload,
       patchSlideContent,
       queryClient,
@@ -1659,13 +1785,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       selectedBlockId,
       selectedBlockIds,
       draggingId,
-      liveSlide?.bloques,
-      liveSlide?.guias,
-      slide?.id,
-      slide?.bloques,
-      slide?.guias,
-      slide?.fondo,
-      slide?.transicion,
+      liveSlide,
+      slide,
       persistBloques,
       persistGuias,
       handleUndo,

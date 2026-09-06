@@ -180,9 +180,9 @@ Estado de partida: `lumina-backend` 219 problemas (209 errores/10 warnings) — 
 | Scoring + sesiones autónomas | `lumina-backend/src/classes/activity-scoring.ts` + `lumina-backend/src/autonomous-sessions/*` | Cursor | **[hecho]** — 68→0. `asString`/`asUnknownArray` en scoring; `extractActivityDefinition` + `CurrentUser`/`JwtAuthUser` en autonomous-sessions |
 | Cola larga backend | 17 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity | **[hecho]** — 35→0. Tipado DTOs @Transform, mocks en specs, tipado seguro en AI/gateway |
 | Cola larga frontend (`no-unused-vars` / `no-explicit-any` restante) | 53 archivos exactos — ver `LINT_CLEANUP_BACKLOG.md` | Antigravity + Claude Code | **[hecho]** — Antigravity bajó 120→76; Claude Code cerró en **L.2** los 6 `error` que quedaban fuera del cluster congelado. `cd lumina-frontend && pnpm lint` → **0 error** (70 warnings), `tsc` limpio, `test:unit` 446/446 |
-| `react-hooks/*` + React Compiler del motor del canvas (**cluster congelado E5**) | **Exactamente `canvas-area.tsx`** (y `slide-renderer.tsx` si reaparece). NO están congelados: `flyout-left-panels.tsx`, `popup-parts.tsx`, `tooltip-parts.tsx`, `diagrama-properties.tsx`, componentes de Timeline (solo `warning`) | **Nadie hasta E5** | **Degradado a `warn` SOLO en `canvas-area.tsx`** vía `lumina-frontend/eslint.config.mjs` (`react-hooks/rules-of-hooks`, `immutability`, `preserve-manual-memoization`, `purity`, `static-components`), con `TODO(migración-etapa-5)`. Son exactamente los diagnósticos del React Compiler que E5 resuelve al centralizar el estado del editor. El override se quita al cerrar E5. |
+| `react-hooks/*` + React Compiler del motor del canvas (**cluster congelado E5**) | **Exactamente `canvas-area.tsx`** (y `slide-renderer.tsx` si reaparece). NO están congelados: `flyout-left-panels.tsx`, `popup-parts.tsx`, `tooltip-parts.tsx`, `diagrama-properties.tsx`, componentes de Timeline (solo `warning`) | Cursor (E5.4) | **[hecho en E5.4]** — override de `eslint.config.mjs` eliminado; `canvas-area.tsx` en lint estricto (0 `error`). `slide-renderer.tsx` sigue con su `switch` hasta E5.5–E5.7. |
 
-**Regla 9 cerrada:** `pnpm lint` está en 0 `error` en los dos paquetes (con `canvas-area.tsx` degradado a `warning` hasta E5). El lint estricto del CI ya es bloqueante de verdad → **`E1` desbloqueado**.
+**Regla 9 cerrada:** `pnpm lint` está en 0 `error` en los dos paquetes. El override de `canvas-area.tsx` se retiró en E5.4. El lint estricto del CI ya es bloqueante de verdad → **`E1` desbloqueado**.
 
 ---
 
@@ -573,7 +573,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 
 ##### E5.4 — Persistencia con `expectedVersion` y descongelar `canvas-area.tsx` en lint
 - **Operador:** Cursor
-- **Estado:** [en curso: Cursor]
+- **Estado:** en revisión — `expectedVersion` en PATCH del canvas + autosave/Ctrl+S; 409 = toast + invalidateQueries (rebase al servidor, no LWW); override de `canvas-area.tsx` eliminado. Verif: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build` → tsc limpio · lint **0 error** (62 warnings, sin override) · test:unit **473/473** (+4 de `build-slide-content-payload.spec.ts`) · build OK.
 - **Precondición:** E5.3 `hecho`.
 - **Contexto (decisión raíz §3 — opción **(a)**):** F1.4 dejó en backend `Slide.contentVersion` + `UpdateSlideDto.expectedVersion` → `409 ConflictException` con `currentVersion` (`classes.service.ts`). El frontend hoy manda `{ content }` entero sin versión (`patchSlideContentById` en `canvas-area.tsx:479`). E5.4 serializa el `content` **desde el estado del reducer** (única fuente de verdad post-E5.2) y adjunta `expectedVersion`; **no** se cambia el DTO ni `lumina-backend`. Autosave sigue siendo debounce sobre el payload derivado (`use-autosave.ts` o equivalente cableado al reducer).
 - **Alcance — PUEDE tocar:**

@@ -157,8 +157,20 @@ export function useCreateSlide(classId: string) {
 export function useUpdateSlide(classId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ slideId, content }: { slideId: string; content: unknown }) => {
-      const { data } = await api.patch(`/classes/${classId}/slides/${slideId}`, { content });
+    mutationFn: async ({
+      slideId,
+      content,
+      expectedVersion,
+    }: {
+      slideId: string;
+      content: unknown;
+      /** Si se omite, el backend sigue en last-write-wins (compat F1.4). */
+      expectedVersion?: number;
+    }) => {
+      const { data } = await api.patch(`/classes/${classId}/slides/${slideId}`, {
+        content,
+        ...(expectedVersion !== undefined ? { expectedVersion } : {}),
+      });
       return data;
     },
     onSuccess: () => {

@@ -275,6 +275,7 @@ export function classSlideToRendererSlide(api: ApiSlide): Slide {
     order: api.order,
     type: api.type,
     title: api.title,
+    contentVersion: api.contentVersion,
     bloques,
     fondo: resolveFondo(c),
     temaId,

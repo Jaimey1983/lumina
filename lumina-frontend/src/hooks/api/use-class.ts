@@ -8,6 +8,8 @@ export interface Slide {
   type: 'COVER' | 'CONTENT' | 'ACTIVITY' | 'VIDEO' | 'IMAGE';
   title: string;
   content?: unknown;
+  /** Versión optimista de `content` (F1.4). Ausente en slides legado → 0. */
+  contentVersion?: number;
 }
 
 export interface ClassDetail {

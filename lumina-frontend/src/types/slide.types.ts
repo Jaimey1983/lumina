@@ -1386,6 +1386,8 @@ export interface Slide {
   order: number;
   type: SlideType;
   title: string;
+  /** Versión optimista de `content` (F1.4 / E5.4). */
+  contentVersion?: number;
   /** Block-based structured content. */
   bloques?: Block[];
   /** Guías persistentes del lienzo (solo editor). */
