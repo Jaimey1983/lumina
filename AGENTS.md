@@ -595,7 +595,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 
 ##### E5.5 — Reconectar canvas: `switch` → `elementRegistry` (~34 tipos) + adelgazar registros viejos (dispatch fuera; borrado completo → E7)
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Cursor]
 - **Precondición:** E5.4 `hecho` · E5.1 `hecho` (frontend consume `@lumina/element-kit-core` sin ciclo).
 - **Contexto:** 37 `ElementDefinition` ya registradas en `@lumina/element-kit` (12 widgets + 22 actividades + 3 bloques canvas). E5.5 cubre los **~34 con paridad DOM probada** (12 widgets + 22 actividades). Los **3 bloques canvas** (`grafico`, `diagrama`, `clip-group`) llevan `RIESGO ACEPTADO (E4.5 §2)` en `slide-renderer.tsx` — **sus `case` NO se borran** (E5.7). Dispatch unificado: `elementRegistry.obtener(tipo)` → `Editor` / `Viewer` / `Propiedades` con adapters del kit. Side-effect: import bootstrap `@lumina/element-kit` (registra elementos) + consultas vía `@lumina/element-kit-core`.
 - **Alcance — PUEDE tocar:**
