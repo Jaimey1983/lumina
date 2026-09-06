@@ -22,11 +22,18 @@ export interface HotspotWidget {
 }
 
 export declare function createDefaultHotspotBlock(): HotspotWidget;
+export type HotspotInnerSelection =
+  | { kind: "widget" }
+  | { kind: "overlay" }
+  | { kind: "overlay-text"; field: string }
+  | { kind: "overlay-image" };
+
 export declare function HotspotEditor(props: {
   block: HotspotWidget;
   onChange: (block: HotspotWidget) => void;
-  onEnsureBlockSelected?: () => void;
-  innerSelection: null;
+  onEnsureBlockSelected: () => void;
+  innerSelection: HotspotInnerSelection | null;
+  onInnerSelectionChange?: (sel: HotspotInnerSelection | null) => void;
 }): ReactElement;
 export declare function HotspotViewer(props: {
   block: HotspotWidget;
