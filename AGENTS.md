@@ -486,7 +486,7 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 ##### E4.6 — Primitivos de canvas (`texto`…`columnas`) — **NO en E4** bajo la recomendación (a)
 Los 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven dentro de `slide-renderer.tsx` (congelado E5). Se migran en **E5**, que los extrae al descongelar el `switch` y reconectar el canvas al `ElementRegistry`. Si al activar E4 se resuelve la «Tensión declarada §1» por el camino (b), esta ficha se reescribe como E4.6–E4.13 (una por primitivo) con el carve-out del freeze explícito.
 
-#### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · **RAÍZ REDACTADA** (Claude Code) · precondición cumplida (E4 cerrada + un elemento migrado por categoría) · sub-fichas E5.1–E5.7 pendientes de redactar (Cursor)
+#### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · **RAÍZ REDACTADA** (Claude Code) · precondición cumplida (E4 cerrada + un elemento migrado por categoría) · sub-ficha E5.1 **en revisión** · E5.2–E5.7 pendientes de redactar (Cursor)
 
 Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** para el slide en edición, **persistencia por diferencia** (mandar el bloque cambiado + `expectedVersion` de F1.4, no el blob entero) e **historial por diferencia** (undo/redo guarda diffs, no 20 `Block[]` completos). E5 es además la etapa que **descongela** el cluster `react-hooks`/React-Compiler (`canvas-area.tsx`), **reconecta el canvas al `elementRegistry`** (retira el `switch` de `slide-renderer.tsx`), **migra los 8 primitivos** (E4.6) y **retira** los dos registros viejos + la fachada de scoring. El barrido de todo lo que quede sin referencias es E7 — E5 retira solo lo acoplado a la unificación del estado.
 
@@ -509,9 +509,30 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 4. **Regla 1 vs. deadlock (misma lectura que E4).** **DECIDIDO:** "cerrada" para una sub-ficha de E5 = el `case` / fila / fachada **efectivamente borrado** y su prueba de paridad reapuntada al `elementRegistry`. Lo que no se pueda borrar por el `RIESGO ACEPTADO (E4.5 §2)` **bloquea su propia sub-ficha** hasta que exista la cobertura de integración — no se hereda otro `TODO`.
 5. **Primitivos (E4.6) vs. descongelar el switch.** **DECIDIDO:** extraerlos dentro de E5 (sub-ficha E5.6), en la misma pasada que borra el `switch` (freeze ya levantado). Son primitivos sin scoring, patrón E3.
 
-**Orden propuesto (secuencial salvo indicación) — sub-fichas redactadas por Cursor (dueño del canvas/editor) al activar la etapa, con el estado real a la vista:**
+**Orden (secuencial salvo indicación) — sub-fichas redactadas por Cursor (dueño del canvas/editor); las 5 decisiones de la raíz están CONFIRMADAS y no se reabren en las sub-fichas:**
 
-- **E5.1** — Desacoplar el registry: crear `@lumina/element-kit-core` (contrato + `ElementRegistry`, sin React ni `lumina-frontend`), `@lumina/element-kit` pasa a depender de `-core`, el frontend importa `elementRegistry` desde `-core` sin ciclo. Sin cambio de comportamiento; `pnpm -r build` verde.
+##### E5.1 — Crear `@lumina/element-kit-core` y desacoplar el registry del frontend
+- **Operador:** GPT Codex
+- **Estado:** en revisión
+- **Precondición:** E4 cerrada (cumplida). Ninguna otra sub-ficha E5.x.
+- **Contexto (decisión raíz §1 — opción **(b)**):** hoy `@lumina/element-kit` depende de `lumina-frontend` (`package.json` → `"lumina-frontend": "workspace:*"`), mientras el canvas (E5.5+) necesitará consultar el catálogo sin crear ciclo. El contrato vive en `packages/element-kit/src/contract.ts` (usa `ComponentType` de React solo como tipo); el registry en `packages/element-kit/src/registry.ts`; la instancia poblada `elementRegistry` + 37 `registrar(...)` en `packages/element-kit/src/index.ts`. El frontend **aún no** declara dependencia de `@lumina/element-kit` — solo `@lumina/scoring`. Este paso prepara el grafo; el consumo desde el canvas llega en E5.5.
+- **Alcance — PUEDE tocar:**
+  - **Nuevo** `packages/element-kit-core/**` — `"name": "@lumina/element-kit-core"`, `"private": true`, `"type": "module"`, `exports` desde `dist/` (o desde `src/` como `@lumina/scoring` si el monorepo ya consume TS en fuente — elegir uno y documentarlo en el commit). Scripts `build` (tsc), `test` (vitest), `lint` (eslint extendiendo la base). **Sin** `@testing-library/*`, **sin** `jsdom`, **sin** `lumina-frontend`, **sin** `@lumina/scoring`. Contenido mínimo movido desde el kit actual:
+    - `src/contract.ts` — tipos `ElementDefinition`, `AparienciaSpec`, props Editor/Viewer/Propiedades, `PuntuacionDelegate` (idénticos a los de hoy).
+    - `src/registry.ts` — clase `ElementRegistry` (idéntica a la de hoy).
+    - `src/index.ts` — export pública: contrato + registry + **singleton** `elementRegistry = new ElementRegistry()` (catálogo vacío al importar solo `-core`).
+    - `src/registry.spec.ts` — pruebas de registrar / obtener / duplicado (portadas desde el kit).
+  - `packages/element-kit/**` — refactor para depender de `@lumina/element-kit-core` (`workspace:*`): re-exportar contrato/registry desde `-core`; **todas** las `import … from "./contract.js"` / `"./registry.js"` pasan a `@lumina/element-kit-core`; la instancia `elementRegistry` del `index.ts` del kit **debe ser la misma** que la de `-core` (registrar ahí los 37 elementos — no duplicar Map). Los `register.ts` por elemento siguen tipando `ElementRegistry` importándolo desde `-core`.
+  - Raíz: entrada en `pnpm-lock.yaml`; job `packages` en `.github/workflows/ci.yml` — añadir `pnpm --filter @lumina/element-kit-core build && test && lint` **antes** del job de `@lumina/element-kit` (mismo patrón que E1.2/E1.3).
+- **Alcance — NO toca:** `lumina-frontend/**`, `lumina-backend/**`, `slide-renderer.tsx`, `canvas-area.tsx`, ningún `src/` fuera de `packages/`. No invertir aún el grafo en runtime del canvas (E5.5). No mover adapters ni `elements/**` al paquete `-core`. No borrar `TODO(migración-etapa-5)` de registros viejos.
+- **Entregable:** grafo de dependencias **sin ciclo** listo para E5.5: `@lumina/element-kit-core` no depende de `lumina-frontend`; `@lumina/element-kit` depende de `-core` + `lumina-frontend` + `@lumina/scoring`; el frontend puede añadir `"@lumina/element-kit-core": "workspace:*"` en E5.5 sin ciclo. Comportamiento idéntico: mismos 37 tipos registrados, mismas pruebas de paridad del kit. Verificación exacta (secuencial, desde la raíz del repo):
+  ```bash
+  pnpm install --frozen-lockfile && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit-core test && pnpm --filter @lumina/element-kit-core lint && pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend build && pnpm --filter lumina-frontend test:unit
+  ```
+  Conteos de referencia al cerrar E4: `@lumina/element-kit` test **270/270** (31 files); `lumina-frontend` test:unit **446/446**; lint 0 `error` en ambos paquetes.
+- **Cierre:** no aplica Regla 4 (refactor estructural; los registros viejos del canvas se retiran en E5.5/E5.6). Commit sugerido: `refactor(element-kit): extraer @lumina/element-kit-core`.
+
+- **E5.1** — *(redactada arriba)* · **E5.2–E5.7** — pendientes de redactar (Cursor).
 - **E5.2** — `editorSlideReducer`: acciones `seleccionar/mover/redimensionar/rotar/editarBloque/añadir/eliminar/pegar/fondo/guías`, absorbe el estado disperso de `canvas-area.tsx`. Sin tocar persistencia ni historial; paridad de comportamiento (specs de `lib/` reusados).
 - **E5.3** — Historial por diferencia: `canvas-history.ts` pasa de `Block[]` completo a `patch`/`inverse-patch` por entrada. Paridad contra `canvas-history.spec.ts` ampliado (misma secuencia → mismo estado visible, menos memoria).
 - **E5.4** — Persistencia por diferencia: autosave serializa `content` mínimo desde el reducer y **manda `expectedVersion`**; manejo del `409` (rebase o aviso). Se quita el override de `canvas-area.tsx` de `eslint.config.mjs` y `pnpm lint` queda en 0 `error` sin él.
