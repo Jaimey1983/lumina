@@ -448,8 +448,8 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 - **Cierre (Regla 4):** `TODO(migración-etapa-5)` junto al `case 'clip-group'`.
 
 ##### E4.4 — Editor vectorial Paper.js (`clip-path-node-editor-paper.tsx`) sobre el contrato
-- **Operador:** Cursor
-- **Estado:** pendiente · **Precondición:** E4.3 `hecho`.
+- **Operador:** Claude Code (reasignado desde Cursor por decisión del dueño del tablero)
+- **Estado:** [en curso: Claude Code] · **Precondición:** E4.3 `hecho`.
 - **Contexto:** `clip-path-node-editor-paper.tsx` (591 líneas) — único consumidor de `paper` 0.12.18, cargado con `dynamic()` desde `render-clip-group.tsx`. Es el editor de nodos de la máscara libre. Antigravity/Cursor tienen contrato específico en `.cursor/rules/lumina-canvas-editor-contracts.mdc`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/elements/clip-group/paper-editor/**` (adapter del editor de nodos a las props del contrato / a un sub-panel del `Editor` de `clip-group`), su parity/render-smoke spec; `clip-path-node-editor-paper.tsx` **solo** para exports internos, sin cambiar comportamiento ni la carga `dynamic()`. `next.config.ts` ya tiene `serverExternalPackages: ['paper']` (E1.1) — no re-tocar.
 - **Alcance — NO toca:** `slide-renderer.tsx`, `canvas-area.tsx`, la lógica de `freeform-mask.ts`; backend.
