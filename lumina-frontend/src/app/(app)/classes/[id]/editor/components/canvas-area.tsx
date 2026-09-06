@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useReducer,
   useRef,
   useState,
   type Ref,
@@ -16,6 +17,11 @@ import { toast } from 'sonner';
 import { useDraggable } from '@dnd-kit/core';
 
 import { blockDragId, parseBlockDragIndex } from '../lib/block-drag-id';
+import { editorSlideReducer } from '../lib/editor-slide-reducer';
+import {
+  createInitialEditorSlideState,
+  editorBloquesOverride,
+} from '../lib/editor-slide-state';
 
 import type {
   Activity,
@@ -45,11 +51,7 @@ import {
   SlideEditorChrome,
   SlideInsertionToolbar,
 } from './floating-toolbar';
-import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
-import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
-import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
-import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, PopupInnerSelection, PopupWidget } from '@/types/widget.types';
-import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
+import type { HotspotWidget, PopupWidget } from '@/types/widget.types';
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';
@@ -344,64 +346,52 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   } = useEditorBlockDrag();
 
   /**
-   * Optimistic bridge: holds the final block positions immediately after a
-   * successful drag so the canvas doesn't snap back while the query refetches.
-   * Cleared once the query settles or the active slide changes.
+   * Estado central del slide (bloques, selección, inner, fondo/guías).
+   * Overlay optimista = `editorBloquesOverride` (antes `committedBloques`).
+   * Historial (`historiesRef`) y persistencia (`patchSlideContentById`) no cambian.
    */
-  const [committedBloques, setCommittedBloques] = useState<Block[] | null>(null);
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
-  const [flipCardsInnerSelection, setFlipCardsInnerSelection] =
-    useState<FlipCardsInnerSelection | null>(null);
-  const [tabsInnerSelection, setTabsInnerSelection] =
-    useState<TabsInnerSelection | null>(null);
-  const [carouselInnerSelection, setCarouselInnerSelection] =
-    useState<CarouselInnerSelection | null>(null);
-  const [clickRevealInnerSelection, setClickRevealInnerSelection] =
-    useState<ClickRevealInnerSelection | null>(null);
-  const [popupInnerSelection, setPopupInnerSelection] =
-    useState<PopupInnerSelection | null>(null);
-  const [hotspotInnerSelection, setHotspotInnerSelection] =
-    useState<HotspotInnerSelection | null>(null);
-  const [timelineInnerSelection, setTimelineInnerSelection] =
-    useState<TimelineInnerSelection | null>(null);
-  const [clipGroupInnerEditId, setClipGroupInnerEditId] = useState<string | null>(
-    null,
+  const [editorState, dispatchEditor] = useReducer(
+    editorSlideReducer,
+    slide,
+    createInitialEditorSlideState,
   );
+  const committedBloques = editorBloquesOverride(editorState);
+  const selectedBlockId = editorState.selectedBlockId;
+  const selectedBlockIds = editorState.selectedBlockIds;
+  const flipCardsInnerSelection = editorState.inner.flipCards;
+  const tabsInnerSelection = editorState.inner.tabs;
+  const carouselInnerSelection = editorState.inner.carousel;
+  const clickRevealInnerSelection = editorState.inner.clickReveal;
+  const popupInnerSelection = editorState.inner.popup;
+  const hotspotInnerSelection = editorState.inner.hotspot;
+  const timelineInnerSelection = editorState.inner.timeline;
+  const clipGroupInnerEditId = editorState.inner.clipGroupBlockId;
+  const marqueeRect = editorState.marqueeRect;
+  const layersPanelOpen = editorState.layersPanelOpen;
 
   const clearInnerSelections = useCallback(() => {
-    setFlipCardsInnerSelection(null);
-    setTabsInnerSelection(null);
-    setCarouselInnerSelection(null);
-    setClickRevealInnerSelection(null);
-    setPopupInnerSelection(null);
-    setHotspotInnerSelection(null);
-    setTimelineInnerSelection(null);
-    setClipGroupInnerEditId(null);
+    dispatchEditor({ type: 'INNER_SELECTION', inner: 'clear' });
   }, []);
 
-  const [marqueeRect, setMarqueeRect] = useState<{
+  const wasDraggingRef = useRef(false);
+  const marqueeStartRef = useRef<{
     startX: number;
     startY: number;
     currentX: number;
     currentY: number;
   } | null>(null);
-  const wasDraggingRef = useRef(false);
   const onBlockSelectRef = useRef(onBlockSelect);
   onBlockSelectRef.current = onBlockSelect;
   const selectedBlockIdRef = useRef(selectedBlockId);
   selectedBlockIdRef.current = selectedBlockId;
+  const slideRef = useRef(slide);
+  slideRef.current = slide;
 
-  // Clear committed state when the user switches slides.
+  // Al cambiar de slide: overlay + selección + inner (conserva layersPanelOpen).
   useEffect(() => {
-    setCommittedBloques(null);
+    dispatchEditor({ type: 'RESETEAR_DESDE_SLIDE', slide: slideRef.current });
+    // Solo `slide?.id`: un refetch del mismo slide no debe borrar la selección.
   }, [slide?.id]);
-
-  useEffect(() => {
-    setSelectedBlockId(null);
-    setSelectedBlockIds([]);
-    clearInnerSelections();
-  }, [slide?.id, clearInnerSelections]);
 
   const hasActivityBlock =
     Boolean(slide?.bloques?.some((b) => b.tipo === 'actividad'));
@@ -421,7 +411,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     guias: EMPTY_SLIDE_GUIAS,
   });
   const [historyTick, setHistoryTick] = useState(0);
-  const [layersPanelOpen, setLayersPanelOpen] = useState(false);
   const bumpHistory = useCallback(() => setHistoryTick((t) => t + 1), []);
 
   useEffect(() => {
@@ -444,12 +433,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   void historyTick;
 
   useEffect(() => {
-    setClipGroupInnerEditId(null);
+    dispatchEditor({ type: 'INNER_SELECTION', inner: { clipGroupBlockId: null } });
   }, [slide?.id, selectedBlockId]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setClipGroupInnerEditId(null);
+      if (e.key === 'Escape') {
+        dispatchEditor({ type: 'INNER_SELECTION', inner: { clipGroupBlockId: null } });
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -702,6 +693,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       const content = buildContentPayload(bloques, undefined, nextGuias);
       const ok = await patchSlideContent(content);
       if (ok) {
+        dispatchEditor({ type: 'GUIAS', guias: nextGuias });
         recordAfterSuccess(
           slide.id,
           previous,
@@ -850,14 +842,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
   const handleDragSave = useCallback(
     async (updatedBlocks: Block[]) => {
-      setCommittedBloques(updatedBlocks);
+      dispatchEditor({ type: 'MOVER', via: 'replace', bloques: updatedBlocks });
       try {
         const prev = cloneSlideBlocks(slide?.bloques ?? []);
         await persistBloques(updatedBlocks, prev, true);
       } catch {
         // Silently ignore — positions will re-sync on next load.
       } finally {
-        setCommittedBloques(null);
+        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       }
     },
     [persistBloques, slide?.bloques],
@@ -1050,9 +1042,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide.bloques ?? []);
       const next = removeBlockAtPath(prev, blockPath);
       if (next === prev) return;
-      setSelectedBlockId(null);
-      setSelectedBlockIds([]);
-      clearInnerSelections();
+      dispatchEditor({ type: 'SELECCIONAR', id: null });
       onBlockSelectRef.current?.('');
       const ok = await persistBloques(next, prev, true, 'eliminar');
       if (ok) {
@@ -1067,7 +1057,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       slide?.bloques,
       liveSlide?.bloques,
       persistBloques,
-      clearInnerSelections,
     ],
   );
 
@@ -1106,6 +1095,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       const content = buildContentPayload(cloneSlideBlocks(bloques), fondo);
       const ok = await patchSlideContent(content);
       if (ok) {
+        dispatchEditor({ type: 'FONDO', fondo });
         recordAfterSuccess(
           slide.id,
           previous,
@@ -1149,11 +1139,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       // el panel de propiedades lee `liveSlide.bloques` obsoleto mientras el PATCH +
       // refetch de handleEditCommit/resize están en vuelo, y pisa la edición recién
       // confirmada (texto escrito, tamaño arrastrado) con la versión previa.
-      setCommittedBloques(nextBloques);
+      dispatchEditor({ type: 'MOVER', via: 'replace', bloques: nextBloques });
       try {
         return await persistBloques(nextBloques, previousBloques, true);
       } finally {
-        setCommittedBloques(null);
+        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       }
     },
     [persistBloques],
@@ -1196,23 +1186,19 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
     const bloques = effectiveBloques ?? slide?.bloques ?? [];
     if (!bloques.length) {
-      setSelectedBlockId(null);
-      setSelectedBlockIds([]);
-      clearInnerSelections();
+      dispatchEditor({ type: 'SELECCIONAR', id: null });
       onBlockSelectRef.current?.('');
       return;
     }
     if (selectedBlockId) {
       if (!getBlockAtPath(bloques, selectedBlockId)) {
-        setSelectedBlockId(null);
-        setSelectedBlockIds([]);
-        clearInnerSelections();
+        dispatchEditor({ type: 'SELECCIONAR', id: null });
         onBlockSelectRef.current?.('');
       }
-    } else {
-      setSelectedBlockIds((prev) => (prev.length === 0 ? prev : []));
+    } else if (selectedBlockIds.length > 0) {
+      dispatchEditor({ type: 'SELECCIONAR_MULTIPLE', ids: [] });
     }
-  }, [slide?.id, selectedBlockId, effectiveBloques, slide?.bloques, clearInnerSelections, draggingId]);
+  }, [slide?.id, selectedBlockId, selectedBlockIds.length, effectiveBloques, slide?.bloques, draggingId]);
 
   const handleRendererBlockSelect = useCallback(
     (id: string, e?: React.MouseEvent) => {
@@ -1223,25 +1209,21 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         clearInnerSelections();
       }
       if (e?.shiftKey) {
-        setSelectedBlockIds((prev) => {
-          let next = [...prev];
-          if (next.includes(id)) {
-            next = next.filter((item) => item !== id);
-          } else {
-            next.push(id);
-          }
-          const lastSelected = next.length > 0 ? next[next.length - 1]! : null;
-          setSelectedBlockId(lastSelected);
-          onBlockSelect?.(lastSelected || '');
-          return next;
-        });
+        let next = [...selectedBlockIds];
+        if (next.includes(id)) {
+          next = next.filter((item) => item !== id);
+        } else {
+          next.push(id);
+        }
+        dispatchEditor({ type: 'SELECCIONAR_MULTIPLE', ids: next });
+        const lastSelected = next.length > 0 ? next[next.length - 1]! : null;
+        onBlockSelect?.(lastSelected || '');
       } else {
-        setSelectedBlockId(id);
-        setSelectedBlockIds(id ? [id] : []);
+        dispatchEditor({ type: 'SELECCIONAR', id });
         onBlockSelect?.(id);
       }
     },
-    [onBlockSelect, clearInnerSelections],
+    [onBlockSelect, clearInnerSelections, selectedBlockIds],
   );
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -1267,12 +1249,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     const startX = e.clientX - rect.left;
     const startY = e.clientY - rect.top;
 
-    setMarqueeRect({
+    const initialMarquee = {
       startX,
       startY,
       currentX: startX,
       currentY: startY,
-    });
+    };
+    marqueeStartRef.current = initialMarquee;
+    dispatchEditor({ type: 'MARQUEE', rect: initialMarquee });
 
     let hasMoved = false;
     const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -1288,23 +1272,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         wasDraggingRef.current = true;
       }
 
-      setMarqueeRect((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          currentX,
-          currentY,
-        };
-      });
+      const nextMarquee = { startX, startY, currentX, currentY };
+      marqueeStartRef.current = nextMarquee;
+      dispatchEditor({ type: 'MARQUEE', rect: nextMarquee });
     };
 
     const handleMouseUp = (upEvent: MouseEvent) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
 
-      setMarqueeRect((prev) => {
-        if (!prev) return null;
-
+      const prev = marqueeStartRef.current;
+      if (prev) {
         const x1 = Math.min(prev.startX, prev.currentX);
         const x2 = Math.max(prev.startX, prev.currentX);
         const y1 = Math.min(prev.startY, prev.currentY);
@@ -1342,38 +1320,32 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             });
 
             if (intersectedIds.length > 0) {
-              setSelectedBlockIds(intersectedIds);
               const lastId = intersectedIds[intersectedIds.length - 1]!;
-              if (selectedBlockIdRef.current !== lastId) {
-                clearInnerSelections();
-              }
-              setSelectedBlockId(lastId);
+              dispatchEditor({ type: 'SELECCIONAR_MULTIPLE', ids: intersectedIds });
               onBlockSelect?.(lastId);
             } else {
-              setSelectedBlockIds([]);
-              setSelectedBlockId(null);
-              clearInnerSelections();
+              dispatchEditor({ type: 'SELECCIONAR', id: null });
               onBlockSelect?.('');
             }
           }
         }
-
-        return null;
-      });
+      }
+      marqueeStartRef.current = null;
+      dispatchEditor({ type: 'MARQUEE', rect: null });
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [allBlocks, onBlockSelect, clearInnerSelections]);
+  }, [allBlocks, onBlockSelect]);
 
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
       const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
-      setCommittedBloques(next);
+      dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
       try {
         return await persistBloques(next, prev, true);
       } finally {
-        setCommittedBloques(null);
+        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       }
     },
     [liveSlide?.bloques, slide?.bloques, persistBloques],
@@ -1414,8 +1386,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     if (!result) return;
     const ok = await persistBloques(result.next, prev, true);
     if (ok) {
-      setSelectedBlockId(String(result.newIndex));
-      setSelectedBlockIds([String(result.newIndex)]);
+      dispatchEditor({ type: 'SELECCIONAR', id: String(result.newIndex) });
       onBlockSelectRef.current?.(String(result.newIndex));
       toast.success('Máscara aplicada al grupo — edita la forma en el panel derecho');
     } else {
@@ -1440,9 +1411,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       if (!next) return;
       const ok = await persistBloques(next, prev, true);
       if (ok) {
-        setSelectedBlockId(null);
-        setSelectedBlockIds([]);
-        clearInnerSelections();
+        dispatchEditor({ type: 'SELECCIONAR', id: null });
         onBlockSelectRef.current?.('');
         toast.success('Máscara de grupo deshecha');
       } else {
@@ -1455,7 +1424,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       liveSlide?.bloques,
       slide?.bloques,
       persistBloques,
-      clearInnerSelections,
     ],
   );
 
@@ -1532,14 +1500,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       const t = e.target as HTMLElement;
       if (t.closest('[data-block-id]')) return;
       if (t.closest('[data-drag-handle]')) return;
-      setSelectedBlockId(null);
-      setSelectedBlockIds([]);
-      clearInnerSelections();
+      dispatchEditor({ type: 'SELECCIONAR', id: null });
       onBlockSelectRef.current?.('');
     };
     root.addEventListener('click', onClickCapture, true);
     return () => root.removeEventListener('click', onClickCapture, true);
-  }, [slide?.id, clearInnerSelections]);
+  }, [slide?.id]);
 
   const showPropertiesPanel =
     selectedBlockId != null && selectedBlockId !== '' && !livePanelOpen;
@@ -1573,9 +1539,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         return true;
       },
       clearBlockSelection: () => {
-        setSelectedBlockId(null);
-        setSelectedBlockIds([]);
-        clearInnerSelections();
+        dispatchEditor({ type: 'SELECCIONAR', id: null });
         onBlockSelectRef.current?.('');
       },
       persistBloquesFromDrag: (bloques) => {
@@ -1583,11 +1547,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       },
       selectBlockByIndex: (index) => {
         const id = String(index);
-        if (selectedBlockIdRef.current !== id) {
-          clearInnerSelections();
-        }
-        setSelectedBlockId(id);
-        setSelectedBlockIds([id]);
+        dispatchEditor({ type: 'SELECCIONAR', id });
         onBlockSelectRef.current?.(id);
         setTimeout(() => {
           const el = canvasRef.current?.querySelector(
@@ -1616,7 +1576,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           return a.x !== b.x || a.y !== b.y;
         });
         if (!changed) return false;
-        void persistBloques(next, prev, true);
+        dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
+        void persistBloques(next, prev, true).finally(() => {
+          dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+        });
         return true;
       },
       toggleCenterGuides: () => {
@@ -1671,7 +1634,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleRemoveBlock,
       handleDragSave,
       handleChangeFondo,
-      clearInnerSelections,
       bumpHistory,
     ],
   );
@@ -1707,9 +1669,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       )}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          setSelectedBlockId(null);
-          setSelectedBlockIds([]);
-          clearInnerSelections();
+          dispatchEditor({ type: 'SELECCIONAR', id: null });
           onBlockSelectRef.current?.('');
         }
       }}
@@ -1742,7 +1702,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           onJumpToHistory={(index) => void handleJumpToHistory(index)}
           onReorder={handleReorder}
           layersPanelOpen={layersPanelOpen}
-          onToggleLayersPanel={() => setLayersPanelOpen((v) => !v)}
+          onToggleLayersPanel={() => dispatchEditor({ type: 'LAYERS_PANEL' })}
           fondo={liveSlide?.fondo}
           onChangeFondo={(f) => void handleChangeFondo(f)}
           onInsertAudio={handleInsertBlock}
@@ -1776,9 +1736,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         )}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
-            setSelectedBlockId(null);
-            setSelectedBlockIds([]);
-            clearInnerSelections();
+            dispatchEditor({ type: 'SELECCIONAR', id: null });
             onBlockSelectRef.current?.('');
           }
         }}
@@ -1830,28 +1788,44 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onActivityChange={onActivityChange}
             onFlipCardsChange={onFlipCardsChange}
             flipCardsInnerSelection={flipCardsInnerSelection}
-            onFlipCardsInnerSelectionChange={setFlipCardsInnerSelection}
+            onFlipCardsInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { flipCards: value } })
+            }
             onTabsChange={onTabsChange}
             tabsInnerSelection={tabsInnerSelection}
-            onTabsInnerSelectionChange={setTabsInnerSelection}
+            onTabsInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { tabs: value } })
+            }
             onCarouselChange={onCarouselChange}
             carouselInnerSelection={carouselInnerSelection}
-            onCarouselInnerSelectionChange={setCarouselInnerSelection}
+            onCarouselInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { carousel: value } })
+            }
             onClickRevealChange={onClickRevealChange}
             clickRevealInnerSelection={clickRevealInnerSelection}
-            onClickRevealInnerSelectionChange={setClickRevealInnerSelection}
+            onClickRevealInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { clickReveal: value } })
+            }
             onPopupChange={onPopupChange}
             popupInnerSelection={popupInnerSelection}
-            onPopupInnerSelectionChange={setPopupInnerSelection}
+            onPopupInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { popup: value } })
+            }
             onHotspotChange={onHotspotChange}
             hotspotInnerSelection={hotspotInnerSelection}
-            onHotspotInnerSelectionChange={setHotspotInnerSelection}
+            onHotspotInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { hotspot: value } })
+            }
             onTimelineChange={onTimelineChange}
             timelineInnerSelection={timelineInnerSelection}
-            onTimelineInnerSelectionChange={setTimelineInnerSelection}
+            onTimelineInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { timeline: value } })
+            }
             onDiagramaChange={onDiagramaChange}
             clipGroupInnerEditId={clipGroupInnerEditId}
-            onClipGroupInnerEditChange={setClipGroupInnerEditId}
+            onClipGroupInnerEditChange={(blockId) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { clipGroupBlockId: blockId } })
+            }
             onClipGroupChange={handleClipGroupChange}
             onUngroupClipGroup={handleUngroupClipMask}
             onRemoveBlock={handleRemoveBlock}

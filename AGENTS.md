@@ -536,7 +536,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
 
 ##### E5.2 — Introducir `editorSlideReducer` (estado central del slide en edición)
 - **Operador:** Cursor
-- **Estado:** [en curso: Cursor]
+- **Estado:** en revisión — `editorSlideReducer` centraliza bloques/selección/inner/fondo/guías en `canvas-area.tsx` vía `useReducer`; historial (`historiesRef` + `canvas-history.ts`) y persistencia (`patchSlideContentById` / autosave) sin cambio de semántica. Verif: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build` → tsc OK · lint 0 error · test:unit **464/464** (446 + 18 del spec nuevo) · build OK.
 - **Precondición:** E5 activa. **Disjunta de E5.1** — E5.2 no toca `packages/**` ni importa el registry, así que Cursor la ejecuta en paralelo con Codex (E5.1) desde el arranque. E5.1 solo condiciona a E5.5.
 - **Contexto (decisión raíz §2):** el reducer gobierna **un solo slide en edición** — bloques, fondo, guías, selección e inner-selection — no el mazo completo (react-query sigue siendo la fuente de `cls.slides`). Hoy `canvas-area.tsx` (~2002 líneas) concentra: `committedBloques` + `liveBloques` (ref), ~10 `useState` de selección (`selectedBlockId`, `selectedBlockIds`, inner-selection de flip-cards/tabs/carousel/click-reveal/popup/hotspot/timeline, `clipGroupInnerEditId`), `marqueeRect`, `layersPanelOpen`, `historyTick`; la persistencia (`patchSlideContentById`) y el historial (`historiesRef` + `canvas-history.ts`) **siguen como están** en este paso.
 - **Alcance — PUEDE tocar:**
