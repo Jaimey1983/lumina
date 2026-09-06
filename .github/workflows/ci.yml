@@ -76,6 +76,11 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+      # El frontend consume @lumina/element-kit(-core) desde dist/ (exports a
+      # dist, no a src). Hay que construirlos antes de lint/test/build.
+      - run: pnpm --filter @lumina/scoring build
+      - run: pnpm --filter @lumina/element-kit-core build
+      - run: pnpm --filter @lumina/element-kit build
       - run: pnpm --filter lumina-frontend lint
       - run: pnpm --filter lumina-frontend test:unit
       - run: pnpm --filter lumina-frontend build

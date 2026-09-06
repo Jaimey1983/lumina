@@ -34,8 +34,10 @@
     "./editor-activities": "./src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
   },
   "scripts": {
+    "predev": "pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "dev": "next dev --turbopack --port 3001",
     "dev:webpack": "next dev --port 3001",
+    "prebuild": "pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

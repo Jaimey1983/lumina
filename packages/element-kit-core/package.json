@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Paquete interno: el monorepo lo consume desde fuente; build conserva dist para CI y publicación futura.",
+  "//": "Paquete interno consumido desde dist/ (igual que @lumina/element-kit). Se exportaba desde src/ (E5.1) pero sus imports relativos con extensión .js (obligatorios bajo moduleResolution NodeNext) no los resuelve Turbopack en `next dev`, que no aplica el extensionAlias .js->.ts del webpack de next.config. Consumir el JS ya emitido evita el problema y unifica el patrón con element-kit.",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
