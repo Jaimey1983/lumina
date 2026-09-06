@@ -11,6 +11,7 @@ import {
   formatHistoryWhen,
   historyViewItems,
   jumpHistory,
+  materializeHistorySnapshot,
   pushHistoryEntry,
   redoHistory,
   resetSlideHistory,
@@ -85,9 +86,11 @@ describe('canvas-history', () => {
     }
     expect(state.entries).toHaveLength(MAX_UNDO);
     expect(state.index).toBe(MAX_UNDO - 1);
-    expect(state.entries[0]?.bloques[0]).toMatchObject({ contenido: 'b0' });
     expect(state.entries[0]?.kind).toBe('inicio');
-    expect(state.entries[state.entries.length - 1]?.bloques[0]).toMatchObject({
+    expect(materializeHistorySnapshot(state, 0)?.bloques[0]).toMatchObject({
+      contenido: 'b0',
+    });
+    expect(materializeHistorySnapshot(state)?.bloques[0]).toMatchObject({
       contenido: `b${MAX_UNDO + 5}`,
     });
   });
@@ -174,7 +177,9 @@ describe('canvas-history', () => {
     expect(fresh.entries).toHaveLength(1);
     expect(fresh.index).toBe(0);
     expect(fresh.entries[0]?.kind).toBe('inicio');
-    expect(fresh.entries[0]?.bloques[0]).toMatchObject({ contenido: 'b9' });
+    expect(materializeHistorySnapshot(fresh)?.bloques[0]).toMatchObject({
+      contenido: 'b9',
+    });
     expect(canUndoHistory(fresh)).toBe(false);
   });
 
@@ -182,5 +187,93 @@ describe('canvas-history', () => {
     const transicion = { tipo: 'fade' as const, duracion: 500 };
     const snapshot = captureSlideSnapshot({ bloques: bloques(1), transicion }, 'edicion');
     expect(snapshot.transicion).toEqual(transicion);
+  });
+
+  it('mantiene paridad visible en mover, pegar, fondo, eliminar y guías', () => {
+    const a = bloques(1)[0]!;
+    const b = bloques(2)[0]!;
+    const pasted = { ...bloques(3)[0]!, contenido: 'pegado' } as Block;
+    const inicio = captureSlideSnapshot(
+      {
+        bloques: [a, b],
+        fondo: { tipo: 'color', valor: '#fff' },
+        guias: { verticales: [], horizontales: [], grilla: { activa: false, tamanoPx: 20 } },
+      },
+      'inicio',
+      1,
+    );
+    const moved = captureSlideSnapshot(
+      { ...inicio, bloques: [{ ...a, x: 55 } as Block, b] },
+      'edicion',
+      2,
+    );
+    const pastedState = captureSlideSnapshot(
+      { ...moved, bloques: [...moved.bloques, pasted] },
+      'pegar',
+      3,
+    );
+    const background = captureSlideSnapshot(
+      { ...pastedState, fondo: { tipo: 'color', valor: '#123456' } },
+      'fondo',
+      4,
+    );
+    const deleted = captureSlideSnapshot(
+      { ...background, bloques: [background.bloques[0]!, pasted] },
+      'eliminar',
+      5,
+    );
+    const guided = captureSlideSnapshot(
+      {
+        ...deleted,
+        guias: {
+          verticales: [640],
+          horizontales: [360],
+          grilla: { activa: true, tamanoPx: 40 },
+        },
+      },
+      'guias',
+      6,
+    );
+
+    let state = createInitialHistory(inicio);
+    for (const snapshot of [moved, pastedState, background, deleted, guided]) {
+      state = pushHistoryEntry(state, snapshot);
+    }
+
+    const visible = (snapshot: typeof inicio) => ({
+      bloques: snapshot.bloques,
+      fondo: snapshot.fondo,
+      guias: snapshot.guias,
+    });
+    expect(visible(materializeHistorySnapshot(state)!)).toEqual(visible(guided));
+    expect(visible(jumpHistory(state, 2)!.snapshot)).toEqual(visible(pastedState));
+    expect(visible(undoHistory(state)!.snapshot)).toEqual(visible(deleted));
+    expect(visible(redoHistory(undoHistory(state)!.state)!.snapshot)).toEqual(
+      visible(guided),
+    );
+  });
+
+  it('almacena forward/inverse patch más chico que un Block[] completo', () => {
+    const manyBlocks = Array.from({ length: 25 }, (_, index) => ({
+      ...bloques(index)[0]!,
+      contenido: `bloque-${index}-${'contenido-largo-'.repeat(20)}`,
+    })) as Block[];
+    const movedBlocks = manyBlocks.map((block, index) =>
+      index === 12 ? ({ ...block, x: 77 } as Block) : block,
+    );
+    let state = createInitialHistory(
+      captureSlideSnapshot({ bloques: manyBlocks }, 'inicio', 1),
+    );
+    state = pushHistoryEntry(
+      state,
+      captureSlideSnapshot({ bloques: movedBlocks }, 'edicion', 2),
+    );
+
+    const entry = state.entries[1]!;
+    expect('forwardPatch' in entry).toBe(true);
+    expect(entry).not.toHaveProperty('bloques');
+    expect(JSON.stringify(entry).length).toBeLessThan(
+      JSON.stringify(movedBlocks).length,
+    );
   });
 });

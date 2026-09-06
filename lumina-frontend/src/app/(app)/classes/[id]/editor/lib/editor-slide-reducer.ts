@@ -75,6 +75,10 @@ function replaceBlockAtPath(
  * Reducer puro del slide en edición.
  * Contrato 3.2: leer (`getBlockPos`) → transformar → clamp.
  * E5.2 no persiste ni registra historial (eso sigue en `canvas-area`).
+ * E5.3 cablea `MOVER via:nudge` y `APLICAR_SNAPSHOT`. Quedan con puente de
+ * array completo desde SlideRenderer: MOVER pos/replace, REDIMENSIONAR, ROTAR,
+ * EDITAR_BLOQUE, AÑADIR_BLOQUE, ELIMINAR_BLOQUE y PEGAR; se retiran al migrar
+ * ese dispatch legacy en E5.5/E5.6.
  */
 export function editorSlideReducer(
   state: EditorSlideState,

@@ -110,6 +110,27 @@ import {
 
 const DEFAULT_SLIDE_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
+/** Vista prestada para calcular el diff; solo `inicio` se clona y retiene completo. */
+function toSlideHistorySnapshot(
+  value: {
+    bloques?: Block[];
+    fondo?: Background;
+    guias?: SlideGuias;
+    transicion?: Slide['transicion'];
+  },
+  kind: HistoryKind,
+  at = Date.now(),
+): SlideHistorySnapshot {
+  return {
+    kind,
+    at,
+    bloques: value.bloques ?? [],
+    fondo: value.fondo,
+    guias: value.guias ?? EMPTY_SLIDE_GUIAS,
+    ...(value.transicion !== undefined ? { transicion: value.transicion } : {}),
+  };
+}
+
 function buildPastedBlock(source: Block): Block {
   const cloned =
     typeof structuredClone === 'function'
@@ -535,10 +556,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         state.entries.length === 1 &&
         state.entries[0]?.kind === 'inicio'
       ) {
-        state = {
-          entries: [{ ...previous, kind: 'inicio', at: state.entries[0].at }],
-          index: 0,
-        };
+        state = createInitialHistory({
+          ...previous,
+          kind: 'inicio',
+          at: state.entries[0].at,
+        });
       }
       state = pushHistoryEntry(state, next, MAX_UNDO);
       historiesRef.current.set(slideId, state);
@@ -561,7 +583,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         const meta = editorMetaRef.current;
         recordAfterSuccess(
           slide.id,
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             {
               bloques: previousBloques,
               fondo: meta.fondo,
@@ -570,7 +592,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             },
             'edicion',
           ),
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             {
               bloques: nextBloques,
               fondo: meta.fondo,
@@ -642,7 +664,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         });
         recordAfterSuccess(
           slideId,
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             {
               bloques: previousBloques,
               fondo: slideMeta.fondo,
@@ -651,7 +673,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             },
             'edicion',
           ),
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             {
               bloques: nextBloques,
               fondo: slideMeta.fondo,
@@ -681,7 +703,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       if (!slide?.id || !classId) return;
       const bloques = liveBloques ?? committedBloques ?? slide.bloques ?? [];
       const meta = editorMetaRef.current;
-      const previous = captureSlideSnapshot(
+      const previous = toSlideHistorySnapshot(
         {
           bloques,
           fondo: meta.fondo,
@@ -697,7 +719,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         recordAfterSuccess(
           slide.id,
           previous,
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             {
               bloques,
               fondo: meta.fondo,
@@ -906,14 +928,29 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     ) => {
       if (!slide?.id) return;
       isUndoRedoRef.current = true;
-      const ok = await patchSlideContent(buildContentFromSnapshot(snapshot));
-      isUndoRedoRef.current = false;
+      let ok = false;
+      try {
+        ok = await patchSlideContent(buildContentFromSnapshot(snapshot));
+      } finally {
+        isUndoRedoRef.current = false;
+      }
       if (ok) {
         historiesRef.current.set(slide.id, nextState);
-        bumpHistory();
-        await queryClient.refetchQueries({
-          queryKey: ['classes', 'detail', classId],
+        dispatchEditor({
+          type: 'APLICAR_SNAPSHOT',
+          bloques: snapshot.bloques,
+          fondo: snapshot.fondo,
+          guias: snapshot.guias,
+          transicion: snapshot.transicion,
         });
+        bumpHistory();
+        try {
+          await queryClient.refetchQueries({
+            queryKey: ['classes', 'detail', classId],
+          });
+        } finally {
+          dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+        }
       } else {
         toast.error(failMessage);
       }
@@ -1088,7 +1125,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     async (fondo: Background) => {
       if (!slide?.id) return;
       const bloques = liveSlide?.bloques ?? slide?.bloques ?? [];
-      const previous = captureSlideSnapshot(
+      const previous = toSlideHistorySnapshot(
         { bloques, fondo: slide.fondo, guias: slide.guias },
         'fondo',
       );
@@ -1099,7 +1136,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         recordAfterSuccess(
           slide.id,
           previous,
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             { bloques, fondo, guias: slide.guias },
             'fondo',
           ),
@@ -1432,7 +1469,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       if (!slide?.id) return false;
       const prevBloques = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
       const meta = editorMetaRef.current;
-      const previousSnapshot = captureSlideSnapshot(
+      const previousSnapshot = toSlideHistorySnapshot(
         {
           bloques: prevBloques,
           fondo: meta.fondo,
@@ -1459,7 +1496,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         recordAfterSuccess(
           slide.id,
           previousSnapshot,
-          captureSlideSnapshot(
+          toSlideHistorySnapshot(
             {
               bloques: prevBloques,
               fondo: meta.fondo,
@@ -1576,7 +1613,13 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           return a.x !== b.x || a.y !== b.y;
         });
         if (!changed) return false;
-        dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
+        dispatchEditor({
+          type: 'MOVER',
+          via: 'nudge',
+          indices,
+          dxPx,
+          dyPx,
+        });
         void persistBloques(next, prev, true).finally(() => {
           dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
         });
