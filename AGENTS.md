@@ -486,7 +486,7 @@ Objetivo (Regla 1): migrar a `ElementDefinition` del kit los **bloques de canvas
 ##### E4.6 — Primitivos de canvas (`texto`…`columnas`) — **NO en E4** bajo la recomendación (a)
 Los 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven dentro de `slide-renderer.tsx` (congelado E5). Se migran en **E5**, que los extrae al descongelar el `switch` y reconectar el canvas al `ElementRegistry`. Si al activar E4 se resuelve la «Tensión declarada §1» por el camino (b), esta ficha se reescribe como E4.6–E4.13 (una por primitivo) con el carve-out del freeze explícito.
 
-#### E5 — Unificar estado del editor (reducer central, persistencia e historial por diferencia) · **RAÍZ REDACTADA** (Claude Code) · precondición cumplida · sub-fichas E5.1 **en revisión** · E5.2 redactada · E5.3–E5.7 pendientes (Cursor)
+#### E5 — Unificar estado del editor · **RAÍZ REDACTADA** · sub-fichas E5.1–E5.7 redactadas (E5.1 **en revisión** · E5.2–E5.7 **pendiente**)
 
 Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** para el slide en edición, **persistencia por diferencia** (mandar el bloque cambiado + `expectedVersion` de F1.4, no el blob entero) e **historial por diferencia** (undo/redo guarda diffs, no 20 `Block[]` completos). E5 es además la etapa que **descongela** el cluster `react-hooks`/React-Compiler (`canvas-area.tsx`), **reconecta el canvas al `elementRegistry`** (retira el `switch` de `slide-renderer.tsx`), **migra los 8 primitivos** (E4.6) y **retira** los dos registros viejos + la fachada de scoring. El barrido de todo lo que quede sin referencias es E7 — E5 retira solo lo acoplado a la unificación del estado.
 
@@ -532,7 +532,7 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
   Conteos de referencia al cerrar E4: `@lumina/element-kit` test **270/270** (31 files); `lumina-frontend` test:unit **446/446**; lint 0 `error` en ambos paquetes.
 - **Cierre:** no aplica Regla 4 (refactor estructural; los registros viejos del canvas se retiran en E5.5/E5.6). Commit sugerido: `refactor(element-kit): extraer @lumina/element-kit-core`.
 
-- **E5.1** — *(redactada arriba)* · **E5.2** — *(redactada abajo)* · **E5.3–E5.7** — pendientes de redactar (Cursor).
+- **E5.1** — *(arriba)* · **E5.2–E5.7** — *(abajo)*.
 
 ##### E5.2 — Introducir `editorSlideReducer` (estado central del slide en edición)
 - **Operador:** Cursor
@@ -553,15 +553,107 @@ Objetivo (Regla 1 / informe «Plano Lumina» Etapa 5): un **reducer central** pa
   Conteo de referencia: test:unit **446/446** (o superior si el spec nuevo suma casos); lint 0 `error` (70 warnings, override de `canvas-area.tsx` sigue activo).
 - **Cierre:** no aplica Regla 4. Commit sugerido: `refactor(editor): editorSlideReducer centraliza estado del slide`.
 
-- **E5.3** — Historial por diferencia: `canvas-history.ts` pasa de `Block[]` completo a `patch`/`inverse-patch` por entrada. Paridad contra `canvas-history.spec.ts` ampliado (misma secuencia → mismo estado visible, menos memoria).
-- **E5.4** — Persistencia por diferencia: autosave serializa `content` mínimo desde el reducer y **manda `expectedVersion`**; manejo del `409` (rebase o aviso). Se quita el override de `canvas-area.tsx` de `eslint.config.mjs` y `pnpm lint` queda en 0 `error` sin él.
-- **E5.5** — Reconectar el canvas: el `switch (block.tipo)` → `elementRegistry.obtener(tipo)` para los ~34 tipos con paridad de DOM probada (12 widgets + 22 actividades). Se **borran** esos `case` + las filas de `activity-registry.ts` / `widget-registry.ts` y se reapuntan sus consumidores. Los 3 `case` con `RIESGO ACEPTADO` quedan fuera (→ E5.7).
-- **E5.6** — Primitivos (E4.6): `texto/imagen/video/audio/codigo/cita/separador/columnas` → `ElementDefinition` sin `puntuacion`, registrados, `switch` borrado, `properties-panel.tsx` reapuntado.
-- **E5.7 (condicional)** — Cobertura de integración real para `grafico`/`diagrama`/`clip-group`+Paper.js (deuda E4.5 §2) y borrado de sus 3 `case`. Si no es viable en E5, se difiere a E7 con su `RIESGO ACEPTADO` intacto — pero **no** se marca E5 cerrada sin decidirlo explícito.
+##### E5.3 — Historial por diferencia (undo/redo con patch, no snapshots completos)
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** E5.2 `hecho`.
+- **Contexto:** `canvas-history.ts` guarda hasta `MAX_UNDO = 20` entradas con `bloques: Block[]` clonado completo por snapshot (`captureSlideSnapshot` → `structuredClone`). Con 20+ bloques por slide esto escala mal. E5.3 pasa a **patch + inverse-patch** (o diff estructural equivalente) por entrada, manteniendo fondo/guias/transicion en el snapshot o en el diff según convenga, pero **sin** clonar el array entero de bloques en cada paso salvo el snapshot inicial (`kind: 'inicio'`).
+- **Alcance — PUEDE tocar:**
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/lib/canvas-history.ts` — nuevo modelo de entrada (`SlideHistoryEntry` con `forwardPatch` / `inversePatch` o `{ kind, patch, inversePatch, meta }`); funciones puras `pushHistory`, `undoHistory`, `redoHistory`, `applySnapshot` actualizadas; API pública compatible con `CanvasArea` (`canUndoHistory`, `canRedoHistory`, `buildHistoryView`, etc.).
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/lib/canvas-history.spec.ts` — ampliado: mismas secuencias que hoy (mover, pegar, fondo, eliminar) → **mismo estado visible** (`bloques`, `fondo`, `guias`) que la implementación anterior; añadir aserción de que el payload almacenado por entrada es más pequeño que un `Block[]` completo (p. ej. conteo de bytes serializados o número de bloques tocados).
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/canvas-area.tsx` — integrar el historial nuevo: al despachar acciones del reducer (E5.2), registrar patch en lugar de `captureSlideSnapshot` completo; undo/redo aplican `inversePatch`/`forwardPatch` vía `APLICAR_SNAPSHOT` o acción dedicada del reducer.
+  - **Nuevo** (si hace falta) `editor/lib/slide-block-patch.ts` + spec — helpers puros para calcular diff entre dos `Block[]` (identificar bloque por `id`, campos pos/size/rotación/contenido).
+- **Alcance — NO toca:** persistencia/autosave/`expectedVersion` (E5.4), `slide-renderer.tsx`, `packages/**`, backend, override eslint.
+- **Entregable:** Ctrl+Z / Ctrl+Y y el panel de historial del lienzo se comportan igual; memoria por slide menor. Verificación:
+  ```bash
+  cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build
+  ```
+  `canvas-history.spec.ts` verde; test:unit sin bajar conteo global.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `refactor(editor): historial por diferencia en canvas-history`.
+
+##### E5.4 — Persistencia con `expectedVersion` y descongelar `canvas-area.tsx` en lint
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** E5.3 `hecho`.
+- **Contexto (decisión raíz §3 — opción **(a)**):** F1.4 dejó en backend `Slide.contentVersion` + `UpdateSlideDto.expectedVersion` → `409 ConflictException` con `currentVersion` (`classes.service.ts`). El frontend hoy manda `{ content }` entero sin versión (`patchSlideContentById` en `canvas-area.tsx:479`). E5.4 serializa el `content` **desde el estado del reducer** (única fuente de verdad post-E5.2) y adjunta `expectedVersion`; **no** se cambia el DTO ni `lumina-backend`. Autosave sigue siendo debounce sobre el payload derivado (`use-autosave.ts` o equivalente cableado al reducer).
+- **Alcance — PUEDE tocar:**
+  - `lumina-frontend/src/hooks/api/use-classes.ts` (o donde viva el tipo `Slide` / `SlideDetail`) — añadir `contentVersion?: number` al modelo devuelto por `GET /classes/:id`; propagar en queries.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/canvas-area.tsx` — `patchSlideContentById`: body `{ content, expectedVersion }`; guardar `contentVersion` local por slide (desde query + actualizar tras PATCH OK); en **409**: toast al docente + refetch del slide (`queryClient.invalidateQueries`) o rebase explícito documentado en el commit (elegir una estrategia, no LWW silencioso).
+  - `lumina-frontend/src/hooks/use-autosave.ts` — sin cambiar la API pública; el valor observado pasa a ser el payload derivado del reducer (no `JSON.stringify` de un slide paralelo).
+  - **Nuevo** (opcional) `editor/lib/build-slide-content-payload.ts` + spec — función pura `buildSlideContentPayload(state: EditorSlideState)` usada por autosave y guardado manual.
+  - `lumina-frontend/eslint.config.mjs` — **eliminar** el bloque `files: ["**/editor/components/canvas-area.tsx"]` que degrada 5 reglas `react-hooks/*` a `warn` (`TODO(migración-etapa-5)` cumplido).
+  - `canvas-area.tsx` — corregir los diagnósticos que el override ocultaba hasta quedar en **0 `error`** de lint sin el override (puede requerir ajustes menores al wiring del reducer, no reescribir el motor).
+- **Alcance — NO toca:** `lumina-backend/**`, `slide-renderer.tsx` / `switch` (E5.5+), `packages/**`, `activity-registry.ts`, `widget-registry.ts`.
+- **Entregable:** guardado automático y Ctrl+S envían `expectedVersion`; conflicto concurrente visible (409). Lint estricto sin override en `canvas-area.tsx`. Verificación:
+  ```bash
+  cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build
+  ```
+  Lint 0 `error` **sin** el override de `canvas-area.tsx`; test:unit sin bajar conteo.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): expectedVersion en autosave y lint estricto en canvas-area`.
+
+##### E5.5 — Reconectar canvas: `switch` → `elementRegistry` (~34 tipos) + retirar registros viejos
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** E5.4 `hecho` · E5.1 `hecho` (frontend consume `@lumina/element-kit-core` sin ciclo).
+- **Contexto:** 37 `ElementDefinition` ya registradas en `@lumina/element-kit` (12 widgets + 22 actividades + 3 bloques canvas). E5.5 cubre los **~34 con paridad DOM probada** (12 widgets + 22 actividades). Los **3 bloques canvas** (`grafico`, `diagrama`, `clip-group`) llevan `RIESGO ACEPTADO (E4.5 §2)` en `slide-renderer.tsx` — **sus `case` NO se borran** (E5.7). Dispatch unificado: `elementRegistry.obtener(tipo)` → `Editor` / `Viewer` / `Propiedades` con adapters del kit. Side-effect: import bootstrap `@lumina/element-kit` (registra elementos) + consultas vía `@lumina/element-kit-core`.
+- **Alcance — PUEDE tocar:**
+  - `lumina-frontend/package.json` — `"@lumina/element-kit-core": "workspace:*"`, `"@lumina/element-kit": "workspace:*"`; `next.config.ts` → `transpilePackages` incluye ambos (patrón E2.2).
+  - **Nuevo** `lumina-frontend/src/lib/element-registry-bootstrap.ts` — import side-effect de `@lumina/element-kit` + re-export de `elementRegistry` desde `@lumina/element-kit-core`.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx` — reemplazar `case` de los 12 widgets + dispatch de actividades (bloques `tipo === 'actividad'` y/o inner paths cubiertos por las 22 definiciones) por dispatch genérico vía registry; **conservar** `case 'grafico'`, `case 'diagrama'`, `case 'clip-group'` intactos (legacy + comentarios `RIESGO ACEPTADO`).
+  - `lumina-frontend/src/components/widgets/shared/widget-registry.ts` — **borrar filas** de los 12 widgets migrados (o el archivo entero si no quedan filas); reapuntar consumidores.
+  - `lumina-frontend/src/components/activities/shared/activity-registry.ts` — **borrar filas** de las 12 actividades Grupo 4 (ticket `LUM-E5-GRUPO4` cerrado).
+  - Consumidores de esos registros: `flyout-panel.tsx`, `panels/activities-panel.tsx`, `panels/flyout-left-panels.tsx`, `panels/widget-panel-catalog.ts`, `panels/widgets-insert-panel.tsx`, `lib/activity-canvas-position.ts`, `widgets/shared/index.ts` — leer metadatos desde `elementRegistry.listar()` o helper `listarWidgets()` / `listarActividades()` (nuevo en bootstrap o `-core`).
+  - `lumina-frontend/src/lib/activity-scoring.ts` — **borrar** fachada (`export * from '@lumina/scoring'`); los **24** imports `@/lib/activity-scoring` → `@lumina/scoring` directo (ticket `LUM-E5-SCORING-FACADE` cerrado).
+  - `packages/element-kit/**` — solo si hace falta exportar helper de listado; sin cambiar adapters/paridad.
+- **Alcance — NO toca:** los 3 `case` canvas con riesgo aceptado, primitivos `texto`…`columnas` (E5.6), el segundo `switch` por `act.tipo` si aún queda tras unificar actividades (E5.6), `properties-panel.tsx` de primitivos, `lumina-backend/**`.
+- **Entregable:** widgets y actividades con paridad renderizan vía `elementRegistry`; registros viejos sin filas migradas; fachada scoring eliminada. Verificación:
+  ```bash
+  cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build && pnpm --filter @lumina/element-kit test
+  ```
+  Paridad specs del kit siguen verdes (**270/270** mínimo); test:unit frontend sin bajar conteo.
+- **Cierre (Regla 4):** filas borradas de `widget-registry.ts` y `activity-registry.ts`; `TODO(migración-etapa-5)` eliminados de esas filas; fachada `lib/activity-scoring.ts` borrada. Los `TODO`/`RIESGO ACEPTADO` de los 3 bloques canvas **permanecen** hasta E5.7. Commit sugerido: `refactor(element-kit): canvas despacha widgets y actividades vía elementRegistry`.
+
+##### E5.6 — Primitivos de canvas (E4.6) + eliminar segundo `switch` por `act.tipo`
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** E5.5 `hecho`.
+- **Contexto (decisión raíz §5):** 8 primitivos (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`) viven como funciones `Render*` dentro de `slide-renderer.tsx` (~2824 líneas); panel en `panels/properties-panel.tsx` (~1827 líneas). El **segundo `switch` por `act.tipo`** (`slide-renderer.tsx:757`, 10 clásicas — ticket `LUM-E5-CLASICAS`) debe quedar **eliminado** si E5.5 no lo cubrió ya; si queda código muerto, E5.6 lo borra. Patrón E3: `ElementDefinition` **sin** `puntuacion`, adapters, parity spec DOM, registro en `elementRegistry`.
+- **Alcance — PUEDE tocar:**
+  - `packages/element-kit/src/elements/<primitivo>/**` — 8 definiciones (`texto`, `imagen`, `video`, `audio`, `codigo`, `cita`, `separador`, `columnas`): extraer `Render*` / paneles desde `slide-renderer.tsx` y `properties-panel.tsx` a componentes importables (barrels en `lumina-frontend` + subpaths si hace falta, patrón E3/E4).
+  - `packages/element-kit/src/index.ts` + shims/aliases — registrar los 8 primitivos.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx` — borrar `case` de primitivos + **todo** el segundo `switch` `act.tipo` (10 clásicas); dispatch vía registry. **Conservar** solo los 3 `case` canvas (`grafico`, `diagrama`, `clip-group`) hasta E5.7.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/panels/properties-panel.tsx` — reapuntar propiedades de primitivos a `elementRegistry.obtener(tipo)?.Propiedades`.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/activity-templates.ts` — reapuntar si referencia tipos del switch viejo.
+  - Parity: 8× `*.parity.spec.tsx` (DOM visible legacy vs kit; primitivos sin scoring).
+- **Alcance — NO toca:** `case 'grafico'|'diagrama'|'clip-group'` (E5.7), `canvas-area.tsx` reducer/historial/persistencia (salvo imports), `lumina-backend/**`.
+- **Entregable:** ningún `switch` por `block.tipo` salvo los 3 canvas con riesgo; ningún `switch` por `act.tipo`; primitivos en el kit. Verificación:
+  ```bash
+  pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build
+  ```
+  Kit test ≥ **270 + 8 suites** nuevas; frontend test:unit sin bajar conteo.
+- **Cierre (Regla 4):** borrar `TODO(migración-etapa-5)` del segundo `switch` (`LUM-E5-CLASICAS` cerrado); `slide-renderer.tsx` sin dispatch legacy de primitivos ni clásicas. Commit sugerido: `refactor(element-kit): primitivos de canvas y retiro del switch act.tipo`.
+
+##### E5.7 — Cobertura de integración real: `grafico` / `diagrama` / `clip-group`+Paper.js
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** E5.6 `hecho`.
+- **Contexto (deuda E4.5 §2):** paridad jsdom de `grafico` (Recharts/`next/dynamic`), `diagrama` grafo (`@xyflow`), `clip-group`+Paper.js es render-smoke — **no** cumple Regla 7 para el cuerpo del canvas. Decisión raíz §4: E5 **no** se cierra dejando esos `case` sin cobertura real **o** decisión explícita de diferir. Opciones (elegir en ejecución, documentar en commit): Playwright CT / test visual (`vitest --project visual`) / harness con layout real; mínimo: comparación screenshot o métrica DOM (chart SVG, xyflow viewport, path Paper) legacy vs kit.
+- **Alcance — PUEDE tocar:**
+  - `packages/element-kit/src/elements/grafico/**`, `diagrama/**`, `clip-group/**` — specs de integración nuevos o ampliados (no cambiar adapters salvo bug demostrado).
+  - `lumina-frontend/vitest.config.ts` / `playwright.config.ts` / dev-deps de test — solo si la opción elegida lo exige (declarar en commit).
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/slide-renderer.tsx` — **borrar** `case 'grafico'`, `case 'diagrama'`, `case 'clip-group'` tras cobertura verde; dispatch 100% registry.
+  - `AGENTS.md` — si se difiere a E7: actualizar esta ficha a `bloqueado`/`diferido` con riesgo aceptado explícito (**no** marcar E5 cerrada sin esa línea).
+- **Alcance — NO toca:** `canvas-area.tsx` reducer/persistencia (E5.2–E5.4), `lumina-backend/**`, primitivos (E5.6).
+- **Entregable (vía A — preferida):** tests de integración verdes para los 3 bloques; los 3 `case` borrados; `slide-renderer.tsx` sin `switch` legacy. Verificación:
+  ```bash
+  pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build
+  ```
+  **Entregable (vía B — si no es viable):** ficha actualizada + `RIESGO ACEPTADO` intacto en los 3 `case` + issue con fecha; E5 global queda **abierta** hasta decisión del dueño del tablero.
+- **Cierre (Regla 4):** vía A → tickets `LUM-E5-CANVAS-BLOCKS` cerrados, comentarios `RIESGO ACEPTADO` eliminados. Vía B → no aplica cierre de E5 global. Commit sugerido (vía A): `test(element-kit): integración canvas grafico/diagrama/clip-group`.
 
 **Reparto de ejecución E5 (definido por el dueño del tablero 2026-09-06, trabajo paralelo entre los 4 operadores):**
 
-- **Cursor** — redacta ahora las 7 sub-fichas E5.1–E5.7 (una por commit `chore(tablero): …`); luego **ejecuta E5.2–E5.6** (motor del canvas, secuencial, un operador). Es el camino crítico: nada de E5 se ejecuta hasta que las fichas estén revisadas.
+- **Cursor** — redactó las 7 sub-fichas E5.1–E5.7 (commits `chore(tablero): …`); **ejecuta E5.2–E5.6** tras revisión (secuencial). Nada de E5 se ejecuta hasta que las fichas estén revisadas.
 - **GPT Codex** — **ejecuta E5.1** (`@lumina/element-kit-core`: contrato + `ElementRegistry`, sin React ni `lumina-frontend`). Depende solo de que la sub-ficha E5.1 esté redactada y revisada; corre en paralelo mientras Cursor redacta E5.2–E5.7. Alcance disjunto: solo `packages/**` + lockfile raíz + job `packages` de CI. Encaja con E1.2/E1.3 (mismos scaffolds).
 - **Claude Code** — **revisa** cada sub-ficha E5.x contra esta ficha raíz según Cursor las va dejando en `en revisión` (redactó la raíz); luego **ejecuta E5.7** (cobertura de integración de `grafico`/`diagrama`/`clip-group`+Paper.js — encaja con E4.5). Sin tocar archivos de E5.1–E5.6.
 - **Antigravity** (lo menos demandante) — **X.1** arriba: borrar el archivo muerto `canvas-editor.tsx`. Un archivo, cero dependencias, verificación clara. Disjunto de todo E5.
