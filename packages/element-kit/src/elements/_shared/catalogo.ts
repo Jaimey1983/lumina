@@ -1,13 +1,14 @@
 import type { ElementCatalogo } from "@lumina/element-kit-core";
 
 /**
- * E7.1 — metadata de catálogo por elemento, en un solo lugar. Cada
- * `*-definition.ts` la referencia como `catalogo: CATALOGO_ELEMENTOS["<tipo>"]`.
+ * E7.1 — metadata de catálogo por elemento, en un solo lugar (fuente única
+ * desde E7.2/E7.3). Cada `*-definition.ts` la referencia como
+ * `catalogo: CATALOGO_ELEMENTOS["<tipo>"]`.
  *
- * Fuente de los datos (a retirar en E7.2/E7.3):
- *  - widgets: `widget-registry.ts` (`WIDGET_LABELS`) + `widget-panel-catalog.ts`
- *    (`WIDGET_PANEL_META.group`).
- *  - actividades Grupo 4: `activity-registry.ts` (`ACTIVITY_REGISTRY`).
+ * De dónde salieron los datos (registros ya borrados):
+ *  - widgets: `widget-registry.ts` (`WIDGET_LABELS`, borrado E7.2) +
+ *    `widget-panel-catalog.ts` (`WIDGET_PANEL_META.group`).
+ *  - actividades Grupo 4: `activity-registry.ts` (`ACTIVITY_REGISTRY`, borrado E7.3).
  *  - actividades clásicas: mapa `titles` de `editor-client.tsx`.
  *  - bloques / primitivos: nombres del editor.
  *
