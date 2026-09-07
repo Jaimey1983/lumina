@@ -13,7 +13,10 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],
     setupFiles: ["./src/vitest-setup.ts"],
-    testTimeout: 15_000,
+    // 30s: los `*.parity.spec.tsx` que hacen `await import("../../index.js")`
+    // pagan el coste de registrar los 45 elementos (Recharts, @xyflow, Paper);
+    // bajo carga (`pnpm -r test`) los 15s daban flake recurrente en grafico.
+    testTimeout: 30_000,
   },
   css: {
     modules: {

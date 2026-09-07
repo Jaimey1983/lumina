@@ -20,6 +20,11 @@ import { describe, expect, it } from "vitest";
  * Limitación: compara NOMBRES, no firmas. Un cambio de tipo en las props de un
  * componente real no lo caza esto — eso lo cubre en runtime cada
  * `*.parity.spec.tsx`, que renderiza el componente real vía el alias de vitest.
+ *
+ * E7.6 (vía C): como el borde `@lumina/element-kit → lumina-frontend` se acepta,
+ * este test además exige que **cada subpath de elemento** consumido tenga ≥1
+ * `*.parity.spec.tsx` en su carpeta — un shim sin prueba de runtime no puede
+ * esconder deriva de firma.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -157,4 +162,60 @@ describe("shims ↔ frontend — los nombres que el kit importa existen a ambos 
       `${spec}: el shim ${path.basename(shim)} no declara [${faltan.join(", ")}]`,
     ).toEqual([]);
   });
+
+  // E7.6 — cada subpath de elemento (widgets/blocks/activities/editor-activities)
+  // debe tener cobertura de paridad en runtime (`*.parity.spec.tsx`), que es lo
+  // único que caza deriva de FIRMAS al renderizar el componente real.
+  const CLASICAS = [
+    "quiz_multiple",
+    "verdadero_falso",
+    "completar_blancos",
+    "arrastrar_soltar",
+    "emparejar",
+    "ordenar_pasos",
+    "video_interactivo",
+    "short_answer",
+    "encuesta_viva",
+    "nube_palabras",
+  ];
+  /** Contenido concatenado de todos los `*.parity.spec.tsx` bajo `elements/`. */
+  function allParitySpecText(): string {
+    const acc: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (/\.parity\.spec\.tsx?$/.test(e.name))
+          acc.push(readFileSync(full, "utf8"));
+      }
+    };
+    walk(path.join(kitSrc, "elements"));
+    return acc.join("\n");
+  }
+  const parityText = allParitySpecText();
+
+  /** `lumina-frontend/<x>/<name>` → tipos de elemento a cubrir. */
+  const elementSubpaths: Array<[string, string[]]> = imports
+    .map(([spec]): [string, string[]] => {
+      if (spec === "lumina-frontend/editor-activities") return [spec, CLASICAS];
+      const m = spec.match(
+        /^lumina-frontend\/(?:widgets|blocks|activities)\/([a-z-]+)/,
+      );
+      if (!m) return [spec, []];
+      const seg = m[1];
+      return [spec, Array.from(new Set([seg, seg.replace(/-/g, "_")]))];
+    })
+    .filter(([, c]) => c.length > 0);
+
+  it.each(elementSubpaths)(
+    "%s: cubierto por algún *.parity.spec.tsx (deriva de firma en runtime)",
+    (spec, tipos) => {
+      const cubierto = tipos.some((t) => parityText.includes(t));
+      expect(
+        cubierto,
+        `${spec}: ningún *.parity.spec.tsx menciona [${tipos.join(", ")}] — ` +
+          `el shim no tiene cobertura de firma en runtime`,
+      ).toBe(true);
+    },
+  );
 });

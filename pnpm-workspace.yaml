@@ -3,6 +3,14 @@ packages:
   - 'lumina-frontend'
   - 'lumina-backend'
 
+# E7.6 (vía C): `@lumina/element-kit` depende de `lumina-frontend` (workspace:*)
+# porque sus adapters envuelven componentes que viven en el frontend (37 subpaths
+# + shims). La inversión total (mover los componentes al kit) es un esfuerzo
+# futuro; el borde se acepta como excepción estructural. Esto permite que
+# `pnpm -r <script>` corra pese al ciclo de tareas (CI usa `pnpm --filter` en
+# orden explícito de todos modos).
+ignoreWorkspaceCycles: true
+
 overrides:
   '@types/pg': 8.11.11
   lodash: '>=4.18.0'
