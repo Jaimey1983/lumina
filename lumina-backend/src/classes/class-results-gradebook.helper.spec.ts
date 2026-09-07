@@ -4,7 +4,7 @@ import {
   scoreActivityResponse,
   sumAndDenominatorForClassGradebook,
 } from './class-results-gradebook.helper';
-import { promedioFromFixtureSlides } from './activity-scoring';
+import { promedioFromFixtureSlides } from '@lumina/scoring';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 

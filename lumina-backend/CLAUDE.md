@@ -14,4 +14,4 @@ Backend de Lumina — NestJS + Prisma + PostgreSQL + Redis + Socket.IO. Expone l
 
 ## Antes de tocar código de calificación o autorización
 
-Este es el código más sensible del backend — cualquier cambio ahí sigue las Reglas 5 y 7 de `AGENTS.md` sin excepción (verificación de propiedad de curso, `@Roles()` explícito, prueba de paridad antes de tocar `activity-scoring.ts`/`grade-calculation.service.ts`).
+Este es el código más sensible del backend — cualquier cambio ahí sigue las Reglas 5 y 7 de `AGENTS.md` sin excepción (verificación de propiedad de curso, `@Roles()` explícito, prueba de paridad antes de tocar el motor de puntuación `@lumina/scoring` — el espejo local `activity-scoring.ts` se retiró en E6.3 — o `grade-calculation.service.ts`).

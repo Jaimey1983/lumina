@@ -1,4 +1,4 @@
-import { evaluateActivityResponse } from './activity-scoring';
+import { evaluateActivityResponse } from '@lumina/scoring';
 
 // ─── Fixtures de definición ───────────────────────────────────────────────────
 //

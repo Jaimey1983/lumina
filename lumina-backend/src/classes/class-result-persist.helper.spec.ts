@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { evaluateActivityResponse } from './activity-scoring';
+import { evaluateActivityResponse } from '@lumina/scoring';
 import {
   CLASS_RESULT_MAX_SCORE_DEFAULT,
   resolvePersistedClassResultScore,

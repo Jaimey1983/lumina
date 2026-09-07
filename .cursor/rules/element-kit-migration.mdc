@@ -8,7 +8,7 @@ alwaysApply: true
 
 Toda convención de esta migración vive en **`AGENTS.md`** (raíz del repositorio). Este archivo no la duplica.
 
-**Antes de crear cualquier tipo de widget, actividad o bloque nuevo**, o de tocar `activity-registry.ts`, `widget-registry.ts`, el union de `Block`, `activity-scoring.ts` o `use-block-drag.ts`: leer `AGENTS.md` completo, en especial Reglas 1, 3 y 4.
+**Antes de crear cualquier tipo de widget, actividad o bloque nuevo**, o de tocar `activity-registry.ts`, `widget-registry.ts`, el union de `Block`, el motor de puntuación `@lumina/scoring` (los espejos locales de `activity-scoring` se retiraron en E5.5/E6.3) o `use-block-drag.ts`: leer `AGENTS.md` completo, en especial Reglas 1, 3 y 4.
 
 Si esta regla y `AGENTS.md` alguna vez dicen cosas distintas, gana `AGENTS.md` — actualizar este archivo para que vuelva a apuntar, no para redefinir.
 

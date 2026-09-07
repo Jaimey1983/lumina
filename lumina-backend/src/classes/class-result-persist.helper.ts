@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { getActivityScoringKind } from './activity-scoring';
+import { getActivityScoringKind } from '@lumina/scoring';
 
 /** Escala de ClassResult / notaColombiana (Fase 0). No usar 1. */
 export const CLASS_RESULT_MAX_SCORE_DEFAULT = 5;

@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import {
   xpFromEvaluation,
   type ActivityEvaluationResult,
-} from '../classes/activity-scoring';
+} from '@lumina/scoring';
 
 export interface EstudianteGamificacion {
   studentId: string;

@@ -10,7 +10,7 @@ import {
   promedioFromFixtureSlides,
   xpFromEvaluation,
   type ActivityScoringKind,
-} from './activity-scoring';
+} from '@lumina/scoring';
 
 interface NotaCase {
   case: string;

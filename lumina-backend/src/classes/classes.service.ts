@@ -26,7 +26,7 @@ import {
   evaluateActivityResponse,
   extractActivityDefinition,
 } from './class-results-gradebook.helper';
-import { isActivityDraftResponse } from './activity-scoring';
+import { isActivityDraftResponse } from '@lumina/scoring';
 import {
   CLASS_RESULT_MAX_SCORE_DEFAULT,
   resolvePersistedClassResultScore,

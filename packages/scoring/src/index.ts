@@ -4,13 +4,14 @@
  * Portado tal cual desde `lumina-frontend/src/lib/activity-scoring.ts` (E2.1):
  * mismas funciones puras, misma lógica, mismas firmas públicas. NO reinterpretar.
  *
- * Consumidores:
- *  - `lumina-frontend/src/lib/activity-scoring.ts` — pasa a fachada que re-exporta
- *    este paquete en E2.2.
- *  - `lumina-backend/src/classes/activity-scoring.ts` — espejo manual todavía; se
- *    reapunta a este paquete en E6 (`TODO(migración-etapa-6)`).
- * Los fixtures de paridad viven en `./activity-scoring.fixtures.json` (copia
- * byte-a-byte de la del frontend).
+ * Consumidores (motor ÚNICO desde E6.3):
+ *  - `lumina-frontend` — imports directos a `@lumina/scoring` (la fachada
+ *    `lib/activity-scoring.ts` se borró en E5.5, `LUM-E5-SCORING-FACADE`).
+ *  - `lumina-backend` — imports directos a `@lumina/scoring` (el espejo manual
+ *    `src/classes/activity-scoring.ts` se borró en E6.3). Consumo CJS desde
+ *    `dist/cjs/` (E6.1/E6.2).
+ * Los fixtures de paridad viven en `./activity-scoring.fixtures.json`
+ * (E6.4 unifica las copias restantes de frontend/backend).
  */
 
 export type ActivityScoringKind =
@@ -118,7 +119,7 @@ export function esEvaluable(activityType: string): boolean {
 /**
  * Partials cuyo promedio de gradebook YA está conectado a `evaluateActivityResponse`.
  * `orden_rango` queda fuera: hay `evaluateOrdenRango`, pero no viewer ni payload real.
- * Debe coincidir con el espejo backend — NO reinterpretar al portar.
+ * Contrato canónico — NO reinterpretar (frontend y backend consumen esto).
  */
 const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'quiz_multiple',
@@ -163,7 +164,7 @@ export interface GradebookAverageEntry {
  * short_answer: solo cuenta si el docente ya calificó (`isManual === true`) y hay nota.
  * El cierre de sesión deja score=1.0 e isManual=false (participación); eso NO es nota académica.
  *
- * Debe coincidir con `class-results-gradebook.helper.ts` / espejo backend.
+ * Debe coincidir con la lógica del gradebook de clase (`class-results-gradebook.helper.ts`).
  */
 export function countsTowardClassGradebookAverage(
   entry: GradebookAverageEntry,
@@ -1003,8 +1004,8 @@ function evaluatePartial(
 }
 
 /**
- * Único evaluador de respuesta para Evaluación / Interacción.
- * Espejo backend: `lumina-backend/src/classes/activity-scoring.ts` — NO reinterpretar al portar.
+ * Único evaluador de respuesta para Evaluación / Interacción — frontend y
+ * backend (E6.3). No hay ya ningún espejo que mantener sincronizado.
  */
 export function evaluateActivityResponse(
   activityType: string,

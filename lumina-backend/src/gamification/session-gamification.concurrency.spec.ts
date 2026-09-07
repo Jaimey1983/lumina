@@ -1,5 +1,5 @@
 import { SessionGamificationService } from './session-gamification.service';
-import type { ActivityEvaluationResult } from '../classes/activity-scoring';
+import type { ActivityEvaluationResult } from '@lumina/scoring';
 import type Redis from 'ioredis';
 
 type MemoryRedis = {

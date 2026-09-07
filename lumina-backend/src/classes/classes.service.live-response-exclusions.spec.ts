@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { SessionGamificationService } from '../gamification/session-gamification.service';
-import { wrapActivityDraftResponse } from './activity-scoring';
+import { wrapActivityDraftResponse } from '@lumina/scoring';
 
 const CLASS_ID = 'class-excl-1';
 const SESSION_ID = 'session-excl-1';

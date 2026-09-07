@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import ts from "typescript";
 import { expect, expectTypeOf, it } from "vitest";
 import * as scoring from "./index.js";
 import type {
@@ -64,71 +62,11 @@ it("fija los parámetros y retornos públicos sin compilar los consumidores", ()
   >();
 });
 
-/** Compara contratos declarados sin importar ni ejecutar la implementación vieja. */
-function superficiePublica(path: string): Record<string, string> {
-  const text = readFileSync(new URL(path, import.meta.url), "utf8");
-  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
-  const printer = ts.createPrinter({ removeComments: true });
-  const surface: Record<string, string> = {};
-  const print = (node: ts.Node) => {
-    const scanner = ts.createScanner(
-      ts.ScriptTarget.Latest, true, ts.LanguageVariant.Standard,
-      printer.printNode(ts.EmitHint.Unspecified, node, source),
-    );
-    const tokens: string[] = [];
-    for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
-      tokens.push(token === ts.SyntaxKind.StringLiteral
-        ? JSON.stringify(scanner.getTokenValue()) : scanner.getTokenText());
-    }
-    return tokens.join("");
-  };
-
-  for (const node of source.statements) {
-    if (
-      !ts.canHaveModifiers(node) ||
-      !ts
-        .getModifiers(node)
-        ?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
-    )
-      continue;
-    if (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
-      surface[node.name.text] = print(node);
-    } else if (ts.isFunctionDeclaration(node) && node.name && node.type) {
-      surface[node.name.text] = print(
-        ts.factory.createFunctionTypeNode(
-          node.typeParameters,
-          node.parameters,
-          node.type,
-        ),
-      );
-    } else if (ts.isVariableStatement(node)) {
-      for (const declaration of node.declarationList.declarations) {
-        if (declaration.type) {
-          surface[declaration.name.getText(source)] = print(declaration.type);
-        } else if (
-          declaration.initializer &&
-          ts.isStringLiteral(declaration.initializer)
-        ) {
-          surface[declaration.name.getText(source)] = JSON.stringify(
-            declaration.initializer.text,
-          );
-        }
-      }
-    }
-  }
-  return surface;
-}
-
-// E2.2: `lumina-frontend/src/lib/activity-scoring.ts` fue una fachada
-// (`export * from '@lumina/scoring'`). E5.5 (`d570527`) la borró y reapuntó los
-// 24 imports a `@lumina/scoring` directo (`LUM-E5-SCORING-FACADE` cerrado), así
-// que ya no hay fachada que verificar. El único espejo manual que queda es el
-// backend (se reapunta en E6).
-it("conserva todas las declaraciones públicas del espejo backend", () => {
-  expect(superficiePublica("./index.ts")).toEqual(
-    superficiePublica("../../../lumina-backend/src/classes/activity-scoring.ts"),
-  );
-});
+// E6.3: el espejo `lumina-backend/src/classes/activity-scoring.ts` fue borrado
+// y el backend consume `@lumina/scoring` directo. Ya no hay una segunda
+// superficie pública que comparar por AST — `@lumina/scoring` es la única. La
+// forma pública se ancla arriba con `expectTypeOf` y el comportamiento con
+// `scoring.spec.ts` (fixtures) + los `*.parity.spec.tsx` del kit.
 
 // E2.1: la implementación ya está portada — el comportamiento se valida en
 // `scoring.spec.ts` (fixtures de paridad). Aquí solo un par de anclas rápidas.
