@@ -882,7 +882,7 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 
 ##### E7.7 — barrido final + cierre de la migración
 - **Operador:** Claude Code
-- **Estado:** **hecho** (`<pendiente>`, 2026-09-06) — barrido final:
+- **Estado:** **hecho** (`ea42a1f`, 2026-09-06) — barrido final:
   - `lumina-frontend/src/lib/activity-scoring.spec.ts` **borrado** (88 tests): re-test puro de `@lumina/scoring` que duplicaba `packages/scoring/src/scoring.spec.ts` (92 tests, gate en el job `packages`). Sin `activity-scoring.ts` al lado desde E5.5. `test:unit` del frontend 495→**407** (sin pérdida de cobertura real — el motor se prueba en su paquete).
   - `grade-calculation.service.ts` `round()` — comentario: la escala de 2 decimales es **deliberada** (nota de período ponderada de Edu, dominio aparte de `notaColombiana`; análisis E6.5). No se unifica.
   - `.github/workflows/ci.yml` — `actions/checkout@v4`→`@v5`, `actions/setup-node@v4`→`@v5` (Node 24; retira el warning de deprecación). `pnpm/action-setup@v4` se mantiene.
