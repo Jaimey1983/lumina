@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultPuzzlePalabras } from "lumina-frontend/activities/puzzle-palabras";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const puzzlePalabrasDefinition = {
   },
   puntuacion: (estado: PuzzlePalabrasEstado, respuesta?: unknown) =>
     evaluarPuzzlePalabras(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["puzzle_palabras"],
 } as const satisfies ElementDefinition<PuzzlePalabrasEstado, PuzzlePalabrasConfig>;
 
 export type PuzzlePalabrasDefinition = typeof puzzlePalabrasDefinition;

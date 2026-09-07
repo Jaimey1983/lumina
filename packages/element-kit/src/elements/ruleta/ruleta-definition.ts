@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultRuletaWidget } from "lumina-frontend/widgets/ruleta";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const ruletaDefinition = {
     tipografia: false,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["ruleta"],
 } as const satisfies ElementDefinition<RuletaEstado, RuletaConfig>;
 
 export type RuletaDefinition = typeof ruletaDefinition;

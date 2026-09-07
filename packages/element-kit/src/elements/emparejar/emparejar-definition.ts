@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   matchPairsTemplate,
@@ -46,6 +47,7 @@ export const emparejarDefinition = {
   },
   puntuacion: (estado: EmparejarEstado, respuesta?: unknown) =>
     evaluarEmparejar(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["emparejar"],
 } as const satisfies ElementDefinition<EmparejarEstado, EmparejarConfig>;
 
 export type EmparejarDefinition = typeof emparejarDefinition;

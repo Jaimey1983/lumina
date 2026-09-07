@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultHotspotBlock } from "lumina-frontend/widgets/hotspot";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const hotspotDefinition = {
     tipografia: true,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["hotspot"],
 } as const satisfies ElementDefinition<HotspotEstado, HotspotConfig>;
 
 export type HotspotDefinition = typeof hotspotDefinition;

@@ -34,6 +34,7 @@ import { separadorDefinition } from "./elements/separador/separador-definition.j
 import { columnasDefinition } from "./elements/columnas/columnas-definition.js";
 export type {
   AparienciaSpec,
+  ElementCatalogo,
   ElementDefinition,
   ElementEditorProps,
   ElementViewerProps,

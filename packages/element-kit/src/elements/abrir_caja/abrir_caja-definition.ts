@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultAbrirCaja } from "lumina-frontend/activities/abrir-caja";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const abrirCajaDefinition = {
   },
   puntuacion: (estado: AbrirCajaEstado, respuesta?: unknown) =>
     evaluarAbrirCaja(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["abrir_caja"],
 } as const satisfies ElementDefinition<AbrirCajaEstado, AbrirCajaConfig>;
 
 export type AbrirCajaDefinition = typeof abrirCajaDefinition;

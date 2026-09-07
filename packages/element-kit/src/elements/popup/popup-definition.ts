@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultPopupBlock } from "lumina-frontend/widgets/popup";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const popupDefinition = {
     tipografia: true,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["popup"],
 } as const satisfies ElementDefinition<PopupEstado, PopupConfig>;
 
 export type PopupDefinition = typeof popupDefinition;

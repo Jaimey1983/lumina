@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   fillBlanksTemplate,
@@ -46,6 +47,7 @@ export const completarBlancosDefinition = {
   },
   puntuacion: (estado: CompletarBlancosEstado, respuesta?: unknown) =>
     evaluarCompletarBlancos(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["completar_blancos"],
 } as const satisfies ElementDefinition<CompletarBlancosEstado, CompletarBlancosConfig>;
 
 export type CompletarBlancosDefinition = typeof completarBlancosDefinition;

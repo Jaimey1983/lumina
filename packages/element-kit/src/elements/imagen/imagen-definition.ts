@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultImageBlock } from "lumina-frontend/blocks/imagen";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const imagenDefinition = {
     tipografia: false,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["imagen"],
 } as const satisfies ElementDefinition<ImagenEstado, ImagenConfig>;
 
 export type ImagenDefinition = typeof imagenDefinition;

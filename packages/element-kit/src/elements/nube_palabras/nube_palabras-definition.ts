@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   wordCloudTemplate,
@@ -46,6 +47,7 @@ export const nubePalabrasDefinition = {
   },
   puntuacion: (estado: NubePalabrasEstado, respuesta?: unknown) =>
     evaluarNubePalabras(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["nube_palabras"],
 } as const satisfies ElementDefinition<NubePalabrasEstado, NubePalabrasConfig>;
 
 export type NubePalabrasDefinition = typeof nubePalabrasDefinition;

@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultGlobos } from "lumina-frontend/activities/globos";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const globosDefinition = {
   },
   puntuacion: (estado: GlobosEstado, respuesta?: unknown) =>
     evaluarGlobos(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["globos"],
 } as const satisfies ElementDefinition<GlobosEstado, GlobosConfig>;
 
 export type GlobosDefinition = typeof globosDefinition;

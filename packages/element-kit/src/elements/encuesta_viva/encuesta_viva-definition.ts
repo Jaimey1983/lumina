@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   livePollTemplate,
@@ -46,6 +47,7 @@ export const encuestaVivaDefinition = {
   },
   puntuacion: (estado: EncuestaVivaEstado, respuesta?: unknown) =>
     evaluarEncuestaViva(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["encuesta_viva"],
 } as const satisfies ElementDefinition<EncuestaVivaEstado, EncuestaVivaConfig>;
 
 export type EncuestaVivaDefinition = typeof encuestaVivaDefinition;

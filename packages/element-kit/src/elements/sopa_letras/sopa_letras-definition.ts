@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultSopaLetras } from "lumina-frontend/activities/sopa-letras";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const sopaLetrasDefinition = {
   },
   puntuacion: (estado: SopaLetrasEstado, respuesta?: unknown) =>
     evaluarSopaLetras(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["sopa_letras"],
 } as const satisfies ElementDefinition<SopaLetrasEstado, SopaLetrasConfig>;
 
 export type SopaLetrasDefinition = typeof sopaLetrasDefinition;

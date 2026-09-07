@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultFlipCardsBlock } from "lumina-frontend/widgets/flip-cards";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const flipCardsDefinition = {
   Viewer: FlipCardsViewer,
   Propiedades: FlipCardsPropiedades,
   apariencia: { color: true, tipografia: true, animacion: true },
+  catalogo: CATALOGO_ELEMENTOS["flip-cards"],
 } as const satisfies ElementDefinition<FlipCardsEstado, FlipCardsConfig>;
 
 export type FlipCardsDefinition = typeof flipCardsDefinition;

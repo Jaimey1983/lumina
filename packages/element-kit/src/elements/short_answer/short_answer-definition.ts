@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   shortAnswerTemplate,
@@ -46,6 +47,7 @@ export const shortAnswerDefinition = {
   },
   puntuacion: (estado: ShortAnswerEstado, respuesta?: unknown) =>
     evaluarShortAnswer(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["short_answer"],
 } as const satisfies ElementDefinition<ShortAnswerEstado, ShortAnswerConfig>;
 
 export type ShortAnswerDefinition = typeof shortAnswerDefinition;

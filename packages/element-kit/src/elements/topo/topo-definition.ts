@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultTopo } from "lumina-frontend/activities/topo";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const topoDefinition = {
   },
   puntuacion: (estado: TopoEstado, respuesta?: unknown) =>
     evaluarTopo(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["topo"],
 } as const satisfies ElementDefinition<TopoEstado, TopoConfig>;
 
 export type TopoDefinition = typeof topoDefinition;

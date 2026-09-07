@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   videoInteractiveTemplate,
@@ -46,6 +47,7 @@ export const videoInteractivoDefinition = {
   },
   puntuacion: (estado: VideoInteractivoEstado, respuesta?: unknown) =>
     evaluarVideoInteractivo(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["video_interactivo"],
 } as const satisfies ElementDefinition<VideoInteractivoEstado, VideoInteractivoConfig>;
 
 export type VideoInteractivoDefinition = typeof videoInteractivoDefinition;

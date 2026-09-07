@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultColumnsBlock } from "lumina-frontend/blocks/columnas";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const columnasDefinition = {
     tipografia: false,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["columnas"],
 } as const satisfies ElementDefinition<ColumnasEstado, ColumnasConfig>;
 
 export type ColumnasDefinition = typeof columnasDefinition;

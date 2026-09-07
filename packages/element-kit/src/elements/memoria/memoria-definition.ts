@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultMemoria } from "lumina-frontend/activities/memoria";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const memoriaDefinition = {
   },
   puntuacion: (estado: MemoriaEstado, respuesta?: unknown) =>
     evaluarMemoria(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["memoria"],
 } as const satisfies ElementDefinition<MemoriaEstado, MemoriaConfig>;
 
 export type MemoriaDefinition = typeof memoriaDefinition;

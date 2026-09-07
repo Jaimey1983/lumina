@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultSeparadorBlock } from "lumina-frontend/blocks/separador";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const separadorDefinition = {
     tipografia: false,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["separador"],
 } as const satisfies ElementDefinition<SeparadorEstado, SeparadorConfig>;
 
 export type SeparadorDefinition = typeof separadorDefinition;

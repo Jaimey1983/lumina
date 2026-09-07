@@ -1,5 +1,6 @@
 export type {
   AparienciaSpec,
+  ElementCatalogo,
   ElementDefinition,
   ElementEditorProps,
   ElementPropsPanelProps,

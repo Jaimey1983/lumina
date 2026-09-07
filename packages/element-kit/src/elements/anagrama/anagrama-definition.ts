@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultAnagrama } from "lumina-frontend/activities/anagrama";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -38,6 +39,7 @@ export const anagramaDefinition = {
   },
   puntuacion: (estado: AnagramaEstado, respuesta?: unknown) =>
     evaluarAnagrama(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["anagrama"],
 } as const satisfies ElementDefinition<AnagramaEstado, AnagramaConfig>;
 
 export type AnagramaDefinition = typeof anagramaDefinition;

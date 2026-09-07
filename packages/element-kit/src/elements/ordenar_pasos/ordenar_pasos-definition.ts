@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   orderStepsTemplate,
@@ -46,6 +47,7 @@ export const ordenarPasosDefinition = {
   },
   puntuacion: (estado: OrdenarPasosEstado, respuesta?: unknown) =>
     evaluarOrdenarPasos(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["ordenar_pasos"],
 } as const satisfies ElementDefinition<OrdenarPasosEstado, OrdenarPasosConfig>;
 
 export type OrdenarPasosDefinition = typeof ordenarPasosDefinition;

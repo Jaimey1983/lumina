@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultAhorcado } from "lumina-frontend/activities/ahorcado";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const ahorcadoDefinition = {
   },
   puntuacion: (estado: AhorcadoEstado, respuesta?: unknown) =>
     evaluarAhorcado(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["ahorcado"],
 } as const satisfies ElementDefinition<AhorcadoEstado, AhorcadoConfig>;
 
 export type AhorcadoDefinition = typeof ahorcadoDefinition;

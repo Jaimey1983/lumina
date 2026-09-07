@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultClickRevealBlock } from "lumina-frontend/widgets/click-reveal";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const clickRevealDefinition = {
   Viewer: ClickRevealViewer,
   Propiedades: ClickRevealPropiedades,
   apariencia: { color: true, tipografia: true, animacion: true },
+  catalogo: CATALOGO_ELEMENTOS["click-reveal"],
 } as const satisfies ElementDefinition<ClickRevealEstado, ClickRevealConfig>;
 
 export type ClickRevealDefinition = typeof clickRevealDefinition;

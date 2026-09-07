@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   trueFalseTemplate,
@@ -46,6 +47,7 @@ export const verdaderoFalsoDefinition = {
   },
   puntuacion: (estado: VerdaderoFalsoEstado, respuesta?: unknown) =>
     evaluarVerdaderoFalso(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["verdadero_falso"],
 } as const satisfies ElementDefinition<VerdaderoFalsoEstado, VerdaderoFalsoConfig>;
 
 export type VerdaderoFalsoDefinition = typeof verdaderoFalsoDefinition;

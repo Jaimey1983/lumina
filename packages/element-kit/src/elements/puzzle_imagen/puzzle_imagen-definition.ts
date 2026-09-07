@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultPuzzleImagen } from "lumina-frontend/activities/puzzle-imagen";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const puzzleImagenDefinition = {
   },
   puntuacion: (estado: PuzzleImagenEstado, respuesta?: unknown) =>
     evaluarPuzzleImagen(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["puzzle_imagen"],
 } as const satisfies ElementDefinition<PuzzleImagenEstado, PuzzleImagenConfig>;
 
 export type PuzzleImagenDefinition = typeof puzzleImagenDefinition;

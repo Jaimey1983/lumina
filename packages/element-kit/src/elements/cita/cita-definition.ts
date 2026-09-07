@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultQuoteBlock } from "lumina-frontend/blocks/cita";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const citaDefinition = {
     tipografia: true,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["cita"],
 } as const satisfies ElementDefinition<CitaEstado, CitaConfig>;
 
 export type CitaDefinition = typeof citaDefinition;

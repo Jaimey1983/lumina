@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultCrucigrama } from "lumina-frontend/activities/crucigrama";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const crucigramaDefinition = {
   },
   puntuacion: (estado: CrucigramaEstado, respuesta?: unknown) =>
     evaluarCrucigrama(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["crucigrama"],
 } as const satisfies ElementDefinition<CrucigramaEstado, CrucigramaConfig>;
 
 export type CrucigramaDefinition = typeof crucigramaDefinition;

@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   dragDropTemplate,
@@ -46,6 +47,7 @@ export const arrastrarSoltarDefinition = {
   },
   puntuacion: (estado: ArrastrarSoltarEstado, respuesta?: unknown) =>
     evaluarArrastrarSoltar(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["arrastrar_soltar"],
 } as const satisfies ElementDefinition<ArrastrarSoltarEstado, ArrastrarSoltarConfig>;
 
 export type ArrastrarSoltarDefinition = typeof arrastrarSoltarDefinition;

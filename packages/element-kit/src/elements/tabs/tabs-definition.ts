@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTabsBlock } from "lumina-frontend/widgets/tabs";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
@@ -11,6 +12,7 @@ export const tabsDefinition = {
   Viewer: TabsViewer,
   Propiedades: TabsPropiedades,
   apariencia: { color: true, tipografia: true, animacion: true },
+  catalogo: CATALOGO_ELEMENTOS["tabs"],
 } as const satisfies ElementDefinition<TabsEstado, TabsConfig>;
 
 export type TabsDefinition = typeof tabsDefinition;

@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultVideoBlock } from "lumina-frontend/blocks/video";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const videoDefinition = {
     tipografia: false,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["video"],
 } as const satisfies ElementDefinition<VideoEstado, VideoConfig>;
 
 export type VideoDefinition = typeof videoDefinition;

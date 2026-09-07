@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultClasificar } from "lumina-frontend/activities/clasificar";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const clasificarDefinition = {
   },
   puntuacion: (estado: ClasificarEstado, respuesta?: unknown) =>
     evaluarClasificar(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["clasificar"],
 } as const satisfies ElementDefinition<ClasificarEstado, ClasificarConfig>;
 
 export type ClasificarDefinition = typeof clasificarDefinition;

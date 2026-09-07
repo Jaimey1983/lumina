@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultGraficoBlock } from "lumina-frontend/blocks/grafico";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const graficoDefinition = {
     tipografia: true,
     animacion: false,
   },
+  catalogo: CATALOGO_ELEMENTOS["grafico"],
 } as const satisfies ElementDefinition<GraficoEstado, GraficoConfig>;
 
 export type GraficoDefinition = typeof graficoDefinition;

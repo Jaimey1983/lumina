@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultBotonBlock } from "lumina-frontend/widgets/boton";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { BotonEditor, BotonPropiedades, BotonViewer } from "./boton-adapters.js";
@@ -18,6 +19,7 @@ export const botonDefinition = {
     tipografia: true,
     animacion: false,
   },
+  catalogo: CATALOGO_ELEMENTOS["boton"],
 } as const satisfies ElementDefinition<BotonEstado, BotonConfig>;
 
 export type BotonDefinition = typeof botonDefinition;

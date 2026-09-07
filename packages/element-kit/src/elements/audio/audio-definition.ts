@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultAudioBlock } from "lumina-frontend/blocks/audio";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const audioDefinition = {
     tipografia: false,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["audio"],
 } as const satisfies ElementDefinition<AudioEstado, AudioConfig>;
 
 export type AudioDefinition = typeof audioDefinition;

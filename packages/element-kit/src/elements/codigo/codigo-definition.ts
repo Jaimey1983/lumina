@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultCodeBlock } from "lumina-frontend/blocks/codigo";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const codigoDefinition = {
     tipografia: true,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["codigo"],
 } as const satisfies ElementDefinition<CodigoEstado, CodigoConfig>;
 
 export type CodigoDefinition = typeof codigoDefinition;

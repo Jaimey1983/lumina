@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import {
   quizMultipleTemplate,
@@ -46,6 +47,7 @@ export const quizMultipleDefinition = {
   },
   puntuacion: (estado: QuizMultipleEstado, respuesta?: unknown) =>
     evaluarQuizMultiple(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["quiz_multiple"],
 } as const satisfies ElementDefinition<QuizMultipleEstado, QuizMultipleConfig>;
 
 export type QuizMultipleDefinition = typeof quizMultipleDefinition;

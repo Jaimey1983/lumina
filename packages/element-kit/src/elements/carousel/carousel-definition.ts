@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultCarouselBlock } from "lumina-frontend/widgets/carousel";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const carouselDefinition = {
   Viewer: CarouselViewer,
   Propiedades: CarouselPropiedades,
   apariencia: { color: true, tipografia: true, animacion: true },
+  catalogo: CATALOGO_ELEMENTOS["carousel"],
 } as const satisfies ElementDefinition<CarouselEstado, CarouselConfig>;
 
 export type CarouselDefinition = typeof carouselDefinition;

@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultMapaMentalBlock } from "lumina-frontend/blocks/diagrama";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const diagramaDefinition = {
     tipografia: true,
     animacion: false,
   },
+  catalogo: CATALOGO_ELEMENTOS["diagrama"],
 } as const satisfies ElementDefinition<DiagramaEstado, DiagramaConfig>;
 
 export type DiagramaDefinition = typeof diagramaDefinition;

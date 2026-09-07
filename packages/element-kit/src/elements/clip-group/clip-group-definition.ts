@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultClipGroup } from "lumina-frontend/blocks/clip-group";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -23,6 +24,7 @@ export const clipGroupDefinition = {
     tipografia: true,
     animacion: false,
   },
+  catalogo: CATALOGO_ELEMENTOS["clip-group"],
 } as const satisfies ElementDefinition<ClipGroupEstado, ClipGroupConfig>;
 
 export type ClipGroupDefinition = typeof clipGroupDefinition;

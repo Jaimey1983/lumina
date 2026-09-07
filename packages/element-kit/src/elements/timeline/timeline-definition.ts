@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTimelineBlock } from "lumina-frontend/widgets/timeline";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const timelineDefinition = {
   Viewer: TimelineViewer,
   Propiedades: TimelinePropiedades,
   apariencia: { color: true, tipografia: true, animacion: true },
+  catalogo: CATALOGO_ELEMENTOS["timeline"],
 } as const satisfies ElementDefinition<TimelineEstado, TimelineConfig>;
 
 export type TimelineDefinition = typeof timelineDefinition;

@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTextBlock } from "lumina-frontend/blocks/texto";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -22,6 +23,7 @@ export const textoDefinition = {
     tipografia: true,
     animacion: true,
   },
+  catalogo: CATALOGO_ELEMENTOS["texto"],
 } as const satisfies ElementDefinition<TextoEstado, TextoConfig>;
 
 export type TextoDefinition = typeof textoDefinition;

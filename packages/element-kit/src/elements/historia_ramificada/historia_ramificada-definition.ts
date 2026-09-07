@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import { createDefaultHistoriaRamificada } from "lumina-frontend/activities/historia-ramificada";
 import type { ElementDefinition } from "@lumina/element-kit-core";
@@ -27,6 +28,7 @@ export const historiaRamificadaDefinition = {
   },
   puntuacion: (estado: HistoriaRamificadaEstado, respuesta?: unknown) =>
     evaluarHistoriaRamificada(estado, respuesta).score ?? 0,
+  catalogo: CATALOGO_ELEMENTOS["historia_ramificada"],
 } as const satisfies ElementDefinition<HistoriaRamificadaEstado, HistoriaRamificadaConfig>;
 
 export type HistoriaRamificadaDefinition = typeof historiaRamificadaDefinition;

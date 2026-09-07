@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTooltipBlock } from "lumina-frontend/widgets/tooltip";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -19,6 +20,7 @@ export const tooltipDefinition = {
     tipografia: true,
     animacion: false,
   },
+  catalogo: CATALOGO_ELEMENTOS["tooltip"],
 } as const satisfies ElementDefinition<TooltipEstado, TooltipConfig>;
 
 export type TooltipDefinition = typeof tooltipDefinition;

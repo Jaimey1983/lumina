@@ -1,3 +1,4 @@
+import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultContadorBlock } from "lumina-frontend/widgets/contador";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
@@ -23,6 +24,7 @@ export const contadorDefinition = {
     tipografia: true,
     animacion: false,
   },
+  catalogo: CATALOGO_ELEMENTOS["contador"],
 } as const satisfies ElementDefinition<ContadorEstado, ContadorConfig>;
 
 export type ContadorDefinition = typeof contadorDefinition;
