@@ -1080,6 +1080,7 @@ import type {
   WidgetCampoEstilo,
   WidgetElementPos,
 } from './widget.types';
+import { isWidgetTipo } from './widget.types';
 
 /** @deprecated Preferir WidgetCampoEstilo */
 export type FlipCardsCampoEstilo = WidgetCampoEstilo;
@@ -1340,6 +1341,31 @@ export type Block = (
 };
 
 export type BlockTipo = Block['tipo'];
+
+/**
+ * Unión de los 12 bloques de widget del canvas (E7.2 — vino de
+ * `widget-registry.ts`). El nombre `isCaptivateWidgetBlock` se conserva por
+ * compatibilidad aunque incluye Flip Cards, que no es Captivate.
+ */
+export type WidgetBlock =
+  | FlipCardsWidget
+  | TabsWidget
+  | CarouselWidget
+  | ClickRevealWidget
+  | TimelineWidget
+  | PopupWidget
+  | HotspotWidget
+  | TooltipWidget
+  | BotonWidget
+  | ContadorWidget
+  | ProgresoWidget
+  | RuletaWidget;
+
+export function isCaptivateWidgetBlock(block: {
+  tipo: string;
+}): block is WidgetBlock {
+  return isWidgetTipo(block.tipo);
+}
 
 // ─── Slide ────────────────────────────────────────────────────────────────────
 

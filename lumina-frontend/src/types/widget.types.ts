@@ -199,6 +199,26 @@ export type WidgetSlideInnerSelection =
 
 export type WidgetTipo = 'flip-cards' | 'tabs' | 'carousel' | 'click-reveal' | 'timeline' | 'popup' | 'hotspot' | 'tooltip' | 'boton' | 'contador' | 'progreso' | 'ruleta';
 
+/** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
+export const WIDGET_TIPOS: readonly WidgetTipo[] = [
+  'flip-cards',
+  'tabs',
+  'carousel',
+  'click-reveal',
+  'timeline',
+  'popup',
+  'hotspot',
+  'tooltip',
+  'boton',
+  'contador',
+  'progreso',
+  'ruleta',
+] as const;
+
+export function isWidgetTipo(value: string): value is WidgetTipo {
+  return (WIDGET_TIPOS as readonly string[]).includes(value);
+}
+
 /** Configuración compartida del contenedor (Tabs + Carousel). */
 export interface WidgetSlideContainerConfig extends WidgetHeaderConfig {
   colorFondoContenedor: string;

@@ -72,7 +72,8 @@ import {
 import { syncPopupBlockSizeFromTriggerPx } from '@/lib/popup-defaults';
 import { clampPopupTriggerPx } from '@/lib/popup-trigger-size';
 import { SlideCanvasRootContext } from '@/components/widgets/shared/slide-canvas-root-context';
-import { isWidgetTipo, type WidgetBlock } from '@/components/widgets/shared/widget-registry';
+import { isWidgetTipo } from '@/types/widget.types';
+import type { WidgetBlock } from '@/types/slide.types';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';

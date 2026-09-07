@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { WIDGET_TIPOS } from '@/components/widgets/shared/widget-registry';
+import { WIDGET_TIPOS } from '@/types/widget.types';
 import {
   WIDGET_PANEL_GROUP_ORDER,
   WIDGET_PANEL_ITEMS,

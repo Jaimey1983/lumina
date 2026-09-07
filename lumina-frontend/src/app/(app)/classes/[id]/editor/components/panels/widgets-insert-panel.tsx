@@ -4,7 +4,7 @@ import type { ComponentType } from 'react';
 import { BarChart, Film, MonitorPlay, QrCode, Table } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
+import type { WidgetTipo } from '@/types/widget.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { DraggableWidgetItem } from '../draggable-widget-item';

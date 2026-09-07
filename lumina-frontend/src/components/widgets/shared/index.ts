@@ -67,11 +67,7 @@ export {
   type WidgetTextField,
 } from './widget-slide-utils';
 export { textStyleToCss } from './widget-text-styles';
-export {
-  isCaptivateWidgetBlock,
-  isWidgetTipo,
-  WIDGET_LABELS,
-  WIDGET_TIPOS,
-  type WidgetBlock,
-  type WidgetTipo,
-} from './widget-registry';
+// E7.2: `widget-registry.ts` borrado. `WidgetTipo` / `WIDGET_TIPOS` /
+// `isWidgetTipo` viven en `@/types/widget.types`; `WidgetBlock` /
+// `isCaptivateWidgetBlock` en `@/types/slide.types`. `WIDGET_LABELS` se retiró
+// (el nombre visible sale de `ElementDefinition.catalogo.nombre`).

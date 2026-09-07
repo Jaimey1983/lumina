@@ -14,7 +14,13 @@ import {
   Timer,
 } from 'lucide-react';
 
-import { WIDGET_LABELS, WIDGET_TIPOS, type WidgetTipo } from '@/components/widgets/shared/widget-registry';
+import { WIDGET_TIPOS, type WidgetTipo } from '@/types/widget.types';
+import { elementRegistry } from '@/lib/element-registry-bootstrap';
+
+/** Nombre visible del widget — sale del catálogo del `ElementDefinition` (E7.2). */
+function widgetLabel(type: WidgetTipo): string {
+  return elementRegistry.obtener(type)?.catalogo?.nombre ?? type;
+}
 
 export type WidgetPanelGroup = 'lienzo' | 'overlay' | 'control';
 
@@ -114,7 +120,7 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
 
 export const WIDGET_PANEL_ITEMS: WidgetPanelItem[] = WIDGET_TIPOS.map((type) => ({
   type,
-  label: WIDGET_LABELS[type],
+  label: widgetLabel(type),
   ...WIDGET_PANEL_META[type],
 }));
 

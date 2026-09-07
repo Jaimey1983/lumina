@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BLOCK_FALLBACKS } from '@/types/slide.types';
 import { CANVAS_OVERFLOW_ORIGIN_MIN } from '@/hooks/use-block-drag';
-import { WIDGET_TIPOS } from '@/components/widgets/shared/widget-registry';
+import { WIDGET_TIPOS } from '@/types/widget.types';
 
 import {
   clientPointToActivityMarco,

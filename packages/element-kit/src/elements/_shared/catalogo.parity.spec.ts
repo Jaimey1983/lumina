@@ -4,10 +4,7 @@
  * E7.2/E7.3 van a borrar. Regla 7: probar la equivalencia antes del borrado.
  */
 import { describe, expect, it } from "vitest";
-import {
-  WIDGET_LABELS,
-  WIDGET_TIPOS,
-} from "../../../../../lumina-frontend/src/components/widgets/shared/widget-registry.js";
+import { WIDGET_TIPOS } from "../../../../../lumina-frontend/src/types/widget.types.js";
 import { ACTIVITY_REGISTRY } from "../../../../../lumina-frontend/src/components/activities/shared/activity-registry.js";
 import { CATALOGO_ELEMENTOS } from "./catalogo.js";
 import { elementRegistry } from "../../index.js";
@@ -23,11 +20,11 @@ describe("E7.1 — ElementDefinition.catalogo vs registros legacy", () => {
     }
   });
 
-  it("widgets: nombre == WIDGET_LABELS y familia 'widget'", () => {
+  it("widgets: cada WidgetTipo tiene catálogo con familia 'widget' y grupo válido", () => {
     for (const tipo of WIDGET_TIPOS) {
       const cat = CATALOGO_ELEMENTOS[tipo as keyof typeof CATALOGO_ELEMENTOS];
       expect(cat, `${tipo} ausente en el catálogo`).toBeDefined();
-      expect(cat.nombre).toBe(WIDGET_LABELS[tipo]);
+      expect(cat.nombre.length).toBeGreaterThan(0);
       expect(cat.familia).toBe("widget");
       expect(["lienzo", "overlay", "control"]).toContain(
         (cat as { grupo?: string }).grupo,

@@ -57,7 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/file-upload';
 import { cn } from '@/lib/utils';
-import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
+import type { WidgetTipo } from '@/types/widget.types';
 
 import {
   useContentAssistant,

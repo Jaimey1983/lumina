@@ -14,7 +14,7 @@ import {
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Background, Block } from '@/types/slide.types';
-import type { WidgetTipo } from '@/components/widgets/shared/widget-registry';
+import type { WidgetTipo } from '@/types/widget.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FlyoutLeftPanels } from './panels/flyout-left-panels';
