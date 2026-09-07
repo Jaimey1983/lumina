@@ -740,7 +740,7 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 
 ##### E6.2 — el backend declara la dep + prueba de paridad contra `@lumina/scoring` (espejo intacto)
 - **Operador:** Claude Code
-- **Estado:** **hecho** (`<pendiente>`, 2026-09-06) — el backend puede consumir `@lumina/scoring` y la paridad con el espejo está probada. Cambios:
+- **Estado:** **hecho** (`da7f66c`, 2026-09-06) — el backend puede consumir `@lumina/scoring` y la paridad con el espejo está probada. Cambios:
   - `packages/scoring/package.json`: `"main": "./dist/cjs/index.js"` + `"types": "./dist/index.d.ts"` de nivel superior (para `moduleResolution: node` clásico del backend; `exports` sigue mandando para frontend/element-kit — verificado que no cambian).
   - `lumina-backend/package.json`: `dependencies` += `"@lumina/scoring": "workspace:*"`; `jest.moduleNameMapper` `^@lumina/scoring$` → `dist/cjs/index.js` + `transformIgnorePatterns` para que `ts-jest` no compile ese `.js`.
   - **Nuevo** `lumina-backend/src/classes/activity-scoring.parity.spec.ts` — corre `class-results-gradebook.fixtures.json` (nota / promedio / evaluation / contract / expectedKinds / draft / video / gradebook Edu) por el **espejo** y por `@lumina/scoring`, `toEqual` caso por caso. **106 casos, todos verdes** → el espejo es sustituible.
