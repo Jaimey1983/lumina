@@ -11,10 +11,8 @@ import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto'
 import { JoinAutonomousSessionDto } from './dto/join-autonomous-session.dto';
 import { SaveProgressDto, CompleteSessionDto } from './dto/save-progress.dto';
 import { namesMatch } from './name-matcher.helper';
-import {
-  extractActivityDefinition,
-  scoreActivityResponse,
-} from '../classes/class-results-gradebook.helper';
+import { extractActivityDefinition } from '@lumina/scoring';
+import { scoreActivityResponse } from '../classes/class-results-gradebook.helper';
 import { toPrismaJsonValue } from '../classes/class-result-persist.helper';
 
 function getDesempeno(score: number): string {

@@ -19,14 +19,14 @@ import {
 } from './dto/save-results.dto';
 import { NotaManualDto } from './dto/save-manual-grade.dto';
 import { JoinAsGuestDto } from './dto/join-as-guest.dto';
+import { activityTipoFromSlideContent } from './class-results-gradebook.helper';
 import {
-  activityTipoFromSlideContent,
   computeClassGradebookPromedio,
   esEvaluable,
   evaluateActivityResponse,
   extractActivityDefinition,
-} from './class-results-gradebook.helper';
-import { isActivityDraftResponse } from '@lumina/scoring';
+  isActivityDraftResponse,
+} from '@lumina/scoring';
 import {
   CLASS_RESULT_MAX_SCORE_DEFAULT,
   resolvePersistedClassResultScore,

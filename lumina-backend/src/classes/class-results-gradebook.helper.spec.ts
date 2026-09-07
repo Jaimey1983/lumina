@@ -1,10 +1,9 @@
 import {
   activityTipoFromSlideContent,
-  esEvaluable,
   scoreActivityResponse,
   sumAndDenominatorForClassGradebook,
 } from './class-results-gradebook.helper';
-import { promedioFromFixtureSlides } from '@lumina/scoring';
+import { esEvaluable, promedioFromFixtureSlides } from '@lumina/scoring';
 import fixturesJson from '@lumina/scoring/fixtures';
 
 interface PromedioCase {

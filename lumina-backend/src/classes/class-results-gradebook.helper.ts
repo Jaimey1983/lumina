@@ -6,29 +6,9 @@ import {
 /** Escala máxima del promedio mostrado en el gradebook de clase (0–5). */
 export const GRADEBOOK_SCORE_SCALE = 5.0;
 
-// TODO(migración-etapa-7): este bloque re-exporta `@lumina/scoring` tal cual —
-// `autonomous-sessions.service.ts` y `classes.service.ts` lo consumen por acá.
-// E7 los reapunta a `@lumina/scoring` directo y borra este re-export (queda
-// solo la lógica propia del gradebook de clase). Ticket LUM-E7-GRADEBOOK-FACADE.
-export {
-  ACTIVITY_SCORING,
-  countsTowardClassGradebookAverage,
-  computeClassGradebookPromedio,
-  esEvaluable,
-  evaluateActivityResponse,
-  extractActivityDefinition,
-  getActivityScoringKind,
-  isGradebookScoringDeferred,
-  notaColombiana,
-  promedioFromFixtureSlides,
-} from '@lumina/scoring';
-export type {
-  ActivityEvaluationDetail,
-  ActivityEvaluationResult,
-  ActivityScoringKind,
-  GradebookAverageEntry,
-  ScoringFixtureSlide,
-} from '@lumina/scoring';
+// E7.5: el re-export de `@lumina/scoring` se retiró (`LUM-E7-GRADEBOOK-FACADE`).
+// Los consumidores importan de `@lumina/scoring` directo; acá queda solo la
+// lógica propia del gradebook de clase.
 
 /**
  * Puntúa una respuesta autónoma. Delega en `evaluateActivityResponse` (espejo
