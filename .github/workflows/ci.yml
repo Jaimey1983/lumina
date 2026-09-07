@@ -54,6 +54,8 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+      # El backend consume @lumina/scoring desde dist/cjs (E6.2).
+      - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter lumina-backend exec prisma generate
       - run: pnpm --filter lumina-backend lint
       - run: pnpm --filter lumina-backend test

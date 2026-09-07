@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@lumina/scoring": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
@@ -92,6 +93,13 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^@lumina/scoring$": "<rootDir>/../node_modules/@lumina/scoring/dist/cjs/index.js"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/",
+      "[/\\\\]packages[/\\\\]scoring[/\\\\]dist[/\\\\]"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

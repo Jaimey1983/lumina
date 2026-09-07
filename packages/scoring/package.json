@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Paquete interno dual (E6.1). TS/ESM (frontend con transpilePackages, element-kit) se consumen desde `src/` vía `types`/`import`/`default`. `require` → build CJS en `dist/cjs/` para lumina-backend (CommonJS/jest, E6.2+). `dist/index.js` (ESM) se mantiene para el .d.ts publicable a futuro.",
+  "//": "Paquete interno dual (E6.1/E6.2). TS/ESM (frontend con transpilePackages, element-kit) se consumen desde `src/` vía `exports.types`/`import`/`default`. `main` + `types` de nivel superior → build CJS/`.d.ts` en `dist/` para lumina-backend (`moduleResolution: node` clásico, no lee `exports`). `exports` tiene prioridad para quien lo soporte.",
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
