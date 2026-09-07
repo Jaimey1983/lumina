@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 
-import type { WidgetHeaderTextField } from '@/types/widget.types';
+import type { WidgetHeaderTextField } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 
 import chromeStyles from './widget-chrome.module.css';

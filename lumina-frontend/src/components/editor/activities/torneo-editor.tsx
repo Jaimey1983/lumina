@@ -20,8 +20,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 
-import type { TorneoActivity } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { TorneoActivity } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

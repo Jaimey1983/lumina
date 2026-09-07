@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 import { getBlockPos } from '@/hooks/use-block-drag';
 import {
   SPACING_EDGE_MAX_PX,

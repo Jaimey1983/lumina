@@ -1,6 +1,6 @@
 'use client';
 
-import type { QuoteBlock } from '@/types/slide.types';
+import type { QuoteBlock } from '@lumina/types/slide';
 
 export interface RenderQuoteProps {
   block: QuoteBlock;

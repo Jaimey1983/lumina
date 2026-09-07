@@ -20,8 +20,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus, Trash2 } from 'lucide-react';
 
-import type { Background, Block, EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { Background, Block, EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

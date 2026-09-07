@@ -1,4 +1,4 @@
-import type { FlipCardCara, FlipCardElementPos } from '@/types/slide.types';
+import type { FlipCardCara, FlipCardElementPos } from '@lumina/types/slide';
 
 import type {
   FlipCardsCaraConfig,

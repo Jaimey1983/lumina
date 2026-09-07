@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import type { TransicionSlide } from '@/types/animation.types';
+import type { TransicionSlide } from '@lumina/types/animation';
 import { TRANSICION_PRESETS, createDefaultTransicion } from '@/lib/animation-defaults';
 
 interface TransitionPanelProps {

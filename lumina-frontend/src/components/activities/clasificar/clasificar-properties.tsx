@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { ClasificarActivity, ClasificarCategoria, ClasificarItem } from '@/types/slide.types';
+import { ClasificarActivity, ClasificarCategoria, ClasificarItem } from '@lumina/types/slide';
 import {
   generarIdClasificar,
   CLASIFICAR_MAX_CATEGORIAS,

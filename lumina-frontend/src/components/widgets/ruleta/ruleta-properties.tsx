@@ -2,8 +2,8 @@
 
 import { useCallback } from 'react';
 
-import type { Block } from '@/types/slide.types';
-import type { RuletaWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { RuletaWidget } from '@lumina/types/widget';
 
 import { generarIdRuleta, RULETA_MAX_ITEMS, RULETA_MIN_ITEMS } from './ruleta-config';
 import { normalizeRuletaBlock } from './ruleta-defaults';

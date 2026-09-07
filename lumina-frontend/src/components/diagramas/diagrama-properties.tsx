@@ -20,7 +20,7 @@ import type {
   DiagramaGrafoBlock,
   DiagramaNodo,
   DiagramaSubtipo,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

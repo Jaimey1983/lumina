@@ -1,5 +1,5 @@
-import type { SlideGuias } from '@/types/slide.types';
-import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+import type { SlideGuias } from '@lumina/types/slide';
+import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 import { parseSlideGrilla } from '@/lib/canvas-grid';
 
 export const VIRTUAL_CANVAS_WIDTH = 1280;

@@ -1,10 +1,10 @@
-import type { TabsWidget, WidgetSlideContent, WidgetSlideInnerSelection } from '@/types/widget.types';
+import type { TabsWidget, WidgetSlideContent, WidgetSlideInnerSelection } from '@lumina/types/widget';
 import {
   DEFAULT_WIDGET_SLIDE_VISIBILIDAD,
   type WidgetLayoutId,
   type WidgetSlideCount,
   type WidgetSlideVisibilidad,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
 import { coerceWidgetLayoutId } from '@/components/widgets/shared/widget-layouts';
 import {

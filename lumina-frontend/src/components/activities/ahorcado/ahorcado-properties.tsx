@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useMemo } from 'react'
-import { AhorcadoActivity } from '@/types/slide.types'
+import { AhorcadoActivity } from '@lumina/types/slide'
 import {
   AHORCADO_MAX_INTENTOS,
   AHORCADO_MIN_INTENTOS,

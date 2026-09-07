@@ -24,7 +24,7 @@ export type {
   ClipShapeTriangle,
   FreeformMaskPath,
   MaskNode,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 export {
   createDefaultClipGroupBlock,
@@ -59,7 +59,7 @@ export {
   resolveFreeformPath,
 } from '@/lib/freeform-mask';
 
-import type { ClipContent, ClipGroupBlock, ClipShape } from '@/types/slide.types';
+import type { ClipContent, ClipGroupBlock, ClipShape } from '@lumina/types/slide';
 import { createDefaultClipGroupBlock } from '@/lib/clip-path';
 
 /** Helper canónico con forma por defecto ('circulo') para `crearPorDefecto` de `ElementDefinition`. */

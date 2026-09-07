@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 
-import type { PopupInnerSelection, PopupWidget, WidgetSlideContent } from '@/types/widget.types';
+import type { PopupInnerSelection, PopupWidget, WidgetSlideContent } from '@lumina/types/widget';
 
 import { cn } from '@/lib/utils';
 import styles from './popup.module.css';

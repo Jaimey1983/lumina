@@ -1,5 +1,5 @@
-import type { TextBlock } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { TextBlock } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 export function createDefaultTextBlock(extra?: Partial<TextBlock>): TextBlock {
   const fb = BLOCK_FALLBACKS.text;

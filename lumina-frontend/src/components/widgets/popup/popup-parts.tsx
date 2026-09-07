@@ -28,7 +28,7 @@ import type {
   PopupTriggerVisual,
   WidgetSlideContent,
   WidgetSlideTextField,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import { stopWidgetInnerPointer, useEscapeToClose } from '@/components/widgets/shared/widget-editor-utils';
 import { TabsSlidePanelEditor } from '@/components/widgets/tabs/tabs-slide-panel';

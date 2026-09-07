@@ -1,6 +1,6 @@
 'use client';
 
-import type { WidgetLayoutId } from '@/types/widget.types';
+import type { WidgetLayoutId } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 
 import { WIDGET_LAYOUTS } from './widget-layouts';

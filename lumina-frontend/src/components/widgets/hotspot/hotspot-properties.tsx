@@ -1,6 +1,6 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 import type {
   HotspotConfiguracion,
   HotspotEfectoApertura,
@@ -8,7 +8,7 @@ import type {
   HotspotTriggerEvento,
   HotspotWidget,
   WidgetSlideContent,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';

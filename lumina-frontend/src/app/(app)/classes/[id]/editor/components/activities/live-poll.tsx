@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Trash2, Plus } from 'lucide-react';
 
-import type { LivePoll, PollOption } from '@/types/slide.types';
+import type { LivePoll, PollOption } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

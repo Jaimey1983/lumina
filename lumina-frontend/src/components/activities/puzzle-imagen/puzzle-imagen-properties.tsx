@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { PuzzleImagenActivity } from '@/types/slide.types';
+import { PuzzleImagenActivity } from '@lumina/types/slide';
 
 interface PuzzleImagenPropertiesProps {
   actividad: PuzzleImagenActivity;

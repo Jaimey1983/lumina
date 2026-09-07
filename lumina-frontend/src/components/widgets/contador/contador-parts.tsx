@@ -2,7 +2,7 @@ import type { MouseEvent } from 'react';
 import { Minus, Pause, Play, Plus, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
-import type { ContadorWidget } from '@/types/widget.types';
+import type { ContadorWidget } from '@lumina/types/widget';
 import { formatContadorTime, mergedContadorConfig } from './contador-config';
 import styles from './contador.module.css';
 

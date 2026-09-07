@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef } from 'react'
-import { AbrirCajaActivity } from '@/types/slide.types'
+import { AbrirCajaActivity } from '@lumina/types/slide'
 import {
   ABRIR_CAJA_GAP_PX,
   CajaIcon,

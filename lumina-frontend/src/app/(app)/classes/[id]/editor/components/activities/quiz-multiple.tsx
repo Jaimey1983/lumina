@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CheckCircle, Circle, XCircle } from 'lucide-react';
 
-import type { QuizMultiple, QuizOption } from '@/types/slide.types';
+import type { QuizMultiple, QuizOption } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { firstPregunta } from './quiz/quiz-utils';

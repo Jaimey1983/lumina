@@ -12,7 +12,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
-import { ClasificarActivity, ClasificarItem } from '@/types/slide.types';
+import { ClasificarActivity, ClasificarItem } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 

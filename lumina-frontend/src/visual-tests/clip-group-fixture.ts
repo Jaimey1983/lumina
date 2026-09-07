@@ -1,5 +1,5 @@
 import { createDefaultClipGroupBlock } from '@/lib/clip-path';
-import type { ClipGroupBlock, ClipContent } from '@/types/slide.types';
+import type { ClipGroupBlock, ClipContent } from '@lumina/types/slide';
 
 /** Lienzo fijo para snapshots deterministas (320×240). */
 export const CLIP_VISUAL_SIZE = { width: 320, height: 240 } as const;

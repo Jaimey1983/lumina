@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { AnagramaActivity } from '@/types/slide.types'
+import { AnagramaActivity } from '@lumina/types/slide'
 import { mezclarLetras } from './anagrama-config'
 
 interface AnagramaEditorProps {

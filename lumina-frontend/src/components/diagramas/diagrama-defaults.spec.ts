@@ -18,7 +18,7 @@ import {
   BLOCK_FALLBACKS,
   type DiagramaGrafoBlock,
   type DiagramaVennBlock,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 describe('diagrama-defaults y bridge', () => {
   it('crea un mapa mental por defecto con contratos v1 correctos', () => {

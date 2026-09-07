@@ -1,6 +1,6 @@
 'use client';
 
-import type { DividerBlock } from '@/types/slide.types';
+import type { DividerBlock } from '@lumina/types/slide';
 
 export interface RenderDividerProps {
   block: DividerBlock;

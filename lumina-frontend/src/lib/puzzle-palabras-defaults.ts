@@ -1,4 +1,4 @@
-import { PuzzlePalabrasActivity } from '@/types/slide.types'
+import { PuzzlePalabrasActivity } from '@lumina/types/slide'
 
 export function createDefaultPuzzlePalabras(): PuzzlePalabrasActivity {
   return {

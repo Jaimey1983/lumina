@@ -12,7 +12,7 @@ import {
   normalizeClipGroupBlock,
 } from './clip-path';
 import { createDefaultLibreShape } from './freeform-mask';
-import type { ClipShape } from '@/types/slide.types';
+import type { ClipShape } from '@lumina/types/slide';
 import { remintBlockChildIds } from '@/components/widgets/shared/widget-clone';
 
 describe('generarClipPath', () => {

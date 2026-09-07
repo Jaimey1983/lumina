@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Block } from '@/types/slide.types';
-import type { TabsWidget } from '@/types/widget.types';
-import { DEFAULT_WIDGET_SLIDE_VISIBILIDAD } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { TabsWidget } from '@lumina/types/widget';
+import { DEFAULT_WIDGET_SLIDE_VISIBILIDAD } from '@lumina/types/widget';
 
 import { remintBlockChildIds } from './widget-clone';
 

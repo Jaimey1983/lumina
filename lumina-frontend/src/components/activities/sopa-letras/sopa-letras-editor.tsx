@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useRef } from 'react';
-import { SopaLetrasActivity } from '@/types/slide.types';
+import { SopaLetrasActivity } from '@lumina/types/slide';
 import { generarGrid } from './sopa-letras-config';
 import { SOPA_LETRAS_GAP_PX, tamanoFuenteCeldaSopa, useSopaGridCellSize } from './sopa-letras-shared';
 

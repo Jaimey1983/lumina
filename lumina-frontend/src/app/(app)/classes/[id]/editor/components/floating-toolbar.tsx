@@ -24,8 +24,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Background, Block } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { Background, Block } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { api } from '@/lib/api';

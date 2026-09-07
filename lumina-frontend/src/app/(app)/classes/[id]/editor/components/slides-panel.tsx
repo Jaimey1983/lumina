@@ -70,7 +70,7 @@ import { SLIDE_LABELS } from '@/config/slide.constants';
 import { SlideRenderer } from './slide-renderer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 import { useLazyInView } from '@/hooks/use-lazy-in-view';
 
 // ─── Local slide interface (compatible with API Slide type) ───────────────────

@@ -1,4 +1,4 @@
-export type { QuoteBlock } from '@/types/slide.types';
+export type { QuoteBlock } from '@lumina/types/slide';
 export {
   createDefaultQuoteBlock,
 } from './cita-defaults';

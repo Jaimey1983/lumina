@@ -1,4 +1,4 @@
-import { MemoriaActivity } from '@/types/slide.types';
+import { MemoriaActivity } from '@lumina/types/slide';
 
 export function createDefaultMemoria(): MemoriaActivity {
   return {

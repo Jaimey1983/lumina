@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
-import type { ContadorAlTerminar, ContadorFormato, ContadorModo, ContadorWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { ContadorAlTerminar, ContadorFormato, ContadorModo, ContadorWidget } from '@lumina/types/widget';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

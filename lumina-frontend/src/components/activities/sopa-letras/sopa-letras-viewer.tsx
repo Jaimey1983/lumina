@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { SopaLetrasActivity } from '@/types/slide.types';
+import { SopaLetrasActivity } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import { generarGrid, seleccionEsPalabra, PalabraColocada } from './sopa-letras-config';

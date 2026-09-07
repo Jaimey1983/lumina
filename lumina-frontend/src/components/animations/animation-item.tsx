@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import type { Animacion, AnimacionTrigger, AnimacionMomento, AnimacionEasing } from '@/types/animation.types';
+import type { Animacion, AnimacionTrigger, AnimacionMomento, AnimacionEasing } from '@lumina/types/animation';
 import { ANIMACION_PRESETS } from '@/lib/animation-defaults';
 
 const LABEL_TIPO: Record<string, string> = {

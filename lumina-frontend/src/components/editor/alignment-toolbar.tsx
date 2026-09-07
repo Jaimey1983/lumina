@@ -1,6 +1,6 @@
 'use client';
 
-import { Block } from '@/types/slide.types';
+import { Block } from '@lumina/types/slide';
 import { toast } from 'sonner';
 import { Scissors } from 'lucide-react';
 import {

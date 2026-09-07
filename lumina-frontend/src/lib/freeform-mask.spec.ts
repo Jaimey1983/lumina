@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ClipPathNode, FreeformMaskPath, MaskNode } from '@/types/slide.types';
+import type { ClipPathNode, FreeformMaskPath, MaskNode } from '@lumina/types/slide';
 import {
   appendMaskNode,
   computeCornerFillet,

@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, Slide } from '@/types/slide.types';
-import type { Animacion, TransicionSlide } from '@/types/animation.types';
+import type { Block, Slide } from '@lumina/types/slide';
+import type { Animacion, TransicionSlide } from '@lumina/types/animation';
 import { AnimationList } from './animation-list';
 import { TransitionPanel } from './transition-panel';
 

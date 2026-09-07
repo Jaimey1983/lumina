@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AhorcadoActivity } from '@/types/slide.types'
+import { AhorcadoActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityResultOverlay } from '../shared/activity-result-overlay'
 import {

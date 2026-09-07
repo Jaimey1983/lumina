@@ -1,4 +1,4 @@
-import type { ContadorWidget } from '@/types/widget.types';
+import type { ContadorWidget } from '@lumina/types/widget';
 import {
   DEFAULT_CONTADOR_ACENTO,
   DEFAULT_CONTADOR_AL_TERMINAR,

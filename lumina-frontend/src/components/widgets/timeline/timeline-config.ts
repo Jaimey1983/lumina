@@ -4,7 +4,7 @@ import type {
   TimelineNodo,
   TimelineIconoLucide,
   WidgetHeaderTextField,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { clampInt, stableWidgetChildId, type WidgetIdentity } from '@/components/widgets/shared/widget-identity';
 
 export const TIMELINE_NODO_COUNT_MIN = 2;

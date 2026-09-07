@@ -22,7 +22,7 @@ import {
 } from '@dnd-kit/core';
 import type { LucideIcon } from 'lucide-react';
 
-import type { Block, BlockMarco, Slide } from '@/types/slide.types';
+import type { Block, BlockMarco, Slide } from '@lumina/types/slide';
 import { useBlockDrag } from '@/hooks/use-block-drag';
 import {
   clientPointToActivityMarco,

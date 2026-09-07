@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo, useRef } from 'react'
-import { TopoActivity } from '@/types/slide.types'
+import { TopoActivity } from '@lumina/types/slide'
 import { topoFingerprint, normalizarTopo, tamanoTextoTopo } from './topo-config'
 import { TOPO_GAP_PX, tamanoIconoTopo, useTopoCellSize } from './topo-shared'
 import styles from './topo.module.css'

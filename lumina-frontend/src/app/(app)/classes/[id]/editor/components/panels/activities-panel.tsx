@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-import type { WidgetTipo } from '@/types/widget.types';
+import type { WidgetTipo } from '@lumina/types/widget';
 import { DraggableActivityItem } from '../draggable-activity-item';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

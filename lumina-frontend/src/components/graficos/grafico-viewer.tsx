@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import type { GraficoDatosBlock } from '@/types/slide.types';
+import type { GraficoDatosBlock } from '@lumina/types/slide';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 

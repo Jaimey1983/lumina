@@ -1,4 +1,4 @@
-import type { QuoteBlock } from '@/types/slide.types';
+import type { QuoteBlock } from '@lumina/types/slide';
 
 export function createDefaultQuoteBlock(extra?: Partial<QuoteBlock>): QuoteBlock {
   return {

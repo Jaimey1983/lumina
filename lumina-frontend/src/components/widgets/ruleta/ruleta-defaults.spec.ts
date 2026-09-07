@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ActivityBlock, RuletaActivity } from '@/types/slide.types';
+import type { ActivityBlock, RuletaActivity } from '@lumina/types/slide';
 
 import { createDefaultRuletaWidget, normalizeRuletaBlock } from './ruleta-defaults';
 

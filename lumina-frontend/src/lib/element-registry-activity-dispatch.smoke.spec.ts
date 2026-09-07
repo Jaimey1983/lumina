@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Activity } from '@/types/slide.types';
+import type { Activity } from '@lumina/types/slide';
 
 import type { ActivityRuntimeConfig } from './activity-runtime-config';
 import { elementRegistry } from './element-registry-bootstrap';

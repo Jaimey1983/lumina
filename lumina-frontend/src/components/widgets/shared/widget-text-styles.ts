@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import type { WidgetCampoEstilo } from '@/types/widget.types';
+import type { WidgetCampoEstilo } from '@lumina/types/widget';
 import { resolveFontFamily } from '@/lib/font-catalog';
 import { typographyFromWidget, typographyToCss } from '@/lib/typography';
 

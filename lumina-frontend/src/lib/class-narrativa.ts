@@ -1,7 +1,7 @@
 // ─── Utilidades para Misión / Quest (Metadatos Narrativos) ───────────────────
 // Capa 10 (PLAN_ACCION_DIAGRAMAS_GRAFICOS §4.5 & D-DG-06).
 
-import type { ClassNarrativeMeta } from '@/types/slide.types';
+import type { ClassNarrativeMeta } from '@lumina/types/slide';
 
 /**
  * Normaliza y sanitiza metadatos narrativos de una clase.

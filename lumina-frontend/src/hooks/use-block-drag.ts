@@ -8,8 +8,8 @@ import {
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 import type { RefObject } from 'react';
 
-import type { Block, Slide, SlideGuias } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { Block, Slide, SlideGuias } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import {
   VIRTUAL_CANVAS_HEIGHT,
   VIRTUAL_CANVAS_WIDTH,

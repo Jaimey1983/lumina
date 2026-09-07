@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import type { WidgetImagenAjuste } from '@/types/widget.types';
+import type { WidgetImagenAjuste } from '@lumina/types/widget';
 
 /** Esquinas redondeadas del contenedor de imagen según layout split. */
 export type ImageWrapperCornerMode = 'all' | 'split-left' | 'split-right';

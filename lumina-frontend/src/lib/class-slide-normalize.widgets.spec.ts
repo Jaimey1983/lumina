@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { FlipCardsWidget } from '@/types/slide.types';
-import type { ClickRevealWidget, RuletaWidget, TabsWidget, TimelineWidget } from '@/types/widget.types';
+import type { FlipCardsWidget } from '@lumina/types/slide';
+import type { ClickRevealWidget, RuletaWidget, TabsWidget, TimelineWidget } from '@lumina/types/widget';
 import {
   classSlideToRendererSlide,
   sanitizeSlideContentForPersistence,
@@ -159,7 +159,7 @@ describe('widget hydrate + persist (PR A)', () => {
     };
 
     const rendered = classSlideToRendererSlide(apiSlide([rawGrafico]));
-    const grafico = (rendered.bloques ?? [])[0] as import('@/types/slide.types').GraficoDatosBlock;
+    const grafico = (rendered.bloques ?? [])[0] as import('@lumina/types/slide').GraficoDatosBlock;
 
     expect(grafico.tipo).toBe('grafico');
     expect(grafico.modo).toBe('contenido');
@@ -169,7 +169,7 @@ describe('widget hydrate + persist (PR A)', () => {
     expect(grafico.series[0].valores).toEqual([100, 200]);
 
     const persisted = sanitizeSlideContentForPersistence({ bloques: [rawGrafico] });
-    const saved = ((persisted?.bloques ?? []) as import('@/types/slide.types').GraficoDatosBlock[])[0];
+    const saved = ((persisted?.bloques ?? []) as import('@lumina/types/slide').GraficoDatosBlock[])[0];
     expect(saved.tipo).toBe('grafico');
     expect(saved.modo).toBe('contenido');
     expect(saved.soloLecturaEnViewer).toBe(true);
@@ -190,7 +190,7 @@ describe('widget hydrate + persist (PR A)', () => {
     };
 
     const rendered = classSlideToRendererSlide(apiSlide([rawDiagrama]));
-    const diagrama = (rendered.bloques ?? [])[0] as import('@/types/slide.types').DiagramaGrafoBlock;
+    const diagrama = (rendered.bloques ?? [])[0] as import('@lumina/types/slide').DiagramaGrafoBlock;
 
     expect(diagrama.tipo).toBe('diagrama');
     expect(diagrama.subtipo).toBe('mapa_mental');
@@ -200,7 +200,7 @@ describe('widget hydrate + persist (PR A)', () => {
     expect(diagrama.aristas).toHaveLength(1);
 
     const persisted = sanitizeSlideContentForPersistence({ bloques: [rawDiagrama] });
-    const saved = ((persisted?.bloques ?? []) as import('@/types/slide.types').DiagramaGrafoBlock[])[0];
+    const saved = ((persisted?.bloques ?? []) as import('@lumina/types/slide').DiagramaGrafoBlock[])[0];
     expect(saved.tipo).toBe('diagrama');
     expect(saved.modo).toBe('contenido');
     expect(saved.soloLecturaEnViewer).toBe(true);
@@ -218,7 +218,7 @@ describe('widget hydrate + persist (PR A)', () => {
     };
 
     const rendered = classSlideToRendererSlide(apiSlide([rawVenn]));
-    const venn = (rendered.bloques ?? [])[0] as import('@/types/slide.types').DiagramaVennBlock;
+    const venn = (rendered.bloques ?? [])[0] as import('@lumina/types/slide').DiagramaVennBlock;
 
     expect(venn.tipo).toBe('diagrama');
     expect(venn.subtipo).toBe('venn');
@@ -228,7 +228,7 @@ describe('widget hydrate + persist (PR A)', () => {
     expect(venn.elementos.find((el) => el.id === 'e2')?.regionId).toBeNull();
 
     const persisted = sanitizeSlideContentForPersistence({ bloques: [rawVenn] });
-    const saved = ((persisted?.bloques ?? []) as import('@/types/slide.types').DiagramaVennBlock[])[0];
+    const saved = ((persisted?.bloques ?? []) as import('@lumina/types/slide').DiagramaVennBlock[])[0];
     expect(saved.tipo).toBe('diagrama');
     expect(saved.subtipo).toBe('venn');
     expect(saved.modo).toBe('contenido');

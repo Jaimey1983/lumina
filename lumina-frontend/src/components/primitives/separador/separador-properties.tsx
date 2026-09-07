@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { DividerBlock, Block } from '@/types/slide.types';
+import type { DividerBlock, Block } from '@lumina/types/slide';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider, SliderThumb } from '@/components/ui/slider';

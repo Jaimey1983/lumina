@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { CANVAS_OVERFLOW_ORIGIN_MIN } from '@/hooks/use-block-drag';
-import { WIDGET_TIPOS } from '@/types/widget.types';
+import { WIDGET_TIPOS } from '@lumina/types/widget';
 
 import {
   clientPointToActivityMarco,

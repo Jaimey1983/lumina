@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Activity, Block } from '@/types/slide.types';
+import type { Activity, Block } from '@lumina/types/slide';
 
 import {
   applyLiveDragPositions,

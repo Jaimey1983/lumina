@@ -1,4 +1,4 @@
-export type { AudioBlock } from '@/types/slide.types';
+export type { AudioBlock } from '@lumina/types/slide';
 export {
   createDefaultAudioBlock,
 } from './audio-defaults';

@@ -1,4 +1,4 @@
-import type { BotonWidget } from '@/types/widget.types';
+import type { BotonWidget } from '@lumina/types/widget';
 import {
   DEFAULT_BOTON_ACCION,
   DEFAULT_BOTON_FORMA,

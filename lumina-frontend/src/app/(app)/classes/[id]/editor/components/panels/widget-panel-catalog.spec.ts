@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { WIDGET_TIPOS } from '@/types/widget.types';
+import { WIDGET_TIPOS } from '@lumina/types/widget';
 import {
   WIDGET_PANEL_GROUP_ORDER,
   WIDGET_PANEL_ITEMS,

@@ -6,7 +6,7 @@ import { Trophy } from 'lucide-react';
 
 import { useSound } from '@/hooks/use-sound';
 import { cn } from '@/lib/utils';
-import type { TorneoActivity } from '@/types/slide.types';
+import type { TorneoActivity } from '@lumina/types/slide';
 
 export interface TorneoRankingRow {
   studentId: string;

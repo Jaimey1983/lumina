@@ -1,6 +1,6 @@
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { HotspotConfiguracion, HotspotWidget, WidgetSlideContent } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { HotspotConfiguracion, HotspotWidget, WidgetSlideContent } from '@lumina/types/widget';
 import { coerceWidgetLayoutId } from '@/components/widgets/shared/widget-layouts';
 
 export const DEFAULT_HOTSPOT_CONFIG: HotspotConfiguracion = {

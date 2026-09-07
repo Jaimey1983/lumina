@@ -17,7 +17,7 @@ import {
   PREDEFINED_SLIDE_THEMES,
 } from '@/lib/slide-themes';
 import { cn } from '@/lib/utils';
-import type { SlideTheme } from '@/types/slide.types';
+import type { SlideTheme } from '@lumina/types/slide';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

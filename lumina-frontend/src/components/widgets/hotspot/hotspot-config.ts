@@ -5,7 +5,7 @@ import type {
   HotspotWidget,
   WidgetSlideContent,
   WidgetSlidePanelConfig,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
 import {
   DEFAULT_HOTSPOT_CONFIG,

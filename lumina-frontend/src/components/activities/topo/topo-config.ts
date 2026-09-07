@@ -1,4 +1,4 @@
-import type { TopoActivity, TopoPregunta } from '@/types/slide.types'
+import type { TopoActivity, TopoPregunta } from '@lumina/types/slide'
 
 export const TOPO_MAX_PREGUNTAS = 30
 export const TOPO_MIN_PREGUNTAS = 1

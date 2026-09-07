@@ -8,7 +8,7 @@ import {
   unionBBoxPct,
 } from './clip-composition';
 import { getBlockPos } from '@/hooks/use-block-drag';
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 
 function texto(x: number, y: number, ancho: number, alto: number): Block {
   return { tipo: 'texto', contenido: 'x', x, y, ancho, alto } as Block;

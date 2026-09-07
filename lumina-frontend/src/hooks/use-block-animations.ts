@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { Animacion } from '@/types/animation.types';
+import type { Animacion } from '@lumina/types/animation';
 
 /**
  * Aplica las animaciones CSS configuradas al elemento referenciado.

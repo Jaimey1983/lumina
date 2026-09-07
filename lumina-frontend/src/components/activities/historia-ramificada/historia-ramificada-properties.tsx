@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { HistoriaRamificadaActivity } from '@/types/slide.types'
+import { HistoriaRamificadaActivity } from '@lumina/types/slide'
 
 interface HistoriaRamificadaPropertiesProps {
   actividad: HistoriaRamificadaActivity

@@ -12,7 +12,7 @@ import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import { ActivitiesPanel } from './panels/activities-panel';
 import { SlideThemesPanel } from './panels/themes-panel';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { SlideTheme } from '@/types/slide.types';
+import type { SlideTheme } from '@lumina/types/slide';
 import {
   LiveResponsesPanel,
   type StudentResponse,
@@ -22,7 +22,7 @@ import type { EstudianteLeaderboard } from '@/hooks/use-gamification';
 import { TorneoPanel } from '@/components/editor/panels/torneo-panel';
 import { QuizSyncedPanel } from './activities/quiz/quiz-synced-panel';
 import { EscapeRoomLiveDashboard } from '@/components/editor/panels/escape-room-live-dashboard';
-import type { Activity } from '@/types/slide.types';
+import type { Activity } from '@lumina/types/slide';
 
 // ─── Panel labels ─────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
-import type { VideoBlock } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { VideoBlock } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 export function createDefaultVideoBlock(extra?: Partial<VideoBlock>): VideoBlock {
   const fb = BLOCK_FALLBACKS.video;

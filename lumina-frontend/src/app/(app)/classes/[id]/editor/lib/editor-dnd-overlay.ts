@@ -1,5 +1,5 @@
 import { parseBlockDragIndex } from './block-drag-id';
-import type { Block, Slide } from '@/types/slide.types';
+import type { Block, Slide } from '@lumina/types/slide';
 
 const BLOCK_TIPO_LABEL: Record<string, string> = {
   texto: 'Texto',

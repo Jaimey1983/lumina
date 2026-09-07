@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@/types/slide.types';
+import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumina/types/slide';
 import { diagramaToGraphModel } from './diagrama-bridge';
 import { VennSvg } from './venn-svg';
 import { Skeleton } from '@/components/ui/skeleton';

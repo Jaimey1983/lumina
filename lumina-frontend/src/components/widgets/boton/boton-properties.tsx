@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
-import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';

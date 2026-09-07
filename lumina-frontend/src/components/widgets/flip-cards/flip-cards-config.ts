@@ -1,4 +1,4 @@
-import type { FlipCard, FlipCardsWidget } from '@/types/slide.types';
+import type { FlipCard, FlipCardsWidget } from '@lumina/types/slide';
 import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
 import { stableWidgetChildId } from '@/components/widgets/shared/widget-identity';
 

@@ -2,7 +2,7 @@
 
 import React, { type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
-import type { TimelineConfiguracion, TimelineNodo } from '@/types/widget.types';
+import type { TimelineConfiguracion, TimelineNodo } from '@lumina/types/widget';
 import { imageFilterStyle } from '@/components/widgets/shared/widget-image-styles';
 import { getTimelineCardStyle } from './timeline-shared';
 import {

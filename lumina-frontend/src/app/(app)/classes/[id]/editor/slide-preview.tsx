@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 
 import { LAYOUT_FROM_KEY } from '@/lib/class-slide-normalize';
-import type { Background, Block, Layout, Slide as RendererSlide } from '@/types/slide.types';
+import type { Background, Block, Layout, Slide as RendererSlide } from '@lumina/types/slide';
 import { SlideRenderer } from './components/slide-renderer';
 
 const CANVAS_W = 1280;

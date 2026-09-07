@@ -1,4 +1,4 @@
-import type { WidgetLayoutId, WidgetSlideContent } from '@/types/widget.types';
+import type { WidgetLayoutId, WidgetSlideContent } from '@lumina/types/widget';
 
 export interface WidgetLayoutDef {
   id: WidgetLayoutId;

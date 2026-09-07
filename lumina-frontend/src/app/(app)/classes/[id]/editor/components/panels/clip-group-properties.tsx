@@ -35,8 +35,8 @@ import type {
   ClipShapeKind,
   ClipShapeLibre,
   ClipShapeTexto,
-} from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+} from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { FONT_DEFAULT } from '@/lib/font-catalog';
 import { TEXT_MASK_DEFAULT_WEIGHT } from '@/lib/text-mask';
 

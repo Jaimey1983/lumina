@@ -1,4 +1,4 @@
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 import { MIN_VISIBLE_PCT } from '@/hooks/use-block-drag';
 
 /** Mínimo global ancho/alto en % durante resize (bloques estándar). */

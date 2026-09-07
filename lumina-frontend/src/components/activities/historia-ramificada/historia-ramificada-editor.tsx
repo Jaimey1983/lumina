@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 
-import { HistoriaRamificadaActivity, HistoriaNodo } from '@/types/slide.types'
+import { HistoriaRamificadaActivity, HistoriaNodo } from '@lumina/types/slide'
 import { GraphCanvas } from '@/lib/graph-editor'
 import type {
   GraphConnectAttempt,

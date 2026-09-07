@@ -26,7 +26,7 @@ import {
 import { getWidgetPanelItem } from '@/app/(app)/classes/[id]/editor/components/panels/widget-panel-catalog';
 import { isUnimplementedInteractiveStub } from '@/lib/class-slide-normalize';
 import { isBlockCanvasLocked } from '@/hooks/use-block-drag';
-import type { Block, BlockTipo } from '@/types/slide.types';
+import type { Block, BlockTipo } from '@lumina/types/slide';
 
 export type LayerReorderAction =
   | 'traer_frente'

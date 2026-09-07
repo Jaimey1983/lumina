@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import type { ImageBlock, Block } from '@/types/slide.types';
+import type { ImageBlock, Block } from '@lumina/types/slide';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';

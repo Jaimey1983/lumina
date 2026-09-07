@@ -1,4 +1,4 @@
-import type { BotonWidget } from '@/types/widget.types';
+import type { BotonWidget } from '@lumina/types/widget';
 import { BotonParts } from './boton-parts';
 
 interface BotonEditorProps {

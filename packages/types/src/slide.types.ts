@@ -596,7 +596,7 @@ export interface HistoriaRamificadaActivity {
     mostrarProgreso: boolean
     permitirRetroceder: boolean
     tema: 'neutro' | 'aventura' | 'ciencia' | 'historia'
-    fondoGlobal?: import('./slide.types').Background
+    fondoGlobal?: import('./slide.types.js').Background
   }
   nodoInicial: string     // id del nodo de inicio
   nodos: HistoriaNodo[]
@@ -1063,7 +1063,7 @@ export type {
   WidgetSlideCount,
   WidgetSlideVisibilidad,
   WidgetTipo,
-} from './widget.types';
+} from './widget.types.js';
 
 import type {
   CarouselWidget,
@@ -1079,8 +1079,8 @@ import type {
   RuletaWidget,
   WidgetCampoEstilo,
   WidgetElementPos,
-} from './widget.types';
-import { isWidgetTipo } from './widget.types';
+} from './widget.types.js';
+import { isWidgetTipo } from './widget.types.js';
 
 /** @deprecated Preferir WidgetCampoEstilo */
 export type FlipCardsCampoEstilo = WidgetCampoEstilo;
@@ -1330,7 +1330,7 @@ export type Block = (
   | ProgresoWidget
   | RuletaWidget
 ) & {
-  animaciones?: import('@/types/animation.types').Animacion[];
+  animaciones?: import('./animation.types.js').Animacion[];
   /**
    * En el editor: impide mover, redimensionar, alinear y desplazar con teclado.
    * No afecta edición de contenido ni orden de capas (z-index).
@@ -1433,7 +1433,7 @@ export interface Slide {
    * Campo opcional aquí solo para tipos locales / documentación.
    */
   timer?: number;
-  transicion?: import('@/types/animation.types').TransicionSlide;
+  transicion?: import('./animation.types.js').TransicionSlide;
 }
 
 // ─── SlideClass ───────────────────────────────────────────────────────────────

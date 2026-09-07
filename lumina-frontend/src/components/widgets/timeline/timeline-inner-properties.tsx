@@ -1,12 +1,12 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 import type {
   TimelineWidget,
   WidgetCampoEstilo,
   WidgetSlideContent,
   WidgetSlideInnerSelection,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,

@@ -4,7 +4,7 @@ import type { FC } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { Block, TextAlign } from '@/types/slide.types';
+import type { Block, TextAlign } from '@lumina/types/slide';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

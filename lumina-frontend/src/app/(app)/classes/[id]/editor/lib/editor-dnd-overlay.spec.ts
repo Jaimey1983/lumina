@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Block, Slide } from '@/types/slide.types';
+import type { Block, Slide } from '@lumina/types/slide';
 
 import { resolveCanvasBlockOverlayLabel } from './editor-dnd-overlay';
 

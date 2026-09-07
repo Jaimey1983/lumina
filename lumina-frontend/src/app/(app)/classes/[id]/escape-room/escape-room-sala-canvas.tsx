@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { GripHorizontal } from 'lucide-react';
 
-import type { Background, Block, Slide } from '@/types/slide.types';
+import type { Background, Block, Slide } from '@lumina/types/slide';
 import { mergeRendererSlideState, sanitizeSlideContentForPersistence } from '@/lib/class-slide-normalize';
 import { SlideInsertionToolbar } from '../editor/components/floating-toolbar';
 import { SlideRenderer } from '../editor/components/slide-renderer';

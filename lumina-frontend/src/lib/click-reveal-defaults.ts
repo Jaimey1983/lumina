@@ -2,9 +2,9 @@ import {
   DEFAULT_CLICK_REVEAL_CONFIG,
   buildClickRevealElements,
 } from '@/components/widgets/click-reveal/click-reveal-config';
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { ClickRevealWidget } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { ClickRevealWidget } from '@lumina/types/widget';
 
 export const DEFAULT_CLICK_REVEAL_CONTENT: Omit<
   ClickRevealWidget,

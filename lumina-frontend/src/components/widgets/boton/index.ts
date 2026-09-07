@@ -2,7 +2,7 @@
  * API pública del widget Botón para consumidores del workspace
  * (`@lumina/element-kit` en E1.4). Sin cambiar comportamiento.
  */
-export type { BotonWidget } from '@/types/widget.types';
+export type { BotonWidget } from '@lumina/types/widget';
 export {
   SlideNavContext,
   useSlideNav,

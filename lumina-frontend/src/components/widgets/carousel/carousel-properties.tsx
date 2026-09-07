@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, CarouselWidget } from '@/types/slide.types';
-import type { WidgetLayoutId, WidgetSlideCount } from '@/types/widget.types';
+import type { Block, CarouselWidget } from '@lumina/types/slide';
+import type { WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { resizeCarouselSlides } from '@/lib/carousel-defaults';
 import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-gallery';
 import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';

@@ -21,7 +21,7 @@ import {
   createEmptyFreeformPath,
 } from '@/lib/freeform-mask';
 import { appendBlockToSlideContent } from '@/lib/class-slide-normalize';
-import type { Block, ClipShape, ClipShapeTexto } from '@/types/slide.types';
+import type { Block, ClipShape, ClipShapeTexto } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 
 import { TextMaskDialog } from './text-mask-dialog';

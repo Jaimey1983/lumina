@@ -42,7 +42,7 @@ import type {
   TimelineWidget,
   DiagramaBlock,
   HotspotWidget,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@/lib/font-catalog';
 import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
@@ -64,7 +64,7 @@ import {
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
 import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
-import type { ClickRevealInnerSelection, PopupInnerSelection, HotspotInnerSelection } from '@/types/widget.types';
+import type { ClickRevealInnerSelection, PopupInnerSelection, HotspotInnerSelection } from '@lumina/types/widget';
 import {
   isEditingPopupOverlay,
   mergedPopupConfig,
@@ -72,8 +72,8 @@ import {
 import { syncPopupBlockSizeFromTriggerPx } from '@/lib/popup-defaults';
 import { clampPopupTriggerPx } from '@/lib/popup-trigger-size';
 import { SlideCanvasRootContext } from '@/components/widgets/shared/slide-canvas-root-context';
-import { isWidgetTipo } from '@/types/widget.types';
-import type { WidgetBlock } from '@/types/slide.types';
+import { isWidgetTipo } from '@lumina/types/widget';
+import type { WidgetBlock } from '@lumina/types/slide';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';

@@ -1,4 +1,4 @@
-import { PuzzleImagenActivity } from '@/types/slide.types';
+import { PuzzleImagenActivity } from '@lumina/types/slide';
 
 export function createDefaultPuzzleImagen(): PuzzleImagenActivity {
   return {

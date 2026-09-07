@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { KeyRound, Trash2 } from 'lucide-react';
 
-import type { EscapeRoomActivity } from '@/types/slide.types';
+import type { EscapeRoomActivity } from '@lumina/types/slide';
 import {
   EscapeRoomEditor,
   normalizeEscapeRoomActivity,

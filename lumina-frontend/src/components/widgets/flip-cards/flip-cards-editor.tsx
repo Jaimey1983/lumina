@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import type { FlipCard, FlipCardCara, FlipCardElementPos, FlipCardsWidget } from '@/types/slide.types';
+import type { FlipCard, FlipCardCara, FlipCardElementPos, FlipCardsWidget } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

@@ -1,4 +1,4 @@
-export type { CodeBlock } from '@/types/slide.types';
+export type { CodeBlock } from '@lumina/types/slide';
 export {
   createDefaultCodeBlock,
 } from './codigo-defaults';

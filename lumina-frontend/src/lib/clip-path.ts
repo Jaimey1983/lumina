@@ -9,8 +9,8 @@ import type {
   ClipShape,
   ClipShapeTexto,
   ClipGroupBlock,
-} from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+} from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { resolveFontFamily } from '@/lib/font-catalog';
 import { normalizeTypography } from '@/lib/text-mask';
 import {

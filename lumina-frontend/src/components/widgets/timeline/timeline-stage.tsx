@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import type { TimelineConfiguracion, TimelineNodo } from '@/types/widget.types';
+import type { TimelineConfiguracion, TimelineNodo } from '@lumina/types/widget';
 
 import styles from './timeline.module.css';
 import { timelineNodeAccentColor, timelineUsesSegmentBar, timelineVariantRootClass } from './timeline-variant-meta';

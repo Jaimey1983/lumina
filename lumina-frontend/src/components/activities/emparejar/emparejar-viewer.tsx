@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { EmparejaLado, MatchPairs } from '@/types/slide.types';
+import type { EmparejaLado, MatchPairs } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';

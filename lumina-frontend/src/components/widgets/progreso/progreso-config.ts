@@ -1,4 +1,4 @@
-import type { ProgresoWidget } from '@/types/widget.types';
+import type { ProgresoWidget } from '@lumina/types/widget';
 import {
   DEFAULT_PROGRESO_BARRA,
   DEFAULT_PROGRESO_FONDO,

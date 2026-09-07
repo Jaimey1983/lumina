@@ -1,4 +1,4 @@
-export type { ImageBlock } from '@/types/slide.types';
+export type { ImageBlock } from '@lumina/types/slide';
 export {
   createDefaultImageBlock,
 } from './imagen-defaults';

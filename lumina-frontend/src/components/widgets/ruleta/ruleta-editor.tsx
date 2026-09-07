@@ -1,6 +1,6 @@
 'use client';
 
-import type { RuletaWidget } from '@/types/widget.types';
+import type { RuletaWidget } from '@lumina/types/widget';
 
 import { normalizeRuletaBlock } from './ruleta-defaults';
 import { RuletaWheel } from './ruleta-wheel';

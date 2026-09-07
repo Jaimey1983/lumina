@@ -1,9 +1,9 @@
-import type { Block, CarouselWidget, TabsWidget } from '@/types/slide.types';
+import type { Block, CarouselWidget, TabsWidget } from '@lumina/types/slide';
 import type {
   WidgetSlideContent,
   WidgetSlideInnerSelection,
   WidgetSlideTextBlock,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { getBlockAtPath } from '@/lib/class-slide-normalize';
 
 export function createWidgetSlideTextBlock(

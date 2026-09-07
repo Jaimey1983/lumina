@@ -1,4 +1,4 @@
-export type { TextBlock } from '@/types/slide.types';
+export type { TextBlock } from '@lumina/types/slide';
 export {
   createDefaultTextBlock,
 } from './texto-defaults';

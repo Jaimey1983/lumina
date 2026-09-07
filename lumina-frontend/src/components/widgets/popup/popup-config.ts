@@ -6,8 +6,8 @@ import type {
   PopupWidget,
   WidgetSlideContent,
   WidgetSlidePanelConfig,
-} from '@/types/widget.types';
-import { DEFAULT_POPUP_OVERLAY_VISIBILIDAD } from '@/types/widget.types';
+} from '@lumina/types/widget';
+import { DEFAULT_POPUP_OVERLAY_VISIBILIDAD } from '@lumina/types/widget';
 import { coerceWidgetLayoutId, resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
 import {
   DEFAULT_POPUP_CONFIG,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { AudioBlock, Block } from '@/types/slide.types';
+import type { AudioBlock, Block } from '@lumina/types/slide';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';

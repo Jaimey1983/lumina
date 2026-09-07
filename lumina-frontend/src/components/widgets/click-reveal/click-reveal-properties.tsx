@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, ClickRevealWidget } from '@/types/slide.types';
-import type { ClickRevealInnerSelection, WidgetLayoutId, WidgetSlideCount } from '@/types/widget.types';
+import type { Block, ClickRevealWidget } from '@lumina/types/slide';
+import type { ClickRevealInnerSelection, WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

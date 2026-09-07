@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { TooltipWidget } from '@/types/widget.types';
+import type { TooltipWidget } from '@lumina/types/widget';
 import { useEscapeToClose } from '@/components/widgets/shared/widget-editor-utils';
 import { TooltipParts } from './tooltip-parts';
 import { tooltipChromeStyle } from './tooltip-config';

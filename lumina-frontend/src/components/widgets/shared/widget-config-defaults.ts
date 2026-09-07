@@ -4,7 +4,7 @@ import {
   DEFAULT_WIDGET_TAB_CHROME,
   type WidgetHeaderConfig,
   type WidgetSlideContainerConfig,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 
 export const DEFAULT_WIDGET_HEADER_CONFIG: WidgetHeaderConfig = {
   mostrarTituloWidget: true,

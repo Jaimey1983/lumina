@@ -1,13 +1,13 @@
 'use client';
 
-import type { Block, ClickRevealWidget } from '@/types/slide.types';
-import type { WidgetCampoEstilo, WidgetSlideContent } from '@/types/widget.types';
+import type { Block, ClickRevealWidget } from '@lumina/types/slide';
+import type { WidgetCampoEstilo, WidgetSlideContent } from '@lumina/types/widget';
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,
 } from '@/components/widgets/shared/widget-inner-properties';
 
-import type { ClickRevealInnerSelection } from '@/types/widget.types';
+import type { ClickRevealInnerSelection } from '@lumina/types/widget';
 import { normalizeClickRevealWidget } from './click-reveal-config';
 
 function patchHeaderStyle(

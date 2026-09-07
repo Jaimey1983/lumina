@@ -5,7 +5,7 @@ import type {
   FlipCardCara,
   FlipCardsCampoEstilo,
   FlipCardsWidget,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';

@@ -1,4 +1,4 @@
-import type { EmparejaLado, MatchPairs } from '@/types/slide.types';
+import type { EmparejaLado, MatchPairs } from '@lumina/types/slide';
 
 export const EMPAREJAR_MAX_PARES = 8;
 export const EMPAREJAR_MIN_PARES = 2;

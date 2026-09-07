@@ -1,4 +1,4 @@
-import type { QuizOption } from '@/types/slide.types';
+import type { QuizOption } from '@lumina/types/slide';
 
 import type { MathRng } from './rng';
 import type {

@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, CarouselWidget } from '@/types/slide.types';
-import type { WidgetCampoEstilo, WidgetSlideContent } from '@/types/widget.types';
+import type { Block, CarouselWidget } from '@lumina/types/slide';
+import type { WidgetCampoEstilo, WidgetSlideContent } from '@lumina/types/widget';
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,

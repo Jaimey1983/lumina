@@ -1,6 +1,6 @@
 'use client';
 
-import type { VideoBlock } from '@/types/slide.types';
+import type { VideoBlock } from '@lumina/types/slide';
 
 export function buildEmbedUrl(url: string, autoplay?: boolean): string {
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);

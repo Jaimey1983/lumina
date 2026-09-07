@@ -4,7 +4,7 @@ import type {
   HotspotWidget,
   WidgetSlideContent,
   WidgetSlideTextField,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { HotspotParts } from './hotspot-parts';
 import { hotspotChromeStyle, isEditingHotspotOverlay, normalizeHotspotWidget } from './hotspot-config';
 

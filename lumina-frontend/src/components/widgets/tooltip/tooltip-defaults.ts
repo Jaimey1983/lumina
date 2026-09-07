@@ -1,6 +1,6 @@
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@lumina/types/widget';
 
 export const DEFAULT_TOOLTIP_COLOR_FONDO = '#0F172A';
 export const DEFAULT_TOOLTIP_COLOR_TEXTO = '#F8FAFC';

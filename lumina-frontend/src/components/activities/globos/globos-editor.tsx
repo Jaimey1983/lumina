@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { GlobosActivity } from '@/types/slide.types'
+import { GlobosActivity } from '@lumina/types/slide'
 import { globosFingerprint, mezclarOpcionesGlobos, normalizarGlobos } from './globos-config'
 import styles from './globos.module.css'
 

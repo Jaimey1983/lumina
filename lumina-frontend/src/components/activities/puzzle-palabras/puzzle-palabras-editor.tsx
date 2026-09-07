@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { PuzzlePalabrasActivity } from '@/types/slide.types'
+import { PuzzlePalabrasActivity } from '@lumina/types/slide'
 import { tokenizarOracion, mezclarTokens } from './puzzle-palabras-config'
 
 interface PuzzlePalabrasEditorProps {

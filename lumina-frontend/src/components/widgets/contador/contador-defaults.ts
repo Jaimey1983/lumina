@@ -1,11 +1,11 @@
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import type {
   ContadorAlTerminar,
   ContadorFormato,
   ContadorModo,
   ContadorWidget,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 
 export const DEFAULT_CONTADOR_MODO: ContadorModo = 'temporizador';
 export const DEFAULT_CONTADOR_FORMATO: ContadorFormato = 'mm:ss';

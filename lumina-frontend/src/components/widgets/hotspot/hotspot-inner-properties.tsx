@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
-import type { HotspotInnerSelection, HotspotWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { HotspotInnerSelection, HotspotWidget } from '@lumina/types/widget';
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,

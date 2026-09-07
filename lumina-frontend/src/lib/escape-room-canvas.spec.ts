@@ -5,7 +5,7 @@ import {
   salaTieneLienzo,
 } from '@/components/viewers/escape-room-viewer';
 import { normalizeSala } from '@/components/editor/activities/escape-room-editor';
-import type { Block, EscapeRoomSala } from '@/types/slide.types';
+import type { Block, EscapeRoomSala } from '@lumina/types/slide';
 
 const base = {
   id: 'sala-1',

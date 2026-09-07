@@ -1,6 +1,6 @@
 'use client';
 
-import type { FlipCardsWidget } from '@/types/slide.types';
+import type { FlipCardsWidget } from '@lumina/types/slide';
 import {
   widgetContainerBackgroundStyle,
   widgetHeaderPadding,

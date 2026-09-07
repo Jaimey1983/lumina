@@ -1,4 +1,4 @@
-import type { ColumnsBlock } from '@/types/slide.types';
+import type { ColumnsBlock } from '@lumina/types/slide';
 
 export function createDefaultColumnsBlock(extra?: Partial<ColumnsBlock>): ColumnsBlock {
   return {

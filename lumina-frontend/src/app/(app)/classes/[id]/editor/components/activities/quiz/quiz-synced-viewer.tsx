@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { HelpCircle } from 'lucide-react';
 
-import type { QuizMultiple, QuizPregunta } from '@/types/slide.types';
+import type { QuizMultiple, QuizPregunta } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';

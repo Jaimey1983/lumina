@@ -1,4 +1,4 @@
-import { BLOCK_FALLBACKS, type ImageBlock } from '@/types/slide.types';
+import { BLOCK_FALLBACKS, type ImageBlock } from '@lumina/types/slide';
 
 /**
  * Bloque de imagen listo para el canvas (contrato 3.2).

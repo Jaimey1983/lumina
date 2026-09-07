@@ -1,4 +1,4 @@
-import type { QuizLayoutVariant, QuizMultiple, QuizOption, QuizPregunta } from '@/types/slide.types';
+import type { QuizLayoutVariant, QuizMultiple, QuizOption, QuizPregunta } from '@lumina/types/slide';
 
 import { normalizarQuizMultiple } from '@/lib/class-slide-normalize';
 

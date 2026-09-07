@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import type { TabsWidget, WidgetSlideContent } from '@/types/widget.types';
+import type { TabsWidget, WidgetSlideContent } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
 import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';

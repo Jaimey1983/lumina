@@ -1,4 +1,4 @@
-import type { AudioBlock } from '@/types/slide.types';
+import type { AudioBlock } from '@lumina/types/slide';
 
 export function createDefaultAudioBlock(extra?: Partial<AudioBlock>): AudioBlock {
   return {

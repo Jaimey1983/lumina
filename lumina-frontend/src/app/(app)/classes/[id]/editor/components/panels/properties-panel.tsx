@@ -25,7 +25,7 @@ import type {
   CarouselWidget,
   ClickRevealWidget,
   TimelineWidget,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 import { ClasificarProperties } from '@/components/activities/clasificar/clasificar-properties';
 import { MemoriaProperties } from '@/components/activities/memoria/memoria-properties';
 import { PuzzleImagenProperties } from '@/components/activities/puzzle-imagen/puzzle-imagen-properties';
@@ -82,7 +82,7 @@ import {
   ClickRevealImageInnerProperties,
   ClickRevealTextInnerProperties,
 } from '@/components/widgets/click-reveal/click-reveal-inner-properties';
-import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, PopupInnerSelection, PopupWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget, RuletaWidget } from '@/types/widget.types';
+import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, PopupInnerSelection, PopupWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget, RuletaWidget } from '@lumina/types/widget';
 import {
   HotspotOverlayProperties,
   HotspotProperties,
@@ -134,7 +134,7 @@ import { Label } from '@/components/ui/label';
 import { Slider, SliderThumb } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { AnimationPanel } from '@/components/animations/animation-panel';
-import type { Animacion, TransicionSlide } from '@/types/animation.types';
+import type { Animacion, TransicionSlide } from '@lumina/types/animation';
 
 const DEBOUNCE_MS = 500;
 
@@ -153,8 +153,8 @@ export interface PropertiesPanelProps {
   hotspotInnerSelection?: HotspotInnerSelection | null;
   timelineInnerSelection?: TimelineInnerSelection | null;
   /** Slide activo — necesario para configurar transición */
-  slide?: import('@/types/slide.types').Slide | null;
-  onApplySlide?: (patch: Partial<import('@/types/slide.types').Slide>) => Promise<boolean>;
+  slide?: import('@lumina/types/slide').Slide | null;
+  onApplySlide?: (patch: Partial<import('@lumina/types/slide').Slide>) => Promise<boolean>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

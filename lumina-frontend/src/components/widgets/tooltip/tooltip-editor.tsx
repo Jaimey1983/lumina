@@ -1,4 +1,4 @@
-import type { TooltipWidget } from '@/types/widget.types';
+import type { TooltipWidget } from '@lumina/types/widget';
 import { TooltipParts } from './tooltip-parts';
 import { tooltipChromeStyle } from './tooltip-config';
 

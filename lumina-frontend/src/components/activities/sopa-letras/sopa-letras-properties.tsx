@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { SopaLetrasActivity, SopaLetrasPalabra } from '@/types/slide.types';
+import { SopaLetrasActivity, SopaLetrasPalabra } from '@lumina/types/slide';
 import {
   SOPA_LETRAS_MAX_PALABRAS,
   SOPA_LETRAS_MIN_PALABRAS,

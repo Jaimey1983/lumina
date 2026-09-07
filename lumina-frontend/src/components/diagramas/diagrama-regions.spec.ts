@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DiagramaVennElemento } from '@/types/slide.types';
+import type { DiagramaVennElemento } from '@lumina/types/slide';
 
 import {
   assignElementoRegion,

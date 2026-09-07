@@ -7,7 +7,7 @@
  * entradas de más.
  */
 import { describe, expect, it } from "vitest";
-import { WIDGET_TIPOS } from "../../../../../lumina-frontend/src/types/widget.types.js";
+import { WIDGET_TIPOS } from "@lumina/types/widget";
 import { CATALOGO_ELEMENTOS } from "./catalogo.js";
 import { elementRegistry } from "../../index.js";
 

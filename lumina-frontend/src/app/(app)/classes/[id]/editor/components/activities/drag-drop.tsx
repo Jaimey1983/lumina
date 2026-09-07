@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, GripVertical, Plus, Trash2, XCircle } from 'lucide-react';
 
-import type { DragDrop, DragDropItem, DragDropZone } from '@/types/slide.types';
+import type { DragDrop, DragDropItem, DragDropZone } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

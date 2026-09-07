@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import type { PopupWidget } from '@/types/widget.types';
+import type { PopupWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 
 import styles from './popup.module.css';

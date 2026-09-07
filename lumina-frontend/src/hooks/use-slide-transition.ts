@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import type { TransicionSlide } from '@/types/animation.types';
+import type { TransicionSlide } from '@lumina/types/animation';
 
 export type TransitionPhase = 'idle' | 'exiting' | 'entering';
 

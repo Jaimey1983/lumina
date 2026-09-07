@@ -6,7 +6,7 @@
  * consumirlas como `crearPorDefecto()` de cada `ElementDefinition`, sin
  * duplicar el shape.
  */
-import type { Activity } from '@/types/slide.types';
+import type { Activity } from '@lumina/types/slide';
 import { createDefaultEmparejar } from '@/lib/emparejar-defaults';
 
 export function shortAnswerTemplate(): Activity {

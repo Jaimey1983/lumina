@@ -32,7 +32,7 @@ import {
   createMaskNodeId,
   normalizeFreeformPath,
 } from '@/lib/freeform-mask';
-import type { FreeformMaskPath, MaskNode } from '@/types/slide.types';
+import type { FreeformMaskPath, MaskNode } from '@lumina/types/slide';
 
 const HIT_TOLERANCE = 10; // px — área de hit más generosa que el visual
 const ANCHOR_R = 4.5;

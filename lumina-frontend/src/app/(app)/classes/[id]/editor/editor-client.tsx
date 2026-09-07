@@ -129,7 +129,7 @@ import {
   type HotspotWidget,
   EMPTY_SLIDE_GUIAS,
   GRID_SIZE_PRESETS,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 import { normalizeSlideGrilla } from '@/lib/canvas-grid';
 import {
   CANVAS_ZOOM_DEFAULT,
@@ -156,7 +156,7 @@ import type { ActivityType, WidgetType } from './components/panels/activities-pa
 import { getActivityPanelItem } from './components/panels/activities-panel';
 import { getWidgetPanelItem } from './components/panels/widget-panel-catalog';
 import { EditorDndShell } from './components/editor-dnd-shell';
-import type { BlockMarco } from '@/types/slide.types';
+import type { BlockMarco } from '@lumina/types/slide';
 import type { StudentResponse } from './components/panels/live-responses-panel';
 
 import {
@@ -213,7 +213,7 @@ import {
   extractActivityDefinition,
 } from '@lumina/scoring';
 import { useGamification } from '@/hooks/use-gamification';
-import type { SlideTheme } from '@/types/slide.types';
+import type { SlideTheme } from '@lumina/types/slide';
 import { useAutosave } from '@/hooks/use-autosave';
 import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
 

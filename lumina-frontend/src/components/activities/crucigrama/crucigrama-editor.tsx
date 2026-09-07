@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useRef } from 'react';
-import { CrucigramaActivity } from '@/types/slide.types';
+import { CrucigramaActivity } from '@lumina/types/slide';
 import { calcularBounds, construirMapaCeldas, numerarPalabras } from './crucigrama-config';
 import {
   CRUCIGRAMA_GAP_PX,

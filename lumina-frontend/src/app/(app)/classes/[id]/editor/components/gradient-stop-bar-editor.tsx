@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { Trash2 } from 'lucide-react';
 
-import type { GradientColorStop } from '@/types/slide.types';
+import type { GradientColorStop } from '@lumina/types/slide';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider, SliderThumb } from '@/components/ui/slider';

@@ -11,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import type { QuizLayoutVariant, QuizOption } from '@/types/slide.types';
+import type { QuizLayoutVariant, QuizOption } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 
 const KAHOOT_COLORS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c', '#8540df', '#0aa865'] as const;

@@ -1,4 +1,4 @@
-import type { GlobosActivity, GlobosPregunta } from '@/types/slide.types'
+import type { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
 
 export const GLOBOS_MAX_PREGUNTAS = 30
 export const GLOBOS_MIN_PREGUNTAS = 1

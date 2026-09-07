@@ -44,8 +44,8 @@ import type {
   ClickRevealWidget,
   TimelineWidget,
   DiagramaBlock,
-} from '@/types/slide.types';
-import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+} from '@lumina/types/slide';
+import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 import {
   getBlockAtPath,
   isUnimplementedInteractiveStub,
@@ -59,7 +59,7 @@ import {
   SlideEditorChrome,
   SlideInsertionToolbar,
 } from './floating-toolbar';
-import type { HotspotWidget, PopupWidget } from '@/types/widget.types';
+import type { HotspotWidget, PopupWidget } from '@lumina/types/widget';
 import { PropertiesPanel } from './panels/properties-panel';
 import { SlideRenderer } from './slide-renderer';
 import { cn } from '@/lib/utils';

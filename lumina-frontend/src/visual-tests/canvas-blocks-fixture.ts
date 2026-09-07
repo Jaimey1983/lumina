@@ -9,7 +9,7 @@ import type {
   DiagramaGrafoBlock,
   DiagramaVennBlock,
   GraficoDatosBlock,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 /** Lienzo fijo para render determinista de los 3 bloques con canvas (E5.7). */
 export const CANVAS_HOST_SIZE = { width: 480, height: 320 } as const;

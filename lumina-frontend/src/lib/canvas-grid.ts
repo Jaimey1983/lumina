@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react';
 
-import type { SlideGrilla, SlideGuias } from '@/types/slide.types';
+import type { SlideGrilla, SlideGuias } from '@lumina/types/slide';
 import {
   DEFAULT_GRID_SIZE_PX,
   GRID_SIZE_PRESETS,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 import {
   VIRTUAL_CANVAS_HEIGHT,

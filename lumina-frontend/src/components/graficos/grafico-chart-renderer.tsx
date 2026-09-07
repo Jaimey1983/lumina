@@ -20,7 +20,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import type { GraficoDatosBlock } from '@/types/slide.types';
+import type { GraficoDatosBlock } from '@lumina/types/slide';
 import { getSeriesColor } from './grafico-color-palettes';
 
 interface GraficoChartRendererProps {

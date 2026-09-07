@@ -1,6 +1,6 @@
-import type { ActivityBlock, BlockMarco, RuletaActivity } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { RuletaWidget } from '@/types/widget.types';
+import type { ActivityBlock, BlockMarco, RuletaActivity } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { RuletaWidget } from '@lumina/types/widget';
 
 import {
   RULETA_COLORES_DEFAULT,

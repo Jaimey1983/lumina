@@ -1,12 +1,12 @@
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
 import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
-import type { ClickRevealInnerSelection } from '@/types/widget.types';
-import type { HotspotInnerSelection } from '@/types/widget.types';
-import type { PopupInnerSelection } from '@/types/widget.types';
+import type { ClickRevealInnerSelection } from '@lumina/types/widget';
+import type { HotspotInnerSelection } from '@lumina/types/widget';
+import type { PopupInnerSelection } from '@lumina/types/widget';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
-import type { Background, Block, Slide, SlideGuias } from '@/types/slide.types';
-import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+import type { Background, Block, Slide, SlideGuias } from '@lumina/types/slide';
+import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 
 import type { ResizeHandleDir } from './resize-coords';
 

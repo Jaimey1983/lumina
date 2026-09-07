@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { ColumnsBlock, Block } from '@/types/slide.types';
+import type { ColumnsBlock, Block } from '@lumina/types/slide';
 
 export interface RenderColumnsProps {
   block: ColumnsBlock;

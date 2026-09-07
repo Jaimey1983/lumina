@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
-import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';

@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Trash2, ChevronUp, ChevronDown, Plus, GripVertical } from 'lucide-react';
 
-import type { OrderSteps, OrderStep } from '@/types/slide.types';
+import type { OrderSteps, OrderStep } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -1,6 +1,6 @@
 'use client';
 
-import type { CodeBlock } from '@/types/slide.types';
+import type { CodeBlock } from '@lumina/types/slide';
 
 export interface RenderCodeProps {
   block: CodeBlock;

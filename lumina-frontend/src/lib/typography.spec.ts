@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TextBlock } from '@/types/slide.types';
+import type { TextBlock } from '@lumina/types/slide';
 import {
   applyTypographyPreset,
   clampFontSize,

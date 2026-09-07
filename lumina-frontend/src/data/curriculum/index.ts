@@ -4,7 +4,7 @@ import type {
   GradoPrimaria,
   GradoBachillerato,
   GradoEscolar,
-} from '@/types/curriculum.types';
+} from '@lumina/types/curriculum';
 
 // Mapa de carga dinámica — evita incluir todos los JSONs en el bundle inicial.
 // El tipo del módulo importado se mantiene laxo (`unknown`) porque

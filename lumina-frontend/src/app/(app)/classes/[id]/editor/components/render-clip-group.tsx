@@ -32,7 +32,7 @@ import type {
   ClipGroupBlock,
   ClipShapeLibre,
   FreeformMaskPath,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 /** Editor Paper.js: solo se carga al entrar en modo edición de forma libre. */
 const ClipPathNodeEditorPaper = dynamic(

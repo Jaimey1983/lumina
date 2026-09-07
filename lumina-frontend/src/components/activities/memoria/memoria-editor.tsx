@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MemoriaActivity } from '@/types/slide.types';
+import { MemoriaActivity } from '@lumina/types/slide';
 import { calcularFilasMemoria } from './memoria-config';
 import {
   colorSimboloDorsoMemoria,

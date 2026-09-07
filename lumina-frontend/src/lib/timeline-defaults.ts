@@ -2,9 +2,9 @@ import {
   DEFAULT_TIMELINE_CONFIG,
   buildTimelineNodos,
 } from '@/components/widgets/timeline/timeline-config';
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { TimelineWidget } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { TimelineWidget } from '@lumina/types/widget';
 
 export const DEFAULT_TIMELINE_CONTENT: Omit<
   TimelineWidget,

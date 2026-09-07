@@ -19,8 +19,8 @@ import {
   useCompleteSession,
 } from '@/hooks/api/use-autonomous-viewer';
 import type { Slide } from '@/hooks/api/use-class';
-import type { Block } from '@/types/slide.types';
-import type { AutonomousSession, CompleteSessionResponse } from '@/types/autonomous.types';
+import type { Block } from '@lumina/types/slide';
+import type { AutonomousSession, CompleteSessionResponse } from '@lumina/types/autonomous';
 import {
   evaluateActivityResponse,
   isActivityDraftResponse,

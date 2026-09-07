@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { TopoActivity, TopoPregunta } from '@/types/slide.types'
+import { TopoActivity, TopoPregunta } from '@lumina/types/slide'
 import { generarIdTopo, TOPO_MAX_PREGUNTAS, TOPO_MIN_PREGUNTAS } from './topo-config'
 
 interface TopoPropertiesProps {

@@ -1,5 +1,5 @@
 /** API pública del widget Progreso (Barra) para `@lumina/element-kit` (E3.2). */
-export type { ProgresoWidget } from '@/types/widget.types';
+export type { ProgresoWidget } from '@lumina/types/widget';
 export {
   createDefaultProgresoBlock,
   normalizeProgresoWidget,

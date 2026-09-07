@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { TooltipWidget } from '@/types/widget.types';
+import type { TooltipWidget } from '@lumina/types/widget';
 import {
   DEFAULT_TOOLTIP_COLOR_FONDO,
   DEFAULT_TOOLTIP_COLOR_TEXTO,

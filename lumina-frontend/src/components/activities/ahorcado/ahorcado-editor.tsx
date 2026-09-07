@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { AhorcadoActivity } from '@/types/slide.types'
+import { AhorcadoActivity } from '@lumina/types/slide'
 import { ahorcadoFingerprint, normalizarAhorcado, revelarPalabraAhorcado } from './ahorcado-config'
 import { AhorcadoFigure } from './ahorcado-figure'
 import styles from './ahorcado.module.css'

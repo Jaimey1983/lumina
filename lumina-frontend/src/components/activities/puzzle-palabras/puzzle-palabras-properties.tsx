@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { PuzzlePalabrasActivity } from '@/types/slide.types'
+import { PuzzlePalabrasActivity } from '@lumina/types/slide'
 import {
   PUZZLE_PALABRAS_MAX_ORACIONES,
   PUZZLE_PALABRAS_MIN_ORACIONES,

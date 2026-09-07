@@ -6,7 +6,7 @@ import type {
   WidgetHeaderTextField,
   WidgetSlideContent,
   WidgetSlideInnerSelection,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';

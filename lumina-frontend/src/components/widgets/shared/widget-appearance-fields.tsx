@@ -7,7 +7,7 @@ import {
   AlignRight,
 } from 'lucide-react';
 
-import type { WidgetAlineacion, WidgetLayoutId } from '@/types/widget.types';
+import type { WidgetAlineacion, WidgetLayoutId } from '@lumina/types/widget';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

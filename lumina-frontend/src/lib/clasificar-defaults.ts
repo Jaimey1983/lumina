@@ -1,4 +1,4 @@
-import { ClasificarActivity } from '@/types/slide.types';
+import { ClasificarActivity } from '@lumina/types/slide';
 
 export function createDefaultClasificar(): ClasificarActivity {
   return {

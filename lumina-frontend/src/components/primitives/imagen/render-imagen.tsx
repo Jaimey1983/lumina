@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import type { ImageBlock } from '@/types/slide.types';
+import type { ImageBlock } from '@lumina/types/slide';
 import { hasMediaSrc } from '@/lib/media-url';
 
 export interface RenderImageProps {

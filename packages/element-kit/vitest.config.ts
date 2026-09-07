@@ -26,6 +26,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@lumina/element-kit-core": elementKitCoreSrc,
+      "@lumina/types/slide": path.resolve(root, "../types/src/slide.types.ts"),
+      "@lumina/types/widget": path.resolve(root, "../types/src/widget.types.ts"),
+      "@lumina/types/animation": path.resolve(root, "../types/src/animation.types.ts"),
+      "@lumina/types/autonomous": path.resolve(root, "../types/src/autonomous.types.ts"),
+      "@lumina/types/curriculum": path.resolve(root, "../types/src/curriculum.types.ts"),
       "lumina-frontend/widgets/timeline": path.resolve(frontendSrc, "components/widgets/timeline/index.ts"),
       "lumina-frontend/widgets/click-reveal": path.resolve(frontendSrc, "components/widgets/click-reveal/index.ts"),
       "lumina-frontend/widgets/carousel": path.resolve(frontendSrc, "components/widgets/carousel/index.ts"),

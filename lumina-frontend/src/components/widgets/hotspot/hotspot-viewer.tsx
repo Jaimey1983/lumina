@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { HotspotWidget } from '@/types/widget.types';
+import type { HotspotWidget } from '@lumina/types/widget';
 import { HotspotParts } from './hotspot-parts';
 import { hotspotChromeStyle } from './hotspot-config';
 

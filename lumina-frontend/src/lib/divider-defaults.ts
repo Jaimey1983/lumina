@@ -1,4 +1,4 @@
-import { BLOCK_FALLBACKS, type DividerBlock } from '@/types/slide.types';
+import { BLOCK_FALLBACKS, type DividerBlock } from '@lumina/types/slide';
 
 export function createDefaultSeparadorBlock(): DividerBlock {
   const fb = BLOCK_FALLBACKS.separador;

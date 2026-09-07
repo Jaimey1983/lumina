@@ -10,7 +10,7 @@ import {
   Square,
 } from 'lucide-react';
 
-import type { QuizMultiple, QuizPregunta } from '@/types/slide.types';
+import type { QuizMultiple, QuizPregunta } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 
 export interface QuizSyncedPanelProps {

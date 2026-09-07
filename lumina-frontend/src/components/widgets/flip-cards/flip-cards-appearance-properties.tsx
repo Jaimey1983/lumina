@@ -1,6 +1,6 @@
 'use client';
 
-import type { Block, FlipCardsWidget } from '@/types/slide.types';
+import type { Block, FlipCardsWidget } from '@lumina/types/slide';
 import { Switch } from '@/components/ui/switch';
 import {
   WidgetAppearanceSection,

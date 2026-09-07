@@ -1,6 +1,6 @@
 'use client';
 
-import type { MemoriaActivity } from '@/types/slide.types';
+import type { MemoriaActivity } from '@lumina/types/slide';
 import styles from './memoria.module.css';
 
 export type MemoriaLado = { texto?: string; imagen?: string };

@@ -15,7 +15,7 @@ import {
   Palette,
   Eye,
 } from 'lucide-react';
-import type { Block, GraficoChartType, GraficoDatosBlock, GraficoSerie } from '@/types/slide.types';
+import type { Block, GraficoChartType, GraficoDatosBlock, GraficoSerie } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

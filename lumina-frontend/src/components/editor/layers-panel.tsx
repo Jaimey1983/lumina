@@ -15,7 +15,7 @@ import {
   buildLayerList,
   type LayerReorderAction,
 } from '@/lib/canvas-layers';
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 
 export interface LayersPanelProps {
   bloques: Block[];

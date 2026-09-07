@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Compass, Plus, Sparkles, Trash2, BookOpen, Check } from 'lucide-react';
-import type { ClassNarrativeMeta } from '@/types/slide.types';
+import type { ClassNarrativeMeta } from '@lumina/types/slide';
 import { normalizeClassNarrativeMeta } from '@/lib/class-narrativa';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

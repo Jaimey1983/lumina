@@ -2,7 +2,7 @@
  * API pública de Anagrama para consumidores del workspace
  * (`@lumina/element-kit` en E2.3). Sin cambiar comportamiento.
  */
-export type { AnagramaActivity } from '@/types/slide.types';
+export type { AnagramaActivity } from '@lumina/types/slide';
 export { createDefaultAnagrama } from '@/lib/anagrama-defaults';
 export { AnagramaEditor } from './anagrama-editor';
 export { AnagramaViewer } from './anagrama-viewer';

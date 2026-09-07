@@ -12,7 +12,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
-import { PuzzleImagenActivity } from '@/types/slide.types';
+import { PuzzleImagenActivity } from '@lumina/types/slide';
 import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import {

@@ -9,7 +9,7 @@
 //     convierten entre ambos espacios usando el contrato canónico
 //     `getBlockPos` → `withRect` (no reimplementa fallbacks por `tipo`).
 
-import type { Block, ClipGroupBlock, ClipShape } from '@/types/slide.types';
+import type { Block, ClipGroupBlock, ClipShape } from '@lumina/types/slide';
 import {
   getBlockPos,
   withRect,

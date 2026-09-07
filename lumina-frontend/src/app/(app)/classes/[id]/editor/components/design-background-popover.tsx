@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { Crosshair, ImageIcon, Paintbrush, RotateCw, Sparkles } from 'lucide-react';
 
-import type { Background, GradientColorStop } from '@/types/slide.types';
+import type { Background, GradientColorStop } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

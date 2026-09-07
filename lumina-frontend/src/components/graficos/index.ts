@@ -1,5 +1,5 @@
 /** API pública del bloque Gráfico para `@lumina/element-kit` (E4.1). */
-export type { GraficoDatosBlock } from '@/types/slide.types';
+export type { GraficoDatosBlock } from '@lumina/types/slide';
 export {
   createDefaultGraficoBlock,
   normalizeGraficoBlock,

@@ -1,4 +1,4 @@
-import type { WidgetAlineacion } from '@/types/widget.types';
+import type { WidgetAlineacion } from '@lumina/types/widget';
 
 export function alineacionToCss(alineacion: WidgetAlineacion): 'left' | 'center' | 'right' {
   switch (alineacion) {

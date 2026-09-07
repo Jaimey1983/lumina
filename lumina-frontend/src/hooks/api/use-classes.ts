@@ -1,6 +1,6 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { ClassModoEntrega } from '@/types/slide.types';
+import type { ClassModoEntrega } from '@lumina/types/slide';
 
 export interface Class {
   id: string;

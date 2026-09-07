@@ -1,4 +1,4 @@
-import type { WidgetElementPos, WidgetItemVisibilidad, WidgetSlideVisibilidad } from '@/types/widget.types';
+import type { WidgetElementPos, WidgetItemVisibilidad, WidgetSlideVisibilidad } from '@lumina/types/widget';
 
 export const DEFAULT_TITULO_POS: WidgetElementPos = { x: 10, y: 14 };
 export const DEFAULT_CUERPO_POS: WidgetElementPos = { x: 10, y: 42 };

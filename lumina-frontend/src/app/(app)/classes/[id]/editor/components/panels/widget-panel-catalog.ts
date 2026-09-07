@@ -14,7 +14,7 @@ import {
   Timer,
 } from 'lucide-react';
 
-import { WIDGET_TIPOS, type WidgetTipo } from '@/types/widget.types';
+import { WIDGET_TIPOS, type WidgetTipo } from '@lumina/types/widget';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 
 /** Nombre visible del widget — sale del catálogo del `ElementDefinition` (E7.2). */

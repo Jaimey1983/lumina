@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { CrucigramaActivity, CrucigramaPalabra } from '@/types/slide.types';
+import { CrucigramaActivity, CrucigramaPalabra } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import { calcularBounds, construirMapaCeldas, numerarPalabras } from './crucigrama-config';

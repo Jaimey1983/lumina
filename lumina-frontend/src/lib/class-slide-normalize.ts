@@ -8,8 +8,8 @@ import type {
   QuizPregunta,
   Slide,
   SlideGuias,
-} from '@/types/slide.types';
-import type { TransicionSlide } from '@/types/animation.types';
+} from '@lumina/types/slide';
+import type { TransicionSlide } from '@lumina/types/animation';
 import { parseSlideGuias } from '@/lib/canvas-guides';
 import { normalizarEmparejar } from '@/components/activities/emparejar/emparejar-config';
 import { normalizarAbrirCaja } from '@/components/activities/abrir-caja/abrir-caja-config';

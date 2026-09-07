@@ -1,6 +1,6 @@
 'use client';
 
-import type { ColumnsBlock, Block } from '@/types/slide.types';
+import type { ColumnsBlock, Block } from '@lumina/types/slide';
 import { Label } from '@/components/ui/label';
 import {
   Select,

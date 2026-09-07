@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

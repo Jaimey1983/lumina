@@ -7,7 +7,7 @@ import {
   useEffect,
   type CSSProperties,
 } from 'react';
-import type { TextBlock } from '@/types/slide.types';
+import type { TextBlock } from '@lumina/types/slide';
 import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
 import { resolveFontFamily } from '@/lib/font-catalog';
 

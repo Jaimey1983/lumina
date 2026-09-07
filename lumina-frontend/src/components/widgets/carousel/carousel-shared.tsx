@@ -1,6 +1,6 @@
 'use client';
 
-import type { CarouselWidget } from '@/types/widget.types';
+import type { CarouselWidget } from '@lumina/types/widget';
 import {
   widgetBodyPadding,
   widgetContainerBackgroundStyle,

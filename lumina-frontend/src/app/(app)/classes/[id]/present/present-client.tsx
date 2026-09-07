@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import styles from '@/components/viewer/slide-transition.module.css';
 import { useSlideTransition } from '@/hooks/use-slide-transition';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
-import type { Activity, Block } from '@/types/slide.types';
+import type { Activity, Block } from '@lumina/types/slide';
 import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
 
 function isEditableKeyboardTarget(target: EventTarget | null): boolean {

@@ -1,5 +1,5 @@
 /** API pública del widget Ruleta para `@lumina/element-kit` (E3.1). */
-export type { RuletaWidget } from '@/types/widget.types';
+export type { RuletaWidget } from '@lumina/types/widget';
 export {
   DEFAULT_RULETA_DURACION,
   createDefaultRuleta,

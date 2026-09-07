@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import type { AnimacionTipo } from '@/types/animation.types';
+import type { AnimacionTipo } from '@lumina/types/animation';
 import { ANIMACION_PRESETS } from '@/lib/animation-defaults';
 
 const LABEL_TIPO: Record<string, string> = {

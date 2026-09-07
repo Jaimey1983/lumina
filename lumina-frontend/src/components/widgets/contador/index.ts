@@ -1,5 +1,5 @@
 /** API pública del widget Contador para `@lumina/element-kit` (E3.2). */
-export type { ContadorWidget } from '@/types/widget.types';
+export type { ContadorWidget } from '@lumina/types/widget';
 export {
   createDefaultContadorBlock,
   normalizeContadorWidget,

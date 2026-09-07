@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
-import type { TimelineWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { TimelineWidget } from '@lumina/types/widget';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   WidgetAppearanceSection,

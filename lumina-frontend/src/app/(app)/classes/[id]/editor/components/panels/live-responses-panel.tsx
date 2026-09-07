@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Users, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Activity } from '@/types/slide.types';
+import type { Activity } from '@lumina/types/slide';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

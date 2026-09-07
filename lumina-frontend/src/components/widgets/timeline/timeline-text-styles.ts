@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import type { TimelineConfiguracion, TimelineNodo } from '@/types/widget.types';
+import type { TimelineConfiguracion, TimelineNodo } from '@lumina/types/widget';
 import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
 
 import { timelineNodeAccentColor } from './timeline-variant-meta';

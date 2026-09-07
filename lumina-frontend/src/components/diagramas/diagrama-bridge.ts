@@ -1,7 +1,7 @@
 // ─── Puente entre Bloque Diagrama y graph-core ────────────────────────────────
 // Convierte entre DiagramaGrafoBlock y el GraphModel agnóstico de React Flow.
 
-import type { DiagramaArista, DiagramaGrafoBlock, DiagramaNodo } from '@/types/slide.types';
+import type { DiagramaArista, DiagramaGrafoBlock, DiagramaNodo } from '@lumina/types/slide';
 import type { GraphEdge, GraphModel, GraphNode } from '@/lib/graph-editor';
 
 /**

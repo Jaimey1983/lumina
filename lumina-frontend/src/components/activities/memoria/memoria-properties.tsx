@@ -2,7 +2,7 @@
 
 import React, { useCallback, useRef } from 'react';
 import { ImageIcon, Upload, X } from 'lucide-react';
-import type { MemoriaActivity } from '@/types/slide.types';
+import type { MemoriaActivity } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {

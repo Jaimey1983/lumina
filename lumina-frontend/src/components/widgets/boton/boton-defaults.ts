@@ -1,12 +1,12 @@
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import type {
   BotonAccion,
   BotonForma,
   BotonTamano,
   BotonVariante,
   BotonWidget,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 
 export const DEFAULT_BOTON_TEXTO = 'Continuar';
 export const DEFAULT_BOTON_VARIANTE: BotonVariante = 'primary';

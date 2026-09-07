@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
-import type { FlipCard, FlipCardCara, FlipCardsWidget } from '@/types/slide.types';
+import type { FlipCard, FlipCardCara, FlipCardsWidget } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 import { useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
 import { usesComputedImageLayout } from '@/components/widgets/shared/widget-image-styles';

@@ -1,4 +1,4 @@
-import type { FlipCardCara } from '@/types/slide.types';
+import type { FlipCardCara } from '@lumina/types/slide';
 
 import {
   imageElementStyle as baseImageElementStyle,

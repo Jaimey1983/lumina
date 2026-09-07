@@ -68,6 +68,6 @@ export {
 } from './widget-slide-utils';
 export { textStyleToCss } from './widget-text-styles';
 // E7.2: `widget-registry.ts` borrado. `WidgetTipo` / `WIDGET_TIPOS` /
-// `isWidgetTipo` viven en `@/types/widget.types`; `WidgetBlock` /
-// `isCaptivateWidgetBlock` en `@/types/slide.types`. `WIDGET_LABELS` se retiró
+// `isWidgetTipo` viven en `@lumina/types/widget`; `WidgetBlock` /
+// `isCaptivateWidgetBlock` en `@lumina/types/slide`. `WIDGET_LABELS` se retiró
 // (el nombre visible sale de `ElementDefinition.catalogo.nombre`).

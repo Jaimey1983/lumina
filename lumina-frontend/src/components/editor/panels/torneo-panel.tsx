@@ -5,7 +5,7 @@ import type { Socket } from 'socket.io-client';
 import { Download, Play, SkipForward, Square, Trophy } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import type { TorneoActivity } from '@/types/slide.types';
+import type { TorneoActivity } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

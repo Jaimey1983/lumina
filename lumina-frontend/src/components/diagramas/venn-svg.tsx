@@ -2,7 +2,7 @@
 
 import { useMemo, type Ref } from 'react';
 
-import type { DiagramaVennBlock, DiagramaVennElemento } from '@/types/slide.types';
+import type { DiagramaVennBlock, DiagramaVennElemento } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 
 import { regionCentroid, vennCircles } from './diagrama-regions';

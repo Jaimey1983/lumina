@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { MemoriaActivity } from '@/types/slide.types';
+import { MemoriaActivity } from '@lumina/types/slide';
 import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../shared/activity-result-overlay';
 import { calcularFilasMemoria } from './memoria-config';

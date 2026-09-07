@@ -55,7 +55,7 @@ import type {
   Block,
   EscapeRoomActivity,
   EscapeRoomSala,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 import { EscapeRoomSalaCanvas } from './escape-room-sala-canvas';
 

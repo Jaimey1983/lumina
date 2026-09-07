@@ -1,6 +1,6 @@
 'use client';
 
-import type { Block, FlipCard, FlipCardsWidget } from '@/types/slide.types';
+import type { Block, FlipCard, FlipCardsWidget } from '@lumina/types/slide';
 import { Checkbox } from '@/components/ui/checkbox';
 
 import type { FlipCardsCaraLado, FlipCardsInnerSelection } from './flip-cards-config';

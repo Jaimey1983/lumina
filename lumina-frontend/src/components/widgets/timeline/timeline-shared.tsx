@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { TimelineConfiguracion } from '@/types/widget.types';
+import type { TimelineConfiguracion } from '@lumina/types/widget';
 import {
   widgetBodyPadding,
   widgetHeaderPadding,

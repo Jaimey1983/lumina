@@ -1,4 +1,4 @@
-import type { WidgetSlideContent } from '@/types/widget.types';
+import type { WidgetSlideContent } from '@lumina/types/widget';
 import { resolveSlideVisibilidad } from '@/components/widgets/shared/widget-slide-utils';
 
 export {
@@ -9,7 +9,7 @@ export {
   resolveTextPos as resolveTabTextPos,
   slideSelectionId as tabSelectionSlideId,
 } from '@/components/widgets/shared/widget-slide-utils';
-export type { WidgetSlideTextField as TabTextField } from '@/types/widget.types';
+export type { WidgetSlideTextField as TabTextField } from '@lumina/types/widget';
 
 import type { TabsConfiguracionCompleta, TabsSlideVisibilidad } from './tabs-config';
 

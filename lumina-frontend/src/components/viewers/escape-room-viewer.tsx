@@ -19,7 +19,7 @@ import {
 import type { EscapeRoomRankingRow } from '@/lib/escape-room-live.types';
 import { useSound } from '@/hooks/use-sound';
 import { cn } from '@/lib/utils';
-import type { Block, EscapeRoomActivity, EscapeRoomSala } from '@/types/slide.types';
+import type { Block, EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
 import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
 import { Button } from '@/components/ui/button';
 

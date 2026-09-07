@@ -1,4 +1,4 @@
-export type { ColumnsBlock, Block } from '@/types/slide.types';
+export type { ColumnsBlock, Block } from '@lumina/types/slide';
 export {
   createDefaultColumnsBlock,
 } from './columnas-defaults';

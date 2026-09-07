@@ -35,8 +35,8 @@ import {
   type TypographyValue,
 } from '@/lib/typography';
 import { cn } from '@/lib/utils';
-import type { HeadingLevel } from '@/types/slide.types';
-import type { WidgetCampoEstilo } from '@/types/widget.types';
+import type { HeadingLevel } from '@lumina/types/slide';
+import type { WidgetCampoEstilo } from '@lumina/types/widget';
 
 const DEFAULT_LINE_HEIGHT = 1.35;
 const DEFAULT_LETTER_SPACING = 0;

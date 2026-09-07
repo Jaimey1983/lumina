@@ -1,4 +1,4 @@
-import type { AhorcadoActivity, AhorcadoConfig, AhorcadoState } from '@/types/slide.types';
+import type { AhorcadoActivity, AhorcadoConfig, AhorcadoState } from '@lumina/types/slide';
 
 export const AHORCADO_MIN_INTENTOS = 4;
 export const AHORCADO_MAX_INTENTOS = 10;

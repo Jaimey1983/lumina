@@ -1,6 +1,6 @@
 'use client';
 
-import type { EmparejaLado } from '@/types/slide.types';
+import type { EmparejaLado } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 
 interface RenderLadoProps {

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { TopoActivity } from '@/types/slide.types'
+import { TopoActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 import { ActivityTimer } from '../shared/activity-timer'
 import { ActivityLives } from '../shared/activity-lives'

@@ -1,4 +1,4 @@
-import type { ClipGroupBlock } from '@/types/slide.types';
+import type { ClipGroupBlock } from '@lumina/types/slide';
 
 import { RenderClipGroup } from '@/app/(app)/classes/[id]/editor/components/render-clip-group';
 import { CLIP_VISUAL_BG, CLIP_VISUAL_SIZE } from './clip-group-fixture';

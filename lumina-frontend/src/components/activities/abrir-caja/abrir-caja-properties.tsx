@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { AbrirCajaActivity, AbrirCajaCaja, AbrirCajaContenido } from '@/types/slide.types'
+import { AbrirCajaActivity, AbrirCajaCaja, AbrirCajaContenido } from '@lumina/types/slide'
 import {
   generarIdCaja,
   ABRIR_CAJA_MAX_CAJAS,

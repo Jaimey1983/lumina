@@ -1,6 +1,6 @@
 'use client';
 
-import type { WidgetLayoutId } from '@/types/widget.types';
+import type { WidgetLayoutId } from '@lumina/types/widget';
 
 export function WidgetLayoutThumb({ layoutId }: { layoutId: WidgetLayoutId }) {
   const imageLeft = layoutId === 'imagen-izq-texto-der';

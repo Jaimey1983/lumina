@@ -23,7 +23,7 @@ import { SlideNavContext, type SlideNavAction } from '@/components/widgets/share
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideCountdownOverlay } from './slide-countdown-overlay';
-import { parseClassModoEntrega, type Activity, type Block } from '@/types/slide.types';
+import { parseClassModoEntrega, type Activity, type Block } from '@lumina/types/slide';
 import styles from '@/components/viewer/slide-transition.module.css';
 import { useSlideTransition } from '@/hooks/use-slide-transition';
 import { useGamification } from '@/hooks/use-gamification';

@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, ClickRevealWidget } from '@/types/slide.types';
-import type { ClickRevealEfecto } from '@/types/widget.types';
+import type { Block, ClickRevealWidget } from '@lumina/types/slide';
+import type { ClickRevealEfecto } from '@lumina/types/widget';
 import { Toggle } from '@/components/ui/toggle';
 import {
   WidgetAppearanceSection,

@@ -1,4 +1,4 @@
-import type { FlipCardsCampoEstilo, FlipCardsWidget } from '@/types/slide.types';
+import type { FlipCardsCampoEstilo, FlipCardsWidget } from '@lumina/types/slide';
 
 import {
   coerceFlipCardsPlantillaId,

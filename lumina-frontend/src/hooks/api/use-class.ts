@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { ClassModoEntrega, ClassNarrativeMeta } from '@/types/slide.types';
+import type { ClassModoEntrega, ClassNarrativeMeta } from '@lumina/types/slide';
 
 export interface Slide {
   id: string;

@@ -20,7 +20,7 @@
 import type { Font, Path, PathCommand } from 'opentype.js';
 
 import { resolveFontFamily, weightsForFamily } from '@/lib/font-catalog';
-import type { ClipShapeTexto } from '@/types/slide.types';
+import type { ClipShapeTexto } from '@lumina/types/slide';
 
 /** Límite de caracteres por línea del texto de una máscara. */
 export const TEXT_MASK_MAX_CHARS = 40;

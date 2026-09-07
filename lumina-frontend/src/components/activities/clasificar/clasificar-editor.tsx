@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ClasificarActivity } from '@/types/slide.types';
+import { ClasificarActivity } from '@lumina/types/slide';
 
 interface ClasificarEditorProps {
   actividad: ClasificarActivity;

@@ -1,5 +1,5 @@
 /** API pública del widget Hotspot para `@lumina/element-kit` (E3.2). */
-export type { HotspotWidget } from '@/types/widget.types';
+export type { HotspotWidget } from '@lumina/types/widget';
 export {
   DEFAULT_HOTSPOT_CONFIG,
   createDefaultHotspotBlock,

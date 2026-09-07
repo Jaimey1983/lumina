@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { GraficoDatosBlock } from '@/types/slide.types';
+import type { GraficoDatosBlock } from '@lumina/types/slide';
 import { GraficoViewer } from './grafico-viewer';
 import { cn } from '@/lib/utils';
 

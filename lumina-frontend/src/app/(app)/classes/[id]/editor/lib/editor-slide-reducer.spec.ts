@@ -7,8 +7,8 @@ import {
   withRect,
   withRotation,
 } from '@/hooks/use-block-drag';
-import type { ActivityBlock, Block, Slide } from '@/types/slide.types';
-import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+import type { ActivityBlock, Block, Slide } from '@lumina/types/slide';
+import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 
 import { getBlockResizeMinDim } from './block-resize-min-dim';
 import { editorSlideReducer } from './editor-slide-reducer';

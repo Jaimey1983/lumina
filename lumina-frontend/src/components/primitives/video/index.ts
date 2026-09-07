@@ -1,4 +1,4 @@
-export type { VideoBlock } from '@/types/slide.types';
+export type { VideoBlock } from '@lumina/types/slide';
 export {
   createDefaultVideoBlock,
 } from './video-defaults';

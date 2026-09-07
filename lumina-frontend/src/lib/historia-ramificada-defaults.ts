@@ -1,4 +1,4 @@
-import { HistoriaRamificadaActivity } from '@/types/slide.types'
+import { HistoriaRamificadaActivity } from '@lumina/types/slide'
 
 export function createDefaultHistoriaRamificada(): HistoriaRamificadaActivity {
   return {

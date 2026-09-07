@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
-import type { ClickRevealWidget } from '@/types/widget.types';
+import type { ClickRevealWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
 import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';

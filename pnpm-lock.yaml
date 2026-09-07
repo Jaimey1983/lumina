@@ -232,6 +232,9 @@ importers:
       '@lumina/scoring':
         specifier: workspace:*
         version: link:../packages/scoring
+      '@lumina/types':
+        specifier: workspace:*
+        version: link:../packages/types
       '@radix-ui/react-context-menu':
         specifier: ^2.2.16
         version: 2.3.7(@types/react-dom@19.2.7(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -407,6 +410,9 @@ importers:
       '@lumina/scoring':
         specifier: workspace:*
         version: link:../scoring
+      '@lumina/types':
+        specifier: workspace:*
+        version: link:../types
       lumina-frontend:
         specifier: workspace:*
         version: link:../../lumina-frontend
@@ -483,6 +489,15 @@ importers:
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(jsdom@26.1.0(supports-color@8.1.1))(vite@8.2.2(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.1))
+
+  packages/types:
+    devDependencies:
+      eslint:
+        specifier: ^9
+        version: 9.39.4(jiti@2.7.0)(supports-color@8.1.1)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
 packages:
 

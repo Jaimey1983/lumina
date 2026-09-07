@@ -1,6 +1,6 @@
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { ProgresoModo, ProgresoWidget } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { ProgresoModo, ProgresoWidget } from '@lumina/types/widget';
 
 export const DEFAULT_PROGRESO_MODO: ProgresoModo = 'slides';
 export const DEFAULT_PROGRESO_PORCENTAJE = 45;

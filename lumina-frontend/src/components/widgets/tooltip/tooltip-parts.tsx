@@ -17,7 +17,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { TooltipWidget } from '@/types/widget.types';
+import type { TooltipWidget } from '@lumina/types/widget';
 import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
 import { mergedTooltipConfig } from './tooltip-config';
 import styles from './tooltip.module.css';

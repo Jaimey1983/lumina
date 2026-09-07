@@ -1,4 +1,4 @@
-import { GlobosActivity } from '@/types/slide.types'
+import { GlobosActivity } from '@lumina/types/slide'
 
 export function createDefaultGlobos(): GlobosActivity {
   return {

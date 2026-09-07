@@ -25,7 +25,7 @@ import {
 import Link from 'next/link';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Block, Background } from '@/types/slide.types';
+import type { Block, Background } from '@lumina/types/slide';
 import { DesignBackgroundPopover } from '../design-background-popover';
 import { createDefaultGraficoBlock } from '@/components/graficos/grafico-defaults';
 import {
@@ -57,7 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/file-upload';
 import { cn } from '@/lib/utils';
-import type { WidgetTipo } from '@/types/widget.types';
+import type { WidgetTipo } from '@lumina/types/widget';
 
 import {
   useContentAssistant,
@@ -78,7 +78,7 @@ import {
 import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@/data/curriculum/index';
-import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@/types/curriculum.types';
+import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
 import { ImagesElementPanel } from './images-element-panel';
 import { ClipMasksPanel } from './clip-masks-panel';

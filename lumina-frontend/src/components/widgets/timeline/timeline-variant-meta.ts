@@ -1,4 +1,4 @@
-import type { TimelineVariante } from '@/types/widget.types';
+import type { TimelineVariante } from '@lumina/types/widget';
 
 import styles from './timeline.module.css';
 

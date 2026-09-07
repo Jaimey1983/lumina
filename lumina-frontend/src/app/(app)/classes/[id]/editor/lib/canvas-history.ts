@@ -1,6 +1,6 @@
-import type { TransicionSlide } from '@/types/animation.types';
-import type { Background, Block, SlideGuias } from '@/types/slide.types';
-import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+import type { TransicionSlide } from '@lumina/types/animation';
+import type { Background, Block, SlideGuias } from '@lumina/types/slide';
+import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 
 import {
   applySlideBlockPatch,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { getBlockPos, isBlockCanvasPositionable, withRect } from '@/hooks/use-block-drag';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 import { createDefaultSeparadorBlock } from './divider-defaults';
 

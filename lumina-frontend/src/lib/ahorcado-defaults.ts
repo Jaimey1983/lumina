@@ -1,4 +1,4 @@
-import type { AhorcadoActivity, AhorcadoConfig } from '@/types/slide.types';
+import type { AhorcadoActivity, AhorcadoConfig } from '@lumina/types/slide';
 
 export const AHORCADO_DEFAULT: AhorcadoConfig = {
   palabra: 'EJEMPLO',

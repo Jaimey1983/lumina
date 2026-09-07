@@ -4,7 +4,7 @@ import {
   normalizeGraficoBlock,
   VALID_GRAFICO_CHART_TYPES,
 } from './grafico-defaults';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 describe('grafico-defaults', () => {
   it('crea un bloque grafico por defecto con contratos v1 correctos', () => {

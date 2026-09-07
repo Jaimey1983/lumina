@@ -8,7 +8,7 @@ import type {
   AutonomousProgressEntry,
   JoinSessionResponse,
   CompleteSessionResponse,
-} from '@/types/autonomous.types';
+} from '@lumina/types/autonomous';
 
 // ─── Fetch session metadata (public) ──────────────────────────────────────────
 /** `class.slides[]` es la fuente de verdad de diapositivas (no `class.content`). */

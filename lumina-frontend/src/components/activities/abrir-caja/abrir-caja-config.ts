@@ -1,4 +1,4 @@
-import type { AbrirCajaActivity, AbrirCajaCaja } from '@/types/slide.types'
+import type { AbrirCajaActivity, AbrirCajaCaja } from '@lumina/types/slide'
 
 export const ABRIR_CAJA_MAX_CAJAS = 12
 export const ABRIR_CAJA_MIN_CAJAS = 2

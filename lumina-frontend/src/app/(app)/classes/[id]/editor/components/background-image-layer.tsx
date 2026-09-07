@@ -1,6 +1,6 @@
 'use client';
 
-import type { BackgroundImage } from '@/types/slide.types';
+import type { BackgroundImage } from '@lumina/types/slide';
 import {
   backgroundAjusteToObjectFit,
   backgroundRotatedLayerSize,

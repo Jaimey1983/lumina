@@ -1,4 +1,4 @@
-import { AnagramaActivity } from '@/types/slide.types'
+import { AnagramaActivity } from '@lumina/types/slide'
 
 export function createDefaultAnagrama(): AnagramaActivity {
   return {

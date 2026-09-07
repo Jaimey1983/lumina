@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { QuizPregunta, QuizMultiple } from '@/types/slide.types';
+import type { QuizPregunta, QuizMultiple } from '@lumina/types/slide';
 
 import {
   isMultiSelectPregunta,

@@ -19,7 +19,7 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-import type { TimelineIconoLucide } from '@/types/widget.types';
+import type { TimelineIconoLucide } from '@lumina/types/widget';
 import { TIMELINE_DEFAULT_ICONS } from './timeline-config';
 
 export { TIMELINE_DEFAULT_ICONS };

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { HistoriaNodo, HistoriaOpcion, HistoriaNodoTipo } from '@/types/slide.types'
+import { HistoriaNodo, HistoriaOpcion, HistoriaNodoTipo } from '@lumina/types/slide'
 import { generarIdHR, ETIQUETAS_NODO, esNodoFinal } from './historia-ramificada-config'
 
 interface NodeEditorProps {

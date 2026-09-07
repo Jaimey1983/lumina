@@ -1,4 +1,4 @@
-import type { QuizMultiple, ShortAnswerActivity } from '@/types/slide.types';
+import type { QuizMultiple, ShortAnswerActivity } from '@lumina/types/slide';
 
 export type MathTema = 'suma' | 'resta' | 'multiplicacion' | 'fracciones' | 'ecuacion';
 

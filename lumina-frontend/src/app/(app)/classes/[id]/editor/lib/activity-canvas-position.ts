@@ -1,8 +1,8 @@
 import type { DragEndEvent } from '@dnd-kit/core';
 
-import type { WidgetTipo } from '@/types/widget.types';
+import type { WidgetTipo } from '@lumina/types/widget';
 import { clampDragCorner } from '@/hooks/use-block-drag';
-import { BLOCK_FALLBACKS, type BlockMarco } from '@/types/slide.types';
+import { BLOCK_FALLBACKS, type BlockMarco } from '@lumina/types/slide';
 
 /**
  * Mismo tamaño que la inserción por click (sin `marco`):

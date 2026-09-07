@@ -3,9 +3,9 @@ import {
   createDefaultTabSlide,
   resizeTabsFichas,
 } from '@/components/widgets/tabs/tabs-config';
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { TabsWidget } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { TabsWidget } from '@lumina/types/widget';
 
 export { createDefaultTabSlide, resizeTabsFichas };
 

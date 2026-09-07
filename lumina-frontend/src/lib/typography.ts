@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
-import type { TextAlign, TextBlock } from '@/types/slide.types';
-import type { WidgetCampoEstilo } from '@/types/widget.types';
+import type { TextAlign, TextBlock } from '@lumina/types/slide';
+import type { WidgetCampoEstilo } from '@lumina/types/widget';
 
 export type TypographyAlign = 'left' | 'center' | 'right' | 'justify';
 export type TypographyTransform = 'none' | 'uppercase' | 'capitalize';

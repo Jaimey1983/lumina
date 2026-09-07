@@ -1,4 +1,4 @@
-import type { WidgetSlideCount } from '@/types/widget.types';
+import type { WidgetSlideCount } from '@lumina/types/widget';
 
 /** Campos de un bloque suficientes para un id estable entre lecturas (sin UUID aleatorio). */
 export type WidgetIdentity = {

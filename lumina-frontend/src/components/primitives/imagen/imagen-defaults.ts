@@ -1,5 +1,5 @@
-import type { ImageBlock } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { ImageBlock } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 export function createDefaultImageBlock(extra?: Partial<ImageBlock>): ImageBlock {
   const fb = BLOCK_FALLBACKS.image;

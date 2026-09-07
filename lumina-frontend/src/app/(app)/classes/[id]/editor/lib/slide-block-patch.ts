@@ -1,4 +1,4 @@
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 
 export type BlockFieldPath = Array<string | number>;
 

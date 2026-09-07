@@ -1,5 +1,5 @@
-import type { Block } from '@/types/slide.types';
-import type { WidgetSlideContent } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { WidgetSlideContent } from '@lumina/types/widget';
 import { resolveFreeformPath } from '@/lib/freeform-mask';
 
 function remintId(): string {

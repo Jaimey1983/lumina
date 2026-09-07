@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, TabsWidget } from '@/types/slide.types';
-import type { WidgetLayoutId, WidgetSlideCount } from '@/types/widget.types';
+import type { Block, TabsWidget } from '@lumina/types/slide';
+import type { WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { resizeTabsFichas } from '@/lib/tabs-defaults';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';

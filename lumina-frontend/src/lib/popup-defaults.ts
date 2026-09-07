@@ -1,7 +1,7 @@
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { PopupConfiguracion, PopupWidget, WidgetSlideContent } from '@/types/widget.types';
-import { DEFAULT_POPUP_OVERLAY_VISIBILIDAD } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { PopupConfiguracion, PopupWidget, WidgetSlideContent } from '@lumina/types/widget';
+import { DEFAULT_POPUP_OVERLAY_VISIBILIDAD } from '@lumina/types/widget';
 import { coerceWidgetLayoutId } from '@/components/widgets/shared/widget-layouts';
 import {
   DEFAULT_POPUP_TRIGGER_PX,

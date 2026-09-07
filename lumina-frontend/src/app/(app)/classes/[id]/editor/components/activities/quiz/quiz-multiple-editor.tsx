@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 
-import type { Feedback, QuizLayoutVariant, QuizMultiple, QuizOption, QuizPregunta } from '@/types/slide.types';
+import type { Feedback, QuizLayoutVariant, QuizMultiple, QuizOption, QuizPregunta } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

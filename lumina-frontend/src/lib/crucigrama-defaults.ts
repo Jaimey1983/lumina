@@ -1,4 +1,4 @@
-import { CrucigramaActivity } from '@/types/slide.types';
+import { CrucigramaActivity } from '@lumina/types/slide';
 
 export function createDefaultCrucigrama(): CrucigramaActivity {
   return {

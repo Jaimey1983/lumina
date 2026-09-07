@@ -1,4 +1,4 @@
-export type { DividerBlock } from '@/types/slide.types';
+export type { DividerBlock } from '@lumina/types/slide';
 export {
   createDefaultSeparadorBlock,
 } from './separador-defaults';

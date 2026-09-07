@@ -1,7 +1,7 @@
 // ─── Normalizador y Fábrica por Defecto para Bloque Gráfico ───────────────────
 // Un solo writer canónico para el bloque `grafico` (Recharts v1).
 
-import { BLOCK_FALLBACKS, type BlockMarco, type GraficoChartType, type GraficoDatosBlock, type GraficoSerie } from '@/types/slide.types';
+import { BLOCK_FALLBACKS, type BlockMarco, type GraficoChartType, type GraficoDatosBlock, type GraficoSerie } from '@lumina/types/slide';
 import { DEFAULT_GRAFICO_PALETA_ID } from './grafico-color-palettes';
 
 export const VALID_GRAFICO_CHART_TYPES: readonly GraficoChartType[] = [

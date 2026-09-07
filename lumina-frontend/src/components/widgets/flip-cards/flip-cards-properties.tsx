@@ -7,7 +7,7 @@ import {
   AlignRight,
 } from 'lucide-react';
 
-import type { Block, FlipCard, FlipCardsWidget } from '@/types/slide.types';
+import type { Block, FlipCard, FlipCardsWidget } from '@lumina/types/slide';
 import { createDefaultFlipCard } from '@/lib/flip-cards-defaults';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClickRevealWidget } from '@/types/widget.types';
+import type { ClickRevealWidget } from '@lumina/types/widget';
 import {
   widgetBodyPadding,
   widgetContainerBackgroundStyle,

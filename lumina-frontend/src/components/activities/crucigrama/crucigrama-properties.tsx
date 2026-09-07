@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { CrucigramaActivity, CrucigramaPalabra } from '@/types/slide.types';
+import { CrucigramaActivity, CrucigramaPalabra } from '@lumina/types/slide';
 import {
   generarIdCrucigrama,
   CRUCIGRAMA_MAX_PALABRAS,

@@ -1,13 +1,13 @@
 'use client';
 
-import type { Block } from '@/types/slide.types';
-import type { TimelineWidget } from '@/types/widget.types';
+import type { Block } from '@lumina/types/slide';
+import type { TimelineWidget } from '@lumina/types/widget';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider, SliderThumb } from '@/components/ui/slider';
 
-import type { TimelineDisposicionNodos, TimelineVariante } from '@/types/widget.types';
+import type { TimelineDisposicionNodos, TimelineVariante } from '@lumina/types/widget';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 

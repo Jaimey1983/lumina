@@ -12,7 +12,7 @@ import type {
   ClipShapeLibre,
   FreeformMaskPath,
   MaskNode,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 let maskNodeSeq = 0;
 

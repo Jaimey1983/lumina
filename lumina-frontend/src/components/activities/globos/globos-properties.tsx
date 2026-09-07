@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { GlobosActivity, GlobosPregunta } from '@/types/slide.types'
+import { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
 import {
   generarIdGlobos,
   GLOBOS_MAX_PREGUNTAS,

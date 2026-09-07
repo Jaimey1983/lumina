@@ -10,11 +10,11 @@ import type {
   WidgetSlideCount,
   WidgetSlideInnerSelection,
   WidgetSlidePanelConfig,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import {
   DEFAULT_CLICK_REVEAL_OVERLAY_VISIBILIDAD,
   DEFAULT_CLICK_REVEAL_TRIGGER_VISIBILIDAD,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
 import {
   coerceWidgetLayoutId,

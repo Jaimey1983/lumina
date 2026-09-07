@@ -12,7 +12,7 @@ import {
   removeBlockAtPath,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
-import type { Block } from '@/types/slide.types';
+import type { Block } from '@lumina/types/slide';
 
 import { getBlockResizeMinDim } from './block-resize-min-dim';
 import { computeNewCoords } from './resize-coords';

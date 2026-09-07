@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import type { Animacion, AnimacionTipo, TransicionSlide } from '@/types/animation.types'
+import type { Animacion, AnimacionTipo, TransicionSlide } from '@lumina/types/animation'
 
 export const ANIMACION_DURACION_DEFAULT = 400
 export const ANIMACION_DELAY_DEFAULT = 0

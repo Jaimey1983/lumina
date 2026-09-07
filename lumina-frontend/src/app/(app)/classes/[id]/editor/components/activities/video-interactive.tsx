@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, Circle, Clock, Play, Trash2, Plus, XCircle } from 'lucide-react';
 
-import type { VideoInteractive, VideoQuestion } from '@/types/slide.types';
+import type { VideoInteractive, VideoQuestion } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

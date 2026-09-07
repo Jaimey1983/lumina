@@ -1,4 +1,4 @@
-import type { VideoQuestion } from '@/types/slide.types';
+import type { VideoQuestion } from '@lumina/types/slide';
 
 export interface TimelinePolicy {
   allowForwardSeek: boolean;

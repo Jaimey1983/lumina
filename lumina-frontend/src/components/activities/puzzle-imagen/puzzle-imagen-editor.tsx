@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { PuzzleImagenActivity } from '@/types/slide.types';
+import { PuzzleImagenActivity } from '@lumina/types/slide';
 import { totalPiezas } from './puzzle-imagen-config';
 
 interface PuzzleImagenEditorProps {

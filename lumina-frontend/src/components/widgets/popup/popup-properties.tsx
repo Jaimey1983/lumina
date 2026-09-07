@@ -2,7 +2,7 @@
 
 
 
-import type { Block, PopupWidget } from '@/types/slide.types';
+import type { Block, PopupWidget } from '@lumina/types/slide';
 
 import type {
 
@@ -20,7 +20,7 @@ import type {
 
   WidgetLayoutId,
 
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 
 import { Checkbox } from '@/components/ui/checkbox';
 

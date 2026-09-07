@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { RuletaWidget } from '@/types/widget.types';
+import type { RuletaWidget } from '@lumina/types/widget';
 
 import { RULETA_EASING, calcularRotacionHastaGanador } from './ruleta-config';
 import { normalizeRuletaBlock } from './ruleta-defaults';

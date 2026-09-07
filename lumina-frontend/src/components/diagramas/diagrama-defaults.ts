@@ -11,7 +11,7 @@ import {
   type DiagramaSubtipo,
   type DiagramaVennBlock,
   type DiagramaVennElemento,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 import { regionesForConjuntos, validRegionIds } from './diagrama-regions';
 
 export const VALID_GRAFO_SUBTIPOS: readonly string[] = [

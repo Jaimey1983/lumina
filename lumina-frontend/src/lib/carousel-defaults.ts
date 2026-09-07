@@ -3,9 +3,9 @@ import {
   createDefaultCarouselSlide,
   resizeCarouselSlides,
 } from '@/components/widgets/carousel/carousel-config';
-import type { BlockMarco } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
-import type { CarouselWidget } from '@/types/widget.types';
+import type { BlockMarco } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import type { CarouselWidget } from '@lumina/types/widget';
 
 export { createDefaultCarouselSlide, resizeCarouselSlides };
 

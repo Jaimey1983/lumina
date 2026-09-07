@@ -1,5 +1,5 @@
 /** API pública del widget Popup para `@lumina/element-kit` (E3.4). */
-export type { PopupWidget } from '@/types/widget.types';
+export type { PopupWidget } from '@lumina/types/widget';
 export {
   DEFAULT_POPUP_CONFIG,
   createDefaultPopupBlock,

@@ -5,7 +5,7 @@ import type {
   BackgroundGradient,
   BackgroundImage,
   GradientColorStop,
-} from '@/types/slide.types';
+} from '@lumina/types/slide';
 
 const DEFAULT_GRADIENT_START = '#6366f1';
 const DEFAULT_GRADIENT_END = '#ec4899';

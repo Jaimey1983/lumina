@@ -8,7 +8,7 @@ import {
   snapAxisToGridPercent,
   toggleSlideGrilla,
 } from '@/lib/canvas-grid';
-import { EMPTY_SLIDE_GUIAS } from '@/types/slide.types';
+import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 import { VIRTUAL_CANVAS_WIDTH } from '@/lib/canvas-guides';
 
 describe('normalizeGridSizePx', () => {

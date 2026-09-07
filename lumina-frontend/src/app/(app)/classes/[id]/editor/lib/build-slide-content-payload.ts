@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-import type { Slide } from '@/types/slide.types';
+import type { Slide } from '@lumina/types/slide';
 
 import type { EditorSlideState } from './editor-slide-state';
 

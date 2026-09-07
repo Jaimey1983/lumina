@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 
-import type { WidgetSlideInnerSelection } from '@/types/widget.types';
+import type { WidgetSlideInnerSelection } from '@lumina/types/widget';
 
 export function useWidgetDraftField<T>(value: T): [T, (v: T) => void] {
   const [draft, setDraft] = useState(value);

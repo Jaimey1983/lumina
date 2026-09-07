@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { MatchPairs } from '@/types/slide.types';
+import type { MatchPairs } from '@lumina/types/slide';
 import { RenderLado } from './emparejar-shared';
 import { ladoTieneImagen } from './emparejar-config';
 

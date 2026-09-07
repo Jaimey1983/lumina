@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { VideoInteractive, VideoQuestion } from '@/types/slide.types';
+import type { VideoInteractive, VideoQuestion } from '@lumina/types/slide';
 import { normalizeVideoSource } from '@/lib/video-url-utils';
 import { logVideoEvent } from '@/lib/video-interactive-logger';
 import { TimelineEngine } from '@/lib/video-interactive/timeline-engine';

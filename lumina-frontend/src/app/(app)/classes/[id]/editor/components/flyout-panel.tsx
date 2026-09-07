@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import type { Background, Block } from '@/types/slide.types';
-import type { WidgetTipo } from '@/types/widget.types';
+import type { Background, Block } from '@lumina/types/slide';
+import type { WidgetTipo } from '@lumina/types/widget';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FlyoutLeftPanels } from './panels/flyout-left-panels';

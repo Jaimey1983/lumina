@@ -1,4 +1,4 @@
-import { SopaLetrasActivity } from '@/types/slide.types';
+import { SopaLetrasActivity } from '@lumina/types/slide';
 
 export function createDefaultSopaLetras(): SopaLetrasActivity {
   return {

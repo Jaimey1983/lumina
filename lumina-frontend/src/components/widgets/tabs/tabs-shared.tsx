@@ -1,6 +1,6 @@
 'use client';
 
-import type { TabsWidget } from '@/types/widget.types';
+import type { TabsWidget } from '@lumina/types/widget';
 import {
   widgetBodyPadding,
   widgetContainerBackgroundStyle,

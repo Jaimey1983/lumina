@@ -38,7 +38,7 @@ import {
   type TextMaskAlign,
   type TextMaskTypography,
 } from '@/lib/text-mask';
-import type { ClipShapeTexto } from '@/types/slide.types';
+import type { ClipShapeTexto } from '@lumina/types/slide';
 
 const WEIGHT_LABELS: Record<number, string> = {
   300: 'Light',

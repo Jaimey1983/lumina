@@ -1,4 +1,4 @@
-import { TopoActivity } from '@/types/slide.types'
+import { TopoActivity } from '@lumina/types/slide'
 
 export function createDefaultTopo(): TopoActivity {
   return {

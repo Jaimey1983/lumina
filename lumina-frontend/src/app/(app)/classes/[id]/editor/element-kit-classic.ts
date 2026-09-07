@@ -7,7 +7,7 @@
  * `lumina-frontend/editor-activities` (ticket LUM-E7-CLASICAS, 2026-12-31).
  * El canvas ya no lo consume (E5.6 despacha por `elementRegistry`); el kit sí.
  */
-export type { Activity } from '@/types/slide.types';
+export type { Activity } from '@lumina/types/slide';
 
 export {
   shortAnswerTemplate,

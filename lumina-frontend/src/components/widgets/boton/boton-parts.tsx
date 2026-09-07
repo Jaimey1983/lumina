@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
-import type { BotonWidget } from '@/types/widget.types';
+import type { BotonWidget } from '@lumina/types/widget';
 import { mergedBotonConfig } from './boton-config';
 import styles from './boton.module.css';
 

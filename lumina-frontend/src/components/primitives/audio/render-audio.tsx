@@ -1,6 +1,6 @@
 'use client';
 
-import type { AudioBlock } from '@/types/slide.types';
+import type { AudioBlock } from '@lumina/types/slide';
 
 export interface RenderAudioProps {
   block: AudioBlock;

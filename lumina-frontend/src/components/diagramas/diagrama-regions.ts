@@ -1,4 +1,4 @@
-import type { DiagramaVennElemento, DiagramaVennRegion } from '@/types/slide.types';
+import type { DiagramaVennElemento, DiagramaVennRegion } from '@lumina/types/slide';
 
 export const VENN_REGIONS_2: DiagramaVennRegion[] = [
   { id: 'a', etiqueta: 'Solo A' },

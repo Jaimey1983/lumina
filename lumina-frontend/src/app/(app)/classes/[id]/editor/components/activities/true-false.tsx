@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, CheckCircle2, Trash2, XCircle } from 'lucide-react';
 
-import type { TrueFalse } from '@/types/slide.types';
+import type { TrueFalse } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

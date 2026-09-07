@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { Camera } from 'lucide-react';
 
-import type { WidgetSlideContent, WidgetSlideTextBlock, WidgetSlideInnerSelection, WidgetSlideTextField, WidgetSlidePanelConfig } from '@/types/widget.types';
+import type { WidgetSlideContent, WidgetSlideTextBlock, WidgetSlideInnerSelection, WidgetSlideTextField, WidgetSlidePanelConfig } from '@lumina/types/widget';
 import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { TimelineWidget, TimelineNodo } from '@/types/widget.types';
+import type { TimelineWidget, TimelineNodo } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
 import { WidgetHeaderEditorField } from '@/components/widgets/shared/widget-header-editor';

@@ -1,7 +1,7 @@
 'use client';
 
-import type { Block, TabsWidget } from '@/types/slide.types';
-import type { WidgetLayoutId } from '@/types/widget.types';
+import type { Block, TabsWidget } from '@lumina/types/slide';
+import type { WidgetLayoutId } from '@lumina/types/widget';
 import {
   WidgetAppearanceStack,
   WidgetColorPickerField,

@@ -2,8 +2,8 @@ import {
   DEFAULT_FLIP_CARDS_CONFIG,
   createDefaultFlipCard,
 } from '@/components/widgets/flip-cards/flip-cards-config';
-import type { BlockMarco, FlipCardsWidget } from '@/types/slide.types';
-import { BLOCK_FALLBACKS } from '@/types/slide.types';
+import type { BlockMarco, FlipCardsWidget } from '@lumina/types/slide';
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 export { createDefaultFlipCard };
 

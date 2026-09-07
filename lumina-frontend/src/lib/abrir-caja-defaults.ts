@@ -1,4 +1,4 @@
-import { AbrirCajaActivity } from '@/types/slide.types'
+import { AbrirCajaActivity } from '@lumina/types/slide'
 
 export function createDefaultAbrirCaja(): AbrirCajaActivity {
   return {

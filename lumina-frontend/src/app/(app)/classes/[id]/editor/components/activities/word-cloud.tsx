@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
-import type { WordCloud } from '@/types/slide.types';
+import type { WordCloud } from '@lumina/types/slide';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -1,4 +1,4 @@
-import type { MatchPairs } from '@/types/slide.types';
+import type { MatchPairs } from '@lumina/types/slide';
 
 export function createDefaultEmparejar(): MatchPairs {
   return {

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { AnagramaActivity } from '@/types/slide.types'
+import { AnagramaActivity } from '@lumina/types/slide'
 import { ANAGRAMA_MAX_PALABRAS, ANAGRAMA_MIN_PALABRAS } from './anagrama-config'
 
 interface AnagramaPropertiesProps {

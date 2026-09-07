@@ -6,7 +6,7 @@ import type {
   HotspotWidget,
   WidgetSlideContent,
   WidgetSlideTextField,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { mergedHotspotConfig } from './hotspot-config';
 import styles from './hotspot.module.css';
 import { WidgetSlidePanelEditor, WidgetSlidePanelView } from '@/components/widgets/shared/widget-slide-panel';

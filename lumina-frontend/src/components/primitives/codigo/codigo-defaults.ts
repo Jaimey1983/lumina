@@ -1,4 +1,4 @@
-import type { CodeBlock } from '@/types/slide.types';
+import type { CodeBlock } from '@lumina/types/slide';
 
 export function createDefaultCodeBlock(extra?: Partial<CodeBlock>): CodeBlock {
   return {

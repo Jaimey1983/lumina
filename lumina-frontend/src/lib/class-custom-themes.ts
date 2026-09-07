@@ -1,4 +1,4 @@
-import type { SlideTheme } from '@/types/slide.types';
+import type { SlideTheme } from '@lumina/types/slide';
 
 const STORAGE_PREFIX = 'lumina-slide-themes:';
 

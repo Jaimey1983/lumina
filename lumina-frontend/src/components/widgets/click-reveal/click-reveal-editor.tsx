@@ -5,7 +5,7 @@ import type {
   ClickRevealTrigger,
   ClickRevealWidget,
   WidgetSlideContent,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
 import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';
 import {

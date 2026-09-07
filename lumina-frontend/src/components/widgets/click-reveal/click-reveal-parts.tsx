@@ -10,7 +10,7 @@ import type {
   ClickRevealWidget,
   WidgetSlideContent,
   WidgetSlideTextField,
-} from '@/types/widget.types';
+} from '@lumina/types/widget';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

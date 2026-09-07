@@ -9,7 +9,7 @@ import {
   type RefObject,
 } from 'react';
 
-import type { SlideGuias } from '@/types/slide.types';
+import type { SlideGuias } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 import {
   RULER_SIZE_PX,
