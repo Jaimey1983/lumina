@@ -759,7 +759,7 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 
 ##### E6.3 — reapuntar consumidores backend a `@lumina/scoring` y borrar el espejo
 - **Operador:** Claude Code
-- **Estado:** **hecho** (`<pendiente>`, 2026-09-06) — `@lumina/scoring` es el **motor único** de frontend y backend.
+- **Estado:** **hecho** (`7a111fa`, 2026-09-06) — `@lumina/scoring` es el **motor único** de frontend y backend.
   - 10 archivos backend reapuntados `./activity-scoring` → `@lumina/scoring`: runtime `class-result-persist.helper.ts` · `class-results-gradebook.helper.ts` (incl. su re-export de fachada) · `classes.service.ts` · `gamification/session-gamification.service.ts`; specs `activity-scoring.spec.ts` · `activity-scoring.reconstruction.spec.ts` · `class-result-persist.helper.spec.ts` · `class-results-gradebook.helper.spec.ts` · `classes.service.live-response-exclusions.spec.ts` · `session-gamification.concurrency.spec.ts`.
   - **Borrados:** `lumina-backend/src/classes/activity-scoring.ts` (1211 líneas) + `activity-scoring.parity.spec.ts` (E6.2, guarda de transición). `grep -rn "classes/activity-scoring" lumina-backend/src` → **0**.
   - `packages/scoring/src/types.spec.ts` — quitado el test «declaraciones públicas del espejo backend» + el helper `superficiePublica` + imports `readFileSync`/`typescript` (92 tests, era 93). Comentarios de "espejo backend" en `index.ts` actualizados.
