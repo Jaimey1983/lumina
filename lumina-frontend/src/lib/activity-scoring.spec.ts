@@ -10,7 +10,7 @@ import {
   xpFromEvaluation,
   type ActivityScoringKind,
 } from '@lumina/scoring';
-import fixtures from './activity-scoring.fixtures.json';
+import fixtures from '@lumina/scoring/fixtures';
 
 interface NotaCase {
   case: string;

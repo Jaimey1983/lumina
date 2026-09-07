@@ -10,8 +10,9 @@
  *  - `lumina-backend` — imports directos a `@lumina/scoring` (el espejo manual
  *    `src/classes/activity-scoring.ts` se borró en E6.3). Consumo CJS desde
  *    `dist/cjs/` (E6.1/E6.2).
- * Los fixtures de paridad viven en `./activity-scoring.fixtures.json`
- * (E6.4 unifica las copias restantes de frontend/backend).
+ * Los fixtures de paridad viven en `./activity-scoring.fixtures.json` — fuente
+ * ÚNICA desde E6.4, expuesta como `@lumina/scoring/fixtures`. Las copias de
+ * frontend y backend se borraron.
  */
 
 export type ActivityScoringKind =

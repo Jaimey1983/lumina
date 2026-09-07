@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import fixturesJson from '@lumina/scoring/fixtures';
 
 import { evaluateActivityResponse } from '@lumina/scoring';
 import {
@@ -19,12 +18,9 @@ interface EvaluationCase {
   scoreEsperado?: number | null;
 }
 
-const fixtures = JSON.parse(
-  readFileSync(
-    join(__dirname, 'class-results-gradebook.fixtures.json'),
-    'utf8',
-  ),
-) as { evaluationCases: EvaluationCase[] };
+const fixtures = fixturesJson as unknown as {
+  evaluationCases: EvaluationCase[];
+};
 
 describe('resolvePersistedMaxScore', () => {
   it('default 5 (no 1)', () => {

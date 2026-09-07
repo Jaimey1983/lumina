@@ -94,7 +94,8 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-      "^@lumina/scoring$": "<rootDir>/../node_modules/@lumina/scoring/dist/cjs/index.js"
+      "^@lumina/scoring$": "<rootDir>/../node_modules/@lumina/scoring/dist/cjs/index.js",
+      "^@lumina/scoring/fixtures$": "<rootDir>/../node_modules/@lumina/scoring/src/activity-scoring.fixtures.json"
     },
     "transformIgnorePatterns": [
       "/node_modules/",

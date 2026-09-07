@@ -5,8 +5,7 @@ import {
   sumAndDenominatorForClassGradebook,
 } from './class-results-gradebook.helper';
 import { promedioFromFixtureSlides } from '@lumina/scoring';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import fixturesJson from '@lumina/scoring/fixtures';
 
 interface PromedioCase {
   case: string;
@@ -20,12 +19,7 @@ interface PromedioCase {
   promedioEsperado: number;
 }
 
-const fixtures = JSON.parse(
-  readFileSync(
-    join(__dirname, 'class-results-gradebook.fixtures.json'),
-    'utf8',
-  ),
-) as { promedioCases: PromedioCase[] };
+const fixtures = fixturesJson as unknown as { promedioCases: PromedioCase[] };
 
 describe('sumAndDenominatorForClassGradebook', () => {
   it('quiz 5.0 + torneo sin nota → promedio 5.0 (no 2.5)', () => {

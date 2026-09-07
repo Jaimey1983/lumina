@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import fixturesJson from '@lumina/scoring/fixtures';
 
 import {
   ACTIVITY_SCORING,
@@ -59,12 +58,7 @@ interface ContractCase {
   respuesta: unknown;
 }
 
-const fixtures = JSON.parse(
-  readFileSync(
-    join(__dirname, 'class-results-gradebook.fixtures.json'),
-    'utf8',
-  ),
-) as FixturesFile;
+const fixtures = fixturesJson as unknown as FixturesFile;
 
 describe('notaColombiana', () => {
   it('mínimo pedagógico si respondió y todo mal', () => {

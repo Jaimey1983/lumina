@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import fixtures from '@/lib/activity-scoring.fixtures.json';
+import fixtures from '@lumina/scoring/fixtures';
 import { promedioFromFixtureSlides } from '@lumina/scoring';
 
 import {
