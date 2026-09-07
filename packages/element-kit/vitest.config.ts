@@ -73,6 +73,38 @@ export default defineConfig({
         frontendSrc,
         "components/clip-group/index.ts",
       ),
+      "lumina-frontend/blocks/texto": path.resolve(
+        frontendSrc,
+        "components/primitives/texto/index.ts",
+      ),
+      "lumina-frontend/blocks/imagen": path.resolve(
+        frontendSrc,
+        "components/primitives/imagen/index.ts",
+      ),
+      "lumina-frontend/blocks/video": path.resolve(
+        frontendSrc,
+        "components/primitives/video/index.ts",
+      ),
+      "lumina-frontend/blocks/audio": path.resolve(
+        frontendSrc,
+        "components/primitives/audio/index.ts",
+      ),
+      "lumina-frontend/blocks/codigo": path.resolve(
+        frontendSrc,
+        "components/primitives/codigo/index.ts",
+      ),
+      "lumina-frontend/blocks/cita": path.resolve(
+        frontendSrc,
+        "components/primitives/cita/index.ts",
+      ),
+      "lumina-frontend/blocks/separador": path.resolve(
+        frontendSrc,
+        "components/primitives/separador/index.ts",
+      ),
+      "lumina-frontend/blocks/columnas": path.resolve(
+        frontendSrc,
+        "components/primitives/columnas/index.ts",
+      ),
       "lumina-frontend/activities/anagrama": path.resolve(
         frontendSrc,
         "components/activities/anagrama/index.ts",

@@ -4,11 +4,7 @@
  *
  * Extraídas de `editor-client.tsx` en E2.5 para que `@lumina/element-kit` pueda
  * consumirlas como `crearPorDefecto()` de cada `ElementDefinition`, sin
- * duplicar el shape. `editor-client` sigue usándolas vía import.
- *
- * TODO(migración-etapa-5): al conectar `ElementRegistry` al canvas, el editor
- * debería crear actividades nuevas vía `elementRegistry.obtener(tipo).crearPorDefecto()`
- * y este archivo se retira. Ticket: LUM-E5-CLASICAS · fecha objetivo: 2026-11-30.
+ * duplicar el shape.
  */
 import type { Activity } from '@/types/slide.types';
 import { createDefaultEmparejar } from '@/lib/emparejar-defaults';

@@ -49,6 +49,30 @@
       "lumina-frontend/blocks/clip-group/paper": [
         "./src/shims/lumina-frontend-clip-group-paper.d.ts"
       ],
+      "lumina-frontend/blocks/texto": [
+        "./src/shims/lumina-frontend-texto.d.ts"
+      ],
+      "lumina-frontend/blocks/imagen": [
+        "./src/shims/lumina-frontend-imagen.d.ts"
+      ],
+      "lumina-frontend/blocks/video": [
+        "./src/shims/lumina-frontend-video.d.ts"
+      ],
+      "lumina-frontend/blocks/audio": [
+        "./src/shims/lumina-frontend-audio.d.ts"
+      ],
+      "lumina-frontend/blocks/codigo": [
+        "./src/shims/lumina-frontend-codigo.d.ts"
+      ],
+      "lumina-frontend/blocks/cita": [
+        "./src/shims/lumina-frontend-cita.d.ts"
+      ],
+      "lumina-frontend/blocks/separador": [
+        "./src/shims/lumina-frontend-separador.d.ts"
+      ],
+      "lumina-frontend/blocks/columnas": [
+        "./src/shims/lumina-frontend-columnas.d.ts"
+      ],
       "lumina-frontend/activities/anagrama": [
         "../../lumina-frontend/src/components/activities/anagrama/index.ts"
       ],

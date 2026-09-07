@@ -767,171 +767,6 @@ function RenderActivity({
     );
   }
 
-  // TODO(migración-etapa-5): este `switch` por `act.tipo` es el "segundo registro"
-  // de actividades. E2.5 ya publicó estas 10 como `ElementDefinition` en
-  // `@lumina/element-kit` (quiz_multiple, verdadero_falso, completar_blancos,
-  // arrastrar_soltar, emparejar, ordenar_pasos, video_interactivo, short_answer,
-  // encuesta_viva, nube_palabras). E5 debe reemplazar todo este bloque por un
-  // dispatch desde `elementRegistry` y borrarlo. Ticket: LUM-E5-CLASICAS ·
-  // fecha objetivo: 2026-11-30.
-  if (act.tipo === 'short_answer') {
-    if (modo === 'editor') {
-      return (
-        <ShortAnswerActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return <ShortAnswerViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'quiz_multiple') {
-    if (modo === 'editor') {
-      return (
-        <QuizMultipleActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return (
-      <QuizMultipleViewer
-        activity={act}
-        editorSyncKey={syncKey}
-        onResponse={onResponse}
-        variant={variant}
-        liveSocket={torneoSocket ?? liveSocket}
-        quizBlockId={blockId}
-        classId={viewerClassId}
-        studentId={viewerStudentId}
-        studentName={viewerStudentName}
-      />
-    );
-  }
-
-  if (act.tipo === 'verdadero_falso') {
-    if (modo === 'editor') {
-      return (
-        <TrueFalseActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return <TrueFalseViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'arrastrar_soltar') {
-    if (modo === 'editor') {
-      return (
-        <DragDropActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return <DragDropActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'completar_blancos') {
-    if (modo === 'editor') {
-      return (
-        <FillBlanksActivityEditor
-          data={act}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-        />
-      );
-    }
-    return <FillBlanksViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'emparejar') {
-    const emparejarAct = act as MatchPairs;
-    if (modo === 'editor') {
-      return (
-        <EmparejarEditor
-          actividad={emparejarAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <EmparejarViewer
-        actividad={emparejarAct}
-        editorSyncKey={syncKey}
-        onResponse={onResponse}
-        variant={variant}
-      />
-    );
-  }
-
-  if (act.tipo === 'ordenar_pasos') {
-    if (modo === 'editor') {
-      return (
-        <OrderStepsActivityEditor
-          data={act}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-        />
-      );
-    }
-    return <OrderStepsViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'nube_palabras') {
-    if (modo === 'editor') {
-      return (
-        <WordCloudActivityEditor
-          data={act}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-        />
-      );
-    }
-    return <WordCloudViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'video_interactivo') {
-    if (modo === 'editor') {
-      return (
-        <VideoInteractiveActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          onChange={(updated) => onActivityChange?.(blockId, updated)}
-        />
-      );
-    }
-    return <VideoInteractiveActivity actividad={act} modo="viewer" editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
-  if (act.tipo === 'encuesta_viva') {
-    if (modo === 'editor') {
-      return (
-        <LivePollActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          onChange={(updated) => onActivityChange?.(blockId, updated)}
-        />
-      );
-    }
-    return <LivePollViewer activity={act} editorSyncKey={syncKey} onResponse={onResponse} variant={variant} />;
-  }
-
   if (act.tipo === 'torneo') {
     if (modo === 'editor') {
       return (
@@ -1011,232 +846,6 @@ function RenderActivity({
         )}
       />
     );
-  }
-
-  if (act.tipo === 'historia_ramificada') {
-    if (modo === 'editor') {
-      return (
-        <HistoriaRamificadaEditor
-          actividad={act}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-        />
-      );
-    }
-    return (
-      <HistoriaRamificadaViewer
-        actividad={act}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'clasificar') {
-    const clasificarAct = act as ClasificarActivity;
-    if (modo === 'editor') {
-      return (
-        <ClasificarEditor
-          actividad={clasificarAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <ClasificarViewer
-        actividad={clasificarAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'memoria') {
-    const memoriaAct = act as MemoriaActivity;
-    if (modo === 'editor') {
-      return (
-        <MemoriaEditor
-          actividad={memoriaAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <MemoriaViewer
-        actividad={memoriaAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'puzzle_imagen') {
-    const puzzleAct = act as PuzzleImagenActivity;
-    if (modo === 'editor') {
-      return (
-        <PuzzleImagenEditor
-          actividad={puzzleAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <PuzzleImagenViewer
-        actividad={puzzleAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'sopa_letras') {
-    const sopaAct = act as SopaLetrasActivity;
-    if (modo === 'editor') {
-      return (
-        <SopaLetrasEditor
-          actividad={sopaAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <SopaLetrasViewer
-        actividad={sopaAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'crucigrama') {
-    const crucigramaAct = act as CrucigramaActivity;
-    if (modo === 'editor') {
-      return (
-        <CrucigramaEditor
-          actividad={crucigramaAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <CrucigramaViewer
-        actividad={crucigramaAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'abrir_caja') {
-    const abrirCajaAct = act as AbrirCajaActivity;
-    if (modo === 'editor') {
-      return (
-        <AbrirCajaEditor
-          actividad={abrirCajaAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <AbrirCajaViewer
-        actividad={abrirCajaAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'anagrama') {
-    const anagramaAct = act as AnagramaActivity;
-    if (modo === 'editor') {
-      return (
-        <AnagramaEditor
-          actividad={anagramaAct}
-        />
-      );
-    }
-    return (
-      <AnagramaViewer
-        actividad={anagramaAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'ahorcado') {
-    const ahorcadoAct = act as AhorcadoActivity;
-    if (modo === 'editor') {
-      return (
-        <AhorcadoEditor
-          actividad={ahorcadoAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <AhorcadoViewer
-        actividad={ahorcadoAct}
-        editorSyncKey={syncKey}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'puzzle_palabras') {
-    const puzzlePalabrasAct = act as PuzzlePalabrasActivity;
-    if (modo === 'editor') {
-      return (
-        <PuzzlePalabrasEditor
-          actividad={puzzlePalabrasAct}
-        />
-      );
-    }
-    return (
-      <PuzzlePalabrasViewer
-        actividad={puzzlePalabrasAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'globos') {
-    const globosAct = act as GlobosActivity;
-    if (modo === 'editor') {
-      return (
-        <GlobosEditor
-          actividad={globosAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <GlobosViewer
-        actividad={globosAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'topo') {
-    const topoAct = act as TopoActivity;
-    if (modo === 'editor') {
-      return (
-        <TopoEditor
-          actividad={topoAct}
-          isSelected={isSelected}
-        />
-      );
-    }
-    return (
-      <TopoViewer
-        actividad={topoAct}
-        onComplete={onResponse}
-      />
-    );
-  }
-
-  if (act.tipo === 'ruleta') {
-    const defRuleta = elementRegistry.obtener<WidgetBlock, { isThumbnail?: boolean }>('ruleta');
-    if (defRuleta) {
-      const widget = normalizeRuletaBlock(block);
-      return modo === 'editor' ? (
-        <defRuleta.Editor estado={widget} config={{}} onChange={() => {}} />
-      ) : (
-        <defRuleta.Viewer estado={widget} config={{}} />
-      );
-    }
   }
 
   const label = ACTIVITY_LABELS[(act as { tipo: keyof typeof ACTIVITY_LABELS }).tipo];
@@ -1711,7 +1320,26 @@ function BlockNode({
 
   function renderContent() {
     switch (block.tipo) {
-      case 'texto':
+      case 'texto': {
+        const def = elementRegistry.obtener<
+          TextBlock,
+          { isEditing?: boolean; onCommit?: (text: string) => void; onDiscard?: () => void }
+        >(block.tipo);
+        if (def) {
+          return editorMode ? (
+            <def.Editor
+              estado={block}
+              config={{
+                isEditing: isTextEditing,
+                onCommit: onEditCommit ? (text) => onEditCommit(blockId, text) : undefined,
+                onDiscard: onEditCancel,
+              }}
+              onChange={() => {}}
+            />
+          ) : (
+            <def.Viewer estado={block} config={{}} />
+          );
+        }
         return (
           <RenderText
             block={block}
@@ -1721,9 +1349,42 @@ function BlockNode({
             onDiscard={onEditCancel}
           />
         );
-      case 'imagen':    return <RenderImage block={block} forceFill={isResizing} />;
-      case 'video':     return <RenderVideo block={block} isThumbnail={isThumbnail} editorMode={editorMode} />;
-      case 'audio':     return <RenderAudio block={block} />;
+      }
+      case 'imagen': {
+        const def = elementRegistry.obtener<ImageBlock, { forceFill?: boolean }>(block.tipo);
+        if (def) {
+          return editorMode ? (
+            <def.Editor estado={block} config={{ forceFill: isResizing }} onChange={() => {}} />
+          ) : (
+            <def.Viewer estado={block} config={{ forceFill: isResizing }} />
+          );
+        }
+        return <RenderImage block={block} forceFill={isResizing} />;
+      }
+      case 'video': {
+        const def = elementRegistry.obtener<VideoBlock, { isThumbnail?: boolean; editorMode?: boolean }>(
+          block.tipo,
+        );
+        if (def) {
+          return editorMode ? (
+            <def.Editor estado={block} config={{ isThumbnail, editorMode }} onChange={() => {}} />
+          ) : (
+            <def.Viewer estado={block} config={{ isThumbnail, editorMode }} />
+          );
+        }
+        return <RenderVideo block={block} isThumbnail={isThumbnail} editorMode={editorMode} />;
+      }
+      case 'audio': {
+        const def = elementRegistry.obtener<AudioBlock, Record<string, unknown>>(block.tipo);
+        if (def) {
+          return editorMode ? (
+            <def.Editor estado={block} config={{}} onChange={() => {}} />
+          ) : (
+            <def.Viewer estado={block} config={{}} />
+          );
+        }
+        return <RenderAudio block={block} />;
+      }
       case 'actividad':
         return activityBlockForRender ? (
           <RenderActivity
@@ -1745,9 +1406,39 @@ function BlockNode({
             viewerClassId={viewerClassId}
           />
         ) : null;
-      case 'codigo':    return <RenderCode block={block} />;
-      case 'cita':      return <RenderQuote block={block} />;
-      case 'separador': return <RenderDivider block={block} />;
+      case 'codigo': {
+        const def = elementRegistry.obtener<CodeBlock, Record<string, unknown>>(block.tipo);
+        if (def) {
+          return editorMode ? (
+            <def.Editor estado={block} config={{}} onChange={() => {}} />
+          ) : (
+            <def.Viewer estado={block} config={{}} />
+          );
+        }
+        return <RenderCode block={block} />;
+      }
+      case 'cita': {
+        const def = elementRegistry.obtener<QuoteBlock, Record<string, unknown>>(block.tipo);
+        if (def) {
+          return editorMode ? (
+            <def.Editor estado={block} config={{}} onChange={() => {}} />
+          ) : (
+            <def.Viewer estado={block} config={{}} />
+          );
+        }
+        return <RenderQuote block={block} />;
+      }
+      case 'separador': {
+        const def = elementRegistry.obtener<DividerBlock, Record<string, unknown>>(block.tipo);
+        if (def) {
+          return editorMode ? (
+            <def.Editor estado={block} config={{}} onChange={() => {}} />
+          ) : (
+            <def.Viewer estado={block} config={{}} />
+          );
+        }
+        return <RenderDivider block={block} />;
+      }
       // TODO(migración-etapa-5): retirar el dispatch legacy de clip-group en slide-renderer.tsx
       // al conectar ElementRegistry. El bloque está en `@lumina/element-kit`
       // (`clipGroupDefinition`, E4.3) y el editor de nodos Paper.js en

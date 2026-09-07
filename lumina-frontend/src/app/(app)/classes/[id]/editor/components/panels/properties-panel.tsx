@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { elementRegistry } from '@/lib/element-registry-bootstrap';
 
 import type {
   ActivityBlock,
@@ -1266,6 +1267,10 @@ export function PropertiesPanel({
     block.tipo !== 'separador' &&
     block.tipo !== 'clip-group' &&
     block.tipo !== 'video' &&
+    block.tipo !== 'audio' &&
+    block.tipo !== 'codigo' &&
+    block.tipo !== 'cita' &&
+    block.tipo !== 'columnas' &&
     block.tipo !== 'grafico' &&
     block.tipo !== 'diagrama'
   ) {
@@ -1321,38 +1326,34 @@ export function PropertiesPanel({
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {activeTab === 'propiedades' ? (
           <>
-            {block.tipo === 'texto' && (
-              <TextBlockFields
-                block={block}
-                applyNow={applyNow}
-                scheduleApply={scheduleApply}
-                clearDebounce={clearDebounce}
-              />
-            )}
-            {block.tipo === 'imagen' && (
-              <ImageBlockFields
-                block={block}
-                applyNow={applyNow}
-                scheduleApply={scheduleApply}
-              />
-            )}
-            {block.tipo === 'separador' && (
-              <SeparadorBlockFields
-                block={block}
-                applyNow={applyNow}
-                scheduleApply={scheduleApply}
-              />
-            )}
+            {(() => {
+              const def = elementRegistry.obtener<Block, Record<string, unknown>>(block.tipo);
+              if (
+                def &&
+                (block.tipo === 'texto' ||
+                  block.tipo === 'imagen' ||
+                  block.tipo === 'separador' ||
+                  block.tipo === 'video' ||
+                  block.tipo === 'audio' ||
+                  block.tipo === 'codigo' ||
+                  block.tipo === 'cita' ||
+                  block.tipo === 'columnas')
+              ) {
+                return (
+                  <def.Propiedades
+                    estado={block}
+                    config={{}}
+                    onConfigChange={() => {}}
+                    onChange={(updated) => {
+                      void applyNow(() => updated);
+                    }}
+                  />
+                );
+              }
+              return null;
+            })()}
             {block.tipo === 'clip-group' && (
               <ClipGroupBlockFields
-                block={block}
-                applyNow={applyNow}
-                scheduleApply={scheduleApply}
-                clearDebounce={clearDebounce}
-              />
-            )}
-            {block.tipo === 'video' && (
-              <VideoBlockFields
                 block={block}
                 applyNow={applyNow}
                 scheduleApply={scheduleApply}
@@ -1398,328 +1399,7 @@ export function PropertiesPanel({
 
 // ─── Sub-panels ───────────────────────────────────────────────────────────────
 
-function TextBlockFields({
-  block,
-  applyNow,
-  scheduleApply,
-  clearDebounce,
-}: {
-  block: TextBlock;
-  applyNow: (fn: (b: Block) => Block) => Promise<void>;
-  scheduleApply: (fn: (b: Block) => Block) => void;
-  clearDebounce: () => void;
-}) {
-  return (
-    <TypographyInspector
-      value={typographyFromTextBlock(block)}
-      sizeMin={TEXT_BLOCK_FONT_SIZE_MIN}
-      sizeMax={TEXT_BLOCK_FONT_SIZE_MAX}
-      defaultSize={24}
-      defaultColor="#000000"
-      headingLevel={block.nivel}
-      enableList
-      onHeadingLevelChange={(nivel) => {
-        void applyNow((b) => {
-          if (b.tipo !== 'texto') return b;
-          if (nivel === undefined) {
-            const rest = { ...b };
-            delete rest.nivel;
-            return rest;
-          }
-          return { ...b, nivel };
-        });
-      }}
-      onChange={(patch) => {
-        const mapped = textBlockPatchFromTypography(patch);
-        const apply = (b: Block): Block =>
-          b.tipo === 'texto' ? { ...b, ...mapped } : b;
-        if (isTypographySizeOnlyPatch(patch)) {
-          scheduleApply(apply);
-          return;
-        }
-        clearDebounce();
-        void applyNow(apply);
-      }}
-    />
-  );
-}
 
-function ImageBlockFields({
-  block,
-  applyNow,
-  scheduleApply,
-}: {
-  block: ImageBlock;
-  applyNow: (fn: (b: Block) => Block) => Promise<void>;
-  scheduleApply: (fn: (b: Block) => Block) => void;
-}) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const radius = parseBorderPx(block.bordeRedondeado);
-  const [radiusLocal, setRadiusLocal] = useState(radius);
-
-  useEffect(() => {
-    setRadiusLocal(parseBorderPx(block.bordeRedondeado));
-  }, [block.bordeRedondeado]);
-
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file?.type.startsWith('image/')) {
-      toast.error('Selecciona una imagen');
-      return;
-    }
-    try {
-      const url = await readFileAsDataURL(file);
-      await applyNow((b) => (b.tipo === 'imagen' ? { ...b, url } : b));
-    } catch {
-      toast.error('No se pudo leer la imagen');
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-4">
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={onFile}
-      />
-
-      <div className="space-y-2">
-        <Label className="text-xs">Ajuste</Label>
-        <Select
-          value={block.ajuste ?? 'contener'}
-          onValueChange={(v) => {
-            const ajuste = v as ImageBlock['ajuste'];
-            void applyNow((b) =>
-              b.tipo === 'imagen' ? { ...b, ajuste } : b,
-            );
-          }}
-        >
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="cubrir">Cubrir</SelectItem>
-            <SelectItem value="contener">Contener</SelectItem>
-            <SelectItem value="llenar">Llenar</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
-        <div className="space-y-0.5">
-          <Label className="text-xs">Bloquear proporción</Label>
-          <p className="text-[11px] text-muted-foreground">Mantiene relación ancho/alto al redimensionar esquinas</p>
-        </div>
-        <Switch
-          checked={!!block.lockAspectRatio}
-          onCheckedChange={(checked) => {
-            void applyNow((b) =>
-              b.tipo === 'imagen' ? { ...b, lockAspectRatio: checked } : b,
-            );
-          }}
-          aria-label="Bloquear proporción de imagen"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <Label className="text-xs">Borde redondeado</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {radiusLocal}px
-          </span>
-        </div>
-        <Slider
-          value={[radiusLocal]}
-          min={0}
-          max={50}
-          step={1}
-          onValueChange={([v]) => {
-            const n = Math.round(v!);
-            setRadiusLocal(n);
-            scheduleApply((b) =>
-              b.tipo === 'imagen'
-                ? { ...b, bordeRedondeado: `${n}px` }
-                : b,
-            );
-          }}
-        >
-          <SliderThumb />
-        </Slider>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => fileRef.current?.click()}
-      >
-        Reemplazar imagen
-      </Button>
-    </div>
-  );
-}
-
-function SeparadorBlockFields({
-  block,
-  applyNow,
-  scheduleApply,
-}: {
-  block: DividerBlock;
-  applyNow: (fn: (b: Block) => Block) => Promise<void>;
-  scheduleApply: (fn: (b: Block) => Block) => void;
-}) {
-  const [grosorLocal, setGrosorLocal] = useState(() => block.grosor ?? 2);
-
-  useEffect(() => {
-    setGrosorLocal(block.grosor ?? 2);
-  }, [block.grosor]);
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="space-y-2">
-        <Label className="text-xs" htmlFor="prop-separador-color">
-          Color
-        </Label>
-        <Input
-          id="prop-separador-color"
-          type="color"
-          value={toHexColor(block.color, '#64748b')}
-          onChange={(e) => {
-            void applyNow((b) =>
-              b.tipo === 'separador' ? { ...b, color: e.target.value } : b,
-            );
-          }}
-          className="h-8 w-full cursor-pointer p-1"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs">Estilo</Label>
-        <Select
-          value={block.estilo ?? 'solido'}
-          onValueChange={(v) => {
-            const estilo = v as NonNullable<DividerBlock['estilo']>;
-            void applyNow((b) =>
-              b.tipo === 'separador' ? { ...b, estilo } : b,
-            );
-          }}
-        >
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="solido">Sólido</SelectItem>
-            <SelectItem value="punteado">Punteado</SelectItem>
-            <SelectItem value="guionado">Guionado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <Label className="text-xs">Grosor</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">{grosorLocal}px</span>
-        </div>
-        <Slider
-          value={[grosorLocal]}
-          min={1}
-          max={16}
-          step={1}
-          onValueChange={([v]) => {
-            const n = Math.round(v!);
-            setGrosorLocal(n);
-            scheduleApply((b) =>
-              b.tipo === 'separador' ? { ...b, grosor: n } : b,
-            );
-          }}
-        >
-          <SliderThumb />
-        </Slider>
-      </div>
-    </div>
-  );
-}
-
-function VideoBlockFields({
-  block,
-  applyNow,
-  scheduleApply,
-  clearDebounce,
-}: {
-  block: VideoBlock;
-  applyNow: (fn: (b: Block) => Block) => Promise<void>;
-  scheduleApply: (fn: (b: Block) => Block) => void;
-  clearDebounce: () => void;
-}) {
-  const [urlDraft, setUrlDraft] = useState(block.url);
-
-  useEffect(() => {
-    setUrlDraft(block.url);
-  }, [block.url]);
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="space-y-2">
-        <Label className="text-xs" htmlFor="prop-video-url">
-          URL
-        </Label>
-        <Input
-          id="prop-video-url"
-          type="url"
-          value={urlDraft}
-          onChange={(e) => {
-            const v = e.target.value;
-            setUrlDraft(v);
-            scheduleApply((b) =>
-              b.tipo === 'video' ? { ...b, url: v } : b,
-            );
-          }}
-          onBlur={() => {
-            clearDebounce();
-            void applyNow((b) =>
-              b.tipo === 'video' ? { ...b, url: urlDraft } : b,
-            );
-          }}
-          className="h-8 text-xs"
-          placeholder="https://…"
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label className="text-xs">Autoplay</Label>
-          <Toggle
-            size="sm"
-            variant="outline"
-            pressed={!!block.autoplay}
-            onPressedChange={(p) => {
-              void applyNow((b) =>
-                b.tipo === 'video' ? { ...b, autoplay: p } : b,
-              );
-            }}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <Label className="text-xs">Controles</Label>
-          <Toggle
-            size="sm"
-            variant="outline"
-            pressed={block.controles !== false}
-            onPressedChange={(p) => {
-              void applyNow((b) =>
-                b.tipo === 'video' ? { ...b, controles: p } : b,
-              );
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function BlockRotationSection({
   rotacion = 0,
