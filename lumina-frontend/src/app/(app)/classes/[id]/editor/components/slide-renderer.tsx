@@ -24,7 +24,6 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { ResizeHandles } from './resize-handles';
-import { RenderClipGroup } from './render-clip-group';
 import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
 import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
@@ -77,10 +76,6 @@ import { isWidgetTipo, type WidgetBlock } from '@/components/widgets/shared/widg
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';
-import { GraficoEditor } from '@/components/graficos/grafico-editor';
-import { GraficoViewer } from '@/components/graficos/grafico-viewer';
-import { DiagramaEditor } from '@/components/diagramas/diagrama-editor';
-import { DiagramaViewer } from '@/components/diagramas/diagrama-viewer';
 
 // ─── Modo ──────────────────────────────────────────────────────────────────────
 
@@ -94,6 +89,21 @@ type PrimitiveRuntimeConfig = {
   forceFill?: boolean;
   isThumbnail?: boolean;
   renderInnerBlock?: (innerBlock: Block, colIdx: number, blockIdx: number) => ReactNode;
+};
+
+/**
+ * Config de runtime de los bloques con canvas (`grafico` / `diagrama` /
+ * `clip-group`). E5.7: se despachan por `elementRegistry` como los widgets;
+ * su cobertura de integración real vive en
+ * `visual-tests/canvas-blocks.integration.visual.spec.tsx`.
+ */
+type CanvasBlockRuntimeConfig = {
+  isThumbnail?: boolean;
+  isSelected?: boolean;
+  onEnsureBlockSelected?: () => void;
+  innerEdit?: boolean;
+  renderComposicion?: (bloques: Block[]) => ReactNode;
+  onEnterInnerEdit?: () => void;
 };
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
@@ -706,93 +716,6 @@ function BlockNode({
             viewerClassId={viewerClassId}
           />
         ) : null;
-      // TODO(migración-etapa-5): retirar el dispatch legacy de clip-group en slide-renderer.tsx
-      // al conectar ElementRegistry. El bloque está en `@lumina/element-kit`
-      // (`clipGroupDefinition`, E4.3) y el editor de nodos Paper.js en
-      // `elements/clip-group/paper-editor` (`PaperNodeEditor`, E4.4) — E5 monta
-      // ese sub-panel sin envolver `RenderClipGroup`.
-      // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `clip-group` es
-      // render-smoke — jsdom no rinde el `<canvas>` de Paper.js. E5 NO borra este
-      // case sin cobertura de integración real (Playwright CT o similar) que
-      // compare la salida visible legacy vs kit del editor de nodos.
-      // Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
-      case 'clip-group':
-        return (
-          <RenderClipGroup
-            block={block}
-            editorMode={editorMode}
-            isSelected={isSelected}
-            innerEdit={clipInnerEdit}
-            renderComposicion={(bloques) => (
-              <SlideRenderer
-                slide={{
-                  id: `${slideId}-clip-${blockId}`,
-                  order: 0,
-                  type: 'CONTENT',
-                  title: '',
-                  bloques,
-                  content: null,
-                }}
-                modo="viewer"
-                viewerFill
-                variant={variant}
-                liveSocket={liveSocket}
-                torneoSocket={torneoSocket}
-                viewerStudentId={viewerStudentId}
-                viewerStudentName={viewerStudentName}
-                viewerClassId={viewerClassId}
-                isThumbnail={isThumbnail}
-                className="h-full w-full"
-              />
-            )}
-            onEnterInnerEdit={
-              editorMode &&
-              (block.contenido.tipo === 'imagen' ||
-                (block.contenido.tipo === 'composicion' &&
-                  block.contenido.fill?.tipo === 'imagen'))
-                ? () => onClipGroupInnerEditChange?.(blockId)
-                : undefined
-            }
-            onContentCommit={
-              onClipGroupChange && block.contenido.tipo === 'imagen'
-                ? (patch) => {
-                    const c = block.contenido;
-                    if (c.tipo !== 'imagen') return;
-                    onClipGroupChange(blockId, {
-                      ...block,
-                      contenido: { ...c, ...patch },
-                    });
-                  }
-                : undefined
-            }
-            onFillCommit={
-              onClipGroupChange &&
-              block.contenido.tipo === 'composicion' &&
-              block.contenido.fill?.tipo === 'imagen'
-                ? (patch) => {
-                    const c = block.contenido;
-                    if (c.tipo !== 'composicion' || c.fill?.tipo !== 'imagen') {
-                      return;
-                    }
-                    onClipGroupChange(blockId, {
-                      ...block,
-                      contenido: { ...c, fill: { ...c.fill, ...patch } },
-                    });
-                  }
-                : undefined
-            }
-            onShapeCommit={
-              onClipGroupChange
-                ? (clipShape) => {
-                    onClipGroupChange(blockId, {
-                      ...block,
-                      clipShape,
-                    });
-                  }
-                : undefined
-            }
-          />
-        );
       case 'flip-cards':
       case 'tabs':
       case 'carousel':
@@ -900,41 +823,78 @@ function BlockNode({
         }
         break;
       }
-      // TODO(migración-etapa-5): reconectar `grafico` desde ElementRegistry
-      // (`graficoDefinition` en @lumina/element-kit) y borrar este case.
-      // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `grafico` es
-      // render-smoke — el chart Recharts se carga con `next/dynamic` y en jsdom
-      // rinde `null`. E5 NO borra este case sin cobertura de integración real
-      // que compare el chart legacy vs kit.
-      // Ticket: LUM-E5-CANVAS-BLOCKS · 2026-12-31.
+      // E5.7 — `grafico` / `diagrama` / `clip-group` se despachan por
+      // `elementRegistry` (adapters de @lumina/element-kit, E4.1–E4.4). La
+      // cobertura de integración real (Recharts / @xyflow / máscara SVG,
+      // legacy vs kit en navegador) vive en
+      // `visual-tests/canvas-blocks.integration.visual.spec.tsx` — cierra
+      // `LUM-E5-CANVAS-BLOCKS`.
       case 'grafico':
-        return editorMode ? (
-          <GraficoEditor
-            block={block}
-            isSelected={selectedId === blockId}
-            onEnsureBlockSelected={() => onClick()}
-          />
-        ) : (
-          <GraficoViewer block={block} isThumbnail={isThumbnail} />
-        );
-      // TODO(migración-etapa-5): retirar el dispatch legacy de diagrama en slide-renderer.tsx
-      // al conectar ElementRegistry.
-      // RIESGO ACEPTADO (E4.5 §2): la paridad del kit para `diagrama` cubre el
-      // Venn (SVG real) pero el grafo usa `GraphCanvas` vía `next/dynamic` →
-      // render-smoke en jsdom. E5 NO borra este case sin cobertura de
-      // integración real del grafo legacy vs kit.
-      // Ticket LUM-E5-CANVAS-BLOCKS, fecha 2026-12-31.
       case 'diagrama':
+      case 'clip-group': {
+        const def = elementRegistry.obtener<Block, CanvasBlockRuntimeConfig>(
+          block.tipo,
+        );
+        if (!def) return null;
+        const canvasConfig: CanvasBlockRuntimeConfig =
+          block.tipo === 'clip-group'
+            ? {
+                isThumbnail,
+                isSelected,
+                innerEdit: clipInnerEdit,
+                renderComposicion: (bloques: Block[]) => (
+                  <SlideRenderer
+                    slide={{
+                      id: `${slideId}-clip-${blockId}`,
+                      order: 0,
+                      type: 'CONTENT',
+                      title: '',
+                      bloques,
+                      content: null,
+                    }}
+                    modo="viewer"
+                    viewerFill
+                    variant={variant}
+                    liveSocket={liveSocket}
+                    torneoSocket={torneoSocket}
+                    viewerStudentId={viewerStudentId}
+                    viewerStudentName={viewerStudentName}
+                    viewerClassId={viewerClassId}
+                    isThumbnail={isThumbnail}
+                    className="h-full w-full"
+                  />
+                ),
+                onEnterInnerEdit:
+                  editorMode &&
+                  (block.contenido.tipo === 'imagen' ||
+                    (block.contenido.tipo === 'composicion' &&
+                      block.contenido.fill?.tipo === 'imagen'))
+                    ? () => onClipGroupInnerEditChange?.(blockId)
+                    : undefined,
+              }
+            : {
+                isThumbnail,
+                isSelected: selectedId === blockId,
+                onEnsureBlockSelected: () => onClick(),
+              };
+        const handleCanvasChange = (updated: Block) => {
+          if (updated.tipo === 'diagrama') {
+            onDiagramaChange?.(blockId, updated);
+          } else if (updated.tipo === 'clip-group') {
+            onClipGroupChange?.(blockId, updated);
+          }
+          // `grafico` es soloLecturaEnViewer: se edita por properties-panel.
+        };
         return editorMode ? (
-          <DiagramaEditor
-            block={block}
-            isSelected={selectedId === blockId}
-            onEnsureBlockSelected={() => onClick()}
-            onChange={(updated) => onDiagramaChange?.(blockId, updated)}
+          <def.Editor
+            estado={block}
+            config={canvasConfig}
+            onChange={handleCanvasChange}
           />
         ) : (
-          <DiagramaViewer block={block} isThumbnail={isThumbnail} />
+          <def.Viewer estado={block} config={{ isThumbnail }} />
         );
+      }
       default: {
         const def = elementRegistry.obtener<Block, PrimitiveRuntimeConfig>(block.tipo);
         if (!def) return null;

@@ -13,13 +13,13 @@ import type { GraficoConfig, GraficoEstado } from "./grafico-types.js";
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function GraficoEditor({
   estado,
+  config,
 }: ElementEditorProps<GraficoEstado, GraficoConfig>) {
   return (
     <LegacyGraficoEditor
       block={estado}
-      onEnsureBlockSelected={() => {
-        /* la selección vive en el canvas (E5); aquí no-op */
-      }}
+      isSelected={config.isSelected === true}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

@@ -10,6 +10,8 @@ export type DiagramaEstado = DiagramaBlock;
 export interface DiagramaConfig {
   readonly isThumbnail?: boolean;
   readonly isSelected?: boolean;
+  /** El Editor legacy lo usa para el click-to-select del lienzo (E5.7). */
+  readonly onEnsureBlockSelected?: () => void;
 }
 
 export const DIAGRAMA_TIPO = "diagrama" as const;

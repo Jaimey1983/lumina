@@ -25,6 +25,7 @@ export function ClipGroupEditor({
       isSelected={config.isSelected === true}
       innerEdit={config.innerEdit === true}
       renderComposicion={config.renderComposicion}
+      onEnterInnerEdit={config.onEnterInnerEdit}
       onContentCommit={(patch: Partial<ClipContentImage>) => {
         if (estado.contenido.tipo === "imagen") {
           onChange({

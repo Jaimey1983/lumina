@@ -21,9 +21,7 @@ export function DiagramaEditor({
       isSelected={config.isSelected === true}
       onChange={onChange}
       block={estado}
-      onEnsureBlockSelected={() => {
-        /* la selección vive en el canvas (E5); aquí no-op */
-      }}
+      onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
 }

@@ -15,6 +15,11 @@ export interface ClipGroupConfig {
   readonly innerEdit?: boolean;
   readonly isThumbnail?: boolean;
   readonly renderComposicion?: (bloques: Block[]) => ReactNode;
+  /**
+   * El canvas lo llama al pedir edición interna de la imagen de máscara
+   * (doble clic). `undefined` = no editable (contenido no-imagen). E5.7.
+   */
+  readonly onEnterInnerEdit?: () => void;
 }
 
 export const CLIP_GROUP_TIPO = "clip-group" as const;
