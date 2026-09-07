@@ -3,10 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Paquete interno: se consume desde fuente (TS). Los consumidores del monorepo (lumina-frontend con transpilePackages) no necesitan `dist/`. `build` sigue existiendo para el job `packages` de CI y para el .d.ts publicable a futuro.",
-  "exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } },
+  "//": "Paquete interno dual (E6.1). TS/ESM (frontend con transpilePackages, element-kit) se consumen desde `src/` vía `types`/`import`/`default`. `require` → build CJS en `dist/cjs/` para lumina-backend (CommonJS/jest, E6.2+). `dist/index.js` (ESM) se mantiene para el .d.ts publicable a futuro.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ./scripts/finish-cjs.mjs",
     "test": "tsc --noEmit && vitest run",
     "lint": "eslint ."
   },
