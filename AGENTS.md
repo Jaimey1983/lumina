@@ -1,16 +1,21 @@
 # Lumina — Convenciones de trabajo (fuente única)
 
-> **Migración a la Estructura Única — TERMINADA (2026-09-06, E7.7).** Las 7 etapas
-> están cerradas: `@lumina/element-kit` + `@lumina/element-kit-core` + `@lumina/scoring`
-> son el motor único de elementos y puntuación; el canvas despacha 100% por
-> `elementRegistry`; `slide-renderer.tsx` sin `switch` legacy; los registros viejos
-> (`widget-registry.ts`, `activity-registry.ts`, espejos de scoring) borrados.
-> **Deuda residual documentada:** E7.4 — `element-kit-classic.ts` + el borde
-> `@lumina/element-kit → lumina-frontend` (~230 componentes en el frontend que el
-> kit envuelve vía 37 shims); su inversión total (vía A) es una mejora futura, no
-> bloqueante. Ver Tablero de pasos, etapa E7.
+> **Migración a la Estructura Única — EN CURSO (E7 abierta).** E1–E6 cerradas.
+> E7 avanzó (E7.1 `catalogo` · E7.2 `widget-registry.ts` borrado · E7.3
+> `activity-registry.ts` borrado · E7.5 fachada gradebook retirada · E7.7 barrido
+> de duplicados + higiene) pero **el núcleo de E7 sigue pendiente:**
+> - **E7.6 — invertir el grafo `@lumina/element-kit → lumina-frontend`.** Solo se
+>   hizo la **vía C** (mitigación: `ignoreWorkspaceCycles` + guard de shims
+>   endurecido). La **vía A** (mover los ~230 componentes del frontend a
+>   `packages/element-kit/src/`, eliminar los 37 shims) y la **vía B** (paquete
+>   intermedio `@lumina/ui-legacy`) **NO se realizaron**. El kit todavía depende
+>   del frontend.
+> - **E7.4 — borrar `element-kit-classic.ts` + subpath `./editor-activities`:**
+>   bloqueado por E7.6 vía A. `LUM-E7-CLASICAS` vivo.
 >
-> Este archivo sigue siendo la **fuente única** de convenciones del repo.
+> La migración se da por terminada recién cuando el grafo quede
+> `lumina-frontend → @lumina/element-kit` sin ciclo y sin shims. Ver Tablero de
+> pasos, etapa E7.
 
 Este archivo es la **única** fuente de verdad para cómo se trabaja en este repositorio. Lo leen, sin excepción y con el mismo contenido:
 
@@ -808,7 +813,7 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 - **Entregable:** `find . -name "*.fixtures.json" -path "*scoring*" -o -name "class-results-gradebook.fixtures.json"` → **solo** `packages/scoring/src/activity-scoring.fixtures.json`. `pnpm --filter @lumina/scoring test` · `pnpm --filter lumina-frontend test:unit` · `pnpm --filter lumina-backend test` — todos verdes, sin bajar conteo. Verif: `pnpm --filter @lumina/scoring build && test && pnpm --filter lumina-frontend test:unit && pnpm --filter lumina-backend build && test && pnpm --filter @lumina/element-kit test`.
 - **Cierre (Regla 4):** 2 copias de la fixture **borradas**; `@lumina/scoring/fixtures` es la única. Nota para E7: `lib/activity-scoring.spec.ts` (frontend) duplica cobertura de `packages/scoring/src/scoring.spec.ts` — candidato a borrar en E7. Commit sugerido: `refactor(scoring): fixture única vía @lumina/scoring/fixtures`.
 
-#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · **RAÍZ REDACTADA** (Claude Code, 2026-09-06, al cerrar E6) · **ÚLTIMA ETAPA** · **E7.1 hecho** (`8d34f8a`) · **E7.2 hecho** (`a21964b`, `widget-registry.ts` borrado — `WidgetTipo`/`WIDGET_TIPOS`/`isWidgetTipo` → `@/types/widget.types`; `WidgetBlock`/`isCaptivateWidgetBlock` → `@/types/slide.types`; `WIDGET_LABELS` retirado, nombre desde `catalogo`; `LUM-E7-WIDGETS` cerrado) · **E7.3 hecho** (`1dca549`) · **E7.5 hecho** (`d7fde16`) · **E7.4 diferido** (tras/dentro de la vía A futura) · **E7.6 hecho** (`e632bc1`) · **E7.7 hecho** — barrido final: `lib/activity-scoring.spec.ts` duplicado borrado, redondeo de `grade-calculation` documentado como deliberado, CI actions `checkout`/`setup-node` → `@v5`. **E7 CERRADA · MIGRACIÓN TERMINADA** (2026-09-06). Único residuo: E7.4 (vía A futura).
+#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · **RAÍZ REDACTADA** (Claude Code, 2026-09-06, al cerrar E6) · **ÚLTIMA ETAPA** · **E7.1 hecho** (`8d34f8a`) · **E7.2 hecho** (`a21964b`, `widget-registry.ts` borrado — `WidgetTipo`/`WIDGET_TIPOS`/`isWidgetTipo` → `@/types/widget.types`; `WidgetBlock`/`isCaptivateWidgetBlock` → `@/types/slide.types`; `WIDGET_LABELS` retirado, nombre desde `catalogo`; `LUM-E7-WIDGETS` cerrado) · **E7.3 hecho** (`1dca549`) · **E7.5 hecho** (`d7fde16`) · **E7.4 pendiente** (bloqueado por E7.6 vía A) · **E7.6 parcial** (`e632bc1`, **solo vía C** — mitigación; vías A y B sin hacer) · **E7.7 hecho** (`ea42a1f`, barrido de duplicados + higiene: `lib/activity-scoring.spec.ts` borrado, redondeo de `grade-calculation` documentado, CI actions `@v5`). **E7 SIGUE ABIERTA** — falta la inversión del grafo (E7.6 vía A) y E7.4. La migración NO está terminada.
 
 Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya no tiene razón de existir — registros de metadata, fachadas de re-export, shims, y el bloqueo estructural del grafo de dependencias. Al cerrar E7 no debe quedar ningún `TODO(migración-etapa-N)` abierto ni ningún `ElementDefinition` despachado por un camino que no sea `elementRegistry`.
 
@@ -867,9 +872,13 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 ##### E7.4 — retirar `element-kit-classic.ts` + subpath `./editor-activities` · **DIFERIDO tras E7.6**
 - El barrel consolida 11 imports frontend→kit de las 10 actividades clásicas de E2.5 (`activity-templates.ts` + 9 `editor/components/activities/*.tsx` + `emparejar`). Solo lo consume el kit (0 consumidores en el frontend). Borrarlo **antes** de que el kit deje de necesitar componentes del frontend = crear ~11 subpaths nuevos + 11 shims, peor que 1 barrel. Se resuelve dentro de / justo después de la inversión del grafo. Con E7.6 por vía **C** (ver abajo), E7.4 queda **abierto como deuda documentada** hasta un esfuerzo futuro de vía A. Ticket `LUM-E7-CLASICAS` sigue vivo.
 
-##### E7.6 — el ciclo `@lumina/element-kit → lumina-frontend` · **vía C (pragmática) — decisión del dueño del tablero 2026-09-06**
+##### E7.6 — el ciclo `@lumina/element-kit → lumina-frontend` · **PARCIAL — solo vía C hecha; vías A y B pendientes**
 - **Operador:** Claude Code
-- **Estado:** **hecho** (`e632bc1`, 2026-09-06) — `pnpm-workspace.yaml` `ignoreWorkspaceCycles: true` → `pnpm -r build|test|lint` verde pese al ciclo de tareas. `shims.types.spec.ts` endurecido: +37 casos que exigen `*.parity.spec.tsx` por subpath de elemento (caza deriva de firmas). `vitest.config.ts` del kit `testTimeout` 15s→30s (mata el flake recurrente de `grafico.parity`). El borde `element-kit → lumina-frontend` queda **aceptado como excepción estructural**; la inversión total (vía A, ~230 archivos al kit) es mejora futura, **no** bloquea el cierre de la migración. Verif: `pnpm -r build && lint && test` VERDE (scoring 92 · backend 243 · element-kit **355** (+37) · core ok) · `lumina-frontend` `test:unit` **495/495**.
+- **Estado:** **parcial — solo mitigación (vía C, `e632bc1`, 2026-09-06).** `pnpm-workspace.yaml` `ignoreWorkspaceCycles: true` → `pnpm -r build|test|lint` corre pese al ciclo. `shims.types.spec.ts` endurecido: +37 casos que exigen `*.parity.spec.tsx` por subpath (caza deriva de firmas). `vitest.config.ts` del kit `testTimeout` 15s→30s (flake de `grafico.parity`).
+  - **NO hecho — el objetivo real de E7.6 sigue abierto:**
+    - **Vía A** — mover los ~230 componentes que hoy viven en `lumina-frontend/src` (widgets, actividades clásicas + Grupo 4, bloques de canvas, primitivos, `activity-templates.ts`) **a `packages/element-kit/src/`**, dejando `lumina-frontend` como consumidor puro (`lumina-frontend → @lumina/element-kit`, sin ciclo). Elimina los **37 shims `.d.ts`** + las 58 entradas `paths` + los subpaths de `lumina-frontend/package.json`. Proyecto multi-sesión, se parte por familia (E7.6.1 widgets · E7.6.2 actividades · E7.6.3 bloques canvas · E7.6.4 primitivos · E7.6.5 borrar shims + `"lumina-frontend": "workspace:*"` del kit).
+    - **Vía B** (alternativa a A) — paquete intermedio `@lumina/ui-legacy` con esos componentes; el kit y el frontend dependen de él. Descartada de entrada si se hace A.
+  - **E7.6 (y E7) NO se cierra con la vía C.** La migración termina cuando el kit deje de depender de `lumina-frontend` y no queden shims.
 - **Contexto:** el objetivo *funcional* de la Estructura Única está cumplido (E1–E6: `elementRegistry` único, motor de scoring único, sin dispatch dual). Lo que queda: `@lumina/element-kit` depende de `lumina-frontend` (`workspace:*`) porque sus 45 adapters envuelven ~230 componentes que viven en el frontend, vía **37 subpaths** + **37 shims** + **58 entradas `paths`**. La inversión total (vía A — mover los 230 archivos al kit) es un proyecto multi-sesión aparte. **Decisión: vía C** — aceptar el borde como excepción estructural documentada y neutralizar sus síntomas.
 - **Alcance — PUEDE tocar:**
   - `pnpm-workspace.yaml` — `ignoreWorkspaceCycles: true` (recupera `pnpm -r build|test|lint`).
@@ -880,9 +889,9 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 - **Entregable:** `pnpm -r build && pnpm -r test && pnpm -r lint` **verde**. Guard de shims endurecido, verde. CI verde. `AGENTS.md` documenta el borde `element-kit → lumina-frontend` como aceptado (vía A queda como mejora futura, no bloqueante del cierre de la migración).
 - **Cierre:** no aplica Regla 4. Commit sugerido: `chore(workspace): aceptar el borde element-kit→lumina-frontend (ignoreWorkspaceCycles) y endurecer el guard de shims`.
 
-##### E7.7 — barrido final + cierre de la migración
+##### E7.7 — barrido de higiene (NO cierra E7)
 - **Operador:** Claude Code
-- **Estado:** **hecho** (`ea42a1f`, 2026-09-06) — barrido final:
+- **Estado:** **hecho** (`ea42a1f`, 2026-09-06) — barrido de higiene. **No cierra E7** (falta E7.6 vía A + E7.4):
   - `lumina-frontend/src/lib/activity-scoring.spec.ts` **borrado** (88 tests): re-test puro de `@lumina/scoring` que duplicaba `packages/scoring/src/scoring.spec.ts` (92 tests, gate en el job `packages`). Sin `activity-scoring.ts` al lado desde E5.5. `test:unit` del frontend 495→**407** (sin pérdida de cobertura real — el motor se prueba en su paquete).
   - `grade-calculation.service.ts` `round()` — comentario: la escala de 2 decimales es **deliberada** (nota de período ponderada de Edu, dominio aparte de `notaColombiana`; análisis E6.5). No se unifica.
   - `.github/workflows/ci.yml` — `actions/checkout@v4`→`@v5`, `actions/setup-node@v4`→`@v5` (Node 24; retira el warning de deprecación). `pnpm/action-setup@v4` se mantiene.
@@ -895,8 +904,8 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
   - `lumina-frontend/src/lib/activity-scoring.spec.ts` — **borrar**: es un re-test puro de `@lumina/scoring` (sin `activity-scoring.ts` al lado desde E5.5), duplica `packages/scoring/src/scoring.spec.ts`. El motor se prueba en su propio paquete.
   - `lumina-backend/src/grade-calculation/grade-calculation.service.ts` — comentario en `round()` documentando que la escala de 2 decimales es **deliberada** (nota de período ponderada de Edu, dominio aparte del `notaColombiana` de 1 decimal de `@lumina/scoring`; análisis de E6.5). No se unifica.
   - `.github/workflows/ci.yml` — `actions/checkout@v4` → `@v5`, `actions/setup-node@v4` → `@v5` (Node 24). `pnpm/action-setup@v4` se deja (última mayor).
-  - `AGENTS.md` — actualizar el encabezado del documento para reflejar que la migración a la Estructura Única terminó; marcar E7 CERRADA.
+  - `AGENTS.md` — encabezado con el estado de la migración (E7 abierta hasta la inversión del grafo).
   - Barrido de huérfanos: `grep` de tipos/archivos/`case` con 0 referencias; `grep -rn "TODO(migración-etapa"` debe volver **solo** el de `element-kit-classic.ts` (E7.4 diferido).
 - **Alcance — NO toca:** `element-kit-classic.ts` (E7.4); la lógica de scoring o de grade-calculation; los adapters del kit.
 - **Entregable:** `grep -rn "TODO(migración-etapa" --include="*.ts" --include="*.tsx"` → solo `element-kit-classic.ts`. `pnpm -r build && test && lint` verde. CI verde en los 3 jobs. Encabezado de `AGENTS.md` actualizado.
-- **Cierre (Regla 4):** `lib/activity-scoring.spec.ts` borrado. Con E7.7 `hecho`, **E7 CERRADA** y la migración a la Estructura Única **terminada** (deuda residual: E7.4 vía A). Commit sugerido: `chore: barrido final de la migración a la Estructura Única (E7.7)`.
+- **Cierre (Regla 4):** `lib/activity-scoring.spec.ts` borrado. E7.7 es solo el barrido de higiene — **NO cierra E7**. E7 se cierra (y la migración termina) con **E7.6 vía A** hecha (grafo `lumina-frontend → @lumina/element-kit` sin ciclo, 0 shims) y **E7.4** (borrar `element-kit-classic.ts`). Commit de E7.7: `chore: barrido final de la migración a la Estructura Única (E7.7)`.
