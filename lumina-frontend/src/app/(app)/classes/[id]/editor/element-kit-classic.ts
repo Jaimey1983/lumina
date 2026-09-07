@@ -1,7 +1,11 @@
 /**
  * API pública de la familia "clásica" de actividades para `@lumina/element-kit`
- * (E2.5). Solo re-exports — no cambia comportamiento. El canvas sigue
- * despachando estas actividades por el `switch` de `slide-renderer.tsx` hasta E5.
+ * (E2.5). Solo re-exports — no cambia comportamiento.
+ *
+ * TODO(migración-etapa-7): borrar este barrel + el subpath `./editor-activities`
+ * cuando el kit deje de importar plantillas/pares Editor/Viewer por
+ * `lumina-frontend/editor-activities` (ticket LUM-E7-CLASICAS, 2026-12-31).
+ * El canvas ya no lo consume (E5.6 despacha por `elementRegistry`); el kit sí.
  */
 export type { Activity } from '@/types/slide.types';
 

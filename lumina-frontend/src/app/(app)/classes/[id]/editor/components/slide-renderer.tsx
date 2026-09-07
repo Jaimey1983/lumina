@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  createElement,
   CSSProperties,
   useState,
   useRef,
@@ -33,15 +32,9 @@ import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable,
 import type {
   Activity,
   ActivityBlock,
-  AudioBlock,
   Block,
-  CodeBlock,
-  ColumnsBlock,
   ClipGroupBlock,
-  DividerBlock,
   FlipCardsWidget,
-  ImageBlock,
-  QuoteBlock,
   Slide,
   TabsWidget,
   CarouselWidget,
@@ -50,13 +43,9 @@ import type {
   TimelineWidget,
   DiagramaBlock,
   HotspotWidget,
-  TextBlock,
-  VideoBlock,
 } from '@/types/slide.types';
 import { cn } from '@/lib/utils';
-import { hasMediaSrc } from '@/lib/media-url';
-import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue, resolveFontFamily } from '@/lib/font-catalog';
-import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
+import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@/lib/font-catalog';
 import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
 import { getSlideVariant } from '@/lib/slide-variant';
 import {
@@ -65,17 +54,6 @@ import {
 } from '@/lib/slide-background';
 import { BackgroundImageLayer } from './background-image-layer';
 
-import { ShortAnswerActivityEditor, ShortAnswerViewer } from './activities/short-answer';
-import { FillBlanksActivityEditor, FillBlanksViewer } from './activities/fill-blanks';
-import { EmparejarEditor } from '@/components/activities/emparejar/emparejar-editor';
-import { EmparejarViewer } from '@/components/activities/emparejar/emparejar-viewer';
-import { OrderStepsActivityEditor, OrderStepsViewer } from './activities/order-steps';
-import { WordCloudActivityEditor, WordCloudViewer } from './activities/word-cloud';
-import { QuizMultipleActivityEditor, QuizMultipleViewer } from './activities/quiz-multiple';
-import { TrueFalseActivityEditor, TrueFalseViewer } from './activities/true-false';
-import { DragDropActivity, DragDropActivityEditor } from './activities/drag-drop';
-import { VideoInteractiveActivity, VideoInteractiveActivityEditor } from './activities/video-interactive';
-import { LivePollActivityEditor, LivePollViewer } from './activities/live-poll';
 import { TorneoActivityEditor } from './activities/torneo-activity';
 import type { Socket } from 'socket.io-client';
 import { TorneoViewer } from '@/components/viewers/torneo-viewer';
@@ -99,54 +77,24 @@ import { isWidgetTipo, type WidgetBlock } from '@/components/widgets/shared/widg
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';
-import { ClasificarEditor } from '@/components/activities/clasificar/clasificar-editor';
-import { ClasificarViewer } from '@/components/activities/clasificar/clasificar-viewer';
-import { MemoriaEditor } from '@/components/activities/memoria/memoria-editor';
-import { MemoriaViewer } from '@/components/activities/memoria/memoria-viewer';
-import { PuzzleImagenEditor } from '@/components/activities/puzzle-imagen/puzzle-imagen-editor';
-import { PuzzleImagenViewer } from '@/components/activities/puzzle-imagen/puzzle-imagen-viewer';
-import { AbrirCajaEditor } from '@/components/activities/abrir-caja/abrir-caja-editor';
-import { AbrirCajaViewer } from '@/components/activities/abrir-caja/abrir-caja-viewer';
-import { AnagramaEditor } from '@/components/activities/anagrama/anagrama-editor';
-import { AnagramaViewer } from '@/components/activities/anagrama/anagrama-viewer';
-import { AhorcadoEditor } from '@/components/activities/ahorcado/ahorcado-editor';
-import { AhorcadoViewer } from '@/components/activities/ahorcado/ahorcado-viewer';
-import { PuzzlePalabrasEditor } from '@/components/activities/puzzle-palabras/puzzle-palabras-editor';
-import { PuzzlePalabrasViewer } from '@/components/activities/puzzle-palabras/puzzle-palabras-viewer';
-import { SopaLetrasEditor } from '@/components/activities/sopa-letras/sopa-letras-editor';
-import { SopaLetrasViewer } from '@/components/activities/sopa-letras/sopa-letras-viewer';
-import { CrucigramaEditor } from '@/components/activities/crucigrama/crucigrama-editor';
-import { CrucigramaViewer } from '@/components/activities/crucigrama/crucigrama-viewer';
-import type {
-  ClasificarActivity,
-  MemoriaActivity,
-  PuzzleImagenActivity,
-  SopaLetrasActivity,
-  CrucigramaActivity,
-  AbrirCajaActivity,
-  AnagramaActivity,
-  AhorcadoActivity,
-  PuzzlePalabrasActivity,
-  MatchPairs,
-  GlobosActivity,
-  TopoActivity,
-} from '@/types/slide.types';
-
-import { GlobosEditor } from '@/components/activities/globos/globos-editor';
-import { GlobosViewer } from '@/components/activities/globos/globos-viewer';
-import { TopoEditor } from '@/components/activities/topo/topo-editor';
-import { TopoViewer } from '@/components/activities/topo/topo-viewer';
-import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
 import { GraficoEditor } from '@/components/graficos/grafico-editor';
 import { GraficoViewer } from '@/components/graficos/grafico-viewer';
 import { DiagramaEditor } from '@/components/diagramas/diagrama-editor';
 import { DiagramaViewer } from '@/components/diagramas/diagrama-viewer';
-import { HistoriaRamificadaEditor } from '@/components/activities/historia-ramificada/historia-ramificada-editor';
-import { HistoriaRamificadaViewer } from '@/components/activities/historia-ramificada/historia-ramificada-viewer';
 
 // ─── Modo ──────────────────────────────────────────────────────────────────────
 
 type Modo = 'editor' | 'viewer' | 'preview';
+
+/** Config de runtime que el dispatch genérico pasa a primitivos del registry. */
+type PrimitiveRuntimeConfig = {
+  isEditing?: boolean;
+  onCommit?: (text: string) => void;
+  onDiscard?: () => void;
+  forceFill?: boolean;
+  isThumbnail?: boolean;
+  renderInnerBlock?: (innerBlock: Block, colIdx: number, blockIdx: number) => ReactNode;
+};
 
 function stripMarcoFromActivityBlock(block: ActivityBlock): ActivityBlock {
   if (!block.marco) return block;
@@ -202,491 +150,6 @@ function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number;
   return getBlockPos(block);
 }
 
-// ─── YouTube embed URL ────────────────────────────────────────────────────────
-
-function buildEmbedUrl(url: string, autoplay?: boolean): string {
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
-  if (ytMatch) {
-    const videoId = ytMatch[1];
-    const params = new URLSearchParams({ ...(autoplay ? { autoplay: '1' } : {}) });
-    return `https://www.youtube.com/embed/${videoId}${params.size ? `?${params}` : ''}`;
-  }
-  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) {
-    const videoId = vimeoMatch[1];
-    const params = new URLSearchParams({ ...(autoplay ? { autoplay: '1' } : {}) });
-    return `https://player.vimeo.com/video/${videoId}${params.size ? `?${params}` : ''}`;
-  }
-  return url;
-}
-
-// ─── Individual block renderers ───────────────────────────────────────────────
-
-const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
-  izquierda: 'left',
-  centro: 'center',
-  derecha: 'right',
-  justificado: 'justify',
-};
-
-function textBlockContenidoIsEmpty(block: TextBlock): boolean {
-  const c = block.contenido;
-  return c === undefined || c === '';
-}
-
-function textBlockFontSizePx(block: TextBlock): number {
-  const raw = block.tamanoFuente ?? '';
-  const m = String(raw).match(/(\d+(?:\.\d+)?)/);
-  return m ? parseFloat(m[1]!) : 0;
-}
-
-function emptyTextPlaceholderLabel(block: TextBlock): string {
-  return textBlockFontSizePx(block) >= 28
-    ? 'Haga clic para agregar título'
-    : 'Haga clic para editar · Shift+Enter para confirmar';
-}
-
-/** Estilos opcionales del JSON de texto: solo se añaden si el campo viene definido. */
-function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
-  const out: CSSProperties = {
-    ...typographyToCss(typographyFromTextBlock(block)),
-  };
-  if (block.fuente !== undefined && block.fuente !== '') {
-    out.fontFamily = resolveFontFamily(block.fuente);
-  }
-  if (block.subrayado === true) {
-    out.textDecoration = 'underline';
-  }
-  if (block.interlineado !== undefined) {
-    out.lineHeight = block.interlineado;
-  }
-  if (block.espaciadoLetras !== undefined) {
-    out.letterSpacing = `${block.espaciadoLetras}px`;
-  }
-  return out;
-}
-
-// ─── Inline text editor ───────────────────────────────────────────────────────
-
-function InlineTextEditor({
-  block,
-  onCommit,
-  onDiscard,
-}: {
-  block: TextBlock;
-  onCommit: (text: string) => void;
-  onDiscard: () => void;
-}) {
-  const [value, setValue] = useState(block.contenido ?? '');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  /** Guards against double-fire from blur + Enter/Escape. */
-  const exitedRef = useRef(false);
-
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.focus();
-    ta.select();
-  }, []);
-
-  function commit() {
-    if (exitedRef.current) return;
-    exitedRef.current = true;
-    onCommit(value);
-  }
-
-  function discard() {
-    if (exitedRef.current) return;
-    exitedRef.current = true;
-    onDiscard();
-  }
-
-  const isEmpty = value === '';
-
-  return (
-    <div
-      className="relative h-full w-full min-h-0"
-      style={
-        isEmpty
-          ? { border: '2px dashed #aaa', boxSizing: 'border-box' }
-          : undefined
-      }
-    >
-      {isEmpty && (
-        <span
-          className="pointer-events-none absolute left-1/2 top-1/2 z-0 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
-          style={{
-            color: '#bbb',
-            fontSize: 'clamp(10px, 1.6vw, 13px)',
-          }}
-        >
-          {emptyTextPlaceholderLabel(block)}
-        </span>
-      )}
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); commit(); }
-          else if (e.key === 'Escape')         { e.preventDefault(); discard(); }
-        }}
-        // Prevent click/dblclick from bubbling to BlockNode while editing
-        onClick={(e) => e.stopPropagation()}
-        onDoubleClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          margin: 0,
-          padding: '2px',
-          border: 'none',
-          outline: 'none',
-          background: isEmpty ? 'transparent' : 'rgba(255,255,255,0.05)',
-          resize: 'none',
-          cursor: 'text',
-          fontSize: block.tamanoFuente,
-          fontWeight: block.negrita ? 'bold' : 'normal',
-          fontStyle: block.cursiva ? 'italic' : 'normal',
-          color: block.color ?? 'inherit',
-          textAlign: block.alineacion
-            ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
-            : 'left',
-          overflowY: 'auto',
-          boxSizing: 'border-box',
-          zIndex: 1,
-          ...textBlockOptionalVisualStyle(block),
-        }}
-      />
-    </div>
-  );
-}
-
-// ─── RenderText ───────────────────────────────────────────────────────────────
-
-interface RenderTextProps {
-  block: TextBlock;
-  modo: Modo;
-  isEditing?: boolean;
-  onCommit?: (text: string) => void;
-  onDiscard?: () => void;
-}
-
-function RenderText({ block, modo, isEditing, onCommit, onDiscard }: RenderTextProps) {
-  if (isEditing && onCommit && onDiscard) {
-    return <InlineTextEditor block={block} onCommit={onCommit} onDiscard={onDiscard} />;
-  }
-
-  if (modo === 'editor' && textBlockContenidoIsEmpty(block)) {
-    return (
-      <div
-        className="relative box-border h-full min-h-[1.25em] w-full"
-        style={{ border: '2px dashed #aaa' }}
-      >
-        <span
-          className="pointer-events-none absolute left-1/2 top-1/2 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
-          style={{
-            color: '#bbb',
-            fontSize: 'clamp(10px, 1.6vw, 13px)',
-          }}
-        >
-          {emptyTextPlaceholderLabel(block)}
-        </span>
-      </div>
-    );
-  }
-
-  const isList = block.lista === 'vinetas' || block.lista === 'numeros';
-  const style: CSSProperties = {
-    margin: 0,
-    whiteSpace: isList ? 'normal' : 'pre-wrap',
-    wordBreak: 'break-word',
-    textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
-    fontSize: block.tamanoFuente,
-    fontWeight: block.negrita ? 'bold' : undefined,
-    fontStyle: block.cursiva ? 'italic' : undefined,
-    color: block.color,
-    ...textBlockOptionalVisualStyle(block),
-    ...(isList
-      ? {
-          paddingLeft: '1.2em',
-          listStyleType: block.lista === 'numeros' ? 'decimal' : 'disc',
-        }
-      : {}),
-  };
-  const tag = isList
-    ? block.lista === 'numeros'
-      ? 'ol'
-      : 'ul'
-    : block.nivel
-      ? `h${block.nivel}`
-      : 'p';
-  const children = isList
-    ? (block.contenido ?? '').split('\n').map((line, i) =>
-        createElement('li', { key: i }, line === '' ? '\u00a0' : line),
-      )
-    : block.contenido;
-  return createElement(tag, { style }, children);
-}
-
-function RenderImage({ block, forceFill }: { block: ImageBlock; forceFill?: boolean }) {
-  const fitMap: Record<string, CSSProperties['objectFit']> = {
-    cubrir: 'cover',
-    contener: 'contain',
-    llenar: 'fill',
-  };
-
-  if (!hasMediaSrc(block.url)) {
-    return (
-      <figure
-        style={{
-          margin: 0,
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#e2e8f0',
-          color: '#64748b',
-          fontSize: '0.75rem',
-          textAlign: 'center',
-          padding: '0.5rem',
-        }}
-      >
-        Sin imagen
-      </figure>
-    );
-  }
-
-  return (
-    <figure style={{ margin: 0, width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={block.url}
-        alt={block.alt ?? ''}
-        style={{
-          display: 'block',
-          width: '100%',
-          height: '100%',
-          maxWidth: '100%',
-          maxHeight: '100%',
-          objectFit: forceFill ? 'fill' : (block.ajuste ? fitMap[block.ajuste] : 'fill'),
-          borderRadius: block.bordeRedondeado,
-        }}
-      />
-      {block.caption && (
-        <figcaption
-          style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}
-        >
-          {block.caption}
-        </figcaption>
-      )}
-    </figure>
-  );
-}
-
-function RenderVideo({
-  block,
-  isThumbnail = false,
-  editorMode = false,
-}: {
-  block: VideoBlock;
-  isThumbnail?: boolean;
-  /** En el editor, el `<iframe>`/`<video>` no debe capturar el pointer: si no,
-   *  el bloque nunca se selecciona (ni aparece la barra flotante) ni se arrastra. */
-  editorMode?: boolean;
-}) {
-  const isYoutube = block.url.includes('youtube') || block.url.includes('youtu.be');
-
-  if (isThumbnail) {
-    if (isYoutube) {
-      const ytMatch = block.url.match(
-        /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-      );
-      const videoId = ytMatch?.[1];
-      if (videoId) {
-        return (
-          <img
-            src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
-            alt=""
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-        );
-      }
-    }
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          background: '#111827',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        aria-hidden
-      >
-        <svg
-          viewBox="0 0 24 24"
-          width="28%"
-          height="28%"
-          fill="white"
-          opacity={0.85}
-          aria-hidden
-        >
-          <path d="M8 5v14l11-7z" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (isYoutube) {
-    const src = buildEmbedUrl(block.url, block.autoplay);
-    return (
-      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <iframe
-          src={src}
-          title="Video YouTube"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            pointerEvents: editorMode ? 'none' : undefined,
-          }}
-        />
-        {editorMode && (
-          <div aria-hidden style={{ position: 'absolute', inset: 0, cursor: 'inherit' }} />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <video
-        src={block.url}
-        controls={block.controles ?? true}
-        autoPlay={block.autoplay}
-        loop={block.bucle}
-        muted={block.silenciado}
-        style={{
-          display: 'block',
-          width: '100%',
-          height: '100%',
-          pointerEvents: editorMode ? 'none' : undefined,
-        }}
-      />
-      {editorMode && (
-        <div aria-hidden style={{ position: 'absolute', inset: 0, cursor: 'inherit' }} />
-      )}
-    </div>
-  );
-}
-
-function RenderAudio({ block }: { block: AudioBlock }) {
-  return (
-    <audio
-      src={block.url}
-      controls={block.controles ?? true}
-      autoPlay={block.autoplay}
-      loop={block.bucle}
-      style={{ width: '100%' }}
-    />
-  );
-}
-
-function RenderCode({ block }: { block: CodeBlock }) {
-  return (
-    <div style={{ overflow: 'hidden', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
-      {block.titulo && (
-        <div
-          style={{
-            padding: '0.25rem 0.75rem',
-            fontSize: '0.75rem',
-            color: '#6b7280',
-            background: '#f9fafb',
-            borderBottom: '1px solid #e5e7eb',
-          }}
-        >
-          {block.titulo}
-        </div>
-      )}
-      <pre
-        style={{
-          margin: 0,
-          padding: '0.75rem 1rem',
-          background: '#1e1e1e',
-          color: '#d4d4d4',
-          fontSize: '0.8125rem',
-          fontFamily: 'ui-monospace, monospace',
-          overflow: 'auto',
-          whiteSpace: 'pre',
-        }}
-      >
-        <code>{block.codigo}</code>
-      </pre>
-    </div>
-  );
-}
-
-function RenderQuote({ block }: { block: QuoteBlock }) {
-  return (
-    <blockquote
-      style={{
-        margin: 0,
-        paddingLeft: '1rem',
-        borderLeft: '3px solid #d1d5db',
-      }}
-    >
-      <p style={{ margin: 0, fontStyle: 'italic', color: '#374151' }}>{block.texto}</p>
-      {(block.autor || block.fuente) && (
-        <footer style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#9ca3af' }}>
-          {block.autor && <cite style={{ fontStyle: 'normal' }}>{block.autor}</cite>}
-          {block.autor && block.fuente && <span> · </span>}
-          {block.fuente && <span>{block.fuente}</span>}
-        </footer>
-      )}
-    </blockquote>
-  );
-}
-
-function RenderDivider({ block }: { block: DividerBlock }) {
-  const styleMap: Record<string, string> = {
-    solido: 'solid',
-    punteado: 'dotted',
-    guionado: 'dashed',
-  };
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-      }}
-    >
-      <hr
-        style={{
-          border: 'none',
-          borderTop: `${block.grosor ?? 2}px ${styleMap[block.estilo ?? 'solido'] ?? 'solid'} ${block.color ?? '#64748b'}`,
-          margin: 0,
-          width: '100%',
-        }}
-      />
-    </div>
-  );
-}
 
 /** Mismo fondo que aplica `EscapeRoomSalaCanvas` cuando el autor no elige uno. */
 const ESCAPE_ROOM_SALA_FONDO_DEFAULT = { tipo: 'color', valor: '#1e1b4b' } as const;
@@ -871,185 +334,6 @@ function RenderActivity({
   );
 }
 
-// ─── ColumnsBlock — forward-referenced from BlockNode ─────────────────────────
-
-interface RenderColumnsProps {
-  block: ColumnsBlock;
-  slideId: string;
-  modo: Modo;
-  selectedId: string | null;
-  selectedBlockIds?: string[];
-  onBlockClick: (id: string, e?: React.MouseEvent) => void;
-  pathPrefix: string;
-  onActivityChange?: (blockId: string, activity: Activity) => void;
-  onFlipCardsChange?: (blockId: string, block: FlipCardsWidget) => void;
-  flipCardsInnerSelection?: FlipCardsInnerSelection | null;
-  onFlipCardsInnerSelectionChange?: (selection: FlipCardsInnerSelection | null) => void;
-  onTabsChange?: (blockId: string, block: TabsWidget) => void;
-  tabsInnerSelection?: TabsInnerSelection | null;
-  onTabsInnerSelectionChange?: (selection: TabsInnerSelection | null) => void;
-  onCarouselChange?: (blockId: string, block: CarouselWidget) => void;
-  carouselInnerSelection?: CarouselInnerSelection | null;
-  onCarouselInnerSelectionChange?: (selection: CarouselInnerSelection | null) => void;
-  onClickRevealChange?: (blockId: string, block: ClickRevealWidget) => void;
-  clickRevealInnerSelection?: ClickRevealInnerSelection | null;
-  onClickRevealInnerSelectionChange?: (selection: ClickRevealInnerSelection | null) => void;
-  onPopupChange?: (blockId: string, block: PopupWidget) => void;
-  popupInnerSelection?: PopupInnerSelection | null;
-  onPopupInnerSelectionChange?: (selection: PopupInnerSelection | null) => void;
-  onHotspotChange?: (blockId: string, block: HotspotWidget) => void;
-  hotspotInnerSelection?: HotspotInnerSelection | null;
-  onHotspotInnerSelectionChange?: (selection: HotspotInnerSelection | null) => void;
-  onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
-  timelineInnerSelection?: TimelineInnerSelection | null;
-  onTimelineInnerSelectionChange?: (selection: TimelineInnerSelection | null) => void;
-  onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
-  onRemoveBlock?: (blockId: string) => void;
-  onDuplicateBlock?: (blockId: string) => void;
-  onCopyBlock?: (blockId: string) => void;
-  onToggleCanvasLock?: (blockId: string) => void;
-  onResponse?: (response: unknown) => void;
-  variant?: 'dark' | 'light';
-  liveSocket?: Socket | null;
-  torneoSocket?: Socket | null;
-  viewerStudentId?: string;
-  viewerStudentName?: string;
-  viewerClassId?: string;
-  isThumbnail?: boolean;
-}
-
-function RenderColumns({
-  block,
-  slideId,
-  modo,
-  selectedId,
-  selectedBlockIds,
-  onBlockClick,
-  pathPrefix,
-  onActivityChange,
-  onFlipCardsChange,
-  flipCardsInnerSelection,
-  onFlipCardsInnerSelectionChange,
-  onTabsChange,
-  tabsInnerSelection,
-  onTabsInnerSelectionChange,
-  onCarouselChange,
-  carouselInnerSelection,
-  onCarouselInnerSelectionChange,
-  onClickRevealChange,
-  clickRevealInnerSelection,
-  onClickRevealInnerSelectionChange,
-  onPopupChange,
-  popupInnerSelection,
-  onPopupInnerSelectionChange,
-  onHotspotChange,
-  hotspotInnerSelection,
-  onHotspotInnerSelectionChange,
-  onTimelineChange,
-  timelineInnerSelection,
-  onTimelineInnerSelectionChange,
-  onDiagramaChange,
-  onRemoveBlock,
-  onDuplicateBlock,
-  onCopyBlock,
-  onToggleCanvasLock,
-  onResponse,
-  variant = 'light',
-  liveSocket,
-  torneoSocket,
-  viewerStudentId,
-  viewerStudentName,
-  viewerClassId,
-  isThumbnail,
-}: RenderColumnsProps) {
-  let gridCols = `repeat(${block.columnas.length}, 1fr)`;
-  if (block.proporcion) {
-    const parts = block.proporcion.split(':');
-    if (parts.length === block.columnas.length) {
-      gridCols = parts.map((n) => `${n.trim()}fr`).join(' ');
-    }
-  }
-
-  const editorMode = modo === 'editor';
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: gridCols,
-        gap: '1rem',
-        width: '100%',
-        height: '100%',
-      }}
-    >
-      {block.columnas.map((colBlocks, colIdx) => (
-        <div
-          key={colIdx}
-          style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
-        >
-          {colBlocks.map((innerBlock, blockIdx) => {
-            const id = `${pathPrefix}-${colIdx}-${blockIdx}`;
-            const isInnerSelected = editorMode && (
-              selectedBlockIds && selectedBlockIds.length > 0
-                ? selectedBlockIds.includes(id)
-                : selectedId === id
-            );
-            return (
-              <BlockNode
-                key={id}
-                block={innerBlock}
-                blockId={id}
-                slideId={slideId}
-                isSelected={isInnerSelected}
-                modo={modo}
-                selectedId={selectedId}
-                selectedBlockIds={selectedBlockIds}
-                onClick={(e) => onBlockClick(id, e)}
-                onBlockClick={onBlockClick}
-                pathPrefix={id}
-                onActivityChange={onActivityChange}
-                onFlipCardsChange={onFlipCardsChange}
-                flipCardsInnerSelection={flipCardsInnerSelection}
-                onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
-                onTabsChange={onTabsChange}
-                tabsInnerSelection={tabsInnerSelection}
-                onTabsInnerSelectionChange={onTabsInnerSelectionChange}
-                onCarouselChange={onCarouselChange}
-                carouselInnerSelection={carouselInnerSelection}
-                onCarouselInnerSelectionChange={onCarouselInnerSelectionChange}
-                onClickRevealChange={onClickRevealChange}
-                clickRevealInnerSelection={clickRevealInnerSelection}
-                onClickRevealInnerSelectionChange={onClickRevealInnerSelectionChange}
-                onPopupChange={onPopupChange}
-                popupInnerSelection={popupInnerSelection}
-                onPopupInnerSelectionChange={onPopupInnerSelectionChange}
-                onHotspotChange={onHotspotChange}
-                hotspotInnerSelection={hotspotInnerSelection}
-                onHotspotInnerSelectionChange={onHotspotInnerSelectionChange}
-                onTimelineChange={onTimelineChange}
-                timelineInnerSelection={timelineInnerSelection}
-                onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
-                onDiagramaChange={onDiagramaChange}
-                onRemoveBlock={onRemoveBlock}
-                onDuplicateBlock={onDuplicateBlock}
-                onCopyBlock={onCopyBlock}
-                onToggleCanvasLock={onToggleCanvasLock}
-                onResponse={onResponse}
-                variant={variant}
-                liveSocket={liveSocket}
-                torneoSocket={torneoSocket}
-                viewerStudentId={viewerStudentId}
-                viewerStudentName={viewerStudentName}
-                viewerClassId={viewerClassId}
-                isThumbnail={isThumbnail}
-              />
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const BLOCK_TOOLBAR_GAP_PX = 4;
 
@@ -1318,73 +602,89 @@ function BlockNode({
 
   useBlockAnimations(blockRef, block.animaciones, isViewerMode);
 
+  function renderColumnInnerBlock(innerBlock: Block, colIdx: number, blockIdx: number) {
+    const id = `${pathPrefix}-${colIdx}-${blockIdx}`;
+    const isInnerSelected = editorMode && (
+      selectedBlockIds && selectedBlockIds.length > 0
+        ? selectedBlockIds.includes(id)
+        : selectedId === id
+    );
+    return (
+      <BlockNode
+        key={id}
+        block={innerBlock}
+        blockId={id}
+        slideId={slideId}
+        isSelected={isInnerSelected}
+        modo={modo}
+        selectedId={selectedId}
+        selectedBlockIds={selectedBlockIds}
+        onClick={(e) => onBlockClick(id, e)}
+        onBlockClick={onBlockClick}
+        pathPrefix={id}
+        onActivityChange={onActivityChange}
+        onFlipCardsChange={onFlipCardsChange}
+        flipCardsInnerSelection={flipCardsInnerSelection}
+        onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
+        onTabsChange={onTabsChange}
+        tabsInnerSelection={tabsInnerSelection}
+        onTabsInnerSelectionChange={onTabsInnerSelectionChange}
+        onCarouselChange={onCarouselChange}
+        carouselInnerSelection={carouselInnerSelection}
+        onCarouselInnerSelectionChange={onCarouselInnerSelectionChange}
+        onClickRevealChange={onClickRevealChange}
+        clickRevealInnerSelection={clickRevealInnerSelection}
+        onClickRevealInnerSelectionChange={onClickRevealInnerSelectionChange}
+        onPopupChange={onPopupChange}
+        popupInnerSelection={popupInnerSelection}
+        onPopupInnerSelectionChange={onPopupInnerSelectionChange}
+        onHotspotChange={onHotspotChange}
+        hotspotInnerSelection={hotspotInnerSelection}
+        onHotspotInnerSelectionChange={onHotspotInnerSelectionChange}
+        onTimelineChange={onTimelineChange}
+        timelineInnerSelection={timelineInnerSelection}
+        onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
+        onDiagramaChange={onDiagramaChange}
+        onRemoveBlock={onRemoveBlock}
+        onDuplicateBlock={onDuplicateBlock}
+        onCopyBlock={onCopyBlock}
+        onToggleCanvasLock={onToggleCanvasLock}
+        onResponse={onResponse}
+        variant={variant}
+        liveSocket={liveSocket}
+        torneoSocket={torneoSocket}
+        viewerStudentId={viewerStudentId}
+        viewerStudentName={viewerStudentName}
+        viewerClassId={viewerClassId}
+        isThumbnail={isThumbnail}
+      />
+    );
+  }
+
+  function primitiveRuntimeConfig(): PrimitiveRuntimeConfig {
+    if (block.tipo === 'texto') {
+      return editorMode
+        ? {
+            isEditing: isTextEditing,
+            onCommit: onEditCommit ? (text) => onEditCommit(blockId, text) : undefined,
+            onDiscard: onEditCancel,
+          }
+        : {};
+    }
+    if (block.tipo === 'imagen') {
+      return { forceFill: isResizing };
+    }
+    if (block.tipo === 'video') {
+      return { isThumbnail };
+    }
+    if (block.tipo === 'columnas') {
+      return { renderInnerBlock: renderColumnInnerBlock };
+    }
+    return {};
+  }
+
   function renderContent() {
     switch (block.tipo) {
-      case 'texto': {
-        const def = elementRegistry.obtener<
-          TextBlock,
-          { isEditing?: boolean; onCommit?: (text: string) => void; onDiscard?: () => void }
-        >(block.tipo);
-        if (def) {
-          return editorMode ? (
-            <def.Editor
-              estado={block}
-              config={{
-                isEditing: isTextEditing,
-                onCommit: onEditCommit ? (text) => onEditCommit(blockId, text) : undefined,
-                onDiscard: onEditCancel,
-              }}
-              onChange={() => {}}
-            />
-          ) : (
-            <def.Viewer estado={block} config={{}} />
-          );
-        }
-        return (
-          <RenderText
-            block={block}
-            modo={modo}
-            isEditing={isTextEditing}
-            onCommit={onEditCommit ? (text) => onEditCommit(blockId, text) : undefined}
-            onDiscard={onEditCancel}
-          />
-        );
-      }
-      case 'imagen': {
-        const def = elementRegistry.obtener<ImageBlock, { forceFill?: boolean }>(block.tipo);
-        if (def) {
-          return editorMode ? (
-            <def.Editor estado={block} config={{ forceFill: isResizing }} onChange={() => {}} />
-          ) : (
-            <def.Viewer estado={block} config={{ forceFill: isResizing }} />
-          );
-        }
-        return <RenderImage block={block} forceFill={isResizing} />;
-      }
-      case 'video': {
-        const def = elementRegistry.obtener<VideoBlock, { isThumbnail?: boolean; editorMode?: boolean }>(
-          block.tipo,
-        );
-        if (def) {
-          return editorMode ? (
-            <def.Editor estado={block} config={{ isThumbnail, editorMode }} onChange={() => {}} />
-          ) : (
-            <def.Viewer estado={block} config={{ isThumbnail, editorMode }} />
-          );
-        }
-        return <RenderVideo block={block} isThumbnail={isThumbnail} editorMode={editorMode} />;
-      }
-      case 'audio': {
-        const def = elementRegistry.obtener<AudioBlock, Record<string, unknown>>(block.tipo);
-        if (def) {
-          return editorMode ? (
-            <def.Editor estado={block} config={{}} onChange={() => {}} />
-          ) : (
-            <def.Viewer estado={block} config={{}} />
-          );
-        }
-        return <RenderAudio block={block} />;
-      }
       case 'actividad':
         return activityBlockForRender ? (
           <RenderActivity
@@ -1406,39 +706,6 @@ function BlockNode({
             viewerClassId={viewerClassId}
           />
         ) : null;
-      case 'codigo': {
-        const def = elementRegistry.obtener<CodeBlock, Record<string, unknown>>(block.tipo);
-        if (def) {
-          return editorMode ? (
-            <def.Editor estado={block} config={{}} onChange={() => {}} />
-          ) : (
-            <def.Viewer estado={block} config={{}} />
-          );
-        }
-        return <RenderCode block={block} />;
-      }
-      case 'cita': {
-        const def = elementRegistry.obtener<QuoteBlock, Record<string, unknown>>(block.tipo);
-        if (def) {
-          return editorMode ? (
-            <def.Editor estado={block} config={{}} onChange={() => {}} />
-          ) : (
-            <def.Viewer estado={block} config={{}} />
-          );
-        }
-        return <RenderQuote block={block} />;
-      }
-      case 'separador': {
-        const def = elementRegistry.obtener<DividerBlock, Record<string, unknown>>(block.tipo);
-        if (def) {
-          return editorMode ? (
-            <def.Editor estado={block} config={{}} onChange={() => {}} />
-          ) : (
-            <def.Viewer estado={block} config={{}} />
-          );
-        }
-        return <RenderDivider block={block} />;
-      }
       // TODO(migración-etapa-5): retirar el dispatch legacy de clip-group en slide-renderer.tsx
       // al conectar ElementRegistry. El bloque está en `@lumina/element-kit`
       // (`clipGroupDefinition`, E4.3) y el editor de nodos Paper.js en
@@ -1668,50 +935,16 @@ function BlockNode({
         ) : (
           <DiagramaViewer block={block} isThumbnail={isThumbnail} />
         );
-      case 'columnas':
-        return (
-          <RenderColumns
-            block={block}
-            slideId={slideId}
-            modo={modo}
-            selectedId={selectedId}
-            selectedBlockIds={selectedBlockIds}
-            onBlockClick={onBlockClick}
-            pathPrefix={pathPrefix}
-            onActivityChange={onActivityChange}
-            onFlipCardsChange={onFlipCardsChange}
-            flipCardsInnerSelection={flipCardsInnerSelection}
-            onFlipCardsInnerSelectionChange={onFlipCardsInnerSelectionChange}
-            onTabsChange={onTabsChange}
-            tabsInnerSelection={tabsInnerSelection}
-            onTabsInnerSelectionChange={onTabsInnerSelectionChange}
-            onCarouselChange={onCarouselChange}
-            carouselInnerSelection={carouselInnerSelection}
-            onCarouselInnerSelectionChange={onCarouselInnerSelectionChange}
-            onClickRevealChange={onClickRevealChange}
-            clickRevealInnerSelection={clickRevealInnerSelection}
-            onClickRevealInnerSelectionChange={onClickRevealInnerSelectionChange}
-            onPopupChange={onPopupChange}
-            popupInnerSelection={popupInnerSelection}
-            onPopupInnerSelectionChange={onPopupInnerSelectionChange}
-            onHotspotChange={onHotspotChange}
-            hotspotInnerSelection={hotspotInnerSelection}
-            onHotspotInnerSelectionChange={onHotspotInnerSelectionChange}
-            onTimelineChange={onTimelineChange}
-            timelineInnerSelection={timelineInnerSelection}
-            onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
-            onDiagramaChange={onDiagramaChange}
-            onRemoveBlock={onRemoveBlock}
-            onResponse={onResponse}
-            variant={variant}
-            liveSocket={liveSocket}
-            torneoSocket={torneoSocket}
-            viewerStudentId={viewerStudentId}
-            viewerStudentName={viewerStudentName}
-            viewerClassId={viewerClassId}
-            isThumbnail={isThumbnail}
-          />
+      default: {
+        const def = elementRegistry.obtener<Block, PrimitiveRuntimeConfig>(block.tipo);
+        if (!def) return null;
+        const config = primitiveRuntimeConfig();
+        return editorMode ? (
+          <def.Editor estado={block} config={config} onChange={() => undefined} />
+        ) : (
+          <def.Viewer estado={block} config={config} />
         );
+      }
     }
   }
 

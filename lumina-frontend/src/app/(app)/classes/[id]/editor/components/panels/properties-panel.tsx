@@ -21,14 +21,10 @@ import type {
   TopoActivity,
   HistoriaRamificadaActivity,
   FlipCardsWidget,
-  DividerBlock,
-  ImageBlock,
   TabsWidget,
   CarouselWidget,
   ClickRevealWidget,
   TimelineWidget,
-  TextBlock,
-  VideoBlock,
 } from '@/types/slide.types';
 import { ClasificarProperties } from '@/components/activities/clasificar/clasificar-properties';
 import { MemoriaProperties } from '@/components/activities/memoria/memoria-properties';
@@ -135,50 +131,12 @@ import { RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import { AnimationPanel } from '@/components/animations/animation-panel';
-import { TypographyInspector } from '@/components/editor/typography-inspector';
 import type { Animacion, TransicionSlide } from '@/types/animation.types';
-import {
-  isTypographySizeOnlyPatch,
-  TEXT_BLOCK_FONT_SIZE_MAX,
-  TEXT_BLOCK_FONT_SIZE_MIN,
-  textBlockPatchFromTypography,
-  typographyFromTextBlock,
-} from '@/lib/typography';
 
 const DEBOUNCE_MS = 500;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function parseBorderPx(s?: string): number {
-  const m = s?.match(/(\d+)/);
-  return m ? Math.min(50, Math.max(0, parseInt(m[1]!, 10))) : 0;
-}
-
-function toHexColor(value: string | undefined, fallback: string): string {
-  if (value && /^#[0-9A-Fa-f]{6}$/.test(value)) return value;
-  return fallback;
-}
-
-function readFileAsDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error ?? new Error('read'));
-    reader.readAsDataURL(file);
-  });
-}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
