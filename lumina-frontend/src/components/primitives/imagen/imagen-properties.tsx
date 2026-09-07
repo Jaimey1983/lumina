@@ -3,17 +3,17 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ImageBlock, Block } from '@lumina/types/slide';
 import { toast } from 'sonner';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Label } from '@lumina/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Switch } from '@lumina/ui/switch';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 
 export function parseBorderPx(s?: string): number {
   if (!s) return 0;

@@ -49,12 +49,12 @@ import {
   CardHeading,
   CardTitle,
   CardToolbar,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+} from '@lumina/ui/card';
+import { Badge } from '@lumina/ui/badge';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import { cn } from '@/lib/utils';
-import { PageBanner } from '@/components/ui/page-banner';
+import { PageBanner } from '@lumina/ui/page-banner';
 
 // ─── Styling constants ────────────────────────────────────────────────────────
 

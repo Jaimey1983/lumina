@@ -9,11 +9,11 @@ import {
 
 import type { Block, FlipCard, FlipCardsWidget } from '@lumina/types/slide';
 import { createDefaultFlipCard } from '@/lib/flip-cards-defaults';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Toggle } from '@/components/ui/toggle';
+import { Button } from '@lumina/ui/button';
+import { Checkbox } from '@lumina/ui/checkbox';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
+import { Toggle } from '@lumina/ui/toggle';
 
 import {
   DEFAULT_FLIP_CARDS_CONFIG,

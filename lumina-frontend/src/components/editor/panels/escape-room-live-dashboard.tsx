@@ -11,9 +11,9 @@ import {
   type EscapeRoomRoomStatus,
   type EscapeRoomTeamPublic,
 } from '@/lib/escape-room-live.types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import { cn } from '@/lib/utils';
 import type { EscapeRoomActivity } from '@lumina/types/slide';
 

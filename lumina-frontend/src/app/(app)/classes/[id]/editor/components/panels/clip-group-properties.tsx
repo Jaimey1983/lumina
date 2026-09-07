@@ -2,18 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
+} from '@lumina/ui/select';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
+import { Switch } from '@lumina/ui/switch';
 import {
   clipShapeLabel,
   clampClipImageOffsetsForBlock,

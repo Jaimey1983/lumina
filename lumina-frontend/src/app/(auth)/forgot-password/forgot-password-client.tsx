@@ -7,8 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ChevronLeft, MailCheck } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
 import {
   Form,
   FormControl,
@@ -16,7 +16,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@lumina/ui/form';
 
 const schema = z.object({
   email: z.string().email('Ingresa un email válido'),

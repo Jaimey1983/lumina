@@ -30,7 +30,7 @@ import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import {
   Dialog,
   DialogBody,
@@ -38,19 +38,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@lumina/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '@lumina/ui/dropdown-menu';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
+import { Separator } from '@lumina/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lumina/ui/tabs';
 import { cn } from '@/lib/utils';
 import {
   formatHistoryWhen,

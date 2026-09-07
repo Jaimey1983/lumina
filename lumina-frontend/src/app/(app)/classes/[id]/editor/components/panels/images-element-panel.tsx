@@ -6,9 +6,9 @@ import { toast } from 'sonner';
 
 import type { Block } from '@lumina/types/slide';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 
 interface Props {
   onInsert: (block: Block) => Promise<boolean>;

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import type { VideoBlock, Block } from '@lumina/types/slide';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
+import { Label } from '@lumina/ui/label';
+import { Input } from '@lumina/ui/input';
+import { Toggle } from '@lumina/ui/toggle';
 
 export interface VideoPropertiesProps {
   block: VideoBlock;

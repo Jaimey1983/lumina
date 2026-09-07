@@ -9,8 +9,8 @@ import { z } from 'zod';
 import { isAxiosError } from 'axios';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
 import {
   Form,
   FormControl,
@@ -18,8 +18,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from '@lumina/ui/form';
+import { Alert, AlertDescription } from '@lumina/ui/alert';
 
 const loginSchema = z.object({
   email: z.string().email('Ingresa un email válido'),

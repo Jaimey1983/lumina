@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@lumina/ui/tooltip';
 
 const HEADER_HEIGHT = "60px";
 const HEADER_HEIGHT_MOBILE = "56px";

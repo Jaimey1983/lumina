@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { Compass, Plus, Sparkles, Trash2, BookOpen, Check } from 'lucide-react';
 import type { ClassNarrativeMeta } from '@lumina/types/slide';
 import { normalizeClassNarrativeMeta } from '@/lib/class-narrativa';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Textarea } from '@lumina/ui/textarea';
+import { Badge } from '@lumina/ui/badge';
 import { toast } from 'sonner';
 
 interface NarrativaPanelProps {

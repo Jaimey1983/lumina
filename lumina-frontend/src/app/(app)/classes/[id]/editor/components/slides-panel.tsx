@@ -49,19 +49,19 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Skeleton } from '@/components/ui/skeleton';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+} from '@lumina/ui/context-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@lumina/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { backgroundToCssStyle, normalizeBackground } from '@/lib/slide-background';
 import { CORE_SLIDE_LAYOUTS, type CoreSlideLayoutKey } from './templates-panel';

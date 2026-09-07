@@ -22,13 +22,13 @@ import type {
 
 } from '@lumina/types/widget';
 
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@lumina/ui/checkbox';
 
-import { Input } from '@/components/ui/input';
+import { Input } from '@lumina/ui/input';
 
-import { Label } from '@/components/ui/label';
+import { Label } from '@lumina/ui/label';
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
 
 import { resolveSlideLayoutId, WIDGET_LAYOUTS } from '@/components/widgets/shared/widget-layouts';
 

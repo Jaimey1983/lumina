@@ -21,17 +21,17 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 
 import type { Feedback, QuizLayoutVariant, QuizMultiple, QuizOption, QuizPregunta } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+} from '@lumina/ui/select';
+import { Switch } from '@lumina/ui/switch';
 import { cn } from '@/lib/utils';
 import { normalizarQuizMultiple } from '@/lib/class-slide-normalize';
 

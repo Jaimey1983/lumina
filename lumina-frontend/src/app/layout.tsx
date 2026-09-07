@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Bricolage_Grotesque } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@lumina/ui/sonner';
 import { AuthProvider } from '@/contexts/auth-context';
 import { QueryProvider } from '@/providers/query-provider';
 import { ReactNode, Suspense } from 'react';

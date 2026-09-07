@@ -54,7 +54,7 @@ import {
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { remintBlockChildIds } from '@/components/widgets/shared/widget-clone';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@lumina/ui/skeleton';
 import {
   SlideEditorChrome,
   SlideInsertionToolbar,

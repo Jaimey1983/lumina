@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,9 +11,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from '@lumina/ui/command';
+import { Label } from '@lumina/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
 import { allGoogleFontFamilies, FONT_CATALOG, fontsGroupedByCategory, resolveFontFamily } from '@/lib/font-catalog';
 import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
 import { readRecentFonts, rememberRecentFont } from '@/lib/font-recent';

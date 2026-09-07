@@ -3,9 +3,9 @@
 import React, { useCallback } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import type { EmparejaLado, MatchPair, MatchPairs } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@lumina/ui/button';
+import { Label } from '@lumina/ui/label';
+import { Textarea } from '@lumina/ui/textarea';
 import {
   EMPAREJAR_MAX_PARES,
   EMPAREJAR_MIN_PARES,

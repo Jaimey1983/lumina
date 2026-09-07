@@ -15,7 +15,7 @@ import {
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Background, Block } from '@lumina/types/slide';
 import type { WidgetTipo } from '@lumina/types/widget';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 import { FlyoutLeftPanels } from './panels/flyout-left-panels';
 import type { LeftPanelId } from './icon-rail';

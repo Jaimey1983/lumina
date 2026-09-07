@@ -3,10 +3,10 @@
 import type { Block, TabsWidget } from '@lumina/types/slide';
 import type { WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { resizeTabsFichas } from '@/lib/tabs-defaults';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Checkbox } from '@lumina/ui/checkbox';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-gallery';
 import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
 

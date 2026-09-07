@@ -15,7 +15,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import type { Animacion } from '@lumina/types/animation';
 import { createDefaultAnimacion } from '@/lib/animation-defaults';
 import { AnimationItem } from './animation-item';

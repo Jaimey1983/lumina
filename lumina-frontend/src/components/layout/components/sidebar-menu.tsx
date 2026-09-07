@@ -5,8 +5,8 @@ import {
   AccordionMenuGroup,
   AccordionMenuItem,
   AccordionMenuLabel,
-} from '@/components/ui/accordion-menu';
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@lumina/ui/accordion-menu';
+import { ScrollArea } from "@lumina/ui/scroll-area";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';

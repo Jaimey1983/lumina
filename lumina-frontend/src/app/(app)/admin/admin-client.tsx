@@ -12,7 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
-import { PageBanner } from '@/components/ui/page-banner';
+import { PageBanner } from '@lumina/ui/page-banner';
 import { useAuth } from '@/hooks/use-auth';
 import {
   useAdminUserAction,
@@ -27,11 +27,11 @@ import {
   useTrustedDomains,
   type AdminUser,
 } from '@/hooks/api/use-admin';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@lumina/ui/badge';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lumina/ui/tabs';
 import {
   Table,
   TableBody,
@@ -39,7 +39,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@lumina/ui/table';
 
 function isAdminRole(role?: string) {
   const r = role?.toUpperCase();

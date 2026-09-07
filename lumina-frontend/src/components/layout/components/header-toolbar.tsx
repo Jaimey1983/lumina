@@ -17,15 +17,15 @@ import {
   AvatarImage,
   AvatarIndicator,
   AvatarStatus,
-} from '@/components/ui/avatar';
+} from '@lumina/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+} from '@lumina/ui/dropdown-menu';
+import { Button } from '@lumina/ui/button';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
 

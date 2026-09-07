@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import type { DividerBlock, Block } from '@lumina/types/slide';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Label } from '@lumina/ui/label';
+import { Input } from '@lumina/ui/input';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 
 export function toHexColor(color?: string, fallback = '#64748b'): string {
   if (!color) return fallback;

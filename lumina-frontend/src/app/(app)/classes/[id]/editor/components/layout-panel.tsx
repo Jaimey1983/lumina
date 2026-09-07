@@ -1,7 +1,7 @@
 'use client';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@lumina/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { getSlideContentRecord } from '@/lib/class-slide-normalize';
 import { SLIDE_LAYOUT_ORDER, type SlidePersistedLayoutKey } from './templates-panel';

@@ -22,9 +22,9 @@ import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus, Trash2 } from 'luc
 
 import type { Background, Block, EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import {
   ESCAPE_ROOM_INTENTOS_DEFAULT,
   ESCAPE_ROOM_INTENTOS_ILIMITADOS,

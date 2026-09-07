@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumina/types/slide';
 import { diagramaToGraphModel } from './diagrama-bridge';
 import { VennSvg } from './venn-svg';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const GraphCanvas = dynamic(

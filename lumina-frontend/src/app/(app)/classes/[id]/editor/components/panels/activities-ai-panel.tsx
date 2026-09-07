@@ -4,16 +4,16 @@ import { useState } from 'react';
 import { Sparkles, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 import { useGenerateActivity, type AiActivityType } from '@/hooks/api/use-ai';
 
 import {

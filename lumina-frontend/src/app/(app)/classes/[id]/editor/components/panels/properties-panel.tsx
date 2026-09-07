@@ -128,10 +128,10 @@ import {
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
 import { isBlockCanvasPositionable, withRotation } from '@/hooks/use-block-drag';
 import { RotateCcw, RotateCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { cn } from '@/lib/utils';
 import { AnimationPanel } from '@/components/animations/animation-panel';
 import type { Animacion, TransicionSlide } from '@lumina/types/animation';

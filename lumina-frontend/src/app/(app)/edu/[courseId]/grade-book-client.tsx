@@ -13,10 +13,10 @@ import {
 import { toast } from 'sonner';
 
 import { GradeScaleBadge, getColombianGradeScale } from '@/components/grade-scale-badge';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import { PageBanner } from '@/components/ui/page-banner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
+import { PageBanner } from '@lumina/ui/page-banner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@lumina/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@lumina/ui/table';
 import { useAuth } from '@/hooks/use-auth';
 import { useAutonomousResults, useUpdateAutonomousScore } from '@/hooks/api/use-autonomous-results';
 import { useAutonomousSessions } from '@/hooks/api/use-autonomous-sessions';

@@ -42,10 +42,10 @@
     "./editor-activities": "./src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
   },
   "scripts": {
-    "predev": "pnpm --filter @lumina/types build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
+    "predev": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "dev": "next dev --turbopack --port 3001",
     "dev:webpack": "next dev --port 3001",
-    "prebuild": "pnpm --filter @lumina/types build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
+    "prebuild": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@lumina/types": "workspace:*",
+    "@lumina/ui": "workspace:*",
     "@lumina/scoring": "workspace:*",
     "@lumina/element-kit-core": "workspace:*",
     "@lumina/element-kit": "workspace:*",

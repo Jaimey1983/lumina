@@ -2,7 +2,7 @@
 
 import type { Block, ClickRevealWidget } from '@lumina/types/slide';
 import type { ClickRevealEfecto } from '@lumina/types/widget';
-import { Toggle } from '@/components/ui/toggle';
+import { Toggle } from '@lumina/ui/toggle';
 import {
   WidgetAppearanceSection,
   WidgetAppearanceStack,

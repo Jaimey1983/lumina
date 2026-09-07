@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
 import {
   clampFontSize,
   commitFontSizeDraft,

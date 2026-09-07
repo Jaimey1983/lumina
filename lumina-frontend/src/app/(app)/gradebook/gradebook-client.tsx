@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { AlertCircle, BookOpen, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { PageBanner } from '@/components/ui/page-banner';
+import { PageBanner } from '@lumina/ui/page-banner';
 import { useCourses } from '@/hooks/api/use-courses';
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import {
@@ -26,11 +26,11 @@ import {
   CardHeader,
   CardHeading,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+} from '@lumina/ui/card';
+import { Badge } from '@lumina/ui/badge';
+import { Button } from '@lumina/ui/button';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import {
   Dialog,
   DialogBody,
@@ -38,7 +38,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@lumina/ui/dialog';
 import {
   Form,
   FormControl,
@@ -46,9 +46,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from '@lumina/ui/form';
+import { Input } from '@lumina/ui/input';
+import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@/lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────

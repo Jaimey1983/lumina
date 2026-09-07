@@ -1,7 +1,7 @@
 'use client';
 
 import type { Block, FlipCard, FlipCardsWidget } from '@lumina/types/slide';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@lumina/ui/checkbox';
 
 import type { FlipCardsCaraLado, FlipCardsInnerSelection } from './flip-cards-config';
 import { resolveCaraVisibilidad } from './flip-cards-card-utils';

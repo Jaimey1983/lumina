@@ -8,8 +8,8 @@ import {
   SheetContent,
   SheetHeader,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+} from '@lumina/ui/sheet';
+import { Button } from '@lumina/ui/button';
 import { SidebarMenu } from './sidebar-menu';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';

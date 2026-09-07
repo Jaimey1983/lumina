@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import type { CodeBlock, Block } from '@lumina/types/slide';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Input } from '@lumina/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 
 const LENGUAJES = [
   { value: 'javascript', label: 'JavaScript' },

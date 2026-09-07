@@ -7,10 +7,10 @@ import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-g
 import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
 import { resolveSlideVisibilidad } from '@/components/widgets/shared/widget-slide-utils';
 import { tabSelectionSlideId } from '@/components/widgets/tabs/tabs-slide-utils';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Checkbox } from '@lumina/ui/checkbox';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 
 import {
   DEFAULT_CAROUSEL_CONFIG,

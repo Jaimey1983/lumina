@@ -3,8 +3,8 @@
 import React, { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Upload, X, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { FileUpload } from '@/components/ui/file-upload'
+import { Button } from '@lumina/ui/button'
+import { FileUpload } from '@lumina/ui/file-upload'
 import { useImportPptx, type SlideImportado } from '@/hooks/api/use-import-pptx'
 
 interface ImportPptxModalProps {

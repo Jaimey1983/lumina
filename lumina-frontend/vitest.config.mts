@@ -12,6 +12,7 @@ const shared = {
   resolve: {
     alias: {
       '@': resolve(root, 'src'),
+      '@lumina/ui': resolve(root, '../packages/ui/src'),
     },
   },
 };

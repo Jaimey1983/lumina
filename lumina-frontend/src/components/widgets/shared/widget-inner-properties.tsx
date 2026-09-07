@@ -7,9 +7,9 @@ import type {
   WidgetSlideContent,
   WidgetSlideInnerSelection,
 } from '@lumina/types/widget';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Checkbox } from '@lumina/ui/checkbox';
+import { Label } from '@lumina/ui/label';
 import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
 import {
   Select,
@@ -17,8 +17,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+} from '@lumina/ui/select';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { WidgetTypographyFields } from '@/components/editor/typography-inspector';
 import {
   applyInlineStyleToWidgetSelection,

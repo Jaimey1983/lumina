@@ -1,14 +1,14 @@
 'use client';
 
-import { Label } from '@/components/ui/label';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+} from '@lumina/ui/select';
+import { Input } from '@lumina/ui/input';
 import type { TransicionSlide } from '@lumina/types/animation';
 import { TRANSICION_PRESETS, createDefaultTransicion } from '@/lib/animation-defaults';
 

@@ -11,9 +11,9 @@ import {
 import { Trash2 } from 'lucide-react';
 
 import type { GradientColorStop } from '@lumina/types/slide';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { cn } from '@/lib/utils';
 import {
   buildLinearGradientCss,

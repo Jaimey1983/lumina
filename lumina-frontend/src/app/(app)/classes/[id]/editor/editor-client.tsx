@@ -165,31 +165,31 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from '@lumina/ui/select';
+import { Button } from '@lumina/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@lumina/ui/dropdown-menu';
 import {
   Dialog,
   DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '@lumina/ui/dialog';
+import { Skeleton } from '@lumina/ui/skeleton';
 import {
   Sheet,
   SheetBody,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@lumina/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
 import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
 import { api } from '@/lib/api';

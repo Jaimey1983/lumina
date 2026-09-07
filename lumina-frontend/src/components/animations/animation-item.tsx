@@ -3,16 +3,16 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+} from '@lumina/ui/select';
+import { Input } from '@lumina/ui/input';
 import type { Animacion, AnimacionTrigger, AnimacionMomento, AnimacionEasing } from '@lumina/types/animation';
 import { ANIMACION_PRESETS } from '@/lib/animation-defaults';
 

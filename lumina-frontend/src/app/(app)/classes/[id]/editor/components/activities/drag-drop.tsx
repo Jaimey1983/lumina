@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, GripVertical, Plus, Trash2, XCircle } from 'lucide-react';
 
 import type { DragDrop, DragDropItem, DragDropZone } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { wrapActivityDraftResponse } from '@lumina/scoring';

@@ -24,11 +24,11 @@ import { useMyGrades } from '@/hooks/api/use-grades';
 import { useMyBadges } from '@/hooks/api/use-badges';
 import { type AuthUser } from '@/contexts/auth-context';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { PageBanner } from '@/components/ui/page-banner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@lumina/ui/badge';
+import { Button } from '@lumina/ui/button';
+import { PageBanner } from '@lumina/ui/page-banner';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import {
   Table,
   TableBody,
@@ -36,7 +36,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@lumina/ui/table';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

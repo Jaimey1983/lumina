@@ -4,7 +4,7 @@ import { forwardRef } from 'react';
 import type { Socket } from 'socket.io-client';
 import { X } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 import type { RightPanelId } from './right-rail';
 import type { ActivityType } from './panels/activities-panel';

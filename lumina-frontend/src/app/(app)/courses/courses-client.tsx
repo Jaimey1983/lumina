@@ -23,11 +23,11 @@ import {
   CardTable,
   CardTitle,
   CardToolbar,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+} from '@lumina/ui/card';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import {
   Table,
   TableBody,
@@ -35,8 +35,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { PageBanner } from '@/components/ui/page-banner';
+} from '@lumina/ui/table';
+import { PageBanner } from '@lumina/ui/page-banner';
 import {
   Dialog,
   DialogBody,
@@ -44,7 +44,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@lumina/ui/dialog';
 import {
   Form,
   FormControl,
@@ -52,7 +52,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@lumina/ui/form';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 

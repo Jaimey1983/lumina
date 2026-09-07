@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@lumina/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

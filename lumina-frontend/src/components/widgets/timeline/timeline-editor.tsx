@@ -13,9 +13,9 @@ import {
 } from '@/components/widgets/shared/widget-editor-utils';
 import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
 import { Camera } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
 
 import styles from './timeline.module.css';
 import { normalizeTimelineWidget, type TimelineInnerSelection } from './timeline-config';

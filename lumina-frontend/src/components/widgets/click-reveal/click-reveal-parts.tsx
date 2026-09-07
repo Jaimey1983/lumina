@@ -11,13 +11,13 @@ import type {
   WidgetSlideContent,
   WidgetSlideTextField,
 } from '@lumina/types/widget';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@lumina/ui/popover';
 import { cn } from '@/lib/utils';
 import { imageFilterStyle } from '@/components/widgets/shared/widget-image-styles';
 import { TabsSlidePanelEditor } from '@/components/widgets/tabs/tabs-slide-panel';

@@ -8,11 +8,11 @@ import {
 } from 'lucide-react';
 
 import type { WidgetAlineacion, WidgetLayoutId } from '@lumina/types/widget';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Toggle } from '@/components/ui/toggle';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
+import { Toggle } from '@lumina/ui/toggle';
 import { TabsLayoutGallery } from '@/components/widgets/tabs/tabs-layout-gallery';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
 

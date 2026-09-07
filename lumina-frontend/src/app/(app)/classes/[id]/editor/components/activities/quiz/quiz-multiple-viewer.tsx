@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Socket } from 'socket.io-client';
 
 import type { QuizMultiple } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 

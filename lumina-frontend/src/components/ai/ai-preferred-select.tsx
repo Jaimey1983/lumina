@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 import type { AiProviderId, AiSettings } from '@/hooks/api/use-ai-settings';
 
 export function describeAiResolvedStatus(settings: AiSettings): string {

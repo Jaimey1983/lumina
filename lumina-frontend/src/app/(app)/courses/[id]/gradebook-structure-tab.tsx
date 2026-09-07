@@ -40,10 +40,10 @@ import {
   type UpdateActivityInput,
 } from '@/hooks/api/use-activities';
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@lumina/ui/button';
+import { Badge } from '@lumina/ui/badge';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import {
   Dialog,
   DialogBody,
@@ -51,7 +51,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@lumina/ui/dialog';
 import {
   Form,
   FormControl,
@@ -59,8 +59,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from '@lumina/ui/form';
+import { Input } from '@lumina/ui/input';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

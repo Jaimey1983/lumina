@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlignCenter, AlignLeft, AlignRight, Loader2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import {
   Dialog,
   DialogBody,
@@ -12,16 +12,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+} from '@lumina/ui/dialog';
+import { Label } from '@lumina/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+} from '@lumina/ui/select';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { FontFamilySelect } from '@/components/editor/font-family-select';
 import { FONT_DEFAULT, resolveFontFamily } from '@/lib/font-catalog';
 import { cn } from '@/lib/utils';

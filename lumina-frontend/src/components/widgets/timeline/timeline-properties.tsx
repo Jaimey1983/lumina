@@ -2,13 +2,13 @@
 
 import type { Block } from '@lumina/types/slide';
 import type { TimelineWidget } from '@lumina/types/widget';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
+import { Checkbox } from '@lumina/ui/checkbox';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
 
 import type { TimelineDisposicionNodos, TimelineVariante } from '@lumina/types/widget';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 
 import { normalizeTimelineWidget, resizeTimelineNodos, type TimelineInnerSelection } from './timeline-config';

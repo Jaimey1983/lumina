@@ -26,8 +26,8 @@ import {
 } from '@/hooks/api/use-autonomous-sessions';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@lumina/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import { SlideNavContext } from '@/components/widgets/shared/slide-nav-context';
 import {
   STATUS_BADGE_STYLE,

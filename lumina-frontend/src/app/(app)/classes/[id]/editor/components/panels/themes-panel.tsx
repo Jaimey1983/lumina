@@ -4,9 +4,9 @@ import { useCallback, useState } from 'react';
 import { Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import { FontFamilySelect } from '@/components/editor/font-family-select';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import {

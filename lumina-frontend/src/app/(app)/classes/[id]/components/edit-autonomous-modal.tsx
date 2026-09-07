@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@lumina/ui/dialog';
 import {
   useCancelAutonomousSession,
   useUpdateAutonomousSession,

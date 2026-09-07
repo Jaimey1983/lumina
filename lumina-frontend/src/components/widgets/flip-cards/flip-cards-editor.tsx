@@ -10,13 +10,13 @@ import {
 import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { FlipCard, FlipCardCara, FlipCardElementPos, FlipCardsWidget } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@lumina/ui/popover';
 import { cn } from '@/lib/utils';
 
 import type {

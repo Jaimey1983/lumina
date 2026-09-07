@@ -40,9 +40,9 @@ import {
   normalizeSala,
   tipoRespuestaLabel,
 } from '@/components/editor/activities/escape-room-editor';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import { ScreenLoader } from '@/components/screen-loader';
 import {
   getSlideContentRecord,

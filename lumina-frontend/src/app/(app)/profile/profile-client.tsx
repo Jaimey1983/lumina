@@ -9,11 +9,11 @@ import { toast } from 'sonner';
 
 import { useAuth } from '@/hooks/use-auth';
 import { getInitials, formatDate } from '@/lib/helpers';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { AvatarUploader } from '@/components/ui/avatar-uploader';
-import { PageBanner } from '@/components/ui/page-banner';
+import { Badge } from '@lumina/ui/badge';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { AvatarUploader } from '@lumina/ui/avatar-uploader';
+import { PageBanner } from '@lumina/ui/page-banner';
 import { isAiStaffRole } from '@/hooks/api/use-ai-settings';
 import { useChangePassword, useUpdateProfile } from '@/hooks/api/use-profile';
 import { apiErrorMessage } from '@/lib/api-error-message';
@@ -25,8 +25,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+} from '@lumina/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@lumina/ui/form';
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: 'Administrador',

@@ -2,7 +2,7 @@
 
 import type { Block } from '@lumina/types/slide';
 import type { TimelineWidget } from '@lumina/types/widget';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@lumina/ui/checkbox';
 import {
   WidgetAppearanceSection,
   WidgetAppearanceStack,

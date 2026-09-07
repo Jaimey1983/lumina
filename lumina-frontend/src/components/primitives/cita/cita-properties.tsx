@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import type { QuoteBlock, Block } from '@lumina/types/slide';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Input } from '@lumina/ui/input';
 
 export interface CitaPropertiesProps {
   block: QuoteBlock;

@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, Trash2, Plus } from 'lucide-react';
 
 import type { LivePoll, PollOption } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Switch } from '@lumina/ui/switch';
 import { cn, seeded01 } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';

@@ -6,9 +6,9 @@ import { useMemo, useState } from 'react';
 import { GitBranch, Loader2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import { PageBanner } from '@/components/ui/page-banner';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
+import { PageBanner } from '@lumina/ui/page-banner';
+import { Skeleton } from '@lumina/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { useCourse } from '@/hooks/api/use-course';
 import {

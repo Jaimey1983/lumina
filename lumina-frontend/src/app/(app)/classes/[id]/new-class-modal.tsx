@@ -7,9 +7,9 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useUpdateClass } from '@/hooks/api/use-classes';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Textarea } from '@lumina/ui/textarea';
 import {
   Dialog,
   DialogBody,
@@ -18,14 +18,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@lumina/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@lumina/ui/select';
 
 // ─── Type ─────────────────────────────────────────────────────────────────────
 

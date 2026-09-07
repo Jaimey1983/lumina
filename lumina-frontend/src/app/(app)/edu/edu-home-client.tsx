@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { BookOpen, ChevronRight, ClipboardList } from 'lucide-react';
 
 import { useCourses } from '@/hooks/api/use-courses';
-import { PageBanner } from '@/components/ui/page-banner';
+import { PageBanner } from '@lumina/ui/page-banner';
 
-import { Alert, AlertContent, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
+import { Card, CardContent } from '@lumina/ui/card';
+import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const courseCardShell =

@@ -5,8 +5,8 @@ import { BarChart, Film, MonitorPlay, QrCode, Table } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { WidgetTipo } from '@lumina/types/widget';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@lumina/ui/scroll-area';
+import { Button } from '@lumina/ui/button';
 import { DraggableWidgetItem } from '../draggable-widget-item';
 import {
   WIDGET_PANEL_GROUP_LABELS,

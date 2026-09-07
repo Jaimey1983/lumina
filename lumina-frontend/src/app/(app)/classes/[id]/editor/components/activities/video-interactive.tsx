@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, Circle, Clock, Play, Trash2, Plus, XCircle } from 'lucide-react';
 
 import type { VideoInteractive, VideoQuestion } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
 import { normalizeVideoSource } from '@/lib/video-url-utils';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';

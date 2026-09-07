@@ -3,6 +3,10 @@
 
 @config "../../tailwind.config.ts";
 
+/* Primitivos shadcn/radix extraídos a @lumina/ui (E7.6.2): quedan fuera de la
+   raíz que Tailwind autodetecta (lumina-frontend/), hay que declararlos. */
+@source "../../../packages/ui/src";
+
 @import 'tw-animate-css';
 
 /** Dark Mode Variant **/

@@ -8,7 +8,7 @@ import {
   EscapeRoomEditor,
   normalizeEscapeRoomActivity,
 } from '@/components/editor/activities/escape-room-editor';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 
 import { useActivityEditor } from './use-activity-editor';

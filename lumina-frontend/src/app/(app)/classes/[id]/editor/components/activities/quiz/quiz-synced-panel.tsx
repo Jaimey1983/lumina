@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 import type { QuizMultiple, QuizPregunta } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 
 export interface QuizSyncedPanelProps {
   classId: string;

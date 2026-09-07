@@ -42,20 +42,20 @@ import {
   sanitizeSlideContentForPersistence,
 } from '@/lib/class-slide-normalize';
 import { SLIDE_TIMER_PER_SLIDE_OPTIONS } from '@/lib/slide-timer-resolve';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { ScrollArea } from '@lumina/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { FileUpload } from '@/components/ui/file-upload';
+} from '@lumina/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lumina/ui/tabs';
+import { Textarea } from '@lumina/ui/textarea';
+import { FileUpload } from '@lumina/ui/file-upload';
 import { cn } from '@/lib/utils';
 import type { WidgetTipo } from '@lumina/types/widget';
 

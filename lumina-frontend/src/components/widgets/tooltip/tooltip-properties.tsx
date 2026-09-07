@@ -3,9 +3,9 @@
 import type { Block } from '@lumina/types/slide';
 import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
+import { Label } from '@lumina/ui/label';
 import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
 import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
 import { mergedTooltipConfig, normalizeTooltipWidget, tooltipFallbackSize } from './tooltip-config';
 import { TOOLTIP_TRIGGER_ICONS } from './tooltip-parts';

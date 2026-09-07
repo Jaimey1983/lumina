@@ -12,8 +12,8 @@ import {
   type PointerEvent,
 } from 'react';
 
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@lumina/ui/input';
+import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@/lib/utils';
 import { sanitizeWidgetHtml } from '@/components/widgets/shared/widget-rich-text';
 

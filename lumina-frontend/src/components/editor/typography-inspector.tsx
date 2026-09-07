@@ -14,13 +14,13 @@ import {
 
 import { FontFamilySelect } from '@/components/editor/font-family-select';
 import { FontSizeInput } from '@/components/editor/font-size-input';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider, SliderThumb } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Toggle } from '@/components/ui/toggle';
+import { Button } from '@lumina/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@lumina/ui/collapsible';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Slider, SliderThumb } from '@lumina/ui/slider';
+import { Switch } from '@lumina/ui/switch';
+import { Toggle } from '@lumina/ui/toggle';
 import {
   applyTypographyPreset,
   isBoldWeight,

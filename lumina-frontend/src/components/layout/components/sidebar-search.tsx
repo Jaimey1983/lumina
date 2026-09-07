@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { Input, InputWrapper } from "@/components/ui/input";
+import { Input, InputWrapper } from "@lumina/ui/input";
 
 export function SidebarSearch() {
   const handleInputChange = () => {};

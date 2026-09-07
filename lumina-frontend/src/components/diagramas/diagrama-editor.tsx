@@ -8,7 +8,7 @@ import { normalizeDiagramaBlock } from './diagrama-defaults';
 import { assignElementoRegion, regionAtPoint } from './diagrama-regions';
 import { VennSvg } from './venn-svg';
 import type { GraphConnectAttempt, GraphNodePositionPatch } from '@/lib/graph-editor';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const GraphCanvas = dynamic(

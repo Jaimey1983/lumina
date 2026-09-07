@@ -6,7 +6,7 @@ import { Download, Play, SkipForward, Square, Trophy } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { TorneoActivity } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
+import { Button } from '@lumina/ui/button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

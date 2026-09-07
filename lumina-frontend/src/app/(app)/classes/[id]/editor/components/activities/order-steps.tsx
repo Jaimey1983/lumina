@@ -21,11 +21,11 @@ import { CSS } from '@dnd-kit/utilities';
 import { Trash2, ChevronUp, ChevronDown, Plus, GripVertical } from 'lucide-react';
 
 import type { OrderSteps, OrderStep } from '@lumina/types/slide';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Switch } from '@lumina/ui/switch';
+import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { useActivityEditor } from './use-activity-editor';

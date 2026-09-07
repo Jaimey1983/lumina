@@ -6,8 +6,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+} from "@lumina/ui/dropdown-menu";
+import { Button } from "@lumina/ui/button";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 

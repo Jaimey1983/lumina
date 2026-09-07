@@ -9,8 +9,8 @@ import { z } from 'zod';
 import { isAxiosError } from 'axios';
 import { CheckCircle2, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
 import {
   Form,
   FormControl,
@@ -18,8 +18,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from '@lumina/ui/form';
+import { Alert, AlertDescription } from '@lumina/ui/alert';
 
 const schema = z
   .object({
