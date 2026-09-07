@@ -728,5 +728,15 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 
 **Redacta las sub-fichas E6.1–E6.x:** Claude Code, al activar E6. **Cierre de E6:** espejo borrado, motor único, fixtures unificadas, CI verde; se redacta la ficha raíz de E7 (quien cierre E6).
 
+##### E6.1 — `@lumina/scoring` dual package (añadir salida CJS, sin tocar consumidores)
+- **Operador:** Claude Code
+- **Estado:** **[en curso: Claude Code]** (2026-09-06; precondición E5 CERRADA + CI verde en `5da2085`).
+- **Precondición:** E5 CERRADA.
+- **Contexto:** `packages/scoring/src/index.ts` es **un solo archivo, sin imports** (funciones puras; los fixtures los cargan los `*.spec.ts`, no el entry). `package.json` hoy: `"type": "module"`, `exports["."] = { types: ./src/index.ts, default: ./src/index.ts }` — frontend (`transpilePackages`) y `@lumina/element-kit` (alias vitest a `src` + `types` para su `tsc`) lo consumen **desde fuente**. El backend (E6.2+, `module: commonjs` / jest CJS) necesita `require('@lumina/scoring')`. E6.1 **solo añade** la condición `require` → build CJS; `import`/`default`/`types` siguen apuntando a `src/index.ts` intactos.
+- **Alcance — PUEDE tocar:** `packages/scoring/**` (nuevo `tsconfig.cjs.json`; `package.json` scripts + `exports`; script que emita `dist/cjs/package.json` con `{"type":"commonjs"}` para que Node lea los `.js` de ese dir como CJS pese al `"type":"module"` del paquete), la entrada del lockfile raíz, y el/los paso(s) `pnpm --filter @lumina/scoring build` de `.github/workflows/ci.yml` (ya existen — solo cambia lo que produce `build`).
+- **Alcance — NO toca:** `lumina-frontend/**`, `lumina-backend/**`, `packages/element-kit*/**`, ningún consumidor. `exports.types` / `exports.import` / `exports.default` **no cambian** (siguen `./src/index.ts`).
+- **Entregable:** `pnpm --filter @lumina/scoring build` emite **ESM** (`dist/index.js` — como hoy) **y CJS** (`dist/cjs/index.js` + `dist/cjs/package.json`). `exports["."]` gana `"require": "./dist/cjs/index.js"`. Prueba: un `*.spec` o un check en `build` que haga `require('node:module').createRequire(...)('@lumina/scoring')` **y** un `import` dinámico, y verifique que ambos exponen `evaluateActivityResponse` / `ACTIVITY_SCORING` con la misma forma. `pnpm --filter @lumina/scoring test` sigue verde (93+). `pnpm --filter lumina-frontend build` y `pnpm --filter @lumina/element-kit build && test` **sin cambios** (no consumen `require`). Verif: `pnpm install --frozen-lockfile && pnpm --filter @lumina/scoring build && pnpm --filter @lumina/scoring test && pnpm --filter @lumina/scoring lint && pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter lumina-frontend build`.
+- **Cierre:** no aplica Regla 4 (no se borra nada; el espejo backend se retira en E6.3). Commit sugerido: `feat(scoring): salida CJS dual para consumo desde lumina-backend`.
+
 #### E7 — Retirar todo registro/switch/archivo viejo sin referencias · bloqueado por E6
 Ficha raíz: quien cierre E6.
