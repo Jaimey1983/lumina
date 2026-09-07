@@ -778,7 +778,7 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 
 ##### E6.4 — una sola fixture de scoring (borrar las 2 copias)
 - **Operador:** Claude Code
-- **Estado:** **hecho** (`<pendiente>`, 2026-09-06) — 1 sola fixture: `packages/scoring/src/activity-scoring.fixtures.json`, expuesta como `@lumina/scoring/fixtures`.
+- **Estado:** **hecho** (`0cb70f8`, 2026-09-06) — 1 sola fixture: `packages/scoring/src/activity-scoring.fixtures.json`, expuesta como `@lumina/scoring/fixtures`.
   - `packages/scoring/package.json` `exports` += `"./fixtures": "./src/activity-scoring.fixtures.json"` (string — JSON no depende de `"type"`).
   - **frontend:** `lib/activity-scoring.spec.ts` + `hooks/use-gradebook.spec.ts` → `import fixtures from '@lumina/scoring/fixtures'`. **Borrada** `lumina-frontend/src/lib/activity-scoring.fixtures.json`.
   - **backend:** `tsconfig.json` += `"resolveJsonModule": true` + `paths` `@lumina/scoring/fixtures` → `../packages/scoring/src/activity-scoring.fixtures.json` (para el type-check de `ts-jest`, que `moduleResolution:node` clásico no resuelve por `exports`); `package.json` `jest.moduleNameMapper` += `^@lumina/scoring/fixtures$` (para el runtime). Los 3 specs (`activity-scoring.spec.ts`, `class-result-persist.helper.spec.ts`, `class-results-gradebook.helper.spec.ts`) pasan de `readFileSync(join(__dirname, …))` a `import fixturesJson from '@lumina/scoring/fixtures'`. **Borrada** `lumina-backend/src/classes/class-results-gradebook.fixtures.json`.
