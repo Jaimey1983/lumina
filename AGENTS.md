@@ -1,6 +1,18 @@
 # Lumina — Convenciones de trabajo (fuente única)
 
-Este archivo es la **única** fuente de verdad para cómo se trabaja en este repositorio mientras dure la migración a la Estructura Única (`@lumina/element-kit`). Lo leen, sin excepción y con el mismo contenido:
+> **Migración a la Estructura Única — TERMINADA (2026-09-06, E7.7).** Las 7 etapas
+> están cerradas: `@lumina/element-kit` + `@lumina/element-kit-core` + `@lumina/scoring`
+> son el motor único de elementos y puntuación; el canvas despacha 100% por
+> `elementRegistry`; `slide-renderer.tsx` sin `switch` legacy; los registros viejos
+> (`widget-registry.ts`, `activity-registry.ts`, espejos de scoring) borrados.
+> **Deuda residual documentada:** E7.4 — `element-kit-classic.ts` + el borde
+> `@lumina/element-kit → lumina-frontend` (~230 componentes en el frontend que el
+> kit envuelve vía 37 shims); su inversión total (vía A) es una mejora futura, no
+> bloqueante. Ver Tablero de pasos, etapa E7.
+>
+> Este archivo sigue siendo la **fuente única** de convenciones del repo.
+
+Este archivo es la **única** fuente de verdad para cómo se trabaja en este repositorio. Lo leen, sin excepción y con el mismo contenido:
 
 - **Claude Code** — vía `CLAUDE.md` en la raíz (`@AGENTS.md`) y en cada paquete.
 - **Cursor** — de forma nativa como regla base, más `.cursor/rules/*.mdc` para reglas ya existentes con alcance específico (editor de canvas). Ningún `.mdc` nuevo redefine lo que dice este archivo — solo puede apuntar aquí.
@@ -796,7 +808,7 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 - **Entregable:** `find . -name "*.fixtures.json" -path "*scoring*" -o -name "class-results-gradebook.fixtures.json"` → **solo** `packages/scoring/src/activity-scoring.fixtures.json`. `pnpm --filter @lumina/scoring test` · `pnpm --filter lumina-frontend test:unit` · `pnpm --filter lumina-backend test` — todos verdes, sin bajar conteo. Verif: `pnpm --filter @lumina/scoring build && test && pnpm --filter lumina-frontend test:unit && pnpm --filter lumina-backend build && test && pnpm --filter @lumina/element-kit test`.
 - **Cierre (Regla 4):** 2 copias de la fixture **borradas**; `@lumina/scoring/fixtures` es la única. Nota para E7: `lib/activity-scoring.spec.ts` (frontend) duplica cobertura de `packages/scoring/src/scoring.spec.ts` — candidato a borrar en E7. Commit sugerido: `refactor(scoring): fixture única vía @lumina/scoring/fixtures`.
 
-#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · **RAÍZ REDACTADA** (Claude Code, 2026-09-06, al cerrar E6) · **ÚLTIMA ETAPA** · **E7.1 hecho** (`8d34f8a`) · **E7.2 hecho** (`a21964b`, `widget-registry.ts` borrado — `WidgetTipo`/`WIDGET_TIPOS`/`isWidgetTipo` → `@/types/widget.types`; `WidgetBlock`/`isCaptivateWidgetBlock` → `@/types/slide.types`; `WIDGET_LABELS` retirado, nombre desde `catalogo`; `LUM-E7-WIDGETS` cerrado) · **E7.3 hecho** (`1dca549`) · **E7.5 hecho** (`d7fde16`) · **E7.4 diferido** (tras/dentro de la vía A futura) · **E7.6 hecho** (`e632bc1`, vía C — `ignoreWorkspaceCycles`, guard de shims endurecido, `pnpm -r` verde) · **E7.7 [en curso: Claude Code]** (barrido final + redondeo + CI actions)
+#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · **RAÍZ REDACTADA** (Claude Code, 2026-09-06, al cerrar E6) · **ÚLTIMA ETAPA** · **E7.1 hecho** (`8d34f8a`) · **E7.2 hecho** (`a21964b`, `widget-registry.ts` borrado — `WidgetTipo`/`WIDGET_TIPOS`/`isWidgetTipo` → `@/types/widget.types`; `WidgetBlock`/`isCaptivateWidgetBlock` → `@/types/slide.types`; `WIDGET_LABELS` retirado, nombre desde `catalogo`; `LUM-E7-WIDGETS` cerrado) · **E7.3 hecho** (`1dca549`) · **E7.5 hecho** (`d7fde16`) · **E7.4 diferido** (tras/dentro de la vía A futura) · **E7.6 hecho** (`e632bc1`) · **E7.7 hecho** — barrido final: `lib/activity-scoring.spec.ts` duplicado borrado, redondeo de `grade-calculation` documentado como deliberado, CI actions `checkout`/`setup-node` → `@v5`. **E7 CERRADA · MIGRACIÓN TERMINADA** (2026-09-06). Único residuo: E7.4 (vía A futura).
 
 Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya no tiene razón de existir — registros de metadata, fachadas de re-export, shims, y el bloqueo estructural del grafo de dependencias. Al cerrar E7 no debe quedar ningún `TODO(migración-etapa-N)` abierto ni ningún `ElementDefinition` despachado por un camino que no sea `elementRegistry`.
 
@@ -870,7 +882,13 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 
 ##### E7.7 — barrido final + cierre de la migración
 - **Operador:** Claude Code
-- **Estado:** **[en curso: Claude Code]** (2026-09-06; precondición E7.6 `hecho` + CI verde en `ec4ae08`).
+- **Estado:** **hecho** (`<pendiente>`, 2026-09-06) — barrido final:
+  - `lumina-frontend/src/lib/activity-scoring.spec.ts` **borrado** (88 tests): re-test puro de `@lumina/scoring` que duplicaba `packages/scoring/src/scoring.spec.ts` (92 tests, gate en el job `packages`). Sin `activity-scoring.ts` al lado desde E5.5. `test:unit` del frontend 495→**407** (sin pérdida de cobertura real — el motor se prueba en su paquete).
+  - `grade-calculation.service.ts` `round()` — comentario: la escala de 2 decimales es **deliberada** (nota de período ponderada de Edu, dominio aparte de `notaColombiana`; análisis E6.5). No se unifica.
+  - `.github/workflows/ci.yml` — `actions/checkout@v4`→`@v5`, `actions/setup-node@v4`→`@v5` (Node 24; retira el warning de deprecación). `pnpm/action-setup@v4` se mantiene.
+  - `AGENTS.md` — encabezado actualizado: migración TERMINADA.
+  - Barrido: `grep -rn "TODO(migración-etapa"` → solo `element-kit-classic.ts` (E7.4 diferido). Registros/fachadas/espejos viejos: todos borrados.
+  - **Verif:** `pnpm -r build && lint && test` verde (scoring 92 · backend 243 · element-kit 355 · core ok) · `lumina-frontend` tsc/lint 0/`test:unit` **407/407**/build 17/17.
 - **Precondición:** E7.6 `hecho`.
 - **Contexto:** último paso. Al terminar, la migración a la Estructura Única está cerrada salvo la deuda documentada de E7.4 (`element-kit-classic.ts`, vía A futura).
 - **Alcance — PUEDE tocar:**

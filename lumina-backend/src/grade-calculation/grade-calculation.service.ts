@@ -225,6 +225,13 @@ export class GradeCalculationService {
   }
 
   // ── Helper: redondear a 2 decimales ───────────────────────────────────────
+  //
+  // E7.7: escala DELIBERADAMENTE distinta a `@lumina/scoring` (1 decimal).
+  // Esto es la nota de período PONDERADA de Lumina Edu — suma de aspectos ×
+  // peso, indicadores de desempeño, auto/coevaluación — un dominio aparte de
+  // `notaColombiana` (convertir aciertos→nota de una actividad). Los 2 decimales
+  // dan granularidad para sumas ponderadas; no se unifica con el motor de
+  // scoring de actividades (análisis de E6.5, hoja de ruta Etapa 6).
   private round(value: number | null): number | null {
     if (value === null) return null;
     return Math.round(value * 100) / 100;
