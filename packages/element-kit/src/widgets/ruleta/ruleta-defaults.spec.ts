@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ActivityBlock, RuletaActivity } from '@lumina/types/slide';
 
-import { createDefaultRuletaWidget, normalizeRuletaBlock } from './ruleta-defaults';
+import { createDefaultRuletaWidget, normalizeRuletaBlock } from './ruleta-defaults.js';
 
 const legadoG4: ActivityBlock = {
   tipo: 'actividad',

@@ -1,4 +1,4 @@
-import type { RuletaWidget } from "lumina-frontend/widgets/ruleta";
+import type { RuletaWidget } from "../../widgets/ruleta/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /** Estado del elemento Ruleta = el bloque de widget completo. */

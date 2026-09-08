@@ -2,7 +2,7 @@
 
 import { forwardRef } from 'react';
 
-import { calcularSectores } from './ruleta-config';
+import { calcularSectores } from './ruleta-config.js';
 
 interface RuletaWheelProps {
   items: { texto: string }[];

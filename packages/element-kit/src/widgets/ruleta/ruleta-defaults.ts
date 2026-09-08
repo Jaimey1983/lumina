@@ -6,7 +6,7 @@ import {
   RULETA_COLORES_DEFAULT,
   RULETA_MAX_ITEMS,
   RULETA_MIN_ITEMS,
-} from './ruleta-config';
+} from './ruleta-config.js';
 
 export const DEFAULT_RULETA_DURACION = 3000;
 

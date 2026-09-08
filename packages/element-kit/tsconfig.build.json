@@ -18,9 +18,6 @@
       "lumina-frontend/widgets/flip-cards": [
         "./src/shims/lumina-frontend-flip-cards.d.ts"
       ],
-      "lumina-frontend/widgets/ruleta": [
-        "./src/shims/lumina-frontend-ruleta.d.ts"
-      ],
       "lumina-frontend/widgets/popup": [
         "./src/shims/lumina-frontend-popup.d.ts"
       ],

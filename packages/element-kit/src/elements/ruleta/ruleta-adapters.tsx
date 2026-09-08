@@ -2,7 +2,7 @@ import {
   RuletaEditor as LegacyRuletaEditor,
   RuletaProperties as LegacyRuletaProperties,
   RuletaViewer as LegacyRuletaViewer,
-} from "lumina-frontend/widgets/ruleta";
+} from "../../widgets/ruleta/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

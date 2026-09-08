@@ -28,9 +28,6 @@
       "@/*": [
         "../../lumina-frontend/src/*"
       ],
-      "lumina-frontend/widgets/ruleta": [
-        "../../lumina-frontend/src/components/widgets/ruleta/index.ts"
-      ],
       "lumina-frontend/widgets/popup": [
         "../../lumina-frontend/src/components/widgets/popup/index.ts"
       ],

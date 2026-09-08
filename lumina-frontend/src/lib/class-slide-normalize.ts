@@ -22,7 +22,7 @@ import { normalizeTooltipWidget } from '@lumina/element-kit/widgets/tooltip/tool
 import { normalizeBotonWidget } from '@lumina/element-kit/widgets/boton/boton-defaults';
 import { normalizeContadorWidget } from '@lumina/element-kit/widgets/contador/contador-defaults';
 import { normalizeProgresoWidget } from '@lumina/element-kit/widgets/progreso/progreso-defaults';
-import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
+import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { normalizeFlipCardsWidget } from '@/components/widgets/flip-cards/flip-cards-config';
 import { normalizeTabsWidget } from '@/components/widgets/tabs/tabs-config';
 import { normalizeCarouselWidget } from '@/components/widgets/carousel/carousel-config';

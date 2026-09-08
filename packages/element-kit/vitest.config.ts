@@ -39,10 +39,6 @@ export default defineConfig({
       "lumina-frontend/widgets/tabs": path.resolve(frontendSrc, "components/widgets/tabs/index.ts"),
       "lumina-frontend/widgets/flip-cards": path.resolve(frontendSrc, "components/widgets/flip-cards/index.ts"),
       "@": frontendSrc,
-      "lumina-frontend/widgets/ruleta": path.resolve(
-        frontendSrc,
-        "components/widgets/ruleta/index.ts",
-      ),
       "lumina-frontend/widgets/popup": path.resolve(
         frontendSrc,
         "components/widgets/popup/index.ts",

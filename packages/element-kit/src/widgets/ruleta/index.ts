@@ -6,8 +6,8 @@ export {
   createDefaultRuletaWidget,
   normalizeRuletaBlock,
   ruletaWidgetToActivity,
-} from './ruleta-defaults';
-export { RuletaEditor } from './ruleta-editor';
-export { RuletaViewer } from './ruleta-viewer';
-export { RuletaProperties, type RuletaPropertiesProps } from './ruleta-properties';
-export { RuletaWheel } from './ruleta-wheel';
+} from './ruleta-defaults.js';
+export { RuletaEditor } from './ruleta-editor.js';
+export { RuletaViewer } from './ruleta-viewer.js';
+export { RuletaProperties, type RuletaPropertiesProps } from './ruleta-properties.js';
+export { RuletaWheel } from './ruleta-wheel.js';

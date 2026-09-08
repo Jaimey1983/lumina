@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { RuletaWidget } from '@lumina/types/widget';
 
-import { RULETA_EASING, calcularRotacionHastaGanador } from './ruleta-config';
-import { normalizeRuletaBlock } from './ruleta-defaults';
-import { RuletaWheel } from './ruleta-wheel';
+import { RULETA_EASING, calcularRotacionHastaGanador } from './ruleta-config.js';
+import { normalizeRuletaBlock } from './ruleta-defaults.js';
+import { RuletaWheel } from './ruleta-wheel.js';
 
 interface RuletaViewerProps {
   block: RuletaWidget;

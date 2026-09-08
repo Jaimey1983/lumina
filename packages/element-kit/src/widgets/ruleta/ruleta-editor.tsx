@@ -2,8 +2,8 @@
 
 import type { RuletaWidget } from '@lumina/types/widget';
 
-import { normalizeRuletaBlock } from './ruleta-defaults';
-import { RuletaWheel } from './ruleta-wheel';
+import { normalizeRuletaBlock } from './ruleta-defaults.js';
+import { RuletaWheel } from './ruleta-wheel.js';
 
 interface RuletaEditorProps {
   block: RuletaWidget;

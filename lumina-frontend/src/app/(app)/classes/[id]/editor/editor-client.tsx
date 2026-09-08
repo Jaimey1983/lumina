@@ -83,7 +83,7 @@ import { createDefaultTooltipBlock } from '@lumina/element-kit/widgets/tooltip/t
 import { createDefaultBotonBlock } from '@lumina/element-kit/widgets/boton/boton-defaults';
 import { createDefaultContadorBlock } from '@lumina/element-kit/widgets/contador/contador-defaults';
 import { createDefaultProgresoBlock } from '@lumina/element-kit/widgets/progreso/progreso-defaults';
-import { createDefaultRuletaWidget } from '@/components/widgets/ruleta/ruleta-defaults';
+import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
 import { createDefaultTimelineBlock } from '@/lib/timeline-defaults';
 import { createDefaultClasificar } from '@/lib/clasificar-defaults';

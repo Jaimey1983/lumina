@@ -38,8 +38,8 @@ import { PuzzlePalabrasProperties } from '@/components/activities/puzzle-palabra
 import { EmparejarProperties } from '@/components/activities/emparejar/emparejar-properties';
 import { GlobosProperties } from '@/components/activities/globos/globos-properties';
 import { TopoProperties } from '@/components/activities/topo/topo-properties';
-import { RuletaProperties } from '@/components/widgets/ruleta/ruleta-properties';
-import { normalizeRuletaBlock } from '@/components/widgets/ruleta/ruleta-defaults';
+import { RuletaProperties } from '@lumina/element-kit/widgets/ruleta/ruleta-properties';
+import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { HistoriaRamificadaProperties } from '@/components/activities/historia-ramificada/historia-ramificada-properties';
 import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
 import {

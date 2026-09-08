@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultRuletaWidget } from "lumina-frontend/widgets/ruleta";
+import { createDefaultRuletaWidget } from "../../widgets/ruleta/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   RuletaEditor,
