@@ -3,7 +3,7 @@ import {
   TabsEditor as LegacyEditor,
   TabsViewer as LegacyViewer,
   TabsProperties as LegacyProperties,
-} from "lumina-frontend/widgets/tabs";
+} from "../../widgets/tabs/index.js";
 import type {
   ElementEditorProps,
   ElementViewerProps,

@@ -1,4 +1,4 @@
-import type { ClickRevealWidget } from "lumina-frontend/widgets/click-reveal";
+import type { ClickRevealWidget } from "../../widgets/click-reveal/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 export type ClickRevealEstado = ClickRevealWidget;

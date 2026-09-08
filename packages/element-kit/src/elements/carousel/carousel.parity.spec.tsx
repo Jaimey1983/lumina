@@ -6,7 +6,7 @@ import {
   CarouselViewer as LegacyViewer,
   createDefaultCarouselBlock,
   normalizeCarouselWidget as legacyNormalize,
-} from "lumina-frontend/widgets/carousel";
+} from "../../widgets/carousel/index.js";
 import { carouselDefinition, normalizeCarouselWidget } from "./index.js";
 
 afterEach(() => {

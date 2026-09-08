@@ -14,4 +14,4 @@ export {
 } from "./carousel-types.js";
 export { registrarCarousel } from "./register.js";
 /** Hidratación idéntica a la del widget existente. */
-export { normalizeCarouselWidget } from "lumina-frontend/widgets/carousel";
+export { normalizeCarouselWidget } from "../../widgets/carousel/index.js";

@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultCarouselBlock } from "lumina-frontend/widgets/carousel";
+import { createDefaultCarouselBlock } from "../../widgets/carousel/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   CarouselEditor,

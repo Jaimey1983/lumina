@@ -10,26 +10,8 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "lumina-frontend/widgets/timeline": [
-        "../../lumina-frontend/src/components/widgets/timeline/index.ts"
-      ],
-      "lumina-frontend/widgets/click-reveal": [
-        "../../lumina-frontend/src/components/widgets/click-reveal/index.ts"
-      ],
-      "lumina-frontend/widgets/carousel": [
-        "../../lumina-frontend/src/components/widgets/carousel/index.ts"
-      ],
-      "lumina-frontend/widgets/tabs": [
-        "../../lumina-frontend/src/components/widgets/tabs/index.ts"
-      ],
-      "lumina-frontend/widgets/flip-cards": [
-        "../../lumina-frontend/src/components/widgets/flip-cards/index.ts"
-      ],
       "@/*": [
         "../../lumina-frontend/src/*"
-      ],
-      "lumina-frontend/widgets/popup": [
-        "../../lumina-frontend/src/components/widgets/popup/index.ts"
       ],
       "lumina-frontend/blocks/grafico": [
         "./src/shims/lumina-frontend-grafico.d.ts"

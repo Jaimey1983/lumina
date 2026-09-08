@@ -14,4 +14,4 @@ export {
 } from "./flip-cards-types.js";
 export { registrarFlipCards } from "./register.js";
 /** Hidratación idéntica a la del widget existente. */
-export { normalizeFlipCardsWidget } from "lumina-frontend/widgets/flip-cards";
+export { normalizeFlipCardsWidget } from "../../widgets/flip-cards/index.js";

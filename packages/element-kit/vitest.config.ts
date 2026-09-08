@@ -33,16 +33,7 @@ export default defineConfig({
       "@lumina/types/animation": path.resolve(root, "../types/src/animation.types.ts"),
       "@lumina/types/autonomous": path.resolve(root, "../types/src/autonomous.types.ts"),
       "@lumina/types/curriculum": path.resolve(root, "../types/src/curriculum.types.ts"),
-      "lumina-frontend/widgets/timeline": path.resolve(frontendSrc, "components/widgets/timeline/index.ts"),
-      "lumina-frontend/widgets/click-reveal": path.resolve(frontendSrc, "components/widgets/click-reveal/index.ts"),
-      "lumina-frontend/widgets/carousel": path.resolve(frontendSrc, "components/widgets/carousel/index.ts"),
-      "lumina-frontend/widgets/tabs": path.resolve(frontendSrc, "components/widgets/tabs/index.ts"),
-      "lumina-frontend/widgets/flip-cards": path.resolve(frontendSrc, "components/widgets/flip-cards/index.ts"),
       "@": frontendSrc,
-      "lumina-frontend/widgets/popup": path.resolve(
-        frontendSrc,
-        "components/widgets/popup/index.ts",
-      ),
       "lumina-frontend/blocks/grafico": path.resolve(
         frontendSrc,
         "components/graficos/index.ts",

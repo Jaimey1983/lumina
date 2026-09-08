@@ -1,4 +1,4 @@
-import type { CarouselWidget } from "lumina-frontend/widgets/carousel";
+import type { CarouselWidget } from "../../widgets/carousel/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 export type CarouselEstado = CarouselWidget;

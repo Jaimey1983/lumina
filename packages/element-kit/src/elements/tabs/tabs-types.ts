@@ -1,4 +1,4 @@
-import type { TabsWidget } from "lumina-frontend/widgets/tabs";
+import type { TabsWidget } from "../../widgets/tabs/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 export type TabsEstado = TabsWidget;

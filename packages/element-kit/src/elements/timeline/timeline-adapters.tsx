@@ -3,7 +3,7 @@ import {
   TimelineEditor as LegacyEditor,
   TimelineViewer as LegacyViewer,
   TimelineProperties as LegacyProperties,
-} from "lumina-frontend/widgets/timeline";
+} from "../../widgets/timeline/index.js";
 import type {
   ElementEditorProps,
   ElementViewerProps,

@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultTimelineBlock } from "lumina-frontend/widgets/timeline";
+import { createDefaultTimelineBlock } from "../../widgets/timeline/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TimelineEditor,

@@ -14,4 +14,4 @@ export {
 } from "./click-reveal-types.js";
 export { registrarClickReveal } from "./register.js";
 /** Hidratación idéntica a la del widget existente. */
-export { normalizeClickRevealWidget } from "lumina-frontend/widgets/click-reveal";
+export { normalizeClickRevealWidget } from "../../widgets/click-reveal/index.js";

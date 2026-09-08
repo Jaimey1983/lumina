@@ -6,7 +6,7 @@ import {
   ClickRevealViewer as LegacyViewer,
   createDefaultClickRevealBlock,
   normalizeClickRevealWidget as legacyNormalize,
-} from "lumina-frontend/widgets/click-reveal";
+} from "../../widgets/click-reveal/index.js";
 import { clickRevealDefinition, normalizeClickRevealWidget } from "./index.js";
 
 afterEach(() => {

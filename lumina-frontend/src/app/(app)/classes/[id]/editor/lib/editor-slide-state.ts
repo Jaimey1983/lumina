@@ -1,10 +1,10 @@
-import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
-import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
-import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
+import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
+import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
+import type { CarouselInnerSelection } from '@lumina/element-kit/widgets/carousel/carousel-config';
 import type { ClickRevealInnerSelection } from '@lumina/types/widget';
 import type { HotspotInnerSelection } from '@lumina/types/widget';
 import type { PopupInnerSelection } from '@lumina/types/widget';
-import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
+import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import type { Background, Block, Slide, SlideGuias } from '@lumina/types/slide';
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 

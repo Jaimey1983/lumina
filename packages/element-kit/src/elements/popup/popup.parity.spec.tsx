@@ -4,7 +4,7 @@ import {
   PopupEditor as LegacyPopupEditor,
   PopupViewer as LegacyPopupViewer,
   createDefaultPopupBlock,
-} from "lumina-frontend/widgets/popup";
+} from "../../widgets/popup/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { popupDefinition } from "./popup-definition.js";
 import type { PopupConfig, PopupEstado } from "./popup-types.js";

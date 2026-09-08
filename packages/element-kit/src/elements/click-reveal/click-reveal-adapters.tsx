@@ -3,7 +3,7 @@ import {
   ClickRevealEditor as LegacyEditor,
   ClickRevealViewer as LegacyViewer,
   ClickRevealProperties as LegacyProperties,
-} from "lumina-frontend/widgets/click-reveal";
+} from "../../widgets/click-reveal/index.js";
 import type {
   ElementEditorProps,
   ElementViewerProps,

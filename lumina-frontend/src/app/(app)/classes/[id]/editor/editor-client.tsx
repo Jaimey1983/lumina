@@ -73,11 +73,11 @@ import {
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
-import { createDefaultFlipCardsBlock } from '@/lib/flip-cards-defaults';
-import { createDefaultTabsBlock } from '@/lib/tabs-defaults';
-import { createDefaultCarouselBlock } from '@/lib/carousel-defaults';
-import { createDefaultClickRevealBlock } from '@/lib/click-reveal-defaults';
-import { createDefaultPopupBlock } from '@/lib/popup-defaults';
+import { createDefaultFlipCardsBlock } from '@lumina/element-kit/widgets/flip-cards/flip-cards-defaults';
+import { createDefaultTabsBlock } from '@lumina/element-kit/widgets/tabs/tabs-defaults';
+import { createDefaultCarouselBlock } from '@lumina/element-kit/widgets/carousel/carousel-defaults';
+import { createDefaultClickRevealBlock } from '@lumina/element-kit/widgets/click-reveal/click-reveal-defaults';
+import { createDefaultPopupBlock } from '@lumina/element-kit/widgets/popup/popup-defaults';
 import { createDefaultHotspotBlock } from '@lumina/element-kit/widgets/hotspot/hotspot-defaults';
 import { createDefaultTooltipBlock } from '@lumina/element-kit/widgets/tooltip/tooltip-defaults';
 import { createDefaultBotonBlock } from '@lumina/element-kit/widgets/boton/boton-defaults';
@@ -85,7 +85,7 @@ import { createDefaultContadorBlock } from '@lumina/element-kit/widgets/contador
 import { createDefaultProgresoBlock } from '@lumina/element-kit/widgets/progreso/progreso-defaults';
 import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
-import { createDefaultTimelineBlock } from '@/lib/timeline-defaults';
+import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
 import { createDefaultClasificar } from '@/lib/clasificar-defaults';
 import { createDefaultMemoria } from '@/lib/memoria-defaults';
 import { createDefaultPuzzleImagen } from '@/lib/puzzle-imagen-defaults';

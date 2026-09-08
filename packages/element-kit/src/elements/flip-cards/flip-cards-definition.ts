@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultFlipCardsBlock } from "lumina-frontend/widgets/flip-cards";
+import { createDefaultFlipCardsBlock } from "../../widgets/flip-cards/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   FlipCardsEditor,

@@ -3,7 +3,7 @@ import {
   FlipCardsEditor as LegacyEditor,
   FlipCardsViewer as LegacyViewer,
   FlipCardsProperties as LegacyProperties,
-} from "lumina-frontend/widgets/flip-cards";
+} from "../../widgets/flip-cards/index.js";
 import type {
   ElementEditorProps,
   ElementViewerProps,

@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultTabsBlock } from "lumina-frontend/widgets/tabs";
+import { createDefaultTabsBlock } from "../../widgets/tabs/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
 import { TABS_TIPO, type TabsEstado, type TabsConfig } from "./tabs-types.js";

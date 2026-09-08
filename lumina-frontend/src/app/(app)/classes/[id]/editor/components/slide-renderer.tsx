@@ -61,20 +61,20 @@ import {
   EscapeRoomViewer,
   bloquesVisiblesDeSala,
 } from '@/components/viewers/escape-room-viewer';
-import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
-import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
-import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
+import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
+import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
+import type { CarouselInnerSelection } from '@lumina/element-kit/widgets/carousel/carousel-config';
 import type { ClickRevealInnerSelection, PopupInnerSelection, HotspotInnerSelection } from '@lumina/types/widget';
 import {
   isEditingPopupOverlay,
   mergedPopupConfig,
-} from '@/components/widgets/popup/popup-config';
-import { syncPopupBlockSizeFromTriggerPx } from '@/lib/popup-defaults';
-import { clampPopupTriggerPx } from '@/lib/popup-trigger-size';
+} from '@lumina/element-kit/widgets/popup/popup-config';
+import { syncPopupBlockSizeFromTriggerPx } from '@lumina/element-kit/widgets/popup/popup-defaults';
+import { clampPopupTriggerPx } from '@lumina/element-kit/widgets/popup/popup-trigger-size';
 import { SlideCanvasRootContext } from '@lumina/editor-shared/slide-canvas-root-context';
 import { isWidgetTipo } from '@lumina/types/widget';
 import type { WidgetBlock } from '@lumina/types/slide';
-import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
+import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';
 

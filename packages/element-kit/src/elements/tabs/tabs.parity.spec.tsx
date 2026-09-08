@@ -6,7 +6,7 @@ import {
   TabsViewer as LegacyViewer,
   createDefaultTabsBlock,
   normalizeTabsWidget as legacyNormalize,
-} from "lumina-frontend/widgets/tabs";
+} from "../../widgets/tabs/index.js";
 import { tabsDefinition, normalizeTabsWidget } from "./index.js";
 
 afterEach(() => {

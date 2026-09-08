@@ -135,14 +135,14 @@ describe('createDefault*Block recibe el marco de drop (flujo handleAddWidget)', 
       '@lumina/element-kit/widgets/tooltip/tooltip-defaults'
     );
     const { createDefaultBotonBlock } = await import('@lumina/element-kit/widgets/boton/boton-defaults');
-    const { createDefaultPopupBlock } = await import('@/lib/popup-defaults');
+    const { createDefaultPopupBlock } = await import('@lumina/element-kit/widgets/popup/popup-defaults');
     const { createDefaultContadorBlock } = await import(
       '@lumina/element-kit/widgets/contador/contador-defaults'
     );
     const { createDefaultProgresoBlock } = await import(
       '@lumina/element-kit/widgets/progreso/progreso-defaults'
     );
-    const { createDefaultFlipCardsBlock } = await import('@/lib/flip-cards-defaults');
+    const { createDefaultFlipCardsBlock } = await import('@lumina/element-kit/widgets/flip-cards/flip-cards-defaults');
 
     const hotspot = createDefaultHotspotBlock(dropWidget('hotspot', 1024, 144));
     expect(hotspot.x).toBeCloseTo(78);

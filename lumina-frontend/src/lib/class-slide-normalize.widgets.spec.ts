@@ -7,9 +7,9 @@ import {
   classSlideToRendererSlide,
   sanitizeSlideContentForPersistence,
 } from './class-slide-normalize';
-import { normalizeTabsWidget } from '@/components/widgets/tabs/tabs-config';
-import { normalizeFlipCardsWidget } from '@/components/widgets/flip-cards/flip-cards-config';
-import { normalizeClickRevealWidget } from '@/components/widgets/click-reveal/click-reveal-config';
+import { normalizeTabsWidget } from '@lumina/element-kit/widgets/tabs/tabs-config';
+import { normalizeFlipCardsWidget } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
+import { normalizeClickRevealWidget } from '@lumina/element-kit/widgets/click-reveal/click-reveal-config';
 
 function apiSlide(bloques: unknown[]): ApiSlide {
   return {

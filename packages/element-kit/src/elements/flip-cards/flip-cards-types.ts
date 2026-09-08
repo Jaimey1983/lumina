@@ -1,4 +1,4 @@
-import type { FlipCardsWidget } from "lumina-frontend/widgets/flip-cards";
+import type { FlipCardsWidget } from "../../widgets/flip-cards/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 export type FlipCardsEstado = FlipCardsWidget;

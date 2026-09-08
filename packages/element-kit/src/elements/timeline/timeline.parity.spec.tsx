@@ -6,7 +6,7 @@ import {
   TimelineViewer as LegacyViewer,
   createDefaultTimelineBlock,
   normalizeTimelineWidget as legacyNormalize,
-} from "lumina-frontend/widgets/timeline";
+} from "../../widgets/timeline/index.js";
 import { timelineDefinition, normalizeTimelineWidget } from "./index.js";
 
 afterEach(() => {

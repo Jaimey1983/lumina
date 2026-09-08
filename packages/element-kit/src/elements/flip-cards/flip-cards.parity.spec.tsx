@@ -6,7 +6,7 @@ import {
   FlipCardsViewer as LegacyViewer,
   createDefaultFlipCardsBlock,
   normalizeFlipCardsWidget as legacyNormalize,
-} from "lumina-frontend/widgets/flip-cards";
+} from "../../widgets/flip-cards/index.js";
 import { flipCardsDefinition, normalizeFlipCardsWidget } from "./index.js";
 
 afterEach(() => {

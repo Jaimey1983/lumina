@@ -3,7 +3,7 @@ import {
   PopupEditor as LegacyPopupEditor,
   PopupProperties as LegacyPopupProperties,
   PopupViewer as LegacyPopupViewer,
-} from "lumina-frontend/widgets/popup";
+} from "../../widgets/popup/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

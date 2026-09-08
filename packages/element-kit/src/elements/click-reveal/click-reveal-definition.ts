@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultClickRevealBlock } from "lumina-frontend/widgets/click-reveal";
+import { createDefaultClickRevealBlock } from "../../widgets/click-reveal/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ClickRevealEditor,

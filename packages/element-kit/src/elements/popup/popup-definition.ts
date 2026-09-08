@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultPopupBlock } from "lumina-frontend/widgets/popup";
+import { createDefaultPopupBlock } from "../../widgets/popup/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   PopupEditor,

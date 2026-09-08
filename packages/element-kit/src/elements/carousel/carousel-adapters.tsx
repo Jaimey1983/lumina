@@ -3,7 +3,7 @@ import {
   CarouselEditor as LegacyEditor,
   CarouselViewer as LegacyViewer,
   CarouselProperties as LegacyProperties,
-} from "lumina-frontend/widgets/carousel";
+} from "../../widgets/carousel/index.js";
 import type {
   ElementEditorProps,
   ElementViewerProps,

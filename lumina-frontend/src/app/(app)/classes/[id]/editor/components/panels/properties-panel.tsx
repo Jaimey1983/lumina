@@ -41,47 +41,47 @@ import { TopoProperties } from '@/components/activities/topo/topo-properties';
 import { RuletaProperties } from '@lumina/element-kit/widgets/ruleta/ruleta-properties';
 import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { HistoriaRamificadaProperties } from '@/components/activities/historia-ramificada/historia-ramificada-properties';
-import type { FlipCardsInnerSelection } from '@/components/widgets/flip-cards/flip-cards-config';
+import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import {
   FlipCardsImageInnerProperties,
   FlipCardsTextInnerProperties,
-} from '@/components/widgets/flip-cards/flip-cards-inner-properties';
-import { FlipCardsProperties, FlipCardsWidgetComponentes } from '@/components/widgets/flip-cards/flip-cards-properties';
-import { FlipCardsCardProperties } from '@/components/widgets/flip-cards/flip-cards-card-properties';
+} from '@lumina/element-kit/widgets/flip-cards/flip-cards-inner-properties';
+import { FlipCardsProperties, FlipCardsWidgetComponentes } from '@lumina/element-kit/widgets/flip-cards/flip-cards-properties';
+import { FlipCardsCardProperties } from '@lumina/element-kit/widgets/flip-cards/flip-cards-card-properties';
 import {
   getTabsPanelSlideId,
   TabsSlideProperties,
   TabsWidgetComponentes,
-} from '@/components/widgets/tabs/tabs-properties';
-import { TabsAppearanceProperties } from '@/components/widgets/tabs/tabs-appearance-properties';
+} from '@lumina/element-kit/widgets/tabs/tabs-properties';
+import { TabsAppearanceProperties } from '@lumina/element-kit/widgets/tabs/tabs-appearance-properties';
 import {
   TabsImageInnerProperties,
   TabsTextInnerProperties,
-} from '@/components/widgets/tabs/tabs-inner-properties';
-import type { TabsInnerSelection } from '@/components/widgets/tabs/tabs-config';
+} from '@lumina/element-kit/widgets/tabs/tabs-inner-properties';
+import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
 import {
   getCarouselPanelSlideId,
   CarouselSlideProperties,
   CarouselWidgetComponentes,
-} from '@/components/widgets/carousel/carousel-properties';
-import { CarouselAppearanceProperties } from '@/components/widgets/carousel/carousel-appearance-properties';
+} from '@lumina/element-kit/widgets/carousel/carousel-properties';
+import { CarouselAppearanceProperties } from '@lumina/element-kit/widgets/carousel/carousel-appearance-properties';
 import {
   CarouselImageInnerProperties,
   CarouselTextInnerProperties,
-} from '@/components/widgets/carousel/carousel-inner-properties';
-import type { CarouselInnerSelection } from '@/components/widgets/carousel/carousel-config';
+} from '@lumina/element-kit/widgets/carousel/carousel-inner-properties';
+import type { CarouselInnerSelection } from '@lumina/element-kit/widgets/carousel/carousel-config';
 import {
   getClickRevealPanelOverlayId,
   getClickRevealPanelTriggerId,
   ClickRevealOverlayProperties,
   ClickRevealTriggerProperties,
   ClickRevealWidgetComponentes,
-} from '@/components/widgets/click-reveal/click-reveal-properties';
-import { ClickRevealAppearanceProperties } from '@/components/widgets/click-reveal/click-reveal-appearance-properties';
+} from '@lumina/element-kit/widgets/click-reveal/click-reveal-properties';
+import { ClickRevealAppearanceProperties } from '@lumina/element-kit/widgets/click-reveal/click-reveal-appearance-properties';
 import {
   ClickRevealImageInnerProperties,
   ClickRevealTextInnerProperties,
-} from '@/components/widgets/click-reveal/click-reveal-inner-properties';
+} from '@lumina/element-kit/widgets/click-reveal/click-reveal-inner-properties';
 import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, PopupInnerSelection, PopupWidget, TooltipWidget, BotonWidget, ContadorWidget, ProgresoWidget, RuletaWidget } from '@lumina/types/widget';
 import {
   HotspotOverlayProperties,
@@ -102,18 +102,18 @@ import {
   PopupTextInnerProperties,
   PopupWidgetComponentes,
   isPopupOverlaySelection,
-} from '@/components/widgets/popup/popup-properties';
+} from '@lumina/element-kit/widgets/popup/popup-properties';
 import {
   TimelineImageInnerProperties,
   TimelineTextInnerProperties,
-} from '@/components/widgets/timeline/timeline-inner-properties';
+} from '@lumina/element-kit/widgets/timeline/timeline-inner-properties';
 import {
   TimelineWidgetComponentes,
   TimelineNodoProperties,
   getTimelinePanelNodoIndex,
-} from '@/components/widgets/timeline/timeline-properties';
-import { TimelineAppearanceProperties } from '@/components/widgets/timeline/timeline-appearance-properties';
-import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';
+} from '@lumina/element-kit/widgets/timeline/timeline-properties';
+import { TimelineAppearanceProperties } from '@lumina/element-kit/widgets/timeline/timeline-appearance-properties';
+import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import { ClipGroupBlockFields } from './clip-group-properties';
 import { GraficoProperties } from '@/components/graficos/grafico-properties';
 import { DiagramaProperties } from '@/components/diagramas/diagrama-properties';

@@ -14,4 +14,4 @@ export {
 } from "./timeline-types.js";
 export { registrarTimeline } from "./register.js";
 /** Hidratación idéntica a la del widget existente. */
-export { normalizeTimelineWidget } from "lumina-frontend/widgets/timeline";
+export { normalizeTimelineWidget } from "../../widgets/timeline/index.js";

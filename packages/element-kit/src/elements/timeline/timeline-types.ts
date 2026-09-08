@@ -1,4 +1,4 @@
-import type { TimelineWidget } from "lumina-frontend/widgets/timeline";
+import type { TimelineWidget } from "../../widgets/timeline/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 export type TimelineEstado = TimelineWidget;
