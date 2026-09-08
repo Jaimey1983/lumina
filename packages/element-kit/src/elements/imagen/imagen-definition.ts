@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultImageBlock } from "lumina-frontend/blocks/imagen";
+import { createDefaultImageBlock } from "../../blocks/imagen/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ImagenEditor,

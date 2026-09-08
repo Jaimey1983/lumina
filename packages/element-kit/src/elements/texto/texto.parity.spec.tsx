@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderText as LegacyRenderText,
   createDefaultTextBlock,
-} from "lumina-frontend/blocks/texto";
+} from "../../blocks/texto/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { textoDefinition } from "./texto-definition.js";
 import type { TextoConfig, TextoEstado } from "./texto-types.js";

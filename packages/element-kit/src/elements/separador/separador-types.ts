@@ -1,4 +1,4 @@
-import type { DividerBlock } from "lumina-frontend/blocks/separador";
+import type { DividerBlock } from "../../blocks/separador/index.js";
 
 export const SEPARADOR_TIPO = "separador" as const;
 export type SeparadorEstado = DividerBlock;

@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultSeparadorBlock } from "lumina-frontend/blocks/separador";
+import { createDefaultSeparadorBlock } from "../../blocks/separador/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   SeparadorEditor,

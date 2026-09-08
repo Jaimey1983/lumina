@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultVideoBlock } from "lumina-frontend/blocks/video";
+import { createDefaultVideoBlock } from "../../blocks/video/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   VideoEditor,

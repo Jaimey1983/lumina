@@ -79,7 +79,7 @@ import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@/data/curriculum/index';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
-import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
+import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 import { ImagesElementPanel } from './images-element-panel';
 import { ClipMasksPanel } from './clip-masks-panel';
 import { WidgetsInsertPanel } from './widgets-insert-panel';

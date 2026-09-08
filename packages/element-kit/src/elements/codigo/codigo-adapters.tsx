@@ -3,7 +3,7 @@ import {
   RenderCode as LegacyRenderCode,
   CodigoProperties as LegacyCodigoProperties,
   type CodeBlock,
-} from "lumina-frontend/blocks/codigo";
+} from "../../blocks/codigo/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -34,13 +34,13 @@ export function CodigoPropiedades({
     <LegacyCodigoProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "codigo") {
           onChange(siguiente as CodeBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "codigo") {
           onChange(siguiente as CodeBlock);
         }

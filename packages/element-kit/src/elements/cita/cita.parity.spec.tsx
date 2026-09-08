@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderQuote as LegacyRenderQuote,
   createDefaultQuoteBlock,
-} from "lumina-frontend/blocks/cita";
+} from "../../blocks/cita/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { citaDefinition } from "./cita-definition.js";
 import type { CitaConfig, CitaEstado } from "./cita-types.js";

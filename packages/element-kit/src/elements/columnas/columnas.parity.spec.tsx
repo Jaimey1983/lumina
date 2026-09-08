@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderColumns as LegacyRenderColumns,
   createDefaultColumnsBlock,
-} from "lumina-frontend/blocks/columnas";
+} from "../../blocks/columnas/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { columnasDefinition } from "./columnas-definition.js";
 import type { ColumnasConfig, ColumnasEstado } from "./columnas-types.js";

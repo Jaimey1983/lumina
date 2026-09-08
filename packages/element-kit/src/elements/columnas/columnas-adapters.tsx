@@ -3,7 +3,7 @@ import {
   RenderColumns as LegacyRenderColumns,
   ColumnasProperties as LegacyColumnasProperties,
   type ColumnsBlock,
-} from "lumina-frontend/blocks/columnas";
+} from "../../blocks/columnas/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -46,7 +46,7 @@ export function ColumnasPropiedades({
     <LegacyColumnasProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "columnas") {
           onChange(siguiente as ColumnsBlock);
         }

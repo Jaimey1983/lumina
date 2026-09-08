@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getBlockPos, isBlockCanvasPositionable, withRect } from '@/hooks/use-block-drag';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
-import { createDefaultSeparadorBlock } from './divider-defaults';
+import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 
 describe('createDefaultSeparadorBlock', () => {
   it('nace en % del lienzo, no en px', () => {

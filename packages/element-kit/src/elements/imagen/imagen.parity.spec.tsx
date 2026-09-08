@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderImage as LegacyRenderImage,
   createDefaultImageBlock,
-} from "lumina-frontend/blocks/imagen";
+} from "../../blocks/imagen/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { imagenDefinition } from "./imagen-definition.js";
 import type { ImagenConfig, ImagenEstado } from "./imagen-types.js";

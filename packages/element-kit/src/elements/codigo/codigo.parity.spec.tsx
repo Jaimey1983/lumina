@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderCode as LegacyRenderCode,
   createDefaultCodeBlock,
-} from "lumina-frontend/blocks/codigo";
+} from "../../blocks/codigo/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { codigoDefinition } from "./codigo-definition.js";
 import type { CodigoConfig, CodigoEstado } from "./codigo-types.js";

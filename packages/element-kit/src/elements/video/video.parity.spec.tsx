@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderVideo as LegacyRenderVideo,
   createDefaultVideoBlock,
-} from "lumina-frontend/blocks/video";
+} from "../../blocks/video/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { videoDefinition } from "./video-definition.js";
 import type { VideoConfig, VideoEstado } from "./video-types.js";

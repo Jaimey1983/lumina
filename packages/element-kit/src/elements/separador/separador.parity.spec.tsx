@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderDivider as LegacyRenderDivider,
   createDefaultSeparadorBlock,
-} from "lumina-frontend/blocks/separador";
+} from "../../blocks/separador/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { separadorDefinition } from "./separador-definition.js";
 import type { SeparadorConfig, SeparadorEstado } from "./separador-types.js";

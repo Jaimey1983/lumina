@@ -34,38 +34,6 @@ export default defineConfig({
       "@lumina/types/autonomous": path.resolve(root, "../types/src/autonomous.types.ts"),
       "@lumina/types/curriculum": path.resolve(root, "../types/src/curriculum.types.ts"),
       "@": frontendSrc,
-      "lumina-frontend/blocks/texto": path.resolve(
-        frontendSrc,
-        "components/primitives/texto/index.ts",
-      ),
-      "lumina-frontend/blocks/imagen": path.resolve(
-        frontendSrc,
-        "components/primitives/imagen/index.ts",
-      ),
-      "lumina-frontend/blocks/video": path.resolve(
-        frontendSrc,
-        "components/primitives/video/index.ts",
-      ),
-      "lumina-frontend/blocks/audio": path.resolve(
-        frontendSrc,
-        "components/primitives/audio/index.ts",
-      ),
-      "lumina-frontend/blocks/codigo": path.resolve(
-        frontendSrc,
-        "components/primitives/codigo/index.ts",
-      ),
-      "lumina-frontend/blocks/cita": path.resolve(
-        frontendSrc,
-        "components/primitives/cita/index.ts",
-      ),
-      "lumina-frontend/blocks/separador": path.resolve(
-        frontendSrc,
-        "components/primitives/separador/index.ts",
-      ),
-      "lumina-frontend/blocks/columnas": path.resolve(
-        frontendSrc,
-        "components/primitives/columnas/index.ts",
-      ),
     },
   },
 });

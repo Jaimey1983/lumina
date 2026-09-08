@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 
 import type { Background, Block } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
-import { createDefaultSeparadorBlock } from '@/lib/divider-defaults';
+import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';

@@ -1,4 +1,4 @@
-import type { TextBlock } from "lumina-frontend/blocks/texto";
+import type { TextBlock } from "../../blocks/texto/index.js";
 
 export const TEXTO_TIPO = "texto" as const;
 export type TextoEstado = TextBlock;

@@ -1,12 +1,12 @@
 export type { AudioBlock } from '@lumina/types/slide';
 export {
   createDefaultAudioBlock,
-} from './audio-defaults';
+} from './audio-defaults.js';
 export {
   RenderAudio,
   type RenderAudioProps,
-} from './render-audio';
+} from './render-audio.js';
 export {
   AudioProperties,
   type AudioPropertiesProps,
-} from './audio-properties';
+} from './audio-properties.js';

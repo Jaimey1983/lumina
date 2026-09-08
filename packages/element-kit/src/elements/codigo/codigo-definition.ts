@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultCodeBlock } from "lumina-frontend/blocks/codigo";
+import { createDefaultCodeBlock } from "../../blocks/codigo/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   CodigoEditor,

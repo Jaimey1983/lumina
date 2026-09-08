@@ -3,7 +3,7 @@ import {
   RenderVideo as LegacyRenderVideo,
   VideoProperties as LegacyVideoProperties,
   type VideoBlock,
-} from "lumina-frontend/blocks/video";
+} from "../../blocks/video/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -48,13 +48,13 @@ export function VideoPropiedades({
     <LegacyVideoProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "video") {
           onChange(siguiente as VideoBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "video") {
           onChange(siguiente as VideoBlock);
         }

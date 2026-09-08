@@ -3,7 +3,7 @@ import {
   RenderDivider as LegacyRenderDivider,
   SeparadorProperties as LegacySeparadorProperties,
   type DividerBlock,
-} from "lumina-frontend/blocks/separador";
+} from "../../blocks/separador/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -34,13 +34,13 @@ export function SeparadorPropiedades({
     <LegacySeparadorProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "separador") {
           onChange(siguiente as DividerBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "separador") {
           onChange(siguiente as DividerBlock);
         }

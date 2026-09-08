@@ -47,7 +47,8 @@
     "lumina-frontend": "workspace:*",
     "paper": "0.12.18",
     "recharts": "^2.15.1",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

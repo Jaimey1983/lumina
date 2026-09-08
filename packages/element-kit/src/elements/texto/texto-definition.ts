@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultTextBlock } from "lumina-frontend/blocks/texto";
+import { createDefaultTextBlock } from "../../blocks/texto/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TextoEditor,

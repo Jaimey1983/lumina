@@ -3,7 +3,7 @@ import {
   RenderAudio as LegacyRenderAudio,
   AudioProperties as LegacyAudioProperties,
   type AudioBlock,
-} from "lumina-frontend/blocks/audio";
+} from "../../blocks/audio/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -34,13 +34,13 @@ export function AudioPropiedades({
     <LegacyAudioProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "audio") {
           onChange(siguiente as AudioBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "audio") {
           onChange(siguiente as AudioBlock);
         }

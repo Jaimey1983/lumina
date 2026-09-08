@@ -1,4 +1,4 @@
-import type { CodeBlock } from "lumina-frontend/blocks/codigo";
+import type { CodeBlock } from "../../blocks/codigo/index.js";
 
 export const CODIGO_TIPO = "codigo" as const;
 export type CodigoEstado = CodeBlock;

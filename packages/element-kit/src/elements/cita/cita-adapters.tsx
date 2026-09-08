@@ -3,7 +3,7 @@ import {
   RenderQuote as LegacyRenderQuote,
   CitaProperties as LegacyCitaProperties,
   type QuoteBlock,
-} from "lumina-frontend/blocks/cita";
+} from "../../blocks/cita/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -34,13 +34,13 @@ export function CitaPropiedades({
     <LegacyCitaProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "cita") {
           onChange(siguiente as QuoteBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "cita") {
           onChange(siguiente as QuoteBlock);
         }

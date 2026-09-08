@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultQuoteBlock } from "lumina-frontend/blocks/cita";
+import { createDefaultQuoteBlock } from "../../blocks/cita/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   CitaEditor,

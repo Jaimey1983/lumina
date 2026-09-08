@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultColumnsBlock } from "lumina-frontend/blocks/columnas";
+import { createDefaultColumnsBlock } from "../../blocks/columnas/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ColumnasEditor,

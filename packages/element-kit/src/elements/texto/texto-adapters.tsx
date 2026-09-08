@@ -3,7 +3,7 @@ import {
   RenderText as LegacyRenderText,
   TextoProperties as LegacyTextoProperties,
   type TextBlock,
-} from "lumina-frontend/blocks/texto";
+} from "../../blocks/texto/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -43,13 +43,13 @@ export function TextoPropiedades({
     <LegacyTextoProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "texto") {
           onChange(siguiente as TextBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "texto") {
           onChange(siguiente as TextBlock);
         }

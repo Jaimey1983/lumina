@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultAudioBlock } from "lumina-frontend/blocks/audio";
+import { createDefaultAudioBlock } from "../../blocks/audio/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   AudioEditor,

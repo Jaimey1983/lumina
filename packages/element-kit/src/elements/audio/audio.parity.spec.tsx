@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RenderAudio as LegacyRenderAudio,
   createDefaultAudioBlock,
-} from "lumina-frontend/blocks/audio";
+} from "../../blocks/audio/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { audioDefinition } from "./audio-definition.js";
 import type { AudioConfig, AudioEstado } from "./audio-types.js";

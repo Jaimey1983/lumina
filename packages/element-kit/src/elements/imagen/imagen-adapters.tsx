@@ -3,7 +3,7 @@ import {
   RenderImage as LegacyRenderImage,
   ImageProperties as LegacyImageProperties,
   type ImageBlock,
-} from "lumina-frontend/blocks/imagen";
+} from "../../blocks/imagen/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,
@@ -35,13 +35,13 @@ export function ImagenPropiedades({
     <LegacyImageProperties
       block={estado}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "imagen") {
           onChange(siguiente as ImageBlock);
         }
       }}
       scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado as unknown);
+        const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "imagen") {
           onChange(siguiente as ImageBlock);
         }

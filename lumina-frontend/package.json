@@ -2,16 +2,7 @@
   "name": "lumina-frontend",
   "version": "0.1.0",
   "private": true,
-  "exports": {
-    "./blocks/texto": "./src/components/primitives/texto/index.ts",
-    "./blocks/imagen": "./src/components/primitives/imagen/index.ts",
-    "./blocks/video": "./src/components/primitives/video/index.ts",
-    "./blocks/audio": "./src/components/primitives/audio/index.ts",
-    "./blocks/codigo": "./src/components/primitives/codigo/index.ts",
-    "./blocks/cita": "./src/components/primitives/cita/index.ts",
-    "./blocks/separador": "./src/components/primitives/separador/index.ts",
-    "./blocks/columnas": "./src/components/primitives/columnas/index.ts"
-  },
+  "exports": {},
   "scripts": {
     "predev": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/editor-shared build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "dev": "next dev --turbopack --port 3001",
