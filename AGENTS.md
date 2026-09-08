@@ -1,21 +1,22 @@
 # Lumina — Convenciones de trabajo (fuente única)
 
-> **Migración a la Estructura Única — EN CURSO (E7 abierta).** E1–E6 cerradas.
-> E7 avanzó (E7.1 `catalogo` · E7.2 `widget-registry.ts` borrado · E7.3
-> `activity-registry.ts` borrado · E7.5 fachada gradebook retirada · E7.7 barrido
-> de duplicados + higiene) pero **el núcleo de E7 sigue pendiente:**
-> - **E7.6 — invertir el grafo `@lumina/element-kit → lumina-frontend`.** Solo se
->   hizo la **vía C** (mitigación: `ignoreWorkspaceCycles` + guard de shims
->   endurecido). La **vía A** (mover los ~230 componentes del frontend a
->   `packages/element-kit/src/`, eliminar los 37 shims) y la **vía B** (paquete
->   intermedio `@lumina/ui-legacy`) **NO se realizaron**. El kit todavía depende
->   del frontend.
-> - **E7.4 — borrar `element-kit-classic.ts` + subpath `./editor-activities`:**
->   bloqueado por E7.6 vía A. `LUM-E7-CLASICAS` vivo.
+> **Migración a la Estructura Única — TERMINADA (E1–E7 cerradas).** 2026-09-07.
+> El grafo quedó `lumina-frontend → @lumina/element-kit → {@lumina/editor-shared,
+> @lumina/ui, @lumina/types, @lumina/scoring, @lumina/element-kit-core}` **sin
+> ciclo y sin shims**. Todos los elementos (widgets, actividades, bloques de
+> canvas, primitivos) viven en `packages/element-kit/src/`; el frontend es
+> consumidor puro. E7.6 se cerró por la **vía A opción 1** (paquetes
+> `@lumina/types` + `@lumina/ui` + `@lumina/editor-shared`, luego mover los ~230
+> componentes por familia — E7.6.3a/b/c, E7.6.4a/b, E7.6.5a/b, E7.6.6 — y cortar
+> el dep en E7.6.7). `ignoreWorkspaceCycles` retirado; `pnpm -r build|test|lint`
+> vuelve a ser comando de verificación válido. E7.4 (`element-kit-classic.ts` +
+> `./editor-activities`) cerrada en E7.6.4b. `grep -rn "TODO(migración-etapa"` →
+> **0**. Detalle: Tablero de pasos, etapa E7.
 >
-> La migración se da por terminada recién cuando el grafo quede
-> `lumina-frontend → @lumina/element-kit` sin ciclo y sin shims. Ver Tablero de
-> pasos, etapa E7.
+> A partir de acá el repo NO está en migración: las Reglas 1–4 (orden de etapas,
+> ley de "nada nuevo en el sistema viejo", cierre obligatorio) ya no aplican —
+> los elementos nuevos nacen como `ElementDefinition` en `packages/element-kit/`.
+> Las Reglas 0, 5–11 siguen vigentes.
 
 Este archivo es la **única** fuente de verdad para cómo se trabaja en este repositorio. Lo leen, sin excepción y con el mismo contenido:
 
@@ -813,7 +814,7 @@ Objetivo (Regla 1 §6 / informe «Plano Lumina» Etapa 6): que **el backend** pu
 - **Entregable:** `find . -name "*.fixtures.json" -path "*scoring*" -o -name "class-results-gradebook.fixtures.json"` → **solo** `packages/scoring/src/activity-scoring.fixtures.json`. `pnpm --filter @lumina/scoring test` · `pnpm --filter lumina-frontend test:unit` · `pnpm --filter lumina-backend test` — todos verdes, sin bajar conteo. Verif: `pnpm --filter @lumina/scoring build && test && pnpm --filter lumina-frontend test:unit && pnpm --filter lumina-backend build && test && pnpm --filter @lumina/element-kit test`.
 - **Cierre (Regla 4):** 2 copias de la fixture **borradas**; `@lumina/scoring/fixtures` es la única. Nota para E7: `lib/activity-scoring.spec.ts` (frontend) duplica cobertura de `packages/scoring/src/scoring.spec.ts` — candidato a borrar en E7. Commit sugerido: `refactor(scoring): fixture única vía @lumina/scoring/fixtures`.
 
-#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · **RAÍZ REDACTADA** (Claude Code, 2026-09-06, al cerrar E6) · **ÚLTIMA ETAPA** · **E7.1 hecho** (`8d34f8a`) · **E7.2 hecho** (`a21964b`, `widget-registry.ts` borrado — `WidgetTipo`/`WIDGET_TIPOS`/`isWidgetTipo` → `@/types/widget.types`; `WidgetBlock`/`isCaptivateWidgetBlock` → `@/types/slide.types`; `WIDGET_LABELS` retirado, nombre desde `catalogo`; `LUM-E7-WIDGETS` cerrado) · **E7.3 hecho** (`1dca549`) · **E7.5 hecho** (`d7fde16`) · **E7.4 hecha** (E7.6.4b: `element-kit-classic.ts` + `./editor-activities` + shim borrados; `LUM-E7-CLASICAS` cerrado) · **E7.6 parcial** (`e632bc1` vía C; vía A = opción 1 `@lumina/types`+`@lumina/ui`, **E7.6.1 hecho** `ae09e34`, **E7.6.2 hecho** `7ba68f4` `@lumina/ui` extraído; **E7.6.3-pre hecho** — `@lumina/editor-shared` extraído; **E7.6.3** partida en a/b/c por familia — **E7.6.3a hecho** (`e2ca560`, Control/burbuja); **E7.6.3b hecho** (`a660431`, ruleta); **E7.6.3c hecho** (`57c7521`, Captivate+popup) — **E7.6.3 COMPLETA**; **E7.6.4** partida a/b — **E7.6.4a hecho** (`9d667f0`, Grupo 4 + graph-editor); **E7.6.4b hecho** — clásicas + emparejar al kit; **E7.6.4 COMPLETA**, **E7.4 cerrada**; **E7.6.5** partida a/b — **E7.6.5a hecho** (grafico+diagrama); **E7.6.5b hecho** — **E7.6.5 COMPLETA** (3 bloques en el kit); **E7.6.6 hecho** — TODOS los elementos en el kit, 0 imports de lumina-frontend; **E7.6.7 [en curso: Claude Code]** (cortar el dep, cerrar E7.6)) · **E7.7 hecho** (`ea42a1f`, barrido de duplicados + higiene: `lib/activity-scoring.spec.ts` borrado, redondeo de `grade-calculation` documentado, CI actions `@v5`). **E7 SIGUE ABIERTA** — falta la inversión del grafo (E7.6 vía A) y E7.4. La migración NO está terminada.
+#### E7 — Retirar todo registro/switch/archivo viejo sin referencias · **RAÍZ REDACTADA** (Claude Code, 2026-09-06, al cerrar E6) · **ÚLTIMA ETAPA** · **E7.1 hecho** (`8d34f8a`) · **E7.2 hecho** (`a21964b`, `widget-registry.ts` borrado — `WidgetTipo`/`WIDGET_TIPOS`/`isWidgetTipo` → `@/types/widget.types`; `WidgetBlock`/`isCaptivateWidgetBlock` → `@/types/slide.types`; `WIDGET_LABELS` retirado, nombre desde `catalogo`; `LUM-E7-WIDGETS` cerrado) · **E7.3 hecho** (`1dca549`) · **E7.5 hecho** (`d7fde16`) · **E7.4 hecha** (E7.6.4b: `element-kit-classic.ts` + `./editor-activities` + shim borrados; `LUM-E7-CLASICAS` cerrado) · **E7.6 parcial** (`e632bc1` vía C; vía A = opción 1 `@lumina/types`+`@lumina/ui`, **E7.6.1 hecho** `ae09e34`, **E7.6.2 hecho** `7ba68f4` `@lumina/ui` extraído; **E7.6.3-pre hecho** — `@lumina/editor-shared` extraído; **E7.6.3** partida en a/b/c por familia — **E7.6.3a hecho** (`e2ca560`, Control/burbuja); **E7.6.3b hecho** (`a660431`, ruleta); **E7.6.3c hecho** (`57c7521`, Captivate+popup) — **E7.6.3 COMPLETA**; **E7.6.4** partida a/b — **E7.6.4a hecho** (`9d667f0`, Grupo 4 + graph-editor); **E7.6.4b hecho** — clásicas + emparejar al kit; **E7.6.4 COMPLETA**, **E7.4 cerrada**; **E7.6.5** partida a/b — **E7.6.5a hecho** (grafico+diagrama); **E7.6.5b hecho** — **E7.6.5 COMPLETA** (3 bloques en el kit); **E7.6.6 hecho** (`3452ff2`) — TODOS los elementos en el kit, 0 imports de lumina-frontend; **E7.6.7 hecho** (`f40f76b`) — dep `"lumina-frontend"` del kit borrado, `ignoreWorkspaceCycles` retirado, `pnpm -r` limpio → **E7.6 CERRADA** (grafo invertido, sin ciclo, sin shims)) · **E7.7 hecho** (`ea42a1f`, barrido de duplicados + higiene). **E7 CERRADA (2026-09-07) — la migración a la Estructura Única está TERMINADA.** `grep -rn "TODO(migración-etapa"` → 0; todos los registros/switches/fachadas/shims viejos borrados; `pnpm -r build && test && lint` verde.
 
 Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya no tiene razón de existir — registros de metadata, fachadas de re-export, shims, y el bloqueo estructural del grafo de dependencias. Al cerrar E7 no debe quedar ningún `TODO(migración-etapa-N)` abierto ni ningún `ElementDefinition` despachado por un camino que no sea `elementRegistry`.
 
@@ -872,7 +873,9 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 ##### E7.4 — retirar `element-kit-classic.ts` + subpath `./editor-activities` · **CERRADA** (E7.6.4b, `d349b3c`)
 - Cerrada como parte de **E7.6.4b**: las 10 clásicas + `emparejar` + `activity-templates.ts` se movieron a `packages/element-kit/src/activities/{_classic,emparejar}/`, con un barrel nuevo `_classic/index.ts` co-locado. `element-kit-classic.ts` + subpath `./editor-activities` en `lumina-frontend/package.json` + shim `lumina-frontend-editor-activities.d.ts` + `paths`/alias **borrados**. `LUM-E7-CLASICAS` **cerrado**.
 
-##### E7.6 — el ciclo `@lumina/element-kit → lumina-frontend` · **PARCIAL — solo vía C hecha; vías A y B pendientes**
+##### E7.6 — el ciclo `@lumina/element-kit → lumina-frontend` · **CERRADA (2026-09-07) — vía A opción 1**
+- **Resumen del cierre:** el ciclo se rompió moviendo TODOS los componentes de elemento al kit y extrayendo el substrato compartido a 3 paquetes nuevos. Orden ejecutado: **E7.6.1** `@lumina/types` (`ae09e34`) · **E7.6.2** `@lumina/ui` (`7ba68f4`) · **E7.6.3-pre** `@lumina/editor-shared` (`4791400`) · **E7.6.3a/b/c** los 12 widgets (`e2ca560`/`a660431`/`57c7521`) · **E7.6.4a/b** todas las actividades + cierre E7.4 (`9d667f0`/`d349b3c`) · **E7.6.5a/b** los 3 bloques de canvas + Paper.js (`a7ac566`/`f54872b`) · **E7.6.6** los 8 primitivos (`3452ff2`) · **E7.6.7** cortar el dep + retirar `ignoreWorkspaceCycles` (`f40f76b`). Grafo final: `lumina-frontend → @lumina/element-kit → {@lumina/editor-shared, @lumina/ui, @lumina/types, @lumina/scoring, @lumina/element-kit-core}` **sin ciclo, sin shims** (los 37 borrados). `pnpm -r build && test && lint` vuelve a correr. La ficha original (relevo + vía C) se conserva abajo como contexto histórico.
+- ~~**PARCIAL — solo vía C hecha; vías A y B pendientes**~~ (histórico):
 - **Operador:** Claude Code
 - **Estado:** **parcial — solo mitigación (vía C, `e632bc1`, 2026-09-06).** `pnpm-workspace.yaml` `ignoreWorkspaceCycles: true` → `pnpm -r build|test|lint` corre pese al ciclo. `shims.types.spec.ts` endurecido: +37 casos que exigen `*.parity.spec.tsx` por subpath (caza deriva de firmas). `vitest.config.ts` del kit `testTimeout` 15s→30s (flake de `grafico.parity`).
   - **NO hecho — el objetivo real de E7.6 sigue abierto:**
@@ -1068,7 +1071,7 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 
 ##### E7.6.7 — cortar el dep `element-kit → lumina-frontend` (cierra E7.6, invierte el grafo)
 - **Operador:** Claude Code
-- **Estado:** **[en curso: Claude Code]**
+- **Estado:** **hecho** (`f40f76b`, 2026-09-07). Borrados: `"lumina-frontend": "workspace:*"` de `packages/element-kit/package.json`; `paths` de `tsconfig.json` (`@/*` + los 3 self-ref) → `{}`; `src/shims/**` del `exclude` de `tsconfig.build.json`; alias `"@"` + var `frontendSrc` de `vitest.config.ts`; `"exports": {}` de `lumina-frontend/package.json`; **`ignoreWorkspaceCycles: true` de `pnpm-workspace.yaml`**. `youtube-adapter.spec.ts`: `vi.mock('@/lib/youtube-api-loader')` → `vi.mock('../youtube-api-loader.js')` (mock stale). Único `lumina-frontend` que resta en el kit: `eslint.config.mjs` (`import base from "../../lumina-frontend/eslint.config.mjs"` — config compartida, todos los paquetes la usan; candidato a `eslint.config.base.mjs` en la raíz en E7.7) + 3 comentarios docstring. Verif: `pnpm install --frozen-lockfile` OK **sin `ignoreWorkspaceCycles`** · **`pnpm -r build && pnpm -r test && pnpm -r lint` verde — sin `ERR_PNPM_TASK_CYCLE`** (editor-shared 128 · scoring 92 · -core 5 · backend 243 · element-kit **276/276** · frontend build 17/17) · lint **0 error** en todos · `pnpm --filter lumina-frontend exec tsc --noEmit` limpio · `test:unit` **246/246** · `test:visual` **33/33**.
 - **Precondición:** E7.6.6 `hecho` (`3452ff2`). `grep "from 'lumina-frontend'" packages/element-kit/src` → 0.
 - **Relevo (2026-09-07):** residuos del borde `element-kit → lumina-frontend`, ya sin uso real:
   - `packages/element-kit/package.json` — `dependencies` tiene `"lumina-frontend": "workspace:*"` (declarada, sin importar).
