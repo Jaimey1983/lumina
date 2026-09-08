@@ -4,6 +4,16 @@
 
 Plataforma educativa interactiva — frontend de Lumina. Conecta con el backend de Lumina (NestJS/REST) y soporta tres roles: `admin`, `teacher` y `student`, cada uno con un dashboard y permisos diferenciados.
 
+> **Estructura Única (migración terminada 2026-09-07).** Todos los **elementos** —
+> widgets, actividades, bloques de canvas, primitivos — viven en
+> **`packages/element-kit/src/{widgets,activities,blocks}/`**, no en este repo. El
+> frontend los consume vía `@lumina/element-kit/*` y despacha por `elementRegistry`.
+> Los primitivos UI (shadcn/radix) están en **`@lumina/ui`**; el substrato del editor
+> (`widgets/shared`, `clip-path`, `text-mask`, `graph-editor`, `getBlockPos`,
+> tipografía/fuentes) en **`@lumina/editor-shared`**; los tipos en **`@lumina/types`**;
+> el motor de puntuación en **`@lumina/scoring`**. Elementos nuevos → `ElementDefinition`
+> en `packages/element-kit/`.
+
 ---
 
 ## Stack tecnológico
@@ -19,18 +29,17 @@ Plataforma educativa interactiva — frontend de Lumina. Conecta con el backend 
 | React Hook Form | ^7.72.0 |
 | Zod | ^4.3.6 |
 | Axios | ^1.13.6 |
-| Radix UI (vía `radix-ui`) | ^1.4.3 |
 | Lucide React | ^1.7.0 |
-| Motion | ^12.38.0 |
 | ApexCharts / react-apexcharts | ^5.10.4 / ^2.1.0 |
 | Recharts | ^2.15.1 |
 | Sonner (toasts) | ^2.0.7 |
 | next-themes | ^0.4.6 |
 | date-fns | ^4.1.0 |
 | @dnd-kit/core | ^6.3.1 |
-| class-variance-authority (CVA) | ^0.7.1 |
 | clsx + tailwind-merge | ^2.1.1 / ^3.5.0 |
-| Embla Carousel | ^8.6.0 |
+| **Paquetes del workspace** | `@lumina/element-kit` (elementos), `@lumina/ui` (primitivos shadcn/radix), `@lumina/editor-shared` (substrato del editor), `@lumina/types`, `@lumina/scoring` |
+
+`radix-ui`, `motion`, `class-variance-authority`, `embla-carousel-react`, `paper`, `@xyflow/react`, `opentype.js`, etc. ya no son deps directas del frontend — viven en `@lumina/ui` / `@lumina/editor-shared` / `@lumina/element-kit` (E7.6, 2026-09-07).
 
 ---
 
@@ -106,7 +115,10 @@ src/
 │   │       ├── sidebar-search.tsx
 │   │       ├── toolbar.tsx
 │   │       └── wrapper.tsx
-│   ├── ui/                     # 65+ componentes UI reutilizables
+│   ├── (widgets/, activities/, primitives/, graficos/, diagramas/, clip-group/ →
+│   │    movidos a @lumina/element-kit; ui/ → @lumina/ui — E7.6, 2026-09-07)
+│   ├── editor/                 # paneles/toolbars del editor de canvas (no elementos)
+│   ├── layout/, viewers/, animations/, ai/…
 │   └── screen-loader.tsx       # Pantalla de carga (usada en guards)
 │
 ├── config/
@@ -128,8 +140,8 @@ src/
 │   │   ├── use-students.ts
 │   │   └── use-users.ts
 │   ├── use-auth.ts             # Re-exporta useAuth desde auth-context
+│   ├── use-block-drag.ts       # motor del canvas (getBlockPos re-exportado de @lumina/editor-shared)
 │   ├── use-body-class.ts
-│   ├── use-copy-to-clipboard.ts
 │   ├── use-menu.ts
 │   ├── use-mobile.tsx
 │   ├── use-mounted.ts
@@ -183,20 +195,21 @@ Layout basado en Metronic Layout-11 con:
 - Header con logo, menú horizontal (`MENU_HEADER`) y toolbar
 - Soporte para modo móvil con menú colapsable
 
-### Componentes UI
+### Componentes UI — `@lumina/ui`
 
-Todos los componentes de `src/components/ui/` siguen el patrón:
+Los 79 primitivos shadcn/radix se movieron a **`@lumina/ui`** (E7.6.2). Se importan
+como `@lumina/ui/<primitivo>` (p. ej. `@lumina/ui/button`). Patrón: variantes con
+`cva()`, composición sobre Radix, `cn()` (`clsx` + `tailwind-merge`), prop `asChild`.
+`Button` tiene variantes `primary`/`mono`/`destructive`/`secondary`/`outline`/`dashed`/
+`ghost`/`dim`/`foreground`/`inverse` y tamaños `lg`/`md`/`sm`/`icon`.
 
-- **Variantes con CVA**: `cva()` para gestionar variantes de estilo
-- **Composición con Radix UI**: Primitivos de Radix envueltos con estilos Tailwind
-- **`cn()` helper**: Merging de clases con `clsx` + `tailwind-merge`
-- **`asChild` prop**: Composición sin wrapper DOM extra (patrón Radix)
+### Widgets (familias) — `@lumina/element-kit/src/widgets/`
 
-Ejemplo representativo — `Button` tiene variantes: `primary`, `mono`, `destructive`, `secondary`, `outline`, `dashed`, `ghost`, `dim`, `foreground`, `inverse`; y tamaños: `lg`, `md`, `sm`, `icon`.
-
-### Widgets (familias)
-
-Hay tres familias. No unificar el comportamiento entre ellas.
+Los 12 widgets viven en **`packages/element-kit/src/widgets/<w>/`** (E7.6.3), con su
+adapter `ElementDefinition` en `packages/element-kit/src/elements/<w>/`. El substrato
+común (`widgets/shared`, `SlideNavContext`, `getBlockPos`, tipografía) está en
+`@lumina/editor-shared`. Contratos de comportamiento (siguen vigentes) — hay tres
+familias, **no unificar el comportamiento entre ellas**:
 
 | Familia | Widgets | Contrato |
 |---|---|---|
@@ -476,7 +489,7 @@ Definido en `src/config/layout-11.config.tsx`:
 - **Usuarios** (`/users`): tabla completa con búsqueda, modal crear (POST /auth/register), modal editar (PATCH /users/:id), activar/desactivar usuario — solo visible para ADMIN/SUPERADMIN
 - Mutaciones con `useMutation` en clases, gradebook, usuarios y perfil
 - Skeleton loaders y estados de error en todos los componentes de datos
-- Librería de 65+ componentes UI (tablas, formularios, modales, animaciones, etc.)
+- Librería de 79 primitivos UI (tablas, formularios, modales, animaciones, etc.) en `@lumina/ui`
 - Sistema de temas claro/oscuro
 - Roles en MAYÚSCULAS: `ADMIN`, `SUPERADMIN`, `TEACHER`, `STUDENT` (el backend retorna mayúsculas)
 

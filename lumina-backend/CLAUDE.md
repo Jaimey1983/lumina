@@ -1,4 +1,4 @@
-Ver `AGENTS.md` en la raíz del repositorio — es la fuente única de convenciones mientras dure la migración a la Estructura Única. Este archivo no la repite ni la reemplaza.
+Ver `AGENTS.md` en la raíz del repositorio — es la fuente única de convenciones. Este archivo no la repite ni la reemplaza. (La migración a la Estructura Única terminó el 2026-09-07; el backend consume `@lumina/scoring` como motor único.)
 
 # lumina-backend
 
