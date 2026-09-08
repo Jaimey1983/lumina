@@ -24,7 +24,7 @@ import {
   createDefaultLibreShape,
   removeLastMaskNode,
   resolveFreeformPath,
-} from '@/lib/freeform-mask';
+} from '@lumina/editor-shared/freeform-mask';
 import type {
   Block,
   ClipCompositionFill,
@@ -37,7 +37,7 @@ import type {
   ClipShapeTexto,
 } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
-import { FONT_DEFAULT } from '@/lib/font-catalog';
+import { FONT_DEFAULT } from '@lumina/editor-shared/font-catalog';
 import { TEXT_MASK_DEFAULT_WEIGHT } from '@/lib/text-mask';
 
 import { TextMaskDialog } from './text-mask-dialog';

@@ -12,7 +12,7 @@ import {
   normalizeFreeformPath,
   removeLastMaskNode,
   resolveFreeformPath,
-} from '@/lib/freeform-mask';
+} from './freeform-mask.js';
 
 const corner = (x: number, y: number, cornerRadius?: number): MaskNode => ({
   id: `${x}-${y}`,

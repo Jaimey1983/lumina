@@ -10,7 +10,7 @@ import {
 import { Camera } from 'lucide-react';
 
 import type { WidgetSlideContent, WidgetSlideTextBlock, WidgetSlideInnerSelection, WidgetSlideTextField, WidgetSlidePanelConfig } from '@lumina/types/widget';
-import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
+import { PanelOnlyText } from './panel-only-field.js';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import {
@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@lumina/ui/popover';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 import {
   applyImageElementStyle,
   computeImagePanClamp,
@@ -27,9 +27,9 @@ import {
   imageWrapperStyle,
   usesComputedImageLayout,
   type ImageWrapperCornerMode,
-} from '@/components/widgets/shared/widget-image-styles';
-import { readContainerDimsFromRef, useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
-import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
+} from './widget-image-styles.js';
+import { readContainerDimsFromRef, useWidgetImageDimensions } from './use-widget-image-dimensions.js';
+import { textStyleToCss } from './widget-text-styles.js';
 
 import slideStyles from './widget-slide-panel.module.css';
 import chromeStyles from './widget-chrome.module.css';

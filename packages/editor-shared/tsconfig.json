@@ -1,0 +1,17 @@
+{
+  // moduleResolution Bundler + serve-from-dist (patrón @lumina/ui): arrastra
+  // @lumina/ui + lucide-react; Bundler resuelve igual que el propio frontend.
+  // Los imports relativos llevan .js (dist/ emitido = ESM válido para Turbopack).
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

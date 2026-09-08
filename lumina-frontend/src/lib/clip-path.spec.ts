@@ -11,9 +11,9 @@ import {
   normalizeClipContentImage,
   normalizeClipGroupBlock,
 } from './clip-path';
-import { createDefaultLibreShape } from './freeform-mask';
+import { createDefaultLibreShape } from '@lumina/editor-shared/freeform-mask';
 import type { ClipShape } from '@lumina/types/slide';
-import { remintBlockChildIds } from '@/components/widgets/shared/widget-clone';
+import { remintBlockChildIds } from '@lumina/editor-shared/widget-clone';
 
 describe('generarClipPath', () => {
   it('rectángulo sin radio genera caja 0–1', () => {

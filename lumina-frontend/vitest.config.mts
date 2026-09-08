@@ -13,6 +13,7 @@ const shared = {
     alias: {
       '@': resolve(root, 'src'),
       '@lumina/ui': resolve(root, '../packages/ui/src'),
+      '@lumina/editor-shared': resolve(root, '../packages/editor-shared/src'),
     },
   },
 };

@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 
 import type { WidgetCampoEstilo } from '@lumina/types/widget';
-import { resolveFontFamily } from '@/lib/font-catalog';
-import { typographyFromWidget, typographyToCss } from '@/lib/typography';
+import { resolveFontFamily } from './font-catalog.js';
+import { typographyFromWidget, typographyToCss } from './typography.js';
 
 export function textStyleToCss(estilo?: WidgetCampoEstilo): CSSProperties {
   if (!estilo) return {};

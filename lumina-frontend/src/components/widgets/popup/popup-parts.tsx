@@ -30,10 +30,10 @@ import type {
   WidgetSlideTextField,
 } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import { stopWidgetInnerPointer, useEscapeToClose } from '@/components/widgets/shared/widget-editor-utils';
+import { stopWidgetInnerPointer, useEscapeToClose } from '@lumina/editor-shared/widget-editor-utils';
 import { TabsSlidePanelEditor } from '@/components/widgets/tabs/tabs-slide-panel';
 import { TabsSlidePanelView } from '@/components/widgets/tabs/tabs-slide-panel';
-import { useSlideCanvasRoot } from '@/components/widgets/shared/slide-canvas-root-context';
+import { useSlideCanvasRoot } from '@lumina/editor-shared/slide-canvas-root-context';
 
 import styles from './popup.module.css';
 import { PopupModalResizeHandles } from './popup-modal-resize-handles';

@@ -5,12 +5,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { TabsWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
-import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';
+import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
+import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 
 import styles from './tabs.module.css';
 import { mergedTabsConfig, normalizeTabsWidget } from './tabs-config';
-import { initialWidgetViewerPageIndex } from '@/components/widgets/shared/widget-identity';
+import { initialWidgetViewerPageIndex } from '@lumina/editor-shared/widget-identity';
 import {
   tabsBodyPadding,
   tabsContainerStyle,

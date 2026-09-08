@@ -124,7 +124,7 @@ import {
   WidgetPropertiesPanelSection,
   WidgetPropertiesPanelShell,
   WidgetPropertiesPanelStack,
-} from '@/components/widgets/shared/widget-properties-panel';
+} from '@lumina/editor-shared/widget-properties-panel';
 import { getBlockAtPath, updateBlockAtPath } from '@/lib/class-slide-normalize';
 import { isBlockCanvasPositionable, withRotation } from '@/hooks/use-block-drag';
 import { RotateCcw, RotateCw } from 'lucide-react';

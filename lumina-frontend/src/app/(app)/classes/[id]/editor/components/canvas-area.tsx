@@ -53,7 +53,7 @@ import {
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
-import { remintBlockChildIds } from '@/components/widgets/shared/widget-clone';
+import { remintBlockChildIds } from '@lumina/editor-shared/widget-clone';
 import { Skeleton } from '@lumina/ui/skeleton';
 import {
   SlideEditorChrome,
@@ -97,7 +97,7 @@ import {
   appendTextBlockToWidgetSlide,
   createWidgetSlideTextBlock,
   resolveWidgetSlideInsertTarget,
-} from '@/components/widgets/shared/widget-slide-blocks';
+} from '@lumina/editor-shared/widget-slide-blocks';
 import {
   MAX_UNDO,
   canRedoHistory,

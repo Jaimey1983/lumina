@@ -15,16 +15,16 @@ import {
   DEFAULT_CLICK_REVEAL_OVERLAY_VISIBILIDAD,
   DEFAULT_CLICK_REVEAL_TRIGGER_VISIBILIDAD,
 } from '@lumina/types/widget';
-import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
+import { alineacionToCss } from '@lumina/editor-shared/widget-alignment';
 import {
   coerceWidgetLayoutId,
   resolveSlideLayoutId,
-} from '@/components/widgets/shared/widget-layouts';
+} from '@lumina/editor-shared/widget-layouts';
 import {
   clampWidgetSlideCount,
   stableWidgetChildId,
   type WidgetIdentity,
-} from '@/components/widgets/shared/widget-identity';
+} from '@lumina/editor-shared/widget-identity';
 
 export { alineacionToCss };
 

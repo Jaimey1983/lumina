@@ -15,7 +15,7 @@ import {
   typographyFromWidget,
   typographyToCss,
   widgetPatchFromTypography,
-} from './typography';
+} from './typography.js';
 
 describe('parseFontSizePx', () => {
   it('convierte rem a px', () => {

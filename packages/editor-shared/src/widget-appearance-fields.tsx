@@ -13,8 +13,8 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { Toggle } from '@lumina/ui/toggle';
-import { TabsLayoutGallery } from '@/components/widgets/tabs/tabs-layout-gallery';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { TabsLayoutGallery } from './tabs-layout-gallery.js';
+import { WidgetSectionTitle } from './widget-properties-panel.js';
 
 /** Columna estándar de secciones de apariencia (mismo espaciado en todos los widgets). */
 export function WidgetAppearanceStack({ children }: { children: ReactNode }) {

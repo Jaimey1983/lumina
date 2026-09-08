@@ -4,7 +4,7 @@ import type { FlipCardsWidget } from '@lumina/types/slide';
 import {
   widgetContainerBackgroundStyle,
   widgetHeaderPadding,
-} from '@/components/widgets/shared/widget-container-styles';
+} from '@lumina/editor-shared/widget-container-styles';
 
 import styles from './flip-cards.module.css';
 import { textStyleToCss } from './flip-cards-text-styles';

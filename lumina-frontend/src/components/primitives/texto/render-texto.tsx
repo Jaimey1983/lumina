@@ -8,8 +8,8 @@ import {
   type CSSProperties,
 } from 'react';
 import type { TextBlock } from '@lumina/types/slide';
-import { typographyFromTextBlock, typographyToCss } from '@/lib/typography';
-import { resolveFontFamily } from '@/lib/font-catalog';
+import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
+import { resolveFontFamily } from '@lumina/editor-shared/font-catalog';
 
 export const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   izquierda: 'left',

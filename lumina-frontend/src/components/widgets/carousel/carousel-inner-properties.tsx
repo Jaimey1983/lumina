@@ -5,7 +5,7 @@ import type { WidgetCampoEstilo, WidgetSlideContent } from '@lumina/types/widget
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,
-} from '@/components/widgets/shared/widget-inner-properties';
+} from '@lumina/editor-shared/widget-inner-properties';
 
 import type { CarouselInnerSelection } from './carousel-config';
 import { normalizeCarouselWidget } from './carousel-config';

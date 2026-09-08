@@ -12,8 +12,8 @@ import {
   Underline,
 } from 'lucide-react';
 
-import { FontFamilySelect } from '@/components/editor/font-family-select';
-import { FontSizeInput } from '@/components/editor/font-size-input';
+import { FontFamilySelect } from './font-family-select.js';
+import { FontSizeInput } from './font-size-input.js';
 import { Button } from '@lumina/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@lumina/ui/collapsible';
 import { Input } from '@lumina/ui/input';
@@ -33,8 +33,8 @@ import {
   type TypographyPresetId,
   type TypographyTransform,
   type TypographyValue,
-} from '@/lib/typography';
-import { cn } from '@/lib/utils';
+} from './typography.js';
+import { cn } from '@lumina/ui/lib/utils';
 import type { HeadingLevel } from '@lumina/types/slide';
 import type { WidgetCampoEstilo } from '@lumina/types/widget';
 

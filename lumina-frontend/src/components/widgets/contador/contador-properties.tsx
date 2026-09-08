@@ -6,8 +6,8 @@ import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 import { mergedContadorConfig, normalizeContadorWidget } from './contador-config';
 
 export interface ContadorPropertiesProps {

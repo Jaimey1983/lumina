@@ -6,7 +6,7 @@ import {
   collectFontFamiliesFromValue,
   FONT_DEFAULT,
   resolveFontFamily,
-} from './font-catalog';
+} from './font-catalog.js';
 
 describe('buildGoogleFontsUrl', () => {
   it('omite fuentes de sistema y Plus Jakarta', () => {

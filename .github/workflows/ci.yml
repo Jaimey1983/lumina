@@ -30,6 +30,9 @@ jobs:
       - run: pnpm --filter @lumina/ui build
       - run: pnpm --filter @lumina/ui test
       - run: pnpm --filter @lumina/ui lint
+      - run: pnpm --filter @lumina/editor-shared build
+      - run: pnpm --filter @lumina/editor-shared test
+      - run: pnpm --filter @lumina/editor-shared lint
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/scoring test
       - run: pnpm --filter @lumina/scoring lint
@@ -88,6 +91,7 @@ jobs:
       # dist, no a src). Hay que construirlos antes de lint/test/build.
       - run: pnpm --filter @lumina/types build
       - run: pnpm --filter @lumina/ui build
+      - run: pnpm --filter @lumina/editor-shared build
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/element-kit-core build
       - run: pnpm --filter @lumina/element-kit build

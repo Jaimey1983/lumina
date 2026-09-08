@@ -7,13 +7,13 @@ import type {
   WidgetSlideContent,
 } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';
+import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 import {
   chromeStyles,
   WidgetHeaderEditorField,
-} from '@/components/widgets/shared/widget-header-editor';
-import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
-import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
+} from '@lumina/editor-shared/widget-header-editor';
+import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
+import { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';
 
 import styles from './click-reveal.module.css';
 import {

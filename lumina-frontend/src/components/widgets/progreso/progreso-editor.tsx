@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProgresoWidget } from '@lumina/types/widget';
-import { useSlideNav } from '@/components/widgets/shared/slide-nav-context';
+import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { mergedProgresoConfig, resolveProgresoPercent } from './progreso-config';
 import { ProgresoParts } from './progreso-parts';
 

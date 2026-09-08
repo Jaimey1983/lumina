@@ -18,14 +18,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TooltipWidget } from '@lumina/types/widget';
-import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
+import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
 import { mergedTooltipConfig } from './tooltip-config';
 import styles from './tooltip.module.css';
 import {
   TOOLTIP_OVERLAY_GAP_PX,
   overlayShiftVars,
-} from '@/components/widgets/shared/overlay-auto-position';
-import { useOverlayAutoPosition } from '@/components/widgets/shared/use-overlay-auto-position';
+} from '@lumina/editor-shared/overlay-auto-position';
+import { useOverlayAutoPosition } from '@lumina/editor-shared/use-overlay-auto-position';
 
 export const TOOLTIP_TRIGGER_ICONS: { id: string; Icon: LucideIcon; label: string }[] = [
   { id: 'info', Icon: Info, label: 'Info' },

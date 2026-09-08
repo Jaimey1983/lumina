@@ -10,7 +10,7 @@ import {
   WidgetInstructionAlignmentFields,
   WidgetLayoutGallerySection,
   WidgetOptionButtonGroup,
-} from '@/components/widgets/shared/widget-appearance-fields';
+} from '@lumina/editor-shared/widget-appearance-fields';
 
 import {
   DEFAULT_CAROUSEL_CONFIG,

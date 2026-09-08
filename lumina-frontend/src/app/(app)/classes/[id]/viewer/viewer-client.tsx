@@ -19,7 +19,7 @@ import { useSlideTimer } from '@/hooks/use-slide-timer';
 import { getEffectiveTimerForApiSlide } from '@/lib/slide-timer-resolve';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
-import { SlideNavContext, type SlideNavAction } from '@/components/widgets/shared/slide-nav-context';
+import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideCountdownOverlay } from './slide-countdown-overlay';

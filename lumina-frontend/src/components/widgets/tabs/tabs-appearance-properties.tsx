@@ -9,7 +9,7 @@ import {
   WidgetContainerAppearanceFields,
   WidgetInstructionAlignmentFields,
   WidgetLayoutGallerySection,
-} from '@/components/widgets/shared/widget-appearance-fields';
+} from '@lumina/editor-shared/widget-appearance-fields';
 
 import { DEFAULT_TABS_CONFIG, normalizeTabsWidget } from './tabs-config';
 

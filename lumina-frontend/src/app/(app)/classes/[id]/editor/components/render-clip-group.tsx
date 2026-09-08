@@ -22,7 +22,7 @@ import {
   getClipImageStyle,
   normalizeClipContentImage,
 } from '@/lib/clip-path';
-import { freeformPathToSvgD, resolveFreeformPath } from '@/lib/freeform-mask';
+import { freeformPathToSvgD, resolveFreeformPath } from '@lumina/editor-shared/freeform-mask';
 import { hasMediaSrc } from '@/lib/media-url';
 import { getBlockPos } from '@/hooks/use-block-drag';
 import type {

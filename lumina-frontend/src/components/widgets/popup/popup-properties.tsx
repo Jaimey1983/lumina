@@ -30,12 +30,12 @@ import { Label } from '@lumina/ui/label';
 
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
 
-import { resolveSlideLayoutId, WIDGET_LAYOUTS } from '@/components/widgets/shared/widget-layouts';
+import { resolveSlideLayoutId, WIDGET_LAYOUTS } from '@lumina/editor-shared/widget-layouts';
 
-import { WidgetLayoutThumb } from '@/components/widgets/shared/widget-layout-thumb';
+import { WidgetLayoutThumb } from '@lumina/editor-shared/widget-layout-thumb';
 
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 
 import {
 
@@ -43,7 +43,7 @@ import {
 
   WidgetSlideTextInnerProperties,
 
-} from '@/components/widgets/shared/widget-inner-properties';
+} from '@lumina/editor-shared/widget-inner-properties';
 
 import { cn } from '@/lib/utils';
 

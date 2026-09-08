@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import type { TimelineWidget, TimelineNodo } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
-import { WidgetHeaderViewer } from '@/components/widgets/shared/widget-header-viewer';
-import { useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
-import { imageElementStyle, usesComputedImageLayout } from '@/components/widgets/shared/widget-image-styles';
+import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
+import { WidgetHeaderViewer } from '@lumina/editor-shared/widget-header-viewer';
+import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
+import { imageElementStyle, usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
 
 import styles from './timeline.module.css';
 import { normalizeTimelineWidget } from './timeline-config';

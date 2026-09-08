@@ -10,8 +10,8 @@ import {
   commitFontSizeDraft,
   liveFontSizeDraft,
   parseFontSizeDraft,
-} from '@/lib/typography';
-import { cn } from '@/lib/utils';
+} from './typography.js';
+import { cn } from '@lumina/ui/lib/utils';
 
 export interface FontSizeInputProps {
   value: number;

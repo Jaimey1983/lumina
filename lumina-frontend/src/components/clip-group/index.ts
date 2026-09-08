@@ -57,7 +57,7 @@ export {
   freeformPathToSvgD,
   normalizeFreeformPath,
   resolveFreeformPath,
-} from '@/lib/freeform-mask';
+} from '@lumina/editor-shared/freeform-mask';
 
 import type { ClipContent, ClipGroupBlock, ClipShape } from '@lumina/types/slide';
 import { createDefaultClipGroupBlock } from '@/lib/clip-path';

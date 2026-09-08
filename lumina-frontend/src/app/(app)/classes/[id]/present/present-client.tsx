@@ -12,7 +12,7 @@ import {
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideRenderer } from '../editor/components/slide-renderer';
-import { SlideNavContext, type SlideNavAction } from '@/components/widgets/shared/slide-nav-context';
+import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { cn } from '@/lib/utils';
 import styles from '@/components/viewer/slide-transition.module.css';
 import { useSlideTransition } from '@/hooks/use-slide-transition';

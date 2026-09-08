@@ -19,7 +19,7 @@ import { createDefaultClipGroupBlock, createTextClipGroupBlock } from '@/lib/cli
 import {
   createDefaultLibreShape,
   createEmptyFreeformPath,
-} from '@/lib/freeform-mask';
+} from '@lumina/editor-shared/freeform-mask';
 import { appendBlockToSlideContent } from '@/lib/class-slide-normalize';
 import type { Block, ClipShape, ClipShapeTexto } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';

@@ -6,7 +6,7 @@ import type {
   WidgetSlideContent,
   WidgetSlidePanelConfig,
 } from '@lumina/types/widget';
-import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { resolveSlideLayoutId } from '@lumina/editor-shared/widget-layouts';
 import {
   DEFAULT_HOTSPOT_CONFIG,
   normalizeHotspotWidget,

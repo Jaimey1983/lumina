@@ -14,10 +14,10 @@ import {
 } from '@lumina/ui/command';
 import { Label } from '@lumina/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
-import { allGoogleFontFamilies, FONT_CATALOG, fontsGroupedByCategory, resolveFontFamily } from '@/lib/font-catalog';
-import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
-import { readRecentFonts, rememberRecentFont } from '@/lib/font-recent';
-import { cn } from '@/lib/utils';
+import { allGoogleFontFamilies, FONT_CATALOG, fontsGroupedByCategory, resolveFontFamily } from './font-catalog.js';
+import { ensureGoogleFonts } from './google-fonts-loader.js';
+import { readRecentFonts, rememberRecentFont } from './font-recent.js';
+import { cn } from '@lumina/ui/lib/utils';
 
 interface FontFamilySelectProps {
   value?: string;

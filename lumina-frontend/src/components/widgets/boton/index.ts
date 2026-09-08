@@ -8,7 +8,7 @@ export {
   useSlideNav,
   type SlideNavAction,
   type SlideNavValue,
-} from '@/components/widgets/shared/slide-nav-context';
+} from '@lumina/editor-shared/slide-nav-context';
 export {
   BOTON_VARIANTES,
   DEFAULT_BOTON_ACCION,

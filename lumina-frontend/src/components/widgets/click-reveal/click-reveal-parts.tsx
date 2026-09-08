@@ -19,11 +19,11 @@ import {
   PopoverTrigger,
 } from '@lumina/ui/popover';
 import { cn } from '@/lib/utils';
-import { imageFilterStyle } from '@/components/widgets/shared/widget-image-styles';
+import { imageFilterStyle } from '@lumina/editor-shared/widget-image-styles';
 import { TabsSlidePanelEditor } from '@/components/widgets/tabs/tabs-slide-panel';
 import { TabsSlidePanelView } from '@/components/widgets/tabs/tabs-slide-panel';
-import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
-import { stopWidgetInnerPointer, useEscapeToClose } from '@/components/widgets/shared/widget-editor-utils';
+import { PanelOnlyText } from '@lumina/editor-shared/panel-only-field';
+import { stopWidgetInnerPointer, useEscapeToClose } from '@lumina/editor-shared/widget-editor-utils';
 
 import styles from './click-reveal.module.css';
 import {

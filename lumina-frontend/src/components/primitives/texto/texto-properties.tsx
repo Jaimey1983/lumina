@@ -1,7 +1,7 @@
 'use client';
 
 import type { TextBlock, Block, HeadingLevel } from '@lumina/types/slide';
-import { TypographyInspector } from '@/components/editor/typography-inspector';
+import { TypographyInspector } from '@lumina/editor-shared/typography-inspector';
 import {
   TEXT_BLOCK_FONT_SIZE_MIN,
   TEXT_BLOCK_FONT_SIZE_MAX,
@@ -9,7 +9,7 @@ import {
   textBlockPatchFromTypography,
   isTypographySizeOnlyPatch,
   type TypographyValue,
-} from '@/lib/typography';
+} from '@lumina/editor-shared/typography';
 
 export interface TextoPropertiesProps {
   block: TextBlock;

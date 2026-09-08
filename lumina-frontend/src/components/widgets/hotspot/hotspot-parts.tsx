@@ -9,14 +9,14 @@ import type {
 } from '@lumina/types/widget';
 import { mergedHotspotConfig } from './hotspot-config';
 import styles from './hotspot.module.css';
-import { WidgetSlidePanelEditor, WidgetSlidePanelView } from '@/components/widgets/shared/widget-slide-panel';
-import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
+import { WidgetSlidePanelEditor, WidgetSlidePanelView } from '@lumina/editor-shared/widget-slide-panel';
+import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
 import { toHotspotSlidePanelConfig } from './hotspot-config';
 import {
   HOTSPOT_OVERLAY_GAP_PX,
   overlayShiftVars,
-} from '@/components/widgets/shared/overlay-auto-position';
-import { useOverlayAutoPosition } from '@/components/widgets/shared/use-overlay-auto-position';
+} from '@lumina/editor-shared/overlay-auto-position';
+import { useOverlayAutoPosition } from '@lumina/editor-shared/use-overlay-auto-position';
 
 interface HotspotPartsProps {
   block: HotspotWidget;

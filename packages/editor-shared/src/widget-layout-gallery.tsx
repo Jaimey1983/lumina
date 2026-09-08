@@ -1,7 +1,7 @@
 'use client';
 
 import type { WidgetLayoutId } from '@lumina/types/widget';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 
 import { WIDGET_LAYOUTS } from './widget-layouts';
 import { WidgetLayoutThumb } from './widget-layout-thumb';

@@ -9,7 +9,7 @@ import {
   WidgetColorPickerField,
   WidgetPercentSliderField,
   WidgetPxSliderField,
-} from '@/components/widgets/shared/widget-appearance-fields';
+} from '@lumina/editor-shared/widget-appearance-fields';
 
 import { mergedTimelineConfig, normalizeTimelineWidget } from './timeline-config';
 

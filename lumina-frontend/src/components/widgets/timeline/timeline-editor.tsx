@@ -3,15 +3,15 @@
 import React, { useState } from 'react';
 import type { TimelineWidget, TimelineNodo } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
-import { WidgetHeaderEditorField } from '@/components/widgets/shared/widget-header-editor';
-import { useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
-import { imageElementStyle, usesComputedImageLayout } from '@/components/widgets/shared/widget-image-styles';
+import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
+import { WidgetHeaderEditorField } from '@lumina/editor-shared/widget-header-editor';
+import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
+import { imageElementStyle, usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
 import {
   stopWidgetInnerKeydown,
   stopWidgetInnerPointer,
-} from '@/components/widgets/shared/widget-editor-utils';
-import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
+} from '@lumina/editor-shared/widget-editor-utils';
+import { PanelOnlyText } from '@lumina/editor-shared/panel-only-field';
 import { Camera } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
@@ -32,8 +32,8 @@ import {
   timelineEtiquetaTextStyle,
   timelineTituloTextStyle,
 } from './timeline-text-styles';
-import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
-import slideStyles from '@/components/widgets/shared/widget-slide-panel.module.css';
+import { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';
+import slideStyles from '@lumina/editor-shared/widget-slide-panel.module.css';
 
 export interface TimelineEditorProps {
   block: TimelineWidget;

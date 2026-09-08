@@ -10,7 +10,7 @@ import type {
 import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Label } from '@lumina/ui/label';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
+import { WidgetDraftTextField } from './panel-only-field.js';
 import {
   Select,
   SelectContent,
@@ -19,13 +19,13 @@ import {
   SelectValue,
 } from '@lumina/ui/select';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
-import { WidgetTypographyFields } from '@/components/editor/typography-inspector';
+import { WidgetTypographyFields } from './typography-inspector.js';
 import {
   applyInlineStyleToWidgetSelection,
   getActiveWidgetTextEditor,
   sanitizeWidgetHtml,
-} from '@/components/widgets/shared/widget-rich-text';
-import { WidgetSectionTitle as SectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+} from './widget-rich-text.js';
+import { WidgetSectionTitle as SectionTitle } from './widget-properties-panel.js';
 
 function patchStyleWithSelection(
   selection: { slideId: string; field: string },

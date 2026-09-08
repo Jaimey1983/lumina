@@ -84,7 +84,7 @@ import { createDefaultBotonBlock } from '@/components/widgets/boton/boton-defaul
 import { createDefaultContadorBlock } from '@/components/widgets/contador/contador-defaults';
 import { createDefaultProgresoBlock } from '@/components/widgets/progreso/progreso-defaults';
 import { createDefaultRuletaWidget } from '@/components/widgets/ruleta/ruleta-defaults';
-import { SlideNavContext } from '@/components/widgets/shared/slide-nav-context';
+import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
 import { createDefaultTimelineBlock } from '@/lib/timeline-defaults';
 import { createDefaultClasificar } from '@/lib/clasificar-defaults';
 import { createDefaultMemoria } from '@/lib/memoria-defaults';

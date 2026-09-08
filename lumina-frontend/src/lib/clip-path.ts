@@ -11,13 +11,13 @@ import type {
   ClipGroupBlock,
 } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
-import { resolveFontFamily } from '@/lib/font-catalog';
+import { resolveFontFamily } from '@lumina/editor-shared/font-catalog';
 import { normalizeTypography } from '@/lib/text-mask';
 import {
   freeformPathToSvgD,
   normalizeFreeformPath,
   resolveFreeformPath,
-} from '@/lib/freeform-mask';
+} from '@lumina/editor-shared/freeform-mask';
 
 export type ClipImageAjuste = NonNullable<ClipContentImage['ajuste']>;
 
@@ -27,7 +27,7 @@ export interface GeneratedClipPath {
 }
 
 /**
- * La edición del contorno freeform vive en `@/lib/freeform-mask`
+ * La edición del contorno freeform vive en `@lumina/editor-shared/freeform-mask`
  * (`FreeformMaskPath` / `MaskNode`) y en el editor Paper.js; aquí solo se
  * consume `freeformPathToSvgD` para el render y `resolveFreeformPath` /
  * `normalizeFreeformPath` para migrar y sanear la forma `libre`.

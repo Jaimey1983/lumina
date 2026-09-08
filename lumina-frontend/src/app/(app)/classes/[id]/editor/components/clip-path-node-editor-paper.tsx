@@ -31,7 +31,7 @@ import {
   computeCornerFillet,
   createMaskNodeId,
   normalizeFreeformPath,
-} from '@/lib/freeform-mask';
+} from '@lumina/editor-shared/freeform-mask';
 import type { FreeformMaskPath, MaskNode } from '@lumina/types/slide';
 
 const HIT_TOLERANCE = 10; // px — área de hit más generosa que el visual

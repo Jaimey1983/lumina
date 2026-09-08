@@ -3,7 +3,7 @@ import type { TimelineConfiguracion } from '@lumina/types/widget';
 import {
   widgetBodyPadding,
   widgetHeaderPadding,
-} from '@/components/widgets/shared/widget-container-styles';
+} from '@lumina/editor-shared/widget-container-styles';
 
 export function TimelineCSSVars(config: TimelineConfiguracion): CSSProperties {
   return {

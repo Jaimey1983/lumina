@@ -11,7 +11,7 @@ import {
   type Modifier,
 } from '@dnd-kit/core'
 import { snapCenterToCursor } from '@dnd-kit/modifiers'
-import { useSlideCanvasRoot } from '@/components/widgets/shared/slide-canvas-root-context'
+import { useSlideCanvasRoot } from '@lumina/editor-shared/slide-canvas-root-context'
 import { useCallback, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 
 /** Compensa `transform: scale()` en el lienzo del slide (preview / miniaturas). */

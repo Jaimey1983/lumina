@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 
 /** Ancho estándar del panel derecho de propiedades de widgets Captivate. */
 export const WIDGET_PROPERTIES_PANEL_WIDTH = 'w-72';

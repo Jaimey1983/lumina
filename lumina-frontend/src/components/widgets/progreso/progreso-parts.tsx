@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { stopWidgetInnerPointer } from '@/components/widgets/shared/widget-editor-utils';
+import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
 import type { ProgresoWidget } from '@lumina/types/widget';
 import { mergedProgresoConfig } from './progreso-config';
 import styles from './progreso.module.css';

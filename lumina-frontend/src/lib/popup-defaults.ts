@@ -2,7 +2,7 @@ import type { BlockMarco } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import type { PopupConfiguracion, PopupWidget, WidgetSlideContent } from '@lumina/types/widget';
 import { DEFAULT_POPUP_OVERLAY_VISIBILIDAD } from '@lumina/types/widget';
-import { coerceWidgetLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { coerceWidgetLayoutId } from '@lumina/editor-shared/widget-layouts';
 import {
   DEFAULT_POPUP_TRIGGER_PX,
   popupTriggerPctFromPx,

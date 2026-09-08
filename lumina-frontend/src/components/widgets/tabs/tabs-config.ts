@@ -5,12 +5,12 @@ import {
   type WidgetSlideCount,
   type WidgetSlideVisibilidad,
 } from '@lumina/types/widget';
-import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
-import { coerceWidgetLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { alineacionToCss } from '@lumina/editor-shared/widget-alignment';
+import { coerceWidgetLayoutId } from '@lumina/editor-shared/widget-layouts';
 import {
   clampWidgetSlideCount,
   stableWidgetChildId,
-} from '@/components/widgets/shared/widget-identity';
+} from '@lumina/editor-shared/widget-identity';
 
 export { alineacionToCss };
 

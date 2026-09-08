@@ -12,12 +12,12 @@ export {
   DEFAULT_CUERPO_POS,
   DEFAULT_TITULO_POS,
   resolveItemVisibilidad,
-} from '@/components/widgets/shared/widget-slide-utils';
+} from '@lumina/editor-shared/widget-slide-utils';
 
 import {
   resolveItemVisibilidad,
   resolveTextPos as sharedResolveTextPos,
-} from '@/components/widgets/shared/widget-slide-utils';
+} from '@lumina/editor-shared/widget-slide-utils';
 
 export function resolveCaraVisibilidad(
   configuracion: FlipCardsConfiguracionCompleta,

@@ -25,9 +25,9 @@ import type {
 } from './flip-cards-config';
 import type { FlipCardsConfiguracionCompleta } from './flip-cards-config';
 import { imageElementStyle, imageWrapperStyle } from './flip-cards-image-styles';
-import { useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
-import { computeImagePanClamp, usesComputedImageLayout } from '@/components/widgets/shared/widget-image-styles';
-import { PanelOnlyText } from '@/components/widgets/shared/panel-only-field';
+import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
+import { computeImagePanClamp, usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
+import { PanelOnlyText } from '@lumina/editor-shared/panel-only-field';
 import {
   clampCardPos,
   resolveCaraVisibilidad,

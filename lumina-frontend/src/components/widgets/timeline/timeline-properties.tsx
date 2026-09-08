@@ -14,8 +14,8 @@ import { cn } from '@/lib/utils';
 import { normalizeTimelineWidget, resizeTimelineNodos, type TimelineInnerSelection } from './timeline-config';
 import { TIMELINE_LUCIDE_OPTIONS, TimelineLucideIcon } from './timeline-icon-catalog';
 import { TIMELINE_VARIANTES, timelineUsesLucideDot } from './timeline-variant-meta';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 
 function PanelSectionDivider() {
   return <div className="border-t border-border" role="separator" aria-hidden />;

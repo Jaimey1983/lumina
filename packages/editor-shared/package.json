@@ -1,0 +1,37 @@
+{
+  "name": "@lumina/editor-shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Substrato compartido del editor (E7.6.3-pre): widgets/shared + helpers de tipografía/fuentes + path helpers de Block. Lo consumen lumina-frontend y (transitivamente, vía los barrels de widget shimeados) @lumina/element-kit. Precursor para mover los widgets al kit (E7.6.3) sin dejar back-edge del kit al frontend. Consumido desde dist/ (patrón @lumina/ui).",
+  "exports": {
+    "./*.css": "./dist/*.css",
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@lumina/types": "workspace:*",
+    "@lumina/ui": "workspace:*",
+    "lucide-react": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

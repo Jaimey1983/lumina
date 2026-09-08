@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { CarouselWidget } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import chromeStyles from '@/components/widgets/shared/widget-chrome.module.css';
-import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';
+import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
+import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 import { TabsSlidePanelView } from '@/components/widgets/tabs/tabs-slide-panel';
 
 import styles from './carousel.module.css';
@@ -15,7 +15,7 @@ import {
   normalizeCarouselWidget,
   toSlidePanelConfig,
 } from './carousel-config';
-import { initialWidgetViewerPageIndex } from '@/components/widgets/shared/widget-identity';
+import { initialWidgetViewerPageIndex } from '@lumina/editor-shared/widget-identity';
 import {
   carouselBodyPadding,
   carouselContainerStyle,

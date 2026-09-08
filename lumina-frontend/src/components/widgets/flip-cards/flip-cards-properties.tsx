@@ -27,7 +27,7 @@ import {
   applyFlipCardsPlantilla,
   resolveFlipCardsPlantillaId,
 } from './flip-cards-templates';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 import { FlipCardsAppearanceProperties } from './flip-cards-appearance-properties';
 
 function CaraCheckboxes({

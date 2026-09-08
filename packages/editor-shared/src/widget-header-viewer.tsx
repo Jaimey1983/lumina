@@ -4,8 +4,8 @@ import type {
   WidgetAlineacion,
   WidgetHeaderFields,
 } from '@lumina/types/widget';
-import { alineacionToCss } from '@/components/widgets/shared/widget-alignment';
-import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
+import { alineacionToCss } from './widget-alignment.js';
+import { textStyleToCss } from './widget-text-styles.js';
 
 import chromeStyles from './widget-chrome.module.css';
 

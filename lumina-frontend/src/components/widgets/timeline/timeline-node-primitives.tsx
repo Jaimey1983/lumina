@@ -3,7 +3,7 @@
 import React, { type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import type { TimelineConfiguracion, TimelineNodo } from '@lumina/types/widget';
-import { imageFilterStyle } from '@/components/widgets/shared/widget-image-styles';
+import { imageFilterStyle } from '@lumina/editor-shared/widget-image-styles';
 import { getTimelineCardStyle } from './timeline-shared';
 import {
   timelineCuerpoTextStyle,
@@ -19,7 +19,7 @@ import {
 } from './timeline-variant-meta';
 
 import styles from './timeline.module.css';
-import slideStyles from '@/components/widgets/shared/widget-slide-panel.module.css';
+import slideStyles from '@lumina/editor-shared/widget-slide-panel.module.css';
 
 export function TimelineCard({
   nodo,

@@ -4,7 +4,7 @@ import type {
   WidgetSlideInnerSelection,
   WidgetSlideTextBlock,
 } from '@lumina/types/widget';
-import { getBlockAtPath } from '@/lib/class-slide-normalize';
+import { getBlockAtPath } from './slide-block-path.js';
 
 export function createWidgetSlideTextBlock(
   partial?: Partial<Omit<WidgetSlideTextBlock, 'id' | 'tipo'>>,

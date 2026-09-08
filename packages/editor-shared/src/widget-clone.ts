@@ -1,6 +1,6 @@
 import type { Block } from '@lumina/types/slide';
 import type { WidgetSlideContent } from '@lumina/types/widget';
-import { resolveFreeformPath } from '@/lib/freeform-mask';
+import { resolveFreeformPath } from './freeform-mask.js';
 
 function remintId(): string {
   return crypto.randomUUID();

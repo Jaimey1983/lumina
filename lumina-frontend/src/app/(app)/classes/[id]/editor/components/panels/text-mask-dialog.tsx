@@ -22,8 +22,8 @@ import {
   SelectValue,
 } from '@lumina/ui/select';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
-import { FontFamilySelect } from '@/components/editor/font-family-select';
-import { FONT_DEFAULT, resolveFontFamily } from '@/lib/font-catalog';
+import { FontFamilySelect } from '@lumina/editor-shared/font-family-select';
+import { FONT_DEFAULT, resolveFontFamily } from '@lumina/editor-shared/font-catalog';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_TYPOGRAPHY,

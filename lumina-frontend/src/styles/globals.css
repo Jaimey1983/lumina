@@ -3,9 +3,11 @@
 
 @config "../../tailwind.config.ts";
 
-/* Primitivos shadcn/radix extraídos a @lumina/ui (E7.6.2): quedan fuera de la
-   raíz que Tailwind autodetecta (lumina-frontend/), hay que declararlos. */
+/* Primitivos shadcn/radix extraídos a @lumina/ui (E7.6.2) y substrato del editor
+   a @lumina/editor-shared (E7.6.3-pre): fuera de la raíz que Tailwind autodetecta
+   (lumina-frontend/), hay que declararlos. */
 @source "../../../packages/ui/src";
+@source "../../../packages/editor-shared/src";
 
 @import 'tw-animate-css';
 

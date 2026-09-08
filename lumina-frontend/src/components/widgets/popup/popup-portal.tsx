@@ -2,7 +2,7 @@
 
 import { createPortal } from 'react-dom';
 
-import { useSlideCanvasRoot } from '@/components/widgets/shared/slide-canvas-root-context';
+import { useSlideCanvasRoot } from '@lumina/editor-shared/slide-canvas-root-context';
 
 import styles from './popup.module.css';
 

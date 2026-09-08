@@ -10,7 +10,7 @@ import type {
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,
-} from '@/components/widgets/shared/widget-inner-properties';
+} from '@lumina/editor-shared/widget-inner-properties';
 
 import type { TimelineInnerSelection } from './timeline-config';
 import { normalizeTimelineWidget } from './timeline-config';

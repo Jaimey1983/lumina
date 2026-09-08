@@ -44,8 +44,8 @@ import type {
   HotspotWidget,
 } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
-import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@/lib/font-catalog';
-import { ensureGoogleFonts } from '@/components/editor/google-fonts-loader';
+import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@lumina/editor-shared/font-catalog';
+import { ensureGoogleFonts } from '@lumina/editor-shared/google-fonts-loader';
 import { getSlideVariant } from '@/lib/slide-variant';
 import {
   backgroundColorSample,
@@ -71,7 +71,7 @@ import {
 } from '@/components/widgets/popup/popup-config';
 import { syncPopupBlockSizeFromTriggerPx } from '@/lib/popup-defaults';
 import { clampPopupTriggerPx } from '@/lib/popup-trigger-size';
-import { SlideCanvasRootContext } from '@/components/widgets/shared/slide-canvas-root-context';
+import { SlideCanvasRootContext } from '@lumina/editor-shared/slide-canvas-root-context';
 import { isWidgetTipo } from '@lumina/types/widget';
 import type { WidgetBlock } from '@lumina/types/slide';
 import type { TimelineInnerSelection } from '@/components/widgets/timeline/timeline-config';

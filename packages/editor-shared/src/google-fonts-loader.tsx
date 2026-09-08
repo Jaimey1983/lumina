@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { buildGoogleFontsUrl, isSystemFont, resolveFontFamily } from '@/lib/font-catalog';
+import { buildGoogleFontsUrl, isSystemFont, resolveFontFamily } from './font-catalog.js';
 
 const loadedFamilies = new Set<string>();
 let preconnectDone = false;

@@ -5,10 +5,10 @@ import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget }
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import { Label } from '@lumina/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 import { BOTON_VARIANTES, botonFallbackSize, mergedBotonConfig, normalizeBotonWidget } from './boton-config';
 
 export interface BotonPropertiesProps {

@@ -11,7 +11,7 @@ import {
   WidgetColorsAppearanceSection,
   WidgetContainerAppearanceFields,
   WidgetInstructionAlignmentFields,
-} from '@/components/widgets/shared/widget-appearance-fields';
+} from '@lumina/editor-shared/widget-appearance-fields';
 
 import { DEFAULT_CLICK_REVEAL_CONFIG, normalizeClickRevealWidget } from './click-reveal-config';
 

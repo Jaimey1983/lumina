@@ -15,7 +15,7 @@ import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
-import { SlideNavContext, type SlideNavAction } from '@/components/widgets/shared/slide-nav-context';
+import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import type { Activity, Block } from '@lumina/types/slide';
 import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
 

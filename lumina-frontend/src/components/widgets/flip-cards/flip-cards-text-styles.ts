@@ -1,1 +1,1 @@
-export { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
+export { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';

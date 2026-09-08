@@ -5,13 +5,13 @@ import {
   widgetBodyPadding,
   widgetContainerBackgroundStyle,
   widgetHeaderPadding,
-} from '@/components/widgets/shared/widget-container-styles';
-import { WidgetHeaderViewer } from '@/components/widgets/shared/widget-header-viewer';
+} from '@lumina/editor-shared/widget-container-styles';
+import { WidgetHeaderViewer } from '@lumina/editor-shared/widget-header-viewer';
 
 import { alineacionToCss, mergedTabsConfig, normalizeTabsWidget } from './tabs-config';
 
 export { mergedTabsConfig, normalizeTabsWidget, alineacionToCss };
-export { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
+export { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';
 
 export function tabsContainerStyle(block: TabsWidget): React.CSSProperties {
   const configuracion = mergedTabsConfig(block);

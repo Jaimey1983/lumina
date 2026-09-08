@@ -1,5 +1,5 @@
 import type { BotonWidget } from '@lumina/types/widget';
-import { useSlideNav } from '@/components/widgets/shared/slide-nav-context';
+import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { BotonParts } from './boton-parts';
 import { mergedBotonConfig } from './boton-config';
 

@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 import type { FlipCard, FlipCardCara, FlipCardsWidget } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
-import { useWidgetImageDimensions } from '@/components/widgets/shared/use-widget-image-dimensions';
-import { usesComputedImageLayout } from '@/components/widgets/shared/widget-image-styles';
+import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
+import { usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
 
 import styles from './flip-cards.module.css';
 import type { FlipCardsConfiguracionCompleta } from './flip-cards-config';

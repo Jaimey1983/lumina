@@ -1,14 +1,14 @@
 import type { WidgetSlideContent } from '@lumina/types/widget';
-import { resolveSlideVisibilidad } from '@/components/widgets/shared/widget-slide-utils';
+import { resolveSlideVisibilidad } from '@lumina/editor-shared/widget-slide-utils';
 
 export {
   isOverlayLayout,
   isSplitLayout,
-} from '@/components/widgets/shared/widget-layouts';
+} from '@lumina/editor-shared/widget-layouts';
 export {
   resolveTextPos as resolveTabTextPos,
   slideSelectionId as tabSelectionSlideId,
-} from '@/components/widgets/shared/widget-slide-utils';
+} from '@lumina/editor-shared/widget-slide-utils';
 export type { WidgetSlideTextField as TabTextField } from '@lumina/types/widget';
 
 import type { TabsConfiguracionCompleta, TabsSlideVisibilidad } from './tabs-config';

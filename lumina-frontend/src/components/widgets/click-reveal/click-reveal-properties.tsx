@@ -6,9 +6,9 @@ import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
-import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-gallery';
-import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
+import { WidgetLayoutGallery } from '@lumina/editor-shared/widget-layout-gallery';
+import { resolveSlideLayoutId } from '@lumina/editor-shared/widget-layouts';
 
 import {
   clickRevealPanelOverlayId,
@@ -17,7 +17,7 @@ import {
   normalizeClickRevealWidget,
   resizeClickRevealElements,
 } from './click-reveal-config';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 
 export interface ClickRevealWidgetComponentesProps {
   block: ClickRevealWidget;

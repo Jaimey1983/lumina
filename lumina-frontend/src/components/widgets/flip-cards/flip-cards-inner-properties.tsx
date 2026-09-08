@@ -9,7 +9,7 @@ import type {
 import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Label } from '@lumina/ui/label';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import {
   Select,
   SelectContent,
@@ -22,8 +22,8 @@ import type {
   FlipCardsCaraLado,
   FlipCardsInnerSelection,
 } from './flip-cards-config';
-import { WidgetTypographyFields } from '@/components/editor/typography-inspector';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetTypographyFields } from '@lumina/editor-shared/typography-inspector';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 
 function patchHeaderStyle(
   block: FlipCardsWidget,

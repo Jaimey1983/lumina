@@ -11,7 +11,7 @@ import { useSlideTimer } from '@/hooks/use-slide-timer';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { SlideRenderer } from '@/app/(app)/classes/[id]/editor/components/slide-renderer';
-import { SlideNavContext, type SlideNavAction } from '@/components/widgets/shared/slide-nav-context';
+import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import {
   useAutonomousSession,
   useJoinSession,

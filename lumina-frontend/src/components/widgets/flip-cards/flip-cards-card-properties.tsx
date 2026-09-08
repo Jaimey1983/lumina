@@ -6,7 +6,7 @@ import { Checkbox } from '@lumina/ui/checkbox';
 import type { FlipCardsCaraLado, FlipCardsInnerSelection } from './flip-cards-config';
 import { resolveCaraVisibilidad } from './flip-cards-card-utils';
 import { mergedFlipCardsConfig } from './flip-cards-shared';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 
 function patchCardFace(
   block: FlipCardsWidget,

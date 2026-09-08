@@ -5,7 +5,7 @@ import type { HotspotInnerSelection, HotspotWidget } from '@lumina/types/widget'
 import {
   WidgetSlideImageInnerProperties,
   WidgetSlideTextInnerProperties,
-} from '@/components/widgets/shared/widget-inner-properties';
+} from '@lumina/editor-shared/widget-inner-properties';
 import { normalizeHotspotWidget } from './hotspot-config';
 
 export interface HotspotInnerPropertiesProps {

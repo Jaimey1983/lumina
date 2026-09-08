@@ -1,7 +1,7 @@
 import type { BlockMarco } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import type { HotspotConfiguracion, HotspotWidget, WidgetSlideContent } from '@lumina/types/widget';
-import { coerceWidgetLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { coerceWidgetLayoutId } from '@lumina/editor-shared/widget-layouts';
 
 export const DEFAULT_HOTSPOT_CONFIG: HotspotConfiguracion = {
   colorPulso: '#EF4444',

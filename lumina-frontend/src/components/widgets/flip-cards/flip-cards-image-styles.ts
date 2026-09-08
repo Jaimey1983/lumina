@@ -4,7 +4,7 @@ import {
   imageElementStyle as baseImageElementStyle,
   imageThumbnailStyle,
   imageWrapperStyle as baseImageWrapperStyle,
-} from '@/components/widgets/shared/widget-image-styles';
+} from '@lumina/editor-shared/widget-image-styles';
 
 export function imageWrapperStyle(cara: FlipCardCara, cardRadius: number) {
   return baseImageWrapperStyle(cara, cardRadius);

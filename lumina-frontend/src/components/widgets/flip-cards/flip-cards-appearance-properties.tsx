@@ -8,7 +8,7 @@ import {
   WidgetColorPickerField,
   WidgetContainerAppearanceFields,
   WidgetPxSliderField,
-} from '@/components/widgets/shared/widget-appearance-fields';
+} from '@lumina/editor-shared/widget-appearance-fields';
 
 import { DEFAULT_FLIP_CARDS_CONFIG, normalizeFlipCardsWidget } from './flip-cards-config';
 

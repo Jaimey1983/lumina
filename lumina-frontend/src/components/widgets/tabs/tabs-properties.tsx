@@ -7,8 +7,8 @@ import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
-import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-gallery';
-import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
+import { WidgetLayoutGallery } from '@lumina/editor-shared/widget-layout-gallery';
+import { resolveSlideLayoutId } from '@lumina/editor-shared/widget-layouts';
 
 import {
   DEFAULT_TABS_CONFIG,
@@ -17,7 +17,7 @@ import {
 } from './tabs-config';
 import { resolveTabSlideVisibilidad, tabSelectionSlideId } from './tabs-slide-utils';
 import { mergedTabsConfig } from './tabs-shared';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 
 export interface TabsWidgetComponentesProps {
   block: TabsWidget;

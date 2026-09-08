@@ -14,8 +14,8 @@ import {
 
 import { Input } from '@lumina/ui/input';
 import { Textarea } from '@lumina/ui/textarea';
-import { cn } from '@/lib/utils';
-import { sanitizeWidgetHtml } from '@/components/widgets/shared/widget-rich-text';
+import { cn } from '@lumina/ui/lib/utils';
+import { sanitizeWidgetHtml } from './widget-rich-text.js';
 
 import { stopWidgetInnerKeydown, stopWidgetInnerPointer } from './widget-editor-utils';
 

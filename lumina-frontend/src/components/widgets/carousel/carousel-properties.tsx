@@ -3,9 +3,9 @@
 import type { Block, CarouselWidget } from '@lumina/types/slide';
 import type { WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { resizeCarouselSlides } from '@/lib/carousel-defaults';
-import { WidgetLayoutGallery } from '@/components/widgets/shared/widget-layout-gallery';
-import { resolveSlideLayoutId } from '@/components/widgets/shared/widget-layouts';
-import { resolveSlideVisibilidad } from '@/components/widgets/shared/widget-slide-utils';
+import { WidgetLayoutGallery } from '@lumina/editor-shared/widget-layout-gallery';
+import { resolveSlideLayoutId } from '@lumina/editor-shared/widget-layouts';
+import { resolveSlideVisibilidad } from '@lumina/editor-shared/widget-slide-utils';
 import { tabSelectionSlideId } from '@/components/widgets/tabs/tabs-slide-utils';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
@@ -18,7 +18,7 @@ import {
   normalizeCarouselWidget,
   type CarouselSlideVisibilidad,
 } from './carousel-config';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 
 export interface CarouselWidgetComponentesProps {
   block: CarouselWidget;

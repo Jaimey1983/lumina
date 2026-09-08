@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ContadorWidget } from '@lumina/types/widget';
-import { useSlideNav } from '@/components/widgets/shared/slide-nav-context';
+import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { mergedContadorConfig } from './contador-config';
 import { ContadorParts } from './contador-parts';
 

@@ -14,10 +14,10 @@ import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
-import { WidgetDraftTextField } from '@/components/widgets/shared/panel-only-field';
-import { WidgetSectionTitle } from '@/components/widgets/shared/widget-properties-panel';
-import { WIDGET_LAYOUTS } from '@/components/widgets/shared/widget-layouts';
-import { WidgetLayoutThumb } from '@/components/widgets/shared/widget-layout-thumb';
+import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
+import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { WIDGET_LAYOUTS } from '@lumina/editor-shared/widget-layouts';
+import { WidgetLayoutThumb } from '@lumina/editor-shared/widget-layout-thumb';
 import { mergedHotspotConfig, normalizeHotspotWidget } from './hotspot-config';
 
 const HOTSPOT_CONTENT_LAYOUTS = WIDGET_LAYOUTS.filter(

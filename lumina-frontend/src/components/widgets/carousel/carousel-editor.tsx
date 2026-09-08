@@ -4,16 +4,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { CarouselWidget, WidgetSlideContent, WidgetSlideInnerSelection } from '@lumina/types/widget';
 import { cn } from '@/lib/utils';
-import { textStyleToCss } from '@/components/widgets/shared/widget-text-styles';
-import { widgetChromeVarsStyle } from '@/components/widgets/shared/widget-container-styles';
+import { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';
+import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 import {
   chromeStyles,
   WidgetHeaderEditorField,
-} from '@/components/widgets/shared/widget-header-editor';
+} from '@lumina/editor-shared/widget-header-editor';
 import {
   stopWidgetInnerPointer,
   useWidgetEditorPageIndex,
-} from '@/components/widgets/shared/widget-editor-utils';
+} from '@lumina/editor-shared/widget-editor-utils';
 import { TabsSlidePanelEditor } from '@/components/widgets/tabs/tabs-slide-panel';
 
 import styles from './carousel.module.css';

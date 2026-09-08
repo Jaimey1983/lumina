@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 
 import type { WidgetHeaderTextField } from '@lumina/types/widget';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 
 import chromeStyles from './widget-chrome.module.css';
 import { PanelOnlyText } from './panel-only-field';

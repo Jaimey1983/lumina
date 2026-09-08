@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
-import { FontFamilySelect } from '@/components/editor/font-family-select';
+import { FontFamilySelect } from '@lumina/editor-shared/font-family-select';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import {
   createEmptyCustomTheme,
