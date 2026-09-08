@@ -10,29 +10,26 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "lumina-frontend/widgets/timeline": ["../../lumina-frontend/src/components/widgets/timeline/index.ts"],
-      "lumina-frontend/widgets/click-reveal": ["../../lumina-frontend/src/components/widgets/click-reveal/index.ts"],
-      "lumina-frontend/widgets/carousel": ["../../lumina-frontend/src/components/widgets/carousel/index.ts"],
-      "lumina-frontend/widgets/tabs": ["../../lumina-frontend/src/components/widgets/tabs/index.ts"],
-      "lumina-frontend/widgets/flip-cards": ["../../lumina-frontend/src/components/widgets/flip-cards/index.ts"],
-      "@/*": ["../../lumina-frontend/src/*"],
-      "lumina-frontend/widgets/boton": [
-        "../../lumina-frontend/src/components/widgets/boton/index.ts"
+      "lumina-frontend/widgets/timeline": [
+        "../../lumina-frontend/src/components/widgets/timeline/index.ts"
+      ],
+      "lumina-frontend/widgets/click-reveal": [
+        "../../lumina-frontend/src/components/widgets/click-reveal/index.ts"
+      ],
+      "lumina-frontend/widgets/carousel": [
+        "../../lumina-frontend/src/components/widgets/carousel/index.ts"
+      ],
+      "lumina-frontend/widgets/tabs": [
+        "../../lumina-frontend/src/components/widgets/tabs/index.ts"
+      ],
+      "lumina-frontend/widgets/flip-cards": [
+        "../../lumina-frontend/src/components/widgets/flip-cards/index.ts"
+      ],
+      "@/*": [
+        "../../lumina-frontend/src/*"
       ],
       "lumina-frontend/widgets/ruleta": [
         "../../lumina-frontend/src/components/widgets/ruleta/index.ts"
-      ],
-      "lumina-frontend/widgets/hotspot": [
-        "../../lumina-frontend/src/components/widgets/hotspot/index.ts"
-      ],
-      "lumina-frontend/widgets/tooltip": [
-        "../../lumina-frontend/src/components/widgets/tooltip/index.ts"
-      ],
-      "lumina-frontend/widgets/contador": [
-        "../../lumina-frontend/src/components/widgets/contador/index.ts"
-      ],
-      "lumina-frontend/widgets/progreso": [
-        "../../lumina-frontend/src/components/widgets/progreso/index.ts"
       ],
       "lumina-frontend/widgets/popup": [
         "../../lumina-frontend/src/components/widgets/popup/index.ts"
@@ -114,5 +111,9 @@
       ]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
+  ]
 }

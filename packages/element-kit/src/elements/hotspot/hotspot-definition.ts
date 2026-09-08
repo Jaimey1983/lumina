@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultHotspotBlock } from "lumina-frontend/widgets/hotspot";
+import { createDefaultHotspotBlock } from "../../widgets/hotspot/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   HotspotEditor,

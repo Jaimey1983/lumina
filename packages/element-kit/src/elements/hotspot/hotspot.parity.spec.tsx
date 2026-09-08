@@ -4,7 +4,7 @@ import {
   HotspotEditor as LegacyHotspotEditor,
   HotspotViewer as LegacyHotspotViewer,
   createDefaultHotspotBlock,
-} from "lumina-frontend/widgets/hotspot";
+} from "../../widgets/hotspot/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { hotspotDefinition } from "./hotspot-definition.js";
 import type { HotspotConfig, HotspotEstado } from "./hotspot-types.js";

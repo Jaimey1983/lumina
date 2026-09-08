@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultContadorBlock } from "lumina-frontend/widgets/contador";
+import { createDefaultContadorBlock } from "../../widgets/contador/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ContadorEditor,

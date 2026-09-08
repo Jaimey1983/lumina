@@ -1,4 +1,4 @@
-import type { BotonWidget } from "lumina-frontend/widgets/boton";
+import type { BotonWidget } from "../../widgets/boton/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /**

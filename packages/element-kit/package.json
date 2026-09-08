@@ -7,10 +7,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./widgets/*": {
+      "types": "./dist/widgets/*.d.ts",
+      "default": "./dist/widgets/*.js"
+    },
+    "./widgets/*.css": "./dist/widgets/*.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "test": "tsc --noEmit && vitest run",
     "lint": "eslint ."
   },
@@ -19,9 +24,12 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@lumina/types": "workspace:*",
+    "@lumina/editor-shared": "workspace:*",
     "@lumina/element-kit-core": "workspace:*",
     "@lumina/scoring": "workspace:*",
+    "@lumina/types": "workspace:*",
+    "@lumina/ui": "workspace:*",
+    "lucide-react": "^1.7.0",
     "lumina-frontend": "workspace:*"
   },
   "devDependencies": {

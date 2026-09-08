@@ -39,29 +39,9 @@ export default defineConfig({
       "lumina-frontend/widgets/tabs": path.resolve(frontendSrc, "components/widgets/tabs/index.ts"),
       "lumina-frontend/widgets/flip-cards": path.resolve(frontendSrc, "components/widgets/flip-cards/index.ts"),
       "@": frontendSrc,
-      "lumina-frontend/widgets/boton": path.resolve(
-        frontendSrc,
-        "components/widgets/boton/index.ts",
-      ),
       "lumina-frontend/widgets/ruleta": path.resolve(
         frontendSrc,
         "components/widgets/ruleta/index.ts",
-      ),
-      "lumina-frontend/widgets/hotspot": path.resolve(
-        frontendSrc,
-        "components/widgets/hotspot/index.ts",
-      ),
-      "lumina-frontend/widgets/tooltip": path.resolve(
-        frontendSrc,
-        "components/widgets/tooltip/index.ts",
-      ),
-      "lumina-frontend/widgets/contador": path.resolve(
-        frontendSrc,
-        "components/widgets/contador/index.ts",
-      ),
-      "lumina-frontend/widgets/progreso": path.resolve(
-        frontendSrc,
-        "components/widgets/progreso/index.ts",
       ),
       "lumina-frontend/widgets/popup": path.resolve(
         frontendSrc,

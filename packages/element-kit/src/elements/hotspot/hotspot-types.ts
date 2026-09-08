@@ -1,4 +1,4 @@
-import type { HotspotWidget } from "lumina-frontend/widgets/hotspot";
+import type { HotspotWidget } from "../../widgets/hotspot/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /** Estado del elemento Hotspot = el bloque de widget completo. */

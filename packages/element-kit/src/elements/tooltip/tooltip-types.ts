@@ -1,4 +1,4 @@
-import type { TooltipWidget } from "lumina-frontend/widgets/tooltip";
+import type { TooltipWidget } from "../../widgets/tooltip/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /** Estado del elemento Tooltip = el bloque de widget completo. */

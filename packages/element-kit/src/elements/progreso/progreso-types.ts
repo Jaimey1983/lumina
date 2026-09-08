@@ -1,4 +1,4 @@
-import type { ProgresoWidget } from "lumina-frontend/widgets/progreso";
+import type { ProgresoWidget } from "../../widgets/progreso/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /** Estado del elemento Progreso (Barra) = el bloque de widget completo. */

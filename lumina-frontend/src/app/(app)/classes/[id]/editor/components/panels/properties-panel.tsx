@@ -86,16 +86,16 @@ import type { ClickRevealInnerSelection, HotspotInnerSelection, HotspotWidget, P
 import {
   HotspotOverlayProperties,
   HotspotProperties,
-} from '@/components/widgets/hotspot/hotspot-properties';
+} from '@lumina/element-kit/widgets/hotspot/hotspot-properties';
 import {
   HotspotImageInnerProperties,
   HotspotTextInnerProperties,
-} from '@/components/widgets/hotspot/hotspot-inner-properties';
-import { isEditingHotspotOverlay } from '@/components/widgets/hotspot/hotspot-config';
-import { TooltipProperties } from '@/components/widgets/tooltip/tooltip-properties';
-import { BotonProperties } from '@/components/widgets/boton/boton-properties';
-import { ContadorProperties } from '@/components/widgets/contador/contador-properties';
-import { ProgresoProperties } from '@/components/widgets/progreso/progreso-properties';
+} from '@lumina/element-kit/widgets/hotspot/hotspot-inner-properties';
+import { isEditingHotspotOverlay } from '@lumina/element-kit/widgets/hotspot/hotspot-config';
+import { TooltipProperties } from '@lumina/element-kit/widgets/tooltip/tooltip-properties';
+import { BotonProperties } from '@lumina/element-kit/widgets/boton/boton-properties';
+import { ContadorProperties } from '@lumina/element-kit/widgets/contador/contador-properties';
+import { ProgresoProperties } from '@lumina/element-kit/widgets/progreso/progreso-properties';
 import {
   PopupImageInnerProperties,
   PopupOverlayProperties,

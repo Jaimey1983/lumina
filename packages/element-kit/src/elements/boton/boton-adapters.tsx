@@ -2,7 +2,7 @@ import {
   BotonEditor as LegacyBotonEditor,
   BotonViewer as LegacyBotonViewer,
   BotonProperties as LegacyBotonProperties,
-} from "lumina-frontend/widgets/boton";
+} from "../../widgets/boton/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

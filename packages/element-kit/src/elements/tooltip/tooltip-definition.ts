@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultTooltipBlock } from "lumina-frontend/widgets/tooltip";
+import { createDefaultTooltipBlock } from "../../widgets/tooltip/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TooltipEditor,

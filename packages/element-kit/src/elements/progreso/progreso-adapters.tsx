@@ -2,7 +2,7 @@ import {
   ProgresoEditor as LegacyProgresoEditor,
   ProgresoProperties as LegacyProgresoProperties,
   ProgresoViewer as LegacyProgresoViewer,
-} from "lumina-frontend/widgets/progreso";
+} from "../../widgets/progreso/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

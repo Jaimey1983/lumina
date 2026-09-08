@@ -130,17 +130,17 @@ describe('clientPointToWidgetMarco', () => {
 
 describe('createDefault*Block recibe el marco de drop (flujo handleAddWidget)', () => {
   it('Hotspot / Tooltip / Botón / Popup / Contador / Progreso / Flip Cards', async () => {
-    const { createDefaultHotspotBlock } = await import('@/lib/hotspot-defaults');
+    const { createDefaultHotspotBlock } = await import('@lumina/element-kit/widgets/hotspot/hotspot-defaults');
     const { createDefaultTooltipBlock } = await import(
-      '@/components/widgets/tooltip/tooltip-defaults'
+      '@lumina/element-kit/widgets/tooltip/tooltip-defaults'
     );
-    const { createDefaultBotonBlock } = await import('@/components/widgets/boton/boton-defaults');
+    const { createDefaultBotonBlock } = await import('@lumina/element-kit/widgets/boton/boton-defaults');
     const { createDefaultPopupBlock } = await import('@/lib/popup-defaults');
     const { createDefaultContadorBlock } = await import(
-      '@/components/widgets/contador/contador-defaults'
+      '@lumina/element-kit/widgets/contador/contador-defaults'
     );
     const { createDefaultProgresoBlock } = await import(
-      '@/components/widgets/progreso/progreso-defaults'
+      '@lumina/element-kit/widgets/progreso/progreso-defaults'
     );
     const { createDefaultFlipCardsBlock } = await import('@/lib/flip-cards-defaults');
 
@@ -184,7 +184,7 @@ describe('createDefault*Block recibe el marco de drop (flujo handleAddWidget)', 
   });
 
   it('click sin arrastrar (sin marco) no cambia: Hotspot en 48,48', async () => {
-    const { createDefaultHotspotBlock } = await import('@/lib/hotspot-defaults');
+    const { createDefaultHotspotBlock } = await import('@lumina/element-kit/widgets/hotspot/hotspot-defaults');
     const hotspot = createDefaultHotspotBlock();
     expect(hotspot.x).toBe(BLOCK_FALLBACKS.hotspot.x);
     expect(hotspot.y).toBe(BLOCK_FALLBACKS.hotspot.y);

@@ -444,6 +444,9 @@ importers:
 
   packages/element-kit:
     dependencies:
+      '@lumina/editor-shared':
+        specifier: workspace:*
+        version: link:../editor-shared
       '@lumina/element-kit-core':
         specifier: workspace:*
         version: link:../element-kit-core
@@ -453,6 +456,12 @@ importers:
       '@lumina/types':
         specifier: workspace:*
         version: link:../types
+      '@lumina/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.7.0
+        version: 1.41.0(react@19.2.4)
       lumina-frontend:
         specifier: workspace:*
         version: link:../../lumina-frontend

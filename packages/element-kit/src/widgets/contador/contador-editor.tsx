@@ -1,0 +1,26 @@
+import type { ContadorWidget } from '@lumina/types/widget';
+import { mergedContadorConfig } from './contador-config.js';
+import { ContadorParts } from './contador-parts.js';
+
+interface ContadorEditorProps {
+  block: ContadorWidget;
+  onEnsureBlockSelected: () => void;
+}
+
+export function ContadorEditor({ block, onEnsureBlockSelected }: ContadorEditorProps) {
+  const cfg = mergedContadorConfig(block);
+  const displaySeconds = cfg.modo === 'cronometro' ? 0 : cfg.segundos;
+
+  return (
+    <div className="relative flex h-full min-h-0 w-full items-center justify-center">
+      <ContadorParts
+        block={block}
+        displaySeconds={displaySeconds}
+        displayNumber={cfg.valorInicial}
+        isEditing
+        showControls={cfg.mostrarControles}
+        onSelect={onEnsureBlockSelected}
+      />
+    </div>
+  );
+}

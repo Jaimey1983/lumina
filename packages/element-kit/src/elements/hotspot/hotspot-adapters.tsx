@@ -3,7 +3,7 @@ import {
   HotspotEditor as LegacyHotspotEditor,
   HotspotProperties as LegacyHotspotProperties,
   HotspotViewer as LegacyHotspotViewer,
-} from "lumina-frontend/widgets/hotspot";
+} from "../../widgets/hotspot/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

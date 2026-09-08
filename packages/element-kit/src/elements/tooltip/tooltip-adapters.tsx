@@ -2,7 +2,7 @@ import {
   TooltipEditor as LegacyTooltipEditor,
   TooltipProperties as LegacyTooltipProperties,
   TooltipViewer as LegacyTooltipViewer,
-} from "lumina-frontend/widgets/tooltip";
+} from "../../widgets/tooltip/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

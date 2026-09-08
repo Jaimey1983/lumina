@@ -1,4 +1,4 @@
-import type { ContadorWidget } from "lumina-frontend/widgets/contador";
+import type { ContadorWidget } from "../../widgets/contador/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /** Estado del elemento Contador = el bloque de widget completo. */

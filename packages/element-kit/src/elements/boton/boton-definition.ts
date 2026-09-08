@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultBotonBlock } from "lumina-frontend/widgets/boton";
+import { createDefaultBotonBlock } from "../../widgets/boton/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { BotonEditor, BotonPropiedades, BotonViewer } from "./boton-adapters.js";
 import { BOTON_TIPO, type BotonConfig, type BotonEstado } from "./boton-types.js";

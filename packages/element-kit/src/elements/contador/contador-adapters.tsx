@@ -2,7 +2,7 @@ import {
   ContadorEditor as LegacyContadorEditor,
   ContadorProperties as LegacyContadorProperties,
   ContadorViewer as LegacyContadorViewer,
-} from "lumina-frontend/widgets/contador";
+} from "../../widgets/contador/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

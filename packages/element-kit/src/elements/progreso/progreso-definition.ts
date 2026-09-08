@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultProgresoBlock } from "lumina-frontend/widgets/progreso";
+import { createDefaultProgresoBlock } from "../../widgets/progreso/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ProgresoEditor,

@@ -4,7 +4,7 @@ import {
   ProgresoEditor as LegacyProgresoEditor,
   ProgresoViewer as LegacyProgresoViewer,
   createDefaultProgresoBlock,
-} from "lumina-frontend/widgets/progreso";
+} from "../../widgets/progreso/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { progresoDefinition } from "./progreso-definition.js";
 import type { ProgresoConfig, ProgresoEstado } from "./progreso-types.js";

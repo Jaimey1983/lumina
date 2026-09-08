@@ -4,7 +4,7 @@ import {
   ContadorEditor as LegacyContadorEditor,
   ContadorViewer as LegacyContadorViewer,
   createDefaultContadorBlock,
-} from "lumina-frontend/widgets/contador";
+} from "../../widgets/contador/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { contadorDefinition } from "./contador-definition.js";
 import type { ContadorConfig, ContadorEstado } from "./contador-types.js";
