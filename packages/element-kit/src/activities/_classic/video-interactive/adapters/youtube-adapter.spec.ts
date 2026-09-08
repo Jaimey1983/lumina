@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createYouTubeAdapter } from './youtube-adapter.js';
 
-vi.mock('@/lib/youtube-api-loader', () => ({
+vi.mock('../youtube-api-loader.js', () => ({
   loadYouTubeIframeApi: vi.fn(() => Promise.resolve()),
 }));
 

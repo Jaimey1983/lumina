@@ -7,7 +7,6 @@
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.spec.tsx",
-    "src/shims/**",
     "src/vitest-setup.ts"
   ]
 }

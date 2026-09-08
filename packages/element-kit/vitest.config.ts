@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const frontendSrc = path.resolve(root, "../../lumina-frontend/src");
 const elementKitCoreSrc = path.resolve(root, "../element-kit-core/src/index.ts");
 
 export default defineConfig({
@@ -33,7 +32,6 @@ export default defineConfig({
       "@lumina/types/animation": path.resolve(root, "../types/src/animation.types.ts"),
       "@lumina/types/autonomous": path.resolve(root, "../types/src/autonomous.types.ts"),
       "@lumina/types/curriculum": path.resolve(root, "../types/src/curriculum.types.ts"),
-      "@": frontendSrc,
     },
   },
 });

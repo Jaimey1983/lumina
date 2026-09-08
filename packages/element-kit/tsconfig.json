@@ -9,20 +9,7 @@
     "declaration": true,
     "outDir": "dist",
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "../../lumina-frontend/src/*"
-      ],
-      "@lumina/element-kit/widgets/*": [
-        "./src/widgets/*"
-      ],
-      "@lumina/element-kit/activities/*": [
-        "./src/activities/*"
-      ],
-      "@lumina/element-kit/blocks/*": [
-        "./src/blocks/*"
-      ]
-    }
+    "paths": {}
   },
   "include": [
     "src/**/*.ts",

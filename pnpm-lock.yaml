@@ -483,9 +483,6 @@ importers:
       lucide-react:
         specifier: ^1.7.0
         version: 1.41.0(react@19.2.4)
-      lumina-frontend:
-        specifier: workspace:*
-        version: link:../../lumina-frontend
       paper:
         specifier: 0.12.18
         version: 0.12.18
