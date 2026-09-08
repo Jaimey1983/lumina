@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: workspaceRoot,
   },
+  // `paper` (0.12.18) llega transitivamente vía `@lumina/element-kit` (editor de
+  // nodos Bézier de clip-group); toca un `<canvas>` 2D al cargar el módulo, así
+  // que no debe bundlearse en SSR.
   serverExternalPackages: ['paper'],
   // Paquetes internos del workspace que se consumen desde fuente TS (E2).
   transpilePackages: ['@lumina/types', '@lumina/ui', '@lumina/editor-shared', '@lumina/scoring', '@lumina/element-kit-core', '@lumina/element-kit'],

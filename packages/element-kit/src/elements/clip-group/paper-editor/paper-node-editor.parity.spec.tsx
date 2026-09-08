@@ -18,7 +18,7 @@ import type { ClipGroupEstado } from "../clip-group-types.js";
 
 /**
  * Paper.js necesita un `<canvas>` 2D real — jsdom no lo da y `paper-core`
- * revienta al cargar. El subpath `lumina-frontend/blocks/clip-group/paper` se
+ * revienta al cargar. El módulo `../../../blocks/clip-group/paper.js` se
  * sustituye por un stub que registra las props; así se verifica el mapeo del
  * adapter sin arrancar el motor. La lógica pura de `freeform-mask` (importada
  * del barrel principal) sí se ejerce de verdad.
