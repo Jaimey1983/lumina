@@ -21,7 +21,7 @@ import {
   Legend,
 } from 'recharts';
 import type { GraficoDatosBlock } from '@lumina/types/slide';
-import { getSeriesColor } from './grafico-color-palettes';
+import { getSeriesColor } from './grafico-color-palettes.js';
 
 interface GraficoChartRendererProps {
   block: GraficoDatosBlock;

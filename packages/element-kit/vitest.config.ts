@@ -34,14 +34,6 @@ export default defineConfig({
       "@lumina/types/autonomous": path.resolve(root, "../types/src/autonomous.types.ts"),
       "@lumina/types/curriculum": path.resolve(root, "../types/src/curriculum.types.ts"),
       "@": frontendSrc,
-      "lumina-frontend/blocks/grafico": path.resolve(
-        frontendSrc,
-        "components/graficos/index.ts",
-      ),
-      "lumina-frontend/blocks/diagrama": path.resolve(
-        frontendSrc,
-        "components/diagramas/index.ts",
-      ),
       "lumina-frontend/blocks/clip-group/paper": path.resolve(
         frontendSrc,
         "components/clip-group/paper.ts",

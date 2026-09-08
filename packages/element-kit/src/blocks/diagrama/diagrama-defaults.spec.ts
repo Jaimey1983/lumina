@@ -9,11 +9,11 @@ import {
   createDefaultVennBlock,
   layoutCronologiaLineal,
   normalizeDiagramaBlock,
-} from './diagrama-defaults';
+} from './diagrama-defaults.js';
 import {
   applyGraphModelToDiagrama,
   diagramaToGraphModel,
-} from './diagrama-bridge';
+} from './diagrama-bridge.js';
 import {
   BLOCK_FALLBACKS,
   type DiagramaGrafoBlock,

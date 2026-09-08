@@ -2,8 +2,8 @@
 
 import React from 'react';
 import type { GraficoDatosBlock } from '@lumina/types/slide';
-import { GraficoViewer } from './grafico-viewer';
-import { cn } from '@/lib/utils';
+import { GraficoViewer } from './grafico-viewer.js';
+import { cn } from '@lumina/ui/lib/utils';
 
 interface GraficoEditorProps {
   block: GraficoDatosBlock;

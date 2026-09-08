@@ -1,4 +1,4 @@
-import type { DiagramaBlock } from "lumina-frontend/blocks/diagrama";
+import type { DiagramaBlock } from "../../blocks/diagrama/index.js";
 
 /** Estado del elemento Diagrama = el bloque de canvas completo. */
 export type DiagramaEstado = DiagramaBlock;

@@ -1,4 +1,4 @@
-import type { GraficoDatosBlock } from "lumina-frontend/blocks/grafico";
+import type { GraficoDatosBlock } from "../../blocks/grafico/index.js";
 
 /** Estado del elemento Gráfico = el bloque de canvas completo. */
 export type GraficoEstado = GraficoDatosBlock;

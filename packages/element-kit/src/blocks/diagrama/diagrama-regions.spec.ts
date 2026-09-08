@@ -7,7 +7,7 @@ import {
   regionAtPoint,
   regionesForConjuntos,
   vennCircles,
-} from './diagrama-regions';
+} from './diagrama-regions.js';
 
 describe('diagrama-regions', () => {
   it('clasifica A, B, intersección y fuera en 2 conjuntos', () => {

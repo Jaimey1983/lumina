@@ -28,8 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@lumina/ui/select';
-import { GRAFICO_PALETAS } from './grafico-color-palettes';
-import { cn } from '@/lib/utils';
+import { GRAFICO_PALETAS } from './grafico-color-palettes.js';
+import { cn } from '@lumina/ui/lib/utils';
 
 interface GraficoPropertiesProps {
   block: GraficoDatosBlock;

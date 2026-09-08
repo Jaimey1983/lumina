@@ -4,10 +4,10 @@ import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import type { GraficoDatosBlock } from '@lumina/types/slide';
 import { Skeleton } from '@lumina/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 
 const GraficoChartRenderer = dynamic(
-  () => import('./grafico-chart-renderer'),
+  () => import('./grafico-chart-renderer.js'),
   {
     ssr: false,
     loading: () => (

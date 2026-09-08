@@ -3,7 +3,7 @@ import {
   createDefaultGraficoBlock,
   normalizeGraficoBlock,
   VALID_GRAFICO_CHART_TYPES,
-} from './grafico-defaults';
+} from './grafico-defaults.js';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 
 describe('grafico-defaults', () => {

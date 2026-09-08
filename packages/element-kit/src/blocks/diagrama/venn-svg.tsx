@@ -3,9 +3,9 @@
 import { useMemo, type Ref } from 'react';
 
 import type { DiagramaVennBlock, DiagramaVennElemento } from '@lumina/types/slide';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 
-import { regionCentroid, vennCircles } from './diagrama-regions';
+import { regionCentroid, vennCircles } from './diagrama-regions.js';
 
 interface VennSvgProps {
   block: DiagramaVennBlock;

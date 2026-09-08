@@ -17,7 +17,12 @@
       "types": "./dist/activities/*.d.ts",
       "default": "./dist/activities/*.js"
     },
-    "./activities/*.css": "./dist/activities/*.css"
+    "./activities/*.css": "./dist/activities/*.css",
+    "./blocks/*": {
+      "types": "./dist/blocks/*.d.ts",
+      "default": "./dist/blocks/*.js"
+    },
+    "./blocks/*.css": "./dist/blocks/*.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
@@ -40,6 +45,7 @@
     "@lumina/ui": "workspace:*",
     "lucide-react": "^1.7.0",
     "lumina-frontend": "workspace:*",
+    "recharts": "^2.15.1",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
@@ -52,6 +58,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
     "jsdom": "^26.1.0",
+    "next": "15.5.19",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "typescript": "^5",

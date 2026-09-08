@@ -3,7 +3,7 @@ export type { GraficoDatosBlock } from '@lumina/types/slide';
 export {
   createDefaultGraficoBlock,
   normalizeGraficoBlock,
-} from './grafico-defaults';
-export { GraficoEditor } from './grafico-editor';
-export { GraficoViewer } from './grafico-viewer';
-export { GraficoProperties } from './grafico-properties';
+} from './grafico-defaults.js';
+export { GraficoEditor } from './grafico-editor.js';
+export { GraficoViewer } from './grafico-viewer.js';
+export { GraficoProperties } from './grafico-properties.js';

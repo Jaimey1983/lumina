@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "exports": {
-    "./blocks/grafico": "./src/components/graficos/index.ts",
-    "./blocks/diagrama": "./src/components/diagramas/index.ts",
     "./blocks/clip-group": "./src/components/clip-group/index.ts",
     "./blocks/clip-group/paper": "./src/components/clip-group/paper.ts",
     "./blocks/texto": "./src/components/primitives/texto/index.ts",

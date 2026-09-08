@@ -3,13 +3,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumina/types/slide';
-import { diagramaToGraphModel } from './diagrama-bridge';
-import { normalizeDiagramaBlock } from './diagrama-defaults';
-import { assignElementoRegion, regionAtPoint } from './diagrama-regions';
-import { VennSvg } from './venn-svg';
+import { diagramaToGraphModel } from './diagrama-bridge.js';
+import { normalizeDiagramaBlock } from './diagrama-defaults.js';
+import { assignElementoRegion, regionAtPoint } from './diagrama-regions.js';
+import { VennSvg } from './venn-svg.js';
 import type { GraphConnectAttempt, GraphNodePositionPatch } from '@lumina/editor-shared/graph-editor';
 import { Skeleton } from '@lumina/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 
 const GraphCanvas = dynamic(
   () => import('@lumina/editor-shared/graph-editor').then((mod) => mod.GraphCanvas),

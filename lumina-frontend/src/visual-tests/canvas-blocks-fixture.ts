@@ -1,8 +1,8 @@
-import { createDefaultGraficoBlock } from '@/components/graficos/grafico-defaults';
+import { createDefaultGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import {
   createDefaultMapaMentalBlock,
   createDefaultVennBlock,
-} from '@/components/diagramas/diagrama-defaults';
+} from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 import { createDefaultClipGroupBlock } from '@/lib/clip-path';
 import type {
   ClipGroupBlock,

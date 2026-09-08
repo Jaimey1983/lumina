@@ -26,8 +26,8 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { Badge } from '@lumina/ui/badge';
-import { cn } from '@/lib/utils';
-import { normalizeDiagramaBlock } from './diagrama-defaults';
+import { cn } from '@lumina/ui/lib/utils';
+import { normalizeDiagramaBlock } from './diagrama-defaults.js';
 
 interface DiagramaPropertiesProps {
   block: DiagramaBlock;

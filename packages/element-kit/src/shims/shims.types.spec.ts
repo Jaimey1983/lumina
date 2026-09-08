@@ -137,7 +137,10 @@ const imports = [...importsFromFrontend().entries()].sort((a, b) =>
 
 describe("shims ↔ frontend — los nombres que el kit importa existen a ambos lados (E4.5)", () => {
   it("el kit importa de al menos un subpath de lumina-frontend", () => {
-    expect(imports.length).toBeGreaterThan(10);
+    // E7.6.3/4/5: los widgets, actividades, grafico y diagrama ya no se shimean
+    // (viven en el kit). Quedan los 8 primitivos + clip-group (+ /paper) hasta
+    // E7.6.5b/6; el guard sigue vigilando lo que reste.
+    expect(imports.length).toBeGreaterThan(0);
   });
 
   it.each(imports)("%s: el barrel real exporta todo lo que el kit importa", (spec, usados) => {

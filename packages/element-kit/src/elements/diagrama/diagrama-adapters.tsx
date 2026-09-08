@@ -2,7 +2,7 @@ import {
   DiagramaEditor as LegacyDiagramaEditor,
   DiagramaProperties as LegacyDiagramaProperties,
   DiagramaViewer as LegacyDiagramaViewer,
-} from "lumina-frontend/blocks/diagrama";
+} from "../../blocks/diagrama/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

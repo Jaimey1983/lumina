@@ -13,12 +13,6 @@
       "@/*": [
         "../../lumina-frontend/src/*"
       ],
-      "lumina-frontend/blocks/grafico": [
-        "./src/shims/lumina-frontend-grafico.d.ts"
-      ],
-      "lumina-frontend/blocks/diagrama": [
-        "./src/shims/lumina-frontend-diagrama.d.ts"
-      ],
       "lumina-frontend/blocks/clip-group": [
         "./src/shims/lumina-frontend-clip-group.d.ts"
       ],
@@ -54,6 +48,9 @@
       ],
       "@lumina/element-kit/activities/*": [
         "./src/activities/*"
+      ],
+      "@lumina/element-kit/blocks/*": [
+        "./src/blocks/*"
       ]
     }
   },

@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultMapaMentalBlock } from "lumina-frontend/blocks/diagrama";
+import { createDefaultMapaMentalBlock } from "../../blocks/diagrama/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   DiagramaEditor,

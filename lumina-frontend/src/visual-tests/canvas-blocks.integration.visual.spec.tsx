@@ -25,8 +25,8 @@ import {
   graficoDefinition,
 } from '@lumina/element-kit';
 
-import { GraficoViewer as LegacyGraficoViewer } from '@/components/graficos/grafico-viewer';
-import { DiagramaViewer as LegacyDiagramaViewer } from '@/components/diagramas/diagrama-viewer';
+import { GraficoViewer as LegacyGraficoViewer } from '@lumina/element-kit/blocks/grafico/grafico-viewer';
+import { DiagramaViewer as LegacyDiagramaViewer } from '@lumina/element-kit/blocks/diagrama/diagrama-viewer';
 import { RenderClipGroup as LegacyRenderClipGroup } from '@/app/(app)/classes/[id]/editor/components/render-clip-group';
 
 import {

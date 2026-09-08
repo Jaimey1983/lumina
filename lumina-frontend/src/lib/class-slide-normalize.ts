@@ -31,8 +31,8 @@ import { normalizeClickRevealWidget } from '@lumina/element-kit/widgets/click-re
 import { normalizeTimelineWidget } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import { normalizeClipGroupBlock } from '@/lib/clip-path';
 import { normalizeBackground } from '@/lib/slide-background';
-import { normalizeGraficoBlock } from '@/components/graficos/grafico-defaults';
-import { normalizeDiagramaBlock } from '@/components/diagramas/diagrama-defaults';
+import { normalizeGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
+import { normalizeDiagramaBlock } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 

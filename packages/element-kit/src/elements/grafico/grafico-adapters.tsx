@@ -2,7 +2,7 @@ import {
   GraficoEditor as LegacyGraficoEditor,
   GraficoProperties as LegacyGraficoProperties,
   GraficoViewer as LegacyGraficoViewer,
-} from "lumina-frontend/blocks/grafico";
+} from "../../blocks/grafico/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

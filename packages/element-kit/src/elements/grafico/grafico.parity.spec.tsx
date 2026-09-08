@@ -4,7 +4,7 @@ import {
   GraficoEditor as LegacyGraficoEditor,
   GraficoViewer as LegacyGraficoViewer,
   createDefaultGraficoBlock,
-} from "lumina-frontend/blocks/grafico";
+} from "../../blocks/grafico/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { graficoDefinition } from "./grafico-definition.js";
 import type { GraficoConfig, GraficoEstado } from "./grafico-types.js";

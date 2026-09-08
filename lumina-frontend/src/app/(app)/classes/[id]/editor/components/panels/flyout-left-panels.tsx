@@ -27,7 +27,7 @@ import Link from 'next/link';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block, Background } from '@lumina/types/slide';
 import { DesignBackgroundPopover } from '../design-background-popover';
-import { createDefaultGraficoBlock } from '@/components/graficos/grafico-defaults';
+import { createDefaultGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import {
   createDefaultCronologiaBlock,
   createDefaultFlujoBlock,
@@ -35,7 +35,7 @@ import {
   createDefaultMapaMentalBlock,
   createDefaultOrganigramaBlock,
   createDefaultVennBlock,
-} from '@/components/diagramas/diagrama-defaults';
+} from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 import {
   appendBlockToSlideContent,
   getSlideContentRecord,

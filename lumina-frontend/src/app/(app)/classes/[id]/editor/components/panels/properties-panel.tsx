@@ -115,8 +115,8 @@ import {
 import { TimelineAppearanceProperties } from '@lumina/element-kit/widgets/timeline/timeline-appearance-properties';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import { ClipGroupBlockFields } from './clip-group-properties';
-import { GraficoProperties } from '@/components/graficos/grafico-properties';
-import { DiagramaProperties } from '@/components/diagramas/diagrama-properties';
+import { GraficoProperties } from '@lumina/element-kit/blocks/grafico/grafico-properties';
+import { DiagramaProperties } from '@lumina/element-kit/blocks/diagrama/diagrama-properties';
 import {
   WIDGET_CONTEXT_IMAGE_HINT,
   WIDGET_CONTEXT_TEXT_HINT,

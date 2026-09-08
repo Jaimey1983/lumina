@@ -6,7 +6,7 @@ import {
   DiagramaProperties as LegacyProperties,
   createDefaultMapaMentalBlock,
   createDefaultVennBlock,
-} from "lumina-frontend/blocks/diagrama";
+} from "../../blocks/diagrama/index.js";
 import { diagramaDefinition } from "./diagrama-definition.js";
 
 describe("Diagrama — paridad legacy / ElementDefinition (E4.2)", () => {
