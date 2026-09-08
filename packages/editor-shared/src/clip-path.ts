@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import { VIRTUAL_CANVAS_HEIGHT, VIRTUAL_CANVAS_WIDTH } from '@/lib/canvas-guides';
+import { VIRTUAL_CANVAS_HEIGHT, VIRTUAL_CANVAS_WIDTH } from './virtual-canvas.js';
 
 import type {
   ClipContent,
@@ -11,13 +11,13 @@ import type {
   ClipGroupBlock,
 } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
-import { resolveFontFamily } from '@lumina/editor-shared/font-catalog';
-import { normalizeTypography } from '@/lib/text-mask';
+import { resolveFontFamily } from './font-catalog.js';
+import { normalizeTypography } from './text-mask.js';
 import {
   freeformPathToSvgD,
   normalizeFreeformPath,
   resolveFreeformPath,
-} from '@lumina/editor-shared/freeform-mask';
+} from './freeform-mask.js';
 
 export type ClipImageAjuste = NonNullable<ClipContentImage['ajuste']>;
 

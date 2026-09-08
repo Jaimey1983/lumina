@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import type { ImageBlock } from '@lumina/types/slide';
-import { hasMediaSrc } from '@/lib/media-url';
+import { hasMediaSrc } from '@lumina/editor-shared/media-url';
 
 export interface RenderImageProps {
   block: ImageBlock;

@@ -19,7 +19,7 @@
 
 import type { Font, Path, PathCommand } from 'opentype.js';
 
-import { resolveFontFamily, weightsForFamily } from '@lumina/editor-shared/font-catalog';
+import { resolveFontFamily, weightsForFamily } from './font-catalog.js';
 import type { ClipShapeTexto } from '@lumina/types/slide';
 
 /** Límite de caracteres por línea del texto de una máscara. */

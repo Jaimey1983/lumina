@@ -1,9 +1,14 @@
 import type { SlideGuias } from '@lumina/types/slide';
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 import { parseSlideGrilla } from '@/lib/canvas-grid';
+import {
+  VIRTUAL_CANVAS_HEIGHT,
+  VIRTUAL_CANVAS_WIDTH,
+} from '@lumina/editor-shared/virtual-canvas';
 
-export const VIRTUAL_CANVAS_WIDTH = 1280;
-export const VIRTUAL_CANVAS_HEIGHT = 720;
+// E7.6.5b: la fuente única es `@lumina/editor-shared/virtual-canvas` (la usa
+// `clip-path` en el kit); aquí se re-exportan para los consumidores del canvas.
+export { VIRTUAL_CANVAS_WIDTH, VIRTUAL_CANVAS_HEIGHT };
 export const RULER_SIZE_PX = 16;
 
 export function clampVirtualX(x: number): number {

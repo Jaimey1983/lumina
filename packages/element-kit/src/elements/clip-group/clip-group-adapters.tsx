@@ -4,7 +4,7 @@ import {
   ClipGroupProperties as LegacyClipGroupProperties,
   type Block,
   type ClipContentImage,
-} from "lumina-frontend/blocks/clip-group";
+} from "../../blocks/clip-group/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

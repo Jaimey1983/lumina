@@ -28,9 +28,11 @@
     "@lumina/types": "workspace:*",
     "@lumina/ui": "workspace:*",
     "@xyflow/react": "12.11.0",
-    "lucide-react": "^1.7.0"
+    "lucide-react": "^1.7.0",
+    "opentype.js": "^1.3.4"
   },
   "devDependencies": {
+    "@types/opentype.js": "^1.3.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

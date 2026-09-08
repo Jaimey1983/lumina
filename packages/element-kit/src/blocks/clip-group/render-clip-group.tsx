@@ -21,10 +21,10 @@ import {
   generarClipPath,
   getClipImageStyle,
   normalizeClipContentImage,
-} from '@/lib/clip-path';
+} from '@lumina/editor-shared/clip-path';
 import { freeformPathToSvgD, resolveFreeformPath } from '@lumina/editor-shared/freeform-mask';
-import { hasMediaSrc } from '@/lib/media-url';
-import { getBlockPos } from '@/hooks/use-block-drag';
+import { hasMediaSrc } from '@lumina/editor-shared/media-url';
+import { getBlockPos } from '@lumina/editor-shared/block-pos';
 import type {
   Block,
   ClipCompositionFill,
@@ -37,7 +37,7 @@ import type {
 /** Editor Paper.js: solo se carga al entrar en modo edición de forma libre. */
 const ClipPathNodeEditorPaper = dynamic(
   () =>
-    import('./clip-path-node-editor-paper').then(
+    import('./clip-path-node-editor-paper.js').then(
       (m) => m.ClipPathNodeEditorPaper,
     ),
   { ssr: false },

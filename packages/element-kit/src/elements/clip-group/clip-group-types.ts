@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Block, ClipGroupBlock } from "lumina-frontend/blocks/clip-group";
+import type { Block, ClipGroupBlock } from "../../blocks/clip-group/index.js";
 
 /** Estado del elemento ClipGroup = el bloque de canvas completo. */
 export type ClipGroupEstado = ClipGroupBlock;

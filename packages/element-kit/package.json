@@ -45,6 +45,7 @@
     "@lumina/ui": "workspace:*",
     "lucide-react": "^1.7.0",
     "lumina-frontend": "workspace:*",
+    "paper": "0.12.18",
     "recharts": "^2.15.1",
     "socket.io-client": "^4.8.3"
   },

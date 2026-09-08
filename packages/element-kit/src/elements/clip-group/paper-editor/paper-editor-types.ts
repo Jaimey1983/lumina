@@ -2,8 +2,8 @@ import type {
   ClipGroupBlock,
   ClipShapeLibre,
   FreeformMaskPath,
-} from "lumina-frontend/blocks/clip-group";
-import { resolveFreeformPath } from "lumina-frontend/blocks/clip-group";
+} from "../../../blocks/clip-group/index.js";
+import { resolveFreeformPath } from "../../../blocks/clip-group/index.js";
 import type { ClipGroupEstado } from "../clip-group-types.js";
 
 /**

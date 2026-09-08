@@ -15,7 +15,7 @@ import {
   withRect,
   type BlockPos,
 } from '@/hooks/use-block-drag';
-import { createDefaultClipGroupBlock } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock } from '@lumina/editor-shared/clip-path';
 
 const EPSILON = 0.0001;
 

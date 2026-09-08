@@ -1,4 +1,4 @@
-import { createDefaultClipGroupBlock } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import type { ClipGroupBlock, ClipContent } from '@lumina/types/slide';
 
 /** Lienzo fijo para snapshots deterministas (320×240). */

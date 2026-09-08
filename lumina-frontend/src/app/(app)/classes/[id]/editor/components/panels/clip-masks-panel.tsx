@@ -15,7 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import { createDefaultClipGroupBlock, createTextClipGroupBlock } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock, createTextClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import {
   createDefaultLibreShape,
   createEmptyFreeformPath,
@@ -24,7 +24,7 @@ import { appendBlockToSlideContent } from '@/lib/class-slide-normalize';
 import type { Block, ClipShape, ClipShapeTexto } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
 
-import { TextMaskDialog } from './text-mask-dialog';
+import { TextMaskDialog } from '@lumina/element-kit/blocks/clip-group/text-mask-dialog';
 
 interface MaskItem {
   id: string;

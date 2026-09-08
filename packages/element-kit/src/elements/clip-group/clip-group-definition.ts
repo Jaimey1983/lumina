@@ -1,5 +1,5 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
-import { createDefaultClipGroup } from "lumina-frontend/blocks/clip-group";
+import { createDefaultClipGroup } from "../../blocks/clip-group/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ClipGroupEditor,

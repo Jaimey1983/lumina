@@ -24,7 +24,7 @@ import {
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { FontFamilySelect } from '@lumina/editor-shared/font-family-select';
 import { FONT_DEFAULT, resolveFontFamily } from '@lumina/editor-shared/font-catalog';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 import {
   DEFAULT_TYPOGRAPHY,
   TEXT_MASK_DEFAULT_WEIGHT,
@@ -37,7 +37,7 @@ import {
   weightsForTextMask,
   type TextMaskAlign,
   type TextMaskTypography,
-} from '@/lib/text-mask';
+} from '@lumina/editor-shared/text-mask';
 import type { ClipShapeTexto } from '@lumina/types/slide';
 
 const WEIGHT_LABELS: Record<number, string> = {

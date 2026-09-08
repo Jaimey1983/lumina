@@ -27,7 +27,7 @@ import {
 
 import { GraficoViewer as LegacyGraficoViewer } from '@lumina/element-kit/blocks/grafico/grafico-viewer';
 import { DiagramaViewer as LegacyDiagramaViewer } from '@lumina/element-kit/blocks/diagrama/diagrama-viewer';
-import { RenderClipGroup as LegacyRenderClipGroup } from '@/app/(app)/classes/[id]/editor/components/render-clip-group';
+import { RenderClipGroup as LegacyRenderClipGroup } from '@lumina/element-kit/blocks/clip-group/render-clip-group';
 
 import {
   CANVAS_HOST_BG,

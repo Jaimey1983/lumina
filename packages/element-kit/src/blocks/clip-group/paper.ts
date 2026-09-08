@@ -10,4 +10,4 @@
 export {
   ClipPathNodeEditorPaper,
   type ClipPathNodeEditorPaperProps,
-} from '@/app/(app)/classes/[id]/editor/components/clip-path-node-editor-paper';
+} from './clip-path-node-editor-paper.js';

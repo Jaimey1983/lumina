@@ -9,7 +9,7 @@ import {
   splitMaskLines,
   textOutlineGeometry,
   weightsForTextMask,
-} from '@/lib/text-mask';
+} from './text-mask.js';
 
 /**
  * Fuente falsa: cada carácter es un rectángulo de 0.5·size de ancho, `size` de

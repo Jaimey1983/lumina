@@ -1,0 +1,2 @@
+export const VIRTUAL_CANVAS_WIDTH = 1280;
+export const VIRTUAL_CANVAS_HEIGHT = 720;

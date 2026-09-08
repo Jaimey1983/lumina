@@ -18,7 +18,7 @@ import {
   clipShapeLabel,
   clampClipImageOffsetsForBlock,
   normalizeClipContentImage,
-} from '@/lib/clip-path';
+} from '@lumina/editor-shared/clip-path';
 import {
   appendMaskNode,
   createDefaultLibreShape,
@@ -38,9 +38,9 @@ import type {
 } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { FONT_DEFAULT } from '@lumina/editor-shared/font-catalog';
-import { TEXT_MASK_DEFAULT_WEIGHT } from '@/lib/text-mask';
+import { TEXT_MASK_DEFAULT_WEIGHT } from '@lumina/editor-shared/text-mask';
 
-import { TextMaskDialog } from './text-mask-dialog';
+import { TextMaskDialog } from './text-mask-dialog.js';
 
 interface Props {
   block: ClipGroupBlock;

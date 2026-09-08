@@ -1,13 +1,13 @@
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ClipPathNodeEditorPaperProps } from "lumina-frontend/blocks/clip-group/paper";
+import type { ClipPathNodeEditorPaperProps } from "../../../blocks/clip-group/paper.js";
 import {
   createDefaultClipGroup,
   createDefaultLibreShape,
   freeformPathToSvgD,
   normalizeFreeformPath,
   resolveFreeformPath,
-} from "lumina-frontend/blocks/clip-group";
+} from "../../../blocks/clip-group/index.js";
 import { PaperNodeEditor } from "./paper-node-editor.js";
 import {
   contornoFreeformAEstado,
@@ -27,7 +27,7 @@ const { capturado } = vi.hoisted(() => ({
   capturado: { current: null as ClipPathNodeEditorPaperProps | null },
 }));
 
-vi.mock("lumina-frontend/blocks/clip-group/paper", () => ({
+vi.mock("../../../blocks/clip-group/paper.js", () => ({
   ClipPathNodeEditorPaper: (props: ClipPathNodeEditorPaperProps) => {
     capturado.current = props;
     return <canvas data-testid="paper-node-editor-stub" />;

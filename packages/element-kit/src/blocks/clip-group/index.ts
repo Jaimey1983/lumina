@@ -30,16 +30,16 @@ export {
   createDefaultClipGroupBlock,
   createTextClipGroupBlock,
   withClipGroupContent,
-} from '@/lib/clip-path';
+} from '@lumina/editor-shared/clip-path';
 
 export {
   RenderClipGroup,
   type RenderClipGroupProps,
-} from '@/app/(app)/classes/[id]/editor/components/render-clip-group';
+} from './render-clip-group.js';
 
 export {
   ClipGroupBlockFields as ClipGroupProperties,
-} from '@/app/(app)/classes/[id]/editor/components/panels/clip-group-properties';
+} from './clip-group-properties.js';
 
 /**
  * El editor de nodos Bézier (motor Paper.js) NO se re-exporta desde este barrel:
@@ -60,7 +60,7 @@ export {
 } from '@lumina/editor-shared/freeform-mask';
 
 import type { ClipContent, ClipGroupBlock, ClipShape } from '@lumina/types/slide';
-import { createDefaultClipGroupBlock } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock } from '@lumina/editor-shared/clip-path';
 
 /** Helper canónico con forma por defecto ('circulo') para `crearPorDefecto` de `ElementDefinition`. */
 export function createDefaultClipGroup(

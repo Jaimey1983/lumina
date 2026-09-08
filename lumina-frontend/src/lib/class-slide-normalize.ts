@@ -29,7 +29,7 @@ import { normalizeTabsWidget } from '@lumina/element-kit/widgets/tabs/tabs-confi
 import { normalizeCarouselWidget } from '@lumina/element-kit/widgets/carousel/carousel-config';
 import { normalizeClickRevealWidget } from '@lumina/element-kit/widgets/click-reveal/click-reveal-config';
 import { normalizeTimelineWidget } from '@lumina/element-kit/widgets/timeline/timeline-config';
-import { normalizeClipGroupBlock } from '@/lib/clip-path';
+import { normalizeClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import { normalizeBackground } from '@/lib/slide-background';
 import { normalizeGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import { normalizeDiagramaBlock } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';

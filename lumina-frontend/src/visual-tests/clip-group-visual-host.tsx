@@ -1,6 +1,6 @@
 import type { ClipGroupBlock } from '@lumina/types/slide';
 
-import { RenderClipGroup } from '@/app/(app)/classes/[id]/editor/components/render-clip-group';
+import { RenderClipGroup } from '@lumina/element-kit/blocks/clip-group/render-clip-group';
 import { CLIP_VISUAL_BG, CLIP_VISUAL_SIZE } from './clip-group-fixture';
 
 export function ClipVisualHost({ block }: { block: ClipGroupBlock }) {

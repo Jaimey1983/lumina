@@ -6,7 +6,7 @@ import {
   createDefaultClipGroup,
   type ClipGroupBlock,
   type ClipShape,
-} from "lumina-frontend/blocks/clip-group";
+} from "../../blocks/clip-group/index.js";
 import { clipGroupDefinition } from "./clip-group-definition.js";
 
 /** Normaliza IDs de `useId` y nombres de clip-path para comparar el DOM visible. */

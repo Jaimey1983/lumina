@@ -3,7 +3,7 @@ import {
   createDefaultMapaMentalBlock,
   createDefaultVennBlock,
 } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
-import { createDefaultClipGroupBlock } from '@/lib/clip-path';
+import { createDefaultClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import type {
   ClipGroupBlock,
   DiagramaGrafoBlock,

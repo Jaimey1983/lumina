@@ -12,7 +12,7 @@ import {
  * se monta de verdad — igual que el `dynamic(ssr:false)` de `render-clip-group`.
  */
 const ClipPathNodeEditorPaper = lazy(() =>
-  import("lumina-frontend/blocks/clip-group/paper").then((m) => ({
+  import("../../../blocks/clip-group/paper.js").then((m) => ({
     default: m.ClipPathNodeEditorPaper,
   })),
 );
