@@ -106,7 +106,7 @@ import {
   videoInteractiveTemplate,
   livePollTemplate,
   wordCloudTemplate,
-} from './activity-templates';
+} from '@lumina/element-kit/activities/_classic/activity-templates';
 import { createDefaultGlobos } from '@lumina/element-kit/activities/globos/globos-defaults';
 import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
@@ -217,7 +217,7 @@ import type { SlideTheme } from '@lumina/types/slide';
 import { useAutosave } from '@/hooks/use-autosave';
 import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
 
-// Las 10 plantillas de la familia clásica viven en `./activity-templates`
+// Las 10 plantillas de la familia clásica viven en `@lumina/element-kit/activities/_classic/activity-templates`
 // (extraídas en E2.5 para que `@lumina/element-kit` las consuma como
 // `crearPorDefecto`). `torneo` y `escape_room` siguen acá — no son parte de E2.5.
 

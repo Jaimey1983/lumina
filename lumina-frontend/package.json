@@ -14,8 +14,7 @@
     "./blocks/codigo": "./src/components/primitives/codigo/index.ts",
     "./blocks/cita": "./src/components/primitives/cita/index.ts",
     "./blocks/separador": "./src/components/primitives/separador/index.ts",
-    "./blocks/columnas": "./src/components/primitives/columnas/index.ts",
-    "./editor-activities": "./src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
+    "./blocks/columnas": "./src/components/primitives/columnas/index.ts"
   },
   "scripts": {
     "predev": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/editor-shared build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",

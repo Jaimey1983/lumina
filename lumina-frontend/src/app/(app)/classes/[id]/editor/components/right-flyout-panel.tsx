@@ -20,7 +20,7 @@ import {
 import { GamificationLeaderboard } from '@/components/gamification/gamification-leaderboard';
 import type { EstudianteLeaderboard } from '@/hooks/use-gamification';
 import { TorneoPanel } from '@/components/editor/panels/torneo-panel';
-import { QuizSyncedPanel } from './activities/quiz/quiz-synced-panel';
+import { QuizSyncedPanel } from '@lumina/element-kit/activities/_classic/quiz/quiz-synced-panel';
 import { EscapeRoomLiveDashboard } from '@/components/editor/panels/escape-room-live-dashboard';
 import type { Activity } from '@lumina/types/slide';
 

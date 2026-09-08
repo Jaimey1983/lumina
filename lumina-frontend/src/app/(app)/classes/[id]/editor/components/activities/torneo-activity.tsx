@@ -8,7 +8,7 @@ import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { cn } from '@/lib/utils';
-import { useActivityEditor } from './use-activity-editor';
+import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
 function normalizeTorneo(raw: TorneoActivity | null | undefined): TorneoActivity {
   const fb = BLOCK_FALLBACKS.torneo;

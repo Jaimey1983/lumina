@@ -38,9 +38,6 @@
       ],
       "lumina-frontend/blocks/columnas": [
         "./src/shims/lumina-frontend-columnas.d.ts"
-      ],
-      "lumina-frontend/editor-activities": [
-        "./src/shims/lumina-frontend-editor-activities.d.ts"
       ]
     }
   },

@@ -1,4 +1,4 @@
-import type { Activity } from "lumina-frontend/editor-activities";
+import type { Activity } from "../../activities/_classic/index.js";
 
 /** Estado del elemento video_interactivo = la actividad completa. */
 export type VideoInteractivoEstado = Activity;

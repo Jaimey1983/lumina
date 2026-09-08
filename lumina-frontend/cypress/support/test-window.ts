@@ -3,7 +3,7 @@
  * cuelga de `window` durante los specs de video interactivo, para poder
  * inspeccionarlos/pilotearlos desde Cypress sin `any`.
  */
-import type { TimelineEngine, TimelinePolicy } from '../../src/lib/video-interactive/timeline-engine';
+import type { TimelineEngine, TimelinePolicy } from '@lumina/element-kit/activities/_classic/video-interactive/timeline-engine';
 
 export interface VideoEventLog {
   event: string;

@@ -4,7 +4,7 @@ import {
   trueFalseTemplate,
   TrueFalseActivityEditor,
   TrueFalseViewer,
-} from "lumina-frontend/editor-activities";
+} from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
 import {

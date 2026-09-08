@@ -35,7 +35,7 @@ import { AbrirCajaProperties } from '@lumina/element-kit/activities/abrir-caja/a
 import { AnagramaProperties } from '@lumina/element-kit/activities/anagrama/anagrama-properties';
 import { AhorcadoProperties } from '@lumina/element-kit/activities/ahorcado/ahorcado-properties';
 import { PuzzlePalabrasProperties } from '@lumina/element-kit/activities/puzzle-palabras/puzzle-palabras-properties';
-import { EmparejarProperties } from '@/components/activities/emparejar/emparejar-properties';
+import { EmparejarProperties } from '@lumina/element-kit/activities/emparejar/emparejar-properties';
 import { GlobosProperties } from '@lumina/element-kit/activities/globos/globos-properties';
 import { TopoProperties } from '@lumina/element-kit/activities/topo/topo-properties';
 import { RuletaProperties } from '@lumina/element-kit/widgets/ruleta/ruleta-properties';

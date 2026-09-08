@@ -1,0 +1,332 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
+
+import type { FillBlanks, FillBlank } from '@lumina/types/slide';
+import { Button } from '@lumina/ui/button';
+import { Input } from '@lumina/ui/input';
+import { Label } from '@lumina/ui/label';
+import { Textarea } from '@lumina/ui/textarea';
+import { cn } from '@lumina/ui/lib/utils';
+import { useSound } from '@lumina/editor-shared/use-sound';
+import { evaluateActivityResponse } from '@lumina/scoring';
+import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function generateId() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+/** Extract blank ids referenced in the template text via {{blank:id}} markers. */
+function extractBlankIds(texto: string): string[] {
+  const matches = [...texto.matchAll(/\{\{blank:([^}]+)\}\}/g)];
+  return matches.map((m) => m[1]);
+}
+
+function isFillBlanksSubmissionCorrect(activity: FillBlanks, answers: Record<string, string>): boolean {
+  return evaluateActivityResponse('completar_blancos', activity, answers).correct === true;
+}
+
+function normalize(a: FillBlanks | null | undefined): FillBlanks {
+  if (!a) {
+    const id = generateId();
+    return {
+      tipo: 'completar_blancos',
+      texto: `Completa: el agua hierve a {{blank:${id}}} °C.`,
+      blancos: [{ id, respuesta: '100' }],
+    };
+  }
+  return { ...a, tipo: 'completar_blancos' };
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+interface Props {
+  editorSyncKey?: string;
+  data: FillBlanks | null;
+  onChange: (data: FillBlanks) => void;
+  onRemove?: () => void;
+  canvasLayout?: boolean;
+  isSelected?: boolean;
+}
+
+// ─── Editor ───────────────────────────────────────────────────────────────────
+
+export function FillBlanksActivityEditor({
+  editorSyncKey,
+  data,
+  onChange,
+  onRemove,
+  canvasLayout,
+  isSelected,
+}: Props) {
+  const { local, setLocal, flush, schedulePersist, commitImmediate } =
+    useActivityEditor<FillBlanks>({
+      data,
+      editorSyncKey,
+      normalize,
+      onChange,
+    });
+
+  function updateImmediate(partial: Partial<FillBlanks>) {
+    commitImmediate({ ...local, ...partial, tipo: 'completar_blancos' });
+  }
+
+  // ── Text template ──
+
+  function handleTextoChange(texto: string) {
+    // Reconcile blancos: keep existing ones that still appear in text, drop removed ones.
+    const referencedIds = extractBlankIds(texto);
+    const existingById = Object.fromEntries(local.blancos.map((b) => [b.id, b]));
+    const blancos: FillBlank[] = referencedIds.map(
+      (id) => existingById[id] ?? { id, respuesta: '' },
+    );
+    const next: FillBlanks = { ...local, tipo: 'completar_blancos', texto, blancos };
+    setLocal(next);
+    schedulePersist(next);
+  }
+
+  // ── Add blank ──
+
+  function addBlank() {
+    const id = generateId();
+    const marker = `{{blank:${id}}}`;
+    const texto = local.texto + (local.texto.endsWith(' ') ? '' : ' ') + marker;
+    const blancos: FillBlank[] = [...local.blancos, { id, respuesta: '' }];
+    updateImmediate({ texto, blancos });
+  }
+
+  // ── Edit blank answer ──
+
+  function updateBlankRespuesta(id: string, respuesta: string) {
+    const blancos = local.blancos.map((b) => (b.id === id ? { ...b, respuesta } : b));
+    const next: FillBlanks = { ...local, tipo: 'completar_blancos', blancos };
+    setLocal(next);
+    schedulePersist(next);
+  }
+
+  // ── Remove blank (from text + list) ──
+
+  function removeBlank(id: string) {
+    const texto = local.texto.replace(new RegExp(`\\{\\{blank:${id}\\}\\}`, 'g'), '___');
+    const blancos = local.blancos.filter((b) => b.id !== id);
+    updateImmediate({ texto, blancos });
+  }
+
+  const referencedIds = extractBlankIds(local.texto);
+
+  return (
+    <div
+      data-activity-editor-root
+      className={cn(
+        canvasLayout
+          ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
+          : 'flex max-h-[min(65vh,480px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
+      )}
+    >
+      {/* Header */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
+        <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
+          Completar blancos
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
+          Usa {'{{blank:id}}'} en el texto para marcar los huecos
+        </span>
+        {onRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-[#9ca3af] hover:text-destructive"
+            title="Eliminar esta actividad"
+            aria-label="Eliminar esta actividad"
+            onClick={(e) => {
+              e.stopPropagation();
+              flush();
+              onRemove();
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2.5 pr-1">
+        {/* Template text */}
+        <div className="space-y-1">
+          <Label htmlFor="fb-texto" className="text-[11px] font-medium">
+            Texto con huecos
+          </Label>
+          <Textarea
+            id="fb-texto"
+            value={local.texto}
+            onChange={(e) => handleTextoChange(e.target.value)}
+            onBlur={flush}
+            rows={3}
+            className="min-h-[4rem] resize-none font-mono text-xs"
+            placeholder="Ej: El agua hierve a {{blank:abc123}} °C."
+          />
+          <p className="text-[10px] text-[#9ca3af]">
+            Escribe {'{{blank:id}}'} donde quieres un hueco, o usa el botón.
+          </p>
+        </div>
+
+        {/* Add blank button */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addBlank}
+          className="h-6 w-full px-2 text-[10px]"
+        >
+          <Plus className="mr-1 size-3" />
+          Añadir hueco al final
+        </Button>
+
+        {/* Blank answers */}
+        {referencedIds.length > 0 && (
+          <div className="space-y-2">
+            <Label className="text-[11px] font-medium">
+              Respuestas correctas ({referencedIds.length} hueco{referencedIds.length !== 1 ? 's' : ''})
+            </Label>
+            <div className="flex flex-col gap-1.5">
+              {referencedIds.map((id, idx) => {
+                const blank = local.blancos.find((b) => b.id === id);
+                return (
+                  <div key={id} className="flex items-center gap-1.5">
+                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-[#9ca3af]">
+                      {idx + 1}
+                    </span>
+                    <Input
+                      value={blank?.respuesta ?? ''}
+                      onChange={(e) => updateBlankRespuesta(id, e.target.value)}
+                      onBlur={flush}
+                      className="h-7 flex-1 text-xs"
+                      placeholder="Respuesta correcta"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 text-[#9ca3af]/50 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => removeBlank(id)}
+                      title="Eliminar hueco"
+                    >
+                      <Trash2 className="size-3" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {referencedIds.length === 0 && (
+          <p className="rounded-md border border-dashed border-[#e5e7eb] bg-[#f9fafb] px-3 py-4 text-center text-[11px] text-[#9ca3af]">
+            Aún no hay huecos en el texto. Añade uno con el botón de arriba.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Viewer ───────────────────────────────────────────────────────────────────
+
+export function FillBlanksViewer({
+  activity,
+  editorSyncKey,
+  onResponse,
+  variant = 'light',
+}: {
+  activity: FillBlanks;
+  editorSyncKey?: string;
+  onResponse?: (response: unknown) => void;
+  variant?: 'dark' | 'light';
+}) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answered, setAnswered] = useState(false);
+  const { play } = useSound();
+
+  useEffect(() => {
+    setAnswered(false);
+    setAnswers({});
+  }, [editorSyncKey]);
+
+  const isDark = variant === 'dark';
+  const blankInputClass = cn(
+    'mx-1 inline-block h-8 w-24 rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#93c5fd]',
+    isDark
+      ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
+      : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
+  );
+
+  const regex = /\{\{blank:([^}]+)\}\}/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  const text = activity.texto || '';
+  const matches = [...text.matchAll(regex)];
+
+  matches.forEach((m) => {
+    parts.push(text.slice(lastIndex, m.index));
+    const id = m[1];
+
+    parts.push(
+      <input
+        key={id}
+        type="text"
+        className={blankInputClass}
+        value={answers[id] || ''}
+        disabled={answered}
+        onChange={(e) => {
+          setAnswers((prev) => ({ ...prev, [id]: e.target.value }));
+        }}
+      />
+    );
+    lastIndex = (m.index || 0) + m[0].length;
+  });
+  parts.push(text.slice(lastIndex));
+
+  const handleSubmit = () => {
+    if (answered) return;
+    setAnswered(true);
+    // Emit Record<string, string>: blankId → given answer
+    const result: Record<string, string> = {};
+    matches.forEach((m) => {
+      result[m[1]] = answers[m[1]] ?? '';
+    });
+    const blanks = activity.blancos ?? [];
+    if (blanks.length > 0) {
+      play(isFillBlanksSubmissionCorrect(activity, result) ? 'correct' : 'wrong');
+    } else {
+      play('submit');
+    }
+    onResponse?.(result);
+  };
+
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-6 rounded-xl p-6 shadow-lumina-xs',
+        isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
+      )}
+    >
+      <div className={cn('text-base font-medium leading-relaxed', isDark ? 'text-white' : 'text-[#111827]')}>
+        {parts}
+      </div>
+      {answered ? (
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          <span>✓</span> ¡Respuesta enviada!
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit}>Enviar</Button>
+        </div>
+      )}
+    </div>
+  );
+}

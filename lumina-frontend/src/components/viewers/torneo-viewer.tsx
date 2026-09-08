@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { Trophy } from 'lucide-react';
 
-import { useSound } from '@/hooks/use-sound';
+import { useSound } from '@lumina/editor-shared/use-sound';
 import { cn } from '@/lib/utils';
 import type { TorneoActivity } from '@lumina/types/slide';
 

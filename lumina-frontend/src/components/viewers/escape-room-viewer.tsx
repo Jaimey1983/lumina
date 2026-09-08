@@ -17,7 +17,7 @@ import {
   pistasReveladasPorIntentos,
 } from '@/lib/escape-room-logic';
 import type { EscapeRoomRankingRow } from '@/lib/escape-room-live.types';
-import { useSound } from '@/hooks/use-sound';
+import { useSound } from '@lumina/editor-shared/use-sound';
 import { cn } from '@/lib/utils';
 import type { Block, EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
 import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';

@@ -49,9 +49,6 @@
       "lumina-frontend/blocks/columnas": [
         "./src/shims/lumina-frontend-columnas.d.ts"
       ],
-      "lumina-frontend/editor-activities": [
-        "../../lumina-frontend/src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
-      ],
       "@lumina/element-kit/widgets/*": [
         "./src/widgets/*"
       ],

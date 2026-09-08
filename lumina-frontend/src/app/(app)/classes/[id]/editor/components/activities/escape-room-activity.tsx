@@ -11,7 +11,7 @@ import {
 import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 
-import { useActivityEditor } from './use-activity-editor';
+import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
 export function EscapeRoomActivityEditor({
   editorSyncKey,
