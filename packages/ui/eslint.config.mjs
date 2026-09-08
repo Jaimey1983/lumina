@@ -1,5 +1,3 @@
-import base from "../../lumina-frontend/eslint.config.mjs";
+import base from "../../eslint.config.base.mjs";
 
-const config = [...base, { ignores: ["dist/**"] }];
-
-export default config;
+export default base;
