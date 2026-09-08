@@ -1,4 +1,4 @@
-import type { CrucigramaActivity } from "lumina-frontend/activities/crucigrama";
+import type { CrucigramaActivity } from "../../activities/crucigrama/index.js";
 
 /** Estado del elemento Crucigrama = la actividad completa. */
 export type CrucigramaEstado = CrucigramaActivity;

@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultAhorcado } from "lumina-frontend/activities/ahorcado";
+import { createDefaultAhorcado } from "../../activities/ahorcado/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   AhorcadoEditor,

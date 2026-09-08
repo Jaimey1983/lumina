@@ -1,4 +1,4 @@
-import type { TopoActivity } from "lumina-frontend/activities/topo";
+import type { TopoActivity } from "../../activities/topo/index.js";
 
 /** Estado del elemento Topo = la actividad completa. */
 export type TopoEstado = TopoActivity;

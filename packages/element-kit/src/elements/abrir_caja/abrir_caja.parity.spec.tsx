@@ -5,7 +5,7 @@ import {
   AbrirCajaEditor as LegacyAbrirCajaEditor,
   AbrirCajaViewer as LegacyAbrirCajaViewer,
   createDefaultAbrirCaja,
-} from "lumina-frontend/activities/abrir-caja";
+} from "../../activities/abrir-caja/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { abrirCajaDefinition, evaluarAbrirCaja } from "./abrir_caja-definition.js";

@@ -2,7 +2,7 @@ import {
   HistoriaRamificadaEditor as LegacyHistoriaRamificadaEditor,
   HistoriaRamificadaViewer as LegacyHistoriaRamificadaViewer,
   HistoriaRamificadaProperties as LegacyHistoriaRamificadaProperties,
-} from "lumina-frontend/activities/historia-ramificada";
+} from "../../activities/historia-ramificada/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

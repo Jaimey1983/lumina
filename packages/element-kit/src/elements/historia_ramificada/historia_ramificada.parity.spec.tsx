@@ -5,7 +5,7 @@ import {
   HistoriaRamificadaEditor as LegacyHistoriaRamificadaEditor,
   HistoriaRamificadaViewer as LegacyHistoriaRamificadaViewer,
   createDefaultHistoriaRamificada,
-} from "lumina-frontend/activities/historia-ramificada";
+} from "../../activities/historia-ramificada/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { historiaRamificadaDefinition, evaluarHistoriaRamificada } from "./historia_ramificada-definition.js";

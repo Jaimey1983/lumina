@@ -1,4 +1,4 @@
-import type { GraphEdge, GraphModel, GraphNode } from '@/lib/graph-editor';
+import type { GraphEdge, GraphModel, GraphNode } from '@lumina/editor-shared/graph-editor';
 
 export type ProgressNodeStatus = 'locked' | 'available' | 'in_progress' | 'completed';
 

@@ -5,7 +5,7 @@ import {
   PuzzlePalabrasEditor as LegacyPuzzlePalabrasEditor,
   PuzzlePalabrasViewer as LegacyPuzzlePalabrasViewer,
   createDefaultPuzzlePalabras,
-} from "lumina-frontend/activities/puzzle-palabras";
+} from "../../activities/puzzle-palabras/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { puzzlePalabrasDefinition, evaluarPuzzlePalabras } from "./puzzle_palabras-definition.js";

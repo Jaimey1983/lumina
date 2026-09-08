@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultCrucigrama } from "lumina-frontend/activities/crucigrama";
+import { createDefaultCrucigrama } from "../../activities/crucigrama/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   CrucigramaEditor,

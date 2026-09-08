@@ -5,7 +5,7 @@ import {
   MemoriaEditor as LegacyMemoriaEditor,
   MemoriaViewer as LegacyMemoriaViewer,
   createDefaultMemoria,
-} from "lumina-frontend/activities/memoria";
+} from "../../activities/memoria/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { memoriaDefinition, evaluarMemoria } from "./memoria-definition.js";

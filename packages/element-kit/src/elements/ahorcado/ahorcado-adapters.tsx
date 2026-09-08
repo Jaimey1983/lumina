@@ -2,7 +2,7 @@ import {
   AhorcadoEditor as LegacyAhorcadoEditor,
   AhorcadoViewer as LegacyAhorcadoViewer,
   AhorcadoProperties as LegacyAhorcadoProperties,
-} from "lumina-frontend/activities/ahorcado";
+} from "../../activities/ahorcado/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

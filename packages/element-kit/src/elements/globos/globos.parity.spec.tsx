@@ -5,7 +5,7 @@ import {
   GlobosEditor as LegacyGlobosEditor,
   GlobosViewer as LegacyGlobosViewer,
   createDefaultGlobos,
-} from "lumina-frontend/activities/globos";
+} from "../../activities/globos/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { globosDefinition, evaluarGlobos } from "./globos-definition.js";

@@ -1,4 +1,4 @@
-import type { AnagramaActivity } from "lumina-frontend/activities/anagrama";
+import type { AnagramaActivity } from "../../activities/anagrama/index.js";
 
 /**
  * Estado del elemento Anagrama = la actividad completa.

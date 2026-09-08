@@ -1,4 +1,4 @@
-import type { PuzzleImagenActivity } from "lumina-frontend/activities/puzzle-imagen";
+import type { PuzzleImagenActivity } from "../../activities/puzzle-imagen/index.js";
 
 /** Estado del elemento PuzzleImagen = la actividad completa. */
 export type PuzzleImagenEstado = PuzzleImagenActivity;

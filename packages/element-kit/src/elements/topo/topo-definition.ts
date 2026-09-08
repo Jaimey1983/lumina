@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultTopo } from "lumina-frontend/activities/topo";
+import { createDefaultTopo } from "../../activities/topo/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   TopoEditor,

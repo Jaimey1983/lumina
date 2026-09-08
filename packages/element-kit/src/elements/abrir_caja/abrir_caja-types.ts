@@ -1,4 +1,4 @@
-import type { AbrirCajaActivity } from "lumina-frontend/activities/abrir-caja";
+import type { AbrirCajaActivity } from "../../activities/abrir-caja/index.js";
 
 /** Estado del elemento AbrirCaja = la actividad completa. */
 export type AbrirCajaEstado = AbrirCajaActivity;

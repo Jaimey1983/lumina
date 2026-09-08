@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultHistoriaRamificada } from "lumina-frontend/activities/historia-ramificada";
+import { createDefaultHistoriaRamificada } from "../../activities/historia-ramificada/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   HistoriaRamificadaEditor,

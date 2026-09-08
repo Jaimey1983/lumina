@@ -1,4 +1,4 @@
-import type { HistoriaRamificadaActivity } from "lumina-frontend/activities/historia-ramificada";
+import type { HistoriaRamificadaActivity } from "../../activities/historia-ramificada/index.js";
 
 /** Estado del elemento HistoriaRamificada = la actividad completa. */
 export type HistoriaRamificadaEstado = HistoriaRamificadaActivity;

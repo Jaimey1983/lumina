@@ -26,21 +26,21 @@ import type {
   ClickRevealWidget,
   TimelineWidget,
 } from '@lumina/types/slide';
-import { ClasificarProperties } from '@/components/activities/clasificar/clasificar-properties';
-import { MemoriaProperties } from '@/components/activities/memoria/memoria-properties';
-import { PuzzleImagenProperties } from '@/components/activities/puzzle-imagen/puzzle-imagen-properties';
-import { SopaLetrasProperties } from '@/components/activities/sopa-letras/sopa-letras-properties';
-import { CrucigramaProperties } from '@/components/activities/crucigrama/crucigrama-properties';
-import { AbrirCajaProperties } from '@/components/activities/abrir-caja/abrir-caja-properties';
-import { AnagramaProperties } from '@/components/activities/anagrama/anagrama-properties';
-import { AhorcadoProperties } from '@/components/activities/ahorcado/ahorcado-properties';
-import { PuzzlePalabrasProperties } from '@/components/activities/puzzle-palabras/puzzle-palabras-properties';
+import { ClasificarProperties } from '@lumina/element-kit/activities/clasificar/clasificar-properties';
+import { MemoriaProperties } from '@lumina/element-kit/activities/memoria/memoria-properties';
+import { PuzzleImagenProperties } from '@lumina/element-kit/activities/puzzle-imagen/puzzle-imagen-properties';
+import { SopaLetrasProperties } from '@lumina/element-kit/activities/sopa-letras/sopa-letras-properties';
+import { CrucigramaProperties } from '@lumina/element-kit/activities/crucigrama/crucigrama-properties';
+import { AbrirCajaProperties } from '@lumina/element-kit/activities/abrir-caja/abrir-caja-properties';
+import { AnagramaProperties } from '@lumina/element-kit/activities/anagrama/anagrama-properties';
+import { AhorcadoProperties } from '@lumina/element-kit/activities/ahorcado/ahorcado-properties';
+import { PuzzlePalabrasProperties } from '@lumina/element-kit/activities/puzzle-palabras/puzzle-palabras-properties';
 import { EmparejarProperties } from '@/components/activities/emparejar/emparejar-properties';
-import { GlobosProperties } from '@/components/activities/globos/globos-properties';
-import { TopoProperties } from '@/components/activities/topo/topo-properties';
+import { GlobosProperties } from '@lumina/element-kit/activities/globos/globos-properties';
+import { TopoProperties } from '@lumina/element-kit/activities/topo/topo-properties';
 import { RuletaProperties } from '@lumina/element-kit/widgets/ruleta/ruleta-properties';
 import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
-import { HistoriaRamificadaProperties } from '@/components/activities/historia-ramificada/historia-ramificada-properties';
+import { HistoriaRamificadaProperties } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-properties';
 import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import {
   FlipCardsImageInnerProperties,

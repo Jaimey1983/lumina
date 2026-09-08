@@ -5,7 +5,7 @@ import {
   CrucigramaEditor as LegacyCrucigramaEditor,
   CrucigramaViewer as LegacyCrucigramaViewer,
   createDefaultCrucigrama,
-} from "lumina-frontend/activities/crucigrama";
+} from "../../activities/crucigrama/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crucigramaDefinition, evaluarCrucigrama } from "./crucigrama-definition.js";

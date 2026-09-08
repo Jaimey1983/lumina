@@ -1,4 +1,4 @@
-import type { MemoriaActivity } from "lumina-frontend/activities/memoria";
+import type { MemoriaActivity } from "../../activities/memoria/index.js";
 
 /** Estado del elemento Memoria = la actividad completa. */
 export type MemoriaEstado = MemoriaActivity;

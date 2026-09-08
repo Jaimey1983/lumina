@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultPuzzleImagen } from "lumina-frontend/activities/puzzle-imagen";
+import { createDefaultPuzzleImagen } from "../../activities/puzzle-imagen/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   PuzzleImagenEditor,

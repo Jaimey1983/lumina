@@ -7,12 +7,12 @@ import { diagramaToGraphModel } from './diagrama-bridge';
 import { normalizeDiagramaBlock } from './diagrama-defaults';
 import { assignElementoRegion, regionAtPoint } from './diagrama-regions';
 import { VennSvg } from './venn-svg';
-import type { GraphConnectAttempt, GraphNodePositionPatch } from '@/lib/graph-editor';
+import type { GraphConnectAttempt, GraphNodePositionPatch } from '@lumina/editor-shared/graph-editor';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const GraphCanvas = dynamic(
-  () => import('@/lib/graph-editor').then((mod) => mod.GraphCanvas),
+  () => import('@lumina/editor-shared/graph-editor').then((mod) => mod.GraphCanvas),
   {
     ssr: false,
     loading: () => (

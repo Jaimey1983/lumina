@@ -16,7 +16,7 @@ import {
   useProgressMap,
   useUpdateProgressEdges,
 } from '@/hooks/api/use-progress-map';
-import type { GraphConnectAttempt } from '@/lib/graph-editor';
+import type { GraphConnectAttempt } from '@lumina/editor-shared/graph-editor';
 import {
   progressMapToGraphModel,
   progressStatusLabel,
@@ -25,7 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const GraphCanvas = dynamic(
-  () => import('@/lib/graph-editor').then((mod) => mod.GraphCanvas),
+  () => import('@lumina/editor-shared/graph-editor').then((mod) => mod.GraphCanvas),
   {
     ssr: false,
     loading: () => <Skeleton className="h-[420px] w-full rounded-lg" />,

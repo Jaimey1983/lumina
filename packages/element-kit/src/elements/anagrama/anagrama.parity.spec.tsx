@@ -6,7 +6,7 @@ import {
   AnagramaViewer as LegacyAnagramaViewer,
   createDefaultAnagrama,
   type AnagramaActivity,
-} from "lumina-frontend/activities/anagrama";
+} from "../../activities/anagrama/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   anagramaDefinition,

@@ -2,7 +2,7 @@ import {
   SopaLetrasEditor as LegacySopaLetrasEditor,
   SopaLetrasViewer as LegacySopaLetrasViewer,
   SopaLetrasProperties as LegacySopaLetrasProperties,
-} from "lumina-frontend/activities/sopa-letras";
+} from "../../activities/sopa-letras/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

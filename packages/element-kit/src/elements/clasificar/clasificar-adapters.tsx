@@ -2,7 +2,7 @@ import {
   ClasificarEditor as LegacyClasificarEditor,
   ClasificarViewer as LegacyClasificarViewer,
   ClasificarProperties as LegacyClasificarProperties,
-} from "lumina-frontend/activities/clasificar";
+} from "../../activities/clasificar/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

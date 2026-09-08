@@ -2,7 +2,7 @@ import {
   GlobosEditor as LegacyGlobosEditor,
   GlobosViewer as LegacyGlobosViewer,
   GlobosProperties as LegacyGlobosProperties,
-} from "lumina-frontend/activities/globos";
+} from "../../activities/globos/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

@@ -2,7 +2,7 @@ import {
   CrucigramaEditor as LegacyCrucigramaEditor,
   CrucigramaViewer as LegacyCrucigramaViewer,
   CrucigramaProperties as LegacyCrucigramaProperties,
-} from "lumina-frontend/activities/crucigrama";
+} from "../../activities/crucigrama/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

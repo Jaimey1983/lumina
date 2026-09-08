@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultPuzzlePalabras } from "lumina-frontend/activities/puzzle-palabras";
+import { createDefaultPuzzlePalabras } from "../../activities/puzzle-palabras/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   PuzzlePalabrasEditor,

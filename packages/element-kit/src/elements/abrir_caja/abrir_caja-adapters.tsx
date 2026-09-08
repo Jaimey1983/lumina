@@ -2,7 +2,7 @@ import {
   AbrirCajaEditor as LegacyAbrirCajaEditor,
   AbrirCajaViewer as LegacyAbrirCajaViewer,
   AbrirCajaProperties as LegacyAbrirCajaProperties,
-} from "lumina-frontend/activities/abrir-caja";
+} from "../../activities/abrir-caja/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

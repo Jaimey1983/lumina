@@ -5,7 +5,7 @@ import {
   ClasificarEditor as LegacyClasificarEditor,
   ClasificarViewer as LegacyClasificarViewer,
   createDefaultClasificar,
-} from "lumina-frontend/activities/clasificar";
+} from "../../activities/clasificar/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { clasificarDefinition, evaluarClasificar } from "./clasificar-definition.js";

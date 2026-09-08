@@ -12,10 +12,10 @@ import type {
 import type { TransicionSlide } from '@lumina/types/animation';
 import { parseSlideGuias } from '@/lib/canvas-guides';
 import { normalizarEmparejar } from '@/components/activities/emparejar/emparejar-config';
-import { normalizarAbrirCaja } from '@/components/activities/abrir-caja/abrir-caja-config';
-import { normalizarGlobos } from '@/components/activities/globos/globos-config';
-import { normalizarTopo } from '@/components/activities/topo/topo-config';
-import { normalizarAhorcado } from '@/components/activities/ahorcado/ahorcado-config';
+import { normalizarAbrirCaja } from '@lumina/element-kit/activities/abrir-caja/abrir-caja-config';
+import { normalizarGlobos } from '@lumina/element-kit/activities/globos/globos-config';
+import { normalizarTopo } from '@lumina/element-kit/activities/topo/topo-config';
+import { normalizarAhorcado } from '@lumina/element-kit/activities/ahorcado/ahorcado-config';
 import { normalizePopupWidget } from '@lumina/element-kit/widgets/popup/popup-defaults';
 import { normalizeHotspotWidget } from '@lumina/element-kit/widgets/hotspot/hotspot-defaults';
 import { normalizeTooltipWidget } from '@lumina/element-kit/widgets/tooltip/tooltip-defaults';

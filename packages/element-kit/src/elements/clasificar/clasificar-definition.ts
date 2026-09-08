@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultClasificar } from "lumina-frontend/activities/clasificar";
+import { createDefaultClasificar } from "../../activities/clasificar/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   ClasificarEditor,

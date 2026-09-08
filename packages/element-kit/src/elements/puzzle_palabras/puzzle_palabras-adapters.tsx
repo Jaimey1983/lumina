@@ -2,7 +2,7 @@ import {
   PuzzlePalabrasEditor as LegacyPuzzlePalabrasEditor,
   PuzzlePalabrasViewer as LegacyPuzzlePalabrasViewer,
   PuzzlePalabrasProperties as LegacyPuzzlePalabrasProperties,
-} from "lumina-frontend/activities/puzzle-palabras";
+} from "../../activities/puzzle-palabras/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

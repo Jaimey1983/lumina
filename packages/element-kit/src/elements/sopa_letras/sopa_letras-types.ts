@@ -1,4 +1,4 @@
-import type { SopaLetrasActivity } from "lumina-frontend/activities/sopa-letras";
+import type { SopaLetrasActivity } from "../../activities/sopa-letras/index.js";
 
 /** Estado del elemento SopaLetras = la actividad completa. */
 export type SopaLetrasEstado = SopaLetrasActivity;

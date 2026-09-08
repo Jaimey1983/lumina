@@ -1,4 +1,4 @@
-import type { GlobosActivity } from "lumina-frontend/activities/globos";
+import type { GlobosActivity } from "../../activities/globos/index.js";
 
 /** Estado del elemento Globos = la actividad completa. */
 export type GlobosEstado = GlobosActivity;

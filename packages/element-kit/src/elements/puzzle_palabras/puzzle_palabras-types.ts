@@ -1,4 +1,4 @@
-import type { PuzzlePalabrasActivity } from "lumina-frontend/activities/puzzle-palabras";
+import type { PuzzlePalabrasActivity } from "../../activities/puzzle-palabras/index.js";
 
 /** Estado del elemento PuzzlePalabras = la actividad completa. */
 export type PuzzlePalabrasEstado = PuzzlePalabrasActivity;

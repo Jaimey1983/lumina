@@ -2,7 +2,7 @@
 // Convierte entre DiagramaGrafoBlock y el GraphModel agnóstico de React Flow.
 
 import type { DiagramaArista, DiagramaGrafoBlock, DiagramaNodo } from '@lumina/types/slide';
-import type { GraphEdge, GraphModel, GraphNode } from '@/lib/graph-editor';
+import type { GraphEdge, GraphModel, GraphNode } from '@lumina/editor-shared/graph-editor';
 
 /**
  * Convierte un bloque DiagramaGrafoBlock al modelo agnóstico GraphModel de graph-core.

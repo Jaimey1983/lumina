@@ -2,7 +2,7 @@ import {
   MemoriaEditor as LegacyMemoriaEditor,
   MemoriaViewer as LegacyMemoriaViewer,
   MemoriaProperties as LegacyMemoriaProperties,
-} from "lumina-frontend/activities/memoria";
+} from "../../activities/memoria/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

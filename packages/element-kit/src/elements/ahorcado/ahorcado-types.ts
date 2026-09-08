@@ -1,4 +1,4 @@
-import type { AhorcadoActivity } from "lumina-frontend/activities/ahorcado";
+import type { AhorcadoActivity } from "../../activities/ahorcado/index.js";
 
 /** Estado del elemento Ahorcado = la actividad completa. */
 export type AhorcadoEstado = AhorcadoActivity;

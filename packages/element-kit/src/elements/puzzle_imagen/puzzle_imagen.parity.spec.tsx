@@ -5,7 +5,7 @@ import {
   PuzzleImagenEditor as LegacyPuzzleImagenEditor,
   PuzzleImagenViewer as LegacyPuzzleImagenViewer,
   createDefaultPuzzleImagen,
-} from "lumina-frontend/activities/puzzle-imagen";
+} from "../../activities/puzzle-imagen/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { puzzleImagenDefinition, evaluarPuzzleImagen } from "./puzzle_imagen-definition.js";

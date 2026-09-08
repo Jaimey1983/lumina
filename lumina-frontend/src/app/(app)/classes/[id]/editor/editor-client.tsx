@@ -86,15 +86,15 @@ import { createDefaultProgresoBlock } from '@lumina/element-kit/widgets/progreso
 import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
 import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
-import { createDefaultClasificar } from '@/lib/clasificar-defaults';
-import { createDefaultMemoria } from '@/lib/memoria-defaults';
-import { createDefaultPuzzleImagen } from '@/lib/puzzle-imagen-defaults';
-import { createDefaultSopaLetras } from '@/lib/sopa-letras-defaults';
-import { createDefaultCrucigrama } from '@/lib/crucigrama-defaults';
-import { createDefaultAbrirCaja } from '@/lib/abrir-caja-defaults';
-import { createDefaultAnagrama } from '@/lib/anagrama-defaults';
-import { createDefaultAhorcado } from '@/lib/ahorcado-defaults';
-import { createDefaultPuzzlePalabras } from '@/lib/puzzle-palabras-defaults';
+import { createDefaultClasificar } from '@lumina/element-kit/activities/clasificar/clasificar-defaults';
+import { createDefaultMemoria } from '@lumina/element-kit/activities/memoria/memoria-defaults';
+import { createDefaultPuzzleImagen } from '@lumina/element-kit/activities/puzzle-imagen/puzzle-imagen-defaults';
+import { createDefaultSopaLetras } from '@lumina/element-kit/activities/sopa-letras/sopa-letras-defaults';
+import { createDefaultCrucigrama } from '@lumina/element-kit/activities/crucigrama/crucigrama-defaults';
+import { createDefaultAbrirCaja } from '@lumina/element-kit/activities/abrir-caja/abrir-caja-defaults';
+import { createDefaultAnagrama } from '@lumina/element-kit/activities/anagrama/anagrama-defaults';
+import { createDefaultAhorcado } from '@lumina/element-kit/activities/ahorcado/ahorcado-defaults';
+import { createDefaultPuzzlePalabras } from '@lumina/element-kit/activities/puzzle-palabras/puzzle-palabras-defaults';
 import {
   shortAnswerTemplate,
   quizMultipleTemplate,
@@ -107,9 +107,9 @@ import {
   livePollTemplate,
   wordCloudTemplate,
 } from './activity-templates';
-import { createDefaultGlobos } from '@/lib/globos-defaults';
-import { createDefaultTopo } from '@/lib/topo-defaults';
-import { createDefaultHistoriaRamificada } from '@/lib/historia-ramificada-defaults';
+import { createDefaultGlobos } from '@lumina/element-kit/activities/globos/globos-defaults';
+import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
+import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
 import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
 import {
   BLOCK_FALLBACKS,

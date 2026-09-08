@@ -1,4 +1,4 @@
-import type { ClasificarActivity } from "lumina-frontend/activities/clasificar";
+import type { ClasificarActivity } from "../../activities/clasificar/index.js";
 
 /** Estado del elemento Clasificar = la actividad completa. */
 export type ClasificarEstado = ClasificarActivity;

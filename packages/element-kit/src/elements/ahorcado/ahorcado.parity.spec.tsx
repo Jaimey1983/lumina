@@ -5,7 +5,7 @@ import {
   AhorcadoEditor as LegacyAhorcadoEditor,
   AhorcadoViewer as LegacyAhorcadoViewer,
   createDefaultAhorcado,
-} from "lumina-frontend/activities/ahorcado";
+} from "../../activities/ahorcado/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { ahorcadoDefinition, evaluarAhorcado } from "./ahorcado-definition.js";

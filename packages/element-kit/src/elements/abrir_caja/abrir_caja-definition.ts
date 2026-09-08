@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultAbrirCaja } from "lumina-frontend/activities/abrir-caja";
+import { createDefaultAbrirCaja } from "../../activities/abrir-caja/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   AbrirCajaEditor,

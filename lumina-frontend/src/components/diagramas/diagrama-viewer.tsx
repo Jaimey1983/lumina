@@ -9,7 +9,7 @@ import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const GraphCanvas = dynamic(
-  () => import('@/lib/graph-editor').then((mod) => mod.GraphCanvas),
+  () => import('@lumina/editor-shared/graph-editor').then((mod) => mod.GraphCanvas),
   {
     ssr: false,
     loading: () => (

@@ -15,18 +15,6 @@
     "./blocks/cita": "./src/components/primitives/cita/index.ts",
     "./blocks/separador": "./src/components/primitives/separador/index.ts",
     "./blocks/columnas": "./src/components/primitives/columnas/index.ts",
-    "./activities/anagrama": "./src/components/activities/anagrama/index.ts",
-    "./activities/clasificar": "./src/components/activities/clasificar/index.ts",
-    "./activities/memoria": "./src/components/activities/memoria/index.ts",
-    "./activities/puzzle-imagen": "./src/components/activities/puzzle-imagen/index.ts",
-    "./activities/sopa-letras": "./src/components/activities/sopa-letras/index.ts",
-    "./activities/crucigrama": "./src/components/activities/crucigrama/index.ts",
-    "./activities/abrir-caja": "./src/components/activities/abrir-caja/index.ts",
-    "./activities/ahorcado": "./src/components/activities/ahorcado/index.ts",
-    "./activities/puzzle-palabras": "./src/components/activities/puzzle-palabras/index.ts",
-    "./activities/globos": "./src/components/activities/globos/index.ts",
-    "./activities/topo": "./src/components/activities/topo/index.ts",
-    "./activities/historia-ramificada": "./src/components/activities/historia-ramificada/index.ts",
     "./editor-activities": "./src/app/(app)/classes/[id]/editor/element-kit-classic.ts"
   },
   "scripts": {

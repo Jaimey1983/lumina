@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultGlobos } from "lumina-frontend/activities/globos";
+import { createDefaultGlobos } from "../../activities/globos/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   GlobosEditor,

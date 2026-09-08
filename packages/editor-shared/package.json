@@ -3,8 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Substrato compartido del editor (E7.6.3-pre): widgets/shared + helpers de tipografía/fuentes + path helpers de Block. Lo consumen lumina-frontend y (transitivamente, vía los barrels de widget shimeados) @lumina/element-kit. Precursor para mover los widgets al kit (E7.6.3) sin dejar back-edge del kit al frontend. Consumido desde dist/ (patrón @lumina/ui).",
+  "//": "Substrato compartido del editor: widgets/shared + helpers de tipografia/fuentes + path helpers de Block (E7.6.3-pre) + graph-editor (xyflow wrapper, E7.6.4a). Lo consumen lumina-frontend y (transitivamente) @lumina/element-kit. Consumido desde dist/ (patron @lumina/ui).",
   "exports": {
+    "./graph-editor": {
+      "types": "./dist/graph-editor/index.d.ts",
+      "default": "./dist/graph-editor/index.js"
+    },
     "./*.css": "./dist/*.css",
     "./*": {
       "types": "./dist/*.d.ts",
@@ -23,6 +27,7 @@
   "dependencies": {
     "@lumina/types": "workspace:*",
     "@lumina/ui": "workspace:*",
+    "@xyflow/react": "12.11.0",
     "lucide-react": "^1.7.0"
   },
   "devDependencies": {

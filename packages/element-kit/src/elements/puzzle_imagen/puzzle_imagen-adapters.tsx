@@ -2,7 +2,7 @@ import {
   PuzzleImagenEditor as LegacyPuzzleImagenEditor,
   PuzzleImagenViewer as LegacyPuzzleImagenViewer,
   PuzzleImagenProperties as LegacyPuzzleImagenProperties,
-} from "lumina-frontend/activities/puzzle-imagen";
+} from "../../activities/puzzle-imagen/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

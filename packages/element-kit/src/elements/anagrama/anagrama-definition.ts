@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultAnagrama } from "lumina-frontend/activities/anagrama";
+import { createDefaultAnagrama } from "../../activities/anagrama/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   AnagramaEditor,

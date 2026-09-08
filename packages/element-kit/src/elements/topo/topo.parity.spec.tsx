@@ -5,7 +5,7 @@ import {
   TopoEditor as LegacyTopoEditor,
   TopoViewer as LegacyTopoViewer,
   createDefaultTopo,
-} from "lumina-frontend/activities/topo";
+} from "../../activities/topo/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { topoDefinition, evaluarTopo } from "./topo-definition.js";

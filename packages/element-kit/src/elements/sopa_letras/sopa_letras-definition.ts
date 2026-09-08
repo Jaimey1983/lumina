@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultSopaLetras } from "lumina-frontend/activities/sopa-letras";
+import { createDefaultSopaLetras } from "../../activities/sopa-letras/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   SopaLetrasEditor,

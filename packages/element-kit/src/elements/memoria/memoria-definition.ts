@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { evaluateActivityResponse } from "@lumina/scoring";
-import { createDefaultMemoria } from "lumina-frontend/activities/memoria";
+import { createDefaultMemoria } from "../../activities/memoria/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import {
   MemoriaEditor,

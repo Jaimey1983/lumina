@@ -2,7 +2,7 @@ import {
   AnagramaEditor as LegacyAnagramaEditor,
   AnagramaViewer as LegacyAnagramaViewer,
   AnagramaProperties as LegacyAnagramaProperties,
-} from "lumina-frontend/activities/anagrama";
+} from "../../activities/anagrama/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

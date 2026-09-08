@@ -2,7 +2,7 @@ import {
   TopoEditor as LegacyTopoEditor,
   TopoViewer as LegacyTopoViewer,
   TopoProperties as LegacyTopoProperties,
-} from "lumina-frontend/activities/topo";
+} from "../../activities/topo/index.js";
 import type {
   ElementEditorProps,
   ElementPropsPanelProps,

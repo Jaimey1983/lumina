@@ -5,7 +5,7 @@ import {
   SopaLetrasEditor as LegacySopaLetrasEditor,
   SopaLetrasViewer as LegacySopaLetrasViewer,
   createDefaultSopaLetras,
-} from "lumina-frontend/activities/sopa-letras";
+} from "../../activities/sopa-letras/index.js";
 import { elementRegistry } from "../../index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { sopaLetrasDefinition, evaluarSopaLetras } from "./sopa_letras-definition.js";
