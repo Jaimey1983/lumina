@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
+import { VIRTUAL_CANVAS_WIDTH, VIRTUAL_CANVAS_HEIGHT } from '@/lib/canvas-guides';
+
 import { computeNewCoords } from '../lib/resize-coords';
 import { computeRotationAngle } from '../lib/rotate-coords';
 import { DEFAULT_BLOCK_RESIZE_MIN_DIM } from '../lib/block-resize-min-dim';
@@ -101,6 +103,7 @@ export function ResizeHandles({
   } | null>(null);
 
   const [isRotating, setIsRotating] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
@@ -154,6 +157,7 @@ export function ResizeHandles({
       const drag = dragRef.current;
       if (!drag) return;
       dragRef.current = null;
+      setIsResizing(false);
       const { canvasRef: cr, blockId: bid, onResizeEnd: cb, lockAspectRatio: keepRatio, minDim: minDimPct } = propsRef.current;
       const canvas = cr.current;
       if (!canvas) return;
@@ -182,12 +186,15 @@ export function ResizeHandles({
       window.removeEventListener('mouseup',   onMouseUp);
       dragRef.current = null;
       rotateDragRef.current = null;
+      setIsResizing(false);
+      setIsRotating(false);
     };
   }, []);
 
   function handleMouseDown(e: React.MouseEvent, dir: HandleDir) {
     e.stopPropagation();
     e.preventDefault();
+    setIsResizing(true);
     dragRef.current = {
       dir,
       origX:      propsRef.current.x,
@@ -221,11 +228,31 @@ export function ResizeHandles({
 
   const showRotate = Boolean(onRotate || onRotateEnd);
 
+  const widthPx = Math.round((ancho / 100) * VIRTUAL_CANVAS_WIDTH);
+  const heightPx = Math.round((alto / 100) * VIRTUAL_CANVAS_HEIGHT);
+  const angleDeg = Math.round((((rotacion % 360) + 360) % 360));
+
   return (
     <>
+      {isRotating ? (
+        <div
+          className="canvas-measure-badge"
+          style={{ top: -46, left: '50%', transform: 'translateX(-50%)' }}
+        >
+          {angleDeg}°
+        </div>
+      ) : isResizing ? (
+        <div
+          className="canvas-measure-badge"
+          style={{ top: 'calc(100% + 8px)', right: 0 }}
+        >
+          {widthPx} × {heightPx}
+        </div>
+      ) : null}
       {showRotate && (
         <>
           <div
+            className="canvas-rotate-line"
             style={{
               position: 'absolute',
               top: -20,
@@ -233,27 +260,22 @@ export function ResizeHandles({
               width: 1,
               height: 20,
               transform: 'translateX(-50%)',
-              background: '#3b82f6',
               zIndex: 49,
               pointerEvents: 'none',
             }}
           />
           <div
+            className="canvas-rotate-handle"
+            data-rotating={isRotating ? 'true' : 'false'}
             onMouseDown={handleRotateMouseDown}
             title="Arrastra para rotar (Shift para pasos de 15°)"
             style={{
               position: 'absolute',
               top: -24,
               left: '50%',
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              background: isRotating ? '#2563eb' : 'white',
-              border: '1.5px solid #2563eb',
               transform: 'translate(-50%, -50%)',
               zIndex: 50,
               cursor: isRotating ? 'grabbing' : 'grab',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
             }}
           />
         </>
@@ -261,19 +283,12 @@ export function ResizeHandles({
       {HANDLES.map((handle) => (
         <div
           key={handle.dir}
+          className="canvas-resize-handle__hit"
           onMouseDown={(e) => handleMouseDown(e, handle.dir)}
-          style={{
-            position: 'absolute',
-            width: 10,
-            height: 10,
-            background: 'white',
-            border: '1px solid #3b82f6',
-            borderRadius: 2,
-            zIndex: 50,
-            cursor: handle.cursor,
-            ...handle.style,
-          }}
-        />
+          style={{ position: 'absolute', cursor: handle.cursor, ...handle.style }}
+        >
+          <div className="canvas-resize-handle" />
+        </div>
       ))}
     </>
   );

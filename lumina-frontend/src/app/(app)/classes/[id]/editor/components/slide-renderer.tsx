@@ -26,7 +26,8 @@ import {
 import { ResizeHandles } from './resize-handles';
 import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
-import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
+import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle, clampAxisOrigin } from '@/hooks/use-block-drag';
+import { VIRTUAL_CANVAS_WIDTH, VIRTUAL_CANVAS_HEIGHT } from '@/lib/canvas-guides';
 
 import type {
   Activity,
@@ -159,6 +160,191 @@ function getBlockPositionStyle(block: Block): CSSProperties {
 
 function getBlockRawCoords(block: Block): { x: number; y: number; ancho: number; alto: number } {
   return getBlockPos(block);
+}
+
+type RawCoords = { x: number; y: number; ancho: number; alto: number };
+export type GroupResizeUpdate = { blockId: string } & RawCoords;
+export type GroupRotateUpdate = GroupResizeUpdate & { rotacion: number };
+
+function getBlockRotacion(block: Block): number {
+  const r = (block as { rotacion?: number }).rotacion;
+  if (typeof r === 'number') return r;
+  const marcoRot = (block as { marco?: { rotacion?: number } }).marco?.rotacion;
+  return typeof marcoRot === 'number' ? marcoRot : 0;
+}
+
+const normDeg = (v: number): number => {
+  const n = ((v % 360) + 360) % 360;
+  const r = Math.round(n * 10) / 10;
+  return r === 360 ? 0 : r;
+};
+
+/**
+ * Overlay de multiselección: marco de grupo (bounding box de la unión) + 8 handles
+ * de escala proporcional + handle de rotación de grupo (rota cada miembro alrededor
+ * del centro del grupo y acumula el ángulo). Lee posición solo con `getBlockRawCoords`
+ * (contrato 3.2); el commit va por `withRect` + `withRotation` → el mismo
+ * `onPersistSlide` que el resize de un bloque (una entrada de historial).
+ */
+function GroupSelectionOverlay({
+  bloques,
+  selectedIds,
+  resizingCoords,
+  rotatingAngles,
+  canvasRef,
+  onGroupResizeMove,
+  onGroupResizeCommit,
+  onGroupRotateMove,
+  onGroupRotateCommit,
+}: {
+  bloques: Block[];
+  selectedIds: string[];
+  resizingCoords: Record<string, RawCoords>;
+  rotatingAngles: Record<string, number>;
+  canvasRef: RefObject<HTMLDivElement | null>;
+  onGroupResizeMove: (updates: GroupResizeUpdate[]) => void;
+  onGroupResizeCommit: (updates: GroupResizeUpdate[]) => void;
+  onGroupRotateMove: (updates: GroupRotateUpdate[]) => void;
+  onGroupRotateCommit: (updates: GroupRotateUpdate[]) => void;
+}) {
+  const resizeOrigRef = useRef<{
+    g: RawCoords;
+    members: { id: string; rect: RawCoords }[];
+  } | null>(null);
+  const rotateOrigRef = useRef<{
+    cx: number;
+    cy: number;
+    members: {
+      id: string;
+      cx: number;
+      cy: number;
+      ancho: number;
+      alto: number;
+      rot: number;
+    }[];
+  } | null>(null);
+
+  const members = selectedIds
+    .map((id) => ({ id, block: bloques[Number(id)] }))
+    .filter(
+      (m): m is { id: string; block: Block } =>
+        Boolean(m.block) &&
+        isBlockCanvasPositionable(m.block!) &&
+        !isBlockCanvasLocked(m.block!),
+    )
+    .map((m) => ({
+      id: m.id,
+      block: m.block,
+      rect: resizingCoords[m.id] ?? getBlockRawCoords(m.block),
+    }));
+
+  if (members.length < 2) return null;
+
+  const minX = Math.min(...members.map((m) => m.rect.x));
+  const minY = Math.min(...members.map((m) => m.rect.y));
+  const maxX = Math.max(...members.map((m) => m.rect.x + m.rect.ancho));
+  const maxY = Math.max(...members.map((m) => m.rect.y + m.rect.alto));
+  const g: RawCoords = { x: minX, y: minY, ancho: maxX - minX, alto: maxY - minY };
+
+  const resizeFanOut = (groupCoords: RawCoords, phase: 'move' | 'commit') => {
+    if (!resizeOrigRef.current) resizeOrigRef.current = { g, members };
+    const o = resizeOrigRef.current;
+    const sx = o.g.ancho > 0 ? groupCoords.ancho / o.g.ancho : 1;
+    const sy = o.g.alto > 0 ? groupCoords.alto / o.g.alto : 1;
+    const updates: GroupResizeUpdate[] = o.members.map((m) => {
+      const ancho = m.rect.ancho * sx;
+      const alto = m.rect.alto * sy;
+      const x = groupCoords.x + (m.rect.x - o.g.x) * sx;
+      const y = groupCoords.y + (m.rect.y - o.g.y) * sy;
+      return {
+        blockId: m.id,
+        x: clampAxisOrigin(x, ancho),
+        y: clampAxisOrigin(y, alto),
+        ancho,
+        alto,
+      };
+    });
+    if (phase === 'commit') {
+      resizeOrigRef.current = null;
+      onGroupResizeCommit(updates);
+    } else {
+      onGroupResizeMove(updates);
+    }
+  };
+
+  const rotateFanOut = (angleDeg: number, phase: 'move' | 'commit') => {
+    if (!rotateOrigRef.current) {
+      rotateOrigRef.current = {
+        cx: g.x + g.ancho / 2,
+        cy: g.y + g.alto / 2,
+        members: members.map((m) => ({
+          id: m.id,
+          cx: m.rect.x + m.rect.ancho / 2,
+          cy: m.rect.y + m.rect.alto / 2,
+          ancho: m.rect.ancho,
+          alto: m.rect.alto,
+          rot: rotatingAngles[m.id] ?? getBlockRotacion(m.block),
+        })),
+      };
+    }
+    const o = rotateOrigRef.current;
+    const rad = (angleDeg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const updates: GroupRotateUpdate[] = o.members.map((m) => {
+      // Rotar el centro del miembro alrededor del centro del grupo en px
+      // (el lienzo virtual 1280×720 no es cuadrado → hay que ir a px y volver).
+      const dxPx = ((m.cx - o.cx) / 100) * VIRTUAL_CANVAS_WIDTH;
+      const dyPx = ((m.cy - o.cy) / 100) * VIRTUAL_CANVAS_HEIGHT;
+      const ndxPx = dxPx * cos - dyPx * sin;
+      const ndyPx = dxPx * sin + dyPx * cos;
+      const ncx = o.cx + (ndxPx / VIRTUAL_CANVAS_WIDTH) * 100;
+      const ncy = o.cy + (ndyPx / VIRTUAL_CANVAS_HEIGHT) * 100;
+      const x = ncx - m.ancho / 2;
+      const y = ncy - m.alto / 2;
+      return {
+        blockId: m.id,
+        x: clampAxisOrigin(x, m.ancho),
+        y: clampAxisOrigin(y, m.alto),
+        ancho: m.ancho,
+        alto: m.alto,
+        rotacion: normDeg(m.rot + angleDeg),
+      };
+    });
+    if (phase === 'commit') {
+      rotateOrigRef.current = null;
+      onGroupRotateCommit(updates);
+    } else {
+      onGroupRotateMove(updates);
+    }
+  };
+
+  return (
+    <div
+      className="canvas-group-frame"
+      style={{
+        left: `${g.x}%`,
+        top: `${g.y}%`,
+        width: `${g.ancho}%`,
+        height: `${g.alto}%`,
+      }}
+    >
+      <ResizeHandles
+        blockId="__group__"
+        x={g.x}
+        y={g.y}
+        ancho={g.ancho}
+        alto={g.alto}
+        rotacion={0}
+        minDim={2}
+        canvasRef={canvasRef}
+        onResize={(_, c) => resizeFanOut(c, 'move')}
+        onResizeEnd={(_, c) => resizeFanOut(c, 'commit')}
+        onRotate={(_, a) => rotateFanOut(a, 'move')}
+        onRotateEnd={(_, a) => rotateFanOut(a, 'commit')}
+      />
+    </div>
+  );
 }
 
 
@@ -917,6 +1103,11 @@ function BlockNode({
         }
       : {};
 
+  const hoverLabel =
+    editorMode && !isSelected && !isTextEditing
+      ? elementRegistry.obtener(block.tipo)?.catalogo?.nombre
+      : undefined;
+
   return (
     <>
     <div
@@ -954,12 +1145,13 @@ function BlockNode({
       className={cn(
         editorMode && 'relative group',
         isBlockButtonShell && 'cursor-pointer outline-none rounded-sm',
-        isBlockButtonShell && 'hover:ring-2 hover:ring-blue-500/40',
+        isBlockButtonShell && 'canvas-chrome-hoverable',
+        editorMode && !isSelected && !isTextEditing && 'canvas-chrome-hoverable',
         editorMode && isTextEditing && 'cursor-text outline-none rounded-sm',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
-        editorMode && isSelected && 'ring-2 ring-blue-500 ring-offset-1',
-        editorMode && canvasLocked && isSelected && 'ring-amber-500/90',
-        editorMode && isLiveDragging && 'z-20 opacity-100 shadow-lg ring-2 ring-[#2563EB]/50',
+        editorMode && isSelected && !canvasLocked && !isLiveDragging && 'canvas-chrome-selected',
+        editorMode && isSelected && canvasLocked && 'canvas-chrome-locked',
+        editorMode && isLiveDragging && 'z-20 opacity-100 canvas-chrome-dragging',
         isInteractiveStub && 'pointer-events-none',
         !editorMode && block.tipo !== 'hotspot' && block.tipo !== 'tooltip' && 'overflow-hidden max-w-full max-h-full',
         !editorMode && block.tipo === 'actividad' && 'min-h-0',
@@ -979,8 +1171,14 @@ function BlockNode({
       )}
     >
       {renderContent()}
+      {hoverLabel && (
+        <span className="canvas-hover-label" aria-hidden="true">
+          {hoverLabel}
+        </span>
+      )}
       {editorMode &&
         isSelected &&
+        (selectedBlockIds?.length ?? 0) < 2 &&
         !clipInnerEdit &&
         !popupOverlayEditing &&
         !canvasLocked &&
@@ -1404,6 +1602,101 @@ export function SlideRenderer({
     onResizeInteractionEnd?.();
   }, [slide, updateSlide, onPersistSlide, onResizeInteractionEnd, onResizeMove, measureCanvasRef]);
 
+  const handleGroupResizeMove = useCallback((updates: GroupResizeUpdate[]) => {
+    setResizingCoords((prev) => {
+      const next = { ...prev };
+      for (const u of updates) {
+        next[u.blockId] = { x: u.x, y: u.y, ancho: u.ancho, alto: u.alto };
+      }
+      return next;
+    });
+  }, []);
+
+  const handleGroupResizeCommit = useCallback(
+    (updates: GroupResizeUpdate[]) => {
+      const previousBloques = slide.bloques ? [...slide.bloques] : [];
+      let nextBlocks = previousBloques;
+      for (const u of updates) {
+        nextBlocks = updateBlockAtPath(nextBlocks, u.blockId, (b) => {
+          if (isBlockCanvasLocked(b)) return b;
+          const resized = withRect(b, u.x, u.y, u.ancho, u.alto);
+          return b.tipo === 'imagen'
+            ? ({ ...resized, ajuste: 'llenar' } as Block)
+            : resized;
+        });
+      }
+
+      setResizingCoords((prev) => {
+        const next = { ...prev };
+        for (const u of updates) delete next[u.blockId];
+        return next;
+      });
+
+      const updatedContent = mergeRendererSlideState(slide, { bloques: nextBlocks });
+      const sanitized =
+        sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
+
+      if (onPersistSlide) {
+        void onPersistSlide({ previousBloques, content: sanitized });
+      } else {
+        updateSlide.mutate({ slideId: slide.id, content: sanitized });
+      }
+      onResizeInteractionEnd?.();
+    },
+    [slide, updateSlide, onPersistSlide, onResizeInteractionEnd],
+  );
+
+  const handleGroupRotateMove = useCallback((updates: GroupRotateUpdate[]) => {
+    setResizingCoords((prev) => {
+      const next = { ...prev };
+      for (const u of updates) {
+        next[u.blockId] = { x: u.x, y: u.y, ancho: u.ancho, alto: u.alto };
+      }
+      return next;
+    });
+    setRotatingAngles((prev) => {
+      const next = { ...prev };
+      for (const u of updates) next[u.blockId] = u.rotacion;
+      return next;
+    });
+  }, []);
+
+  const handleGroupRotateCommit = useCallback(
+    (updates: GroupRotateUpdate[]) => {
+      const previousBloques = slide.bloques ? [...slide.bloques] : [];
+      let nextBlocks = previousBloques;
+      for (const u of updates) {
+        nextBlocks = updateBlockAtPath(nextBlocks, u.blockId, (b) => {
+          if (isBlockCanvasLocked(b)) return b;
+          return withRotation(withRect(b, u.x, u.y, u.ancho, u.alto), u.rotacion);
+        });
+      }
+
+      setResizingCoords((prev) => {
+        const next = { ...prev };
+        for (const u of updates) delete next[u.blockId];
+        return next;
+      });
+      setRotatingAngles((prev) => {
+        const next = { ...prev };
+        for (const u of updates) delete next[u.blockId];
+        return next;
+      });
+
+      const updatedContent = mergeRendererSlideState(slide, { bloques: nextBlocks });
+      const sanitized =
+        sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
+
+      if (onPersistSlide) {
+        void onPersistSlide({ previousBloques, content: sanitized });
+      } else {
+        updateSlide.mutate({ slideId: slide.id, content: sanitized });
+      }
+      onResizeInteractionEnd?.();
+    },
+    [slide, updateSlide, onPersistSlide, onResizeInteractionEnd],
+  );
+
   // ─── Inline text editing ──────────────────────────────────────────────────
 
   function handleEditStart(blockId: string) {
@@ -1683,6 +1976,22 @@ export function SlideRenderer({
           Sin bloques — agrega contenido desde el panel lateral
         </div>
       )}
+
+      {editorMode &&
+        (selectedBlockIdsProp?.length ?? 0) >= 2 &&
+        !draggingBlockId && (
+          <GroupSelectionOverlay
+            bloques={blocks}
+            selectedIds={selectedBlockIdsProp ?? []}
+            resizingCoords={resizingCoords}
+            rotatingAngles={rotatingAngles}
+            canvasRef={measureCanvasRef}
+            onGroupResizeMove={handleGroupResizeMove}
+            onGroupResizeCommit={handleGroupResizeCommit}
+            onGroupRotateMove={handleGroupRotateMove}
+            onGroupRotateCommit={handleGroupRotateCommit}
+          />
+        )}
     </div>
     </SlideCanvasRootContext.Provider>
   );

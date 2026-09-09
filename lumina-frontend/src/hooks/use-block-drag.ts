@@ -182,9 +182,9 @@ export type SnapLine = {
 };
 
 export function snapLineColor(line: SnapLine): string {
-  if (line.kind === 'gap') return '#10B981';
-  if (line.kind === 'grid') return '#94A3B8';
-  return '#F97316';
+  if (line.kind === 'gap') return 'var(--canvas-guide-gap, #10B981)';
+  if (line.kind === 'grid') return 'var(--canvas-guide-grid, #94A3B8)';
+  return 'var(--canvas-guide-align, #F97316)';
 }
 
 export type SnapToGuidesOptions = {

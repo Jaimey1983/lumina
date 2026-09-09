@@ -2013,8 +2013,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
                 top: `${Math.min(marqueeRect.startY, marqueeRect.currentY)}px`,
                 width: `${Math.abs(marqueeRect.currentX - marqueeRect.startX)}px`,
                 height: `${Math.abs(marqueeRect.currentY - marqueeRect.startY)}px`,
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                border: '1px solid #2563EB',
+                backgroundColor: 'var(--canvas-accent-soft)',
+                border: '1px solid var(--canvas-accent)',
+                borderRadius: 2,
                 pointerEvents: 'none',
                 zIndex: 1000,
               }}
@@ -2059,6 +2060,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
                   bottom: 0,
                   width: '1px',
                   background: snapLineColor(line),
+                  boxShadow: `0 0 3px ${snapLineColor(line)}`,
                   pointerEvents: 'none',
                   zIndex: 9999,
                 }}
@@ -2073,6 +2075,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
                   right: 0,
                   height: '1px',
                   background: snapLineColor(line),
+                  boxShadow: `0 0 3px ${snapLineColor(line)}`,
                   pointerEvents: 'none',
                   zIndex: 9999,
                 }}

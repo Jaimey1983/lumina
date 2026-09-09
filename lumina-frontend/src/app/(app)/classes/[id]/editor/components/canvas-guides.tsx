@@ -263,7 +263,7 @@ function GuidePositionBadge({
 
   return (
     <div
-      className="pointer-events-none absolute z-[60] rounded bg-[#2563EB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white shadow-sm"
+      className="pointer-events-none absolute z-[60] rounded bg-[var(--canvas-accent)] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white shadow-sm"
       style={style}
     >
       {Math.round(position)}px
@@ -297,7 +297,9 @@ function HorizontalGuideLine({
       <div
         className={cn(
           'absolute left-0 right-0',
-          isPreview ? 'border-t border-dashed border-[#2563EB]/80' : 'h-px bg-[#2563EB]',
+          isPreview
+            ? 'border-t border-dashed border-[var(--canvas-accent)]'
+            : 'h-px bg-[var(--canvas-accent)]',
         )}
         style={{
           top: 0,
@@ -349,7 +351,9 @@ function VerticalGuideLine({
       <div
         className={cn(
           'absolute top-0 bottom-0',
-          isPreview ? 'border-l border-dashed border-[#2563EB]/80' : 'w-px bg-[#2563EB]',
+          isPreview
+            ? 'border-l border-dashed border-[var(--canvas-accent)]'
+            : 'w-px bg-[var(--canvas-accent)]',
         )}
         style={{
           left: 0,

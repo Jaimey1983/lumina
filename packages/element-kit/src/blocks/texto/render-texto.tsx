@@ -95,7 +95,7 @@ export function InlineTextEditor({
       className="relative h-full w-full min-h-0"
       style={
         isEmpty
-          ? { border: '2px dashed #aaa', boxSizing: 'border-box' }
+          ? { border: '1px dashed var(--border, #d4d4d8)', boxSizing: 'border-box' }
           : undefined
       }
     >
@@ -103,7 +103,7 @@ export function InlineTextEditor({
         <span
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
           style={{
-            color: '#bbb',
+            color: 'var(--muted-foreground, #a1a1aa)',
             fontSize: 'clamp(10px, 1.6vw, 13px)',
           }}
         >
@@ -184,12 +184,12 @@ export function RenderText({
     return (
       <div
         className="relative box-border h-full min-h-[1.25em] w-full"
-        style={{ border: '2px dashed #aaa' }}
+        style={{ border: '1px dashed var(--border, #d4d4d8)' }}
       >
         <span
           className="pointer-events-none absolute left-1/2 top-1/2 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
           style={{
-            color: '#bbb',
+            color: 'var(--muted-foreground, #a1a1aa)',
             fontSize: 'clamp(10px, 1.6vw, 13px)',
           }}
         >

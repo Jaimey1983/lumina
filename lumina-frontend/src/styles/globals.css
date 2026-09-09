@@ -54,6 +54,21 @@
   --editor-canvas-pt-md: 3.75rem;
   --editor-canvas-pb: 2rem;
 
+  /* Canvas — chrome de selección de bloques (anillo, handles, marquee).
+     Deriva del acento del sistema (`--primary`); una sola fuente para
+     slide-renderer, resize-handles, canvas-area y canvas-guides. */
+  --canvas-accent: var(--primary);
+  --canvas-accent-soft: color-mix(in oklab, var(--primary) 16%, transparent);
+  --canvas-accent-hover: color-mix(in oklab, var(--primary) 45%, transparent);
+  --canvas-handle-fill: var(--card);
+  --canvas-handle-size: 9px;
+  --canvas-handle-ring: rgba(15, 23, 42, 0.28);
+  --canvas-elevation: 0 10px 28px -8px rgba(15, 23, 42, 0.3);
+  /* Guías inteligentes / snap-lines — jerarquía por función (1px + glow tenue) */
+  --canvas-guide-align: #f97316; /* alineación con hermano */
+  --canvas-guide-gap: #10b981; /* espaciado igual */
+  --canvas-guide-grid: #94a3b8; /* grilla */
+
   /* Lumina 2.0 — Color Tokens */
   --lumina-purple: #2563eb;
   --lumina-purple-light: #60a5fa;
@@ -139,6 +154,11 @@
 
   --editor-shell-bg: var(--color-zinc-900);
   --editor-workspace-bg: var(--color-zinc-950);
+
+  /* Canvas — chrome de selección (dark): el acento ya cambia vía --primary;
+     solo el contorno de contraste de los handles se invierte. */
+  --canvas-handle-ring: rgba(255, 255, 255, 0.32);
+  --canvas-elevation: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
 }
 
 /** Theme Setup **/
@@ -281,6 +301,164 @@ html {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/** Canvas — chrome de selección de bloques (editor).
+    Sustituye a los `ring-2 ring-blue-500 ring-offset-1` toscos: filo de 1px
+    nítido + aura suave, radio heredado del bloque, transición corta. **/
+.canvas-chrome-selected {
+  box-shadow:
+    0 0 0 1px var(--canvas-accent),
+    0 0 0 4px var(--canvas-accent-soft);
+  transition: box-shadow 120ms ease;
+}
+
+.canvas-chrome-hoverable {
+  transition: box-shadow 120ms ease;
+}
+
+.canvas-chrome-hoverable:hover {
+  box-shadow: 0 0 0 1px var(--canvas-accent-hover);
+}
+
+/** Canvas — etiqueta de tipo al pasar el ratón (estilo Figma). **/
+.canvas-hover-label {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--canvas-accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 100ms ease;
+  z-index: 30;
+}
+
+.group:hover > .canvas-hover-label {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-hover-label {
+    transition: none;
+  }
+}
+
+.canvas-chrome-locked {
+  box-shadow:
+    0 0 0 1px var(--lumina-amber),
+    0 0 0 4px color-mix(in oklab, var(--lumina-amber) 15%, transparent);
+  transition: box-shadow 120ms ease;
+}
+
+.canvas-chrome-dragging {
+  box-shadow:
+    0 0 0 1px var(--canvas-accent),
+    var(--canvas-elevation);
+}
+
+/** Canvas — handles de redimensión y rotación.
+    Área de agarre invisible de 20px; cuadro visible chico con sombra. **/
+.canvas-resize-handle__hit {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.canvas-resize-handle {
+  width: var(--canvas-handle-size);
+  height: var(--canvas-handle-size);
+  background: var(--canvas-handle-fill);
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px var(--canvas-accent),
+    0 1px 2px var(--canvas-handle-ring);
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease;
+}
+
+.canvas-resize-handle__hit:hover .canvas-resize-handle {
+  transform: scale(1.18);
+  box-shadow:
+    0 0 0 1px var(--canvas-accent),
+    0 0 0 4px var(--canvas-accent-soft),
+    0 1px 2px var(--canvas-handle-ring);
+}
+
+.canvas-rotate-line {
+  background: var(--canvas-accent);
+  opacity: 0.55;
+}
+
+.canvas-rotate-handle {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--canvas-handle-fill);
+  box-shadow:
+    0 0 0 1.5px var(--canvas-accent),
+    0 1px 3px var(--canvas-handle-ring);
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease;
+  pointer-events: auto;
+}
+
+.canvas-rotate-handle[data-rotating='true'] {
+  background: var(--canvas-accent);
+  transform: scale(1.12);
+}
+
+/** Canvas — marco de grupo (multiselección ≥ 2 bloques).
+    Trazo discontinuo = "grupo", frente al filo continuo de la selección simple. **/
+.canvas-group-frame {
+  position: absolute;
+  z-index: 40;
+  pointer-events: none;
+  border: 1px dashed var(--canvas-accent);
+  border-radius: 3px;
+  box-shadow: 0 0 0 4px var(--canvas-accent-soft);
+}
+
+/** Canvas — badge de medida en vivo (W×H al redimensionar, ° al rotar). **/
+.canvas-measure-badge {
+  position: absolute;
+  z-index: 51;
+  pointer-events: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--canvas-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px var(--canvas-handle-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-chrome-selected,
+  .canvas-chrome-hoverable,
+  .canvas-chrome-locked,
+  .canvas-resize-handle,
+  .canvas-rotate-handle {
+    transition: none;
   }
 }
 

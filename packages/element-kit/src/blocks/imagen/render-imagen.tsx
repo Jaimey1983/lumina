@@ -23,11 +23,14 @@ export function RenderImage({ block, forceFill }: RenderImageProps) {
           margin: 0,
           width: '100%',
           height: '100%',
+          boxSizing: 'border-box',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#e2e8f0',
-          color: '#64748b',
+          background: 'var(--muted, #eef1f5)',
+          color: 'var(--muted-foreground, #64748b)',
+          border: '1px dashed var(--border, #d4d4d8)',
+          borderRadius: 'var(--lumina-radius-md, 6px)',
           fontSize: '0.75rem',
           textAlign: 'center',
           padding: '0.5rem',
@@ -74,7 +77,7 @@ export function RenderImage({ block, forceFill }: RenderImageProps) {
           style={{
             marginTop: '0.25rem',
             fontSize: '0.75rem',
-            color: '#6b7280',
+            color: 'var(--muted-foreground, #6b7280)',
             textAlign: 'center',
           }}
         >
