@@ -144,6 +144,7 @@ import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
 import { SlidesPanel } from './components/slides-panel';
 import { CanvasArea, type CanvasAreaHandle } from './components/canvas-area';
+import { RichTextAiBridgeProvider } from './components/rich-text-ai-bridge';
 import { RightRail, type RightPanelId } from './components/right-rail';
 import { RightFlyoutPanel } from './components/right-flyout-panel';
 import {
@@ -2690,6 +2691,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 slideIndex: resolvedSlideIndex,
               }}
             >
+            <RichTextAiBridgeProvider
+              slideTitle={activeSlide?.title}
+              courseName={cls?.title}
+            >
             <CanvasArea
               ref={canvasAreaRef}
               canvasSurfaceRef={canvasSurfaceRef}
@@ -2713,6 +2718,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               canvasZoom={canvasZoom}
               onCanvasZoomChange={handleCanvasZoomChange}
             />
+            </RichTextAiBridgeProvider>
             </SlideNavContext.Provider>
             <SlideCountdownOverlay
               timeLeft={editorTimeLeft}

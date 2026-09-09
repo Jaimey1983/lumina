@@ -17,6 +17,7 @@ import { ContentAssistantDto } from './dto/content-assistant.dto';
 import { EvaluateResponseDto } from './dto/evaluate-response.dto';
 import { GenerateFromDocumentDto } from './dto/generate-from-document.dto';
 import { RefineStructureDto } from './dto/refine-structure.dto';
+import { TextAssistDto, type TextAssistAction } from './dto/text-assist.dto';
 import { AiKeysService } from './ai-keys.service';
 import { parseLlmJsonObject } from './ai-json';
 import { assertAiStaff } from './ai-staff';
@@ -676,7 +677,59 @@ Si pide eliminar slides, renumera los restantes desde 1.`;
     const structure = await this.callLlmJson(userId, system, userMsg);
     return { structure, instruction: dto.instruction };
   }
+
+  // ── 8. Reescritura asistida de un fragmento de texto ────────────────────────
+
+  async assistText(
+    dto: TextAssistDto,
+    userId: string,
+    userRole: string,
+  ): Promise<{ result: string; action: TextAssistAction }> {
+    assertAiStaff(userRole);
+
+    const system = `Eres un editor de texto para material educativo.
+Devuelve ÚNICAMENTE JSON válido con la forma { "result": "<texto reescrito>" }.
+Conserva el idioma del texto original salvo que se pida traducir.
+No inventes información, no añadas comillas ni markdown fuera del JSON, no incluyas el contexto en el resultado.`;
+
+    const ctx = dto.context
+      ? `\n\nContexto (no lo incluyas en el resultado): ${JSON.stringify(dto.context)}`
+      : '';
+    const userMsg = `${TEXT_ASSIST_INSTRUCTIONS[dto.action](dto)}\n\nTexto:\n"""${dto.text}"""${ctx}`;
+
+    // `completeParsed` propaga `ServiceUnavailableException` (timeout / clave /
+    // proveedor) → 503 sin filtrar la clave. Una respuesta no-JSON → `{}` →
+    // degradación limpia: se devuelve el texto original.
+    const parsed = await this.completeParsed(userId, system, userMsg);
+    const result =
+      typeof parsed['result'] === 'string' ? parsed['result'].trim() : '';
+    return { result: result || dto.text, action: dto.action };
+  }
 }
+
+const TEXT_ASSIST_INSTRUCTIONS: Record<
+  TextAssistAction,
+  (dto: TextAssistDto) => string
+> = {
+  mejorar: () =>
+    'Mejora la redacción: más claro, correcto y fluido, mismo significado y extensión aproximada.',
+  acortar: () =>
+    'Acorta el texto a aproximadamente la mitad, conservando la idea principal.',
+  alargar: () =>
+    'Amplía el texto con más detalle y algún ejemplo, sin cambiar el tono.',
+  formal: () => 'Reescribe en un registro más formal y profesional.',
+  cercano: () =>
+    'Reescribe en un tono más cercano y cotidiano, apropiado para estudiantes.',
+  simplificar: (dto) =>
+    `Simplifica el lenguaje para que lo entienda ${
+      dto.context?.nivelEducativo ?? 'un estudiante de secundaria'
+    }, sin perder rigor.`,
+  corregir: () =>
+    'Corrige ortografía, gramática y puntuación. No cambies el estilo ni el contenido.',
+  bullets: () =>
+    'Convierte el texto en una lista concisa, una idea por línea separada por saltos de línea, sin símbolos de viñeta.',
+  traducir: (dto) => `Traduce el texto a ${dto.targetLang ?? 'inglés'}.`,
+};
 
 function defaultActivityCount(type: AiActivityType): number {
   switch (type) {

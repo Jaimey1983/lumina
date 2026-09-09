@@ -11,6 +11,7 @@ import { ContentAssistantDto } from './dto/content-assistant.dto';
 import { EvaluateResponseDto } from './dto/evaluate-response.dto';
 import { GenerateFromDocumentDto } from './dto/generate-from-document.dto';
 import { RefineStructureDto } from './dto/refine-structure.dto';
+import { TextAssistDto } from './dto/text-assist.dto';
 
 /**
  * Funcionalidades de IA independientes de contexto de curso.
@@ -75,5 +76,11 @@ export class AiFeaturesController {
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.aiService.refineStructure(dto, user.id, user.role);
+  }
+
+  /** POST /ai/text-assist — Reescritura de un fragmento seleccionado en el editor */
+  @Post('text-assist')
+  assistText(@Body() dto: TextAssistDto, @CurrentUser() user: JwtAuthUser) {
+    return this.aiService.assistText(dto, user.id, user.role);
   }
 }

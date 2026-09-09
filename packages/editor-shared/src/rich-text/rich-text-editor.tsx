@@ -42,8 +42,6 @@ export interface RichTextEditorProps {
   style?: CSSProperties;
   /** Oculta la barra flotante de formato (por defecto se muestra). */
   hideToolbar?: boolean;
-  /** Fase 4 — asistente de IA sobre el texto seleccionado. */
-  onAiAssist?: (selectedText: string) => void;
 }
 
 export function RichTextEditor({
@@ -56,7 +54,6 @@ export function RichTextEditor({
   className,
   style,
   hideToolbar = false,
-  onAiAssist,
 }: RichTextEditorProps) {
   ensureEditorStyles();
   const exitedRef = useRef(false);
@@ -137,7 +134,7 @@ export function RichTextEditor({
   return (
     <>
       <EditorContent editor={editor} className={className} style={style} />
-      {!hideToolbar ? <BubbleToolbar editor={editor} onAiAssist={onAiAssist} /> : null}
+      {!hideToolbar ? <BubbleToolbar editor={editor} /> : null}
     </>
   );
 }

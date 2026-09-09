@@ -181,3 +181,42 @@ export function useRefineStructure() {
     },
   });
 }
+
+// ─── Asistente de redacción sobre la selección (Fase 4) ───────────────────────
+
+export type TextAssistAction =
+  | 'mejorar'
+  | 'acortar'
+  | 'alargar'
+  | 'formal'
+  | 'cercano'
+  | 'simplificar'
+  | 'corregir'
+  | 'bullets'
+  | 'traducir';
+
+export interface TextAssistInput {
+  text: string;
+  action: TextAssistAction;
+  targetLang?: string;
+  context?: {
+    slideTitle?: string;
+    courseName?: string;
+    nivelEducativo?: string;
+  };
+}
+
+export interface TextAssistResult {
+  result: string;
+  action: TextAssistAction;
+}
+
+/** POST /ai/text-assist — reescribe un fragmento de texto seleccionado. */
+export function useTextAssist() {
+  return useMutation({
+    mutationFn: async (input: TextAssistInput): Promise<TextAssistResult> => {
+      const { data } = await api.post<TextAssistResult>('/ai/text-assist', input);
+      return data;
+    },
+  });
+}

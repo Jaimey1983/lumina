@@ -13,6 +13,13 @@ export { isSafeHref, sanitizeRichMark, sanitizeRichDoc } from './sanitize.js';
 export { plainToRich, richToPlain } from './plain.js';
 export { richToHtml, escapeHtml, type RichToHtmlOptions } from './html.js';
 export { looksLikeRichHtml, sanitizeWidgetHtml } from './widget-html.js';
+export {
+  RichTextAiProvider,
+  useRichTextAi,
+  type RichTextAiBridge,
+  type RichTextAiAction,
+} from './ai-context.js';
+export { wordDiff, type DiffOp } from './word-diff.js';
 export { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
 export {
   registerActiveRichEditor,

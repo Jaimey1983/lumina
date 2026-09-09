@@ -28,6 +28,8 @@ import {
   Underline,
 } from 'lucide-react';
 import { isSafeHref } from './sanitize.js';
+import { useRichTextAi } from './ai-context.js';
+import { AiAssistPanel } from './ai-assist-panel.js';
 
 const SIZE_STEP = 2;
 const SIZE_MIN = 8;
@@ -54,7 +56,7 @@ interface ToolbarButton {
   run: (e: Editor) => void;
 }
 
-function buildButtons(onAiAssist?: (text: string) => void): ToolbarButton[] {
+function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
   const btns: ToolbarButton[] = [
     { id: 'bold', label: 'Negrita', icon: <Bold className="size-3.5" />, isActive: (e) => e.isActive('bold'), run: (e) => e.chain().focus().toggleBold().run() },
     { id: 'italic', label: 'Cursiva', icon: <Italic className="size-3.5" />, isActive: (e) => e.isActive('italic'), run: (e) => e.chain().focus().toggleItalic().run() },
@@ -91,10 +93,7 @@ function buildButtons(onAiAssist?: (text: string) => void): ToolbarButton[] {
       id: 'ai',
       label: 'Asistente de redacción',
       icon: <Sparkles className="size-3.5" />,
-      run: (e) => {
-        const { from, to } = e.state.selection;
-        onAiAssist(e.state.doc.textBetween(from, to, ' '));
-      },
+      run: () => onAiAssist(),
     });
   }
   return btns;
@@ -116,17 +115,21 @@ const wrapperStyle: CSSProperties = {
 
 export interface BubbleToolbarProps {
   editor: Editor | null;
-  /** Fase 4 — asistente de IA sobre el texto seleccionado. */
-  onAiAssist?: (selectedText: string) => void;
 }
 
-export function BubbleToolbar({ editor, onAiAssist }: BubbleToolbarProps) {
+export function BubbleToolbar({ editor }: BubbleToolbarProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [, forceTick] = useState(0);
   const [focusIdx, setFocusIdx] = useState(0);
-  const buttonsRef = useRef(buildButtons(onAiAssist));
-  buttonsRef.current = buildButtons(onAiAssist);
+  const [aiOpen, setAiOpen] = useState(false);
+  const aiOpenRef = useRef(false);
+  aiOpenRef.current = aiOpen;
+  const lastPosRef = useRef<{ top: number; left: number } | null>(null);
+  const ai = useRichTextAi();
+  const openAi = useCallback(() => setAiOpen(true), []);
+  const buttonsRef = useRef<ToolbarButton[]>([]);
+  buttonsRef.current = buildButtons(ai ? openAi : undefined);
 
   const recompute = useCallback(() => {
     if (!editor || !editor.isEditable) {
@@ -136,17 +139,19 @@ export function BubbleToolbar({ editor, onAiAssist }: BubbleToolbarProps) {
     const { from, to, empty } = editor.state.selection;
     const focusInToolbar =
       typeof document !== 'undefined' && ref.current?.contains(document.activeElement);
-    if (empty || (!editor.isFocused && !focusInToolbar)) {
+    if (!aiOpenRef.current && (empty || (!editor.isFocused && !focusInToolbar))) {
       setPos(null);
       return;
     }
     try {
       const a = editor.view.coordsAtPos(from);
       const b = editor.view.coordsAtPos(to);
-      setPos({ top: Math.min(a.top, b.top) - 8, left: (a.left + b.left) / 2 });
+      const next = { top: Math.min(a.top, b.top) - 8, left: (a.left + b.left) / 2 };
+      lastPosRef.current = next;
+      setPos(next);
       forceTick((n) => n + 1);
     } catch {
-      setPos(null);
+      if (!aiOpenRef.current) setPos(null);
     }
   }, [editor]);
 
@@ -170,9 +175,10 @@ export function BubbleToolbar({ editor, onAiAssist }: BubbleToolbarProps) {
     };
   }, [editor, recompute]);
 
-  if (!editor || !pos || typeof document === 'undefined') return null;
+  if (!editor || typeof document === 'undefined') return null;
 
   const buttons = buttonsRef.current;
+  const panelPos = pos ?? lastPosRef.current;
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
@@ -187,6 +193,8 @@ export function BubbleToolbar({ editor, onAiAssist }: BubbleToolbarProps) {
   };
 
   return createPortal(
+    <>
+    {pos ? (
     <div
       ref={ref}
       role="toolbar"
@@ -231,7 +239,22 @@ export function BubbleToolbar({ editor, onAiAssist }: BubbleToolbarProps) {
           </button>
         );
       })}
-    </div>,
+    </div>
+    ) : null}
+    {aiOpen && panelPos ? (
+      <div
+        style={{
+          position: 'fixed',
+          zIndex: 61,
+          top: panelPos.top + 8,
+          left: panelPos.left,
+          transform: 'translate(-50%, 0)',
+        }}
+      >
+        <AiAssistPanel editor={editor} onClose={() => setAiOpen(false)} />
+      </div>
+    ) : null}
+    </>,
     document.body,
   );
 }
