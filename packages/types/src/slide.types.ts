@@ -672,8 +672,26 @@ export interface TextBlock {
   fondoTexto?: string;
   /** Radio del fondo en px. */
   radioFondo?: number;
+  /** Opacidad del fondo/resaltado del texto (0–100). */
+  fondoTextoOpacidad?: number;
   /** Cada salto de línea se vuelve un ítem. */
   lista?: 'ninguna' | 'vinetas' | 'numeros';
+
+  // ── Caja del bloque (Fase 5A) ──────────────────────────────────────────────
+  /** Relleno interior de la caja en px. */
+  relleno?: number;
+  /** Alineación vertical del texto dentro de la caja. */
+  alineacionVertical?: 'arriba' | 'centro' | 'abajo';
+  /** Borde de la caja. */
+  borde?: { color?: string; grosor?: number; radio?: number };
+  /** Sombra de la caja (independiente de la sombra del texto `sombra`). */
+  sombraCaja?: { color?: string; desenfoque?: number; x?: number; y?: number };
+  /** Columnas de texto (1–3). */
+  columnas?: number;
+  /** Separación entre columnas en px. */
+  columnasBrecha?: number;
+  /** Ancho máximo de línea en `ch` (medida tipográfica) para legibilidad. */
+  medidaMax?: number;
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
   x?: number;
   y?: number;

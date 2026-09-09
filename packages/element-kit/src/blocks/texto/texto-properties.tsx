@@ -16,6 +16,11 @@ import {
   applyTypographyToSelection,
   applyHeadingLevelToSelection,
 } from '@lumina/editor-shared/rich-text';
+import {
+  textBoxValueFromBlock,
+  applyTextBoxPatch,
+  type TextBoxValue,
+} from '@lumina/editor-shared/text-box';
 
 export interface TextoPropertiesProps {
   block: TextBlock;
@@ -114,6 +119,14 @@ export function TextoProperties({
     applyBlockPatch(patch);
   };
 
+  const handleBoxChange = (patch: Partial<TextBoxValue>) => {
+    const apply = (b: Block): Block =>
+      b.tipo === 'texto' ? applyTextBoxPatch(b, patch) : b;
+    clearDebounce?.();
+    if (applyNow) void applyNow(apply);
+    else if (onChange) onChange(applyTextBoxPatch(block, patch));
+  };
+
   return (
     <TypographyInspector
       value={typographyFromTextBlock(block)}
@@ -125,6 +138,8 @@ export function TextoProperties({
       enableList
       contrastBackground={slideBackground}
       metaText={block.contenido}
+      boxValue={textBoxValueFromBlock(block)}
+      onBoxChange={handleBoxChange}
       onHeadingLevelChange={handleHeadingLevelChange}
       onChange={handleTypographyChange}
     />

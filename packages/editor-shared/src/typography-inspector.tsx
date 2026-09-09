@@ -36,6 +36,7 @@ import {
 } from './typography.js';
 import { cn } from '@lumina/ui/lib/utils';
 import { contrastVerdict } from './contrast.js';
+import type { TextBoxValue } from './text-box.js';
 import type { HeadingLevel } from '@lumina/types/slide';
 import type { WidgetCampoEstilo } from '@lumina/types/widget';
 
@@ -122,6 +123,9 @@ export interface TypographyInspectorProps {
   contrastBackground?: string;
   /** Texto plano para el contador de palabras/caracteres. */
   metaText?: string;
+  /** Panel «Caja» (relleno, borde, sombra, columnas…) — sólo para el primitivo `texto`. */
+  boxValue?: TextBoxValue;
+  onBoxChange?: (patch: Partial<TextBoxValue>) => void;
 }
 
 /** Inspector tipográfico único del panel derecho. */
@@ -136,6 +140,8 @@ export function TypographyInspector({
   headingLevel,
   onHeadingLevelChange,
   enableList,
+  boxValue,
+  onBoxChange,
   contrastBackground,
   metaText,
 }: TypographyInspectorProps) {
@@ -458,6 +464,10 @@ export function TypographyInspector({
         ) : null}
       </InspectorSection>
 
+      {boxValue && onBoxChange ? (
+        <BoxSection value={boxValue} onChange={onBoxChange} disabled={disabled} />
+      ) : null}
+
       {metaText !== undefined || contrastBackground ? (
         <TextMetaFooter
           text={metaText}
@@ -468,6 +478,203 @@ export function TypographyInspector({
         />
       ) : null}
     </div>
+  );
+}
+
+const V_ALIGNS: { id: NonNullable<TextBoxValue['alineacionVertical']>; label: string }[] = [
+  { id: 'arriba', label: 'Arriba' },
+  { id: 'centro', label: 'Centro' },
+  { id: 'abajo', label: 'Abajo' },
+];
+
+function BoxSection({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: TextBoxValue;
+  onChange: (patch: Partial<TextBoxValue>) => void;
+  disabled?: boolean;
+}) {
+  const hasBorder =
+    !!value.bordeColor || (value.bordeGrosor ?? 0) > 0 || (value.bordeRadio ?? 0) > 0;
+  const hasShadow =
+    !!value.sombraColor ||
+    (value.sombraDesenfoque ?? 0) > 0 ||
+    !!value.sombraX ||
+    !!value.sombraY;
+
+  return (
+    <InspectorSection title="Caja" defaultOpen={false}>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Relleno</Label>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {value.relleno ?? 0}px
+          </span>
+        </div>
+        <Slider
+          value={[value.relleno ?? 0]}
+          min={0}
+          max={64}
+          step={2}
+          disabled={disabled}
+          onValueChange={([v]) => onChange({ relleno: v || undefined })}
+        >
+          <SliderThumb />
+        </Slider>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Alineación vertical</Label>
+        <div className="grid grid-cols-3 gap-1">
+          {V_ALIGNS.map(({ id, label }) => (
+            <Button
+              key={id}
+              type="button"
+              size="sm"
+              variant={value.alineacionVertical === id ? 'secondary' : 'outline'}
+              className="h-7 px-1 text-[11px]"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  alineacionVertical: value.alineacionVertical === id ? undefined : id,
+                })
+              }
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Columnas</Label>
+        <div className="grid grid-cols-3 gap-1">
+          {[1, 2, 3].map((n) => (
+            <Button
+              key={n}
+              type="button"
+              size="sm"
+              variant={(value.columnas ?? 1) === n ? 'secondary' : 'outline'}
+              className="h-7 px-1 text-[11px]"
+              disabled={disabled}
+              onClick={() => onChange({ columnas: n === 1 ? undefined : n })}
+            >
+              {n}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Ancho máx. de línea</Label>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {value.medidaMax ? `${value.medidaMax} ch` : 'auto'}
+          </span>
+        </div>
+        <Slider
+          value={[value.medidaMax ?? 0]}
+          min={0}
+          max={90}
+          step={2}
+          disabled={disabled}
+          onValueChange={([v]) => onChange({ medidaMax: v || undefined })}
+        >
+          <SliderThumb />
+        </Slider>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+        <Label className="text-xs">Borde</Label>
+        <Switch
+          checked={hasBorder}
+          disabled={disabled}
+          onCheckedChange={(on) =>
+            onChange(
+              on
+                ? { bordeColor: '#2563eb', bordeGrosor: 2, bordeRadio: 8 }
+                : { bordeColor: undefined, bordeGrosor: undefined, bordeRadio: undefined },
+            )
+          }
+        />
+      </div>
+      {hasBorder ? (
+        <>
+          <Input
+            type="color"
+            className="h-8 w-full cursor-pointer p-1"
+            disabled={disabled}
+            value={toHexColor(value.bordeColor, '#2563eb')}
+            onChange={(e) => onChange({ bordeColor: e.target.value })}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[10px]">Grosor</Label>
+              <Slider
+                value={[value.bordeGrosor ?? 2]}
+                min={1}
+                max={12}
+                step={1}
+                disabled={disabled}
+                onValueChange={([v]) => onChange({ bordeGrosor: v })}
+              >
+                <SliderThumb />
+              </Slider>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px]">Radio</Label>
+              <Slider
+                value={[value.bordeRadio ?? 8]}
+                min={0}
+                max={32}
+                step={1}
+                disabled={disabled}
+                onValueChange={([v]) => onChange({ bordeRadio: v })}
+              >
+                <SliderThumb />
+              </Slider>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+        <Label className="text-xs">Sombra de caja</Label>
+        <Switch
+          checked={hasShadow}
+          disabled={disabled}
+          onCheckedChange={(on) =>
+            onChange(
+              on
+                ? { sombraColor: 'rgba(2,6,23,0.35)', sombraDesenfoque: 18, sombraX: 0, sombraY: 8 }
+                : {
+                    sombraColor: undefined,
+                    sombraDesenfoque: undefined,
+                    sombraX: undefined,
+                    sombraY: undefined,
+                  },
+            )
+          }
+        />
+      </div>
+      {hasShadow ? (
+        <div className="space-y-1">
+          <Label className="text-[10px]">Desenfoque</Label>
+          <Slider
+            value={[value.sombraDesenfoque ?? 18]}
+            min={0}
+            max={48}
+            step={1}
+            disabled={disabled}
+            onValueChange={([v]) => onChange({ sombraDesenfoque: v })}
+          >
+            <SliderThumb />
+          </Slider>
+        </div>
+      ) : null}
+    </InspectorSection>
   );
 }
 

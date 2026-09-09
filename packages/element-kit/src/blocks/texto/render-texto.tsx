@@ -19,6 +19,11 @@ import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
 import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
 import {
+  textBlockBoxCss,
+  textBlockColumnsCss,
+  hexWithOpacity,
+} from '@lumina/editor-shared/text-box';
+import {
   richMarksToStyle,
   isSafeHref,
   useTextTokens,
@@ -109,7 +114,10 @@ export function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
   if (block.espaciadoLetras !== undefined) {
     out.letterSpacing = `${block.espaciadoLetras}px`;
   }
-  return out;
+  if (block.fondoTexto && block.fondoTextoOpacidad !== undefined) {
+    out.backgroundColor = hexWithOpacity(block.fondoTexto, block.fondoTextoOpacidad);
+  }
+  return { ...out, ...textBlockColumnsCss(block) };
 }
 
 export function InlineTextEditor({
@@ -321,14 +329,19 @@ export function RenderText({
       interlineado: block.interlineado,
     },
   };
-  if (doc.nodes.length === 1) {
-    return richNodeToElement(doc.nodes[0]!, 0, style, ctx);
-  }
-  return createElement(
-    'div',
-    { style },
-    doc.nodes.map((n, i) => richNodeToElement(n, i, undefined, ctx)),
-  );
+  const inner =
+    doc.nodes.length === 1
+      ? richNodeToElement(doc.nodes[0]!, 0, style, ctx)
+      : createElement(
+          'div',
+          { style },
+          doc.nodes.map((n, i) => richNodeToElement(n, i, undefined, ctx)),
+        );
+
+  // Caja del bloque (relleno / borde / sombra / alineación vertical): sólo se
+  // añade el envoltorio si el bloque define algo — si no, DOM idéntico a antes.
+  const box = textBlockBoxCss(block);
+  return box ? createElement('div', { style: box }, inner) : inner;
 }
 
 // \u2500\u2500\u2500 Render de RichDoc \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
