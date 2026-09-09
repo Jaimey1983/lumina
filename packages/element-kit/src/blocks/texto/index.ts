@@ -12,6 +12,7 @@ export {
   textBlockHeadingFallbackStyle,
   type RenderTextProps,
 } from './render-texto.js';
+export { getRichDoc, isRichTextEnabled } from './rich-text.js';
 export {
   TextoProperties,
   type TextoPropertiesProps,

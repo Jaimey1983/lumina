@@ -641,7 +641,13 @@ export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface TextBlock {
   tipo: 'texto';
+  /** Texto plano (con `\n`). Fuente de verdad salvo que exista `contenidoRich`. */
   contenido: string;
+  /**
+   * Documento de texto enriquecido (Fase 1). Cuando está presente es la fuente
+   * de verdad; `contenido` se recomputa a partir de él en cada commit.
+   */
+  contenidoRich?: import('./rich-text.types.js').RichDoc;
   nivel?: HeadingLevel;
   alineacion?: TextAlign;
   tamanoFuente?: string;

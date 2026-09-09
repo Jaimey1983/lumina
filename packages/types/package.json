@@ -6,6 +6,7 @@
   "//": "Tipos compartidos entre lumina-frontend y @lumina/element-kit (E7.6.1). Consumido desde dist/ (mismo patrón que @lumina/element-kit-core: los specifiers .js de NodeNext no los resuelve Turbopack si se sirve src/).",
   "exports": {
     "./slide": { "types": "./dist/slide.types.d.ts", "import": "./dist/slide.types.js" },
+    "./rich-text": { "types": "./dist/rich-text.types.d.ts", "import": "./dist/rich-text.types.js" },
     "./widget": { "types": "./dist/widget.types.d.ts", "import": "./dist/widget.types.js" },
     "./animation": { "types": "./dist/animation.types.d.ts", "import": "./dist/animation.types.js" },
     "./autonomous": { "types": "./dist/autonomous.types.d.ts", "import": "./dist/autonomous.types.js" },

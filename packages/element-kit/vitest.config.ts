@@ -28,6 +28,7 @@ export default defineConfig({
       "@lumina/ui": path.resolve(root, "../ui/src"),
       "@lumina/editor-shared": path.resolve(root, "../editor-shared/src"),
       "@lumina/types/slide": path.resolve(root, "../types/src/slide.types.ts"),
+      "@lumina/types/rich-text": path.resolve(root, "../types/src/rich-text.types.ts"),
       "@lumina/types/widget": path.resolve(root, "../types/src/widget.types.ts"),
       "@lumina/types/animation": path.resolve(root, "../types/src/animation.types.ts"),
       "@lumina/types/autonomous": path.resolve(root, "../types/src/autonomous.types.ts"),

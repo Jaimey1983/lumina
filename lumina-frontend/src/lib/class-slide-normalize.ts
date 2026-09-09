@@ -33,6 +33,7 @@ import { normalizeClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import { normalizeBackground } from '@/lib/slide-background';
 import { normalizeGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import { normalizeDiagramaBlock } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
+import { sanitizeRichDoc, richToPlain, isRichDoc } from '@lumina/editor-shared/rich-text';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -147,7 +148,27 @@ function withoutInteractiveStubs(bloques: Block[]): Block[] {
   return bloques.filter((b) => !isUnimplementedInteractiveStub(b));
 }
 
+/**
+ * Texto enriquecido (Fase 1): si el bloque trae `contenidoRich`, se sanea y se
+ * recomputa `contenido` a partir de él. Si el `RichDoc` es inválido se descarta y
+ * el bloque queda como texto plano. Sin `contenidoRich` el bloque no cambia — el
+ * relleno perezoso lo hará el editor enriquecido (Fase 2), no la hidratación.
+ */
+function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
+  if (block.contenidoRich === undefined) return block;
+  if (!isRichDoc(block.contenidoRich)) {
+    const rest: typeof block = { ...block };
+    delete rest.contenidoRich;
+    return rest;
+  }
+  const doc = sanitizeRichDoc(block.contenidoRich);
+  return { ...block, contenidoRich: doc, contenido: richToPlain(doc) };
+}
+
 function normalizeBlock(block: Block): Block {
+  if (block.tipo === 'texto') {
+    return normalizeTextBlock(block);
+  }
   if (block.tipo === 'actividad' && block.actividad.tipo === 'ruleta') {
     return normalizeRuletaBlock(block);
   }

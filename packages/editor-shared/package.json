@@ -9,6 +9,10 @@
       "types": "./dist/graph-editor/index.d.ts",
       "default": "./dist/graph-editor/index.js"
     },
+    "./rich-text": {
+      "types": "./dist/rich-text/index.d.ts",
+      "default": "./dist/rich-text/index.js"
+    },
     "./*.css": "./dist/*.css",
     "./*": {
       "types": "./dist/*.d.ts",

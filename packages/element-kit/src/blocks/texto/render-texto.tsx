@@ -2,15 +2,22 @@
 
 import {
   createElement,
+  cloneElement,
+  isValidElement,
   useState,
   useRef,
   useEffect,
   type CSSProperties,
+  type ReactElement,
+  type ReactNode,
 } from 'react';
 import type { TextBlock } from '@lumina/types/slide';
+import type { RichMark, RichNode, RichRun } from '@lumina/types/rich-text';
 import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
 import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
+import { richMarksToStyle, isSafeHref } from '@lumina/editor-shared/rich-text';
+import { getRichDoc } from './rich-text.js';
 
 export const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   izquierda: 'left',
@@ -249,19 +256,102 @@ export function RenderText({
         }
       : {}),
   };
-  const tag = isList
-    ? block.lista === 'numeros'
-      ? 'ol'
-      : 'ul'
-    : block.nivel
-      ? `h${block.nivel}`
-      : 'p';
-  const children = isList
-    ? (block.contenido ?? '')
-        .split('\n')
-        .map((line, i) =>
-          createElement('li', { key: i }, line === '' ? '\u00a0' : line),
-        )
-    : block.contenido;
-  return createElement(tag, { style }, children);
+  // El nodo ra\u00edz del RichDoc ya refleja lista / nivel / alineaci\u00f3n del bloque.
+  const doc = getRichDoc(block);
+  if (doc.nodes.length === 1) {
+    return richNodeToElement(doc.nodes[0]!, 0, style);
+  }
+  return createElement(
+    'div',
+    { style },
+    doc.nodes.map((n, i) => richNodeToElement(n, i)),
+  );
+}
+
+// \u2500\u2500\u2500 Render de RichDoc \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+function findMark<T extends RichMark['t']>(
+  marks: RichMark[] | undefined,
+  t: T,
+): Extract<RichMark, { t: T }> | undefined {
+  return marks?.find((m) => m.t === t) as Extract<RichMark, { t: T }> | undefined;
+}
+
+function renderRun(run: RichRun, key: number): ReactNode {
+  const marks = run.marks;
+  if (!marks || marks.length === 0) return run.text;
+
+  let node: ReactNode = run.text;
+  const markStyle = richMarksToStyle(marks);
+  if (Object.keys(markStyle).length > 0) {
+    node = createElement('span', { style: markStyle }, node);
+  }
+  const script = findMark(marks, 'script');
+  if (script) node = createElement(script.value === 'sup' ? 'sup' : 'sub', null, node);
+  if (findMark(marks, 'spoiler')) node = createElement('span', { 'data-spoiler': '1' }, node);
+  const term = findMark(marks, 'term');
+  if (term) node = createElement('span', { 'data-term': term.glosaId }, node);
+  const lang = findMark(marks, 'lang');
+  if (lang) node = createElement('span', { lang: lang.value }, node);
+  const link = findMark(marks, 'link');
+  if (link?.href && isSafeHref(link.href)) {
+    node = createElement(
+      'a',
+      { href: link.href, target: '_blank', rel: 'noopener noreferrer' },
+      node,
+    );
+  }
+  return isValidElement(node)
+    ? cloneElement(node as ReactElement, { key })
+    : createElement('span', { key }, node);
+}
+
+function renderRuns(runs: RichRun[] | undefined): ReactNode {
+  if (!runs || runs.length === 0) return null;
+  if (runs.length === 1 && (!runs[0]!.marks || runs[0]!.marks.length === 0)) {
+    return runs[0]!.text;
+  }
+  return runs.map((r, i) => renderRun(r, i));
+}
+
+function richNodeToElement(
+  node: RichNode,
+  key: number | string,
+  style?: CSSProperties,
+): ReactNode {
+  switch (node.type) {
+    case 'heading':
+      return createElement(`h${node.level ?? 2}`, { key, style }, renderRuns(node.runs));
+    case 'blockquote':
+      return createElement('blockquote', { key, style }, renderRuns(node.runs));
+    case 'codeBlock':
+      return createElement(
+        'pre',
+        { key, style },
+        createElement('code', null, (node.runs ?? []).map((r) => r.text).join('')),
+      );
+    case 'hr':
+      return createElement('hr', { key });
+    case 'bulletList':
+    case 'orderedList':
+    case 'taskList':
+      return createElement(
+        node.type === 'orderedList' ? 'ol' : 'ul',
+        { key, style },
+        (node.children ?? []).map((li, i) => richNodeToElement(li, i)),
+      );
+    case 'listItem': {
+      const soloTexto =
+        node.runs && node.runs.length === 1 && !node.runs[0]!.marks
+          ? node.runs[0]!.text
+          : undefined;
+      return createElement(
+        'li',
+        { key },
+        soloTexto === '' ? '\u00a0' : renderRuns(node.runs),
+      );
+    }
+    default:
+      return createElement('p', { key, style }, renderRuns(node.runs));
+  }
 }
