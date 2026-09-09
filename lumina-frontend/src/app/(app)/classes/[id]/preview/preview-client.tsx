@@ -16,6 +16,7 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { TextTokensProvider } from '@lumina/editor-shared/rich-text';
 import type { Activity, Block } from '@lumina/types/slide';
 import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
 
@@ -178,6 +179,7 @@ export function PreviewClient({ id }: { id: string }) {
                 style={bg.style}
               >
                 <SlideNavContext.Provider value={{ navigate: navigateSlide, slideCount: slides.length, slideIndex: activeSlideIndex }}>
+                <TextTokensProvider value={{ extra: classData.title ? { clase: classData.title } : undefined }}>
                 <SlideRenderer
                   slide={activeSlide}
                   modo="viewer"
@@ -190,6 +192,7 @@ export function PreviewClient({ id }: { id: string }) {
                   viewerStudentName="Vista previa"
                   viewerClassId={id}
                 />
+                </TextTokensProvider>
                 </SlideNavContext.Provider>
               </div>
             ) : (

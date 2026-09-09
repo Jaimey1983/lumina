@@ -6,9 +6,26 @@
  * a `getSchema()` de `@tiptap/core` sin instanciar un editor.
  */
 
-import { Extension, Mark, mergeAttributes } from '@tiptap/core';
+import {
+  Extension,
+  InputRule,
+  Mark,
+  markInputRule,
+  markPasteRule,
+  mergeAttributes,
+} from '@tiptap/core';
 import type { Extensions } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import {
+  Bold,
+  starInputRegex as boldStarInput,
+  starPasteRegex as boldStarPaste,
+} from '@tiptap/extension-bold';
+import {
+  Italic,
+  starInputRegex as italicStarInput,
+  starPasteRegex as italicStarPaste,
+} from '@tiptap/extension-italic';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import { Highlight } from '@tiptap/extension-highlight';
@@ -179,6 +196,49 @@ const Lang = Mark.create({
   },
 });
 
+/**
+ * Bold / Italic que SOLO disparan con `*` / `**` — nunca con `_` / `__`, para no
+ * convertir `snake_case` o `__init__` en formato al escribir o pegar (Fase 5A).
+ */
+const BoldStarOnly = Bold.extend({
+  addInputRules() {
+    return [markInputRule({ find: boldStarInput, type: this.type })];
+  },
+  addPasteRules() {
+    return [markPasteRule({ find: boldStarPaste, type: this.type })];
+  },
+});
+
+const ItalicStarOnly = Italic.extend({
+  addInputRules() {
+    return [markInputRule({ find: italicStarInput, type: this.type })];
+  },
+  addPasteRules() {
+    return [markPasteRule({ find: italicStarPaste, type: this.type })];
+  },
+});
+
+/** Reemplazos tipográficos al escribir: `--` → em‑dash, `...` → elipsis. */
+const SmartTypography = Extension.create({
+  name: 'luminaSmartTypography',
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /--$/,
+        handler: ({ range, commands }) => {
+          commands.insertContentAt(range, '—');
+        },
+      }),
+      new InputRule({
+        find: /\.\.\.$/,
+        handler: ({ range, commands }) => {
+          commands.insertContentAt(range, '…');
+        },
+      }),
+    ];
+  },
+});
+
 export interface RichTextExtensionOptions {
   placeholder?: string;
 }
@@ -186,6 +246,9 @@ export interface RichTextExtensionOptions {
 export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensions {
   return [
     StarterKit.configure({
+      // Bold/Italic propios (solo `*`/`**`) — ver BoldStarOnly / ItalicStarOnly.
+      bold: false,
+      italic: false,
       // `link` de StarterKit v3: validado con isSafeHref; `slideRef` lo añade LinkSlideRef.
       link: {
         openOnClick: false,
@@ -193,9 +256,12 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
         isAllowedUri: (url: string) => isSafeHref(url),
       },
-      // codeBlock: sin resaltado por ahora (Fase 5 añade lowlight).
+      // codeBlock: sin resaltado por ahora (Fase 5B añade lowlight).
       codeBlock: { HTMLAttributes: { spellcheck: 'false' } },
     }),
+    BoldStarOnly,
+    ItalicStarOnly,
+    SmartTypography,
     TextStyle,
     TextStyleExtras,
     Color,

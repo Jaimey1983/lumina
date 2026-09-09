@@ -20,6 +20,18 @@ export {
   type RichTextAiAction,
 } from './ai-context.js';
 export { wordDiff, type DiffOp } from './word-diff.js';
+export {
+  resolveBuiltinToken,
+  makeTokenResolver,
+  interpolateTokens,
+  hasTokens,
+  type TokenContext,
+} from './text-tokens.js';
+export {
+  TextTokensProvider,
+  useTextTokens,
+  type TextTokensValue,
+} from './text-tokens-context.js';
 export { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
 export {
   registerActiveRichEditor,

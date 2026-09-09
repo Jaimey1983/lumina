@@ -13,6 +13,7 @@ import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { TextTokensProvider } from '@lumina/editor-shared/rich-text';
 import { cn } from '@/lib/utils';
 import styles from '@/components/viewer/slide-transition.module.css';
 import { useSlideTransition } from '@/hooks/use-slide-transition';
@@ -209,6 +210,9 @@ export function PresentClient({ id }: { id: string }) {
               slideIndex: activeSlideIndex,
             }}
           >
+            <TextTokensProvider
+              value={{ extra: classData?.title ? { clase: classData.title } : undefined }}
+            >
             <SlideRenderer
               slide={activeSlide}
               modo="viewer"
@@ -221,6 +225,7 @@ export function PresentClient({ id }: { id: string }) {
               viewerStudentName="Presentación"
               viewerClassId={id}
             />
+            </TextTokensProvider>
           </SlideNavContext.Provider>
         </div>
       ) : null}

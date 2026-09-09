@@ -18,8 +18,17 @@ import type { RichDoc, RichMark, RichNode, RichRun } from '@lumina/types/rich-te
 import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
 import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
-import { richMarksToStyle, isSafeHref } from '@lumina/editor-shared/rich-text';
+import {
+  richMarksToStyle,
+  isSafeHref,
+  useTextTokens,
+  makeTokenResolver,
+  interpolateTokens,
+} from '@lumina/editor-shared/rich-text';
+import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { getRichDoc } from './rich-text.js';
+
+type ResolveToken = (name: string) => string | undefined;
 
 /**
  * El editor enriquecido (TipTap) se carga sólo al entrar en edición inline —
@@ -212,6 +221,9 @@ export function RenderText({
   onCommit,
   onDiscard,
 }: RenderTextProps) {
+  const nav = useSlideNav();
+  const tokens = useTextTokens();
+
   if (isEditing && onCommit && onDiscard) {
     return (
       <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
@@ -275,13 +287,21 @@ export function RenderText({
   };
   // El nodo ra\u00edz del RichDoc ya refleja lista / nivel / alineaci\u00f3n del bloque.
   const doc = getRichDoc(block);
+  // Los tokens `{{...}}` se resuelven s\u00f3lo fuera del editor.
+  const resolveToken: ResolveToken | undefined =
+    modo === 'editor'
+      ? undefined
+      : makeTokenResolver(
+          { slideIndex: nav.slideIndex, slideCount: nav.slideCount },
+          tokens.extra,
+        );
   if (doc.nodes.length === 1) {
-    return richNodeToElement(doc.nodes[0]!, 0, style);
+    return richNodeToElement(doc.nodes[0]!, 0, style, resolveToken);
   }
   return createElement(
     'div',
     { style },
-    doc.nodes.map((n, i) => richNodeToElement(n, i)),
+    doc.nodes.map((n, i) => richNodeToElement(n, i, undefined, resolveToken)),
   );
 }
 
@@ -294,11 +314,12 @@ function findMark<T extends RichMark['t']>(
   return marks?.find((m) => m.t === t) as Extract<RichMark, { t: T }> | undefined;
 }
 
-function renderRun(run: RichRun, key: number): ReactNode {
+function renderRun(run: RichRun, key: number, resolveToken?: ResolveToken): ReactNode {
+  const text = resolveToken ? interpolateTokens(run.text, resolveToken) : run.text;
   const marks = run.marks;
-  if (!marks || marks.length === 0) return run.text;
+  if (!marks || marks.length === 0) return text;
 
-  let node: ReactNode = run.text;
+  let node: ReactNode = text;
   const markStyle = richMarksToStyle(marks);
   if (Object.keys(markStyle).length > 0) {
     node = createElement('span', { style: markStyle }, node);
@@ -323,25 +344,36 @@ function renderRun(run: RichRun, key: number): ReactNode {
     : createElement('span', { key }, node);
 }
 
-function renderRuns(runs: RichRun[] | undefined): ReactNode {
+function renderRuns(runs: RichRun[] | undefined, resolveToken?: ResolveToken): ReactNode {
   if (!runs || runs.length === 0) return null;
   if (runs.length === 1 && (!runs[0]!.marks || runs[0]!.marks.length === 0)) {
-    return runs[0]!.text;
+    const t = runs[0]!.text;
+    return resolveToken ? interpolateTokens(t, resolveToken) : t;
   }
-  return runs.map((r, i) => renderRun(r, i));
+  return runs.map((r, i) => renderRun(r, i, resolveToken));
 }
 
 function richNodeToElement(
   node: RichNode,
   key: number | string,
   style?: CSSProperties,
+  resolveToken?: ResolveToken,
 ): ReactNode {
   switch (node.type) {
     case 'heading':
-      return createElement(`h${node.level ?? 2}`, { key, style }, renderRuns(node.runs));
+      return createElement(
+        `h${node.level ?? 2}`,
+        { key, style },
+        renderRuns(node.runs, resolveToken),
+      );
     case 'blockquote':
-      return createElement('blockquote', { key, style }, renderRuns(node.runs));
+      return createElement(
+        'blockquote',
+        { key, style },
+        renderRuns(node.runs, resolveToken),
+      );
     case 'codeBlock':
+      // El c\u00f3digo no interpola tokens.
       return createElement(
         'pre',
         { key, style },
@@ -355,7 +387,7 @@ function richNodeToElement(
       return createElement(
         node.type === 'orderedList' ? 'ol' : 'ul',
         { key, style },
-        (node.children ?? []).map((li, i) => richNodeToElement(li, i)),
+        (node.children ?? []).map((li, i) => richNodeToElement(li, i, undefined, resolveToken)),
       );
     case 'listItem': {
       const soloTexto =
@@ -365,10 +397,10 @@ function richNodeToElement(
       return createElement(
         'li',
         { key },
-        soloTexto === '' ? '\u00a0' : renderRuns(node.runs),
+        soloTexto === '' ? '\u00a0' : renderRuns(node.runs, resolveToken),
       );
     }
     default:
-      return createElement('p', { key, style }, renderRuns(node.runs));
+      return createElement('p', { key, style }, renderRuns(node.runs, resolveToken));
   }
 }
