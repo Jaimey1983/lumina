@@ -39,6 +39,7 @@ import {
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { getRichDoc } from './rich-text.js';
 import { SpoilerRun } from './spoiler-mark.js';
+import { CurvedText } from './curved-text.js';
 
 type ResolveToken = (name: string) => string | undefined;
 interface RenderCtx {
@@ -269,6 +270,14 @@ export function RenderText({
         />
       </Suspense>
     );
+  }
+
+  // Texto curvado: una sola línea, sin formato por fragmentos (limitación).
+  if (
+    Math.abs(block.curvatura ?? 0) >= 1 &&
+    !textBlockContenidoIsEmpty(block)
+  ) {
+    return <CurvedText block={block} text={(block.contenido ?? '').replace(/\s*\n\s*/g, ' ')} />;
   }
 
   if (modo === 'editor' && textBlockContenidoIsEmpty(block)) {

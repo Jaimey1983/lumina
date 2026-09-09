@@ -140,6 +140,21 @@ export function TextoProperties({
       metaText={block.contenido}
       boxValue={textBoxValueFromBlock(block)}
       onBoxChange={handleBoxChange}
+      curvatura={block.curvatura}
+      onCurvaturaChange={(n) => {
+        const apply = (b: Block): Block => {
+          if (b.tipo !== 'texto') return b;
+          if (n === undefined) {
+            const rest = { ...b };
+            delete rest.curvatura;
+            return rest;
+          }
+          return { ...b, curvatura: n };
+        };
+        clearDebounce?.();
+        if (applyNow) void applyNow(apply);
+        else if (onChange) onChange(apply(block) as TextBlock);
+      }}
       revealValue={block.revelado}
       onRevealChange={(next) => {
         const apply = (b: Block): Block => {

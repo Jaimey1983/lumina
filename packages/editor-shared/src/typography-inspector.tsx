@@ -129,6 +129,9 @@ export interface TypographyInspectorProps {
   /** Panel «Revelado» (animación por palabra/línea) — sólo para el primitivo `texto`. */
   revealValue?: RevealValue;
   onRevealChange?: (next: RevealValue | undefined) => void;
+  /** Curvatura del texto (−100…100). */
+  curvatura?: number;
+  onCurvaturaChange?: (n: number | undefined) => void;
 }
 
 type RevealValue = NonNullable<import('@lumina/types/slide').TextBlock['revelado']>;
@@ -149,6 +152,8 @@ export function TypographyInspector({
   onBoxChange,
   revealValue,
   onRevealChange,
+  curvatura,
+  onCurvaturaChange,
   contrastBackground,
   metaText,
 }: TypographyInspectorProps) {
@@ -477,6 +482,32 @@ export function TypographyInspector({
 
       {onRevealChange ? (
         <RevealSection value={revealValue} onChange={onRevealChange} disabled={disabled} />
+      ) : null}
+
+      {onCurvaturaChange ? (
+        <InspectorSection title="Curvatura" defaultOpen={false}>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Curvatura</Label>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {curvatura ?? 0}
+              </span>
+            </div>
+            <Slider
+              value={[curvatura ?? 0]}
+              min={-100}
+              max={100}
+              step={5}
+              disabled={disabled}
+              onValueChange={([v]) => onCurvaturaChange(v || undefined)}
+            >
+              <SliderThumb />
+            </Slider>
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              Una sola línea, sin formato por fragmentos.
+            </p>
+          </div>
+        </InspectorSection>
       ) : null}
 
       {metaText !== undefined || contrastBackground ? (
