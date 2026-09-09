@@ -45,6 +45,7 @@ import type {
 } from '@lumina/types/slide';
 import type { RichDoc } from '@lumina/types/rich-text';
 import { richToPlain } from '@lumina/editor-shared/rich-text';
+import { syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
 import { cn } from '@/lib/utils';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@lumina/editor-shared/font-catalog';
 import { ensureGoogleFonts } from '@lumina/editor-shared/google-fonts-loader';
@@ -1427,7 +1428,8 @@ export function SlideRenderer({
       block.contenido === contenido &&
       JSON.stringify(block.contenidoRich ?? null) === JSON.stringify(doc);
     if (unchanged) return;
-    blocks[blockIndex] = { ...block, contenidoRich: doc, contenido } as Block;
+    // Sincroniza `nivel` / `lista` / `alineacion` con el nodo raíz del doc.
+    blocks[blockIndex] = syncTextBlockFromRichDoc(block, doc) as Block;
     const updatedContent = mergeRendererSlideState(slide, { bloques: blocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
     if (onPersistSlide) {

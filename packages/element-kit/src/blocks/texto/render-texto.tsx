@@ -13,7 +13,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import type { TextBlock } from '@lumina/types/slide';
+import type { HeadingLevel, TextBlock } from '@lumina/types/slide';
 import type { RichDoc, RichMark, RichNode, RichRun } from '@lumina/types/rich-text';
 import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
@@ -34,6 +34,17 @@ interface RenderCtx {
   resolveToken?: ResolveToken;
   /** true en el editor / no interactivo → los spoilers salen ya revelados. */
   spoilerRevealed?: boolean;
+  /**
+   * Overrides explícitos del bloque para la escala de encabezado — el `nivel`
+   * puede vivir en el nodo del `RichDoc` (`heading.level`), no solo en
+   * `block.nivel`; el render deriva la escala del nodo salvo estos overrides.
+   */
+  headingOverride?: {
+    tamanoFuente?: string;
+    negrita?: boolean;
+    espaciadoLetras?: number;
+    interlineado?: number;
+  };
 }
 
 /**
@@ -303,6 +314,12 @@ export function RenderText({
             tokens.extra,
           ),
     spoilerRevealed: modo === 'editor',
+    headingOverride: {
+      tamanoFuente: block.tamanoFuente,
+      negrita: block.negrita,
+      espaciadoLetras: block.espaciadoLetras,
+      interlineado: block.interlineado,
+    },
   };
   if (doc.nodes.length === 1) {
     return richNodeToElement(doc.nodes[0]!, 0, style, ctx);
@@ -371,12 +388,17 @@ function richNodeToElement(
   ctx?: RenderCtx,
 ): ReactNode {
   switch (node.type) {
-    case 'heading':
+    case 'heading': {
+      const lvl = (node.level ?? 2) as HeadingLevel;
+      // La escala (tamaño/peso/interlineado/tracking) se deriva del nivel del
+      // NODO — el ajuste manual del bloque (si existe) gana vía `headingOverride`.
+      const scale = headingFallbackCss(lvl, ctx?.headingOverride ?? {});
       return createElement(
-        `h${node.level ?? 2}`,
-        { key, style },
+        `h${lvl}`,
+        { key, style: { ...style, ...scale } },
         renderRuns(node.runs, ctx),
       );
+    }
     case 'blockquote':
       return createElement(
         'blockquote',

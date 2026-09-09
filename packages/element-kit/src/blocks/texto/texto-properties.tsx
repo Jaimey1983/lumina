@@ -59,10 +59,23 @@ export function TextoProperties({
   };
 
   const handleHeadingLevelChange = (nivel?: HeadingLevel) => {
-    // Con una selección de rango viva, el nivel se aplica al nodo del editor.
+    // Con una selección de rango viva, el nivel se aplica al nodo del editor…
     const editor = activeSelectionEditor();
     if (editor) {
       applyHeadingLevelToSelection(editor, nivel);
+      // …y se refleja en `block.nivel` para que el panel y la escala no diverjan
+      // (el commit del editor lo resincroniza igualmente vía syncTextBlockFromRichDoc).
+      const syncNivel = (b: Block): Block => {
+        if (b.tipo !== 'texto') return b;
+        if (nivel === undefined) {
+          const rest = { ...b };
+          delete rest.nivel;
+          return rest;
+        }
+        return { ...b, nivel };
+      };
+      if (applyNow) void applyNow(syncNivel);
+      else if (onChange) onChange(syncNivel(block) as TextBlock);
       return;
     }
     if (applyNow) {
