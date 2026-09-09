@@ -14,6 +14,7 @@ import type { Editor } from '@tiptap/core';
 import {
   Bold,
   Code,
+  EyeOff,
   Highlighter,
   Italic,
   Link2,
@@ -66,6 +67,7 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
     { id: 'sup', label: 'Superíndice', icon: <SupIcon className="size-3.5" />, isActive: (e) => e.isActive('superscript'), run: (e) => e.chain().focus().toggleSuperscript().run() },
     { id: 'sub', label: 'Subíndice', icon: <SubIcon className="size-3.5" />, isActive: (e) => e.isActive('subscript'), run: (e) => e.chain().focus().toggleSubscript().run() },
     { id: 'highlight', label: 'Resaltar', icon: <Highlighter className="size-3.5" />, isActive: (e) => e.isActive('highlight'), run: (e) => e.chain().focus().toggleHighlight({ color: HIGHLIGHT_DEFAULT }).run() },
+    { id: 'spoiler', label: 'Ocultar respuesta', icon: <EyeOff className="size-3.5" />, isActive: (e) => e.isActive('spoiler'), run: (e) => e.chain().focus().toggleMark('spoiler').run() },
     { id: 'size-down', label: 'Reducir tamaño', icon: <Minus className="size-3.5" />, run: (e) => setFontSize(e, currentFontSizePx(e) - SIZE_STEP) },
     { id: 'size-up', label: 'Aumentar tamaño', icon: <Plus className="size-3.5" />, run: (e) => setFontSize(e, currentFontSizePx(e) + SIZE_STEP) },
     {

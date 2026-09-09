@@ -27,8 +27,14 @@ import {
 } from '@lumina/editor-shared/rich-text';
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { getRichDoc } from './rich-text.js';
+import { SpoilerRun } from './spoiler-mark.js';
 
 type ResolveToken = (name: string) => string | undefined;
+interface RenderCtx {
+  resolveToken?: ResolveToken;
+  /** true en el editor / no interactivo → los spoilers salen ya revelados. */
+  spoilerRevealed?: boolean;
+}
 
 /**
  * El editor enriquecido (TipTap) se carga sólo al entrar en edición inline —
@@ -287,21 +293,24 @@ export function RenderText({
   };
   // El nodo ra\u00edz del RichDoc ya refleja lista / nivel / alineaci\u00f3n del bloque.
   const doc = getRichDoc(block);
-  // Los tokens `{{...}}` se resuelven s\u00f3lo fuera del editor.
-  const resolveToken: ResolveToken | undefined =
-    modo === 'editor'
-      ? undefined
-      : makeTokenResolver(
-          { slideIndex: nav.slideIndex, slideCount: nav.slideCount },
-          tokens.extra,
-        );
+  const ctx: RenderCtx = {
+    // Los tokens `{{...}}` se resuelven s\u00f3lo fuera del editor.
+    resolveToken:
+      modo === 'editor'
+        ? undefined
+        : makeTokenResolver(
+            { slideIndex: nav.slideIndex, slideCount: nav.slideCount },
+            tokens.extra,
+          ),
+    spoilerRevealed: modo === 'editor',
+  };
   if (doc.nodes.length === 1) {
-    return richNodeToElement(doc.nodes[0]!, 0, style, resolveToken);
+    return richNodeToElement(doc.nodes[0]!, 0, style, ctx);
   }
   return createElement(
     'div',
     { style },
-    doc.nodes.map((n, i) => richNodeToElement(n, i, undefined, resolveToken)),
+    doc.nodes.map((n, i) => richNodeToElement(n, i, undefined, ctx)),
   );
 }
 
@@ -314,8 +323,8 @@ function findMark<T extends RichMark['t']>(
   return marks?.find((m) => m.t === t) as Extract<RichMark, { t: T }> | undefined;
 }
 
-function renderRun(run: RichRun, key: number, resolveToken?: ResolveToken): ReactNode {
-  const text = resolveToken ? interpolateTokens(run.text, resolveToken) : run.text;
+function renderRun(run: RichRun, key: number, ctx?: RenderCtx): ReactNode {
+  const text = ctx?.resolveToken ? interpolateTokens(run.text, ctx.resolveToken) : run.text;
   const marks = run.marks;
   if (!marks || marks.length === 0) return text;
 
@@ -326,7 +335,9 @@ function renderRun(run: RichRun, key: number, resolveToken?: ResolveToken): Reac
   }
   const script = findMark(marks, 'script');
   if (script) node = createElement(script.value === 'sup' ? 'sup' : 'sub', null, node);
-  if (findMark(marks, 'spoiler')) node = createElement('span', { 'data-spoiler': '1' }, node);
+  if (findMark(marks, 'spoiler')) {
+    node = createElement(SpoilerRun, { revealed: ctx?.spoilerRevealed }, node);
+  }
   const term = findMark(marks, 'term');
   if (term) node = createElement('span', { 'data-term': term.glosaId }, node);
   const lang = findMark(marks, 'lang');
@@ -344,33 +355,33 @@ function renderRun(run: RichRun, key: number, resolveToken?: ResolveToken): Reac
     : createElement('span', { key }, node);
 }
 
-function renderRuns(runs: RichRun[] | undefined, resolveToken?: ResolveToken): ReactNode {
+function renderRuns(runs: RichRun[] | undefined, ctx?: RenderCtx): ReactNode {
   if (!runs || runs.length === 0) return null;
   if (runs.length === 1 && (!runs[0]!.marks || runs[0]!.marks.length === 0)) {
     const t = runs[0]!.text;
-    return resolveToken ? interpolateTokens(t, resolveToken) : t;
+    return ctx?.resolveToken ? interpolateTokens(t, ctx.resolveToken) : t;
   }
-  return runs.map((r, i) => renderRun(r, i, resolveToken));
+  return runs.map((r, i) => renderRun(r, i, ctx));
 }
 
 function richNodeToElement(
   node: RichNode,
   key: number | string,
   style?: CSSProperties,
-  resolveToken?: ResolveToken,
+  ctx?: RenderCtx,
 ): ReactNode {
   switch (node.type) {
     case 'heading':
       return createElement(
         `h${node.level ?? 2}`,
         { key, style },
-        renderRuns(node.runs, resolveToken),
+        renderRuns(node.runs, ctx),
       );
     case 'blockquote':
       return createElement(
         'blockquote',
         { key, style },
-        renderRuns(node.runs, resolveToken),
+        renderRuns(node.runs, ctx),
       );
     case 'codeBlock':
       // El c\u00f3digo no interpola tokens.
@@ -387,7 +398,7 @@ function richNodeToElement(
       return createElement(
         node.type === 'orderedList' ? 'ol' : 'ul',
         { key, style },
-        (node.children ?? []).map((li, i) => richNodeToElement(li, i, undefined, resolveToken)),
+        (node.children ?? []).map((li, i) => richNodeToElement(li, i, undefined, ctx)),
       );
     case 'listItem': {
       const soloTexto =
@@ -397,10 +408,10 @@ function richNodeToElement(
       return createElement(
         'li',
         { key },
-        soloTexto === '' ? '\u00a0' : renderRuns(node.runs, resolveToken),
+        soloTexto === '' ? '\u00a0' : renderRuns(node.runs, ctx),
       );
     }
     default:
-      return createElement('p', { key, style }, renderRuns(node.runs, resolveToken));
+      return createElement('p', { key, style }, renderRuns(node.runs, ctx));
   }
 }
