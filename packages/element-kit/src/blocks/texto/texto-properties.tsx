@@ -17,6 +17,8 @@ export interface TextoPropertiesProps {
   scheduleApply?: (fn: (b: Block) => Block) => void;
   clearDebounce?: () => void;
   onChange?: (updated: TextBlock) => void;
+  /** Fondo del slide — para el aviso de contraste WCAG del panel. */
+  slideBackground?: string;
 }
 
 export function TextoProperties({
@@ -25,6 +27,7 @@ export function TextoProperties({
   scheduleApply,
   clearDebounce,
   onChange,
+  slideBackground,
 }: TextoPropertiesProps) {
   const handleHeadingLevelChange = (nivel?: HeadingLevel) => {
     if (applyNow) {
@@ -74,6 +77,8 @@ export function TextoProperties({
       defaultColor="#000000"
       headingLevel={block.nivel}
       enableList
+      contrastBackground={slideBackground}
+      metaText={block.contenido}
       onHeadingLevelChange={handleHeadingLevelChange}
       onChange={handleTypographyChange}
     />

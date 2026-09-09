@@ -35,6 +35,7 @@ import {
   type TypographyValue,
 } from './typography.js';
 import { cn } from '@lumina/ui/lib/utils';
+import { contrastVerdict } from './contrast.js';
 import type { HeadingLevel } from '@lumina/types/slide';
 import type { WidgetCampoEstilo } from '@lumina/types/widget';
 
@@ -117,6 +118,10 @@ export interface TypographyInspectorProps {
   headingLevel?: HeadingLevel;
   onHeadingLevelChange?: (nivel: HeadingLevel | undefined) => void;
   enableList?: boolean;
+  /** Color de fondo contra el que evaluar el contraste WCAG del texto. */
+  contrastBackground?: string;
+  /** Texto plano para el contador de palabras/caracteres. */
+  metaText?: string;
 }
 
 /** Inspector tipográfico único del panel derecho. */
@@ -131,6 +136,8 @@ export function TypographyInspector({
   headingLevel,
   onHeadingLevelChange,
   enableList,
+  contrastBackground,
+  metaText,
 }: TypographyInspectorProps) {
   const size = value.fontSize ?? defaultSize;
   const lineHeight = value.lineHeight ?? DEFAULT_LINE_HEIGHT;
@@ -450,6 +457,62 @@ export function TypographyInspector({
           </div>
         ) : null}
       </InspectorSection>
+
+      {metaText !== undefined || contrastBackground ? (
+        <TextMetaFooter
+          text={metaText}
+          fg={value.color ?? defaultColor}
+          bg={contrastBackground}
+          fontPx={size}
+          bold={isBoldWeight(value.fontWeight)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function TextMetaFooter({
+  text,
+  fg,
+  bg,
+  fontPx,
+  bold,
+}: {
+  text?: string;
+  fg: string;
+  bg?: string;
+  fontPx: number;
+  bold: boolean;
+}) {
+  const words = text ? (text.trim().match(/\S+/g)?.length ?? 0) : null;
+  const chars = text ? text.length : null;
+  const verdict = bg ? contrastVerdict(fg, bg, fontPx, bold) : null;
+
+  if (words === null && !verdict) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border pt-2 text-[10px] text-muted-foreground">
+      {words !== null ? (
+        <span className="tabular-nums">
+          {words} {words === 1 ? 'palabra' : 'palabras'} · {chars} caracteres
+        </span>
+      ) : (
+        <span />
+      )}
+      {verdict ? (
+        <span
+          className={cn(
+            'tabular-nums',
+            !verdict.passes && 'font-semibold text-amber-600 dark:text-amber-500',
+          )}
+          title={`Contraste WCAG AA — mínimo ${verdict.umbral}:1 (${
+            verdict.large ? 'texto grande' : 'texto normal'
+          })`}
+        >
+          {!verdict.passes ? '⚠ ' : ''}
+          Contraste {verdict.ratio.toFixed(1)}:1
+        </span>
+      ) : null}
     </div>
   );
 }

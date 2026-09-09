@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 
 import type { TextAlign, TextBlock } from '@lumina/types/slide';
 import type { WidgetCampoEstilo } from '@lumina/types/widget';
+import { HEADING_SCALE } from './heading-scale.js';
 
 export type TypographyAlign = 'left' | 'center' | 'right' | 'justify';
 export type TypographyTransform = 'none' | 'uppercase' | 'capitalize';
@@ -122,15 +123,25 @@ export function isBoldWeight(weight?: number | 'normal' | 'bold'): boolean {
 }
 
 export function typographyFromTextBlock(block: TextBlock): TypographyValue {
+  // Cuando el bloque es un encabezado sin override explícito, el inspector debe
+  // mostrar el valor efectivo de la escala (H1 = 40px/700/1.1…), no el default.
+  const escala = block.nivel ? HEADING_SCALE[block.nivel] : undefined;
   return {
     fontFamily: block.fuente,
-    fontSize: parseFontSizePx(block.tamanoFuente, 24),
+    fontSize: parseFontSizePx(block.tamanoFuente, escala?.sizePx ?? 24),
     color: block.color,
-    fontWeight: block.negrita ? 'bold' : 'normal',
+    fontWeight:
+      block.negrita !== undefined
+        ? block.negrita
+          ? 'bold'
+          : 'normal'
+        : escala && escala.weight >= 600
+          ? 'bold'
+          : 'normal',
     fontStyle: block.cursiva ? 'italic' : 'normal',
     underline: !!block.subrayado,
-    lineHeight: block.interlineado,
-    letterSpacing: block.espaciadoLetras,
+    lineHeight: block.interlineado ?? escala?.lineHeight,
+    letterSpacing: block.espaciadoLetras ?? escala?.trackingPx,
     align: block.alineacion ? ALIGN_FROM_BLOCK[block.alineacion] : undefined,
     textTransform: block.transformacion
       ? TRANSFORM_FROM_BLOCK[block.transformacion]

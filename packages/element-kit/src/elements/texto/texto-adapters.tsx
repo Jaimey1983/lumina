@@ -37,11 +37,13 @@ export function TextoViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function TextoPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<TextoEstado, TextoConfig>): ReactElement {
   return (
     <LegacyTextoProperties
       block={estado}
+      slideBackground={config.slideBackground}
       applyNow={async (actualizar) => {
         const siguiente = actualizar(estado);
         if ((siguiente as { tipo?: string }).tipo === "texto") {

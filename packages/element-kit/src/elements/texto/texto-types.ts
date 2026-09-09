@@ -6,4 +6,6 @@ export type TextoConfig = {
   isEditing?: boolean;
   onCommit?: (text: string) => void;
   onDiscard?: () => void;
+  /** Fondo del slide — para el aviso de contraste WCAG del panel de propiedades. */
+  slideBackground?: string;
 };

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 
 import { LAYOUT_FROM_KEY } from '@/lib/class-slide-normalize';
 import type { Background, Block, Layout, Slide as RendererSlide } from '@lumina/types/slide';
+import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { SlideRenderer } from './components/slide-renderer';
 
 const CANVAS_W = 1280;
@@ -62,13 +63,15 @@ function contentToRendererSlide(content: unknown): RendererSlide {
       fondo,
       diseno,
       bloques: [
-        {
-          tipo: 'texto',
-          contenido:
-            'Vista previa: este slide guarda formato antiguo. Ábrelo en el editor de clase para editarlo con bloques.',
-          color: '#92400e',
-          tamanoFuente: '1rem',
-        },
+        createTextBlock({
+          omitPosition: true,
+          extra: {
+            contenido:
+              'Vista previa: este slide guarda formato antiguo. Ábrelo en el editor de clase para editarlo con bloques.',
+            color: '#92400e',
+            tamanoFuente: '1rem',
+          },
+        }),
       ],
     };
   }

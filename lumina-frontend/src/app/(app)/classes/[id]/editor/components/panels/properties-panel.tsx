@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
+import { backgroundColorForContrast } from '@lumina/editor-shared/contrast';
 
 import type {
   ActivityBlock,
@@ -1300,7 +1301,9 @@ export function PropertiesPanel({
                 return (
                   <def.Propiedades
                     estado={block}
-                    config={{}}
+                    config={{
+                      slideBackground: backgroundColorForContrast(slide?.fondo),
+                    }}
                     onConfigChange={() => {}}
                     onChange={(updated) => {
                       void applyNow(() => updated);

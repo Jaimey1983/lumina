@@ -9,7 +9,8 @@ import {
 } from 'react';
 import type { TextBlock } from '@lumina/types/slide';
 import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
-import { resolveFontFamily } from '@lumina/editor-shared/font-catalog';
+import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
+import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
 
 export const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   izquierda: 'left',
@@ -24,9 +25,20 @@ export function textBlockContenidoIsEmpty(block: TextBlock): boolean {
 }
 
 export function textBlockFontSizePx(block: TextBlock): number {
-  const raw = block.tamanoFuente ?? '';
-  const m = String(raw).match(/(\d+(?:\.\d+)?)/);
-  return m ? parseFloat(m[1]!) : 0;
+  return effectiveFontSizePx(block.tamanoFuente, block.nivel);
+}
+
+/**
+ * Estilo derivado de `block.nivel` (H1–H6) — solo para los campos que el bloque
+ * no fija explícitamente. `{}` cuando no hay nivel. El ajuste manual gana.
+ */
+export function textBlockHeadingFallbackStyle(block: TextBlock): CSSProperties {
+  return headingFallbackCss(block.nivel, {
+    tamanoFuente: block.tamanoFuente,
+    negrita: block.negrita,
+    espaciadoLetras: block.espaciadoLetras,
+    interlineado: block.interlineado,
+  });
 }
 
 export function emptyTextPlaceholderLabel(block: TextBlock): string {
@@ -41,7 +53,7 @@ export function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
     ...typographyToCss(typographyFromTextBlock(block)),
   };
   if (block.fuente !== undefined && block.fuente !== '') {
-    out.fontFamily = resolveFontFamily(block.fuente);
+    out.fontFamily = fontFamilyWithFallback(block.fuente);
   }
   if (block.subrayado === true) {
     out.textDecoration = 'underline';
@@ -89,6 +101,7 @@ export function InlineTextEditor({
   }
 
   const isEmpty = value === '';
+  const headingCss = textBlockHeadingFallbackStyle(block);
 
   return (
     <div
@@ -138,8 +151,17 @@ export function InlineTextEditor({
           background: isEmpty ? 'transparent' : 'rgba(255,255,255,0.05)',
           resize: 'none',
           cursor: 'text',
-          fontSize: block.tamanoFuente,
-          fontWeight: block.negrita ? 'bold' : 'normal',
+          ...headingCss,
+          fontSize:
+            block.tamanoFuente && block.tamanoFuente !== ''
+              ? block.tamanoFuente
+              : headingCss.fontSize,
+          fontWeight:
+            block.negrita === true
+              ? 'bold'
+              : block.negrita === false
+                ? 'normal'
+                : (headingCss.fontWeight ?? 'normal'),
           fontStyle: block.cursiva ? 'italic' : 'normal',
           color: block.color ?? 'inherit',
           textAlign: block.alineacion
@@ -200,13 +222,23 @@ export function RenderText({
   }
 
   const isList = block.lista === 'vinetas' || block.lista === 'numeros';
+  const headingCss = textBlockHeadingFallbackStyle(block);
   const style: CSSProperties = {
     margin: 0,
     whiteSpace: isList ? 'normal' : 'pre-wrap',
     wordBreak: 'break-word',
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
-    fontSize: block.tamanoFuente,
-    fontWeight: block.negrita ? 'bold' : undefined,
+    ...headingCss,
+    fontSize:
+      block.tamanoFuente && block.tamanoFuente !== ''
+        ? block.tamanoFuente
+        : headingCss.fontSize,
+    fontWeight:
+      block.negrita === true
+        ? 'bold'
+        : block.negrita === false
+          ? undefined
+          : headingCss.fontWeight,
     fontStyle: block.cursiva ? 'italic' : undefined,
     color: block.color,
     ...textBlockOptionalVisualStyle(block),

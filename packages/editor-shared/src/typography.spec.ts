@@ -89,6 +89,29 @@ describe('adaptadores TextBlock', () => {
     });
   });
 
+  it('un encabezado sin overrides expone el valor efectivo de la escala', () => {
+    const heading: TextBlock = { tipo: 'texto', contenido: 'T', nivel: 1 };
+    expect(typographyFromTextBlock(heading)).toMatchObject({
+      fontSize: 40,
+      fontWeight: 'bold',
+      lineHeight: 1.1,
+      letterSpacing: -0.5,
+    });
+  });
+
+  it('el override explícito del bloque gana sobre la escala del nivel', () => {
+    const heading: TextBlock = {
+      tipo: 'texto',
+      contenido: 'T',
+      nivel: 2,
+      tamanoFuente: '12px',
+      negrita: false,
+    };
+    const v = typographyFromTextBlock(heading);
+    expect(v.fontSize).toBe(12);
+    expect(v.fontWeight).toBe('normal');
+  });
+
   it('escribe un patch de vuelta al bloque', () => {
     expect(
       textBlockPatchFromTypography({

@@ -5,6 +5,7 @@ import {
   buildGoogleFontsUrl,
   collectFontFamiliesFromValue,
   FONT_DEFAULT,
+  fontFamilyWithFallback,
   resolveFontFamily,
 } from './font-catalog.js';
 
@@ -63,5 +64,22 @@ describe('collectFontFamiliesFromValue', () => {
 describe('resolveFontFamily', () => {
   it('cae al default si está vacío', () => {
     expect(resolveFontFamily('')).toBe(FONT_DEFAULT);
+  });
+});
+
+describe('fontFamilyWithFallback', () => {
+  it('añade el stack por categoría', () => {
+    expect(fontFamilyWithFallback('Merriweather')).toBe('Merriweather, serif');
+    expect(fontFamilyWithFallback('JetBrains Mono')).toBe('"JetBrains Mono", monospace');
+    expect(fontFamilyWithFallback('Caveat')).toBe('Caveat, cursive');
+  });
+  it('entrecomilla familias con espacios', () => {
+    expect(fontFamilyWithFallback('Playfair Display')).toBe('"Playfair Display", serif');
+  });
+  it('display cae a sans-serif', () => {
+    expect(fontFamilyWithFallback('Bebas Neue')).toBe('"Bebas Neue", sans-serif');
+  });
+  it('vacío → default con su stack', () => {
+    expect(fontFamilyWithFallback('')).toBe(`"${FONT_DEFAULT}", sans-serif`);
   });
 });

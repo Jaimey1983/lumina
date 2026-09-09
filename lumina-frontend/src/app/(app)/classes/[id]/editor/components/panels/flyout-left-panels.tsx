@@ -80,6 +80,7 @@ import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@/data/curriculum/index';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
+import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { ImagesElementPanel } from './images-element-panel';
 import { ClipMasksPanel } from './clip-masks-panel';
 import { WidgetsInsertPanel } from './widgets-insert-panel';
@@ -379,7 +380,10 @@ function ElementosPanel({
             onClick={() =>
               add({
                 tipo: 'columnas',
-                columnas: [[{ tipo: 'texto', contenido: 'Columna izquierda' }], [{ tipo: 'texto', contenido: 'Columna derecha' }]],
+                columnas: [
+                  [createTextBlock({ preset: 'cuerpo', omitPosition: true, extra: { contenido: 'Columna izquierda' } })],
+                  [createTextBlock({ preset: 'cuerpo', omitPosition: true, extra: { contenido: 'Columna derecha' } })],
+                ],
                 proporcion: '1:1',
               })
             }

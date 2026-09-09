@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import type { Background, Block } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
+import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { api } from '@/lib/api';
 import { useClass } from '@/hooks/api/use-class';
@@ -114,19 +115,19 @@ export function SlideInsertionToolbar({
   const gifFileRef = useRef<HTMLInputElement>(null);
 
   const insertText = useCallback(() => {
-    const block: Block = {
-      tipo: 'texto',
-      contenido: 'Texto nuevo',
-      x: 10,
-      y: 40,
-      ancho: 80,
-      alto: 15,
-      tamanoFuente: '24px',
-      color: '#000000',
-      negrita: false,
-      alineacion: 'izquierda',
-    };
-    void onInsert(block);
+    void onInsert(
+      createTextBlock({
+        preset: 'cuerpo',
+        extra: {
+          contenido: 'Texto nuevo',
+          x: 10,
+          y: 40,
+          ancho: 80,
+          alto: 15,
+          alineacion: 'izquierda',
+        },
+      }),
+    );
   }, [onInsert]);
 
   const insertSeparador = useCallback(() => {

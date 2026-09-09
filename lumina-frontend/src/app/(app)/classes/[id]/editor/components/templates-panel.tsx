@@ -3,6 +3,7 @@
 import type { FC } from 'react';
 
 import { Button } from '@lumina/ui/button';
+import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { cn } from '@/lib/utils';
 import type { Block, TextAlign } from '@lumina/types/slide';
 
@@ -236,19 +237,20 @@ export function buildTemplateTextBlock(
   tamanoPx: number,
   alineacion: TextAlign = 'izquierda',
 ): Block {
-  return {
-    tipo: 'texto',
-    contenido,
-    x,
-    y,
-    ancho,
-    alto,
-    tamanoFuente: `${tamanoPx}px`,
-    color: '#1a1a1a',
-    alineacion,
-    negrita: false,
-    cursiva: false,
-  };
+  return createTextBlock({
+    extra: {
+      contenido,
+      x,
+      y,
+      ancho,
+      alto,
+      tamanoFuente: `${tamanoPx}px`,
+      color: '#1a1a1a',
+      alineacion,
+      negrita: false,
+      cursiva: false,
+    },
+  });
 }
 
 const PLACEHOLDER_IMG =

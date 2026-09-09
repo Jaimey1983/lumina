@@ -149,6 +149,28 @@ export function resolveFontFamily(stored?: string): string {
   return FONT_DEFAULT
 }
 
+const CATEGORY_FALLBACK: Record<FontCategory, string> = {
+  'sans-serif': 'sans-serif',
+  serif: 'serif',
+  display: 'sans-serif',
+  handwriting: 'cursive',
+  monospace: 'monospace',
+  system: 'sans-serif',
+}
+
+/**
+ * Familia resuelta + stack de reserva por categoría, listo para `font-family`.
+ * P. ej. `Playfair Display` → `"Playfair Display", serif`. Evita el FOUT/caja rota
+ * mientras carga la fuente de Google y da un plan B si nunca carga.
+ */
+export function fontFamilyWithFallback(stored?: string): string {
+  const familia = resolveFontFamily(stored)
+  const entry = FONT_CATALOG.find((f) => f.familia === familia)
+  const fallback = entry ? CATEGORY_FALLBACK[entry.categoria] : 'sans-serif'
+  const name = /[\s"']/.test(familia) ? `"${familia.replace(/"/g, '')}"` : familia
+  return `${name}, ${fallback}`
+}
+
 export function isSystemFont(familia: string): boolean {
   const entry = FONT_CATALOG.find((f) => f.familia === familia)
   return entry?.categoria === 'system' || familia === FONT_DEFAULT
