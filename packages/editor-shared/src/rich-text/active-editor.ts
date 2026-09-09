@@ -4,7 +4,7 @@ import type { Editor } from '@tiptap/core';
  * Registro del `<RichTextEditor>` con foco. Lo usa el panel de propiedades
  * (`TypographyInspector`) y la barra flotante para aplicar formato al rango
  * seleccionado en vez de al bloque entero. Reemplaza al viejo
- * `registerWidgetTextEditor` de `widget-rich-text.ts`.
+ * `registerWidgetTextEditor` del retirado `widget-rich-text.ts` (Fase 3).
  */
 export interface ActiveRichEditor {
   editor: Editor;

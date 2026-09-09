@@ -15,15 +15,11 @@ import {
 import { Input } from '@lumina/ui/input';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
-import { sanitizeWidgetHtml } from './widget-rich-text.js';
+import { sanitizeWidgetHtml, looksLikeRichHtml } from './rich-text/widget-html.js';
 
 import { stopWidgetInnerKeydown, stopWidgetInnerPointer } from './widget-editor-utils';
 
 export const WIDGET_TEXT_DEBOUNCE_MS = 280;
-
-function looksLikeRichHtml(value: string): boolean {
-  return /<[a-z][\s\S]*>/i.test(value);
-}
 
 /** Borrador local mientras hay foco; no deja que el valor del servidor pise las teclas. */
 export function useWidgetDraftText(value: string, onChange: (next: string) => void) {

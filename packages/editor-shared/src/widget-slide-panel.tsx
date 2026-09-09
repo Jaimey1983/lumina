@@ -45,7 +45,7 @@ import {
 import {
   looksLikeRichHtml,
   sanitizeWidgetHtml,
-} from './widget-rich-text';
+} from './rich-text/widget-html.js';
 
 function slidePanelStyle(
   slide: WidgetSlideContent,

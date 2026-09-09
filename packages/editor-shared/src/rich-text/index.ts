@@ -12,6 +12,7 @@ export { richMarkToStyle, richMarksToStyle, hexToRgba } from './marks.js';
 export { isSafeHref, sanitizeRichMark, sanitizeRichDoc } from './sanitize.js';
 export { plainToRich, richToPlain } from './plain.js';
 export { richToHtml, escapeHtml, type RichToHtmlOptions } from './html.js';
+export { looksLikeRichHtml, sanitizeWidgetHtml } from './widget-html.js';
 export { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
 export {
   registerActiveRichEditor,

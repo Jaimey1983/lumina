@@ -20,51 +20,7 @@ import {
 } from '@lumina/ui/select';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { WidgetTypographyFields } from './typography-inspector.js';
-import {
-  applyInlineStyleToWidgetSelection,
-  getActiveWidgetTextEditor,
-  sanitizeWidgetHtml,
-} from './widget-rich-text.js';
 import { WidgetSectionTitle as SectionTitle } from './widget-properties-panel.js';
-
-function patchStyleWithSelection(
-  selection: { slideId: string; field: string },
-  context: WidgetSlideInnerContext,
-  patch: Partial<WidgetCampoEstilo>,
-): boolean {
-  let appliedInline = false;
-
-  if (patch.color && applyInlineStyleToWidgetSelection({ color: patch.color })) {
-    appliedInline = true;
-  } else if (
-    patch.fontSize &&
-    applyInlineStyleToWidgetSelection({ fontSize: `${patch.fontSize}px` })
-  ) {
-    appliedInline = true;
-  } else if (patch.fontWeight !== undefined) {
-    const fw = patch.fontWeight === 'bold' || patch.fontWeight === 700 ? '700' : '400';
-    if (applyInlineStyleToWidgetSelection({ fontWeight: fw })) appliedInline = true;
-  } else if (patch.fontStyle && applyInlineStyleToWidgetSelection({ fontStyle: patch.fontStyle })) {
-    appliedInline = true;
-  } else if (patch.underline !== undefined) {
-    if (
-      applyInlineStyleToWidgetSelection({
-        textDecoration: patch.underline ? 'underline' : 'none',
-      })
-    ) {
-      appliedInline = true;
-    }
-  }
-
-  if (!appliedInline) return false;
-
-  const active = getActiveWidgetTextEditor();
-  if (!active) return true;
-
-  const html = sanitizeWidgetHtml(active.getHtml());
-  context.patchSlide(selection.slideId, { [selection.field]: html });
-  return true;
-}
 
 export interface WidgetSlideInnerContext {
   slides: WidgetSlideContent[];
@@ -161,15 +117,6 @@ export function WidgetSlideTextInnerProperties({
         : (slide.cuerpo ?? '');
 
   const patchStyle = (patch: Partial<WidgetCampoEstilo>) => {
-    if (
-      patchStyleWithSelection(
-        { slideId: selection.slideId, field: selection.field },
-        context,
-        patch,
-      )
-    ) {
-      return;
-    }
     const prev = slide[styleKey] ?? {};
     context.patchSlide(selection.slideId, {
       [styleKey]: { ...prev, ...patch },
