@@ -58,6 +58,29 @@ const NODE_TYPES = new Set<RichNodeType>([
 
 const isColor = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
 
+/** Orden canónico de marcas — hace estable el round-trip con TipTap. */
+const MARK_ORDER: RichMarkType[] = [
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'code',
+  'script',
+  'color',
+  'highlight',
+  'size',
+  'font',
+  'tracking',
+  'link',
+  'term',
+  'spoiler',
+  'lang',
+];
+const markRank = (t: RichMarkType): number => {
+  const i = MARK_ORDER.indexOf(t);
+  return i === -1 ? MARK_ORDER.length : i;
+};
+
 /** Devuelve una marca saneada o `null` si es inválida / no permitida. */
 export function sanitizeRichMark(mark: RichMark): RichMark | null {
   if (!mark || typeof mark !== 'object' || !MARK_TYPES.has(mark.t)) return null;
@@ -108,10 +131,17 @@ export function sanitizeRichMark(mark: RichMark): RichMark | null {
 
 function sanitizeRun(run: RichRun): RichRun | null {
   if (!run || typeof run.text !== 'string') return null;
-  const marks = Array.isArray(run.marks)
-    ? run.marks.map(sanitizeRichMark).filter((m): m is RichMark => m !== null)
-    : undefined;
-  return marks && marks.length > 0 ? { text: run.text, marks } : { text: run.text };
+  if (!Array.isArray(run.marks)) return { text: run.text };
+  const seen = new Set<RichMarkType>();
+  const marks = run.marks
+    .map(sanitizeRichMark)
+    .filter((m): m is RichMark => {
+      if (m === null || seen.has(m.t)) return false;
+      seen.add(m.t);
+      return true;
+    })
+    .sort((a, b) => markRank(a.t) - markRank(b.t));
+  return marks.length > 0 ? { text: run.text, marks } : { text: run.text };
 }
 
 /** Une runs contiguos con el mismo conjunto de marcas (serializado). */

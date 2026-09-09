@@ -1,0 +1,320 @@
+/**
+ * Puente `RichDoc` ↔ documento JSON de TipTap/ProseMirror (Fase 2).
+ *
+ * Transformación pura de objetos — no importa TipTap, se testea en Node. El
+ * `<RichTextEditor>` consume `richToPmDoc` como `content` inicial y produce
+ * `pmDocToRich(editor.getJSON())` en cada commit.
+ */
+
+import type {
+  RichDoc,
+  RichMark,
+  RichNode,
+  RichRun,
+} from '@lumina/types/rich-text';
+import type { TextAlign } from '@lumina/types/slide';
+import { sanitizeRichDoc } from './sanitize.js';
+
+/** Forma mínima del JSON de TipTap que usamos (subconjunto de `JSONContent`). */
+export interface PmJSON {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: PmJSON[];
+  marks?: { type: string; attrs?: Record<string, unknown> }[];
+  text?: string;
+}
+
+const ALIGNS: TextAlign[] = ['izquierda', 'centro', 'derecha', 'justificado'];
+const isAlign = (v: unknown): v is TextAlign => ALIGNS.includes(v as TextAlign);
+
+// ─── RichDoc → TipTap JSON ───────────────────────────────────────────────────
+
+function runMarksToPm(marks: RichMark[] | undefined): PmJSON['marks'] {
+  if (!marks || marks.length === 0) return undefined;
+  const out: NonNullable<PmJSON['marks']> = [];
+  const textStyle: Record<string, unknown> = {};
+
+  for (const m of marks) {
+    switch (m.t) {
+      case 'bold':
+      case 'italic':
+      case 'underline':
+      case 'strike':
+      case 'code':
+        out.push({ type: m.t === 'strike' ? 'strike' : m.t });
+        break;
+      case 'color':
+        textStyle.color = m.value;
+        break;
+      case 'size':
+        textStyle.fontSize = `${m.px}px`;
+        break;
+      case 'font':
+        textStyle.fontFamily = m.family;
+        break;
+      case 'tracking':
+        textStyle.letterSpacing = `${m.px}px`;
+        break;
+      case 'highlight':
+        out.push({
+          type: 'highlight',
+          attrs: {
+            color: m.value,
+            ...(m.alpha !== undefined ? { alpha: m.alpha } : {}),
+          },
+        });
+        break;
+      case 'script':
+        out.push({ type: m.value === 'sup' ? 'superscript' : 'subscript' });
+        break;
+      case 'link':
+        out.push({
+          type: 'link',
+          attrs: {
+            href: m.href ?? null,
+            ...(m.slideRef !== undefined ? { slideRef: m.slideRef } : {}),
+          },
+        });
+        break;
+      case 'term':
+        out.push({ type: 'term', attrs: { glosaId: m.glosaId } });
+        break;
+      case 'spoiler':
+        out.push({ type: 'spoiler' });
+        break;
+      case 'lang':
+        out.push({ type: 'lang', attrs: { value: m.value } });
+        break;
+    }
+  }
+  if (Object.keys(textStyle).length > 0) out.push({ type: 'textStyle', attrs: textStyle });
+  return out.length > 0 ? out : undefined;
+}
+
+function runsToPmText(runs: RichRun[] | undefined): PmJSON[] {
+  if (!runs) return [];
+  return runs
+    .filter((r) => r.text !== '')
+    .map((r) => ({
+      type: 'text',
+      text: r.text,
+      ...(runMarksToPm(r.marks) ? { marks: runMarksToPm(r.marks) } : {}),
+    }));
+}
+
+function paragraphFromRuns(runs: RichRun[] | undefined, align?: TextAlign): PmJSON {
+  return {
+    type: 'paragraph',
+    ...(align ? { attrs: { align } } : {}),
+    content: runsToPmText(runs),
+  };
+}
+
+function listItemFromNode(node: RichNode, task: boolean): PmJSON {
+  const body = paragraphFromRuns(node.runs);
+  return task
+    ? { type: 'taskItem', attrs: { checked: node.checked === true }, content: [body] }
+    : { type: 'listItem', content: [body] };
+}
+
+function nodeToPm(node: RichNode): PmJSON | null {
+  switch (node.type) {
+    case 'paragraph':
+      return paragraphFromRuns(node.runs, node.align);
+    case 'heading':
+      return {
+        type: 'heading',
+        attrs: { level: node.level ?? 2, ...(node.align ? { align: node.align } : {}) },
+        content: runsToPmText(node.runs),
+      };
+    case 'blockquote':
+      return { type: 'blockquote', content: [paragraphFromRuns(node.runs)] };
+    case 'codeBlock':
+      return {
+        type: 'codeBlock',
+        ...(node.lang ? { attrs: { language: node.lang } } : {}),
+        content: node.runs?.length
+          ? [{ type: 'text', text: node.runs.map((r) => r.text).join('') }]
+          : [],
+      };
+    case 'hr':
+      return { type: 'horizontalRule' };
+    case 'bulletList':
+    case 'orderedList':
+      return {
+        type: node.type,
+        content: (node.children ?? []).map((li) => listItemFromNode(li, false)),
+      };
+    case 'taskList':
+      return {
+        type: 'taskList',
+        content: (node.children ?? []).map((li) => listItemFromNode(li, true)),
+      };
+    // callout / math / table: el editor de Fase 2 no los edita todavía (Fase 5).
+    default:
+      return null;
+  }
+}
+
+/** `RichDoc` → JSON de documento TipTap (`{ type: 'doc', content: [...] }`). */
+export function richToPmDoc(doc: RichDoc): PmJSON {
+  const content = (doc?.nodes ?? [])
+    .map(nodeToPm)
+    .filter((n): n is PmJSON => n !== null);
+  return { type: 'doc', content: content.length > 0 ? content : [{ type: 'paragraph' }] };
+}
+
+// ─── TipTap JSON → RichDoc ───────────────────────────────────────────────────
+
+function pmMarksToRun(marks: PmJSON['marks']): RichMark[] | undefined {
+  if (!marks || marks.length === 0) return undefined;
+  const out: RichMark[] = [];
+  for (const mk of marks) {
+    switch (mk.type) {
+      case 'bold':
+      case 'italic':
+      case 'underline':
+      case 'strike':
+      case 'code':
+        out.push({ t: mk.type } as RichMark);
+        break;
+      case 'superscript':
+        out.push({ t: 'script', value: 'sup' });
+        break;
+      case 'subscript':
+        out.push({ t: 'script', value: 'sub' });
+        break;
+      case 'highlight': {
+        const value = mk.attrs?.color;
+        if (typeof value === 'string') {
+          const alpha = mk.attrs?.alpha;
+          out.push({
+            t: 'highlight',
+            value,
+            ...(typeof alpha === 'number' ? { alpha } : {}),
+          });
+        }
+        break;
+      }
+      case 'link': {
+        const href = typeof mk.attrs?.href === 'string' ? mk.attrs.href : undefined;
+        const slideRef =
+          typeof mk.attrs?.slideRef === 'number' ? mk.attrs.slideRef : undefined;
+        if (href || slideRef !== undefined) {
+          out.push({ t: 'link', ...(href ? { href } : {}), ...(slideRef !== undefined ? { slideRef } : {}) });
+        }
+        break;
+      }
+      case 'term':
+        if (typeof mk.attrs?.glosaId === 'string') {
+          out.push({ t: 'term', glosaId: mk.attrs.glosaId });
+        }
+        break;
+      case 'spoiler':
+        out.push({ t: 'spoiler' });
+        break;
+      case 'lang':
+        if (typeof mk.attrs?.value === 'string') out.push({ t: 'lang', value: mk.attrs.value });
+        break;
+      case 'textStyle': {
+        const a = mk.attrs ?? {};
+        if (typeof a.color === 'string') out.push({ t: 'color', value: a.color });
+        if (typeof a.fontFamily === 'string') out.push({ t: 'font', family: a.fontFamily });
+        if (typeof a.fontSize === 'string' || typeof a.fontSize === 'number') {
+          const px = parseFloat(String(a.fontSize));
+          if (Number.isFinite(px)) out.push({ t: 'size', px: Math.round(px) });
+        }
+        if (typeof a.letterSpacing === 'string' || typeof a.letterSpacing === 'number') {
+          const px = parseFloat(String(a.letterSpacing));
+          if (Number.isFinite(px)) out.push({ t: 'tracking', px });
+        }
+        break;
+      }
+    }
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function pmInlineToRuns(content: PmJSON[] | undefined): RichRun[] | undefined {
+  if (!content || content.length === 0) return undefined;
+  const runs: RichRun[] = [];
+  for (const child of content) {
+    if (child.type === 'text' && typeof child.text === 'string') {
+      const marks = pmMarksToRun(child.marks);
+      runs.push({ text: child.text, ...(marks ? { marks } : {}) });
+    } else if (child.type === 'hardBreak') {
+      const last = runs[runs.length - 1];
+      if (last) last.text += '\n';
+      else runs.push({ text: '\n' });
+    }
+  }
+  return runs.length > 0 ? runs : undefined;
+}
+
+function firstParagraphRuns(node: PmJSON): RichRun[] | undefined {
+  const para = node.content?.find((c) => c.type === 'paragraph');
+  return pmInlineToRuns(para?.content);
+}
+
+function pmNodeToRich(node: PmJSON): RichNode | null {
+  switch (node.type) {
+    case 'paragraph': {
+      const align = isAlign(node.attrs?.align) ? node.attrs.align : undefined;
+      const runs = pmInlineToRuns(node.content);
+      return { type: 'paragraph', ...(align ? { align } : {}), ...(runs ? { runs } : {}) };
+    }
+    case 'heading': {
+      const lvlRaw = Number(node.attrs?.level);
+      const level = (lvlRaw >= 1 && lvlRaw <= 6 ? lvlRaw : 2) as RichNode['level'];
+      const align = isAlign(node.attrs?.align) ? node.attrs.align : undefined;
+      const runs = pmInlineToRuns(node.content);
+      return { type: 'heading', level, ...(align ? { align } : {}), ...(runs ? { runs } : {}) };
+    }
+    case 'blockquote': {
+      const runs = firstParagraphRuns(node);
+      return { type: 'blockquote', ...(runs ? { runs } : {}) };
+    }
+    case 'codeBlock': {
+      const text = (node.content ?? [])
+        .filter((c) => c.type === 'text')
+        .map((c) => c.text ?? '')
+        .join('');
+      const lang = typeof node.attrs?.language === 'string' ? node.attrs.language : undefined;
+      return {
+        type: 'codeBlock',
+        ...(lang ? { lang } : {}),
+        ...(text !== '' ? { runs: [{ text }] } : {}),
+      };
+    }
+    case 'horizontalRule':
+      return { type: 'hr' };
+    case 'bulletList':
+    case 'orderedList':
+      return {
+        type: node.type,
+        children: (node.content ?? []).map((li) => ({
+          type: 'listItem' as const,
+          runs: firstParagraphRuns(li) ?? [{ text: '' }],
+        })),
+      };
+    case 'taskList':
+      return {
+        type: 'taskList',
+        children: (node.content ?? []).map((li) => ({
+          type: 'listItem' as const,
+          checked: li.attrs?.checked === true,
+          runs: firstParagraphRuns(li) ?? [{ text: '' }],
+        })),
+      };
+    default:
+      return null;
+  }
+}
+
+/** JSON de documento TipTap → `RichDoc` saneado. */
+export function pmDocToRich(json: PmJSON): RichDoc {
+  const nodes = (json?.content ?? [])
+    .map(pmNodeToRich)
+    .filter((n): n is RichNode => n !== null);
+  return sanitizeRichDoc({ version: 1, nodes });
+}
