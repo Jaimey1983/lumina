@@ -1250,7 +1250,10 @@ export function PropertiesPanel({
   }
 
   return (
-    <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background">
+    <aside
+      data-rich-text-safe=""
+      className="flex h-full w-72 shrink-0 flex-col border-l border-border bg-background"
+    >
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Propiedades

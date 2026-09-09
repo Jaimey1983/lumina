@@ -6,6 +6,7 @@ import type { RichDoc } from '@lumina/types/rich-text';
 import { richTextExtensions } from './pm-extensions.js';
 import { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
 import { registerActiveRichEditor } from './active-editor.js';
+import { BubbleToolbar } from './bubble-toolbar.js';
 
 const STYLE_ID = 'lumina-rich-editor-styles';
 const EDITOR_CSS = `
@@ -39,6 +40,10 @@ export interface RichTextEditorProps {
   ownerId?: string;
   className?: string;
   style?: CSSProperties;
+  /** Oculta la barra flotante de formato (por defecto se muestra). */
+  hideToolbar?: boolean;
+  /** Fase 4 — asistente de IA sobre el texto seleccionado. */
+  onAiAssist?: (selectedText: string) => void;
 }
 
 export function RichTextEditor({
@@ -50,6 +55,8 @@ export function RichTextEditor({
   ownerId = 'texto',
   className,
   style,
+  hideToolbar = false,
+  onAiAssist,
 }: RichTextEditorProps) {
   ensureEditorStyles();
   const exitedRef = useRef(false);
@@ -93,7 +100,14 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor) return;
     const handleFocus = () => registerActiveRichEditor({ editor, ownerId });
-    const handleBlur = () => commit();
+    const handleBlur = () => {
+      // No comitear si el foco pasó al panel de propiedades o a la barra flotante
+      // (marcados `data-rich-text-safe`): el editor sigue vivo para aplicar formato
+      // al rango. Comitea cuando el foco sale de verdad (canvas, otro bloque…).
+      const next = typeof document !== 'undefined' ? document.activeElement : null;
+      if (next && next.closest('[data-rich-text-safe]')) return;
+      commit();
+    };
     editor.on('focus', handleFocus);
     editor.on('blur', handleBlur);
     if (editor.isFocused) registerActiveRichEditor({ editor, ownerId });
@@ -120,5 +134,10 @@ export function RichTextEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
-  return <EditorContent editor={editor} className={className} style={style} />;
+  return (
+    <>
+      <EditorContent editor={editor} className={className} style={style} />
+      {!hideToolbar ? <BubbleToolbar editor={editor} onAiAssist={onAiAssist} /> : null}
+    </>
+  );
 }

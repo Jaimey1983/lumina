@@ -19,6 +19,12 @@ export {
   subscribeActiveRichEditor,
   type ActiveRichEditor,
 } from './active-editor.js';
+export {
+  applyTypographyToSelection,
+  applyHeadingLevelToSelection,
+  splitTypographyPatch,
+  RANGE_TYPOGRAPHY_KEYS,
+} from './apply-typography.js';
 
 // El componente y el esquema (importan TipTap) NO se re-exportan aquí para no
 // arrastrar `@tiptap/*` a consumidores puros como `class-slide-normalize`.

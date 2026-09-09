@@ -10,6 +10,12 @@ import {
   isTypographySizeOnlyPatch,
   type TypographyValue,
 } from '@lumina/editor-shared/typography';
+import {
+  getActiveRichEditor,
+  splitTypographyPatch,
+  applyTypographyToSelection,
+  applyHeadingLevelToSelection,
+} from '@lumina/editor-shared/rich-text';
 
 export interface TextoPropertiesProps {
   block: TextBlock;
@@ -21,6 +27,14 @@ export interface TextoPropertiesProps {
   slideBackground?: string;
 }
 
+/** Editor de texto enriquecido activo con una selección de rango viva. */
+function activeSelectionEditor() {
+  const active = getActiveRichEditor();
+  if (!active) return null;
+  const sel = active.editor.state.selection;
+  return sel.empty ? null : active.editor;
+}
+
 export function TextoProperties({
   block,
   applyNow,
@@ -29,7 +43,28 @@ export function TextoProperties({
   onChange,
   slideBackground,
 }: TextoPropertiesProps) {
+  const applyBlockPatch = (patch: Partial<TypographyValue>) => {
+    const mapped = textBlockPatchFromTypography(patch);
+    const apply = (b: Block): Block => (b.tipo === 'texto' ? { ...b, ...mapped } : b);
+    if (isTypographySizeOnlyPatch(patch) && scheduleApply) {
+      scheduleApply(apply);
+      return;
+    }
+    clearDebounce?.();
+    if (applyNow) {
+      void applyNow(apply);
+    } else if (onChange) {
+      onChange({ ...block, ...mapped });
+    }
+  };
+
   const handleHeadingLevelChange = (nivel?: HeadingLevel) => {
+    // Con una selección de rango viva, el nivel se aplica al nodo del editor.
+    const editor = activeSelectionEditor();
+    if (editor) {
+      applyHeadingLevelToSelection(editor, nivel);
+      return;
+    }
     if (applyNow) {
       void applyNow((b) => {
         if (b.tipo !== 'texto') return b;
@@ -52,20 +87,18 @@ export function TextoProperties({
   };
 
   const handleTypographyChange = (patch: Partial<TypographyValue>) => {
-    const mapped = textBlockPatchFromTypography(patch);
-    const apply = (b: Block): Block =>
-      b.tipo === 'texto' ? { ...b, ...mapped } : b;
-
-    if (isTypographySizeOnlyPatch(patch) && scheduleApply) {
-      scheduleApply(apply);
+    // Si hay un `<RichTextEditor>` activo con selección: las claves de rango
+    // (fuente, tamaño, color, peso, itálica, subrayado, tracking, alineación) van
+    // a la selección; el resto (interlineado, transform, opacidad, fondo, lista…)
+    // sigue siendo del bloque. Panel derecho = bloque · barra flotante = rango.
+    const editor = activeSelectionEditor();
+    if (editor) {
+      const { range, block: blockPatch } = splitTypographyPatch(patch);
+      if (Object.keys(range).length > 0) applyTypographyToSelection(editor, range);
+      if (Object.keys(blockPatch).length > 0) applyBlockPatch(blockPatch);
       return;
     }
-    clearDebounce?.();
-    if (applyNow) {
-      void applyNow(apply);
-    } else if (onChange) {
-      onChange({ ...block, ...mapped });
-    }
+    applyBlockPatch(patch);
   };
 
   return (
