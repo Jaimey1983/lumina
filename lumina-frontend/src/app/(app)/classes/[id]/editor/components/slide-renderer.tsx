@@ -43,6 +43,8 @@ import type {
   DiagramaBlock,
   HotspotWidget,
 } from '@lumina/types/slide';
+import type { RichDoc } from '@lumina/types/rich-text';
+import { richToPlain } from '@lumina/editor-shared/rich-text';
 import { cn } from '@/lib/utils';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@lumina/editor-shared/font-catalog';
 import { ensureGoogleFonts } from '@lumina/editor-shared/google-fonts-loader';
@@ -85,7 +87,7 @@ type Modo = 'editor' | 'viewer' | 'preview';
 /** Config de runtime que el dispatch genérico pasa a primitivos del registry. */
 type PrimitiveRuntimeConfig = {
   isEditing?: boolean;
-  onCommit?: (text: string) => void;
+  onCommit?: (doc: RichDoc) => void;
   onDiscard?: () => void;
   forceFill?: boolean;
   isThumbnail?: boolean;
@@ -486,8 +488,8 @@ interface BlockNodeProps {
   editingId?: string | null;
   /** Enter inline-edit mode for a TextBlock (double-click in editor). */
   onEditStart?: (blockId: string) => void;
-  /** Commit the edited text and persist (Enter / blur). */
-  onEditCommit?: (blockId: string, newText: string) => void;
+  /** Commit the edited rich document and persist (Shift+Enter / blur). */
+  onEditCommit?: (blockId: string, doc: RichDoc) => void;
   /** Discard changes and exit inline-edit mode (Escape). */
   onEditCancel?: () => void;
   /** True while this block is being resized for live visual feedback tweaks. */
@@ -677,7 +679,7 @@ function BlockNode({
       return editorMode
         ? {
             isEditing: isTextEditing,
-            onCommit: onEditCommit ? (text) => onEditCommit(blockId, text) : undefined,
+            onCommit: onEditCommit ? (doc) => onEditCommit(blockId, doc) : undefined,
             onDiscard: onEditCancel,
           }
         : {};
@@ -1413,14 +1415,19 @@ export function SlideRenderer({
     onBlockSelect?.(blockId);
   }
 
-  const handleEditCommit = useCallback((blockId: string, newText: string) => {
+  const handleEditCommit = useCallback((blockId: string, doc: RichDoc) => {
     setEditingId(null);
     const previousBloques = slide.bloques ? [...slide.bloques] : [];
     const blocks = slide.bloques ? [...slide.bloques] : [];
     const blockIndex = parseInt(blockId, 10);
     const block = blocks[blockIndex];
-    if (!block || block.tipo !== 'texto' || block.contenido === newText) return;
-    blocks[blockIndex] = { ...block, contenido: newText } as Block;
+    if (!block || block.tipo !== 'texto') return;
+    const contenido = richToPlain(doc);
+    const unchanged =
+      block.contenido === contenido &&
+      JSON.stringify(block.contenidoRich ?? null) === JSON.stringify(doc);
+    if (unchanged) return;
+    blocks[blockIndex] = { ...block, contenidoRich: doc, contenido } as Block;
     const updatedContent = mergeRendererSlideState(slide, { bloques: blocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
     if (onPersistSlide) {

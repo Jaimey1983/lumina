@@ -12,3 +12,14 @@ export { richMarkToStyle, richMarksToStyle, hexToRgba } from './marks.js';
 export { isSafeHref, sanitizeRichMark, sanitizeRichDoc } from './sanitize.js';
 export { plainToRich, richToPlain } from './plain.js';
 export { richToHtml, escapeHtml, type RichToHtmlOptions } from './html.js';
+export { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
+export {
+  registerActiveRichEditor,
+  getActiveRichEditor,
+  subscribeActiveRichEditor,
+  type ActiveRichEditor,
+} from './active-editor.js';
+
+// El componente y el esquema (importan TipTap) NO se re-exportan aquí para no
+// arrastrar `@tiptap/*` a consumidores puros como `class-slide-normalize`.
+// Importar desde `@lumina/editor-shared/rich-text/rich-text-editor`.

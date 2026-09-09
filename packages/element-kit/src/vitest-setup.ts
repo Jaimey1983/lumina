@@ -23,6 +23,41 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = ResizeObserverStub;
 }
 
+/**
+ * jsdom no implementa geometría de layout — ProseMirror (editor de texto
+ * enriquecido) la consulta al medir posiciones. Stub mínimo para que los specs
+ * del `<RichTextEditor>` no revienten con `getClientRects is not a function`.
+ */
+const zeroRect = () =>
+  ({
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: 0,
+    height: 0,
+    toJSON() {
+      return {};
+    },
+  }) as DOMRect;
+
+if (typeof Range !== "undefined" && !Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = function getClientRects() {
+    return { length: 0, item: () => null, [Symbol.iterator]: function* () {} } as unknown as DOMRectList;
+  };
+  Range.prototype.getBoundingClientRect = zeroRect;
+}
+if (typeof Element !== "undefined") {
+  if (!Element.prototype.getClientRects) {
+    Element.prototype.getClientRects = function getClientRects() {
+      return { length: 0, item: () => null, [Symbol.iterator]: function* () {} } as unknown as DOMRectList;
+    };
+  }
+  Element.prototype.scrollIntoView ??= function scrollIntoView() {};
+}
+
 if (typeof globalThis.matchMedia === "undefined") {
   globalThis.matchMedia = () =>
     ({

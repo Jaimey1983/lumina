@@ -4,6 +4,8 @@ import {
   createElement,
   cloneElement,
   isValidElement,
+  lazy,
+  Suspense,
   useState,
   useRef,
   useEffect,
@@ -12,12 +14,22 @@ import {
   type ReactNode,
 } from 'react';
 import type { TextBlock } from '@lumina/types/slide';
-import type { RichMark, RichNode, RichRun } from '@lumina/types/rich-text';
+import type { RichDoc, RichMark, RichNode, RichRun } from '@lumina/types/rich-text';
 import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
 import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
 import { richMarksToStyle, isSafeHref } from '@lumina/editor-shared/rich-text';
 import { getRichDoc } from './rich-text.js';
+
+/**
+ * El editor enriquecido (TipTap) se carga sólo al entrar en edición inline —
+ * nunca en viewer / preview / miniatura, para no llevar `@tiptap/*` a esos bundles.
+ */
+const RichTextEditorLazy = lazy(() =>
+  import('@lumina/editor-shared/rich-text/rich-text-editor').then((m) => ({
+    default: m.RichTextEditor,
+  })),
+);
 
 export const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   izquierda: 'left',
@@ -188,7 +200,8 @@ export interface RenderTextProps {
   block: TextBlock;
   modo?: 'editor' | 'viewer';
   isEditing?: boolean;
-  onCommit?: (text: string) => void;
+  /** Un único commit por gesto de edición, con el documento enriquecido. */
+  onCommit?: (doc: RichDoc) => void;
   onDiscard?: () => void;
 }
 
@@ -201,11 +214,15 @@ export function RenderText({
 }: RenderTextProps) {
   if (isEditing && onCommit && onDiscard) {
     return (
-      <InlineTextEditor
-        block={block}
-        onCommit={onCommit}
-        onDiscard={onDiscard}
-      />
+      <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
+        <RichTextEditorLazy
+          value={getRichDoc(block)}
+          onCommit={onCommit}
+          onDiscard={onDiscard}
+          placeholder={emptyTextPlaceholderLabel(block)}
+          style={{ position: 'absolute', inset: 0 }}
+        />
+      </Suspense>
     );
   }
 
