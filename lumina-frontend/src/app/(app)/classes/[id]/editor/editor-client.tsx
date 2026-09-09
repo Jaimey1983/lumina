@@ -45,6 +45,7 @@ import {
 import { useClass, type ClassDetail, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import {
   isAxiosSlideVersionConflict,
+  samePersistPayload,
   SLIDE_VERSION_CONFLICT_MESSAGE,
 } from './lib/build-slide-content-payload';
 import {
@@ -718,6 +719,22 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [reducerPersistPayload, setReducerPersistPayload] = useState<
     Record<string, unknown> | null
   >(null);
+  const persistBaselineSlideIdRef = useRef<string | null>(null);
+
+  const handleContentPersisted = useCallback(() => {
+    setContentSaveEpoch((n) => n + 1);
+  }, []);
+
+  const handlePersistPayloadChange = useCallback((payload: Record<string, unknown>) => {
+    const slideId = activeSlideIdRef.current;
+    setReducerPersistPayload((prev) =>
+      samePersistPayload(prev, payload) ? prev : payload,
+    );
+    if (slideId && persistBaselineSlideIdRef.current !== slideId) {
+      persistBaselineSlideIdRef.current = slideId;
+      setContentSaveEpoch((n) => n + 1);
+    }
+  }, []);
 
   const previewOpenRef = useRef(false);
   const sortedSlidesLengthRef = useRef(0);
@@ -919,6 +936,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   useEffect(() => {
     setActiveSlideLiveBloques(null);
   }, [resolvedSlideIndex]);
+
+  useEffect(() => {
+    persistBaselineSlideIdRef.current = null;
+    setReducerPersistPayload(null);
+  }, [activeSlide?.id]);
 
   const rendererSlide = useMemo(
     () => (activeSlide ? classSlideToRendererSlide(activeSlide as ApiSlide) : null),
@@ -2693,7 +2715,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <CanvasArea
               ref={canvasAreaRef}
               canvasSurfaceRef={canvasSurfaceRef}
-              onPersistPayloadChange={setReducerPersistPayload}
+              onPersistPayloadChange={handlePersistPayloadChange}
+              onContentPersisted={handleContentPersisted}
               slide={rendererSlide}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}

@@ -16,6 +16,19 @@ export type SlideContentExtras = {
  * Serializa el `content` mínimo desde el estado del reducer (E5.4).
  * No incluye selección, marquee ni flags de UI.
  */
+/** True si ambos payloads serializan igual (evita setState/autosave en eco). */
+export function samePersistPayload(
+  a: Record<string, unknown> | null | undefined,
+  b: Record<string, unknown>,
+): boolean {
+  if (a == null) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
 export function buildSlideContentPayload(
   state: Pick<EditorSlideState, 'bloques' | 'fondo' | 'guias' | 'transicion'>,
   extras?: SlideContentExtras,

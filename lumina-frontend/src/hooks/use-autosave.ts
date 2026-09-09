@@ -44,6 +44,13 @@ export function useAutosave<T>(
 
   const lastSavedRef = useRef(stableSerialize(value));
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * `saveFn` en ref: TanStack Query recrea `updateSlide.mutate` al cambiar
+   * `isPending`. Si el effect depende de `saveFn`, el timer se reinicia en
+   * cada render y puede encadenar Maximum update depth.
+   */
+  const saveFnRef = useRef(saveFn);
+  saveFnRef.current = saveFn;
 
   useLayoutEffect(() => {
     lastSavedRef.current = stableSerialize(valueRef.current);
@@ -80,7 +87,7 @@ export function useAutosave<T>(
         setIsDirty(false);
         return;
       }
-      saveFn(latest);
+      saveFnRef.current(latest);
       lastSavedRef.current = latestSnap;
       setIsDirty(false);
     }, delay);
@@ -91,7 +98,7 @@ export function useAutosave<T>(
         timerRef.current = null;
       }
     };
-  }, [snapshot, delay, enabled, saveFn]);
+  }, [snapshot, delay, enabled]);
 
   return { isDirty, isSaving: isSavePending };
 }

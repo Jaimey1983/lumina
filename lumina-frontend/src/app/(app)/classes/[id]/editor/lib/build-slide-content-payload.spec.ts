@@ -6,6 +6,7 @@ import {
   buildSlideContentPayload,
   parseContentVersion,
   parseSlideVersionConflict,
+  samePersistPayload,
 } from './build-slide-content-payload';
 import { createInitialEditorSlideState } from './editor-slide-state';
 
@@ -81,5 +82,12 @@ describe('parseContentVersion / parseSlideVersionConflict', () => {
     ).toEqual({ currentVersion: 2 });
 
     expect(parseSlideVersionConflict({ statusCode: 409 })).toBeNull();
+  });
+
+  it('samePersistPayload compara por JSON y no trata null como igual', () => {
+    const a = { bloques: [{ id: '1' }], guias: [] };
+    expect(samePersistPayload(null, a)).toBe(false);
+    expect(samePersistPayload(a, { ...a })).toBe(true);
+    expect(samePersistPayload(a, { ...a, guias: [{}] })).toBe(false);
   });
 });
