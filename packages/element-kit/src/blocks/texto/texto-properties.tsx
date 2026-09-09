@@ -140,6 +140,21 @@ export function TextoProperties({
       metaText={block.contenido}
       boxValue={textBoxValueFromBlock(block)}
       onBoxChange={handleBoxChange}
+      revealValue={block.revelado}
+      onRevealChange={(next) => {
+        const apply = (b: Block): Block => {
+          if (b.tipo !== 'texto') return b;
+          if (!next) {
+            const rest = { ...b };
+            delete rest.revelado;
+            return rest;
+          }
+          return { ...b, revelado: next };
+        };
+        clearDebounce?.();
+        if (applyNow) void applyNow(apply);
+        else if (onChange) onChange(apply(block) as TextBlock);
+      }}
       onHeadingLevelChange={handleHeadingLevelChange}
       onChange={handleTypographyChange}
     />

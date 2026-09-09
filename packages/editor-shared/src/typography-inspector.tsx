@@ -126,7 +126,12 @@ export interface TypographyInspectorProps {
   /** Panel «Caja» (relleno, borde, sombra, columnas…) — sólo para el primitivo `texto`. */
   boxValue?: TextBoxValue;
   onBoxChange?: (patch: Partial<TextBoxValue>) => void;
+  /** Panel «Revelado» (animación por palabra/línea) — sólo para el primitivo `texto`. */
+  revealValue?: RevealValue;
+  onRevealChange?: (next: RevealValue | undefined) => void;
 }
+
+type RevealValue = NonNullable<import('@lumina/types/slide').TextBlock['revelado']>;
 
 /** Inspector tipográfico único del panel derecho. */
 export function TypographyInspector({
@@ -142,6 +147,8 @@ export function TypographyInspector({
   enableList,
   boxValue,
   onBoxChange,
+  revealValue,
+  onRevealChange,
   contrastBackground,
   metaText,
 }: TypographyInspectorProps) {
@@ -468,6 +475,10 @@ export function TypographyInspector({
         <BoxSection value={boxValue} onChange={onBoxChange} disabled={disabled} />
       ) : null}
 
+      {onRevealChange ? (
+        <RevealSection value={revealValue} onChange={onRevealChange} disabled={disabled} />
+      ) : null}
+
       {metaText !== undefined || contrastBackground ? (
         <TextMetaFooter
           text={metaText}
@@ -673,6 +684,96 @@ function BoxSection({
             <SliderThumb />
           </Slider>
         </div>
+      ) : null}
+    </InspectorSection>
+  );
+}
+
+const REVEAL_EFFECTS: { id: RevealValue['efecto']; label: string }[] = [
+  { id: 'aparecer', label: 'Aparecer' },
+  { id: 'subir', label: 'Subir' },
+  { id: 'zoom', label: 'Zoom' },
+];
+
+function RevealSection({
+  value,
+  onChange,
+  disabled,
+}: {
+  value?: RevealValue;
+  onChange: (next: RevealValue | undefined) => void;
+  disabled?: boolean;
+}) {
+  const por = value?.por;
+  return (
+    <InspectorSection title="Revelado del texto" defaultOpen={false}>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Modo</Label>
+        <div className="grid grid-cols-3 gap-1">
+          {([
+            ['none', 'Ninguno'],
+            ['palabra', 'Palabra'],
+            ['linea', 'Línea'],
+          ] as const).map(([id, label]) => (
+            <Button
+              key={id}
+              type="button"
+              size="sm"
+              variant={(por ?? 'none') === id ? 'secondary' : 'outline'}
+              className="h-7 px-1 text-[11px]"
+              disabled={disabled}
+              onClick={() =>
+                onChange(
+                  id === 'none'
+                    ? undefined
+                    : { por: id, efecto: value?.efecto ?? 'aparecer', retraso: value?.retraso },
+                )
+              }
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {value ? (
+        <>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Efecto</Label>
+            <div className="grid grid-cols-3 gap-1">
+              {REVEAL_EFFECTS.map(({ id, label }) => (
+                <Button
+                  key={id}
+                  type="button"
+                  size="sm"
+                  variant={value.efecto === id ? 'secondary' : 'outline'}
+                  className="h-7 px-1 text-[11px]"
+                  disabled={disabled}
+                  onClick={() => onChange({ ...value, efecto: id })}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Retraso entre unidades</Label>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {value.retraso ?? (value.por === 'linea' ? 140 : 60)}ms
+              </span>
+            </div>
+            <Slider
+              value={[value.retraso ?? (value.por === 'linea' ? 140 : 60)]}
+              min={20}
+              max={280}
+              step={10}
+              disabled={disabled}
+              onValueChange={([v]) => onChange({ ...value, retraso: v })}
+            >
+              <SliderThumb />
+            </Slider>
+          </div>
+        </>
       ) : null}
     </InspectorSection>
   );

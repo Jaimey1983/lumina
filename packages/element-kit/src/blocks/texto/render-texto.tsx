@@ -24,6 +24,12 @@ import {
   hexWithOpacity,
 } from '@lumina/editor-shared/text-box';
 import {
+  textBlockRevealPlan,
+  revealUnitCss,
+  ensureRevealStyles,
+  type RevealPlan,
+} from '@lumina/editor-shared/text-reveal';
+import {
   richMarksToStyle,
   isSafeHref,
   useTextTokens,
@@ -50,6 +56,8 @@ interface RenderCtx {
     espaciadoLetras?: number;
     interlineado?: number;
   };
+  /** Revelado animado (solo viewer). `counter` da un índice continuo. */
+  reveal?: { plan: RevealPlan; counter: { n: number } };
 }
 
 /**
@@ -329,6 +337,13 @@ export function RenderText({
       interlineado: block.interlineado,
     },
   };
+  if (modo === 'viewer') {
+    const plan = textBlockRevealPlan(block);
+    if (plan) {
+      ensureRevealStyles();
+      ctx.reveal = { plan, counter: { n: 0 } };
+    }
+  }
   const inner =
     doc.nodes.length === 1
       ? richNodeToElement(doc.nodes[0]!, 0, style, ctx)
@@ -353,10 +368,36 @@ function findMark<T extends RichMark['t']>(
   return marks?.find((m) => m.t === t) as Extract<RichMark, { t: T }> | undefined;
 }
 
+/** Reparte el texto en `<span>` animados por palabra (revelado). */
+function revealWords(text: string, ctx?: RenderCtx): ReactNode {
+  if (ctx?.reveal?.plan.unit !== 'palabra' || text === '') return text;
+  const { plan, counter } = ctx.reveal;
+  return text.split(/(\s+)/).map((part, i) => {
+    if (part === '') return null;
+    if (/^\s+$/.test(part)) return part;
+    return createElement(
+      'span',
+      { key: i, style: revealUnitCss(plan, counter.n++), 'data-reveal-unit': '' },
+      part,
+    );
+  });
+}
+
+/** Envuelve el contenido de una línea/bloque en un `<span>` animado (revelado). */
+function revealLine(children: ReactNode, ctx?: RenderCtx): ReactNode {
+  if (ctx?.reveal?.plan.unit !== 'linea') return children;
+  const { plan, counter } = ctx.reveal;
+  return createElement(
+    'span',
+    { style: revealUnitCss(plan, counter.n++), 'data-reveal-unit': '' },
+    children,
+  );
+}
+
 function renderRun(run: RichRun, key: number, ctx?: RenderCtx): ReactNode {
   const text = ctx?.resolveToken ? interpolateTokens(run.text, ctx.resolveToken) : run.text;
   const marks = run.marks;
-  if (!marks || marks.length === 0) return text;
+  if (!marks || marks.length === 0) return revealWords(text, ctx);
 
   let node: ReactNode = text;
   const markStyle = richMarksToStyle(marks);
@@ -380,6 +421,14 @@ function renderRun(run: RichRun, key: number, ctx?: RenderCtx): ReactNode {
       node,
     );
   }
+  if (ctx?.reveal?.plan.unit === 'palabra') {
+    const { plan, counter } = ctx.reveal;
+    node = createElement(
+      'span',
+      { style: revealUnitCss(plan, counter.n++), 'data-reveal-unit': '' },
+      node,
+    );
+  }
   return isValidElement(node)
     ? cloneElement(node as ReactElement, { key })
     : createElement('span', { key }, node);
@@ -388,8 +437,10 @@ function renderRun(run: RichRun, key: number, ctx?: RenderCtx): ReactNode {
 function renderRuns(runs: RichRun[] | undefined, ctx?: RenderCtx): ReactNode {
   if (!runs || runs.length === 0) return null;
   if (runs.length === 1 && (!runs[0]!.marks || runs[0]!.marks.length === 0)) {
-    const t = runs[0]!.text;
-    return ctx?.resolveToken ? interpolateTokens(t, ctx.resolveToken) : t;
+    const t = ctx?.resolveToken
+      ? interpolateTokens(runs[0]!.text, ctx.resolveToken)
+      : runs[0]!.text;
+    return revealWords(t, ctx);
   }
   return runs.map((r, i) => renderRun(r, i, ctx));
 }
@@ -409,14 +460,14 @@ function richNodeToElement(
       return createElement(
         `h${lvl}`,
         { key, style: { ...style, ...scale } },
-        renderRuns(node.runs, ctx),
+        revealLine(renderRuns(node.runs, ctx), ctx),
       );
     }
     case 'blockquote':
       return createElement(
         'blockquote',
         { key, style },
-        renderRuns(node.runs, ctx),
+        revealLine(renderRuns(node.runs, ctx), ctx),
       );
     case 'codeBlock':
       // El c\u00f3digo no interpola tokens.
@@ -443,10 +494,14 @@ function richNodeToElement(
       return createElement(
         'li',
         { key },
-        soloTexto === '' ? '\u00a0' : renderRuns(node.runs, ctx),
+        soloTexto === '' ? '\u00a0' : revealLine(renderRuns(node.runs, ctx), ctx),
       );
     }
     default:
-      return createElement('p', { key, style }, renderRuns(node.runs, ctx));
+      return createElement(
+        'p',
+        { key, style },
+        revealLine(renderRuns(node.runs, ctx), ctx),
+      );
   }
 }

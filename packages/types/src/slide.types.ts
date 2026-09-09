@@ -692,6 +692,15 @@ export interface TextBlock {
   columnasBrecha?: number;
   /** Ancho máximo de línea en `ch` (medida tipográfica) para legibilidad. */
   medidaMax?: number;
+  /** Revelado animado del texto en el viewer (Fase 5A). */
+  revelado?: {
+    por: 'palabra' | 'linea';
+    efecto: 'aparecer' | 'subir' | 'zoom';
+    /** Retraso entre unidades en ms. */
+    retraso?: number;
+  };
+  /** Curvatura del texto (−100…100; 0 = recto) — Fase 5A. */
+  curvatura?: number;
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
   x?: number;
   y?: number;
