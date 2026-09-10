@@ -163,6 +163,19 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(container.querySelector('li[data-checked="true"]')).not.toBeNull();
   });
 
+  it('codeBlock → <pre><code> con el código (fallback mientras carga lowlight)', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'codeBlock', lang: 'js', runs: [{ text: 'const x = 1;' }] }],
+    };
+    const { container } = render(
+      <RenderText block={{ tipo: 'texto', contenido: 'const x = 1;', contenidoRich: doc }} modo="viewer" />,
+    );
+    const pre = container.querySelector('pre');
+    expect(pre).not.toBeNull();
+    expect(pre?.querySelector('code')?.textContent).toBe('const x = 1;');
+  });
+
   it('math → nodo [data-math] con el LaTeX (fallback mientras carga KaTeX)', () => {
     const doc: RichDoc = {
       version: 1,

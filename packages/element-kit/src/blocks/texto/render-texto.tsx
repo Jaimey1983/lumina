@@ -84,6 +84,11 @@ const MathBlockLazy = lazy(() =>
   import('./math-block.js').then((m) => ({ default: m.MathBlock })),
 );
 
+/** lowlight (+ tema CSS) solo se carga cuando hay un nodo `codeBlock`. */
+const CodeBlockLazy = lazy(() =>
+  import('./code-block.js').then((m) => ({ default: m.CodeBlock })),
+);
+
 export const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   izquierda: 'left',
   centro: 'center',
@@ -581,13 +586,22 @@ function richNodeToElement(
         { key, style: withSpacing(style) },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
-    case 'codeBlock':
-      // El c\u00f3digo no interpola tokens.
+    case 'codeBlock': {
+      // El c\u00f3digo no interpola tokens. Resaltado con lowlight (carga perezosa).
+      const code = (node.runs ?? []).map((r) => r.text).join('');
       return createElement(
-        'pre',
-        { key, style },
-        createElement('code', null, (node.runs ?? []).map((r) => r.text).join('')),
+        Suspense,
+        {
+          key,
+          fallback: createElement(
+            'pre',
+            { style },
+            createElement('code', null, code),
+          ),
+        },
+        createElement(CodeBlockLazy, { code, lang: node.lang, style }),
       );
+    }
     case 'hr':
       return createElement('hr', { key });
     case 'bulletList':

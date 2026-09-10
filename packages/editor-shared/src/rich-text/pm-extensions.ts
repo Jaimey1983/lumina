@@ -35,7 +35,11 @@ import { Superscript } from '@tiptap/extension-superscript';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { TableKit } from '@tiptap/extension-table';
+import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import { createLowlight, common } from 'lowlight';
 import { Placeholder } from '@tiptap/extension-placeholder';
+
+const lowlight = createLowlight(common);
 import { isSafeHref } from './sanitize.js';
 
 const ALIGN_TO_CSS: Record<string, string> = {
@@ -346,8 +350,12 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
         isAllowedUri: (url: string) => isSafeHref(url),
       },
-      // codeBlock: sin resaltado por ahora (Fase 5B añade lowlight).
-      codeBlock: { HTMLAttributes: { spellcheck: 'false' } },
+      // codeBlock: lo reemplaza CodeBlockLowlight (resaltado con lowlight).
+      codeBlock: false,
+    }),
+    CodeBlockLowlight.configure({
+      lowlight,
+      HTMLAttributes: { spellcheck: 'false' },
     }),
     BoldStarOnly,
     ItalicStarOnly,

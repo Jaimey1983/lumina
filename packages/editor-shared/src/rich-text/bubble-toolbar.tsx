@@ -20,6 +20,7 @@ import {
   Indent,
   Info,
   Italic,
+  SquareCode,
   Link2,
   Link2Off,
   ListChecks,
@@ -206,6 +207,27 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
               .focus()
               .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
               .run(),
+    },
+    {
+      id: 'code-block',
+      label: 'Bloque de código',
+      icon: <SquareCode className="size-3.5" />,
+      isActive: (e) => e.isActive('codeBlock'),
+      run: (e) => {
+        if (e.isActive('codeBlock')) {
+          e.chain().focus().toggleCodeBlock().run();
+          return;
+        }
+        const lang =
+          typeof window !== 'undefined'
+            ? window.prompt('Lenguaje (opcional): js, python, sql…', '')
+            : null;
+        const chain = e.chain().focus();
+        (lang && lang.trim()
+          ? chain.toggleCodeBlock({ language: lang.trim() })
+          : chain.toggleCodeBlock()
+        ).run();
+      },
     },
     {
       id: 'math',
