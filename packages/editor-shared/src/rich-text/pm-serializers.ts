@@ -108,10 +108,25 @@ function runsToPmText(runs: RichRun[] | undefined): PmJSON[] {
     }));
 }
 
-function paragraphFromRuns(runs: RichRun[] | undefined, align?: TextAlign): PmJSON {
+/** Atributos de bloque de nodo (alineación + sangría + espaciado) para el JSON de TipTap. */
+function blockAttrs(node: RichNode): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (node.align) out.align = node.align;
+  if (Number.isFinite(node.indent)) out.indent = node.indent;
+  if (Number.isFinite(node.spaceBefore)) out.spaceBefore = node.spaceBefore;
+  if (Number.isFinite(node.spaceAfter)) out.spaceAfter = node.spaceAfter;
+  return out;
+}
+
+function paragraphFromRuns(
+  runs: RichRun[] | undefined,
+  align?: TextAlign,
+  extra?: Record<string, unknown>,
+): PmJSON {
+  const attrs = { ...(align ? { align } : {}), ...(extra ?? {}) };
   return {
     type: 'paragraph',
-    ...(align ? { attrs: { align } } : {}),
+    ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
     content: runsToPmText(runs),
   };
 }
@@ -125,12 +140,14 @@ function listItemFromNode(node: RichNode, task: boolean): PmJSON {
 
 function nodeToPm(node: RichNode): PmJSON | null {
   switch (node.type) {
-    case 'paragraph':
-      return paragraphFromRuns(node.runs, node.align);
+    case 'paragraph': {
+      const { align: _a, ...rest } = blockAttrs(node);
+      return paragraphFromRuns(node.runs, node.align, rest);
+    }
     case 'heading':
       return {
         type: 'heading',
-        attrs: { level: node.level ?? 2, ...(node.align ? { align: node.align } : {}) },
+        attrs: { level: node.level ?? 2, ...blockAttrs(node) },
         content: runsToPmText(node.runs),
       };
     case 'blockquote':
@@ -270,19 +287,43 @@ function firstParagraphRuns(node: PmJSON): RichRun[] | undefined {
   return pmInlineToRuns(para?.content);
 }
 
+/** Lee sangría / espaciado del `attrs` de un nodo de bloque de TipTap. */
+function pmBlockSpacing(attrs?: Record<string, unknown>): Partial<RichNode> {
+  const out: Partial<RichNode> = {};
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+  const indent = n(attrs?.indent);
+  const before = n(attrs?.spaceBefore);
+  const after = n(attrs?.spaceAfter);
+  if (indent !== undefined) out.indent = indent;
+  if (before !== undefined) out.spaceBefore = before;
+  if (after !== undefined) out.spaceAfter = after;
+  return out;
+}
+
 function pmNodeToRich(node: PmJSON): RichNode | null {
   switch (node.type) {
     case 'paragraph': {
       const align = isAlign(node.attrs?.align) ? node.attrs.align : undefined;
       const runs = pmInlineToRuns(node.content);
-      return { type: 'paragraph', ...(align ? { align } : {}), ...(runs ? { runs } : {}) };
+      return {
+        type: 'paragraph',
+        ...(align ? { align } : {}),
+        ...pmBlockSpacing(node.attrs),
+        ...(runs ? { runs } : {}),
+      };
     }
     case 'heading': {
       const lvlRaw = Number(node.attrs?.level);
       const level = (lvlRaw >= 1 && lvlRaw <= 6 ? lvlRaw : 2) as RichNode['level'];
       const align = isAlign(node.attrs?.align) ? node.attrs.align : undefined;
       const runs = pmInlineToRuns(node.content);
-      return { type: 'heading', level, ...(align ? { align } : {}), ...(runs ? { runs } : {}) };
+      return {
+        type: 'heading',
+        level,
+        ...(align ? { align } : {}),
+        ...pmBlockSpacing(node.attrs),
+        ...(runs ? { runs } : {}),
+      };
     }
     case 'blockquote': {
       const runs = firstParagraphRuns(node);

@@ -117,6 +117,17 @@ describe('richToPmDoc / pmDocToRich', () => {
     expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
   });
 
+  it('sangría y espaciado de párrafo/encabezado sobreviven el viaje', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'heading', level: 2, spaceBefore: 24, runs: [{ text: 'Sección' }] },
+        { type: 'paragraph', indent: 3, spaceAfter: 12, runs: [{ text: 'sangrado' }] },
+      ],
+    };
+    expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+  });
+
   it('term con definición sobrevive el viaje', () => {
     const doc: RichDoc = {
       version: 1,

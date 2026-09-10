@@ -512,12 +512,28 @@ function renderRuns(runs: RichRun[] | undefined, ctx?: RenderCtx): ReactNode {
   return runs.map((r, i) => renderRun(r, i, ctx));
 }
 
+/** Sangría / espaciado / alineación propios del nodo (párrafo, encabezado, lista…). */
+function nodeSpacingCss(node: RichNode): CSSProperties {
+  const out: CSSProperties = {};
+  if (node.align && TEXT_ALIGN_MAP[node.align]) out.textAlign = TEXT_ALIGN_MAP[node.align];
+  if (Number.isFinite(node.indent)) out.marginInlineStart = `${node.indent}rem`;
+  if (Number.isFinite(node.spaceBefore)) out.marginTop = `${node.spaceBefore}px`;
+  if (Number.isFinite(node.spaceAfter)) out.marginBottom = `${node.spaceAfter}px`;
+  return out;
+}
+
 function richNodeToElement(
   node: RichNode,
   key: number | string,
   style?: CSSProperties,
   ctx?: RenderCtx,
+  asTaskItem = false,
 ): ReactNode {
+  const withSpacing = (base?: CSSProperties): CSSProperties | undefined => {
+    const sp = nodeSpacingCss(node);
+    if (Object.keys(sp).length === 0) return base;
+    return { ...base, ...sp };
+  };
   switch (node.type) {
     case 'heading': {
       const lvl = (node.level ?? 2) as HeadingLevel;
@@ -526,14 +542,14 @@ function richNodeToElement(
       const scale = headingFallbackCss(lvl, ctx?.headingOverride ?? {});
       return createElement(
         `h${lvl}`,
-        { key, style: { ...style, ...scale } },
+        { key, style: { ...style, ...scale, ...nodeSpacingCss(node) } },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
     }
     case 'blockquote':
       return createElement(
         'blockquote',
-        { key, style },
+        { key, style: withSpacing(style) },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
     case 'codeBlock':
@@ -547,27 +563,46 @@ function richNodeToElement(
       return createElement('hr', { key });
     case 'bulletList':
     case 'orderedList':
-    case 'taskList':
+    case 'taskList': {
+      const isTask = node.type === 'taskList';
+      const listStyle = withSpacing(
+        isTask ? { ...style, listStyle: 'none', paddingLeft: 0 } : style,
+      );
       return createElement(
         node.type === 'orderedList' ? 'ol' : 'ul',
-        { key, style },
-        (node.children ?? []).map((li, i) => richNodeToElement(li, i, undefined, ctx)),
+        { key, style: listStyle, ...(isTask ? { 'data-task-list': '' } : {}) },
+        (node.children ?? []).map((li, i) =>
+          richNodeToElement(li, i, undefined, ctx, isTask),
+        ),
       );
+    }
     case 'listItem': {
       const soloTexto =
         node.runs && node.runs.length === 1 && !node.runs[0]!.marks
           ? node.runs[0]!.text
           : undefined;
-      return createElement(
-        'li',
-        { key },
-        soloTexto === '' ? '\u00a0' : revealLine(renderRuns(node.runs, ctx), ctx),
-      );
+      const body =
+        soloTexto === '' ? '\u00a0' : revealLine(renderRuns(node.runs, ctx), ctx);
+      if (asTaskItem) {
+        return createElement(
+          'li',
+          { key, 'data-checked': node.checked === true ? 'true' : 'false' },
+          createElement('input', {
+            type: 'checkbox',
+            checked: node.checked === true,
+            disabled: true,
+            readOnly: true,
+            style: { marginRight: '0.5em' },
+          }),
+          body,
+        );
+      }
+      return createElement('li', { key }, body);
     }
     default:
       return createElement(
         'p',
-        { key, style },
+        { key, style: withSpacing(style) },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
   }

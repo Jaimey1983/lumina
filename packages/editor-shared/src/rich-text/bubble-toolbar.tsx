@@ -17,10 +17,13 @@ import {
   Code,
   EyeOff,
   Highlighter,
+  Indent,
   Italic,
   Link2,
   Link2Off,
+  ListChecks,
   Minus,
+  Outdent,
   Plus,
   Presentation,
   RemoveFormatting,
@@ -48,6 +51,27 @@ function currentFontSizePx(editor: Editor): number {
 function setFontSize(editor: Editor, px: number): void {
   const clamped = Math.min(SIZE_MAX, Math.max(SIZE_MIN, Math.round(px)));
   editor.chain().focus().setMark('textStyle', { fontSize: `${clamped}px` }).run();
+}
+
+const INDENT_STEP = 1.5;
+const INDENT_MAX = 9;
+
+/** Tipo del nodo de bloque que contiene la selección (paragraph / heading). */
+function currentBlockType(editor: Editor): 'paragraph' | 'heading' | null {
+  const name = editor.state.selection.$from.parent.type.name;
+  return name === 'paragraph' || name === 'heading' ? name : null;
+}
+
+function changeIndent(editor: Editor, delta: number): void {
+  const type = currentBlockType(editor);
+  if (!type) return;
+  const cur = (editor.getAttributes(type).indent as number | undefined) ?? 0;
+  const next = Math.max(0, Math.min(INDENT_MAX, cur + delta));
+  editor
+    .chain()
+    .focus()
+    .updateAttributes(type, { indent: next === 0 ? null : next })
+    .run();
 }
 
 interface ToolbarButton {
@@ -134,6 +158,27 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
           .setMark('term', { glosaId, definicion: definicion === '' ? null : definicion })
           .run();
       },
+    },
+    {
+      id: 'outdent',
+      label: 'Reducir sangría',
+      icon: <Outdent className="size-3.5" />,
+      isDisabled: (e) => !currentBlockType(e) || !(e.getAttributes(currentBlockType(e)!).indent),
+      run: (e) => changeIndent(e, -INDENT_STEP),
+    },
+    {
+      id: 'indent',
+      label: 'Aumentar sangría',
+      icon: <Indent className="size-3.5" />,
+      isDisabled: (e) => !currentBlockType(e),
+      run: (e) => changeIndent(e, INDENT_STEP),
+    },
+    {
+      id: 'task-list',
+      label: 'Lista de tareas',
+      icon: <ListChecks className="size-3.5" />,
+      isActive: (e) => e.isActive('taskList'),
+      run: (e) => e.chain().focus().toggleTaskList().run(),
     },
     { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
   ];

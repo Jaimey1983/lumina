@@ -50,6 +50,20 @@ const CSS_TO_ALIGN: Record<string, string> = {
 };
 
 /** `align` (valores del dominio Lumina) en paragraph / heading. */
+const numAttr = (key: string, dataName: string, cssProp: string, unit: string) => ({
+  default: null as number | null,
+  parseHTML: (el: HTMLElement) => {
+    const v = el.getAttribute(dataName);
+    return v == null ? null : Number(v);
+  },
+  renderHTML: (attrs: Record<string, unknown>) => {
+    const v = attrs[key] as number | null;
+    return v == null || !Number.isFinite(v)
+      ? {}
+      : { [dataName]: String(v), style: `${cssProp}:${v}${unit}` };
+  },
+});
+
 const NodeAlign = Extension.create({
   name: 'luminaNodeAlign',
   addGlobalAttributes() {
@@ -71,6 +85,9 @@ const NodeAlign = Extension.create({
               return { 'data-align': a, style: `text-align:${ALIGN_TO_CSS[a]}` };
             },
           },
+          indent: numAttr('indent', 'data-indent', 'margin-inline-start', 'rem'),
+          spaceBefore: numAttr('spaceBefore', 'data-space-before', 'margin-top', 'px'),
+          spaceAfter: numAttr('spaceAfter', 'data-space-after', 'margin-bottom', 'px'),
         },
       },
     ];

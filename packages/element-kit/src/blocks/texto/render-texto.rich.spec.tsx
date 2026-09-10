@@ -120,6 +120,47 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(out).not.toContain('<a ');
   });
 
+  it('nodo con indent / spaceBefore / align → estilo propio del nodo', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'paragraph', runs: [{ text: 'a' }] },
+        { type: 'paragraph', indent: 2, spaceBefore: 10, align: 'derecha', runs: [{ text: 'b' }] },
+      ],
+    };
+    const { container } = render(
+      <RenderText block={{ tipo: 'texto', contenido: 'a\nb', contenidoRich: doc }} modo="viewer" />,
+    );
+    const p = container.querySelectorAll('p')[1] as HTMLElement;
+    expect(p.style.marginInlineStart).toBe('2rem');
+    expect(p.style.marginTop).toBe('10px');
+    expect(p.style.textAlign).toBe('right');
+  });
+
+  it('taskList → <ul data-task-list> con <input type=checkbox> por ítem', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        {
+          type: 'taskList',
+          children: [
+            { type: 'listItem', checked: true, runs: [{ text: 'hecho' }] },
+            { type: 'listItem', checked: false, runs: [{ text: 'falta' }] },
+          ],
+        },
+      ],
+    };
+    const { container } = render(
+      <RenderText block={{ tipo: 'texto', contenido: 'hecho\nfalta', contenidoRich: doc }} modo="viewer" />,
+    );
+    expect(container.querySelector('ul[data-task-list]')).not.toBeNull();
+    const boxes = container.querySelectorAll('input[type="checkbox"]');
+    expect(boxes).toHaveLength(2);
+    expect((boxes[0] as HTMLInputElement).checked).toBe(true);
+    expect((boxes[1] as HTMLInputElement).checked).toBe(false);
+    expect(container.querySelector('li[data-checked="true"]')).not.toBeNull();
+  });
+
   it('un RichDoc multi-nodo se envuelve en <div>', () => {
     const doc: RichDoc = {
       version: 1,
