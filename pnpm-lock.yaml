@@ -502,6 +502,9 @@ importers:
       hast-util-to-html:
         specifier: 9.0.4
         version: 9.0.4
+      highlight.js:
+        specifier: 11.11.2
+        version: 11.11.2
       katex:
         specifier: 0.16.11
         version: 0.16.11
