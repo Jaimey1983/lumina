@@ -283,13 +283,13 @@ export interface BubbleToolbarProps {
 
 export function BubbleToolbar({ editor }: BubbleToolbarProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; below?: boolean } | null>(null);
   const [, forceTick] = useState(0);
   const [focusIdx, setFocusIdx] = useState(0);
   const [aiOpen, setAiOpen] = useState(false);
   const aiOpenRef = useRef(false);
   aiOpenRef.current = aiOpen;
-  const lastPosRef = useRef<{ top: number; left: number } | null>(null);
+  const lastPosRef = useRef<{ top: number; left: number; below?: boolean } | null>(null);
   const ai = useRichTextAi();
   const openAi = useCallback(() => setAiOpen(true), []);
   const buttonsRef = useRef<ToolbarButton[]>([]);
@@ -310,7 +310,21 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
     try {
       const a = editor.view.coordsAtPos(from);
       const b = editor.view.coordsAtPos(to);
-      const next = { top: Math.min(a.top, b.top) - 8, left: (a.left + b.left) / 2 };
+      let top = Math.min(a.top, b.top) - 8;
+      let left = (a.left + b.left) / 2;
+      let below = false;
+      // Clamp / flip al viewport: la barra mide ~26px de alto y hasta ~820px de
+      // ancho (28 botones). Si no cabe arriba, va debajo de la selección; el
+      // ancho se acota a los bordes con un margen de 8px.
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+      const barW = ref.current?.offsetWidth || 480;
+      const half = barW / 2;
+      left = Math.max(8 + half, Math.min(vw - 8 - half, left));
+      if (top < 44) {
+        top = Math.max(a.bottom, b.bottom) + 8;
+        below = true;
+      }
+      const next = { top, left, below };
       lastPosRef.current = next;
       setPos(next);
       forceTick((n) => n + 1);
@@ -376,7 +390,7 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
       aria-label="Formato de texto"
       aria-orientation="horizontal"
       data-rich-text-safe=""
-      style={{ ...wrapperStyle, top: pos.top, left: pos.left }}
+      style={{ ...wrapperStyle, top: pos.top, left: pos.left, transform: pos.below ? "translate(-50%, 0)" : "translate(-50%, -100%)" }}
       onMouseDown={(e) => e.preventDefault()}
       onKeyDown={onKeyDown}
     >
