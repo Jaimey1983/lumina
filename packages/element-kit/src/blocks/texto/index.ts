@@ -8,7 +8,6 @@ export {
 } from './texto-defaults.js';
 export {
   RenderText,
-  InlineTextEditor,
   textBlockHeadingFallbackStyle,
   type RenderTextProps,
 } from './render-texto.js';

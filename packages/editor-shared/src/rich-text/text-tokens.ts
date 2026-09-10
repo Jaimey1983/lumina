@@ -1,6 +1,19 @@
 /**
  * Tokens `{{...}}` en el texto (Fase 5A). Se resuelven SOLO fuera del editor
  * (viewer / presentación / preview); en edición el docente ve el token literal.
+ *
+ * Tokens válidos (fuente única de la lista):
+ *   Built-in (`resolveBuiltinToken`):
+ *     {{fecha}}         fecha corta local (es)
+ *     {{fecha_larga}}   fecha larga ("3 de septiembre de 2026")
+ *     {{hora}}          hora HH:MM
+ *     {{n_slide}}       número de diapositiva actual (1-based)
+ *     {{total_slides}}  total de diapositivas del mazo
+ *   Inyectados por el frontend (`textTokenExtra` → `TextTokensProvider`):
+ *     {{clase}}         título de la clase
+ *     {{codigo_clase}}  código de acceso de la clase
+ *     {{docente}}       nombre del docente (si el backend lo expone)
+ * Un token desconocido se deja literal.
  */
 
 export interface TokenContext {

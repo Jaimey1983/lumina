@@ -6,9 +6,6 @@ import {
   isValidElement,
   lazy,
   Suspense,
-  useState,
-  useRef,
-  useEffect,
   type CSSProperties,
   type ReactElement,
   type ReactNode,
@@ -140,116 +137,6 @@ export function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
   // Contorno/degradado del texto van al final: el degradado fuerza `color: transparent`
   // y debe ganar sobre el color de `typographyToCss`.
   return { ...out, ...textBlockColumnsCss(block), ...textBlockDecorCss(block) };
-}
-
-export function InlineTextEditor({
-  block,
-  onCommit,
-  onDiscard,
-}: {
-  block: TextBlock;
-  onCommit: (text: string) => void;
-  onDiscard: () => void;
-}) {
-  const [value, setValue] = useState(block.contenido ?? '');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  /** Guards against double-fire from blur + Enter/Escape. */
-  const exitedRef = useRef(false);
-
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.focus();
-    ta.select();
-  }, []);
-
-  function commit() {
-    if (exitedRef.current) return;
-    exitedRef.current = true;
-    onCommit(value);
-  }
-
-  function discard() {
-    if (exitedRef.current) return;
-    exitedRef.current = true;
-    onDiscard();
-  }
-
-  const isEmpty = value === '';
-  const headingCss = textBlockHeadingFallbackStyle(block);
-
-  return (
-    <div
-      className="relative h-full w-full min-h-0"
-      style={
-        isEmpty
-          ? { border: '2px dashed #aaa', boxSizing: 'border-box' }
-          : undefined
-      }
-    >
-      {isEmpty && (
-        <span
-          className="pointer-events-none absolute left-1/2 top-1/2 z-0 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
-          style={{
-            color: '#bbb',
-            fontSize: 'clamp(10px, 1.6vw, 13px)',
-          }}
-        >
-          {emptyTextPlaceholderLabel(block)}
-        </span>
-      )}
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.shiftKey) {
-            e.preventDefault();
-            commit();
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            discard();
-          }
-        }}
-        onClick={(e) => e.stopPropagation()}
-        onDoubleClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          margin: 0,
-          padding: '2px',
-          border: 'none',
-          outline: 'none',
-          background: isEmpty ? 'transparent' : 'rgba(255,255,255,0.05)',
-          resize: 'none',
-          cursor: 'text',
-          ...headingCss,
-          fontSize:
-            block.tamanoFuente && block.tamanoFuente !== ''
-              ? block.tamanoFuente
-              : headingCss.fontSize,
-          fontWeight:
-            block.negrita === true
-              ? 'bold'
-              : block.negrita === false
-                ? 'normal'
-                : (headingCss.fontWeight ?? 'normal'),
-          fontStyle: block.cursiva ? 'italic' : 'normal',
-          color: block.color ?? 'inherit',
-          textAlign: block.alineacion
-            ? (TEXT_ALIGN_MAP[block.alineacion] ?? 'left')
-            : 'left',
-          overflowY: 'auto',
-          boxSizing: 'border-box',
-          zIndex: 1,
-          ...textBlockOptionalVisualStyle(block),
-        }}
-      />
-    </div>
-  );
 }
 
 export interface RenderTextProps {
