@@ -35,6 +35,7 @@ import type {
   ClipGroupBlock,
   FlipCardsWidget,
   Slide,
+  SlideTheme,
   TabsWidget,
   CarouselWidget,
   ClickRevealWidget,
@@ -75,6 +76,8 @@ import {
 import { syncPopupBlockSizeFromTriggerPx } from '@lumina/element-kit/widgets/popup/popup-defaults';
 import { clampPopupTriggerPx } from '@lumina/element-kit/widgets/popup/popup-trigger-size';
 import { SlideCanvasRootContext } from '@lumina/editor-shared/slide-canvas-root-context';
+import { SlideThemeProvider } from '@lumina/editor-shared/slide-theme-context';
+import { getPredefinedSlideTheme } from '@/lib/slide-themes';
 import { isWidgetTipo } from '@lumina/types/widget';
 import type { WidgetBlock } from '@lumina/types/slide';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
@@ -1202,6 +1205,12 @@ export interface SlideRendererProps {
   onClipGroupChange?: (blockId: string, block: ClipGroupBlock) => void;
   /** Desagrupa un `clip-group` de composición (reemplaza el bloque por sus hijos). */
   onUngroupClipGroup?: (blockId: string) => void;
+  /**
+   * Tema del slide para los roles tipográficos (`estiloTema`). Si se pasa, tiene
+   * prioridad (p. ej. tema personalizado del editor); si no, se resuelve el tema
+   * predefinido desde `slide.content.temaId`.
+   */
+  theme?: SlideTheme | null;
 }
 
 export function SlideRenderer({
@@ -1256,6 +1265,7 @@ export function SlideRenderer({
   onClipGroupInnerEditChange,
   onClipGroupChange,
   onUngroupClipGroup,
+  theme: themeProp,
 }: SlideRendererProps) {
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
   const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
@@ -1290,6 +1300,13 @@ export function SlideRenderer({
   const variant =
     variantProp ?? getSlideVariant(backgroundColorSample(slide.fondo));
   const editorMode = modo === 'editor';
+
+  // Tema para los roles tipográficos (`estiloTema`): prop explícita (tema
+  // personalizado) o el predefinido resuelto desde `slide.temaId`.
+  const slideTheme = useMemo<SlideTheme | null>(
+    () => themeProp ?? getPredefinedSlideTheme(slide.temaId ?? '') ?? null,
+    [themeProp, slide.temaId],
+  );
 
   const handleRotate = useCallback((blockId: string, angle: number) => {
     const blocks = slide.bloques ?? [];
@@ -1483,6 +1500,7 @@ export function SlideRenderer({
 
   if (modo === 'preview') {
     return (
+      <SlideThemeProvider value={{ theme: slideTheme }}>
       <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
       <div
         ref={previewContainerRef}
@@ -1546,11 +1564,13 @@ export function SlideRenderer({
         )}
       </div>
       </SlideCanvasRootContext.Provider>
+      </SlideThemeProvider>
     );
   }
 
   // ─── Editor / viewer mode ─────────────────────────────────────────────────
   return (
+    <SlideThemeProvider value={{ theme: slideTheme }}>
     <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
     <div
       data-slide-root
@@ -1694,5 +1714,6 @@ export function SlideRenderer({
       )}
     </div>
     </SlideCanvasRootContext.Provider>
+    </SlideThemeProvider>
   );
 }

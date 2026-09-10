@@ -17,6 +17,8 @@ import type { HeadingLevel, TextBlock } from '@lumina/types/slide';
 import type { RichDoc, RichMark, RichNode, RichRun } from '@lumina/types/rich-text';
 import { typographyFromTextBlock, typographyToCss } from '@lumina/editor-shared/typography';
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
+import { useSlideTheme } from '@lumina/editor-shared/slide-theme-context';
+import { resolveThemeTextStyle } from '@lumina/editor-shared/theme-text-styles';
 import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
 import {
   textBlockBoxCss,
@@ -265,6 +267,7 @@ export function RenderText({
 }: RenderTextProps) {
   const nav = useSlideNav();
   const tokens = useTextTokens();
+  const { theme } = useSlideTheme();
 
   if (isEditing && onCommit && onDiscard) {
     return (
@@ -309,24 +312,31 @@ export function RenderText({
 
   const isList = block.lista === 'vinetas' || block.lista === 'numeros';
   const headingCss = textBlockHeadingFallbackStyle(block);
+  // Capa base del rol de tema (`estiloTema`): el tema activo define
+  // fuente/tamaño/color/peso; los ajustes explícitos del bloque ganan encima.
+  const roleCss = block.estiloTema
+    ? resolveThemeTextStyle(theme, block.estiloTema)
+    : {};
+  // El rol de tema tiene prioridad sobre la escala H1–H6 como *fallback*.
+  const fallbackCss: CSSProperties = { ...headingCss, ...roleCss };
   const style: CSSProperties = {
     margin: 0,
     whiteSpace: isList ? 'normal' : 'pre-wrap',
     wordBreak: 'break-word',
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
-    ...headingCss,
+    ...fallbackCss,
     fontSize:
       block.tamanoFuente && block.tamanoFuente !== ''
         ? block.tamanoFuente
-        : headingCss.fontSize,
+        : fallbackCss.fontSize,
     fontWeight:
       block.negrita === true
         ? 'bold'
         : block.negrita === false
           ? undefined
-          : headingCss.fontWeight,
+          : fallbackCss.fontWeight,
     fontStyle: block.cursiva ? 'italic' : undefined,
-    color: block.color,
+    color: block.color ?? roleCss.color,
     ...textBlockOptionalVisualStyle(block),
     ...(isList
       ? {

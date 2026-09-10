@@ -155,6 +155,21 @@ export function TextoProperties({
         if (applyNow) void applyNow(apply);
         else if (onChange) onChange(apply(block) as TextBlock);
       }}
+      estiloTema={block.estiloTema}
+      onEstiloTemaChange={(rol) => {
+        const apply = (b: Block): Block => {
+          if (b.tipo !== 'texto') return b;
+          if (rol === undefined) {
+            const rest = { ...b };
+            delete rest.estiloTema;
+            return rest;
+          }
+          return { ...b, estiloTema: rol };
+        };
+        clearDebounce?.();
+        if (applyNow) void applyNow(apply);
+        else if (onChange) onChange(apply(block) as TextBlock);
+      }}
       revealValue={block.revelado}
       onRevealChange={(next) => {
         const apply = (b: Block): Block => {

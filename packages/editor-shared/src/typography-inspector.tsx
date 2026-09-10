@@ -132,6 +132,9 @@ export interface TypographyInspectorProps {
   /** Curvatura del texto (−100…100). */
   curvatura?: number;
   onCurvaturaChange?: (n: number | undefined) => void;
+  /** Rol tipográfico del tema del slide (`titulo`/`cuerpo`/`pie`). */
+  estiloTema?: 'titulo' | 'cuerpo' | 'pie';
+  onEstiloTemaChange?: (rol: 'titulo' | 'cuerpo' | 'pie' | undefined) => void;
 }
 
 type RevealValue = NonNullable<import('@lumina/types/slide').TextBlock['revelado']>;
@@ -154,6 +157,8 @@ export function TypographyInspector({
   onRevealChange,
   curvatura,
   onCurvaturaChange,
+  estiloTema,
+  onEstiloTemaChange,
   contrastBackground,
   metaText,
 }: TypographyInspectorProps) {
@@ -219,6 +224,34 @@ export function TypographyInspector({
                 </Button>
               );
             })}
+          </div>
+        </div>
+      ) : null}
+
+      {onEstiloTemaChange ? (
+        <div className="space-y-1.5">
+          <Label className="text-xs">Estilo de tema</Label>
+          <div className="grid grid-cols-4 gap-1">
+            {(
+              [
+                ['none', 'Ninguno'],
+                ['titulo', 'Título'],
+                ['cuerpo', 'Cuerpo'],
+                ['pie', 'Pie'],
+              ] as const
+            ).map(([id, label]) => (
+              <Button
+                key={id}
+                type="button"
+                size="sm"
+                variant={(estiloTema ?? 'none') === id ? 'secondary' : 'outline'}
+                className="h-7 px-1 text-[10px]"
+                disabled={disabled}
+                onClick={() => onEstiloTemaChange(id === 'none' ? undefined : id)}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
         </div>
       ) : null}

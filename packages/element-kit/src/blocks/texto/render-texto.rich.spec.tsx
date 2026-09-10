@@ -2,8 +2,10 @@ import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { TextBlock } from '@lumina/types/slide';
 import type { RichDoc } from '@lumina/types/rich-text';
+import type { SlideTheme } from '@lumina/types/slide';
 import { plainToRich } from '@lumina/editor-shared/rich-text';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
+import { SlideThemeProvider } from '@lumina/editor-shared/slide-theme-context';
 import { RenderText } from './render-texto.js';
 import { getRichDoc } from './rich-text.js';
 
@@ -173,6 +175,63 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(el).not.toBeNull();
     expect(el.textContent).toBe('consejo');
     expect(el.style.borderInlineStart).toContain('#10b981');
+  });
+
+  describe('estiloTema (rol tipográfico del tema)', () => {
+    const theme: SlideTheme = {
+      id: 'x',
+      nombre: 'X',
+      esPersonalizado: false,
+      fondo: { tipo: 'color', valor: '#fff' },
+      fuente: 'Poppins',
+      colores: { texto: '#123456', textoSecundario: '#777', acento: '#00f', fondo: '#fff' },
+      tipografia: { titulo: { tamanoFuente: 55 } },
+    };
+
+    it('aplica tamaño/color del rol cuando hay tema en contexto', () => {
+      const { container } = render(
+        <SlideThemeProvider value={{ theme }}>
+          <RenderText
+            block={{ tipo: 'texto', contenido: 'Título', estiloTema: 'titulo' }}
+            modo="viewer"
+          />
+        </SlideThemeProvider>,
+      );
+      const p = container.querySelector('p') as HTMLElement;
+      expect(p.style.fontSize).toBe('55px');
+      expect(p.style.color).toBe('rgb(18, 52, 86)'); // #123456
+    });
+
+    it('el ajuste explícito del bloque gana sobre el rol del tema', () => {
+      const { container } = render(
+        <SlideThemeProvider value={{ theme }}>
+          <RenderText
+            block={{
+              tipo: 'texto',
+              contenido: 'Título',
+              estiloTema: 'titulo',
+              tamanoFuente: '18px',
+              color: '#ff0000',
+            }}
+            modo="viewer"
+          />
+        </SlideThemeProvider>,
+      );
+      const p = container.querySelector('p') as HTMLElement;
+      expect(p.style.fontSize).toBe('18px');
+      expect(p.style.color).toBe('rgb(255, 0, 0)');
+    });
+
+    it('sin tema en contexto → el rol no rompe nada (preset del rol)', () => {
+      const { container } = render(
+        <RenderText
+          block={{ tipo: 'texto', contenido: 'Pie', estiloTema: 'pie' }}
+          modo="viewer"
+        />,
+      );
+      const p = container.querySelector('p') as HTMLElement;
+      expect(p.style.fontSize).toBe('14px');
+    });
   });
 
   it('un RichDoc multi-nodo se envuelve en <div>', () => {

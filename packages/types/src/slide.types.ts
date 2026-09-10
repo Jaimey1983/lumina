@@ -52,6 +52,20 @@ export interface SlideThemeColors {
   fondo: string;
 }
 
+export type ThemeTextRole = 'titulo' | 'cuerpo' | 'pie';
+
+/** Ajustes tipográficos de un rol de tema (todos opcionales; sin valor = preset). */
+export interface ThemeTextStyle {
+  tamanoFuente?: number;
+  negrita?: boolean;
+  color?: string;
+  /** Nombre de la fuente; si falta se usa `SlideTheme.fuente`. */
+  fuente?: string;
+  interlineado?: number;
+  espaciadoLetras?: number;
+  transform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+}
+
 export interface SlideTheme {
   id: string;
   nombre: string;
@@ -60,6 +74,8 @@ export interface SlideTheme {
   /** Nombre de la fuente, ej: 'Inter', 'Poppins'. */
   fuente: string;
   colores: SlideThemeColors;
+  /** Estilos por rol tipográfico (`titulo`/`cuerpo`/`pie`) — Fase 5A. */
+  tipografia?: Partial<Record<ThemeTextRole, ThemeTextStyle>>;
 }
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -705,6 +721,12 @@ export interface TextBlock {
   contorno?: { color?: string; grosor?: number };
   /** Degradado aplicado al texto (`background-clip: text`) — Fase 5A. */
   degradado?: { desde: string; hasta: string; angulo?: number };
+  /**
+   * Rol tipográfico del tema del slide — Fase 5A. El bloque guarda solo el rol;
+   * los visuales se derivan del tema activo en render (el bloque gana sobre el
+   * tema, igual que la escala H1–H6). Cambiar de tema no persiste nada aquí.
+   */
+  estiloTema?: 'titulo' | 'cuerpo' | 'pie';
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
   x?: number;
   y?: number;
