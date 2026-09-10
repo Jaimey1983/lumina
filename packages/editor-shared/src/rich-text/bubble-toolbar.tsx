@@ -321,19 +321,30 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
 
   useEffect(() => {
     if (!editor) return;
+    // Recalcular en `selectionUpdate` (coalescido a un frame) + scroll/resize.
+    // NO en `transaction`: se disparaba en cada pulsación de tecla → un
+    // `coordsAtPos` × 2 + re-render del portal por carácter (jank en bloques
+    // grandes). `selectionUpdate` cubre el caso real (mover/extender selección).
+    let raf = 0;
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        recompute();
+      });
+    };
     recompute();
-    editor.on('selectionUpdate', recompute);
-    editor.on('transaction', recompute);
-    editor.on('focus', recompute);
-    editor.on('blur', recompute);
-    const onWin = () => recompute();
+    editor.on('selectionUpdate', schedule);
+    editor.on('focus', schedule);
+    editor.on('blur', schedule);
+    const onWin = () => schedule();
     window.addEventListener('scroll', onWin, true);
     window.addEventListener('resize', onWin);
     return () => {
-      editor.off('selectionUpdate', recompute);
-      editor.off('transaction', recompute);
-      editor.off('focus', recompute);
-      editor.off('blur', recompute);
+      if (raf) cancelAnimationFrame(raf);
+      editor.off('selectionUpdate', schedule);
+      editor.off('focus', schedule);
+      editor.off('blur', schedule);
       window.removeEventListener('scroll', onWin, true);
       window.removeEventListener('resize', onWin);
     };

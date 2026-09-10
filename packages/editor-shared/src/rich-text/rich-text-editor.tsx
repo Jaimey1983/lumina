@@ -91,7 +91,7 @@ export function RichTextEditor({
   });
 
   function commit(): void {
-    if (!editor || exitedRef.current) return;
+    if (!editor || editor.isDestroyed || exitedRef.current) return;
     if (editor.view.composing) return; // IME: no comitear a mitad de composición
     exitedRef.current = true;
     registerActiveRichEditor(null);
@@ -107,13 +107,18 @@ export function RichTextEditor({
 
   useEffect(() => {
     if (!editor) return;
+    exitedRef.current = false;
     const handleFocus = () => registerActiveRichEditor({ editor, ownerId });
-    const handleBlur = () => {
-      // No comitear si el foco pasó al panel de propiedades o a la barra flotante
-      // (marcados `data-rich-text-safe`): el editor sigue vivo para aplicar formato
-      // al rango. Comitea cuando el foco sale de verdad (canvas, otro bloque…).
-      const next = typeof document !== 'undefined' ? document.activeElement : null;
-      if (next && next.closest('[data-rich-text-safe]')) return;
+    const handleBlur = ({ event }: { event: FocusEvent }) => {
+      // Solo se comitea si el foco aterriza en un elemento REAL fuera del editor
+      // y fuera de la zona segura (panel / barra flotante). Un `blur` con
+      // `relatedTarget` nulo (arrastre de selección fuera de la caja, foco que
+      // sale de la ventana, re-render del árbol) NO cierra la edición — antes
+      // cualquier blur transitorio expulsaba al usuario a media selección.
+      const next = (event?.relatedTarget ?? null) as HTMLElement | null;
+      if (!next) return;
+      if (editor.view.dom.contains(next)) return;
+      if (typeof next.closest === 'function' && next.closest('[data-rich-text-safe]')) return;
       commit();
     };
     editor.on('focus', handleFocus);
@@ -128,6 +133,7 @@ export function RichTextEditor({
         editor.commands.blur();
       } else if (e.key === 'Enter' && e.shiftKey) {
         e.preventDefault();
+        commit(); // directo — no depender de que el `blur` dispare síncrono
         editor.commands.blur();
       }
     };
@@ -137,6 +143,10 @@ export function RichTextEditor({
       editor.off('focus', handleFocus);
       editor.off('blur', handleBlur);
       dom.removeEventListener('keydown', onKeyDown);
+      // Al desmontar (cambio de slide / bloque / `editingId`) se conserva la
+      // edición: es la señal canónica de "el usuario terminó". `commit()` está
+      // protegido contra doble ejecución (`exitedRef`) y editor destruido.
+      commit();
       registerActiveRichEditor(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
