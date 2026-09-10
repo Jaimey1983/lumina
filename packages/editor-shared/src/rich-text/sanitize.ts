@@ -117,7 +117,13 @@ export function sanitizeRichMark(mark: RichMark): RichMark | null {
         ? { t: 'script', value: mark.value }
         : null;
     case 'term':
-      return isColor(mark.glosaId) ? { t: 'term', glosaId: mark.glosaId } : null;
+      return isColor(mark.glosaId)
+        ? {
+            t: 'term',
+            glosaId: mark.glosaId,
+            ...(isColor(mark.definicion) ? { definicion: mark.definicion } : {}),
+          }
+        : null;
     case 'link': {
       const href = isSafeHref(mark.href) ? mark.href : undefined;
       const slideRef = Number.isInteger(mark.slideRef) ? mark.slideRef : undefined;

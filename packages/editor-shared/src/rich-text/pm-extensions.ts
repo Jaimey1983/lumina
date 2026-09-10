@@ -157,6 +157,14 @@ const Term = Mark.create({
         parseHTML: (el) => el.getAttribute('data-term'),
         renderHTML: (attrs) => (attrs.glosaId ? { 'data-term': attrs.glosaId } : {}),
       },
+      definicion: {
+        default: null,
+        parseHTML: (el) => el.getAttribute('data-definicion'),
+        renderHTML: (attrs) =>
+          attrs.definicion
+            ? { 'data-definicion': String(attrs.definicion), title: String(attrs.definicion) }
+            : {},
+      },
     };
   },
   parseHTML() {

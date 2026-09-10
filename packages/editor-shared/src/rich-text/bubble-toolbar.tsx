@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/core';
 import {
   Bold,
+  BookMarked,
   Code,
   EyeOff,
   Highlighter,
@@ -109,6 +110,31 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
       },
     },
     { id: 'unlink', label: 'Quitar enlace', icon: <Link2Off className="size-3.5" />, isDisabled: (e) => !e.isActive('link'), run: (e) => e.chain().focus().unsetLink().run() },
+    {
+      id: 'term',
+      label: 'Término del glosario',
+      icon: <BookMarked className="size-3.5" />,
+      isActive: (e) => e.isActive('term'),
+      run: (e) => {
+        if (e.isActive('term')) {
+          e.chain().focus().unsetMark('term').run();
+          return;
+        }
+        const prev = (e.getAttributes('term').definicion as string | undefined) ?? '';
+        const def =
+          typeof window !== 'undefined' ? window.prompt('Definición del término', prev) : null;
+        if (def === null) return;
+        const definicion = def.trim();
+        const glosaId =
+          (e.getAttributes('term').glosaId as string | undefined) ??
+          `t-${Math.random().toString(36).slice(2, 9)}`;
+        e
+          .chain()
+          .focus()
+          .setMark('term', { glosaId, definicion: definicion === '' ? null : definicion })
+          .run();
+      },
+    },
     { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
   ];
   if (onAiAssist) {

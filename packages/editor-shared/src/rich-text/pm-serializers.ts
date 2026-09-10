@@ -77,7 +77,13 @@ function runMarksToPm(marks: RichMark[] | undefined): PmJSON['marks'] {
         });
         break;
       case 'term':
-        out.push({ type: 'term', attrs: { glosaId: m.glosaId } });
+        out.push({
+          type: 'term',
+          attrs: {
+            glosaId: m.glosaId,
+            ...(m.definicion !== undefined ? { definicion: m.definicion } : {}),
+          },
+        });
         break;
       case 'spoiler':
         out.push({ type: 'spoiler' });
@@ -207,7 +213,15 @@ function pmMarksToRun(marks: PmJSON['marks']): RichMark[] | undefined {
       }
       case 'term':
         if (typeof mk.attrs?.glosaId === 'string') {
-          out.push({ t: 'term', glosaId: mk.attrs.glosaId });
+          const definicion =
+            typeof mk.attrs?.definicion === 'string' && mk.attrs.definicion !== ''
+              ? mk.attrs.definicion
+              : undefined;
+          out.push({
+            t: 'term',
+            glosaId: mk.attrs.glosaId,
+            ...(definicion !== undefined ? { definicion } : {}),
+          });
         }
         break;
       case 'spoiler':

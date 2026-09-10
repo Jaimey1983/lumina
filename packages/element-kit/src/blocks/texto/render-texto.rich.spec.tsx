@@ -80,6 +80,34 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(navigate).toHaveBeenCalledWith({ kind: 'ir_a', index: 2 });
   });
 
+  it('term con definición → <span data-term title aria-label tabindex>', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        {
+          type: 'paragraph',
+          runs: [
+            { text: 'ADN', marks: [{ t: 'term', glosaId: 'g1', definicion: 'ácido desoxirribonucleico' }] },
+          ],
+        },
+      ],
+    };
+    const out = html({ tipo: 'texto', contenido: 'ADN', contenidoRich: doc });
+    expect(out).toContain('data-term="g1"');
+    expect(out).toContain('title="ácido desoxirribonucleico"');
+    expect(out).toContain('tabindex="0"');
+  });
+
+  it('term sin definición → <span data-term> sin title', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'paragraph', runs: [{ text: 'x', marks: [{ t: 'term', glosaId: 'g2' }] }] }],
+    };
+    const out = html({ tipo: 'texto', contenido: 'x', contenidoRich: doc });
+    expect(out).toContain('data-term="g2"');
+    expect(out).not.toContain('title=');
+  });
+
   it('link.slideRef sin navigate → <span data-slide-ref>, no <a>', () => {
     const doc: RichDoc = {
       version: 1,

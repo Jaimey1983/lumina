@@ -431,7 +431,27 @@ function renderRun(run: RichRun, key: number, ctx?: RenderCtx): ReactNode {
     node = createElement(SpoilerRun, { revealed: ctx?.spoilerRevealed }, node);
   }
   const term = findMark(marks, 'term');
-  if (term) node = createElement('span', { 'data-term': term.glosaId }, node);
+  if (term) {
+    node = createElement(
+      'span',
+      {
+        'data-term': term.glosaId,
+        ...(term.definicion
+          ? {
+              title: term.definicion,
+              'aria-label': term.definicion,
+              tabIndex: 0,
+              style: {
+                textDecoration: 'underline dotted',
+                textUnderlineOffset: '0.15em',
+                cursor: 'help',
+              },
+            }
+          : {}),
+      },
+      node,
+    );
+  }
   const lang = findMark(marks, 'lang');
   if (lang) node = createElement('span', { lang: lang.value }, node);
   const link = findMark(marks, 'link');

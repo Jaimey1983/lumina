@@ -18,7 +18,7 @@ export type RichMark =
   | { t: 'tracking'; px: number }
   | { t: 'script'; value: 'sup' | 'sub' }
   | { t: 'link'; href?: string; slideRef?: number }
-  | { t: 'term'; glosaId: string }
+  | { t: 'term'; glosaId: string; definicion?: string }
   | { t: 'spoiler' }
   | { t: 'lang'; value: string };
 

@@ -117,6 +117,21 @@ describe('richToPmDoc / pmDocToRich', () => {
     expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
   });
 
+  it('term con definición sobrevive el viaje', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        {
+          type: 'paragraph',
+          runs: [
+            { text: 'fotosíntesis', marks: [{ t: 'term', glosaId: 't-1', definicion: 'proceso de las plantas' }] },
+          ],
+        },
+      ],
+    };
+    expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+  });
+
   it('link con href peligroso se descarta al volver a RichDoc', () => {
     const rich = pmDocToRich({
       type: 'doc',
