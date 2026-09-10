@@ -545,6 +545,8 @@ function BoxSection({
     (value.sombraDesenfoque ?? 0) > 0 ||
     !!value.sombraX ||
     !!value.sombraY;
+  const hasStroke = !!value.contornoColor || (value.contornoGrosor ?? 0) > 0;
+  const hasGradient = !!value.degradadoDesde && !!value.degradadoHasta;
 
   return (
     <InspectorSection title="Caja" defaultOpen={false}>
@@ -715,6 +717,104 @@ function BoxSection({
             <SliderThumb />
           </Slider>
         </div>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+        <Label className="text-xs">Contorno del texto</Label>
+        <Switch
+          checked={hasStroke}
+          disabled={disabled}
+          onCheckedChange={(on) =>
+            onChange(
+              on
+                ? { contornoColor: '#000000', contornoGrosor: 1 }
+                : { contornoColor: undefined, contornoGrosor: undefined },
+            )
+          }
+        />
+      </div>
+      {hasStroke ? (
+        <>
+          <Input
+            type="color"
+            className="h-8 w-full cursor-pointer p-1"
+            disabled={disabled}
+            value={toHexColor(value.contornoColor, '#000000')}
+            onChange={(e) => onChange({ contornoColor: e.target.value })}
+          />
+          <div className="space-y-1">
+            <Label className="text-[10px]">Grosor</Label>
+            <Slider
+              value={[value.contornoGrosor ?? 1]}
+              min={0.5}
+              max={8}
+              step={0.5}
+              disabled={disabled}
+              onValueChange={([v]) => onChange({ contornoGrosor: v })}
+            >
+              <SliderThumb />
+            </Slider>
+          </div>
+        </>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+        <Label className="text-xs">Degradado del texto</Label>
+        <Switch
+          checked={hasGradient}
+          disabled={disabled}
+          onCheckedChange={(on) =>
+            onChange(
+              on
+                ? { degradadoDesde: '#6366f1', degradadoHasta: '#ec4899', degradadoAngulo: 90 }
+                : { degradadoDesde: undefined, degradadoHasta: undefined, degradadoAngulo: undefined },
+            )
+          }
+        />
+      </div>
+      {hasGradient ? (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[10px]">Desde</Label>
+              <Input
+                type="color"
+                className="h-8 w-full cursor-pointer p-1"
+                disabled={disabled}
+                value={toHexColor(value.degradadoDesde, '#6366f1')}
+                onChange={(e) => onChange({ degradadoDesde: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px]">Hasta</Label>
+              <Input
+                type="color"
+                className="h-8 w-full cursor-pointer p-1"
+                disabled={disabled}
+                value={toHexColor(value.degradadoHasta, '#ec4899')}
+                onChange={(e) => onChange({ degradadoHasta: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px]">Ángulo</Label>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {value.degradadoAngulo ?? 90}°
+              </span>
+            </div>
+            <Slider
+              value={[value.degradadoAngulo ?? 90]}
+              min={0}
+              max={360}
+              step={5}
+              disabled={disabled}
+              onValueChange={([v]) => onChange({ degradadoAngulo: v })}
+            >
+              <SliderThumb />
+            </Slider>
+          </div>
+        </>
       ) : null}
     </InspectorSection>
   );

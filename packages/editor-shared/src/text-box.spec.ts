@@ -4,6 +4,7 @@ import {
   hexWithOpacity,
   textBlockBoxCss,
   textBlockColumnsCss,
+  textBlockDecorCss,
   textBoxValueFromBlock,
   applyTextBoxPatch,
 } from './text-box.js';
@@ -73,5 +74,62 @@ describe('textBoxValueFromBlock / applyTextBoxPatch', () => {
   });
   it('patch de columnas 1 → columnas = undefined', () => {
     expect(applyTextBoxPatch({ ...base, columnas: 3 }, { columnas: undefined }).columnas).toBeUndefined();
+  });
+});
+
+describe('contorno y degradado', () => {
+  it('round-trip de contorno', () => {
+    const b: TextBlock = { ...base, contorno: { color: '#f00', grosor: 2 } };
+    const v = textBoxValueFromBlock(b);
+    expect(v.contornoColor).toBe('#f00');
+    expect(v.contornoGrosor).toBe(2);
+  });
+
+  it('patch enciende contorno; grosor solo lo actualiza sin borrar el color', () => {
+    const on = applyTextBoxPatch(base, { contornoColor: '#000', contornoGrosor: 1 });
+    expect(on.contorno).toEqual({ color: '#000', grosor: 1 });
+    const bumped = applyTextBoxPatch(on, { contornoGrosor: 4 });
+    expect(bumped.contorno).toEqual({ color: '#000', grosor: 4 });
+  });
+
+  it('patch apaga contorno con ambos undefined', () => {
+    const b: TextBlock = { ...base, contorno: { color: '#000', grosor: 1 } };
+    const off = applyTextBoxPatch(b, { contornoColor: undefined, contornoGrosor: undefined });
+    expect(off.contorno).toBeUndefined();
+  });
+
+  it('patch de degradado: enciende, ajusta ángulo sin perderlo, apaga', () => {
+    const on = applyTextBoxPatch(base, {
+      degradadoDesde: '#111',
+      degradadoHasta: '#eee',
+      degradadoAngulo: 90,
+    });
+    expect(on.degradado).toEqual({ desde: '#111', hasta: '#eee', angulo: 90 });
+
+    const rotated = applyTextBoxPatch(on, { degradadoAngulo: 200 });
+    expect(rotated.degradado).toEqual({ desde: '#111', hasta: '#eee', angulo: 200 });
+
+    const off = applyTextBoxPatch(rotated, {
+      degradadoDesde: undefined,
+      degradadoHasta: undefined,
+      degradadoAngulo: undefined,
+    });
+    expect(off.degradado).toBeUndefined();
+  });
+
+  it('textBlockDecorCss: stroke + gradient con color transparente', () => {
+    const css = textBlockDecorCss({
+      ...base,
+      contorno: { color: '#000', grosor: 2 },
+      degradado: { desde: '#6366f1', hasta: '#ec4899', angulo: 45 },
+    });
+    expect(css.WebkitTextStroke).toBe('2px #000');
+    expect(css.backgroundImage).toBe('linear-gradient(45deg, #6366f1, #ec4899)');
+    expect(css.WebkitBackgroundClip).toBe('text');
+    expect(css.color).toBe('transparent');
+  });
+
+  it('textBlockDecorCss vacío cuando no hay nada', () => {
+    expect(textBlockDecorCss(base)).toEqual({});
   });
 });

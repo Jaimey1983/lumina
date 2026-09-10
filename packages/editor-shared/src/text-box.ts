@@ -16,6 +16,11 @@ export interface TextBoxValue {
   columnasBrecha?: number;
   medidaMax?: number;
   fondoTextoOpacidad?: number;
+  contornoColor?: string;
+  contornoGrosor?: number;
+  degradadoDesde?: string;
+  degradadoHasta?: string;
+  degradadoAngulo?: number;
 }
 
 export function textBoxValueFromBlock(block: TextBlock): TextBoxValue {
@@ -33,6 +38,11 @@ export function textBoxValueFromBlock(block: TextBlock): TextBoxValue {
     columnasBrecha: block.columnasBrecha,
     medidaMax: block.medidaMax,
     fondoTextoOpacidad: block.fondoTextoOpacidad,
+    contornoColor: block.contorno?.color,
+    contornoGrosor: block.contorno?.grosor,
+    degradadoDesde: block.degradado?.desde,
+    degradadoHasta: block.degradado?.hasta,
+    degradadoAngulo: block.degradado?.angulo,
   };
 }
 
@@ -67,7 +77,47 @@ export function applyTextBoxPatch(block: TextBlock, patch: Partial<TextBoxValue>
       ...('sombraY' in patch ? { y: patch.sombraY } : {}),
     };
   }
+  if ('contornoColor' in patch || 'contornoGrosor' in patch) {
+    const merged = {
+      ...block.contorno,
+      ...('contornoColor' in patch ? { color: patch.contornoColor } : {}),
+      ...('contornoGrosor' in patch ? { grosor: patch.contornoGrosor } : {}),
+    };
+    if (merged.color || merged.grosor) next.contorno = merged;
+    else delete next.contorno;
+  }
+  if ('degradadoDesde' in patch || 'degradadoHasta' in patch || 'degradadoAngulo' in patch) {
+    // El toggle apaga el degradado poniendo `degradadoDesde`/`degradadoHasta` a undefined.
+    if (
+      ('degradadoDesde' in patch && patch.degradadoDesde === undefined) ||
+      ('degradadoHasta' in patch && patch.degradadoHasta === undefined)
+    ) {
+      delete next.degradado;
+    } else {
+      const angulo = patch.degradadoAngulo ?? block.degradado?.angulo;
+      next.degradado = {
+        desde: patch.degradadoDesde ?? block.degradado?.desde ?? '#6366f1',
+        hasta: patch.degradadoHasta ?? block.degradado?.hasta ?? '#ec4899',
+        ...(angulo !== undefined ? { angulo } : {}),
+      };
+    }
+  }
   return next;
+}
+
+/** Estilo del ELEMENTO de texto para contorno/stroke y degradado (`background-clip: text`). */
+export function textBlockDecorCss(block: TextBlock): CSSProperties {
+  const out: CSSProperties = {};
+  if (block.contorno && (block.contorno.color || block.contorno.grosor)) {
+    out.WebkitTextStroke = `${block.contorno.grosor ?? 1}px ${block.contorno.color ?? '#000000'}`;
+  }
+  if (block.degradado?.desde && block.degradado?.hasta) {
+    out.backgroundImage = `linear-gradient(${block.degradado.angulo ?? 90}deg, ${block.degradado.desde}, ${block.degradado.hasta})`;
+    out.WebkitBackgroundClip = 'text';
+    out.backgroundClip = 'text';
+    out.color = 'transparent';
+  }
+  return out;
 }
 
 /** `#rrggbb` + opacidad 0–100 → `rgba(...)`; otros formatos pasan tal cual. */

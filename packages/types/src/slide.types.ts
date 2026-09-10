@@ -701,6 +701,10 @@ export interface TextBlock {
   };
   /** Curvatura del texto (−100…100; 0 = recto) — Fase 5A. */
   curvatura?: number;
+  /** Contorno/stroke del texto — Fase 5A. */
+  contorno?: { color?: string; grosor?: number };
+  /** Degradado aplicado al texto (`background-clip: text`) — Fase 5A. */
+  degradado?: { desde: string; hasta: string; angulo?: number };
   /** Canvas positioning — percentage of canvas dimensions (0-100). */
   x?: number;
   y?: number;

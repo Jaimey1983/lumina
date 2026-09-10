@@ -55,4 +55,26 @@ describe('RenderText — caja del bloque (Fase 5A)', () => {
       'rgba(250, 204, 21, 0.35)',
     );
   });
+
+  it('contorno → -webkit-text-stroke en el <p>', () => {
+    const { container } = render(
+      <RenderText block={block({ contorno: { color: '#000000', grosor: 2 } })} modo="viewer" />,
+    );
+    const p = container.querySelector('p') as HTMLElement;
+    expect(p.style.getPropertyValue('-webkit-text-stroke')).toBe('2px #000000');
+  });
+
+  it('degradado → linear-gradient + background-clip:text + color transparente', () => {
+    const { container } = render(
+      <RenderText
+        block={block({ degradado: { desde: '#6366f1', hasta: '#ec4899', angulo: 45 } })}
+        modo="viewer"
+      />,
+    );
+    const p = container.querySelector('p') as HTMLElement;
+    expect(p.style.backgroundImage).toBe('linear-gradient(45deg, #6366f1, #ec4899)');
+    // `-webkit-background-clip` no lo refleja la CSSOM de jsdom; el valor se asevera
+    // directo sobre `textBlockDecorCss` en editor-shared/text-box.spec.ts.
+    expect(p.style.color).toBe('transparent');
+  });
 });

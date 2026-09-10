@@ -21,6 +21,7 @@ import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/h
 import {
   textBlockBoxCss,
   textBlockColumnsCss,
+  textBlockDecorCss,
   hexWithOpacity,
 } from '@lumina/editor-shared/text-box';
 import {
@@ -126,7 +127,9 @@ export function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
   if (block.fondoTexto && block.fondoTextoOpacidad !== undefined) {
     out.backgroundColor = hexWithOpacity(block.fondoTexto, block.fondoTextoOpacidad);
   }
-  return { ...out, ...textBlockColumnsCss(block) };
+  // Contorno/degradado del texto van al final: el degradado fuerza `color: transparent`
+  // y debe ganar sobre el color de `typographyToCss`.
+  return { ...out, ...textBlockColumnsCss(block), ...textBlockDecorCss(block) };
 }
 
 export function InlineTextEditor({
