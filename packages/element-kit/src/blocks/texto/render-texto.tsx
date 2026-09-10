@@ -257,6 +257,44 @@ export interface RenderTextProps {
   onDiscard?: () => void;
 }
 
+/**
+ * Estilo BASE de la superficie de edición: fuente / tamaño / color / peso /
+ * alineación / interlineado efectivos del bloque (rol de tema → escala de nivel →
+ * ajustes del bloque). El estilo por nodo (Fase 1) vive en el `RichDoc` y llega
+ * como `style` inline en el editor; esta capa da coherencia al cursor, al estado
+ * vacío y a los runs sin estilo propio, para que editar == ver (WYSIWYG).
+ */
+function editorSurfaceStyle(
+  block: TextBlock,
+  theme: ReturnType<typeof useSlideTheme>['theme'],
+): CSSProperties {
+  const roleCss = block.estiloTema ? resolveThemeTextStyle(theme, block.estiloTema) : {};
+  const headingCss = textBlockHeadingFallbackStyle(block);
+  const base: CSSProperties = { ...headingCss, ...roleCss };
+  const out: CSSProperties = {
+    fontSize:
+      block.tamanoFuente && block.tamanoFuente !== ''
+        ? block.tamanoFuente
+        : base.fontSize,
+    fontWeight:
+      block.negrita === true ? 'bold' : block.negrita === false ? 'normal' : base.fontWeight,
+    fontStyle: block.cursiva ? 'italic' : undefined,
+    color: block.color ?? roleCss.color,
+    lineHeight: block.interlineado ?? base.lineHeight,
+    letterSpacing:
+      block.espaciadoLetras !== undefined
+        ? `${block.espaciadoLetras}px`
+        : base.letterSpacing,
+    textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
+  };
+  if (block.fuente && block.fuente !== '') {
+    out.fontFamily = fontFamilyWithFallback(block.fuente);
+  } else if (roleCss.fontFamily) {
+    out.fontFamily = roleCss.fontFamily;
+  }
+  return out;
+}
+
 export function RenderText({
   block,
   modo = 'viewer',
@@ -269,6 +307,7 @@ export function RenderText({
   const { theme } = useSlideTheme();
 
   if (isEditing && onCommit && onDiscard) {
+    const box = textBlockBoxCss(block);
     return (
       <Suspense fallback={<div style={{ position: 'absolute', inset: 0 }} />}>
         <RichTextEditorLazy
@@ -276,7 +315,12 @@ export function RenderText({
           onCommit={onCommit}
           onDiscard={onDiscard}
           placeholder={emptyTextPlaceholderLabel(block)}
-          style={{ position: 'absolute', inset: 0 }}
+          style={{
+            ...editorSurfaceStyle(block, theme),
+            ...(box ?? {}),
+            position: 'absolute',
+            inset: 0,
+          }}
         />
       </Suspense>
     );

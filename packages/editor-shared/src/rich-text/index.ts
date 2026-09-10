@@ -43,6 +43,7 @@ export {
 export {
   applyTypographyToSelection,
   applyHeadingLevelToSelection,
+  applyBlockStyleToEditor,
   splitTypographyPatch,
   RANGE_TYPOGRAPHY_KEYS,
 } from './apply-typography.js';

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { TextBlock, Block, HeadingLevel } from '@lumina/types/slide';
 import { TypographyInspector } from '@lumina/editor-shared/typography-inspector';
 import {
@@ -12,10 +13,12 @@ import {
 } from '@lumina/editor-shared/typography';
 import {
   getActiveRichEditor,
+  subscribeActiveRichEditor,
   splitTypographyPatch,
   applyTypographyToSelection,
   applyHeadingLevelToSelection,
 } from '@lumina/editor-shared/rich-text';
+import { HEADING_SCALE, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
 import {
   textBoxValueFromBlock,
   applyTextBoxPatch,
@@ -32,12 +35,103 @@ export interface TextoPropertiesProps {
   slideBackground?: string;
 }
 
-/** Editor de texto enriquecido activo con una selección de rango viva. */
-function activeSelectionEditor() {
-  const active = getActiveRichEditor();
-  if (!active) return null;
-  const sel = active.editor.state.selection;
-  return sel.empty ? null : active.editor;
+/** Editor de texto enriquecido activo (con o sin selección de rango). */
+function activeEditor() {
+  return getActiveRichEditor()?.editor ?? null;
+}
+
+/**
+ * Limpia los ajustes tipográficos "derivados" de un nivel al cambiar de nivel:
+ * si el tamaño actual del bloque coincide con la escala del nivel previo (o no
+ * hay tamaño explícito), se borran para que la escala del nuevo nivel mande.
+ * Un tamaño manual distinto se respeta.
+ */
+function rescaleBlockForLevel(b: TextBlock, nivel?: HeadingLevel): TextBlock {
+  const next: TextBlock = { ...b };
+  if (nivel === undefined) delete next.nivel;
+  else next.nivel = nivel;
+
+  const prevScale = b.nivel ? HEADING_SCALE[b.nivel] : undefined;
+  const curPx = effectiveFontSizePx(b.tamanoFuente, b.nivel);
+  const derived =
+    !b.tamanoFuente || b.tamanoFuente === '' || (prevScale && curPx === prevScale.sizePx);
+  if (derived) {
+    delete next.tamanoFuente;
+    delete next.negrita;
+    delete next.interlineado;
+    delete next.espaciadoLetras;
+  }
+  return next;
+}
+
+/**
+ * Re-renderiza el panel cuando cambia el editor activo o su selección, para que
+ * los valores mostrados reflejen el estilo del nodo/rango bajo el cursor y no
+ * solo `block.*` (que va por detrás hasta el commit).
+ */
+function useActiveEditorTick(): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setTick((n) => n + 1);
+    const unsub = subscribeActiveRichEditor(() => {
+      bump();
+      const ed = getActiveRichEditor()?.editor;
+      if (ed) {
+        ed.on('selectionUpdate', bump);
+        ed.on('transaction', bump);
+      }
+    });
+    const ed = getActiveRichEditor()?.editor;
+    if (ed) {
+      ed.on('selectionUpdate', bump);
+      ed.on('transaction', bump);
+    }
+    return () => {
+      unsub();
+      const cur = getActiveRichEditor()?.editor;
+      if (cur) {
+        cur.off('selectionUpdate', bump);
+        cur.off('transaction', bump);
+      }
+    };
+  }, []);
+  return tick;
+}
+
+/** Estilo tipográfico efectivo bajo el cursor: `block.*` + atributos del nodo activo. */
+function effectiveTypography(block: TextBlock): TypographyValue {
+  const base = typographyFromTextBlock(block);
+  const ed = getActiveRichEditor()?.editor;
+  if (!ed) return base;
+  const isHeading = ed.isActive('heading');
+  const a = { ...ed.getAttributes('paragraph'), ...ed.getAttributes(isHeading ? 'heading' : 'paragraph') };
+  const ts = ed.getAttributes('textStyle');
+  const out: TypographyValue = { ...base };
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+  const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined);
+  out.fontFamily = str(ts.fontFamily) ?? str(a.fontFamily) ?? out.fontFamily;
+  const tsSize = str(ts.fontSize) ? parseFloat(String(ts.fontSize)) : undefined;
+  out.fontSize = num(tsSize) ?? num(a.fontSize) ?? out.fontSize;
+  out.color = str(ts.color) ?? str(a.color) ?? out.color;
+  if (ed.isActive('bold') || a.bold === true) out.fontWeight = 'bold';
+  else if (a.bold === false) out.fontWeight = 'normal';
+  if (ed.isActive('italic') || a.italic === true) out.fontStyle = 'italic';
+  else if (a.italic === false) out.fontStyle = 'normal';
+  if (ed.isActive('underline') || a.underline === true) out.underline = true;
+  else if (a.underline === false) out.underline = false;
+  if (num(a.lineHeight) !== undefined) out.lineHeight = num(a.lineHeight);
+  const tsTrack = str(ts.letterSpacing) ? parseFloat(String(ts.letterSpacing)) : undefined;
+  out.letterSpacing = num(tsTrack) ?? num(a.letterSpacing) ?? out.letterSpacing;
+  if (typeof a.align === 'string') {
+    const map: Record<string, TypographyValue['align']> = {
+      izquierda: 'left',
+      centro: 'center',
+      derecha: 'right',
+      justificado: 'justify',
+    };
+    if (map[a.align]) out.align = map[a.align];
+  }
+  return out;
 }
 
 export function TextoProperties({
@@ -48,6 +142,7 @@ export function TextoProperties({
   onChange,
   slideBackground,
 }: TextoPropertiesProps) {
+  useActiveEditorTick();
   const applyBlockPatch = (patch: Partial<TypographyValue>) => {
     const mapped = textBlockPatchFromTypography(patch);
     const apply = (b: Block): Block => (b.tipo === 'texto' ? { ...b, ...mapped } : b);
@@ -63,57 +158,37 @@ export function TextoProperties({
     }
   };
 
+  /** Cambio de nivel — reescala tamaño/peso/interlineado/tracking al nuevo nivel. */
   const handleHeadingLevelChange = (nivel?: HeadingLevel) => {
-    // Con una selección de rango viva, el nivel se aplica al nodo del editor…
-    const editor = activeSelectionEditor();
+    const editor = activeEditor();
     if (editor) {
       applyHeadingLevelToSelection(editor, nivel);
-      // …y se refleja en `block.nivel` para que el panel y la escala no diverjan
-      // (el commit del editor lo resincroniza igualmente vía syncTextBlockFromRichDoc).
-      const syncNivel = (b: Block): Block => {
-        if (b.tipo !== 'texto') return b;
-        if (nivel === undefined) {
-          const rest = { ...b };
-          delete rest.nivel;
-          return rest;
-        }
-        return { ...b, nivel };
-      };
-      if (applyNow) void applyNow(syncNivel);
-      else if (onChange) onChange(syncNivel(block) as TextBlock);
-      return;
     }
-    if (applyNow) {
-      void applyNow((b) => {
-        if (b.tipo !== 'texto') return b;
-        if (nivel === undefined) {
-          const rest = { ...b };
-          delete rest.nivel;
-          return rest;
-        }
-        return { ...b, nivel };
-      });
-    } else if (onChange) {
-      if (nivel === undefined) {
-        const rest = { ...block };
-        delete rest.nivel;
-        onChange(rest);
-      } else {
-        onChange({ ...block, nivel });
-      }
-    }
+    // El bloque siempre se reescala (panel + render sin editor + tras el commit).
+    const apply = (b: Block): Block =>
+      b.tipo === 'texto' ? rescaleBlockForLevel(b, nivel) : b;
+    clearDebounce?.();
+    if (applyNow) void applyNow(apply);
+    else if (onChange) onChange(rescaleBlockForLevel(block, nivel));
   };
 
   const handleTypographyChange = (patch: Partial<TypographyValue>) => {
-    // Si hay un `<RichTextEditor>` activo con selección: las claves de rango
+    // Con `<RichTextEditor>` activo: con selección de rango, las claves de rango
     // (fuente, tamaño, color, peso, itálica, subrayado, tracking, alineación) van
-    // a la selección; el resto (interlineado, transform, opacidad, fondo, lista…)
-    // sigue siendo del bloque. Panel derecho = bloque · barra flotante = rango.
-    const editor = activeSelectionEditor();
+    // como MARCAS sobre la selección; SIN selección van como estilo del NODO a
+    // todo el documento (antes era no-op — Problema 6). El resto (interlineado,
+    // transform, opacidad, fondo, lista…) es del bloque en ambos casos.
+    const editor = activeEditor();
     if (editor) {
-      const { range, block: blockPatch } = splitTypographyPatch(patch);
-      if (Object.keys(range).length > 0) applyTypographyToSelection(editor, range);
-      if (Object.keys(blockPatch).length > 0) applyBlockPatch(blockPatch);
+      const collapsed = editor.state.selection.empty;
+      applyTypographyToSelection(editor, patch);
+      // Coherencia del panel / post-commit: sin selección → todo al bloque; con
+      // selección → solo las claves de bloque (las de rango viven en la marca).
+      if (collapsed) applyBlockPatch(patch);
+      else {
+        const { block: blockPatch } = splitTypographyPatch(patch);
+        if (Object.keys(blockPatch).length > 0) applyBlockPatch(blockPatch);
+      }
       return;
     }
     applyBlockPatch(patch);
@@ -129,7 +204,7 @@ export function TextoProperties({
 
   return (
     <TypographyInspector
-      value={typographyFromTextBlock(block)}
+      value={effectiveTypography(block)}
       sizeMin={TEXT_BLOCK_FONT_SIZE_MIN}
       sizeMax={TEXT_BLOCK_FONT_SIZE_MAX}
       defaultSize={24}

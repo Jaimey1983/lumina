@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/core';
 import type { RichDoc } from '@lumina/types/rich-text';
 import {
   applyTypographyToSelection,
+  applyHeadingLevelToSelection,
   getActiveRichEditor,
   registerActiveRichEditor,
 } from '@lumina/editor-shared/rich-text';
@@ -68,11 +69,43 @@ describe('Formato por selección (Fase 2C/2D — resuelve P1)', () => {
     expect(attrs.fontSize).toBe('28px');
   });
 
-  it('selección vacía → no aplica nada', async () => {
+  it('selección vacía → aplica el estilo al NODO de todo el documento (no a marcas)', async () => {
     const editor = await mountAndGetEditor('sin selección');
     editor.commands.setTextSelection({ from: 3, to: 3 });
-    expect(applyTypographyToSelection(editor, { fontWeight: 'bold' })).toBe(false);
+    expect(applyTypographyToSelection(editor, { fontWeight: 'bold' })).toBe(true);
+    // No es una marca de rango: es atributo del nodo `paragraph`.
     expect(editor.isActive('bold')).toBe(false);
+    expect(editor.getAttributes('paragraph').bold).toBe(true);
+  });
+
+  it('selección vacía + color/tamaño → atributos del nodo, no textStyle', async () => {
+    const editor = await mountAndGetEditor('bloque entero');
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    applyTypographyToSelection(editor, { color: '#0000ff', fontSize: 30 });
+    const a = editor.getAttributes('paragraph');
+    expect(a.color).toBe('#0000ff');
+    expect(a.fontSize).toBe(30);
+    expect(editor.getAttributes('textStyle').color).toBeUndefined();
+  });
+
+  it('cambiar a un nivel de encabezado con cursor colapsado convierte todo el bloque', async () => {
+    const editor = await mountAndGetEditor('Mi título');
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    applyHeadingLevelToSelection(editor, 1);
+    expect(editor.isActive('heading', { level: 1 })).toBe(true);
+    // Tamaño "derivado" (no había) → se limpia → la escala H1 del CSS manda.
+    expect(editor.getAttributes('heading').fontSize).toBeFalsy();
+  });
+
+  it('un tamaño manual distinto de la escala se respeta al cambiar de nivel', async () => {
+    const editor = await mountAndGetEditor('Texto');
+    editor.commands.setTextSelection({ from: 1, to: 6 });
+    applyTypographyToSelection(editor, { fontSize: 30 }); // marca de rango
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    // aplica tamaño 55 al nodo (no escala de ningún nivel)
+    applyTypographyToSelection(editor, { fontSize: 55 });
+    applyHeadingLevelToSelection(editor, 2);
+    expect(editor.getAttributes('heading').fontSize).toBe(55);
   });
 
   it('<BubbleToolbar> monta sin romper con un editor', async () => {

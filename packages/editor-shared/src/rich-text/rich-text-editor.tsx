@@ -7,12 +7,23 @@ import { richTextExtensions } from './pm-extensions.js';
 import { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
 import { registerActiveRichEditor } from './active-editor.js';
 import { BubbleToolbar } from './bubble-toolbar.js';
+import { HEADING_SCALE } from '../heading-scale.js';
 
 const STYLE_ID = 'lumina-rich-editor-styles';
+// Escala H1–H6 como *fallback* del editor (Tailwind resetea `h1..h6`). El estilo
+// por nodo (Fase 1) llega como `style` inline y siempre gana sobre estas reglas
+// → editar se ve igual que el render.
+const HEADING_CSS = ([1, 2, 3, 4, 5, 6] as const)
+  .map((n) => {
+    const s = HEADING_SCALE[n];
+    return `.lumina-rich-editor h${n}{font-size:${s.sizePx}px;font-weight:${s.weight};line-height:${s.lineHeight};letter-spacing:${s.trackingPx}px;margin:0}`;
+  })
+  .join('\n');
 const EDITOR_CSS = `
 .lumina-rich-editor{outline:none;white-space:pre-wrap;word-break:break-word;height:100%;width:100%;overflow-y:auto;box-sizing:border-box;padding:2px}
 .lumina-rich-editor:focus,.lumina-rich-editor:focus-visible{outline:none}
 .lumina-rich-editor p{margin:0}
+${HEADING_CSS}
 .lumina-rich-editor ul,.lumina-rich-editor ol{margin:0;padding-left:1.2em}
 .lumina-rich-editor blockquote{margin:0;padding-left:0.8em;border-left:3px solid rgba(15,23,42,.15)}
 .lumina-rich-editor pre{margin:0}
