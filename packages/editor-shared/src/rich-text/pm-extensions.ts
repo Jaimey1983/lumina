@@ -34,6 +34,7 @@ import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
+import { TableKit } from '@tiptap/extension-table';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { isSafeHref } from './sanitize.js';
 
@@ -327,6 +328,7 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
     Superscript,
     TaskList,
     TaskItem.configure({ nested: false }),
+    TableKit.configure({ table: { resizable: false } }),
     NodeAlign,
     LinkSlideRef,
     Term,

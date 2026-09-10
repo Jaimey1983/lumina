@@ -54,6 +54,8 @@ const NODE_TYPES = new Set<RichNodeType>([
   'hr',
   'math',
   'table',
+  'tableRow',
+  'tableCell',
 ]);
 
 const isColor = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
@@ -188,6 +190,15 @@ function sanitizeNode(node: RichNode): RichNode | null {
   if (node.variant === 'nota' || node.variant === 'aviso' || node.variant === 'tip') {
     out.variant = node.variant;
   }
+  if (node.type === 'tableCell') {
+    if (node.header === true) out.header = true;
+    if (Number.isInteger(node.colspan) && (node.colspan as number) > 1) {
+      out.colspan = node.colspan;
+    }
+    if (Number.isInteger(node.rowspan) && (node.rowspan as number) > 1) {
+      out.rowspan = node.rowspan;
+    }
+  }
 
   if (Array.isArray(node.runs)) {
     const runs = mergeRuns(
@@ -202,14 +213,15 @@ function sanitizeNode(node: RichNode): RichNode | null {
     if (children.length > 0) out.children = children;
   }
 
-  // Listas/tablas sin hijos y `math` sin fórmula no aportan nada; el resto
-  // (paragraph, heading, blockquote, codeBlock, listItem, callout, hr) son
-  // bloques válidos aunque estén vacíos.
+  // Listas/tablas/filas sin hijos y `math` sin fórmula no aportan nada; el resto
+  // (paragraph, heading, blockquote, codeBlock, listItem, callout, hr, tableCell)
+  // son bloques válidos aunque estén vacíos.
   if (
     (node.type === 'bulletList' ||
       node.type === 'orderedList' ||
       node.type === 'taskList' ||
-      node.type === 'table') &&
+      node.type === 'table' ||
+      node.type === 'tableRow') &&
     out.children === undefined
   ) {
     return null;

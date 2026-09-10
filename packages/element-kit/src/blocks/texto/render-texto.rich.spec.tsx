@@ -163,6 +163,36 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(container.querySelector('li[data-checked="true"]')).not.toBeNull();
   });
 
+  it('table → <table> con <th> en cabecera y <td> en el cuerpo', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        {
+          type: 'table',
+          children: [
+            {
+              type: 'tableRow',
+              children: [
+                { type: 'tableCell', header: true, runs: [{ text: 'Col' }] },
+              ],
+            },
+            {
+              type: 'tableRow',
+              children: [{ type: 'tableCell', runs: [{ text: 'val' }] }],
+            },
+          ],
+        },
+      ],
+    };
+    const { container } = render(
+      <RenderText block={{ tipo: 'texto', contenido: 'Col\nval', contenidoRich: doc }} modo="viewer" />,
+    );
+    expect(container.querySelector('table[data-table]')).not.toBeNull();
+    expect(container.querySelector('th')?.textContent).toBe('Col');
+    expect(container.querySelector('td')?.textContent).toBe('val');
+    expect(container.querySelectorAll('tr')).toHaveLength(2);
+  });
+
   it('callout → <div data-callout> con borde e íconos de color por variante', () => {
     const doc: RichDoc = {
       version: 1,

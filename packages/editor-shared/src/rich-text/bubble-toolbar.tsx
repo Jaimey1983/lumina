@@ -25,6 +25,7 @@ import {
   ListChecks,
   Minus,
   Outdent,
+  Table as TableIcon,
   Plus,
   Presentation,
   RemoveFormatting,
@@ -190,6 +191,20 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
         e.isActive('callout')
           ? e.chain().focus().setNode('paragraph').run()
           : e.chain().focus().setNode('callout', { variant: 'nota' }).run(),
+    },
+    {
+      id: 'table',
+      label: 'Insertar / quitar tabla',
+      icon: <TableIcon className="size-3.5" />,
+      isActive: (e) => e.isActive('table'),
+      run: (e) =>
+        e.isActive('table')
+          ? e.chain().focus().deleteTable().run()
+          : e
+              .chain()
+              .focus()
+              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .run(),
     },
     { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
   ];

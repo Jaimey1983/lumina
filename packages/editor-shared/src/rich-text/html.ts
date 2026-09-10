@@ -114,8 +114,27 @@ function nodeToHtml(node: RichNode): string {
     }
     case 'listItem':
       return `<li>${runsToHtml(node.runs)}</li>`;
-    case 'table':
-      return `<div data-table="1">${(node.children ?? []).map(nodeToHtml).join('')}</div>`;
+    case 'table': {
+      const rows = (node.children ?? [])
+        .map((row) => {
+          const cells = (row.children ?? [])
+            .map((cell) => {
+              const tag = cell.header ? 'th' : 'td';
+              const attrs = [
+                cell.colspan && cell.colspan > 1 ? ` colspan="${cell.colspan}"` : '',
+                cell.rowspan && cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : '',
+              ].join('');
+              return `<${tag}${attrs}>${runsToHtml(cell.runs)}</${tag}>`;
+            })
+            .join('');
+          return `<tr>${cells}</tr>`;
+        })
+        .join('');
+      return `<table data-table="1"><tbody>${rows}</tbody></table>`;
+    }
+    case 'tableRow':
+    case 'tableCell':
+      return '';
     default:
       return '';
   }

@@ -610,6 +610,52 @@ function richNodeToElement(
         },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
+    case 'table': {
+      const cellBase: CSSProperties = {
+        border: '1px solid #cbd5e1',
+        padding: '0.35em 0.55em',
+        verticalAlign: 'top',
+      };
+      return createElement(
+        'table',
+        {
+          key,
+          'data-table': '1',
+          style: {
+            ...nodeSpacingCss(node),
+            borderCollapse: 'collapse',
+            width: '100%',
+          },
+        },
+        createElement(
+          'tbody',
+          null,
+          (node.children ?? []).map((row, ri) =>
+            createElement(
+              'tr',
+              { key: ri },
+              (row.children ?? []).map((cell, ci) =>
+                createElement(
+                  cell.header ? 'th' : 'td',
+                  {
+                    key: ci,
+                    ...(cell.colspan && cell.colspan > 1 ? { colSpan: cell.colspan } : {}),
+                    ...(cell.rowspan && cell.rowspan > 1 ? { rowSpan: cell.rowspan } : {}),
+                    style: cell.header
+                      ? { ...cellBase, background: '#f1f5f9', fontWeight: 600, textAlign: 'left' }
+                      : cellBase,
+                  },
+                  renderRuns(cell.runs, ctx),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    case 'tableRow':
+    case 'tableCell':
+      return null;
     case 'listItem': {
       const soloTexto =
         node.runs && node.runs.length === 1 && !node.runs[0]!.marks

@@ -138,6 +138,28 @@ function listItemFromNode(node: RichNode, task: boolean): PmJSON {
     : { type: 'listItem', content: [body] };
 }
 
+function tableCellToPm(cell: RichNode): PmJSON {
+  const attrs: Record<string, unknown> = {};
+  if (Number.isInteger(cell.colspan) && (cell.colspan as number) > 1) {
+    attrs.colspan = cell.colspan;
+  }
+  if (Number.isInteger(cell.rowspan) && (cell.rowspan as number) > 1) {
+    attrs.rowspan = cell.rowspan;
+  }
+  return {
+    type: cell.header ? 'tableHeader' : 'tableCell',
+    ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
+    content: [paragraphFromRuns(cell.runs)],
+  };
+}
+
+function tableRowToPm(row: RichNode): PmJSON {
+  return {
+    type: 'tableRow',
+    content: (row.children ?? []).map(tableCellToPm),
+  };
+}
+
 function nodeToPm(node: RichNode): PmJSON | null {
   switch (node.type) {
     case 'paragraph': {
@@ -179,7 +201,11 @@ function nodeToPm(node: RichNode): PmJSON | null {
         attrs: { variant: node.variant ?? 'nota' },
         content: runsToPmText(node.runs),
       };
-    // math / table: el editor no los edita todavía (Fase 5B posterior).
+    case 'table': {
+      const rows = (node.children ?? []).map(tableRowToPm).filter((r) => r.content?.length);
+      return rows.length > 0 ? { type: 'table', content: rows } : null;
+    }
+    // math: el editor lo trata como nodo atómico (ver pm-extensions).
     default:
       return null;
   }
@@ -373,9 +399,35 @@ function pmNodeToRich(node: PmJSON): RichNode | null {
       const runs = pmInlineToRuns(node.content);
       return { type: 'callout', variant, ...(runs ? { runs } : {}) };
     }
+    case 'table': {
+      const rows = (node.content ?? [])
+        .map(pmTableRowToRich)
+        .filter((r): r is RichNode => r !== null);
+      return rows.length > 0 ? { type: 'table', children: rows } : null;
+    }
     default:
       return null;
   }
+}
+
+function pmTableCellToRich(cell: PmJSON): RichNode {
+  const out: RichNode = {
+    type: 'tableCell',
+    runs: firstParagraphRuns(cell) ?? [{ text: '' }],
+  };
+  if (cell.type === 'tableHeader') out.header = true;
+  const colspan = Number(cell.attrs?.colspan);
+  const rowspan = Number(cell.attrs?.rowspan);
+  if (Number.isInteger(colspan) && colspan > 1) out.colspan = colspan;
+  if (Number.isInteger(rowspan) && rowspan > 1) out.rowspan = rowspan;
+  return out;
+}
+
+function pmTableRowToRich(row: PmJSON): RichNode | null {
+  const cells = (row.content ?? [])
+    .filter((c) => c.type === 'tableCell' || c.type === 'tableHeader')
+    .map(pmTableCellToRich);
+  return cells.length > 0 ? { type: 'tableRow', children: cells } : null;
 }
 
 /** JSON de documento TipTap → `RichDoc` saneado. */

@@ -117,6 +117,34 @@ describe('richToPmDoc / pmDocToRich', () => {
     expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
   });
 
+  it('tabla (con fila de cabecera) sobrevive el viaje', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        {
+          type: 'table',
+          children: [
+            {
+              type: 'tableRow',
+              children: [
+                { type: 'tableCell', header: true, runs: [{ text: 'A' }] },
+                { type: 'tableCell', header: true, runs: [{ text: 'B' }] },
+              ],
+            },
+            {
+              type: 'tableRow',
+              children: [
+                { type: 'tableCell', runs: [{ text: '1', marks: [{ t: 'bold' }] }] },
+                { type: 'tableCell', runs: [{ text: '2' }] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+  });
+
   it('callout (nota/aviso/tip) sobrevive el viaje', () => {
     const doc: RichDoc = {
       version: 1,

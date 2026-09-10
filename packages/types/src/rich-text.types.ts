@@ -42,7 +42,9 @@ export type RichNodeType =
   | 'callout'
   | 'hr'
   | 'math'
-  | 'table';
+  | 'table'
+  | 'tableRow'
+  | 'tableCell';
 
 export interface RichNode {
   type: RichNodeType;
@@ -62,9 +64,14 @@ export interface RichNode {
   lang?: string;
   /** callout */
   variant?: 'nota' | 'aviso' | 'tip';
+  /** tableCell — celda de cabecera (`<th>`) */
+  header?: boolean;
+  /** tableCell — celdas / filas que abarca */
+  colspan?: number;
+  rowspan?: number;
   /** hojas de texto (paragraph, heading, listItem, blockquote, codeBlock) */
   runs?: RichRun[];
-  /** hijos de bloque (listas, blockquote, table) */
+  /** hijos de bloque (listas, blockquote, table→tableRow→tableCell) */
   children?: RichNode[];
 }
 
