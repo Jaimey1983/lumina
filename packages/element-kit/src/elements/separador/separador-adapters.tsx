@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { SeparadorConfig, SeparadorEstado } from "./separador-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function SeparadorEditor({
@@ -28,24 +29,14 @@ export function SeparadorViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function SeparadorPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<SeparadorEstado, SeparadorConfig>): ReactElement {
-  return (
-    <LegacySeparadorProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "separador") {
-          onChange(siguiente as DividerBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "separador") {
-          onChange(siguiente as DividerBlock);
-        }
-      }}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "separador",
   );
+  return <LegacySeparadorProperties block={estado} {...applyProps} />;
 }

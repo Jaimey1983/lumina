@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { CodigoConfig, CodigoEstado } from "./codigo-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function CodigoEditor({
@@ -28,25 +29,14 @@ export function CodigoViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function CodigoPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<CodigoEstado, CodigoConfig>): ReactElement {
-  return (
-    <LegacyCodigoProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "codigo") {
-          onChange(siguiente as CodeBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "codigo") {
-          onChange(siguiente as CodeBlock);
-        }
-      }}
-      clearDebounce={() => undefined}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "codigo",
   );
+  return <LegacyCodigoProperties block={estado} {...applyProps} />;
 }

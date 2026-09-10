@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { AudioConfig, AudioEstado } from "./audio-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function AudioEditor({
@@ -28,25 +29,14 @@ export function AudioViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function AudioPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<AudioEstado, AudioConfig>): ReactElement {
-  return (
-    <LegacyAudioProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "audio") {
-          onChange(siguiente as AudioBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "audio") {
-          onChange(siguiente as AudioBlock);
-        }
-      }}
-      clearDebounce={() => undefined}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "audio",
   );
+  return <LegacyAudioProperties block={estado} {...applyProps} />;
 }

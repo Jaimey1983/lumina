@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { CitaConfig, CitaEstado } from "./cita-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function CitaEditor({
@@ -28,25 +29,14 @@ export function CitaViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function CitaPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<CitaEstado, CitaConfig>): ReactElement {
-  return (
-    <LegacyCitaProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "cita") {
-          onChange(siguiente as QuoteBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "cita") {
-          onChange(siguiente as QuoteBlock);
-        }
-      }}
-      clearDebounce={() => undefined}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "cita",
   );
+  return <LegacyCitaProperties block={estado} {...applyProps} />;
 }

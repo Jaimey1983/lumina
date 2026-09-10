@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { cloneSlideBlocks } from '../../lib/canvas-history';
+import type { EditorPersistHost } from '@lumina/editor-shared/editor-persist-host';
 import { toast } from 'sonner';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import { backgroundColorForContrast } from '@lumina/editor-shared/contrast';
@@ -146,6 +148,13 @@ export interface PropertiesPanelProps {
   selectedBlockId: string | null;
   selectedBlockIds?: string[];
   onApplyBloques: (next: Block[]) => Promise<boolean>;
+  onApplyLocal?: (next: Block[]) => void;
+  onApplyPersist?: (
+    next: Block[],
+    opts: { previousBloques: Block[]; mode?: 'immediate' | 'debounced' },
+  ) => Promise<boolean>;
+  onCancelScheduledPersist?: () => void;
+  onFlushScheduledPersist?: () => Promise<boolean>;
   flipCardsInnerSelection?: FlipCardsInnerSelection | null;
   tabsInnerSelection?: TabsInnerSelection | null;
   carouselInnerSelection?: CarouselInnerSelection | null;
@@ -165,6 +174,10 @@ export function PropertiesPanel({
   selectedBlockId,
   selectedBlockIds = [],
   onApplyBloques,
+  onApplyLocal,
+  onApplyPersist,
+  onCancelScheduledPersist,
+  onFlushScheduledPersist,
   flipCardsInnerSelection = null,
   tabsInnerSelection = null,
   carouselInnerSelection = null,
@@ -184,13 +197,16 @@ export function PropertiesPanel({
   pathRef.current = selectedBlockId;
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const baselineBloquesRef = useRef<Block[] | null>(null);
 
   const clearDebounce = useCallback(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-  }, []);
+    baselineBloquesRef.current = null;
+    onCancelScheduledPersist?.();
+  }, [onCancelScheduledPersist]);
 
   useEffect(() => () => clearDebounce(), [clearDebounce]);
 
@@ -202,36 +218,94 @@ export function PropertiesPanel({
     setActiveTab('propiedades');
   }, [selectedBlockId]);
 
+  const applyAtPath = useCallback((fn: (b: Block) => Block): Block[] | null => {
+    const path = pathRef.current;
+    if (!path) return null;
+    return updateBlockAtPath(bloquesRef.current, path, fn);
+  }, []);
+
   const applyNow = useCallback(
     async (fn: (b: Block) => Block) => {
-      const path = pathRef.current;
-      if (!path) return;
       clearDebounce();
-      const cur = bloquesRef.current;
-      const next = updateBlockAtPath(cur, path, fn);
+      const next = applyAtPath(fn);
+      if (!next) return;
+      if (onApplyLocal && onApplyPersist) {
+        const previous = cloneSlideBlocks(bloquesRef.current);
+        onApplyLocal(next);
+        const ok = await onApplyPersist(next, {
+          previousBloques: previous,
+          mode: 'immediate',
+        });
+        if (!ok) toast.error('No se pudo guardar');
+        return;
+      }
       const ok = await onApplyBloques(next);
       if (!ok) toast.error('No se pudo guardar');
     },
-    [onApplyBloques, clearDebounce],
+    [applyAtPath, clearDebounce, onApplyLocal, onApplyPersist, onApplyBloques],
   );
 
   const scheduleApply = useCallback(
     (fn: (b: Block) => Block) => {
+      const next = applyAtPath(fn);
+      if (!next) return;
+      if (onApplyLocal && onApplyPersist) {
+        if (baselineBloquesRef.current === null) {
+          baselineBloquesRef.current = cloneSlideBlocks(bloquesRef.current);
+        }
+        onApplyLocal(next);
+        void onApplyPersist(next, {
+          previousBloques: baselineBloquesRef.current,
+          mode: 'debounced',
+        }).then((ok) => {
+          if (ok) baselineBloquesRef.current = null;
+        });
+        return;
+      }
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         debounceRef.current = null;
-        const path = pathRef.current;
-        if (!path) return;
-        const cur = bloquesRef.current;
-        const next = updateBlockAtPath(cur, path, fn);
-        void (async () => {
-          const ok = await onApplyBloques(next);
-          if (!ok) toast.error('No se pudo guardar');
-        })();
+        void applyNow(fn);
       }, DEBOUNCE_MS);
     },
-    [onApplyBloques],
+    [applyAtPath, applyNow, onApplyLocal, onApplyPersist],
   );
+
+  const persistHost = useMemo((): EditorPersistHost => {
+    return {
+      applyLocal: (fn) => {
+        const next = applyAtPath(fn);
+        if (next) onApplyLocal?.(next);
+      },
+      persistNow: async (fn) => {
+        await applyNow(fn);
+      },
+      schedulePersist: (fn) => {
+        scheduleApply(fn);
+      },
+      flushPersist: async () => {
+        if (onFlushScheduledPersist) {
+          const ok = await onFlushScheduledPersist();
+          if (!ok) toast.error('No se pudo guardar');
+          return;
+        }
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+          debounceRef.current = null;
+        }
+      },
+      clearScheduled: () => {
+        clearDebounce();
+      },
+    };
+  }, [
+    applyAtPath,
+    applyNow,
+    scheduleApply,
+    clearDebounce,
+    onApplyLocal,
+    onFlushScheduledPersist,
+  ]);
 
   const applyAnimaciones = useCallback(
     async (animaciones: Animacion[]) => {
@@ -1306,6 +1380,7 @@ export function PropertiesPanel({
                     estado={block}
                     config={{
                       slideBackground: backgroundColorForContrast(slide?.fondo),
+                      persistHost,
                     }}
                     onConfigChange={() => {}}
                     onChange={(updated) => {

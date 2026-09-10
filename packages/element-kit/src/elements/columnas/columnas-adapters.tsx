@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { ColumnasConfig, ColumnasEstado } from "./columnas-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function ColumnasEditor({
@@ -40,18 +41,14 @@ export function ColumnasViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function ColumnasPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<ColumnasEstado, ColumnasConfig>): ReactElement {
-  return (
-    <LegacyColumnasProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "columnas") {
-          onChange(siguiente as ColumnsBlock);
-        }
-      }}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "columnas",
   );
+  return <LegacyColumnasProperties block={estado} {...applyProps} />;
 }

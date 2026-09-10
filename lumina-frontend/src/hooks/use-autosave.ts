@@ -12,6 +12,8 @@ function stableSerialize(value: unknown): string {
   }
 }
 
+const RETRY_WHEN_BLOCKED_MS = 300;
+
 export type UseAutosaveOptions = {
   /** Si es false, no se programa el guardado diferido (p. ej. sesión en vivo). */
   enabled?: boolean;
@@ -19,6 +21,10 @@ export type UseAutosaveOptions = {
   isSavePending?: boolean;
   /** Al cambiar (p. ej. id del slide), se reinicia la línea base y el temporizador. */
   resetKey?: unknown;
+  /**
+   * Si devuelve false al disparar el timer, se reintenta (P5: lienzo con PATCH en cola).
+   */
+  shouldSave?: () => boolean;
 };
 
 /**
@@ -30,7 +36,7 @@ export type UseAutosaveOptions = {
  */
 export function useAutosave<T>(
   value: T,
-  saveFn: (value: T) => void,
+  saveFn: (value: T) => void | Promise<boolean | void>,
   delay = 2000,
   options?: UseAutosaveOptions,
 ): { isDirty: boolean; isSaving: boolean } {
@@ -42,25 +48,68 @@ export function useAutosave<T>(
   const valueRef = useRef(value);
   valueRef.current = value;
 
+  const saveFnRef = useRef(saveFn);
+  saveFnRef.current = saveFn;
+
+  const shouldSaveRef = useRef(options?.shouldSave);
+  shouldSaveRef.current = options?.shouldSave;
+
   const lastSavedRef = useRef(stableSerialize(value));
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useLayoutEffect(() => {
-    lastSavedRef.current = stableSerialize(valueRef.current);
-    setIsDirty(false);
+  const clearTimer = () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+  };
+
+  const scheduleSaveAttempt = (waitMs: number) => {
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      void attemptSave();
+    }, waitMs);
+  };
+
+  const attemptSave = async () => {
+    if (!enabled) return;
+
+    const latest = valueRef.current;
+    const latestSnap = stableSerialize(latest);
+    if (latestSnap === lastSavedRef.current) {
+      setIsDirty(false);
+      return;
+    }
+
+    if (shouldSaveRef.current && !shouldSaveRef.current()) {
+      scheduleSaveAttempt(RETRY_WHEN_BLOCKED_MS);
+      return;
+    }
+
+    try {
+      const outcome = await saveFnRef.current(latest);
+      if (outcome === false) {
+        scheduleSaveAttempt(RETRY_WHEN_BLOCKED_MS);
+        return;
+      }
+      lastSavedRef.current = stableSerialize(valueRef.current);
+      setIsDirty(false);
+    } catch {
+      setIsDirty(true);
+    }
+  };
+
+  useLayoutEffect(() => {
+    lastSavedRef.current = stableSerialize(valueRef.current);
+    setIsDirty(false);
+    clearTimer();
   }, [resetKey]);
 
   const snapshot = stableSerialize(value);
 
   useEffect(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+    clearTimer();
 
     if (!enabled) {
       return;
@@ -72,26 +121,13 @@ export function useAutosave<T>(
     }
 
     setIsDirty(true);
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      const latest = valueRef.current;
-      const latestSnap = stableSerialize(latest);
-      if (latestSnap === lastSavedRef.current) {
-        setIsDirty(false);
-        return;
-      }
-      saveFn(latest);
-      lastSavedRef.current = latestSnap;
-      setIsDirty(false);
-    }, delay);
+    scheduleSaveAttempt(delay);
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
+      clearTimer();
     };
-  }, [snapshot, delay, enabled, saveFn]);
+    // saveFn estable vía ref; shouldSave vía ref.
+  }, [snapshot, delay, enabled]);
 
   return { isDirty, isSaving: isSavePending };
 }

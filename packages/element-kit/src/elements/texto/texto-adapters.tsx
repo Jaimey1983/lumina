@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import {
   RenderText as LegacyRenderText,
   TextoProperties as LegacyTextoProperties,
-  type TextBlock,
 } from "../../blocks/texto/index.js";
 import type {
   ElementEditorProps,
@@ -10,6 +9,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { TextoConfig, TextoEstado } from "./texto-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function TextoEditor({
@@ -40,24 +40,17 @@ export function TextoPropiedades({
   config,
   onChange,
 }: ElementPropsPanelProps<TextoEstado, TextoConfig>): ReactElement {
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "texto",
+  );
   return (
     <LegacyTextoProperties
       block={estado}
       slideBackground={config.slideBackground}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "texto") {
-          onChange(siguiente as TextBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "texto") {
-          onChange(siguiente as TextBlock);
-        }
-      }}
-      clearDebounce={() => undefined}
-      onChange={onChange}
+      {...applyProps}
     />
   );
 }

@@ -717,6 +717,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [timerGlobalSaving, setTimerGlobalSaving] = useState(false);
   const [themeApplyBusy, setThemeApplyBusy] = useState(false);
   const [contentSaveEpoch, setContentSaveEpoch] = useState(0);
+  /** Cola/debounce/PATCH del coordinador del lienzo (P5). */
+  const [slidePersistBusy, setSlidePersistBusy] = useState(false);
+  const slidePersistBusyRef = useRef(false);
+  slidePersistBusyRef.current = slidePersistBusy;
   /** Payload persistible emitido por el reducer del lienzo (E5.4). */
   const [reducerPersistPayload, setReducerPersistPayload] = useState<
     Record<string, unknown> | null
@@ -851,36 +855,22 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [classId, queryClient]);
 
   const autosaveSaveFn = useCallback(
-    (latest: unknown) => {
+    async (latest: unknown): Promise<boolean> => {
       const slideId = activeSlideIdRef.current;
-      if (!slideId || sessionActiveRef.current) return;
+      if (!slideId || sessionActiveRef.current) return true;
+      const canvas = canvasAreaRef.current;
+      if (!canvas) return false;
+      if (canvas.isSlidePersistBusy()) return false;
       const payload = buildSlidePayload(latest);
-      const detail = queryClient.getQueryData<ClassDetail | null>([
-        'classes',
-        'detail',
-        classId,
-      ]);
-      const cached = detail?.slides?.find((s) => s.id === slideId);
-      updateSlide.mutate(
-        {
-          slideId,
-          content: payload,
-          expectedVersion: expectedVersionOf(cached as ApiSlide | undefined),
-        },
-        {
-          onSuccess: () => setSaveError(false),
-          onError: (err) => {
-            setSaveError(true);
-            if (isAxiosSlideVersionConflict(err)) {
-              notifySlideVersionConflict();
-              return;
-            }
-            toast.error('Error al guardar');
-          },
-        },
+      const ok = await canvas.enqueueAutosaveContent(
+        payload as Record<string, unknown>,
       );
+      if (ok) {
+        setSaveError(false);
+      }
+      return ok;
     },
-    [buildSlidePayload, updateSlide, queryClient, classId, notifySlideVersionConflict],
+    [buildSlidePayload],
   );
 
   const autosaveValue = reducerPersistPayload ?? activeSlide?.content ?? null;
@@ -891,8 +881,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     2000,
     {
       enabled: !sessionActive && !!activeSlide,
-      isSavePending: updateSlide.isPending,
+      isSavePending: updateSlide.isPending || slidePersistBusy,
       resetKey: `${activeSlide?.id ?? ''}:${contentSaveEpoch}`,
+      shouldSave: () => !slidePersistBusyRef.current,
     },
   );
 
@@ -1063,54 +1054,41 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     setModalUserOpen(true);
   }, []);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!activeSlide) return;
     const payload = buildSlidePayload(
       reducerPersistPayload ?? activeSlide.content ?? null,
     );
-    updateSlide.mutate(
-      {
-        slideId: activeSlide.id,
-        content: payload,
-        expectedVersion: expectedVersionOf(activeSlide as ApiSlide),
-      },
-      {
-        onSuccess: () => {
-          setSaveError(false);
-          toast.success('Slide guardado');
-          if (!sessionActiveRef.current) {
-            const versionContent =
-              payload !== null && typeof payload === 'object' && !Array.isArray(payload)
-                ? payload
-                : {};
-            createSlideVersion.mutate(
-              { content: versionContent },
-              {
-                onError: () => {
-                  toast.error('No se pudo guardar la versión en el historial');
-                },
-              },
-            );
-          }
-        },
-        onError: (err) => {
-          setSaveError(true);
-          if (isAxiosSlideVersionConflict(err)) {
-            notifySlideVersionConflict();
-            return;
-          }
-          toast.error('Error al guardar');
-        },
-      },
+    const versionContent =
+      payload !== null && typeof payload === 'object' && !Array.isArray(payload)
+        ? payload
+        : {};
+    const canvas = canvasAreaRef.current;
+    if (!canvas) {
+      toast.error('Error al guardar');
+      return;
+    }
+    const ok = await canvas.saveSlideContentNow(
+      versionContent as Record<string, unknown>,
     );
-  }, [
-    activeSlide,
-    reducerPersistPayload,
-    buildSlidePayload,
-    updateSlide,
-    createSlideVersion,
-    notifySlideVersionConflict,
-  ]);
+    if (!ok) {
+      setSaveError(true);
+      toast.error('Error al guardar');
+      return;
+    }
+    setSaveError(false);
+    toast.success('Slide guardado');
+    if (!sessionActiveRef.current) {
+      createSlideVersion.mutate(
+        { content: versionContent },
+        {
+          onError: () => {
+            toast.error('No se pudo guardar la versión en el historial');
+          },
+        },
+      );
+    }
+  }, [activeSlide, reducerPersistPayload, buildSlidePayload, createSlideVersion]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -1512,7 +1490,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   );
 
   const handleCommitSlideContent = useCallback(
-    (content: Record<string, unknown>) => {
+    async (content: Record<string, unknown>) => {
       if (!activeSlide) return;
       if (activeSlideHasActivity) {
         const bloques = Array.isArray(content.bloques) ? (content.bloques as Block[]) : [];
@@ -1523,6 +1501,14 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         }
       }
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
+      const canvas = canvasAreaRef.current;
+      if (canvas) {
+        const ok = await canvas.saveSlideContentNow(sanitized);
+        if (!ok) {
+          toast.error('No se pudo guardar el slide');
+        }
+        return;
+      }
       updateSlide.mutate(
         {
           slideId: activeSlide.id,
@@ -2717,6 +2703,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               ref={canvasAreaRef}
               canvasSurfaceRef={canvasSurfaceRef}
               onPersistPayloadChange={setReducerPersistPayload}
+              onSlidePersisted={() => setContentSaveEpoch((e) => e + 1)}
+              onSlidePersistBusyChange={setSlidePersistBusy}
               slide={rendererSlide}
               slideTheme={activeSlideTheme}
               isLoading={isLoading}

@@ -24,6 +24,11 @@ import {
   parseSlideVersionConflict,
   SLIDE_VERSION_CONFLICT_MESSAGE,
 } from '../lib/build-slide-content-payload';
+import {
+  createSlidePersistCoordinator,
+  type PatchResult,
+  type SlidePersistCoordinator,
+} from '../lib/slide-persist-coordinator';
 import { editorSlideReducer } from '../lib/editor-slide-reducer';
 import {
   createInitialEditorSlideState,
@@ -283,6 +288,10 @@ export interface CanvasAreaProps {
    * El autosave de `editor-client` observa este valor, no el blob de la query.
    */
   onPersistPayloadChange?: (payload: Record<string, unknown>) => void;
+  /** Tras un PATCH OK del lienzo (p. ej. resetear baseline de autosave). */
+  onSlidePersisted?: (slideId: string, contentVersion: number) => void;
+  /** Cola/debounce/PATCH del coordinador (P5 autosave). */
+  onSlidePersistBusyChange?: (busy: boolean) => void;
   /** Muestra reglas y guías manuales (solo editor). */
   guidesVisible?: boolean;
   /** Escala visual del lienzo (1 = 100 %). */
@@ -330,6 +339,11 @@ export type CanvasAreaHandle = {
    * panel izquierdo "Diseño" (`DesignBackgroundPopover` en ambos casos).
    */
   changeFondo: (fondo: Background) => Promise<void>;
+  /** Red de seguridad: PATCH vía coordinador cuando el autosave dispara (P5). */
+  enqueueAutosaveContent: (content: Record<string, unknown>) => Promise<boolean>;
+  /** Ctrl+S: un PATCH vía cola (coalesce debounce pendiente). */
+  saveSlideContentNow: (content: Record<string, unknown>) => Promise<boolean>;
+  isSlidePersistBusy: () => boolean;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -368,6 +382,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     livePanelOpen = false,
     canvasSurfaceRef,
     onPersistPayloadChange,
+    onSlidePersisted,
+    onSlidePersistBusyChange,
     guidesVisible = true,
     canvasZoom = CANVAS_ZOOM_DEFAULT,
     onCanvasZoomChange,
@@ -449,6 +465,81 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   editorStateRef.current = editorState;
   /** `contentVersion` local por slideId — se hidrata desde la query y se avanza tras PATCH OK. */
   const contentVersionBySlideRef = useRef<Map<string, number>>(new Map());
+  const onSlidePersistedRef = useRef(onSlidePersisted);
+  onSlidePersistedRef.current = onSlidePersisted;
+  const onSlidePersistBusyChangeRef = useRef(onSlidePersistBusyChange);
+  onSlidePersistBusyChangeRef.current = onSlidePersistBusyChange;
+  const onPersistActivityRef = useRef<(() => void) | undefined>(undefined);
+  onPersistActivityRef.current = () => {
+    onSlidePersistBusyChangeRef.current?.(
+      persistCoordinatorRef.current?.isBusy ?? false,
+    );
+  };
+  const debouncedBurstPreviousRef = useRef<Block[] | null>(null);
+  const debouncedPendingNextRef = useRef<Block[] | null>(null);
+  const onCoordinatorPersistedRef = useRef<(id: string, version: number) => void>(
+    () => {},
+  );
+  const classIdForVersionRef = useRef(classId);
+  classIdForVersionRef.current = classId;
+  const queryClientForVersionRef = useRef(queryClient);
+  queryClientForVersionRef.current = queryClient;
+
+  const performSlidePatchRef = useRef<
+    (
+      targetSlideId: string,
+      content: Record<string, unknown>,
+      expectedVersion: number,
+    ) => Promise<PatchResult>
+  >(async () => ({ ok: false, reason: 'network' }));
+
+  const persistCoordinatorRef = useRef<SlidePersistCoordinator | null>(null);
+  if (!persistCoordinatorRef.current) {
+    persistCoordinatorRef.current = createSlidePersistCoordinator({
+      getContentVersion: (targetSlideId) => {
+        const remembered = contentVersionBySlideRef.current.get(targetSlideId);
+        if (remembered !== undefined) return remembered;
+        const detail = queryClientForVersionRef.current.getQueryData<ClassDetail>([
+          'classes',
+          'detail',
+          classIdForVersionRef.current,
+        ]);
+        const fromQuery = detail?.slides?.find((s) => s.id === targetSlideId)
+          ?.contentVersion;
+        return typeof fromQuery === 'number' ? fromQuery : 0;
+      },
+      patch: (id, content, expectedVersion) =>
+        performSlidePatchRef.current(id, content, expectedVersion),
+      onPersisted: (id, version) => onCoordinatorPersistedRef.current(id, version),
+      onActivity: () => onPersistActivityRef.current?.(),
+    });
+  }
+
+  const bumpContentVersion = useCallback((targetSlideId: string, version: number) => {
+    const cur = contentVersionBySlideRef.current.get(targetSlideId) ?? 0;
+    const monotonic = Math.max(cur, version);
+    contentVersionBySlideRef.current.set(targetSlideId, monotonic);
+    return monotonic;
+  }, []);
+
+  const syncSlideContentInCache = useCallback(
+    (
+      targetSlideId: string,
+      content: Record<string, unknown>,
+      contentVersion: number,
+    ) => {
+      queryClient.setQueryData<ClassDetail>(['classes', 'detail', classId], (old) => {
+        if (!old?.slides) return old;
+        return {
+          ...old,
+          slides: old.slides.map((s) =>
+            s.id === targetSlideId ? { ...s, content, contentVersion } : s,
+          ),
+        };
+      });
+    },
+    [classId, queryClient],
+  );
 
   // Al cambiar de slide: overlay + selección + inner (conserva layersPanelOpen).
   useEffect(() => {
@@ -537,7 +628,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   useEffect(() => {
     if (!slideId) return;
     if (typeof slideContentVersion === 'number') {
-      contentVersionBySlideRef.current.set(slideId, slideContentVersion);
+      bumpContentVersion(slideId, slideContentVersion);
       return;
     }
     const detail = queryClient.getQueryData<ClassDetail>([
@@ -548,9 +639,13 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     const fromQuery = detail?.slides?.find((s) => s.id === slideId)
       ?.contentVersion;
     if (typeof fromQuery === 'number') {
-      contentVersionBySlideRef.current.set(slideId, fromQuery);
+      bumpContentVersion(slideId, fromQuery);
     }
-  }, [slideId, slideContentVersion, classId, queryClient]);
+  }, [slideId, slideContentVersion, classId, queryClient, bumpContentVersion]);
+
+  useEffect(() => {
+    persistCoordinatorRef.current?.cancelScheduled();
+  }, [slideId]);
 
   const persistBloquesState = editorState.bloques;
   const persistFondoState = editorState.fondo;
@@ -603,26 +698,26 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       const conflict = parseSlideVersionConflict(body);
       if (conflict?.currentVersion !== undefined) {
-        contentVersionBySlideRef.current.set(
-          targetSlideId,
-          conflict.currentVersion,
-        );
+        bumpContentVersion(targetSlideId, conflict.currentVersion);
       }
       await queryClient.invalidateQueries({
         queryKey: ['classes', 'detail', classId],
       });
     },
-    [classId, queryClient],
+    [classId, queryClient, bumpContentVersion],
   );
 
-  const patchSlideContentById = useCallback(
-    async (targetSlideId: string, content: Record<string, unknown>): Promise<boolean> => {
-      if (!classId) return false;
+  const performSlidePatch = useCallback(
+    async (
+      targetSlideId: string,
+      content: Record<string, unknown>,
+      expectedVersion: number,
+    ): Promise<PatchResult> => {
+      if (!classId) return { ok: false, reason: 'network' };
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
-      const expectedVersion = readCachedContentVersion(targetSlideId);
       const res = await fetch(
         `${apiUrl}/classes/${classId}/slides/${targetSlideId}`,
         {
@@ -642,23 +737,61 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
       if (res.status === 409) {
         await handleVersionConflict(targetSlideId, body);
-        return false;
+        const conflict = parseSlideVersionConflict(body);
+        return {
+          ok: false,
+          reason: 'conflict',
+          currentVersion: conflict?.currentVersion,
+        };
       }
-      if (!res.ok) return false;
+      if (!res.ok) return { ok: false, reason: 'network' };
       const nextVersion =
         parseContentVersion(body) ?? expectedVersion + 1;
-      contentVersionBySlideRef.current.set(targetSlideId, nextVersion);
-      return true;
+      const monotonic = bumpContentVersion(targetSlideId, nextVersion);
+      syncSlideContentInCache(targetSlideId, sanitized, monotonic);
+      return { ok: true, contentVersion: monotonic };
     },
-    [classId, readCachedContentVersion, handleVersionConflict],
+    [classId, handleVersionConflict, bumpContentVersion, syncSlideContentInCache],
+  );
+  performSlidePatchRef.current = performSlidePatch;
+
+  const enqueueSlideContent = useCallback(
+    async (
+      targetSlideId: string,
+      content: Record<string, unknown>,
+    ): Promise<boolean> => {
+      if (!classId) return false;
+      return persistCoordinatorRef.current!.enqueue({
+        targetSlideId,
+        content,
+        mode: 'immediate',
+      });
+    },
+    [classId],
+  );
+
+  /** Vacía debounce pendiente antes de un PATCH immediate (evita 409 por orden invertido). */
+  const flushAndEnqueueSlideContent = useCallback(
+    async (
+      targetSlideId: string,
+      content: Record<string, unknown>,
+    ): Promise<boolean> => {
+      if (!classId) return false;
+      const coord = persistCoordinatorRef.current;
+      if (!coord) return false;
+      const flushOk = await coord.flush();
+      if (!flushOk) return false;
+      return enqueueSlideContent(targetSlideId, content);
+    },
+    [classId, enqueueSlideContent],
   );
 
   const patchSlideContent = useCallback(
     async (content: Record<string, unknown>): Promise<boolean> => {
       if (!slideId || !classId) return false;
-      return patchSlideContentById(slideId, content);
+      return flushAndEnqueueSlideContent(slideId, content);
     },
-    [slideId, classId, patchSlideContentById],
+    [slideId, classId, flushAndEnqueueSlideContent],
   );
 
   const buildContentPayload = useCallback(
@@ -717,7 +850,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       kind: HistoryKind = 'edicion',
     ): Promise<boolean> => {
       const content = buildContentPayload(nextBloques);
-      const ok = await patchSlideContent(content);
+      if (!slideId) return false;
+      const ok = await flushAndEnqueueSlideContent(slideId, content);
       if (!ok) return false;
       if (recordHistory && slide?.id && !isUndoRedoRef.current) {
         const meta = editorMetaRef.current;
@@ -743,16 +877,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           ),
         );
       }
-      await queryClient.refetchQueries({
-        queryKey: ['classes', 'detail', classId],
-      });
       return true;
     },
     [
       buildContentPayload,
-      patchSlideContent,
-      queryClient,
-      classId,
+      flushAndEnqueueSlideContent,
+      slideId,
       slide,
       recordAfterSuccess,
     ],
@@ -794,7 +924,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         ...(slideMeta.transicion ? { transicion: slideMeta.transicion } : {}),
         guias,
       };
-      const ok = await patchSlideContentById(slideId, content);
+      const ok = await flushAndEnqueueSlideContent(slideId, content);
       if (!ok) return false;
       if (recordHistory && !isUndoRedoRef.current) {
         ensureHistoryForSlide(slideId, {
@@ -824,18 +954,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           ),
         );
       }
-      await queryClient.refetchQueries({
-        queryKey: ['classes', 'detail', classId],
-      });
       return true;
     },
-    [
-      patchSlideContentById,
-      queryClient,
-      classId,
-      recordAfterSuccess,
-      ensureHistoryForSlide,
-    ],
+    [flushAndEnqueueSlideContent, recordAfterSuccess, ensureHistoryForSlide],
   );
 
   const persistGuias = useCallback(
@@ -869,9 +990,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             'guias',
           ),
         );
-        await queryClient.refetchQueries({
-          queryKey: ['classes', 'detail', classId],
-        });
       } else {
         toast.error('No se pudieron guardar las guías');
       }
@@ -883,7 +1001,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       classId,
       buildContentPayload,
       patchSlideContent,
-      queryClient,
       recordAfterSuccess,
     ],
   );
@@ -1081,25 +1198,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           transicion: snapshot.transicion,
         });
         bumpHistory();
-        try {
-          await queryClient.refetchQueries({
-            queryKey: ['classes', 'detail', classId],
-          });
-        } finally {
-          dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
-        }
+        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
       } else {
         toast.error(failMessage);
       }
     },
-    [
-      slide,
-      buildContentFromSnapshot,
-      patchSlideContent,
-      queryClient,
-      classId,
-      bumpHistory,
-    ],
+    [slide, buildContentFromSnapshot, patchSlideContent, bumpHistory],
   );
 
   const handleUndo = useCallback(async () => {
@@ -1277,9 +1381,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             'fondo',
           ),
         );
-        await queryClient.refetchQueries({
-          queryKey: ['classes', 'detail', classId],
-        });
         toast.success('Fondo guardado');
       } else {
         toast.error('No se pudo guardar el fondo');
@@ -1290,8 +1391,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       slide,
       buildContentPayload,
       patchSlideContent,
-      queryClient,
-      classId,
       recordAfterSuccess,
     ],
   );
@@ -1508,17 +1607,134 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     document.addEventListener('mouseup', handleMouseUp);
   }, [allBlocks, onBlockSelect]);
 
+  const handleApplyLocal = useCallback((next: Block[]) => {
+    dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
+  }, []);
+
+  const recordPersistHistory = useCallback(
+    (previousBloques: Block[], nextBloques: Block[], kind: HistoryKind = 'edicion') => {
+      if (!slide?.id || isUndoRedoRef.current) return;
+      const meta = editorMetaRef.current;
+      recordAfterSuccess(
+        slide.id,
+        toSlideHistorySnapshot(
+          {
+            bloques: previousBloques,
+            fondo: meta.fondo,
+            guias: meta.guias,
+            transicion: meta.transicion,
+          },
+          'edicion',
+        ),
+        toSlideHistorySnapshot(
+          {
+            bloques: nextBloques,
+            fondo: meta.fondo,
+            guias: meta.guias,
+            transicion: meta.transicion,
+          },
+          kind,
+        ),
+      );
+    },
+    [slide?.id, recordAfterSuccess],
+  );
+
+  const handleApplyPersist = useCallback(
+    async (
+      next: Block[],
+      opts: {
+        previousBloques: Block[];
+        mode?: 'immediate' | 'debounced';
+      },
+    ): Promise<boolean> => {
+      if (!slideId || !classId) return false;
+      const mode = opts.mode ?? 'immediate';
+      const content = buildContentPayload(next);
+
+      if (mode === 'debounced') {
+        if (debouncedBurstPreviousRef.current === null) {
+          debouncedBurstPreviousRef.current = cloneSlideBlocks(opts.previousBloques);
+        }
+        debouncedPendingNextRef.current = next;
+        return persistCoordinatorRef.current!.enqueue({
+          targetSlideId: slideId,
+          content,
+          mode: 'debounced',
+          debounceMs: 500,
+        });
+      }
+
+      debouncedBurstPreviousRef.current = null;
+      debouncedPendingNextRef.current = null;
+      const ok = await flushAndEnqueueSlideContent(slideId, content);
+      if (ok) {
+        recordPersistHistory(opts.previousBloques, next);
+        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+      }
+      return ok;
+    },
+    [
+      slideId,
+      classId,
+      buildContentPayload,
+      flushAndEnqueueSlideContent,
+      recordPersistHistory,
+    ],
+  );
+
+  const handleCancelScheduledPersist = useCallback(() => {
+    debouncedBurstPreviousRef.current = null;
+    debouncedPendingNextRef.current = null;
+    persistCoordinatorRef.current?.cancelScheduled();
+  }, []);
+
+  onCoordinatorPersistedRef.current = (id, version) => {
+    onSlidePersistedRef.current?.(id, version);
+    if (id !== slideId) return;
+    const baseline = debouncedBurstPreviousRef.current;
+    const pendingNext = debouncedPendingNextRef.current;
+    if (baseline && pendingNext) {
+      recordPersistHistory(baseline, pendingNext);
+      debouncedBurstPreviousRef.current = null;
+      debouncedPendingNextRef.current = null;
+      dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+    }
+  };
+
+  const handleFlushScheduledPersist = useCallback(async (): Promise<boolean> => {
+    if (!slideId) return true;
+    const ok = await persistCoordinatorRef.current!.flush();
+    if (ok) {
+      debouncedBurstPreviousRef.current = null;
+      dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+    }
+    return ok;
+  }, [slideId]);
+
+  const saveSlideContentNow = useCallback(
+    async (content: Record<string, unknown>): Promise<boolean> => {
+      if (!slideId) return false;
+      const coord = persistCoordinatorRef.current;
+      if (!coord) return false;
+      const ok = await coord.flushLatestContent(slideId, content);
+      if (ok) {
+        debouncedBurstPreviousRef.current = null;
+        debouncedPendingNextRef.current = null;
+        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
+      }
+      return ok;
+    },
+    [slideId, dispatchEditor],
+  );
+
   const handleApplyBloques = useCallback(
     async (next: Block[]) => {
       const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide?.bloques ?? []);
-      dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
-      try {
-        return await persistBloques(next, prev, true);
-      } finally {
-        dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' });
-      }
+      handleApplyLocal(next);
+      return handleApplyPersist(next, { previousBloques: prev, mode: 'immediate' });
     },
-    [liveSlide, slide, persistBloques],
+    [liveSlide, slide, handleApplyLocal, handleApplyPersist],
   );
 
   const handleClipGroupChange = useCallback(
@@ -1638,21 +1854,16 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           ),
         );
       }
-      await queryClient.refetchQueries({
-        queryKey: ['classes', 'detail', classId],
-      });
       return true;
     },
-    [
-      slide,
-      liveSlide,
-      buildContentPayload,
-      patchSlideContent,
-      queryClient,
-      classId,
-      recordAfterSuccess,
-    ],
+    [slide, liveSlide, buildContentPayload, patchSlideContent, recordAfterSuccess],
   );
+
+  useEffect(() => {
+    onSlidePersistBusyChangeRef.current?.(
+      persistCoordinatorRef.current?.isBusy ?? false,
+    );
+  }, []);
 
   useEffect(() => {
     const root = canvasRef.current;
@@ -1784,6 +1995,13 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         bumpHistory();
       },
       changeFondo: (fondo) => handleChangeFondo(fondo),
+      enqueueAutosaveContent: (content) => {
+        if (!slideId) return Promise.resolve(false);
+        if (persistCoordinatorRef.current?.isBusy) return Promise.resolve(false);
+        return enqueueSlideContent(slideId, content);
+      },
+      saveSlideContentNow: (content) => saveSlideContentNow(content),
+      isSlidePersistBusy: () => persistCoordinatorRef.current?.isBusy ?? false,
     }),
     [
       selectedBlockId,
@@ -1803,6 +2021,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleDragSave,
       handleChangeFondo,
       bumpHistory,
+      slideId,
+      enqueueSlideContent,
+      saveSlideContentNow,
     ],
   );
 
@@ -2129,6 +2350,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         selectedBlockId={selectedBlockId}
         selectedBlockIds={selectedBlockIds}
         onApplyBloques={handleApplyBloques}
+        onApplyLocal={handleApplyLocal}
+        onApplyPersist={handleApplyPersist}
+        onCancelScheduledPersist={handleCancelScheduledPersist}
+        onFlushScheduledPersist={handleFlushScheduledPersist}
         slide={liveSlide}
         onApplySlide={handleApplySlide}
         flipCardsInnerSelection={flipCardsInnerSelection}

@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { VideoConfig, VideoEstado } from "./video-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function VideoEditor({
@@ -42,25 +43,14 @@ export function VideoViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function VideoPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<VideoEstado, VideoConfig>): ReactElement {
-  return (
-    <LegacyVideoProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "video") {
-          onChange(siguiente as VideoBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "video") {
-          onChange(siguiente as VideoBlock);
-        }
-      }}
-      clearDebounce={() => undefined}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "video",
   );
+  return <LegacyVideoProperties block={estado} {...applyProps} />;
 }

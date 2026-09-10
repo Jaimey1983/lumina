@@ -10,6 +10,7 @@ import type {
   ElementViewerProps,
 } from "@lumina/element-kit-core";
 import type { ImagenConfig, ImagenEstado } from "./imagen-types.js";
+import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridge.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
 export function ImagenEditor({
@@ -29,24 +30,14 @@ export function ImagenViewer({
 /** Adapta el panel de propiedades a `onChange` del contrato. */
 export function ImagenPropiedades({
   estado,
+  config,
   onChange,
 }: ElementPropsPanelProps<ImagenEstado, ImagenConfig>): ReactElement {
-  return (
-    <LegacyImageProperties
-      block={estado}
-      applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "imagen") {
-          onChange(siguiente as ImageBlock);
-        }
-      }}
-      scheduleApply={(actualizar) => {
-        const siguiente = actualizar(estado);
-        if ((siguiente as { tipo?: string }).tipo === "imagen") {
-          onChange(siguiente as ImageBlock);
-        }
-      }}
-      onChange={onChange}
-    />
+  const applyProps = primitivePropertyApplyProps(
+    config.persistHost,
+    onChange,
+    estado,
+    "imagen",
   );
+  return <LegacyImageProperties block={estado} {...applyProps} />;
 }
