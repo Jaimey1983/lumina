@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import type { TextBlock } from '@lumina/types/slide';
 import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
 
@@ -59,7 +59,9 @@ export function CurvedText({ block, text }: CurvedTextProps) {
   }, []);
 
   const fontPx = parseFloat(block.tamanoFuente ?? '') || 32;
-  const pathId = useStableId();
+  // `useId()` → único y estable SSR↔cliente y entre instancias (antes un contador
+  // de módulo colisionaba: `<textPath href="#id">` resolvía a la 1.ª curva).
+  const pathId = `lumina-curve-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const d = curvedArcPath(dims.w, dims.h, block.curvatura ?? 0, fontPx);
 
   const anchor =
@@ -99,11 +101,4 @@ export function CurvedText({ block, text }: CurvedTextProps) {
       </svg>
     </div>
   );
-}
-
-let idSeq = 0;
-function useStableId(): string {
-  const ref = useRef<string>('');
-  if (!ref.current) ref.current = `lumina-curve-${++idSeq}`;
-  return ref.current;
 }

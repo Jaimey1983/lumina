@@ -130,7 +130,11 @@ export function textBlockOptionalVisualStyle(block: TextBlock): CSSProperties {
   if (block.espaciadoLetras !== undefined) {
     out.letterSpacing = `${block.espaciadoLetras}px`;
   }
-  if (block.fondoTexto && block.fondoTextoOpacidad !== undefined) {
+  // `fondoTexto` y `degradado` son incompatibles: el degradado usa
+  // `background-clip:text` y recortaría también el fondo → texto invisible. Con
+  // degradado activo, el fondo del texto se ignora.
+  const hasGradient = !!(block.degradado?.desde && block.degradado?.hasta);
+  if (block.fondoTexto && block.fondoTextoOpacidad !== undefined && !hasGradient) {
     out.backgroundColor = hexWithOpacity(block.fondoTexto, block.fondoTextoOpacidad);
   }
   // Contorno/degradado del texto van al final: el degradado fuerza `color: transparent`
@@ -446,10 +450,13 @@ function revealWords(text: string, ctx?: RenderCtx): ReactNode {
   const { plan, counter } = ctx.reveal;
   return text.split(/(\s+)/).map((part, i) => {
     if (part === '') return null;
-    if (/^\s+$/.test(part)) return part;
+    if (/^\s+$/.test(part)) return createElement('span', { key: `s${counter.n}-${i}` }, part);
+    const n = counter.n++;
+    // `key` derivada del índice GLOBAL de unidad → única entre runs distintos
+    // (antes `key: i` se repetía y React reconciliaba mal la animación).
     return createElement(
       'span',
-      { key: i, style: revealUnitCss(plan, counter.n++), 'data-reveal-unit': '' },
+      { key: `w${n}`, style: revealUnitCss(plan, n), 'data-reveal-unit': '' },
       part,
     );
   });

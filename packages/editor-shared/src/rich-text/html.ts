@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { RichDoc, RichMark, RichNode, RichRun } from '@lumina/types/rich-text';
 import { richMarksToStyle } from './marks.js';
 import { isSafeHref } from './sanitize.js';
+import { HEADING_SCALE } from '../heading-scale.js';
 
 const ALIGN_TO_CSS: Record<string, string> = {
   izquierda: 'left',
@@ -15,7 +16,31 @@ export function escapeHtml(s: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Tipografía del nodo raíz (Fase 1) + escala de encabezado como fallback. */
+function nodeTypographyCssText(node: RichNode): CSSProperties {
+  const out: CSSProperties = {};
+  if (node.type === 'heading') {
+    const s = HEADING_SCALE[(node.level ?? 2) as 1];
+    out.fontSize = `${s.sizePx}px`;
+    out.fontWeight = s.weight;
+    out.lineHeight = s.lineHeight;
+    out.letterSpacing = `${s.trackingPx}px`;
+    out.margin = '0';
+  }
+  if (node.fontFamily) out.fontFamily = node.fontFamily;
+  if (Number.isFinite(node.fontSize)) out.fontSize = `${node.fontSize}px`;
+  if (node.color) out.color = node.color;
+  if (node.bold === true) out.fontWeight = 'bold';
+  else if (node.bold === false) out.fontWeight = 'normal';
+  if (node.italic === true) out.fontStyle = 'italic';
+  if (node.underline === true) out.textDecorationLine = 'underline';
+  if (Number.isFinite(node.lineHeight)) out.lineHeight = node.lineHeight;
+  if (Number.isFinite(node.letterSpacing)) out.letterSpacing = `${node.letterSpacing}px`;
+  return out;
 }
 
 function styleToCssText(style: CSSProperties): string {
@@ -44,7 +69,9 @@ function runToHtml(run: RichRun): string {
   if (script) inner = `<${script.value === 'sup' ? 'sup' : 'sub'}>${inner}</${script.value === 'sup' ? 'sup' : 'sub'}>`;
 
   if (findMark(marks, 'spoiler')) {
-    inner = `<span data-spoiler="1">${inner}</span>`;
+    // En HTML serializado (miniaturas / preview) no hay interacción → se difumina
+    // para no filtrar la respuesta (el render React usa `SpoilerRun`).
+    inner = `<span data-spoiler="1" style="filter:blur(5px);background:rgba(15,23,42,.08);border-radius:3px">${inner}</span>`;
   }
   const term = findMark(marks, 'term');
   if (term) inner = `<span data-term="${escapeHtml(term.glosaId)}">${inner}</span>`;
@@ -65,7 +92,7 @@ function runsToHtml(runs: RichRun[] | undefined): string {
 }
 
 function nodeStyle(node: RichNode): string {
-  const style: CSSProperties = {};
+  const style: CSSProperties = { ...nodeTypographyCssText(node) };
   if (node.align && ALIGN_TO_CSS[node.align]) {
     style.textAlign = ALIGN_TO_CSS[node.align] as CSSProperties['textAlign'];
   }
@@ -124,13 +151,16 @@ function nodeToHtml(node: RichNode): string {
                 cell.colspan && cell.colspan > 1 ? ` colspan="${cell.colspan}"` : '',
                 cell.rowspan && cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : '',
               ].join('');
-              return `<${tag}${attrs}>${runsToHtml(cell.runs)}</${tag}>`;
+              const cs = cell.header
+                ? 'border:1px solid #cbd5e1;padding:.35em .55em;background:#f1f5f9;font-weight:600;text-align:left'
+                : 'border:1px solid #cbd5e1;padding:.35em .55em;vertical-align:top';
+              return `<${tag}${attrs} style="${cs}">${runsToHtml(cell.runs)}</${tag}>`;
             })
             .join('');
           return `<tr>${cells}</tr>`;
         })
         .join('');
-      return `<table data-table="1"><tbody>${rows}</tbody></table>`;
+      return `<table data-table="1" style="border-collapse:collapse;width:100%"><tbody>${rows}</tbody></table>`;
     }
     case 'tableRow':
     case 'tableCell':

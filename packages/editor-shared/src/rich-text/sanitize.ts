@@ -256,6 +256,32 @@ function sanitizeNode(node: RichNode, depth = 0): RichNode | null {
     return null;
   }
   if (node.type === 'math' && out.latex === undefined) return null;
+
+  // Tablas rectangulares: una fila con menos celdas que la más ancha rompe el
+  // esquema de TipTap al montar el editor. Se rellenan con celdas vacías.
+  if (node.type === 'table' && out.children) {
+    const width = Math.max(
+      0,
+      ...out.children.map((row) =>
+        (row.children ?? []).reduce((n, c) => n + (c.colspan && c.colspan > 1 ? c.colspan : 1), 0),
+      ),
+    );
+    for (const row of out.children) {
+      const have = (row.children ?? []).reduce(
+        (n, c) => n + (c.colspan && c.colspan > 1 ? c.colspan : 1),
+        0,
+      );
+      if (have < width) {
+        row.children = [
+          ...(row.children ?? []),
+          ...Array.from({ length: width - have }, () => ({
+            type: 'tableCell' as const,
+            runs: [{ text: '' }],
+          })),
+        ];
+      }
+    }
+  }
   return out;
 }
 

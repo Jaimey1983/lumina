@@ -166,7 +166,10 @@ export function textBlockBoxCss(block: TextBlock): CSSProperties | null {
       sombraCaja!.desenfoque ?? 8
     }px ${sombraCaja!.color ?? 'rgba(15,23,42,0.25)'}`;
   }
-  if (alineacionVertical) {
+  // La alineación vertical usa un contenedor flex, que rompe `column-count` del
+  // texto multicolumna → con columnas, la alineación vertical se ignora.
+  const hasColumns = !!(block.columnas && block.columnas >= 2);
+  if (alineacionVertical && !hasColumns) {
     out.display = 'flex';
     out.flexDirection = 'column';
     out.justifyContent = V_ALIGN[alineacionVertical] ?? 'flex-start';

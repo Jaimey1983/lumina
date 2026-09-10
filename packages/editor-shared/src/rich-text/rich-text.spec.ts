@@ -163,7 +163,9 @@ describe('richToHtml', () => {
       ],
     };
     const html = richToHtml(doc);
-    expect(html).toContain('<h3>T</h3>');
+    // El `<h3>` ahora lleva la escala de encabezado inline (paridad con el
+    // render React: antes la miniatura mostraba el H3 sin tamaño).
+    expect(html).toMatch(/<h3 style="[^"]*font-size:26px[^"]*">T<\/h3>/);
     expect(html).toContain('<ul><li>a</li></ul>');
     expect(html).toContain('<blockquote>q</blockquote>');
   });
@@ -189,5 +191,15 @@ describe('marks', () => {
     expect(
       richMarksToStyle([{ t: 'bold' }, { t: 'color', value: '#111' }, { t: 'size', px: 20 }]),
     ).toMatchObject({ fontWeight: 'bold', color: '#111', fontSize: '20px' });
+  });
+  it('underline + strike se acumulan en una sola text-decoration', () => {
+    const s = richMarksToStyle([{ t: 'underline' }, { t: 'strike' }]) as Record<string, unknown>;
+    expect(String(s.textDecorationLine).split(/\s+/).sort()).toEqual([
+      'line-through',
+      'underline',
+    ]);
+  });
+  it('script no produce estilo CSS (lo envuelve <sup>/<sub>)', () => {
+    expect(richMarksToStyle([{ t: 'script', value: 'sup' }])).toEqual({});
   });
 });

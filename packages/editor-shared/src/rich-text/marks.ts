@@ -26,9 +26,9 @@ export function richMarkToStyle(mark: RichMark): CSSProperties {
     case 'italic':
       return { fontStyle: 'italic' };
     case 'underline':
-      return { textDecoration: 'underline' };
+      return { textDecorationLine: 'underline' };
     case 'strike':
-      return { textDecoration: 'line-through' };
+      return { textDecorationLine: 'line-through' };
     case 'code':
       return {
         fontFamily:
@@ -53,11 +53,9 @@ export function richMarkToStyle(mark: RichMark): CSSProperties {
       return { fontFamily: mark.family };
     case 'tracking':
       return { letterSpacing: `${mark.px}px` };
-    case 'script':
-      return {
-        verticalAlign: mark.value === 'sup' ? 'super' : 'sub',
-        fontSize: '0.75em',
-      };
+    // `script` no produce estilo: el renderer lo envuelve en `<sup>`/`<sub>`
+    // semántico (que ya trae `vertical-align` + `font-size` del UA). Duplicarlo
+    // aquí producía doble desplazamiento y doble reducción.
     default:
       return {};
   }
@@ -66,8 +64,19 @@ export function richMarkToStyle(mark: RichMark): CSSProperties {
 /** Combina los estilos de varias marcas (el orden del array = precedencia creciente). */
 export function richMarksToStyle(marks: RichMark[] | undefined): CSSProperties {
   if (!marks || marks.length === 0) return {};
-  return marks.reduce<CSSProperties>(
-    (acc, m) => ({ ...acc, ...richMarkToStyle(m) }),
+  const out = marks.reduce<CSSProperties & { textDecorationLine?: string }>(
+    (acc, m) => {
+      const s = richMarkToStyle(m) as CSSProperties & { textDecorationLine?: string };
+      // `underline` + `strike` no deben pisarse: se acumulan en una sola regla.
+      if (s.textDecorationLine && acc.textDecorationLine) {
+        const parts = new Set(
+          `${acc.textDecorationLine} ${s.textDecorationLine}`.split(/\s+/).filter(Boolean),
+        );
+        return { ...acc, ...s, textDecorationLine: [...parts].join(' ') };
+      }
+      return { ...acc, ...s };
+    },
     {},
   );
+  return out;
 }
