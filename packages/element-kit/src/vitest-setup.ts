@@ -12,6 +12,22 @@ vi.mock("next/dynamic", () => ({
     },
 }));
 
+/**
+ * `render-texto` carga `code-block` / `math-block` con `React.lazy`. Esos módulos
+ * arrastran `lowlight` + `hast-util-to-html` + `katex` (ESM pesado): si el import
+ * dinámico resuelve DESPUÉS de que el entorno de un test se destruye, vitest
+ * lanza `EnvironmentTeardownError`. Stubs síncronos para el suite (la cobertura
+ * real del resaltado / KaTeX se hace en el navegador, no en jsdom).
+ */
+vi.mock("./blocks/texto/code-block.js", () => ({
+  CodeBlock: ({ code }: { code: string }) => code,
+  default: ({ code }: { code: string }) => code,
+}));
+vi.mock("./blocks/texto/math-block.js", () => ({
+  MathBlock: ({ latex }: { latex: string }) => latex,
+  default: ({ latex }: { latex: string }) => latex,
+}));
+
 /** jsdom no trae ResizeObserver / matchMedia — varios viewers de Grupo 4 los usan. */
 class ResizeObserverStub {
   observe(): void {}

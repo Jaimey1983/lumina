@@ -49,17 +49,6 @@ interface RenderCtx {
   resolveToken?: ResolveToken;
   /** true en el editor / no interactivo → los spoilers salen ya revelados. */
   spoilerRevealed?: boolean;
-  /**
-   * Overrides explícitos del bloque para la escala de encabezado — el `nivel`
-   * puede vivir en el nodo del `RichDoc` (`heading.level`), no solo en
-   * `block.nivel`; el render deriva la escala del nodo salvo estos overrides.
-   */
-  headingOverride?: {
-    tamanoFuente?: string;
-    negrita?: boolean;
-    espaciadoLetras?: number;
-    interlineado?: number;
-  };
   /** Revelado animado (solo viewer). `counter` da un índice continuo. */
   reveal?: { plan: RevealPlan; counter: { n: number } };
   /**
@@ -371,12 +360,6 @@ export function RenderText({
       modo === 'editor' || !nav.navigate
         ? undefined
         : (n: number) => nav.navigate?.({ kind: 'ir_a', index: n - 1 }),
-    headingOverride: {
-      tamanoFuente: block.tamanoFuente,
-      negrita: block.negrita,
-      espaciadoLetras: block.espaciadoLetras,
-      interlineado: block.interlineado,
-    },
   };
   if (modo === 'viewer') {
     const plan = textBlockRevealPlan(block);
@@ -385,13 +368,17 @@ export function RenderText({
       ctx.reveal = { plan, counter: { n: 0 } };
     }
   }
+  // El estilo base (derivado de `block.*`, que a su vez deriva del doc) se pasa a
+  // TODOS los nodos — también en multi-nodo — para que la tipografía y la
+  // alineación del bloque lleguen a `<p>`/`<h1>`/`<ul>`/`<table>`/`<li>`, no solo
+  // por herencia del `<div>` contenedor.
   const inner =
     doc.nodes.length === 1
       ? richNodeToElement(doc.nodes[0]!, 0, style, ctx)
       : createElement(
           'div',
-          { style },
-          doc.nodes.map((n, i) => richNodeToElement(n, i, undefined, ctx)),
+          { style: { textAlign: style.textAlign } },
+          doc.nodes.map((n, i) => richNodeToElement(n, i, style, ctx)),
         );
 
   // Caja del bloque (relleno / borde / sombra / alineación vertical): sólo se
@@ -556,6 +543,29 @@ function nodeSpacingCss(node: RichNode): CSSProperties {
   return out;
 }
 
+/**
+ * Estilo tipográfico del bloque guardado en el NODO raíz (Fase 1 del modelo
+ * único). Gana sobre la capa base (`style`) y sobre la escala H1–H6, y pierde
+ * frente a las marcas de rango de cada run.
+ */
+function nodeTypographyCss(node: RichNode): CSSProperties {
+  const out: CSSProperties = {};
+  if (node.fontFamily) out.fontFamily = fontFamilyWithFallback(node.fontFamily);
+  if (Number.isFinite(node.fontSize)) out.fontSize = `${node.fontSize}px`;
+  if (node.color) out.color = node.color;
+  // Tri-estado: `false` fija `normal`/`none` para ganar sobre un rol de tema o
+  // la escala del nivel; `undefined` no toca nada.
+  if (node.bold === true) out.fontWeight = 'bold';
+  else if (node.bold === false) out.fontWeight = 'normal';
+  if (node.italic === true) out.fontStyle = 'italic';
+  else if (node.italic === false) out.fontStyle = 'normal';
+  if (node.underline === true) out.textDecoration = 'underline';
+  else if (node.underline === false) out.textDecoration = 'none';
+  if (Number.isFinite(node.lineHeight)) out.lineHeight = node.lineHeight;
+  if (Number.isFinite(node.letterSpacing)) out.letterSpacing = `${node.letterSpacing}px`;
+  return out;
+}
+
 function richNodeToElement(
   node: RichNode,
   key: number | string,
@@ -568,22 +578,28 @@ function richNodeToElement(
     if (Object.keys(sp).length === 0) return base;
     return { ...base, ...sp };
   };
+  const typo = nodeTypographyCss(node);
   switch (node.type) {
     case 'heading': {
       const lvl = (node.level ?? 2) as HeadingLevel;
       // La escala (tamaño/peso/interlineado/tracking) se deriva del nivel del
-      // NODO — el ajuste manual del bloque (si existe) gana vía `headingOverride`.
-      const scale = headingFallbackCss(lvl, ctx?.headingOverride ?? {});
+      // NODO y solo rellena lo que el propio nodo no fija (`node.fontSize`, …).
+      const scale = headingFallbackCss(lvl, {
+        tamanoFuente: Number.isFinite(node.fontSize) ? `${node.fontSize}px` : undefined,
+        negrita: typeof node.bold === 'boolean' ? node.bold : undefined,
+        espaciadoLetras: Number.isFinite(node.letterSpacing) ? node.letterSpacing : undefined,
+        interlineado: Number.isFinite(node.lineHeight) ? node.lineHeight : undefined,
+      });
       return createElement(
         `h${lvl}`,
-        { key, style: { ...style, ...scale, ...nodeSpacingCss(node) } },
+        { key, style: { ...style, ...scale, ...typo, ...nodeSpacingCss(node) } },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
     }
     case 'blockquote':
       return createElement(
         'blockquote',
-        { key, style: withSpacing(style) },
+        { key, style: { ...withSpacing(style), ...typo } },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
     case 'codeBlock': {
@@ -609,7 +625,9 @@ function richNodeToElement(
     case 'taskList': {
       const isTask = node.type === 'taskList';
       const listStyle = withSpacing(
-        isTask ? { ...style, listStyle: 'none', paddingLeft: 0 } : style,
+        isTask
+          ? { ...style, ...typo, listStyle: 'none', paddingLeft: 0 }
+          : { ...style, ...typo },
       );
       return createElement(
         node.type === 'orderedList' ? 'ol' : 'ul',
@@ -625,7 +643,12 @@ function richNodeToElement(
         {
           key,
           'data-callout': node.variant ?? 'nota',
-          style: { ...style, ...calloutStyle(node.variant), ...nodeSpacingCss(node) },
+          style: {
+            ...style,
+            ...typo,
+            ...calloutStyle(node.variant),
+            ...nodeSpacingCss(node),
+          },
         },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
@@ -717,7 +740,7 @@ function richNodeToElement(
     default:
       return createElement(
         'p',
-        { key, style: withSpacing(style) },
+        { key, style: { ...withSpacing(style), ...typo } },
         revealLine(renderRuns(node.runs, ctx), ctx),
       );
   }

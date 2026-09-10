@@ -69,11 +69,48 @@ export interface RichNode {
   /** tableCell — celdas / filas que abarca */
   colspan?: number;
   rowspan?: number;
+
+  // ── Estilo tipográfico del bloque (Fase 1 del modelo único) ────────────────
+  // Vive en el/los nodo(s) raíz de un bloque de texto simple. `TextBlock.*`
+  // (`tamanoFuente`, `color`, `fuente`, `negrita`, …) se **deriva** de aquí en
+  // `syncTextBlockFromRichDoc` / `normalizeTextBlock`. Todo opcional y aditivo:
+  // los `contenidoRich` guardados sin estos campos siguen siendo válidos.
+  /** Familia tipográfica (nombre, ej. `'Inter'`). */
+  fontFamily?: string;
+  /** Tamaño en px virtuales del slide. */
+  fontSize?: number;
+  /** Color del texto del nodo. */
+  color?: string;
+  /** Negrita de todo el nodo (distinto de la marca `bold` por rango). */
+  bold?: boolean;
+  /** Cursiva de todo el nodo. */
+  italic?: boolean;
+  /** Subrayado de todo el nodo. */
+  underline?: boolean;
+  /** Interlineado (multiplicador). */
+  lineHeight?: number;
+  /** Espaciado entre letras en px. */
+  letterSpacing?: number;
+
   /** hojas de texto (paragraph, heading, listItem, blockquote, codeBlock) */
   runs?: RichRun[];
   /** hijos de bloque (listas, blockquote, table→tableRow→tableCell) */
   children?: RichNode[];
 }
+
+/** Claves de `RichNode` que forman el estilo tipográfico del bloque (nodo raíz). */
+export const RICH_NODE_STYLE_KEYS = [
+  'fontFamily',
+  'fontSize',
+  'color',
+  'bold',
+  'italic',
+  'underline',
+  'lineHeight',
+  'letterSpacing',
+] as const;
+
+export type RichNodeStyleKey = (typeof RICH_NODE_STYLE_KEYS)[number];
 
 export interface RichDoc {
   version: 1;

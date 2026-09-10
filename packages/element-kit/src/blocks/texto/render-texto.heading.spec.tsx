@@ -52,7 +52,9 @@ describe('RenderText — escala de encabezados (Fase 0.1)', () => {
     const { container } = render(<RenderText block={block} modo="viewer" />);
     const s = styleOf(container, 'h2');
     expect(s.fontSize).toBe('32px');
-    expect(s.fontWeight).toBe('');
+    // Modelo único: `negrita:false` fija `normal` (gana sobre rol de tema); lo
+    // esencial es que NO herede el 700 de la escala del nivel.
+    expect(['', 'normal']).toContain(s.fontWeight);
   });
 
   it('sin nivel el <p> no gana estilo de la escala', () => {
@@ -92,16 +94,17 @@ describe('RenderText — escala de encabezados (Fase 0.1)', () => {
     expect(styleOf(container, 'p').fontSize).toBe('');
   });
 
-  it('override explícito de tamaño en el bloque gana sobre la escala del nodo', () => {
+  // Modelo único (Fase 1): el override de tamaño vive EN EL NODO, no en
+  // `block.tamanoFuente`. Un nodo con `fontSize` gana sobre la escala del nivel.
+  it('override explícito de tamaño en el nodo gana sobre la escala del nivel', () => {
     const doc: RichDoc = {
       version: 1,
-      nodes: [{ type: 'heading', level: 1, runs: [{ text: 'H1 chico' }] }],
+      nodes: [{ type: 'heading', level: 1, fontSize: 14, runs: [{ text: 'H1 chico' }] }],
     };
     const block: TextBlock = {
       tipo: 'texto',
       contenido: 'H1 chico',
       contenidoRich: doc,
-      tamanoFuente: '14px',
     };
     const { container } = render(<RenderText block={block} modo="viewer" />);
     expect(styleOf(container, 'h1').fontSize).toBe('14px');

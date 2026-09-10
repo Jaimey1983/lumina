@@ -100,6 +100,76 @@ const NodeAlign = Extension.create({
   },
 });
 
+/**
+ * Estilo tipográfico del bloque en `paragraph` / `heading` (Fase 1 del modelo
+ * único): `fontFamily` / `fontSize` / `color` / `bold` / `italic` / `underline` /
+ * `lineHeight` / `letterSpacing` como atributos del NODO (no marcas por rango).
+ * `render-texto` y `pm-serializers` los tratan como el estilo del bloque; el
+ * panel de propiedades escribe aquí cuando no hay selección de rango viva.
+ */
+const NodeBlockStyle = Extension.create({
+  name: 'luminaNodeBlockStyle',
+  addGlobalAttributes() {
+    const numAttrPx = (cssProp: string, key: string, unit: 'px' | '') => ({
+      default: null as number | null,
+      parseHTML: (el: HTMLElement) => {
+        const raw = el.style.getPropertyValue(cssProp);
+        const n = raw ? parseFloat(raw) : NaN;
+        return Number.isFinite(n) ? n : null;
+      },
+      renderHTML: (attrs: Record<string, unknown>) => {
+        const v = attrs[key];
+        return typeof v === 'number' && Number.isFinite(v)
+          ? { style: `${cssProp}:${v}${unit}` }
+          : {};
+      },
+    });
+    const strAttr = (cssProp: string, key: string) => ({
+      default: null as string | null,
+      parseHTML: (el: HTMLElement) => el.style.getPropertyValue(cssProp) || null,
+      renderHTML: (attrs: Record<string, unknown>) => {
+        const v = attrs[key];
+        return v ? { style: `${cssProp}:${v as string}` } : {};
+      },
+    });
+    const boolAttr = (
+      cssProp: string,
+      key: string,
+      onValue: string,
+      offValue: string,
+    ) => ({
+      default: null as boolean | null,
+      parseHTML: (el: HTMLElement) => {
+        const raw = el.style.getPropertyValue(cssProp).trim();
+        if (!raw) return null;
+        if (raw.includes(onValue)) return true;
+        if (raw.includes(offValue)) return false;
+        return null;
+      },
+      renderHTML: (attrs: Record<string, unknown>) => {
+        if (attrs[key] === true) return { style: `${cssProp}:${onValue}` };
+        if (attrs[key] === false) return { style: `${cssProp}:${offValue}` };
+        return {};
+      },
+    });
+    return [
+      {
+        types: ['paragraph', 'heading'],
+        attributes: {
+          fontFamily: strAttr('font-family', 'fontFamily'),
+          fontSize: numAttrPx('font-size', 'fontSize', 'px'),
+          color: strAttr('color', 'color'),
+          bold: boolAttr('font-weight', 'bold', 'bold', 'normal'),
+          italic: boolAttr('font-style', 'italic', 'italic', 'normal'),
+          underline: boolAttr('text-decoration', 'underline', 'underline', 'none'),
+          lineHeight: numAttrPx('line-height', 'lineHeight', ''),
+          letterSpacing: numAttrPx('letter-spacing', 'letterSpacing', 'px'),
+        },
+      },
+    ];
+  },
+});
+
 /** `fontSize` / `fontFamily` / `letterSpacing` sobre el mark `textStyle`. */
 const TextStyleExtras = Extension.create({
   name: 'luminaTextStyleExtras',
@@ -371,6 +441,7 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
     TaskItem.configure({ nested: false }),
     TableKit.configure({ table: { resizable: false } }),
     NodeAlign,
+    NodeBlockStyle,
     LinkSlideRef,
     Term,
     Spoiler,

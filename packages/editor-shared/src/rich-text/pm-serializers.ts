@@ -12,6 +12,7 @@ import type {
   RichNode,
   RichRun,
 } from '@lumina/types/rich-text';
+import { RICH_NODE_STYLE_KEYS } from '@lumina/types/rich-text';
 import type { TextAlign } from '@lumina/types/slide';
 import { sanitizeRichDoc } from './sanitize.js';
 
@@ -99,18 +100,56 @@ function runMarksToPm(marks: RichMark[] | undefined): PmJSON['marks'] {
 
 function runsToPmText(runs: RichRun[] | undefined): PmJSON[] {
   if (!runs) return [];
-  return runs
-    .filter((r) => r.text !== '')
-    .map((r) => ({
-      type: 'text',
-      text: r.text,
-      ...(runMarksToPm(r.marks) ? { marks: runMarksToPm(r.marks) } : {}),
-    }));
+  const out: PmJSON[] = [];
+  for (const r of runs) {
+    if (r.text === '') continue;
+    const marks = runMarksToPm(r.marks);
+    // Los `\n` internos de un run se emiten como `hardBreak` (no como texto
+    // literal, que ProseMirror no rinde como salto de línea — bug de títulos
+    // multilínea legados). El round-trip los devuelve a `\n` en `pmInlineToRuns`.
+    const segments = r.text.split('\n');
+    segments.forEach((seg, i) => {
+      if (seg !== '') {
+        out.push({ type: 'text', text: seg, ...(marks ? { marks } : {}) });
+      }
+      if (i < segments.length - 1) out.push({ type: 'hardBreak' });
+    });
+  }
+  return out;
 }
 
-/** Atributos de bloque de nodo (alineación + sangría + espaciado) para el JSON de TipTap. */
-function blockAttrs(node: RichNode): Record<string, unknown> {
+/** Copia los 8 campos de estilo tipográfico del bloque (nodo raíz) definidos. */
+function nodeStyleAttrs(node: RichNode): Record<string, unknown> {
   const out: Record<string, unknown> = {};
+  const rec = node as unknown as Record<string, unknown>;
+  for (const k of RICH_NODE_STYLE_KEYS) {
+    const v = rec[k];
+    if (v !== undefined && v !== null) out[k] = v;
+  }
+  return out;
+}
+
+/** Lee el estilo tipográfico del bloque desde el `attrs` de un nodo de TipTap. */
+function readNodeStyle(attrs?: Record<string, unknown>): Partial<RichNode> {
+  const out: Record<string, unknown> = {};
+  if (!attrs) return out;
+  for (const k of RICH_NODE_STYLE_KEYS) {
+    const v = attrs[k];
+    if (v === undefined || v === null) continue;
+    if (k === 'bold' || k === 'italic' || k === 'underline') {
+      if (typeof v === 'boolean') out[k] = v;
+    } else if (k === 'fontFamily' || k === 'color') {
+      if (typeof v === 'string' && v !== '') out[k] = v;
+    } else if (typeof v === 'number' && Number.isFinite(v)) {
+      out[k] = v;
+    }
+  }
+  return out as Partial<RichNode>;
+}
+
+/** Atributos de bloque de nodo (alineación + sangría + espaciado + tipografía) para TipTap. */
+function blockAttrs(node: RichNode): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...nodeStyleAttrs(node) };
   if (node.align) out.align = node.align;
   if (Number.isFinite(node.indent)) out.indent = node.indent;
   if (Number.isFinite(node.spaceBefore)) out.spaceBefore = node.spaceBefore;
@@ -344,6 +383,7 @@ function pmNodeToRich(node: PmJSON): RichNode | null {
         type: 'paragraph',
         ...(align ? { align } : {}),
         ...pmBlockSpacing(node.attrs),
+        ...readNodeStyle(node.attrs),
         ...(runs ? { runs } : {}),
       };
     }
@@ -357,6 +397,7 @@ function pmNodeToRich(node: PmJSON): RichNode | null {
         level,
         ...(align ? { align } : {}),
         ...pmBlockSpacing(node.attrs),
+        ...readNodeStyle(node.attrs),
         ...(runs ? { runs } : {}),
       };
     }

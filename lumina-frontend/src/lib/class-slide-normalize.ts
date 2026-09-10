@@ -33,7 +33,8 @@ import { normalizeClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import { normalizeBackground } from '@/lib/slide-background';
 import { normalizeGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import { normalizeDiagramaBlock } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
-import { sanitizeRichDoc, richToPlain, isRichDoc } from '@lumina/editor-shared/rich-text';
+import { sanitizeRichDoc, isRichDoc } from '@lumina/editor-shared/rich-text';
+import { syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -149,10 +150,12 @@ function withoutInteractiveStubs(bloques: Block[]): Block[] {
 }
 
 /**
- * Texto enriquecido (Fase 1): si el bloque trae `contenidoRich`, se sanea y se
- * recomputa `contenido` a partir de él. Si el `RichDoc` es inválido se descarta y
- * el bloque queda como texto plano. Sin `contenidoRich` el bloque no cambia — el
- * relleno perezoso lo hará el editor enriquecido (Fase 2), no la hidratación.
+ * Texto enriquecido (Fase 1): si el bloque trae `contenidoRich`, se sanea, se
+ * recomputa `contenido` y se **reconcilian** las propiedades de bloque
+ * (`nivel`, `lista`, `alineacion` + tipografía) con el/los nodo(s) raíz — así un
+ * slide guardado con `contenidoRich` y `block.*` divergentes se hidrata
+ * coherente (antes solo se curaba en el próximo commit del bloque). Si el
+ * `RichDoc` es inválido se descarta y el bloque queda como texto plano.
  */
 function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
   if (block.contenidoRich === undefined) return block;
@@ -162,7 +165,7 @@ function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
     return rest;
   }
   const doc = sanitizeRichDoc(block.contenidoRich);
-  return { ...block, contenidoRich: doc, contenido: richToPlain(doc) };
+  return syncTextBlockFromRichDoc(block, doc) as Block;
 }
 
 function normalizeBlock(block: Block): Block {

@@ -60,6 +60,28 @@ const NODE_TYPES = new Set<RichNodeType>([
 
 const isColor = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
 
+/** Límites del documento saneado (evita pegados/IA gigantes). */
+const MAX_NODES = 600;
+const MAX_DEPTH = 8;
+
+/** Copia validada del estilo tipográfico del bloque (nodo raíz). */
+function sanitizeNodeStyle(node: RichNode, out: RichNode): void {
+  if (isColor(node.fontFamily)) out.fontFamily = node.fontFamily;
+  if (isColor(node.color)) out.color = node.color;
+  if (Number.isFinite(node.fontSize) && (node.fontSize as number) >= 4 && (node.fontSize as number) <= 400) {
+    out.fontSize = Math.round(node.fontSize as number);
+  }
+  if (typeof node.bold === 'boolean') out.bold = node.bold;
+  if (typeof node.italic === 'boolean') out.italic = node.italic;
+  if (typeof node.underline === 'boolean') out.underline = node.underline;
+  if (Number.isFinite(node.lineHeight) && (node.lineHeight as number) > 0 && (node.lineHeight as number) <= 4) {
+    out.lineHeight = node.lineHeight;
+  }
+  if (Number.isFinite(node.letterSpacing) && Math.abs(node.letterSpacing as number) <= 80) {
+    out.letterSpacing = node.letterSpacing;
+  }
+}
+
 /** Orden canónico de marcas — hace estable el round-trip con TipTap. */
 const MARK_ORDER: RichMarkType[] = [
   'bold',
@@ -166,12 +188,19 @@ function mergeRuns(runs: RichRun[]): RichRun[] {
   return out;
 }
 
-function sanitizeNode(node: RichNode): RichNode | null {
+function sanitizeNode(node: RichNode, depth = 0): RichNode | null {
   if (!node || typeof node !== 'object' || !NODE_TYPES.has(node.type)) return null;
+  if (depth > MAX_DEPTH) return null;
   const out: RichNode = { type: node.type };
 
-  if (node.type === 'heading' && node.level && node.level >= 1 && node.level <= 6) {
-    out.level = node.level;
+  if (node.type === 'heading') {
+    // Un `heading` sin nivel válido cae a H2 (nunca queda sin nivel → el bloque
+    // perdía `nivel` en `syncTextBlockFromRichDoc`).
+    out.level =
+      node.level && node.level >= 1 && node.level <= 6 ? node.level : 2;
+  }
+  if (node.type === 'paragraph' || node.type === 'heading') {
+    sanitizeNodeStyle(node, out);
   }
   if (
     node.align === 'izquierda' ||
@@ -208,7 +237,7 @@ function sanitizeNode(node: RichNode): RichNode | null {
   }
   if (Array.isArray(node.children)) {
     const children = node.children
-      .map(sanitizeNode)
+      .map((c) => sanitizeNode(c, depth + 1))
       .filter((n): n is RichNode => n !== null);
     if (children.length > 0) out.children = children;
   }
@@ -230,10 +259,40 @@ function sanitizeNode(node: RichNode): RichNode | null {
   return out;
 }
 
+/** Cuenta nodos recursivamente (para el tope `MAX_NODES`). */
+function countNodes(nodes: RichNode[]): number {
+  let n = nodes.length;
+  for (const node of nodes) if (node.children) n += countNodes(node.children);
+  return n;
+}
+
+/** Recorta un párrafo vacío final (residuo de "Enter, Enter, borrar"). */
+function trimTrailingEmptyParagraph(nodes: RichNode[]): RichNode[] {
+  if (nodes.length <= 1) return nodes;
+  const last = nodes[nodes.length - 1]!;
+  if (last.type === 'paragraph' && (!last.runs || last.runs.length === 0)) {
+    return nodes.slice(0, -1);
+  }
+  return nodes;
+}
+
 /** Documento saneado: recorta marcas/nodos fuera del esquema, `href` inseguros, y funde runs. */
 export function sanitizeRichDoc(doc: RichDoc): RichDoc {
-  const nodes = Array.isArray(doc?.nodes)
-    ? doc.nodes.map(sanitizeNode).filter((n): n is RichNode => n !== null)
+  let nodes = Array.isArray(doc?.nodes)
+    ? doc.nodes.map((n) => sanitizeNode(n, 0)).filter((n): n is RichNode => n !== null)
     : [];
+  nodes = trimTrailingEmptyParagraph(nodes);
+  if (countNodes(nodes) > MAX_NODES) {
+    // Recorte duro: nos quedamos con los primeros nodos hasta el tope.
+    const kept: RichNode[] = [];
+    let acc = 0;
+    for (const node of nodes) {
+      const size = 1 + (node.children ? countNodes(node.children) : 0);
+      if (acc + size > MAX_NODES) break;
+      kept.push(node);
+      acc += size;
+    }
+    nodes = kept;
+  }
   return { version: 1, nodes: nodes.length > 0 ? nodes : [{ type: 'paragraph' }] };
 }

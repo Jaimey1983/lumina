@@ -215,6 +215,55 @@ describe('richToPmDoc / pmDocToRich', () => {
     }
   });
 
+  it('round-trip de la tipografía del bloque en el nodo raíz (Fase 1)', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        {
+          type: 'heading',
+          level: 1,
+          fontFamily: 'Poppins',
+          fontSize: 40,
+          color: '#123456',
+          bold: true,
+          italic: false,
+          lineHeight: 1.2,
+          letterSpacing: -0.5,
+          runs: [{ text: 'Título' }],
+        },
+      ],
+    };
+    expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+    const n = roundTrip(doc).nodes[0]!;
+    expect(n.fontSize).toBe(40);
+    expect(n.color).toBe('#123456');
+    expect(n.fontFamily).toBe('Poppins');
+    expect(n.bold).toBe(true);
+    expect(n.italic).toBe(false);
+    expect(n.lineHeight).toBe(1.2);
+    expect(n.letterSpacing).toBe(-0.5);
+  });
+
+  it('los `\\n` de un run se serializan como hardBreak y vuelven a `\\n`', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'heading', level: 1, runs: [{ text: 'Línea 1\nLínea 2' }] }],
+    };
+    const pm = richToPmDoc(doc);
+    const types = (pm.content?.[0]?.content ?? []).map((c) => c.type);
+    expect(types).toContain('hardBreak');
+    expect(roundTrip(doc).nodes[0]!.runs).toEqual([{ text: 'Línea 1\nLínea 2' }]);
+  });
+
+  it('heading sin nivel → H2 al sanear (no queda sin nivel)', () => {
+    const rich = pmDocToRich({
+      type: 'doc',
+      content: [{ type: 'heading', attrs: {}, content: [{ type: 'text', text: 'x' }] }],
+    });
+    expect(rich.nodes[0]!.type).toBe('heading');
+    expect(rich.nodes[0]!.level).toBe(2);
+  });
+
   it('nodos vacíos / tipos desconocidos se omiten sin romper', () => {
     const pm = richToPmDoc({
       version: 1,
