@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -15,6 +16,7 @@ import {
   Bold,
   BookMarked,
   Code,
+  EllipsisVertical,
   EyeOff,
   Highlighter,
   Indent,
@@ -37,9 +39,9 @@ import {
   Superscript as SupIcon,
   Underline,
 } from 'lucide-react';
-import { isSafeHref } from './sanitize.js';
 import { useRichTextAi } from './ai-context.js';
 import { AiAssistPanel } from './ai-assist-panel.js';
+import { BubblePopover, type BubblePopoverId } from './bubble-popovers.js';
 
 const SIZE_STEP = 2;
 const SIZE_MIN = 8;
@@ -60,7 +62,6 @@ function setFontSize(editor: Editor, px: number): void {
 const INDENT_STEP = 1.5;
 const INDENT_MAX = 9;
 
-/** Tipo del nodo de bloque que contiene la selección (paragraph / heading). */
 function currentBlockType(editor: Editor): 'paragraph' | 'heading' | null {
   const name = editor.state.selection.$from.parent.type.name;
   return name === 'paragraph' || name === 'heading' ? name : null;
@@ -71,11 +72,7 @@ function changeIndent(editor: Editor, delta: number): void {
   if (!type) return;
   const cur = (editor.getAttributes(type).indent as number | undefined) ?? 0;
   const next = Math.max(0, Math.min(INDENT_MAX, cur + delta));
-  editor
-    .chain()
-    .focus()
-    .updateAttributes(type, { indent: next === 0 ? null : next })
-    .run();
+  editor.chain().focus().updateAttributes(type, { indent: next === 0 ? null : next }).run();
 }
 
 interface ToolbarButton {
@@ -84,189 +81,85 @@ interface ToolbarButton {
   icon: ReactNode;
   isActive?: (e: Editor) => boolean;
   isDisabled?: (e: Editor) => boolean;
-  run: (e: Editor) => void;
+  /** Abre un popover en vez de ejecutar `run` (enlace, fórmula, término…). */
+  popover?: BubblePopoverId;
+  run?: (e: Editor) => void;
 }
 
-function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
-  const btns: ToolbarButton[] = [
-    { id: 'bold', label: 'Negrita', icon: <Bold className="size-3.5" />, isActive: (e) => e.isActive('bold'), run: (e) => e.chain().focus().toggleBold().run() },
-    { id: 'italic', label: 'Cursiva', icon: <Italic className="size-3.5" />, isActive: (e) => e.isActive('italic'), run: (e) => e.chain().focus().toggleItalic().run() },
-    { id: 'underline', label: 'Subrayado', icon: <Underline className="size-3.5" />, isActive: (e) => e.isActive('underline'), run: (e) => e.chain().focus().toggleUnderline().run() },
-    { id: 'strike', label: 'Tachado', icon: <Strikethrough className="size-3.5" />, isActive: (e) => e.isActive('strike'), run: (e) => e.chain().focus().toggleStrike().run() },
-    { id: 'code', label: 'Código', icon: <Code className="size-3.5" />, isActive: (e) => e.isActive('code'), run: (e) => e.chain().focus().toggleCode().run() },
-    { id: 'sup', label: 'Superíndice', icon: <SupIcon className="size-3.5" />, isActive: (e) => e.isActive('superscript'), run: (e) => e.chain().focus().toggleSuperscript().run() },
-    { id: 'sub', label: 'Subíndice', icon: <SubIcon className="size-3.5" />, isActive: (e) => e.isActive('subscript'), run: (e) => e.chain().focus().toggleSubscript().run() },
-    { id: 'highlight', label: 'Resaltar', icon: <Highlighter className="size-3.5" />, isActive: (e) => e.isActive('highlight'), run: (e) => e.chain().focus().toggleHighlight({ color: HIGHLIGHT_DEFAULT }).run() },
-    { id: 'spoiler', label: 'Ocultar respuesta', icon: <EyeOff className="size-3.5" />, isActive: (e) => e.isActive('spoiler'), run: (e) => e.chain().focus().toggleMark('spoiler').run() },
-    { id: 'size-down', label: 'Reducir tamaño', icon: <Minus className="size-3.5" />, run: (e) => setFontSize(e, currentFontSizePx(e) - SIZE_STEP) },
-    { id: 'size-up', label: 'Aumentar tamaño', icon: <Plus className="size-3.5" />, run: (e) => setFontSize(e, currentFontSizePx(e) + SIZE_STEP) },
+interface ToolbarGroup {
+  id: string;
+  buttons: ToolbarButton[];
+}
+
+/** Grupos SIEMPRE visibles en línea (con separador entre grupos). */
+function primaryGroups(onAiAssist?: () => void): ToolbarGroup[] {
+  const groups: ToolbarGroup[] = [
+    {
+      id: 'format',
+      buttons: [
+        { id: 'bold', label: 'Negrita', icon: <Bold className="size-3.5" />, isActive: (e) => e.isActive('bold'), run: (e) => e.chain().focus().toggleBold().run() },
+        { id: 'italic', label: 'Cursiva', icon: <Italic className="size-3.5" />, isActive: (e) => e.isActive('italic'), run: (e) => e.chain().focus().toggleItalic().run() },
+        { id: 'underline', label: 'Subrayado', icon: <Underline className="size-3.5" />, isActive: (e) => e.isActive('underline'), run: (e) => e.chain().focus().toggleUnderline().run() },
+        { id: 'strike', label: 'Tachado', icon: <Strikethrough className="size-3.5" />, isActive: (e) => e.isActive('strike'), run: (e) => e.chain().focus().toggleStrike().run() },
+        { id: 'code', label: 'Código en línea', icon: <Code className="size-3.5" />, isActive: (e) => e.isActive('code'), run: (e) => e.chain().focus().toggleCode().run() },
+        { id: 'sup', label: 'Superíndice', icon: <SupIcon className="size-3.5" />, isActive: (e) => e.isActive('superscript'), run: (e) => e.chain().focus().toggleSuperscript().run() },
+        { id: 'sub', label: 'Subíndice', icon: <SubIcon className="size-3.5" />, isActive: (e) => e.isActive('subscript'), run: (e) => e.chain().focus().toggleSubscript().run() },
+      ],
+    },
+    {
+      id: 'mark',
+      buttons: [
+        { id: 'highlight', label: 'Resaltar', icon: <Highlighter className="size-3.5" />, isActive: (e) => e.isActive('highlight'), run: (e) => e.chain().focus().toggleHighlight({ color: HIGHLIGHT_DEFAULT }).run() },
+        { id: 'spoiler', label: 'Ocultar respuesta', icon: <EyeOff className="size-3.5" />, isActive: (e) => e.isActive('spoiler'), run: (e) => e.chain().focus().toggleMark('spoiler').run() },
+      ],
+    },
+    {
+      id: 'size',
+      buttons: [
+        { id: 'size-down', label: 'Reducir tamaño', icon: <Minus className="size-3.5" />, run: (e) => setFontSize(e, currentFontSizePx(e) - SIZE_STEP) },
+        { id: 'size-up', label: 'Aumentar tamaño', icon: <Plus className="size-3.5" />, run: (e) => setFontSize(e, currentFontSizePx(e) + SIZE_STEP) },
+      ],
+    },
     {
       id: 'link',
-      label: 'Enlace',
-      icon: <Link2 className="size-3.5" />,
-      isActive: (e) => e.isActive('link'),
-      run: (e) => {
-        const prev = (e.getAttributes('link').href as string | undefined) ?? '';
-        const url = typeof window !== 'undefined' ? window.prompt('URL del enlace', prev) : null;
-        if (url === null) return;
-        const href = url.trim();
-        if (href === '') {
-          e.chain().focus().unsetLink().run();
-        } else if (isSafeHref(href)) {
-          e.chain().focus().extendMarkRange('link').setLink({ href }).run();
-        }
-      },
+      buttons: [
+        { id: 'link', label: 'Enlace', icon: <Link2 className="size-3.5" />, isActive: (e) => e.isActive('link') && typeof e.getAttributes('link').slideRef !== 'number', popover: 'link' },
+        { id: 'unlink', label: 'Quitar enlace', icon: <Link2Off className="size-3.5" />, isDisabled: (e) => !e.isActive('link'), run: (e) => e.chain().focus().unsetLink().run() },
+      ],
     },
-    {
-      id: 'slide-ref',
-      label: 'Ir a diapositiva',
-      icon: <Presentation className="size-3.5" />,
-      isActive: (e) => typeof e.getAttributes('link').slideRef === 'number',
-      run: (e) => {
-        const prev = e.getAttributes('link').slideRef as number | undefined;
-        const raw =
-          typeof window !== 'undefined'
-            ? window.prompt('Número de diapositiva', prev ? String(prev) : '')
-            : null;
-        if (raw === null) return;
-        const n = Math.round(Number(raw.trim()));
-        if (!Number.isFinite(n) || n < 1) {
-          e.chain().focus().unsetLink().run();
-          return;
-        }
-        e.chain().focus().extendMarkRange('link').setMark('link', { href: null, slideRef: n }).run();
-      },
-    },
-    { id: 'unlink', label: 'Quitar enlace', icon: <Link2Off className="size-3.5" />, isDisabled: (e) => !e.isActive('link'), run: (e) => e.chain().focus().unsetLink().run() },
-    {
-      id: 'term',
-      label: 'Término del glosario',
-      icon: <BookMarked className="size-3.5" />,
-      isActive: (e) => e.isActive('term'),
-      run: (e) => {
-        if (e.isActive('term')) {
-          e.chain().focus().unsetMark('term').run();
-          return;
-        }
-        const prev = (e.getAttributes('term').definicion as string | undefined) ?? '';
-        const def =
-          typeof window !== 'undefined' ? window.prompt('Definición del término', prev) : null;
-        if (def === null) return;
-        const definicion = def.trim();
-        const glosaId =
-          (e.getAttributes('term').glosaId as string | undefined) ??
-          `t-${Math.random().toString(36).slice(2, 9)}`;
-        e
-          .chain()
-          .focus()
-          .setMark('term', { glosaId, definicion: definicion === '' ? null : definicion })
-          .run();
-      },
-    },
-    {
-      id: 'outdent',
-      label: 'Reducir sangría',
-      icon: <Outdent className="size-3.5" />,
-      isDisabled: (e) => !currentBlockType(e) || !(e.getAttributes(currentBlockType(e)!).indent),
-      run: (e) => changeIndent(e, -INDENT_STEP),
-    },
-    {
-      id: 'indent',
-      label: 'Aumentar sangría',
-      icon: <Indent className="size-3.5" />,
-      isDisabled: (e) => !currentBlockType(e),
-      run: (e) => changeIndent(e, INDENT_STEP),
-    },
-    {
-      id: 'task-list',
-      label: 'Lista de tareas',
-      icon: <ListChecks className="size-3.5" />,
-      isActive: (e) => e.isActive('taskList'),
-      run: (e) => e.chain().focus().toggleTaskList().run(),
-    },
-    {
-      id: 'callout',
-      label: 'Llamada (nota)',
-      icon: <Info className="size-3.5" />,
-      isActive: (e) => e.isActive('callout'),
-      run: (e) =>
-        e.isActive('callout')
-          ? e.chain().focus().setNode('paragraph').run()
-          : e.chain().focus().setNode('callout', { variant: 'nota' }).run(),
-    },
-    {
-      id: 'table',
-      label: 'Insertar / quitar tabla',
-      icon: <TableIcon className="size-3.5" />,
-      isActive: (e) => e.isActive('table'),
-      run: (e) =>
-        e.isActive('table')
-          ? e.chain().focus().deleteTable().run()
-          : e
-              .chain()
-              .focus()
-              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-              .run(),
-    },
-    {
-      id: 'code-block',
-      label: 'Bloque de código',
-      icon: <SquareCode className="size-3.5" />,
-      isActive: (e) => e.isActive('codeBlock'),
-      run: (e) => {
-        if (e.isActive('codeBlock')) {
-          e.chain().focus().toggleCodeBlock().run();
-          return;
-        }
-        const lang =
-          typeof window !== 'undefined'
-            ? window.prompt('Lenguaje (opcional): js, python, sql…', '')
-            : null;
-        const chain = e.chain().focus();
-        (lang && lang.trim()
-          ? chain.toggleCodeBlock({ language: lang.trim() })
-          : chain.toggleCodeBlock()
-        ).run();
-      },
-    },
-    {
-      id: 'math',
-      label: 'Fórmula (LaTeX)',
-      icon: <Sigma className="size-3.5" />,
-      isActive: (e) => e.isActive('math'),
-      run: (e) => {
-        const prev = (e.getAttributes('math').latex as string | undefined) ?? '';
-        const latex =
-          typeof window !== 'undefined'
-            ? window.prompt('Fórmula en LaTeX', prev)
-            : null;
-        if (latex === null) return;
-        const value = latex.trim();
-        if (value === '') return;
-        if (e.isActive('math')) {
-          e.chain().focus().updateAttributes('math', { latex: value }).run();
-        } else {
-          e.chain().focus().insertContent({ type: 'math', attrs: { latex: value } }).run();
-        }
-      },
-    },
-    { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
   ];
   if (onAiAssist) {
-    btns.push({
+    groups.push({
       id: 'ai',
-      label: 'Asistente de redacción',
-      icon: <Sparkles className="size-3.5" />,
-      run: () => onAiAssist(),
+      buttons: [
+        { id: 'ai', label: 'Asistente de redacción', icon: <Sparkles className="size-3.5" />, run: () => onAiAssist() },
+      ],
     });
   }
-  return btns;
+  return groups;
+}
+
+/** Acciones secundarias — detrás del botón «⋯ Más» (con etiqueta de texto). */
+function secondaryButtons(): ToolbarButton[] {
+  return [
+    { id: 'slide-ref', label: 'Ir a diapositiva', icon: <Presentation className="size-3.5" />, isActive: (e) => typeof e.getAttributes('link').slideRef === 'number', popover: 'slideRef' },
+    { id: 'term', label: 'Término del glosario', icon: <BookMarked className="size-3.5" />, isActive: (e) => e.isActive('term'), popover: 'term' },
+    { id: 'outdent', label: 'Reducir sangría', icon: <Outdent className="size-3.5" />, isDisabled: (e) => !currentBlockType(e) || !e.getAttributes(currentBlockType(e)!).indent, run: (e) => changeIndent(e, -INDENT_STEP) },
+    { id: 'indent', label: 'Aumentar sangría', icon: <Indent className="size-3.5" />, isDisabled: (e) => !currentBlockType(e), run: (e) => changeIndent(e, INDENT_STEP) },
+    { id: 'task-list', label: 'Lista de tareas', icon: <ListChecks className="size-3.5" />, isActive: (e) => e.isActive('taskList'), run: (e) => e.chain().focus().toggleTaskList().run() },
+    { id: 'callout', label: 'Llamada (nota)', icon: <Info className="size-3.5" />, isActive: (e) => e.isActive('callout'), run: (e) => (e.isActive('callout') ? e.chain().focus().setNode('paragraph').run() : e.chain().focus().setNode('callout', { variant: 'nota' }).run()) },
+    { id: 'table', label: 'Insertar / quitar tabla', icon: <TableIcon className="size-3.5" />, isActive: (e) => e.isActive('table'), run: (e) => (e.isActive('table') ? e.chain().focus().deleteTable().run() : e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()) },
+    { id: 'code-block', label: 'Bloque de código', icon: <SquareCode className="size-3.5" />, isActive: (e) => e.isActive('codeBlock'), popover: 'codeBlock' },
+    { id: 'math', label: 'Fórmula (LaTeX)', icon: <Sigma className="size-3.5" />, isActive: (e) => e.isActive('math'), popover: 'math' },
+    { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
+  ];
 }
 
 const wrapperStyle: CSSProperties = {
   position: 'fixed',
   zIndex: 60,
   display: 'flex',
+  alignItems: 'center',
   gap: 2,
   padding: 3,
   borderRadius: 8,
@@ -274,26 +167,67 @@ const wrapperStyle: CSSProperties = {
   color: 'var(--popover-foreground, #0f172a)',
   border: '1px solid var(--border, #e2e8f0)',
   boxShadow: '0 8px 24px rgba(15,23,42,0.18)',
-  transform: 'translate(-50%, -100%)',
+};
+
+const btnStyle = (active: boolean, disabled: boolean): CSSProperties => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 26,
+  height: 26,
+  border: 'none',
+  borderRadius: 6,
+  cursor: disabled ? 'default' : 'pointer',
+  opacity: disabled ? 0.4 : 1,
+  background: active ? 'var(--accent, #e2e8f0)' : 'transparent',
+});
+
+const sepStyle: CSSProperties = {
+  width: 1,
+  alignSelf: 'stretch',
+  margin: '3px 2px',
+  background: 'var(--border, #e2e8f0)',
 };
 
 export interface BubbleToolbarProps {
   editor: Editor | null;
 }
 
+type Pos = { top: number; left: number; below?: boolean };
+
 export function BubbleToolbar({ editor }: BubbleToolbarProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; below?: boolean } | null>(null);
+  const [pos, setPos] = useState<Pos | null>(null);
   const [, forceTick] = useState(0);
   const [focusIdx, setFocusIdx] = useState(0);
   const [aiOpen, setAiOpen] = useState(false);
-  const aiOpenRef = useRef(false);
-  aiOpenRef.current = aiOpen;
-  const lastPosRef = useRef<{ top: number; left: number; below?: boolean } | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [popover, setPopover] = useState<BubblePopoverId | null>(null);
+  const overlayOpenRef = useRef(false);
+  overlayOpenRef.current = aiOpen || moreOpen || popover !== null;
+  const lastPosRef = useRef<Pos | null>(null);
   const ai = useRichTextAi();
-  const openAi = useCallback(() => setAiOpen(true), []);
-  const buttonsRef = useRef<ToolbarButton[]>([]);
-  buttonsRef.current = buildButtons(ai ? openAi : undefined);
+  const openAi = useCallback(() => {
+    setMoreOpen(false);
+    setPopover(null);
+    setAiOpen(true);
+  }, []);
+
+  const groups = useMemo(() => primaryGroups(ai ? openAi : undefined), [ai, openAi]);
+  const secondary = useMemo(() => secondaryButtons(), []);
+  const flatPrimary = useMemo(() => groups.flatMap((g) => g.buttons), [groups]);
+  /** Índices (en `flatPrimary`) donde arranca un grupo nuevo → separador antes. */
+  const groupStarts = useMemo(() => {
+    const set = new Set<number>();
+    let acc = 0;
+    for (const g of groups) {
+      if (acc > 0) set.add(acc);
+      acc += g.buttons.length;
+    }
+    return set;
+  }, [groups]);
+  /** Botones navegables por teclado en la fila: primarios + «⋯». */
+  const navCount = flatPrimary.length + 1;
 
   const recompute = useCallback(() => {
     if (!editor || !editor.isEditable) {
@@ -303,7 +237,7 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
     const { from, to, empty } = editor.state.selection;
     const focusInToolbar =
       typeof document !== 'undefined' && ref.current?.contains(document.activeElement);
-    if (!aiOpenRef.current && (empty || (!editor.isFocused && !focusInToolbar))) {
+    if (!overlayOpenRef.current && (empty || (!editor.isFocused && !focusInToolbar))) {
       setPos(null);
       return;
     }
@@ -313,32 +247,25 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
       let top = Math.min(a.top, b.top) - 8;
       let left = (a.left + b.left) / 2;
       let below = false;
-      // Clamp / flip al viewport: la barra mide ~26px de alto y hasta ~820px de
-      // ancho (28 botones). Si no cabe arriba, va debajo de la selección; el
-      // ancho se acota a los bordes con un margen de 8px.
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
-      const barW = ref.current?.offsetWidth || 480;
+      const barW = ref.current?.offsetWidth || 420;
       const half = barW / 2;
       left = Math.max(8 + half, Math.min(vw - 8 - half, left));
       if (top < 44) {
         top = Math.max(a.bottom, b.bottom) + 8;
         below = true;
       }
-      const next = { top, left, below };
+      const next: Pos = { top, left, below };
       lastPosRef.current = next;
       setPos(next);
       forceTick((n) => n + 1);
     } catch {
-      if (!aiOpenRef.current) setPos(null);
+      if (!overlayOpenRef.current) setPos(null);
     }
   }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
-    // Recalcular en `selectionUpdate` (coalescido a un frame) + scroll/resize.
-    // NO en `transaction`: se disparaba en cada pulsación de tecla → un
-    // `coordsAtPos` × 2 + re-render del portal por carácter (jank en bloques
-    // grandes). `selectionUpdate` cubre el caso real (mover/extender selección).
     let raf = 0;
     const schedule = () => {
       if (raf) return;
@@ -364,85 +291,207 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
     };
   }, [editor, recompute]);
 
+  // Cierra los overlays cuando la selección desaparece / cambia el editor.
+  useEffect(() => {
+    if (!pos) {
+      setMoreOpen(false);
+      setAiOpen(false);
+      setPopover(null);
+    }
+  }, [pos]);
+
   if (!editor || typeof document === 'undefined') return null;
 
-  const buttons = buttonsRef.current;
-  const panelPos = pos ?? lastPosRef.current;
+  const anchor = pos ?? lastPosRef.current;
+  const overlayTop = anchor
+    ? anchor.below
+      ? anchor.top + 40
+      : anchor.top + 6
+    : 0;
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
     let next = focusIdx;
-    if (e.key === 'ArrowRight') next = (focusIdx + 1) % buttons.length;
-    else if (e.key === 'ArrowLeft') next = (focusIdx - 1 + buttons.length) % buttons.length;
+    if (e.key === 'ArrowRight') next = (focusIdx + 1) % navCount;
+    else if (e.key === 'ArrowLeft') next = (focusIdx - 1 + navCount) % navCount;
     else if (e.key === 'Home') next = 0;
-    else next = buttons.length - 1;
+    else next = navCount - 1;
     setFocusIdx(next);
-    ref.current?.querySelectorAll<HTMLButtonElement>('button')[next]?.focus();
+    ref.current?.querySelectorAll<HTMLButtonElement>('button[data-nav]')[next]?.focus();
+  };
+
+  const runButton = (b: ToolbarButton) => {
+    if (b.popover) {
+      setAiOpen(false);
+      setMoreOpen(false);
+      setPopover(b.popover);
+      return;
+    }
+    b.run?.(editor);
+    recompute();
+  };
+
+  const renderPrimaryButton = (b: ToolbarButton, i: number) => {
+    const active = b.isActive?.(editor) ?? false;
+    const disabled = b.isDisabled?.(editor) ?? false;
+    return (
+      <button
+        key={b.id}
+        type="button"
+        data-nav
+        title={b.label}
+        aria-label={b.label}
+        aria-pressed={b.isActive ? active : undefined}
+        aria-haspopup={b.popover ? 'dialog' : undefined}
+        disabled={disabled}
+        tabIndex={i === focusIdx ? 0 : -1}
+        onFocus={() => setFocusIdx(i)}
+        onClick={() => !disabled && runButton(b)}
+        style={btnStyle(active, disabled)}
+      >
+        {b.icon}
+      </button>
+    );
   };
 
   return createPortal(
     <>
-    {pos ? (
-    <div
-      ref={ref}
-      role="toolbar"
-      aria-label="Formato de texto"
-      aria-orientation="horizontal"
-      data-rich-text-safe=""
-      style={{ ...wrapperStyle, top: pos.top, left: pos.left, transform: pos.below ? "translate(-50%, 0)" : "translate(-50%, -100%)" }}
-      onMouseDown={(e) => e.preventDefault()}
-      onKeyDown={onKeyDown}
-    >
-      {buttons.map((b, i) => {
-        const active = b.isActive?.(editor) ?? false;
-        const disabled = b.isDisabled?.(editor) ?? false;
-        return (
+      {pos ? (
+        <div
+          ref={ref}
+          role="toolbar"
+          aria-label="Formato de texto"
+          aria-orientation="horizontal"
+          data-rich-text-safe=""
+          style={{
+            ...wrapperStyle,
+            top: pos.top,
+            left: pos.left,
+            transform: pos.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+          }}
+          onMouseDown={(e) => {
+            // No robar el foco al pulsar la barra (salvo en un input de popover).
+            const t = e.target as HTMLElement;
+            if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) e.preventDefault();
+          }}
+          onKeyDown={onKeyDown}
+        >
+          {flatPrimary.map((b, i) => (
+            <span key={b.id} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {groupStarts.has(i) ? <span style={sepStyle} aria-hidden /> : null}
+              {renderPrimaryButton(b, i)}
+            </span>
+          ))}
+          <span style={sepStyle} aria-hidden />
           <button
-            key={b.id}
             type="button"
-            title={b.label}
-            aria-label={b.label}
-            aria-pressed={b.isActive ? active : undefined}
-            disabled={disabled}
-            tabIndex={i === focusIdx ? 0 : -1}
-            onFocus={() => setFocusIdx(i)}
+            data-nav
+            title="Más opciones"
+            aria-label="Más opciones"
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            tabIndex={flatPrimary.length === focusIdx ? 0 : -1}
+            onFocus={() => setFocusIdx(flatPrimary.length)}
             onClick={() => {
-              b.run(editor);
-              recompute();
+              setAiOpen(false);
+              setPopover(null);
+              setMoreOpen((v) => !v);
             }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 26,
-              height: 26,
-              border: 'none',
-              borderRadius: 6,
-              cursor: disabled ? 'default' : 'pointer',
-              opacity: disabled ? 0.4 : 1,
-              background: active ? 'var(--accent, #e2e8f0)' : 'transparent',
-            }}
+            style={btnStyle(moreOpen, false)}
           >
-            {b.icon}
+            <EllipsisVertical className="size-3.5" />
           </button>
-        );
-      })}
-    </div>
-    ) : null}
-    {aiOpen && panelPos ? (
-      <div
-        style={{
-          position: 'fixed',
-          zIndex: 61,
-          top: panelPos.top + 8,
-          left: panelPos.left,
-          transform: 'translate(-50%, 0)',
-        }}
-      >
-        <AiAssistPanel editor={editor} onClose={() => setAiOpen(false)} />
-      </div>
-    ) : null}
+        </div>
+      ) : null}
+
+      {moreOpen && anchor ? (
+        <div
+          role="menu"
+          aria-label="Más opciones de formato"
+          data-rich-text-safe=""
+          onMouseDown={(e) => e.preventDefault()}
+          style={{
+            position: 'fixed',
+            zIndex: 61,
+            top: overlayTop,
+            left: anchor.left,
+            transform: 'translate(-50%, 0)',
+            minWidth: 200,
+            padding: 4,
+            borderRadius: 8,
+            background: 'var(--popover, #fff)',
+            color: 'var(--popover-foreground, #0f172a)',
+            border: '1px solid var(--border, #e2e8f0)',
+            boxShadow: '0 10px 30px rgba(15,23,42,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          {secondary.map((b) => {
+            const active = b.isActive?.(editor) ?? false;
+            const disabled = b.isDisabled?.(editor) ?? false;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                role="menuitem"
+                disabled={disabled}
+                onClick={() => {
+                  if (disabled) return;
+                  setMoreOpen(false);
+                  runButton(b);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  padding: '6px 8px',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  textAlign: 'left',
+                  cursor: disabled ? 'default' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  background: active ? 'var(--accent, #e2e8f0)' : 'transparent',
+                }}
+              >
+                {b.icon}
+                <span>{b.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {popover && anchor ? (
+        <BubblePopover
+          id={popover}
+          editor={editor}
+          pos={{ top: overlayTop, left: anchor.left }}
+          onClose={() => {
+            setPopover(null);
+            editor.chain().focus().run();
+            recompute();
+          }}
+        />
+      ) : null}
+
+      {aiOpen && anchor ? (
+        <div
+          style={{
+            position: 'fixed',
+            zIndex: 61,
+            top: overlayTop,
+            left: anchor.left,
+            transform: 'translate(-50%, 0)',
+          }}
+        >
+          <AiAssistPanel editor={editor} onClose={() => setAiOpen(false)} />
+        </div>
+      ) : null}
     </>,
     document.body,
   );
