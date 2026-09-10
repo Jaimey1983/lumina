@@ -205,6 +205,7 @@ import type { SlideImportado } from '@/hooks/api/use-import-pptx';
 import { getBackground } from '@/lib/class-backgrounds';
 import {
   buildSlideContentWithTheme,
+  findSlideThemeById,
   getSlideTemaIdFromContent,
   NO_SLIDE_THEME_ID,
 } from '@/lib/slide-themes';
@@ -935,6 +936,22 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const activeTemaId = useMemo(
     () => (activeSlide ? getSlideTemaIdFromContent(activeSlide.content) : undefined),
     [activeSlide],
+  );
+
+  /** Tema resuelto del slide activo (predefinido o personalizado) para `estiloTema`. */
+  const activeSlideTheme = useMemo<SlideTheme | null>(
+    () => findSlideThemeById(activeTemaId, customThemes) ?? null,
+    [activeTemaId, customThemes],
+  );
+
+  /** Tema resuelto del slide mostrado en el panel de vista previa. */
+  const previewSlideTheme = useMemo<SlideTheme | null>(
+    () =>
+      findSlideThemeById(
+        previewApiSlide ? getSlideTemaIdFromContent(previewApiSlide.content) : undefined,
+        customThemes,
+      ) ?? null,
+    [previewApiSlide, customThemes],
   );
 
   /**
@@ -2701,6 +2718,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               canvasSurfaceRef={canvasSurfaceRef}
               onPersistPayloadChange={setReducerPersistPayload}
               slide={rendererSlide}
+              slideTheme={activeSlideTheme}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}
               onFlipCardsChange={handleFlipCardsChange}
@@ -2959,6 +2977,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                       <SlideRenderer
                         slide={previewRendererSlide}
                         modo="preview"
+                        theme={previewSlideTheme}
                         className="h-full w-full"
                       />
                       </TextTokensProvider>

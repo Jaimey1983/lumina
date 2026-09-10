@@ -39,6 +39,7 @@ import type {
   FlipCardsWidget,
   Slide,
   SlideGuias,
+  SlideTheme,
   TabsWidget,
   CarouselWidget,
   ClickRevealWidget,
@@ -254,6 +255,8 @@ function BlockDragHandleInner({
 
 export interface CanvasAreaProps {
   slide: Slide | null;
+  /** Tema resuelto del slide (predefinido o personalizado) para `estiloTema`. */
+  slideTheme?: SlideTheme | null;
   isLoading?: boolean;
   onBlockSelect?: (id: string) => void;
   onActivityChange?: (blockId: string, activity: Activity) => void;
@@ -347,6 +350,7 @@ const SLIDE_SURFACE_CLASS = cn(
 export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function CanvasArea(
   {
     slide,
+    slideTheme,
     isLoading,
     onBlockSelect,
     onActivityChange,
@@ -1945,6 +1949,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           <SlideRenderer
             slide={liveSlide}
             modo="editor"
+            theme={slideTheme}
             canvasRef={canvasRef}
             onBlockSelect={handleRendererBlockSelect}
             selectedBlockId={selectedBlockId}
