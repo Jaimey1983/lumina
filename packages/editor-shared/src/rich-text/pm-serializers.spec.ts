@@ -117,6 +117,17 @@ describe('richToPmDoc / pmDocToRich', () => {
     expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
   });
 
+  it('callout (nota/aviso/tip) sobrevive el viaje', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'callout', variant: 'aviso', runs: [{ text: 'cuidado', marks: [{ t: 'bold' }] }] },
+        { type: 'callout', variant: 'tip', runs: [{ text: 'truco' }] },
+      ],
+    };
+    expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+  });
+
   it('sangría y espaciado de párrafo/encabezado sobreviven el viaje', () => {
     const doc: RichDoc = {
       version: 1,
@@ -165,11 +176,12 @@ describe('richToPmDoc / pmDocToRich', () => {
     }
   });
 
-  it('nodos no editables (callout/math/table) se omiten sin romper', () => {
+  it('nodos no editables (math/table) se omiten sin romper', () => {
     const pm = richToPmDoc({
       version: 1,
       nodes: [
-        { type: 'callout', variant: 'nota', runs: [{ text: 'x' }] } as never,
+        { type: 'math', latex: 'x^2' } as never,
+        { type: 'table', children: [] } as never,
         { type: 'paragraph', runs: [{ text: 'ok' }] },
       ],
     });

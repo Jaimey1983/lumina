@@ -161,6 +161,20 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(container.querySelector('li[data-checked="true"]')).not.toBeNull();
   });
 
+  it('callout → <div data-callout> con borde e íconos de color por variante', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'callout', variant: 'tip', runs: [{ text: 'consejo' }] }],
+    };
+    const { container } = render(
+      <RenderText block={{ tipo: 'texto', contenido: 'consejo', contenidoRich: doc }} modo="viewer" />,
+    );
+    const el = container.querySelector('div[data-callout="tip"]') as HTMLElement;
+    expect(el).not.toBeNull();
+    expect(el.textContent).toBe('consejo');
+    expect(el.style.borderInlineStart).toContain('#10b981');
+  });
+
   it('un RichDoc multi-nodo se envuelve en <div>', () => {
     const doc: RichDoc = {
       version: 1,

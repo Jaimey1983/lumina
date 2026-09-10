@@ -37,7 +37,7 @@ describe('Markdown / esquema del editor (Fase 5A)', () => {
   it('el esquema tiene los nodos y marcas de RichDoc', () => {
     const editor = makeEditor();
     const { nodes, marks } = editor.schema;
-    for (const n of ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'taskList', 'taskItem', 'horizontalRule']) {
+    for (const n of ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'taskList', 'taskItem', 'horizontalRule', 'callout']) {
       expect(nodes[n], `nodo ${n}`).toBeDefined();
     }
     for (const m of ['bold', 'italic', 'underline', 'strike', 'code', 'textStyle', 'highlight', 'link', 'subscript', 'superscript', 'term', 'spoiler', 'lang']) {

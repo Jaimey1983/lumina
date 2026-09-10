@@ -10,6 +10,7 @@ import {
   Extension,
   InputRule,
   Mark,
+  Node,
   markInputRule,
   markPasteRule,
   mergeAttributes,
@@ -221,6 +222,36 @@ const Lang = Mark.create({
   },
 });
 
+const CALLOUT_VARIANTS = ['nota', 'aviso', 'tip'] as const;
+
+/** Nodo de bloque «llamada» (nota / aviso / tip) — Fase 5B. */
+const Callout = Node.create({
+  name: 'callout',
+  group: 'block',
+  content: 'inline*',
+  defining: true,
+  addAttributes() {
+    return {
+      variant: {
+        default: 'nota',
+        parseHTML: (el: HTMLElement) => {
+          const v = el.getAttribute('data-callout');
+          return (CALLOUT_VARIANTS as readonly string[]).includes(v ?? '') ? v : 'nota';
+        },
+        renderHTML: (attrs: Record<string, unknown>) => ({
+          'data-callout': String(attrs.variant ?? 'nota'),
+        }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'div[data-callout]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['div', mergeAttributes(HTMLAttributes), 0];
+  },
+});
+
 /**
  * Bold / Italic que SOLO disparan con `*` / `**` — nunca con `_` / `__`, para no
  * convertir `snake_case` o `__init__` en formato al escribir o pegar (Fase 5A).
@@ -301,6 +332,7 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
     Term,
     Spoiler,
     Lang,
+    Callout,
     Placeholder.configure({
       placeholder: opts.placeholder ?? 'Escribe…',
       showOnlyWhenEditable: true,

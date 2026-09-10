@@ -18,6 +18,7 @@ import {
   EyeOff,
   Highlighter,
   Indent,
+  Info,
   Italic,
   Link2,
   Link2Off,
@@ -179,6 +180,16 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
       icon: <ListChecks className="size-3.5" />,
       isActive: (e) => e.isActive('taskList'),
       run: (e) => e.chain().focus().toggleTaskList().run(),
+    },
+    {
+      id: 'callout',
+      label: 'Llamada (nota)',
+      icon: <Info className="size-3.5" />,
+      isActive: (e) => e.isActive('callout'),
+      run: (e) =>
+        e.isActive('callout')
+          ? e.chain().focus().setNode('paragraph').run()
+          : e.chain().focus().setNode('callout', { variant: 'nota' }).run(),
     },
     { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
   ];

@@ -173,7 +173,13 @@ function nodeToPm(node: RichNode): PmJSON | null {
         type: 'taskList',
         content: (node.children ?? []).map((li) => listItemFromNode(li, true)),
       };
-    // callout / math / table: el editor de Fase 2 no los edita todavía (Fase 5).
+    case 'callout':
+      return {
+        type: 'callout',
+        attrs: { variant: node.variant ?? 'nota' },
+        content: runsToPmText(node.runs),
+      };
+    // math / table: el editor no los edita todavía (Fase 5B posterior).
     default:
       return null;
   }
@@ -361,6 +367,12 @@ function pmNodeToRich(node: PmJSON): RichNode | null {
           runs: firstParagraphRuns(li) ?? [{ text: '' }],
         })),
       };
+    case 'callout': {
+      const v = node.attrs?.variant;
+      const variant = v === 'aviso' || v === 'tip' ? v : 'nota';
+      const runs = pmInlineToRuns(node.content);
+      return { type: 'callout', variant, ...(runs ? { runs } : {}) };
+    }
     default:
       return null;
   }

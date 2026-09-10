@@ -512,6 +512,20 @@ function renderRuns(runs: RichRun[] | undefined, ctx?: RenderCtx): ReactNode {
   return runs.map((r, i) => renderRun(r, i, ctx));
 }
 
+/** Estilo base de una «llamada» (nota / aviso / tip) — Fase 5B. */
+const CALLOUT_STYLE: Record<string, CSSProperties> = {
+  nota: { borderInlineStart: '4px solid #3b82f6', background: 'rgba(59,130,246,0.08)' },
+  aviso: { borderInlineStart: '4px solid #f59e0b', background: 'rgba(245,158,11,0.10)' },
+  tip: { borderInlineStart: '4px solid #10b981', background: 'rgba(16,185,129,0.10)' },
+};
+function calloutStyle(variant?: string): CSSProperties {
+  return {
+    ...(CALLOUT_STYLE[variant ?? 'nota'] ?? CALLOUT_STYLE.nota),
+    padding: '0.5em 0.75em',
+    borderRadius: 4,
+  };
+}
+
 /** Sangría / espaciado / alineación propios del nodo (párrafo, encabezado, lista…). */
 function nodeSpacingCss(node: RichNode): CSSProperties {
   const out: CSSProperties = {};
@@ -576,6 +590,16 @@ function richNodeToElement(
         ),
       );
     }
+    case 'callout':
+      return createElement(
+        'div',
+        {
+          key,
+          'data-callout': node.variant ?? 'nota',
+          style: { ...style, ...calloutStyle(node.variant), ...nodeSpacingCss(node) },
+        },
+        revealLine(renderRuns(node.runs, ctx), ctx),
+      );
     case 'listItem': {
       const soloTexto =
         node.runs && node.runs.length === 1 && !node.runs[0]!.marks
