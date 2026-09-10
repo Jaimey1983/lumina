@@ -1,8 +1,9 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { TextBlock } from '@lumina/types/slide';
 import type { RichDoc } from '@lumina/types/rich-text';
 import { plainToRich } from '@lumina/editor-shared/rich-text';
+import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
 import { RenderText } from './render-texto.js';
 import { getRichDoc } from './rich-text.js';
 
@@ -58,6 +59,37 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     });
     expect(html(mk('https://ok.dev'))).toContain('rel="noopener noreferrer"');
     expect(html(mk('javascript:alert(1)'))).not.toContain('<a ');
+  });
+
+  it('link.slideRef → navega con SlideNavContext al hacer clic (index 0-based)', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'paragraph', runs: [{ text: 'ir', marks: [{ t: 'link', slideRef: 3 }] }] },
+      ],
+    };
+    const navigate = vi.fn();
+    const { container } = render(
+      <SlideNavContext.Provider value={{ navigate, slideCount: 5, slideIndex: 0 }}>
+        <RenderText block={{ tipo: 'texto', contenido: 'ir', contenidoRich: doc }} modo="viewer" />
+      </SlideNavContext.Provider>,
+    );
+    const a = container.querySelector('a[data-slide-ref="3"]') as HTMLElement;
+    expect(a).not.toBeNull();
+    a.click();
+    expect(navigate).toHaveBeenCalledWith({ kind: 'ir_a', index: 2 });
+  });
+
+  it('link.slideRef sin navigate → <span data-slide-ref>, no <a>', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'paragraph', runs: [{ text: 'ir', marks: [{ t: 'link', slideRef: 2 }] }] },
+      ],
+    };
+    const out = html({ tipo: 'texto', contenido: 'ir', contenidoRich: doc });
+    expect(out).toContain('data-slide-ref="2"');
+    expect(out).not.toContain('<a ');
   });
 
   it('un RichDoc multi-nodo se envuelve en <div>', () => {

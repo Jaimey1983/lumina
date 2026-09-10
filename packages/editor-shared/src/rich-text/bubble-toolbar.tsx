@@ -21,6 +21,7 @@ import {
   Link2Off,
   Minus,
   Plus,
+  Presentation,
   RemoveFormatting,
   Sparkles,
   Strikethrough,
@@ -85,6 +86,26 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
         } else if (isSafeHref(href)) {
           e.chain().focus().extendMarkRange('link').setLink({ href }).run();
         }
+      },
+    },
+    {
+      id: 'slide-ref',
+      label: 'Ir a diapositiva',
+      icon: <Presentation className="size-3.5" />,
+      isActive: (e) => typeof e.getAttributes('link').slideRef === 'number',
+      run: (e) => {
+        const prev = e.getAttributes('link').slideRef as number | undefined;
+        const raw =
+          typeof window !== 'undefined'
+            ? window.prompt('Número de diapositiva', prev ? String(prev) : '')
+            : null;
+        if (raw === null) return;
+        const n = Math.round(Number(raw.trim()));
+        if (!Number.isFinite(n) || n < 1) {
+          e.chain().focus().unsetLink().run();
+          return;
+        }
+        e.chain().focus().extendMarkRange('link').setMark('link', { href: null, slideRef: n }).run();
       },
     },
     { id: 'unlink', label: 'Quitar enlace', icon: <Link2Off className="size-3.5" />, isDisabled: (e) => !e.isActive('link'), run: (e) => e.chain().focus().unsetLink().run() },

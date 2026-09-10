@@ -60,6 +60,11 @@ interface RenderCtx {
   };
   /** Revelado animado (solo viewer). `counter` da un índice continuo. */
   reveal?: { plan: RevealPlan; counter: { n: number } };
+  /**
+   * Navegación a diapositiva (marca `link.slideRef`, 1-based). Solo se cablea
+   * fuera del editor y cuando hay un `SlideNavContext` con `navigate`.
+   */
+  navSlide?: (slideNumber: number) => void;
 }
 
 /**
@@ -342,6 +347,10 @@ export function RenderText({
             tokens.extra,
           ),
     spoilerRevealed: modo === 'editor',
+    navSlide:
+      modo === 'editor' || !nav.navigate
+        ? undefined
+        : (n: number) => nav.navigate?.({ kind: 'ir_a', index: n - 1 }),
     headingOverride: {
       tamanoFuente: block.tamanoFuente,
       negrita: block.negrita,
@@ -426,12 +435,38 @@ function renderRun(run: RichRun, key: number, ctx?: RenderCtx): ReactNode {
   const lang = findMark(marks, 'lang');
   if (lang) node = createElement('span', { lang: lang.value }, node);
   const link = findMark(marks, 'link');
-  if (link?.href && isSafeHref(link.href)) {
-    node = createElement(
-      'a',
-      { href: link.href, target: '_blank', rel: 'noopener noreferrer' },
-      node,
-    );
+  if (link) {
+    if (typeof link.slideRef === 'number' && link.slideRef >= 1) {
+      const n = Math.round(link.slideRef);
+      node = ctx?.navSlide
+        ? createElement(
+            'a',
+            {
+              role: 'link',
+              tabIndex: 0,
+              'data-slide-ref': String(n),
+              style: { cursor: 'pointer', textDecoration: 'underline' },
+              onClick: (e: { preventDefault: () => void }) => {
+                e.preventDefault();
+                ctx.navSlide!(n);
+              },
+              onKeyDown: (e: { key: string; preventDefault: () => void }) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  ctx.navSlide!(n);
+                }
+              },
+            },
+            node,
+          )
+        : createElement('span', { 'data-slide-ref': String(n) }, node);
+    } else if (link.href && isSafeHref(link.href)) {
+      node = createElement(
+        'a',
+        { href: link.href, target: '_blank', rel: 'noopener noreferrer' },
+        node,
+      );
+    }
   }
   if (ctx?.reveal?.plan.unit === 'palabra') {
     const { plan, counter } = ctx.reveal;
