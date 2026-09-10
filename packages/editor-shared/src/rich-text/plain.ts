@@ -46,7 +46,7 @@ function fontSizePx(raw?: string): number | undefined {
 }
 
 /** Estilo tipográfico del nodo raíz derivado de las pistas del bloque. */
-function nodeStyleFromHints(h: PlainToRichHints): Partial<RichNode> {
+export function nodeStyleFromHints(h: PlainToRichHints): Partial<RichNode> {
   const out: Partial<RichNode> = {};
   if (h.fuente) out.fontFamily = h.fuente;
   const px = fontSizePx(h.tamanoFuente);
@@ -113,4 +113,61 @@ export function plainToRich(
       },
     ],
   };
+}
+
+const STYLEABLE_NODE_TYPES = new Set<RichNode['type']>([
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'blockquote',
+  'callout',
+]);
+
+/** Extrae las pistas de un `TextBlock` para hidratar o derivar el `RichDoc`. */
+export function hintsFromTextBlock(block: PlainToRichHints): PlainToRichHints {
+  return {
+    nivel: block.nivel,
+    lista: block.lista,
+    alineacion: block.alineacion,
+    fuente: block.fuente,
+    tamanoFuente: block.tamanoFuente,
+    color: block.color,
+    negrita: block.negrita,
+    cursiva: block.cursiva,
+    subrayado: block.subrayado,
+    interlineado: block.interlineado,
+    espaciadoLetras: block.espaciadoLetras,
+  };
+}
+
+/**
+ * Rellena en el documento solo los campos de estilo que el nodo **no** trae,
+ * usando las pistas del bloque. El valor del nodo siempre gana. Ausencia en
+ * el nodo no borra el bloque: eso lo garantiza `syncTextBlockFromRichDoc`.
+ */
+export function hydrateMissingNodeStyle(doc: RichDoc, hints: PlainToRichHints): RichDoc {
+  const style = nodeStyleFromHints(hints);
+  const align = hints.alineacion;
+  if (Object.keys(style).length === 0 && !align) return doc;
+  return {
+    ...doc,
+    nodes: doc.nodes.map((n) => {
+      if (!STYLEABLE_NODE_TYPES.has(n.type)) return n;
+      const next: RichNode = { ...n };
+      for (const [k, v] of Object.entries(style) as [keyof RichNode, RichNode[keyof RichNode]][]) {
+        if (v === undefined) continue;
+        if (next[k] === undefined) {
+          (next as unknown as Record<string, unknown>)[k as string] = v;
+        }
+      }
+      if (align && !next.align) next.align = align;
+      return next;
+    }),
+  };
+}
+
+export function isStyleableRichNodeType(type: RichNode['type']): boolean {
+  return STYLEABLE_NODE_TYPES.has(type);
 }

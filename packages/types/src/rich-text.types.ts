@@ -52,8 +52,14 @@ export interface RichNode {
   level?: HeadingLevel;
   /** override de alineación a nivel de nodo */
   align?: TextAlign;
-  /** sangría en rem */
+  /** sangría de bloque (todo el párrafo) en rem — `margin-inline-start` */
   indent?: number;
+  /**
+   * Sangría de primera línea en rem (`text-indent`).
+   * Positivo = primera línea; negativo = sangría francesa (el resto de
+   * líneas se corre con padding para no recortar la primera).
+   */
+  textIndent?: number;
   spaceBefore?: number;
   spaceAfter?: number;
   /** taskList item */

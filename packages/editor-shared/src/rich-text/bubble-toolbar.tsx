@@ -42,6 +42,11 @@ import {
 import { useRichTextAi } from './ai-context.js';
 import { AiAssistPanel } from './ai-assist-panel.js';
 import { BubblePopover, type BubblePopoverId } from './bubble-popovers.js';
+import {
+  TEXT_INDENT_STEP,
+  isFirstLineIndent,
+  isHangingIndent,
+} from './indent.js';
 
 const SIZE_STEP = 2;
 const SIZE_MIN = 8;
@@ -59,8 +64,38 @@ function setFontSize(editor: Editor, px: number): void {
   editor.chain().focus().setMark('textStyle', { fontSize: `${clamped}px` }).run();
 }
 
-const INDENT_STEP = 1.5;
+const INDENT_STEP = TEXT_INDENT_STEP;
 const INDENT_MAX = 9;
+
+function FirstLineIndentIcon() {
+  return (
+    <svg
+      className="size-3.5"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden
+    >
+      <path strokeLinecap="round" d="M6 3.5h7.5M2.5 8h11M2.5 12.5h11" />
+    </svg>
+  );
+}
+
+function HangingIndentIcon() {
+  return (
+    <svg
+      className="size-3.5"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden
+    >
+      <path strokeLinecap="round" d="M2.5 3.5h11M6 8h7.5M6 12.5h7.5" />
+    </svg>
+  );
+}
 
 function currentBlockType(editor: Editor): 'paragraph' | 'heading' | null {
   const name = editor.state.selection.$from.parent.type.name;
@@ -73,6 +108,31 @@ function changeIndent(editor: Editor, delta: number): void {
   const cur = (editor.getAttributes(type).indent as number | undefined) ?? 0;
   const next = Math.max(0, Math.min(INDENT_MAX, cur + delta));
   editor.chain().focus().updateAttributes(type, { indent: next === 0 ? null : next }).run();
+}
+
+function currentTextIndent(editor: Editor): number {
+  const type = currentBlockType(editor);
+  if (!type) return 0;
+  const v = editor.getAttributes(type).textIndent;
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+}
+
+function setTextIndent(editor: Editor, next: number | null): void {
+  const type = currentBlockType(editor);
+  if (!type) return;
+  editor.chain().focus().updateAttributes(type, { textIndent: next }).run();
+}
+
+/** Primera línea ↔ off. Si había francesa, la sustituye. */
+function toggleFirstLineIndent(editor: Editor): void {
+  const cur = currentTextIndent(editor);
+  setTextIndent(editor, cur > 0 ? null : TEXT_INDENT_STEP);
+}
+
+/** Sangría francesa ↔ off. Si había primera línea, la sustituye. */
+function toggleHangingIndent(editor: Editor): void {
+  const cur = currentTextIndent(editor);
+  setTextIndent(editor, cur < 0 ? null : -TEXT_INDENT_STEP);
 }
 
 interface ToolbarButton {
@@ -146,6 +206,22 @@ function secondaryButtons(): ToolbarButton[] {
     { id: 'term', label: 'Término del glosario', icon: <BookMarked className="size-3.5" />, isActive: (e) => e.isActive('term'), popover: 'term' },
     { id: 'outdent', label: 'Reducir sangría', icon: <Outdent className="size-3.5" />, isDisabled: (e) => !currentBlockType(e) || !e.getAttributes(currentBlockType(e)!).indent, run: (e) => changeIndent(e, -INDENT_STEP) },
     { id: 'indent', label: 'Aumentar sangría', icon: <Indent className="size-3.5" />, isDisabled: (e) => !currentBlockType(e), run: (e) => changeIndent(e, INDENT_STEP) },
+    {
+      id: 'indent-first',
+      label: 'Sangría primera línea',
+      icon: <FirstLineIndentIcon />,
+      isActive: (e) => isFirstLineIndent(currentTextIndent(e)),
+      isDisabled: (e) => !currentBlockType(e),
+      run: (e) => toggleFirstLineIndent(e),
+    },
+    {
+      id: 'indent-hanging',
+      label: 'Sangría francesa',
+      icon: <HangingIndentIcon />,
+      isActive: (e) => isHangingIndent(currentTextIndent(e)),
+      isDisabled: (e) => !currentBlockType(e),
+      run: (e) => toggleHangingIndent(e),
+    },
     { id: 'task-list', label: 'Lista de tareas', icon: <ListChecks className="size-3.5" />, isActive: (e) => e.isActive('taskList'), run: (e) => e.chain().focus().toggleTaskList().run() },
     { id: 'callout', label: 'Llamada (nota)', icon: <Info className="size-3.5" />, isActive: (e) => e.isActive('callout'), run: (e) => (e.isActive('callout') ? e.chain().focus().setNode('paragraph').run() : e.chain().focus().setNode('callout', { variant: 'nota' }).run()) },
     { id: 'table', label: 'Insertar / quitar tabla', icon: <TableIcon className="size-3.5" />, isActive: (e) => e.isActive('table'), run: (e) => (e.isActive('table') ? e.chain().focus().deleteTable().run() : e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()) },

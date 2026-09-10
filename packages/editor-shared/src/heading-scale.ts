@@ -114,3 +114,19 @@ export function typographyPatchFromHeadingLevel(nivel: HeadingLevel | undefined)
     letterSpacing: s.trackingPx,
   };
 }
+
+/**
+ * ¿El tamaño actual es el de la escala (cuerpo 18px o el nivel previo) y no
+ * un override manual? El 18px del preset de cuerpo **es derivado**, no un
+ * ajuste del docente. `curPx === undefined` (nodo sin fontSize) también es
+ * derivado: al cambiar de nivel hay que escribir la escala, no borrar.
+ */
+export function isDerivedHeadingSize(
+  curPx: number | undefined,
+  prevNivel?: HeadingLevel,
+): boolean {
+  if (curPx === undefined || !Number.isFinite(curPx)) return true;
+  if (curPx === BODY_TEXT_SCALE.sizePx) return true;
+  if (prevNivel !== undefined && curPx === HEADING_SCALE[prevNivel].sizePx) return true;
+  return false;
+}

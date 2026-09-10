@@ -51,9 +51,10 @@ describe('RenderText — revelado por palabra/línea (Fase 5A)', () => {
   });
 
   it('sin revelado: DOM idéntico', () => {
-    const out = render(<RenderText block={block({ contenido: 'Hola' })} modo="viewer" />).container.innerHTML;
-    expect(out).toBe(
-      '<p style="margin: 0px; white-space: pre-wrap; word-break: break-word;">Hola</p>',
+    const { container } = render(
+      <RenderText block={block({ contenido: 'Hola' })} modo="viewer" />,
     );
+    expect(container.firstElementChild?.tagName).toBe('P');
+    expect(container.querySelector('[data-rich-ws]')?.textContent).toBe('Hola');
   });
 });

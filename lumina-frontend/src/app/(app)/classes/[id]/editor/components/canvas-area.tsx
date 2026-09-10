@@ -2100,7 +2100,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
       {/* Floating Alignment Toolbar — solo si hay ≥2 bloques desbloqueados */}
       {selectedBlockIds.filter((id) => {
-        const b = liveSlide?.bloques?.[Number(id)];
+        const b = liveSlide?.bloques ? getBlockAtPath(liveSlide.bloques, id) : undefined;
         return b && !isBlockCanvasLocked(b);
       }).length >= 2 && (
         <div

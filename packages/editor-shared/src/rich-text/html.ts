@@ -3,6 +3,7 @@ import type { RichDoc, RichMark, RichNode, RichRun } from '@lumina/types/rich-te
 import { richMarksToStyle } from './marks.js';
 import { isSafeHref } from './sanitize.js';
 import { HEADING_SCALE } from '../heading-scale.js';
+import { textIndentStyle } from './indent.js';
 
 const ALIGN_TO_CSS: Record<string, string> = {
   izquierda: 'left',
@@ -97,6 +98,7 @@ function nodeStyle(node: RichNode): string {
     style.textAlign = ALIGN_TO_CSS[node.align] as CSSProperties['textAlign'];
   }
   if (Number.isFinite(node.indent)) style.marginInlineStart = `${node.indent}rem`;
+  Object.assign(style, textIndentStyle(node.textIndent));
   if (Number.isFinite(node.spaceBefore)) style.marginTop = `${node.spaceBefore}px`;
   if (Number.isFinite(node.spaceAfter)) style.marginBottom = `${node.spaceAfter}px`;
   const css = styleToCssText(style);

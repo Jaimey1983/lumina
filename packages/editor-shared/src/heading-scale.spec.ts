@@ -5,6 +5,7 @@ import {
   headingFallbackCss,
   effectiveFontSizePx,
   typographyPatchFromHeadingLevel,
+  isDerivedHeadingSize,
 } from './heading-scale.js';
 
 describe('HEADING_SCALE', () => {
@@ -87,5 +88,27 @@ describe('typographyPatchFromHeadingLevel', () => {
       lineHeight: BODY_TEXT_SCALE.lineHeight,
       letterSpacing: 0,
     });
+  });
+});
+
+describe('isDerivedHeadingSize', () => {
+  it('sin tamaño o NaN es derivado', () => {
+    expect(isDerivedHeadingSize(undefined)).toBe(true);
+    expect(isDerivedHeadingSize(Number.NaN)).toBe(true);
+  });
+
+  it('18px del cuerpo es derivado (no un override)', () => {
+    expect(isDerivedHeadingSize(18)).toBe(true);
+    expect(isDerivedHeadingSize(BODY_TEXT_SCALE.sizePx)).toBe(true);
+  });
+
+  it('el tamaño de la escala del nivel previo es derivado', () => {
+    expect(isDerivedHeadingSize(40, 1)).toBe(true);
+    expect(isDerivedHeadingSize(32, 2)).toBe(true);
+  });
+
+  it('un tamaño manual distinto de cuerpo y de la escala previa se respeta', () => {
+    expect(isDerivedHeadingSize(24)).toBe(false);
+    expect(isDerivedHeadingSize(55, 1)).toBe(false);
   });
 });

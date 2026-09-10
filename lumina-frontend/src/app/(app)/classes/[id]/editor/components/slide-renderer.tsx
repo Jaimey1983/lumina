@@ -21,6 +21,7 @@ import {
   isUnimplementedInteractiveStub,
   mergeRendererSlideState,
   sanitizeSlideContentForPersistence,
+  getBlockAtPath,
   updateBlockAtPath,
 } from '@/lib/class-slide-normalize';
 import { ResizeHandles } from './resize-handles';
@@ -45,8 +46,8 @@ import type {
   HotspotWidget,
 } from '@lumina/types/slide';
 import type { RichDoc } from '@lumina/types/rich-text';
-import { richToPlain } from '@lumina/editor-shared/rich-text';
-import { syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
+import { richToPlain, sanitizeRichDoc } from '@lumina/editor-shared/rich-text';
+import { getRichDoc, syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
 import { cn } from '@/lib/utils';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@lumina/editor-shared/font-catalog';
 import { ensureGoogleFonts } from '@lumina/editor-shared/google-fonts-loader';
@@ -1278,6 +1279,7 @@ export function SlideRenderer({
   }, [slideFonts]);
 
   const [editingId,     setEditingId]     = useState<string | null>(null);
+  const editPointerRef = useRef<{ startedInEditor: boolean } | null>(null);
   const [resizingCoords, setResizingCoords] = useState<Record<string, { x: number; y: number; ancho: number; alto: number }>>({});
   const [rotatingAngles, setRotatingAngles] = useState<Record<string, number>>({});
   const [slideCanvasRoot, setSlideCanvasRoot] = useState<HTMLElement | null>(null);
@@ -1436,18 +1438,18 @@ export function SlideRenderer({
   const handleEditCommit = useCallback((blockId: string, doc: RichDoc) => {
     setEditingId(null);
     const previousBloques = slide.bloques ? [...slide.bloques] : [];
-    const blocks = slide.bloques ? [...slide.bloques] : [];
-    const blockIndex = parseInt(blockId, 10);
-    const block = blocks[blockIndex];
+    const block = getBlockAtPath(previousBloques, blockId);
     if (!block || block.tipo !== 'texto') return;
-    const contenido = richToPlain(doc);
+    const incoming = sanitizeRichDoc(doc);
+    const current = getRichDoc(block);
     const unchanged =
-      block.contenido === contenido &&
-      JSON.stringify(block.contenidoRich ?? null) === JSON.stringify(doc);
+      richToPlain(incoming) === (block.contenido ?? '') &&
+      JSON.stringify(incoming) === JSON.stringify(current);
     if (unchanged) return;
-    // Sincroniza `nivel` / `lista` / `alineacion` con el nodo raíz del doc.
-    blocks[blockIndex] = syncTextBlockFromRichDoc(block, doc) as Block;
-    const updatedContent = mergeRendererSlideState(slide, { bloques: blocks });
+    const nextBlocks = updateBlockAtPath(previousBloques, blockId, (b) =>
+      b.tipo === 'texto' ? syncTextBlockFromRichDoc(b, incoming) : b,
+    );
+    const updatedContent = mergeRendererSlideState(slide, { bloques: nextBlocks });
     const sanitized = sanitizeSlideContentForPersistence(updatedContent) ?? updatedContent;
     if (onPersistSlide) {
       void onPersistSlide({ previousBloques, content: sanitized });
@@ -1468,9 +1470,26 @@ export function SlideRenderer({
     onBlockSelect?.(blockId, e);
   }
 
+  function handleCanvasPointerDown(e: React.MouseEvent) {
+    if (!editingId) {
+      editPointerRef.current = null;
+      return;
+    }
+    const t = e.target as HTMLElement;
+    const startedInEditor = !!t.closest('.lumina-rich-editor, [data-rich-text-safe]');
+    editPointerRef.current = { startedInEditor };
+  }
+
   function handleCanvasClick(e: React.MouseEvent) {
     if (!editorMode) return;
     if ((e.target as HTMLElement).closest('[data-popup-overlay-portal]')) return;
+    // Mouseup fuera de la caja tras empezar la selección dentro del editor:
+    // no cerrar la sesión (antes expulsaba al docente a media selección).
+    if (editingId && editPointerRef.current?.startedInEditor) {
+      editPointerRef.current = null;
+      return;
+    }
+    editPointerRef.current = null;
     setSelectedIdState(null);
     setEditingId(null);
     onBlockSelect?.('');
@@ -1600,6 +1619,7 @@ export function SlideRenderer({
                 overflow: 'hidden',
               }),
       }}
+      onMouseDown={handleCanvasPointerDown}
       onClick={handleCanvasClick}
       ref={bindSlideRootRef}
     >

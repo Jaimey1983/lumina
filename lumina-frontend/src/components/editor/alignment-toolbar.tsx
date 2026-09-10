@@ -3,6 +3,7 @@
 import { Block } from '@lumina/types/slide';
 import { toast } from 'sonner';
 import { Scissors } from 'lucide-react';
+import { getBlockAtPath, updateBlockAtPath } from '@lumina/editor-shared/slide-block-path';
 import {
   getBlockPos,
   isBlockCanvasLocked,
@@ -31,19 +32,16 @@ export function AlignmentToolbar({
   if (selectedIds.length < 2) return null;
 
   const handleAction = async (action: string) => {
-    const selectedIndices = selectedIds
-      .map((id) => Number(id))
+    const selected = selectedIds
+      .map((id) => ({ id, block: getBlockAtPath(bloques, id) }))
       .filter(
-        (idx) =>
-          !isNaN(idx) &&
-          idx >= 0 &&
-          idx < bloques.length &&
-          !isBlockCanvasLocked(bloques[idx]!),
+        (x): x is { id: string; block: Block } =>
+          !!x.block && !isBlockCanvasLocked(x.block),
       );
 
-    if (selectedIndices.length < 2) return;
+    if (selected.length < 2) return;
 
-    const positions = selectedIndices.map((idx) => getBlockPos(bloques[idx]!));
+    const positions = selected.map((x) => getBlockPos(x.block));
 
     const minX = Math.min(...positions.map((p) => p.x));
     const maxX = Math.max(...positions.map((p) => p.x + p.ancho));
@@ -52,87 +50,75 @@ export function AlignmentToolbar({
     const selectionWidth = maxX - minX;
     const selectionHeight = maxY - minY;
 
-    const updatedMap: Record<number, Block> = {};
+    const updated = new Map<string, Block>();
 
     switch (action) {
       case 'align_left': {
-        selectedIndices.forEach((idx) => {
-          updatedMap[idx] = withClampedPosition(bloques[idx]!, minX, getBlockPos(bloques[idx]!).y);
+        selected.forEach(({ id, block }) => {
+          updated.set(id, withClampedPosition(block, minX, getBlockPos(block).y));
         });
         break;
       }
       case 'align_center_h': {
-        selectedIndices.forEach((idx) => {
-          const block = bloques[idx]!;
+        selected.forEach(({ id, block }) => {
           const pos = getBlockPos(block);
           const newX = minX + (selectionWidth - pos.ancho) / 2;
-          updatedMap[idx] = withClampedPosition(block, newX, pos.y);
+          updated.set(id, withClampedPosition(block, newX, pos.y));
         });
         break;
       }
       case 'align_right': {
-        selectedIndices.forEach((idx) => {
-          const block = bloques[idx]!;
+        selected.forEach(({ id, block }) => {
           const pos = getBlockPos(block);
-          const newX = maxX - pos.ancho;
-          updatedMap[idx] = withClampedPosition(block, newX, pos.y);
+          updated.set(id, withClampedPosition(block, maxX - pos.ancho, pos.y));
         });
         break;
       }
       case 'align_top': {
-        selectedIndices.forEach((idx) => {
-          updatedMap[idx] = withClampedPosition(bloques[idx]!, getBlockPos(bloques[idx]!).x, minY);
+        selected.forEach(({ id, block }) => {
+          updated.set(id, withClampedPosition(block, getBlockPos(block).x, minY));
         });
         break;
       }
       case 'align_center_v': {
-        selectedIndices.forEach((idx) => {
-          const block = bloques[idx]!;
+        selected.forEach(({ id, block }) => {
           const pos = getBlockPos(block);
           const newY = minY + (selectionHeight - pos.alto) / 2;
-          updatedMap[idx] = withClampedPosition(block, pos.x, newY);
+          updated.set(id, withClampedPosition(block, pos.x, newY));
         });
         break;
       }
       case 'align_bottom': {
-        selectedIndices.forEach((idx) => {
-          const block = bloques[idx]!;
+        selected.forEach(({ id, block }) => {
           const pos = getBlockPos(block);
-          const newY = maxY - pos.alto;
-          updatedMap[idx] = withClampedPosition(block, pos.x, newY);
+          updated.set(id, withClampedPosition(block, pos.x, maxY - pos.alto));
         });
         break;
       }
       case 'distribute_h': {
-        if (selectedIndices.length < 3) return;
-        const sortedIndices = [...selectedIndices].sort((a, b) => {
-          const posA = getBlockPos(bloques[a]!);
-          const posB = getBlockPos(bloques[b]!);
+        if (selected.length < 3) return;
+        const sorted = [...selected].sort((a, b) => {
+          const posA = getBlockPos(a.block);
+          const posB = getBlockPos(b.block);
           return posA.x + posA.ancho / 2 - (posB.x + posB.ancho / 2);
         });
-
-        const firstIdx = sortedIndices[0]!;
-        const lastIdx = sortedIndices[sortedIndices.length - 1]!;
-        const firstPos = getBlockPos(bloques[firstIdx]!);
-        const lastPos = getBlockPos(bloques[lastIdx]!);
-
+        const firstPos = getBlockPos(sorted[0]!.block);
+        const lastPos = getBlockPos(sorted[sorted.length - 1]!.block);
         const firstCenter = firstPos.x + firstPos.ancho / 2;
         const lastCenter = lastPos.x + lastPos.ancho / 2;
-        const step = (lastCenter - firstCenter) / (sortedIndices.length - 1);
+        const step = (lastCenter - firstCenter) / (sorted.length - 1);
 
         let distributeClamped = false;
-        sortedIndices.forEach((idx, index) => {
-          if (index === 0 || index === sortedIndices.length - 1) return;
-          const block = bloques[idx]!;
-          const pos = getBlockPos(block);
-          const targetCenter = firstCenter + index * step;
-          const targetX = targetCenter - pos.ancho / 2;
+        sorted.forEach((item, index) => {
+          if (index === 0 || index === sorted.length - 1) return;
+          const pos = getBlockPos(item.block);
+          const targetX = firstCenter + index * step - pos.ancho / 2;
           const { block: next, wasClamped } = withClampedPositionChecked(
-            block,
+            item.block,
             targetX,
             pos.y,
           );
-          updatedMap[idx] = next;
+          updated.set(item.id, next);
           if (wasClamped) distributeClamped = true;
         });
         if (distributeClamped) {
@@ -143,35 +129,29 @@ export function AlignmentToolbar({
         break;
       }
       case 'distribute_v': {
-        if (selectedIndices.length < 3) return;
-        const sortedIndices = [...selectedIndices].sort((a, b) => {
-          const posA = getBlockPos(bloques[a]!);
-          const posB = getBlockPos(bloques[b]!);
+        if (selected.length < 3) return;
+        const sorted = [...selected].sort((a, b) => {
+          const posA = getBlockPos(a.block);
+          const posB = getBlockPos(b.block);
           return posA.y + posA.alto / 2 - (posB.y + posB.alto / 2);
         });
-
-        const firstIdx = sortedIndices[0]!;
-        const lastIdx = sortedIndices[sortedIndices.length - 1]!;
-        const firstPos = getBlockPos(bloques[firstIdx]!);
-        const lastPos = getBlockPos(bloques[lastIdx]!);
-
+        const firstPos = getBlockPos(sorted[0]!.block);
+        const lastPos = getBlockPos(sorted[sorted.length - 1]!.block);
         const firstCenter = firstPos.y + firstPos.alto / 2;
         const lastCenter = lastPos.y + lastPos.alto / 2;
-        const step = (lastCenter - firstCenter) / (sortedIndices.length - 1);
+        const step = (lastCenter - firstCenter) / (sorted.length - 1);
 
         let distributeClamped = false;
-        sortedIndices.forEach((idx, index) => {
-          if (index === 0 || index === sortedIndices.length - 1) return;
-          const block = bloques[idx]!;
-          const pos = getBlockPos(block);
-          const targetCenter = firstCenter + index * step;
-          const targetY = targetCenter - pos.alto / 2;
+        sorted.forEach((item, index) => {
+          if (index === 0 || index === sorted.length - 1) return;
+          const pos = getBlockPos(item.block);
+          const targetY = firstCenter + index * step - pos.alto / 2;
           const { block: next, wasClamped } = withClampedPositionChecked(
-            block,
+            item.block,
             pos.x,
             targetY,
           );
-          updatedMap[idx] = next;
+          updated.set(item.id, next);
           if (wasClamped) distributeClamped = true;
         });
         if (distributeClamped) {
@@ -185,7 +165,10 @@ export function AlignmentToolbar({
         return;
     }
 
-    const nextBlocks = bloques.map((block, idx) => updatedMap[idx] ?? block);
+    let nextBlocks = bloques;
+    for (const [id, block] of updated) {
+      nextBlocks = updateBlockAtPath(nextBlocks, id, () => block);
+    }
     await onApplyBloques(nextBlocks);
   };
 

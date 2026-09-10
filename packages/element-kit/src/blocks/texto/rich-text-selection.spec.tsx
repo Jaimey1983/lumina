@@ -7,6 +7,7 @@ import {
   applyHeadingLevelToSelection,
   getActiveRichEditor,
   registerActiveRichEditor,
+  pmDocToRich,
 } from '@lumina/editor-shared/rich-text';
 import { RichTextEditor } from '@lumina/editor-shared/rich-text/rich-text-editor';
 import { BubbleToolbar } from '@lumina/editor-shared/rich-text/bubble-toolbar';
@@ -93,8 +94,9 @@ describe('Formato por selección (Fase 2C/2D — resuelve P1)', () => {
     editor.commands.setTextSelection({ from: 3, to: 3 });
     applyHeadingLevelToSelection(editor, 1);
     expect(editor.isActive('heading', { level: 1 })).toBe(true);
-    // Tamaño "derivado" (no había) → se limpia → la escala H1 del CSS manda.
-    expect(editor.getAttributes('heading').fontSize).toBeFalsy();
+    // Cuerpo → H1 escribe la escala en el nodo (40 / bold), no espera CSS.
+    expect(editor.getAttributes('heading').fontSize).toBe(40);
+    expect(editor.getAttributes('heading').bold).toBe(true);
   });
 
   it('un tamaño manual distinto de la escala se respeta al cambiar de nivel', async () => {
@@ -106,6 +108,14 @@ describe('Formato por selección (Fase 2C/2D — resuelve P1)', () => {
     applyTypographyToSelection(editor, { fontSize: 55 });
     applyHeadingLevelToSelection(editor, 2);
     expect(editor.getAttributes('heading').fontSize).toBe(55);
+  });
+
+  it('sangría de primera línea / francesa sobrevive getJSON → RichDoc', async () => {
+    const editor = await mountAndGetEditor('párrafo de prueba');
+    editor.chain().focus().updateAttributes('paragraph', { textIndent: 1.5 }).run();
+    expect(pmDocToRich(editor.getJSON() as never).nodes[0]?.textIndent).toBe(1.5);
+    editor.chain().focus().updateAttributes('paragraph', { textIndent: -1.5 }).run();
+    expect(pmDocToRich(editor.getJSON() as never).nodes[0]?.textIndent).toBe(-1.5);
   });
 
   it('<BubbleToolbar> monta sin romper con un editor', async () => {

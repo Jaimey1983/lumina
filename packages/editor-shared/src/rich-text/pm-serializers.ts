@@ -14,6 +14,7 @@ import type {
 } from '@lumina/types/rich-text';
 import { RICH_NODE_STYLE_KEYS } from '@lumina/types/rich-text';
 import type { TextAlign } from '@lumina/types/slide';
+import { asFiniteNumber } from './indent.js';
 import { sanitizeRichDoc } from './sanitize.js';
 
 /** Forma mínima del JSON de TipTap que usamos (subconjunto de `JSONContent`). */
@@ -152,6 +153,7 @@ function blockAttrs(node: RichNode): Record<string, unknown> {
   const out: Record<string, unknown> = { ...nodeStyleAttrs(node) };
   if (node.align) out.align = node.align;
   if (Number.isFinite(node.indent)) out.indent = node.indent;
+  if (Number.isFinite(node.textIndent)) out.textIndent = node.textIndent;
   if (Number.isFinite(node.spaceBefore)) out.spaceBefore = node.spaceBefore;
   if (Number.isFinite(node.spaceAfter)) out.spaceAfter = node.spaceAfter;
   return out;
@@ -364,11 +366,12 @@ function firstParagraphRuns(node: PmJSON): RichRun[] | undefined {
 /** Lee sangría / espaciado del `attrs` de un nodo de bloque de TipTap. */
 function pmBlockSpacing(attrs?: Record<string, unknown>): Partial<RichNode> {
   const out: Partial<RichNode> = {};
-  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
-  const indent = n(attrs?.indent);
-  const before = n(attrs?.spaceBefore);
-  const after = n(attrs?.spaceAfter);
+  const indent = asFiniteNumber(attrs?.indent);
+  const textIndent = asFiniteNumber(attrs?.textIndent);
+  const before = asFiniteNumber(attrs?.spaceBefore);
+  const after = asFiniteNumber(attrs?.spaceAfter);
   if (indent !== undefined) out.indent = indent;
+  if (textIndent !== undefined) out.textIndent = textIndent;
   if (before !== undefined) out.spaceBefore = before;
   if (after !== undefined) out.spaceAfter = after;
   return out;

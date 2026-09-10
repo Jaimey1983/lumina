@@ -68,6 +68,7 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   ensureEditorStyles();
   const exitedRef = useRef(false);
+  const dirtyRef = useRef(false);
   const onCommitRef = useRef(onCommit);
   onCommitRef.current = onCommit;
   const onDiscardRef = useRef(onDiscard);
@@ -79,6 +80,9 @@ export function RichTextEditor({
     content: initialContent,
     autofocus: autoFocus ? 'end' : false,
     immediatelyRender: false,
+    onUpdate: () => {
+      dirtyRef.current = true;
+    },
     editorProps: {
       attributes: {
         class: 'lumina-rich-editor',
@@ -98,11 +102,20 @@ export function RichTextEditor({
     onCommitRef.current(pmDocToRich(editor.getJSON() as PmJSON));
   }
 
-  function discard(): void {
+  function closeWithoutCommit(): void {
     if (exitedRef.current) return;
     exitedRef.current = true;
     registerActiveRichEditor(null);
     onDiscardRef.current?.();
+  }
+
+  function discard(): void {
+    closeWithoutCommit();
+  }
+
+  function finishIfDirty(): void {
+    if (dirtyRef.current) commit();
+    else closeWithoutCommit();
   }
 
   useEffect(() => {
@@ -119,7 +132,7 @@ export function RichTextEditor({
       if (!next) return;
       if (editor.view.dom.contains(next)) return;
       if (typeof next.closest === 'function' && next.closest('[data-rich-text-safe]')) return;
-      commit();
+      finishIfDirty();
     };
     editor.on('focus', handleFocus);
     editor.on('blur', handleBlur);
@@ -143,10 +156,9 @@ export function RichTextEditor({
       editor.off('focus', handleFocus);
       editor.off('blur', handleBlur);
       dom.removeEventListener('keydown', onKeyDown);
-      // Al desmontar (cambio de slide / bloque / `editingId`) se conserva la
-      // edición: es la señal canónica de "el usuario terminó". `commit()` está
-      // protegido contra doble ejecución (`exitedRef`) y editor destruido.
-      commit();
+      // Al desmontar: persistir SOLO si el docente cambió algo. Abrir y
+      // cerrar (doble clic, Strict Mode, click en lienzo) no escribe.
+      finishIfDirty();
       registerActiveRichEditor(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

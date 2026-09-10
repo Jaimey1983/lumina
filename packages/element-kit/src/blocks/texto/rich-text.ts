@@ -1,7 +1,13 @@
 import type { TextAlign, TextBlock } from '@lumina/types/slide';
 import type { RichDoc, RichNode } from '@lumina/types/rich-text';
 import { RICH_NODE_STYLE_KEYS } from '@lumina/types/rich-text';
-import { plainToRich, richToPlain, sanitizeRichDoc } from '@lumina/editor-shared/rich-text';
+import {
+  hintsFromTextBlock,
+  hydrateMissingNodeStyle,
+  plainToRich,
+  richToPlain,
+  sanitizeRichDoc,
+} from '@lumina/editor-shared/rich-text';
 
 /**
  * Kill-switch de producción del render enriquecido (Fase 1.7). Por defecto ON;
@@ -18,28 +24,16 @@ export function isRichTextEnabled(): boolean {
 }
 
 /**
- * Accessor único de lectura de un bloque de texto. Devuelve `contenidoRich`
- * saneado si existe, o un `RichDoc` derivado de `contenido` plano usando las
- * pistas del bloque (estructura + tipografía). **Todo render de texto pasa por
- * aquí** — nadie lee `block.contenido` directo para pintar a partir de Fase 1.
+ * Accessor único de lectura. Si hay `contenidoRich`, lo sanea y fusiona las
+ * pistas del bloque solo en campos ausentes del nodo. Si no hay doc, deriva
+ * uno de `contenido` plano. El valor del nodo siempre gana.
  */
 export function getRichDoc(block: TextBlock): RichDoc {
+  const hints = hintsFromTextBlock(block);
   if (isRichTextEnabled() && block.contenidoRich) {
-    return sanitizeRichDoc(block.contenidoRich);
+    return hydrateMissingNodeStyle(sanitizeRichDoc(block.contenidoRich), hints);
   }
-  return plainToRich(block.contenido ?? '', {
-    nivel: block.nivel,
-    lista: block.lista,
-    alineacion: block.alineacion,
-    fuente: block.fuente,
-    tamanoFuente: block.tamanoFuente,
-    color: block.color,
-    negrita: block.negrita,
-    cursiva: block.cursiva,
-    subrayado: block.subrayado,
-    interlineado: block.interlineado,
-    espaciadoLetras: block.espaciadoLetras,
-  });
+  return plainToRich(block.contenido ?? '', hints);
 }
 
 /** px → string `"Npx"` para `TextBlock.tamanoFuente`. */
@@ -63,9 +57,9 @@ function sharedNodeValue<K extends keyof RichNode>(
 /**
  * Aplica un `RichDoc` editado a un `TextBlock`: guarda `contenidoRich`, recomputa
  * `contenido` plano y **deriva las propiedades de bloque** (`nivel`, `lista`,
- * `alineacion` + tipografía: `tamanoFuente`, `color`, `fuente`, `negrita`,
- * `cursiva`, `subrayado`, `interlineado`, `espaciadoLetras`) del/los nodo(s)
- * raíz. Así el panel de propiedades y la escala no divergen del documento.
+ * `alineacion` + tipografía) del/los nodo(s) raíz **solo cuando el nodo trae
+ * valor**. Ausencia en el nodo no borra el campo del bloque: el bloque es
+ * proyección + fallback legado, no un segundo documento que se limpia.
  *
  * - Funciona con docs de varios nodos si **todos** comparten el mismo valor;
  *   si divergen, esa propiedad de bloque se deja como está (estado "mixto").
@@ -93,48 +87,24 @@ export function syncTextBlockFromRichDoc(block: TextBlock, doc: RichDoc): TextBl
   // ── Alineación y tipografía: se comparten si TODOS los nodos coinciden. ────
   const align = sharedNodeValue(nodes, 'align');
   if (align) next.alineacion = align as TextAlign;
-  else if (nodes.every((n) => !n.align)) delete next.alineacion;
 
-  // ── Tipografía del bloque ─────────────────────────────────────────────────
+  // ── Tipografía del bloque: solo escribir cuando el nodo trae valor. ──────
   const applyStyle = <T>(
     key: (typeof RICH_NODE_STYLE_KEYS)[number],
     onValue: (v: T) => void,
-    onClear: () => void,
   ) => {
     const shared = sharedNodeValue(nodes, key as keyof RichNode) as T | undefined;
     if (shared !== undefined && shared !== null) onValue(shared);
-    else if (
-      nodes.every(
-        (n) => (n as unknown as Record<string, unknown>)[key] === undefined,
-      )
-    )
-      onClear();
   };
 
-  applyStyle<string>('fontFamily', (v) => (next.fuente = v), () => delete next.fuente);
-  applyStyle<number>(
-    'fontSize',
-    (v) => (next.tamanoFuente = pxToTamano(v)),
-    () => delete next.tamanoFuente,
-  );
-  applyStyle<string>('color', (v) => (next.color = v), () => delete next.color);
-  applyStyle<boolean>('bold', (v) => (next.negrita = v), () => delete next.negrita);
-  applyStyle<boolean>('italic', (v) => (next.cursiva = v), () => delete next.cursiva);
-  applyStyle<boolean>(
-    'underline',
-    (v) => (next.subrayado = v),
-    () => delete next.subrayado,
-  );
-  applyStyle<number>(
-    'lineHeight',
-    (v) => (next.interlineado = v),
-    () => delete next.interlineado,
-  );
-  applyStyle<number>(
-    'letterSpacing',
-    (v) => (next.espaciadoLetras = v),
-    () => delete next.espaciadoLetras,
-  );
+  applyStyle<string>('fontFamily', (v) => (next.fuente = v));
+  applyStyle<number>('fontSize', (v) => (next.tamanoFuente = pxToTamano(v)));
+  applyStyle<string>('color', (v) => (next.color = v));
+  applyStyle<boolean>('bold', (v) => (next.negrita = v));
+  applyStyle<boolean>('italic', (v) => (next.cursiva = v));
+  applyStyle<boolean>('underline', (v) => (next.subrayado = v));
+  applyStyle<number>('lineHeight', (v) => (next.interlineado = v));
+  applyStyle<number>('letterSpacing', (v) => (next.espaciadoLetras = v));
 
   return next;
 }

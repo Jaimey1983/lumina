@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TextBlock } from '@lumina/types/slide';
 import type { RichDoc } from '@lumina/types/rich-text';
+import { applyHeadingLevelToRichDoc } from '@lumina/editor-shared/rich-text';
 import { getRichDoc, syncTextBlockFromRichDoc } from './rich-text.js';
 
 /**
@@ -44,7 +45,7 @@ describe('getRichDoc — traslada la tipografía de bloque al nodo raíz', () =>
     expect(doc.nodes[0]!.bold).toBe(false);
   });
 
-  it('con contenidoRich presente, ese doc manda (no se re-deriva)', () => {
+  it('con contenidoRich presente, el color del nodo gana sobre el del bloque', () => {
     const rich: RichDoc = {
       version: 1,
       nodes: [{ type: 'paragraph', color: '#abcdef', runs: [{ text: 'y' }] }],
@@ -56,6 +57,24 @@ describe('getRichDoc — traslada la tipografía de bloque al nodo raíz', () =>
       color: '#000000',
     });
     expect(doc.nodes[0]!.color).toBe('#abcdef');
+  });
+
+  it('contenidoRich sin color + block.color → hidrata el color ausente', () => {
+    const rich: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'paragraph', runs: [{ text: 'y' }] }],
+    };
+    const doc = getRichDoc({
+      tipo: 'texto',
+      contenido: 'y',
+      contenidoRich: rich,
+      color: '#112233',
+      tamanoFuente: '18px',
+      alineacion: 'centro',
+    });
+    expect(doc.nodes[0]!.color).toBe('#112233');
+    expect(doc.nodes[0]!.fontSize).toBe(18);
+    expect(doc.nodes[0]!.align).toBe('centro');
   });
 });
 
@@ -84,12 +103,12 @@ describe('syncTextBlockFromRichDoc — deriva TextBlock.* del nodo raíz', () =>
     expect(out.nivel).toBe(1);
   });
 
-  it('nodo sin fontSize → block.tamanoFuente se limpia', () => {
+  it('nodo sin fontSize → block.tamanoFuente se conserva (legado)', () => {
     const out = syncTextBlockFromRichDoc(
       { tipo: 'texto', contenido: '', tamanoFuente: '14px' },
       mk([{ type: 'heading', level: 1, runs: [{ text: 'T' }] }]),
     );
-    expect(out.tamanoFuente).toBeUndefined();
+    expect(out.tamanoFuente).toBe('14px');
   });
 
   it('multi-nodo con tipografía coincidente → se comparte al bloque', () => {
@@ -133,12 +152,12 @@ describe('syncTextBlockFromRichDoc — deriva TextBlock.* del nodo raíz', () =>
     expect(out.alineacion).toBe('centro');
   });
 
-  it('ningún nodo con align → block.alineacion se limpia', () => {
+  it('ningún nodo con align → block.alineacion se conserva (legado)', () => {
     const out = syncTextBlockFromRichDoc(
       { tipo: 'texto', contenido: '', alineacion: 'derecha' },
       mk([{ type: 'paragraph', runs: [{ text: 'a' }] }]),
     );
-    expect(out.alineacion).toBeUndefined();
+    expect(out.alineacion).toBe('derecha');
   });
 
   it('round-trip: getRichDoc → syncTextBlockFromRichDoc devuelve el mismo estilo', () => {
@@ -159,5 +178,16 @@ describe('syncTextBlockFromRichDoc — deriva TextBlock.* del nodo raíz', () =>
     expect(back.negrita).toBe(true);
     expect(back.nivel).toBe(3);
     expect(back.alineacion).toBe('centro');
+  });
+
+  it('cuerpo 18px → H1 escribe 40px/bold en el nodo y el bloque', () => {
+    const block: TextBlock = { tipo: 'texto', contenido: 'Título', tamanoFuente: '18px' };
+    const doc = applyHeadingLevelToRichDoc(getRichDoc(block), 1, true);
+    const back = syncTextBlockFromRichDoc(block, doc);
+    expect(doc.nodes[0]!.type).toBe('heading');
+    expect(doc.nodes[0]!.fontSize).toBe(40);
+    expect(back.tamanoFuente).toBe('40px');
+    expect(back.negrita).toBe(true);
+    expect(back.nivel).toBe(1);
   });
 });

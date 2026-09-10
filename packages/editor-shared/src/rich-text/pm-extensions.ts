@@ -55,7 +55,18 @@ const CSS_TO_ALIGN: Record<string, string> = {
   justify: 'justificado',
 };
 
-/** `align` (valores del dominio Lumina) en paragraph / heading. */
+/** Nodos de bloque que aceptan alineación y estilo tipográfico de nodo. */
+const BLOCK_STYLE_TYPES = [
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'blockquote',
+  'callout',
+] as const;
+
+/** `align` (valores del dominio Lumina) en nodos de bloque. */
 const numAttr = (key: string, dataName: string, cssProp: string, unit: string) => ({
   default: null as number | null,
   parseHTML: (el: HTMLElement) => {
@@ -75,7 +86,7 @@ const NodeAlign = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: ['paragraph', 'heading'],
+        types: [...BLOCK_STYLE_TYPES],
         attributes: {
           align: {
             default: null,
@@ -92,6 +103,23 @@ const NodeAlign = Extension.create({
             },
           },
           indent: numAttr('indent', 'data-indent', 'margin-inline-start', 'rem'),
+          textIndent: {
+            default: null as number | null,
+            parseHTML: (el: HTMLElement) => {
+              const v = el.getAttribute('data-text-indent');
+              return v == null ? null : Number(v);
+            },
+            renderHTML: (attrs: Record<string, unknown>) => {
+              const v = attrs.textIndent as number | null;
+              if (v == null || !Number.isFinite(v) || v === 0) return {};
+              const hangPad =
+                v < 0 ? `padding-inline-start:${Math.abs(v)}rem;` : '';
+              return {
+                'data-text-indent': String(v),
+                style: `${hangPad}text-indent:${v}rem`,
+              };
+            },
+          },
           spaceBefore: numAttr('spaceBefore', 'data-space-before', 'margin-top', 'px'),
           spaceAfter: numAttr('spaceAfter', 'data-space-after', 'margin-bottom', 'px'),
         },
@@ -101,9 +129,9 @@ const NodeAlign = Extension.create({
 });
 
 /**
- * Estilo tipográfico del bloque en `paragraph` / `heading` (Fase 1 del modelo
- * único): `fontFamily` / `fontSize` / `color` / `bold` / `italic` / `underline` /
- * `lineHeight` / `letterSpacing` como atributos del NODO (no marcas por rango).
+ * Estilo tipográfico del bloque en nodos de bloque (párrafo, heading, listas,
+ * blockquote, callout): `fontFamily` / `fontSize` / `color` / `bold` / `italic` /
+ * `underline` / `lineHeight` / `letterSpacing` como atributos del NODO.
  * `render-texto` y `pm-serializers` los tratan como el estilo del bloque; el
  * panel de propiedades escribe aquí cuando no hay selección de rango viva.
  */
@@ -154,7 +182,7 @@ const NodeBlockStyle = Extension.create({
     });
     return [
       {
-        types: ['paragraph', 'heading'],
+        types: [...BLOCK_STYLE_TYPES],
         attributes: {
           fontFamily: strAttr('font-family', 'fontFamily'),
           fontSize: numAttrPx('font-size', 'fontSize', 'px'),

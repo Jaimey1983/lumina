@@ -173,9 +173,31 @@ describe('richToPmDoc / pmDocToRich', () => {
       nodes: [
         { type: 'heading', level: 2, spaceBefore: 24, runs: [{ text: 'Sección' }] },
         { type: 'paragraph', indent: 3, spaceAfter: 12, runs: [{ text: 'sangrado' }] },
+        { type: 'paragraph', textIndent: 1.5, runs: [{ text: 'primera línea' }] },
+        { type: 'paragraph', textIndent: -1.5, runs: [{ text: 'francesa' }] },
       ],
     };
     expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+  });
+
+  it('textIndent como string numérico (getJSON de TipTap) no se tira', () => {
+    const rich = pmDocToRich({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { textIndent: '1.5' },
+          content: [{ type: 'text', text: 'x' }],
+        },
+        {
+          type: 'paragraph',
+          attrs: { textIndent: '-1.5' },
+          content: [{ type: 'text', text: 'y' }],
+        },
+      ],
+    });
+    expect(rich.nodes[0]?.textIndent).toBe(1.5);
+    expect(rich.nodes[1]?.textIndent).toBe(-1.5);
   });
 
   it('term con definición sobrevive el viaje', () => {

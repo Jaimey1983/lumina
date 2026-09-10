@@ -139,6 +139,45 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(p.style.textAlign).toBe('right');
   });
 
+  it('sangría de primera línea → text-indent positivo', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'paragraph', textIndent: 1.5, runs: [{ text: 'primera' }] }],
+    };
+    const { container } = render(
+      <RenderText block={{ tipo: 'texto', contenido: 'primera', contenidoRich: doc }} modo="viewer" />,
+    );
+    const p = container.querySelector('p') as HTMLElement;
+    expect(p.style.textIndent).toBe('1.5rem');
+    expect(p.style.paddingInlineStart).toBe('');
+    // Contrato: pre-wrap en el span interno, no en el <p> (si no, WebKit
+    // anula text-indent al salir del editor).
+    expect(p.style.whiteSpace).toBe('');
+    expect((p.querySelector('[data-rich-ws]') as HTMLElement).style.whiteSpace).toBe(
+      'pre-wrap',
+    );
+  });
+
+  it('sangría francesa → text-indent negativo + padding', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [{ type: 'paragraph', textIndent: -1.5, runs: [{ text: 'francesa' }] }],
+    };
+    const { container } = render(
+      <RenderText
+        block={{ tipo: 'texto', contenido: 'francesa', contenidoRich: doc }}
+        modo="viewer"
+      />,
+    );
+    const p = container.querySelector('p') as HTMLElement;
+    expect(p.style.textIndent).toBe('-1.5rem');
+    expect(p.style.paddingInlineStart).toBe('1.5rem');
+    expect(p.style.whiteSpace).toBe('');
+    expect((p.querySelector('[data-rich-ws]') as HTMLElement).style.whiteSpace).toBe(
+      'pre-wrap',
+    );
+  });
+
   it('taskList → <ul data-task-list> con <input type=checkbox> por ítem', () => {
     const doc: RichDoc = {
       version: 1,

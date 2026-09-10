@@ -53,25 +53,46 @@ describe('RichTextEditor (Fase 2B)', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it('blur hacia un elemento real fuera → un único onCommit equivalente', async () => {
+  it('blur hacia fuera SIN cambios → cierra la sesión, no persiste', async () => {
     const outside = document.createElement('button');
     document.body.appendChild(outside);
-    const { el, onCommit } = await mountEditor({ value: doc('Texto de prueba') });
+    const { el, onCommit, onDiscard } = await mountEditor({ value: doc('Texto de prueba') });
     fireEvent.blur(el, { relatedTarget: outside });
-    await waitFor(() => expect(onCommit).toHaveBeenCalledTimes(1));
-    const committed = onCommit.mock.calls[0]![0] as RichDoc;
-    expect(committed.version).toBe(1);
-    expect(richToPlain(committed)).toBe('Texto de prueba');
-    fireEvent.blur(el, { relatedTarget: outside });
-    expect(onCommit).toHaveBeenCalledTimes(1); // un commit por gesto
+    await waitFor(() => expect(onDiscard).toHaveBeenCalledTimes(1));
+    expect(onCommit).not.toHaveBeenCalled();
     outside.remove();
   });
 
-  it('desmontar (cambio de slide / bloque) comitea la edición pendiente', async () => {
-    const { onCommit, unmount } = await mountEditor({ value: doc('pendiente') });
+  it('blur hacia fuera CON cambios → un único onCommit', async () => {
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    const { el, onCommit } = await mountEditor({ value: doc('Texto de prueba') });
+    fireEvent.focus(el);
+    await waitFor(() => expect(getActiveRichEditor()?.editor).toBeTruthy());
+    getActiveRichEditor()!.editor.commands.insertContent(' extra');
+    fireEvent.blur(el, { relatedTarget: outside });
+    await waitFor(() => expect(onCommit).toHaveBeenCalledTimes(1));
+    expect(richToPlain(onCommit.mock.calls[0]![0] as RichDoc)).toContain('Texto de prueba');
+    fireEvent.blur(el, { relatedTarget: outside });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    outside.remove();
+  });
+
+  it('desmontar SIN cambios no persiste', async () => {
+    const { onCommit, onDiscard, unmount } = await mountEditor({ value: doc('pendiente') });
+    unmount();
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onDiscard).toHaveBeenCalledTimes(1);
+  });
+
+  it('desmontar CON cambios comitea la edición pendiente', async () => {
+    const { el, onCommit, unmount } = await mountEditor({ value: doc('pendiente') });
+    fireEvent.focus(el);
+    await waitFor(() => expect(getActiveRichEditor()?.editor).toBeTruthy());
+    getActiveRichEditor()!.editor.commands.insertContent(' x');
     unmount();
     expect(onCommit).toHaveBeenCalledTimes(1);
-    expect(richToPlain(onCommit.mock.calls[0]![0] as RichDoc)).toBe('pendiente');
+    expect(richToPlain(onCommit.mock.calls[0]![0] as RichDoc)).toContain('pendiente');
   });
 
   it('Escape → onDiscard, sin onCommit', async () => {

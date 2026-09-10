@@ -2,7 +2,7 @@ import type { Editor } from '@tiptap/core';
 import type { HeadingLevel } from '@lumina/types/slide';
 import type { TypographyValue } from '../typography.js';
 import { isBoldWeight } from '../typography.js';
-import { HEADING_SCALE } from '../heading-scale.js';
+import { BODY_TEXT_SCALE, HEADING_SCALE, isDerivedHeadingSize } from '../heading-scale.js';
 
 const ALIGN_TO_BLOCK: Record<string, string> = {
   left: 'izquierda',
@@ -36,8 +36,16 @@ export function splitTypographyPatch(patch: Partial<TypographyValue>): {
   return { range, block };
 }
 
-/** Los tipos de nodo de bloque que aceptan el estilo tipográfico del bloque. */
-const STYLE_NODE_TYPES = ['paragraph', 'heading'] as const;
+/** Nodos que aceptan estilo de bloque (tipografía + alineación). */
+const STYLE_NODE_TYPES = [
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'blockquote',
+  'callout',
+] as const;
 
 /**
  * Estilo tipográfico del bloque (`NodeBlockStyle`) desde un `TypographyValue`.
@@ -136,9 +144,7 @@ export function applyTypographyToSelection(
   }
   if (patch.align !== undefined) {
     const a = patch.align ? (ALIGN_TO_BLOCK[patch.align] ?? 'izquierda') : null;
-    chain = chain
-      .updateAttributes('paragraph', { align: a })
-      .updateAttributes('heading', { align: a });
+    for (const type of STYLE_NODE_TYPES) chain = chain.updateAttributes(type, { align: a });
     applied = true;
   }
   if (applied) chain.run();
@@ -164,30 +170,31 @@ export function applyHeadingLevelToSelection(
   const curHeading = editor.getAttributes('heading');
   const prevLevel: number | undefined =
     typeof curHeading.level === 'number' ? curHeading.level : undefined;
-  const prevScale = prevLevel ? HEADING_SCALE[prevLevel as HeadingLevel] : undefined;
   const curSize =
     typeof cur.fontSize === 'number'
       ? cur.fontSize
       : typeof curHeading.fontSize === 'number'
         ? curHeading.fontSize
         : undefined;
-  const sizeIsDerived =
-    curSize === undefined || (prevScale && curSize === prevScale.sizePx);
+  const sizeIsDerived = isDerivedHeadingSize(
+    curSize,
+    prevLevel as HeadingLevel | undefined,
+  );
 
   let chain = editor.chain().setTextSelection(range);
   chain = nivel === undefined ? chain.setParagraph() : chain.setHeading({ level: nivel });
 
-  // Si el tamaño estaba "derivado" del nivel anterior, se limpia el estilo de
-  // nodo → la escala del NUEVO nivel (regla `h1..h6` del editor + `render-texto`)
-  // toma el control. Un tamaño manual distinto se respeta.
+  // Cuerpo→Hn (o Hn→Hm) con tamaño derivado: ESCRIBIR la escala en el nodo.
+  // Borrar y esperar CSS era la causa de "solo cambia interlineado".
   if (sizeIsDerived) {
-    const clear = {
-      fontSize: null,
-      bold: null,
-      lineHeight: null,
-      letterSpacing: null,
+    const scale = nivel ? HEADING_SCALE[nivel] : BODY_TEXT_SCALE;
+    const attrs = {
+      fontSize: scale.sizePx,
+      bold: scale.weight >= 600,
+      lineHeight: scale.lineHeight,
+      letterSpacing: scale.trackingPx,
     };
-    for (const type of STYLE_NODE_TYPES) chain = chain.updateAttributes(type, clear);
+    for (const type of STYLE_NODE_TYPES) chain = chain.updateAttributes(type, attrs);
   }
   chain.setTextSelection({ from, to }).run();
   return true;

@@ -17,8 +17,18 @@ import {
   splitTypographyPatch,
   applyTypographyToSelection,
   applyHeadingLevelToSelection,
+  applyHeadingLevelToRichDoc,
+  applyTypographyPatchToRichDoc,
+  richToPlain,
+  sanitizeRichDoc,
 } from '@lumina/editor-shared/rich-text';
-import { HEADING_SCALE, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
+import {
+  BODY_TEXT_SCALE,
+  HEADING_SCALE,
+  effectiveFontSizePx,
+  isDerivedHeadingSize,
+} from '@lumina/editor-shared/heading-scale';
+import { getRichDoc } from './rich-text.js';
 import {
   textBoxValueFromBlock,
   applyTextBoxPatch,
@@ -41,27 +51,46 @@ function activeEditor() {
 }
 
 /**
- * Limpia los ajustes tipográficos "derivados" de un nivel al cambiar de nivel:
- * si el tamaño actual del bloque coincide con la escala del nivel previo (o no
- * hay tamaño explícito), se borran para que la escala del nuevo nivel mande.
- * Un tamaño manual distinto se respeta.
+ * Al cambiar de nivel: si el tamaño es el de la escala (cuerpo 18px o el
+ * nivel previo) se ESCRIBE la escala nueva en bloque y documento. Un override
+ * manual se respeta. Nunca se borra el tamaño esperando CSS.
  */
 function rescaleBlockForLevel(b: TextBlock, nivel?: HeadingLevel): TextBlock {
   const next: TextBlock = { ...b };
   if (nivel === undefined) delete next.nivel;
   else next.nivel = nivel;
 
-  const prevScale = b.nivel ? HEADING_SCALE[b.nivel] : undefined;
-  const curPx = effectiveFontSizePx(b.tamanoFuente, b.nivel);
-  const derived =
-    !b.tamanoFuente || b.tamanoFuente === '' || (prevScale && curPx === prevScale.sizePx);
+  const curPx =
+    b.tamanoFuente && b.tamanoFuente.trim() !== ''
+      ? effectiveFontSizePx(b.tamanoFuente, b.nivel)
+      : undefined;
+  const derived = isDerivedHeadingSize(curPx, b.nivel);
   if (derived) {
-    delete next.tamanoFuente;
-    delete next.negrita;
-    delete next.interlineado;
-    delete next.espaciadoLetras;
+    const scale = nivel ? HEADING_SCALE[nivel] : BODY_TEXT_SCALE;
+    next.tamanoFuente = `${scale.sizePx}px`;
+    next.negrita = scale.weight >= 600;
+    next.interlineado = scale.lineHeight;
+    next.espaciadoLetras = scale.trackingPx;
   }
+
+  const baseDoc = b.contenidoRich ? sanitizeRichDoc(b.contenidoRich) : getRichDoc(b);
+  const headingDoc = applyHeadingLevelToRichDoc(baseDoc, nivel, derived);
+  next.contenidoRich = headingDoc;
+  next.contenido = richToPlain(headingDoc);
   return next;
+}
+
+/** Escribe el patch en `TextBlock.*` y en el `RichDoc` a la vez. */
+function applyTypographyToTextBlock(
+  b: TextBlock,
+  patch: Partial<TypographyValue>,
+): TextBlock {
+  const mapped: TextBlock = { ...b, ...textBlockPatchFromTypography(patch) };
+  const baseDoc = b.contenidoRich ? sanitizeRichDoc(b.contenidoRich) : getRichDoc(b);
+  const patchedDoc = applyTypographyPatchToRichDoc(baseDoc, patch);
+  mapped.contenidoRich = patchedDoc;
+  mapped.contenido = richToPlain(patchedDoc);
+  return mapped;
 }
 
 /**
@@ -144,8 +173,8 @@ export function TextoProperties({
 }: TextoPropertiesProps) {
   useActiveEditorTick();
   const applyBlockPatch = (patch: Partial<TypographyValue>) => {
-    const mapped = textBlockPatchFromTypography(patch);
-    const apply = (b: Block): Block => (b.tipo === 'texto' ? { ...b, ...mapped } : b);
+    const apply = (b: Block): Block =>
+      b.tipo === 'texto' ? applyTypographyToTextBlock(b, patch) : b;
     if (isTypographySizeOnlyPatch(patch) && scheduleApply) {
       scheduleApply(apply);
       return;
@@ -154,7 +183,7 @@ export function TextoProperties({
     if (applyNow) {
       void applyNow(apply);
     } else if (onChange) {
-      onChange({ ...block, ...mapped });
+      onChange(applyTypographyToTextBlock(block, patch));
     }
   };
 

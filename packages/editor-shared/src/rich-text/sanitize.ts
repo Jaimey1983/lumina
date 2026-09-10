@@ -6,6 +6,7 @@ import type {
   RichNodeType,
   RichRun,
 } from '@lumina/types/rich-text';
+import { asFiniteNumber } from './indent.js';
 
 const SAFE_SCHEMES = new Set(['http', 'https', 'mailto', 'tel']);
 
@@ -210,9 +211,14 @@ function sanitizeNode(node: RichNode, depth = 0): RichNode | null {
   ) {
     out.align = node.align;
   }
-  if (Number.isFinite(node.indent)) out.indent = node.indent;
-  if (Number.isFinite(node.spaceBefore)) out.spaceBefore = node.spaceBefore;
-  if (Number.isFinite(node.spaceAfter)) out.spaceAfter = node.spaceAfter;
+  const indent = asFiniteNumber(node.indent);
+  const textIndent = asFiniteNumber(node.textIndent);
+  const spaceBefore = asFiniteNumber(node.spaceBefore);
+  const spaceAfter = asFiniteNumber(node.spaceAfter);
+  if (indent !== undefined) out.indent = indent;
+  if (textIndent !== undefined) out.textIndent = textIndent;
+  if (spaceBefore !== undefined) out.spaceBefore = spaceBefore;
+  if (spaceAfter !== undefined) out.spaceAfter = spaceAfter;
   if (typeof node.checked === 'boolean') out.checked = node.checked;
   if (typeof node.latex === 'string') out.latex = node.latex;
   if (typeof node.lang === 'string') out.lang = node.lang;

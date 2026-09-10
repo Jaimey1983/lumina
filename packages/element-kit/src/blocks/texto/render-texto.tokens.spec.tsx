@@ -41,8 +41,13 @@ describe('RenderText — tokens {{…}} (Fase 5A)', () => {
     expect(out).not.toContain('{{fecha}}'); // fecha built-in siempre resuelve
   });
 
-  it('texto sin tokens: DOM idéntico a antes', () => {
-    const plain = html(<RenderText block={block('Hola mundo')} modo="viewer" />);
-    expect(plain).toBe('<p style="margin: 0px; white-space: pre-wrap; word-break: break-word;">Hola mundo</p>');
+  it('texto sin tokens: un <p> con saltos en el span interno, no en el bloque', () => {
+    const { container } = render(<RenderText block={block('Hola mundo')} modo="viewer" />);
+    const p = container.querySelector('p') as HTMLElement;
+    expect(p.style.margin).toBe('0px');
+    expect(p.style.whiteSpace).toBe('');
+    const inner = p.querySelector('[data-rich-ws]') as HTMLElement;
+    expect(inner.style.whiteSpace).toBe('pre-wrap');
+    expect(inner.textContent).toBe('Hola mundo');
   });
 });

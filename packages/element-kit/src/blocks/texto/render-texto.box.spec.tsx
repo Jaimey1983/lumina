@@ -7,10 +7,10 @@ const block = (extra: Partial<TextBlock>): TextBlock => ({ tipo: 'texto', conten
 
 describe('RenderText — caja del bloque (Fase 5A)', () => {
   it('sin props de caja: DOM idéntico (sin envoltorio)', () => {
-    const out = render(<RenderText block={block({})} modo="viewer" />).container.innerHTML;
-    expect(out).toBe(
-      '<p style="margin: 0px; white-space: pre-wrap; word-break: break-word;">Hola</p>',
-    );
+    const { container } = render(<RenderText block={block({})} modo="viewer" />);
+    expect(container.firstElementChild?.tagName).toBe('P');
+    expect((container.firstElementChild as HTMLElement).style.whiteSpace).toBe('');
+    expect(container.querySelector('[data-rich-ws]')?.textContent).toBe('Hola');
   });
 
   it('con relleno + borde: se añade <div> de caja alrededor del <p>', () => {

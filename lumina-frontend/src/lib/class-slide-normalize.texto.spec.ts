@@ -53,6 +53,27 @@ describe('normalizeTextBlock (Fase 1)', () => {
     expect(out.contenido).toBe('plano');
   });
 
+  it('contenidoRich sin color + block.color se hidrata, no se borra', () => {
+    const b: TextBlock = {
+      tipo: 'texto',
+      contenido: 'x',
+      color: '#112233',
+      tamanoFuente: '18px',
+      alineacion: 'centro',
+      contenidoRich: {
+        version: 1,
+        nodes: [{ type: 'paragraph', runs: [{ text: 'x' }] }],
+      },
+    };
+    const out = firstBlock([b]);
+    expect(out.color).toBe('#112233');
+    expect(out.tamanoFuente).toBe('18px');
+    expect(out.alineacion).toBe('centro');
+    expect(out.contenidoRich!.nodes[0]!.color).toBe('#112233');
+    expect(out.contenidoRich!.nodes[0]!.fontSize).toBe(18);
+    expect(out.contenidoRich!.nodes[0]!.align).toBe('centro');
+  });
+
   it('marca link con href peligroso se limpia al hidratar', () => {
     const b: TextBlock = {
       tipo: 'texto',

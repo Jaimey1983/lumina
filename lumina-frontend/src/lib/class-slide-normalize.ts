@@ -33,8 +33,8 @@ import { normalizeClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import { normalizeBackground } from '@/lib/slide-background';
 import { normalizeGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import { normalizeDiagramaBlock } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
-import { sanitizeRichDoc, isRichDoc } from '@lumina/editor-shared/rich-text';
-import { syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
+import { isRichDoc } from '@lumina/editor-shared/rich-text';
+import { getRichDoc, syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
 
 const DEFAULT_FONDO: Background = { tipo: 'color', valor: '#ffffff' };
 
@@ -150,12 +150,10 @@ function withoutInteractiveStubs(bloques: Block[]): Block[] {
 }
 
 /**
- * Texto enriquecido (Fase 1): si el bloque trae `contenidoRich`, se sanea, se
- * recomputa `contenido` y se **reconcilian** las propiedades de bloque
- * (`nivel`, `lista`, `alineacion` + tipografía) con el/los nodo(s) raíz — así un
- * slide guardado con `contenidoRich` y `block.*` divergentes se hidrata
- * coherente (antes solo se curaba en el próximo commit del bloque). Si el
- * `RichDoc` es inválido se descarta y el bloque queda como texto plano.
+ * Texto enriquecido: hidrata el `RichDoc` con las pistas del bloque (solo
+ * campos ausentes del nodo) y proyecta al bloque sin borrar legado. Un slide
+ * viejo con `contenidoRich` incompleto y `block.color`/`tamanoFuente` no
+ * pierde tipografía al refetch.
  */
 function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
   if (block.contenidoRich === undefined) return block;
@@ -164,8 +162,7 @@ function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
     delete rest.contenidoRich;
     return rest;
   }
-  const doc = sanitizeRichDoc(block.contenidoRich);
-  return syncTextBlockFromRichDoc(block, doc) as Block;
+  return syncTextBlockFromRichDoc(block, getRichDoc(block)) as Block;
 }
 
 function normalizeBlock(block: Block): Block {

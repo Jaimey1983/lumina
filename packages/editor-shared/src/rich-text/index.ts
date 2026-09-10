@@ -10,8 +10,26 @@ export { isRichDoc } from '@lumina/types/rich-text';
 
 export { richMarkToStyle, richMarksToStyle, hexToRgba } from './marks.js';
 export { isSafeHref, sanitizeRichMark, sanitizeRichDoc } from './sanitize.js';
-export { plainToRich, richToPlain } from './plain.js';
+export {
+  plainToRich,
+  richToPlain,
+  hydrateMissingNodeStyle,
+  hintsFromTextBlock,
+  nodeStyleFromHints,
+  isStyleableRichNodeType,
+} from './plain.js';
+export {
+  applyTypographyPatchToRichDoc,
+  applyHeadingLevelToRichDoc,
+} from './rich-doc-style.js';
 export { richToHtml, escapeHtml, type RichToHtmlOptions } from './html.js';
+export {
+  TEXT_INDENT_STEP,
+  asFiniteNumber,
+  textIndentStyle,
+  isFirstLineIndent,
+  isHangingIndent,
+} from './indent.js';
 export { looksLikeRichHtml, sanitizeWidgetHtml } from './widget-html.js';
 export {
   RichTextAiProvider,

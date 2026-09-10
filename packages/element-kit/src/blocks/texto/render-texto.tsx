@@ -35,6 +35,7 @@ import {
   useTextTokens,
   makeTokenResolver,
   interpolateTokens,
+  textIndentStyle,
 } from '@lumina/editor-shared/rich-text';
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { getRichDoc } from './rich-text.js';
@@ -255,8 +256,9 @@ export function RenderText({
   const fallbackCss: CSSProperties = { ...headingCss, ...roleCss };
   const style: CSSProperties = {
     margin: 0,
-    whiteSpace: isList ? 'normal' : 'pre-wrap',
-    wordBreak: 'break-word',
+    // `white-space: pre-wrap` NO va en este bloque: convive con `text-indent`
+    // del nodo y WebKit lo ignora. Los saltos se conservan en un span interno
+    // (`preserveRichBreaks`) — el mismo modelo que `.lumina-rich-editor` > `p`.
     textAlign: block.alineacion ? TEXT_ALIGN_MAP[block.alineacion] : undefined,
     ...fallbackCss,
     fontSize:
@@ -471,11 +473,26 @@ function calloutStyle(variant?: string): CSSProperties {
   };
 }
 
+/**
+ * Conserva `\n` de los runs sin poner `pre-wrap` en el bloque. `text-indent`
+ * (primera línea / francesa) vive en el `p`/`h*`; WebKit lo anula si el
+ * mismo elemento tiene `white-space: pre-wrap`.
+ */
+const PRESERVE_BREAKS: CSSProperties = {
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+};
+
+function preserveRichBreaks(children: ReactNode): ReactNode {
+  return createElement('span', { style: PRESERVE_BREAKS, 'data-rich-ws': '' }, children);
+}
+
 /** Sangría / espaciado / alineación propios del nodo (párrafo, encabezado, lista…). */
 function nodeSpacingCss(node: RichNode): CSSProperties {
   const out: CSSProperties = {};
   if (node.align && TEXT_ALIGN_MAP[node.align]) out.textAlign = TEXT_ALIGN_MAP[node.align];
   if (Number.isFinite(node.indent)) out.marginInlineStart = `${node.indent}rem`;
+  Object.assign(out, textIndentStyle(node.textIndent));
   if (Number.isFinite(node.spaceBefore)) out.marginTop = `${node.spaceBefore}px`;
   if (Number.isFinite(node.spaceAfter)) out.marginBottom = `${node.spaceAfter}px`;
   return out;
@@ -531,14 +548,14 @@ function richNodeToElement(
       return createElement(
         `h${lvl}`,
         { key, style: { ...style, ...scale, ...typo, ...nodeSpacingCss(node) } },
-        revealLine(renderRuns(node.runs, ctx), ctx),
+        preserveRichBreaks(revealLine(renderRuns(node.runs, ctx), ctx)),
       );
     }
     case 'blockquote':
       return createElement(
         'blockquote',
         { key, style: { ...withSpacing(style), ...typo } },
-        revealLine(renderRuns(node.runs, ctx), ctx),
+        preserveRichBreaks(revealLine(renderRuns(node.runs, ctx), ctx)),
       );
     case 'codeBlock': {
       // El c\u00f3digo no interpola tokens. Resaltado con lowlight (carga perezosa).
@@ -588,7 +605,7 @@ function richNodeToElement(
             ...nodeSpacingCss(node),
           },
         },
-        revealLine(renderRuns(node.runs, ctx), ctx),
+        preserveRichBreaks(revealLine(renderRuns(node.runs, ctx), ctx)),
       );
     case 'table': {
       const cellBase: CSSProperties = {
@@ -679,7 +696,7 @@ function richNodeToElement(
       return createElement(
         'p',
         { key, style: { ...withSpacing(style), ...typo } },
-        revealLine(renderRuns(node.runs, ctx), ctx),
+        preserveRichBreaks(revealLine(renderRuns(node.runs, ctx), ctx)),
       );
   }
 }
