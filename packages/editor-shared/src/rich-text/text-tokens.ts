@@ -60,6 +60,26 @@ export function makeTokenResolver(
   };
 }
 
+/**
+ * Construye el `extra` para `<TextTokensProvider>` a partir de datos de clase.
+ * Solo incluye las claves con valor no vacío → `undefined` si no hay ninguna.
+ * `{{docente}}` requiere que el backend lo exponga en el payload; se omite si
+ * no se pasa.
+ */
+export function textTokenExtra(input: {
+  clase?: string | null;
+  codigoClase?: string | null;
+  docente?: string | null;
+}): Record<string, string> | undefined {
+  const out: Record<string, string> = {};
+  if (input.clase && input.clase.trim()) out.clase = input.clase.trim();
+  if (input.codigoClase && input.codigoClase.trim()) {
+    out.codigo_clase = input.codigoClase.trim();
+  }
+  if (input.docente && input.docente.trim()) out.docente = input.docente.trim();
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 /** Sustituye los `{{token}}` reconocidos; deja intactos los desconocidos. */
 export function interpolateTokens(
   text: string,

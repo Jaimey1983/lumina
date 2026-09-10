@@ -25,6 +25,7 @@ export {
   makeTokenResolver,
   interpolateTokens,
   hasTokens,
+  textTokenExtra,
   type TokenContext,
 } from './text-tokens.js';
 export {

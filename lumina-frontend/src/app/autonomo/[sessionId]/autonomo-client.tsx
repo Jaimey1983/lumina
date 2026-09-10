@@ -12,6 +12,7 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { SlideRenderer } from '@/app/(app)/classes/[id]/editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import {
   useAutonomousSession,
   useJoinSession,
@@ -351,12 +352,14 @@ interface ViewerProps {
   timerBehavior: 'advance' | 'lock';
   closesAt: string;
   background: string;
+  claseTitle?: string;
+  codigoClase?: string;
   onComplete: (finalNota?: number) => void;
 }
 
 function ViewerScreen({
   sessionId, studentId, attemptNumber, slides,
-  allowBackNav, timerBehavior, closesAt, background, onComplete,
+  allowBackNav, timerBehavior, closesAt, background, claseTitle, codigoClase, onComplete,
 }: ViewerProps) {
   const [idx, setIdx]        = useState(0);
   const [locked, setLocked]  = useState(false);
@@ -608,6 +611,9 @@ function ViewerScreen({
                   )}
                 >
                   <SlideNavContext.Provider value={{ navigate: navigateSlide, slideCount: slides.length, slideIndex: idx }}>
+                  <TextTokensProvider
+                    value={{ extra: textTokenExtra({ clase: claseTitle, codigoClase }) }}
+                  >
                   <SlideRenderer
                     slide={activeSlide}
                     modo="viewer"
@@ -615,6 +621,7 @@ function ViewerScreen({
                     variant={slideVariant}
                     viewerFill
                   />
+                  </TextTokensProvider>
                   </SlideNavContext.Provider>
                 </div>
               </div>
@@ -811,6 +818,8 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
         timerBehavior={session.timerBehavior}
         closesAt={session.closesAt}
         background={session.background ?? session.class.background ?? 'none'}
+        claseTitle={session.class?.title}
+        codigoClase={(session.class as { codigo?: string } | undefined)?.codigo}
         onComplete={handleComplete}
       />
     );

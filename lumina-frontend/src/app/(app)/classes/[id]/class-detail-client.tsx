@@ -29,6 +29,7 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
+import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import {
   STATUS_BADGE_STYLE,
   STATUS_LABELS,
@@ -162,7 +163,16 @@ export function ClassDetailClient({ id }: { id: string }) {
                         slideIndex: activeIndex,
                       }}
                     >
-                      <SlideRenderer slide={rendererActiveSlide} modo="preview" />
+                      <TextTokensProvider
+                        value={{
+                          extra: textTokenExtra({
+                            clase: cls?.title,
+                            codigoClase: (cls as { codigo?: string } | undefined)?.codigo,
+                          }),
+                        }}
+                      >
+                        <SlideRenderer slide={rendererActiveSlide} modo="preview" />
+                      </TextTokensProvider>
                     </SlideNavContext.Provider>
                   )}
                 </div>

@@ -85,6 +85,7 @@ import { createDefaultContadorBlock } from '@lumina/element-kit/widgets/contador
 import { createDefaultProgresoBlock } from '@lumina/element-kit/widgets/progreso/progreso-defaults';
 import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
+import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
 import { createDefaultClasificar } from '@lumina/element-kit/activities/clasificar/clasificar-defaults';
 import { createDefaultMemoria } from '@lumina/element-kit/activities/memoria/memoria-defaults';
@@ -2947,11 +2948,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                           slideIndex: previewResolvedIndex,
                         }}
                       >
+                      <TextTokensProvider
+                        value={{
+                          extra: textTokenExtra({
+                            clase: cls?.title,
+                            codigoClase: (cls as { codigo?: string } | undefined)?.codigo,
+                          }),
+                        }}
+                      >
                       <SlideRenderer
                         slide={previewRendererSlide}
                         modo="preview"
                         className="h-full w-full"
                       />
+                      </TextTokensProvider>
                       </SlideNavContext.Provider>
                     ) : null}
                   </div>

@@ -20,6 +20,7 @@ import { getEffectiveTimerForApiSlide } from '@/lib/slide-timer-resolve';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideCountdownOverlay } from './slide-countdown-overlay';
@@ -686,6 +687,14 @@ export function ViewerClient({ id }: { id: string }) {
                       slideIndex: activeSlideIndex,
                     }}
                   >
+                  <TextTokensProvider
+                    value={{
+                      extra: textTokenExtra({
+                        clase: classData?.title,
+                        codigoClase: (classData as { codigo?: string } | undefined)?.codigo,
+                      }),
+                    }}
+                  >
                   <SlideRenderer
                     slide={activeSlide}
                     modo="viewer"
@@ -697,6 +706,7 @@ export function ViewerClient({ id }: { id: string }) {
                     viewerStudentName={guestIdentity.studentName}
                     viewerClassId={id}
                   />
+                  </TextTokensProvider>
                   </SlideNavContext.Provider>
                 </div>
                 <SlideCountdownOverlay

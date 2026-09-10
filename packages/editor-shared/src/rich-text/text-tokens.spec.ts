@@ -4,6 +4,7 @@ import {
   makeTokenResolver,
   interpolateTokens,
   hasTokens,
+  textTokenExtra,
 } from './text-tokens.js';
 
 const now = new Date('2026-09-09T14:30:00');
@@ -33,6 +34,23 @@ describe('makeTokenResolver', () => {
   it('extra vacío no pisa built-in', () => {
     const r = makeTokenResolver({ slideCount: 3, slideIndex: 0 }, { n_slide: '' });
     expect(r('n_slide')).toBe('1');
+  });
+});
+
+describe('textTokenExtra', () => {
+  it('mapea clase / codigoClase / docente a las claves de token', () => {
+    expect(textTokenExtra({ clase: 'Historia', codigoClase: 'ab12', docente: 'Ana' })).toEqual({
+      clase: 'Historia',
+      codigo_clase: 'ab12',
+      docente: 'Ana',
+    });
+  });
+  it('omite claves vacías / ausentes y devuelve undefined si no queda ninguna', () => {
+    expect(textTokenExtra({ clase: '  ', codigoClase: null })).toBeUndefined();
+    expect(textTokenExtra({ clase: 'X' })).toEqual({ clase: 'X' });
+  });
+  it('recorta espacios', () => {
+    expect(textTokenExtra({ codigoClase: '  K9  ' })).toEqual({ codigo_clase: 'K9' });
   });
 });
 
