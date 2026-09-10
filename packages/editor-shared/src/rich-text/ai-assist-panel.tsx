@@ -15,7 +15,10 @@ const ACTIONS: { id: RichTextAiAction; label: string }[] = [
   { id: 'formal', label: 'Tono formal' },
   { id: 'cercano', label: 'Tono cercano' },
   { id: 'bullets', label: 'Convertir en viñetas' },
+  { id: 'traducir', label: 'Traducir a inglés' },
 ];
+
+const MAX_ASSIST_CHARS = 4000;
 
 const shell: CSSProperties = {
   minWidth: 240,
@@ -53,12 +56,27 @@ export function AiAssistPanel({ editor, onClose, style }: AiAssistPanelProps) {
   if (!bridge) return null;
 
   const run = async (action: RichTextAiAction) => {
+    if (originalRef.current.trim() === '') {
+      setError('Selecciona primero el texto que quieres reescribir.');
+      return;
+    }
+    if (originalRef.current.length > MAX_ASSIST_CHARS) {
+      setError(
+        `La selección es muy larga (${originalRef.current.length} caracteres, máximo ${MAX_ASSIST_CHARS}).`,
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     setLastAction(action);
     try {
-      const out = await bridge.assist(originalRef.current, action);
-      setResult(out.trim());
+      const out = (await bridge.assist(originalRef.current, action)).trim();
+      if (out === '' || out === originalRef.current) {
+        setError('La IA no propuso cambios para este texto.');
+        setResult(null);
+      } else {
+        setResult(out);
+      }
     } catch {
       setError('No se pudo completar la reescritura.');
       setResult(null);
@@ -69,8 +87,57 @@ export function AiAssistPanel({ editor, onClose, style }: AiAssistPanelProps) {
 
   const accept = () => {
     if (result == null) return;
-    const { from, to } = rangeRef.current;
-    editor.chain().focus().insertContentAt({ from, to }, result).run();
+    // Recaptura el rango: si el texto en el rango guardado ya no coincide con el
+    // original (el usuario movió el cursor / editó), se usa la selección actual.
+    let { from, to } = rangeRef.current;
+    const atStored = editor.state.doc.textBetween(
+      Math.min(from, editor.state.doc.content.size),
+      Math.min(to, editor.state.doc.content.size),
+      ' ',
+    );
+    if (atStored !== originalRef.current) {
+      const sel = editor.state.selection;
+      from = sel.from;
+      to = sel.to;
+    }
+
+    if (lastAction === 'bullets') {
+      // "Convertir en viñetas" → lista real, no un párrafo con `\n`.
+      const items = result
+        .split('\n')
+        .map((l) => l.replace(/^\s*[-*•]\s*/, '').trim())
+        .filter(Boolean);
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(
+          { from, to },
+          {
+            type: 'bulletList',
+            content: items.map((text) => ({
+              type: 'listItem',
+              content: [{ type: 'paragraph', content: text ? [{ type: 'text', text }] : [] }],
+            })),
+          },
+        )
+        .run();
+      onClose();
+      return;
+    }
+
+    // Marcas dominantes del rango original (cubren toda la selección) → se
+    // reponen sobre el texto insertado (insertar texto plano las borraba).
+    const carried: string[] = [];
+    for (const m of ['bold', 'italic', 'underline', 'strike'] as const) {
+      if (editor.isActive(m)) carried.push(m);
+    }
+    const ts = editor.getAttributes('textStyle');
+    let chain = editor.chain().focus().insertContentAt({ from, to }, result);
+    const insertedEnd = from + result.length;
+    chain = chain.setTextSelection({ from, to: insertedEnd });
+    if (Object.keys(ts).length > 0) chain = chain.setMark('textStyle', ts);
+    for (const m of carried) chain = chain.setMark(m);
+    chain.setTextSelection(insertedEnd).run();
     onClose();
   };
 

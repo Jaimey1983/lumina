@@ -4,11 +4,21 @@ export type DiffOp = { type: 'same' | 'del' | 'add'; text: string };
  * Diff a nivel de palabra (LCS) para mostrar el resultado de la IA como
  * verde (añadido) / rojo tachado (eliminado). Conserva los espacios.
  */
+/** Por encima de este nº de tokens el LCS O(m·n) se vuelve caro → diff en bloque. */
+const MAX_DIFF_TOKENS = 1800;
+
 export function wordDiff(before: string, after: string): DiffOp[] {
   const a = tokenize(before);
   const b = tokenize(after);
   const m = a.length;
   const n = b.length;
+
+  if (m > MAX_DIFF_TOKENS || n > MAX_DIFF_TOKENS) {
+    const ops: DiffOp[] = [];
+    if (before !== '') ops.push({ type: 'del', text: before });
+    if (after !== '') ops.push({ type: 'add', text: after });
+    return ops;
+  }
 
   // Tabla LCS
   const lcs: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
