@@ -117,6 +117,17 @@ describe('richToPmDoc / pmDocToRich', () => {
     expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
   });
 
+  it('fórmula (math/latex) sobrevive el viaje', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'paragraph', runs: [{ text: 'Ecuación:' }] },
+        { type: 'math', latex: 'E = mc^2' },
+      ],
+    };
+    expect(roundTrip(doc)).toEqual(sanitizeRichDoc(doc));
+  });
+
   it('tabla (con fila de cabecera) sobrevive el viaje', () => {
     const doc: RichDoc = {
       version: 1,
@@ -204,12 +215,13 @@ describe('richToPmDoc / pmDocToRich', () => {
     }
   });
 
-  it('nodos no editables (math/table) se omiten sin romper', () => {
+  it('nodos vacíos / tipos desconocidos se omiten sin romper', () => {
     const pm = richToPmDoc({
       version: 1,
       nodes: [
-        { type: 'math', latex: 'x^2' } as never,
-        { type: 'table', children: [] } as never,
+        { type: 'math', latex: '' } as never, // math sin fórmula → se descarta
+        { type: 'table', children: [] } as never, // tabla vacía → se descarta
+        { type: 'quantum' } as never, // tipo desconocido
         { type: 'paragraph', runs: [{ text: 'ok' }] },
       ],
     });

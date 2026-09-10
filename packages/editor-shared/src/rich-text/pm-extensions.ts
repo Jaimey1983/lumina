@@ -223,6 +223,39 @@ const Lang = Mark.create({
   },
 });
 
+/**
+ * Nodo de bloque «fórmula» (LaTeX) — Fase 5B. Atómico: en el editor se muestra
+ * el LaTeX crudo en un recuadro; el viewer lo renderiza con KaTeX (carga
+ * perezosa). No mete KaTeX en el bundle del editor.
+ */
+const MathBlock = Node.create({
+  name: 'math',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      latex: {
+        default: '',
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-latex') ?? el.textContent ?? '',
+        renderHTML: (attrs: Record<string, unknown>) => ({
+          'data-latex': String(attrs.latex ?? ''),
+        }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'div[data-math]' }, { tag: 'span[data-math]' }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    return [
+      'div',
+      mergeAttributes(HTMLAttributes, { 'data-math': '1' }),
+      String((node.attrs as { latex?: string }).latex ?? ''),
+    ];
+  },
+});
+
 const CALLOUT_VARIANTS = ['nota', 'aviso', 'tip'] as const;
 
 /** Nodo de bloque «llamada» (nota / aviso / tip) — Fase 5B. */
@@ -335,6 +368,7 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
     Spoiler,
     Lang,
     Callout,
+    MathBlock,
     Placeholder.configure({
       placeholder: opts.placeholder ?? 'Escribe…',
       showOnlyWhenEditable: true,

@@ -205,7 +205,10 @@ function nodeToPm(node: RichNode): PmJSON | null {
       const rows = (node.children ?? []).map(tableRowToPm).filter((r) => r.content?.length);
       return rows.length > 0 ? { type: 'table', content: rows } : null;
     }
-    // math: el editor lo trata como nodo atómico (ver pm-extensions).
+    case 'math':
+      return typeof node.latex === 'string' && node.latex !== ''
+        ? { type: 'math', attrs: { latex: node.latex } }
+        : null;
     default:
       return null;
   }
@@ -404,6 +407,10 @@ function pmNodeToRich(node: PmJSON): RichNode | null {
         .map(pmTableRowToRich)
         .filter((r): r is RichNode => r !== null);
       return rows.length > 0 ? { type: 'table', children: rows } : null;
+    }
+    case 'math': {
+      const latex = typeof node.attrs?.latex === 'string' ? node.attrs.latex : '';
+      return latex !== '' ? { type: 'math', latex } : null;
     }
     default:
       return null;

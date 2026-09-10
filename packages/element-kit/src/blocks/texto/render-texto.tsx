@@ -79,6 +79,11 @@ const RichTextEditorLazy = lazy(() =>
   })),
 );
 
+/** KaTeX (+ CSS) solo se carga cuando un documento tiene un nodo `math`. */
+const MathBlockLazy = lazy(() =>
+  import('./math-block.js').then((m) => ({ default: m.MathBlock })),
+);
+
 export const TEXT_ALIGN_MAP: Record<string, CSSProperties['textAlign']> = {
   izquierda: 'left',
   centro: 'center',
@@ -656,6 +661,22 @@ function richNodeToElement(
     case 'tableRow':
     case 'tableCell':
       return null;
+    case 'math': {
+      const latex = node.latex ?? '';
+      if (latex === '') return null;
+      return createElement(
+        Suspense,
+        {
+          key,
+          fallback: createElement(
+            'div',
+            { 'data-math': '1', style: { fontFamily: 'monospace' } },
+            latex,
+          ),
+        },
+        createElement(MathBlockLazy, { latex }),
+      );
+    }
     case 'listItem': {
       const soloTexto =
         node.runs && node.runs.length === 1 && !node.runs[0]!.marks

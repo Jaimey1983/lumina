@@ -25,6 +25,7 @@ import {
   ListChecks,
   Minus,
   Outdent,
+  Sigma,
   Table as TableIcon,
   Plus,
   Presentation,
@@ -205,6 +206,27 @@ function buildButtons(onAiAssist?: () => void): ToolbarButton[] {
               .focus()
               .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
               .run(),
+    },
+    {
+      id: 'math',
+      label: 'Fórmula (LaTeX)',
+      icon: <Sigma className="size-3.5" />,
+      isActive: (e) => e.isActive('math'),
+      run: (e) => {
+        const prev = (e.getAttributes('math').latex as string | undefined) ?? '';
+        const latex =
+          typeof window !== 'undefined'
+            ? window.prompt('Fórmula en LaTeX', prev)
+            : null;
+        if (latex === null) return;
+        const value = latex.trim();
+        if (value === '') return;
+        if (e.isActive('math')) {
+          e.chain().focus().updateAttributes('math', { latex: value }).run();
+        } else {
+          e.chain().focus().insertContent({ type: 'math', attrs: { latex: value } }).run();
+        }
+      },
     },
     { id: 'clear', label: 'Limpiar formato', icon: <RemoveFormatting className="size-3.5" />, run: (e) => e.chain().focus().unsetAllMarks().run() },
   ];

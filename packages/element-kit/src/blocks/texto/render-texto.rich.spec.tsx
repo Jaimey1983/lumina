@@ -163,6 +163,25 @@ describe('RenderText — RichDoc (Fase 1)', () => {
     expect(container.querySelector('li[data-checked="true"]')).not.toBeNull();
   });
 
+  it('math → nodo [data-math] con el LaTeX (fallback mientras carga KaTeX)', () => {
+    const doc: RichDoc = {
+      version: 1,
+      nodes: [
+        { type: 'paragraph', runs: [{ text: 'x' }] },
+        { type: 'math', latex: 'a^2 + b^2 = c^2' },
+      ],
+    };
+    const { container } = render(
+      <RenderText
+        block={{ tipo: 'texto', contenido: 'x', contenidoRich: doc }}
+        modo="viewer"
+      />,
+    );
+    const math = container.querySelector('[data-math]');
+    expect(math).not.toBeNull();
+    expect(math?.textContent).toContain('a^2 + b^2 = c^2');
+  });
+
   it('table → <table> con <th> en cabecera y <td> en el cuerpo', () => {
     const doc: RichDoc = {
       version: 1,
