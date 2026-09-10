@@ -268,7 +268,7 @@ export function ResizeHandles({
             height: 10,
             background: 'white',
             border: '1px solid #3b82f6',
-            borderRadius: 2,
+            borderRadius: 3,
             zIndex: 50,
             cursor: handle.cursor,
             ...handle.style,
