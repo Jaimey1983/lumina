@@ -935,6 +935,11 @@ function BlockNode({
       tabIndex={isBlockButtonShell ? 0 : undefined}
       aria-pressed={editorMode && !isTextEditing ? isSelected : undefined}
       data-block-id={blockId}
+      data-canvas-target={
+        // Primer nivel del editor: Moveable no debe resolver hijos de
+        // clip-group/columnas que reutilizan el mismo data-block-id.
+        editorMode && !isThumbnail && positionStyle ? blockId : undefined
+      }
       data-live-dragging={isLiveDragging ? 'true' : undefined}
       style={{
         ...positionStyle,
@@ -976,7 +981,10 @@ function BlockNode({
         isBlockButtonShell && 'hover:ring-2 hover:ring-blue-500/40',
         editorMode && isTextEditing && 'cursor-text outline-none rounded-sm',
         isFormBlock && 'min-h-0 max-w-full cursor-default',
-        editorMode && isSelected && 'ring-1 ring-blue-500 ring-offset-1',
+        editorMode &&
+          isSelected &&
+          (!suppressCanvasHandles || canvasLocked) &&
+          'ring-1 ring-blue-500 ring-offset-1',
         editorMode && canvasLocked && isSelected && 'ring-amber-500/90',
         editorMode && isLiveDragging && 'z-20 opacity-100 shadow-lg ring-1 ring-[#2563EB]/50',
         isInteractiveStub && 'pointer-events-none',

@@ -92,7 +92,7 @@ import {
 import { useEditorBlockDrag } from './editor-dnd-shell';
 import { DroppableCanvas } from './droppable-canvas';
 import { SpacingIndicators } from '@/components/editor/spacing-indicators';
-import { CanvasMoveable } from './canvas-moveable';
+import { CanvasMoveable, canvasTopLevelSelector } from './canvas-moveable';
 import { CANVAS_MOVEABLE_ENABLED } from '../lib/canvas-moveable-flag';
 import { CanvasGuidesChrome } from './canvas-guides';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
@@ -400,6 +400,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
   // ── canvasRef — points at the slide frame div ───────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
+  /** Nodo con `transform: scale(zoom)` — `rootContainer` de react-moveable. */
+  const scaleContainerRef = useRef<HTMLDivElement>(null);
 
   const parentSurfaceRef = useRef(canvasSurfaceRef);
   parentSurfaceRef.current = canvasSurfaceRef;
@@ -1056,7 +1058,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         }
         setTimeout(() => {
           const el = canvasRef.current?.querySelector(
-            `[data-block-id="${String(newIndex)}"]`,
+            canvasTopLevelSelector(newIndex),
           );
           (el as HTMLElement | null)?.click();
         }, 0);
@@ -1093,7 +1095,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         if (ok) {
           setTimeout(() => {
             const el = canvasRef.current?.querySelector(
-              `[data-block-id="${String(newIndex)}"]`
+              canvasTopLevelSelector(newIndex),
             ) as HTMLElement | null;
             if (el) el.click();
           }, 50);
@@ -1131,6 +1133,34 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       }
     },
     [persistBloques, slide],
+  );
+
+  /**
+   * Etapa G · G2a — props estables para `<CanvasMoveable>`. `selectedBlockIds`
+   * es `string[]`; sin memoizar, `.map().filter()` inline crea un array nuevo
+   * en cada render de `CanvasArea` (incluso sin drag en curso), lo que
+   * invalida en cascada el `useMemo`/`useEffect` de resolución de DOM targets
+   * dentro de `CanvasMoveable` y multiplica renders sin necesidad. Igual para
+   * `onLiveChange`/`onCommit`: una arrow function inline se recrea siempre,
+   * forzando a `handleDrag`/`handleResize`/`handleRotate` (useCallback con esa
+   * dependencia) a recrearse también. Contrato: las props que cruzan el borde
+   * hacia un motor de interacción imperativo (`react-moveable`) deben ser
+   * referencialmente estables cuando su valor lógico no cambió.
+   */
+  const moveableSelectedIndices = useMemo(
+    () =>
+      selectedBlockIds.map(Number).filter((n) => Number.isInteger(n) && n >= 0),
+    [selectedBlockIds],
+  );
+  const handleMoveableLiveChange = useCallback(
+    (next: Block[]) => dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next }),
+    [],
+  );
+  const handleMoveableCommit = useCallback(
+    (next: Block[]) => {
+      void handleDragSave(next);
+    },
+    [handleDragSave],
   );
 
   // ── snap during resize ──────────────────────────────────────────────────────
@@ -1254,7 +1284,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         const newIndex = next.length - 1;
         setTimeout(() => {
           const el = canvasRef.current?.querySelector(
-            `[data-block-id="${String(newIndex)}"]`,
+            canvasTopLevelSelector(newIndex),
           ) as HTMLElement | null;
           el?.click();
         }, 50);
@@ -1931,7 +1961,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         onBlockSelectRef.current?.(id);
         setTimeout(() => {
           const el = canvasRef.current?.querySelector(
-            `[data-block-id="${id}"]`,
+            canvasTopLevelSelector(id),
           ) as HTMLElement | null;
           el?.click();
         }, 0);
@@ -2148,6 +2178,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         </div>
       ) : liveSlide ? (
         <div
+          ref={scaleContainerRef}
           className="mx-auto flex max-h-full w-full max-w-[var(--editor-slide-max-w)] shrink-0 justify-center"
           style={{
             transform: `scale(${canvasZoom})`,
@@ -2268,19 +2299,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           {CANVAS_MOVEABLE_ENABLED ? (
             <CanvasMoveable
               canvasRef={canvasRef}
+              scaleContainerRef={scaleContainerRef}
               blocks={allBlocks}
-              selectedIndices={selectedBlockIds
-                .map(Number)
-                .filter((n) => Number.isInteger(n) && n >= 0)}
+              selectedIndices={moveableSelectedIndices}
               zoom={canvasZoom}
               guias={liveSlide?.guias}
               snapSuppressedRef={snapSuppressedRef}
-              onLiveChange={(next) =>
-                dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next })
-              }
-              onCommit={(next) => {
-                void handleDragSave(next);
-              }}
+              onLiveChange={handleMoveableLiveChange}
+              onCommit={handleMoveableCommit}
             />
           ) : null}
 

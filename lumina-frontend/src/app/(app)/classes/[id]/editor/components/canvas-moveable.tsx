@@ -20,10 +20,14 @@ import {
 import Moveable, {
   type OnDrag,
   type OnDragEnd,
+  type OnDragGroupStart,
+  type OnDragStart,
   type OnResize,
   type OnResizeEnd,
+  type OnResizeStart,
   type OnRotate,
   type OnRotateEnd,
+  type OnRotateStart,
 } from 'react-moveable';
 
 import type { Block, SlideGuias } from '@lumina/types/slide';
@@ -52,6 +56,12 @@ import { snapAngle } from '../lib/rotate-coords';
 export interface CanvasMoveableProps {
   /** Elemento del lienzo en coordenadas % (SLIDE_SURFACE). Los bloques tienen `data-block-id`. */
   canvasRef: RefObject<HTMLDivElement | null>;
+  /**
+   * Contenedor que aplica `transform: scale(zoom)`. react-moveable exige que
+   * `rootContainer` sea ese nodo transformado — no un hijo suyo — para que el
+   * control-box coincida con el bloque a cualquier zoom (tensión G2).
+   */
+  scaleContainerRef?: RefObject<HTMLDivElement | null>;
   /** Bloques efectivos (liveBloques → committed → servidor). */
   blocks: Block[];
   /** Índices (top-level) seleccionados. */
@@ -69,6 +79,24 @@ export interface CanvasMoveableProps {
 
 const MOVEABLE_DIRECTIONS = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
+/**
+ * Selector del bloque de primer nivel en el lienzo.
+ *
+ * `data-block-id` se reutiliza dentro de `clip-group` (SlideRenderer anidado
+ * en modo viewer) y en columnas: `querySelector('[data-block-id="1"]')`
+ * puede devolver un hijo interno de una máscara en vez del bloque
+ * seleccionado. El control-box de Moveable queda entonces en otro rectángulo
+ * — síntoma: "el cuadro de selección aparece apartado, como si hubiera 2
+ * bloques" (el `ring` de CSS sigue en el bloque real; Moveable apunta al
+ * nodo equivocado).
+ *
+ * Contrato: solo los BlockNode posicionados del editor (no miniatura, no
+ * viewer anidado) marcan `data-canvas-target`.
+ */
+export function canvasTopLevelSelector(index: number | string): string {
+  return `[data-canvas-target="${index}"]`;
+}
+
 function dirFromMoveable(direction: number[]): ResizeHandleDir {
   const [x, y] = direction;
   if (y < 0 && x < 0) return 'NW';
@@ -79,6 +107,25 @@ function dirFromMoveable(direction: number[]): ResizeHandleDir {
   if (y > 0) return 'S';
   if (x < 0) return 'W';
   return 'E';
+}
+
+/**
+ * Contrato: un control interno que gestiona su propio puntero (p. ej. los
+ * nodos del editor de contorno Paper.js de una máscara de recorte, o el
+ * marcador de un hotspot) se marca con `data-moveable-ignore` en el DOM.
+ *
+ * `<Moveable target={…}>` (react-moveable) cubre TODO el bloque — sin este
+ * guard, cualquier pointerdown dentro de él, incluido el de un manejador
+ * interno, arranca un drag/resize/rotate del bloque completo en vez de
+ * llegar al control interno (síntoma: "al mover desde el manejador de la
+ * máscara se mueve toda la imagen"). Este helper deja que el control interno
+ * gane siempre frente al gesto del lienzo — no es un caso especial de
+ * clip-group: cualquier widget con controles internos puede optar por el
+ * mismo atributo.
+ */
+function isMoveableIgnored(e: { inputEvent?: unknown }): boolean {
+  const target = (e.inputEvent as { target?: unknown } | null | undefined)?.target;
+  return target instanceof Element && target.closest('[data-moveable-ignore]') != null;
 }
 
 interface DragOrigin {
@@ -92,6 +139,7 @@ interface DragOrigin {
 
 export function CanvasMoveable({
   canvasRef,
+  scaleContainerRef,
   blocks,
   selectedIndices,
   zoom,
@@ -120,16 +168,35 @@ export function CanvasMoveable({
   );
 
   // Resolver los nodos DOM de la selección dentro del lienzo.
+  //
+  // Contrato: esta es una proyección (índices seleccionados → nodos DOM), no
+  // debe producir una actualización de estado cuando el resultado lógico es
+  // el mismo. `blocks`/`activeIndices` cambian de referencia en cada frame de
+  // drag (nueva posición ⇒ nuevo array) sin que los nodos DOM afectados
+  // (mismo `data-block-id`, mismo orden) cambien realmente — si `setTargets`
+  // emitiera un array nuevo en cada corrida, cada frame de drag dispararía un
+  // re-render adicional de este componente cuyo único efecto sería volver a
+  // disparar este mismo efecto, en cascada, durante el propio drag
+  // (exactamente el patrón que dispara "Maximum update depth exceeded").
+  // La guarda de igualdad hace que el efecto sea un no-op cuando nada
+  // relevante cambió, sin depender de que el emisor (`canvas-area.tsx`) sea
+  // perfectamente estable.
+  const targetsRef = useRef<HTMLElement[]>([]);
   useEffect(() => {
     const surface = canvasRef.current;
-    if (!surface || activeIndices.length === 0) {
-      setTargets([]);
-      return;
-    }
-    const els = activeIndices
-      .map((i) => surface.querySelector<HTMLElement>(`[data-block-id="${i}"]`))
-      .filter((el): el is HTMLElement => el != null);
-    setTargets(els);
+    const next = !surface || activeIndices.length === 0
+      ? []
+      : activeIndices
+          .map((i) => surface.querySelector<HTMLElement>(canvasTopLevelSelector(i)))
+          .filter((el): el is HTMLElement => el != null);
+
+    const prev = targetsRef.current;
+    const sameLength = prev.length === next.length;
+    const sameElements = sameLength && prev.every((el, i) => el === next[i]);
+    if (sameElements) return;
+
+    targetsRef.current = next;
+    setTargets(next);
   }, [canvasRef, activeIndices, blocks]);
 
   const rectPx = useCallback(() => {
@@ -137,19 +204,29 @@ export function CanvasMoveable({
     return r && r.width > 0 ? r : null;
   }, [canvasRef]);
 
-  const captureOrigins = useCallback(() => {
-    originsRef.current = activeIndices.map((index) => {
-      const p = getBlockPos(blocks[index]);
-      return {
-        index,
-        x: p.x,
-        y: p.y,
-        ancho: p.ancho,
-        alto: p.alto,
-        rot: blockRotation(blocks[index]),
-      };
-    });
-  }, [activeIndices, blocks]);
+  const captureOrigins = useCallback(
+    (e?: OnDragStart | OnDragGroupStart | OnResizeStart | OnRotateStart) => {
+      if (e && isMoveableIgnored(e)) {
+        // El pointerdown originó dentro de un control interno (p. ej. un nodo
+        // del editor de máscara) — cede el gesto y no arranca el drag/resize/
+        // rotate del bloque completo.
+        e.stopAble();
+        return;
+      }
+      originsRef.current = activeIndices.map((index) => {
+        const p = getBlockPos(blocks[index]);
+        return {
+          index,
+          x: p.x,
+          y: p.y,
+          ancho: p.ancho,
+          alto: p.alto,
+          rot: blockRotation(blocks[index]),
+        };
+      });
+    },
+    [activeIndices, blocks],
+  );
 
   const clearOverlay = useCallback(() => {
     setGuides([]);
@@ -308,7 +385,9 @@ export function CanvasMoveable({
       </div>
       <Moveable
         target={single ? targets[0] : targets}
-        rootContainer={canvasRef.current ?? undefined}
+        rootContainer={scaleContainerRef?.current ?? canvasRef.current ?? undefined}
+        zoom={zoom}
+        useResizeObserver
         origin={false}
         draggable
         resizable={single}

@@ -576,6 +576,11 @@ export function ClipPathNodeEditorPaper({
   return (
     <div
       className="absolute inset-0 z-[30]"
+      // El editor de nodos gestiona su propio puntero (Paper.js `tool.onMouseDown`);
+      // sin este marcador, `<Moveable target={…}>` del lienzo (CanvasMoveable)
+      // intercepta el pointerdown de un nodo y arrastra el bloque completo en
+      // vez de dejar que Paper.js reposicione el nodo. Ver canvas-moveable.tsx.
+      data-moveable-ignore
       onPointerDownCapture={(e) => e.stopPropagation()}
       onPointerMoveCapture={(e) => {
         if (dragRef.current) e.stopPropagation();

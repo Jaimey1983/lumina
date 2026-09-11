@@ -529,6 +529,11 @@ export function RenderClipGroup({
             <div
               ref={containerRef}
               className="relative h-full w-full overflow-hidden"
+              // Mismo motivo que en el editor de nodos Paper.js: mientras se
+              // desplaza/escala la imagen dentro de la máscara, este
+              // contenedor gestiona su propio puntero (setPointerCapture) y
+              // no debe cederle el gesto a <Moveable target={…}> del lienzo.
+              data-moveable-ignore={imagePanActive ? '' : undefined}
               onPointerDown={imagePanActive ? handleImagePointerDown : undefined}
               onPointerMove={imagePanActive ? handleImagePointerMove : undefined}
               onPointerUp={imagePanActive ? handleImagePointerUp : undefined}
