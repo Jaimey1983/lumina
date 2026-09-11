@@ -242,6 +242,85 @@ Antigravity bajó 120→76 problemas sobre los 53 archivos; los 6 `error` restan
   - `lumina-frontend/eslint.config.mjs` — bloque `files: ["**/editor/components/canvas-area.tsx"]` que baja `react-hooks/{rules-of-hooks,immutability,preserve-manual-memoization,purity,static-components}` a `warn`, con `TODO(migración-etapa-5)`.
 - **Verificación:** `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit` → 0 `error` (70 warnings), tsc limpio, 446/446. `cd lumina-backend && pnpm lint` → 0.
 
+### Etapa G — Alineación, guías y referencias de espaciado del editor de canvas
+
+Trabajo **post-migración** (E1–E7 cerradas). No es migración: **Reglas 1–4 no aplican**; Reglas 0, 5–11 vigentes. No hay `ElementDefinition` nuevo — es motor del editor.
+
+#### G — Reconstruir el sistema de alineación, guías y espaciado del canvas · **RAÍZ REDACTADA** (Claude Code, 2026-09-10) · sub-fichas G0–G5 abajo · commit `chore(tablero): abrir Etapa G`
+
+- **Objetivo:** fundir los dos sistemas solapados (`snapLines` de `use-block-drag.ts` + `<SpacingIndicators>` de `components/editor/spacing-indicators.tsx`) en **un solo motor de alineación** con **un solo lenguaje visual** y **una sola configuración**. Elevar el render a calidad Figma/Framer (guías con remates, líneas de extensión, cotas con anticolisión, badge de dimensión, nitidez 1 px a cualquier zoom). Ampliar el catálogo de ~8 acciones (alinear/distribuir por centros) a ~30 (match-size, espaciado exacto, tidy, guías numéricas/mazo, rejilla de layout, herramienta de medición, atajos). Respetar el contrato del editor (`getBlockPos → transformar → clamp → persistir → historial`, `.cursor/rules/lumina-canvas-editor-contracts.mdc`).
+- **Estado real del repo (relevado 2026-09-10):**
+  - `use-block-drag.ts` — `snapPositionToGuides()`, `SNAP_THRESHOLD_PX = 8` (fijo, no escalado por zoom), `SnapLine`, `snapLineColor()` (naranja `#F97316` align · verde `#10B981` gap · gris `#94A3B8` grid).
+  - `lib/canvas-spacing.ts` — `getEqualGapSnapTargets()`; `SPACING_NEIGHBOR_MAX_PX 200` · `SPACING_EDGE_MAX_PX 80` · `SPACING_EQUAL_TOLERANCE_PX 4`.
+  - `components/editor/spacing-indicators.tsx` — cotas azules/verdes 1 px dashed con etiqueta `{n} px`; `1280×720` literal (el resto usa `VIRTUAL_CANVAS_*`); requiere solape en el eje perpendicular; O(n³) por frame (useMemo keyed por objeto nuevo cada frame).
+  - `editor/components/canvas-guides.tsx` — `CanvasGuidesChrome` (reglas 16 px `RULER_SIZE_PX`, sin unidades, sin marcador de cursor, colores `#F9FAFB`/`#E5E7EB` hardcodeados sin modo oscuro); guías manuales **por slide** (`slide.guias`).
+  - `lib/canvas-grid.ts` — `GRID_SIZE_PRESETS [8,16,20,32,40,64,80]`; overlay `rgba(148,163,184,0.4)` 1 px sin mayor/menor; persistida por slide en `slide.guias.grilla`.
+  - `editor/components/canvas-area.tsx` — pinta ambos overlays a la vez; `handleResizeMove` imanta la posición pero devuelve `ancho`/`alto` sin tocar → **no hay snap de tamaño**.
+  - `@lumina/editor-shared/block-pos` — `getBlockPos` devuelve AABB **sin rotación** (pero `blockPosToStyle` sí aplica `rotate()`) → guía desplazada de lo que se ve en bloques rotados.
+  - `editor/lib/rotate-coords.ts` — `snapAngle()` a 0/45/90…/15° con Shift, sin guía radial ni badge de grados en el lienzo.
+  - `editor-client.tsx` — `guidesVisible = useState(true)` local, **no persistido**.
+  - `editor/components/resize-handles.tsx` — tiradores 10×10, `border 1px #3b82f6`, `borderRadius 3`; selección `ring-1 ring-blue-500 ring-offset-1` en `slide-renderer.tsx` (ajustado 2026-09-09; base de esta etapa).
+- **Decisión de arquitectura (la fija esta raíz — el operador no la reabre):** adoptar el stack **Scena** (`react-moveable` + `@scena/react-guides` + `selecto`, MIT) como capa de **interacción + render**, sobre un `alignment-engine` propio fino que decide *targets* y *políticas* (qué cuenta como peer — excluir `audio/codigo/cita/columnas` y actividades con `marco` —, reglas de igual-tamaño/igual-hueco, persistencia). `dnd-kit` se mantiene para el rail de slides y paneles; solo el drag/resize/rotate **de bloques en el lienzo** pasa a `moveable`. Descartado: motor de render 100 % propio (reimplementar OBB-snapping, líneas de extensión, colisión de etiquetas y measure-tool bien = varias semanas y es justo lo que Scena ya resuelve). Paquete nuevo `@lumina/canvas-align` (o `@lumina/editor-shared/align` — se confirma en G0): expone `computeSnap()` (lógica pura) y `<AlignmentOverlay>` (render); consume `getBlockPos`/`VIRTUAL_CANVAS_*` de `@lumina/editor-shared`; patrón de scaffold `@lumina/element-kit-core`. Bundle: `react-moveable` ≈ 50 kB gz, solo en la ruta del editor (ya hay code-split por ruta). Aceptado.
+- **Tensiones a resolver en G2 (no las decide el operador):** (1) `react-moveable` sobre el contenedor con `transform: scale(zoom)` — hay que pasarle `zoom` explícito; QA en 25–400 %. (2) ¿Se reescriben los specs de `use-block-drag` o se deja como puente hasta G4? Recomendación: superficie nueva en G0, `use-block-drag` intacto hasta G2.
+- **Orden:** G0 → G1 → G2 → G3 → G4 → G5, secuencial. G0/G1 tocan `packages/` + `components/editor`; G2+ tocan `canvas-area.tsx` / `slide-renderer.tsx` (un operador a la vez sobre esos).
+- **Reparto:** Codex **G0** · Claude Code **G1** y **G5** + revisa cada sub-ficha G0–G4 según Cursor las deja `en revisión` · Cursor **G2 → G3 → G4** (dueño del canvas, secuencial; espera a G1 `hecho`) · Antigravity libre (puede tomar el sweep de QA de G5 o la consolidación de tokens de color del overlay si se separa como ítem disjunto).
+- **Métricas de éxito:** cobertura de feedback (guía o cota en cualquier posición relativa, incl. diagonal / rotado / lejano — hoy ~40 %); nitidez 1 px físico en zoom 25–400 % claro/oscuro; ≤ 3 colores con semántica fija y documentada (hoy 4 sin semántica); < 4 ms/frame de cálculo con 20 bloques; paridad 100 % de los snaps actuales + casos nuevos; catálogo ~8 → ~30 acciones.
+- **Redacción:** G0–G5 quedan redactadas abajo. Si al ejecutar una el alcance resulta mal estimado, el operador **para** (`bloqueado por <ID>`) y pide reescribir — no la amplía (Regla 10).
+
+##### G0 — Motor de dominio `@lumina/canvas-align` (lógica pura, sin render)
+- **Operador:** Codex
+- **Estado:** pendiente
+- **Precondición:** ficha raíz G incorporada a `AGENTS.md` (este commit).
+- **Alcance — PUEDE tocar:** nuevo `packages/canvas-align/**` (`@lumina/canvas-align`, patrón `@lumina/element-kit-core`: `"type":"module"`, `exports` desde `dist/`, `build`=tsc, `test`=vitest, `lint` extendiendo la base). Deps: `@lumina/types`, `@lumina/editor-shared`. Contenido: `computeSnap(dragRect, peers, ctx)` → `{ rect, guides: Guide[], measurements: Measurement[] }` en **una pasada** — funde `snapPositionToGuides` (`use-block-drag.ts`), `getEqualGapSnapTargets` (`canvas-spacing.ts`) y la detección de vecinos/igual-hueco (`spacing-indicators.tsx`); OBB (rotación) vía matriz; umbral `= f(zoom)`; **snap de tamaño en resize**; targets: bordes/centros de objeto, huecos iguales, tamaños iguales, bordes/centro/tercios del lienzo, márgenes, guías, grid. `packages/canvas-align/src/*.spec.ts` de **paridad**: portar casos de `use-block-drag.spec.ts` + `canvas-spacing.spec.ts` + `canvas-grid.spec.ts` (mismos snaps que hoy) + casos nuevos (rotado, resize-size, diagonal, lejano). CI: job `packages` construye `@lumina/canvas-align` tras `@lumina/editor-shared`. Raíz: `pnpm-lock.yaml`.
+- **Alcance — NO toca:** `lumina-frontend/**`, `slide-renderer.tsx`, `canvas-area.tsx`, ningún render. No cablea consumidores.
+- **Entregable:** paquete con `computeSnap` tipado fuerte y paridad verde; sin consumidores todavía. Verif: `pnpm install --frozen-lockfile && pnpm --filter @lumina/canvas-align build && pnpm --filter @lumina/canvas-align test && pnpm --filter @lumina/canvas-align lint && pnpm -r build`.
+- **Cierre:** no aplica Regla 4. Commit: `feat(canvas-align): motor de snapping unificado`.
+
+##### G1 — `<AlignmentOverlay>` — render unificado con un solo lenguaje visual
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** G0 `hecho`.
+- **Alcance — PUEDE tocar:** `packages/canvas-align/src/overlay/**` — `<AlignmentOverlay guides measurements activeRect zoom>` que dibuja: guías de alineación con **ticks** en los dos bordes alineados + **líneas de extensión punteadas** a objetos no solapados; cotas (pills con `tabular-nums`, sombra sutil, **anticolisión**) para distancia entre objetos, a bordes del lienzo y hueco igual; badge de dimensión **W×H** y posición **X,Y** sobre el elemento activo; badge de **grados** en rotación; un token de color por semántica (`--align-object` · `--align-distribute` · `--align-canvas` — retira los 4 colores sueltos); render **pixel-snapped** (redondeo a px de dispositivo con `zoom`); fade 80 ms con `prefers-reduced-motion`; escala de `z-index` documentada. `*.spec.tsx` de render (jsdom + testing-library): geometría de guías/cotas, colisión de etiquetas, formato de pill.
+- **Alcance — NO toca:** `use-block-drag.ts`, `spacing-indicators.tsx`, `canvas-guides.tsx`, `canvas-area.tsx` (los cablea G2).
+- **Entregable:** overlay en el paquete con specs de render verdes. Verif: `pnpm --filter @lumina/canvas-align build && pnpm --filter @lumina/canvas-align test && pnpm --filter @lumina/canvas-align lint && pnpm -r build`.
+- **Cierre:** no aplica Regla 4. Commit: `feat(canvas-align): AlignmentOverlay unificado`.
+
+##### G2 — Interacción: `react-moveable` + `@scena/react-guides` + `selecto` en el lienzo
+- **Operador:** Cursor (dueño del canvas / editor)
+- **Estado:** pendiente
+- **Precondición:** G1 `hecho`.
+- **Alcance — PUEDE tocar:** `lumina-frontend/package.json` (deps `react-moveable`, `@scena/react-guides`, `selecto` pinneadas; `transpilePackages` si hace falta). `canvas-area.tsx` — `<Moveable>` envuelve la **selección**; drag/resize/rotate emiten en px del contenedor → conversión a % en el borde (misma matemática `delta/rect`); `computeSnap` (G0) alimenta `elementGuidelines`/`snapGap`/`snapThreshold(zoom)`; `<AlignmentOverlay>` (G1) reemplaza el doble render. `selecto` reemplaza el marquee manual; `@scena/react-guides` reemplaza `CanvasGuidesChrome` (reglas con unidades, zoom sincronizado, marcador de cursor, arrastrar-para-crear guía, tema claro/oscuro). Adelgazar `use-block-drag.ts`: retirar `snapPositionToGuides` y la sesión de drag `dnd-kit` del lienzo; **conservar** `withPosition`, `clampDragCorner`, `applyNudgeToBlocks`, `blockPosToStyle`. `slide-renderer.tsx` — decidir en ejecución si `moveable` provee los tiradores o se mantiene `resize-handles.tsx` (documentar). `onSave` / clamp / historial **intactos**.
+- **Alcance — NO toca:** el rail de slides / paneles (siguen con `dnd-kit`); `@lumina/element-kit`; el backend.
+- **Entregable:** paridad de drag/resize/rotate + undo/redo con specs reapuntados; snapping consciente de rotación (OBB) y de tamaño; QA manual en zoom 25–400 %. `spacing-indicators.tsx` y el render de `snapLines` en `canvas-area.tsx` borrados cuando la paridad esté verde. Verif: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build`.
+- **Cierre:** Regla 4 no aplica (no es migración); `spacing-indicators.tsx` borrado, `use-block-drag.ts` reducido a helpers. Commit: `refactor(editor): mover interacción del lienzo a react-moveable`.
+
+##### G3 — Guías numéricas / de mazo + rejilla de layout + persistencia de preferencias
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** G2 `hecho`.
+- **Alcance — PUEDE tocar:** `@lumina/types` — extender `SlideGuias` (**aditivo**): guías `{ pos, eje, bloqueada?, color? }`, `margenes?`, `columnas?`/`filas?` + `gutter`; nuevo `DeckGuias` en el modelo de clase. `canvas-area.tsx` + `editor-client.tsx` — panel de guías: crear/editar por valor numérico, bloquear, borrar todas, «guías desde selección»; rejilla de layout (márgenes + columnas/filas con gutter) con presets (12 columnas, tercios, regla áurea, *title-safe*/*action-safe* TV); «aplicar guías/grilla a todos los slides». `canvas-grid.ts` — grilla mayor/menor (línea marcada cada N). Persistir `guidesVisible`, unidad de regla, fuerza de imán y targets activos en preferencias de editor (`localStorage` o endpoint de prefs — decidir). `parseSlideGuias` ya es tolerante.
+- **Alcance — NO toca:** `@lumina/element-kit`; el backend, salvo el modelo de clase si se añade `DeckGuias` — si toca backend, `bloqueado` y ficha nueva.
+- **Entregable:** guías numéricas/mazo + rejilla de layout operativas; toggle de reglas persistente. Verif: `pnpm --filter @lumina/types build && cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
+- **Cierre:** no aplica Regla 4. Commit: `feat(editor): guías numéricas, de mazo y rejilla de layout`.
+
+##### G4 — Catálogo ampliado (alinear / distribuir / organizar) + herramienta de medición + atajos
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** G3 `hecho`.
+- **Alcance — PUEDE tocar:** `components/editor/alignment-toolbar.tsx` + nuevo panel «Organizar» — match size (ancho/alto/ambos), fijar espaciado exacto (input px), distribuir por bordes / por huecos iguales («tidy up»), alinear a **objeto clave** (último seleccionado). `canvas-area.tsx` — **herramienta de medición** (mantener tecla + hover → cota viva, estilo Alt-hover de Figma); snapping en nudge con flechas (mostrar guía) y en campos numéricos del panel de propiedades. Atajos: `Shift+R` reglas · `Shift+;` grilla · `Shift+'` guías · tecla de medición · `Alt` sin imán (ya). `@lumina/canvas-align` — helpers de match-size / tidy si hace falta.
+- **Alcance — NO toca:** motor de scoring, `@lumina/element-kit`, el backend.
+- **Entregable:** cada acción con test unitario; toolbar/panel nuevos; atajos documentados en el editor. Verif: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build`.
+- **Cierre:** no aplica Regla 4. Commit: `feat(editor): catálogo de alineación y herramienta de medición`.
+
+##### G5 — Pulido, preferencias finas, accesibilidad y QA — cierra la Etapa G
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** G4 `hecho`.
+- **Alcance — PUEDE tocar:** afinado del umbral por zoom + fuerza de imán configurable; targets toggleables por tipo (grid / guías / objetos / bordes / centro); modo oscuro de reglas y overlay revisado; `aria-live` que anuncia «alineado al centro» / «distancia 24 px» / «45°»; garantizar que el overlay **nunca** entra en thumbnails / viewer / present (`modo !== 'editor'`); `prefers-reduced-motion` en todo el overlay; escala de `z-index` final documentada. QA en zoom 25–400 %, claro/oscuro/system, 1–20 bloques, bloques rotados y actividades (`marco`).
+- **Alcance — NO toca:** la lógica de `@lumina/canvas-align` salvo bugs; el backend.
+- **Entregable:** checklist de QA adjunto al PR. Con G5 `hecho`, **Etapa G cerrada**. Verif: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build && cd .. && pnpm -r build && pnpm -r test && pnpm -r lint`.
+- **Cierre:** no aplica Regla 4. Commit: `chore(editor): pulido y QA de la Etapa G`.
+
 ### Migración a Estructura Única — fichas por etapa
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
