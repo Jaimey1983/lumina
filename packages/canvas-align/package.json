@@ -1,0 +1,32 @@
+{
+  "name": "@lumina/canvas-align",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Motor de alineacion del editor de canvas (Etapa G). computeSnap() unifica snapPositionToGuides + getEqualGapSnapTargets + deteccion de vecinos/igual-hueco de spacing-indicators, con OBB (rotacion), umbral f(zoom) y snap de tamano. Consumido desde dist/ (patron @lumina/element-kit-core). G1 anade <AlignmentOverlay> en src/overlay.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@lumina/editor-shared": "workspace:*",
+    "@lumina/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "eslint": "^9",
+    "react": "19.2.4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

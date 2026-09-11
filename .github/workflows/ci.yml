@@ -33,6 +33,9 @@ jobs:
       - run: pnpm --filter @lumina/editor-shared build
       - run: pnpm --filter @lumina/editor-shared test
       - run: pnpm --filter @lumina/editor-shared lint
+      - run: pnpm --filter @lumina/canvas-align build
+      - run: pnpm --filter @lumina/canvas-align test
+      - run: pnpm --filter @lumina/canvas-align lint
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/scoring test
       - run: pnpm --filter @lumina/scoring lint
