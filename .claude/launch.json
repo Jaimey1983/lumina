@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "lumina-backend", "run", "start:dev"],
       "port": 3000
+    },
+    {
+      "name": "repro-react-moveable",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../lumina-repro-moveable", "run", "dev"],
+      "port": 5183
     }
   ]
 }
