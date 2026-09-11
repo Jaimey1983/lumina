@@ -64,3 +64,6 @@ export {
   type ComputeSnapContext,
   type ComputeSnapResult,
 } from './compute-snap.js';
+
+// Render (G1)
+export * from './overlay/index.js';
