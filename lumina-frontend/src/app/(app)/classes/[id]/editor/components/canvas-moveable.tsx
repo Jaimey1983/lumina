@@ -9,13 +9,15 @@
 // (computeSnap / computeNewCoords) → clamp (clampDragCorner, dentro de
 // computeSnap) → persistir (onCommit) → historial (lo hace canvas-area).
 //
-// RIESGO ACEPTADO (G2b, ver AGENTS.md): con bloques de texto en columnas CSS
-// (`columnas: 2`), el control-box de <Moveable> puede rendir ~15-20% más
-// grande que el rect real del bloque (root-cause: `column-fill` desborda el
-// contenido en columnas extra cuando no entra en la altura del bloque, y
-// react-moveable mide ese overflow). El drag/resize en sí sigue siendo
-// correcto — solo el handle visual queda desalineado. `rootContainer`,
-// `useAccuratePosition` y forzar `updateRect()` NO lo arreglan.
+// FIX (G2b, ver AGENTS.md): bloques de texto en columnas CSS (`columnas: 2`)
+// hacían que el control-box de <Moveable> rindiera ~15-20% más grande que el
+// rect real (root-cause: `column-fill` desborda el contenido en columnas
+// extra cuando no entra en la altura del bloque, y `useResizeObserver` medía
+// ese overflow vía ResizeObserver en vez de `getBoundingClientRect`).
+// `rootContainer`, `useAccuratePosition` y forzar `updateRect()` NO lo
+// arreglaban — retirar la prop `useResizeObserver` sí: sin ella, Moveable no
+// re-mide automáticamente por ResizeObserver; `updateRect()` (más abajo) ya
+// cubre el único caso real que necesitábamos (nueva selección de target).
 
 import {
   useCallback,
@@ -402,7 +404,6 @@ export function CanvasMoveable({
         ref={moveableRef}
         target={single ? targets[0] : targets}
         zoom={zoom}
-        useResizeObserver
         origin={false}
         draggable
         resizable={single}
