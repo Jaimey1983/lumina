@@ -92,6 +92,8 @@ import {
 import { useEditorBlockDrag } from './editor-dnd-shell';
 import { DroppableCanvas } from './droppable-canvas';
 import { SpacingIndicators } from '@/components/editor/spacing-indicators';
+import { CanvasMoveable } from './canvas-moveable';
+import { CANVAS_MOVEABLE_ENABLED } from '../lib/canvas-moveable-flag';
 import { CanvasGuidesChrome } from './canvas-guides';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
 import { LayersPanel } from '@/components/editor/layers-panel';
@@ -2225,6 +2227,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onPersistSlide={handlePersistFromRenderer}
             onResizeInteractionEnd={clearSnapLines}
             onResizeMove={handleResizeMove}
+            suppressCanvasHandles={CANVAS_MOVEABLE_ENABLED}
             draggingBlockId={
               draggingId ? String(parseBlockDragIndex(draggingId) ?? '') || null : null
             }
@@ -2247,7 +2250,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             />
           )}
 
-          {activeBlock ? (
+          {!CANVAS_MOVEABLE_ENABLED && activeBlock ? (
             <SpacingIndicators
               activeBlock={activeBlock}
               activeIndex={
@@ -2261,8 +2264,29 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             />
           ) : null}
 
+          {/* Etapa G · G2a — motor de interacción nuevo (detrás de flag). */}
+          {CANVAS_MOVEABLE_ENABLED ? (
+            <CanvasMoveable
+              canvasRef={canvasRef}
+              blocks={allBlocks}
+              selectedIndices={selectedBlockIds
+                .map(Number)
+                .filter((n) => Number.isInteger(n) && n >= 0)}
+              zoom={canvasZoom}
+              guias={liveSlide?.guias}
+              snapSuppressedRef={snapSuppressedRef}
+              onLiveChange={(next) =>
+                dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next })
+              }
+              onCommit={(next) => {
+                void handleDragSave(next);
+              }}
+            />
+          ) : null}
+
           {/* Drag handles — sincronizados con effectiveBloques */}
-          {allBlocks.map((block, index) =>
+          {!CANVAS_MOVEABLE_ENABLED &&
+            allBlocks.map((block, index) =>
             isUnimplementedInteractiveStub(block) ? null : (
             <BlockDragHandle
               key={index}
@@ -2274,7 +2298,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             ),
           )}
 
-          {snapLines.map((line, i) =>
+          {!CANVAS_MOVEABLE_ENABLED && snapLines.map((line, i) =>
             line.orientation === 'vertical' ? (
               <div
                 key={`snap-v-${line.position}-${i}`}

@@ -489,6 +489,8 @@ interface BlockNodeProps {
   currentCoords?: { x: number; y: number; ancho: number; alto: number };
   onResize?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
   onResizeEnd?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
+  /** Etapa G · G2a — oculta `<ResizeHandles>` propio (react-moveable los provee). */
+  suppressCanvasHandles?: boolean;
   /** ID of the block currently in inline-text-edit mode (null if none). */
   editingId?: string | null;
   /** Enter inline-edit mode for a TextBlock (double-click in editor). */
@@ -565,6 +567,7 @@ function BlockNode({
   currentCoords,
   onResize,
   onResizeEnd,
+  suppressCanvasHandles,
   editingId,
   onEditStart,
   onEditCommit,
@@ -987,6 +990,7 @@ function BlockNode({
     >
       {renderContent()}
       {editorMode &&
+        !suppressCanvasHandles &&
         isSelected &&
         !clipInnerEdit &&
         !popupOverlayEditing &&
@@ -1183,6 +1187,8 @@ export interface SlideRendererProps {
     blockId: string,
     rawCoords: { x: number; y: number; ancho: number; alto: number },
   ) => { x: number; y: number; ancho: number; alto: number };
+  /** Etapa G · G2a — oculta los `<ResizeHandles>` propios (react-moveable los provee). */
+  suppressCanvasHandles?: boolean;
   /**
    * Variante visual de los viewers de actividad.
    * Si se omite, se calcula con la luminancia de `slide.fondo` vía `getSlideVariant`.
@@ -1253,6 +1259,7 @@ export function SlideRenderer({
   onPersistSlide,
   onResizeInteractionEnd,
   onResizeMove,
+  suppressCanvasHandles,
   variant: variantProp,
   viewerFill = false,
   liveSocket,
@@ -1666,6 +1673,7 @@ export function SlideRenderer({
             modo={modo}
             selectedId={selectedId}
             selectedBlockIds={selectedBlockIdsProp}
+            suppressCanvasHandles={suppressCanvasHandles}
             onClick={(e) => handleBlockClick(blockId, e)}
             onBlockClick={(id, e) => handleBlockClick(id, e)}
             pathPrefix={blockId}
