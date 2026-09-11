@@ -401,7 +401,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   // ── canvasRef — points at the slide frame div ───────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
   /** Nodo con `transform: scale(zoom)` — `rootContainer` de react-moveable. */
-  const scaleContainerRef = useRef<HTMLDivElement>(null);
 
   const parentSurfaceRef = useRef(canvasSurfaceRef);
   parentSurfaceRef.current = canvasSurfaceRef;
@@ -2178,7 +2177,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         </div>
       ) : liveSlide ? (
         <div
-          ref={scaleContainerRef}
           className="mx-auto flex max-h-full w-full max-w-[var(--editor-slide-max-w)] shrink-0 justify-center"
           style={{
             transform: `scale(${canvasZoom})`,
@@ -2299,7 +2297,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           {CANVAS_MOVEABLE_ENABLED ? (
             <CanvasMoveable
               canvasRef={canvasRef}
-              scaleContainerRef={scaleContainerRef}
               blocks={allBlocks}
               selectedIndices={moveableSelectedIndices}
               zoom={canvasZoom}

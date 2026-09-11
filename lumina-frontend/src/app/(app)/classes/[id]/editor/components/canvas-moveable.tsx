@@ -8,6 +8,14 @@
 // Contrato del editor (`.cursorrules`): leer (getBlockPos) → transformar
 // (computeSnap / computeNewCoords) → clamp (clampDragCorner, dentro de
 // computeSnap) → persistir (onCommit) → historial (lo hace canvas-area).
+//
+// RIESGO ACEPTADO (G2b, ver AGENTS.md): con bloques de texto en columnas CSS
+// (`columnas: 2`), el control-box de <Moveable> puede rendir ~15-20% más
+// grande que el rect real del bloque (root-cause: `column-fill` desborda el
+// contenido en columnas extra cuando no entra en la altura del bloque, y
+// react-moveable mide ese overflow). El drag/resize en sí sigue siendo
+// correcto — solo el handle visual queda desalineado. `rootContainer`,
+// `useAccuratePosition` y forzar `updateRect()` NO lo arreglan.
 
 import {
   useCallback,
@@ -56,12 +64,6 @@ import { snapAngle } from '../lib/rotate-coords';
 export interface CanvasMoveableProps {
   /** Elemento del lienzo en coordenadas % (SLIDE_SURFACE). Los bloques tienen `data-block-id`. */
   canvasRef: RefObject<HTMLDivElement | null>;
-  /**
-   * Contenedor que aplica `transform: scale(zoom)`. react-moveable exige que
-   * `rootContainer` sea ese nodo transformado — no un hijo suyo — para que el
-   * control-box coincida con el bloque a cualquier zoom (tensión G2).
-   */
-  scaleContainerRef?: RefObject<HTMLDivElement | null>;
   /** Bloques efectivos (liveBloques → committed → servidor). */
   blocks: Block[];
   /** Índices (top-level) seleccionados. */
@@ -139,7 +141,6 @@ interface DragOrigin {
 
 export function CanvasMoveable({
   canvasRef,
-  scaleContainerRef,
   blocks,
   selectedIndices,
   zoom,
@@ -149,6 +150,7 @@ export function CanvasMoveable({
   onCommit,
 }: CanvasMoveableProps) {
   const [targets, setTargets] = useState<HTMLElement[]>([]);
+  const moveableRef = useRef<Moveable | null>(null);
   const [guides, setGuides] = useState<SnapLine[]>([]);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [activeRect, setActiveRect] = useState<AlignRect | null>(null);
@@ -198,6 +200,19 @@ export function CanvasMoveable({
     targetsRef.current = next;
     setTargets(next);
   }, [canvasRef, activeIndices, blocks]);
+
+  // El control-box de react-moveable se congela con el rect que midió al
+  // montar/al cambiar `target`; si en ese instante el layout todavía no
+  // asentó (p. ej. `aspect-video` recién calculado, fuentes cargando), el
+  // control-box queda desalineado del bloque real y no se re-mide solo — no
+  // hay resize del target en sí, así que `useResizeObserver` no dispara.
+  // `updateRect()` fuerza una re-medición explícita un frame después de que
+  // el DOM del target esté listo.
+  useEffect(() => {
+    if (targets.length === 0) return;
+    const id = requestAnimationFrame(() => moveableRef.current?.updateRect());
+    return () => cancelAnimationFrame(id);
+  }, [targets]);
 
   const rectPx = useCallback(() => {
     const r = canvasRef.current?.getBoundingClientRect();
@@ -384,8 +399,8 @@ export function CanvasMoveable({
         />
       </div>
       <Moveable
+        ref={moveableRef}
         target={single ? targets[0] : targets}
-        rootContainer={scaleContainerRef?.current ?? canvasRef.current ?? undefined}
         zoom={zoom}
         useResizeObserver
         origin={false}
