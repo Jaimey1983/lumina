@@ -9,15 +9,18 @@
 // (computeSnap / computeNewCoords) → clamp (clampDragCorner, dentro de
 // computeSnap) → persistir (onCommit) → historial (lo hace canvas-area).
 //
-// FIX (G2b, ver AGENTS.md): bloques de texto en columnas CSS (`columnas: 2`)
-// hacían que el control-box de <Moveable> rindiera ~15-20% más grande que el
-// rect real (root-cause: `column-fill` desborda el contenido en columnas
-// extra cuando no entra en la altura del bloque, y `useResizeObserver` medía
-// ese overflow vía ResizeObserver en vez de `getBoundingClientRect`).
-// `rootContainer`, `useAccuratePosition` y forzar `updateRect()` NO lo
-// arreglaban — retirar la prop `useResizeObserver` sí: sin ella, Moveable no
-// re-mide automáticamente por ResizeObserver; `updateRect()` (más abajo) ya
-// cubre el único caso real que necesitábamos (nueva selección de target).
+// RIESGO ACEPTADO (G2b, ver AGENTS.md): con bloques de texto en columnas CSS
+// (`columnas: 2`), el control-box de <Moveable> puede rendir ~15-20% más
+// grande que el rect real del bloque. Investigado a fondo (ver AGENTS.md,
+// ficha G2b) — la causa real es que `target.offsetWidth` (lo que
+// react-moveable usa para medir, ver `getSize()`/`calculateElementInfo()`
+// en su código fuente) del MISMO nodo DOM, en el MISMO estado visual,
+// alterna de forma no determinística entre el valor correcto (965px) y uno
+// inflado (1173px) según el historial de reflows previos — no es una
+// cuestión de timing controlable desde acá (`rootContainer`,
+// `useAccuratePosition`, `updateRect()` con 1/2/N rAF, o quitar
+// `useResizeObserver`, no lo arreglan de forma confiable). El drag/resize en
+// sí sigue siendo correcto — solo el handle visual puede quedar desalineado.
 
 import {
   useCallback,
@@ -206,10 +209,12 @@ export function CanvasMoveable({
   // El control-box de react-moveable se congela con el rect que midió al
   // montar/al cambiar `target`; si en ese instante el layout todavía no
   // asentó (p. ej. `aspect-video` recién calculado, fuentes cargando), el
-  // control-box queda desalineado del bloque real y no se re-mide solo — no
-  // hay resize del target en sí, así que `useResizeObserver` no dispara.
-  // `updateRect()` fuerza una re-medición explícita un frame después de que
-  // el DOM del target esté listo.
+  // control-box queda desalineado del bloque real. `useResizeObserver` (en
+  // el <Moveable> de abajo) lo mantiene watcheando cambios de tamaño reales
+  // del target (p. ej. contenido que crece/encoge tras cargar); esto más
+  // `updateRect()` un frame después de que cambie `target` cubre el caso de
+  // montaje/selección nueva. Ninguno de los dos resuelve el caso de
+  // `columnas` documentado como RIESGO ACEPTADO arriba.
   useEffect(() => {
     if (targets.length === 0) return;
     const id = requestAnimationFrame(() => moveableRef.current?.updateRect());
@@ -404,6 +409,7 @@ export function CanvasMoveable({
         ref={moveableRef}
         target={single ? targets[0] : targets}
         zoom={zoom}
+        useResizeObserver
         origin={false}
         draggable
         resizable={single}
