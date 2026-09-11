@@ -940,6 +940,15 @@ function BlockNode({
         ...positionStyle,
         ...animationStyle,
         ...(isLiveDragging ? { opacity: 1, visibility: 'visible' as const } : {}),
+        // Etapa G · G2a fix — con react-moveable como target, el contenido de
+        // texto (no contenteditable salvo isTextEditing) sigue siendo
+        // seleccionable por el navegador por defecto: un click-drag en el
+        // cuerpo del bloque arranca una selección nativa en vez de dejar que
+        // Moveable inicie el drag. Solo aplica bajo el flag y fuera de edición
+        // — no cambia nada con CANVAS_MOVEABLE_ENABLED=false (default).
+        ...(editorMode && suppressCanvasHandles && !isTextEditing
+          ? { userSelect: 'none' as const, WebkitUserSelect: 'none' as const }
+          : {}),
       }}
       onClick={
         editorMode && !isTextEditing && !isInteractiveStub

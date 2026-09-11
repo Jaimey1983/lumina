@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/editor-shared build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
+    "predev": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/editor-shared build && pnpm --filter @lumina/canvas-align build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "dev": "next dev --turbopack --port 3001",
     "dev:webpack": "next dev --port 3001",
-    "prebuild": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/editor-shared build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
+    "prebuild": "pnpm --filter @lumina/types build && pnpm --filter @lumina/ui build && pnpm --filter @lumina/editor-shared build && pnpm --filter @lumina/canvas-align build && pnpm --filter @lumina/element-kit-core build && pnpm --filter @lumina/element-kit build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
