@@ -72,12 +72,16 @@ Cursor también carga la regla en `.cursor/rules/lumina-canvas-editor-contracts.
 - Textos de widgets: edición **solo panel lateral**, no inline en lienzo.
 - Handles y capas usan `effectiveBloques`, no solo estado del servidor.
 
-### 3. Drag (dnd-kit)
+### 3. Drag / resize / rotate del lienzo principal (react-moveable, Etapa G · G2b)
 
-- Live: `applyLiveDragPositions` + clamp grupal.
-- Miniatura lateral: debounce **~150 ms** durante drag (no setState por frame).
-- Snap: `snapPositionToGuides` (guías + grilla kind `'grid'`).
-- `canvasLocked: true` → no mover, no alinear, no nudge.
+**Archivo canónico:** `components/canvas-moveable.tsx` (`<CanvasMoveable>`) — único motor de interacción del lienzo del editor principal desde G2b. La ruta vieja (dnd-kit `useDraggable` por bloque + `<ResizeHandles>` + `<SpacingIndicators>` + `snapLines` pintadas en `canvas-area.tsx`) se retiró; `canvas-moveable-flag.ts` no existe más.
+
+- Live: `computeSnap`/`computeNewCoords` (`@lumina/canvas-align`) + `withPosition`/`withRect`/`withRotation`, sin dnd-kit.
+- Snap: `computeSnap` (mismo contrato que `snapPositionToGuides`, pero vive en `@lumina/canvas-align`).
+- `canvasLocked: true` → excluido de `activeIndices` en `<CanvasMoveable>`, no mover, no alinear, no nudge.
+- `snapSuppressedRef` (Alt) sigue viviendo en `use-block-drag.ts`/`useEditorBlockDrag()` — no lo dupliques.
+
+`useBlockDrag` (el hook de sesión de drag con dnd-kit, en `src/hooks/use-block-drag.ts`) **sigue vivo** — pero solo lo consume `escape-room-sala-canvas.tsx` (canvas del editor de salas de Escape Room, un canvas totalmente distinto). No lo reintroduzcas en `canvas-area.tsx`; si necesitás tocar algo ahí, revisa primero si escape-room depende de la misma función antes de "limpiarla".
 
 ### 4. Historial undo/redo
 

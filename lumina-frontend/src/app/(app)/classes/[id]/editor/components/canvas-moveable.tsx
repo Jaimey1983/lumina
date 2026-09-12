@@ -1,26 +1,25 @@
 'use client';
 
-// Etapa G · G2a — motor de interacción del lienzo sobre react-moveable +
-// @lumina/canvas-align. Detrás del flag CANVAS_MOVEABLE_ENABLED (default off);
-// la ruta histórica (dnd-kit + <ResizeHandles> + snapLines + <SpacingIndicators>)
-// sigue intacta. G2b conmuta el default, valida el zoom 25–400 % y borra lo viejo.
+// Etapa G · G2b — único motor de interacción del lienzo (react-moveable +
+// @lumina/canvas-align). La ruta histórica (dnd-kit block-drag +
+// <ResizeHandles> + snapLines + <SpacingIndicators>) se retiró de
+// canvas-area.tsx — este componente es ahora el único camino para
+// mover/redimensionar/rotar bloques en el lienzo del editor principal.
 //
 // Contrato del editor (`.cursorrules`): leer (getBlockPos) → transformar
 // (computeSnap / computeNewCoords) → clamp (clampDragCorner, dentro de
 // computeSnap) → persistir (onCommit) → historial (lo hace canvas-area).
 //
-// RIESGO ACEPTADO (G2b, ver AGENTS.md): con bloques de texto en columnas CSS
-// (`columnas: 2`), el control-box de <Moveable> puede rendir ~15-20% más
-// grande que el rect real del bloque. Investigado a fondo (ver AGENTS.md,
-// ficha G2b) — la causa real es que `target.offsetWidth` (lo que
-// react-moveable usa para medir, ver `getSize()`/`calculateElementInfo()`
-// en su código fuente) del MISMO nodo DOM, en el MISMO estado visual,
-// alterna de forma no determinística entre el valor correcto (965px) y uno
-// inflado (1173px) según el historial de reflows previos — no es una
-// cuestión de timing controlable desde acá (`rootContainer`,
-// `useAccuratePosition`, `updateRect()` con 1/2/N rAF, o quitar
-// `useResizeObserver`, no lo arreglan de forma confiable). El drag/resize en
-// sí sigue siendo correcto — solo el handle visual puede quedar desalineado.
+// NOTA DE DX (no de producto, ver AGENTS.md ficha G2b) — bajo `next dev` (no
+// `next build && next start`) el control-box de `<Moveable>` puede rendir
+// desalineado del rect real del bloque (~15-20 % más grande), tanto en
+// bloques con `columnas: 2` como en texto plano. Verificado exhaustivamente
+// contra un build de producción (selección fresca, drag en vivo, zoom
+// 50–200 %, grupo, actividades con `marco`): el ratio da 1.0000 exacto en
+// TODOS los casos — es un artefacto exclusivo de Turbopack/Fast Refresh en
+// modo dev, no un bug del motor de interacción ni de producción. Si ves esto
+// mientras trabajás con `next dev`, no es un bug nuevo — no reabrir la
+// investigación; probar en `next build && next start` para confirmar.
 
 import {
   useCallback,

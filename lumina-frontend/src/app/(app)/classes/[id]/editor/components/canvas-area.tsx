@@ -13,11 +13,10 @@ import {
 } from 'react';
 import { useParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { GripHorizontal, Presentation } from 'lucide-react';
+import { Presentation } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDraggable } from '@dnd-kit/core';
 
-import { blockDragId, parseBlockDragIndex } from '../lib/block-drag-id';
+import { parseBlockDragIndex } from '../lib/block-drag-id';
 import {
   buildSlideContentPayload,
   parseContentVersion,
@@ -75,7 +74,6 @@ import {
   isBlockCanvasLocked,
   isBlockCanvasPositionable,
   prepareBlockForPaste,
-  snapLineColor,
   snapPositionToGuides,
 } from '@/hooks/use-block-drag';
 import {
@@ -91,9 +89,7 @@ import {
 } from '@/lib/canvas-zoom';
 import { useEditorBlockDrag } from './editor-dnd-shell';
 import { DroppableCanvas } from './droppable-canvas';
-import { SpacingIndicators } from '@/components/editor/spacing-indicators';
 import { CanvasMoveable, canvasTopLevelSelector } from './canvas-moveable';
-import { CANVAS_MOVEABLE_ENABLED } from '../lib/canvas-moveable-flag';
 import { CanvasGuidesChrome } from './canvas-guides';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
 import { LayersPanel } from '@/components/editor/layers-panel';
@@ -156,106 +152,6 @@ function buildPastedBlock(source: Block): Block {
   return prepareBlockForPaste(reminted, {
     newId: `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
   });
-}
-
-// ─── Per-block drag handle ────────────────────────────────────────────────────
-
-/**
- * A small GripHorizontal badge centred on the top edge of a block.
- * Only this badge is pointer-interactive — the rest of the overlay div is
- * pointer-events:none, so clicks on the block body still reach SlideRenderer.
- */
-function BlockDragHandle({
-  block,
-  index,
-  draggingId,
-  selectedBlockIds,
-}: {
-  block: Block;
-  index: number;
-  draggingId: string | null;
-  selectedBlockIds: string[];
-}) {
-  if (!isBlockCanvasPositionable(block) || isBlockCanvasLocked(block)) {
-    return null;
-  }
-  return (
-    <BlockDragHandleInner
-      block={block}
-      index={index}
-      draggingId={draggingId}
-      selectedBlockIds={selectedBlockIds}
-    />
-  );
-}
-
-function BlockDragHandleInner({
-  block,
-  index,
-  draggingId,
-  selectedBlockIds,
-}: {
-  block: Block;
-  index: number;
-  draggingId: string | null;
-  selectedBlockIds: string[];
-}) {
-  const id = blockDragId(index);
-  const { attributes, listeners, setNodeRef } = useDraggable({
-    id,
-    data: {
-      selectedBlockIds,
-    },
-  });
-  // Posición sincronizada con SlideRenderer (effectiveBloques durante drag/commit).
-  const pos = getBlockPos(block);
-  const isActive = draggingId === id;
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left:   `${pos.x}%`,
-        top:    `${pos.y}%`,
-        width:  `${pos.ancho}%`,
-        height: `${pos.alto}%`,
-        // Invisible container — never captures mouse itself
-        pointerEvents: 'none',
-        zIndex: 25,
-      }}
-    >
-      {/* Only the badge is interactive */}
-      <div
-        ref={setNodeRef}
-        data-drag-handle
-        data-canvas-dragging={isActive ? 'true' : undefined}
-        {...attributes}
-        {...listeners}
-        title="Arrastrar bloque"
-        style={{
-          position:        'absolute',
-          top:             0,
-          left:            '50%',
-          transform:       'translate(-50%, -40%)',
-          width:           20,
-          height:          10,
-          pointerEvents:   'auto',
-          cursor:          isActive ? 'grabbing' : 'grab',
-          display:         'flex',
-          alignItems:      'center',
-          justifyContent:  'center',
-          background:      'rgba(59, 130, 246, 0.85)',
-          borderRadius:    '3px 3px 4px 4px',
-          zIndex:          26,
-          opacity:         1,
-          transition:      'opacity 150ms',
-          userSelect:      'none',
-        }}
-      >
-        <GripHorizontal size={8} color="white" />
-      </div>
-    </div>
-  );
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -417,7 +313,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const {
     draggingId,
     liveBloques,
-    snapLines,
     clearSnapLines,
     setSnapLines,
     snapSuppressedRef,
@@ -1479,7 +1374,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
 
   const blocks = slide?.bloques ?? [];
   const allBlocks = effectiveBloques ?? blocks;
-  const activeBlock = selectedBlockId ? allBlocks[Number(selectedBlockId)] : undefined;
 
   useEffect(() => {
     if (draggingId != null) return;
@@ -2256,7 +2150,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onPersistSlide={handlePersistFromRenderer}
             onResizeInteractionEnd={clearSnapLines}
             onResizeMove={handleResizeMove}
-            suppressCanvasHandles={CANVAS_MOVEABLE_ENABLED}
+            suppressCanvasHandles
             draggingBlockId={
               draggingId ? String(parseBlockDragIndex(draggingId) ?? '') || null : null
             }
@@ -2279,79 +2173,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             />
           )}
 
-          {!CANVAS_MOVEABLE_ENABLED && activeBlock ? (
-            <SpacingIndicators
-              activeBlock={activeBlock}
-              activeIndex={
-                Number.isInteger(Number(selectedBlockId))
-                  ? Number(selectedBlockId)
-                  : undefined
-              }
-              allBlocks={allBlocks}
-              canvasWidth={1280}
-              canvasHeight={720}
-            />
-          ) : null}
-
-          {/* Etapa G · G2a — motor de interacción nuevo (detrás de flag). */}
-          {CANVAS_MOVEABLE_ENABLED ? (
-            <CanvasMoveable
-              canvasRef={canvasRef}
-              blocks={allBlocks}
-              selectedIndices={moveableSelectedIndices}
-              zoom={canvasZoom}
-              guias={liveSlide?.guias}
-              snapSuppressedRef={snapSuppressedRef}
-              onLiveChange={handleMoveableLiveChange}
-              onCommit={handleMoveableCommit}
-            />
-          ) : null}
-
-          {/* Drag handles — sincronizados con effectiveBloques */}
-          {!CANVAS_MOVEABLE_ENABLED &&
-            allBlocks.map((block, index) =>
-            isUnimplementedInteractiveStub(block) ? null : (
-            <BlockDragHandle
-              key={index}
-              block={block}
-              index={index}
-              draggingId={draggingId}
-              selectedBlockIds={selectedBlockIds}
-            />
-            ),
-          )}
-
-          {!CANVAS_MOVEABLE_ENABLED && snapLines.map((line, i) =>
-            line.orientation === 'vertical' ? (
-              <div
-                key={`snap-v-${line.position}-${i}`}
-                style={{
-                  position: 'absolute',
-                  left: `${line.position}%`,
-                  top: 0,
-                  bottom: 0,
-                  width: '1px',
-                  background: snapLineColor(line),
-                  pointerEvents: 'none',
-                  zIndex: 9999,
-                }}
-              />
-            ) : (
-              <div
-                key={`snap-h-${line.position}-${i}`}
-                style={{
-                  position: 'absolute',
-                  top: `${line.position}%`,
-                  left: 0,
-                  right: 0,
-                  height: '1px',
-                  background: snapLineColor(line),
-                  pointerEvents: 'none',
-                  zIndex: 9999,
-                }}
-              />
-            ),
-          )}
+          {/* Etapa G · G2b — motor de interacción único del lienzo (react-moveable). */}
+          <CanvasMoveable
+            canvasRef={canvasRef}
+            blocks={allBlocks}
+            selectedIndices={moveableSelectedIndices}
+            zoom={canvasZoom}
+            guias={liveSlide?.guias}
+            snapSuppressedRef={snapSuppressedRef}
+            onLiveChange={handleMoveableLiveChange}
+            onCommit={handleMoveableCommit}
+          />
           </DroppableCanvas>
         </CanvasGuidesChrome>
         </div>

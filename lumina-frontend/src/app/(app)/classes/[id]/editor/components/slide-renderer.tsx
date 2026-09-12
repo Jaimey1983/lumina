@@ -949,8 +949,8 @@ function BlockNode({
         // texto (no contenteditable salvo isTextEditing) sigue siendo
         // seleccionable por el navegador por defecto: un click-drag en el
         // cuerpo del bloque arranca una selección nativa en vez de dejar que
-        // Moveable inicie el drag. Solo aplica bajo el flag y fuera de edición
-        // — no cambia nada con CANVAS_MOVEABLE_ENABLED=false (default).
+        // Moveable inicie el drag. Solo aplica en modo editor y fuera de
+        // edición de texto (suppressCanvasHandles es siempre true desde G2b).
         ...(editorMode && suppressCanvasHandles && !isTextEditing
           ? { userSelect: 'none' as const, WebkitUserSelect: 'none' as const }
           : {}),
