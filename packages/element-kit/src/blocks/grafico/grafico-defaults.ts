@@ -2,7 +2,7 @@
 // Un solo writer canónico para el bloque `grafico` (Recharts v1).
 
 import { BLOCK_FALLBACKS, type BlockMarco, type GraficoChartType, type GraficoDatosBlock, type GraficoSerie } from '@lumina/types/slide';
-import { DEFAULT_GRAFICO_PALETA_ID } from './grafico-color-palettes.js';
+import { DEFAULT_LUMINA_PALETTE_ID as DEFAULT_GRAFICO_PALETA_ID } from '@lumina/charts';
 
 export const VALID_GRAFICO_CHART_TYPES: readonly GraficoChartType[] = [
   'column',

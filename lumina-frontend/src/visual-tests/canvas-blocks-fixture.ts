@@ -72,6 +72,15 @@ export function clipGroupFixture(): ClipGroupBlock {
 export function normalizeRenderedHtml(html: string): string {
   return (
     html
+      // ApexCharts genera una clase de instancia aleatoria por montaje
+      // (`apexcharts9g5ek1xx`, sin guion tras el prefijo — no confundir con
+      // clases reales como `apexcharts-canvas`/`apexcharts-svg`, que sí llevan
+      // guion) para su hoja de estilos con scope; distinta en cada render.
+      // Va ANTES que la normalización de `useId` de React: esa regex matchea
+      // cualquier "r" seguida de dígitos en cualquier posición, y si corriera
+      // primero mordería un fragmento del sufijo aleatorio (p. ej. "...12r34"
+      // → "...12R") dejando el resto sin colapsar — falso negativo de paridad.
+      .replace(/\bapexcharts[0-9a-z]{6,}\b/g, 'apexcharts_')
       // React useId: `_r_0_`, `«r1»`, `:r2:` — colapsar a un token fijo.
       .replace(/[«:]?r_?\d+_?[»:]?/g, 'R')
       .replace(/\sid="[^"]*"/g, '')
@@ -79,6 +88,12 @@ export function normalizeRenderedHtml(html: string): string {
       // referencias SVG `url(#x)` y `url("#x")` / `url(&quot;#x&quot;)`.
       .replace(/url\((?:&quot;|")?#[^)]*?(?:&quot;|")?\)/g, 'url(#_)')
       .replace(/\srecharts-[\w-]+-\d+/g, ' recharts-_')
+      // `pathFrom`/`pathTo`: bookkeeping interno de ApexCharts para
+      // interpolar la transición de entrada — no son atributos SVG estándar,
+      // no afectan lo renderizado (solo `d` lo hace) y su valor depende de
+      // qué instancia previa (si alguna) reusó su caché interna, no de los
+      // datos del gráfico. Mismo criterio que ya se aplica a `id="..."`.
+      .replace(/\s(?:pathFrom|pathTo)="[^"]*"/g, '')
       .replace(/\s+/g, ' ')
       .trim()
   );

@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@lumina/ui/select';
-import { GRAFICO_PALETAS } from './grafico-color-palettes.js';
+import { LUMINA_CHART_PALETTES as GRAFICO_PALETAS } from '@lumina/charts';
 import { cn } from '@lumina/ui/lib/utils';
 
 interface GraficoPropertiesProps {

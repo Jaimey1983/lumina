@@ -38,6 +38,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@lumina/charts": "workspace:*",
     "@lumina/editor-shared": "workspace:*",
     "@lumina/element-kit-core": "workspace:*",
     "@lumina/scoring": "workspace:*",

@@ -1,22 +1,12 @@
 'use client';
 
-import React, { Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import React from 'react';
 import type { GraficoDatosBlock } from '@lumina/types/slide';
-import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
-
-const GraficoChartRenderer = dynamic(
-  () => import('./grafico-chart-renderer.js'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <Skeleton className="h-full w-full rounded-lg" />
-      </div>
-    ),
-  },
-);
+// `GraficoChartRenderer` ya no necesita cargarse perezoso desde acá (H3): es
+// un adapter liviano — la carga perezosa real de la librería de gráficos vive
+// dentro de `<LuminaChart>` (`@lumina/charts`), un solo lugar para toda la app.
+import GraficoChartRenderer from './grafico-chart-renderer.js';
 
 interface GraficoViewerProps {
   block: GraficoDatosBlock;
@@ -56,15 +46,7 @@ export function GraficoViewer({
 
       <div className="relative min-h-0 flex-1 w-full">
         {hasData ? (
-          <Suspense
-            fallback={
-              <div className="flex h-full w-full items-center justify-center p-2">
-                <Skeleton className="h-full w-full rounded-lg" />
-              </div>
-            }
-          >
-            <GraficoChartRenderer block={block} isThumbnail={isThumbnail} />
-          </Suspense>
+          <GraficoChartRenderer block={block} isThumbnail={isThumbnail} />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
             Gráfico sin datos

@@ -26,7 +26,12 @@ function baseChartOptions(config: LuminaChartConfig, theme: LuminaChartTheme): A
     foreColor: theme.foreColor,
     background: 'transparent',
     toolbar: { show: !config.isThumbnail },
-    animations: { enabled: !config.isThumbnail },
+    // Animación deshabilitada siempre (no solo en miniatura), no solo por gusto:
+    // la entrada animada de ApexCharts hace que la geometría real del SVG sea
+    // dependiente del instante exacto de captura — no hay un DOM "final"
+    // determinista mientras la transición corre. Habilitarla es una decisión
+    // de catálogo/configuración (H6), no de este swap de motor (H3).
+    animations: { enabled: false },
     zoom: { enabled: false },
   };
 }

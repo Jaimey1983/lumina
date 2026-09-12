@@ -84,17 +84,20 @@ async function renderBody(node: ReactNode, geomSelector: string, waitMs = 250) {
 }
 
 describe('E5.7 — integración canvas: legacy vs ElementDefinition del kit', () => {
-  test('grafico: el ContainerResponsive de Recharts monta y el kit == legacy', async () => {
-    // NOTA: en el navegador headless de vitest, el `ResponsiveContainer` de
-    // Recharts (cargado por `next/dynamic`, `ssr:false`) mide 0×0 y no pinta
-    // barras — es un límite del harness (no hay layout de Next), el mismo que
-    // motivó el RIESGO ACEPTADO de E4.5. Lo que E5.7 sí verifica: el adapter
-    // del kit produce el **mismo DOM** que el componente legacy hasta el punto
-    // en que Recharts toma el control (`.recharts-responsive-container` montado
-    // e idéntico). El cuerpo del chart es una llamada byte a byte al mismo
-    // `GraficoChartRenderer` (ver `grafico-adapters.tsx` → `LegacyGraficoViewer`).
+  test('grafico: el canvas de ApexCharts monta y el kit == legacy', async () => {
+    // Motor ApexCharts desde H3 (Etapa H — antes Recharts). Igual que con
+    // Recharts antes: en el navegador headless de vitest el contenedor mide
+    // 0×0 y no pinta barras reales — límite del harness (no hay layout de
+    // Next), el mismo que motivó el RIESGO ACEPTADO de E4.5. Lo que E5.7 sí
+    // verifica: el adapter del kit produce el **mismo DOM** que el componente
+    // legacy hasta el punto en que ApexCharts toma el control
+    // (`.apexcharts-canvas` montado e idéntico). El cuerpo del chart es una
+    // llamada byte a byte al mismo `GraficoChartRenderer` (ver
+    // `grafico-adapters.tsx` → `LegacyGraficoViewer`) — "legacy" y "kit" son
+    // hoy el mismo componente; el test verifica que el adapter del contrato
+    // no introduce divergencia, no una migración de motor (esa ya se hizo).
     const block = graficoFixture();
-    const geom = '.recharts-responsive-container';
+    const geom = '.apexcharts-canvas';
 
     const legacy = await renderBody(<LegacyGraficoViewer block={block} />, geom, 1200);
     expect(legacy.count, 'el chart-renderer se cargó (next/dynamic resuelto)').toBeGreaterThan(0);
