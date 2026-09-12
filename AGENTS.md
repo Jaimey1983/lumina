@@ -629,7 +629,7 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 
 #### H6 — Ampliar catálogo y configuración en `@lumina/charts` (heredado por todos los consumidores)
 - **Operador:** Antigravity
-- **Estado:** pendiente — ficha completa, lista para asignar (Regla 10: no se asigna incompleta).
+- **Estado:** [en curso: Antigravity]
 - **Precondición:** H5 hecho (ampliar sobre un solo motor ya limpio, no sobre dos conviviendo) — **cumplida**.
 
 **Contexto — estado real del repo al abrir esta ficha (2026-09-12, cierre de H5):**
