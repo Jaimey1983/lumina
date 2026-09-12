@@ -635,38 +635,42 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
       const sanitized = sanitizeSlideContentForPersistence(content) ?? content;
-      const res = await fetch(
-        `${apiUrl}/classes/${classId}/slides/${targetSlideId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ content: sanitized, expectedVersion }),
-        },
-      );
-      let body: unknown = null;
       try {
-        body = await res.json();
+        const res = await fetch(
+          `${apiUrl}/classes/${classId}/slides/${targetSlideId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ content: sanitized, expectedVersion }),
+          },
+        );
+        let body: unknown = null;
+        try {
+          body = await res.json();
+        } catch {
+          body = null;
+        }
+        if (res.status === 409) {
+          await handleVersionConflict(targetSlideId, body);
+          const conflict = parseSlideVersionConflict(body);
+          return {
+            ok: false,
+            reason: 'conflict',
+            currentVersion: conflict?.currentVersion,
+          };
+        }
+        if (!res.ok) return { ok: false, reason: 'network' };
+        const nextVersion =
+          parseContentVersion(body) ?? expectedVersion + 1;
+        const monotonic = bumpContentVersion(targetSlideId, nextVersion);
+        syncSlideContentInCache(targetSlideId, sanitized, monotonic);
+        return { ok: true, contentVersion: monotonic };
       } catch {
-        body = null;
+        return { ok: false, reason: 'network' };
       }
-      if (res.status === 409) {
-        await handleVersionConflict(targetSlideId, body);
-        const conflict = parseSlideVersionConflict(body);
-        return {
-          ok: false,
-          reason: 'conflict',
-          currentVersion: conflict?.currentVersion,
-        };
-      }
-      if (!res.ok) return { ok: false, reason: 'network' };
-      const nextVersion =
-        parseContentVersion(body) ?? expectedVersion + 1;
-      const monotonic = bumpContentVersion(targetSlideId, nextVersion);
-      syncSlideContentInCache(targetSlideId, sanitized, monotonic);
-      return { ok: true, contentVersion: monotonic };
     },
     [classId, handleVersionConflict, bumpContentVersion, syncSlideContentInCache],
   );

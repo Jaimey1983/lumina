@@ -62,7 +62,7 @@ type DebouncedSlot = {
 export function createSlidePersistCoordinator(
   deps: SlidePersistCoordinatorDeps,
 ): SlidePersistCoordinator {
-  let queue: ImmediateJob[] = [];
+  const queue: ImmediateJob[] = [];
   let pumping = false;
   let inFlight = false;
 
@@ -110,6 +110,8 @@ export function createSlidePersistCoordinator(
         return true;
       }
       return false;
+    } catch {
+      return false;
     } finally {
       inFlight = false;
       notifyActivity();
@@ -122,11 +124,17 @@ export function createSlidePersistCoordinator(
     try {
       while (queue.length > 0) {
         const job = queue.shift()!;
-        const ok = await executePatch(job);
+        let ok = false;
+        try {
+          ok = await executePatch(job);
+        } catch {
+          ok = false;
+        }
         job.resolve(ok);
       }
     } finally {
       pumping = false;
+      notifyActivity();
     }
   };
 

@@ -230,4 +230,56 @@ describe('createSlidePersistCoordinator', () => {
     expect(await pending).toBe(false);
     expect(patch).not.toHaveBeenCalled();
   });
+
+  it('notifica onActivity y devuelve isBusy=false tras completar todas las tareas', async () => {
+    const activityStates: boolean[] = [];
+    const patch = vi.fn(async () => ({ ok: true as const, contentVersion: 2 }));
+
+    const holder: { current: ReturnType<typeof createSlidePersistCoordinator> | null } = {
+      current: null,
+    };
+    const coord = createSlidePersistCoordinator({
+      getContentVersion: () => 1,
+      patch,
+      onActivity: () => {
+        if (holder.current) {
+          activityStates.push(holder.current.isBusy);
+        }
+      },
+    });
+    holder.current = coord;
+
+    expect(coord.isBusy).toBe(false);
+    const p = coord.enqueue({
+      targetSlideId: 's1',
+      content: { test: true },
+      mode: 'immediate',
+    });
+
+    await p;
+    expect(coord.isBusy).toBe(false);
+    expect(activityStates.length).toBeGreaterThanOrEqual(2);
+    expect(activityStates[0]).toBe(true);
+    expect(activityStates[activityStates.length - 1]).toBe(false);
+  });
+
+  it('resuelve la promesa con false y limpia isBusy si patch lanza una excepción', async () => {
+    const patch = vi.fn(async () => {
+      throw new Error('Network crash');
+    });
+
+    const coord = createSlidePersistCoordinator({
+      getContentVersion: () => 1,
+      patch,
+    });
+
+    const ok = await coord.enqueue({
+      targetSlideId: 's1',
+      content: {},
+      mode: 'immediate',
+    });
+
+    expect(ok).toBe(false);
+    expect(coord.isBusy).toBe(false);
+  });
 });

@@ -918,9 +918,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     ? apiSlideHasActivity(previewApiSlide as ApiSlide)
     : false;
 
-  // Clear live bloques whenever the user switches to a different slide.
+  // Clear live bloques and reducer persist payload whenever the user switches to a different slide.
   useEffect(() => {
     setActiveSlideLiveBloques(null);
+    setReducerPersistPayload(null);
   }, [resolvedSlideIndex]);
 
   const rendererSlide = useMemo(
