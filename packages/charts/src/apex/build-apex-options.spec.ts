@@ -123,3 +123,234 @@ describe('buildApexChart — tipos circulares (pie/donut/radialBar)', () => {
     expect(built.options.dataLabels?.enabled).toBe(false);
   });
 });
+
+describe('buildApexChart — tipos nuevos de catálogo (H6)', () => {
+  it('combo: genera chartType "line" y preserva tipoCombo por serie', () => {
+    const comboConfig: LuminaChartConfig = {
+      type: 'combo',
+      categorias: ['Ene', 'Feb', 'Mar'],
+      series: [
+        { nombre: 'Barras', valores: [10, 20, 30], tipoCombo: 'column' },
+        { nombre: 'Línea', valores: [5, 15, 25], tipoCombo: 'line', ejeCombo: 'secundario' },
+      ],
+    };
+    const built = buildApexChart(comboConfig, theme);
+    expect(built.chartType).toBe('line');
+    expect(built.series).toEqual([
+      { name: 'Barras', type: 'column', data: [10, 20, 30] },
+      { name: 'Línea', type: 'line', data: [5, 15, 25] },
+    ]);
+    // Eje dual
+    expect(Array.isArray(built.options.yaxis)).toBe(true);
+    expect((built.options.yaxis as unknown[])[1]).toMatchObject({ opposite: true });
+  });
+
+  it('scatter: chartType "scatter", eje X numérico y datos mapeados a [x, y]', () => {
+    const scatterConfig: LuminaChartConfig = {
+      type: 'scatter',
+      categorias: [],
+      series: [
+        {
+          nombre: 'Muestra',
+          valores: [],
+          puntos: [
+            { x: 1, y: 10 },
+            { x: 2, y: 20 },
+          ],
+        },
+      ],
+    };
+    const built = buildApexChart(scatterConfig, theme);
+    expect(built.chartType).toBe('scatter');
+    expect(built.options.xaxis?.type).toBe('numeric');
+    expect(built.series).toEqual([{ name: 'Muestra', data: [[1, 10], [2, 20]] }]);
+  });
+
+  it('bubble: chartType "bubble", eje X numérico y datos con tamaño z [x, y, z]', () => {
+    const bubbleConfig: LuminaChartConfig = {
+      type: 'bubble',
+      categorias: [],
+      series: [
+        {
+          nombre: 'Burbujas',
+          valores: [],
+          puntos: [
+            { x: 5, y: 15, z: 25 },
+            { x: 10, y: 30, z: 40 },
+          ],
+        },
+      ],
+    };
+    const built = buildApexChart(bubbleConfig, theme);
+    expect(built.chartType).toBe('bubble');
+    expect(built.options.xaxis?.type).toBe('numeric');
+    expect(built.series).toEqual([{ name: 'Burbujas', data: [[5, 15, 25], [10, 30, 40]] }]);
+  });
+
+  it('radar: chartType "radar", categorías en eje X y series con datos', () => {
+    const radarConfig: LuminaChartConfig = {
+      type: 'radar',
+      categorias: ['Fuerza', 'Agilidad', 'Inteligencia'],
+      series: [{ nombre: 'Personaje A', valores: [80, 90, 70] }],
+    };
+    const built = buildApexChart(radarConfig, theme);
+    expect(built.chartType).toBe('radar');
+    expect(built.options.xaxis?.categories).toEqual(['Fuerza', 'Agilidad', 'Inteligencia']);
+    expect(built.series).toEqual([{ name: 'Personaje A', data: [80, 90, 70] }]);
+  });
+
+  it('treemap: chartType "treemap", usa primera serie y categorías como etiquetas', () => {
+    const treemapConfig: LuminaChartConfig = {
+      type: 'treemap',
+      categorias: ['Matemáticas', 'Lenguaje', 'Ciencias'],
+      series: [{ nombre: 'Asignaturas', valores: [40, 35, 25] }],
+    };
+    const built = buildApexChart(treemapConfig, theme);
+    expect(built.chartType).toBe('treemap');
+    expect(built.series).toEqual([
+      {
+        data: [
+          { x: 'Matemáticas', y: 40 },
+          { x: 'Lenguaje', y: 35 },
+          { x: 'Ciencias', y: 25 },
+        ],
+      },
+    ]);
+  });
+
+  it('funnel: chartType "bar" con plotOptions.bar.isFunnel: true', () => {
+    const funnelConfig: LuminaChartConfig = {
+      type: 'funnel',
+      categorias: ['Vistas', 'Clics', 'Compras'],
+      series: [{ nombre: 'Embudo', valores: [1000, 200, 50] }],
+    };
+    const built = buildApexChart(funnelConfig, theme);
+    expect(built.chartType).toBe('bar');
+    expect(built.options.plotOptions?.bar?.isFunnel).toBe(true);
+    expect(built.options.plotOptions?.bar?.horizontal).toBe(true);
+    expect(built.series).toEqual([{ name: 'Embudo', data: [1000, 200, 50] }]);
+  });
+
+  it('heatmap: chartType "heatmap", mapea cada serie a celdas { x, y }', () => {
+    const heatmapConfig: LuminaChartConfig = {
+      type: 'heatmap',
+      categorias: ['Lunes', 'Martes'],
+      series: [
+        { nombre: 'Mañana', valores: [5, 8] },
+        { nombre: 'Tarde', valores: [12, 15] },
+      ],
+    };
+    const built = buildApexChart(heatmapConfig, theme);
+    expect(built.chartType).toBe('heatmap');
+    expect(built.series).toEqual([
+      {
+        name: 'Mañana',
+        data: [
+          { x: 'Lunes', y: 5 },
+          { x: 'Martes', y: 8 },
+        ],
+      },
+      {
+        name: 'Tarde',
+        data: [
+          { x: 'Lunes', y: 12 },
+          { x: 'Martes', y: 15 },
+        ],
+      },
+    ]);
+  });
+});
+
+describe('buildApexChart — configuración fina (H6)', () => {
+  it('apilado: normal y porcentaje activan stacked en ApexCharts', () => {
+    const normal = buildApexChart({ ...baseConfig, apilado: 'normal' }, theme);
+    expect(normal.options.chart?.stacked).toBe(true);
+    expect(normal.options.chart?.stackType).toBe('normal');
+
+    const pct = buildApexChart({ ...baseConfig, apilado: 'porcentaje' }, theme);
+    expect(pct.options.chart?.stacked).toBe(true);
+    expect(pct.options.chart?.stackType).toBe('100%');
+
+    const none = buildApexChart({ ...baseConfig, apilado: 'ninguno' }, theme);
+    expect(none.options.chart?.stacked).toBe(false);
+  });
+
+  it('títulos y límites de ejes X e Y', () => {
+    const built = buildApexChart(
+      {
+        ...baseConfig,
+        ejeXTitulo: 'Meses',
+        ejeYTitulo: 'Puntaje',
+        ejeYMin: 0,
+        ejeYMax: 100,
+        ejeYEscalaLog: true,
+      },
+      theme,
+    );
+    expect(built.options.xaxis?.title?.text).toBe('Meses');
+    const yaxis = built.options.yaxis as { title?: { text?: string }; min?: number; max?: number; logarithmic?: boolean };
+    expect(yaxis.title?.text).toBe('Puntaje');
+    expect(yaxis.min).toBe(0);
+    expect(yaxis.max).toBe(100);
+    expect(yaxis.logarithmic).toBe(true);
+  });
+
+  it('mostrarEtiquetasDatos: true habilita dataLabels en el gráfico', () => {
+    const built = buildApexChart({ ...baseConfig, mostrarEtiquetasDatos: true }, theme);
+    expect(built.options.dataLabels?.enabled).toBe(true);
+  });
+
+  it('lineaReferencia: genera anotación horizontal con valor y etiqueta', () => {
+    const built = buildApexChart(
+      {
+        ...baseConfig,
+        lineaReferencia: { valor: 80, etiqueta: 'Aprobación' },
+      },
+      theme,
+    );
+    expect(built.options.annotations?.yaxis).toBeDefined();
+    expect(built.options.annotations?.yaxis?.[0]?.y).toBe(80);
+    expect(built.options.annotations?.yaxis?.[0]?.label?.text).toBe('Aprobación');
+  });
+
+  it('animar: opt-in explícito habilita animations.enabled', () => {
+    const disabled = buildApexChart(baseConfig, theme);
+    expect(disabled.options.chart?.animations?.enabled).toBe(false);
+
+    const enabled = buildApexChart({ ...baseConfig, animar: true }, theme);
+    expect(enabled.options.chart?.animations?.enabled).toBe(true);
+  });
+
+  it('ordenDatos: ascendente y descendente ordenan por primera serie', () => {
+    const unsortedConfig: LuminaChartConfig = {
+      type: 'column',
+      categorias: ['Media', 'Baja', 'Alta'],
+      series: [
+        { nombre: 'Valores', valores: [50, 10, 90] },
+        { nombre: 'Secundario', valores: [5, 1, 9] },
+      ],
+    };
+
+    const asc = buildApexChart({ ...unsortedConfig, ordenDatos: 'ascendente' }, theme);
+    expect(asc.options.xaxis?.categories).toEqual(['Baja', 'Media', 'Alta']);
+    expect(asc.series).toEqual([
+      { name: 'Valores', data: [10, 50, 90] },
+      { name: 'Secundario', data: [1, 5, 9] },
+    ]);
+
+    const desc = buildApexChart({ ...unsortedConfig, ordenDatos: 'descendente' }, theme);
+    expect(desc.options.xaxis?.categories).toEqual(['Alta', 'Media', 'Baja']);
+    expect(desc.series).toEqual([
+      { name: 'Valores', data: [90, 50, 10] },
+      { name: 'Secundario', data: [9, 5, 1] },
+    ]);
+  });
+
+  it('exportarImagen: controla toolbar.show', () => {
+    const explicitFalse = buildApexChart({ ...baseConfig, exportarImagen: false }, theme);
+    expect(explicitFalse.options.chart?.toolbar?.show).toBe(false);
+
+    const explicitTrue = buildApexChart({ ...baseConfig, exportarImagen: true }, theme);
+    expect(explicitTrue.options.chart?.toolbar?.show).toBe(true);
+  });
+});

@@ -12,6 +12,13 @@ export const VALID_GRAFICO_CHART_TYPES: readonly GraficoChartType[] = [
   'pie',
   'donut',
   'radialBar',
+  'combo',
+  'scatter',
+  'bubble',
+  'radar',
+  'treemap',
+  'funnel',
+  'heatmap',
 ] as const;
 
 export const DEFAULT_GRAFICO_CATEGORIAS: string[] = [
@@ -93,10 +100,42 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
         ? (item as { color: string }).color.trim()
         : undefined;
 
+    const rawTipoCombo = (item as { tipoCombo?: unknown }).tipoCombo;
+    const tipoCombo =
+      rawTipoCombo === 'column' || rawTipoCombo === 'line' || rawTipoCombo === 'area'
+        ? rawTipoCombo
+        : undefined;
+
+    const rawEjeCombo = (item as { ejeCombo?: unknown }).ejeCombo;
+    const ejeCombo =
+      rawEjeCombo === 'primario' || rawEjeCombo === 'secundario'
+        ? rawEjeCombo
+        : undefined;
+
+    const rawPuntos = (item as { puntos?: unknown }).puntos;
+    const puntos = Array.isArray(rawPuntos)
+      ? rawPuntos
+          .filter((p) => p && typeof p === 'object')
+          .map((p) => {
+            const px = Number((p as { x?: unknown }).x);
+            const py = Number((p as { y?: unknown }).y);
+            const rawZ = (p as { z?: unknown }).z;
+            const pz = rawZ !== undefined ? Number(rawZ) : undefined;
+            return {
+              x: Number.isFinite(px) ? px : 0,
+              y: Number.isFinite(py) ? py : 0,
+              ...(pz !== undefined && Number.isFinite(pz) ? { z: pz } : {}),
+            };
+          })
+      : undefined;
+
     cleaned.push({
       nombre,
       valores,
       ...(color ? { color } : {}),
+      ...(tipoCombo ? { tipoCombo } : {}),
+      ...(ejeCombo ? { ejeCombo } : {}),
+      ...(puntos ? { puntos } : {}),
     });
   }
 
@@ -123,6 +162,30 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
   const categorias = sanitizeCategorias(raw.categorias);
   const series = sanitizeSeries(raw.series, categorias.length);
 
+  const apilado =
+    raw.apilado === 'normal' || raw.apilado === 'porcentaje' || raw.apilado === 'ninguno'
+      ? raw.apilado
+      : undefined;
+
+  const ordenDatos =
+    raw.ordenDatos === 'como-esta' || raw.ordenDatos === 'ascendente' || raw.ordenDatos === 'descendente'
+      ? raw.ordenDatos
+      : undefined;
+
+  const lineaReferencia =
+    raw.lineaReferencia &&
+    typeof raw.lineaReferencia === 'object' &&
+    typeof raw.lineaReferencia.valor === 'number' &&
+    Number.isFinite(raw.lineaReferencia.valor)
+      ? {
+          valor: raw.lineaReferencia.valor,
+          etiqueta:
+            typeof raw.lineaReferencia.etiqueta === 'string' && raw.lineaReferencia.etiqueta.trim().length > 0
+              ? raw.lineaReferencia.etiqueta.trim()
+              : undefined,
+        }
+      : undefined;
+
   return {
     id,
     tipo: 'grafico',
@@ -144,6 +207,19 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
     ancho: typeof raw.ancho === 'number' && Number.isFinite(raw.ancho) ? raw.ancho : fb.ancho,
     alto: typeof raw.alto === 'number' && Number.isFinite(raw.alto) ? raw.alto : fb.alto,
     zIndex: typeof raw.zIndex === 'number' && Number.isFinite(raw.zIndex) ? raw.zIndex : undefined,
+
+    // Configuración fina (H6)
+    apilado,
+    ejeXTitulo: typeof raw.ejeXTitulo === 'string' && raw.ejeXTitulo.trim().length > 0 ? raw.ejeXTitulo.trim() : undefined,
+    ejeYTitulo: typeof raw.ejeYTitulo === 'string' && raw.ejeYTitulo.trim().length > 0 ? raw.ejeYTitulo.trim() : undefined,
+    ejeYMin: typeof raw.ejeYMin === 'number' && Number.isFinite(raw.ejeYMin) ? raw.ejeYMin : undefined,
+    ejeYMax: typeof raw.ejeYMax === 'number' && Number.isFinite(raw.ejeYMax) ? raw.ejeYMax : undefined,
+    ejeYEscalaLog: typeof raw.ejeYEscalaLog === 'boolean' ? raw.ejeYEscalaLog : undefined,
+    mostrarEtiquetasDatos: typeof raw.mostrarEtiquetasDatos === 'boolean' ? raw.mostrarEtiquetasDatos : undefined,
+    lineaReferencia,
+    animar: typeof raw.animar === 'boolean' ? raw.animar : undefined,
+    ordenDatos,
+    exportarImagen: typeof raw.exportarImagen === 'boolean' ? raw.exportarImagen : undefined,
   };
 }
 
@@ -155,6 +231,31 @@ export function createDefaultGraficoBlock(
   marco?: BlockMarco,
 ): GraficoDatosBlock {
   const fb = BLOCK_FALLBACKS.grafico;
+  const isScatterOrBubble = partial?.chartType === 'scatter' || partial?.chartType === 'bubble';
+
+  const defaultSeries: GraficoSerie[] = isScatterOrBubble
+    ? [
+        {
+          nombre: 'Serie 1',
+          valores: [20, 45, 30, 70],
+          puntos: [
+            { x: 10, y: 20, ...(partial?.chartType === 'bubble' ? { z: 15 } : {}) },
+            { x: 20, y: 45, ...(partial?.chartType === 'bubble' ? { z: 25 } : {}) },
+            { x: 30, y: 30, ...(partial?.chartType === 'bubble' ? { z: 10 } : {}) },
+            { x: 40, y: 70, ...(partial?.chartType === 'bubble' ? { z: 35 } : {}) },
+          ],
+        },
+      ]
+    : [
+        {
+          nombre: 'Grupo A',
+          valores: [65, 59, 80, 81, 56],
+        },
+        {
+          nombre: 'Grupo B',
+          valores: [28, 48, 40, 19, 86],
+        },
+      ];
 
   const base: Partial<GraficoDatosBlock> = {
     id: `grafico-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -163,16 +264,7 @@ export function createDefaultGraficoBlock(
     soloLecturaEnViewer: true,
     chartType: 'column',
     categorias: [...DEFAULT_GRAFICO_CATEGORIAS],
-    series: [
-      {
-        nombre: 'Grupo A',
-        valores: [65, 59, 80, 81, 56],
-      },
-      {
-        nombre: 'Grupo B',
-        valores: [28, 48, 40, 19, 86],
-      },
-    ],
+    series: defaultSeries,
     colorPaleta: DEFAULT_GRAFICO_PALETA_ID,
     titulo: 'Gráfico de datos',
     descripcionAccesible: 'Gráfico de datos comparativos por categorías',

@@ -80,7 +80,8 @@ describe('grafico-defaults', () => {
     expect(normalized.y).toBe(BLOCK_FALLBACKS.grafico.y);
   });
 
-  it('soporta todos los tipos de gráfico válidos', () => {
+  it('soporta todos los tipos de gráfico válidos (14 tipos)', () => {
+    expect(VALID_GRAFICO_CHART_TYPES).toHaveLength(14);
     for (const type of VALID_GRAFICO_CHART_TYPES) {
       const b = normalizeGraficoBlock({ tipo: 'grafico', chartType: type });
       expect(b.chartType).toBe(type);
@@ -97,5 +98,90 @@ describe('grafico-defaults', () => {
     });
 
     expect(normalized.series[0].valores).toEqual([10, 20, 0, 0]);
+  });
+
+  it('sanitiza campos de configuración fina de forma aditiva', () => {
+    const raw = {
+      tipo: 'grafico',
+      chartType: 'combo',
+      apilado: 'normal',
+      ejeXTitulo: '  Trimestre  ',
+      ejeYTitulo: '  Ventas  ',
+      ejeYMin: 0,
+      ejeYMax: 500,
+      ejeYEscalaLog: true,
+      mostrarEtiquetasDatos: true,
+      lineaReferencia: { valor: 250, etiqueta: '  Meta  ' },
+      animar: true,
+      ordenDatos: 'descendente',
+      exportarImagen: false,
+      series: [
+        {
+          nombre: 'S1',
+          valores: [100],
+          tipoCombo: 'column',
+          ejeCombo: 'primario',
+        },
+        {
+          nombre: 'S2',
+          valores: [200],
+          tipoCombo: 'line',
+          ejeCombo: 'secundario',
+        },
+      ],
+      categorias: ['T1'],
+    };
+
+    const normalized = normalizeGraficoBlock(raw);
+
+    expect(normalized.chartType).toBe('combo');
+    expect(normalized.apilado).toBe('normal');
+    expect(normalized.ejeXTitulo).toBe('Trimestre');
+    expect(normalized.ejeYTitulo).toBe('Ventas');
+    expect(normalized.ejeYMin).toBe(0);
+    expect(normalized.ejeYMax).toBe(500);
+    expect(normalized.ejeYEscalaLog).toBe(true);
+    expect(normalized.mostrarEtiquetasDatos).toBe(true);
+    expect(normalized.lineaReferencia).toEqual({ valor: 250, etiqueta: 'Meta' });
+    expect(normalized.animar).toBe(true);
+    expect(normalized.ordenDatos).toBe('descendente');
+    expect(normalized.exportarImagen).toBe(false);
+    expect(normalized.series[0].tipoCombo).toBe('column');
+    expect(normalized.series[0].ejeCombo).toBe('primario');
+    expect(normalized.series[1].tipoCombo).toBe('line');
+    expect(normalized.series[1].ejeCombo).toBe('secundario');
+  });
+
+  it('sanitiza y preserva puntos para scatter y bubble', () => {
+    const raw = {
+      tipo: 'grafico',
+      chartType: 'bubble',
+      series: [
+        {
+          nombre: 'Burbujas',
+          valores: [],
+          puntos: [
+            { x: '10', y: '20', z: '30' },
+            { x: 'invalid', y: 40, z: null },
+          ],
+        },
+      ],
+    };
+
+    const normalized = normalizeGraficoBlock(raw);
+    expect(normalized.series[0].puntos).toEqual([
+      { x: 10, y: 20, z: 30 },
+      { x: 0, y: 40, z: 0 },
+    ]);
+  });
+
+  it('createDefaultGraficoBlock inicializa puntos al crear scatter o bubble', () => {
+    const scatter = createDefaultGraficoBlock({ chartType: 'scatter' });
+    expect(scatter.chartType).toBe('scatter');
+    expect(scatter.series[0].puntos?.length).toBeGreaterThan(0);
+
+    const bubble = createDefaultGraficoBlock({ chartType: 'bubble' });
+    expect(bubble.chartType).toBe('bubble');
+    expect(bubble.series[0].puntos?.[0].z).toBeDefined();
   });
 });

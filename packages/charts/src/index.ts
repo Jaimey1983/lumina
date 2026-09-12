@@ -3,6 +3,8 @@
 export type {
   LuminaChartType,
   LuminaChartSeries,
+  LuminaChartPoint,
+  LuminaChartReferenceLine,
   LuminaChartConfig,
 } from './types.js';
 export { LUMINA_CHART_TYPES } from './types.js';

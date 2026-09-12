@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { Button } from '@lumina/ui/button';
 import { cn } from '@lumina/ui/lib/utils';
+import type { ApexOptions } from 'apexcharts';
 import { buildApexChart } from './apex/build-apex-options.js';
 import { resolveChartTheme, type LuminaChartTheme } from './chart-theme.js';
 import type { LuminaChartConfig } from './types.js';
@@ -40,6 +41,37 @@ function useLiveChartTheme(): LuminaChartTheme {
 }
 
 function ChartDataTable({ config }: { config: LuminaChartConfig }) {
+  const isScatterOrBubble = config.type === 'scatter' || config.type === 'bubble';
+  const isBubble = config.type === 'bubble';
+
+  if (isScatterOrBubble) {
+    return (
+      <table className="w-full text-left text-xs">
+        <caption className="sr-only">{config.titulo || 'Datos del gráfico'}</caption>
+        <thead>
+          <tr className="border-b border-border">
+            <th className="p-1.5 font-medium text-muted-foreground">Serie</th>
+            <th className="p-1.5 font-medium text-muted-foreground">X</th>
+            <th className="p-1.5 font-medium text-muted-foreground">Y</th>
+            {isBubble && <th className="p-1.5 font-medium text-muted-foreground">Tamaño (Z)</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {config.series.flatMap((s) =>
+            (s.puntos ?? []).map((pt, pIdx) => (
+              <tr key={`${s.nombre}-${pIdx}`} className="border-b border-border/40">
+                <td className="p-1.5 text-foreground">{s.nombre}</td>
+                <td className="p-1.5 text-foreground tabular-nums">{pt.x}</td>
+                <td className="p-1.5 text-foreground tabular-nums">{pt.y}</td>
+                {isBubble && <td className="p-1.5 text-foreground tabular-nums">{pt.z ?? 0}</td>}
+              </tr>
+            )),
+          )}
+        </tbody>
+      </table>
+    );
+  }
+
   return (
     <table className="w-full text-left text-xs">
       <caption className="sr-only">{config.titulo || 'Datos del gráfico'}</caption>
@@ -80,7 +112,10 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
 
   const built = useMemo(() => buildApexChart(config, theme), [config, theme]);
 
-  const hasData = config.categorias.length > 0 && config.series.length > 0;
+  const hasData =
+    config.type === 'scatter' || config.type === 'bubble'
+      ? config.series.length > 0 && config.series.some((s) => (s.puntos?.length ?? 0) > 0)
+      : config.categorias.length > 0 && config.series.length > 0;
 
   if (!hasData) {
     return (
@@ -107,7 +142,7 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
           <Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}>
             <ApexChart
               type={built.chartType}
-              series={built.series}
+              series={built.series as ApexOptions['series']}
               options={built.options}
               width="100%"
               height="100%"

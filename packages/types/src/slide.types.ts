@@ -1250,12 +1250,33 @@ export type GraficoChartType =
   | 'area'
   | 'pie'
   | 'donut'
-  | 'radialBar';
+  | 'radialBar'
+  | 'combo'
+  | 'scatter'
+  | 'bubble'
+  | 'radar'
+  | 'treemap'
+  | 'funnel'
+  | 'heatmap';
+
+export interface GraficoPunto {
+  x: number;
+  y: number;
+  z?: number;
+}
 
 export interface GraficoSerie {
   nombre: string;
   valores: number[];
   color?: string;
+  tipoCombo?: 'column' | 'line' | 'area';
+  ejeCombo?: 'primario' | 'secundario';
+  puntos?: GraficoPunto[];
+}
+
+export interface GraficoLineaReferencia {
+  valor: number;
+  etiqueta?: string;
 }
 
 export interface GraficoDatosBlock {
@@ -1275,6 +1296,17 @@ export interface GraficoDatosBlock {
   titulo?: string;
   descripcionAccesible?: string;
   mostrarLeyenda?: boolean;
+  apilado?: 'ninguno' | 'normal' | 'porcentaje';
+  ejeXTitulo?: string;
+  ejeYTitulo?: string;
+  ejeYMin?: number;
+  ejeYMax?: number;
+  ejeYEscalaLog?: boolean;
+  mostrarEtiquetasDatos?: boolean;
+  lineaReferencia?: GraficoLineaReferencia;
+  animar?: boolean;
+  ordenDatos?: 'como-esta' | 'ascendente' | 'descendente';
+  exportarImagen?: boolean;
 }
 
 // ─── Bloque Diagrama (Grafos y Geometrías) ──────────────────────────────────
