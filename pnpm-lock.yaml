@@ -230,6 +230,9 @@ importers:
       '@lumina/canvas-align':
         specifier: workspace:*
         version: link:../packages/canvas-align
+      '@lumina/charts':
+        specifier: workspace:*
+        version: link:../packages/charts
       '@lumina/editor-shared':
         specifier: workspace:*
         version: link:../packages/editor-shared

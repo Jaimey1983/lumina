@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   // que no debe bundlearse en SSR.
   serverExternalPackages: ['paper'],
   // Paquetes internos del workspace que se consumen desde fuente TS (E2).
-  transpilePackages: ['@lumina/types', '@lumina/ui', '@lumina/editor-shared', '@lumina/scoring', '@lumina/element-kit-core', '@lumina/element-kit'],
+  transpilePackages: ['@lumina/types', '@lumina/ui', '@lumina/charts', '@lumina/editor-shared', '@lumina/scoring', '@lumina/element-kit-core', '@lumina/element-kit'],
   webpack: (config) => {
     config.resolve = config.resolve || {};
     config.resolve.extensionAlias = {

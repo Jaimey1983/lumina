@@ -21,6 +21,7 @@
   "dependencies": {
     "@lumina/types": "workspace:*",
     "@lumina/ui": "workspace:*",
+    "@lumina/charts": "workspace:*",
     "@lumina/editor-shared": "workspace:*",
     "@lumina/scoring": "workspace:*",
     "@lumina/element-kit-core": "workspace:*",

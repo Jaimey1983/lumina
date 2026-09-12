@@ -1,15 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+import { LuminaChart, LUMINA_SEMANTIC_PALETTE, type LuminaChartConfig } from '@lumina/charts';
+import { NOTA_COLOMBIANA_BANDAS } from '@lumina/scoring';
 import {
   AlertCircle,
   AlertTriangle,
@@ -721,33 +714,22 @@ function SessionDetailSection({
 
           <div className="rounded-[10px] border border-[#e5e7eb] p-4">
             <p className={cn(ANALYTICS_SECTION_TITLE, 'mb-3')}>Embudo de participación</p>
-            <ResponsiveContainer width="100%" height={Math.max(220, funnelChartData.length * 36)}>
-              <BarChart
-                layout="vertical"
-                data={funnelChartData}
-                margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal stroke="#e5e7eb" />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis
-                  type="category"
-                  dataKey="label"
-                  width={88}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                />
-                <Tooltip
-                  formatter={(value: number) => [value, 'Estudiantes alcanzados']}
-                  labelFormatter={(l) => String(l)}
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '0.8125rem',
-                  }}
-                />
-                <Bar dataKey="studentsReached" fill="#2563EB" radius={[0, 4, 4, 0]} maxBarSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ height: Math.max(220, funnelChartData.length * 36) }}>
+              <LuminaChart
+                config={{
+                  type: 'bar',
+                  categorias: funnelChartData.map((f) => f.label),
+                  series: [
+                    {
+                      nombre: 'Estudiantes alcanzados',
+                      valores: funnelChartData.map((f) => f.studentsReached),
+                      color: LUMINA_SEMANTIC_PALETTE.neutro,
+                    },
+                  ],
+                  mostrarLeyenda: false,
+                }}
+              />
+            </div>
           </div>
 
           <div className="rounded-[10px] border border-[#e5e7eb] overflow-hidden">
@@ -948,7 +930,14 @@ function AtRiskSection({
 
 // ─── Grade Distribution ───────────────────────────────────────────────────────
 
-const DISTRIBUTION_RANGES = ['Bajo', 'Básico', 'Alto', 'Superior'] as const;
+// Un rol semántico por banda (peor → mejor desempeño), no una paleta neutra
+// de series — así el color mismo comunica el juicio (Etapa H, H4).
+const BANDA_SEMANTICA = {
+  bajo: 'riesgo',
+  basico: 'alerta',
+  alto: 'neutro',
+  superior: 'positivo',
+} as const satisfies Record<(typeof NOTA_COLOMBIANA_BANDAS)[number]['id'], keyof typeof LUMINA_SEMANTIC_PALETTE>;
 
 function GradeDistributionSection({
   distribution,
@@ -959,14 +948,23 @@ function GradeDistributionSection({
   isLoading: boolean;
   isError: boolean;
 }) {
-  const chartData = distribution
-    ? [
-        { range: 'Bajo\n(<3.0)', count: distribution.bajo },
-        { range: 'Básico\n(3–3.9)', count: distribution.basico },
-        { range: 'Alto\n(4–4.6)', count: distribution.alto },
-        { range: 'Superior\n(≥4.7)', count: distribution.superior },
-      ]
-    : DISTRIBUTION_RANGES.map((range) => ({ range, count: 0 }));
+  // Una categoría (sin etiqueta — la leyenda ya nombra cada banda) con 4
+  // series de 1 valor cada una: da color por banda usando el contrato de
+  // @lumina/charts tal como está hoy (color por serie), sin ampliar su
+  // config — eso es H6.
+  const chartConfig: LuminaChartConfig = {
+    type: 'column',
+    categorias: [''],
+    series: NOTA_COLOMBIANA_BANDAS.map((banda) => ({
+      nombre: `${banda.etiqueta} (${banda.rangoTexto})`,
+      valores: [distribution ? distribution[banda.id] : 0],
+      color: LUMINA_SEMANTIC_PALETTE[BANDA_SEMANTICA[banda.id]],
+    })),
+    mostrarLeyenda: true,
+  };
+  const total = distribution
+    ? distribution.bajo + distribution.basico + distribution.alto + distribution.superior
+    : 0;
 
   return (
     <Card className={ANALYTICS_CARD}>
@@ -976,9 +974,7 @@ function GradeDistributionSection({
         </CardHeading>
         {distribution && !isLoading && (
           <CardToolbar>
-            <span className="text-xs text-[#6b7280]">
-              {distribution.bajo + distribution.basico + distribution.alto + distribution.superior} estudiantes
-            </span>
+            <span className="text-xs text-[#6b7280]">{total} estudiantes</span>
           </CardToolbar>
         )}
       </CardHeader>
@@ -993,34 +989,9 @@ function GradeDistributionSection({
             <p className="text-sm text-[#6b7280]">Sin datos de distribución.</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-              <XAxis
-                dataKey="range"
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                allowDecimals={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '0.8125rem',
-                }}
-                labelStyle={{ fontWeight: 600 }}
-                formatter={(value: number) => [value, 'Estudiantes']}
-              />
-              <Bar dataKey="count" fill="#2563EB" radius={[4, 4, 0, 0]} maxBarSize={56} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ height: 220 }}>
+            <LuminaChart config={chartConfig} />
+          </div>
         )}
       </CardContent>
     </Card>

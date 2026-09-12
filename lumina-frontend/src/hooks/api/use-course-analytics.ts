@@ -2,6 +2,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { Class } from '@/hooks/api/use-classes';
 import { toDisplayNoteOnFive, type ApiGradebookRow } from '@/hooks/use-gradebook';
+import { clasificarNotaColombiana, type NotaColombianaBandaId } from '@lumina/scoring';
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -87,13 +88,22 @@ export interface CourseAnalyticsData {
 }
 
 // ─── Performance label helper ─────────────────────────────────────────────────
+// La clasificación real (umbrales 3.0/4.0/4.6) vive en @lumina/scoring
+// (Etapa H, H2) — antes estaba copiada acá, en el filtro de `atRisk` y en
+// `distribution` (más una 4ª copia como texto en analytics-client.tsx).
+// Este mapa solo traduce el id de banda a la etiqueta que ya esperaba la UI
+// (sin tilde en "Basico" — no se cambia el contrato de StudentProgressRow).
+
+const BANDA_A_ETIQUETA: Record<NotaColombianaBandaId, NonNullable<StudentProgressRow['performance']>> = {
+  bajo: 'Bajo',
+  basico: 'Basico',
+  alto: 'Alto',
+  superior: 'Superior',
+};
 
 function getPerformance(avg: number | null): StudentProgressRow['performance'] {
-  if (avg === null) return null;
-  if (avg < 3.0) return 'Bajo';
-  if (avg < 4.0) return 'Basico';
-  if (avg <= 4.6) return 'Alto';
-  return 'Superior';
+  const banda = clasificarNotaColombiana(avg);
+  return banda ? BANDA_A_ETIQUETA[banda] : null;
 }
 
 // ─── Core computation ─────────────────────────────────────────────────────────
@@ -212,15 +222,14 @@ function computeAnalytics(
 
   // ─── At-risk and distribution ─────────────────────────────────────────────
   const atRisk: AtRiskStudentRow[] = studentProgress
-    .filter((s) => s.avgGrade !== null && (s.avgGrade as number) < 3.0)
+    .filter((s) => clasificarNotaColombiana(s.avgGrade) === 'bajo')
     .map((s) => ({ studentId: s.studentId, studentName: s.studentName, promedio: s.avgGrade as number }));
 
-  const distribution: GradeDistribution = {
-    bajo: studentProgress.filter((s) => s.avgGrade !== null && (s.avgGrade as number) < 3.0).length,
-    basico: studentProgress.filter((s) => s.avgGrade !== null && (s.avgGrade as number) >= 3.0 && (s.avgGrade as number) < 4.0).length,
-    alto: studentProgress.filter((s) => s.avgGrade !== null && (s.avgGrade as number) >= 4.0 && (s.avgGrade as number) <= 4.6).length,
-    superior: studentProgress.filter((s) => s.avgGrade !== null && (s.avgGrade as number) > 4.6).length,
-  };
+  const distribution: GradeDistribution = { bajo: 0, basico: 0, alto: 0, superior: 0 };
+  for (const s of studentProgress) {
+    const banda = clasificarNotaColombiana(s.avgGrade);
+    if (banda) distribution[banda] += 1;
+  }
 
   return {
     summary: {
