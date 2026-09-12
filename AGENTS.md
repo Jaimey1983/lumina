@@ -334,8 +334,8 @@ Troceada el 2026-09-10 (sin otros operadores, editor en uso en `feat/texto-enriq
 - **Cierre (parcial):** Regla 4 no aplica del todo — `spacing-indicators.tsx` y `canvas-moveable-flag.ts` **borrados** (el segundo retirado, no invertido a kill switch — ver justificación arriba); `use-block-drag.ts` **NO** se redujo a helpers (permanece completo por el consumidor de escape-room, hallazgo de Regla 10 documentado arriba). G2b **sigue abierta** — falta la deuda declarada (`ResizeHandles`, wiring residual de `EditorDndShell`, y el reemplazo de `CanvasGuidesChrome`/marquee por `@scena/react-guides`/`selecto`) antes de poder marcarla `hecho` del todo. Commit: `refactor(editor): conmutar el default a react-moveable y retirar la primera capa de dnd-kit del lienzo (G2b)`.
 
 ##### G2c — Reemplazar `CanvasGuidesChrome` por `@scena/react-guides` y el marquee manual por `selecto`/`react-selecto`
-- **Operador:** sin asignar — ficha redactada 2026-09-12 (Claude Code) para que una sesión nueva la ejecute en frío, sin depender del contexto de la sesión que cerró G2b.
-- **Estado:** pendiente — **no ejecutada todavía**, solo investigada y redactada.
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code] — 2026-09-12.
 - **Precondición:** G2b (parcial) `hecho` — commit `b4ce2de`. No depende de que se cierre la deuda declarada de G2b (`ResizeHandles`, wiring de `EditorDndShell`) — son archivos disjuntos.
 
 **Contexto — estado real del código (relevado 2026-09-12, no confiar en versiones previas de esta ficha si el código cambió):**
