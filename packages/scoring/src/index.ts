@@ -1067,3 +1067,14 @@ export function detailsForLivePanel(
     correct: d.correct,
   }));
 }
+
+// Bandas de desempeño de la escala colombiana (Etapa H, H2) — módulo aparte
+// por tamaño, re-exportado acá para que `@lumina/scoring` siga siendo un solo
+// punto de import.
+export {
+  NOTA_COLOMBIANA_BANDAS,
+  clasificarNotaColombiana,
+  obtenerBandaNotaColombiana,
+  type NotaColombianaBanda,
+  type NotaColombianaBandaId,
+} from './grade-bands.js';

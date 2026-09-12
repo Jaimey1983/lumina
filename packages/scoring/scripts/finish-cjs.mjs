@@ -1,9 +1,20 @@
 // E6.1 — post-build: marca `dist/cjs/` como CommonJS (el paquete es
 // `"type": "module"`, así que Node leería los `.js` de ahí como ESM sin esto)
 // y comprueba que `require` e `import` resuelven `@lumina/scoring` igual.
+//
+// El chequeo ESM importa `dist/index.js` (el build real), no el paquete por
+// nombre (`@lumina/scoring`) — desde H2, `exports.import` apunta a
+// `src/index.ts`, que tiene un import interno relativo a `./grade-bands.js`
+// (convención NodeNext: el specifier usa `.js`, el archivo fuente es `.ts`).
+// Un bundler (Next `transpilePackages`, Vite) resuelve ese `.js` contra el
+// `.ts` hermano sin problema — así lo consumen `lumina-frontend` y
+// `@lumina/element-kit` — pero el loader nativo de Node (sin bundler, el que
+// usa este script) no hace esa resolución y falla con `ERR_MODULE_NOT_FOUND`.
+// Contra `dist/index.js` no hay ambigüedad: ahí `./grade-bands.js` es un
+// archivo real, emitido por `tsc` junto al resto.
 import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,7 +25,7 @@ writeFileSync(resolve(cjsDir, 'package.json'), JSON.stringify({ type: 'commonjs'
 
 const require = createRequire(import.meta.url);
 const cjs = require('@lumina/scoring');
-const esm = await import('@lumina/scoring');
+const esm = await import(pathToFileURL(resolve(pkgRoot, 'dist/index.js')));
 
 const CLAVES = [
   'evaluateActivityResponse',
