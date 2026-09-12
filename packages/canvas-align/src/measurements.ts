@@ -369,3 +369,84 @@ export function computeMeasurements({
 
   return lines;
 }
+
+/**
+ * Cota entre dos bloques puntuales, sin el gating por umbral que usa
+ * `computeMeasurements` (pensado para el ambiente durante drag, donde solo
+ * interesa mostrar lo cercano). Esta es para la herramienta de medición
+ * "mantener tecla + hover" (Etapa G, G4): el docente elige explícitamente
+ * qué dos bloques comparar, así que se muestra la distancia exista o no
+ * solape — sin límite de distancia.
+ *
+ * Si los rects se solapan en el eje perpendicular (banda compartida), la
+ * línea se ancla al centro de esa banda — igual que `computeMeasurements`.
+ * Si no hay banda compartida (posición diagonal), se ancla al punto medio
+ * entre los centros de ambos rects — una aproximación razonable, no un
+ * dog-leg real.
+ */
+export function computePairMeasurement(
+  aPos: BlockPos,
+  bPos: BlockPos,
+  canvasWidth: number,
+  canvasHeight: number,
+): Measurement[] {
+  const toPx = (p: BlockPos): RectPx => ({
+    x: (p.x / 100) * canvasWidth,
+    y: (p.y / 100) * canvasHeight,
+    w: (p.ancho / 100) * canvasWidth,
+    h: (p.alto / 100) * canvasHeight,
+  });
+  const aPx = toPx(aPos);
+  const bPx = toPx(bPos);
+  const lines: Measurement[] = [];
+
+  // ─── Horizontal (gap en X) ──────────────────────────────────────────────
+  const aLeftOfB = aPx.x + aPx.w <= bPx.x;
+  const bLeftOfA = bPx.x + bPx.w <= aPx.x;
+  if (aLeftOfB || bLeftOfA) {
+    const left = aLeftOfB ? { pos: aPos, px: aPx } : { pos: bPos, px: bPx };
+    const right = aLeftOfB ? { pos: bPos, px: bPx } : { pos: aPos, px: aPx };
+    const gap = right.px.x - (left.px.x + left.px.w);
+    const overlapY = overlapsVertically(aPx, bPx);
+    const yLinePct = overlapY
+      ? ((Math.max(aPx.y, bPx.y) + Math.min(aPx.y + aPx.h, bPx.y + bPx.h)) / 2 / canvasHeight) * 100
+      : ((aPos.y + aPos.alto / 2 + bPos.y + bPos.alto / 2) / 2 / canvasHeight) * 100;
+    lines.push({
+      id: 'pair-h',
+      type: 'horizontal',
+      minX_pct: left.pos.x + left.pos.ancho,
+      maxX_pct: right.pos.x,
+      minY_pct: yLinePct,
+      maxY_pct: yLinePct,
+      distance: gap,
+      role: 'neighbor',
+      color: COLOR_NEIGHBOR,
+    });
+  }
+
+  // ─── Vertical (gap en Y) ────────────────────────────────────────────────
+  const aAboveB = aPx.y + aPx.h <= bPx.y;
+  const bAboveA = bPx.y + bPx.h <= aPx.y;
+  if (aAboveB || bAboveA) {
+    const top = aAboveB ? { pos: aPos, px: aPx } : { pos: bPos, px: bPx };
+    const bottom = aAboveB ? { pos: bPos, px: bPx } : { pos: aPos, px: aPx };
+    const gap = bottom.px.y - (top.px.y + top.px.h);
+    const overlapX = overlapsHorizontally(aPx, bPx);
+    const xLinePct = overlapX
+      ? ((Math.max(aPx.x, bPx.x) + Math.min(aPx.x + aPx.w, bPx.x + bPx.w)) / 2 / canvasWidth) * 100
+      : ((aPos.x + aPos.ancho / 2 + bPos.x + bPos.ancho / 2) / 2 / canvasWidth) * 100;
+    lines.push({
+      id: 'pair-v',
+      type: 'vertical',
+      minX_pct: xLinePct,
+      maxX_pct: xLinePct,
+      minY_pct: top.pos.y + top.pos.alto,
+      maxY_pct: bottom.pos.y,
+      distance: gap,
+      role: 'neighbor',
+      color: COLOR_NEIGHBOR,
+    });
+  }
+
+  return lines;
+}

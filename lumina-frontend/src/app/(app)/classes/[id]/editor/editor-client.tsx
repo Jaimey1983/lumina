@@ -1178,6 +1178,28 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         return;
       }
 
+      // G4 — atajos de reglas/grilla/guías. `e.code` (tecla física) en vez de
+      // `e.key` porque Shift+; y Shift+' cambian de carácter según el layout
+      // de teclado (p. ej. Shift+; = ':' en US) — el atajo debe ser la
+      // combinación física, no el carácter resultante.
+      if (!mod && e.shiftKey && sortedSlides.length > 0 && !sessionActive) {
+        if (e.code === 'KeyR') {
+          e.preventDefault();
+          handleGuidesVisibleChange(!guidesVisible);
+          return;
+        }
+        if (e.code === 'Semicolon') {
+          e.preventDefault();
+          canvas?.toggleGrid();
+          return;
+        }
+        if (e.code === 'Quote') {
+          e.preventDefault();
+          canvas?.toggleCenterGuides();
+          return;
+        }
+      }
+
       if (
         !mod &&
         (e.key === 'ArrowLeft' ||
@@ -1203,6 +1225,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     rightPanel,
     copiedBlock,
     activeSlide?.id,
+    sortedSlides.length,
+    sessionActive,
+    guidesVisible,
+    handleGuidesVisibleChange,
   ]);
 
   const handleStartSession = useCallback(async () => {
@@ -2266,6 +2292,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                   <PopoverContent align="end" className="w-56 p-1.5">
                     <button
                       type="button"
+                      title="Atajo: Shift+R"
                       className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                       aria-pressed={guidesVisible}
                       onClick={() => handleGuidesVisibleChange(!guidesVisible)}
@@ -2280,6 +2307,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                     </button>
                     <button
                       type="button"
+                      title="Atajo: Shift+'"
                       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                       onClick={() => canvasAreaRef.current?.toggleCenterGuides()}
                     >
@@ -2346,6 +2374,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                     </div>
                     <button
                       type="button"
+                      title="Atajo: Shift+;"
                       className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                       aria-pressed={activeGrid.activa}
                       onClick={() => canvasAreaRef.current?.toggleGrid()}
@@ -2394,6 +2423,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                         ))}
                       </select>
                     </label>
+                    <p className="border-t border-border px-2 pt-1.5 text-[11px] text-muted-foreground">
+                      Mantené <kbd className="rounded border border-border px-1">Alt</kbd> y pasá el
+                      mouse sobre otro bloque para medir la distancia (sin arrastrar).
+                    </p>
                   </PopoverContent>
                 </Popover>
               </>

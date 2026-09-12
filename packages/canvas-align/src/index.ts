@@ -48,6 +48,7 @@ export {
 
 export {
   computeMeasurements,
+  computePairMeasurement,
   type Measurement,
   type ComputeMeasurementsInput,
 } from './measurements.js';

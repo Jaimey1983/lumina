@@ -99,6 +99,16 @@ import { useEditorBlockDrag } from './editor-dnd-shell';
 import { DroppableCanvas } from './droppable-canvas';
 import { CanvasMoveable, canvasTopLevelSelector } from './canvas-moveable';
 import { CanvasGuidesChrome } from './canvas-guides';
+import {
+  computeSnap,
+  computePairMeasurement,
+  blockRotation,
+  AlignmentOverlay,
+  type SnapLine,
+  type Measurement,
+  type AlignRect,
+} from '@lumina/canvas-align';
+import { VIRTUAL_CANVAS_HEIGHT, VIRTUAL_CANVAS_WIDTH } from '@lumina/editor-shared/virtual-canvas';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
 import { LayersPanel } from '@/components/editor/layers-panel';
 import {
@@ -1072,6 +1082,83 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const liveSlide: Slide | null =
     slide && effectiveBloques ? { ...slide, bloques: effectiveBloques } : slide;
 
+  // ── G4 — asistencia visual manual: overlay compartido por (a) la guía
+  // transitoria al hacer nudge con flechas y (b) la herramienta de medición
+  // (mantener Alt + hover sobre otro bloque, sin arrastrar). Presentacional
+  // puro — no toca el reducer ni la persistencia.
+  const [assistOverlay, setAssistOverlay] = useState<{
+    guides: SnapLine[];
+    measurements: Measurement[];
+    activeRect: AlignRect | null;
+    peerRects?: AlignRect[];
+  } | null>(null);
+  const assistFadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (assistFadeTimeoutRef.current) clearTimeout(assistFadeTimeoutRef.current);
+  }, []);
+
+  // Herramienta de medición: reutiliza `snapSuppressedRef` (el mismo "Alt
+  // apretado" que ya desactiva el imán en `<CanvasMoveable>`) porque los dos
+  // estados son mutuamente excluyentes en la práctica — medir por hover solo
+  // corre con el botón del mouse levantado, arrastrar/redimensionar solo con
+  // el botón presionado.
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (!snapSuppressedRef.current || e.buttons !== 0) {
+        return;
+      }
+      const ids =
+        selectedBlockIds.length > 0
+          ? selectedBlockIds
+          : selectedBlockId
+            ? [selectedBlockId]
+            : [];
+      if (ids.length !== 1) {
+        setAssistOverlay(null);
+        return;
+      }
+      const selId = ids[0]!;
+      const target = e.target as Element | null;
+      const hoveredEl = target?.closest('[data-canvas-target]') as HTMLElement | null;
+      const hoveredId = hoveredEl?.getAttribute('data-canvas-target');
+      if (!hoveredId || hoveredId === selId) {
+        setAssistOverlay(null);
+        return;
+      }
+      const bloques = liveSlide?.bloques ?? slide?.bloques ?? [];
+      const selBlock = getBlockAtPath(bloques, selId);
+      const hovBlock = getBlockAtPath(bloques, hoveredId);
+      if (!selBlock || !hovBlock) {
+        setAssistOverlay(null);
+        return;
+      }
+      const selPos = getBlockPos(selBlock);
+      const hovPos = getBlockPos(hovBlock);
+      const measurements = computePairMeasurement(
+        selPos,
+        hovPos,
+        VIRTUAL_CANVAS_WIDTH,
+        VIRTUAL_CANVAS_HEIGHT,
+      );
+      setAssistOverlay({
+        guides: [],
+        measurements,
+        activeRect: { x: selPos.x, y: selPos.y, ancho: selPos.ancho, alto: selPos.alto },
+        peerRects: [{ x: hovPos.x, y: hovPos.y, ancho: hovPos.ancho, alto: hovPos.alto }],
+      });
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') setAssistOverlay(null);
+    };
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [snapSuppressedRef, selectedBlockId, selectedBlockIds, liveSlide, slide]);
+
   editorMetaRef.current = {
     fondo: liveSlide?.fondo ?? slide?.fondo,
     guias: liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS,
@@ -1764,6 +1851,35 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           return a.x !== b.x || a.y !== b.y;
         });
         if (!changed) return false;
+        // G4 — guía visual transitoria: informativa, no cambia el destino
+        // exacto del nudge (contrato del nudge = desplazamiento en px
+        // literal, no imantado). Solo aplica con 1 bloque — con grupo, el
+        // overlay de una sola cota sería engañoso.
+        if (indices.length === 1) {
+          const idx = indices[0]!;
+          const movedPos = getBlockPos(next[idx]!);
+          const { guides, measurements } = computeSnap(
+            movedPos.x,
+            movedPos.y,
+            movedPos.ancho,
+            movedPos.alto,
+            idx,
+            next,
+            {
+              guias: liveSlide?.guias ?? slide?.guias,
+              enabled: true,
+              zoom: canvasZoom,
+              rotacionDeg: blockRotation(next[idx]!),
+            },
+          );
+          setAssistOverlay({
+            guides,
+            measurements,
+            activeRect: { x: movedPos.x, y: movedPos.y, ancho: movedPos.ancho, alto: movedPos.alto },
+          });
+          if (assistFadeTimeoutRef.current) clearTimeout(assistFadeTimeoutRef.current);
+          assistFadeTimeoutRef.current = setTimeout(() => setAssistOverlay(null), 900);
+        }
         dispatchEditor({
           type: 'MOVER',
           via: 'nudge',
@@ -1870,6 +1986,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       handleChangeFondo,
       bumpHistory,
       slideId,
+      canvasZoom,
       enqueueSlideContent,
       saveSlideContentNow,
     ],
@@ -2101,6 +2218,19 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onLiveChange={handleMoveableLiveChange}
             onCommit={handleMoveableCommit}
           />
+
+          {/* G4 — guía de nudge + herramienta de medición (Alt + hover). */}
+          {assistOverlay && (
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              <AlignmentOverlay
+                guides={assistOverlay.guides}
+                measurements={assistOverlay.measurements}
+                activeRect={assistOverlay.activeRect}
+                peerRects={assistOverlay.peerRects}
+                zoom={canvasZoom}
+              />
+            </div>
+          )}
           </DroppableCanvas>
         </CanvasGuidesChrome>
         </div>
