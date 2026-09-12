@@ -53,7 +53,6 @@ import type {
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 import {
   getBlockAtPath,
-  isUnimplementedInteractiveStub,
   removeBlockAtPath,
   sanitizeSlideContentForPersistence,
   updateBlockAtPath,
@@ -87,6 +86,7 @@ import {
   stepCanvasZoom,
   wheelDeltaToZoomStep,
 } from '@/lib/canvas-zoom';
+import Selecto, { type OnSelectEnd } from 'react-selecto';
 import { useEditorBlockDrag } from './editor-dnd-shell';
 import { DroppableCanvas } from './droppable-canvas';
 import { CanvasMoveable, canvasTopLevelSelector } from './canvas-moveable';
@@ -339,20 +339,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const hotspotInnerSelection = editorState.inner.hotspot;
   const timelineInnerSelection = editorState.inner.timeline;
   const clipGroupInnerEditId = editorState.inner.clipGroupBlockId;
-  const marqueeRect = editorState.marqueeRect;
   const layersPanelOpen = editorState.layersPanelOpen;
 
   const clearInnerSelections = useCallback(() => {
     dispatchEditor({ type: 'INNER_SELECTION', inner: 'clear' });
   }, []);
 
-  const wasDraggingRef = useRef(false);
-  const marqueeStartRef = useRef<{
-    startX: number;
-    startY: number;
-    currentX: number;
-    currentY: number;
-  } | null>(null);
   const onBlockSelectRef = useRef(onBlockSelect);
   onBlockSelectRef.current = onBlockSelect;
   const selectedBlockIdRef = useRef(selectedBlockId);
@@ -1420,117 +1412,45 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     [onBlockSelect, clearInnerSelections, selectedBlockIds],
   );
 
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return; // Only left click
-    const target = e.target as HTMLElement;
-    
-    // Ignore if click started on interactive elements, block nodes, resize/drag handles
-    if (
-      target.closest('[data-block-id]') ||
-      target.closest('[data-drag-handle]') ||
-      target.closest('[data-resize-handle]') ||
+  // G2c — rubber-band de selección vía `selecto` (reemplaza el marquee manual
+  // de mousemove/mouseup + cálculo de overlap a mano). `dragCondition` replica
+  // los guards que tenía `handleCanvasMouseDown`: no arranca el rubber-band si
+  // el mousedown cae sobre un bloque, un control de `react-moveable` o un
+  // elemento interactivo — esos gestos los maneja el bloque/Moveable, no acá.
+  const [selectoContainer, setSelectoContainer] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    setSelectoContainer(canvasRef.current);
+  }, [liveSlide?.id]);
+
+  const selectoDragCondition = useCallback((e: { inputEvent?: unknown }) => {
+    const target = (e.inputEvent as { target?: unknown } | null | undefined)?.target;
+    if (!(target instanceof Element)) return true;
+    return !(
+      target.closest('[data-canvas-target]') ||
+      target.closest('[class*="moveable"]') ||
       target.closest('button') ||
       target.closest('input') ||
       target.closest('textarea') ||
       target.closest('select')
-    ) {
-      return;
-    }
+    );
+  }, []);
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  const handleSelectoEnd = useCallback(
+    (e: OnSelectEnd) => {
+      const ids = e.selected
+        .map((el) => el.getAttribute('data-canvas-target'))
+        .filter((id): id is string => id != null);
 
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
-
-    const initialMarquee = {
-      startX,
-      startY,
-      currentX: startX,
-      currentY: startY,
-    };
-    marqueeStartRef.current = initialMarquee;
-    dispatchEditor({ type: 'MARQUEE', rect: initialMarquee });
-
-    let hasMoved = false;
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!canvasRef.current) return;
-      const currentRect = canvasRef.current.getBoundingClientRect();
-      const currentX = Math.max(0, Math.min(currentRect.width, moveEvent.clientX - currentRect.left));
-      const currentY = Math.max(0, Math.min(currentRect.height, moveEvent.clientY - currentRect.top));
-
-      const dx = moveEvent.clientX - (rect.left + startX);
-      const dy = moveEvent.clientY - (rect.top + startY);
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-        hasMoved = true;
-        wasDraggingRef.current = true;
+      if (ids.length > 0) {
+        dispatchEditor({ type: 'SELECCIONAR_MULTIPLE', ids });
+        onBlockSelect?.(ids[ids.length - 1]!);
+      } else if (!e.isDragStartEnd) {
+        dispatchEditor({ type: 'SELECCIONAR', id: null });
+        onBlockSelect?.('');
       }
-
-      const nextMarquee = { startX, startY, currentX, currentY };
-      marqueeStartRef.current = nextMarquee;
-      dispatchEditor({ type: 'MARQUEE', rect: nextMarquee });
-    };
-
-    const handleMouseUp = (upEvent: MouseEvent) => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-
-      const prev = marqueeStartRef.current;
-      if (prev) {
-        const x1 = Math.min(prev.startX, prev.currentX);
-        const x2 = Math.max(prev.startX, prev.currentX);
-        const y1 = Math.min(prev.startY, prev.currentY);
-        const y2 = Math.max(prev.startY, prev.currentY);
-
-        const marqueeWidth = x2 - x1;
-        const marqueeHeight = y2 - y1;
-
-        if (marqueeWidth > 4 || marqueeHeight > 4) {
-          const canvasBounds = canvasRef.current?.getBoundingClientRect();
-          if (canvasBounds) {
-            const canvasW = canvasBounds.width;
-            const canvasH = canvasBounds.height;
-
-            const marqueeLeftPct = (x1 / canvasW) * 100;
-            const marqueeRightPct = (x2 / canvasW) * 100;
-            const marqueeTopPct = (y1 / canvasH) * 100;
-            const marqueeBottomPct = (y2 / canvasH) * 100;
-
-            const intersectedIds: string[] = [];
-            allBlocks.forEach((block, index) => {
-              if (isUnimplementedInteractiveStub(block)) return;
-              const pos = getBlockPos(block);
-              const blockLeft = pos.x;
-              const blockRight = pos.x + pos.ancho;
-              const blockTop = pos.y;
-              const blockBottom = pos.y + pos.alto;
-
-              const overlapX = marqueeLeftPct < blockRight && marqueeRightPct > blockLeft;
-              const overlapY = marqueeTopPct < blockBottom && marqueeBottomPct > blockTop;
-
-              if (overlapX && overlapY) {
-                intersectedIds.push(String(index));
-              }
-            });
-
-            if (intersectedIds.length > 0) {
-              const lastId = intersectedIds[intersectedIds.length - 1]!;
-              dispatchEditor({ type: 'SELECCIONAR_MULTIPLE', ids: intersectedIds });
-              onBlockSelect?.(lastId);
-            } else {
-              dispatchEditor({ type: 'SELECCIONAR', id: null });
-              onBlockSelect?.('');
-            }
-          }
-        }
-      }
-      marqueeStartRef.current = null;
-      dispatchEditor({ type: 'MARQUEE', rect: null });
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [allBlocks, onBlockSelect]);
+    },
+    [onBlockSelect],
+  );
 
   const handleApplyLocal = useCallback((next: Block[]) => {
     dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
@@ -1794,15 +1714,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     const root = canvasRef.current;
     if (!root) return;
     const onClickCapture = (e: MouseEvent) => {
-      if (wasDraggingRef.current) {
-        wasDraggingRef.current = false;
-        e.stopPropagation();
-        e.preventDefault();
-        return;
-      }
       const t = e.target as HTMLElement;
       if (t.closest('[data-block-id]')) return;
-      if (t.closest('[data-drag-handle]')) return;
       dispatchEditor({ type: 'SELECCIONAR', id: null });
       onBlockSelectRef.current?.('');
     };
@@ -2085,11 +1998,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             void persistGuias(next);
           }}
           canvasRef={canvasRef}
+          zoom={canvasZoom}
         >
           <DroppableCanvas
             ref={setCanvasSurfaceRef}
             className={cn(SLIDE_SURFACE_CLASS, 'z-0')}
-            onMouseDown={handleCanvasMouseDown}
           >
           {/* Contenido del slide — independiente de reglas/guías */}
           <SlideRenderer
@@ -2157,19 +2070,18 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             className="absolute inset-0 h-full w-full min-h-0 min-w-0"
           />
 
-          {marqueeRect && (
-            <div
-              style={{
-                position: 'absolute',
-                left: `${Math.min(marqueeRect.startX, marqueeRect.currentX)}px`,
-                top: `${Math.min(marqueeRect.startY, marqueeRect.currentY)}px`,
-                width: `${Math.abs(marqueeRect.currentX - marqueeRect.startX)}px`,
-                height: `${Math.abs(marqueeRect.currentY - marqueeRect.startY)}px`,
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                border: '1px solid #2563EB',
-                pointerEvents: 'none',
-                zIndex: 1000,
-              }}
+          {/* G2c — rubber-band de selección (reemplaza el marquee manual). */}
+          {selectoContainer && (
+            <Selecto
+              container={selectoContainer}
+              selectableTargets={['[data-canvas-target]']}
+              hitRate={0}
+              selectByClick={false}
+              selectFromInside
+              preventDragFromInside
+              preventClickEventOnDrag
+              dragCondition={selectoDragCondition}
+              onSelectEnd={handleSelectoEnd}
             />
           )}
 

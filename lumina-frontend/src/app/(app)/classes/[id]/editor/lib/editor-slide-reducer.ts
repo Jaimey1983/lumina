@@ -103,9 +103,6 @@ export function editorSlideReducer(
       return { ...state, inner: { ...state.inner, ...action.inner } };
     }
 
-    case 'MARQUEE':
-      return { ...state, marqueeRect: action.rect };
-
     case 'LAYERS_PANEL':
       return {
         ...state,

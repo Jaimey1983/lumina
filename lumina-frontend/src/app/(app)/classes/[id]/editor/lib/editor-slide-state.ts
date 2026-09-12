@@ -10,14 +10,6 @@ import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 
 import type { ResizeHandleDir } from './resize-coords';
 
-/** Rectángulo de selección por arrastre (px del marco del slide). */
-export interface EditorMarqueeRect {
-  startX: number;
-  startY: number;
-  currentX: number;
-  currentY: number;
-}
-
 /** Inner-selection por familia de widget; todas nulas = sin foco interno. */
 export interface EditorInnerSelection {
   flipCards: FlipCardsInnerSelection | null;
@@ -59,7 +51,6 @@ export interface EditorSlideState {
   selectedBlockId: string | null;
   selectedBlockIds: string[];
   inner: EditorInnerSelection;
-  marqueeRect: EditorMarqueeRect | null;
   layersPanelOpen: boolean;
 }
 
@@ -67,7 +58,6 @@ export type EditorSlideAction =
   | { type: 'SELECCIONAR'; id: string | null }
   | { type: 'SELECCIONAR_MULTIPLE'; ids: string[] }
   | { type: 'INNER_SELECTION'; inner: Partial<EditorInnerSelection> | 'clear' }
-  | { type: 'MARQUEE'; rect: EditorMarqueeRect | null }
   | { type: 'LAYERS_PANEL'; open?: boolean }
   | { type: 'MOVER'; via: 'pos'; blockPath: string; x: number; y: number }
   | { type: 'MOVER'; via: 'nudge'; indices: number[]; dxPx: number; dyPx: number }
@@ -121,7 +111,6 @@ export function createInitialEditorSlideState(
     selectedBlockId: null,
     selectedBlockIds: [],
     inner: { ...EMPTY_INNER_SELECTION },
-    marqueeRect: null,
     layersPanelOpen: false,
   };
 }

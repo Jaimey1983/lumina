@@ -1,13 +1,8 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+
+import Guides, { type OnChangeGuides } from '@scena/react-guides';
 
 import type { SlideGuias } from '@lumina/types/slide';
 import { cn } from '@/lib/utils';
@@ -15,21 +10,9 @@ import {
   RULER_SIZE_PX,
   VIRTUAL_CANVAS_HEIGHT,
   VIRTUAL_CANVAS_WIDTH,
-  clientToVirtual,
-  isPointerInsideCanvas,
-  rulerMarksX,
-  rulerMarksY,
   toggleCenterGuides,
-  virtualXToPercent,
-  virtualYToPercent,
 } from '@/lib/canvas-guides';
 import { gridOverlayStyle, normalizeSlideGrilla } from '@/lib/canvas-grid';
-
-type GuideOrientation = 'horizontal' | 'vertical';
-
-type GuideInteraction =
-  | { kind: 'create'; orientation: GuideOrientation; position: number }
-  | { kind: 'move'; orientation: GuideOrientation; index: number; position: number };
 
 interface CanvasGuidesChromeProps {
   visible: boolean;
@@ -38,128 +21,9 @@ interface CanvasGuidesChromeProps {
   guias: SlideGuias;
   onGuiasChange: (next: SlideGuias) => void;
   canvasRef: RefObject<HTMLDivElement | null>;
+  /** Zoom del lienzo (1 = 100%) — dispara un re-medido del manager de guías al cambiar. */
+  zoom?: number;
   children: ReactNode;
-}
-
-function useGuideInteraction({
-  canvasRef,
-  guias,
-  onGuiasChange,
-  enabled,
-}: {
-  canvasRef: RefObject<HTMLDivElement | null>;
-  guias: SlideGuias;
-  onGuiasChange: (next: SlideGuias) => void;
-  enabled: boolean;
-}) {
-  const [interaction, setInteraction] = useState<GuideInteraction | null>(null);
-  const interactionRef = useRef<GuideInteraction | null>(null);
-  const guiasRef = useRef(guias);
-  interactionRef.current = interaction;
-  guiasRef.current = guias;
-
-  const startCreate = useCallback((orientation: GuideOrientation) => {
-    if (!enabled) return;
-    const initial =
-      orientation === 'horizontal'
-        ? VIRTUAL_CANVAS_HEIGHT / 2
-        : VIRTUAL_CANVAS_WIDTH / 2;
-    setInteraction({ kind: 'create', orientation, position: initial });
-  }, [enabled]);
-
-  const startMove = useCallback(
-    (orientation: GuideOrientation, index: number) => {
-      if (!enabled) return;
-      const position =
-        orientation === 'horizontal'
-          ? guias.horizontales[index] ?? 0
-          : guias.verticales[index] ?? 0;
-      setInteraction({ kind: 'move', orientation, index, position });
-    },
-    [enabled, guias.horizontales, guias.verticales],
-  );
-
-  const deleteGuide = useCallback(
-    (orientation: GuideOrientation, index: number) => {
-      const g = guiasRef.current;
-      if (orientation === 'horizontal') {
-        onGuiasChange({
-          ...g,
-          horizontales: g.horizontales.filter((_, i) => i !== index),
-        });
-      } else {
-        onGuiasChange({
-          ...g,
-          verticales: g.verticales.filter((_, i) => i !== index),
-        });
-      }
-    },
-    [onGuiasChange],
-  );
-
-  useEffect(() => {
-    if (!interaction) return;
-
-    const onPointerMove = (e: PointerEvent) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const { x, y } = clientToVirtual(e.clientX, e.clientY, rect);
-      setInteraction((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          position: prev.orientation === 'horizontal' ? y : x,
-        };
-      });
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      const current = interactionRef.current;
-      if (!current) return;
-      const rect = canvasRef.current?.getBoundingClientRect();
-      const inside = rect ? isPointerInsideCanvas(e.clientX, e.clientY, rect) : false;
-
-      const g = guiasRef.current;
-      if (current.kind === 'create') {
-        if (inside) {
-          if (current.orientation === 'horizontal') {
-            onGuiasChange({
-              ...g,
-              horizontales: [...g.horizontales, current.position],
-            });
-          } else {
-            onGuiasChange({
-              ...g,
-              verticales: [...g.verticales, current.position],
-            });
-          }
-        }
-      } else if (current.kind === 'move') {
-        if (!inside) {
-          deleteGuide(current.orientation, current.index);
-        } else if (current.orientation === 'horizontal') {
-          const horizontales = [...g.horizontales];
-          horizontales[current.index] = current.position;
-          onGuiasChange({ ...g, horizontales });
-        } else {
-          const verticales = [...g.verticales];
-          verticales[current.index] = current.position;
-          onGuiasChange({ ...g, verticales });
-        }
-      }
-
-      setInteraction(null);
-    };
-
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    return () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-    };
-  }, [interaction, canvasRef, guias, onGuiasChange, deleteGuide]);
-
-  return { interaction, startCreate, startMove, deleteGuide };
 }
 
 function RulerCorner({
@@ -191,190 +55,6 @@ function RulerCorner({
   );
 }
 
-function HorizontalRuler({ onStartDrag }: { onStartDrag: () => void }) {
-  return (
-    <div
-      role="presentation"
-      className="relative h-4 w-full min-w-0 cursor-ns-resize select-none overflow-hidden border-b border-[#E5E7EB] bg-[#F9FAFB]"
-      style={{ height: RULER_SIZE_PX }}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onStartDrag();
-      }}
-    >
-      {rulerMarksX().map((px) => (
-          <span
-            key={px}
-            className="pointer-events-none absolute bottom-0 -translate-x-1/2 text-[9px] leading-none text-[#9CA3AF]"
-            style={{ left: `${(px / VIRTUAL_CANVAS_WIDTH) * 100}%` }}
-          >
-            <span
-              className="absolute bottom-full left-1/2 mb-px block h-1 w-px -translate-x-1/2 bg-[#E5E7EB]"
-              aria-hidden
-            />
-            {px}
-          </span>
-        ))}
-    </div>
-  );
-}
-
-function VerticalRuler({ onStartDrag }: { onStartDrag: () => void }) {
-  return (
-    <div
-      role="presentation"
-      className="relative h-full w-4 min-h-0 cursor-ew-resize select-none overflow-hidden border-r border-[#E5E7EB] bg-[#F9FAFB]"
-      style={{ width: RULER_SIZE_PX }}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onStartDrag();
-      }}
-    >
-      {rulerMarksY().map((px) => (
-          <span
-            key={px}
-            className="pointer-events-none absolute left-0 -translate-y-1/2 pl-0.5 text-[9px] leading-none text-[#9CA3AF]"
-            style={{ top: `${(px / VIRTUAL_CANVAS_HEIGHT) * 100}%` }}
-          >
-            <span
-              className="absolute top-1/2 left-full ml-px block h-px w-1 -translate-y-1/2 bg-[#E5E7EB]"
-              aria-hidden
-            />
-            {px}
-          </span>
-        ))}
-    </div>
-  );
-}
-
-function GuidePositionBadge({
-  orientation,
-  position,
-}: {
-  orientation: GuideOrientation;
-  position: number;
-}) {
-  const style: React.CSSProperties =
-    orientation === 'horizontal'
-      ? { top: `${virtualYToPercent(position)}%`, left: 8, transform: 'translateY(-50%)' }
-      : { left: `${virtualXToPercent(position)}%`, top: 8, transform: 'translateX(-50%)' };
-
-  return (
-    <div
-      className="pointer-events-none absolute z-[60] rounded bg-[#2563EB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white shadow-sm"
-      style={style}
-    >
-      {Math.round(position)}px
-    </div>
-  );
-}
-
-function HorizontalGuideLine({
-  y,
-  isPreview,
-  isActive,
-  onPointerDown,
-  onDoubleClick,
-}: {
-  y: number;
-  isPreview?: boolean;
-  isActive?: boolean;
-  onPointerDown?: (e: React.PointerEvent) => void;
-  onDoubleClick?: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const interactive = !isPreview && Boolean(onPointerDown);
-
-  return (
-    <div
-      className="pointer-events-none absolute left-0 right-0 z-[15]"
-      style={{ top: `${virtualYToPercent(y)}%`, height: 0 }}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-    >
-      <div
-        className={cn(
-          'absolute left-0 right-0',
-          isPreview ? 'border-t border-dashed border-[#2563EB]/80' : 'h-px bg-[#2563EB]',
-        )}
-        style={{
-          top: 0,
-          opacity: isPreview ? 0.8 : hovered || isActive ? 1 : 0.6,
-          pointerEvents: 'none',
-        }}
-      />
-      {interactive && (
-        <div
-          className="absolute -top-px left-0 right-0 h-[3px] cursor-ns-resize"
-          style={{ pointerEvents: 'auto' }}
-          title="Arrastra para mover · Doble clic para borrar"
-          onPointerDown={onPointerDown}
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            onDoubleClick?.();
-          }}
-          onPointerEnter={() => setHovered(true)}
-          onPointerLeave={() => setHovered(false)}
-        />
-      )}
-    </div>
-  );
-}
-
-function VerticalGuideLine({
-  x,
-  isPreview,
-  isActive,
-  onPointerDown,
-  onDoubleClick,
-}: {
-  x: number;
-  isPreview?: boolean;
-  isActive?: boolean;
-  onPointerDown?: (e: React.PointerEvent) => void;
-  onDoubleClick?: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const interactive = !isPreview && Boolean(onPointerDown);
-
-  return (
-    <div
-      className="pointer-events-none absolute top-0 bottom-0 z-[15]"
-      style={{ left: `${virtualXToPercent(x)}%`, width: 0 }}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-    >
-      <div
-        className={cn(
-          'absolute top-0 bottom-0',
-          isPreview ? 'border-l border-dashed border-[#2563EB]/80' : 'w-px bg-[#2563EB]',
-        )}
-        style={{
-          left: 0,
-          opacity: isPreview ? 0.8 : hovered || isActive ? 1 : 0.6,
-          pointerEvents: 'none',
-        }}
-      />
-      {interactive && (
-        <div
-          className="absolute top-0 bottom-0 -left-px w-[3px] cursor-ew-resize"
-          style={{ pointerEvents: 'auto' }}
-          title="Arrastra para mover · Doble clic para borrar"
-          onPointerDown={onPointerDown}
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            onDoubleClick?.();
-          }}
-          onPointerEnter={() => setHovered(true)}
-          onPointerLeave={() => setHovered(false)}
-        />
-      )}
-    </div>
-  );
-}
-
 function CanvasGridOverlay({ tamanoPx }: { tamanoPx: number }) {
   return (
     <div
@@ -385,111 +65,124 @@ function CanvasGridOverlay({ tamanoPx }: { tamanoPx: number }) {
   );
 }
 
-function CanvasGuidesOverlay({
-  active,
-  guias,
-  interaction,
-  startMove,
-  deleteGuide,
-}: {
-  active: boolean;
-  guias: SlideGuias;
-  interaction: GuideInteraction | null;
-  startMove: (orientation: GuideOrientation, index: number) => void;
-  deleteGuide: (orientation: GuideOrientation, index: number) => void;
-}) {
-  const previewH =
-    interaction?.kind === 'create' && interaction.orientation === 'horizontal'
-      ? interaction
-      : interaction?.kind === 'move' && interaction.orientation === 'horizontal'
-        ? interaction
-        : null;
-  const previewV =
-    interaction?.kind === 'create' && interaction.orientation === 'vertical'
-      ? interaction
-      : interaction?.kind === 'move' && interaction.orientation === 'vertical'
-        ? interaction
-        : null;
+/**
+ * Mide el eje del canvas con `getBoundingClientRect()` (no `ResizeObserver`
+ * — éste no ve el `transform: scale(zoom)` del wrapper del canvas, y las
+ * coordenadas de puntero que usa la librería internamente sí vienen
+ * post-transform). Se usa para derivar `zoom` (px reales por unidad
+ * virtual) — ver el comentario de `CanvasGuidesChrome`.
+ */
+function useAxisSizePx(
+  containerRef: RefObject<HTMLDivElement | null>,
+  axis: 'x' | 'y',
+  zoom: number,
+): number {
+  const [sizePx, setSizePx] = useState(0);
 
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 z-[21] overflow-visible"
-      aria-hidden={!active}
-    >
-      {active && (
-        <>
-          {guias.horizontales.map((y, index) => {
-            const isMoving =
-              interaction?.kind === 'move' &&
-              interaction.orientation === 'horizontal' &&
-              interaction.index === index;
-            if (isMoving) return null;
-            return (
-              <HorizontalGuideLine
-                key={`h-${index}-${y}`}
-                y={y}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  startMove('horizontal', index);
-                }}
-                onDoubleClick={() => deleteGuide('horizontal', index)}
-              />
-            );
-          })}
-          {guias.verticales.map((x, index) => {
-            const isMoving =
-              interaction?.kind === 'move' &&
-              interaction.orientation === 'vertical' &&
-              interaction.index === index;
-            if (isMoving) return null;
-            return (
-              <VerticalGuideLine
-                key={`v-${index}-${x}`}
-                x={x}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  startMove('vertical', index);
-                }}
-                onDoubleClick={() => deleteGuide('vertical', index)}
-              />
-            );
-          })}
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-          {previewH && (
-            <HorizontalGuideLine y={previewH.position} isPreview isActive />
-          )}
-          {previewV && (
-            <VerticalGuideLine x={previewV.position} isPreview isActive />
-          )}
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const next = axis === 'x' ? rect.width : rect.height;
+      setSizePx((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
+    };
 
-          {interaction && (
-            <GuidePositionBadge
-              orientation={interaction.orientation}
-              position={interaction.position}
-            />
-          )}
-        </>
-      )}
-    </div>
-  );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [containerRef, axis]);
+
+  // El zoom del lienzo cambia el tamaño VISUAL (post-transform) sin disparar
+  // ResizeObserver (que mide la caja de layout, ajena al `transform: scale`).
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const next = axis === 'x' ? rect.width : rect.height;
+      setSizePx((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [containerRef, axis, zoom]);
+
+  return sizePx;
 }
 
+/**
+ * `<Guides>` reporta/recibe posiciones en las mismas unidades que su prop
+ * `zoom` (px reales ÷ zoom). Con `zoom = sizePx / <virtual>` sus posiciones
+ * quedan directamente en px virtuales del lienzo 1280×720 — el mismo
+ * formato de `SlideGuias.horizontales/verticales` — sin conversión manual.
+ *
+ * `@scena/react-guides` ancla su capa de líneas (`.scena-guides-guides`) al
+ * borde OPUESTO del manager por CSS interna de la librería (`bottom:0` para
+ * `type="horizontal"`, `right:0` para `type="vertical"`), y mide el puntero
+ * desde el borde SUPERIOR/IZQUIERDO (`guide-origin`, siempre en `top:0;
+ * left:0` del manager). Si el manager ocupara todo el lienzo, ese desfase
+ * bottom-anchor-vs-top-origin desplazaría las líneas fuera del lienzo —
+ * `guidesOffset` no lo compensa de forma consistente entre el render
+ * (`renderGuides`, en unidades virtuales) y el arrastre interactivo
+ * (`movePos`, en px reales): son dos fórmulas con unidades distintas para
+ * la misma prop, no hay un valor único que sirva para ambas. La solución
+ * que sí es consistente en los dos caminos: NO agrandar el manager — darle
+ * tamaño 0 en el eje que dibuja (`height:0` horizontal / `width:0`
+ * vertical) y clavarlo exactamente en el borde SUPERIOR/IZQUIERDO del
+ * lienzo. Con tamaño 0, el borde "opuesto" (bottom/right) y el origen
+ * (top/left) son el MISMO punto — el top-izquierda real del lienzo — así
+ * que `guidesOffset` puede quedarse en su default (0) y las posiciones
+ * (creadas por drag o pasadas por `defaultGuides`) quedan directamente en
+ * px virtuales medidos desde ese punto, sin desfase que corregir.
+ */
 export function CanvasGuidesChrome({
   visible,
   viewportClassName,
   guias,
   onGuiasChange,
   canvasRef,
+  zoom = 1,
   children,
 }: CanvasGuidesChromeProps) {
-  const { interaction, startCreate, startMove, deleteGuide } = useGuideInteraction({
-    canvasRef,
-    guias,
-    onGuiasChange,
-    enabled: visible,
-  });
+  const guiasRef = useRef(guias);
+  guiasRef.current = guias;
+
+  const horizontalSizePx = useAxisSizePx(canvasRef, 'y', zoom);
+  const verticalSizePx = useAxisSizePx(canvasRef, 'x', zoom);
+
+  const horizontalZoom = horizontalSizePx > 0 ? horizontalSizePx / VIRTUAL_CANVAS_HEIGHT : 1;
+  const verticalZoom = verticalSizePx > 0 ? verticalSizePx / VIRTUAL_CANVAS_WIDTH : 1;
+
+  const horizontalGuidesRef = useRef<Guides | null>(null);
+  const verticalGuidesRef = useRef<Guides | null>(null);
+
+  useEffect(() => {
+    horizontalGuidesRef.current?.resize();
+  }, [horizontalSizePx]);
+  useEffect(() => {
+    verticalGuidesRef.current?.resize();
+  }, [verticalSizePx]);
+
+  const handleHorizontalChange = useCallback(
+    ({ guides }: OnChangeGuides) => {
+      const horizontales = guides.filter((v) => v >= 0 && v <= VIRTUAL_CANVAS_HEIGHT);
+      onGuiasChange({ ...guiasRef.current, horizontales });
+    },
+    [onGuiasChange],
+  );
+
+  const handleVerticalChange = useCallback(
+    ({ guides }: OnChangeGuides) => {
+      const verticales = guides.filter((v) => v >= 0 && v <= VIRTUAL_CANVAS_WIDTH);
+      onGuiasChange({ ...guiasRef.current, verticales });
+    },
+    [onGuiasChange],
+  );
 
   const grilla = normalizeSlideGrilla(guias.grilla);
 
@@ -500,13 +193,6 @@ export function CanvasGuidesChrome({
     >
       {children}
       {grilla.activa && <CanvasGridOverlay tamanoPx={grilla.tamanoPx} />}
-      <CanvasGuidesOverlay
-        active={visible}
-        guias={guias}
-        interaction={interaction}
-        startMove={startMove}
-        deleteGuide={deleteGuide}
-      />
       {visible && (
         <>
           <RulerCorner
@@ -515,27 +201,60 @@ export function CanvasGuidesChrome({
             onToggleCenter={() => onGuiasChange(toggleCenterGuides(guias))}
           />
           <div
-            className="pointer-events-auto absolute z-[8]"
-            style={{
-              top: -RULER_SIZE_PX,
-              left: 0,
-              right: 0,
-              height: RULER_SIZE_PX,
-            }}
+            className="scena-guides-lumina-host pointer-events-none absolute inset-0 z-[21]"
+            aria-hidden={false}
           >
-            <HorizontalRuler onStartDrag={() => startCreate('horizontal')} />
+            <Guides
+              ref={horizontalGuidesRef}
+              type="horizontal"
+              zoom={horizontalZoom}
+              digit={0}
+              defaultGuides={guias.horizontales}
+              displayDragPos
+              displayGuidePos
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 0 }}
+              rulerStyle={{
+                position: 'absolute',
+                top: -RULER_SIZE_PX,
+                left: 0,
+                width: '100%',
+                height: RULER_SIZE_PX,
+              }}
+              onChangeGuides={handleHorizontalChange}
+            />
+            <Guides
+              ref={verticalGuidesRef}
+              type="vertical"
+              zoom={verticalZoom}
+              digit={0}
+              defaultGuides={guias.verticales}
+              displayDragPos
+              displayGuidePos
+              style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: 0 }}
+              rulerStyle={{
+                position: 'absolute',
+                top: 0,
+                left: -RULER_SIZE_PX,
+                height: '100%',
+                width: RULER_SIZE_PX,
+              }}
+              onChangeGuides={handleVerticalChange}
+            />
           </div>
-          <div
-            className="pointer-events-auto absolute z-[8]"
-            style={{
-              top: 0,
-              left: -RULER_SIZE_PX,
-              width: RULER_SIZE_PX,
-              bottom: 0,
-            }}
-          >
-            <VerticalRuler onStartDrag={() => startCreate('vertical')} />
-          </div>
+          {/*
+            Los managers de @scena/react-guides quedan clavados con tamaño 0
+            en el borde superior/izquierdo del lienzo (ver comentario arriba
+            de `CanvasGuidesChrome`) con `pointer-events: none`; solo el
+            propio `<canvas>` de la regla y cada línea de guía (`.scena-guides-guide`,
+            1px) recuperan `pointer-events: auto` — así no compite con el
+            marquee/`selecto` ni con `react-moveable` en el resto del lienzo.
+          */}
+          <style>{`
+            .scena-guides-lumina-host canvas,
+            .scena-guides-lumina-host .scena-guides-guide {
+              pointer-events: auto;
+            }
+          `}</style>
         </>
       )}
     </div>
