@@ -629,7 +629,7 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 
 #### H6 — Ampliar catálogo y configuración en `@lumina/charts` (heredado por todos los consumidores)
 - **Operador:** Antigravity
-- **Estado:** [en curso: Antigravity]
+- **Estado:** en revisión — Catálogo ampliado a 14 tipos (combo/scatter/bubble/radar/treemap/funnel/heatmap) y configuración fina (apilado, ejes, etiquetas, línea de referencia, animación, orden de datos, exportación). Verificación completa: `pnpm --filter @lumina/charts build && pnpm --filter @lumina/charts test && pnpm --filter @lumina/charts lint` (50/50 tests, 0 lint error), `pnpm --filter @lumina/types build`, `pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint` (383/383 tests, 0 lint error), `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build` (287/287 unit, 33/33 visual, 0 lint error, build OK).
 - **Precondición:** H5 hecho (ampliar sobre un solo motor ya limpio, no sobre dos conviviendo) — **cumplida**.
 
 **Contexto — estado real del repo al abrir esta ficha (2026-09-12, cierre de H5):**
