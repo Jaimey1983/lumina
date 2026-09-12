@@ -194,3 +194,52 @@ export function degreesLabel(deg: number): string {
   const n = ((deg % 360) + 360) % 360;
   return `${Math.round(n * 10) / 10}°`;
 }
+
+// ─── Anuncio de accesibilidad (aria-live) ────────────────────────────────────
+/**
+ * Texto corto en español para un `aria-live="polite"` que anuncie, al soltar
+ * un drag/resize/rotate (o al mostrar la guía transitoria de nudge / la
+ * herramienta de medición), qué alineación se logró — un lector de pantalla
+ * no ve las guías ni las cotas del overlay (`aria-hidden`, es decorativo).
+ * Devuelve `''` si no hay nada que anunciar (sin guías, sin cotas, sin
+ * rotación) para no generar anuncios vacíos.
+ */
+export function describeAlignmentAnnouncement(
+  guides: SnapLine[],
+  measurements: Measurement[],
+  rotationDeg?: number,
+): string {
+  const parts: string[] = [];
+
+  const hasKind = (kind: SnapLine['kind']) => guides.some((g) => g.kind === kind);
+  if (hasKind('grid')) {
+    parts.push('Ajustado a la grilla');
+  } else if (hasKind('gap')) {
+    parts.push('Espaciado igualado');
+  } else {
+    const alignedVertical = guides.some(
+      (g) => g.orientation === 'vertical' && (g.kind ?? 'align') === 'align',
+    );
+    const alignedHorizontal = guides.some(
+      (g) => g.orientation === 'horizontal' && (g.kind ?? 'align') === 'align',
+    );
+    if (alignedVertical && alignedHorizontal) {
+      parts.push('Alineado horizontal y verticalmente');
+    } else if (alignedVertical) {
+      parts.push('Alineado verticalmente');
+    } else if (alignedHorizontal) {
+      parts.push('Alineado horizontalmente');
+    }
+  }
+
+  if (measurements.length > 0) {
+    const closest = measurements.reduce((min, m) => (m.distance < min.distance ? m : min));
+    parts.push(`Distancia: ${Math.round(closest.distance)} px`);
+  }
+
+  if (typeof rotationDeg === 'number' && rotationDeg % 360 !== 0) {
+    parts.push(`Rotación: ${degreesLabel(rotationDeg)}`);
+  }
+
+  return parts.join(' · ');
+}

@@ -12,6 +12,7 @@ import {
   dimensionLabel,
   degreesLabel,
   alignColor,
+  describeAlignmentAnnouncement,
 } from './geometry.js';
 
 describe('pixelSnapPct', () => {
@@ -100,5 +101,65 @@ describe('dimensionLabel / degreesLabel', () => {
     expect(degreesLabel(-45)).toBe('315°');
     expect(degreesLabel(405)).toBe('45°');
     expect(degreesLabel(44.98)).toBe('45°');
+  });
+});
+
+describe('describeAlignmentAnnouncement (aria-live)', () => {
+  const measBase: Omit<Measurement, 'id' | 'distance' | 'role'> = {
+    type: 'horizontal', minX_pct: 0, maxX_pct: 1, minY_pct: 0, maxY_pct: 0, color: '#000',
+  };
+
+  it('sin guías, sin cotas, sin rotación → vacío (nada que anunciar)', () => {
+    expect(describeAlignmentAnnouncement([], [])).toBe('');
+  });
+
+  it('guía vertical de alineación → "Alineado verticalmente"', () => {
+    const guides: SnapLine[] = [{ orientation: 'vertical', position: 50, kind: 'align' }];
+    expect(describeAlignmentAnnouncement(guides, [])).toBe('Alineado verticalmente');
+  });
+
+  it('guía horizontal de alineación → "Alineado horizontalmente"', () => {
+    const guides: SnapLine[] = [{ orientation: 'horizontal', position: 50, kind: 'align' }];
+    expect(describeAlignmentAnnouncement(guides, [])).toBe('Alineado horizontalmente');
+  });
+
+  it('guías en ambos ejes → un solo mensaje combinado', () => {
+    const guides: SnapLine[] = [
+      { orientation: 'vertical', position: 50, kind: 'align' },
+      { orientation: 'horizontal', position: 30, kind: 'align' },
+    ];
+    expect(describeAlignmentAnnouncement(guides, [])).toBe('Alineado horizontal y verticalmente');
+  });
+
+  it('guía de hueco igual (kind gap) → "Espaciado igualado", no "Alineado"', () => {
+    const guides: SnapLine[] = [{ orientation: 'horizontal', position: 10, kind: 'gap' }];
+    expect(describeAlignmentAnnouncement(guides, [])).toBe('Espaciado igualado');
+  });
+
+  it('guía de grilla (kind grid) → "Ajustado a la grilla"', () => {
+    const guides: SnapLine[] = [{ orientation: 'vertical', position: 10, kind: 'grid' }];
+    expect(describeAlignmentAnnouncement(guides, [])).toBe('Ajustado a la grilla');
+  });
+
+  it('cotas → reporta la distancia más chica, redondeada', () => {
+    const measurements: Measurement[] = [
+      { ...measBase, id: 'a', distance: 24.4, role: 'neighbor' },
+      { ...measBase, id: 'b', distance: 80, role: 'canvas' },
+    ];
+    expect(describeAlignmentAnnouncement([], measurements)).toBe('Distancia: 24 px');
+  });
+
+  it('rotación no nula → "Rotación: N°"; rotación 0/360 no se anuncia', () => {
+    expect(describeAlignmentAnnouncement([], [], 45)).toBe('Rotación: 45°');
+    expect(describeAlignmentAnnouncement([], [], 0)).toBe('');
+    expect(describeAlignmentAnnouncement([], [], 360)).toBe('');
+  });
+
+  it('combina alineación + distancia + rotación en un solo texto', () => {
+    const guides: SnapLine[] = [{ orientation: 'vertical', position: 50, kind: 'align' }];
+    const measurements: Measurement[] = [{ ...measBase, id: 'a', distance: 12, role: 'neighbor' }];
+    expect(describeAlignmentAnnouncement(guides, measurements, 90)).toBe(
+      'Alineado verticalmente · Distancia: 12 px · Rotación: 90°',
+    );
   });
 });

@@ -104,6 +104,7 @@ import {
   computePairMeasurement,
   blockRotation,
   AlignmentOverlay,
+  describeAlignmentAnnouncement,
   type SnapLine,
   type Measurement,
   type AlignRect,
@@ -1093,6 +1094,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     peerRects?: AlignRect[];
   } | null>(null);
   const assistFadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // G5 — mismo `aria-live` que `<CanvasMoveable>`, para el nudge con flechas
+  // y la herramienta de medición (el overlay visual es `aria-hidden`).
+  const [assistAnnouncement, setAssistAnnouncement] = useState('');
 
   useEffect(() => () => {
     if (assistFadeTimeoutRef.current) clearTimeout(assistFadeTimeoutRef.current);
@@ -1147,6 +1151,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         activeRect: { x: selPos.x, y: selPos.y, ancho: selPos.ancho, alto: selPos.alto },
         peerRects: [{ x: hovPos.x, y: hovPos.y, ancho: hovPos.ancho, alto: hovPos.alto }],
       });
+      setAssistAnnouncement(describeAlignmentAnnouncement([], measurements));
     };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Alt') setAssistOverlay(null);
@@ -1877,6 +1882,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             measurements,
             activeRect: { x: movedPos.x, y: movedPos.y, ancho: movedPos.ancho, alto: movedPos.alto },
           });
+          setAssistAnnouncement(
+            describeAlignmentAnnouncement(guides, measurements, blockRotation(next[idx]!)),
+          );
           if (assistFadeTimeoutRef.current) clearTimeout(assistFadeTimeoutRef.current);
           assistFadeTimeoutRef.current = setTimeout(() => setAssistOverlay(null), 900);
         }
@@ -2231,6 +2239,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
               />
             </div>
           )}
+          {/* G5 — mismo aria-live que <CanvasMoveable>, para nudge/medición. */}
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {assistAnnouncement}
+          </div>
           </DroppableCanvas>
         </CanvasGuidesChrome>
         </div>

@@ -17,6 +17,7 @@ export {
   pixelSnapPct,
   pixelSnapX,
   pixelSnapY,
+  describeAlignmentAnnouncement,
   type AlignSemantic,
   type GuideTick,
   type ExtensionSegment,

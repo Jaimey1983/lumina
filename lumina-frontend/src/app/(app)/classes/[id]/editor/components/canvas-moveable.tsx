@@ -48,6 +48,7 @@ import {
   blockRotation,
   snapResizeSize,
   AlignmentOverlay,
+  describeAlignmentAnnouncement,
   type SnapLine,
   type Measurement,
   type AlignRect,
@@ -160,6 +161,18 @@ export function CanvasMoveable({
   const [activeRect, setActiveRect] = useState<AlignRect | null>(null);
   const [activeRotation, setActiveRotation] = useState<number | undefined>(undefined);
 
+  // G5 — accesibilidad: `aria-live` que anuncia el resultado del snap al
+  // soltar (drag/resize/rotate end). El overlay visual es `aria-hidden`
+  // (decorativo); esto es lo que un lector de pantalla recibe en su lugar.
+  // Espejos en ref de `guides`/`measurements`/`activeRotation`: `commit()` los
+  // lee al soltar, y como es un `useCallback` con pocas deps (no reincluye
+  // esos 3 estados para no recrearse en cada frame de drag), leerlos del
+  // estado directo sería una clausura vieja.
+  const [announcement, setAnnouncement] = useState('');
+  const guidesRef = useRef<SnapLine[]>([]);
+  const measurementsRef = useRef<Measurement[]>([]);
+  const activeRotationRef = useRef<number | undefined>(undefined);
+
   const originsRef = useRef<DragOrigin[]>([]);
   const liveBlocksRef = useRef<Block[]>(blocks);
   liveBlocksRef.current = blocks;
@@ -249,12 +262,25 @@ export function CanvasMoveable({
     [activeIndices, blocks],
   );
 
-  const clearOverlay = useCallback(() => {
-    setGuides([]);
-    setMeasurements([]);
-    setActiveRect(null);
-    setActiveRotation(undefined);
+  const applyGuides = useCallback((g: SnapLine[]) => {
+    guidesRef.current = g;
+    setGuides(g);
   }, []);
+  const applyMeasurements = useCallback((m: Measurement[]) => {
+    measurementsRef.current = m;
+    setMeasurements(m);
+  }, []);
+  const applyActiveRotation = useCallback((r: number | undefined) => {
+    activeRotationRef.current = r;
+    setActiveRotation(r);
+  }, []);
+
+  const clearOverlay = useCallback(() => {
+    applyGuides([]);
+    applyMeasurements([]);
+    setActiveRect(null);
+    applyActiveRotation(undefined);
+  }, [applyGuides, applyMeasurements, applyActiveRotation]);
 
   const applyToBlocks = useCallback(
     (mut: Map<number, Block>): Block[] =>
@@ -286,10 +312,10 @@ export function CanvasMoveable({
           { guias, enabled, zoom, rotacionDeg: o.rot },
         );
         mut.set(o.index, withPosition(liveBlocksRef.current[o.index], snapped.x, snapped.y));
-        setGuides(g);
-        setMeasurements(m);
+        applyGuides(g);
+        applyMeasurements(m);
         setActiveRect({ x: snapped.x, y: snapped.y, ancho: o.ancho, alto: o.alto });
-        setActiveRotation(o.rot % 360 !== 0 ? o.rot : undefined);
+        applyActiveRotation(o.rot % 360 !== 0 ? o.rot : undefined);
       } else {
         // Grupo: traslación + clamp por bloque, sin overlay (G2b lo enriquece).
         for (const o of origins) {
@@ -300,7 +326,7 @@ export function CanvasMoveable({
 
       onLiveChange?.(applyToBlocks(mut));
     },
-    [rectPx, snapSuppressedRef, guias, zoom, onLiveChange, applyToBlocks],
+    [rectPx, snapSuppressedRef, guias, zoom, onLiveChange, applyToBlocks, applyGuides, applyMeasurements, applyActiveRotation],
   );
 
   // ─── Resize ──────────────────────────────────────────────────────────────
@@ -352,13 +378,13 @@ export function CanvasMoveable({
         o.index,
         withRect(liveBlocksRef.current[o.index], snapped.x, snapped.y, next.ancho, next.alto),
       );
-      setGuides(g);
-      setMeasurements(m);
+      applyGuides(g);
+      applyMeasurements(m);
       setActiveRect({ x: snapped.x, y: snapped.y, ancho: next.ancho, alto: next.alto });
-      setActiveRotation(o.rot % 360 !== 0 ? o.rot : undefined);
+      applyActiveRotation(o.rot % 360 !== 0 ? o.rot : undefined);
       onLiveChange?.(applyToBlocks(mut));
     },
-    [rectPx, snapSuppressedRef, guias, zoom, onLiveChange, applyToBlocks],
+    [rectPx, snapSuppressedRef, guias, zoom, onLiveChange, applyToBlocks, applyGuides, applyMeasurements, applyActiveRotation],
   );
 
   // ─── Rotate ──────────────────────────────────────────────────────────────
@@ -371,15 +397,22 @@ export function CanvasMoveable({
       const mut = new Map<number, Block>();
       mut.set(o.index, withRotation(liveBlocksRef.current[o.index], snapped));
       setActiveRect({ x: o.x, y: o.y, ancho: o.ancho, alto: o.alto });
-      setActiveRotation(snapped % 360 !== 0 ? snapped : undefined);
-      setGuides([]);
-      setMeasurements([]);
+      applyActiveRotation(snapped % 360 !== 0 ? snapped : undefined);
+      applyGuides([]);
+      applyMeasurements([]);
       onLiveChange?.(applyToBlocks(mut));
     },
-    [onLiveChange, applyToBlocks],
+    [onLiveChange, applyToBlocks, applyActiveRotation, applyGuides, applyMeasurements],
   );
 
   const commit = useCallback(() => {
+    setAnnouncement(
+      describeAlignmentAnnouncement(
+        guidesRef.current,
+        measurementsRef.current,
+        activeRotationRef.current,
+      ),
+    );
     onCommit(liveBlocksRef.current);
     clearOverlay();
     originsRef.current = [];
@@ -389,12 +422,26 @@ export function CanvasMoveable({
   const handleResizeEnd = useCallback((_e: OnResizeEnd) => commit(), [commit]);
   const handleRotateEnd = useCallback((_e: OnRotateEnd) => commit(), [commit]);
 
-  if (targets.length === 0) return null;
+  // Región `aria-live` siempre montada (no depende de `targets` — un
+  // commit puede ir seguido de una deselección, y la región no debe
+  // desmontarse antes de que el lector de pantalla llegue a leerla).
+  const liveRegion = (
+    <div
+      aria-live="polite"
+      aria-atomic="true"
+      className="sr-only"
+    >
+      {announcement}
+    </div>
+  );
+
+  if (targets.length === 0) return liveRegion;
 
   const single = targets.length === 1;
 
   return (
     <>
+      {liveRegion}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <AlignmentOverlay
           guides={guides}
