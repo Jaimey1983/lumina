@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
     return config;
   },
   experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+    optimizePackageImports: ['lucide-react', 'date-fns'],
   },
   eslint: {
     // `next build` no bloquea por lint: hay violaciones pre-existentes en el

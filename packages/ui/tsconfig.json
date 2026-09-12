@@ -1,6 +1,6 @@
 {
   // moduleResolution Bundler (no NodeNext como @lumina/types / element-kit-core):
-  // @lumina/ui arrastra next/link, radix-ui, recharts, react-hook-form… cuya
+  // @lumina/ui arrastra next/link, radix-ui, react-hook-form… cuya
   // resolución de tipos en modo ESM de NodeNext es frágil. Bundler resuelve igual
   // que el propio lumina-frontend. Los imports relativos llevan .js igual
   // (obligatorio para que el dist/ emitido sea ESM válido que sirve Turbopack).

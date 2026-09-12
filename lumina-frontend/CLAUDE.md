@@ -30,14 +30,14 @@ Plataforma educativa interactiva — frontend de Lumina. Conecta con el backend 
 | Zod | ^4.3.6 |
 | Axios | ^1.13.6 |
 | Lucide React | ^1.7.0 |
-| ApexCharts / react-apexcharts | ^5.10.4 / ^2.1.0 |
-| Recharts | ^2.15.1 |
 | Sonner (toasts) | ^2.0.7 |
 | next-themes | ^0.4.6 |
 | date-fns | ^4.1.0 |
 | @dnd-kit/core | ^6.3.1 |
 | clsx + tailwind-merge | ^2.1.1 / ^3.5.0 |
-| **Paquetes del workspace** | `@lumina/element-kit` (elementos), `@lumina/ui` (primitivos shadcn/radix), `@lumina/editor-shared` (substrato del editor), `@lumina/types`, `@lumina/scoring` |
+| **Paquetes del workspace** | `@lumina/element-kit` (elementos), `@lumina/ui` (primitivos shadcn/radix), `@lumina/editor-shared` (substrato del editor), `@lumina/charts` (contrato único de gráficos, ApexCharts — Etapa H), `@lumina/types`, `@lumina/scoring` |
+
+`apexcharts` / `react-apexcharts` (motor de `@lumina/charts`) y `recharts` (retirado del monorepo, Etapa H) ya no son deps directas del frontend.
 
 `radix-ui`, `motion`, `class-variance-authority`, `embla-carousel-react`, `paper`, `@xyflow/react`, `opentype.js`, etc. ya no son deps directas del frontend — viven en `@lumina/ui` / `@lumina/editor-shared` / `@lumina/element-kit` (E7.6, 2026-09-07).
 
@@ -484,7 +484,7 @@ Definido en `src/config/layout-11.config.tsx`:
 - Lista y detalle de cursos con estudiantes asociados
 - Módulo completo de clases: lista con selector de curso, crear/editar/eliminar/publicar clases, detalle de clase con slides, modal agregar slide
 - **Gradebook** (`/gradebook`): selector curso + período, tabla libro de notas con celdas clicables, modal ingresar/editar nota (RHF + Zod), panel de notas finales
-- **Analytics** (`/analytics`): resumen del curso (stat cards), progreso de estudiantes, ranking de actividades, engagement, estudiantes en riesgo, distribución de notas (Recharts)
+- **Analytics** (`/analytics`): resumen del curso (stat cards), progreso de estudiantes, ranking de actividades, engagement, estudiantes en riesgo, distribución de notas (`@lumina/charts`)
 - **Perfil** (`/profile`): info personal con avatar/iniciales, modal editar perfil, cambio de contraseña, info de cuenta, estadísticas del docente
 - **Usuarios** (`/users`): tabla completa con búsqueda, modal crear (POST /auth/register), modal editar (PATCH /users/:id), activar/desactivar usuario — solo visible para ADMIN/SUPERADMIN
 - Mutaciones con `useMutation` en clases, gradebook, usuarios y perfil
