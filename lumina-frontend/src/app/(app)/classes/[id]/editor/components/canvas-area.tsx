@@ -16,7 +16,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Presentation } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { parseBlockDragIndex } from '../lib/block-drag-id';
 import {
   buildSlideContentPayload,
   parseContentVersion,
@@ -73,7 +72,6 @@ import {
   isBlockCanvasLocked,
   isBlockCanvasPositionable,
   prepareBlockForPaste,
-  snapPositionToGuides,
 } from '@/hooks/use-block-drag';
 import {
   groupBlocksIntoClipMask,
@@ -310,13 +308,13 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     }
   }, []);
 
-  const {
-    draggingId,
-    liveBloques,
-    clearSnapLines,
-    setSnapLines,
-    snapSuppressedRef,
-  } = useEditorBlockDrag();
+  // G2d — el lienzo principal ya no reposiciona bloques por dnd-kit (react-moveable
+  // lo reemplazó en G2a/G2b): `draggingId`/`liveBloques`/`clearSnapLines`/`setSnapLines`
+  // quedaban siempre en su valor vacío. Se sigue llamando `useEditorBlockDrag()` (que
+  // internamente monta `useBlockDrag()` dentro de `EditorDndShell`) solo por
+  // `snapSuppressedRef` — el ref de "Alt apretado" que `<CanvasMoveable>` lee para
+  // desactivar el imán.
+  const { snapSuppressedRef } = useEditorBlockDrag();
 
   /**
    * Estado central del slide (bloques, selección, inner, fondo/guías).
@@ -852,7 +850,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const persistGuias = useCallback(
     async (nextGuias: SlideGuias) => {
       if (!slide?.id || !classId) return;
-      const bloques = liveBloques ?? committedBloques ?? slide.bloques ?? [];
+      const bloques = committedBloques ?? slide.bloques ?? [];
       const meta = editorMetaRef.current;
       const previous = toSlideHistorySnapshot(
         {
@@ -886,7 +884,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     },
     [
       slide,
-      liveBloques,
       committedBloques,
       classId,
       buildContentPayload,
@@ -1049,40 +1046,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     [handleDragSave],
   );
 
-  // ── snap during resize ──────────────────────────────────────────────────────
-  /**
-   * Called by SlideRenderer on every resize frame with the raw provisional
-   * coordinates.  Runs the same snapPositionToGuides logic used during drag,
-   * updates the visible orange guide lines, and returns the snapped coords so
-   * SlideRenderer can show the live preview at the snapped position.
-   */
-  const handleResizeMove = useCallback(
-    (
-      blockId: string,
-      rawCoords: { x: number; y: number; ancho: number; alto: number },
-    ): { x: number; y: number; ancho: number; alto: number } => {
-      const peers = slide?.bloques ?? [];
-      const draggedIndex = parseInt(blockId, 10);
-
-      const { x, y, lines } = snapPositionToGuides(
-        rawCoords.x,
-        rawCoords.y,
-        rawCoords.ancho,
-        rawCoords.alto,
-        isNaN(draggedIndex) ? -1 : draggedIndex,
-        peers,
-        { guias: slide?.guias, enabled: !snapSuppressedRef.current },
-      );
-
-      setSnapLines(lines);
-      return { x, y, ancho: rawCoords.ancho, alto: rawCoords.alto };
-    },
-    [slide, setSnapLines, snapSuppressedRef],
-  );
-
   // ── live slide: inject updated positions during drag for real-time preview ──
-  // Priority: live drag positions > committed (post-drag, pre-refetch) > server state
-  const effectiveBloques = liveBloques ?? committedBloques;
+  // G2d — `effectiveBloques` era `liveBloques ?? committedBloques`; `liveBloques`
+  // (drag de bloque por dnd-kit) siempre es nulo en el lienzo principal desde
+  // G2a/G2b (ver comentario de `useEditorBlockDrag()` arriba).
+  const effectiveBloques = committedBloques;
   const liveSlide: Slide | null =
     slide && effectiveBloques ? { ...slide, bloques: effectiveBloques } : slide;
 
@@ -1348,28 +1316,15 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       lastPushedEffectiveBloquesRef.current = undefined;
     }
 
-    const push = () => {
-      if (Object.is(lastPushedEffectiveBloquesRef.current, effectiveBloques)) return;
-      lastPushedEffectiveBloquesRef.current = effectiveBloques;
-      onEffectiveBloquesRef.current?.(effectiveBloques);
-    };
-
-    // Durante el drag, actualizar la miniatura con throttle evita re-render en cada
-    // frame (rompe dnd-kit) pero mantiene la vista lateral razonablemente sincronizada.
-    if (draggingId != null) {
-      const timer = window.setTimeout(push, 150);
-      return () => clearTimeout(timer);
-    }
-
-    push();
-  }, [effectiveBloques, slide?.id, draggingId]);
+    if (Object.is(lastPushedEffectiveBloquesRef.current, effectiveBloques)) return;
+    lastPushedEffectiveBloquesRef.current = effectiveBloques;
+    onEffectiveBloquesRef.current?.(effectiveBloques);
+  }, [effectiveBloques, slide?.id]);
 
   const blocks = slide?.bloques ?? [];
   const allBlocks = effectiveBloques ?? blocks;
 
   useEffect(() => {
-    if (draggingId != null) return;
-
     const bloques = effectiveBloques ?? slide?.bloques ?? [];
     if (!bloques.length) {
       dispatchEditor({ type: 'SELECCIONAR', id: null });
@@ -1384,7 +1339,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     } else if (selectedBlockIds.length > 0) {
       dispatchEditor({ type: 'SELECCIONAR_MULTIPLE', ids: [] });
     }
-  }, [slide?.id, selectedBlockId, selectedBlockIds.length, effectiveBloques, slide?.bloques, draggingId]);
+  }, [slide?.id, selectedBlockId, selectedBlockIds.length, effectiveBloques, slide?.bloques]);
 
   const handleRendererBlockSelect = useCallback(
     (id: string, e?: React.MouseEvent) => {
@@ -1773,7 +1728,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         }, 0);
       },
       nudgeSelectedBlocks: (dxPx, dyPx) => {
-        if (draggingId != null) return false;
         const ids =
           selectedBlockIds.length > 0
             ? selectedBlockIds
@@ -1844,7 +1798,6 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     [
       selectedBlockId,
       selectedBlockIds,
-      draggingId,
       liveSlide,
       slide,
       persistBloques,
@@ -2061,12 +2014,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onCopyBlock={handleCopyBlock}
             onToggleCanvasLock={(blockPath) => void handleToggleCanvasLock(blockPath)}
             onPersistSlide={handlePersistFromRenderer}
-            onResizeInteractionEnd={clearSnapLines}
-            onResizeMove={handleResizeMove}
             suppressCanvasHandles
-            draggingBlockId={
-              draggingId ? String(parseBlockDragIndex(draggingId) ?? '') || null : null
-            }
             className="absolute inset-0 h-full w-full min-h-0 min-w-0"
           />
 

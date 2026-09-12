@@ -36,7 +36,6 @@ import { CANVAS_DROP_ZONE_ID } from './droppable-canvas';
 import type { ActivityPanelDragData } from './draggable-activity-item';
 import type { WidgetPanelDragData } from './draggable-widget-item';
 import type { ActivityType, WidgetType } from './panels/activities-panel';
-import { resolveCanvasBlockOverlayLabel } from '../lib/editor-dnd-overlay';
 import { cn } from '@/lib/utils';
 
 export interface ActivityDragOverlayState {
@@ -57,9 +56,20 @@ export function useEditorDndShell() {
   return useContext(EditorDndShellContext);
 }
 
-const BlockDragContext = createContext<ReturnType<typeof useBlockDrag> | null>(null);
+/**
+ * G2d — el lienzo principal reposiciona bloques con `react-moveable` desde
+ * G2a/G2b, no con `useBlockDrag()`/dnd-kit (ese hook sigue vivo solo para
+ * `escape-room-sala-canvas.tsx`, que lo llama por su cuenta). Lo único de
+ * `useBlockDrag()` que el lienzo principal todavía necesita es
+ * `snapSuppressedRef` (el ref de "Alt apretado" que lee `<CanvasMoveable>`
+ * para desactivar el imán) — por eso el contexto expone solo eso, no el
+ * objeto `blockDrag` completo.
+ */
+type BlockDragSharedState = Pick<ReturnType<typeof useBlockDrag>, 'snapSuppressedRef'>;
 
-export function useEditorBlockDrag() {
+const BlockDragContext = createContext<BlockDragSharedState | null>(null);
+
+export function useEditorBlockDrag(): BlockDragSharedState {
   const ctx = useContext(BlockDragContext);
   if (!ctx) {
     throw new Error('useEditorBlockDrag debe usarse dentro de EditorDndShell');
@@ -92,18 +102,15 @@ export function EditorDndShell({
   const [isOverCanvas, setIsOverCanvas] = useState(false);
   const [dropMissHint, setDropMissHint] = useState(false);
 
+  // G2d — se mantiene solo por `snapSuppressedRef` (ver comentario de
+  // `BlockDragContext` abajo). `onSave` nunca se invoca en la práctica: nada
+  // en el lienzo principal completa un drag de bloque por dnd-kit.
   const blockDrag = useBlockDrag({
     canvasRef,
     slide,
     onSave: onBlockDragSave,
   });
 
-  /**
-   * DndContext no debe recibir callbacks nuevos en cada onMove: liveBloques cambia
-   * el objeto `blockDrag` y @dnd-kit reentra en onDragMove → Maximum update depth.
-   */
-  const blockDragRef = useRef(blockDrag);
-  blockDragRef.current = blockDrag;
   const panelDragRef = useRef(panelDrag);
   panelDragRef.current = panelDrag;
   const onActivityDropRef = useRef(onActivityDrop);
@@ -126,17 +133,16 @@ export function EditorDndShell({
     if (isWidgetPanelDrag(event.active)) {
       const data = event.active.data.current as WidgetPanelDragData;
       setPanelDrag({ kind: 'widget', ...data });
-      return;
     }
-    blockDragRef.current.handleDragStart(event);
+    // G2d — sin rama de fallback para "drag de bloque por dnd-kit": ningún
+    // bloque del lienzo principal registra `useDraggable` desde G2a/G2b
+    // (react-moveable lo reemplazó), así que ese `active.id` nunca llega acá.
   }, []);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
     if (panelDragRef.current) {
       setIsOverCanvas(event.over?.id === CANVAS_DROP_ZONE_ID);
-      return;
     }
-    blockDragRef.current.handleDragMove(event);
   }, []);
 
   const handleDragEnd = useCallback(
@@ -171,9 +177,9 @@ export function EditorDndShell({
         }
         setPanelDrag(null);
         setIsOverCanvas(false);
-        return;
       }
-      blockDragRef.current.handleDragEnd(event);
+      // G2d — sin rama de fallback para "drag de bloque por dnd-kit" (ver
+      // comentario en `handleDragStart`).
     },
     [canvasRef],
   );
@@ -181,7 +187,6 @@ export function EditorDndShell({
   const handleDragCancel = useCallback(() => {
     setPanelDrag(null);
     setIsOverCanvas(false);
-    blockDragRef.current.handleDragCancel();
   }, []);
 
   const overlay =
@@ -190,9 +195,6 @@ export function EditorDndShell({
       : panelDrag?.kind === 'widget' && getWidgetDragOverlay
         ? getWidgetDragOverlay(panelDrag.tipo)
         : null;
-  const canvasBlockLabel = overlay
-    ? null
-    : resolveCanvasBlockOverlayLabel(slide, blockDrag.draggingId);
 
   useEffect(() => {
     if (!panelDrag) return;
@@ -211,7 +213,7 @@ export function EditorDndShell({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <BlockDragContext.Provider value={blockDrag}>
+      <BlockDragContext.Provider value={{ snapSuppressedRef: blockDrag.snapSuppressedRef }}>
         <EditorDndShellContext.Provider
           value={{ isOverCanvas, panelDragActive: panelDrag != null }}
         >
@@ -229,11 +231,7 @@ export function EditorDndShell({
         </EditorDndShellContext.Provider>
       </BlockDragContext.Provider>
 
-      {/*
-        Rail: chip con icono. Lienzo: chip de tipo (no clona el bloque).
-        El preview alineado al drop es applyLiveDragPositions → liveSlide.
-        Un clon a tamaño real en el overlay se desfasa con scale() del canvas.
-      */}
+      {/* Rail: chip con icono para la actividad/widget que se está insertando. */}
       <DragOverlay dropAnimation={null}>
         {panelDrag && overlay ? (
           <div
@@ -245,16 +243,6 @@ export function EditorDndShell({
           >
             <overlay.Icon className="size-4 shrink-0 text-[#2563EB]" />
             <span className="text-xs font-medium text-foreground">{overlay.label}</span>
-          </div>
-        ) : canvasBlockLabel ? (
-          <div
-            aria-hidden
-            className={cn(
-              'flex items-center rounded-md border border-[#2563EB]/40 bg-white/95 px-2.5 py-1 shadow-md',
-              'pointer-events-none cursor-grabbing',
-            )}
-          >
-            <span className="text-[11px] font-medium text-foreground">{canvasBlockLabel}</span>
           </div>
         ) : null}
       </DragOverlay>
