@@ -542,6 +542,89 @@ Sin bajar el conteo de tests (258 unit / 33 visual al redactar esta ficha) ni su
 - **Entregable:** `describeAlignmentAnnouncement` con test; `aria-live` funcionando en drag/resize/rotate y en nudge/medición; checklist de QA (zoom 50–200 % — rango real, no 25–400 %; claro/oscuro; 1–20 bloques; bloque rotado; actividad con `marco`) documentado en el cierre. Con G5 `hecho`, **Etapa G cerrada**. Verif: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build && cd .. && pnpm -r build && pnpm -r test && pnpm -r lint`. QA manual en build de producción (`pnpm build && npm run start`, no `next dev`).
 - **Cierre:** no aplica Regla 4. Commit: `feat(editor): aria-live de alineación + QA final de la Etapa G (G5)`.
 
+### Etapa H — Contrato único de datos y gráficos (`@lumina/charts` sobre ApexCharts)
+
+Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: **Reglas 1–4 no aplican**; Reglas 0, 5–11 vigentes.
+
+**Objetivo:** unificar los tres sistemas de gráficos que hoy coexisten sin comunicarse — Recharts en el elemento `grafico` del canvas, Recharts armado a mano en `/analytics` → `GradeDistributionSection`, y `@lumina/ui/chart.tsx` (wrapper shadcn sin consumidores) — sobre un único paquete `@lumina/charts`, motor **ApexCharts** (decisión cerrada 2026-09-12). Al cerrar la etapa: `recharts` retirado del monorepo por completo, catálogo ampliado (heatmap, radar, funnel, gauge, combo/dual-eje, apilado, dispersión, treemap) disponible tanto para autoría manual (elemento `grafico`) como para datos de API (`/analytics`), con una sola paleta semántica y un solo sistema de theming claro/oscuro.
+
+**Estado real del repo (relevado 2026-09-12):**
+
+- `packages/element-kit/src/blocks/grafico/` — Recharts vía `next/dynamic`, 7 tipos (`column`,`bar`,`line`,`area`,`pie`,`donut`,`radialBar`), paleta propia (`grafico-color-palettes.ts`, 7 paletas hex fijas), config manual (tipo, título, A11y, paleta, leyenda, mini-tabla de datos). Esquema `GraficoDatosBlock` en `packages/types/src/slide.types.ts:1261`.
+- `lumina-frontend/src/app/(app)/analytics/analytics-client.tsx:953` (`GradeDistributionSection`) — único gráfico real de `/analytics`, Recharts `<BarChart>` armado inline, colores hex hardcodeados (`#ffffff`,`#e5e7eb`,`#6b7280`…) que no reaccionan a modo oscuro, sin relación con `grafico-color-palettes.ts`. Bandas de calificación (`bajo`/`básico`/`alto`/`superior`) tipeadas literal en líneas 964-967 en vez de leídas de `@lumina/scoring` (`notaColombiana`).
+- `packages/ui/src/chart.tsx` — wrapper shadcn (`ChartContainer`/`ChartTooltipContent`/`ChartLegendContent`) sobre Recharts con theming vía CSS vars por tema — **0 consumidores** (`grep` de `ChartContainer`/`@lumina/ui/chart` en todo `lumina-frontend/src` → vacío).
+- `lumina-frontend/package.json` — `apexcharts@^5.10.4` + `react-apexcharts@^2.1.0` declaradas, con `styles/components/apexcharts.css` importado, **0 componentes que las usen** en todo `src/`.
+- Único consumo de `recharts` en todo el repo, confirmado por `grep -rn "from ['\"]recharts['\"]"`: los 3 archivos de arriba (`grafico-chart-renderer.tsx`, `analytics-client.tsx`, `packages/ui/src/chart.tsx`). Ningún otro archivo del frontend ni del backend lo importa.
+- `@lumina/scoring` (`packages/scoring/src/index.ts`) expone `notaColombiana()` pero no expone las bandas bajo/básico/alto/superior como dato estructurado consumible — hoy son un concepto solo implícito en el cálculo, no un export.
+
+**Decisión de motor (cerrada 2026-09-12): ApexCharts, motor único — no se combina con ECharts.** Motivos: SVG nativo (nitidez a cualquier zoom del canvas vía `transform: scale()`, igual que Recharts hoy — descarta ECharts salvo que se fuerce `renderer:'svg'` en cada instancia, riesgo de olvido); catálogo cubre lo que a Lumina le falta sin sobrar como ECharts (heatmap, radar, funnel, boxplot/candlestick, timeline/rangeBar, zoom/pan/exportación de imagen integrados); dependencia ya declarada en `lumina-frontend/package.json` sin uso real — cero costo de bundle nuevo neto una vez retirado Recharts; blast radius de migración acotado a 3 archivos (confirmado por grep, sin usos ocultos). **Se evaluó combinar ApexCharts + ECharts** (ECharts solo para lo que ApexCharts no cubre: Sankey, Sunburst, heatmap-calendario, grafos de red, mapas geo, gauge multi-aguja) y **se descartó** — ninguno de esos tipos tiene hoy un requerimiento de producto concreto, y el costo (bundle doble, theming duplicado entre dos motores, testing duplicado, decisión ad hoc por tipo nuevo) reintroduce justo la fragmentación que esta etapa busca cerrar. Salvaguarda barata en vez de eso: el contrato público de `@lumina/charts` (H1) es **agnóstico de motor** — ningún consumidor habla directo con la API de ApexCharts — para que, si algún día aparece un requerimiento real y concreto de un tipo exclusivo de ECharts, se pueda sumar un segundo backend solo para ese tipo puntual sin reescribir nada existente.
+
+**Orden:** H1 (scaffold del contrato) y H2 (bandas de scoring) son independientes entre sí — pueden ir en paralelo. H3 y H4 (migrar los dos consumidores reales) dependen de H1; H4 además depende de H2. H5 (retirar Recharts) depende de H3+H4. H6 (ampliar catálogo) depende de H5 — se amplía sobre un motor ya limpio, no sobre dos conviviendo. H7 es diferida (extender a KPIs/sparklines), no bloqueante para cerrar la etapa.
+
+#### H1 — Scaffold `@lumina/charts` (motor ApexCharts + theming + paletas + formato, sin consumidores)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** ninguna.
+- **Alcance — PUEDE tocar:** nuevo `packages/charts/**` (`@lumina/charts`), patrón `@lumina/ui`/`@lumina/editor-shared` (workspace, `moduleResolution: Bundler`, `exports` desde `dist/`, `build`=tsc, `test`=vitest+lint). Deps: `apexcharts`, `react-apexcharts`, `@lumina/types`, `@lumina/ui` (tokens de color/tema). Contenido:
+  - `src/chart-theme.ts` — theming claro/oscuro vía CSS vars (equivalente a lo que resuelve hoy `packages/ui/src/chart.tsx` para Recharts, adaptado a las opciones `theme`/`chart.foreColor`/`tooltip` de ApexCharts).
+  - `src/palettes.ts` — fusiona `grafico-color-palettes.ts` (7 paletas) + una paleta semántica nueva (`positivo`/`alerta`/`riesgo`/`neutro`) para usos de analítica (estudiantes en riesgo, distribución de notas).
+  - `src/format.ts` — formato de número/porcentaje/moneda/escala 0–5, envolviendo lo que exponga `@lumina/scoring` para la escala colombiana (ver H2).
+  - `src/chart-container.tsx` — `<LuminaChart>` sobre `react-apexcharts` con carga perezosa (mismo patrón `next/dynamic`/`React.lazy` que ya usa `grafico-chart-renderer.tsx` hoy), tooltip/leyenda a medida, tabla de datos alternable (accesibilidad). **Principio de diseño (no reabrir en ejecución):** `<LuminaChart>` es el único punto de contacto con `react-apexcharts`/`apexcharts` — ningún consumidor (`grafico`, `analytics-client.tsx`) importa la librería directo. El tipo de gráfico y su config se expresan en el vocabulario propio de `@lumina/charts`, no en las opciones nativas de ApexCharts, para que un segundo backend (H7+/futuro, ver decisión de motor arriba) sea un adapter interno nuevo y no un cambio de superficie pública.
+  - Specs de theming/paleta/formato (puros, sin necesitar navegador).
+- **Alcance — NO toca:** `packages/element-kit/**`, `lumina-frontend/src/app/(app)/analytics/**`, `packages/ui/src/chart.tsx` (se retira en H5, no antes).
+- **Entregable:** `pnpm --filter @lumina/charts build && test && lint` verde. Sin consumidores todavía.
+- **Cierre:** no aplica Regla 4 (aditivo). Commit: `feat(charts): scaffold @lumina/charts sobre ApexCharts`.
+
+#### H2 — Bandas de calificación colombiana como dato estructurado en `@lumina/scoring`
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** ninguna — independiente de H1, puede ir en paralelo.
+- **Contexto:** `analytics-client.tsx:964-967` tipea a mano los rótulos y rangos de las 4 bandas (`bajo <3.0`, `básico 3–3.9`, `alto 4–4.6`, `superior ≥4.7`) que en realidad gobierna `notaColombiana()` en `@lumina/scoring` — el mismo patrón de duplicación que motivó cerrar el espejo de scoring en E6, aquí sobre *rangos*, no sobre *lógica de cálculo*.
+- **Alcance — PUEDE tocar:** `packages/scoring/src/index.ts` (o un módulo nuevo `grade-bands.ts` del paquete) — exportar las bandas como array estructurado `{ id, etiqueta, min, max }` derivado de las mismas constantes que ya usa `notaColombiana()` internamente (una sola fuente, no una tabla paralela). Spec de paridad: las bandas exportadas coinciden con los umbrales reales de `notaColombiana()`.
+- **Alcance — NO toca:** `analytics-client.tsx` (reapuntar es H4, después de que `@lumina/charts` exista), el backend (el espejo ya no existe desde E6).
+- **Entregable:** `pnpm --filter @lumina/scoring build && test && lint` verde, con las bandas expuestas y testeadas.
+- **Cierre:** no aplica Regla 4. Commit: `feat(scoring): exponer bandas de la escala colombiana como dato estructurado`.
+
+#### H3 — Migrar el elemento `grafico` del canvas a `@lumina/charts` (paridad de los 7 tipos actuales)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** H1 hecho.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/grafico/grafico-chart-renderer.tsx` (reescribir sobre `<LuminaChart>` de `@lumina/charts`, un config por cada uno de los 7 tipos actuales — sin ampliar catálogo todavía, un paso a la vez), `grafico-color-palettes.ts` (delegar a `@lumina/charts/palettes` o retirarse si el nuevo paquete ya cubre el mismo contrato — decidir en ejecución y documentar), `packages/element-kit/package.json` (dep `@lumina/charts`; puede convivir con `recharts` mientras H5 no cierre). El test de integración real (Playwright) de E5.7 (`canvas-blocks.integration.visual.spec.tsx`) se actualiza para comparar contra el nuevo render.
+- **Alcance — NO toca:** `GraficoDatosBlock` (el esquema no cambia en esta ficha — es swap de motor, no de features), `analytics-client.tsx`, `packages/ui/src/chart.tsx`.
+- **Entregable:** los 7 tipos de gráfico se ven equivalentes (mismos datos → misma información visible) con ApexCharts como motor. `pnpm --filter @lumina/element-kit build && test && lint` + la suite de Playwright verdes.
+- **Cierre:** no aplica Regla 4 todavía (Recharts se retira recién en H5). Commit: `refactor(element-kit): grafico consume @lumina/charts (ApexCharts)`.
+
+#### H4 — Migrar `GradeDistributionSection` de `/analytics` a `@lumina/charts`
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** H1 hecho, H2 hecho (para leer las bandas de una sola fuente en vez de los literales de hoy).
+- **Alcance — PUEDE tocar:** `lumina-frontend/src/app/(app)/analytics/analytics-client.tsx` (`GradeDistributionSection` reemplaza su `<BarChart>` de Recharts por `<LuminaChart>` de `@lumina/charts`; las etiquetas/rangos de banda se leen de `@lumina/scoring` en vez de los literales de las líneas 964-967; los colores hardcodeados en hex se reemplazan por la paleta semántica de `@lumina/charts`, con soporte real de modo oscuro).
+- **Alcance — NO toca:** el resto de secciones de `/analytics` que no son gráficos (tablas, stat cards, badges) — quedan fuera salvo que se decida ampliarlas en H7.
+- **Entregable:** el gráfico de distribución de notas se ve igual de informativo, reacciona a modo oscuro, y las bandas vienen de `@lumina/scoring`. `pnpm --filter lumina-frontend build && lint && test:unit` verde.
+- **Cierre:** no aplica Regla 4 todavía. Commit: `refactor(analytics): distribución de notas consume @lumina/charts`.
+
+#### H5 — Retirar Recharts del monorepo + `@lumina/ui/chart.tsx`
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** H3 hecho, H4 hecho.
+- **Alcance — PUEDE tocar:** `grep -rn "from ['\"]recharts['\"]"` en todo el repo debe devolver 0 antes de tocar nada — si aparece un cuarto consumidor no detectado en el relevo de esta ficha raíz, **parar** y reescribir el alcance (Regla 10), no improvisar. Si da 0: borrar `packages/ui/src/chart.tsx` (+ su spec si existe) y la dependencia `recharts` de todo `package.json` que la declare; borrar `apexcharts`/`react-apexcharts`/`styles/components/apexcharts.css` de `lumina-frontend` si ya no se consumen directo ahí (deben consumirse solo vía `@lumina/charts`, no como dep directa duplicada del frontend).
+- **Entregable:** `grep -rn "recharts"` en el repo → 0 (salvo como dependencia interna de `@lumina/charts`). `pnpm -r build && test && lint` verde.
+- **Cierre:** Recharts retirado por completo — un solo motor de gráficos en todo Lumina. Commit: `chore(charts): retirar recharts y el wrapper sin uso de @lumina/ui`.
+
+#### H6 — Ampliar catálogo y configuración en `@lumina/charts` (heredado por todos los consumidores)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** H5 hecho (ampliar sobre un solo motor ya limpio, no sobre dos conviviendo).
+- **Alcance — PUEDE tocar:** `packages/charts/**` — nuevos tipos (combo/dual-eje, apilado y apilado 100%, dispersión/burbujas, radar, treemap, funnel, heatmap, gauge); configuración fina (ejes: título/min/max/escala log, formato de valores, etiquetas de datos, línea de referencia/meta, animación on/off, orden de datos, exportación a imagen); `packages/element-kit/src/blocks/grafico/**` (exponer los tipos nuevos en el panel de propiedades + ampliar `GraficoDatosBlock`/`normalizeGraficoBlock` de forma aditiva, patrón de sanitización ya establecido); `analytics-client.tsx` solo si se decide usar algún tipo nuevo ahí (ej. heatmap de participación).
+- **Alcance — NO toca:** nada fuera de gráficos.
+- **Entregable:** catálogo ampliado disponible en el elemento del editor y en `/analytics` sin duplicar implementación. Verificación con paridad + Playwright.
+- **Cierre:** no aplica Regla 4. Commit: `feat(charts): catálogo ampliado y configuración fina`.
+
+#### H7 — (diferida, no bloqueante) Extender el contrato a KPIs/sparklines de dashboard, gradebook y perfil
+- **Operador:** a definir
+- **Estado:** diferida — se redacta cuando se decida encarar esta parte, no bloquea el cierre de H1–H6.
+- **Contexto:** indicadores tipo KPI, barras de progreso y posibles sparklines de tendencia hoy son ad hoc por página (dashboard, gradebook, perfil docente) — candidatos a vivir como "primitivos chicos" de `@lumina/charts` una vez que el contrato principal esté probado en los dos consumidores reales (H3/H4).
+
 ### Migración a Estructura Única — fichas por etapa
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
