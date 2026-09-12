@@ -2,7 +2,511 @@
   "grado": "4",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 4°-5°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Fuerzas, dirección y movimiento",
+      "dba_asociados": [1],
+      "dba_relacionados": [2],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["describe", "indica", "comunica", "predice"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Características de las fuerzas (magnitud y dirección)",
+        "Efectos de la fuerza sobre el movimiento",
+        "Fricción y superficies"
+      ],
+      "subtemas": [
+        "¿Qué le pasa a un objeto cuando le aplico una fuerza en una dirección?",
+        "Fuerzas que detienen, aceleran o cambian la dirección de un objeto",
+        "Qué es la fricción y cómo afecta el movimiento",
+        "Comparar el movimiento de objetos en superficies lisas y rugosas"
+      ],
+      "palabras_clave": ["fuerza", "magnitud", "dirección", "movimiento", "fricción", "rozamiento", "reposo", "superficies", "grado 4"],
+      "dba_enunciado": "Comprende que la magnitud y la dirección en que se aplica una fuerza puede producir cambios en la forma como se mueve un objeto (dirección y rapidez).",
+      "evidencias_aprendizaje": [
+        "Describe las características de las fuerzas (magnitud y dirección) que se deben aplicar para producir un efecto dado (detener, acelerar, cambiar de dirección).",
+        "Indica, a partir de pequeñas experiencias, cuando una fuerza aplicada sobre un cuerpo no produce cambios en su estado de reposo, de movimiento o en su dirección.",
+        "Comunica resultados sobre los efectos de la fuerza de fricción en el movimiento de los objetos al comparar superficies con distintos niveles de rozamiento.",
+        "Predice y explica en una situación de objetos desplazándose por diferentes superficies (lisas, rugosas) en cuál de ellas el cuerpo puede mantenerse por más tiempo en movimiento."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que una fuerza puede mover o detener un objeto, con ayuda.",
+          "basico": "Identifica la magnitud y dirección de una fuerza aplicada a un objeto.",
+          "alto": "Explica los efectos de la fricción en el movimiento de los objetos comparando superficies.",
+          "superior": "Predice y explica en qué superficie un objeto se mantendrá en movimiento por más tiempo."
+        },
+        "procedimental": {
+          "bajo": "Observa experiencias sencillas sobre fuerzas con acompañamiento.",
+          "basico": "Indica cuándo una fuerza no produce cambios en el movimiento de un cuerpo con ayuda.",
+          "alto": "Comunica de forma autónoma los resultados sobre los efectos de la fricción.",
+          "superior": "Diseña un experimento propio para comparar el efecto de distintas superficies sobre el movimiento."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre fuerzas cuando se le invita.",
+          "basico": "Muestra interés por experimentar con fuerzas y movimiento.",
+          "alto": "Sigue normas de seguridad durante los experimentos con objetos en movimiento.",
+          "superior": "Promueve el trabajo colaborativo al diseñar experiencias sobre fuerzas."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar tipo de fuerza con su efecto sobre el movimiento", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre fricción y movimiento", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Predecir en qué superficie un objeto se mueve más tiempo", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Me ubico en el universo y en la Tierra e identifico características de la materia, fenómenos físicos y manifestaciones de la energía en el entorno.",
+      "subprocesos_ebc": [
+        "Describo y verifico el efecto de la transferencia de energía térmica en los cambios de estado de algunas sustancias.",
+        "Verifico la posibilidad de mezclar diversos líquidos, sólidos y gases.",
+        "Propongo y verifico diferentes métodos de separación de mezclas.",
+        "Establezco relaciones entre objetos que tienen masas iguales y volúmenes diferentes o viceversa y su posibilidad de flotar.",
+        "Comparo movimientos y desplazamientos de seres vivos y objetos.",
+        "Relaciono el estado de reposo o movimiento de un objeto con las fuerzas aplicadas sobre éste.",
+        "Describo fuerzas y torques en máquinas simples.",
+        "Verifico la conducción de electricidad o calor en materiales.",
+        "Identifico las funciones de los componentes de un circuito eléctrico.",
+        "Describo los principales elementos del sistema solar y establezco relaciones de tamaño, movimiento y posición.",
+        "Comparo el peso y la masa de un objeto en diferentes puntos del sistema solar.",
+        "Describo las características físicas de la Tierra y su atmósfera.",
+        "Relaciono el movimiento de traslación con los cambios climáticos.",
+        "Establezco relaciones entre mareas, corrientes marinas, movimiento de placas tectónicas, formas del paisaje y relieve, y las fuerzas que los generan."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Máquinas simples",
+      "dba_asociados": [2],
+      "dba_relacionados": [1],
+      "enfoque_men": "Ciencia, tecnología y sociedad",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["explora", "describe", "identifica", "observa"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Máquinas simples",
+        "Palancas",
+        "Máquinas simples en el cuerpo humano"
+      ],
+      "subtemas": [
+        "¿Qué es una máquina simple y para qué sirve?",
+        "Cómo el tamaño de una palanca y el punto de apoyo cambian la fuerza necesaria",
+        "Máquinas simples en objetos cotidianos",
+        "Palancas en mi propio cuerpo: huesos y músculos"
+      ],
+      "palabras_clave": ["máquinas simples", "palanca", "punto de apoyo", "fuerza", "sistema óseo", "sistema muscular", "movimiento", "grado 4"],
+      "dba_enunciado": "Comprende los efectos y las ventajas de utilizar máquinas simples en diferentes tareas que requieren la aplicación de una fuerza.",
+      "evidencias_aprendizaje": [
+        "Explora cómo los cambios en el tamaño de una palanca (longitud) o la posición del punto de apoyo afectan las fuerzas y los movimientos implicados.",
+        "Describe la función que cumplen fuerzas en una máquina simple para generar movimiento.",
+        "Identifica y observa máquinas simples en objetos cotidianos para explicar su utilidad (aplicar una fuerza pequeña para generar una fuerza grande, generar un pequeño movimiento para crear un gran movimiento).",
+        "Identifica y describe palancas presentes en su cuerpo, conformadas por sus sistemas óseo y muscular."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra alguna máquina simple con ayuda.",
+          "basico": "Identifica máquinas simples en objetos cotidianos.",
+          "alto": "Describe la función que cumplen las fuerzas en una máquina simple.",
+          "superior": "Explica cómo el tamaño de una palanca o la posición del punto de apoyo afectan la fuerza necesaria."
+        },
+        "procedimental": {
+          "bajo": "Explora máquinas simples con acompañamiento.",
+          "basico": "Identifica y observa máquinas simples en su entorno con ayuda.",
+          "alto": "Identifica y describe palancas presentes en su propio cuerpo de forma autónoma.",
+          "superior": "Construye o representa una máquina simple para resolver un problema cotidiano."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre máquinas simples cuando se le invita.",
+          "basico": "Muestra curiosidad por cómo funcionan las máquinas simples.",
+          "alto": "Cuida los materiales usados para explorar máquinas simples.",
+          "superior": "Propone soluciones cotidianas usando máquinas simples y las comparte con sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Emparejar máquinas simples con su función", "tipo": "Emparejar" },
+        { "descripcion": "Quiz sobre máquinas simples", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Llenar espacios sobre las palancas del cuerpo", "tipo": "Llenar espacios" }
+      ],
+      "ebc_factor": "Ciencia, tecnología y sociedad",
+      "ebc_estandar": "Identifico transformaciones en mi entorno a partir de la aplicación de algunos principios físicos, químicos y biológicos que permiten el desarrollo de tecnologías.",
+      "subprocesos_ebc": [
+        "Identifico máquinas simples en objetos cotidianos y describo su utilidad.",
+        "Construyo máquinas simples para solucionar problemas cotidianos.",
+        "Identifico, en la historia, situaciones en las que en ausencia de motores potentes se utilizaron máquinas simples.",
+        "Analizo características ambientales de mi entorno y peligros que lo amenazan.",
+        "Establezco relaciones entre el efecto invernadero, la lluvia ácida y el debilitamiento de la capa de ozono con la contaminación atmosférica.",
+        "Asocio el clima y otras características del entorno con los materiales de construcción, los aparatos eléctricos más utilizados, los recursos naturales y las costumbres de diferentes comunidades.",
+        "Verifico que la cocción de alimentos genera cambios físicos y químicos.",
+        "Identifico y describo aparatos que generan energía luminosa, térmica y mecánica.",
+        "Identifico y establezco las aplicaciones de los circuitos eléctricos en el desarrollo tecnológico.",
+        "Establezco relaciones entre microorganismos y salud.",
+        "Reconozco los efectos nocivos del exceso en el consumo de cafeína, tabaco, drogas y licores.",
+        "Establezco relaciones entre deporte y salud física y mental."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "La rotación de la Tierra: el día y la noche",
+      "dba_asociados": [3],
+      "dba_relacionados": [4],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["registra", "explica", "observa", "comunica"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Rotación de la Tierra",
+        "El día y la noche",
+        "Movimiento aparente del Sol"
+      ],
+      "subtemas": [
+        "¿Por qué existen el día y la noche?",
+        "La Tierra gira sobre su propio eje",
+        "El Sol solo ilumina la mitad de la Tierra",
+        "Representar el ciclo día-noche con una maqueta o modelo"
+      ],
+      "palabras_clave": ["rotación", "día y noche", "Tierra", "Sol", "movimiento aparente", "maqueta", "sombra", "grado 4"],
+      "dba_enunciado": "Comprende que el fenómeno del día y la noche se debe a que la Tierra rota sobre su eje y en consecuencia el sol sólo ilumina la mitad de su superficie.",
+      "evidencias_aprendizaje": [
+        "Registra y realiza dibujos de las sombras que proyecta un objeto que recibe la luz del Sol en diferentes momentos del día, relacionándolas con el movimiento aparente del Sol en el cielo.",
+        "Explica cómo se producen el día y la noche por medio de una maqueta o modelo de la Tierra y del Sol.",
+        "Observa y registra algunos patrones de regularidad (ciclo del día y la noche), elabora tablas y comunica los resultados."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que existen el día y la noche, con ayuda.",
+          "basico": "Identifica que la Tierra gira sobre su propio eje.",
+          "alto": "Explica cómo se producen el día y la noche mediante un modelo de la Tierra y el Sol.",
+          "superior": "Relaciona el movimiento aparente del Sol con las sombras que proyecta un objeto en distintos momentos del día."
+        },
+        "procedimental": {
+          "bajo": "Observa sombras y momentos del día con acompañamiento.",
+          "basico": "Registra dibujos de sombras en diferentes momentos del día con ayuda.",
+          "alto": "Explica con una maqueta o modelo el fenómeno del día y la noche de forma autónoma.",
+          "superior": "Elabora tablas y comunica patrones de regularidad del ciclo día-noche."
+        },
+        "actitudinal": {
+          "bajo": "Participa en la observación de sombras y del Sol cuando se le invita.",
+          "basico": "Muestra interés por comprender el ciclo del día y la noche.",
+          "alto": "Es constante en el registro de sus observaciones.",
+          "superior": "Comparte y compara sus registros con los de sus compañeros de forma respetuosa."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar los momentos del día según la posición del Sol", "tipo": "Ordenar" },
+        { "descripcion": "Verdadero o falso sobre la rotación de la Tierra", "tipo": "Verdadero/Falso" },
+        { "descripcion": "Explicar con un modelo por qué existen el día y la noche", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Me ubico en el universo y en la Tierra e identifico características de la materia, fenómenos físicos y manifestaciones de la energía en el entorno.",
+      "subprocesos_ebc": [
+        "Describo y verifico el efecto de la transferencia de energía térmica en los cambios de estado de algunas sustancias.",
+        "Verifico la posibilidad de mezclar diversos líquidos, sólidos y gases.",
+        "Propongo y verifico diferentes métodos de separación de mezclas.",
+        "Establezco relaciones entre objetos que tienen masas iguales y volúmenes diferentes o viceversa y su posibilidad de flotar.",
+        "Comparo movimientos y desplazamientos de seres vivos y objetos.",
+        "Relaciono el estado de reposo o movimiento de un objeto con las fuerzas aplicadas sobre éste.",
+        "Describo fuerzas y torques en máquinas simples.",
+        "Verifico la conducción de electricidad o calor en materiales.",
+        "Identifico las funciones de los componentes de un circuito eléctrico.",
+        "Describo los principales elementos del sistema solar y establezco relaciones de tamaño, movimiento y posición.",
+        "Comparo el peso y la masa de un objeto en diferentes puntos del sistema solar.",
+        "Describo las características físicas de la Tierra y su atmósfera.",
+        "Relaciono el movimiento de traslación con los cambios climáticos.",
+        "Establezco relaciones entre mareas, corrientes marinas, movimiento de placas tectónicas, formas del paisaje y relieve, y las fuerzas que los generan."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Las fases de la Luna",
+      "dba_asociados": [4],
+      "dba_relacionados": [3],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["observa", "registra", "predice"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Fases de la Luna",
+        "Posición relativa Sol-Tierra-Luna"
+      ],
+      "subtemas": [
+        "¿Por qué la Luna cambia de forma a lo largo del mes?",
+        "Observar y dibujar las fases de la Luna",
+        "Predecir la fase de la Luna según la posición de la Tierra, el Sol y la Luna"
+      ],
+      "palabras_clave": ["fases de la Luna", "Sol", "Tierra", "posición relativa", "calendario lunar", "observación", "astronomía", "grado 4"],
+      "dba_enunciado": "Comprende que las fases de la Luna se deben a la posición relativa del Sol, la Luna y la Tierra a lo largo del mes.",
+      "evidencias_aprendizaje": [
+        "Realiza observaciones de la forma de la Luna y las registra mediante dibujos, explicando cómo varían a lo largo del mes.",
+        "Predice cuál sería la fase de la Luna que un observador vería desde la Tierra, dada una cierta posición relativa entre la Tierra, el Sol y la Luna."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra alguna fase de la Luna con ayuda.",
+          "basico": "Reconoce que la Luna cambia de forma a lo largo del mes.",
+          "alto": "Explica cómo la posición relativa del Sol, la Luna y la Tierra produce las fases lunares.",
+          "superior": "Predice la fase de la Luna que se vería desde la Tierra dada una posición relativa específica."
+        },
+        "procedimental": {
+          "bajo": "Observa la Luna con acompañamiento.",
+          "basico": "Registra mediante dibujos la forma de la Luna con ayuda.",
+          "alto": "Explica cómo varían las fases de la Luna a lo largo del mes de forma autónoma.",
+          "superior": "Elabora un calendario lunar propio registrando las fases observadas."
+        },
+        "actitudinal": {
+          "bajo": "Participa en la observación de la Luna cuando se le invita.",
+          "basico": "Muestra interés por observar el cielo nocturno.",
+          "alto": "Es constante en el registro de sus observaciones de la Luna.",
+          "superior": "Comparte sus observaciones lunares con sus compañeros de forma respetuosa."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar las fases de la Luna", "tipo": "Ordenar" },
+        { "descripcion": "Emparejar cada fase de la Luna con su nombre", "tipo": "Emparejar" },
+        { "descripcion": "Predecir la fase de la Luna según una posición dada", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Me ubico en el universo y en la Tierra e identifico características de la materia, fenómenos físicos y manifestaciones de la energía en el entorno.",
+      "subprocesos_ebc": [
+        "Describo y verifico el efecto de la transferencia de energía térmica en los cambios de estado de algunas sustancias.",
+        "Verifico la posibilidad de mezclar diversos líquidos, sólidos y gases.",
+        "Propongo y verifico diferentes métodos de separación de mezclas.",
+        "Establezco relaciones entre objetos que tienen masas iguales y volúmenes diferentes o viceversa y su posibilidad de flotar.",
+        "Comparo movimientos y desplazamientos de seres vivos y objetos.",
+        "Relaciono el estado de reposo o movimiento de un objeto con las fuerzas aplicadas sobre éste.",
+        "Describo fuerzas y torques en máquinas simples.",
+        "Verifico la conducción de electricidad o calor en materiales.",
+        "Identifico las funciones de los componentes de un circuito eléctrico.",
+        "Describo los principales elementos del sistema solar y establezco relaciones de tamaño, movimiento y posición.",
+        "Comparo el peso y la masa de un objeto en diferentes puntos del sistema solar.",
+        "Describo las características físicas de la Tierra y su atmósfera.",
+        "Relaciono el movimiento de traslación con los cambios climáticos.",
+        "Establezco relaciones entre mareas, corrientes marinas, movimiento de placas tectónicas, formas del paisaje y relieve, y las fuerzas que los generan."
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Mezclas y técnicas de separación",
+      "dba_asociados": [5],
+      "dba_relacionados": [],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["clasifica", "selecciona", "predice", "compara"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Mezclas homogéneas y heterogéneas",
+        "Técnicas de separación de mezclas"
+      ],
+      "subtemas": [
+        "¿Qué diferencia una mezcla homogénea de una heterogénea?",
+        "Técnicas de separación: filtración, tamizado, decantación, evaporación",
+        "Elegir la técnica correcta según los materiales de la mezcla",
+        "Predecir qué tipo de mezcla se forma al combinar materiales"
+      ],
+      "palabras_clave": ["mezclas", "homogénea", "heterogénea", "filtración", "tamizado", "decantación", "evaporación", "separación de mezclas", "grado 4"],
+      "dba_enunciado": "Comprende que existen distintos tipos de mezclas (homogéneas y heterogéneas) que de acuerdo con los materiales que las componen pueden separarse mediante diferentes técnicas (filtración, tamizado, decantación, evaporación).",
+      "evidencias_aprendizaje": [
+        "Clasifica como homogénea o heterogénea una mezcla dada, a partir del número de fases observadas.",
+        "Selecciona las técnicas para separar una mezcla dada, de acuerdo con las propiedades de sus componentes.",
+        "Predice el tipo de mezcla que se producirá a partir de la combinación de materiales, considerando ejemplos de materiales cotidianos en diferentes estados de agregación (agua-aceite, arena-gravilla, agua-piedras).",
+        "Compara las ventajas y desventajas de distintas técnicas de separación (filtración, tamizado, decantación, evaporación) de mezclas homogéneas y heterogéneas, considerando ejemplos de mezclas concretas."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra ejemplos de mezclas con ayuda.",
+          "basico": "Reconoce mezclas homogéneas y heterogéneas.",
+          "alto": "Selecciona la técnica de separación adecuada según las propiedades de los componentes de una mezcla.",
+          "superior": "Compara ventajas y desventajas de distintas técnicas de separación de mezclas."
+        },
+        "procedimental": {
+          "bajo": "Observa mezclas de materiales con acompañamiento.",
+          "basico": "Clasifica mezclas dadas como homogéneas o heterogéneas con ayuda.",
+          "alto": "Aplica técnicas de separación de mezclas de forma autónoma.",
+          "superior": "Diseña un procedimiento propio para separar los componentes de una mezcla dada."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre mezclas cuando se le invita.",
+          "basico": "Muestra interés por experimentar con mezclas de materiales.",
+          "alto": "Sigue normas de seguridad al manipular materiales para formar o separar mezclas.",
+          "superior": "Promueve el manejo responsable de materiales durante los experimentos con mezclas."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Clasificar mezclas como homogéneas o heterogéneas", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre técnicas de separación de mezclas", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Predecir el tipo de mezcla al combinar materiales", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Me ubico en el universo y en la Tierra e identifico características de la materia, fenómenos físicos y manifestaciones de la energía en el entorno.",
+      "subprocesos_ebc": [
+        "Describo y verifico el efecto de la transferencia de energía térmica en los cambios de estado de algunas sustancias.",
+        "Verifico la posibilidad de mezclar diversos líquidos, sólidos y gases.",
+        "Propongo y verifico diferentes métodos de separación de mezclas.",
+        "Establezco relaciones entre objetos que tienen masas iguales y volúmenes diferentes o viceversa y su posibilidad de flotar.",
+        "Comparo movimientos y desplazamientos de seres vivos y objetos.",
+        "Relaciono el estado de reposo o movimiento de un objeto con las fuerzas aplicadas sobre éste.",
+        "Describo fuerzas y torques en máquinas simples.",
+        "Verifico la conducción de electricidad o calor en materiales.",
+        "Identifico las funciones de los componentes de un circuito eléctrico.",
+        "Describo los principales elementos del sistema solar y establezco relaciones de tamaño, movimiento y posición.",
+        "Comparo el peso y la masa de un objeto en diferentes puntos del sistema solar.",
+        "Describo las características físicas de la Tierra y su atmósfera.",
+        "Relaciono el movimiento de traslación con los cambios climáticos.",
+        "Establezco relaciones entre mareas, corrientes marinas, movimiento de placas tectónicas, formas del paisaje y relieve, y las fuerzas que los generan."
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Niveles tróficos y cadenas alimenticias",
+      "dba_asociados": [6],
+      "dba_relacionados": [7],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["identifica", "indica", "representa"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Niveles tróficos",
+        "Cadenas y redes alimenticias"
+      ],
+      "subtemas": [
+        "¿Qué función cumple cada organismo en una cadena alimenticia?",
+        "Productores, consumidores y descomponedores",
+        "Qué pasa si se altera un nivel de una red alimenticia",
+        "Representar cadenas y redes tróficas"
+      ],
+      "palabras_clave": ["niveles tróficos", "cadena alimenticia", "red alimenticia", "productores", "consumidores", "descomponedores", "ecosistema", "grado 4"],
+      "dba_enunciado": "Comprende que los organismos cumplen distintas funciones en cada uno de los niveles tróficos y que las relaciones entre ellos pueden representarse en cadenas y redes alimenticias.",
+      "evidencias_aprendizaje": [
+        "Identifica los niveles tróficos en cadenas y redes alimenticias y establece la función de cada uno en un ecosistema.",
+        "Indica qué puede ocurrir con las distintas poblaciones que forman parte de una red alimenticia cuando se altera cualquiera de sus niveles.",
+        "Representa cadenas, pirámides o redes tróficas para establecer relaciones entre los niveles tróficos."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algún nivel trófico con ayuda.",
+          "basico": "Identifica los niveles tróficos en una cadena alimenticia.",
+          "alto": "Establece la función de cada nivel trófico en un ecosistema.",
+          "superior": "Indica qué puede ocurrir con las poblaciones de una red alimenticia cuando se altera alguno de sus niveles."
+        },
+        "procedimental": {
+          "bajo": "Observa ejemplos de cadenas alimenticias con acompañamiento.",
+          "basico": "Identifica niveles tróficos en cadenas alimenticias sencillas con ayuda.",
+          "alto": "Representa cadenas, pirámides o redes tróficas de forma autónoma.",
+          "superior": "Explica y sustenta el efecto de alterar un nivel trófico en una red alimenticia."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre cadenas alimenticias cuando se le invita.",
+          "basico": "Muestra interés por conocer las relaciones alimenticias en un ecosistema.",
+          "alto": "Respeta el equilibrio de las cadenas alimenticias de su entorno.",
+          "superior": "Promueve el cuidado de los ecosistemas para mantener el equilibrio de las cadenas alimenticias."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar los niveles de una cadena alimenticia", "tipo": "Ordenar" },
+        { "descripcion": "Relacionar organismos con su nivel trófico", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre cadenas y redes alimenticias", "tipo": "Quiz opción múltiple" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Identifico estructuras de los seres vivos que les permiten desarrollarse en un entorno y que puedo utilizar como criterios de clasificación.",
+      "subprocesos_ebc": [
+        "Explico la importancia de la célula como unidad básica de los seres vivos.",
+        "Identifico los niveles de organización celular de los seres vivos.",
+        "Identifico en mi entorno objetos que cumplen funciones similares a las de mis órganos y sustento la comparación.",
+        "Represento los diversos sistemas de órganos del ser humano y explico su función.",
+        "Clasifico seres vivos en diversos grupos taxonómicos (plantas, animales, microorganismos…).",
+        "Indago acerca del tipo de fuerza (compresión, tensión o torsión) que puede fracturar diferentes tipos de huesos.",
+        "Identifico máquinas simples en el cuerpo de seres vivos y explico su función.",
+        "Investigo y describo diversos tipos de neuronas, las comparo entre sí y con circuitos eléctricos.",
+        "Analizo el ecosistema que me rodea y lo comparo con otros.",
+        "Identifico adaptaciones de los seres vivos, teniendo en cuenta las características de los ecosistemas en que viven.",
+        "Explico la dinámica de un ecosistema, teniendo en cuenta las necesidades de energía y nutrientes de los seres vivos (cadena alimentaria).",
+        "Identifico fenómenos de camuflaje en el entorno y los relaciono con las necesidades de los seres vivos."
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Tipos de ecosistemas y sus características físicas",
+      "dba_asociados": [7],
+      "dba_relacionados": [6],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Crear",
+        "verbo_bloom": ["diferencia", "explica", "propone", "plantea"],
+        "nivel_numero": 6
+      },
+      "temas": [
+        "Tipos de ecosistemas (terrestres y acuáticos)",
+        "Características físicas de los ecosistemas",
+        "Conservación de ecosistemas"
+      ],
+      "subtemas": [
+        "¿Qué diferencia a un ecosistema terrestre de uno acuático?",
+        "Cómo la temperatura, la humedad, el suelo y la altitud afectan a los seres vivos",
+        "Ecosistemas representativos de mi región",
+        "Estrategias para conservar un ecosistema"
+      ],
+      "palabras_clave": ["ecosistemas terrestres", "ecosistemas acuáticos", "temperatura", "humedad", "altitud", "conservación", "especies endémicas", "grado 4"],
+      "dba_enunciado": "Comprende que existen distintos tipos de ecosistemas (terrestres y acuáticos) y que sus características físicas (temperatura, humedad, tipos de suelo, altitud) permiten que habiten en ellos diferentes seres vivos.",
+      "evidencias_aprendizaje": [
+        "Diferencia tipos de ecosistemas (terrestres y acuáticos) correspondientes a distintas ubicaciones geográficas, para establecer sus principales características.",
+        "Explica cómo repercuten las características físicas (temperatura, humedad, tipo de suelo, altitud) de ecosistemas (acuáticos y terrestres) en la supervivencia de los organismos que allí habitan.",
+        "Propone representaciones de los ecosistemas representativos de su región, resaltando sus particularidades (especies endémicas, potencialidades ecoturísticas, entre otros.) y plantea estrategias para su conservación."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra un tipo de ecosistema con ayuda.",
+          "basico": "Diferencia ecosistemas terrestres de acuáticos.",
+          "alto": "Explica cómo las características físicas de un ecosistema afectan la supervivencia de los organismos.",
+          "superior": "Propone representaciones y estrategias de conservación para un ecosistema de su región."
+        },
+        "procedimental": {
+          "bajo": "Observa ecosistemas de su entorno con acompañamiento.",
+          "basico": "Diferencia tipos de ecosistemas según ubicaciones geográficas con ayuda.",
+          "alto": "Explica de forma autónoma cómo repercuten las características físicas de un ecosistema en sus organismos.",
+          "superior": "Diseña una propuesta de conservación para un ecosistema representativo de su región."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre ecosistemas cuando se le invita.",
+          "basico": "Muestra interés por conocer los ecosistemas de su región.",
+          "alto": "Valora la importancia de conservar los ecosistemas y sus especies.",
+          "superior": "Promueve estrategias de conservación de ecosistemas entre sus compañeros y su comunidad."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar tipo de ecosistema con sus características", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre tipos de ecosistemas", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Proponer una estrategia de conservación para un ecosistema de mi región", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Identifico estructuras de los seres vivos que les permiten desarrollarse en un entorno y que puedo utilizar como criterios de clasificación.",
+      "subprocesos_ebc": [
+        "Explico la importancia de la célula como unidad básica de los seres vivos.",
+        "Identifico los niveles de organización celular de los seres vivos.",
+        "Identifico en mi entorno objetos que cumplen funciones similares a las de mis órganos y sustento la comparación.",
+        "Represento los diversos sistemas de órganos del ser humano y explico su función.",
+        "Clasifico seres vivos en diversos grupos taxonómicos (plantas, animales, microorganismos…).",
+        "Indago acerca del tipo de fuerza (compresión, tensión o torsión) que puede fracturar diferentes tipos de huesos.",
+        "Identifico máquinas simples en el cuerpo de seres vivos y explico su función.",
+        "Investigo y describo diversos tipos de neuronas, las comparo entre sí y con circuitos eléctricos.",
+        "Analizo el ecosistema que me rodea y lo comparo con otros.",
+        "Identifico adaptaciones de los seres vivos, teniendo en cuenta las características de los ecosistemas en que viven.",
+        "Explico la dinámica de un ecosistema, teniendo en cuenta las necesidades de energía y nutrientes de los seres vivos (cadena alimentaria).",
+        "Identifico fenómenos de camuflaje en el entorno y los relaciono con las necesidades de los seres vivos."
+      ]
+    }
+  ]
 }

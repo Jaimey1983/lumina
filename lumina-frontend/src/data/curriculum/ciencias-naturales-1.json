@@ -2,7 +2,296 @@
   "grado": "1",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 1°-3°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Los sentidos y la percepción del entorno",
+      "dba_asociados": [1],
+      "dba_relacionados": [2],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["describe", "caracteriza", "compara", "usa"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Los cinco sentidos",
+        "Propiedades físicas de los objetos (temperatura, color, textura, sonido, olor, sabor)",
+        "Instrumentos de observación"
+      ],
+      "subtemas": [
+        "¿Qué percibimos con cada uno de los cinco sentidos?",
+        "Cómo describir sonidos, sabores, olores, colores, texturas y formas",
+        "Comparar temperaturas: más caliente, similar, menos caliente",
+        "Tipos de luz: color, intensidad y fuente",
+        "Usar la lupa para observar objetos pequeños",
+        "Dibujar y representar lo que observamos"
+      ],
+      "palabras_clave": ["sentidos", "percepción sensorial", "temperatura", "sonido", "color", "textura", "olor", "sabor", "luz", "lupa", "observación", "grado 1"],
+      "dba_enunciado": "Comprende que los sentidos le permiten percibir algunas características de los objetos que nos rodean (temperatura, sabor, sonidos, olor, color, texturas y formas).",
+      "evidencias_aprendizaje": [
+        "Describe y caracteriza, utilizando el sentido apropiado, sonidos, sabores, olores, colores, texturas y formas.",
+        "Compara y describe cambios en las temperaturas (más caliente, similar, menos caliente) utilizando el tacto en diversos objetos (con diferente color) sometidos a fuentes de calor como el sol.",
+        "Describe y caracteriza, utilizando la vista, diferentes tipos de luz (color, intensidad y fuente).",
+        "Usa instrumentos como la lupa para realizar observaciones de objetos pequeños y representarlos mediante dibujos."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra los cinco sentidos con ayuda del docente.",
+          "basico": "Reconoce qué sentido permite percibir cada característica de un objeto.",
+          "alto": "Describe con vocabulario apropiado las características de objetos usando cada sentido.",
+          "superior": "Explica por qué distintos sentidos perciben distintas propiedades de un mismo objeto."
+        },
+        "procedimental": {
+          "bajo": "Manipula objetos para explorarlos con ayuda.",
+          "basico": "Usa la lupa para observar objetos pequeños con acompañamiento.",
+          "alto": "Usa instrumentos de observación de forma autónoma y representa lo observado mediante dibujos.",
+          "superior": "Diseña una forma propia de registrar y comparar observaciones sensoriales de varios objetos."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades de exploración sensorial cuando se le invita.",
+          "basico": "Muestra interés por explorar objetos con los sentidos.",
+          "alto": "Cuida los instrumentos de observación y los materiales explorados.",
+          "superior": "Promueve entre sus compañeros el uso cuidadoso de los sentidos y los instrumentos de observación."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Emparejar objetos con la característica sensorial que los describe", "tipo": "Emparejar" },
+        { "descripcion": "Verdadero o falso sobre los cinco sentidos", "tipo": "Verdadero/Falso" },
+        { "descripcion": "Sopa de letras: los cinco sentidos", "tipo": "Sopa de letras" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Materiales y sus usos",
+      "dba_asociados": [2],
+      "dba_relacionados": [1],
+      "enfoque_men": "Ciencia, tecnología y sociedad",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["clasifica", "predice", "selecciona", "utiliza"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Materiales de uso cotidiano",
+        "Propiedades de los materiales",
+        "Selección de materiales según su función"
+      ],
+      "subtemas": [
+        "Materiales sólidos y líquidos que nos rodean",
+        "Propiedades de los materiales: dureza, flexibilidad, permeabilidad, color, sabor, textura",
+        "Para qué sirve cada material según sus características",
+        "Escoger el material correcto para fabricar un objeto",
+        "Medir y clasificar materiales con instrumentos caseros"
+      ],
+      "palabras_clave": ["materiales", "propiedades de los materiales", "dureza", "flexibilidad", "permeabilidad al agua", "solubilidad", "clasificación de materiales", "usos de los materiales", "grado 1"],
+      "dba_enunciado": "Comprende que existe una gran variedad de materiales y que éstos se utilizan para distintos fines, según sus características (longitud, dureza, flexibilidad, permeabilidad al agua, solubilidad, ductilidad, maleabilidad, color, sabor, textura).",
+      "evidencias_aprendizaje": [
+        "Clasifica materiales de uso cotidiano a partir de características que percibe con los sentidos, incluyendo materiales sólidos como madera, plástico, vidrio, metal, roca y líquidos como opacos, incoloros, transparentes, así como algunas propiedades (flexibilidad, dureza, permeabilidad al agua, color, sabor y textura).",
+        "Predice cuáles podrían ser los posibles usos de un material (por ejemplo, la goma), de acuerdo con sus características.",
+        "Selecciona qué materiales utilizaría para fabricar un objeto dada cierta necesidad (por ejemplo, un paraguas que evite el paso del agua).",
+        "Utiliza instrumentos no convencionales (sus manos, palos, cuerdas, vasos, jarras) para medir y clasificar materiales según su tamaño."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra materiales de uso cotidiano con ayuda del docente.",
+          "basico": "Reconoce algunas propiedades de los materiales (dureza, flexibilidad, color, textura).",
+          "alto": "Clasifica materiales según sus propiedades y predice sus posibles usos.",
+          "superior": "Justifica por qué un material es adecuado o no para una necesidad específica."
+        },
+        "procedimental": {
+          "bajo": "Manipula materiales para explorarlos con acompañamiento.",
+          "basico": "Clasifica materiales sólidos y líquidos con ayuda.",
+          "alto": "Usa instrumentos no convencionales para medir y clasificar materiales de forma autónoma.",
+          "superior": "Selecciona y justifica el material más adecuado para fabricar un objeto según una necesidad dada."
+        },
+        "actitudinal": {
+          "bajo": "Participa en actividades de exploración de materiales cuando se le invita.",
+          "basico": "Muestra curiosidad por los materiales de su entorno.",
+          "alto": "Cuida los materiales e instrumentos usados en las actividades.",
+          "superior": "Promueve el uso responsable de los materiales entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar materiales con sus propiedades", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre propiedades de los materiales", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Seleccionar el material adecuado para fabricar un objeto", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Ciencia, tecnología y sociedad",
+      "ebc_estandar": "Valoro la utilidad de algunos objetos y técnicas desarrollados por el ser humano y reconozco que somos agentes de cambio en el entorno y en la sociedad.",
+      "subprocesos_ebc": [
+        "Clasifico y comparo objetos según sus usos.",
+        "Diferencio objetos naturales de objetos creados por el ser humano.",
+        "Identifico objetos que emitan luz o sonido.",
+        "Identifico circuitos eléctricos en mi entorno.",
+        "Analizo la utilidad de algunos aparatos eléctricos a mi alrededor.",
+        "Identifico aparatos que utilizamos hoy y que no se utilizaban en épocas pasadas.",
+        "Asocio el clima con la forma de vida de diferentes comunidades.",
+        "Identifico necesidades de cuidado de mi cuerpo y el de otras personas."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Seres vivos y objetos inertes",
+      "dba_asociados": [3],
+      "dba_relacionados": [4],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["clasifica", "compara", "describe", "propone"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Características de los seres vivos",
+        "Clasificación de seres vivos",
+        "Cuidado de plantas y animales"
+      ],
+      "subtemas": [
+        "¿Qué diferencia a un ser vivo de un objeto inerte?",
+        "Partes de las plantas: raíz, tallo, hojas, flores y frutos",
+        "Características de los animales de mi entorno",
+        "Clasificación de los animales según su relación con el medio (aves, peces, reptiles, anfibios, mamíferos, insectos)",
+        "Cómo cuidar plantas y animales",
+        "Usar la lupa para observar seres vivos"
+      ],
+      "palabras_clave": ["seres vivos", "objetos inertes", "plantas", "animales", "ciclo de vida", "cuidado de seres vivos", "clasificación de seres vivos", "entorno vivo", "grado 1"],
+      "dba_enunciado": "Comprende que los seres vivos (plantas y animales) tienen características comunes (se alimentan, respiran, tienen un ciclo de vida, responden al entorno) y los diferencia de los objetos inertes.",
+      "evidencias_aprendizaje": [
+        "Clasifica seres vivos (plantas y animales) de su entorno, según sus características observables (tamaño, cubierta corporal, cantidad y tipo de miembros, forma de raíz, tallo, hojas, flores y frutos) y los diferencia de los objetos inertes, a partir de criterios que tienen que ver con las características básicas de los seres vivos.",
+        "Compara características y partes de plantas y animales, utilizando instrumentos simples como la lupa para realizar observaciones.",
+        "Describe las partes de las plantas (raíz, tallo, hojas, flores y frutos), así como las de animales de su entorno, según características observables (tamaño, cubierta corporal, cantidad y tipo de miembros).",
+        "Propone acciones de cuidado a plantas y animales, teniendo en cuenta características como tipo de alimentación, ciclos de vida y relación con el entorno."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra seres vivos y objetos inertes de su entorno con ayuda.",
+          "basico": "Reconoce características comunes de los seres vivos (se alimentan, respiran, responden al entorno).",
+          "alto": "Clasifica seres vivos y los diferencia de objetos inertes según criterios observables.",
+          "superior": "Argumenta por qué un ser vivo comparte características con otros seres vivos y se diferencia de los objetos inertes."
+        },
+        "procedimental": {
+          "bajo": "Observa plantas y animales con acompañamiento del docente.",
+          "basico": "Usa la lupa para observar partes de plantas y animales con ayuda.",
+          "alto": "Describe y compara partes de plantas y animales de forma autónoma.",
+          "superior": "Propone y sustenta acciones de cuidado para plantas y animales según sus necesidades."
+        },
+        "actitudinal": {
+          "bajo": "Participa en actividades de observación de seres vivos cuando se le invita.",
+          "basico": "Muestra interés por conocer plantas y animales de su entorno.",
+          "alto": "Cuida los seres vivos y los materiales usados en la observación.",
+          "superior": "Promueve entre sus compañeros el cuidado de plantas y animales del entorno."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Emparejar seres vivos con sus características", "tipo": "Emparejar" },
+        { "descripcion": "Ordenar el ciclo de vida de una planta", "tipo": "Ordenar" },
+        { "descripcion": "Quiz: seres vivos vs objetos inertes", "tipo": "Quiz opción múltiple" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.",
+      "subprocesos_ebc": [
+        "Establezco relaciones entre las funciones de los cinco sentidos.",
+        "Describo mi cuerpo y el de mis compañeros y compañeras.",
+        "Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.",
+        "Propongo y verifico necesidades de los seres vivos.",
+        "Observo y describo cambios en mi desarrollo y en el de otros seres vivos.",
+        "Describo y verifico ciclos de vida de seres vivos.",
+        "Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.",
+        "Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.",
+        "Explico adaptaciones de los seres vivos al ambiente.",
+        "Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.",
+        "Identifico patrones comunes a los seres vivos."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Mi cuerpo y sus cambios",
+      "dba_asociados": [4],
+      "dba_relacionados": [3],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["registra", "describe", "predice", "establece"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "El cuerpo humano y su crecimiento",
+        "Herencia y semejanzas familiares",
+        "Comparación entre personas"
+      ],
+      "subtemas": [
+        "Cambios físicos de mi cuerpo con el tiempo",
+        "Qué características cambian y cuáles se mantienen (color de ojos, piel y cabello)",
+        "Semejanzas y diferencias entre niños, niñas y adultos",
+        "Qué características heredamos de nuestros padres"
+      ],
+      "palabras_clave": ["cuerpo humano", "crecimiento", "cambios físicos", "herencia", "semejanzas familiares", "comparación", "características físicas", "grado 1"],
+      "dba_enunciado": "Comprende que su cuerpo experimenta constantes cambios a lo largo del tiempo y reconoce a partir de su comparación que tiene características similares y diferentes a las de sus padres y compañeros.",
+      "evidencias_aprendizaje": [
+        "Registra cambios físicos ocurridos en su cuerpo durante el crecimiento, tales como peso, talla, longitud de brazos, piernas, pies y manos, así como algunas características que no varían como el color de ojos, piel y cabello.",
+        "Describe su cuerpo y predice los cambios que se producirán en un futuro, a partir de los ejercicios de comparación que realiza entre un niño y un adulto.",
+        "Describe y registra similitudes y diferencias físicas que observa entre niños y niñas de su grado reconociéndose y reconociendo al otro.",
+        "Establece relaciones hereditarias a partir de las características físicas de sus padres, describiendo diferencias y similitudes."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra partes de su cuerpo con ayuda del docente.",
+          "basico": "Reconoce que su cuerpo cambia con el tiempo.",
+          "alto": "Describe cambios físicos de su cuerpo y establece relaciones hereditarias con sus padres.",
+          "superior": "Explica por qué algunas características cambian y otras se mantienen con el tiempo."
+        },
+        "procedimental": {
+          "bajo": "Participa en el registro de medidas de su cuerpo con acompañamiento.",
+          "basico": "Registra cambios físicos de su cuerpo (peso, talla) con ayuda.",
+          "alto": "Compara y registra similitudes y diferencias físicas entre compañeros de forma autónoma.",
+          "superior": "Predice y sustenta cambios futuros de su cuerpo a partir de comparaciones entre niño y adulto."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades de comparación cuando se le invita.",
+          "basico": "Muestra interés por conocer los cambios de su cuerpo.",
+          "alto": "Respeta las semejanzas y diferencias físicas de sus compañeros.",
+          "superior": "Promueve el respeto por la diversidad física entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Llenar espacios sobre los cambios del cuerpo", "tipo": "Llenar espacios" },
+        { "descripcion": "Relacionar características heredadas de los padres", "tipo": "Relacionar columnas" },
+        { "descripcion": "Ruleta de palabras: mi cuerpo", "tipo": "Ruleta de palabras" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.",
+      "subprocesos_ebc": [
+        "Establezco relaciones entre las funciones de los cinco sentidos.",
+        "Describo mi cuerpo y el de mis compañeros y compañeras.",
+        "Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.",
+        "Propongo y verifico necesidades de los seres vivos.",
+        "Observo y describo cambios en mi desarrollo y en el de otros seres vivos.",
+        "Describo y verifico ciclos de vida de seres vivos.",
+        "Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.",
+        "Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.",
+        "Explico adaptaciones de los seres vivos al ambiente.",
+        "Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.",
+        "Identifico patrones comunes a los seres vivos."
+      ]
+    }
+  ]
 }

@@ -2,7 +2,436 @@
   "grado": "3",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 1°-3°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Propagación de la luz",
+      "dba_asociados": [1],
+      "dba_relacionados": [2, 3],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["compara", "selecciona", "describe"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Propagación de la luz",
+        "Materiales según el paso de la luz (opacos, transparentes, translúcidos, reflectivos)",
+        "Cuidado de los ojos frente a la luz"
+      ],
+      "subtemas": [
+        "¿Cómo viaja la luz a través de diferentes materiales?",
+        "Materiales opacos, transparentes, translúcidos y reflectivos",
+        "Elegir el material correcto según lo que necesito ver o no ver",
+        "La luz viaja en línea recta y en todas las direcciones",
+        "Precauciones con los ojos frente a la luz directa (sol, láser)"
+      ],
+      "palabras_clave": ["luz", "propagación de la luz", "materiales opacos", "materiales transparentes", "translúcidos", "reflectivos", "espejo", "cuidado de los ojos", "grado 3"],
+      "dba_enunciado": "Comprende la forma en que se propaga la luz a través de diferentes materiales (opacos, transparentes como el aire, translúcidos como el papel y reflectivos como el espejo).",
+      "evidencias_aprendizaje": [
+        "Compara, en un experimento, distintos materiales de acuerdo con la cantidad de luz que dejan pasar (opacos, transparentes, translúcidos y reflectivos) y selecciona el tipo de material que elegiría para un cierto fin (por ejemplo, un frasco que no permita ver su contenido).",
+        "Selecciona la fuente apropiada para iluminar completamente una determinada superficie teniendo en cuenta que la luz se propaga en todas las direcciones y viaja en línea recta.",
+        "Describe las precauciones que debe tener presentes frente a la exposición de los ojos a rayos de luz directa (rayos láser, luz del sol) que pueden causarle daño."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que la luz puede atravesar algunos materiales y otros no, con ayuda.",
+          "basico": "Identifica materiales opacos, transparentes, translúcidos y reflectivos.",
+          "alto": "Compara materiales según la cantidad de luz que dejan pasar y selecciona el más adecuado para un fin.",
+          "superior": "Explica por qué la luz viaja en línea recta y en todas las direcciones, aplicándolo a una situación real."
+        },
+        "procedimental": {
+          "bajo": "Participa en experimentos sobre la luz con acompañamiento.",
+          "basico": "Compara distintos materiales frente a una fuente de luz con ayuda.",
+          "alto": "Selecciona de forma autónoma la fuente de luz apropiada para iluminar una superficie.",
+          "superior": "Diseña un experimento para comparar cómo distintos materiales dejan pasar la luz."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades de exploración de la luz cuando se le invita.",
+          "basico": "Muestra interés por experimentar con la luz y los materiales.",
+          "alto": "Sigue las precauciones necesarias para cuidar sus ojos frente a la luz directa.",
+          "superior": "Promueve entre sus compañeros el cuidado de los ojos frente a fuentes de luz intensa."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Clasificar materiales según cuánta luz dejan pasar", "tipo": "Relacionar columnas" },
+        { "descripcion": "Verdadero o falso sobre la propagación de la luz", "tipo": "Verdadero/Falso" },
+        { "descripcion": "Seleccionar el material adecuado según una necesidad", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Formación de la sombra",
+      "dba_asociados": [2],
+      "dba_relacionados": [1],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["predice", "desplaza", "explica"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Formación de la sombra",
+        "Relación entre distancia, fuente de luz y tamaño de la sombra"
+      ],
+      "subtemas": [
+        "¿Cómo se forma una sombra?",
+        "Qué pasa con el tamaño de la sombra si muevo la fuente de luz o el objeto",
+        "Predecir dónde aparecerá una sombra",
+        "Registrar en tablas los cambios en el tamaño de una sombra"
+      ],
+      "palabras_clave": ["sombra", "fuente de luz", "distancia", "tamaño de la sombra", "experimento", "tablas de registro", "predicción", "grado 3"],
+      "dba_enunciado": "Comprende la forma en que se produce la sombra y la relación de su tamaño con las distancias entre la fuente de luz, el objeto interpuesto y el lugar donde se produce la sombra.",
+      "evidencias_aprendizaje": [
+        "Predice dónde se producirá la sombra de acuerdo con la posición de la fuente de luz y del objeto.",
+        "Desplaza la fuente de luz y el objeto para aumentar o reducir el tamaño de la sombra que se produce según las necesidades.",
+        "Explica los datos obtenidos mediante observaciones y mediciones, que registra en tablas y otros formatos, de lo que sucede con el tamaño de la sombra de un objeto variando la distancia a la fuente de luz."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que una sombra se forma cuando un objeto bloquea la luz, con ayuda.",
+          "basico": "Identifica los elementos necesarios para que se forme una sombra (fuente de luz, objeto, superficie).",
+          "alto": "Predice dónde se producirá la sombra según la posición de la fuente de luz y el objeto.",
+          "superior": "Explica, con datos registrados, cómo varía el tamaño de la sombra al cambiar la distancia a la fuente de luz."
+        },
+        "procedimental": {
+          "bajo": "Observa la formación de sombras con acompañamiento.",
+          "basico": "Desplaza la fuente de luz o el objeto para cambiar el tamaño de la sombra con ayuda.",
+          "alto": "Registra en tablas los cambios en el tamaño de la sombra de forma autónoma.",
+          "superior": "Diseña un experimento propio para comprobar cómo la distancia afecta el tamaño de una sombra."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre la sombra cuando se le invita.",
+          "basico": "Muestra interés por experimentar con la luz y las sombras.",
+          "alto": "Es cuidadoso al registrar los datos de sus observaciones.",
+          "superior": "Comparte y compara sus resultados con los de sus compañeros de forma respetuosa."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar los pasos para predecir la posición de una sombra", "tipo": "Ordenar" },
+        { "descripcion": "Llenar espacios sobre la formación de la sombra", "tipo": "Llenar espacios" },
+        { "descripcion": "Quiz sobre sombra y fuente de luz", "tipo": "Quiz opción múltiple" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "El sonido y su propagación",
+      "dba_asociados": [3],
+      "dba_relacionados": [1],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["demuestra", "describe", "compara", "clasifica"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "El sonido como vibración",
+        "Características del sonido (altura, timbre, intensidad)",
+        "Propagación del sonido en distintos medios"
+      ],
+      "subtemas": [
+        "¿Qué hace que un objeto produzca sonido?",
+        "Sonidos graves y agudos, fuertes y débiles",
+        "Cómo se propaga el sonido en el agua, el aire y los sólidos",
+        "Materiales que atenúan mejor el sonido"
+      ],
+      "palabras_clave": ["sonido", "vibración", "altura del sonido", "intensidad", "timbre", "propagación del sonido", "atenuación", "grado 3"],
+      "dba_enunciado": "Comprende la naturaleza (fenómeno de la vibración) y las características del sonido (altura, timbre, intensidad) y que este se propaga en distintos medios (sólidos, líquidos, gaseosos).",
+      "evidencias_aprendizaje": [
+        "Demuestra que el sonido es una vibración mediante el uso de fuentes para producirlo: cuerdas (guitarra), parches (tambor) y tubos de aire (flauta), identificando en cada una el elemento que vibra.",
+        "Describe y compara sonidos según su altura (grave o agudo) y su intensidad (fuerte o débil).",
+        "Compara y describe cómo se atenúa (reduce su intensidad) el sonido al pasar por diferentes medios (agua, aire, sólidos) y cómo influye la distancia en este proceso.",
+        "Clasifica materiales de acuerdo con la manera como atenúan un sonido."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que el sonido se produce por vibración, con ayuda.",
+          "basico": "Identifica el elemento que vibra en distintas fuentes de sonido (cuerdas, parches, tubos de aire).",
+          "alto": "Describe y compara sonidos según su altura e intensidad.",
+          "superior": "Explica cómo se atenúa el sonido al pasar por diferentes medios y qué influye en ese proceso."
+        },
+        "procedimental": {
+          "bajo": "Explora fuentes sonoras con acompañamiento.",
+          "basico": "Demuestra que el sonido es una vibración usando instrumentos sencillos con ayuda.",
+          "alto": "Compara y describe la atenuación del sonido en diferentes medios de forma autónoma.",
+          "superior": "Clasifica materiales según su capacidad de atenuar el sonido y justifica su clasificación."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre el sonido cuando se le invita.",
+          "basico": "Muestra interés por explorar fuentes de sonido.",
+          "alto": "Respeta el volumen adecuado al usar instrumentos o fuentes sonoras en el aula.",
+          "superior": "Promueve un ambiente sonoro adecuado para el trabajo en el aula."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Emparejar instrumentos musicales con el elemento que vibra", "tipo": "Emparejar" },
+        { "descripcion": "Quiz sobre las características del sonido", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Sopa de letras: el sonido", "tipo": "Sopa de letras" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Cambios de estado del agua por variación de temperatura",
+      "dba_asociados": [4],
+      "dba_relacionados": [],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["interpreta", "explica", "utiliza"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Cambios de estado de la materia",
+        "La temperatura y el agua",
+        "Instrumentos de medición (balanza, probeta, termómetro)"
+      ],
+      "subtemas": [
+        "¿Qué le pasa al agua cuando cambia la temperatura?",
+        "Evaporación y condensación en la vida cotidiana",
+        "Medir masa, volumen y temperatura con instrumentos convencionales",
+        "Predecir qué pasará con una sustancia si cambia la temperatura"
+      ],
+      "palabras_clave": ["cambios de estado", "temperatura", "agua", "evaporación", "condensación", "termómetro", "probeta", "balanza", "grado 3"],
+      "dba_enunciado": "Comprende la influencia de la variación de la temperatura en los cambios de estado de la materia, considerando como ejemplo el caso del agua.",
+      "evidencias_aprendizaje": [
+        "Interpreta los resultados de experimentos en los que se analizan los cambios de estado del agua al predecir lo qué ocurrirá con el estado de una sustancia dada una variación de la temperatura.",
+        "Explica fenómenos cotidianos en los que se pone de manifiesto el cambio de estado del agua a partir de las variaciones de temperatura (la evaporación del agua en el paso de líquido a gas y los vidrios empañados en el paso de gas a líquido, entre otros).",
+        "Utiliza instrumentos convencionales (balanza, probeta, termómetro) para hacer mediciones de masa, volumen y temperatura del agua que le permitan diseñar e interpretar experiencias sobre los cambios de estado del agua en función de las variaciones de temperatura."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que la temperatura puede cambiar el estado del agua, con ayuda.",
+          "basico": "Identifica ejemplos cotidianos de cambios de estado del agua (evaporación, condensación).",
+          "alto": "Interpreta resultados de experimentos sobre cambios de estado y predice lo que ocurrirá con una sustancia.",
+          "superior": "Explica fenómenos cotidianos de cambio de estado a partir de variaciones de temperatura."
+        },
+        "procedimental": {
+          "bajo": "Observa experimentos sobre cambios de estado con acompañamiento.",
+          "basico": "Usa instrumentos convencionales (termómetro, balanza, probeta) con ayuda para medir.",
+          "alto": "Diseña e interpreta experiencias sobre cambios de estado del agua de forma autónoma.",
+          "superior": "Registra sistemáticamente mediciones de masa, volumen y temperatura para sustentar sus conclusiones."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades experimentales cuando se le invita.",
+          "basico": "Muestra interés por los experimentos con agua y temperatura.",
+          "alto": "Usa los instrumentos de medición con cuidado y precisión.",
+          "superior": "Promueve el uso responsable del agua durante los experimentos."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar el proceso de evaporación y condensación", "tipo": "Ordenar" },
+        { "descripcion": "Relacionar instrumentos con lo que miden", "tipo": "Relacionar columnas" },
+        { "descripcion": "Predecir qué pasa con el agua al cambiar la temperatura", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Factores bióticos y abióticos de un ecosistema",
+      "dba_asociados": [5],
+      "dba_relacionados": [6],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["diferencia", "interpreta", "predice"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Factores bióticos y abióticos de un ecosistema",
+        "Relación entre los factores de un ecosistema"
+      ],
+      "subtemas": [
+        "¿Qué son los factores bióticos y abióticos de un ecosistema?",
+        "Cómo la luz, el agua, la temperatura, el suelo y el aire afectan a las plantas y animales",
+        "Qué pasa si se altera un factor abiótico en un ecosistema",
+        "El ecosistema de mi región"
+      ],
+      "palabras_clave": ["ecosistema", "factores bióticos", "factores abióticos", "flora", "fauna", "luz", "temperatura", "suelo", "grado 3"],
+      "dba_enunciado": "Explica la influencia de los factores abióticos (luz, temperatura, suelo y aire) en el desarrollo de los factores bióticos (fauna y flora) de un ecosistema.",
+      "evidencias_aprendizaje": [
+        "Diferencia los factores bióticos (plantas y animales) de los abióticos (luz, agua, temperatura, suelo y aire) de un ecosistema propio de su región.",
+        "Interpreta el ecosistema de su región describiendo relaciones entre factores bióticos (plantas y animales) y abióticos (luz, agua, temperatura, suelo y aire).",
+        "Predice los efectos que ocurren en los organismos al alterarse un factor abiótico en un ecosistema."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algunos factores bióticos y abióticos de un ecosistema con ayuda.",
+          "basico": "Diferencia factores bióticos de abióticos en un ecosistema.",
+          "alto": "Interpreta relaciones entre factores bióticos y abióticos de un ecosistema de su región.",
+          "superior": "Predice los efectos que ocurrirían en los organismos al alterarse un factor abiótico."
+        },
+        "procedimental": {
+          "bajo": "Observa el ecosistema de su región con acompañamiento.",
+          "basico": "Diferencia y clasifica factores bióticos y abióticos con ayuda.",
+          "alto": "Interpreta y describe relaciones entre factores de un ecosistema de forma autónoma.",
+          "superior": "Diseña una explicación propia sobre el efecto de alterar un factor abiótico en un ecosistema."
+        },
+        "actitudinal": {
+          "bajo": "Participa en la observación del ecosistema cuando se le invita.",
+          "basico": "Muestra interés por conocer el ecosistema de su región.",
+          "alto": "Cuida los elementos bióticos y abióticos observados en las salidas de campo o el entorno escolar.",
+          "superior": "Promueve el cuidado del ecosistema de su región entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar factores bióticos y abióticos de un ecosistema", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre factores de un ecosistema", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Predecir el efecto de alterar un factor abiótico", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.",
+      "subprocesos_ebc": [
+        "Establezco relaciones entre las funciones de los cinco sentidos.",
+        "Describo mi cuerpo y el de mis compañeros y compañeras.",
+        "Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.",
+        "Propongo y verifico necesidades de los seres vivos.",
+        "Observo y describo cambios en mi desarrollo y en el de otros seres vivos.",
+        "Describo y verifico ciclos de vida de seres vivos.",
+        "Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.",
+        "Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.",
+        "Explico adaptaciones de los seres vivos al ambiente.",
+        "Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.",
+        "Identifico patrones comunes a los seres vivos."
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Relaciones entre los seres vivos",
+      "dba_asociados": [6],
+      "dba_relacionados": [5],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["interpreta", "observa", "describe", "predice"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Relaciones entre seres vivos (intra e interespecíficas)",
+        "Estrategias de supervivencia"
+      ],
+      "subtemas": [
+        "Tipos de relaciones entre seres vivos: competencia, territorialidad, gregarismo, depredación, parasitismo, comensalismo, amensalismo, mutualismo",
+        "Cómo el camuflaje ayuda a sobrevivir",
+        "Qué pasa con los organismos si cambian las condiciones del ecosistema",
+        "Relaciones que me ayudan a sobrevivir como ser humano"
+      ],
+      "palabras_clave": ["relaciones intraespecíficas", "relaciones interespecíficas", "depredación", "mutualismo", "camuflaje", "supervivencia", "competencia", "grado 3"],
+      "dba_enunciado": "Comprende las relaciones de los seres vivos con otros organismos de su entorno (intra e interespecíficas) y las explica como esenciales para su supervivencia en un ambiente determinado.",
+      "evidencias_aprendizaje": [
+        "Interpreta las relaciones de competencia, territorialidad, gregarismo, depredación, parasitismo, comensalismo, amensalismo y mutualismo, como esenciales para la supervivencia de los organismos en un ecosistema, dando ejemplos.",
+        "Observa y describe características que le permiten a algunos organismos camuflarse con el entorno, para explicar cómo mejoran su posibilidad de supervivencia.",
+        "Predice qué ocurrirá con otros organismos del mismo ecosistema, dada una variación en sus condiciones ambientales o en una población de organismos.",
+        "Describe y registra las relaciones intra e interespecíficas que le permiten sobrevivir como ser humano en un ecosistema."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algún tipo de relación entre seres vivos con ayuda.",
+          "basico": "Reconoce ejemplos de relaciones de competencia, depredación o mutualismo, entre otras.",
+          "alto": "Interpreta relaciones intra e interespecíficas como esenciales para la supervivencia de los organismos.",
+          "superior": "Predice qué ocurrirá con los organismos de un ecosistema ante cambios en sus condiciones o poblaciones."
+        },
+        "procedimental": {
+          "bajo": "Observa relaciones entre seres vivos en imágenes con acompañamiento.",
+          "basico": "Describe relaciones simples entre organismos con ayuda.",
+          "alto": "Observa y describe características de camuflaje que mejoran la supervivencia de forma autónoma.",
+          "superior": "Registra y explica relaciones intra e interespecíficas que le permiten sobrevivir como ser humano en un ecosistema."
+        },
+        "actitudinal": {
+          "bajo": "Participa en actividades sobre relaciones entre seres vivos cuando se le invita.",
+          "basico": "Muestra interés por conocer cómo interactúan los seres vivos.",
+          "alto": "Respeta las relaciones naturales entre los seres vivos de su entorno.",
+          "superior": "Promueve el respeto por las relaciones ecológicas de su entorno entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Emparejar tipo de relación con su ejemplo", "tipo": "Emparejar" },
+        { "descripcion": "Quiz sobre relaciones entre seres vivos", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Describir el tipo de relación presente en una imagen", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.",
+      "subprocesos_ebc": [
+        "Establezco relaciones entre las funciones de los cinco sentidos.",
+        "Describo mi cuerpo y el de mis compañeros y compañeras.",
+        "Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.",
+        "Propongo y verifico necesidades de los seres vivos.",
+        "Observo y describo cambios en mi desarrollo y en el de otros seres vivos.",
+        "Describo y verifico ciclos de vida de seres vivos.",
+        "Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.",
+        "Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.",
+        "Explico adaptaciones de los seres vivos al ambiente.",
+        "Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.",
+        "Identifico patrones comunes a los seres vivos."
+      ]
+    }
+  ]
 }

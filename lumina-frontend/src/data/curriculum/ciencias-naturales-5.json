@@ -2,7 +2,297 @@
   "grado": "5",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 4°-5°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Componentes de un circuito eléctrico básico",
+      "dba_asociados": [1],
+      "dba_relacionados": [2],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["realiza", "identifica", "soluciona"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Componentes de un circuito eléctrico",
+        "Conexión de un circuito eléctrico",
+        "Efectos de la corriente eléctrica"
+      ],
+      "subtemas": [
+        "¿Qué partes tiene un circuito eléctrico básico?",
+        "Cómo conectar pilas, cables y bombillos, motores o timbres",
+        "Qué pasa si un circuito no funciona",
+        "Efectos de la electricidad: luz, calor, movimiento, sonido",
+        "Representar un circuito con símbolos"
+      ],
+      "palabras_clave": ["circuito eléctrico", "pila", "cables", "bombillo", "motor", "timbre", "polos", "símbolos eléctricos", "grado 5"],
+      "dba_enunciado": "Comprende que un circuito eléctrico básico está formado por un generador o fuente (pila), conductores (cables) y uno o más dispositivos (bombillos, motores, timbres), que deben estar conectados apropiadamente (por sus dos polos) para que funcionen y produzcan diferentes efectos.",
+      "evidencias_aprendizaje": [
+        "Realiza circuitos eléctricos simples que funcionan con fuentes (pilas), cables y dispositivos (bombillo, motores, timbres) y los representa utilizando los símbolos apropiados.",
+        "Identifica y soluciona dificultades cuando construye un circuito que no funciona.",
+        "Identifica los diferentes efectos que se producen en los componentes de un circuito como luz y calor en un bombillo, movimiento en un motor y sonido en un timbre."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algún componente de un circuito eléctrico con ayuda.",
+          "basico": "Identifica los componentes de un circuito eléctrico básico (pila, cables, dispositivo).",
+          "alto": "Identifica los diferentes efectos que se producen en los componentes de un circuito.",
+          "superior": "Explica por qué un circuito no funciona y propone una solución."
+        },
+        "procedimental": {
+          "bajo": "Observa el armado de un circuito con acompañamiento.",
+          "basico": "Realiza circuitos eléctricos simples con ayuda.",
+          "alto": "Representa un circuito eléctrico utilizando los símbolos apropiados de forma autónoma.",
+          "superior": "Identifica y soluciona de manera independiente dificultades en un circuito que no funciona."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre circuitos eléctricos cuando se le invita.",
+          "basico": "Muestra interés por construir circuitos eléctricos sencillos.",
+          "alto": "Sigue normas de seguridad al manipular pilas y cables.",
+          "superior": "Promueve el manejo seguro de la electricidad entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Emparejar componentes del circuito con su función", "tipo": "Emparejar" },
+        { "descripcion": "Ordenar los pasos para armar un circuito eléctrico", "tipo": "Ordenar" },
+        { "descripcion": "Quiz sobre circuitos eléctricos", "tipo": "Quiz opción múltiple" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Me ubico en el universo y en la Tierra e identifico características de la materia, fenómenos físicos y manifestaciones de la energía en el entorno.",
+      "subprocesos_ebc": [
+        "Describo y verifico el efecto de la transferencia de energía térmica en los cambios de estado de algunas sustancias.",
+        "Verifico la posibilidad de mezclar diversos líquidos, sólidos y gases.",
+        "Propongo y verifico diferentes métodos de separación de mezclas.",
+        "Establezco relaciones entre objetos que tienen masas iguales y volúmenes diferentes o viceversa y su posibilidad de flotar.",
+        "Comparo movimientos y desplazamientos de seres vivos y objetos.",
+        "Relaciono el estado de reposo o movimiento de un objeto con las fuerzas aplicadas sobre éste.",
+        "Describo fuerzas y torques en máquinas simples.",
+        "Verifico la conducción de electricidad o calor en materiales.",
+        "Identifico las funciones de los componentes de un circuito eléctrico.",
+        "Describo los principales elementos del sistema solar y establezco relaciones de tamaño, movimiento y posición.",
+        "Comparo el peso y la masa de un objeto en diferentes puntos del sistema solar.",
+        "Describo las características físicas de la Tierra y su atmósfera.",
+        "Relaciono el movimiento de traslación con los cambios climáticos.",
+        "Establezco relaciones entre mareas, corrientes marinas, movimiento de placas tectónicas, formas del paisaje y relieve, y las fuerzas que los generan."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Materiales conductores y aislantes",
+      "dba_asociados": [2],
+      "dba_relacionados": [1],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["construye", "identifica", "explica", "verifica"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Materiales conductores y aislantes",
+        "Calor generado por la corriente eléctrica"
+      ],
+      "subtemas": [
+        "¿Qué materiales dejan pasar la corriente eléctrica y cuáles no?",
+        "Por qué los cables están hechos de metal y recubiertos de plástico",
+        "Cómo comprobar si un material es conductor o aislante",
+        "El paso de la corriente genera calor"
+      ],
+      "palabras_clave": ["conductores", "aislantes", "corriente eléctrica", "calor", "metal", "plástico", "circuito eléctrico", "experimento", "grado 5"],
+      "dba_enunciado": "Comprende que algunos materiales son buenos conductores de la corriente eléctrica y otros no (denominados aislantes) y que el paso de la corriente siempre genera calor.",
+      "evidencias_aprendizaje": [
+        "Construye experimentalmente circuitos sencillos para establecer qué materiales son buenos conductores de la corriente eléctrica y cuáles no.",
+        "Identifica, en un conjunto de materiales dados, cuáles son buenos conductores de corriente y cuáles son aislantes de acuerdo a su comportamiento dentro de un circuito eléctrico básico.",
+        "Explica por qué algunos objetos se fabrican con ciertos materiales (por ejemplo, por qué los cables están recubiertos por plástico y formados por metal) en función de su capacidad para conducir electricidad.",
+        "Verifica, con el tacto, que los componentes de un circuito (cables, pilas, bombillos, motores) se calientan cuando están funcionando, y lo atribuye al paso de la corriente eléctrica."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que algunos materiales dejan pasar la corriente y otros no, con ayuda.",
+          "basico": "Identifica materiales conductores y aislantes en un conjunto dado.",
+          "alto": "Explica por qué ciertos objetos se fabrican con materiales conductores o aislantes según su función.",
+          "superior": "Relaciona el calentamiento de los componentes de un circuito con el paso de la corriente eléctrica."
+        },
+        "procedimental": {
+          "bajo": "Observa experimentos sobre conductores y aislantes con acompañamiento.",
+          "basico": "Construye circuitos sencillos para probar materiales con ayuda.",
+          "alto": "Verifica de forma autónoma, con el tacto, el calentamiento de los componentes de un circuito.",
+          "superior": "Diseña un experimento propio para clasificar distintos materiales según su conductividad."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre conductores y aislantes cuando se le invita.",
+          "basico": "Muestra interés por experimentar con distintos materiales y la electricidad.",
+          "alto": "Sigue normas de seguridad al verificar el calentamiento de un circuito.",
+          "superior": "Promueve el uso seguro de materiales conductores y aislantes en el aula."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Clasificar materiales como conductores o aislantes", "tipo": "Relacionar columnas" },
+        { "descripcion": "Verdadero o falso sobre conductores y aislantes", "tipo": "Verdadero/Falso" },
+        { "descripcion": "Explicar por qué se usa cierto material en un cable", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Me ubico en el universo y en la Tierra e identifico características de la materia, fenómenos físicos y manifestaciones de la energía en el entorno.",
+      "subprocesos_ebc": [
+        "Describo y verifico el efecto de la transferencia de energía térmica en los cambios de estado de algunas sustancias.",
+        "Verifico la posibilidad de mezclar diversos líquidos, sólidos y gases.",
+        "Propongo y verifico diferentes métodos de separación de mezclas.",
+        "Establezco relaciones entre objetos que tienen masas iguales y volúmenes diferentes o viceversa y su posibilidad de flotar.",
+        "Comparo movimientos y desplazamientos de seres vivos y objetos.",
+        "Relaciono el estado de reposo o movimiento de un objeto con las fuerzas aplicadas sobre éste.",
+        "Describo fuerzas y torques en máquinas simples.",
+        "Verifico la conducción de electricidad o calor en materiales.",
+        "Identifico las funciones de los componentes de un circuito eléctrico.",
+        "Describo los principales elementos del sistema solar y establezco relaciones de tamaño, movimiento y posición.",
+        "Comparo el peso y la masa de un objeto en diferentes puntos del sistema solar.",
+        "Describo las características físicas de la Tierra y su atmósfera.",
+        "Relaciono el movimiento de traslación con los cambios climáticos.",
+        "Establezco relaciones entre mareas, corrientes marinas, movimiento de placas tectónicas, formas del paisaje y relieve, y las fuerzas que los generan."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Órganos, tejidos y células",
+      "dba_asociados": [3],
+      "dba_relacionados": [4],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["explica", "relaciona", "asocia"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Órganos, tejidos y células",
+        "Sistemas del cuerpo humano",
+        "Cuidado del cuerpo"
+      ],
+      "subtemas": [
+        "¿Cómo se relacionan las células, los tejidos y los órganos?",
+        "Qué función cumple cada sistema de mi cuerpo",
+        "Por qué el tipo de célula se relaciona con la función del tejido",
+        "Alimentación e higiene para el cuidado de mis sistemas"
+      ],
+      "palabras_clave": ["órganos", "tejidos", "células", "sistemas del cuerpo", "higiene", "alimentación", "cuidado del cuerpo", "grado 5"],
+      "dba_enunciado": "Comprende que los sistemas del cuerpo humano están formados por órganos, tejidos y células y que la estructura de cada tipo de célula está relacionada con la función del tejido que forman.",
+      "evidencias_aprendizaje": [
+        "Explica la estructura (órganos, tejidos y células) y las funciones de los sistemas de su cuerpo.",
+        "Relaciona el funcionamiento de los tejidos de un ser vivo con los tipos de células que posee.",
+        "Asocia el cuidado de sus sistemas con una alimentación e higiene adecuadas."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algún sistema del cuerpo humano con ayuda.",
+          "basico": "Identifica órganos, tejidos y células como niveles de organización del cuerpo.",
+          "alto": "Explica la estructura y función de los sistemas de su cuerpo.",
+          "superior": "Relaciona el tipo de célula con la función del tejido que forma en una situación concreta."
+        },
+        "procedimental": {
+          "bajo": "Observa representaciones de los sistemas del cuerpo con acompañamiento.",
+          "basico": "Relaciona el funcionamiento de un tejido con los tipos de células que lo forman con ayuda.",
+          "alto": "Explica de forma autónoma la estructura y función de los sistemas de su cuerpo.",
+          "superior": "Propone cuidados para un sistema del cuerpo a partir de una situación real (por ejemplo, una lesión)."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre el cuerpo humano cuando se le invita.",
+          "basico": "Muestra interés por conocer cómo funciona su cuerpo.",
+          "alto": "Asocia el cuidado de sus sistemas con una alimentación e higiene adecuadas.",
+          "superior": "Promueve hábitos de autocuidado y de cuidado del cuerpo entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar sistema del cuerpo con su función", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre órganos, tejidos y células", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Explicar qué cuidados necesita un sistema del cuerpo", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Identifico estructuras de los seres vivos que les permiten desarrollarse en un entorno y que puedo utilizar como criterios de clasificación.",
+      "subprocesos_ebc": [
+        "Explico la importancia de la célula como unidad básica de los seres vivos.",
+        "Identifico los niveles de organización celular de los seres vivos.",
+        "Identifico en mi entorno objetos que cumplen funciones similares a las de mis órganos y sustento la comparación.",
+        "Represento los diversos sistemas de órganos del ser humano y explico su función.",
+        "Clasifico seres vivos en diversos grupos taxonómicos (plantas, animales, microorganismos…).",
+        "Indago acerca del tipo de fuerza (compresión, tensión o torsión) que puede fracturar diferentes tipos de huesos.",
+        "Identifico máquinas simples en el cuerpo de seres vivos y explico su función.",
+        "Investigo y describo diversos tipos de neuronas, las comparo entre sí y con circuitos eléctricos.",
+        "Analizo el ecosistema que me rodea y lo comparo con otros.",
+        "Identifico adaptaciones de los seres vivos, teniendo en cuenta las características de los ecosistemas en que viven.",
+        "Explico la dinámica de un ecosistema, teniendo en cuenta las necesidades de energía y nutrientes de los seres vivos (cadena alimentaria).",
+        "Identifico fenómenos de camuflaje en el entorno y los relaciono con las necesidades de los seres vivos."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Nutrición: sistemas digestivo, respiratorio y circulatorio",
+      "dba_asociados": [4],
+      "dba_relacionados": [3],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["explica", "relaciona"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Sistema digestivo, respiratorio y circulatorio",
+        "Nutrición y obtención de energía"
+      ],
+      "subtemas": [
+        "¿Qué camino siguen los alimentos en el cuerpo?",
+        "Cómo el sistema respiratorio y el circulatorio trabajan juntos para dar energía a las células",
+        "Por qué aumenta la frecuencia cardíaca y respiratoria al hacer ejercicio",
+        "El intercambio gaseoso en los pulmones"
+      ],
+      "palabras_clave": ["sistema digestivo", "sistema respiratorio", "sistema circulatorio", "nutrición", "digestión", "energía", "frecuencia cardíaca", "intercambio gaseoso", "grado 5"],
+      "dba_enunciado": "Comprende que en los seres humanos (y en muchos otros animales) la nutrición involucra el funcionamiento integrado de un conjunto de sistemas de órganos: digestivo, respiratorio y circulatorio.",
+      "evidencias_aprendizaje": [
+        "Explica el camino que siguen los alimentos en el organismo y los cambios que sufren durante el proceso de digestión desde que son ingeridos hasta que los nutrientes llegan a las células.",
+        "Relaciona las características de los órganos del sistema digestivo (tipos de dientes, características de intestinos y estómagos) de diferentes organismos con los tipos de alimento que consumen.",
+        "Explica por qué cuando se hace ejercicio físico aumentan tanto la frecuencia cardíaca como la respiratoria y vincula la explicación con los procesos de obtención de energía de las células.",
+        "Explica el intercambio gaseoso que ocurre en los alvéolos pulmonares, entre la sangre y el aire, y lo relaciona con los procesos de obtención de energía de las células."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra algún sistema relacionado con la nutrición con ayuda.",
+          "basico": "Identifica los sistemas digestivo, respiratorio y circulatorio.",
+          "alto": "Explica el camino que siguen los alimentos en el organismo hasta llegar a las células.",
+          "superior": "Relaciona el aumento de la frecuencia cardíaca y respiratoria con los procesos de obtención de energía de las células."
+        },
+        "procedimental": {
+          "bajo": "Observa representaciones del proceso de digestión con acompañamiento.",
+          "basico": "Relaciona características de los órganos digestivos con el tipo de alimento que consume un organismo, con ayuda.",
+          "alto": "Explica de forma autónoma el intercambio gaseoso que ocurre en los pulmones.",
+          "superior": "Explica y sustenta, a partir de una situación real, cómo interactúan los sistemas digestivo, respiratorio y circulatorio."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades sobre nutrición y sistemas del cuerpo cuando se le invita.",
+          "basico": "Muestra interés por conocer cómo su cuerpo obtiene energía de los alimentos.",
+          "alto": "Valora la importancia de una alimentación adecuada para su cuerpo.",
+          "superior": "Promueve hábitos saludables de alimentación y actividad física entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar el camino de los alimentos en el cuerpo", "tipo": "Ordenar" },
+        { "descripcion": "Relacionar sistema con su función en la nutrición", "tipo": "Relacionar columnas" },
+        { "descripcion": "Explicar por qué aumenta la frecuencia cardíaca al hacer ejercicio", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Identifico estructuras de los seres vivos que les permiten desarrollarse en un entorno y que puedo utilizar como criterios de clasificación.",
+      "subprocesos_ebc": [
+        "Explico la importancia de la célula como unidad básica de los seres vivos.",
+        "Identifico los niveles de organización celular de los seres vivos.",
+        "Identifico en mi entorno objetos que cumplen funciones similares a las de mis órganos y sustento la comparación.",
+        "Represento los diversos sistemas de órganos del ser humano y explico su función.",
+        "Clasifico seres vivos en diversos grupos taxonómicos (plantas, animales, microorganismos…).",
+        "Indago acerca del tipo de fuerza (compresión, tensión o torsión) que puede fracturar diferentes tipos de huesos.",
+        "Identifico máquinas simples en el cuerpo de seres vivos y explico su función.",
+        "Investigo y describo diversos tipos de neuronas, las comparo entre sí y con circuitos eléctricos.",
+        "Analizo el ecosistema que me rodea y lo comparo con otros.",
+        "Identifico adaptaciones de los seres vivos, teniendo en cuenta las características de los ecosistemas en que viven.",
+        "Explico la dinámica de un ecosistema, teniendo en cuenta las necesidades de energía y nutrientes de los seres vivos (cadena alimentaria).",
+        "Identifico fenómenos de camuflaje en el entorno y los relaciono con las necesidades de los seres vivos."
+      ]
+    }
+  ]
 }

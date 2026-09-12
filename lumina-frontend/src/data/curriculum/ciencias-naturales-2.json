@@ -2,7 +2,292 @@
   "grado": "2",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 1°-3°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Fuerzas y deformación de los materiales",
+      "dba_asociados": [1],
+      "dba_relacionados": [2],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["compara", "clasifica", "predice", "comunica"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Fuerzas y deformación de los materiales",
+        "Resistencia de los materiales",
+        "Materiales de uso cotidiano y sus propiedades mecánicas"
+      ],
+      "subtemas": [
+        "¿Qué es una fuerza y cómo cambia la forma de los objetos?",
+        "Estirar, comprimir, torcer, aplastar, doblar: tipos de acciones sobre los materiales",
+        "Materiales que se deforman fácil y materiales que resisten",
+        "Predecir qué le pasará a un material si le aplico una fuerza",
+        "Comunicar de forma oral y escrita los resultados de un experimento"
+      ],
+      "palabras_clave": ["fuerza", "deformación", "materiales", "resistencia", "madera", "plástico", "resortes", "experimentos", "grado 2"],
+      "dba_enunciado": "Comprende que una acción mecánica (fuerza) puede producir distintas deformaciones en un objeto, y que este resiste a las fuerzas de diferente modo, de acuerdo con el material del que está hecho.",
+      "evidencias_aprendizaje": [
+        "Compara los cambios de forma que se generan sobre objetos constituidos por distintos materiales (madera, hierro, plástico, plastilina, resortes, papel, entre otros), cuando se someten a diferentes acciones relacionadas con la aplicación de fuerzas (estirar, comprimir, torcer, aplastar, abrir, partir, doblar, arrugar).",
+        "Clasifica los materiales según su resistencia a ser deformados cuando se les aplica una fuerza.",
+        "Predice el tipo de acción requerida para producir una deformación determinada en un cierto material y las comunica haciendo uso de diferentes formatos (oral, escrito)."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Reconoce que una fuerza puede cambiar la forma de un objeto con ayuda.",
+          "basico": "Identifica acciones que aplican fuerza sobre un objeto (estirar, doblar, aplastar).",
+          "alto": "Clasifica materiales según su resistencia a ser deformados.",
+          "superior": "Predice y explica qué acción produce una deformación determinada en un material específico."
+        },
+        "procedimental": {
+          "bajo": "Manipula materiales para observar cambios de forma con acompañamiento.",
+          "basico": "Aplica acciones simples (estirar, doblar) sobre distintos materiales con ayuda.",
+          "alto": "Compara los cambios de forma en varios materiales de manera autónoma.",
+          "superior": "Comunica oralmente y por escrito los resultados de sus experimentos con materiales."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades de exploración de fuerzas cuando se le invita.",
+          "basico": "Muestra interés por experimentar con distintos materiales.",
+          "alto": "Cuida los materiales e instrumentos usados en los experimentos.",
+          "superior": "Propone normas de cuidado para el manejo seguro de materiales durante los experimentos."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Clasificar materiales según su resistencia a deformarse", "tipo": "Relacionar columnas" },
+        { "descripcion": "Verdadero o falso sobre fuerzas y deformación", "tipo": "Verdadero/Falso" },
+        { "descripcion": "Predecir el efecto de una fuerza sobre un material", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Estados de la materia",
+      "dba_asociados": [2],
+      "dba_relacionados": [1],
+      "enfoque_men": "Entorno físico",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["clasifica", "compara", "reconoce"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Estados de la materia (sólido, líquido, gaseoso)",
+        "Propiedades de los líquidos",
+        "El aire como material"
+      ],
+      "subtemas": [
+        "¿Qué diferencia a un sólido, un líquido y un gas?",
+        "Forma propia o forma del recipiente: cómo reconocer el estado de un material",
+        "Comparar líquidos: cuál fluye más, cuál es más transparente",
+        "El aire existe aunque no lo veamos: experimentos para comprobarlo"
+      ],
+      "palabras_clave": ["estados de la materia", "sólido", "líquido", "gaseoso", "fluidez", "viscosidad", "transparencia", "aire", "grado 2"],
+      "dba_enunciado": "Comprende que las sustancias pueden encontrarse en distintos estados (sólido, líquido y gaseoso).",
+      "evidencias_aprendizaje": [
+        "Clasifica materiales de su entorno según su estado (sólidos, líquidos o gases) a partir de sus propiedades básicas (si tienen forma propia o adoptan la del recipiente que los contiene, si fluyen, entre otros).",
+        "Compara las características físicas observables (fluidez, viscosidad, transparencia) de un conjunto de líquidos (agua, aceite, miel).",
+        "Reconoce el aire como un material a partir de evidencias de su presencia aunque no se pueda ver, en el marco de distintas experiencias (abanicar, soplar, entre otros)."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra ejemplos de sólidos, líquidos y gases con ayuda.",
+          "basico": "Reconoce las características básicas de cada estado de la materia.",
+          "alto": "Clasifica materiales de su entorno según su estado.",
+          "superior": "Explica por qué el aire es un material aunque no se pueda ver."
+        },
+        "procedimental": {
+          "bajo": "Observa materiales en distintos estados con acompañamiento.",
+          "basico": "Compara líquidos sencillos (agua, aceite) con ayuda.",
+          "alto": "Realiza experiencias para comprobar la presencia del aire de forma autónoma.",
+          "superior": "Diseña una experiencia propia para comparar propiedades de distintos líquidos."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades de exploración de estados de la materia cuando se le invita.",
+          "basico": "Muestra curiosidad por los materiales de su entorno.",
+          "alto": "Sigue normas de seguridad al manipular líquidos en los experimentos.",
+          "superior": "Promueve el uso responsable de materiales y líquidos en el aula."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Clasificar materiales según su estado", "tipo": "Emparejar" },
+        { "descripcion": "Quiz: sólido, líquido o gaseoso", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Llenar espacios sobre las propiedades del aire", "tipo": "Llenar espacios" }
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.",
+      "subprocesos_ebc": [
+        "Describo y clasifico objetos según características que percibo con los cinco sentidos.",
+        "Propongo y verifico diversas formas de medir sólidos y líquidos.",
+        "Establezco relaciones entre magnitudes y unidades de medida apropiadas.",
+        "Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.",
+        "Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.",
+        "Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.",
+        "Clasifico luces según color, intensidad y fuente.",
+        "Clasifico sonidos según tono, volumen y fuente.",
+        "Propongo experiencias para comprobar la propagación de la luz y del sonido.",
+        "Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.",
+        "Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.",
+        "Construyo circuitos eléctricos simples con pilas.",
+        "Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo."
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Adaptaciones de plantas y animales al ambiente",
+      "dba_asociados": [3],
+      "dba_relacionados": [4],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Analizar",
+        "verbo_bloom": ["describe", "clasifica", "explica", "predice", "establece"],
+        "nivel_numero": 4
+      },
+      "temas": [
+        "Adaptaciones de plantas y animales al ambiente",
+        "Necesidades básicas de los seres vivos",
+        "Relación entre seres vivos y su entorno"
+      ],
+      "subtemas": [
+        "¿Cómo ayudan las características físicas de un animal o planta a vivir en su ambiente?",
+        "Necesidades básicas: luz, agua, aire, suelo, nutrientes, desplazamiento y protección",
+        "Qué pasa si a una planta o animal le falta algo que necesita",
+        "Tipos de desplazamiento, dieta y protección de los seres vivos"
+      ],
+      "palabras_clave": ["adaptaciones", "plantas", "animales", "ambiente", "necesidades básicas", "desplazamiento", "dieta", "protección", "grado 2"],
+      "dba_enunciado": "Comprende la relación entre las características físicas de plantas y animales con los ambientes en donde viven, teniendo en cuenta sus necesidades básicas (luz, agua, aire, suelo, nutrientes, desplazamiento y protección).",
+      "evidencias_aprendizaje": [
+        "Describe y clasifica plantas y animales de su entorno, según su tipo de desplazamiento, dieta y protección.",
+        "Explica cómo las características físicas de un animal o planta le ayudan a vivir en un cierto ambiente.",
+        "Predice posibles problemas que podrían ocurrir cuando no se satisfacen algunas de las necesidades básicas en el desarrollo de plantas y animales, a partir de los resultados obtenidos en experimentaciones sencillas.",
+        "Establece relaciones entre las características de los seres vivos y el ambiente donde habitan."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra necesidades básicas de plantas y animales con ayuda.",
+          "basico": "Reconoce que las características físicas ayudan a un ser vivo a vivir en su ambiente.",
+          "alto": "Explica cómo las características de plantas y animales se relacionan con su ambiente.",
+          "superior": "Predice problemas que enfrentaría un ser vivo si no se satisfacen sus necesidades básicas."
+        },
+        "procedimental": {
+          "bajo": "Observa plantas y animales de su entorno con acompañamiento.",
+          "basico": "Describe y clasifica plantas y animales según desplazamiento, dieta y protección con ayuda.",
+          "alto": "Establece relaciones entre las características de los seres vivos y su ambiente de forma autónoma.",
+          "superior": "Diseña una experimentación sencilla para poner a prueba una necesidad básica de un ser vivo."
+        },
+        "actitudinal": {
+          "bajo": "Participa en las actividades de observación cuando se le invita.",
+          "basico": "Muestra interés por conocer las necesidades de los seres vivos.",
+          "alto": "Respeta y cuida los seres vivos observados en clase.",
+          "superior": "Promueve acciones para proteger el ambiente de plantas y animales de su entorno."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar seres vivos con su ambiente", "tipo": "Relacionar columnas" },
+        { "descripcion": "Quiz sobre adaptaciones de plantas y animales", "tipo": "Quiz opción múltiple" },
+        { "descripcion": "Qué pasaría si a una planta le falta agua", "tipo": "Respuesta abierta" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.",
+      "subprocesos_ebc": [
+        "Establezco relaciones entre las funciones de los cinco sentidos.",
+        "Describo mi cuerpo y el de mis compañeros y compañeras.",
+        "Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.",
+        "Propongo y verifico necesidades de los seres vivos.",
+        "Observo y describo cambios en mi desarrollo y en el de otros seres vivos.",
+        "Describo y verifico ciclos de vida de seres vivos.",
+        "Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.",
+        "Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.",
+        "Explico adaptaciones de los seres vivos al ambiente.",
+        "Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.",
+        "Identifico patrones comunes a los seres vivos."
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Ciclo de vida de plantas y animales",
+      "dba_asociados": [4],
+      "dba_relacionados": [3],
+      "enfoque_men": "Entorno vivo",
+      "nivel_cognitivo": {
+        "nivel": "Aplicar",
+        "verbo_bloom": ["representa", "identifica"],
+        "nivel_numero": 3
+      },
+      "temas": [
+        "Ciclo de vida de plantas y animales",
+        "Cambios físicos en el desarrollo",
+        "Procesos de germinación, floración, crecimiento y reproducción"
+      ],
+      "subtemas": [
+        "Etapas del ciclo de vida de una planta: germinación, floración, fruto",
+        "Etapas del ciclo de vida de un animal: crecimiento y reproducción",
+        "Cómo representar con dibujos los cambios de un ser vivo en el tiempo"
+      ],
+      "palabras_clave": ["ciclo de vida", "germinación", "floración", "crecimiento", "reproducción", "cambios físicos", "plantas", "animales", "grado 2"],
+      "dba_enunciado": "Explica los procesos de cambios físicos que ocurren en el ciclo de vida de plantas y animales de su entorno, en un período de tiempo determinado.",
+      "evidencias_aprendizaje": [
+        "Representa con dibujos u otros formatos los cambios en el desarrollo de plantas y animales en un período de tiempo, identificando procesos como la germinación, la floración y la aparición de frutos.",
+        "Representa con dibujos u otros formatos los cambios en el desarrollo de los animales en un período de tiempo, identificando procesos como el crecimiento y la reproducción."
+      ],
+      "indicadores_desempeno": {
+        "cognitivo": {
+          "bajo": "Nombra alguna etapa del ciclo de vida de una planta o animal con ayuda.",
+          "basico": "Reconoce las etapas del ciclo de vida de plantas y animales.",
+          "alto": "Identifica procesos como germinación, floración, crecimiento y reproducción en el ciclo de vida.",
+          "superior": "Explica los cambios físicos que ocurren en cada etapa del ciclo de vida de un ser vivo."
+        },
+        "procedimental": {
+          "bajo": "Observa el crecimiento de una planta o animal con acompañamiento.",
+          "basico": "Representa con dibujos alguna etapa del ciclo de vida con ayuda.",
+          "alto": "Representa con dibujos u otros formatos los cambios en el desarrollo de plantas y animales de forma autónoma.",
+          "superior": "Registra sistemáticamente los cambios de un ser vivo durante un período de tiempo determinado."
+        },
+        "actitudinal": {
+          "bajo": "Participa en el seguimiento del ciclo de vida cuando se le invita.",
+          "basico": "Muestra interés por observar el crecimiento de seres vivos.",
+          "alto": "Es constante en el registro de los cambios observados.",
+          "superior": "Promueve el cuidado de plantas y animales durante su ciclo de vida entre sus compañeros."
+        }
+      },
+      "actividades_sugeridas": [
+        { "descripcion": "Ordenar las etapas del ciclo de vida de una planta", "tipo": "Ordenar" },
+        { "descripcion": "Emparejar cada etapa del ciclo de vida con su dibujo", "tipo": "Emparejar" },
+        { "descripcion": "Sopa de letras: ciclo de vida", "tipo": "Sopa de letras" }
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.",
+      "subprocesos_ebc": [
+        "Establezco relaciones entre las funciones de los cinco sentidos.",
+        "Describo mi cuerpo y el de mis compañeros y compañeras.",
+        "Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.",
+        "Propongo y verifico necesidades de los seres vivos.",
+        "Observo y describo cambios en mi desarrollo y en el de otros seres vivos.",
+        "Describo y verifico ciclos de vida de seres vivos.",
+        "Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.",
+        "Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.",
+        "Explico adaptaciones de los seres vivos al ambiente.",
+        "Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.",
+        "Identifico patrones comunes a los seres vivos."
+      ]
+    }
+  ]
 }
