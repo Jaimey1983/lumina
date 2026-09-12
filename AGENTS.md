@@ -628,13 +628,66 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 - **Cierre:** Recharts retirado por completo — un solo motor de gráficos en todo Lumina. Commit: `chore(charts): retirar recharts y el wrapper sin uso de @lumina/ui`.
 
 #### H6 — Ampliar catálogo y configuración en `@lumina/charts` (heredado por todos los consumidores)
-- **Operador:** Claude Code
-- **Estado:** pendiente
-- **Precondición:** H5 hecho (ampliar sobre un solo motor ya limpio, no sobre dos conviviendo).
-- **Alcance — PUEDE tocar:** `packages/charts/**` — nuevos tipos (combo/dual-eje, apilado y apilado 100%, dispersión/burbujas, radar, treemap, funnel, heatmap, gauge); configuración fina (ejes: título/min/max/escala log, formato de valores, etiquetas de datos, línea de referencia/meta, animación on/off, orden de datos, exportación a imagen); `packages/element-kit/src/blocks/grafico/**` (exponer los tipos nuevos en el panel de propiedades + ampliar `GraficoDatosBlock`/`normalizeGraficoBlock` de forma aditiva, patrón de sanitización ya establecido); `analytics-client.tsx` solo si se decide usar algún tipo nuevo ahí (ej. heatmap de participación).
-- **Alcance — NO toca:** nada fuera de gráficos.
-- **Entregable:** catálogo ampliado disponible en el elemento del editor y en `/analytics` sin duplicar implementación. Verificación con paridad + Playwright.
-- **Cierre:** no aplica Regla 4. Commit: `feat(charts): catálogo ampliado y configuración fina`.
+- **Operador:** Antigravity
+- **Estado:** pendiente — ficha completa, lista para asignar (Regla 10: no se asigna incompleta).
+- **Precondición:** H5 hecho (ampliar sobre un solo motor ya limpio, no sobre dos conviviendo) — **cumplida**.
+
+**Contexto — estado real del repo al abrir esta ficha (2026-09-12, cierre de H5):**
+
+- `packages/charts/src/types.ts` — `LuminaChartType` tiene hoy 7 valores (`column`,`bar`,`line`,`area`,`pie`,`donut`,`radialBar`) y `LuminaChartConfig`/`LuminaChartSeries` solo el esquema mínimo de H1 (sin ejes, sin apilado, sin animación configurable).
+- `packages/charts/src/apex/build-apex-options.ts` — único adapter `LuminaChartConfig → ApexOptions`; hoy tiene 2 ramas (`buildCartesianChart` para column/bar/line/area, `buildCircularChart` para pie/donut/radialBar). La animación está **forzada a `false` siempre** (decisión de H3, ver comentario en el archivo) — H6 la reintroduce como opción, no cambia el default.
+- `packages/element-kit/src/blocks/grafico/` — `grafico-defaults.ts` (`normalizeGraficoBlock`/`createDefaultGraficoBlock`, sanitizadores por campo), `grafico-properties.tsx` (panel de configuración, hoy: tipo/título/A11y/paleta/leyenda/mini-tabla), `grafico-chart-renderer.tsx` (adapter delgado que arma un `LuminaChartConfig` desde `GraficoDatosBlock` y renderiza `<LuminaChart>` — no toca ApexCharts directo).
+- `packages/types/src/slide.types.ts:1246` — `GraficoChartType`/`GraficoDatosBlock`/`GraficoSerie`, el esquema persistido en la base de datos. Cualquier campo nuevo es **aditivo y opcional**, con sanitización en `normalizeGraficoBlock` — el patrón ya está establecido (ver cómo `colorPaleta`/`mostrarLeyenda` se sanitizan hoy), no hay que inventarlo.
+- `lumina-frontend/src/app/(app)/analytics/analytics-client.tsx` — `GradeDistributionSection` y el "Embudo de participación" de `SessionDetailSection` ya consumen `<LuminaChart>` (H4); no tienen UI de configuración (los arma el propio código de la página, no un panel de propiedades).
+- `E5.7`/H3 dejaron un test de integración real en navegador: `lumina-frontend/src/visual-tests/canvas-blocks.integration.visual.spec.tsx` + `canvas-blocks-fixture.ts` (normaliza HTML de ApexCharts: clase de instancia aleatoria, `pathFrom`/`pathTo`). Cualquier tipo de gráfico nuevo que se ejercite ahí debe seguir el mismo patrón de normalización si aparecen nuevos artefactos no deterministas (ids de heatmap, gradientes de treemap, etc.) — revisar antes de asumir que un tipo nuevo "no lo necesita".
+
+**Decisiones de diseño ya cerradas (no reabrir en ejecución — evitan que el catálogo se vuelva ad hoc):**
+
+1. **Catálogo objetivo — 7 tipos nuevos, no más:** `combo` (barras+línea con eje Y dual), `scatter` (dispersión), `bubble` (burbujas, dispersión + tamaño), `radar`, `treemap`, `funnel`, `heatmap`. Sumados a los 7 de H1/H3 → **14 tipos** en el catálogo. **Deliberadamente fuera de alcance** (no pedirlos, no improvisarlos): candlestick/boxplot (sin caso de uso pedagógico real en Lumina hoy), gauge dedicado tipo velocímetro con aguja (ver punto 4 — se resuelve con `radialBar`, que ya existe), mapas geográficos, 3D, sunburst/sankey (los mismos que se descartaron al cerrar la decisión de motor ApexCharts-vs-ECharts).
+2. **Apilado no es un tipo nuevo, es una opción:** se agrega `apilado?: 'ninguno' | 'normal' | 'porcentaje'` a `LuminaChartConfig`, aplicable cuando `type` es `column`, `bar`, `area` o `combo`. No se crean `stackedColumn`/`stackedArea` como valores de `LuminaChartType` — sería duplicar tipos por una variante de configuración.
+3. **Combo (dual-eje) vía override por serie**, no un tipo separado por combinación: `LuminaChartSeries` gana `tipoCombo?: 'column' | 'line' | 'area'` y `ejeCombo?: 'primario' | 'secundario'`, **ambos ignorados salvo que `config.type === 'combo'`**. Sanitizar en el adapter: si `type !== 'combo'`, esos campos de la serie no se leen (no hace falta limpiarlos del dato persistido, solo no usarlos).
+4. **No se agrega un tipo `gauge`.** Un velocímetro con aguja no es nativo de ApexCharts y construirlo a mano es una inversión desproporcionada para el valor pedagógico que aporta sobre lo que ya existe: `radialBar` (H1) ya cubre "progreso hacia una meta" con una dona radial — es el patrón que ya usan dashboards reales (GitHub, Vercel, etc.) para lo mismo. Si en el panel de propiedades hace falta aclarar esto, usar la etiqueta "Radial (progreso)" en vez de prometer un gauge que no se va a construir.
+5. **`scatter`/`bubble` cambian la forma de los datos de una serie** — no encajan en "categorías + array de valores" (un punto de dispersión es `(x, y)`, una burbuja es `(x, y, tamaño)`). Se agrega `LuminaChartSeries.puntos?: { x: number; y: number; z?: number }[]` (z = tamaño, solo relevante para `bubble`). Cuando `type` es `scatter`/`bubble`, el adapter lee `puntos` en vez de `valores`/`categorias`; para los demás tipos, `puntos` no se usa. En el editor (`grafico-properties.tsx`), la mini-tabla de categorías/series actual **no sirve** para scatter/bubble — hace falta una tabla de puntos `x/y(/z)` alternativa cuando el tipo seleccionado es uno de esos dos (decisión de UI: mostrar una tabla distinta según el tipo, no forzar el mismo editor para todo).
+6. **`heatmap` reutiliza categorías+series tal cual están hoy**, sin campos nuevos: cada serie es una fila del mapa de calor, `categorias` son las columnas, `valores[i]` es la intensidad de la celda `(fila, columna_i)` — es exactamente el formato nativo de heatmap de ApexCharts, cero cambios de esquema.
+7. **`treemap` reutiliza categorías+la primera serie**: `categorias[i]` = etiqueta del rectángulo, `series[0].valores[i]` = su tamaño. Si hay más de una serie, se ignoran las demás (documentarlo en el tooltip de ayuda del selector de tipo, no fallar en silencio sin explicar).
+8. **`funnel`** reutiliza categorías (etapas, de mayor a menor) + la primera serie (tamaño de cada etapa) — mismo formato que ya usa hoy el "Embudo de participación" de `/analytics` (H4), que sigue siendo una barra horizontal común; esta ficha **puede** (no obliga) migrar ese chart concreto a `type:'funnel'` si el resultado visual es mejor, documentándolo en el cierre.
+9. **Configuración fina — todos campos opcionales, aditivos, con sanitización:**
+   - `ejeXTitulo?: string`, `ejeYTitulo?: string`
+   - `ejeYMin?: number`, `ejeYMax?: number`, `ejeYEscalaLog?: boolean`
+   - `mostrarEtiquetasDatos?: boolean` (valores encima de barras/puntos)
+   - `lineaReferencia?: { valor: number; etiqueta?: string }` (línea de meta/umbral horizontal)
+   - `animar?: boolean` (por defecto `false`, igual que hoy — H3 lo fijó así por determinismo de test; habilitarlo es opt-in explícito del consumidor, nunca el default global)
+   - `ordenDatos?: 'como-esta' | 'ascendente' | 'descendente'` (ordena por el valor de la primera serie antes de graficar)
+   - `exportarImagen?: boolean` (activa el toolbar nativo de exportación PNG/SVG de ApexCharts — hoy `toolbar.show` ya sigue `!isThumbnail`, esto es un control más fino independiente de eso)
+
+**Alcance — PUEDE tocar:**
+- `packages/charts/src/types.ts` — los 7 tipos nuevos en `LuminaChartType`/`LUMINA_CHART_TYPES`; los campos nuevos de `LuminaChartConfig`/`LuminaChartSeries` de los puntos 2–9 arriba.
+- `packages/charts/src/apex/build-apex-options.ts` — una rama de construcción por tipo nuevo (o agrupadas donde el formato de opciones de ApexCharts sea compartido, como ya hace `buildCartesianChart`); cablear la configuración fina en las ramas existentes y las nuevas.
+- `packages/charts/src/apex/build-apex-options.spec.ts` (+ nuevos `*.spec.ts` si conviene separar por tipo) — un test de la forma de las opciones por cada tipo nuevo y por cada campo de configuración fina, mismo patrón que los tests existentes (puro, sin navegador).
+- `packages/charts/src/chart-container.tsx` — solo si algún tipo nuevo necesita algo del wrapper que hoy no expone (p. ej. una tabla de datos alternativa para scatter/bubble, ver punto 5).
+- `packages/element-kit/src/blocks/grafico/grafico-defaults.ts` — ampliar `GraficoDatosBlock`-equivalente (los campos nuevos de configuración) de forma aditiva en `@lumina/types/slide.ts` + su sanitización en `normalizeGraficoBlock`, siguiendo el patrón ya usado para los campos existentes.
+- `packages/types/src/slide.types.ts` — los campos nuevos de `GraficoDatosBlock`/`GraficoSerie` (aditivos, opcionales; `GraficoChartType` gana los 7 valores nuevos).
+- `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` — exponer el catálogo ampliado (más iconos en el selector de tipo) y la configuración fina en el panel; la tabla de puntos x/y(/z) alternativa para scatter/bubble (punto 5).
+- `packages/element-kit/src/blocks/grafico/grafico-chart-renderer.tsx` — mapear los campos nuevos del bloque a `LuminaChartConfig` (debería ser un mapeo casi directo, ya que los nombres de campo pueden coincidir a propósito con los de `@lumina/charts`).
+- `lumina-frontend/src/app/(app)/analytics/analytics-client.tsx` — **solo** si se decide migrar el "Embudo de participación" a `type:'funnel'` (punto 8, opcional) — no es obligatorio ampliar `/analytics` con los demás tipos nuevos en esta ficha.
+- `lumina-frontend/src/visual-tests/canvas-blocks-fixture.ts` / `canvas-blocks.integration.visual.spec.tsx` — solo si se decide agregar cobertura de integración real en navegador para alguno de los tipos nuevos (recomendado al menos para `combo` y `heatmap`, los más propensos a artefactos no deterministas tipo gradientes/clipPaths).
+- `packages/element-kit/src/blocks/grafico/grafico-defaults.spec.ts` — paridad de sanitización para los campos nuevos.
+
+**Alcance — NO toca:** nada fuera de gráficos (ningún otro elemento del kit, ningún otro archivo de `/analytics`, el backend, `@lumina/scoring`). No se agrega un tipo `gauge` (punto 4). No se crean tipos `stackedColumn`/`stackedArea` (punto 2). No se toca el motor de ApexCharts fuera de `packages/charts/**` (ningún consumidor debe importar `apexcharts`/`react-apexcharts` directo — sigue valiendo el principio de diseño de H1).
+
+**Entregable:**
+1. Los 14 tipos de gráfico (7 de H1/H3 + 7 nuevos) disponibles en el selector de tipo del elemento `grafico`, cada uno con al menos un test que arme sus opciones de ApexCharts correctamente (forma del objeto, no render en navegador salvo que se decida ampliar el punto de integración real).
+2. La configuración fina del punto 9 aplicable a los tipos que tenga sentido (ejes no aplican a pie/donut/radar/treemap/funnel — el panel de propiedades debe ocultar los controles que no apliquen al tipo seleccionado, no mostrarlos inertes).
+3. `GraficoDatosBlock` ampliado de forma aditiva — un bloque `grafico` guardado **antes** de esta ficha debe seguir abriendo y viéndose igual después (sanitización con defaults seguros para todos los campos nuevos).
+4. Verificación exacta:
+   ```bash
+   pnpm --filter @lumina/charts build && pnpm --filter @lumina/charts test && pnpm --filter @lumina/charts lint
+   pnpm --filter @lumina/types build
+   pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint
+   cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build
+   ```
+   Sin bajar el conteo de tests de ninguno de los 3 paquetes (`@lumina/charts` 36, `@lumina/element-kit` 380, frontend `test:unit` 287 / `test:visual` 33, al redactar esta ficha) ni subir errores de lint sobre el baseline (0 en todos, 39 warnings preexistentes en el frontend). Si se migra el embudo de `/analytics` a `funnel` (punto 8, opcional), verificación visual manual en un build de producción (`pnpm build && npm run start`, no `next dev`) del gráfico de distribución + el embudo, con captura o descripción en el cierre.
+- **Cierre:** no aplica Regla 4 (no es migración de elemento, es ampliación de un contrato ya migrado). Commit sugerido: `feat(charts): catálogo ampliado (combo/scatter/bubble/radar/treemap/funnel/heatmap) y configuración fina`.
 
 #### H7 — (diferida, no bloqueante) Extender el contrato a KPIs/sparklines de dashboard, gradebook y perfil
 - **Operador:** a definir
