@@ -12,10 +12,18 @@ import {
 // ─── Lenguaje visual único (retira los 4 colores sueltos de hoy) ──────────────
 export type AlignSemantic = 'object' | 'distribute' | 'canvas';
 
-/** Un color por semántica. Los consumidores pueden sobreescribir vía CSS var. */
+/**
+ * Un color por semántica. Los consumidores pueden sobreescribir vía CSS var.
+ *
+ * `distribute` usa `#047857` (emerald-700) y no `#10B981` (emerald-500): el
+ * texto blanco de las pills de cota (`Pill` en `alignment-overlay.tsx`) sobre
+ * `#10B981` da ~2.6:1 de contraste — por debajo del mínimo WCAG AA (4.5:1)
+ * para texto normal. `#047857` da ~5.8:1, pasa AA sin dejar de leerse como
+ * "verde" (mismo rol semántico, mismo matiz, más oscuro).
+ */
 export const ALIGN_TOKEN: Record<AlignSemantic, { var: string; fallback: string }> = {
   object: { var: '--align-object', fallback: '#2563EB' },
-  distribute: { var: '--align-distribute', fallback: '#10B981' },
+  distribute: { var: '--align-distribute', fallback: '#047857' },
   canvas: { var: '--align-canvas', fallback: '#94A3B8' },
 };
 
