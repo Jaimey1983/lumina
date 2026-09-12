@@ -1,0 +1,31 @@
+/** API pública de `@lumina/charts` (Etapa H). Único paquete de visualización de datos de Lumina. */
+
+export type {
+  LuminaChartType,
+  LuminaChartSeries,
+  LuminaChartConfig,
+} from './types.js';
+export { LUMINA_CHART_TYPES } from './types.js';
+
+export { LuminaChart, type LuminaChartProps } from './chart-container.js';
+
+export {
+  LUMINA_CHART_PALETTES,
+  LUMINA_SEMANTIC_PALETTE,
+  DEFAULT_LUMINA_PALETTE_ID,
+  getSeriesColor,
+  type LuminaColorPalette,
+  type LuminaSemanticRole,
+} from './palettes.js';
+
+export {
+  formatChartValue,
+  formatCurrency,
+  formatDecimal,
+  formatInteger,
+  formatPercent,
+  formatScale0a5,
+  type LuminaValueFormat,
+} from './format.js';
+
+export { resolveChartTheme, type LuminaChartTheme } from './chart-theme.js';

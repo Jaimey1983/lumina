@@ -1,0 +1,38 @@
+{
+  "name": "@lumina/charts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Contrato único de visualización de datos de Lumina (Etapa H). Motor ApexCharts — decisión cerrada 2026-09-12, ver AGENTS.md. Ningún consumidor importa react-apexcharts/apexcharts directo: todo pasa por <LuminaChart> y el vocabulario de types.ts, para que un segundo backend (si algún día hace falta) sea un adapter interno, no un cambio de superficie pública. Consumido desde dist/ (patrón @lumina/ui / @lumina/editor-shared).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@lumina/types": "workspace:*",
+    "@lumina/ui": "workspace:*",
+    "apexcharts": "^5.10.4",
+    "react-apexcharts": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "next": "15.5.19",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}
