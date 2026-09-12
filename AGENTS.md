@@ -449,13 +449,31 @@ Sin bajar el conteo de tests (258 unit / 33 visual al redactar esta ficha) ni su
 **Cierre:** no aplica Regla 4 (no es migración; es limpieza de código muerto declarada como deuda en G2b). Cierra la deuda de G2b **solo en la mitad que corresponde** (el wiring de `EditorDndShell` en el lienzo principal) — la mitad de `<ResizeHandles>` de esa nota se da por **inválida** (no aplica, ver contexto arriba) en vez de resuelta. Commit sugerido: `refactor(editor): retirar wiring muerto de drag/resize por dnd-kit del lienzo principal (G2d)`.
 
 ##### G3 — Guías numéricas / de mazo + rejilla de layout + persistencia de preferencias
-- **Operador:** Cursor
-- **Estado:** pendiente
-- **Precondición:** G2 `hecho`.
-- **Alcance — PUEDE tocar:** `@lumina/types` — extender `SlideGuias` (**aditivo**): guías `{ pos, eje, bloqueada?, color? }`, `margenes?`, `columnas?`/`filas?` + `gutter`; nuevo `DeckGuias` en el modelo de clase. `canvas-area.tsx` + `editor-client.tsx` — panel de guías: crear/editar por valor numérico, bloquear, borrar todas, «guías desde selección»; rejilla de layout (márgenes + columnas/filas con gutter) con presets (12 columnas, tercios, regla áurea, *title-safe*/*action-safe* TV); «aplicar guías/grilla a todos los slides». `canvas-grid.ts` — grilla mayor/menor (línea marcada cada N). Persistir `guidesVisible`, unidad de regla, fuerza de imán y targets activos en preferencias de editor (`localStorage` o endpoint de prefs — decidir). `parseSlideGuias` ya es tolerante.
-- **Alcance — NO toca:** `@lumina/element-kit`; el backend, salvo el modelo de clase si se añade `DeckGuias` — si toca backend, `bloqueado` y ficha nueva.
-- **Entregable:** guías numéricas/mazo + rejilla de layout operativas; toggle de reglas persistente. Verif: `pnpm --filter @lumina/types build && cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
-- **Cierre:** no aplica Regla 4. Commit: `feat(editor): guías numéricas, de mazo y rejilla de layout`.
+- **Operador:** Claude Code (reasignado desde Cursor — sin otros operadores disponibles, mismo criterio que el resto de la Etapa G)
+- **Estado:** **[en curso: Claude Code]**
+- **Precondición:** G2 (con G2a–G2d) `hecho` — confirmado en el tablero.
+- **Corrección de alcance (Regla 10, hecha ANTES de tocar código — la ficha original se escribió antes de G2a–G2d y varios supuestos ya no aplican):**
+  - `canvas-guides.tsx` fue **reescrito en G2c** sobre `@scena/react-guides` (antes era reglas/guías 100% a mano). La librería no expone un concepto de "guía bloqueada" — `onChangeGuides` entrega el array completo de posiciones sin identidad estable por guía entre cambios. Implementar "bloquear guía" individual exigiría forkear el comportamiento interno de arrastre/borrado de la librería — **fuera de alcance de esta ficha**. Se documenta como deuda para una ficha aparte (no se inventa un mecanismo paralelo a medias).
+  - `SlideGuias` (`@lumina/types/slide`) hoy es `{ horizontales: number[]; verticales: number[]; grilla?: SlideGrilla }`, con `SlideGrilla = { activa: boolean; tamanoPx: number }` — más simple que lo que la ficha original imaginaba (`{ pos, eje, bloqueada?, color? }[]`, `margenes?`, `filas?`). El modelo real es por-slide (no hay `DeckGuias` en el modelo de clase, y no hace falta para el entregable mínimo: "guías numéricas + rejilla operativas").
+  - `persistGuias(nextGuias)` en `canvas-area.tsx` (línea ~850) sigue siendo el único punto de escritura (PATCH + historial) — confirmado, sigue vigente tal como la ficha asumía.
+  - **Alcance re-cortado a lo verificable sin abrir nuevas tensiones de arquitectura:**
+    1. Guía numérica exacta (valor en px virtuales + eje) desde el popover "Vista del lienzo".
+    2. «Borrar todas las guías» (conserva `grilla`).
+    3. «Guías desde selección» — bordes + centro de la selección actual (uno o varios bloques) como guías nuevas.
+    4. Rejilla de **columnas** (aditivo a `SlideGrilla`: `columnas?: number`) con presets (12 / tercios / desactivada) — independiente de la cuadrícula de snap (`tamanoPx`) ya existente.
+    5. Persistencia de `guidesVisible` en `localStorage` (decisión: localStorage, no endpoint de prefs — no hay otro estado de editor persistido server-side hoy y añadir uno es una ficha en sí misma).
+  - **Descoped explícito (no silenciado — deuda declarada):** bloquear guías individuales (bloqueador de librería, ver arriba); `DeckGuias` / «aplicar guías o grilla a todos los slides» (requiere iterar todos los slides + PATCH por slide, sin primitivo bulk hoy — alcance de una ficha propia); regla áurea / *title-safe*/*action-safe* TV como presets de márgenes (sin `margenes?` en el modelo — se puede agregar en una ficha G3-cont si se necesita); unidad de regla / fuerza de imán / targets activos configurables (no hay UI de imán configurable hoy, es prematuro persistir una preferencia que no existe todavía).
+- **Alcance — PUEDE tocar:**
+  - `@lumina/types` (`packages/types/src/slide.types.ts`) — extender `SlideGrilla` con `columnas?: number` (aditivo, opcional).
+  - `lumina-frontend/src/lib/canvas-grid.ts` — `normalizeSlideGrilla` conserva `columnas?`; nuevo helper `columnGuidesPercent(columnas, gutterPct?)` (posiciones de las líneas de columna en % del ancho) + preset de columnas (`COLUMN_PRESETS = [3, 12]` o similar) + `setSlideGrillaColumnas(guias, columnas)`.
+  - `lumina-frontend/src/lib/canvas-guides.ts` — helper `percentToVirtual{X,Y}` (inversa de `virtual{X,Y}ToPercent`, para convertir `BlockPos` a guías); helper `addGuide(guias, eje, valor)` (dedup + clamp) y `clearAllGuides(guias)` (conserva `grilla`).
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/canvas-guides.tsx` — overlay de columnas (similar a `CanvasGridOverlay`, líneas verticales en las posiciones de `columnGuidesPercent`).
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/canvas-area.tsx` — `CanvasAreaHandle` gana `addNumericGuide(eje, valorPx)`, `clearAllGuides()`, `addGuidesFromSelection()` (usa `getBlockPos` + `selectedBlockId`/`selectedBlockIds` ya presentes en el componente), `setGridColumnas(columnas)`.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/editor-client.tsx` — UI en el popover "Vista del lienzo" (input numérico + selector de eje + botón «Añadir»; botón «Borrar todas»; botón «Guías desde selección»; selector de preset de columnas); persistir/leer `guidesVisible` de `localStorage` (con manejo de `try/catch`, puede no estar disponible).
+  - Specs nuevos/ampliados: `canvas-grid.spec.ts` (columnas), `canvas-guides.spec.ts` (percentToVirtual, addGuide, clearAllGuides).
+- **Alcance — NO toca:** `@lumina/element-kit`, `@lumina/canvas-align`, `@scena/react-guides` en sí (solo se lo sigue usando como está), el backend, el modelo de clase (`DeckGuias` descoped).
+- **Entregable:** guías numéricas + «guías desde selección» + «borrar todas» + rejilla de columnas con presets operativas; `guidesVisible` persistente entre sesiones del mismo navegador. Verif: `pnpm --filter @lumina/types build && cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`. QA manual en build de producción (`pnpm build && npm run start`, no `next dev` — los bugs de control-box en dev son un artefacto conocido de Turbopack, documentado en G2b, no bloquean esta ficha).
+- **Cierre:** no aplica Regla 4. Commit: `feat(editor): guías numéricas, guías desde selección y rejilla de columnas (G3)`.
 
 ##### G4 — Catálogo ampliado (alinear / distribuir / organizar) + herramienta de medición + atajos
 - **Operador:** Cursor
