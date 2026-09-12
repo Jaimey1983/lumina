@@ -10,6 +10,27 @@ import {
 // `clip-path` en el kit); aquí se re-exportan para los consumidores del canvas.
 export { VIRTUAL_CANVAS_WIDTH, VIRTUAL_CANVAS_HEIGHT };
 export const RULER_SIZE_PX = 16;
+export const GUIDES_VISIBLE_STORAGE_KEY = 'lumina-editor-guides-visible';
+
+/** Preferencia de reglas/guías visibles — persistida por navegador (G3). */
+export function readStoredGuidesVisible(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = window.localStorage.getItem(GUIDES_VISIBLE_STORAGE_KEY);
+    return raw == null ? true : raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function writeStoredGuidesVisible(visible: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(GUIDES_VISIBLE_STORAGE_KEY, visible ? '1' : '0');
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
 
 export function clampVirtualX(x: number): number {
   return Math.max(0, Math.min(VIRTUAL_CANVAS_WIDTH, Math.round(x)));
@@ -72,6 +93,48 @@ export function virtualXToPercent(x: number): number {
 
 export function virtualYToPercent(y: number): number {
   return (y / VIRTUAL_CANVAS_HEIGHT) * 100;
+}
+
+/** Inversa de `virtualXToPercent` — % del ancho → px virtuales, clamped. */
+export function percentToVirtualX(pct: number): number {
+  return clampVirtualX((pct / 100) * VIRTUAL_CANVAS_WIDTH);
+}
+
+/** Inversa de `virtualYToPercent` — % del alto → px virtuales, clamped. */
+export function percentToVirtualY(pct: number): number {
+  return clampVirtualY((pct / 100) * VIRTUAL_CANVAS_HEIGHT);
+}
+
+/** Añade una guía numérica exacta (px virtuales) al eje dado, sin duplicar. */
+export function addGuide(
+  guias: SlideGuias,
+  eje: 'horizontal' | 'vertical',
+  valorPx: number,
+): SlideGuias {
+  const clamped = eje === 'horizontal' ? clampVirtualY(valorPx) : clampVirtualX(valorPx);
+  if (eje === 'horizontal') {
+    if (guias.horizontales.includes(clamped)) return guias;
+    return { ...guias, horizontales: [...guias.horizontales, clamped].sort((a, b) => a - b) };
+  }
+  if (guias.verticales.includes(clamped)) return guias;
+  return { ...guias, verticales: [...guias.verticales, clamped].sort((a, b) => a - b) };
+}
+
+/** Añade varias guías a la vez (dedup + sort), reutilizando `addGuide`. */
+export function addGuides(
+  guias: SlideGuias,
+  nuevas: Array<{ eje: 'horizontal' | 'vertical'; valorPx: number }>,
+): SlideGuias {
+  return nuevas.reduce((acc, { eje, valorPx }) => addGuide(acc, eje, valorPx), guias);
+}
+
+/** Borra todas las guías manuales (conserva la grilla). */
+export function clearAllGuides(guias: SlideGuias): SlideGuias {
+  return {
+    horizontales: [],
+    verticales: [],
+    ...(guias.grilla ? { grilla: guias.grilla } : {}),
+  };
 }
 
 export function rulerMarksX(): number[] {

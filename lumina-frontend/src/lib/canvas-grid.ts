@@ -22,10 +22,21 @@ export function normalizeGridSizePx(px: unknown): number {
   );
 }
 
+/** Presets de rejilla de layout por columnas (G3). 0 = desactivada. */
+export const COLUMN_GRID_PRESETS = [0, 3, 12] as const;
+
+function normalizeColumnas(raw: unknown): number | undefined {
+  const n = typeof raw === 'number' && Number.isFinite(raw) ? Math.round(raw) : 0;
+  if (n <= 0) return undefined;
+  return Math.min(24, Math.max(1, n));
+}
+
 export function normalizeSlideGrilla(raw?: SlideGrilla | null): SlideGrilla {
+  const columnas = normalizeColumnas(raw?.columnas);
   return {
     activa: raw?.activa === true,
     tamanoPx: normalizeGridSizePx(raw?.tamanoPx),
+    ...(columnas ? { columnas } : {}),
   };
 }
 
@@ -38,7 +49,30 @@ export function parseSlideGrilla(raw: unknown): SlideGrilla | undefined {
     activa: o.activa === true,
     tamanoPx:
       typeof o.tamanoPx === 'number' ? o.tamanoPx : DEFAULT_GRID_SIZE_PX,
+    columnas: typeof o.columnas === 'number' ? o.columnas : undefined,
   });
+}
+
+/** Posiciones (% del ancho, sin bordes 0/100) de las líneas divisorias de columnas. */
+export function columnGuidesPercent(columnas: number): number[] {
+  const n = normalizeColumnas(columnas);
+  if (!n || n < 2) return [];
+  const out: number[] = [];
+  for (let i = 1; i < n; i += 1) out.push((i / n) * 100);
+  return out;
+}
+
+/** Activa/desactiva la rejilla de columnas con el nº dado (0 = apaga). */
+export function setSlideGrillaColumnas(
+  guias: SlideGuias,
+  columnas: number,
+): SlideGuias {
+  const grilla = normalizeSlideGrilla(guias.grilla);
+  const next = normalizeColumnas(columnas);
+  return {
+    ...guias,
+    grilla: { ...grilla, columnas: next },
+  };
 }
 
 export function toggleSlideGrilla(guias: SlideGuias): SlideGuias {

@@ -1443,6 +1443,8 @@ export interface CanvasContent {
 export interface SlideGrilla {
   activa: boolean;
   tamanoPx: number;
+  /** Rejilla de layout por columnas (líneas verticales, independiente de `tamanoPx`). G3. */
+  columnas?: number;
 }
 
 /** Guías de alineación manuales del editor (coordenadas virtuales 1280×720). */

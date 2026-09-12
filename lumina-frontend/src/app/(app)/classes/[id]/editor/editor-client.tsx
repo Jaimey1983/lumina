@@ -131,7 +131,8 @@ import {
   EMPTY_SLIDE_GUIAS,
   GRID_SIZE_PRESETS,
 } from '@lumina/types/slide';
-import { normalizeSlideGrilla } from '@/lib/canvas-grid';
+import { COLUMN_GRID_PRESETS, normalizeSlideGrilla } from '@/lib/canvas-grid';
+import { readStoredGuidesVisible, writeStoredGuidesVisible } from '@/lib/canvas-guides';
 import {
   CANVAS_ZOOM_DEFAULT,
   CANVAS_ZOOM_STEP,
@@ -327,18 +328,26 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [activePanel,        setActivePanel]        = useState<LeftPanelId | null>(null);
   const [rightPanel,         setRightPanel]         = useState<RightPanelId | null>(null);
   const [guidesVisible,      setGuidesVisible]      = useState(true);
+  const [numericGuideEje,    setNumericGuideEje]    = useState<'horizontal' | 'vertical'>('vertical');
+  const [numericGuideValor,  setNumericGuideValor]  = useState('');
   const [canvasZoom,         setCanvasZoom]         = useState(CANVAS_ZOOM_DEFAULT);
   const [copiedBlock,        setCopiedBlock]        = useState<Block | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
 
   useEffect(() => {
     setCanvasZoom(readStoredCanvasZoom());
+    setGuidesVisible(readStoredGuidesVisible());
   }, []);
 
   const handleCanvasZoomChange = useCallback((next: number) => {
     const z = clampCanvasZoom(next);
     setCanvasZoom(z);
     writeStoredCanvasZoom(z);
+  }, []);
+
+  const handleGuidesVisibleChange = useCallback((next: boolean) => {
+    setGuidesVisible(next);
+    writeStoredGuidesVisible(next);
   }, []);
   const [saveError, setSaveError] = useState(false);
   const [modalUserOpen,      setModalUserOpen]      = useState(false);
@@ -2259,7 +2268,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                       type="button"
                       className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                       aria-pressed={guidesVisible}
-                      onClick={() => setGuidesVisible((v) => !v)}
+                      onClick={() => handleGuidesVisibleChange(!guidesVisible)}
                     >
                       <span className="flex items-center gap-2">
                         <Ruler className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -2277,6 +2286,64 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                       <Crosshair className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                       Guías centrales
                     </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                      onClick={() => canvasAreaRef.current?.addGuidesFromSelection()}
+                    >
+                      <Crosshair className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      Guías desde selección
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent"
+                      onClick={() => canvasAreaRef.current?.clearAllGuides()}
+                    >
+                      <Ruler className="size-4 shrink-0" aria-hidden />
+                      Borrar todas las guías
+                    </button>
+                    <div className="flex items-center gap-1.5 px-2 py-1.5">
+                      <select
+                        value={numericGuideEje}
+                        aria-label="Eje de la guía"
+                        className="h-7 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
+                        onChange={(e) =>
+                          setNumericGuideEje(e.target.value as 'horizontal' | 'vertical')
+                        }
+                      >
+                        <option value="vertical">Vertical (x)</option>
+                        <option value="horizontal">Horizontal (y)</option>
+                      </select>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="px"
+                        aria-label="Valor de la guía en px virtuales"
+                        value={numericGuideValor}
+                        className="h-7 w-16 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
+                        onChange={(e) => setNumericGuideValor(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key !== 'Enter') return;
+                          const n = Number(numericGuideValor);
+                          if (!Number.isFinite(n)) return;
+                          canvasAreaRef.current?.addNumericGuide(numericGuideEje, n);
+                          setNumericGuideValor('');
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-7 shrink-0 px-2 text-xs"
+                        onClick={() => {
+                          const n = Number(numericGuideValor);
+                          if (!Number.isFinite(n)) return;
+                          canvasAreaRef.current?.addNumericGuide(numericGuideEje, n);
+                          setNumericGuideValor('');
+                        }}
+                      >
+                        Añadir
+                      </Button>
+                    </div>
                     <button
                       type="button"
                       className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
@@ -2310,6 +2377,23 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                         </select>
                       </label>
                     ) : null}
+                    <label className="flex items-center justify-between gap-2 px-2 py-1.5 text-sm">
+                      <span className="text-muted-foreground">Columnas de layout</span>
+                      <select
+                        value={activeGrid.columnas ?? 0}
+                        aria-label="Rejilla de columnas de layout"
+                        className="h-7 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
+                        onChange={(e) => {
+                          canvasAreaRef.current?.setGridColumnas(Number(e.target.value));
+                        }}
+                      >
+                        {COLUMN_GRID_PRESETS.map((n) => (
+                          <option key={n} value={n}>
+                            {n === 0 ? 'Off' : `${n} columnas`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </PopoverContent>
                 </Popover>
               </>

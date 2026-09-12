@@ -12,7 +12,7 @@ import {
   VIRTUAL_CANVAS_WIDTH,
   toggleCenterGuides,
 } from '@/lib/canvas-guides';
-import { gridOverlayStyle, normalizeSlideGrilla } from '@/lib/canvas-grid';
+import { columnGuidesPercent, gridOverlayStyle, normalizeSlideGrilla } from '@/lib/canvas-grid';
 
 interface CanvasGuidesChromeProps {
   visible: boolean;
@@ -62,6 +62,23 @@ function CanvasGridOverlay({ tamanoPx }: { tamanoPx: number }) {
       style={gridOverlayStyle(tamanoPx)}
       aria-hidden
     />
+  );
+}
+
+/** Rejilla de layout por columnas (G3) — líneas verticales evenly-spaced. */
+function CanvasColumnGridOverlay({ columnas }: { columnas: number }) {
+  const lines = columnGuidesPercent(columnas);
+  if (lines.length === 0) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[11]" aria-hidden>
+      {lines.map((pct) => (
+        <div
+          key={pct}
+          className="absolute inset-y-0 w-px bg-[rgba(99,102,241,0.35)]"
+          style={{ left: `${pct}%` }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -193,6 +210,7 @@ export function CanvasGuidesChrome({
     >
       {children}
       {grilla.activa && <CanvasGridOverlay tamanoPx={grilla.tamanoPx} />}
+      {grilla.columnas ? <CanvasColumnGridOverlay columnas={grilla.columnas} /> : null}
       {visible && (
         <>
           <RulerCorner

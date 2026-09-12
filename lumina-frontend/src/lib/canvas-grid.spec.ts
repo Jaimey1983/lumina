@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  columnGuidesPercent,
   normalizeGridSizePx,
   normalizeSlideGrilla,
   parseSlideGrilla,
+  setSlideGrillaColumnas,
   setSlideGrillaSize,
   snapAxisToGridPercent,
   toggleSlideGrilla,
@@ -68,6 +70,41 @@ describe('toggleSlideGrilla / setSlideGrillaSize', () => {
   it('setSlideGrillaSize activa y fija tamaño', () => {
     const next = setSlideGrillaSize(EMPTY_SLIDE_GUIAS, 80);
     expect(next.grilla).toEqual({ activa: true, tamanoPx: 80 });
+  });
+});
+
+describe('columnGuidesPercent', () => {
+  it('devuelve vacío para 0 o 1 columna', () => {
+    expect(columnGuidesPercent(0)).toEqual([]);
+    expect(columnGuidesPercent(1)).toEqual([]);
+  });
+
+  it('devuelve n-1 líneas evenly-spaced para n columnas', () => {
+    const lines = columnGuidesPercent(3);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBeCloseTo(100 / 3);
+    expect(lines[1]).toBeCloseTo(200 / 3);
+    expect(columnGuidesPercent(12)).toHaveLength(11);
+  });
+});
+
+describe('setSlideGrillaColumnas', () => {
+  it('activa la rejilla de columnas conservando guías manuales', () => {
+    const guias = { horizontales: [10], verticales: [20], grilla: { activa: true, tamanoPx: 40 } };
+    const next = setSlideGrillaColumnas(guias, 12);
+    expect(next.horizontales).toEqual([10]);
+    expect(next.verticales).toEqual([20]);
+    expect(next.grilla).toEqual({ activa: true, tamanoPx: 40, columnas: 12 });
+  });
+
+  it('columnas: 0 la desactiva', () => {
+    const guias = {
+      horizontales: [],
+      verticales: [],
+      grilla: { activa: false, tamanoPx: 40, columnas: 3 },
+    };
+    const next = setSlideGrillaColumnas(guias, 0);
+    expect(next.grilla).toEqual({ activa: false, tamanoPx: 40 });
   });
 });
 

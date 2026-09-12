@@ -77,8 +77,18 @@ import {
   groupBlocksIntoClipMask,
   ungroupClipMask,
 } from '@/lib/clip-composition';
-import { toggleCenterGuides } from '@/lib/canvas-guides';
-import { setSlideGrillaSize, toggleSlideGrilla } from '@/lib/canvas-grid';
+import {
+  addGuides,
+  clearAllGuides as clearAllGuidesFromState,
+  percentToVirtualX,
+  percentToVirtualY,
+  toggleCenterGuides,
+} from '@/lib/canvas-guides';
+import {
+  setSlideGrillaColumnas,
+  setSlideGrillaSize,
+  toggleSlideGrilla,
+} from '@/lib/canvas-grid';
 import {
   CANVAS_ZOOM_DEFAULT,
   stepCanvasZoom,
@@ -226,6 +236,14 @@ export type CanvasAreaHandle = {
   toggleGrid: () => void;
   /** Cambia el tamaño de celda de la grilla (px virtuales) y la activa. */
   setGridSize: (tamanoPx: number) => void;
+  /** Activa la rejilla de columnas con el nº dado (0 desactiva). G3. */
+  setGridColumnas: (columnas: number) => void;
+  /** Añade una guía numérica exacta (px virtuales) al eje dado. G3. */
+  addNumericGuide: (eje: 'horizontal' | 'vertical', valorPx: number) => void;
+  /** Borra todas las guías manuales del slide (conserva la grilla). G3. */
+  clearAllGuides: () => void;
+  /** Añade guías en los bordes + centro de la selección actual. G3. */
+  addGuidesFromSelection: () => void;
   /** Reinicia la pila Ctrl+Z del slide activo (p. ej. tras restaurar una versión). */
   resetSlideHistory: () => void;
   /**
@@ -1769,6 +1787,45 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       setGridSize: (tamanoPx: number) => {
         const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
         void persistGuias(setSlideGrillaSize(current, tamanoPx));
+      },
+      setGridColumnas: (columnas: number) => {
+        const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
+        void persistGuias(setSlideGrillaColumnas(current, columnas));
+      },
+      addNumericGuide: (eje, valorPx) => {
+        const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
+        void persistGuias(addGuides(current, [{ eje, valorPx }]));
+      },
+      clearAllGuides: () => {
+        const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
+        void persistGuias(clearAllGuidesFromState(current));
+      },
+      addGuidesFromSelection: () => {
+        const ids =
+          selectedBlockIds.length > 0
+            ? selectedBlockIds
+            : selectedBlockId
+              ? [selectedBlockId]
+              : [];
+        const indices = ids.map(Number).filter((n) => Number.isInteger(n) && n >= 0);
+        const bloques = liveSlide?.bloques ?? slide?.bloques ?? [];
+        const current = liveSlide?.guias ?? slide?.guias ?? EMPTY_SLIDE_GUIAS;
+        const nuevas: Array<{ eje: 'horizontal' | 'vertical'; valorPx: number }> = [];
+        for (const i of indices) {
+          const bloque = bloques[i];
+          if (!bloque) continue;
+          const pos = getBlockPos(bloque);
+          nuevas.push(
+            { eje: 'vertical', valorPx: percentToVirtualX(pos.x) },
+            { eje: 'vertical', valorPx: percentToVirtualX(pos.x + pos.ancho) },
+            { eje: 'vertical', valorPx: percentToVirtualX(pos.x + pos.ancho / 2) },
+            { eje: 'horizontal', valorPx: percentToVirtualY(pos.y) },
+            { eje: 'horizontal', valorPx: percentToVirtualY(pos.y + pos.alto) },
+            { eje: 'horizontal', valorPx: percentToVirtualY(pos.y + pos.alto / 2) },
+          );
+        }
+        if (nuevas.length === 0) return;
+        void persistGuias(addGuides(current, nuevas));
       },
       resetSlideHistory: () => {
         if (!slide?.id) return;
