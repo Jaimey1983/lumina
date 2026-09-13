@@ -32,6 +32,7 @@ import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block, Background } from '@lumina/types/slide';
 import { DesignBackgroundPopover } from '../design-background-popover';
 import { createDefaultGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
+import { GRAFICO_TEMPLATES } from '@lumina/element-kit/blocks/grafico/grafico-templates';
 import {
   createDefaultCronologiaBlock,
   createDefaultFlujoBlock,
@@ -314,6 +315,30 @@ function ElementosPanel({
                 )
               }
             />
+          </div>
+
+          <div className="mt-2.5 pt-2 border-t border-border/50">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <BookOpen className="h-3 w-3" /> Plantillas Pedagógicas
+            </p>
+            <div className="space-y-1">
+              {GRAFICO_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  disabled={disabledNonText}
+                  onClick={() => add(tmpl.buildBlock())}
+                  className="w-full text-left p-1.5 rounded-md hover:bg-muted/70 transition-colors border border-transparent hover:border-border/60 disabled:opacity-50 disabled:pointer-events-none group"
+                >
+                  <div className="text-[11px] font-medium text-foreground group-hover:text-primary leading-tight">
+                    {tmpl.nombre}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
+                    {tmpl.descripcion}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </PanelSection>
         <PanelSection title="Diagramas">
