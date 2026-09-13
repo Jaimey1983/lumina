@@ -1,7 +1,15 @@
 'use client';
 
-import React from 'react';
-import { Plus, Trash2, Table as TableIcon, AlertCircle } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import {
+  Plus,
+  Trash2,
+  Table as TableIcon,
+  AlertCircle,
+  ArrowLeftRight,
+  ClipboardPaste,
+  FileSpreadsheet,
+} from 'lucide-react';
 import type { GraficoDatosBlock, GraficoSerie } from '@lumina/types/slide';
 import { getSeriesColor } from '@lumina/charts';
 import { Button } from '@lumina/ui/button';
@@ -14,6 +22,11 @@ import {
   DialogFooter,
   DialogBody,
 } from '@lumina/ui/dialog';
+import {
+  parseClipboardTable,
+  transposeChartData,
+  sortChartDataBySeries,
+} from './grafico-data-utils.js';
 
 interface GraficoDataDialogProps {
   open: boolean;
@@ -35,6 +48,87 @@ export function GraficoDataDialog({
   const isHistogram = block.chartType === 'histogram';
 
   const defaultCaja = { min: 0, q1: 0, mediana: 0, q3: 0, max: 0 } as const;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pasteFeedback, setPasteFeedback] = useState<string | null>(null);
+
+  // ─── Funciones I6: Pegar, Importar, Transponer, Ordenar ───
+  const applyParsedData = (data: { categorias: string[]; series: { nombre: string; valores: number[] }[] }) => {
+    if (data.categorias.length === 0 || data.series.length === 0) return;
+    const nextSeries: GraficoSerie[] = data.series.map((s, idx) => ({
+      nombre: s.nombre || `Serie ${idx + 1}`,
+      valores: s.valores,
+      ...(block.series[idx]?.color ? { color: block.series[idx].color } : {}),
+    }));
+    commitChange(
+      {
+        ...block,
+        categorias: data.categorias,
+        series: nextSeries,
+      },
+      true,
+    );
+    setPasteFeedback('¡Datos importados con éxito!');
+    setTimeout(() => setPasteFeedback(null), 3000);
+  };
+
+  const handlePasteClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const parsed = parseClipboardTable(text);
+      if (parsed) {
+        applyParsedData(parsed);
+      } else {
+        setPasteFeedback('No se detectó un formato tabular válido en el portapapeles.');
+        setTimeout(() => setPasteFeedback(null), 4000);
+      }
+    } catch {
+      setPasteFeedback('No se pudo acceder al portapapeles. Usa Ctrl+V o importa un archivo.');
+      setTimeout(() => setPasteFeedback(null), 4000);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        const parsed = parseClipboardTable(content);
+        if (parsed) {
+          applyParsedData(parsed);
+        } else {
+          setPasteFeedback('Formato de archivo CSV no reconocido.');
+          setTimeout(() => setPasteFeedback(null), 4000);
+        }
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleTranspose = () => {
+    const transposed = transposeChartData(block);
+    commitChange({ ...block, categorias: transposed.categorias, series: transposed.series }, true);
+    setPasteFeedback('Tabla transpuesta (filas ↔ columnas)');
+    setTimeout(() => setPasteFeedback(null), 2500);
+  };
+
+  const handleSortAsc = () => {
+    const sorted = sortChartDataBySeries(block, 0, 'asc');
+    commitChange({ ...block, categorias: sorted.categorias, series: sorted.series }, true);
+    setPasteFeedback('Ordenado de menor a mayor por la 1ª serie');
+    setTimeout(() => setPasteFeedback(null), 2500);
+  };
+
+  const handleSortDesc = () => {
+    const sorted = sortChartDataBySeries(block, 0, 'desc');
+    commitChange({ ...block, categorias: sorted.categorias, series: sorted.series }, true);
+    setPasteFeedback('Ordenado de mayor a menor por la 1ª serie');
+    setTimeout(() => setPasteFeedback(null), 2500);
+  };
 
   // Manipulación de Categorias (Filas)
   const handleCategoryNameChange = (catIdx: number, newName: string) => {
@@ -197,6 +291,86 @@ export function GraficoDataDialog({
 
 
         <DialogBody className="grow overflow-y-auto pr-1 space-y-4">
+          {/* Barra de Herramientas de Datos (I6: Pegar, Importar, Transponer, Ordenar) */}
+          {!isScatterOrBubble && !isBoxPlot && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-lg bg-muted/40 border border-border">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".csv,.txt,.tsv"
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-7 text-xs gap-1.5"
+                  title="Importar archivo .csv o .tsv delimitado"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Importar CSV
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePasteClipboard}
+                  className="h-7 text-xs gap-1.5"
+                  title="Pegar tabla copiada desde Excel o Google Sheets"
+                >
+                  <ClipboardPaste className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  Pegar de Excel / Sheets
+                </Button>
+                {!isHistogram && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleTranspose}
+                    className="h-7 text-xs gap-1.5"
+                    title="Intercambiar filas por columnas"
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    Transponer
+                  </Button>
+                )}
+                {!isHistogram && block.categorias.length > 1 && (
+                  <div className="flex items-center gap-1 border-l border-border/60 pl-1.5">
+                    <span className="text-[10px] text-muted-foreground">Ordenar:</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSortAsc}
+                      className="h-6 px-1.5 text-[10px]"
+                      title="Ordenar de menor a mayor por la primera serie"
+                    >
+                      Asc
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSortDesc}
+                      className="h-6 px-1.5 text-[10px]"
+                      title="Ordenar de mayor a menor por la primera serie"
+                    >
+                      Desc
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {pasteFeedback && (
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 animate-in fade-in">
+                  {pasteFeedback}
+                </span>
+              )}
+            </div>
+          )}
+
           {['treemap', 'funnel'].includes(block.chartType) && block.series.length > 1 && (
             <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-md">
               <AlertCircle className="h-4 w-4 shrink-0" />
