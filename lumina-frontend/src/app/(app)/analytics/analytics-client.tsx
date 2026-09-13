@@ -46,6 +46,8 @@ import {
 import { Badge } from '@lumina/ui/badge';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
+import { StatCard, type StatCardProps } from '@lumina/ui/stat-card';
+import { Progress } from '@lumina/ui/progress';
 import { cn } from '@/lib/utils';
 import { PageBanner } from '@lumina/ui/page-banner';
 
@@ -174,38 +176,6 @@ function SectionSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
-
-interface KpiCardProps {
-  label: string;
-  value: string;
-  subLabel?: string;
-  icon: React.ReactNode;
-  loading?: boolean;
-}
-
-function KpiCard({ label, value, subLabel, icon, loading }: KpiCardProps) {
-  return (
-    <div className={cn(ANALYTICS_CARD, 'p-5')}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">{label}</span>
-        <span className="text-[#9ca3af]">{icon}</span>
-      </div>
-      {loading ? (
-        <>
-          <Skeleton className="h-9 w-28 mb-1.5" />
-          <Skeleton className="h-3 w-32" />
-        </>
-      ) : (
-        <>
-          <p className="text-3xl font-bold leading-none text-[#111827]">{value}</p>
-          {subLabel ? <p className="text-xs text-[#6b7280] mt-1.5">{subLabel}</p> : null}
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── Course Summary (KPI row) ─────────────────────────────────────────────────
 
 function CourseSummarySection({
@@ -230,13 +200,14 @@ function CourseSummarySection({
     );
   }
 
-  const cards: KpiCardProps[] = [
+  const cards: StatCardProps[] = [
     {
       label: 'Estudiantes',
       value: summary ? String(summary.totalStudents) : '—',
       subLabel: 'Total en el curso',
       icon: <Users className="size-5 text-[#2563EB]" />,
       loading: isLoading,
+      variant: 'flat',
     },
     {
       label: 'Promedio general',
@@ -244,6 +215,7 @@ function CourseSummarySection({
       subLabel: 'Escala 0–5',
       icon: <Star className="size-5 text-[#2563EB]" />,
       loading: isLoading,
+      variant: 'flat',
     },
     {
       label: 'Tasa de completitud',
@@ -251,6 +223,7 @@ function CourseSummarySection({
       subLabel: 'Actividades completadas',
       icon: <BookOpen className="size-5 text-[#2563EB]" />,
       loading: isLoading,
+      variant: 'flat',
     },
     {
       label: 'Clases activas',
@@ -258,13 +231,14 @@ function CourseSummarySection({
       subLabel: 'Estado publicado',
       icon: <BarChart2 className="size-5 text-[#2563EB]" />,
       loading: isLoading,
+      variant: 'flat',
     },
   ];
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => (
-        <KpiCard key={card.label} {...card} />
+        <StatCard key={card.label} {...card} />
       ))}
     </div>
   );
@@ -696,12 +670,11 @@ function SessionDetailSection({
                         </td>
                         <td className="px-4 py-3 text-center text-[#111827]">{row.avgTimeOnSlide}</td>
                         <td className="px-5 py-3">
-                          <div className="h-2 rounded-full bg-[#dbeafe] overflow-hidden">
-                            <div
-                              className="h-full bg-[#2563EB] rounded-full transition-all"
-                              style={{ width: `${Math.min(100, Math.max(0, row.responseRate))}%` }}
-                            />
-                          </div>
+                          <Progress
+                            value={Math.min(100, Math.max(0, row.responseRate))}
+                            className="h-2 bg-[#dbeafe]"
+                            indicatorClassName="bg-[#2563EB]"
+                          />
                           <p className="text-xs text-[#6b7280] mt-1">{row.responseRate}%</p>
                         </td>
                         <td className="px-4 py-3 text-center text-[#111827]">{row.totalStudents}</td>

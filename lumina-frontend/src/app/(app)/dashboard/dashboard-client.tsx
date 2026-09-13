@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import {
   type ColumnDef,
@@ -28,6 +28,8 @@ import { Badge } from '@lumina/ui/badge';
 import { Button } from '@lumina/ui/button';
 import { PageBanner } from '@lumina/ui/page-banner';
 import { Skeleton } from '@lumina/ui/skeleton';
+import { StatCard } from '@lumina/ui/stat-card';
+import { Progress } from '@lumina/ui/progress';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
 import {
   Table,
@@ -83,46 +85,6 @@ function countClassesCreatedBetween(classes: Class[], from: Date, to: Date) {
   }).length;
 }
 
-function DeltaLabel({ current, previous }: { current: number; previous: number }) {
-  const diff = current - previous;
-  if (diff === 0) {
-    return (
-      <p className="mt-1 text-lumina-sm font-semibold text-[#9ca3af]">Sin cambio vs. mes anterior</p>
-    );
-  }
-  const up = diff > 0;
-  return (
-    <p
-      className="mt-1 text-lumina-sm font-semibold"
-      style={{ color: up ? '#34d399' : '#f87171' }}
-    >
-      {up ? '+' : ''}
-      {diff} vs. mes anterior
-    </p>
-  );
-}
-
-function StatCardLumina({
-  label,
-  valueNode,
-  delta,
-}: {
-  label: string;
-  valueNode: ReactNode;
-  delta?: ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs">
-      <div className="text-2xl font-extrabold">
-        <span className="bg-gradient-to-r from-[#2563EB] to-[#60A5FA] bg-clip-text text-transparent">
-          {valueNode}
-        </span>
-      </div>
-      <p className="mt-0.5 text-lumina-sm font-medium text-[#6b7280]">{label}</p>
-      {delta != null ? delta : null}
-    </div>
-  );
-}
 
 const THUMB_GRADIENTS = [
   'from-[#60a5fa] to-[#2563EB]',
@@ -402,10 +364,11 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
           ))
         ) : (
           <>
-            <StatCardLumina
+            <StatCard
               label="Clases creadas"
-              valueNode={classes.length}
-              delta={
+              value={classes.length}
+              variant="gradient"
+              trend={
                 sessionsThisMonth > 0 ? (
                   <p className="mt-1 text-lumina-sm font-semibold" style={{ color: '#34d399' }}>
                     +{sessionsThisMonth} nueva{sessionsThisMonth === 1 ? '' : 's'} este mes
@@ -415,17 +378,17 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
                 )
               }
             />
-            <StatCardLumina label="Estudiantes activos" valueNode="—" />
-            <StatCardLumina
+            <StatCard label="Estudiantes activos" value="—" variant="gradient" />
+            <StatCard
               label="Promedio general"
-              valueNode={analyticsQuery.isLoading ? '…' : avgGrade}
+              value={analyticsQuery.isLoading ? '…' : avgGrade}
+              variant="gradient"
             />
-            <StatCardLumina
+            <StatCard
               label="Sesiones este mes"
-              valueNode={sessionsThisMonth}
-              delta={
-                <DeltaLabel current={sessionsThisMonth} previous={sessionsPrevMonth} />
-              }
+              value={sessionsThisMonth}
+              variant="gradient"
+              trend={{ value: sessionsThisMonth - sessionsPrevMonth }}
             />
           </>
         )}
@@ -524,12 +487,11 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
                         {row.score}
                       </span>
                     </div>
-                    <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-[#f9fafb]">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#2563EB] to-[#60A5FA]"
-                        style={{ width: `${row.pct}%` }}
-                      />
-                    </div>
+                    <Progress
+                      value={row.pct}
+                      className="mt-2 h-[3px] bg-[#f9fafb]"
+                      indicatorClassName="bg-gradient-to-r from-[#2563EB] to-[#60A5FA]"
+                    />
                   </div>
                 </div>
               </li>
@@ -582,17 +544,20 @@ function AdminDashboard({ user }: { user: AuthUser }) {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCardLumina
+        <StatCard
           label="Total usuarios"
-          valueNode={usersQuery.isLoading ? '…' : users.length}
+          value={usersQuery.isLoading ? '…' : users.length}
+          variant="gradient"
         />
-        <StatCardLumina
+        <StatCard
           label="Total cursos"
-          valueNode={coursesQuery.isLoading ? '…' : courses.length}
+          value={coursesQuery.isLoading ? '…' : courses.length}
+          variant="gradient"
         />
-        <StatCardLumina
+        <StatCard
           label="Cursos activos"
-          valueNode={coursesQuery.isLoading ? '…' : activeCourses}
+          value={coursesQuery.isLoading ? '…' : activeCourses}
+          variant="gradient"
         />
       </div>
 
@@ -660,17 +625,20 @@ function StudentDashboard({ user }: { user: AuthUser }) {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCardLumina
+        <StatCard
           label="Cursos matriculados"
-          valueNode={coursesQuery.isLoading ? '…' : courses.length}
+          value={coursesQuery.isLoading ? '…' : courses.length}
+          variant="gradient"
         />
-        <StatCardLumina
+        <StatCard
           label="Notas registradas"
-          valueNode={gradesQuery.isLoading ? '…' : grades.length}
+          value={gradesQuery.isLoading ? '…' : grades.length}
+          variant="gradient"
         />
-        <StatCardLumina
+        <StatCard
           label="Puntos acumulados"
-          valueNode={badgesQuery.isLoading ? '…' : (badgesData?.totalPoints ?? 0)}
+          value={badgesQuery.isLoading ? '…' : (badgesData?.totalPoints ?? 0)}
+          variant="gradient"
         />
       </div>
 

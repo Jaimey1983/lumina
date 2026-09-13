@@ -696,7 +696,7 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 
 #### H7 — Consolidar las tarjetas KPI y barras de progreso duplicadas en un primitivo compartido
 - **Operador:** Antigravity
-- **Estado:** [en curso: Antigravity]
+- **Estado:** en revisión — `StatCard` implementado en `@lumina/ui` (`packages/ui/src/stat-card.tsx`) con soporte de `variant="gradient"` (reemplaza `StatCardLumina` y `DeltaLabel` en 10 sitios de `/dashboard`) y `variant="flat"` (reemplaza `KpiCard` en 4 sitios de `/analytics`), con soporte de `trend`, `icon`, `subLabel`, `loading` (Skeleton) y accesibilidad. Se adoptó `<Progress>` de `@lumina/ui/progress` para reemplazar las 2 barras manuales (`dashboard-client.tsx` con gradient indicator y `analytics-client.tsx` con blue indicator). `StatCardLumina`, `DeltaLabel` y `KpiCard` completamente eliminados (0 dual paths). Verificación: `@lumina/ui` build/test/lint 0 errores; `lumina-frontend` tsc limpio, lint 0 errores (39 warnings preexistentes intactos), `test:unit` 287/287 pasados, `test:visual` 33/33 pasados, `build` 20/20 páginas estáticas; verificación visual manual en build de producción (`next start`) en `/dashboard` y `/analytics` en temas claro y oscuro confirmada.
 - **Precondición:** H1–H6 hechas (contrato de `@lumina/charts` ya probado en dos consumidores reales) — **cumplida**.
 
 **Contexto — relevado 2026-09-12 (corrige el esbozo original de esta ficha, que suponía "primitivos chicos de `@lumina/charts`" sin haber mirado el código):**
