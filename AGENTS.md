@@ -845,8 +845,13 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I6 — Datos: pegar desde Excel/CSV, importar, transponer, ordenar + plantillas pedagógicas
 - **Operador:** Antigravity.
-- **Estado:** [en curso: Antigravity].
-- **Precondición:** I1 hecha (el modal de datos es el lugar natural para esto — pegar una tabla ancha necesita espacio, no una barra lateral).
+- **Estado:** en revisión — implementado en `packages/element-kit/src/blocks/grafico/`:
+  - `grafico-data-utils.ts`: `parseClipboardTable` (detección automática de tabulaciones, comas, punto y coma y formato numérico latino o anglosajón), `transposeChartData` (inversión de categorías y series), y `sortChartDataBySeries` (ordenamiento ascendente/descendente según valores de serie). 5 pruebas unitarias en `grafico-data-utils.spec.ts` (100 % verdes).
+  - `grafico-data-dialog.tsx`: barra de herramientas con botones para "Importar CSV", "Pegar de Excel / Sheets", "Transponer" y "Ordenar (Asc/Desc)", con retroalimentación visual amigable.
+  - `grafico-templates.ts`: 6 plantillas pedagógicas completas (`comparativa-grupos`, `evolucion-temporal`, `distribucion-calificaciones`, `meta-progreso`, `encuesta-percepcion`, `correlacion-estudio-nota`) con datasets de ejemplo e intención pedagógica explícita.
+  - `flyout-left-panels.tsx`: sección "Plantillas Pedagógicas" en el panel izquierdo de inserción con acceso directo a las 6 plantillas.
+  - Comandos verificados: `pnpm --filter @lumina/element-kit test` (413/413 tests, 0 errores), `pnpm --filter @lumina/element-kit lint` (0 errores, 33 warnings), `pnpm --filter @lumina/element-kit build`, `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build` (20/20 páginas, 0 errores), `pnpm -r test` (scoring 100/100, element-kit-core 5/5, charts 124/124, editor-shared 278/278, canvas-align 66/66, backend 249/249, element-kit 413/413).
+- **Precondición:** I1 hecha.
 - **Alcance — PUEDE tocar:** el modal de datos de I1 (`grafico-data-dialog.tsx`) — parseo de texto pegado (TSV/CSV, patrón de pegado desde Excel/Sheets), botón de importar `.csv`, transponer filas/columnas, ordenar por serie, control de decimales/unidad-sufijo por eje; **nueva** dependencia si hace falta un parser robusto (`papaparse`, ~7kB — evaluar si el parseo simple de `split('\t')`/`split(',')` alcanza antes de sumar una librería); **nuevo** `packages/element-kit/src/blocks/grafico/grafico-templates.ts` — plantillas pedagógicas con datasets de ejemplo (comparativa entre grupos, evolución en el tiempo, distribución porcentual, progreso hacia meta, encuesta/frecuencias, correlación), ofrecidas en el panel de inserción de I1 como alternativa a "insertar vacío".
 - **Entregable:** pegar una tabla desde Excel/Sheets puebla categorías+series; transponer y ordenar funcionan; al menos 5-6 plantillas con datos de ejemplo reales insertables desde el panel izquierdo. Verificación: mismo comando que I1.
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): pegar/importar datos y plantillas pedagógicas para grafico`.
