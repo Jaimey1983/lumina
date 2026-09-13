@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutCiclo, layoutCuadrantes, layoutIshikawa, layoutRadial } from './layout-pedagogico.js';
+import { layoutCiclo, layoutCuadrantes, layoutIshikawa, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import type { DiagramaArista, DiagramaNodo } from '@lumina/types/slide';
 
 describe('layout-pedagogico', () => {
@@ -62,6 +62,25 @@ describe('layout-pedagogico', () => {
       expect(laidOut[1].x).toBe(320); // Columna derecha
       expect(laidOut[2].x).toBe(70);
       expect(laidOut[3].x).toBe(320);
+    });
+  });
+
+  describe('layoutPiramide', () => {
+    it('distribuye niveles apilados verticalmente con ancho creciente hacia la base', () => {
+      const { nodos, aristas } = layoutPiramide(sampleNodes);
+      expect(nodos).toHaveLength(4);
+      // El vértice superior está más arriba que la base
+      expect(nodos[0].y).toBeLessThan(nodos[1].y);
+      expect(nodos[1].y).toBeLessThan(nodos[2].y);
+      expect(nodos[2].y).toBeLessThan(nodos[3].y);
+
+      // El ancho del vértice es menor que el de la base
+      expect(nodos[0].ancho).toBeLessThan(nodos[3].ancho!);
+
+      // Hay conexiones secuenciales entre niveles
+      expect(aristas).toHaveLength(3);
+      expect(aristas[0].desdeId).toBe('n1');
+      expect(aristas[0].haciaId).toBe('n2');
     });
   });
 });

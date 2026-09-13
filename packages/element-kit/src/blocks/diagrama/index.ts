@@ -8,9 +8,11 @@ export {
   createDefaultCicloBlock,
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
+  createDefaultPiramideBlock,
   normalizeDiagramaBlock,
 } from './diagrama-defaults.js';
 export { DiagramaEditor } from './diagrama-editor.js';
 export { DiagramaViewer } from './diagrama-viewer.js';
 export { DiagramaProperties } from './diagrama-properties.js';
 export { DiagramaShapeNode, DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
+export { PALETAS_DIAGRAMA, aplicarPaletaADiagrama } from './diagrama-temas.js';

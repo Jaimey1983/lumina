@@ -9,6 +9,7 @@ import {
   type DiagramaGrafoBlock,
   type DiagramaNodo,
   type DiagramaOpciones,
+  type DiagramaPaletaId,
   type DiagramaSubtipo,
   type DiagramaVennBlock,
   type DiagramaVennElemento,
@@ -21,6 +22,7 @@ export const VALID_GRAFO_SUBTIPOS: readonly string[] = [
   'mapa_conceptual',
   'flujo',
   'cronologia',
+  'piramide',
 ];
 
 // ─── Cronología pedagógica (layout lineal restringido sobre graph-core) ───────
@@ -336,7 +338,10 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
         (rawOpciones.tema === 'auto' || rawOpciones.tema === 'claro' || rawOpciones.tema === 'oscuro')
           ? { tema: rawOpciones.tema }
           : {}),
-        ...(typeof rawOpciones.paleta === 'string' ? { paleta: rawOpciones.paleta } : {}),
+        ...(typeof rawOpciones.paleta === 'string' &&
+        ['editorial', 'tecnologico', 'menta', 'pizarra', 'vibrante', 'calido'].includes(rawOpciones.paleta)
+          ? { paleta: rawOpciones.paleta as DiagramaPaletaId }
+          : {}),
         ...(typeof rawOpciones.fondo === 'string' &&
         (rawOpciones.fondo === 'puntos' || rawOpciones.fondo === 'cuadricula' || rawOpciones.fondo === 'vacio')
           ? { fondo: rawOpciones.fondo }
@@ -1033,6 +1038,53 @@ export function createDefaultTablaTBlock(
       { id: 't-d2', etiqueta: 'Desventaja 2: Requiere Disciplina', cuerpo: 'Riesgo de procrastinación', x: 320, y: 130, forma: 'chip', estilo: { color: '#DC2626' } },
     ],
     aristas: [],
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Pirámide Jerárquica (ej. Taxonomía de Bloom).
+ */
+export function createDefaultPiramideBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const piramideNodos: DiagramaNodo[] = [
+    { id: 'p-1', etiqueta: 'Crear', cuerpo: 'Producir trabajo nuevo u original', x: 225, y: 40, ancho: 150, forma: 'triangle', estilo: { color: '#7C3AED' } },
+    { id: 'p-2', etiqueta: 'Evaluar', cuerpo: 'Justificar una postura o decisión', x: 200, y: 95, ancho: 200, forma: 'trapezoid', estilo: { color: '#2563EB' } },
+    { id: 'p-3', etiqueta: 'Analizar', cuerpo: 'Distinguir partes y relaciones', x: 175, y: 150, ancho: 250, forma: 'trapezoid', estilo: { color: '#0284C7' } },
+    { id: 'p-4', etiqueta: 'Aplicar', cuerpo: 'Usar información en situaciones nuevas', x: 150, y: 205, ancho: 300, forma: 'trapezoid', estilo: { color: '#0D9488' } },
+    { id: 'p-5', etiqueta: 'Comprender', cuerpo: 'Explicar ideas o conceptos', x: 125, y: 260, ancho: 350, forma: 'trapezoid', estilo: { color: '#D97706' } },
+    { id: 'p-6', etiqueta: 'Recordar', cuerpo: 'Reconocer y traer a la memoria hechos', x: 100, y: 315, ancho: 400, forma: 'trapezoid', estilo: { color: '#DC2626' } },
+  ];
+
+  const piramideAristas: DiagramaArista[] = [
+    { id: 'e-p1-p2', desdeId: 'p-1', haciaId: 'p-2', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-p2-p3', desdeId: 'p-2', haciaId: 'p-3', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-p3-p4', desdeId: 'p-3', haciaId: 'p-4', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-p4-p5', desdeId: 'p-4', haciaId: 'p-5', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-p5-p6', desdeId: 'p-5', haciaId: 'p-6', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+  ];
+
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `piramide-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'piramide',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Pirámide de Aprendizaje (Taxonomía de Bloom)',
+    descripcionAccesible: 'Pirámide jerárquica con niveles cognitivos escalonados de base a cúspide',
+    nodos: piramideNodos,
+    aristas: piramideAristas,
+    opciones: {
+      paleta: 'tecnologico',
+    },
     x: marco ? marco.izquierdaPct : fb.x,
     y: marco ? marco.arribaPct : fb.y,
     ancho: marco ? marco.anchoPct : fb.ancho,

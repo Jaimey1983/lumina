@@ -201,3 +201,58 @@ export function layoutCuadrantes(
 
   return nodos;
 }
+
+/**
+ * Layout de Pirámide Jerárquica:
+ * Distribuye los nodos en capas horizontales centradas que aumentan en ancho de la cúspide a la base.
+ */
+export function layoutPiramide(
+  nodos: DiagramaNodo[],
+  _aristas?: DiagramaArista[],
+): { nodos: DiagramaNodo[]; aristas: DiagramaArista[] } {
+  void _aristas;
+  if (nodos.length === 0) return { nodos: [], aristas: [] };
+
+  const count = nodos.length;
+  const centerX = 300;
+  const startY = 40;
+  const stepY = Math.min(75, Math.max(50, Math.floor(340 / count)));
+  const minWidth = 140;
+  const maxWidth = 380;
+
+  const laidOutNodes: DiagramaNodo[] = nodos.map((nodo, idx) => {
+    // Proporción de 0 (cúspide) a 1 (base)
+    const ratio = count === 1 ? 0.5 : idx / (count - 1);
+    const ancho = Math.round(minWidth + ratio * (maxWidth - minWidth));
+    const x = Math.round(centerX - ancho / 2);
+    const y = Math.round(startY + idx * stepY);
+    const forma = idx === 0 ? ('triangle' as const) : ('trapezoid' as const);
+
+    return {
+      ...nodo,
+      x,
+      y,
+      ancho,
+      alto: Math.min(50, stepY - 10),
+      forma: (nodo.forma ?? forma) as DiagramaNodo['forma'],
+    };
+  });
+
+  // Conexiones secuenciales entre niveles adyacentes de la pirámide
+  const nextAristas: DiagramaArista[] = [];
+  for (let i = 0; i < count - 1; i++) {
+    nextAristas.push({
+      id: `piramide-${laidOutNodes[i].id}-${laidOutNodes[i + 1].id}`,
+      desdeId: laidOutNodes[i].id,
+      haciaId: laidOutNodes[i + 1].id,
+      dirigida: true,
+      tipoTrazado: 'straight',
+      estiloLinea: 'solida',
+      color: '#CBD5E1',
+      grosor: 1.5,
+    });
+  }
+
+  return { nodos: laidOutNodes, aristas: nextAristas };
+}
+

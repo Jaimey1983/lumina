@@ -14,6 +14,8 @@ import {
   Sparkles,
   BookOpen,
   FileText,
+  Triangle,
+  Palette,
 } from 'lucide-react';
 import type {
   Block,
@@ -22,6 +24,7 @@ import type {
   DiagramaGrafoBlock,
   DiagramaNodo,
   DiagramaNodoForma,
+  DiagramaPaletaId,
   DiagramaSubtipo,
 } from '@lumina/types/slide';
 import {
@@ -29,7 +32,7 @@ import {
   type GraphEdge,
   type GraphNode,
 } from '@lumina/editor-shared/graph-editor';
-import { layoutRadial } from './layout-pedagogico.js';
+import { layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
@@ -44,7 +47,9 @@ import {
   createDefaultCicloBlock,
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
+  createDefaultPiramideBlock,
 } from './diagrama-defaults.js';
+import { PALETAS_DIAGRAMA, aplicarPaletaADiagrama } from './diagrama-temas.js';
 
 interface DiagramaPropertiesProps {
   block: DiagramaBlock;
@@ -71,6 +76,8 @@ const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
   { forma: 'pill', label: 'Píldora' },
   { forma: 'parallelogram', label: 'Paralelogramo' },
   { forma: 'card-icon', label: 'Icono' },
+  { forma: 'trapezoid', label: 'Trapecio' },
+  { forma: 'triangle', label: 'Triángulo' },
 ];
 
 const TEMPLATES_CONFIG = [
@@ -79,6 +86,7 @@ const TEMPLATES_CONFIG = [
   { id: 'ciclo', label: 'Ciclo PDCA', desc: 'Bucle continuo' },
   { id: 'matriz2x2', label: 'Matriz 2×2', desc: 'Prioridades' },
   { id: 'tabla_t', label: 'Tabla T', desc: 'Pros y Contras' },
+  { id: 'piramide', label: 'Pirámide de Bloom', desc: 'Jerarquía cognitiva' },
 ];
 
 const SUBTIPOS_CONFIG: Array<{
@@ -92,6 +100,7 @@ const SUBTIPOS_CONFIG: Array<{
   { subtipo: 'mapa_conceptual', label: 'Mapa Conceptual', Icon: Workflow, nodeLabel: 'Concepto' },
   { subtipo: 'flujo', label: 'Flujo', Icon: GitMerge, nodeLabel: 'Paso' },
   { subtipo: 'cronologia', label: 'Cronología', Icon: Milestone, nodeLabel: 'Evento' },
+  { subtipo: 'piramide', label: 'Pirámide', Icon: Triangle, nodeLabel: 'Nivel' },
 ];
 
 /** Cronología: normaliza para reimponer el eje lineal y la cadena de conectores. */
@@ -219,7 +228,19 @@ export function DiagramaProperties({
     let newX = 200;
     let newY = 150;
 
-    if (currentSubtipo === 'organigrama') {
+    if (currentSubtipo === 'piramide') {
+      const newNode: DiagramaNodo = {
+        id: newNodeId,
+        etiqueta: `Nivel ${count}`,
+        cuerpo: 'Descripción del nivel',
+        x: 200,
+        y: 200,
+        forma: 'trapezoid',
+      };
+      const { nodos: pNodes, aristas: pEdges } = layoutPiramide([...grafoBlock.nodos, newNode]);
+      commitChange({ ...grafoBlock, nodos: pNodes, aristas: pEdges }, true);
+      return;
+    } else if (currentSubtipo === 'organigrama') {
       newX = 100 + ((count - 1) % 3) * 160;
       newY = 130 + Math.floor((count - 1) / 3) * 110;
     } else if (currentSubtipo === 'flujo') {
@@ -274,6 +295,13 @@ export function DiagramaProperties({
 
   const handleRemoveNode = (nodeId: string) => {
     if (!grafoBlock || grafoBlock.nodos.length <= 1) return;
+
+    if (currentSubtipo === 'piramide') {
+      const nextNodos = grafoBlock.nodos.filter((n) => n.id !== nodeId);
+      const { nodos: pNodes, aristas: pEdges } = layoutPiramide(nextNodos);
+      commitChange({ ...grafoBlock, nodos: pNodes, aristas: pEdges }, true);
+      return;
+    }
 
     const nextNodos = grafoBlock.nodos.filter((n) => n.id !== nodeId);
     const nextAristas = grafoBlock.aristas.filter(
@@ -338,6 +366,12 @@ export function DiagramaProperties({
       return;
     }
 
+    if (currentSubtipo === 'piramide') {
+      const { nodos: pNodes, aristas: pEdges } = layoutPiramide(grafoBlock.nodos, grafoBlock.aristas);
+      commitChange({ ...grafoBlock, nodos: pNodes, aristas: pEdges }, true);
+      return;
+    }
+
     const graphNodes: GraphNode[] = grafoBlock.nodos.map((n) => ({
       id: n.id,
       x: n.x,
@@ -378,6 +412,7 @@ export function DiagramaProperties({
     else if (templateId === 'ciclo') newBlock = createDefaultCicloBlock(coords);
     else if (templateId === 'matriz2x2') newBlock = createDefaultMatriz2x2Block(coords);
     else if (templateId === 'tabla_t') newBlock = createDefaultTablaTBlock(coords);
+    else if (templateId === 'piramide') newBlock = createDefaultPiramideBlock(coords);
     else return;
 
     commitChange(newBlock, true);
@@ -478,6 +513,65 @@ export function DiagramaProperties({
           })}
         </div>
       </div>
+
+      {/* Selector de Paletas Armónicas */}
+      {grafoBlock && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+              <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Paleta de Colores
+              </Label>
+            </div>
+            {grafoBlock.opciones?.paleta && (
+              <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 h-4 font-mono">
+                {PALETAS_DIAGRAMA[grafoBlock.opciones.paleta]?.nombre.split(' ')[0] ?? 'Auto'}
+              </Badge>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {(Object.keys(PALETAS_DIAGRAMA) as DiagramaPaletaId[]).map((paletaKey) => {
+              const pal = PALETAS_DIAGRAMA[paletaKey];
+              const isSelected = grafoBlock.opciones?.paleta === paletaKey;
+              return (
+                <button
+                  key={paletaKey}
+                  type="button"
+                  title={pal.descripcion}
+                  onClick={() => {
+                    const themed = aplicarPaletaADiagrama(grafoBlock, paletaKey);
+                    commitChange(themed, true);
+                  }}
+                  className={cn(
+                    'flex flex-col gap-1 rounded-md border p-1.5 text-left transition-all hover:bg-muted/50',
+                    isSelected
+                      ? 'border-primary ring-1 ring-primary/40 bg-primary/5 shadow-2xs'
+                      : 'border-border/60 bg-card/60',
+                  )}
+                >
+                  <span className="text-[10px] font-medium text-foreground truncate">{pal.nombre}</span>
+                  <div className="flex items-center gap-1">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0 shadow-2xs"
+                      style={{ backgroundColor: pal.acentoPrincipal }}
+                    />
+                    <div className="flex -space-x-1 overflow-hidden">
+                      {pal.colores.slice(0, 4).map((c, i) => (
+                        <span
+                          key={i}
+                          className="h-2 w-2 rounded-full border border-background shrink-0"
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Plantillas Pedagógicas */}
       <div className="space-y-2 border-t border-border pt-3">
