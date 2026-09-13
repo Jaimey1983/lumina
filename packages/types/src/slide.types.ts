@@ -1387,14 +1387,42 @@ export type DiagramaSubtipo =
   | 'cronologia'
   | 'venn';
 
+export type DiagramaNodoForma =
+  | 'rect'
+  | 'rounded'
+  | 'pill'
+  | 'diamond'
+  | 'parallelogram'
+  | 'ellipse'
+  | 'hexagon'
+  | 'chip'
+  | 'root'
+  | 'card-icon';
+
 export interface DiagramaNodo {
   id: string;
   etiqueta: string;
   cuerpo?: string;
   x: number;
   y: number;
+  forma?: DiagramaNodoForma;
+  icono?: string;
+  imagen?: string;
+  ancho?: number;
+  alto?: number;
   estilo?: Record<string, unknown>;
 }
+
+export type DiagramaAristaTrazado =
+  | 'bezier'
+  | 'smoothstep'
+  | 'straight'
+  | 'orthogonal';
+
+export type DiagramaAristaEstiloLinea =
+  | 'solida'
+  | 'discontinua'
+  | 'punteada';
 
 export interface DiagramaArista {
   id: string;
@@ -1402,6 +1430,20 @@ export interface DiagramaArista {
   haciaId: string;
   etiqueta?: string;
   dirigida?: boolean;
+  tipoTrazado?: DiagramaAristaTrazado;
+  estiloLinea?: DiagramaAristaEstiloLinea;
+  color?: string;
+  grosor?: number;
+  flechaInicio?: boolean;
+}
+
+export interface DiagramaOpciones {
+  tema?: 'auto' | 'claro' | 'oscuro';
+  paleta?: string;
+  fondo?: 'puntos' | 'cuadricula' | 'vacio';
+  direccionLayout?: 'TB' | 'LR' | 'BT' | 'RL' | 'radial';
+  densidad?: 'compacta' | 'normal' | 'amplia';
+  animacionEntrada?: boolean;
 }
 
 export interface DiagramaGrafoBlock {
@@ -1420,6 +1462,7 @@ export interface DiagramaGrafoBlock {
   nodos: DiagramaNodo[];
   aristas: DiagramaArista[];
   layout?: 'libre' | 'jerarquico' | 'lineal';
+  opciones?: DiagramaOpciones;
 }
 
 export interface DiagramaVennRegion {
