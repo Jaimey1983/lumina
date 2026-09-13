@@ -845,7 +845,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I6 — Datos: pegar desde Excel/CSV, importar, transponer, ordenar + plantillas pedagógicas
 - **Operador:** Antigravity.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Antigravity].
 - **Precondición:** I1 hecha (el modal de datos es el lugar natural para esto — pegar una tabla ancha necesita espacio, no una barra lateral).
 - **Alcance — PUEDE tocar:** el modal de datos de I1 (`grafico-data-dialog.tsx`) — parseo de texto pegado (TSV/CSV, patrón de pegado desde Excel/Sheets), botón de importar `.csv`, transponer filas/columnas, ordenar por serie, control de decimales/unidad-sufijo por eje; **nueva** dependencia si hace falta un parser robusto (`papaparse`, ~7kB — evaluar si el parseo simple de `split('\t')`/`split(',')` alcanza antes de sumar una librería); **nuevo** `packages/element-kit/src/blocks/grafico/grafico-templates.ts` — plantillas pedagógicas con datasets de ejemplo (comparativa entre grupos, evolución en el tiempo, distribución porcentual, progreso hacia meta, encuesta/frecuencias, correlación), ofrecidas en el panel de inserción de I1 como alternativa a "insertar vacío".
 - **Entregable:** pegar una tabla desde Excel/Sheets puebla categorías+series; transponer y ordenar funcionan; al menos 5-6 plantillas con datos de ejemplo reales insertables desde el panel izquierdo. Verificación: mismo comando que I1.
