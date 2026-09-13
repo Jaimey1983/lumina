@@ -754,6 +754,104 @@ La duplicación real, confirmada archivo por archivo:
    Sin bajar el conteo de tests (`lumina-frontend` `test:unit` 287 / `test:visual` 33 al redactar esta ficha) ni subir errores de lint sobre el baseline (0 en ambos paquetes, 39 warnings preexistentes en el frontend). **Verificación visual manual obligatoria en un build de producción** (`pnpm build && npm run start`, no `next dev` — ver el hallazgo de G2b sobre artefactos exclusivos de dev) de `/dashboard` y `/analytics`: las tarjetas y barras deben verse igual (o mejor) que antes, en claro y oscuro.
 - **Cierre (Regla 4-style):** `StatCardLumina`/`KpiCard`/`DeltaLabel` borrados, no conviviendo con `StatCard`. Commit sugerido: `refactor(ui): consolidar StatCard y adoptar Progress, retirar StatCardLumina/KpiCard duplicados`.
 
+## Etapa I — Catálogo completo y configuración profunda del elemento `grafico` (plan original)
+
+Trabajo **post-migración**, continuación de la Etapa H. No es migración de elementos: Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
+
+**Por qué existe esta etapa (que no debería repetirse):** H6 se redactó con un catálogo autoimpuesto de 14 tipos, decidido con mi propio criterio de "qué es pedagógicamente necesario" — en contra de la instrucción explícita de cubrir "todos los charts necesarios", y sin haber visto el documento `PLAN_MEJORA_GRAFICOS_DATOS.md` (7 de septiembre de 2026, aportado por el usuario fuera del repo) que ya tenía el catálogo completo (~24-32 variantes agrupadas por intención pedagógica), las 8 secciones de configuración objetivo, y la crítica de UX que motiva esta etapa. **Esta etapa toma ese documento como fuente de verdad literal — no se vuelve a recortar por criterio del redactor.** Las únicas 2 desviaciones del plan son decisiones ya cerradas explícitamente en conversación con el usuario (no autoimpuestas en silencio):
+
+1. **Motor: ApexCharts único, sin ECharts** (decisión de la raíz de Etapa H, ratificada tras esta revisión). De las brechas de catálogo, **una sola es exclusiva de ECharts: `sankey`**. Se difiere explícitamente — no se descarta — hasta que exista un caso de uso pedagógico concreto (no hipotético) que lo pida; el contrato de `@lumina/charts` ya está diseñado para admitir un segundo motor solo para ese tipo puntual sin romper nada (principio de diseño de H1). `pictogram` tampoco lo trae nativo ningún motor — es build a mano en cualquier caso, se trata igual (diferido, no descartado).
+2. **"Config, no tipo nuevo" cuando el resultado visual es el mismo con menos superficie:** `column-grouped`/`column-stacked`/`column-stacked-100` del plan ya están cubiertos por la opción `apilado` (H6) sobre `column`/`bar`/`area`/`combo` — no se agregan como tipos de motor separados. `line-smooth`/`step` del plan se resuelven como una opción `curva` sobre `line`/`area` — no dos tipos nuevos. Esto es exactamente lo que H6 ya hizo bien; se mantiene el criterio, no se revierte.
+
+Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `gauge` real, `polarArea`, `donut-total`, `semicírculo`, `sparkline`, las 8 secciones de configuración completas, pegar desde Excel/CSV, plantillas pedagógicas, y **la reestructuración del panel para que el selector de tipo muestre variantes de la familia activa en vez de una lista plana, con la edición de datos movida a un modal** — se toma literal, sin recortar.
+
+**Estado real del repo al abrir esta etapa (2026-09-12, cierre de H7):**
+
+- `packages/charts/src/types.ts` — `LuminaChartType` con 14 valores planos (`column`,`bar`,`line`,`area`,`pie`,`donut`,`radialBar`,`combo`,`scatter`,`bubble`,`radar`,`treemap`,`funnel`,`heatmap`), sin agrupación por familia en el tipo ni en ningún metadato asociado.
+- `packages/charts/src/apex/build-apex-options.ts` — una función `build*Chart` por tipo; `format.ts` (H1, con `formatChartValue`/`formatCurrency`/`formatPercent`/`formatDecimal`/`formatScale0a5`) **no se importa acá** — los ejes y el tooltip muestran números crudos.
+- `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` — `CHART_TYPES` (líneas 49-68) es una grilla plana de 14 íconos sin agrupar; la sección "Datos (Mini-Tabla)" / "Puntos de Datos (X,Y,Z)" vive **inline dentro del panel lateral** (líneas ~590-819), compitiendo por espacio vertical con el resto de la configuración.
+- `lumina-frontend/src/app/(app)/classes/[id]/editor/components/panels/flyout-left-panels.tsx:212-293` — panel de inserción (izquierda) con **6 botones hardcodeados** (Columnas, Barras, Líneas, Área, Circular, Dona) sin agrupar y **sin conexión con el catálogo de 14 tipos** del panel derecho — insertar y luego cambiar de tipo son dos selectores de tipo completamente independientes, sin jerarquía familia→variante entre ellos.
+- `packages/ui/src/dialog.tsx` (+ `sheet.tsx`, `drawer.tsx`) — primitivos de modal/panel deslizante ya existen en `@lumina/ui` y ya se usan en otras partes del editor (p. ej. el modal "Configurar contexto curricular") — no hace falta traer ninguna librería nueva para el modal de datos.
+- `packages/ui/src/stat-card.tsx` (H7) — `StatCard` ya existe, con `variant`/`trend`/`icon`/`loading`. Relevante para KPI/`stat-sparkline` del plan: una vez que exista un modo sparkline real (I2), combinarlo con `StatCard` para un "stat + tendencia" queda barato — evaluar en I2, no es una ficha aparte.
+- `packages/types/src/slide.types.ts:1246` — `GraficoDatosBlock`/`GraficoSerie` — sin campos para boxplot (min/Q1/mediana/Q3/máx) ni para waterfall (deltas con signo) todavía.
+
+**Orden:** I1 va primero — es la reestructuración estructural (familia→variante + modal) sobre la que insertan variantes I2/I3. I2/I3 pueden ir en paralelo entre sí una vez I1 esté hecha (I2 no toca schema, I3 sí — archivos disjuntos). I4/I5/I6/I7 (profundidad de configuración) son independientes de I2/I3 y entre sí, pero dependen de I1 (el modal y la agrupación cambian dónde vive cada control nuevo).
+
+#### I1 — Reestructurar el panel de propiedades: selector familia→variante + modal de datos
+- **Operador:** Claude Code (reasignable — ver H6/H7 para el prompt canónico si se prefiere Antigravity).
+- **Estado:** pendiente.
+- **Precondición:** ninguna — es la primera ficha de la etapa.
+- **Contexto:** ver "Estado real del repo" de la raíz. El pedido es concreto: hoy el panel izquierdo (inserción) y el derecho (propiedades) son dos selectores de tipo independientes y planos; el usuario señaló el caso exacto — elegís "Dona" a la izquierda para insertar, y a la derecha te aparece una lista plana de 14 opciones sin relación jerárquica con lo que elegiste, en vez de ver las variantes de la familia "Proporción" (dona, dona-con-total, semicírculo, treemap, embudo, polar-area). Además la tabla de datos/editor de puntos ocupa el panel lateral angosto, mal lugar para editar una tabla.
+- **Alcance — PUEDE tocar:**
+  - `packages/charts/src/types.ts` — agregar metadata de agrupación al contrato: `LuminaChartFamily = 'comparar'|'evolucion'|'proporcion'|'relacion'|'estadistica'|'kpi'|'especiales'` + un mapa `LUMINA_CHART_FAMILIES: Record<LuminaChartType, { familia: LuminaChartFamily; label: string }>` (o extender `LUMINA_CHART_TYPES` a objetos en vez de strings — decisión de forma concreta al ejecutar, manteniendo retrocompatibilidad de lo que ya exporta el índice).
+  - `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` — reemplazar `CHART_TYPES` plano por: (a) un selector de **familia** (7 opciones, según el agrupamiento del plan — comparar/evolución/proporción/relación/estadística/KPI/especiales), (b) dentro de la familia activa, una grilla de **variantes** (los tipos de esa familia — para "Proporción" serían pie/donut/radialBar/treemap/funnel + las variantes nuevas de I2). Cambiar de familia es una acción distinta (más grande, con más consecuencias en los datos) de cambiar de variante dentro de la misma familia — no deben verse igual de "livianas" en la UI.
+  - **Nuevo** modal de edición de datos: `packages/element-kit/src/blocks/grafico/grafico-data-dialog.tsx` (o nombre equivalente) usando `Dialog` de `@lumina/ui/dialog` — mueve ahí la mini-tabla categorías/series y el editor de puntos X/Y/Z (scatter/bubble) que hoy viven inline en `grafico-properties.tsx`. El panel lateral queda con un botón "Editar datos" que abre el modal; el resto de la configuración (tipo, estilo, ejes, etc.) se queda en el panel lateral.
+  - `lumina-frontend/src/app/(app)/classes/[id]/editor/components/panels/flyout-left-panels.tsx:212-293` — el panel de inserción pasa a ofrecer las **7 familias** (no 6 tipos sueltos) como acción de inserción; insertar por familia crea el tipo por defecto de esa familia (ej. "Proporción" → `donut`, no necesariamente `pie`) con datos de ejemplo razonables.
+  - Specs nuevos/ajustados de `grafico-defaults.spec.ts`/`grafico-properties` si existen, y del panel de inserción si tiene cobertura.
+- **Alcance — NO toca:** `apex/build-apex-options.ts` (ningún tipo de motor nuevo en esta ficha — es reestructuración de UI sobre los tipos que ya existen), el schema de `GraficoDatosBlock` salvo lo estrictamente necesario para la metadata de familia (que vive en `@lumina/charts`, no en el bloque persistido).
+- **Entregable:** elegir una familia en el panel izquierdo inserta un tipo por defecto de esa familia; el panel derecho, con un bloque ya insertado, muestra primero las variantes de la familia activa y ofrece un camino explícito (no al mismo nivel visual) para cambiar de familia; la tabla de datos/editor de puntos vive en un modal, no inline en el panel lateral. Verificación:
+  ```bash
+  pnpm --filter @lumina/charts build && pnpm --filter @lumina/charts test && pnpm --filter @lumina/charts lint
+  pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint
+  cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build
+  ```
+  Sin bajar conteos de tests ni subir errores de lint sobre el baseline al redactar esta ficha (`@lumina/charts` 51, `@lumina/element-kit` 383, frontend `test:unit` 287/`test:visual` 33, 0 errores en los 3). Verificación visual manual obligatoria en build de producción: insertar por familia, cambiar de variante dentro de la familia, cambiar de familia, abrir/editar/cerrar el modal de datos, confirmar persistencia (PATCH 200) en cada paso.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): selector de tipo por familia/variante y modal de datos para grafico`.
+
+#### I2 — Ampliar catálogo: variantes de Proporción, Evolución y Especiales (sin cambio de schema)
+- **Operador:** a definir.
+- **Estado:** pendiente.
+- **Precondición:** I1 hecha (las variantes nuevas necesitan un lugar agrupado donde aparecer).
+- **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (nuevos valores de `LuminaChartType`: `polarArea`; nuevos campos de config: `curva?: 'recta'|'suave'|'escalon'` para line/area, `modoSparkline?: boolean` para line/area/column, `mostrarTotal?: boolean` para donut, `angulo?: 'completo'|'semicirculo'` para pie/donut); `packages/charts/src/apex/build-apex-options.ts` (nueva `buildPolarAreaChart`; ajustes en `buildCartesianChart` para `curva`/`modoSparkline`; ajustes en `buildCircularChart` para `mostrarTotal`/`angulo`); specs correspondientes. **Reconsiderar explícitamente** (no repetir en silencio) la decisión de H6 de no tener un `gauge` dedicado — evaluar si un semicírculo con aguja/zona de color vía `radialBar` + anotación cumple el pedido del plan, y documentar la decisión tomada (con o sin tipo nuevo) en el cierre de esta ficha. `waterfall` (cascada) — nuevo tipo vía la técnica de columna apilada con base invisible + conectores; requiere que `LuminaChartSeries` pueda expresar valores con signo (delta) — evaluar si entra en esta ficha (sin cambio de schema más allá de interpretar `valores` como deltas) o si necesita I3.
+- **Alcance — NO toca:** el schema de `GraficoDatosBlock` en `@lumina/types` más allá de campos opcionales aditivos ya cubiertos arriba; histograma/boxplot (I3).
+- **Entregable:** `polarArea`, semicírculo/dona-con-total, curva recta/escalonada, modo sparkline y cascada disponibles y probados; decisión de gauge documentada. Verificación: mismo comando que I1, sin bajar conteos.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): polarArea, semicírculo, dona con total, curvas y cascada`.
+
+#### I3 — Estadística: histograma y boxplot (requiere extensión de schema)
+- **Operador:** a definir.
+- **Estado:** pendiente.
+- **Precondición:** I1 hecha. Puede ir en paralelo con I2 (archivos disjuntos: I2 no toca `@lumina/types`, esta sí).
+- **Contexto:** ninguno de los dos tipos es gratis — `histogram` exige lógica de *binning* (agrupar valores continuos en intervalos) que no es una opción de ApexCharts, es lógica propia antes de graficar; `boxplot` es nativo de ApexCharts (`boxPlot`) pero exige que el modelo de datos tenga min/Q1/mediana/Q3/máx por categoría, algo que `GraficoSerie.valores: number[]` no expresa hoy.
+- **Alcance — PUEDE tocar:** `packages/types/src/slide.types.ts` (nuevo campo opcional en `GraficoSerie` o una forma alternativa de serie para boxplot — aditivo); `packages/charts/src/types.ts` (`boxPlot`/`histogram` en `LuminaChartType`, tipo de datos correspondiente); `packages/charts/src/apex/build-apex-options.ts` (`buildBoxPlotChart`, `buildHistogramChart` con binning propio); `packages/element-kit/src/blocks/grafico/` (UI para cargar los 5 valores de boxplot por categoría, o para configurar el número de buckets del histograma); `grafico-defaults.ts` (sanitización aditiva y retrocompatible).
+- **Alcance — NO toca:** nada de I1/I2 salvo integrarse en la agrupación por familia que I1 ya dejó lista.
+- **Entregable:** `histogram` y `boxPlot` disponibles, con datos de ejemplo razonables y sanitización que no rompe bloques existentes. Verificación: mismo comando que I1.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): histograma y boxplot`.
+
+#### I4 — Configuración profunda: Ejes, Series y Etiquetas/Leyenda
+- **Operador:** a definir.
+- **Estado:** pendiente.
+- **Precondición:** I1 hecha (el modal libera espacio en el panel lateral para estos controles nuevos).
+- **Contexto — lo que falta, confirmado contra el código real:** formato numérico de eje/tooltip (**`format.ts` de H1 existe, está probado, y no se importa en `build-apex-options.ts` — es la pieza más barata de esta ficha**), rotación de etiquetas de eje, ocultar eje, control de grillas (ambos ejes/solo Y/ninguna); color por serie (el campo `GraficoSerie.color` existe en el modelo pero no hay color picker en la UI — hoy el color siempre sale de la paleta por índice), forma de línea/grosor/mostrar puntos/opacidad de relleno por serie; posición de leyenda (hoy fija en "abajo"), formato de etiqueta de dato, formato de tooltip.
+- **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (`formatoValor?: LuminaValueFormat` en `LuminaChartConfig`; `ejeXRotacion?`, `ejeXOculto?`, `ejeYOculto?`, `grillas?: 'ambas'|'y'|'ninguna'`; `posicionLeyenda?: 'arriba'|'abajo'|'izquierda'|'derecha'`; en `LuminaChartSeries`: `curvaLinea?`, `grosorLinea?`, `mostrarPuntos?`, `opacidadRelleno?`); `packages/charts/src/apex/build-apex-options.ts` (cablear `format.ts` en `xaxis.labels.formatter`/`yaxis.labels.formatter`/`tooltip.y.formatter`; aplicar los campos nuevos); `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` (color picker por serie, controles nuevos de ejes/etiquetas/leyenda); `packages/types/src/slide.types.ts` + `grafico-defaults.ts` (aditivo).
+- **Entregable:** los ejes y el tooltip respetan un formato elegido (decimal/porcentaje/moneda/entero); color por serie editable desde la UI; leyenda con posición elegible; rotación/ocultamiento de ejes y control de grillas funcionando. Verificación: mismo comando que I1.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): formato numérico cableado, color por serie, ejes y leyenda configurables`.
+
+#### I5 — Configuración: Estilo y Anotaciones múltiples
+- **Operador:** a definir.
+- **Estado:** pendiente.
+- **Precondición:** I1 hecha.
+- **Contexto:** hoy `LuminaChartConfig.lineaReferencia` es un solo objeto (una línea de referencia como máximo); esquinas/sombra/fuente/fondo están hardcodeados en `build-apex-options.ts` (`borderRadius:4`, `fontFamily:'inherit'`, `background:'transparent'`); no hay editor de paleta personalizada (las paletas son las 7 de H1 + la semántica de 4 roles, fijas).
+- **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (`lineaReferencia` pasa a `lineasReferencia?: LuminaChartReferenceLine[]` — aditivo, migrar el caso singular a un arreglo de 1 elemento en la sanitización; `bandas?: { desde: number; hasta: number; etiqueta?: string; color?: string }[]`; `estilo?: { esquinas?: number; sombra?: boolean; fuente?: string; fondo?: 'transparente'|'tarjeta'; duracionAnimacion?: number }`; `paletaPersonalizada?: string[]`); `packages/charts/src/apex/build-apex-options.ts` (cablear todo lo anterior a `annotations`/`chart`/`plotOptions`); `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` (UI de anotaciones múltiples + editor de paleta personalizada + sección de estilo).
+- **Entregable:** múltiples líneas de referencia y bandas configurables; esquinas/sombra/fuente/fondo/duración de animación configurables; paleta personalizada editable desde la UI. Verificación: mismo comando que I1.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): anotaciones múltiples, bandas y estilo configurable`.
+
+#### I6 — Datos: pegar desde Excel/CSV, importar, transponer, ordenar + plantillas pedagógicas
+- **Operador:** a definir.
+- **Estado:** pendiente.
+- **Precondición:** I1 hecha (el modal de datos es el lugar natural para esto — pegar una tabla ancha necesita espacio, no una barra lateral).
+- **Alcance — PUEDE tocar:** el modal de datos de I1 (`grafico-data-dialog.tsx`) — parseo de texto pegado (TSV/CSV, patrón de pegado desde Excel/Sheets), botón de importar `.csv`, transponer filas/columnas, ordenar por serie, control de decimales/unidad-sufijo por eje; **nueva** dependencia si hace falta un parser robusto (`papaparse`, ~7kB — evaluar si el parseo simple de `split('\t')`/`split(',')` alcanza antes de sumar una librería); **nuevo** `packages/element-kit/src/blocks/grafico/grafico-templates.ts` — plantillas pedagógicas con datasets de ejemplo (comparativa entre grupos, evolución en el tiempo, distribución porcentual, progreso hacia meta, encuesta/frecuencias, correlación), ofrecidas en el panel de inserción de I1 como alternativa a "insertar vacío".
+- **Entregable:** pegar una tabla desde Excel/Sheets puebla categorías+series; transponer y ordenar funcionan; al menos 5-6 plantillas con datos de ejemplo reales insertables desde el panel izquierdo. Verificación: mismo comando que I1.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): pegar/importar datos y plantillas pedagógicas para grafico`.
+
+#### I7 — Accesibilidad: resumen automático de los datos
+- **Operador:** a definir.
+- **Estado:** pendiente.
+- **Precondición:** I1 hecha.
+- **Contexto:** hoy `descripcionAccesible` es un campo de texto libre que el docente escribe a mano (o queda con el default genérico "Gráfico de datos comparativos por categorías"). El plan pide generar automáticamente un resumen a partir de los datos reales (ej. "Gráfico de columnas: Grupo A varía entre 56 y 81, Grupo B entre 19 y 86, con el valor máximo en Mayo").
+- **Alcance — PUEDE tocar:** `packages/charts/src/` (nueva función pura `generarResumenAccesible(config: LuminaChartConfig): string`, con tests); `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` (botón "Generar automáticamente" junto al campo de descripción accesible — no reemplaza el campo editable, lo sugiere).
+- **Entregable:** un botón genera un resumen legible y correcto a partir de los datos del bloque, editable después por el docente. Verificación: mismo comando que I1 (agregar tests unitarios de `generarResumenAccesible` con distintos catálogos de tipo).
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): resumen accesible generado automáticamente`.
+
 ### Migración a Estructura Única — fichas por etapa
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
