@@ -23,6 +23,8 @@ import {
   Volume2,
   Workflow,
   Triangle,
+  Filter,
+  Disc,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,6 +45,8 @@ import {
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
   createDefaultPiramideBlock,
+  createDefaultEmbudoBlock,
+  createDefaultCebollaBlock,
 } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 import {
   appendBlockToSlideContent,
@@ -391,6 +395,20 @@ function ElementosPanel({
               icon={Triangle}
               disabled={disabledNonText}
               onClick={() => add(createDefaultPiramideBlock())}
+            />
+          </div>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Embudo / Proceso"
+              icon={Filter}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultEmbudoBlock())}
+            />
+            <InsertBtn
+              label="Círculos Concéntricos"
+              icon={Disc}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultCebollaBlock())}
             />
           </div>
         </PanelSection>
