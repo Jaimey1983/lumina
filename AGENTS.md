@@ -824,7 +824,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I4 — Configuración profunda: Ejes, Series y Etiquetas/Leyenda
 - **Operador:** Claude Code.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Claude Code].
 - **Precondición:** I1 hecha (el modal libera espacio en el panel lateral para estos controles nuevos).
 - **Contexto — lo que falta, confirmado contra el código real:** formato numérico de eje/tooltip (**`format.ts` de H1 existe, está probado, y no se importa en `build-apex-options.ts` — es la pieza más barata de esta ficha**), rotación de etiquetas de eje, ocultar eje, control de grillas (ambos ejes/solo Y/ninguna); color por serie (el campo `GraficoSerie.color` existe en el modelo pero no hay color picker en la UI — hoy el color siempre sale de la paleta por índice), forma de línea/grosor/mostrar puntos/opacidad de relleno por serie; posición de leyenda (hoy fija en "abajo"), formato de etiqueta de dato, formato de tooltip.
 - **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (`formatoValor?: LuminaValueFormat` en `LuminaChartConfig`; `ejeXRotacion?`, `ejeXOculto?`, `ejeYOculto?`, `grillas?: 'ambas'|'y'|'ninguna'`; `posicionLeyenda?: 'arriba'|'abajo'|'izquierda'|'derecha'`; en `LuminaChartSeries`: `curvaLinea?`, `grosorLinea?`, `mostrarPuntos?`, `opacidadRelleno?`); `packages/charts/src/apex/build-apex-options.ts` (cablear `format.ts` en `xaxis.labels.formatter`/`yaxis.labels.formatter`/`tooltip.y.formatter`; aplicar los campos nuevos); `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` (color picker por serie, controles nuevos de ejes/etiquetas/leyenda); `packages/types/src/slide.types.ts` + `grafico-defaults.ts` (aditivo).
