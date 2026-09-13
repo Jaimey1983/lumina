@@ -22,6 +22,7 @@ import {
   Video,
   Volume2,
   Workflow,
+  Triangle,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,6 +42,7 @@ import {
   createDefaultCicloBlock,
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
+  createDefaultPiramideBlock,
 } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 import {
   appendBlockToSlideContent,
@@ -377,12 +379,18 @@ function ElementosPanel({
               onClick={() => add(createDefaultMatriz2x2Block())}
             />
           </div>
-          <div className="mt-1.5">
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             <InsertBtn
               label="Tabla T (Pros y Contras)"
               icon={Columns2}
               disabled={disabledNonText}
               onClick={() => add(createDefaultTablaTBlock())}
+            />
+            <InsertBtn
+              label="Pirámide Jerárquica"
+              icon={Triangle}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultPiramideBlock())}
             />
           </div>
         </PanelSection>
