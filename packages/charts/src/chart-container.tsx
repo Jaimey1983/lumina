@@ -140,7 +140,19 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
           </div>
         ) : (
           <Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}>
+            {/*
+              `key={config.type}` fuerza un remount de <Chart> al cambiar de
+              tipo. Sin esto, react-apexcharts intenta reconfigurar la misma
+              instancia vía `updateOptions()` — funciona entre tipos afines
+              (column↔bar) pero deja geometría obsoleta al saltar entre
+              formas de eje muy distintas (scatter numérico → combo
+              categórico, combo → heatmap): confirmado en vivo (H6) que la
+              única forma de recuperar el render correcto sin este `key` era
+              recargar la página — los datos persistidos siempre eran
+              correctos, solo el DOM del chart montado quedaba stale.
+            */}
             <ApexChart
+              key={config.type}
               type={built.chartType}
               series={built.series as ApexOptions['series']}
               options={built.options}
