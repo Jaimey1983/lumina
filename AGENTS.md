@@ -833,7 +833,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I5 — Configuración: Estilo y Anotaciones múltiples
 - **Operador:** Claude Code.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Claude Code].
 - **Precondición:** I1 hecha.
 - **Contexto:** hoy `LuminaChartConfig.lineaReferencia` es un solo objeto (una línea de referencia como máximo); esquinas/sombra/fuente/fondo están hardcodeados en `build-apex-options.ts` (`borderRadius:4`, `fontFamily:'inherit'`, `background:'transparent'`); no hay editor de paleta personalizada (las paletas son las 7 de H1 + la semántica de 4 roles, fijas).
 - **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (`lineaReferencia` pasa a `lineasReferencia?: LuminaChartReferenceLine[]` — aditivo, migrar el caso singular a un arreglo de 1 elemento en la sanitización; `bandas?: { desde: number; hasta: number; etiqueta?: string; color?: string }[]`; `estilo?: { esquinas?: number; sombra?: boolean; fuente?: string; fondo?: 'transparente'|'tarjeta'; duracionAnimacion?: number }`; `paletaPersonalizada?: string[]`); `packages/charts/src/apex/build-apex-options.ts` (cablear todo lo anterior a `annotations`/`chart`/`plotOptions`); `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` (UI de anotaciones múltiples + editor de paleta personalizada + sección de estilo).
