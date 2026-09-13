@@ -25,7 +25,16 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
       body: n.cuerpo,
       accent,
       highlighted: Boolean(isRoot),
-      meta: { estilo: n.estilo },
+      meta: {
+        blockId: block.id,
+        estilo: n.estilo,
+        forma: n.forma,
+        icono: n.icono,
+        imagen: n.imagen,
+        subtipo: block.subtipo,
+        isRoot,
+        nodeType: 'diagramaShapeNode',
+      },
     };
   });
 
@@ -41,6 +50,19 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
           block.subtipo === 'organigrama' ||
           block.subtipo === 'mapa_conceptual' ||
           block.subtipo === 'cronologia',
+    meta: {
+      tipoTrazado:
+        a.tipoTrazado ??
+        (block.subtipo === 'flujo' || block.subtipo === 'organigrama'
+          ? 'smoothstep'
+          : block.subtipo === 'cronologia'
+            ? 'straight'
+            : 'bezier'),
+      estiloLinea: a.estiloLinea ?? 'solida',
+      color: a.color,
+      grosor: a.grosor,
+      flechaInicio: a.flechaInicio,
+    },
   }));
 
   return { nodes, edges };
@@ -61,6 +83,9 @@ export function applyGraphModelToDiagrama(
       cuerpo: n.body ?? original?.cuerpo,
       x: Math.round(n.x),
       y: Math.round(n.y),
+      forma: (n.meta?.forma as DiagramaNodo['forma']) ?? original?.forma,
+      icono: (n.meta?.icono as string | undefined) ?? original?.icono,
+      imagen: (n.meta?.imagen as string | undefined) ?? original?.imagen,
       estilo: {
         ...(original?.estilo ?? {}),
         ...(n.meta?.estilo as Record<string, unknown> | undefined),
@@ -84,6 +109,11 @@ export function applyGraphModelToDiagrama(
             (block.subtipo === 'flujo' ||
               block.subtipo === 'organigrama' ||
               block.subtipo === 'mapa_conceptual'),
+      tipoTrazado: (e.meta?.tipoTrazado as DiagramaArista['tipoTrazado']) ?? original?.tipoTrazado,
+      estiloLinea: (e.meta?.estiloLinea as DiagramaArista['estiloLinea']) ?? original?.estiloLinea,
+      color: (e.meta?.color as string | undefined) ?? original?.color,
+      grosor: (e.meta?.grosor as number | undefined) ?? original?.grosor,
+      flechaInicio: (e.meta?.flechaInicio as boolean | undefined) ?? original?.flechaInicio,
     };
   });
 

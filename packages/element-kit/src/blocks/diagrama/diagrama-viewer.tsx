@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type { DiagramaBlock, DiagramaGrafoBlock, DiagramaVennBlock } from '@lumina/types/slide';
 import { diagramaToGraphModel } from './diagrama-bridge.js';
 import { VennSvg } from './venn-svg.js';
+import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
 
@@ -74,6 +75,7 @@ export function DiagramaViewer({
             positionAuthority={
               grafoBlock.subtipo === 'cronologia' ? 'model' : 'rf'
             }
+            nodeTypes={DIAGRAMA_NODE_TYPES}
             fitView={true}
             showControls={false}
             showMiniMap={false}

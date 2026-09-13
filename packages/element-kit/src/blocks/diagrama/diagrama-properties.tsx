@@ -12,6 +12,8 @@ import {
   Milestone,
   Workflow,
   Sparkles,
+  BookOpen,
+  FileText,
 } from 'lucide-react';
 import type {
   Block,
@@ -19,15 +21,30 @@ import type {
   DiagramaBlock,
   DiagramaGrafoBlock,
   DiagramaNodo,
+  DiagramaNodoForma,
   DiagramaSubtipo,
 } from '@lumina/types/slide';
+import {
+  computeDagreLayout,
+  type GraphEdge,
+  type GraphNode,
+} from '@lumina/editor-shared/graph-editor';
+import { layoutRadial } from './layout-pedagogico.js';
+import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { Badge } from '@lumina/ui/badge';
 import { cn } from '@lumina/ui/lib/utils';
-import { normalizeDiagramaBlock } from './diagrama-defaults.js';
+import {
+  normalizeDiagramaBlock,
+  createDefaultFrayerBlock,
+  createDefaultIshikawaBlock,
+  createDefaultCicloBlock,
+  createDefaultMatriz2x2Block,
+  createDefaultTablaTBlock,
+} from './diagrama-defaults.js';
 
 interface DiagramaPropertiesProps {
   block: DiagramaBlock;
@@ -44,6 +61,24 @@ const COLOR_OPTIONS = [
   '#DC2626', // Rojo
   '#0891B2', // Cian
   '#DB2777', // Rosa
+];
+
+const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
+  { forma: 'root', label: 'Raíz' },
+  { forma: 'rounded', label: 'Tarjeta' },
+  { forma: 'chip', label: 'Chip' },
+  { forma: 'diamond', label: 'Rombo' },
+  { forma: 'pill', label: 'Píldora' },
+  { forma: 'parallelogram', label: 'Paralelogramo' },
+  { forma: 'card-icon', label: 'Icono' },
+];
+
+const TEMPLATES_CONFIG = [
+  { id: 'frayer', label: 'Modelo Frayer', desc: 'Concepto + 4 cuadrantes' },
+  { id: 'ishikawa', label: 'Ishikawa', desc: 'Causa y Efecto' },
+  { id: 'ciclo', label: 'Ciclo PDCA', desc: 'Bucle continuo' },
+  { id: 'matriz2x2', label: 'Matriz 2×2', desc: 'Prioridades' },
+  { id: 'tabla_t', label: 'Tabla T', desc: 'Pros y Contras' },
 ];
 
 const SUBTIPOS_CONFIG: Array<{
@@ -71,11 +106,14 @@ export function DiagramaProperties({
   applyNow,
 }: DiagramaPropertiesProps) {
   const [localBlock, setLocalBlock] = useState<DiagramaBlock>(block);
+  const [outlineText, setOutlineText] = useState('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setLocalBlock(block);
-  }, [block.id]);
+    if (!debounceTimerRef.current) {
+      setLocalBlock(block);
+    }
+  }, [block]);
 
   useEffect(() => {
     return () => {
@@ -267,9 +305,153 @@ export function DiagramaProperties({
     commitChange({ ...grafoBlock, aristas: nextAristas }, true);
   };
 
+  const handleNodeFormaChange = (nodeId: string, forma: DiagramaNodoForma) => {
+    if (!grafoBlock) return;
+    const nextNodos = grafoBlock.nodos.map((n) =>
+      n.id === nodeId ? { ...n, forma } : n,
+    );
+    commitChange({ ...grafoBlock, nodos: nextNodos }, true);
+  };
+
+  const handleEdgeTrazadoChange = (
+    edgeId: string,
+    tipoTrazado: DiagramaArista['tipoTrazado'],
+  ) => {
+    if (!grafoBlock) return;
+    const nextAristas = grafoBlock.aristas.map((a) =>
+      a.id === edgeId ? { ...a, tipoTrazado } : a,
+    );
+    commitChange({ ...grafoBlock, aristas: nextAristas }, true);
+  };
+
+  const handleAutoLayout = () => {
+    if (!grafoBlock) return;
+
+    if (currentSubtipo === 'mapa_mental') {
+      const reordered = layoutRadial(grafoBlock.nodos, grafoBlock.aristas);
+      commitChange({ ...grafoBlock, nodos: reordered }, true);
+      return;
+    }
+
+    if (currentSubtipo === 'cronologia') {
+      commitChange(finalizeGrafo(grafoBlock), true);
+      return;
+    }
+
+    const graphNodes: GraphNode[] = grafoBlock.nodos.map((n) => ({
+      id: n.id,
+      x: n.x,
+      y: n.y,
+      label: n.etiqueta,
+      body: n.cuerpo,
+      accent: (n.estilo?.color as string) ?? '#2563EB',
+    }));
+    const graphEdges: GraphEdge[] = grafoBlock.aristas.map((a) => ({
+      id: a.id,
+      source: a.desdeId,
+      target: a.haciaId,
+    }));
+
+    const laidOut = computeDagreLayout(graphNodes, graphEdges, {
+      direction: currentSubtipo === 'flujo' || currentSubtipo === 'organigrama' ? 'TB' : 'TB',
+    });
+
+    const posMap = new Map(laidOut.map((l) => [l.id, l]));
+    const nextNodos = grafoBlock.nodos.map((n) => {
+      const p = posMap.get(n.id);
+      return p ? { ...n, x: p.x, y: p.y } : n;
+    });
+
+    commitChange({ ...grafoBlock, nodos: nextNodos }, true);
+  };
+
+  const handleLoadTemplate = (templateId: string) => {
+    const coords = {
+      x: localBlock.x,
+      y: localBlock.y,
+      ancho: localBlock.ancho,
+      alto: localBlock.alto,
+    };
+    let newBlock: DiagramaBlock;
+    if (templateId === 'frayer') newBlock = createDefaultFrayerBlock(coords);
+    else if (templateId === 'ishikawa') newBlock = createDefaultIshikawaBlock(coords);
+    else if (templateId === 'ciclo') newBlock = createDefaultCicloBlock(coords);
+    else if (templateId === 'matriz2x2') newBlock = createDefaultMatriz2x2Block(coords);
+    else if (templateId === 'tabla_t') newBlock = createDefaultTablaTBlock(coords);
+    else return;
+
+    commitChange(newBlock, true);
+  };
+
+  const handleGenerateOutline = () => {
+    if (!grafoBlock || !outlineText.trim()) return;
+
+    const { nodos, aristas } = outlineToDiagrama(outlineText, currentSubtipo);
+    if (nodos.length === 0) return;
+
+    // Si es mapa mental, aplicar distribución radial; si no, dagre jerárquico
+    let positionedNodes = nodos;
+    if (currentSubtipo === 'mapa_mental') {
+      positionedNodes = layoutRadial(nodos, aristas);
+    } else {
+      const graphNodes: GraphNode[] = nodos.map((n) => ({
+        id: n.id,
+        x: n.x,
+        y: n.y,
+        label: n.etiqueta,
+        body: n.cuerpo,
+        accent: (n.estilo?.color as string) ?? '#2563EB',
+      }));
+      const graphEdges: GraphEdge[] = aristas.map((a) => ({
+        id: a.id,
+        source: a.desdeId,
+        target: a.haciaId,
+      }));
+      const laidOut = computeDagreLayout(graphNodes, graphEdges, { direction: 'TB' });
+      const posMap = new Map(laidOut.map((l) => [l.id, l]));
+      positionedNodes = nodos.map((n) => {
+        const p = posMap.get(n.id);
+        return p ? { ...n, x: p.x, y: p.y } : n;
+      });
+    }
+
+    commitChange(
+      {
+        ...grafoBlock,
+        nodos: positionedNodes,
+        aristas,
+      },
+      true,
+    );
+  };
+
   return (
     <div className="space-y-5 text-xs">
-      {/* 1. Selector de Subtipo */}
+      {/* Auto-Organizar con Layout Inteligente */}
+      {grafoBlock && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <div className="font-semibold text-foreground text-xs leading-tight">Auto-Organizar</div>
+              <div className="text-[10px] text-muted-foreground leading-tight">
+                {currentSubtipo === 'mapa_mental' ? 'Distribución radial 360°' : 'Alineación jerárquica'}
+              </div>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="primary"
+            onClick={handleAutoLayout}
+            className="h-7 text-xs px-2.5"
+          >
+            Organizar
+          </Button>
+        </div>
+      )}
+
+      {/* Selector de Subtipo */}
       <div className="space-y-2">
         <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Tipo de Diagrama
@@ -296,6 +478,62 @@ export function DiagramaProperties({
           })}
         </div>
       </div>
+
+      {/* Plantillas Pedagógicas */}
+      <div className="space-y-2 border-t border-border pt-3">
+        <div className="flex items-center gap-1.5">
+          <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Plantillas Pedagógicas
+          </Label>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {TEMPLATES_CONFIG.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => handleLoadTemplate(tpl.id)}
+              className="flex flex-col items-start rounded border border-border/70 bg-card/60 p-2 text-left hover:bg-primary/5 hover:border-primary/50 transition-all"
+            >
+              <span className="font-semibold text-foreground text-[11px]">{tpl.label}</span>
+              <span className="text-[9px] text-muted-foreground line-clamp-1">{tpl.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Modo Esquema (Texto / Markdown) */}
+      {grafoBlock && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Modo Esquema (Texto / Markdown)
+            </Label>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            Escribe ideas con sangría (2 espacios o guiones) para generar el diagrama al instante.
+          </p>
+          <Textarea
+            value={outlineText}
+            onChange={(e) => setOutlineText(e.target.value)}
+            placeholder={`Idea Principal\n  Rama 1\n    Detalle A\n  Rama 2\n    Detalle B`}
+            rows={5}
+            className="text-xs font-mono resize-none leading-relaxed bg-muted/20"
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!outlineText.trim()}
+            onClick={handleGenerateOutline}
+            className="w-full h-7 text-xs font-medium"
+          >
+            <Sparkles className="mr-1.5 h-3 w-3 text-primary" />
+            Generar desde Esquema
+          </Button>
+        </div>
+      )}
 
       {/* 2. Título y Accesibilidad */}
       <div className="space-y-3">
@@ -413,6 +651,25 @@ export function DiagramaProperties({
                       />
                     ))}
                   </div>
+
+                  {/* Selector de forma del nodo */}
+                  <div className="flex items-center gap-1 overflow-x-auto pt-1 pb-0.5">
+                    {FORMAS_CONFIG.map((f) => (
+                      <button
+                        key={f.forma}
+                        type="button"
+                        onClick={() => handleNodeFormaChange(nodo.id, f.forma)}
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-[9px] border transition-all shrink-0',
+                          (nodo.forma ?? (isRoot ? 'root' : 'rounded')) === f.forma
+                            ? 'border-primary bg-primary text-primary-foreground font-semibold'
+                            : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/70',
+                        )}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })}
@@ -477,6 +734,25 @@ export function DiagramaProperties({
                     }
                     className="w-full rounded border border-border/40 bg-background px-1.5 py-0.5 text-[10px] text-foreground focus:outline-hidden"
                   />
+
+                  {/* Selector de trazado */}
+                  <div className="flex items-center gap-1 pt-0.5">
+                    {(['smoothstep', 'bezier', 'straight'] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleEdgeTrazadoChange(arista.id, t)}
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-[9px] border transition-all',
+                          (arista.tipoTrazado ?? 'smoothstep') === t
+                            ? 'border-primary bg-primary/10 text-primary font-medium'
+                            : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                        )}
+                      >
+                        {t === 'smoothstep' ? 'Curva' : t === 'bezier' ? 'Bézier' : 'Recta'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })}

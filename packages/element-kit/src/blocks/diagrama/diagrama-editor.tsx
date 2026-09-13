@@ -7,6 +7,7 @@ import { diagramaToGraphModel } from './diagrama-bridge.js';
 import { normalizeDiagramaBlock } from './diagrama-defaults.js';
 import { assignElementoRegion, regionAtPoint } from './diagrama-regions.js';
 import { VennSvg } from './venn-svg.js';
+import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
 import type { GraphConnectAttempt, GraphNodePositionPatch } from '@lumina/editor-shared/graph-editor';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
@@ -62,6 +63,105 @@ export function DiagramaEditor({
     };
   }, []);
 
+  // Escuchar eventos desacoplados desde los nodos del canvas (NodeToolbar y doble clic inline)
+  useEffect(() => {
+    if (!grafoBlock || !onChange) return;
+
+    const handleNodeUpdate = (e: Event) => {
+      const detail = (e as CustomEvent<{ id: string; etiqueta: string; blockId?: string }>).detail;
+      if (detail.blockId && detail.blockId !== block.id) return;
+      const { id, etiqueta } = detail;
+      const nextNodos = grafoBlock.nodos.map((n) =>
+        n.id === id ? { ...n, etiqueta } : n,
+      );
+      onChange({ ...grafoBlock, nodos: nextNodos });
+    };
+
+    const handleAddChild = (e: Event) => {
+      const detail = (e as CustomEvent<{ parentId: string; blockId?: string }>).detail;
+      if (detail.blockId && detail.blockId !== block.id) return;
+      const { parentId } = detail;
+      const parentNode = grafoBlock.nodos.find((n) => n.id === parentId);
+      if (!parentNode) return;
+
+      const count = grafoBlock.nodos.length + 1;
+      const maxSeq = grafoBlock.nodos.reduce((max, n) => {
+        const seq = Number(n.id.split('-').pop());
+        return Number.isFinite(seq) && seq > max ? seq : max;
+      }, 0);
+      const newNodeId = `nodo-${grafoBlock.subtipo}-${Math.max(count, maxSeq + 1)}`;
+
+      // Posicionar el nuevo hijo cerca del padre con un offset
+      const angle = ((grafoBlock.nodos.length * 45) * Math.PI) / 180;
+      const offset = 140;
+      const newX = Math.round(parentNode.x + offset * Math.cos(angle));
+      const newY = Math.round(parentNode.y + offset * Math.sin(angle));
+
+      const parentColor =
+        typeof parentNode.estilo?.color === 'string'
+          ? parentNode.estilo.color
+          : '#2563EB';
+
+      const newNode = {
+        id: newNodeId,
+        etiqueta: `Nuevo Concepto`,
+        x: newX,
+        y: newY,
+        forma: (grafoBlock.subtipo === 'mapa_mental' ? 'chip' : 'rounded') as import('@lumina/types/slide').DiagramaNodoForma,
+        estilo: { color: parentColor },
+      };
+
+      const nextEdgeSeq =
+        grafoBlock.aristas.reduce((max, a) => {
+          const parts = a.id.split('-');
+          const seq = Number(parts[parts.length - 1]);
+          return Number.isFinite(seq) && seq > max ? seq : max;
+        }, grafoBlock.aristas.length) + 1;
+
+      const newArista = {
+        id: `arista-${parentId}-${newNodeId}-${nextEdgeSeq}`,
+        desdeId: parentId,
+        haciaId: newNodeId,
+        dirigida: grafoBlock.subtipo === 'flujo' || grafoBlock.subtipo === 'organigrama',
+        tipoTrazado: (grafoBlock.subtipo === 'flujo' ? 'smoothstep' : 'bezier') as import('@lumina/types/slide').DiagramaAristaTrazado,
+      };
+
+      onChange({
+        ...grafoBlock,
+        nodos: [...grafoBlock.nodos, newNode],
+        aristas: [...grafoBlock.aristas, newArista],
+      });
+    };
+
+    const handleDeleteNode = (e: Event) => {
+      const detail = (e as CustomEvent<{ id: string; blockId?: string }>).detail;
+      if (detail.blockId && detail.blockId !== block.id) return;
+      const { id } = detail;
+      if (grafoBlock.nodos.length <= 1) return;
+
+      const nextNodos = grafoBlock.nodos.filter((n) => n.id !== id);
+      const nextAristas = grafoBlock.aristas.filter(
+        (a) => a.desdeId !== id && a.haciaId !== id,
+      );
+
+      onChange({
+        ...grafoBlock,
+        nodos: nextNodos,
+        aristas: nextAristas,
+      });
+    };
+
+    window.addEventListener('lumina-diagrama-node-update', handleNodeUpdate);
+    window.addEventListener('lumina-diagrama-add-child', handleAddChild);
+    window.addEventListener('lumina-diagrama-delete-node', handleDeleteNode);
+
+    return () => {
+      window.removeEventListener('lumina-diagrama-node-update', handleNodeUpdate);
+      window.removeEventListener('lumina-diagrama-add-child', handleAddChild);
+      window.removeEventListener('lumina-diagrama-delete-node', handleDeleteNode);
+    };
+  }, [block.id, grafoBlock, onChange]);
+
   const model = useMemo(() => {
     if (!grafoBlock) return { nodes: [], edges: [] };
     return diagramaToGraphModel(grafoBlock);
@@ -115,8 +215,15 @@ export function DiagramaEditor({
       );
       if (exists) return;
 
+      const nextEdgeSeq =
+        grafoBlock.aristas.reduce((max, a) => {
+          const parts = a.id.split('-');
+          const seq = Number(parts[parts.length - 1]);
+          return Number.isFinite(seq) && seq > max ? seq : max;
+        }, grafoBlock.aristas.length) + 1;
+
       const newArista = {
-        id: `arista-${attempt.source}-${attempt.target}-${Date.now()}`,
+        id: `arista-${attempt.source}-${attempt.target}-${nextEdgeSeq}`,
         desdeId: attempt.source,
         haciaId: attempt.target,
         dirigida: grafoBlock.subtipo === 'flujo',
@@ -236,6 +343,7 @@ export function DiagramaEditor({
             positionAuthority={
               grafoBlock.subtipo === 'cronologia' ? 'model' : 'rf'
             }
+            nodeTypes={DIAGRAMA_NODE_TYPES}
             onNodesMove={handleNodesMove}
             onConnect={handleConnect}
             fitView={false}

@@ -8,6 +8,7 @@ import {
   type DiagramaBlock,
   type DiagramaGrafoBlock,
   type DiagramaNodo,
+  type DiagramaOpciones,
   type DiagramaSubtipo,
   type DiagramaVennBlock,
   type DiagramaVennElemento,
@@ -109,12 +110,30 @@ function sanitizeNodos(raw: unknown): DiagramaNodo[] {
         ? ((item as { estilo: Record<string, unknown> }).estilo as Record<string, unknown>)
         : undefined;
 
+    const forma =
+      typeof (item as { forma?: unknown }).forma === 'string'
+        ? ((item as { forma: string }).forma as DiagramaNodo['forma'])
+        : undefined;
+
+    const icono =
+      typeof (item as { icono?: unknown }).icono === 'string'
+        ? (item as { icono: string }).icono
+        : undefined;
+
+    const imagen =
+      typeof (item as { imagen?: unknown }).imagen === 'string'
+        ? (item as { imagen: string }).imagen
+        : undefined;
+
     cleaned.push({
       id,
       etiqueta,
       ...(cuerpo ? { cuerpo } : {}),
       x,
       y,
+      ...(forma ? { forma } : {}),
+      ...(icono ? { icono } : {}),
+      ...(imagen ? { imagen } : {}),
       ...(estilo ? { estilo } : {}),
     });
   }
@@ -171,12 +190,42 @@ function sanitizeAristas(raw: unknown, validNodeIds: Set<string>): DiagramaArist
         ? (item as { dirigida: boolean }).dirigida
         : undefined;
 
+    const tipoTrazado =
+      typeof (item as { tipoTrazado?: unknown }).tipoTrazado === 'string'
+        ? ((item as { tipoTrazado: string }).tipoTrazado as DiagramaArista['tipoTrazado'])
+        : undefined;
+
+    const estiloLinea =
+      typeof (item as { estiloLinea?: unknown }).estiloLinea === 'string'
+        ? ((item as { estiloLinea: string }).estiloLinea as DiagramaArista['estiloLinea'])
+        : undefined;
+
+    const color =
+      typeof (item as { color?: unknown }).color === 'string'
+        ? (item as { color: string }).color
+        : undefined;
+
+    const grosor =
+      typeof (item as { grosor?: unknown }).grosor === 'number'
+        ? (item as { grosor: number }).grosor
+        : undefined;
+
+    const flechaInicio =
+      typeof (item as { flechaInicio?: unknown }).flechaInicio === 'boolean'
+        ? (item as { flechaInicio: boolean }).flechaInicio
+        : undefined;
+
     cleaned.push({
       id,
       desdeId,
       haciaId,
       ...(etiqueta ? { etiqueta } : {}),
       ...(dirigida !== undefined ? { dirigida } : {}),
+      ...(tipoTrazado ? { tipoTrazado } : {}),
+      ...(estiloLinea ? { estiloLinea } : {}),
+      ...(color ? { color } : {}),
+      ...(grosor ? { grosor } : {}),
+      ...(flechaInicio !== undefined ? { flechaInicio } : {}),
     });
   }
 
@@ -279,6 +328,33 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
   const validNodeIds = new Set(nodos.map((n) => n.id));
   const aristas = sanitizeAristas(raw.aristas, validNodeIds);
 
+  // Sanitizar opciones aditivas del diagrama
+  const rawOpciones = raw.opciones && typeof raw.opciones === 'object' ? (raw.opciones as Record<string, unknown>) : undefined;
+  const opciones: DiagramaOpciones | undefined = rawOpciones
+    ? {
+        ...(typeof rawOpciones.tema === 'string' &&
+        (rawOpciones.tema === 'auto' || rawOpciones.tema === 'claro' || rawOpciones.tema === 'oscuro')
+          ? { tema: rawOpciones.tema }
+          : {}),
+        ...(typeof rawOpciones.paleta === 'string' ? { paleta: rawOpciones.paleta } : {}),
+        ...(typeof rawOpciones.fondo === 'string' &&
+        (rawOpciones.fondo === 'puntos' || rawOpciones.fondo === 'cuadricula' || rawOpciones.fondo === 'vacio')
+          ? { fondo: rawOpciones.fondo }
+          : {}),
+        ...(typeof rawOpciones.direccionLayout === 'string' &&
+        ['TB', 'LR', 'BT', 'RL', 'radial'].includes(rawOpciones.direccionLayout)
+          ? { direccionLayout: rawOpciones.direccionLayout as DiagramaOpciones['direccionLayout'] }
+          : {}),
+        ...(typeof rawOpciones.densidad === 'string' &&
+        (rawOpciones.densidad === 'compacta' || rawOpciones.densidad === 'normal' || rawOpciones.densidad === 'amplia')
+          ? { densidad: rawOpciones.densidad }
+          : {}),
+        ...(typeof rawOpciones.animacionEntrada === 'boolean'
+          ? { animacionEntrada: rawOpciones.animacionEntrada }
+          : {}),
+      }
+    : undefined;
+
   // Cronología: writer canónico de la invariante lineal. Ignora `raw.aristas`
   // (la cadena es autogenerada) y fija `layout: 'lineal'`.
   if (subtipo === 'cronologia') {
@@ -299,6 +375,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
       nodos: linear.nodos,
       aristas: linear.aristas,
       layout: 'lineal',
+      ...(opciones ? { opciones } : {}),
     };
   }
 
@@ -323,6 +400,7 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
     nodos,
     aristas,
     layout,
+    ...(opciones ? { opciones } : {}),
   };
 }
 
@@ -785,4 +863,181 @@ export function createDefaultVennBlock(
   };
 
   return normalizeDiagramaBlock(base) as DiagramaVennBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica Modelo Frayer (Concepto central + 4 cuadrantes).
+ */
+export function createDefaultFrayerBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `frayer-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'mapa_conceptual',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Modelo Frayer: Fotosíntesis',
+    descripcionAccesible: 'Organizador Frayer con Definición, Características, Ejemplos y No-Ejemplos',
+    nodos: [
+      { id: 'f-centro', etiqueta: 'Fotosíntesis', cuerpo: 'Proceso biológico vegetal', x: 230, y: 155, forma: 'root', estilo: { color: '#059669', destacado: true } },
+      { id: 'f-def', etiqueta: '1. Definición', cuerpo: 'Conversión de energía lumínica en glucosa y oxígeno.', x: 50, y: 40, forma: 'rounded', estilo: { color: '#2563EB' } },
+      { id: 'f-caract', etiqueta: '2. Características', cuerpo: 'Ocurre en cloroplastos; requiere luz, agua y CO2.', x: 410, y: 40, forma: 'rounded', estilo: { color: '#7C3AED' } },
+      { id: 'f-ej', etiqueta: '3. Ejemplos', cuerpo: 'Plantas verdes, algas verdeazuladas, fitoplancton.', x: 50, y: 270, forma: 'rounded', estilo: { color: '#D97706' } },
+      { id: 'f-noej', etiqueta: '4. No Ejemplos', cuerpo: 'Respiración celular humana, descomposición bacteriana.', x: 410, y: 270, forma: 'rounded', estilo: { color: '#DC2626' } },
+    ],
+    aristas: [
+      { id: 'af-1', desdeId: 'f-centro', haciaId: 'f-def', tipoTrazado: 'smoothstep' },
+      { id: 'af-2', desdeId: 'f-centro', haciaId: 'f-caract', tipoTrazado: 'smoothstep' },
+      { id: 'af-3', desdeId: 'f-centro', haciaId: 'f-ej', tipoTrazado: 'smoothstep' },
+      { id: 'af-4', desdeId: 'f-centro', haciaId: 'f-noej', tipoTrazado: 'smoothstep' },
+    ],
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica Ishikawa (Diagrama de Causa y Efecto / Espina de Pescado).
+ */
+export function createDefaultIshikawaBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `ishikawa-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'mapa_mental',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Diagrama de Causa-Efecto (Ishikawa)',
+    descripcionAccesible: 'Diagrama de espina de pescado para análisis causal del problema',
+    nodos: [
+      { id: 'ish-efecto', etiqueta: 'Problema Principal', cuerpo: 'Bajo Rendimiento Académico', x: 520, y: 160, forma: 'root', estilo: { color: '#DC2626', destacado: true } },
+      { id: 'ish-metodo', etiqueta: 'Métodos de Estudio', cuerpo: 'Falta de planificación horaria', x: 70, y: 50, forma: 'card-icon', icono: 'book-open', estilo: { color: '#2563EB' } },
+      { id: 'ish-entorno', etiqueta: 'Entorno de Aprendizaje', cuerpo: 'Distracciones en el hogar', x: 270, y: 50, forma: 'card-icon', icono: 'home', estilo: { color: '#059669' } },
+      { id: 'ish-material', etiqueta: 'Materiales y Recursos', cuerpo: 'Fuentes desactualizadas', x: 70, y: 310, forma: 'card-icon', icono: 'file-text', estilo: { color: '#D97706' } },
+      { id: 'ish-persona', etiqueta: 'Factores Personales', cuerpo: 'Falta de descanso y estrés', x: 270, y: 310, forma: 'card-icon', icono: 'user', estilo: { color: '#7C3AED' } },
+    ],
+    aristas: [
+      { id: 'ai-1', desdeId: 'ish-metodo', haciaId: 'ish-efecto', tipoTrazado: 'straight', dirigida: true },
+      { id: 'ai-2', desdeId: 'ish-entorno', haciaId: 'ish-efecto', tipoTrazado: 'straight', dirigida: true },
+      { id: 'ai-3', desdeId: 'ish-material', haciaId: 'ish-efecto', tipoTrazado: 'straight', dirigida: true },
+      { id: 'ai-4', desdeId: 'ish-persona', haciaId: 'ish-efecto', tipoTrazado: 'straight', dirigida: true },
+    ],
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Ciclo Continuo / Bucle Secuencial.
+ */
+export function createDefaultCicloBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `ciclo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'flujo',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Ciclo de Mejora Continua (PDCA)',
+    descripcionAccesible: 'Ciclo circular continuo: Planear, Hacer, Verificar, Actuar',
+    nodos: [
+      { id: 'ciclo-1', etiqueta: '1. Planear', cuerpo: 'Definir metas y estrategias', x: 205, y: 40, forma: 'pill', estilo: { color: '#2563EB' } },
+      { id: 'ciclo-2', etiqueta: '2. Hacer', cuerpo: 'Implementar el plan de acción', x: 335, y: 170, forma: 'pill', estilo: { color: '#059669' } },
+      { id: 'ciclo-3', etiqueta: '3. Verificar', cuerpo: 'Evaluar resultados obtenidos', x: 205, y: 300, forma: 'pill', estilo: { color: '#D97706' } },
+      { id: 'ciclo-4', etiqueta: '4. Actuar', cuerpo: 'Estandarizar y corregir', x: 75, y: 170, forma: 'pill', estilo: { color: '#7C3AED' } },
+    ],
+    aristas: [
+      { id: 'ac-1', desdeId: 'ciclo-1', haciaId: 'ciclo-2', dirigida: true, tipoTrazado: 'smoothstep' },
+      { id: 'ac-2', desdeId: 'ciclo-2', haciaId: 'ciclo-3', dirigida: true, tipoTrazado: 'smoothstep' },
+      { id: 'ac-3', desdeId: 'ciclo-3', haciaId: 'ciclo-4', dirigida: true, tipoTrazado: 'smoothstep' },
+      { id: 'ac-4', desdeId: 'ciclo-4', haciaId: 'ciclo-1', dirigida: true, tipoTrazado: 'smoothstep' },
+    ],
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Matriz 2x2 (ej. Eisenhower o FODA).
+ */
+export function createDefaultMatriz2x2Block(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `matriz-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'mapa_conceptual',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Matriz 2×2: Prioridades',
+    descripcionAccesible: 'Matriz de cuadrantes para clasificar prioridades e impacto',
+    nodos: [
+      { id: 'm-q1', etiqueta: 'Urgente e Importante', cuerpo: 'Hacer de inmediato', x: 70, y: 40, forma: 'rounded', estilo: { color: '#DC2626' } },
+      { id: 'm-q2', etiqueta: 'Importante, No Urgente', cuerpo: 'Planificar con fecha fija', x: 290, y: 40, forma: 'rounded', estilo: { color: '#2563EB' } },
+      { id: 'm-q3', etiqueta: 'Urgente, No Importante', cuerpo: 'Delegar si es posible', x: 70, y: 210, forma: 'rounded', estilo: { color: '#D97706' } },
+      { id: 'm-q4', etiqueta: 'Ni Urgente Ni Importante', cuerpo: 'Eliminar distracciones', x: 290, y: 210, forma: 'rounded', estilo: { color: '#6B7280' } },
+    ],
+    aristas: [],
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Tabla T (Comparación binaria / Pros vs Contras).
+ */
+export function createDefaultTablaTBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `tablat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'mapa_conceptual',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Tabla T: Ventajas vs. Desventajas',
+    descripcionAccesible: 'Tabla comparativa de dos columnas para análisis crítico',
+    nodos: [
+      { id: 't-v1', etiqueta: 'Ventaja 1: Mayor Flexibilidad', cuerpo: 'Permite aprendizaje autónomo', x: 70, y: 50, forma: 'chip', estilo: { color: '#059669' } },
+      { id: 't-d1', etiqueta: 'Desventaja 1: Menor Interacción', cuerpo: 'Disminuye el contacto presencial', x: 320, y: 50, forma: 'chip', estilo: { color: '#DC2626' } },
+      { id: 't-v2', etiqueta: 'Ventaja 2: Ahorro de Tiempo', cuerpo: 'Sin desplazamientos diarios', x: 70, y: 130, forma: 'chip', estilo: { color: '#059669' } },
+      { id: 't-d2', etiqueta: 'Desventaja 2: Requiere Disciplina', cuerpo: 'Riesgo de procrastinación', x: 320, y: 130, forma: 'chip', estilo: { color: '#DC2626' } },
+    ],
+    aristas: [],
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
 }
