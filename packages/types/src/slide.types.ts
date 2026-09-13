@@ -1385,6 +1385,7 @@ export type DiagramaSubtipo =
   | 'mapa_conceptual'
   | 'flujo'
   | 'cronologia'
+  | 'piramide'
   | 'venn';
 
 export type DiagramaNodoForma =
@@ -1397,7 +1398,9 @@ export type DiagramaNodoForma =
   | 'hexagon'
   | 'chip'
   | 'root'
-  | 'card-icon';
+  | 'card-icon'
+  | 'trapezoid'
+  | 'triangle';
 
 export interface DiagramaNodo {
   id: string;
@@ -1437,9 +1440,17 @@ export interface DiagramaArista {
   flechaInicio?: boolean;
 }
 
+export type DiagramaPaletaId =
+  | 'editorial'
+  | 'tecnologico'
+  | 'menta'
+  | 'pizarra'
+  | 'vibrante'
+  | 'calido';
+
 export interface DiagramaOpciones {
   tema?: 'auto' | 'claro' | 'oscuro';
-  paleta?: string;
+  paleta?: DiagramaPaletaId;
   fondo?: 'puntos' | 'cuadricula' | 'vacio';
   direccionLayout?: 'TB' | 'LR' | 'BT' | 'RL' | 'radial';
   densidad?: 'compacta' | 'normal' | 'amplia';
