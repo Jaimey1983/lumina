@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
   Controls,
   MiniMap,
   Handle,
@@ -76,6 +77,7 @@ export interface GraphCanvasProps {
   showControls?: boolean;
   showMiniMap?: boolean;
   showBackground?: boolean;
+  backgroundVariant?: BackgroundVariant | 'dots' | 'lines' | 'cross';
   /** Tipos de nodo personalizados adicionales para este lienzo. */
   nodeTypes?: NodeTypes;
   /** Tipos de arista personalizados adicionales para este lienzo. */
@@ -237,6 +239,7 @@ export function GraphCanvas({
   showControls = true,
   showMiniMap = true,
   showBackground = true,
+  backgroundVariant,
   nodeTypes,
   edgeTypes,
   children,
@@ -322,7 +325,13 @@ export function GraphCanvas({
         fitView={fitView}
         attributionPosition="bottom-right"
       >
-        {showBackground && <Background color="var(--border, #E5E7EB)" gap={20} />}
+        {showBackground && (
+          <Background
+            variant={backgroundVariant as BackgroundVariant}
+            color="var(--border, #E5E7EB)"
+            gap={20}
+          />
+        )}
         {showControls && <Controls className="!bg-card !border-border !fill-foreground !text-foreground shadow-xs" />}
         {showMiniMap && (
           <MiniMap

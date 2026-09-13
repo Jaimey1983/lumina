@@ -18,6 +18,9 @@ import {
   Palette,
   Filter,
   Disc,
+  Grid,
+  Sliders,
+  Spline,
 } from 'lucide-react';
 import type {
   Block,
@@ -52,6 +55,9 @@ import {
   createDefaultPiramideBlock,
   createDefaultEmbudoBlock,
   createDefaultCebollaBlock,
+  createDefaultArbolProblemasBlock,
+  createDefaultEisenhowerBlock,
+  createDefaultEmpatiaBlock,
 } from './diagrama-defaults.js';
 import { PALETAS_DIAGRAMA, aplicarPaletaADiagrama } from './diagrama-temas.js';
 
@@ -89,6 +95,9 @@ const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
 const TEMPLATES_CONFIG = [
   { id: 'frayer', label: 'Modelo Frayer', desc: 'Concepto + 4 cuadrantes' },
   { id: 'ishikawa', label: 'Ishikawa', desc: 'Causa y Efecto' },
+  { id: 'arbol_problemas', label: 'Árbol de Problemas', desc: 'Causas, tronco y efectos' },
+  { id: 'eisenhower', label: 'Matriz Eisenhower', desc: 'Urgente vs Importante' },
+  { id: 'empatia', label: 'Mapa de Empatía', desc: 'Design Thinking pedagógico' },
   { id: 'ciclo', label: 'Ciclo PDCA', desc: 'Bucle continuo' },
   { id: 'matriz2x2', label: 'Matriz 2×2', desc: 'Prioridades' },
   { id: 'tabla_t', label: 'Tabla T', desc: 'Pros y Contras' },
@@ -400,6 +409,24 @@ export function DiagramaProperties({
     commitChange({ ...grafoBlock, aristas: nextAristas }, true);
   };
 
+  const handleGlobalEdgeTrazado = (tipoTrazado: DiagramaArista['tipoTrazado']) => {
+    if (!grafoBlock) return;
+    const nextAristas = grafoBlock.aristas.map((a) => ({ ...a, tipoTrazado }));
+    commitChange({ ...grafoBlock, aristas: nextAristas }, true);
+  };
+
+  const handleGlobalEdgeEstilo = (estiloLinea: DiagramaArista['estiloLinea']) => {
+    if (!grafoBlock) return;
+    const nextAristas = grafoBlock.aristas.map((a) => ({ ...a, estiloLinea }));
+    commitChange({ ...grafoBlock, aristas: nextAristas }, true);
+  };
+
+  const handleFondoChange = (fondo: 'puntos' | 'cuadricula' | 'vacio') => {
+    if (!grafoBlock) return;
+    const opciones = { ...(grafoBlock.opciones ?? {}), fondo };
+    commitChange({ ...grafoBlock, opciones }, true);
+  };
+
   const handleAutoLayout = () => {
     if (!grafoBlock) return;
 
@@ -469,6 +496,9 @@ export function DiagramaProperties({
     let newBlock: DiagramaBlock;
     if (templateId === 'frayer') newBlock = createDefaultFrayerBlock(coords);
     else if (templateId === 'ishikawa') newBlock = createDefaultIshikawaBlock(coords);
+    else if (templateId === 'arbol_problemas') newBlock = createDefaultArbolProblemasBlock(coords);
+    else if (templateId === 'eisenhower') newBlock = createDefaultEisenhowerBlock(coords);
+    else if (templateId === 'empatia') newBlock = createDefaultEmpatiaBlock(coords);
     else if (templateId === 'ciclo') newBlock = createDefaultCicloBlock(coords);
     else if (templateId === 'matriz2x2') newBlock = createDefaultMatriz2x2Block(coords);
     else if (templateId === 'tabla_t') newBlock = createDefaultTablaTBlock(coords);
@@ -631,6 +661,78 @@ export function DiagramaProperties({
                 </button>
               );
             })}
+          </div>
+
+          {/* Configuración Visual Global: Fondo de Lienzo y Trazo de Conectores */}
+          <div className="space-y-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <Sliders className="h-3 w-3 text-muted-foreground" />
+              <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Estilo Visual Global
+              </Label>
+            </div>
+
+            {/* Fondo de Lienzo */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Grid className="h-3 w-3" /> Fondo
+              </span>
+              <div className="flex items-center gap-1">
+                {(['puntos', 'cuadricula', 'vacio'] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => handleFondoChange(f)}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] border transition-all capitalize',
+                      (grafoBlock.opciones?.fondo ?? 'puntos') === f
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    {f === 'puntos' ? 'Puntos' : f === 'cuadricula' ? 'Cuadrícula' : 'Vacío'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trazado Global de Conectores */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Spline className="h-3 w-3" /> Conexiones
+              </span>
+              <div className="flex items-center gap-1">
+                {(['smoothstep', 'bezier', 'straight'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => handleGlobalEdgeTrazado(t)}
+                    className="px-1.5 py-0.5 rounded text-[10px] border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                    title={`Aplicar trazado ${t === 'smoothstep' ? 'curva ortogonal' : t === 'bezier' ? 'bézier fluido' : 'línea recta'} a todas las conexiones`}
+                  >
+                    {t === 'smoothstep' ? 'Ortogonal' : t === 'bezier' ? 'Fluida' : 'Recta'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Estilo de Línea Global */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Línea</span>
+              <div className="flex items-center gap-1">
+                {(['solida', 'discontinua', 'punteada'] as const).map((estilo) => (
+                  <button
+                    key={estilo}
+                    type="button"
+                    onClick={() => handleGlobalEdgeEstilo(estilo)}
+                    className="px-1.5 py-0.5 rounded text-[10px] border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all capitalize"
+                    title={`Aplicar línea ${estilo} a todas las conexiones`}
+                  >
+                    {estilo === 'solida' ? 'Sólida' : estilo === 'discontinua' ? 'Guiones' : 'Puntos'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

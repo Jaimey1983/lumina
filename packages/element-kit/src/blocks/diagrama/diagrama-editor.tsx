@@ -458,7 +458,12 @@ export function DiagramaEditor({
             fitView={false}
             showControls={isSelected}
             showMiniMap={false}
-            showBackground={true}
+            showBackground={grafoBlock.opciones?.fondo !== 'vacio'}
+            backgroundVariant={
+              grafoBlock.opciones?.fondo === 'cuadricula'
+                ? ('lines' as const)
+                : ('dots' as const)
+            }
           />
         )}
       </div>

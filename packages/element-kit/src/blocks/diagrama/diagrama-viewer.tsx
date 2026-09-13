@@ -79,7 +79,12 @@ export function DiagramaViewer({
             fitView={true}
             showControls={false}
             showMiniMap={false}
-            showBackground={!isThumbnail}
+            showBackground={!isThumbnail && grafoBlock.opciones?.fondo !== 'vacio'}
+            backgroundVariant={
+              grafoBlock.opciones?.fondo === 'cuadricula'
+                ? ('lines' as const)
+                : ('dots' as const)
+            }
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">

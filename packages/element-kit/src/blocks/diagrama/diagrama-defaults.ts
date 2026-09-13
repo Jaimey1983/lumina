@@ -341,7 +341,18 @@ export function normalizeDiagramaBlock(input: unknown): DiagramaBlock {
           ? { tema: rawOpciones.tema }
           : {}),
         ...(typeof rawOpciones.paleta === 'string' &&
-        ['editorial', 'tecnologico', 'menta', 'pizarra', 'vibrante', 'calido'].includes(rawOpciones.paleta)
+        [
+          'editorial',
+          'tecnologico',
+          'menta',
+          'pizarra',
+          'vibrante',
+          'calido',
+          'oceano',
+          'aurora',
+          'monocromatico',
+          'pastel',
+        ].includes(rawOpciones.paleta)
           ? { paleta: rawOpciones.paleta as DiagramaPaletaId }
           : {}),
         ...(typeof rawOpciones.fondo === 'string' &&
@@ -1174,6 +1185,149 @@ export function createDefaultCebollaBlock(
     aristas: cebollaAristas,
     opciones: {
       paleta: 'editorial',
+    },
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Árbol de Problemas
+ * (Causas en raíces -> Problema central en tronco -> Efectos/Consecuencias en copa/ramas).
+ */
+export function createDefaultArbolProblemasBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const arbolNodos: DiagramaNodo[] = [
+    // Efectos (Nivel superior / Ramas)
+    { id: 'ap-efecto-1', etiqueta: 'Efecto 1: Deserción Escolar', cuerpo: 'Abandono prematuro de los estudios', x: 70, y: 30, forma: 'rounded', estilo: { color: '#DC2626' } },
+    { id: 'ap-efecto-2', etiqueta: 'Efecto 2: Brecha de Aprendizaje', cuerpo: 'Rezago acumulativo en competencias clave', x: 270, y: 30, forma: 'rounded', estilo: { color: '#DC2626' } },
+    { id: 'ap-efecto-3', etiqueta: 'Efecto 3: Desmotivación', cuerpo: 'Pérdida de interés y autoestima académica', x: 470, y: 30, forma: 'rounded', estilo: { color: '#DC2626' } },
+
+    // Problema Central (Tronco)
+    { id: 'ap-problema', etiqueta: 'Problema Central', cuerpo: 'Bajo Rendimiento en Lectura Crítica', x: 270, y: 160, forma: 'root', estilo: { color: '#EA580C', destacado: true } },
+
+    // Causas Raíz (Nivel inferior / Raíces)
+    { id: 'ap-causa-1', etiqueta: 'Causa 1: Hábitos Lectores', cuerpo: 'Poco tiempo dedicado a la lectura en el hogar', x: 70, y: 300, forma: 'pill', estilo: { color: '#2563EB' } },
+    { id: 'ap-causa-2', etiqueta: 'Causa 2: Recursos Didácticos', cuerpo: 'Textos desactualizados o poco atractivos', x: 270, y: 300, forma: 'pill', estilo: { color: '#059669' } },
+    { id: 'ap-causa-3', etiqueta: 'Causa 3: Estrategias Docentes', cuerpo: 'Falta de metodologías activas e interactivas', x: 470, y: 300, forma: 'pill', estilo: { color: '#7C3AED' } },
+  ];
+
+  const arbolAristas: DiagramaArista[] = [
+    // Causas conducen al problema
+    { id: 'e-ap-c1-p', desdeId: 'ap-causa-1', haciaId: 'ap-problema', dirigida: true, tipoTrazado: 'smoothstep', color: '#64748B' },
+    { id: 'e-ap-c2-p', desdeId: 'ap-causa-2', haciaId: 'ap-problema', dirigida: true, tipoTrazado: 'smoothstep', color: '#64748B' },
+    { id: 'e-ap-c3-p', desdeId: 'ap-causa-3', haciaId: 'ap-problema', dirigida: true, tipoTrazado: 'smoothstep', color: '#64748B' },
+
+    // El problema genera efectos
+    { id: 'e-ap-p-e1', desdeId: 'ap-problema', haciaId: 'ap-efecto-1', dirigida: true, tipoTrazado: 'smoothstep', color: '#EF4444' },
+    { id: 'e-ap-p-e2', desdeId: 'ap-problema', haciaId: 'ap-efecto-2', dirigida: true, tipoTrazado: 'smoothstep', color: '#EF4444' },
+    { id: 'e-ap-p-e3', desdeId: 'ap-problema', haciaId: 'ap-efecto-3', dirigida: true, tipoTrazado: 'smoothstep', color: '#EF4444' },
+  ];
+
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `arbol-prob-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'organigrama',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Árbol de Problemas: Diagnóstico Pedagógico',
+    descripcionAccesible: 'Árbol causal con causas en la base, problema central en el medio y efectos en la parte superior',
+    nodos: arbolNodos,
+    aristas: arbolAristas,
+    opciones: {
+      paleta: 'calido',
+    },
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Matriz de Eisenhower (Urgente vs Importante).
+ */
+export function createDefaultEisenhowerBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const eisenhowerNodos: DiagramaNodo[] = [
+    { id: 'eis-q1', etiqueta: '1. Hacer de Inmediato', cuerpo: 'Urgente & Importante (Crisis, fechas límite)', x: 70, y: 40, ancho: 220, forma: 'rounded', estilo: { color: '#DC2626' } },
+    { id: 'eis-q2', etiqueta: '2. Planificar y Agendar', cuerpo: 'No Urgente & Importante (Estrategia, formación)', x: 330, y: 40, ancho: 220, forma: 'rounded', estilo: { color: '#2563EB' } },
+    { id: 'eis-q3', etiqueta: '3. Delegar', cuerpo: 'Urgente & No Importante (Interrupciones, trámites)', x: 70, y: 200, ancho: 220, forma: 'rounded', estilo: { color: '#D97706' } },
+    { id: 'eis-q4', etiqueta: '4. Eliminar / Descartar', cuerpo: 'Ni Urgente Ni Importante (Distracciones)', x: 330, y: 200, ancho: 220, forma: 'rounded', estilo: { color: '#64748B' } },
+  ];
+
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `eisenhower-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'mapa_conceptual',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Matriz de Eisenhower: Gestión del Tiempo y Prioridades',
+    descripcionAccesible: 'Matriz de cuatro cuadrantes clasificando tareas por urgencia e importancia',
+    nodos: eisenhowerNodos,
+    aristas: [],
+    opciones: {
+      paleta: 'vibrante',
+    },
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Mapa de Empatía (Design Thinking en educación).
+ */
+export function createDefaultEmpatiaBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const empatiaNodos: DiagramaNodo[] = [
+    // Usuario / Estudiante en el centro
+    { id: 'emp-centro', etiqueta: 'Estudiante / Usuario', cuerpo: 'Perfil del alumno o usuario en estudio', x: 260, y: 155, forma: 'circle', estilo: { color: '#7C3AED', destacado: true } },
+
+    // 4 Perspectivas
+    { id: 'emp-piensa', etiqueta: '¿Qué piensa y siente?', cuerpo: 'Lo que realmente le importa, sus aspiraciones y preocupaciones', x: 260, y: 25, forma: 'rounded', estilo: { color: '#2563EB' } },
+    { id: 'emp-ve', etiqueta: '¿Qué ve?', cuerpo: 'Su entorno, compañeros, redes sociales y contexto diario', x: 470, y: 155, forma: 'rounded', estilo: { color: '#059669' } },
+    { id: 'emp-dice', etiqueta: '¿Qué dice y hace?', cuerpo: 'Comportamiento público, actitud ante retos y palabras', x: 260, y: 290, forma: 'rounded', estilo: { color: '#D97706' } },
+    { id: 'emp-oye', etiqueta: '¿Qué oye?', cuerpo: 'Lo que dicen sus docentes, amigos e influenciadores', x: 50, y: 155, forma: 'rounded', estilo: { color: '#0891B2' } },
+  ];
+
+  const empatiaAristas: DiagramaArista[] = [
+    { id: 'e-emp-c-p', desdeId: 'emp-centro', haciaId: 'emp-piensa', dirigida: false, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+    { id: 'e-emp-c-v', desdeId: 'emp-centro', haciaId: 'emp-ve', dirigida: false, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+    { id: 'e-emp-c-d', desdeId: 'emp-centro', haciaId: 'emp-dice', dirigida: false, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+    { id: 'e-emp-c-o', desdeId: 'emp-centro', haciaId: 'emp-oye', dirigida: false, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+  ];
+
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `empatia-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'mapa_conceptual',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Mapa de Empatía (Design Thinking)',
+    descripcionAccesible: 'Mapa de empatía con 4 cuadrantes alrededor del usuario: piensa, ve, dice/hace y oye',
+    nodos: empatiaNodos,
+    aristas: empatiaAristas,
+    opciones: {
+      paleta: 'oceano',
     },
     x: marco ? marco.izquierdaPct : fb.x,
     y: marco ? marco.arribaPct : fb.y,

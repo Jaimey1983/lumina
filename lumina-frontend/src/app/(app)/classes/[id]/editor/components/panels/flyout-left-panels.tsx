@@ -25,6 +25,8 @@ import {
   Triangle,
   Filter,
   Disc,
+  GitFork,
+  HeartHandshake,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,6 +50,9 @@ import {
   createDefaultPiramideBlock,
   createDefaultEmbudoBlock,
   createDefaultCebollaBlock,
+  createDefaultArbolProblemasBlock,
+  createDefaultEisenhowerBlock,
+  createDefaultEmpatiaBlock,
 } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 import {
   appendBlockToSlideContent,
@@ -434,6 +439,28 @@ function ElementosPanel({
               icon={Disc}
               disabled={disabledNonText}
               onClick={() => add(createDefaultCebollaBlock())}
+            />
+          </div>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Árbol de Problemas"
+              icon={GitFork}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultArbolProblemasBlock())}
+            />
+            <InsertBtn
+              label="Matriz Eisenhower"
+              icon={Grid}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultEisenhowerBlock())}
+            />
+          </div>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Mapa de Empatía"
+              icon={HeartHandshake}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultEmpatiaBlock())}
             />
           </div>
         </PanelSection>

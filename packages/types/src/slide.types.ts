@@ -1450,7 +1450,11 @@ export type DiagramaPaletaId =
   | 'menta'
   | 'pizarra'
   | 'vibrante'
-  | 'calido';
+  | 'calido'
+  | 'oceano'
+  | 'aurora'
+  | 'monocromatico'
+  | 'pastel';
 
 export interface DiagramaOpciones {
   tema?: 'auto' | 'claro' | 'oscuro';

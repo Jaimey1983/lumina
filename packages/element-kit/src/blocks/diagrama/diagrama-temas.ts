@@ -51,6 +51,34 @@ export const PALETAS_DIAGRAMA: Record<DiagramaPaletaId, PaletaDef> = {
     acentoPrincipal: '#C2410C', // Terracota
     colores: ['#D97706', '#B45309', '#9A3412', '#991B1B', '#78350F', '#EA580C'],
   },
+  oceano: {
+    id: 'oceano',
+    nombre: 'Océano Profundo',
+    descripcion: 'Gradiente marino de azul índigo, cerúleo, cian y aguamarina.',
+    acentoPrincipal: '#0284C7', // Azul Cerúleo
+    colores: ['#0369A1', '#0EA5E9', '#06B6D4', '#0891B2', '#38BDF8', '#1E40AF'],
+  },
+  aurora: {
+    id: 'aurora',
+    nombre: 'Aurora Boreal',
+    descripcion: 'Misterio nocturno con verde esmeralda, violeta y cian brillante.',
+    acentoPrincipal: '#8B5CF6', // Violeta
+    colores: ['#10B981', '#06B6D4', '#A855F7', '#EC4899', '#3B82F6', '#14B8A6'],
+  },
+  monocromatico: {
+    id: 'monocromatico',
+    nombre: 'Monocromático Minimal',
+    descripcion: 'Escala sobria de carbón, pizarra y grafito con máxima legibilidad.',
+    acentoPrincipal: '#334155', // Pizarra Oscura
+    colores: ['#1E293B', '#475569', '#64748B', '#94A3B8', '#0F172A', '#52525B'],
+  },
+  pastel: {
+    id: 'pastel',
+    nombre: 'Pastel Pedagógico',
+    descripcion: 'Tonos suaves y amigables diseñados para educación infantil y primaria.',
+    acentoPrincipal: '#6366F1', // Lavanda suave
+    colores: ['#F472B6', '#38BDF8', '#4ADE80', '#FBBF24', '#A78BFA', '#FB7185'],
+  },
 };
 
 /**

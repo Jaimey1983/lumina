@@ -11,6 +11,9 @@ export {
   createDefaultPiramideBlock,
   createDefaultEmbudoBlock,
   createDefaultCebollaBlock,
+  createDefaultArbolProblemasBlock,
+  createDefaultEisenhowerBlock,
+  createDefaultEmpatiaBlock,
   normalizeDiagramaBlock,
 } from './diagrama-defaults.js';
 export { DiagramaEditor } from './diagrama-editor.js';

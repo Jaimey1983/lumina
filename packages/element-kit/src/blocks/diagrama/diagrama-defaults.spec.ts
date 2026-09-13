@@ -7,6 +7,9 @@ import {
   createDefaultMapaMentalBlock,
   createDefaultOrganigramaBlock,
   createDefaultVennBlock,
+  createDefaultArbolProblemasBlock,
+  createDefaultEisenhowerBlock,
+  createDefaultEmpatiaBlock,
   layoutCronologiaLineal,
   normalizeDiagramaBlock,
 } from './diagrama-defaults.js';
@@ -287,5 +290,37 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
       expect(after?.cuerpo).toBe(orig.cuerpo);
       expect(after?.estilo?.color).toBe(orig.estilo?.color);
     });
+  });
+
+  it('crea un Árbol de Problemas con causas, tronco y efectos debidamente conectados', () => {
+    const block = createDefaultArbolProblemasBlock();
+    expect(block.tipo).toBe('diagrama');
+    expect(block.subtipo).toBe('organigrama');
+    expect(block.nodos.length).toBe(7); // 3 causas, 1 problema, 3 efectos
+    expect(block.aristas.length).toBe(6);
+    expect(block.opciones?.paleta).toBe('calido');
+    const problema = block.nodos.find((n) => n.id === 'ap-problema');
+    expect(problema).toBeDefined();
+    expect(problema?.forma).toBe('root');
+  });
+
+  it('crea una Matriz de Eisenhower con 4 cuadrantes', () => {
+    const block = createDefaultEisenhowerBlock();
+    expect(block.tipo).toBe('diagrama');
+    expect(block.subtipo).toBe('mapa_conceptual');
+    expect(block.nodos.length).toBe(4);
+    expect(block.nodos.map((n) => n.id)).toEqual(['eis-q1', 'eis-q2', 'eis-q3', 'eis-q4']);
+    expect(block.opciones?.paleta).toBe('vibrante');
+  });
+
+  it('crea un Mapa de Empatía con usuario central y 4 cuadrantes', () => {
+    const block = createDefaultEmpatiaBlock();
+    expect(block.tipo).toBe('diagrama');
+    expect(block.subtipo).toBe('mapa_conceptual');
+    expect(block.nodos.length).toBe(5);
+    expect(block.aristas.length).toBe(4);
+    expect(block.opciones?.paleta).toBe('oceano');
+    const centro = block.nodos.find((n) => n.id === 'emp-centro');
+    expect(centro?.forma).toBe('circle');
   });
 });

@@ -48,4 +48,21 @@ describe('diagrama-temas', () => {
     const raiz = updated.nodos.find((n) => n.id === 'raiz');
     expect(raiz?.estilo?.color).toBe(PALETAS_DIAGRAMA.tecnologico.acentoPrincipal);
   });
+
+  it('soporta las nuevas paletas armónicas: oceano, aurora, monocromatico, pastel', () => {
+    const paletas: Array<keyof typeof PALETAS_DIAGRAMA> = [
+      'oceano',
+      'aurora',
+      'monocromatico',
+      'pastel',
+    ];
+
+    for (const pal of paletas) {
+      const updated = aplicarPaletaADiagrama(sampleGrafo, pal);
+      expect(updated.opciones?.paleta).toBe(pal);
+      const raiz = updated.nodos.find((n) => n.id === 'raiz');
+      expect(raiz?.estilo?.color).toBe(PALETAS_DIAGRAMA[pal].acentoPrincipal);
+      expect(PALETAS_DIAGRAMA[pal].colores.length).toBeGreaterThanOrEqual(6);
+    }
+  });
 });
