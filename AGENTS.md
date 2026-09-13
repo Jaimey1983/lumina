@@ -695,7 +695,7 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 
 #### H7 — Consolidar las tarjetas KPI y barras de progreso duplicadas en un primitivo compartido
 - **Operador:** Antigravity
-- **Estado:** pendiente — ficha completa, lista para asignar (Regla 10: no se asigna incompleta).
+- **Estado:** [en curso: Antigravity]
 - **Precondición:** H1–H6 hechas (contrato de `@lumina/charts` ya probado en dos consumidores reales) — **cumplida**.
 
 **Contexto — relevado 2026-09-12 (corrige el esbozo original de esta ficha, que suponía "primitivos chicos de `@lumina/charts`" sin haber mirado el código):**
