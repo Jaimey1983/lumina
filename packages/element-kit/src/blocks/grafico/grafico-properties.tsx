@@ -27,6 +27,7 @@ import {
   Plus,
   Trash2,
   Sparkles,
+  Wand2,
 } from 'lucide-react';
 import type { Block, GraficoChartType, GraficoDatosBlock } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
@@ -47,7 +48,9 @@ import {
   LUMINA_CHART_PALETTES as GRAFICO_PALETAS,
   getChartFamily,
   getChartTypesByFamily,
+  generarResumenAccesible,
   type LuminaChartFamily,
+  type LuminaChartConfig,
 } from '@lumina/charts';
 import { cn } from '@lumina/ui/lib/utils';
 import { GraficoDataDialog } from './grafico-data-dialog.js';
@@ -178,6 +181,18 @@ export function GraficoProperties({
   // Cambiar descripción accesible
   const handleA11yChange = (descripcionAccesible: string) => {
     commitChange({ ...localBlock, descripcionAccesible });
+  };
+
+  // Generar automáticamente la descripción accesible a partir de los datos (Etapa I7)
+  const handleGenerarResumenAccesible = () => {
+    const config: LuminaChartConfig = {
+      type: localBlock.chartType,
+      categorias: localBlock.categorias,
+      series: localBlock.series,
+      histogramBins: localBlock.histogramBins,
+    };
+    const resumen = generarResumenAccesible(config);
+    commitChange({ ...localBlock, descripcionAccesible: resumen }, true);
   };
 
   // Configuración fina
@@ -492,9 +507,21 @@ export function GraficoProperties({
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <Eye className="h-3 w-3 text-muted-foreground" />
-            <Label className="text-[11px] text-muted-foreground">Descripción Accesible (A11y)</Label>
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1">
+              <Eye className="h-3 w-3 text-muted-foreground" />
+              <Label className="text-[11px] text-muted-foreground">Descripción Accesible (A11y)</Label>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerarResumenAccesible}
+              className="h-6 px-1.5 text-[10px] text-primary hover:text-primary"
+              title="Genera una sugerencia a partir de los datos del gráfico — la puedes editar después"
+            >
+              <Wand2 className="mr-1 h-3 w-3" /> Generar automáticamente
+            </Button>
           </div>
           <Textarea
             value={localBlock.descripcionAccesible || ''}

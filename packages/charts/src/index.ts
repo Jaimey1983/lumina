@@ -52,3 +52,5 @@ export {
   MAX_HISTOGRAM_BINS,
   type HistogramBins,
 } from './histogram.js';
+
+export { generarResumenAccesible } from './accessible-summary.js';
