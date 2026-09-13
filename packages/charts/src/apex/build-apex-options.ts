@@ -8,6 +8,7 @@ import { getSeriesColor } from '../palettes.js';
 import type { LuminaChartTheme } from '../chart-theme.js';
 import type { LuminaChartConfig } from '../types.js';
 import { computeHistogramBins, sanitizeHistogramBinCount } from '../histogram.js';
+import { formatChartValue } from '../format.js';
 
 export type BuiltApexChartType =
   | 'bar'
@@ -90,10 +91,53 @@ function buildAnnotations(config: LuminaChartConfig, theme: LuminaChartTheme): A
   };
 }
 
+/**
+ * Grilla compartida por los tipos cartesianos/afines. `grillas` (Etapa I4)
+ * controla qué líneas se muestran; `modoSparkline` (I2) sigue ocultándola
+ * entera, igual que antes.
+ */
+function buildGrid(config: LuminaChartConfig, theme: LuminaChartTheme): ApexOptions['grid'] {
+  const grillas = config.grillas ?? 'ambas';
+  return {
+    show: !config.modoSparkline,
+    borderColor: theme.borderColor,
+    strokeDashArray: 3,
+    xaxis: { lines: { show: grillas === 'ambas' } },
+    yaxis: { lines: { show: grillas === 'ambas' || grillas === 'y' } },
+  };
+}
+
+const LEGEND_POSITION_MAP: Record<NonNullable<LuminaChartConfig['posicionLeyenda']>, 'top' | 'bottom' | 'left' | 'right'> = {
+  arriba: 'top',
+  abajo: 'bottom',
+  izquierda: 'left',
+  derecha: 'right',
+};
+
+/** Resuelve la posición de leyenda pedida por `posicionLeyenda` (I4), o `fallback` (el default previo de cada tipo). */
+function resolveLegendPosition(config: LuminaChartConfig, fallback: 'top' | 'bottom' | 'left' | 'right'): 'top' | 'bottom' | 'left' | 'right' {
+  return config.posicionLeyenda ? LEGEND_POSITION_MAP[config.posicionLeyenda] : fallback;
+}
+
+/** Tooltip compartido: respeta `formatoValor` (I4) cuando está definido. */
+function buildTooltip(config: LuminaChartConfig): ApexOptions['tooltip'] {
+  if (config.isThumbnail) {
+    return { enabled: false };
+  }
+  if (!config.formatoValor) {
+    return { enabled: true };
+  }
+  return {
+    enabled: true,
+    y: { formatter: (value: number) => formatChartValue(value, config.formatoValor) },
+  };
+}
+
 function buildXAxis(config: LuminaChartConfig, theme: LuminaChartTheme, isNumeric = false): ApexOptions['xaxis'] {
+  const hidden = Boolean(config.ejeXOculto);
   return {
     ...(isNumeric ? { type: 'numeric' } : { categories: config.categorias }),
-    ...(config.ejeXTitulo
+    ...(config.ejeXTitulo && !hidden
       ? {
           title: {
             text: config.ejeXTitulo,
@@ -101,7 +145,14 @@ function buildXAxis(config: LuminaChartConfig, theme: LuminaChartTheme, isNumeri
           },
         }
       : {}),
+    axisBorder: { show: !hidden },
+    axisTicks: { show: !hidden },
     labels: {
+      show: !hidden,
+      ...(config.ejeXRotacion !== undefined ? { rotate: config.ejeXRotacion } : {}),
+      ...(isNumeric && config.formatoValor
+        ? { formatter: (value: string) => formatChartValue(Number(value), config.formatoValor) }
+        : {}),
       style: { fontSize: config.isThumbnail ? '8px' : '11px', colors: theme.mutedColor },
     },
   };
@@ -109,14 +160,20 @@ function buildXAxis(config: LuminaChartConfig, theme: LuminaChartTheme, isNumeri
 
 function buildYAxis(config: LuminaChartConfig, theme: LuminaChartTheme): ApexOptions['yaxis'] {
   const hasSecondary = config.type === 'combo' && config.series.some((s) => s.ejeCombo === 'secundario');
+  const hidden = Boolean(config.ejeYOculto);
 
   const primaryY: Record<string, unknown> = {
+    show: !hidden,
     labels: {
+      show: !hidden,
       style: { fontSize: config.isThumbnail ? '8px' : '11px', colors: theme.mutedColor },
+      ...(config.formatoValor
+        ? { formatter: (value: number) => formatChartValue(value, config.formatoValor) }
+        : {}),
     },
   };
 
-  if (config.ejeYTitulo) {
+  if (config.ejeYTitulo && !hidden) {
     primaryY.title = {
       text: config.ejeYTitulo,
       style: { fontSize: config.isThumbnail ? '8px' : '11px', color: theme.mutedColor },
@@ -212,40 +269,55 @@ function buildCartesianChart(config: LuminaChartConfig, theme: LuminaChartTheme)
       }))
     : config.series.map((s) => ({ name: s.nombre, data: s.valores }));
 
-  const apexCurve =
-    config.curva === 'recta'
-      ? ('straight' as const)
-      : config.curva === 'escalon'
-        ? ('stepline' as const)
-        : ('smooth' as const);
+  const curveFor = (curva: LuminaChartConfig['curva']) =>
+    curva === 'recta' ? ('straight' as const) : curva === 'escalon' ? ('stepline' as const) : ('smooth' as const);
+  const apexCurve = curveFor(config.curva);
+  // Curva/grosor por serie (I4): solo se vuelven arreglos cuando al menos una
+  // serie los pide explícitamente — si no, el valor sigue siendo el escalar
+  // global de siempre (paridad exacta con el comportamiento previo a I4).
+  const perSeriesCurva = config.series.some((s) => s.curvaLinea !== undefined);
+  const perSeriesGrosor = config.series.some((s) => s.grosorLinea !== undefined);
+  const anyMarkers = config.series.some((s) => s.mostrarPuntos);
+  const perSeriesOpacidad = config.series.some((s) => s.opacidadRelleno !== undefined);
 
   const stroke = isCombo
-    ? { width: config.series.map((s) => (s.tipoCombo === 'line' ? 2 : 0)), curve: apexCurve }
+    ? {
+        width: config.series.map((s) => (s.tipoCombo === 'line' ? (s.grosorLinea ?? 2) : 0)),
+        curve: perSeriesCurva ? config.series.map((s) => curveFor(s.curvaLinea ?? config.curva)) : apexCurve,
+      }
     : config.type === 'line' || config.type === 'area'
-      ? { curve: apexCurve, width: 2 }
+      ? {
+          curve: perSeriesCurva ? config.series.map((s) => curveFor(s.curvaLinea ?? config.curva)) : apexCurve,
+          width: perSeriesGrosor ? config.series.map((s) => s.grosorLinea ?? 2) : 2,
+        }
       : { width: 0 };
 
   const fill =
     config.type === 'area'
-      ? { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.05 } }
-      : { opacity: 1 };
+      ? perSeriesOpacidad
+        ? { opacity: config.series.map((s) => s.opacidadRelleno ?? 0.2) }
+        : { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.05 } }
+      : perSeriesOpacidad
+        ? { opacity: config.series.map((s) => s.opacidadRelleno ?? 1) }
+        : { opacity: 1 };
 
   const options: ApexOptions = {
     chart: { ...baseChartOptions(config, theme), type: apexChartType },
     colors,
     xaxis: buildXAxis(config, theme),
     yaxis: buildYAxis(config, theme),
-    grid: { show: !config.modoSparkline, borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
-      position: 'bottom',
+      position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, false),
     stroke,
     fill,
+    ...(anyMarkers ? { markers: { size: config.series.map((s) => (s.mostrarPuntos ? 4 : 0)) } } : {}),
     ...(buildAnnotations(config, theme) ? { annotations: buildAnnotations(config, theme) } : {}),
     plotOptions: {
       bar: {
@@ -281,14 +353,14 @@ function buildScatterOrBubbleChart(config: LuminaChartConfig, theme: LuminaChart
     colors,
     xaxis: buildXAxis(config, theme, true),
     yaxis: buildYAxis(config, theme),
-    grid: { borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
-      position: 'bottom',
+      position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, false),
     ...(buildAnnotations(config, theme) ? { annotations: buildAnnotations(config, theme) } : {}),
   };
@@ -310,11 +382,11 @@ function buildRadarChart(config: LuminaChartConfig, theme: LuminaChartTheme): Bu
     yaxis: { show: false },
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
-      position: 'bottom',
+      position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, false),
     stroke: { width: 2 },
     markers: { size: 3 },
@@ -337,7 +409,7 @@ function buildTreemapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
     chart: { ...baseChartOptions(config, theme), type: 'treemap' },
     colors,
     legend: { show: false },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, true),
     plotOptions: {
       treemap: {
@@ -362,9 +434,9 @@ function buildFunnelChart(config: LuminaChartConfig, theme: LuminaChartTheme): B
     colors,
     xaxis: buildXAxis(config, theme),
     yaxis: buildYAxis(config, theme),
-    grid: { borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: { show: false },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, true),
     ...(buildAnnotations(config, theme) ? { annotations: buildAnnotations(config, theme) } : {}),
     plotOptions: {
@@ -395,14 +467,14 @@ function buildHeatmapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
     colors,
     xaxis: buildXAxis(config, theme),
     yaxis: buildYAxis(config, theme),
-    grid: { borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
-      position: 'bottom',
+      position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, false),
     plotOptions: {
       heatmap: {
@@ -483,11 +555,11 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
     labels: config.categorias,
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
-      position: config.type === 'radialBar' ? 'right' : 'bottom',
+      position: resolveLegendPosition(config, config.type === 'radialBar' ? 'right' : 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, config.type !== 'radialBar'),
     plotOptions,
   };
@@ -509,11 +581,11 @@ function buildPolarAreaChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     yaxis: { show: false },
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
-      position: 'bottom',
+      position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, false),
     plotOptions: {
       polarArea: {
@@ -582,9 +654,9 @@ function buildWaterfallChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     chart: { ...baseChartOptions(config, theme), type: 'bar' },
     xaxis: buildXAxis(config, theme),
     yaxis: buildYAxis(config, theme),
-    grid: { show: !config.modoSparkline, borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: { show: false },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, true),
     ...(buildAnnotations(config, theme) ? { annotations: buildAnnotations(config, theme) } : {}),
     plotOptions: {
@@ -618,14 +690,14 @@ function buildBoxPlotChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
     colors,
     xaxis: buildXAxis(config, theme),
     yaxis: buildYAxis(config, theme),
-    grid: { borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
-      position: 'bottom',
+      position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     plotOptions: {
       boxPlot: {
         colors: {
@@ -654,9 +726,9 @@ function buildHistogramChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     // `categorias` del bloque — `histogram` las ignora (Etapa I3).
     xaxis: buildXAxis({ ...config, categorias: labels }, theme),
     yaxis: buildYAxis(config, theme),
-    grid: { borderColor: theme.borderColor, strokeDashArray: 3 },
+    grid: buildGrid(config, theme),
     legend: { show: false },
-    tooltip: { enabled: !config.isThumbnail },
+    tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, false),
     plotOptions: {
       bar: {

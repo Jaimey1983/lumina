@@ -3,6 +3,8 @@
 // referenciar tipos de `apexcharts`/`react-apexcharts` directamente — ver el
 // comentario de package.json y la decisión de motor en AGENTS.md (Etapa H).
 
+import type { LuminaValueFormat } from './format.js';
+
 /**
  * Tipos de gráfico soportados por el contrato (catálogo completo de 16 tipos, Etapa I2).
  */
@@ -187,6 +189,16 @@ export interface LuminaChartSeries {
   puntos?: LuminaChartPoint[];
   /** Un resumen de cinco números por categoría, para type `boxPlot`. Ignorado en otros tipos. */
   cajas?: LuminaChartBoxPlotPoint[];
+
+  // ─── Estilo por serie (Etapa I4) — solo aplican en line/area/combo ───
+  /** Interpolación de curva de esta serie. Sin especificar, usa `LuminaChartConfig.curva` (o `'suave'`). */
+  curvaLinea?: 'recta' | 'suave' | 'escalon';
+  /** Grosor de línea en px de esta serie. Sin especificar, usa el default del tipo (2px en line/area, 2px si es línea dentro de un combo). */
+  grosorLinea?: number;
+  /** Mostrar marcadores (puntos) sobre esta serie. */
+  mostrarPuntos?: boolean;
+  /** Opacidad de relleno (0–1) de esta serie, para line/area. */
+  opacidadRelleno?: number;
 }
 
 export interface LuminaChartReferenceLine {
@@ -248,4 +260,18 @@ export interface LuminaChartConfig {
   // ─── Estadística (Etapa I3) ───
   /** Número de intervalos (bins) para type `histogram`. Ignorado en otros tipos; por defecto 8. */
   histogramBins?: number;
+
+  // ─── Ejes, formato y leyenda (Etapa I4) ───
+  /** Formato numérico de eje Y / tooltip (ver `format.ts`). Por defecto `'decimal'`. */
+  formatoValor?: LuminaValueFormat;
+  /** Rotación en grados de las etiquetas del eje X. Sin especificar, usa el comportamiento por defecto de ApexCharts. */
+  ejeXRotacion?: number;
+  /** Ocultar por completo el eje X (etiquetas, borde y marcas). */
+  ejeXOculto?: boolean;
+  /** Ocultar por completo el eje Y (primario). */
+  ejeYOculto?: boolean;
+  /** Qué líneas de grilla mostrar. Por defecto `'ambas'`. */
+  grillas?: 'ambas' | 'y' | 'ninguna';
+  /** Posición de la leyenda. Por defecto `'abajo'` (`'derecha'` en radialBar). */
+  posicionLeyenda?: 'arriba' | 'abajo' | 'izquierda' | 'derecha';
 }

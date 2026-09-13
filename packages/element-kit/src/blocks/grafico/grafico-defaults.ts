@@ -151,6 +151,30 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
         })
       : undefined;
 
+    // Estilo por serie (Etapa I4) — solo aplican en line/area/combo, pero se
+    // sanitizan igual para cualquier tipo (el adapter/build-options decide si
+    // los usa).
+    const rawCurvaLinea = (item as { curvaLinea?: unknown }).curvaLinea;
+    const curvaLinea =
+      rawCurvaLinea === 'recta' || rawCurvaLinea === 'suave' || rawCurvaLinea === 'escalon'
+        ? rawCurvaLinea
+        : undefined;
+
+    const rawGrosorLinea = (item as { grosorLinea?: unknown }).grosorLinea;
+    const grosorLinea =
+      typeof rawGrosorLinea === 'number' && Number.isFinite(rawGrosorLinea) ? rawGrosorLinea : undefined;
+
+    const mostrarPuntos =
+      typeof (item as { mostrarPuntos?: unknown }).mostrarPuntos === 'boolean'
+        ? (item as { mostrarPuntos: boolean }).mostrarPuntos
+        : undefined;
+
+    const rawOpacidadRelleno = (item as { opacidadRelleno?: unknown }).opacidadRelleno;
+    const opacidadRelleno =
+      typeof rawOpacidadRelleno === 'number' && Number.isFinite(rawOpacidadRelleno)
+        ? Math.min(1, Math.max(0, rawOpacidadRelleno))
+        : undefined;
+
     cleaned.push({
       nombre,
       valores,
@@ -159,6 +183,10 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
       ...(ejeCombo ? { ejeCombo } : {}),
       ...(puntos ? { puntos } : {}),
       ...(cajas ? { cajas } : {}),
+      ...(curvaLinea ? { curvaLinea } : {}),
+      ...(grosorLinea !== undefined ? { grosorLinea } : {}),
+      ...(mostrarPuntos !== undefined ? { mostrarPuntos } : {}),
+      ...(opacidadRelleno !== undefined ? { opacidadRelleno } : {}),
     });
   }
 
@@ -257,6 +285,29 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
     histogramBins:
       typeof raw.histogramBins === 'number' && Number.isFinite(raw.histogramBins)
         ? Math.round(raw.histogramBins)
+        : undefined,
+
+    // Ejes, formato y leyenda (Etapa I4)
+    formatoValor:
+      raw.formatoValor === 'entero' ||
+      raw.formatoValor === 'decimal' ||
+      raw.formatoValor === 'porcentaje' ||
+      raw.formatoValor === 'moneda' ||
+      raw.formatoValor === 'escala0a5'
+        ? raw.formatoValor
+        : undefined,
+    ejeXRotacion:
+      typeof raw.ejeXRotacion === 'number' && Number.isFinite(raw.ejeXRotacion) ? raw.ejeXRotacion : undefined,
+    ejeXOculto: typeof raw.ejeXOculto === 'boolean' ? raw.ejeXOculto : undefined,
+    ejeYOculto: typeof raw.ejeYOculto === 'boolean' ? raw.ejeYOculto : undefined,
+    grillas:
+      raw.grillas === 'ambas' || raw.grillas === 'y' || raw.grillas === 'ninguna' ? raw.grillas : undefined,
+    posicionLeyenda:
+      raw.posicionLeyenda === 'arriba' ||
+      raw.posicionLeyenda === 'abajo' ||
+      raw.posicionLeyenda === 'izquierda' ||
+      raw.posicionLeyenda === 'derecha'
+        ? raw.posicionLeyenda
         : undefined,
   };
 }

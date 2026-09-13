@@ -628,3 +628,196 @@ describe('buildApexChart — Estadística: boxPlot e histogram (Etapa I3)', () =
   });
 });
 
+describe('buildApexChart — Ejes, Series y Etiquetas/Leyenda (Etapa I4)', () => {
+  it('formatoValor: cablea formatChartValue en yaxis.labels.formatter y tooltip.y.formatter', () => {
+    const built = buildApexChart(
+      { ...baseConfig, formatoValor: 'porcentaje' },
+      theme,
+    );
+    const yaxis = built.options.yaxis as { labels?: { formatter?: (v: number) => string } };
+    expect(yaxis.labels?.formatter?.(0.5)).toBe('50%');
+    const tooltipY = built.options.tooltip?.y as { formatter?: (v: number, o: unknown) => string };
+    expect(tooltipY.formatter?.(0.5, {})).toBe('50%');
+  });
+
+  it('sin formatoValor: no agrega formatter (comportamiento previo intacto)', () => {
+    const built = buildApexChart(baseConfig, theme);
+    const yaxis = built.options.yaxis as { labels?: { formatter?: unknown } };
+    expect(yaxis.labels?.formatter).toBeUndefined();
+    const tooltipY = built.options.tooltip?.y as { formatter?: unknown } | undefined;
+    expect(tooltipY?.formatter).toBeUndefined();
+  });
+
+  it('formatoValor en eje X: solo se aplica con eje numérico (scatter/bubble)', () => {
+    const scatterBuilt = buildApexChart(
+      {
+        type: 'scatter',
+        categorias: [],
+        series: [{ nombre: 'S', valores: [], puntos: [{ x: 1000, y: 1 }] }],
+        formatoValor: 'entero',
+      },
+      theme,
+    );
+    const xaxis = scatterBuilt.options.xaxis as { labels?: { formatter?: (v: string) => string } };
+    expect(xaxis.labels?.formatter?.('1000')).toBe('1.000');
+
+    // column (eje X categórico) no debe recibir un formatter numérico —
+    // las categorías son strings arbitrarios, no números.
+    const columnBuilt = buildApexChart({ ...baseConfig, formatoValor: 'entero' }, theme);
+    expect(columnBuilt.options.xaxis?.labels?.formatter).toBeUndefined();
+  });
+
+  it('ejeXRotacion: fija xaxis.labels.rotate cuando se especifica', () => {
+    const built = buildApexChart({ ...baseConfig, ejeXRotacion: -45 }, theme);
+    expect(built.options.xaxis?.labels?.rotate).toBe(-45);
+
+    const sinRotar = buildApexChart(baseConfig, theme);
+    expect(sinRotar.options.xaxis?.labels?.rotate).toBeUndefined();
+  });
+
+  it('ejeXOculto: oculta labels, borde y marcas del eje X', () => {
+    const built = buildApexChart({ ...baseConfig, ejeXOculto: true }, theme);
+    expect(built.options.xaxis?.labels?.show).toBe(false);
+    expect(built.options.xaxis?.axisBorder?.show).toBe(false);
+    expect(built.options.xaxis?.axisTicks?.show).toBe(false);
+
+    const visible = buildApexChart(baseConfig, theme);
+    expect(visible.options.xaxis?.labels?.show).toBe(true);
+  });
+
+  it('ejeYOculto: oculta el eje Y primario (labels y el eje entero)', () => {
+    const built = buildApexChart({ ...baseConfig, ejeYOculto: true }, theme);
+    const yaxis = built.options.yaxis as { show?: boolean; labels?: { show?: boolean } };
+    expect(yaxis.show).toBe(false);
+    expect(yaxis.labels?.show).toBe(false);
+  });
+
+  it('grillas: "ninguna" oculta ambas líneas; "y" solo conserva la horizontal', () => {
+    const ninguna = buildApexChart({ ...baseConfig, grillas: 'ninguna' }, theme);
+    expect(ninguna.options.grid?.xaxis?.lines?.show).toBe(false);
+    expect(ninguna.options.grid?.yaxis?.lines?.show).toBe(false);
+
+    const soloY = buildApexChart({ ...baseConfig, grillas: 'y' }, theme);
+    expect(soloY.options.grid?.xaxis?.lines?.show).toBe(false);
+    expect(soloY.options.grid?.yaxis?.lines?.show).toBe(true);
+
+    const ambas = buildApexChart(baseConfig, theme);
+    expect(ambas.options.grid?.xaxis?.lines?.show).toBe(true);
+    expect(ambas.options.grid?.yaxis?.lines?.show).toBe(true);
+  });
+
+  it('posicionLeyenda: sobreescribe la posición por defecto de cada tipo', () => {
+    const arriba = buildApexChart({ ...baseConfig, posicionLeyenda: 'arriba' }, theme);
+    expect(arriba.options.legend?.position).toBe('top');
+
+    const izquierda = buildApexChart({ ...baseConfig, posicionLeyenda: 'izquierda' }, theme);
+    expect(izquierda.options.legend?.position).toBe('left');
+
+    // radialBar sin posicionLeyenda sigue cayendo a la derecha (default previo)
+    const radial = buildApexChart(
+      { type: 'radialBar', categorias: ['A'], series: [{ nombre: 'S', valores: [50] }] },
+      theme,
+    );
+    expect(radial.options.legend?.position).toBe('right');
+
+    // radialBar con posicionLeyenda explícito la respeta
+    const radialAbajo = buildApexChart(
+      { type: 'radialBar', categorias: ['A'], series: [{ nombre: 'S', valores: [50] }], posicionLeyenda: 'abajo' },
+      theme,
+    );
+    expect(radialAbajo.options.legend?.position).toBe('bottom');
+  });
+
+  it('color por serie: sigue funcionando (ya existía, sin regresión de I4)', () => {
+    const built = buildApexChart(
+      { ...baseConfig, series: [{ nombre: 'A', valores: [1, 2, 3], color: '#FF00FF' }] },
+      theme,
+    );
+    expect(built.options.colors).toEqual(['#FF00FF']);
+  });
+
+  it('curvaLinea por serie: cada serie de un combo puede pedir su propia curva', () => {
+    const built = buildApexChart(
+      {
+        type: 'combo',
+        categorias: ['A', 'B'],
+        series: [
+          { nombre: 'Recta', valores: [1, 2], tipoCombo: 'line', curvaLinea: 'recta' },
+          { nombre: 'Suave', valores: [3, 4], tipoCombo: 'line', curvaLinea: 'suave' },
+        ],
+      },
+      theme,
+    );
+    expect(built.options.stroke?.curve).toEqual(['straight', 'smooth']);
+  });
+
+  it('curvaLinea: sin overrides por serie, stroke.curve sigue siendo un escalar (paridad con I2)', () => {
+    const built = buildApexChart(
+      { type: 'line', categorias: ['A', 'B'], series: [{ nombre: 'S', valores: [1, 2] }], curva: 'escalon' },
+      theme,
+    );
+    expect(built.options.stroke?.curve).toBe('stepline');
+  });
+
+  it('grosorLinea por serie: cambia el ancho de línea individual en line/area', () => {
+    const built = buildApexChart(
+      {
+        type: 'line',
+        categorias: ['A', 'B'],
+        series: [
+          { nombre: 'Fina', valores: [1, 2], grosorLinea: 1 },
+          { nombre: 'Gruesa', valores: [3, 4], grosorLinea: 5 },
+        ],
+      },
+      theme,
+    );
+    expect(built.options.stroke?.width).toEqual([1, 5]);
+
+    const sinOverride = buildApexChart(
+      { type: 'line', categorias: ['A'], series: [{ nombre: 'S', valores: [1] }] },
+      theme,
+    );
+    expect(sinOverride.options.stroke?.width).toBe(2);
+  });
+
+  it('mostrarPuntos por serie: agrega markers solo cuando alguna serie lo pide', () => {
+    const built = buildApexChart(
+      {
+        type: 'line',
+        categorias: ['A', 'B'],
+        series: [
+          { nombre: 'Con puntos', valores: [1, 2], mostrarPuntos: true },
+          { nombre: 'Sin puntos', valores: [3, 4] },
+        ],
+      },
+      theme,
+    );
+    expect(built.options.markers?.size).toEqual([4, 0]);
+
+    const sinPuntos = buildApexChart(
+      { type: 'line', categorias: ['A'], series: [{ nombre: 'S', valores: [1] }] },
+      theme,
+    );
+    expect(sinPuntos.options.markers).toBeUndefined();
+  });
+
+  it('opacidadRelleno por serie: en area reemplaza el gradiente por opacidad plana cuando se pide', () => {
+    const conOverride = buildApexChart(
+      {
+        type: 'area',
+        categorias: ['A'],
+        series: [{ nombre: 'S', valores: [1], opacidadRelleno: 0.7 }],
+      },
+      theme,
+    );
+    expect(conOverride.options.fill?.opacity).toEqual([0.7]);
+    expect(conOverride.options.fill?.type).not.toBe('gradient');
+
+    const sinOverride = buildApexChart(
+      { type: 'area', categorias: ['A'], series: [{ nombre: 'S', valores: [1] }] },
+      theme,
+    );
+    expect(sinOverride.options.fill?.type).toBe('gradient');
+  });
+});
+

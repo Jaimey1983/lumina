@@ -1290,7 +1290,16 @@ export interface GraficoSerie {
   puntos?: GraficoPunto[];
   /** Un resumen de cinco números por categoría, para chartType `boxPlot`. Ignorado en otros tipos. */
   cajas?: GraficoCaja[];
+
+  // Estilo por serie (Etapa I4) — solo aplican en line/area/combo
+  curvaLinea?: 'recta' | 'suave' | 'escalon';
+  grosorLinea?: number;
+  mostrarPuntos?: boolean;
+  opacidadRelleno?: number;
 }
+
+/** Igual al `LuminaValueFormat` de `@lumina/charts/format` — duplicado literal porque `@lumina/types` no depende de `@lumina/charts`. */
+export type GraficoFormatoValor = 'entero' | 'decimal' | 'porcentaje' | 'moneda' | 'escala0a5';
 
 export interface GraficoLineaReferencia {
   valor: number;
@@ -1334,6 +1343,14 @@ export interface GraficoDatosBlock {
 
   /** Número de intervalos (bins) para chartType `histogram`. Ignorado en otros tipos. */
   histogramBins?: number;
+
+  // Ejes, formato y leyenda (Etapa I4)
+  formatoValor?: GraficoFormatoValor;
+  ejeXRotacion?: number;
+  ejeXOculto?: boolean;
+  ejeYOculto?: boolean;
+  grillas?: 'ambas' | 'y' | 'ninguna';
+  posicionLeyenda?: 'arriba' | 'abajo' | 'izquierda' | 'derecha';
 }
 
 // ─── Bloque Diagrama (Grafos y Geometrías) ──────────────────────────────────

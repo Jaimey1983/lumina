@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Trash2, Table as TableIcon, AlertCircle } from 'lucide-react';
 import type { GraficoDatosBlock, GraficoSerie } from '@lumina/types/slide';
+import { getSeriesColor } from '@lumina/charts';
 import { Button } from '@lumina/ui/button';
 import {
   Dialog,
@@ -85,6 +86,13 @@ export function GraficoDataDialog({
     const nextSeries = [...block.series];
     nextSeries[serieIdx] = { ...nextSeries[serieIdx], nombre: newName };
     commitChange({ ...block, series: nextSeries });
+  };
+
+  // Color por serie (Etapa I4) — si no se pinta explícito, sigue resolviendo por paleta/índice.
+  const handleSeriesColorChange = (serieIdx: number, color: string) => {
+    const nextSeries = [...block.series];
+    nextSeries[serieIdx] = { ...nextSeries[serieIdx], color };
+    commitChange({ ...block, series: nextSeries }, true);
   };
 
   const handleSeriesValueChange = (serieIdx: number, catIdx: number, rawVal: string) => {
@@ -229,6 +237,13 @@ export function GraficoDataDialog({
                         <th key={sIdx} colSpan={5} className="p-2 font-semibold border-l border-border/40 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <input
+                              type="color"
+                              value={getSeriesColor(sIdx, block.colorPaleta, serie.color)}
+                              onChange={(e) => handleSeriesColorChange(sIdx, e.target.value)}
+                              className="h-5 w-5 shrink-0 cursor-pointer rounded border border-border/60 bg-transparent p-0"
+                              title="Color de la serie"
+                            />
+                            <input
                               type="text"
                               value={serie.nombre}
                               onChange={(e) => handleSeriesNameChange(sIdx, e.target.value)}
@@ -325,6 +340,13 @@ export function GraficoDataDialog({
                   <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-muted-foreground">Serie {sIdx + 1}:</span>
+                      <input
+                        type="color"
+                        value={getSeriesColor(sIdx, block.colorPaleta, serie.color)}
+                        onChange={(e) => handleSeriesColorChange(sIdx, e.target.value)}
+                        className="h-5 w-5 shrink-0 cursor-pointer rounded border border-border/60 bg-transparent p-0"
+                        title="Color de la serie"
+                      />
                       <input
                         type="text"
                         value={serie.nombre}
@@ -458,13 +480,22 @@ export function GraficoDataDialog({
                         <th key={sIdx} className="p-2.5 min-w-[120px] font-semibold border-l border-border/40">
                           <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-1">
-                              <input
-                                type="text"
-                                value={serie.nombre}
-                                onChange={(e) => handleSeriesNameChange(sIdx, e.target.value)}
-                                className="w-full bg-transparent font-medium text-foreground border-b border-dashed border-border/60 hover:border-primary focus:border-primary focus:outline-hidden px-0.5 text-xs truncate"
-                                title="Editar nombre de la serie"
-                              />
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <input
+                                  type="color"
+                                  value={getSeriesColor(sIdx, block.colorPaleta, serie.color)}
+                                  onChange={(e) => handleSeriesColorChange(sIdx, e.target.value)}
+                                  className="h-5 w-5 shrink-0 cursor-pointer rounded border border-border/60 bg-transparent p-0"
+                                  title="Color de la serie"
+                                />
+                                <input
+                                  type="text"
+                                  value={serie.nombre}
+                                  onChange={(e) => handleSeriesNameChange(sIdx, e.target.value)}
+                                  className="w-full bg-transparent font-medium text-foreground border-b border-dashed border-border/60 hover:border-primary focus:border-primary focus:outline-hidden px-0.5 text-xs truncate"
+                                  title="Editar nombre de la serie"
+                                />
+                              </div>
                               {block.series.length > 1 && (
                                 <button
                                   type="button"

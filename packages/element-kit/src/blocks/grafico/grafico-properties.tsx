@@ -259,6 +259,32 @@ export function GraficoProperties({
     );
   };
 
+  // Ejes, formato y leyenda (Etapa I4)
+  const handleFormatoValorChange = (formatoValor: GraficoDatosBlock['formatoValor'] | 'decimal') => {
+    commitChange({ ...localBlock, formatoValor: formatoValor === 'decimal' ? undefined : formatoValor }, true);
+  };
+
+  const handleEjeXRotacionChange = (raw: string) => {
+    const val = Number(raw);
+    commitChange({ ...localBlock, ejeXRotacion: Number.isFinite(val) && raw.trim() !== '' ? val : undefined }, true);
+  };
+
+  const handleEjeXOcultoToggle = (ejeXOculto: boolean) => {
+    commitChange({ ...localBlock, ejeXOculto: ejeXOculto || undefined }, true);
+  };
+
+  const handleEjeYOcultoToggle = (ejeYOculto: boolean) => {
+    commitChange({ ...localBlock, ejeYOculto: ejeYOculto || undefined }, true);
+  };
+
+  const handleGrillasChange = (grillas: 'ambas' | 'y' | 'ninguna') => {
+    commitChange({ ...localBlock, grillas: grillas === 'ambas' ? undefined : grillas }, true);
+  };
+
+  const handlePosicionLeyendaChange = (posicionLeyenda: 'arriba' | 'abajo' | 'izquierda' | 'derecha') => {
+    commitChange({ ...localBlock, posicionLeyenda }, true);
+  };
+
   const activeFamily = getChartFamily(localBlock.chartType);
   const activeFamilyMeta = LUMINA_CHART_FAMILIES.find((f) => f.id === activeFamily);
   const familyVariants = getChartTypesByFamily(activeFamily);
@@ -273,6 +299,8 @@ export function GraficoProperties({
   const supportsSparkline = ['column', 'bar', 'line', 'area'].includes(localBlock.chartType);
   const supportsAngulo = ['pie', 'donut', 'radialBar'].includes(localBlock.chartType);
   const supportsTotal = localBlock.chartType === 'donut';
+  const supportsLeyenda = !['treemap', 'funnel', 'waterfall', 'histogram'].includes(localBlock.chartType);
+  const supportsGrillas = ['column', 'bar', 'line', 'area', 'combo', 'scatter', 'bubble', 'funnel', 'heatmap', 'waterfall', 'boxPlot', 'histogram'].includes(localBlock.chartType);
 
   return (
     <div className="space-y-5 text-xs">
@@ -443,6 +471,26 @@ export function GraficoProperties({
           />
         </div>
 
+        {supportsLeyenda && localBlock.mostrarLeyenda !== false && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Posición de la Leyenda</Label>
+            <Select
+              value={localBlock.posicionLeyenda || (localBlock.chartType === 'radialBar' ? 'derecha' : 'abajo')}
+              onValueChange={(val) => handlePosicionLeyendaChange(val as 'arriba' | 'abajo' | 'izquierda' | 'derecha')}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Abajo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="arriba" className="text-xs">Arriba</SelectItem>
+                <SelectItem value="abajo" className="text-xs">Abajo</SelectItem>
+                <SelectItem value="izquierda" className="text-xs">Izquierda</SelectItem>
+                <SelectItem value="derecha" className="text-xs">Derecha</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex items-center justify-between pt-1">
           <Label className="text-[11px] text-muted-foreground">Etiquetas de Datos (Valores)</Label>
           <Switch
@@ -492,7 +540,7 @@ export function GraficoProperties({
       </div>
 
       {/* 5. Configuración Avanzada / Ejes / Apilado / Curvas */}
-      {(supportsStacking || supportsAxes || supportsOrdering || supportsCurva || supportsAngulo || isHistogram) && (
+      {(supportsStacking || supportsAxes || supportsOrdering || supportsCurva || supportsAngulo || isHistogram || supportsGrillas) && (
         <div className="space-y-3 border-t border-border pt-3">
           <div className="flex items-center gap-1.5">
             <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -500,6 +548,44 @@ export function GraficoProperties({
               Ejes y Configuración
             </span>
           </div>
+
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Formato Numérico (Eje / Tooltip)</Label>
+            <Select
+              value={localBlock.formatoValor || 'decimal'}
+              onValueChange={(val) => handleFormatoValorChange(val as GraficoDatosBlock['formatoValor'])}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Decimal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="decimal" className="text-xs">Decimal</SelectItem>
+                <SelectItem value="entero" className="text-xs">Entero</SelectItem>
+                <SelectItem value="porcentaje" className="text-xs">Porcentaje</SelectItem>
+                <SelectItem value="moneda" className="text-xs">Moneda (COP)</SelectItem>
+                <SelectItem value="escala0a5" className="text-xs">Escala 0–5</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {supportsGrillas && (
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Líneas de Grilla</Label>
+              <Select
+                value={localBlock.grillas || 'ambas'}
+                onValueChange={(val) => handleGrillasChange(val as 'ambas' | 'y' | 'ninguna')}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Ambas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ambas" className="text-xs">Ambas (X e Y)</SelectItem>
+                  <SelectItem value="y" className="text-xs">Solo horizontal (Y)</SelectItem>
+                  <SelectItem value="ninguna" className="text-xs">Ninguna</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {isHistogram && (
             <div className="space-y-1">
@@ -635,6 +721,37 @@ export function GraficoProperties({
                     className="h-7 text-xs"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Rotación Eje X (°)</Label>
+                  <Input
+                    type="number"
+                    value={localBlock.ejeXRotacion ?? ''}
+                    placeholder="Auto"
+                    onChange={(e) => handleEjeXRotacionChange(e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+                <div className="flex flex-col justify-end gap-1">
+                  <Label className="text-[10px] text-muted-foreground">&nbsp;</Label>
+                  <div className="flex items-center justify-between h-7">
+                    <span className="text-[10px] text-muted-foreground">Ocultar Eje X</span>
+                    <Switch
+                      checked={Boolean(localBlock.ejeXOculto)}
+                      onCheckedChange={handleEjeXOcultoToggle}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <Label className="text-[10px] text-muted-foreground">Ocultar Eje Y</Label>
+                <Switch
+                  checked={Boolean(localBlock.ejeYOculto)}
+                  onCheckedChange={handleEjeYOcultoToggle}
+                />
               </div>
 
               <div className="flex items-center justify-between pt-1">

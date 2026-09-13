@@ -268,4 +268,86 @@ describe('grafico-defaults', () => {
     const legacyBlock = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
     expect(legacyBlock.histogramBins).toBeUndefined();
   });
+
+  it('normalizeGraficoBlock sanitiza los campos de ejes/formato/leyenda de la Etapa I4', () => {
+    const raw = {
+      tipo: 'grafico',
+      chartType: 'line',
+      formatoValor: 'porcentaje',
+      ejeXRotacion: '-45',
+      ejeXOculto: true,
+      ejeYOculto: false,
+      grillas: 'y',
+      posicionLeyenda: 'izquierda',
+    };
+
+    const normalized = normalizeGraficoBlock(raw);
+    // ejeXRotacion llega como string en `raw` (posible entrada corrupta) → no es number, se descarta.
+    expect(normalized.ejeXRotacion).toBeUndefined();
+    expect(normalized.formatoValor).toBe('porcentaje');
+    expect(normalized.ejeXOculto).toBe(true);
+    expect(normalized.ejeYOculto).toBe(false);
+    expect(normalized.grillas).toBe('y');
+    expect(normalized.posicionLeyenda).toBe('izquierda');
+
+    const withNumericRotation = normalizeGraficoBlock({ ...raw, ejeXRotacion: -45 });
+    expect(withNumericRotation.ejeXRotacion).toBe(-45);
+  });
+
+  it('normalizeGraficoBlock descarta valores inválidos de los campos I4 sin romper el resto', () => {
+    const normalized = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'column',
+      formatoValor: 'no_valido',
+      grillas: 'no_valido',
+      posicionLeyenda: 'no_valido',
+    });
+    expect(normalized.formatoValor).toBeUndefined();
+    expect(normalized.grillas).toBeUndefined();
+    expect(normalized.posicionLeyenda).toBeUndefined();
+
+    // Un bloque guardado antes de I4 sigue abriendo igual.
+    const legacyBlock = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
+    expect(legacyBlock.formatoValor).toBeUndefined();
+    expect(legacyBlock.ejeXRotacion).toBeUndefined();
+    expect(legacyBlock.ejeXOculto).toBeUndefined();
+    expect(legacyBlock.ejeYOculto).toBeUndefined();
+    expect(legacyBlock.grillas).toBeUndefined();
+    expect(legacyBlock.posicionLeyenda).toBeUndefined();
+  });
+
+  it('normalizeGraficoBlock sanitiza el estilo por serie de la Etapa I4 (curvaLinea/grosorLinea/mostrarPuntos/opacidadRelleno)', () => {
+    const raw = {
+      tipo: 'grafico',
+      chartType: 'line',
+      categorias: ['A'],
+      series: [
+        {
+          nombre: 'S1',
+          valores: [1],
+          curvaLinea: 'recta',
+          grosorLinea: 4,
+          mostrarPuntos: true,
+          opacidadRelleno: 1.5, // fuera de rango, debe acotarse a 1
+        },
+        {
+          nombre: 'S2',
+          valores: [2],
+          curvaLinea: 'no_valido',
+          grosorLinea: 'no_numerico',
+          opacidadRelleno: -1, // fuera de rango, debe acotarse a 0
+        },
+      ],
+    };
+
+    const normalized = normalizeGraficoBlock(raw);
+    expect(normalized.series[0].curvaLinea).toBe('recta');
+    expect(normalized.series[0].grosorLinea).toBe(4);
+    expect(normalized.series[0].mostrarPuntos).toBe(true);
+    expect(normalized.series[0].opacidadRelleno).toBe(1);
+    expect(normalized.series[1].curvaLinea).toBeUndefined();
+    expect(normalized.series[1].grosorLinea).toBeUndefined();
+    expect(normalized.series[1].mostrarPuntos).toBeUndefined();
+    expect(normalized.series[1].opacidadRelleno).toBe(0);
+  });
 });
