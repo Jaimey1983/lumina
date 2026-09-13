@@ -1304,6 +1304,24 @@ export type GraficoFormatoValor = 'entero' | 'decimal' | 'porcentaje' | 'moneda'
 export interface GraficoLineaReferencia {
   valor: number;
   etiqueta?: string;
+  color?: string;
+}
+
+/** Banda horizontal de referencia (rango sombreado en el eje Y). */
+export interface GraficoBanda {
+  desde: number;
+  hasta: number;
+  etiqueta?: string;
+  color?: string;
+}
+
+/** Estilo visual general del gráfico (Etapa I5). */
+export interface GraficoEstilo {
+  esquinas?: number;
+  sombra?: boolean;
+  fuente?: string;
+  fondo?: 'transparente' | 'tarjeta';
+  duracionAnimacion?: number;
 }
 
 export interface GraficoDatosBlock {
@@ -1330,7 +1348,8 @@ export interface GraficoDatosBlock {
   ejeYMax?: number;
   ejeYEscalaLog?: boolean;
   mostrarEtiquetasDatos?: boolean;
-  lineaReferencia?: GraficoLineaReferencia;
+  /** Etapa I5: reemplaza al `lineaReferencia` singular — `normalizeGraficoBlock` migra bloques viejos. */
+  lineasReferencia?: GraficoLineaReferencia[];
   animar?: boolean;
   ordenDatos?: 'como-esta' | 'ascendente' | 'descendente';
   exportarImagen?: boolean;
@@ -1351,6 +1370,11 @@ export interface GraficoDatosBlock {
   ejeYOculto?: boolean;
   grillas?: 'ambas' | 'y' | 'ninguna';
   posicionLeyenda?: 'arriba' | 'abajo' | 'izquierda' | 'derecha';
+
+  // Estilo y anotaciones (Etapa I5)
+  bandas?: GraficoBanda[];
+  estilo?: GraficoEstilo;
+  paletaPersonalizada?: string[];
 }
 
 // ─── Bloque Diagrama (Grafos y Geometrías) ──────────────────────────────────

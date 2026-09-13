@@ -111,7 +111,7 @@ describe('grafico-defaults', () => {
       ejeYMax: 500,
       ejeYEscalaLog: true,
       mostrarEtiquetasDatos: true,
-      lineaReferencia: { valor: 250, etiqueta: '  Meta  ' },
+      lineaReferencia: { valor: 250, etiqueta: '  Meta  ' }, // formato legado (pre-I5) — sanitizeLineasReferencia lo migra
       animar: true,
       ordenDatos: 'descendente',
       exportarImagen: false,
@@ -146,7 +146,7 @@ describe('grafico-defaults', () => {
     expect(normalized.ejeYMax).toBe(500);
     expect(normalized.ejeYEscalaLog).toBe(true);
     expect(normalized.mostrarEtiquetasDatos).toBe(true);
-    expect(normalized.lineaReferencia).toEqual({ valor: 250, etiqueta: 'Meta' });
+    expect(normalized.lineasReferencia).toEqual([{ valor: 250, etiqueta: 'Meta' }]);
     expect(normalized.animar).toBe(true);
     expect(normalized.ordenDatos).toBe('descendente');
     expect(normalized.exportarImagen).toBe(false);
@@ -349,5 +349,88 @@ describe('grafico-defaults', () => {
     expect(normalized.series[1].grosorLinea).toBeUndefined();
     expect(normalized.series[1].mostrarPuntos).toBeUndefined();
     expect(normalized.series[1].opacidadRelleno).toBe(0);
+  });
+
+  it('normalizeGraficoBlock: `lineasReferencia` (formato nuevo, Etapa I5) sanitiza cada elemento del arreglo', () => {
+    const normalized = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'line',
+      lineasReferencia: [
+        { valor: 80, etiqueta: '  Meta  ', color: '#ff0000' },
+        { valor: 'no_numerico' }, // se descarta
+        { valor: 50 },
+      ],
+    });
+    expect(normalized.lineasReferencia).toEqual([
+      { valor: 80, etiqueta: 'Meta', color: '#ff0000' },
+      { valor: 50 },
+    ]);
+  });
+
+  it('normalizeGraficoBlock: sin lineasReferencia ni lineaReferencia legada, el campo queda undefined', () => {
+    const normalized = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
+    expect(normalized.lineasReferencia).toBeUndefined();
+  });
+
+  it('normalizeGraficoBlock: sanitiza `bandas` (rango + etiqueta + color), descartando entradas inválidas', () => {
+    const normalized = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'column',
+      bandas: [
+        { desde: 0, hasta: 30, etiqueta: '  Riesgo  ', color: '#ef4444' },
+        { desde: 'no_numerico', hasta: 10 }, // se descarta
+        { desde: 30, hasta: 60 },
+      ],
+    });
+    expect(normalized.bandas).toEqual([
+      { desde: 0, hasta: 30, etiqueta: 'Riesgo', color: '#ef4444' },
+      { desde: 30, hasta: 60 },
+    ]);
+
+    const sinBandas = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
+    expect(sinBandas.bandas).toBeUndefined();
+  });
+
+  it('normalizeGraficoBlock: sanitiza `estilo` (esquinas/sombra/fuente/fondo/duracionAnimacion), descartando campos inválidos', () => {
+    const normalized = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'column',
+      estilo: {
+        esquinas: 12,
+        sombra: true,
+        fuente: '  Georgia  ',
+        fondo: 'tarjeta',
+        duracionAnimacion: 500,
+      },
+    });
+    expect(normalized.estilo).toEqual({
+      esquinas: 12,
+      sombra: true,
+      fuente: 'Georgia',
+      fondo: 'tarjeta',
+      duracionAnimacion: 500,
+    });
+
+    const invalido = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'column',
+      estilo: { fondo: 'no_valido', esquinas: 'no_numerico' },
+    });
+    expect(invalido.estilo).toBeUndefined();
+
+    const sinEstilo = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
+    expect(sinEstilo.estilo).toBeUndefined();
+  });
+
+  it('normalizeGraficoBlock: sanitiza `paletaPersonalizada` (arreglo de strings no vacíos)', () => {
+    const normalized = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'column',
+      paletaPersonalizada: ['#111111', '  ', 42, '#222222'],
+    });
+    expect(normalized.paletaPersonalizada).toEqual(['#111111', '#222222']);
+
+    const sinPaleta = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
+    expect(sinPaleta.paletaPersonalizada).toBeUndefined();
   });
 });

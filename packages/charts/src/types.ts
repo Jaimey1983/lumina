@@ -204,6 +204,30 @@ export interface LuminaChartSeries {
 export interface LuminaChartReferenceLine {
   valor: number;
   etiqueta?: string;
+  /** Color explícito de la línea. Sin especificar, usa el color mutado del tema. */
+  color?: string;
+}
+
+/** Banda horizontal de referencia (rango sombreado en el eje Y), p. ej. "zona de riesgo". */
+export interface LuminaChartBand {
+  desde: number;
+  hasta: number;
+  etiqueta?: string;
+  color?: string;
+}
+
+/** Estilo visual general del gráfico (Etapa I5). Todos los campos opcionales, con default el look actual. */
+export interface LuminaChartStyle {
+  /** Radio de esquina en px para barras/columnas y celdas de heatmap. */
+  esquinas?: number;
+  /** Sombra sutil bajo el gráfico (`chart.dropShadow`). */
+  sombra?: boolean;
+  /** Familia tipográfica CSS. Por defecto `'inherit'`. */
+  fuente?: string;
+  /** Fondo del gráfico: transparente (por defecto) o color de tarjeta del tema. */
+  fondo?: 'transparente' | 'tarjeta';
+  /** Duración de la animación de entrada en ms. Solo aplica si `animar: true`. */
+  duracionAnimacion?: number;
 }
 
 /**
@@ -238,8 +262,11 @@ export interface LuminaChartConfig {
   ejeYEscalaLog?: boolean;
   /** Mostrar valores numéricos encima de barras/puntos. */
   mostrarEtiquetasDatos?: boolean;
-  /** Línea horizontal de referencia / meta / umbral. */
-  lineaReferencia?: LuminaChartReferenceLine;
+  /**
+   * Líneas horizontales de referencia / meta / umbral (Etapa I5 — antes un
+   * solo objeto `lineaReferencia`; ahora un arreglo, cero o más).
+   */
+  lineasReferencia?: LuminaChartReferenceLine[];
   /** Activar animaciones de entrada (por defecto false para determinismo). */
   animar?: boolean;
   /** Ordenamiento automático por valor de la primera serie antes de graficar. */
@@ -274,4 +301,12 @@ export interface LuminaChartConfig {
   grillas?: 'ambas' | 'y' | 'ninguna';
   /** Posición de la leyenda. Por defecto `'abajo'` (`'derecha'` en radialBar). */
   posicionLeyenda?: 'arriba' | 'abajo' | 'izquierda' | 'derecha';
+
+  // ─── Estilo y anotaciones (Etapa I5) ───
+  /** Bandas horizontales de referencia (rangos sombreados en el eje Y), p. ej. "zona de riesgo". */
+  bandas?: LuminaChartBand[];
+  /** Estilo visual general (esquinas, sombra, fuente, fondo, duración de animación). */
+  estilo?: LuminaChartStyle;
+  /** Paleta de colores hexadecimales explícita, indexada por serie/categoría. Sin especificar, usa `paletaId`. */
+  paletaPersonalizada?: string[];
 }

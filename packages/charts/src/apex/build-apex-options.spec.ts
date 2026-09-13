@@ -306,11 +306,11 @@ describe('buildApexChart — configuración fina (H6)', () => {
     expect(built.options.dataLabels?.enabled).toBe(true);
   });
 
-  it('lineaReferencia: genera anotación horizontal con valor y etiqueta', () => {
+  it('lineasReferencia: genera anotación horizontal con valor y etiqueta', () => {
     const built = buildApexChart(
       {
         ...baseConfig,
-        lineaReferencia: { valor: 80, etiqueta: 'Aprobación' },
+        lineasReferencia: [{ valor: 80, etiqueta: 'Aprobación' }],
       },
       theme,
     );
@@ -818,6 +818,132 @@ describe('buildApexChart — Ejes, Series y Etiquetas/Leyenda (Etapa I4)', () =>
       theme,
     );
     expect(sinOverride.options.fill?.type).toBe('gradient');
+  });
+});
+
+describe('buildApexChart — Estilo y Anotaciones múltiples (Etapa I5)', () => {
+  it('lineasReferencia: soporta múltiples líneas, cada una con su propio color', () => {
+    const built = buildApexChart(
+      {
+        ...baseConfig,
+        lineasReferencia: [
+          { valor: 80, etiqueta: 'Meta' },
+          { valor: 50, etiqueta: 'Mínimo', color: '#ff0000' },
+        ],
+      },
+      theme,
+    );
+    const yaxis = built.options.annotations?.yaxis ?? [];
+    expect(yaxis).toHaveLength(2);
+    expect(yaxis[0]).toMatchObject({ y: 80, label: { text: 'Meta' } });
+    expect(yaxis[1]).toMatchObject({ y: 50, borderColor: '#ff0000', label: { text: 'Mínimo' } });
+  });
+
+  it('bandas: genera anotaciones de rango [desde, hasta] con color y etiqueta', () => {
+    const built = buildApexChart(
+      {
+        ...baseConfig,
+        bandas: [{ desde: 0, hasta: 30, etiqueta: 'Riesgo', color: '#ef4444' }],
+      },
+      theme,
+    );
+    const yaxis = built.options.annotations?.yaxis ?? [];
+    expect(yaxis).toHaveLength(1);
+    expect(yaxis[0]).toMatchObject({ y: 0, y2: 30, fillColor: '#ef4444', label: { text: 'Riesgo' } });
+  });
+
+  it('bandas + lineasReferencia combinadas: las bandas van primero, ambas conviven', () => {
+    const built = buildApexChart(
+      {
+        ...baseConfig,
+        bandas: [{ desde: 0, hasta: 30 }],
+        lineasReferencia: [{ valor: 80 }],
+      },
+      theme,
+    );
+    const yaxis = built.options.annotations?.yaxis ?? [];
+    expect(yaxis).toHaveLength(2);
+    expect(yaxis[0]).toMatchObject({ y: 0, y2: 30 });
+    expect(yaxis[1]).toMatchObject({ y: 80 });
+  });
+
+  it('sin lineasReferencia ni bandas: annotations queda undefined (paridad previa a I5)', () => {
+    const built = buildApexChart(baseConfig, theme);
+    expect(built.options.annotations).toBeUndefined();
+  });
+
+  it('paletaPersonalizada: sobreescribe la paleta por índice, salvo color explícito de serie', () => {
+    const built = buildApexChart(
+      {
+        type: 'column',
+        categorias: ['A', 'B'],
+        series: [
+          { nombre: 'S1', valores: [1, 2] },
+          { nombre: 'S2', valores: [3, 4], color: '#00ff00' },
+        ],
+        paletaPersonalizada: ['#111111', '#222222'],
+      },
+      theme,
+    );
+    expect(built.options.colors).toEqual(['#111111', '#00ff00']);
+  });
+
+  it('paletaPersonalizada: recicla el arreglo si hay más series que colores', () => {
+    const built = buildApexChart(
+      {
+        type: 'column',
+        categorias: ['A'],
+        series: [
+          { nombre: 'S1', valores: [1] },
+          { nombre: 'S2', valores: [2] },
+          { nombre: 'S3', valores: [3] },
+        ],
+        paletaPersonalizada: ['#aaa', '#bbb'],
+      },
+      theme,
+    );
+    expect(built.options.colors).toEqual(['#aaa', '#bbb', '#aaa']);
+  });
+
+  it('estilo.esquinas: sobreescribe el borderRadius por defecto de barras/columnas', () => {
+    const built = buildApexChart({ ...baseConfig, estilo: { esquinas: 12 } }, theme);
+    expect(built.options.plotOptions?.bar?.borderRadius).toBe(12);
+
+    const sinEstilo = buildApexChart(baseConfig, theme);
+    expect(sinEstilo.options.plotOptions?.bar?.borderRadius).toBe(4);
+  });
+
+  it('estilo.sombra: activa dropShadow', () => {
+    const conSombra = buildApexChart({ ...baseConfig, estilo: { sombra: true } }, theme);
+    expect(conSombra.options.chart?.dropShadow?.enabled).toBe(true);
+
+    const sinSombra = buildApexChart(baseConfig, theme);
+    expect(sinSombra.options.chart?.dropShadow?.enabled).toBe(false);
+  });
+
+  it('estilo.fuente: sobreescribe fontFamily; sin especificar usa "inherit"', () => {
+    const built = buildApexChart({ ...baseConfig, estilo: { fuente: 'Georgia' } }, theme);
+    expect(built.options.chart?.fontFamily).toBe('Georgia');
+
+    const sinFuente = buildApexChart(baseConfig, theme);
+    expect(sinFuente.options.chart?.fontFamily).toBe('inherit');
+  });
+
+  it('estilo.fondo: "tarjeta" usa el color de superficie del tema; sin especificar es transparente', () => {
+    const conFondo = buildApexChart({ ...baseConfig, estilo: { fondo: 'tarjeta' } }, theme);
+    expect(conFondo.options.chart?.background).toBe(theme.surfaceColor);
+
+    const sinFondo = buildApexChart(baseConfig, theme);
+    expect(sinFondo.options.chart?.background).toBe('transparent');
+  });
+
+  it('estilo.duracionAnimacion: solo aplica cuando animar está activo', () => {
+    const conAnimar = buildApexChart({ ...baseConfig, animar: true, estilo: { duracionAnimacion: 500 } }, theme);
+    expect(conAnimar.options.chart?.animations?.speed).toBe(500);
+
+    const sinAnimar = buildApexChart({ ...baseConfig, estilo: { duracionAnimacion: 500 } }, theme);
+    expect(sinAnimar.options.chart?.animations?.enabled).toBe(false);
+    expect(sinAnimar.options.chart?.animations?.speed).toBeUndefined();
   });
 });
 

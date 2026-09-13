@@ -9,6 +9,8 @@ export type {
   LuminaChartPoint,
   LuminaChartBoxPlotPoint,
   LuminaChartReferenceLine,
+  LuminaChartBand,
+  LuminaChartStyle,
   LuminaChartConfig,
 } from './types.js';
 export {

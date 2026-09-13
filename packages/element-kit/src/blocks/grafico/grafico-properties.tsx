@@ -24,6 +24,9 @@ import {
   Palette,
   Eye,
   Settings2,
+  Plus,
+  Trash2,
+  Sparkles,
 } from 'lucide-react';
 import type { Block, GraficoChartType, GraficoDatosBlock } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
@@ -208,31 +211,106 @@ export function GraficoProperties({
     commitChange({ ...localBlock, ejeYEscalaLog: ejeYEscalaLog || undefined }, true);
   };
 
-  const handleReferenceLineValueChange = (raw: string) => {
-    const val = Number(raw);
-    if (!Number.isFinite(val) || raw.trim() === '') {
-      commitChange({ ...localBlock, lineaReferencia: undefined });
-    } else {
-      commitChange({
-        ...localBlock,
-        lineaReferencia: {
-          valor: val,
-          etiqueta: localBlock.lineaReferencia?.etiqueta,
-        },
-      });
-    }
+  // Líneas de referencia (Etapa I5 — arreglo, 0 o más)
+  const handleAddLineaReferencia = () => {
+    const nextLineas = [...(localBlock.lineasReferencia ?? []), { valor: 0 }];
+    commitChange({ ...localBlock, lineasReferencia: nextLineas }, true);
   };
 
-  const handleReferenceLineLabelChange = (etiqueta: string) => {
-    if (localBlock.lineaReferencia) {
-      commitChange({
-        ...localBlock,
-        lineaReferencia: {
-          ...localBlock.lineaReferencia,
-          etiqueta: etiqueta.trim().length > 0 ? etiqueta : undefined,
-        },
-      });
-    }
+  const handleLineaReferenciaValueChange = (idx: number, raw: string) => {
+    const val = Number(raw);
+    const nextLineas = [...(localBlock.lineasReferencia ?? [])];
+    nextLineas[idx] = { ...nextLineas[idx], valor: Number.isFinite(val) ? val : 0 };
+    commitChange({ ...localBlock, lineasReferencia: nextLineas });
+  };
+
+  const handleLineaReferenciaLabelChange = (idx: number, etiqueta: string) => {
+    const nextLineas = [...(localBlock.lineasReferencia ?? [])];
+    nextLineas[idx] = { ...nextLineas[idx], etiqueta: etiqueta.trim().length > 0 ? etiqueta : undefined };
+    commitChange({ ...localBlock, lineasReferencia: nextLineas });
+  };
+
+  const handleLineaReferenciaColorChange = (idx: number, color: string) => {
+    const nextLineas = [...(localBlock.lineasReferencia ?? [])];
+    nextLineas[idx] = { ...nextLineas[idx], color };
+    commitChange({ ...localBlock, lineasReferencia: nextLineas }, true);
+  };
+
+  const handleRemoveLineaReferencia = (idx: number) => {
+    const nextLineas = (localBlock.lineasReferencia ?? []).filter((_, i) => i !== idx);
+    commitChange({ ...localBlock, lineasReferencia: nextLineas.length > 0 ? nextLineas : undefined }, true);
+  };
+
+  // Bandas de referencia (Etapa I5 — rango sombreado, 0 o más)
+  const handleAddBanda = () => {
+    const nextBandas = [...(localBlock.bandas ?? []), { desde: 0, hasta: 0 }];
+    commitChange({ ...localBlock, bandas: nextBandas }, true);
+  };
+
+  const handleBandaFieldChange = (idx: number, field: 'desde' | 'hasta', raw: string) => {
+    const val = Number(raw);
+    const nextBandas = [...(localBlock.bandas ?? [])];
+    nextBandas[idx] = { ...nextBandas[idx], [field]: Number.isFinite(val) ? val : 0 };
+    commitChange({ ...localBlock, bandas: nextBandas });
+  };
+
+  const handleBandaLabelChange = (idx: number, etiqueta: string) => {
+    const nextBandas = [...(localBlock.bandas ?? [])];
+    nextBandas[idx] = { ...nextBandas[idx], etiqueta: etiqueta.trim().length > 0 ? etiqueta : undefined };
+    commitChange({ ...localBlock, bandas: nextBandas });
+  };
+
+  const handleBandaColorChange = (idx: number, color: string) => {
+    const nextBandas = [...(localBlock.bandas ?? [])];
+    nextBandas[idx] = { ...nextBandas[idx], color };
+    commitChange({ ...localBlock, bandas: nextBandas }, true);
+  };
+
+  const handleRemoveBanda = (idx: number) => {
+    const nextBandas = (localBlock.bandas ?? []).filter((_, i) => i !== idx);
+    commitChange({ ...localBlock, bandas: nextBandas.length > 0 ? nextBandas : undefined }, true);
+  };
+
+  // Estilo visual general (Etapa I5)
+  const updateEstilo = (patch: Partial<NonNullable<GraficoDatosBlock['estilo']>>, immediate = false) => {
+    commitChange({ ...localBlock, estilo: { ...localBlock.estilo, ...patch } }, immediate);
+  };
+
+  const handleEstiloEsquinasChange = (raw: string) => {
+    const val = Number(raw);
+    updateEstilo({ esquinas: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
+  };
+
+  const handleEstiloSombraToggle = (sombra: boolean) => updateEstilo({ sombra: sombra || undefined }, true);
+
+  const handleEstiloFuenteChange = (fuente: string) => {
+    updateEstilo({ fuente: fuente.trim().length > 0 ? fuente : undefined });
+  };
+
+  const handleEstiloFondoChange = (fondo: 'transparente' | 'tarjeta') => {
+    updateEstilo({ fondo: fondo === 'transparente' ? undefined : fondo }, true);
+  };
+
+  const handleEstiloDuracionChange = (raw: string) => {
+    const val = Number(raw);
+    updateEstilo({ duracionAnimacion: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
+  };
+
+  // Paleta personalizada (Etapa I5)
+  const handleAddPaletaColor = () => {
+    const nextPaleta = [...(localBlock.paletaPersonalizada ?? []), '#3B82F6'];
+    commitChange({ ...localBlock, paletaPersonalizada: nextPaleta }, true);
+  };
+
+  const handlePaletaColorChange = (idx: number, color: string) => {
+    const nextPaleta = [...(localBlock.paletaPersonalizada ?? [])];
+    nextPaleta[idx] = color;
+    commitChange({ ...localBlock, paletaPersonalizada: nextPaleta }, true);
+  };
+
+  const handleRemovePaletaColor = (idx: number) => {
+    const nextPaleta = (localBlock.paletaPersonalizada ?? []).filter((_, i) => i !== idx);
+    commitChange({ ...localBlock, paletaPersonalizada: nextPaleta.length > 0 ? nextPaleta : undefined }, true);
   };
 
   const handleCurvaChange = (curva: 'suave' | 'recta' | 'escalon') => {
@@ -762,30 +840,225 @@ export function GraficoProperties({
                 />
               </div>
 
-              <div className="space-y-1 pt-1">
-                <Label className="text-[10px] text-muted-foreground">Línea de Referencia / Meta</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    value={localBlock.lineaReferencia?.valor ?? ''}
-                    placeholder="Valor (ej: 80)"
-                    onChange={(e) => handleReferenceLineValueChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                  <Input
-                    type="text"
-                    value={localBlock.lineaReferencia?.etiqueta ?? ''}
-                    placeholder="Etiqueta (ej: Meta)"
-                    disabled={localBlock.lineaReferencia?.valor === undefined}
-                    onChange={(e) => handleReferenceLineLabelChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-muted-foreground">Líneas de Referencia / Meta</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddLineaReferencia}
+                    className="h-6 px-1.5 text-[10px]"
+                  >
+                    <Plus className="mr-1 h-3 w-3" /> Añadir
+                  </Button>
                 </div>
+                {(localBlock.lineasReferencia ?? []).map((linea, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={linea.color || '#94a3b8'}
+                      onChange={(e) => handleLineaReferenciaColorChange(idx, e.target.value)}
+                      className="h-7 w-6 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0"
+                      title="Color de la línea"
+                    />
+                    <Input
+                      type="number"
+                      value={linea.valor}
+                      placeholder="Valor (ej: 80)"
+                      onChange={(e) => handleLineaReferenciaValueChange(idx, e.target.value)}
+                      className="h-7 text-xs"
+                    />
+                    <Input
+                      type="text"
+                      value={linea.etiqueta ?? ''}
+                      placeholder="Etiqueta (ej: Meta)"
+                      onChange={(e) => handleLineaReferenciaLabelChange(idx, e.target.value)}
+                      className="h-7 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLineaReferencia(idx)}
+                      className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive"
+                      title="Eliminar línea"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-muted-foreground">Bandas de Referencia (Rango)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddBanda}
+                    className="h-6 px-1.5 text-[10px]"
+                  >
+                    <Plus className="mr-1 h-3 w-3" /> Añadir
+                  </Button>
+                </div>
+                {(localBlock.bandas ?? []).map((banda, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={banda.color || '#ef4444'}
+                      onChange={(e) => handleBandaColorChange(idx, e.target.value)}
+                      className="h-7 w-6 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0"
+                      title="Color de la banda"
+                    />
+                    <Input
+                      type="number"
+                      value={banda.desde}
+                      placeholder="Desde"
+                      onChange={(e) => handleBandaFieldChange(idx, 'desde', e.target.value)}
+                      className="h-7 text-xs"
+                    />
+                    <Input
+                      type="number"
+                      value={banda.hasta}
+                      placeholder="Hasta"
+                      onChange={(e) => handleBandaFieldChange(idx, 'hasta', e.target.value)}
+                      className="h-7 text-xs"
+                    />
+                    <Input
+                      type="text"
+                      value={banda.etiqueta ?? ''}
+                      placeholder="Etiqueta"
+                      onChange={(e) => handleBandaLabelChange(idx, e.target.value)}
+                      className="h-7 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBanda(idx)}
+                      className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive"
+                      title="Eliminar banda"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
+
+      {/* 6. Estilo Visual (Etapa I5) */}
+      <div className="space-y-3 border-t border-border pt-3">
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Estilo Visual
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Radio de Esquinas (px)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={localBlock.estilo?.esquinas ?? ''}
+              placeholder="Auto"
+              onChange={(e) => handleEstiloEsquinasChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Fuente Tipográfica</Label>
+            <Input
+              type="text"
+              value={localBlock.estilo?.fuente ?? ''}
+              placeholder="Heredada"
+              onChange={(e) => handleEstiloFuenteChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground">Fondo</Label>
+          <Select
+            value={localBlock.estilo?.fondo || 'transparente'}
+            onValueChange={(val) => handleEstiloFondoChange(val as 'transparente' | 'tarjeta')}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Transparente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="transparente" className="text-xs">Transparente</SelectItem>
+              <SelectItem value="tarjeta" className="text-xs">Color de tarjeta (tema)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <Label className="text-[11px] text-muted-foreground">Sombra Sutil</Label>
+          <Switch
+            checked={Boolean(localBlock.estilo?.sombra)}
+            onCheckedChange={handleEstiloSombraToggle}
+          />
+        </div>
+
+        {Boolean(localBlock.animar) && (
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Duración de Animación (ms)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={localBlock.estilo?.duracionAnimacion ?? ''}
+              placeholder="Auto"
+              onChange={(e) => handleEstiloDuracionChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        )}
+
+        <div className="space-y-1.5 pt-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] text-muted-foreground">Paleta Personalizada</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddPaletaColor}
+              className="h-6 px-1.5 text-[10px]"
+            >
+              <Plus className="mr-1 h-3 w-3" /> Añadir Color
+            </Button>
+          </div>
+          {localBlock.paletaPersonalizada && localBlock.paletaPersonalizada.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {localBlock.paletaPersonalizada.map((color, idx) => (
+                <div key={idx} className="flex items-center gap-1 rounded border border-border/60 bg-muted/30 p-1">
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => handlePaletaColorChange(idx, e.target.value)}
+                    className="h-6 w-6 cursor-pointer rounded border border-input bg-transparent p-0"
+                    title="Color de la paleta"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePaletaColor(idx)}
+                    className="p-0.5 text-muted-foreground/70 hover:text-destructive"
+                    title="Eliminar color"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {(!localBlock.paletaPersonalizada || localBlock.paletaPersonalizada.length === 0) && (
+            <span className="text-[10px] text-muted-foreground/70">Sin paleta personalizada — usa la paleta seleccionada arriba.</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

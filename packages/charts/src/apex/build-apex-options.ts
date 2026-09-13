@@ -46,18 +46,40 @@ function baseChartOptions(config: LuminaChartConfig, theme: LuminaChartTheme): A
     (config.exportarImagen !== undefined ? config.exportarImagen : true) &&
     !config.isThumbnail &&
     !isSparkline;
+  const estilo = config.estilo;
 
   return {
-    fontFamily: 'inherit',
+    fontFamily: estilo?.fuente || 'inherit',
     foreColor: theme.foreColor,
-    background: 'transparent',
+    background: estilo?.fondo === 'tarjeta' ? theme.surfaceColor : 'transparent',
     toolbar: { show: showToolbar },
-    animations: { enabled: Boolean(config.animar) },
+    animations: {
+      enabled: Boolean(config.animar),
+      ...(config.animar && estilo?.duracionAnimacion !== undefined ? { speed: estilo.duracionAnimacion } : {}),
+    },
     zoom: { enabled: false },
     sparkline: { enabled: isSparkline },
     stacked: isStacked,
     stackType: config.apilado === 'porcentaje' ? '100%' : 'normal',
+    dropShadow: estilo?.sombra
+      ? { enabled: true, top: 2, left: 0, blur: 4, opacity: 0.15 }
+      : { enabled: false },
   };
+}
+
+/**
+ * Resuelve el color de una serie/categoría (Etapa I5): color explícito de la
+ * serie/punto > `paletaPersonalizada` (indexada) > `getSeriesColor` (paleta
+ * con id, comportamiento previo a I5).
+ */
+function resolveColor(idx: number, config: LuminaChartConfig, explicitColor?: string): string {
+  if (explicitColor && explicitColor.trim().length > 0) {
+    return explicitColor;
+  }
+  if (config.paletaPersonalizada && config.paletaPersonalizada.length > 0) {
+    return config.paletaPersonalizada[idx % config.paletaPersonalizada.length];
+  }
+  return getSeriesColor(idx, config.paletaId);
 }
 
 function buildDataLabels(config: LuminaChartConfig, defaultEnabled = false): ApexOptions['dataLabels'] {
@@ -70,25 +92,47 @@ function buildDataLabels(config: LuminaChartConfig, defaultEnabled = false): Ape
   return { enabled };
 }
 
+/**
+ * Anotaciones del eje Y (Etapa I5): cero o más líneas de referencia +
+ * cero o más bandas sombreadas. `undefined` si no hay ninguna (mismo
+ * comportamiento que la versión previa a I5, un solo `lineaReferencia`).
+ */
 function buildAnnotations(config: LuminaChartConfig, theme: LuminaChartTheme): ApexOptions['annotations'] | undefined {
-  if (!config.lineaReferencia) return undefined;
-  return {
-    yaxis: [
-      {
-        y: config.lineaReferencia.valor,
-        borderColor: theme.mutedColor,
-        strokeDashArray: 4,
-        label: {
-          text: config.lineaReferencia.etiqueta ?? `Meta: ${config.lineaReferencia.valor}`,
-          style: {
-            color: theme.foreColor,
-            background: theme.borderColor,
-            fontSize: '10px',
-          },
+  const lineas = config.lineasReferencia ?? [];
+  const bandas = config.bandas ?? [];
+  if (lineas.length === 0 && bandas.length === 0) return undefined;
+
+  const yaxis: NonNullable<ApexOptions['annotations']>['yaxis'] = [
+    ...bandas.map((banda) => ({
+      y: banda.desde,
+      y2: banda.hasta,
+      fillColor: banda.color ?? theme.mutedColor,
+      opacity: 0.15,
+      ...(banda.etiqueta
+        ? {
+            label: {
+              text: banda.etiqueta,
+              style: { color: theme.foreColor, background: theme.borderColor, fontSize: '10px' },
+            },
+          }
+        : {}),
+    })),
+    ...lineas.map((linea) => ({
+      y: linea.valor,
+      borderColor: linea.color ?? theme.mutedColor,
+      strokeDashArray: 4,
+      label: {
+        text: linea.etiqueta ?? `Meta: ${linea.valor}`,
+        style: {
+          color: theme.foreColor,
+          background: theme.borderColor,
+          fontSize: '10px',
         },
       },
-    ],
-  };
+    })),
+  ];
+
+  return { yaxis };
 }
 
 /**
@@ -259,7 +303,7 @@ function buildCartesianChart(config: LuminaChartConfig, theme: LuminaChartTheme)
       ? 'bar'
       : (config.type as 'line' | 'area');
 
-  const colors = config.series.map((s, idx) => getSeriesColor(idx, config.paletaId, s.color));
+  const colors = config.series.map((s, idx) => resolveColor(idx, config, s.color));
 
   const series: ApexCartesianSeries = isCombo
     ? config.series.map((s) => ({
@@ -322,7 +366,7 @@ function buildCartesianChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     plotOptions: {
       bar: {
         horizontal: isHorizontalBar,
-        borderRadius: 4,
+        borderRadius: config.estilo?.esquinas ?? 4,
         columnWidth: '60%',
       },
     },
@@ -333,7 +377,7 @@ function buildCartesianChart(config: LuminaChartConfig, theme: LuminaChartTheme)
 
 function buildScatterOrBubbleChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
   const chartType = config.type as 'scatter' | 'bubble';
-  const colors = config.series.map((s, idx) => getSeriesColor(idx, config.paletaId, s.color));
+  const colors = config.series.map((s, idx) => resolveColor(idx, config, s.color));
 
   const series: ApexCartesianSeries = config.series.map((s) => {
     if (chartType === 'scatter') {
@@ -369,7 +413,7 @@ function buildScatterOrBubbleChart(config: LuminaChartConfig, theme: LuminaChart
 }
 
 function buildRadarChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
-  const colors = config.series.map((s, idx) => getSeriesColor(idx, config.paletaId, s.color));
+  const colors = config.series.map((s, idx) => resolveColor(idx, config, s.color));
   const series: ApexCartesianSeries = config.series.map((s) => ({ name: s.nombre, data: s.valores }));
 
   const options: ApexOptions = {
@@ -397,7 +441,7 @@ function buildRadarChart(config: LuminaChartConfig, theme: LuminaChartTheme): Bu
 
 function buildTreemapChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
   const primary = config.series[0];
-  const colors = config.categorias.map((_, idx) => getSeriesColor(idx, config.paletaId));
+  const colors = config.categorias.map((_, idx) => resolveColor(idx, config));
   const data = config.categorias.map((cat, idx) => ({
     x: cat,
     y: primary?.valores[idx] ?? 0,
@@ -424,7 +468,7 @@ function buildTreemapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
 
 function buildFunnelChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
   const primary = config.series[0];
-  const colors = config.categorias.map((_, idx) => getSeriesColor(idx, config.paletaId));
+  const colors = config.categorias.map((_, idx) => resolveColor(idx, config));
   const data = config.categorias.map((_, idx) => primary?.valores[idx] ?? 0);
 
   const series: ApexCartesianSeries = [{ name: primary?.nombre || 'Etapas', data }];
@@ -453,7 +497,7 @@ function buildFunnelChart(config: LuminaChartConfig, theme: LuminaChartTheme): B
 }
 
 function buildHeatmapChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
-  const colors = [getSeriesColor(0, config.paletaId)];
+  const colors = [resolveColor(0, config)];
   const series: ApexCartesianSeries = config.series.map((s) => ({
     name: s.nombre,
     data: config.categorias.map((cat, idx) => ({
@@ -478,7 +522,7 @@ function buildHeatmapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
     dataLabels: buildDataLabels(config, false),
     plotOptions: {
       heatmap: {
-        radius: 2,
+        radius: config.estilo?.esquinas ?? 2,
         enableShades: true,
       },
     },
@@ -490,7 +534,7 @@ function buildHeatmapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
 function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
   const primary = config.series[0];
   const values = config.categorias.map((_, idx) => primary?.valores[idx] ?? 0);
-  const colors = config.categorias.map((_, idx) => getSeriesColor(idx, config.paletaId));
+  const colors = config.categorias.map((_, idx) => resolveColor(idx, config));
 
   const isSemicircle = config.angulo === 'semicirculo';
   const isRadial = config.type === 'radialBar';
@@ -570,7 +614,7 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
 function buildPolarAreaChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
   const primary = config.series[0];
   const values = config.categorias.map((_, idx) => primary?.valores[idx] ?? 0);
-  const colors = config.categorias.map((_, idx) => getSeriesColor(idx, config.paletaId));
+  const colors = config.categorias.map((_, idx) => resolveColor(idx, config));
 
   const options: ApexOptions = {
     chart: { ...baseChartOptions(config, theme), type: 'polarArea' },
@@ -602,7 +646,7 @@ function buildWaterfallChart(config: LuminaChartConfig, theme: LuminaChartTheme)
   const primary = config.series[0];
   const rawValues = config.categorias.map((_, idx) => primary?.valores[idx] ?? 0);
 
-  const baseColor = getSeriesColor(0, config.paletaId, primary?.color);
+  const baseColor = resolveColor(0, config, primary?.color);
   const positiveColor = '#10b981';
   const negativeColor = '#ef4444';
 
@@ -662,7 +706,7 @@ function buildWaterfallChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     plotOptions: {
       bar: {
         horizontal: false,
-        borderRadius: 2,
+        borderRadius: config.estilo?.esquinas ?? 2,
         columnWidth: '55%',
       },
     },
@@ -672,7 +716,7 @@ function buildWaterfallChart(config: LuminaChartConfig, theme: LuminaChartTheme)
 }
 
 function buildBoxPlotChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
-  const colors = config.series.map((s, idx) => getSeriesColor(idx, config.paletaId, s.color));
+  const colors = config.series.map((s, idx) => resolveColor(idx, config, s.color));
 
   const series: ApexCartesianSeries = config.series.map((s) => ({
     name: s.nombre,
@@ -715,7 +759,7 @@ function buildHistogramChart(config: LuminaChartConfig, theme: LuminaChartTheme)
   const primary = config.series[0];
   const binCount = sanitizeHistogramBinCount(config.histogramBins);
   const { labels, counts } = computeHistogramBins(primary?.valores ?? [], binCount);
-  const colors = [getSeriesColor(0, config.paletaId, primary?.color)];
+  const colors = [resolveColor(0, config, primary?.color)];
 
   const series: ApexCartesianSeries = [{ name: primary?.nombre || 'Frecuencia', data: counts }];
 
@@ -733,7 +777,7 @@ function buildHistogramChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     plotOptions: {
       bar: {
         horizontal: false,
-        borderRadius: 4,
+        borderRadius: config.estilo?.esquinas ?? 4,
         columnWidth: '90%',
       },
     },

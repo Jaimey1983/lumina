@@ -1,7 +1,16 @@
 // ─── Normalizador y Fábrica por Defecto para Bloque Gráfico ───────────────────
 // Un solo writer canónico para el bloque `grafico` (Recharts v1).
 
-import { BLOCK_FALLBACKS, type BlockMarco, type GraficoChartType, type GraficoDatosBlock, type GraficoSerie } from '@lumina/types/slide';
+import {
+  BLOCK_FALLBACKS,
+  type BlockMarco,
+  type GraficoBanda,
+  type GraficoChartType,
+  type GraficoDatosBlock,
+  type GraficoEstilo,
+  type GraficoLineaReferencia,
+  type GraficoSerie,
+} from '@lumina/types/slide';
 import { DEFAULT_LUMINA_PALETTE_ID as DEFAULT_GRAFICO_PALETA_ID } from '@lumina/charts';
 
 export const VALID_GRAFICO_CHART_TYPES: readonly GraficoChartType[] = [
@@ -200,6 +209,92 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
       ];
 }
 
+function sanitizeLineaReferenciaItem(item: unknown): GraficoLineaReferencia | undefined {
+  if (!item || typeof item !== 'object') return undefined;
+  const valor = (item as { valor?: unknown }).valor;
+  if (typeof valor !== 'number' || !Number.isFinite(valor)) return undefined;
+
+  const etiquetaRaw = (item as { etiqueta?: unknown }).etiqueta;
+  const colorRaw = (item as { color?: unknown }).color;
+
+  return {
+    valor,
+    etiqueta: typeof etiquetaRaw === 'string' && etiquetaRaw.trim().length > 0 ? etiquetaRaw.trim() : undefined,
+    color: typeof colorRaw === 'string' && colorRaw.trim().length > 0 ? colorRaw.trim() : undefined,
+  };
+}
+
+/**
+ * `lineasReferencia` (Etapa I5) reemplaza al `lineaReferencia` singular de
+ * H6. Acepta el formato nuevo (arreglo) y migra el formato legado (un solo
+ * objeto) para que un bloque guardado antes de I5 siga abriendo igual.
+ */
+function sanitizeLineasReferencia(raw: Record<string, unknown>): GraficoLineaReferencia[] | undefined {
+  if (Array.isArray(raw.lineasReferencia)) {
+    const cleaned = raw.lineasReferencia
+      .map(sanitizeLineaReferenciaItem)
+      .filter((l): l is GraficoLineaReferencia => l !== undefined);
+    return cleaned.length > 0 ? cleaned : undefined;
+  }
+
+  const legacy = sanitizeLineaReferenciaItem(raw.lineaReferencia);
+  return legacy ? [legacy] : undefined;
+}
+
+function sanitizeBandaItem(item: unknown): GraficoBanda | undefined {
+  if (!item || typeof item !== 'object') return undefined;
+  const desde = (item as { desde?: unknown }).desde;
+  const hasta = (item as { hasta?: unknown }).hasta;
+  if (typeof desde !== 'number' || !Number.isFinite(desde)) return undefined;
+  if (typeof hasta !== 'number' || !Number.isFinite(hasta)) return undefined;
+
+  const etiquetaRaw = (item as { etiqueta?: unknown }).etiqueta;
+  const colorRaw = (item as { color?: unknown }).color;
+
+  return {
+    desde,
+    hasta,
+    etiqueta: typeof etiquetaRaw === 'string' && etiquetaRaw.trim().length > 0 ? etiquetaRaw.trim() : undefined,
+    color: typeof colorRaw === 'string' && colorRaw.trim().length > 0 ? colorRaw.trim() : undefined,
+  };
+}
+
+function sanitizeBandas(raw: unknown): GraficoBanda[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const cleaned = raw.map(sanitizeBandaItem).filter((b): b is GraficoBanda => b !== undefined);
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
+function sanitizeEstilo(raw: unknown): GraficoEstilo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const r = raw as Record<string, unknown>;
+
+  const esquinas = typeof r.esquinas === 'number' && Number.isFinite(r.esquinas) ? r.esquinas : undefined;
+  const sombra = typeof r.sombra === 'boolean' ? r.sombra : undefined;
+  const fuente = typeof r.fuente === 'string' && r.fuente.trim().length > 0 ? r.fuente.trim() : undefined;
+  const fondo = r.fondo === 'transparente' || r.fondo === 'tarjeta' ? r.fondo : undefined;
+  const duracionAnimacion =
+    typeof r.duracionAnimacion === 'number' && Number.isFinite(r.duracionAnimacion) ? r.duracionAnimacion : undefined;
+
+  const result: GraficoEstilo = {
+    ...(esquinas !== undefined ? { esquinas } : {}),
+    ...(sombra !== undefined ? { sombra } : {}),
+    ...(fuente ? { fuente } : {}),
+    ...(fondo ? { fondo } : {}),
+    ...(duracionAnimacion !== undefined ? { duracionAnimacion } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function sanitizePaletaPersonalizada(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const cleaned = raw
+    .filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
+    .map((c) => c.trim());
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 /**
  * Sanitiza e hidrata cualquier entrada para garantizar un `GraficoDatosBlock` válido.
  * Garantiza `modo: 'contenido'`, `soloLecturaEnViewer: true` y estructura consistente.
@@ -207,6 +302,9 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
 export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
   const fb = BLOCK_FALLBACKS.grafico;
   const raw = (input && typeof input === 'object' ? input : {}) as Partial<GraficoDatosBlock>;
+  // Acceso sin tipar para leer campos legados (`lineaReferencia` singular,
+  // Etapa I5) que ya no forman parte de `GraficoDatosBlock`.
+  const rawAny = raw as unknown as Record<string, unknown>;
 
   const id = typeof raw.id === 'string' && raw.id.trim().length > 0 ? raw.id : `grafico-${Date.now()}`;
   const chartType = sanitizeChartType(raw.chartType);
@@ -223,19 +321,7 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
       ? raw.ordenDatos
       : undefined;
 
-  const lineaReferencia =
-    raw.lineaReferencia &&
-    typeof raw.lineaReferencia === 'object' &&
-    typeof raw.lineaReferencia.valor === 'number' &&
-    Number.isFinite(raw.lineaReferencia.valor)
-      ? {
-          valor: raw.lineaReferencia.valor,
-          etiqueta:
-            typeof raw.lineaReferencia.etiqueta === 'string' && raw.lineaReferencia.etiqueta.trim().length > 0
-              ? raw.lineaReferencia.etiqueta.trim()
-              : undefined,
-        }
-      : undefined;
+  const lineasReferencia = sanitizeLineasReferencia(rawAny);
 
   return {
     id,
@@ -267,7 +353,7 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
     ejeYMax: typeof raw.ejeYMax === 'number' && Number.isFinite(raw.ejeYMax) ? raw.ejeYMax : undefined,
     ejeYEscalaLog: typeof raw.ejeYEscalaLog === 'boolean' ? raw.ejeYEscalaLog : undefined,
     mostrarEtiquetasDatos: typeof raw.mostrarEtiquetasDatos === 'boolean' ? raw.mostrarEtiquetasDatos : undefined,
-    lineaReferencia,
+    lineasReferencia,
     animar: typeof raw.animar === 'boolean' ? raw.animar : undefined,
     ordenDatos,
     exportarImagen: typeof raw.exportarImagen === 'boolean' ? raw.exportarImagen : undefined,
@@ -309,6 +395,11 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
       raw.posicionLeyenda === 'derecha'
         ? raw.posicionLeyenda
         : undefined,
+
+    // Estilo y anotaciones (Etapa I5)
+    bandas: sanitizeBandas(rawAny.bandas),
+    estilo: sanitizeEstilo(rawAny.estilo),
+    paletaPersonalizada: sanitizePaletaPersonalizada(rawAny.paletaPersonalizada),
   };
 }
 
