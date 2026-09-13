@@ -850,7 +850,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I7 — Accesibilidad: resumen automático de los datos
 - **Operador:** Claude Code.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Claude Code].
 - **Precondición:** I1 hecha.
 - **Contexto:** hoy `descripcionAccesible` es un campo de texto libre que el docente escribe a mano (o queda con el default genérico "Gráfico de datos comparativos por categorías"). El plan pide generar automáticamente un resumen a partir de los datos reales (ej. "Gráfico de columnas: Grupo A varía entre 56 y 81, Grupo B entre 19 y 86, con el valor máximo en Mayo").
 - **Alcance — PUEDE tocar:** `packages/charts/src/` (nueva función pura `generarResumenAccesible(config: LuminaChartConfig): string`, con tests); `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` (botón "Generar automáticamente" junto al campo de descripción accesible — no reemplaza el campo editable, lo sugiere).
