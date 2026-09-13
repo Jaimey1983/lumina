@@ -7,6 +7,7 @@ export type {
   LuminaChartTypeMeta,
   LuminaChartSeries,
   LuminaChartPoint,
+  LuminaChartBoxPlotPoint,
   LuminaChartReferenceLine,
   LuminaChartConfig,
 } from './types.js';
@@ -40,3 +41,12 @@ export {
 } from './format.js';
 
 export { resolveChartTheme, type LuminaChartTheme } from './chart-theme.js';
+
+export {
+  computeHistogramBins,
+  sanitizeHistogramBinCount,
+  DEFAULT_HISTOGRAM_BINS,
+  MIN_HISTOGRAM_BINS,
+  MAX_HISTOGRAM_BINS,
+  type HistogramBins,
+} from './histogram.js';

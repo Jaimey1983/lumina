@@ -3,11 +3,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   BarChart,
+  BarChart2,
   BarChartHorizontal,
   LineChart,
   AreaChart,
   PieChart,
   CircleDot,
+  Disc,
   Gauge,
   Layers,
   ScatterChart,
@@ -16,6 +18,8 @@ import {
   LayoutGrid,
   Filter,
   Grid,
+  Boxes,
+  Sigma,
   Table as TableIcon,
   Palette,
   Eye,
@@ -59,14 +63,18 @@ const CHART_TYPE_ICONS: Record<GraficoChartType, React.ComponentType<{ className
   area: AreaChart,
   pie: PieChart,
   donut: CircleDot,
+  polarArea: Disc,
   radialBar: Gauge,
   combo: Layers,
+  waterfall: BarChart2,
   scatter: ScatterChart,
   bubble: Circle,
   radar: Radar,
   treemap: LayoutGrid,
   funnel: Filter,
   heatmap: Grid,
+  boxPlot: Boxes,
+  histogram: Sigma,
 };
 
 export function GraficoProperties({
@@ -227,14 +235,44 @@ export function GraficoProperties({
     }
   };
 
+  const handleCurvaChange = (curva: 'suave' | 'recta' | 'escalon') => {
+    commitChange({ ...localBlock, curva: curva === 'suave' ? undefined : curva }, true);
+  };
+
+  const handleModoSparklineToggle = (modoSparkline: boolean) => {
+    commitChange({ ...localBlock, modoSparkline: modoSparkline || undefined }, true);
+  };
+
+  const handleMostrarTotalToggle = (mostrarTotal: boolean) => {
+    commitChange({ ...localBlock, mostrarTotal: mostrarTotal || undefined }, true);
+  };
+
+  const handleAnguloChange = (angulo: 'completo' | 'semicirculo') => {
+    commitChange({ ...localBlock, angulo: angulo === 'completo' ? undefined : angulo }, true);
+  };
+
+  const handleHistogramBinsChange = (raw: string) => {
+    const val = Number(raw);
+    commitChange(
+      { ...localBlock, histogramBins: Number.isFinite(val) && raw.trim() !== '' ? Math.round(val) : undefined },
+      true,
+    );
+  };
+
   const activeFamily = getChartFamily(localBlock.chartType);
   const activeFamilyMeta = LUMINA_CHART_FAMILIES.find((f) => f.id === activeFamily);
   const familyVariants = getChartTypesByFamily(activeFamily);
 
   const isScatterOrBubble = localBlock.chartType === 'scatter' || localBlock.chartType === 'bubble';
+  const isBoxPlot = localBlock.chartType === 'boxPlot';
+  const isHistogram = localBlock.chartType === 'histogram';
   const supportsStacking = ['column', 'bar', 'area', 'combo'].includes(localBlock.chartType);
-  const supportsAxes = ['column', 'bar', 'line', 'area', 'combo', 'scatter', 'bubble'].includes(localBlock.chartType);
-  const supportsOrdering = !['pie', 'donut', 'radialBar', 'treemap'].includes(localBlock.chartType);
+  const supportsAxes = ['column', 'bar', 'line', 'area', 'combo', 'scatter', 'bubble', 'waterfall', 'boxPlot', 'histogram'].includes(localBlock.chartType);
+  const supportsOrdering = !['pie', 'donut', 'radialBar', 'treemap', 'waterfall', 'boxPlot', 'histogram'].includes(localBlock.chartType);
+  const supportsCurva = ['line', 'area', 'combo'].includes(localBlock.chartType);
+  const supportsSparkline = ['column', 'bar', 'line', 'area'].includes(localBlock.chartType);
+  const supportsAngulo = ['pie', 'donut', 'radialBar'].includes(localBlock.chartType);
+  const supportsTotal = localBlock.chartType === 'donut';
 
   return (
     <div className="space-y-5 text-xs">
@@ -319,7 +357,11 @@ export function GraficoProperties({
           <span className="text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border">
             {isScatterOrBubble
               ? `${localBlock.series.length} ${localBlock.series.length === 1 ? 'serie' : 'series'}`
-              : `${localBlock.categorias.length} cat · ${localBlock.series.length} ser`}
+              : isBoxPlot
+                ? `${localBlock.categorias.length} grupo${localBlock.categorias.length === 1 ? '' : 's'} · ${localBlock.series.length} ser`
+                : isHistogram
+                  ? `${localBlock.series[0]?.valores.length ?? 0} datos`
+                  : `${localBlock.categorias.length} cat · ${localBlock.series.length} ser`}
           </span>
         </Button>
 
@@ -424,10 +466,33 @@ export function GraficoProperties({
             onCheckedChange={handleAnimationToggle}
           />
         </div>
+
+        {supportsTotal && (
+          <div className="flex items-center justify-between pt-1">
+            <Label className="text-[11px] text-muted-foreground">Mostrar Total en el Centro</Label>
+            <Switch
+              checked={Boolean(localBlock.mostrarTotal)}
+              onCheckedChange={handleMostrarTotalToggle}
+            />
+          </div>
+        )}
+
+        {supportsSparkline && (
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex flex-col">
+              <Label className="text-[11px] text-muted-foreground">Modo Sparkline (Compacto)</Label>
+              <span className="text-[10px] text-muted-foreground/70">Oculta ejes y grillas para tarjetas KPI</span>
+            </div>
+            <Switch
+              checked={Boolean(localBlock.modoSparkline)}
+              onCheckedChange={handleModoSparklineToggle}
+            />
+          </div>
+        )}
       </div>
 
-      {/* 5. Configuración Avanzada / Ejes / Apilado */}
-      {(supportsStacking || supportsAxes || supportsOrdering) && (
+      {/* 5. Configuración Avanzada / Ejes / Apilado / Curvas */}
+      {(supportsStacking || supportsAxes || supportsOrdering || supportsCurva || supportsAngulo || isHistogram) && (
         <div className="space-y-3 border-t border-border pt-3">
           <div className="flex items-center gap-1.5">
             <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -435,6 +500,58 @@ export function GraficoProperties({
               Ejes y Configuración
             </span>
           </div>
+
+          {isHistogram && (
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Número de Intervalos (Bins)</Label>
+              <Input
+                type="number"
+                min={2}
+                max={20}
+                value={localBlock.histogramBins ?? ''}
+                placeholder="Auto (8)"
+                onChange={(e) => handleHistogramBinsChange(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </div>
+          )}
+
+          {supportsCurva && (
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Interpolación de Curva</Label>
+              <Select
+                value={localBlock.curva || 'suave'}
+                onValueChange={(val) => handleCurvaChange(val as 'suave' | 'recta' | 'escalon')}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Suave (por defecto)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="suave" className="text-xs">Curva suave (interpolada)</SelectItem>
+                  <SelectItem value="recta" className="text-xs">Línea recta (segmentos)</SelectItem>
+                  <SelectItem value="escalon" className="text-xs">Escalón (stepline)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {supportsAngulo && (
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Apertura Angular</Label>
+              <Select
+                value={localBlock.angulo || 'completo'}
+                onValueChange={(val) => handleAnguloChange(val as 'completo' | 'semicirculo')}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Círculo completo (360°)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="completo" className="text-xs">Círculo completo (360°)</SelectItem>
+                  <SelectItem value="semicirculo" className="text-xs">Semicírculo (180° / Medidor)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {supportsStacking && (
             <div className="space-y-1">

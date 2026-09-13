@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+ï»¿import { describe, expect, it } from 'vitest';
 import {
   LUMINA_CHART_FAMILIES,
   LUMINA_CHART_TYPES,
@@ -22,8 +22,8 @@ describe('Lumina Chart Families (Etapa I)', () => {
     expect(LUMINA_CHART_FAMILIES.map((f) => f.id)).toEqual(expectedFamilies);
   });
 
-  it('cada uno de los 14 tipos está mapeado en LUMINA_CHART_TYPE_META con metadata válida', () => {
-    expect(LUMINA_CHART_TYPES).toHaveLength(14);
+  it('cada uno de los 18 tipos estÃ¡ mapeado en LUMINA_CHART_TYPE_META con metadata vÃ¡lida', () => {
+    expect(LUMINA_CHART_TYPES).toHaveLength(18);
     for (const type of LUMINA_CHART_TYPES) {
       const meta = LUMINA_CHART_TYPE_META[type];
       expect(meta).toBeDefined();
@@ -38,10 +38,12 @@ describe('Lumina Chart Families (Etapa I)', () => {
     expect(getChartFamily('column')).toBe('comparar');
     expect(getChartFamily('bar')).toBe('comparar');
     expect(getChartFamily('combo')).toBe('comparar');
+    expect(getChartFamily('waterfall')).toBe('comparar');
     expect(getChartFamily('line')).toBe('evolucion');
     expect(getChartFamily('area')).toBe('evolucion');
     expect(getChartFamily('donut')).toBe('proporcion');
     expect(getChartFamily('pie')).toBe('proporcion');
+    expect(getChartFamily('polarArea')).toBe('proporcion');
     expect(getChartFamily('treemap')).toBe('proporcion');
     expect(getChartFamily('funnel')).toBe('proporcion');
     expect(getChartFamily('scatter')).toBe('relacion');
@@ -49,14 +51,16 @@ describe('Lumina Chart Families (Etapa I)', () => {
     expect(getChartFamily('radialBar')).toBe('kpi');
     expect(getChartFamily('heatmap')).toBe('especiales');
     expect(getChartFamily('radar')).toBe('especiales');
+    expect(getChartFamily('boxPlot')).toBe('estadistica');
+    expect(getChartFamily('histogram')).toBe('estadistica');
   });
 
   it('getChartTypesByFamily devuelve las variantes de cada familia', () => {
-    expect(getChartTypesByFamily('comparar')).toEqual(['column', 'bar', 'combo']);
+    expect(getChartTypesByFamily('comparar')).toEqual(['column', 'bar', 'combo', 'waterfall']);
     expect(getChartTypesByFamily('evolucion')).toEqual(['line', 'area']);
-    expect(getChartTypesByFamily('proporcion')).toEqual(['donut', 'pie', 'radialBar', 'treemap', 'funnel']);
+    expect(getChartTypesByFamily('proporcion')).toEqual(['donut', 'pie', 'polarArea', 'radialBar', 'treemap', 'funnel']);
     expect(getChartTypesByFamily('relacion')).toEqual(['scatter', 'bubble']);
-    expect(getChartTypesByFamily('estadistica')).toEqual(['column', 'bar']);
+    expect(getChartTypesByFamily('estadistica')).toEqual(['column', 'bar', 'boxPlot', 'histogram']);
     expect(getChartTypesByFamily('kpi')).toEqual(['radialBar']);
     expect(getChartTypesByFamily('especiales')).toEqual(['heatmap', 'radar']);
   });

@@ -4,7 +4,7 @@
 // comentario de package.json y la decisión de motor en AGENTS.md (Etapa H).
 
 /**
- * Tipos de gráfico soportados por el contrato (catálogo completo de 14 tipos, H6).
+ * Tipos de gráfico soportados por el contrato (catálogo completo de 16 tipos, Etapa I2).
  */
 export type LuminaChartType =
   | 'column'
@@ -20,7 +20,11 @@ export type LuminaChartType =
   | 'radar'
   | 'treemap'
   | 'funnel'
-  | 'heatmap';
+  | 'heatmap'
+  | 'polarArea'
+  | 'waterfall'
+  | 'boxPlot'
+  | 'histogram';
 
 export const LUMINA_CHART_TYPES: readonly LuminaChartType[] = [
   'column',
@@ -37,6 +41,10 @@ export const LUMINA_CHART_TYPES: readonly LuminaChartType[] = [
   'treemap',
   'funnel',
   'heatmap',
+  'polarArea',
+  'waterfall',
+  'boxPlot',
+  'histogram',
 ] as const;
 
 /**
@@ -72,7 +80,7 @@ export const LUMINA_CHART_FAMILIES: readonly LuminaChartFamilyMeta[] = [
     label: 'Comparación',
     descripcion: 'Comparar magnitudes entre categorías o grupos',
     defaultType: 'column',
-    types: ['column', 'bar', 'combo'],
+    types: ['column', 'bar', 'combo', 'waterfall'],
   },
   {
     id: 'evolucion',
@@ -86,7 +94,7 @@ export const LUMINA_CHART_FAMILIES: readonly LuminaChartFamilyMeta[] = [
     label: 'Proporción',
     descripcion: 'Representar partes de un todo y composiciones',
     defaultType: 'donut',
-    types: ['donut', 'pie', 'radialBar', 'treemap', 'funnel'],
+    types: ['donut', 'pie', 'polarArea', 'radialBar', 'treemap', 'funnel'],
   },
   {
     id: 'relacion',
@@ -100,7 +108,7 @@ export const LUMINA_CHART_FAMILIES: readonly LuminaChartFamilyMeta[] = [
     label: 'Estadística',
     descripcion: 'Distribución de frecuencias y rangos de datos',
     defaultType: 'column',
-    types: ['column', 'bar'],
+    types: ['column', 'bar', 'boxPlot', 'histogram'],
   },
   {
     id: 'kpi',
@@ -122,10 +130,12 @@ export const LUMINA_CHART_TYPE_META: Record<LuminaChartType, LuminaChartTypeMeta
   column: { type: 'column', familia: 'comparar', label: 'Columnas', descripcion: 'Barras verticales por categoría' },
   bar: { type: 'bar', familia: 'comparar', label: 'Barras', descripcion: 'Barras horizontales' },
   combo: { type: 'combo', familia: 'comparar', label: 'Combinado', descripcion: 'Columnas y líneas combinadas' },
+  waterfall: { type: 'waterfall', familia: 'comparar', label: 'Cascada', descripcion: 'Flujo acumulativo y variaciones (deltas)' },
   line: { type: 'line', familia: 'evolucion', label: 'Líneas', descripcion: 'Tendencias y series de tiempo' },
   area: { type: 'area', familia: 'evolucion', label: 'Área', descripcion: 'Volumen y evolución temporal' },
   donut: { type: 'donut', familia: 'proporcion', label: 'Dona', descripcion: 'Proporciones con centro hueco' },
   pie: { type: 'pie', familia: 'proporcion', label: 'Circular', descripcion: 'Distribución porcentual de un total' },
+  polarArea: { type: 'polarArea', familia: 'proporcion', label: 'Área Polar', descripcion: 'Sectores con radio proporcional a los valores' },
   radialBar: { type: 'radialBar', familia: 'kpi', label: 'Radial (progreso)', descripcion: 'Medidor circular de progreso' },
   treemap: { type: 'treemap', familia: 'proporcion', label: 'Treemap', descripcion: 'Jerarquía y áreas proporcionales' },
   funnel: { type: 'funnel', familia: 'proporcion', label: 'Embudo', descripcion: 'Etapas de conversión descendentes' },
@@ -133,6 +143,8 @@ export const LUMINA_CHART_TYPE_META: Record<LuminaChartType, LuminaChartTypeMeta
   bubble: { type: 'bubble', familia: 'relacion', label: 'Burbujas', descripcion: 'Tres variables (X, Y, Tamaño Z)' },
   heatmap: { type: 'heatmap', familia: 'especiales', label: 'Mapa de calor', descripcion: 'Matriz bidimensional de intensidad' },
   radar: { type: 'radar', familia: 'especiales', label: 'Radar', descripcion: 'Perfil multidimensional' },
+  boxPlot: { type: 'boxPlot', familia: 'estadistica', label: 'Diagrama de cajas', descripcion: 'Mínimo, cuartiles y máximo por grupo' },
+  histogram: { type: 'histogram', familia: 'estadistica', label: 'Histograma', descripcion: 'Frecuencia de valores agrupados en intervalos' },
 };
 
 export function getChartFamily(type: LuminaChartType): LuminaChartFamily {
@@ -150,6 +162,18 @@ export interface LuminaChartPoint {
   z?: number;
 }
 
+/**
+ * Resumen de cinco números (mínimo, cuartiles, máximo) de un grupo del tipo
+ * `boxPlot`. Ignorado en cualquier otro tipo de gráfico (Etapa I, I3).
+ */
+export interface LuminaChartBoxPlotPoint {
+  min: number;
+  q1: number;
+  mediana: number;
+  q3: number;
+  max: number;
+}
+
 export interface LuminaChartSeries {
   nombre: string;
   valores: number[];
@@ -161,6 +185,8 @@ export interface LuminaChartSeries {
   ejeCombo?: 'primario' | 'secundario';
   /** Puntos (x, y, z) para tipos scatter/bubble. Ignorado en otros tipos. */
   puntos?: LuminaChartPoint[];
+  /** Un resumen de cinco números por categoría, para type `boxPlot`. Ignorado en otros tipos. */
+  cajas?: LuminaChartBoxPlotPoint[];
 }
 
 export interface LuminaChartReferenceLine {
@@ -208,4 +234,18 @@ export interface LuminaChartConfig {
   ordenDatos?: 'como-esta' | 'ascendente' | 'descendente';
   /** Controlar visibilidad del menú de exportación de imagen (PNG/SVG). */
   exportarImagen?: boolean;
+
+  // ─── Variantes y Opciones Adicionales (Etapa I2) ───
+  /** Tipo de interpolación de curva para gráficos cartesianos continuos (line/area/combo). */
+  curva?: 'recta' | 'suave' | 'escalon';
+  /** Modo sparkline minimalista (oculta ejes, grillas y controles para tarjetas KPI). */
+  modoSparkline?: boolean;
+  /** Mostrar la suma total en el centro del gráfico donut. */
+  mostrarTotal?: boolean;
+  /** Apertura angular para gráficos circulares (pie/donut/radialBar: 'completo' = 360°, 'semicirculo' = 180°). */
+  angulo?: 'completo' | 'semicirculo';
+
+  // ─── Estadística (Etapa I3) ───
+  /** Número de intervalos (bins) para type `histogram`. Ignorado en otros tipos; por defecto 8. */
+  histogramBins?: number;
 }

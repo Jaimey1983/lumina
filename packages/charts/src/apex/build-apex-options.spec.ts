@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildApexChart } from './build-apex-options.js';
+import { buildApexChart, type ApexCartesianSeries } from './build-apex-options.js';
 import { resolveChartTheme } from '../chart-theme.js';
 import { getSeriesColor } from '../palettes.js';
 import type { LuminaChartConfig } from '../types.js';
@@ -360,3 +360,271 @@ describe('buildApexChart — configuración fina (H6)', () => {
     expect(explicitTrue.options.chart?.toolbar?.show).toBe(true);
   });
 });
+
+describe('buildApexChart — Variantes y Configuración de Etapa I2', () => {
+  it('polarArea: chartType "polarArea", series como array numérico, labels como categorías y plotOptions configurado', () => {
+    const config: LuminaChartConfig = {
+      type: 'polarArea',
+      categorias: ['Norte', 'Sur', 'Este', 'Oeste'],
+      series: [{ nombre: 'Regiones', valores: [40, 60, 80, 20] }],
+      mostrarLeyenda: true,
+    };
+    const built = buildApexChart(config, theme);
+    expect(built.chartType).toBe('polarArea');
+    expect(built.series).toEqual([40, 60, 80, 20]);
+    expect(built.options.labels).toEqual(['Norte', 'Sur', 'Este', 'Oeste']);
+    expect(built.options.plotOptions?.polarArea?.rings).toBeDefined();
+    expect(built.options.plotOptions?.polarArea?.spokes).toBeDefined();
+    expect((built.options.yaxis as { show?: boolean })?.show).toBe(false);
+  });
+
+  it('waterfall: calcula deltas acumulativos con rangos [bottom, top] y colores semánticos', () => {
+    const config: LuminaChartConfig = {
+      type: 'waterfall',
+      categorias: ['Inicio', 'Ventas', 'Gastos', 'Impuestos', 'Cierre'],
+      series: [{ nombre: 'Flujo', valores: [100, 30, -20, -10, 0] }],
+    };
+    const built = buildApexChart(config, theme);
+    expect(built.chartType).toBe('bar');
+    expect(built.options.plotOptions?.bar?.horizontal).toBe(false);
+
+    const seriesData = (built.series as ApexCartesianSeries)[0]?.data as Array<{
+      x: string;
+      y: [number, number];
+      fillColor: string;
+    }>;
+
+    expect(seriesData).toHaveLength(5);
+    // Inicio: 100 -> [0, 100]
+    expect(seriesData[0]).toEqual(expect.objectContaining({ x: 'Inicio', y: [0, 100] }));
+    // Ventas: +30 -> [100, 130] con color positivo (#10b981)
+    expect(seriesData[1]).toEqual(expect.objectContaining({ x: 'Ventas', y: [100, 130], fillColor: '#10b981' }));
+    // Gastos: -20 -> [110, 130] con color negativo (#ef4444)
+    expect(seriesData[2]).toEqual(expect.objectContaining({ x: 'Gastos', y: [110, 130], fillColor: '#ef4444' }));
+    // Impuestos: -10 -> [100, 110] con color negativo (#ef4444)
+    expect(seriesData[3]).toEqual(expect.objectContaining({ x: 'Impuestos', y: [100, 110], fillColor: '#ef4444' }));
+  });
+
+  it('curva: aplica interpolación "straight", "stepline" o "smooth" en line/area', () => {
+    const lineBase: LuminaChartConfig = {
+      type: 'line',
+      categorias: ['A', 'B', 'C'],
+      series: [{ nombre: 'Serie', valores: [1, 5, 2] }],
+    };
+
+    const recta = buildApexChart({ ...lineBase, curva: 'recta' }, theme);
+    expect(recta.options.stroke?.curve).toBe('straight');
+
+    const escalon = buildApexChart({ ...lineBase, curva: 'escalon' }, theme);
+    expect(escalon.options.stroke?.curve).toBe('stepline');
+
+    const suave = buildApexChart({ ...lineBase, curva: 'suave' }, theme);
+    expect(suave.options.stroke?.curve).toBe('smooth');
+
+    const porDefecto = buildApexChart(lineBase, theme);
+    expect(porDefecto.options.stroke?.curve).toBe('smooth');
+  });
+
+  it('modoSparkline: habilita sparkline y oculta toolbar, grilla y leyenda', () => {
+    const sparkConfig: LuminaChartConfig = {
+      ...baseConfig,
+      modoSparkline: true,
+    };
+    const built = buildApexChart(sparkConfig, theme);
+    expect(built.options.chart?.sparkline?.enabled).toBe(true);
+    expect(built.options.chart?.toolbar?.show).toBe(false);
+    expect(built.options.grid?.show).toBe(false);
+    expect(built.options.legend?.show).toBe(false);
+  });
+
+  it('angulo: "semicirculo" configura startAngle -90 y endAngle 90 en pie, donut y radialBar', () => {
+    const pieBuilt = buildApexChart(
+      {
+        type: 'pie',
+        categorias: ['A', 'B'],
+        series: [{ nombre: 'S', valores: [50, 50] }],
+        angulo: 'semicirculo',
+      },
+      theme,
+    );
+    expect(pieBuilt.options.plotOptions?.pie?.startAngle).toBe(-90);
+    expect(pieBuilt.options.plotOptions?.pie?.endAngle).toBe(90);
+
+    const donutBuilt = buildApexChart(
+      {
+        type: 'donut',
+        categorias: ['A', 'B'],
+        series: [{ nombre: 'S', valores: [40, 60] }],
+        angulo: 'semicirculo',
+      },
+      theme,
+    );
+    expect(donutBuilt.options.plotOptions?.pie?.startAngle).toBe(-90);
+    expect(donutBuilt.options.plotOptions?.pie?.endAngle).toBe(90);
+
+    const radialBuilt = buildApexChart(
+      {
+        type: 'radialBar',
+        categorias: ['Progreso'],
+        series: [{ nombre: 'Meta', valores: [75] }],
+        angulo: 'semicirculo',
+      },
+      theme,
+    );
+    expect(radialBuilt.options.plotOptions?.radialBar?.startAngle).toBe(-90);
+    expect(radialBuilt.options.plotOptions?.radialBar?.endAngle).toBe(90);
+  });
+
+  it('mostrarTotal: true en donut activa la etiqueta total en el centro con la suma', () => {
+    const donutBuilt = buildApexChart(
+      {
+        type: 'donut',
+        categorias: ['A', 'B', 'C'],
+        series: [{ nombre: 'S', valores: [10, 20, 30] }],
+        mostrarTotal: true,
+      },
+      theme,
+    );
+    const totalConfig = donutBuilt.options.plotOptions?.pie?.donut?.labels?.total;
+    expect(totalConfig?.show).toBe(true);
+    expect(totalConfig?.label).toBe('Total');
+    expect(totalConfig?.formatter?.(undefined as never)).toBe('60');
+  });
+});
+
+describe('buildApexChart — Estadística: boxPlot e histogram (Etapa I3)', () => {
+  it('boxPlot: chartType "boxPlot" y cada serie mapea sus cajas a [min, q1, mediana, q3, max]', () => {
+    const boxPlotConfig: LuminaChartConfig = {
+      type: 'boxPlot',
+      categorias: ['Grupo A', 'Grupo B'],
+      series: [
+        {
+          nombre: 'Notas',
+          valores: [],
+          cajas: [
+            { min: 2, q1: 3, mediana: 4, q3: 4.5, max: 5 },
+            { min: 1, q1: 2, mediana: 3, q3: 4, max: 5 },
+          ],
+        },
+      ],
+    };
+    const built = buildApexChart(boxPlotConfig, theme);
+    expect(built.chartType).toBe('boxPlot');
+    expect(built.series).toEqual([
+      {
+        name: 'Notas',
+        data: [
+          { x: 'Grupo A', y: [2, 3, 4, 4.5, 5] },
+          { x: 'Grupo B', y: [1, 2, 3, 4, 5] },
+        ],
+      },
+    ]);
+    expect(built.options.chart?.type).toBe('boxPlot');
+    expect(built.options.xaxis?.categories).toEqual(['Grupo A', 'Grupo B']);
+  });
+
+  it('boxPlot: una categoría sin caja correspondiente cae a [0,0,0,0,0]', () => {
+    const built = buildApexChart(
+      {
+        type: 'boxPlot',
+        categorias: ['A', 'B'],
+        series: [{ nombre: 'S', valores: [], cajas: [{ min: 1, q1: 2, mediana: 3, q3: 4, max: 5 }] }],
+      },
+      theme,
+    );
+    expect(built.series).toEqual([
+      {
+        name: 'S',
+        data: [
+          { x: 'A', y: [1, 2, 3, 4, 5] },
+          { x: 'B', y: [0, 0, 0, 0, 0] },
+        ],
+      },
+    ]);
+  });
+
+  it('boxPlot: colorea el cuerpo superior/inferior a partir de la paleta', () => {
+    const built = buildApexChart(
+      {
+        type: 'boxPlot',
+        categorias: ['A'],
+        series: [
+          { nombre: 'S1', valores: [], cajas: [{ min: 0, q1: 1, mediana: 2, q3: 3, max: 4 }] },
+          { nombre: 'S2', valores: [], cajas: [{ min: 0, q1: 1, mediana: 2, q3: 3, max: 4 }] },
+        ],
+      },
+      theme,
+    );
+    expect(built.options.plotOptions?.boxPlot?.colors?.upper).toBe(built.options.colors?.[0]);
+    expect(built.options.plotOptions?.boxPlot?.colors?.lower).toBe(built.options.colors?.[1]);
+  });
+
+  it('histogram: chartType "bar" y bina los valores de la primera serie en columnas de frecuencia', () => {
+    const histogramConfig: LuminaChartConfig = {
+      type: 'histogram',
+      categorias: [],
+      series: [{ nombre: 'Puntajes', valores: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }],
+      histogramBins: 5,
+    };
+    const built = buildApexChart(histogramConfig, theme);
+    expect(built.chartType).toBe('bar');
+    expect(built.options.chart?.type).toBe('bar');
+    const series = built.series as { name?: string; data: unknown[] }[];
+    expect(series).toHaveLength(1);
+    expect(series[0].data).toEqual([2, 2, 2, 2, 3]);
+    expect((series[0].data as number[]).reduce((a, b) => a + b, 0)).toBe(11);
+    expect(built.options.xaxis?.categories).toHaveLength(5);
+  });
+
+  it('histogram: usa 8 bins por defecto si no se especifica histogramBins', () => {
+    const built = buildApexChart(
+      {
+        type: 'histogram',
+        categorias: [],
+        series: [{ nombre: 'Datos', valores: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }],
+      },
+      theme,
+    );
+    expect((built.series as { data: unknown[] }[])[0].data).toHaveLength(8);
+  });
+
+  it('histogram: ignora `categorias` del bloque — el eje X sale de los bordes de los bins', () => {
+    const built = buildApexChart(
+      {
+        type: 'histogram',
+        categorias: ['esto', 'se', 'ignora'],
+        series: [{ nombre: 'Datos', valores: [1, 2, 3], color: '#123456' }],
+        histogramBins: 2,
+      },
+      theme,
+    );
+    expect(built.options.xaxis?.categories).not.toEqual(['esto', 'se', 'ignora']);
+    expect(built.options.colors).toEqual(['#123456']);
+  });
+
+  it('ordenDatos no reordena boxPlot ni histogram (no operan sobre valores/categorías planas)', () => {
+    const boxPlot = buildApexChart(
+      {
+        type: 'boxPlot',
+        categorias: ['A', 'B'],
+        series: [{ nombre: 'S', valores: [], cajas: [{ min: 0, q1: 1, mediana: 2, q3: 3, max: 4 }] }],
+        ordenDatos: 'ascendente',
+      },
+      theme,
+    );
+    expect(boxPlot.options.xaxis?.categories).toEqual(['A', 'B']);
+
+    const histogram = buildApexChart(
+      {
+        type: 'histogram',
+        categorias: [],
+        series: [{ nombre: 'S', valores: [1, 2, 3] }],
+        ordenDatos: 'descendente',
+        histogramBins: 3,
+      },
+      theme,
+    );
+    expect((histogram.series as { data: unknown[] }[])[0].data).toHaveLength(3);
+  });
+});
+

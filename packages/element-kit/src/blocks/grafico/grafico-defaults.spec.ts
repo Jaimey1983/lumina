@@ -80,8 +80,8 @@ describe('grafico-defaults', () => {
     expect(normalized.y).toBe(BLOCK_FALLBACKS.grafico.y);
   });
 
-  it('soporta todos los tipos de gráfico válidos (14 tipos)', () => {
-    expect(VALID_GRAFICO_CHART_TYPES).toHaveLength(14);
+  it('soporta todos los tipos de gráfico válidos (18 tipos)', () => {
+    expect(VALID_GRAFICO_CHART_TYPES).toHaveLength(18);
     for (const type of VALID_GRAFICO_CHART_TYPES) {
       const b = normalizeGraficoBlock({ tipo: 'grafico', chartType: type });
       expect(b.chartType).toBe(type);
@@ -115,6 +115,10 @@ describe('grafico-defaults', () => {
       animar: true,
       ordenDatos: 'descendente',
       exportarImagen: false,
+      curva: 'escalon',
+      modoSparkline: true,
+      mostrarTotal: true,
+      angulo: 'semicirculo',
       series: [
         {
           nombre: 'S1',
@@ -146,6 +150,10 @@ describe('grafico-defaults', () => {
     expect(normalized.animar).toBe(true);
     expect(normalized.ordenDatos).toBe('descendente');
     expect(normalized.exportarImagen).toBe(false);
+    expect(normalized.curva).toBe('escalon');
+    expect(normalized.modoSparkline).toBe(true);
+    expect(normalized.mostrarTotal).toBe(true);
+    expect(normalized.angulo).toBe('semicirculo');
     expect(normalized.series[0].tipoCombo).toBe('column');
     expect(normalized.series[0].ejeCombo).toBe('primario');
     expect(normalized.series[1].tipoCombo).toBe('line');
@@ -183,5 +191,81 @@ describe('grafico-defaults', () => {
     const bubble = createDefaultGraficoBlock({ chartType: 'bubble' });
     expect(bubble.chartType).toBe('bubble');
     expect(bubble.series[0].puntos?.[0].z).toBeDefined();
+  });
+
+  it('createDefaultGraficoBlock genera defaults apropiados para waterfall y polarArea', () => {
+    const waterfall = createDefaultGraficoBlock({ chartType: 'waterfall' });
+    expect(waterfall.chartType).toBe('waterfall');
+    expect(waterfall.series[0].valores).toHaveLength(waterfall.categorias.length);
+    expect(waterfall.series[0].valores).toEqual([100, 35, -20, 40, -15]);
+
+    const polarArea = createDefaultGraficoBlock({ chartType: 'polarArea' });
+    expect(polarArea.chartType).toBe('polarArea');
+    expect(polarArea.series[0].valores).toHaveLength(polarArea.categorias.length);
+  });
+
+  it('createDefaultGraficoBlock genera defaults apropiados para boxPlot (cajas alineadas a categorías)', () => {
+    const boxPlot = createDefaultGraficoBlock({ chartType: 'boxPlot' });
+    expect(boxPlot.chartType).toBe('boxPlot');
+    expect(boxPlot.categorias.length).toBeGreaterThan(1);
+    expect(boxPlot.series[0].cajas).toHaveLength(boxPlot.categorias.length);
+    for (const caja of boxPlot.series[0].cajas ?? []) {
+      expect(caja.min).toBeLessThanOrEqual(caja.q1);
+      expect(caja.q1).toBeLessThanOrEqual(caja.mediana);
+      expect(caja.mediana).toBeLessThanOrEqual(caja.q3);
+      expect(caja.q3).toBeLessThanOrEqual(caja.max);
+    }
+  });
+
+  it('createDefaultGraficoBlock genera defaults apropiados para histogram (categorías = etiquetas de dato, no del eje)', () => {
+    const histogram = createDefaultGraficoBlock({ chartType: 'histogram' });
+    expect(histogram.chartType).toBe('histogram');
+    expect(histogram.series[0].valores.length).toBeGreaterThan(1);
+    expect(histogram.categorias).toHaveLength(histogram.series[0].valores.length);
+  });
+
+  it('normalizeGraficoBlock sanitiza `cajas` de boxPlot alineándolas a la cantidad de categorías', () => {
+    const raw = {
+      tipo: 'grafico',
+      chartType: 'boxPlot',
+      categorias: ['A', 'B', 'C'],
+      series: [
+        {
+          nombre: 'Distribución',
+          valores: [],
+          cajas: [
+            { min: '1', q1: 2, mediana: 3, q3: 4, max: '5' },
+            { min: 'invalido', q1: null, mediana: 3, q3: 4, max: 5 },
+          ],
+        },
+      ],
+    };
+
+    const normalized = normalizeGraficoBlock(raw);
+    expect(normalized.series[0].cajas).toEqual([
+      { min: 1, q1: 2, mediana: 3, q3: 4, max: 5 },
+      { min: 0, q1: 0, mediana: 3, q3: 4, max: 5 },
+      { min: 0, q1: 0, mediana: 0, q3: 0, max: 0 },
+    ]);
+  });
+
+  it('normalizeGraficoBlock sanitiza `histogramBins` de forma aditiva y retrocompatible', () => {
+    const withBins = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'histogram',
+      histogramBins: '12.6',
+    });
+    expect(withBins.histogramBins).toBeUndefined();
+
+    const withNumericBins = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'histogram',
+      histogramBins: 12.6,
+    });
+    expect(withNumericBins.histogramBins).toBe(13);
+
+    // Un bloque guardado antes de I3 (sin histogramBins) sigue abriendo igual.
+    const legacyBlock = normalizeGraficoBlock({ tipo: 'grafico', chartType: 'column' });
+    expect(legacyBlock.histogramBins).toBeUndefined();
   });
 });

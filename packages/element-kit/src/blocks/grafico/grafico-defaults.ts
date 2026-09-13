@@ -19,6 +19,10 @@ export const VALID_GRAFICO_CHART_TYPES: readonly GraficoChartType[] = [
   'treemap',
   'funnel',
   'heatmap',
+  'polarArea',
+  'waterfall',
+  'boxPlot',
+  'histogram',
 ] as const;
 
 export const DEFAULT_GRAFICO_CATEGORIAS: string[] = [
@@ -129,6 +133,24 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
           })
       : undefined;
 
+    // `cajas` (chartType `boxPlot`, Etapa I3): un resumen de cinco números por
+    // categoría. Se acota a `expectedLength` (igual que `valores`) para que la
+    // grilla categoría↔caja siempre esté alineada.
+    const rawCajas = Array.isArray((item as { cajas?: unknown }).cajas)
+      ? (item as { cajas: unknown[] }).cajas
+      : undefined;
+    const cajas = rawCajas
+      ? Array.from({ length: expectedLength }, (_, j) => {
+          const c = rawCajas[j];
+          const co = c && typeof c === 'object' ? (c as Record<string, unknown>) : {};
+          const num = (key: string) => {
+            const v = Number(co[key]);
+            return Number.isFinite(v) ? v : 0;
+          };
+          return { min: num('min'), q1: num('q1'), mediana: num('mediana'), q3: num('q3'), max: num('max') };
+        })
+      : undefined;
+
     cleaned.push({
       nombre,
       valores,
@@ -136,6 +158,7 @@ function sanitizeSeries(raw: unknown, expectedLength: number): GraficoSerie[] {
       ...(tipoCombo ? { tipoCombo } : {}),
       ...(ejeCombo ? { ejeCombo } : {}),
       ...(puntos ? { puntos } : {}),
+      ...(cajas ? { cajas } : {}),
     });
   }
 
@@ -220,6 +243,21 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
     animar: typeof raw.animar === 'boolean' ? raw.animar : undefined,
     ordenDatos,
     exportarImagen: typeof raw.exportarImagen === 'boolean' ? raw.exportarImagen : undefined,
+
+    // Variantes y Opciones Adicionales (Etapa I2)
+    curva:
+      raw.curva === 'recta' || raw.curva === 'suave' || raw.curva === 'escalon'
+        ? raw.curva
+        : undefined,
+    modoSparkline: typeof raw.modoSparkline === 'boolean' ? raw.modoSparkline : undefined,
+    mostrarTotal: typeof raw.mostrarTotal === 'boolean' ? raw.mostrarTotal : undefined,
+    angulo: raw.angulo === 'completo' || raw.angulo === 'semicirculo' ? raw.angulo : undefined,
+
+    // Estadística (Etapa I3)
+    histogramBins:
+      typeof raw.histogramBins === 'number' && Number.isFinite(raw.histogramBins)
+        ? Math.round(raw.histogramBins)
+        : undefined,
   };
 }
 
@@ -232,30 +270,78 @@ export function createDefaultGraficoBlock(
 ): GraficoDatosBlock {
   const fb = BLOCK_FALLBACKS.grafico;
   const isScatterOrBubble = partial?.chartType === 'scatter' || partial?.chartType === 'bubble';
+  const isWaterfall = partial?.chartType === 'waterfall';
+  const isPolarArea = partial?.chartType === 'polarArea';
+  const isBoxPlot = partial?.chartType === 'boxPlot';
+  const isHistogram = partial?.chartType === 'histogram';
 
-  const defaultSeries: GraficoSerie[] = isScatterOrBubble
-    ? [
-        {
-          nombre: 'Serie 1',
-          valores: [20, 45, 30, 70],
-          puntos: [
-            { x: 10, y: 20, ...(partial?.chartType === 'bubble' ? { z: 15 } : {}) },
-            { x: 20, y: 45, ...(partial?.chartType === 'bubble' ? { z: 25 } : {}) },
-            { x: 30, y: 30, ...(partial?.chartType === 'bubble' ? { z: 10 } : {}) },
-            { x: 40, y: 70, ...(partial?.chartType === 'bubble' ? { z: 35 } : {}) },
-          ],
-        },
-      ]
-    : [
-        {
-          nombre: 'Grupo A',
-          valores: [65, 59, 80, 81, 56],
-        },
-        {
-          nombre: 'Grupo B',
-          valores: [28, 48, 40, 19, 86],
-        },
-      ];
+  let defaultCategorias = [...DEFAULT_GRAFICO_CATEGORIAS];
+  let defaultSeries: GraficoSerie[] = [
+    {
+      nombre: 'Grupo A',
+      valores: [65, 59, 80, 81, 56],
+    },
+    {
+      nombre: 'Grupo B',
+      valores: [28, 48, 40, 19, 86],
+    },
+  ];
+
+  if (isScatterOrBubble) {
+    defaultSeries = [
+      {
+        nombre: 'Serie 1',
+        valores: [20, 45, 30, 70],
+        puntos: [
+          { x: 10, y: 20, ...(partial?.chartType === 'bubble' ? { z: 15 } : {}) },
+          { x: 20, y: 45, ...(partial?.chartType === 'bubble' ? { z: 25 } : {}) },
+          { x: 30, y: 30, ...(partial?.chartType === 'bubble' ? { z: 10 } : {}) },
+          { x: 40, y: 70, ...(partial?.chartType === 'bubble' ? { z: 35 } : {}) },
+        ],
+      },
+    ];
+  } else if (isWaterfall) {
+    defaultCategorias = ['Inicio', 'Ventas', 'Costos', 'Nuevos', 'Ajuste'];
+    defaultSeries = [
+      {
+        nombre: 'Flujo',
+        valores: [100, 35, -20, 40, -15],
+      },
+    ];
+  } else if (isPolarArea) {
+    defaultCategorias = ['Norte', 'Sur', 'Este', 'Oeste', 'Centro'];
+    defaultSeries = [
+      {
+        nombre: 'Regiones',
+        valores: [45, 75, 60, 30, 85],
+      },
+    ];
+  } else if (isBoxPlot) {
+    defaultCategorias = ['Grupo A', 'Grupo B', 'Grupo C'];
+    defaultSeries = [
+      {
+        nombre: 'Distribución',
+        valores: [],
+        cajas: [
+          { min: 60, q1: 70, mediana: 75, q3: 82, max: 95 },
+          { min: 50, q1: 65, mediana: 72, q3: 80, max: 90 },
+          { min: 55, q1: 68, mediana: 74, q3: 79, max: 88 },
+        ],
+      },
+    ];
+  } else if (isHistogram) {
+    // `histogram` bina los valores de la primera serie — cada "categoría" es
+    // solo la etiqueta de fila de un dato crudo en el editor de datos, no una
+    // categoría del eje X (que en el chart final son los bordes de los bins).
+    const sampleValues = [55, 60, 62, 65, 68, 70, 72, 74, 75, 76, 78, 80, 82, 85, 88, 90, 92, 95];
+    defaultCategorias = sampleValues.map((_, i) => `Dato ${i + 1}`);
+    defaultSeries = [
+      {
+        nombre: 'Puntajes',
+        valores: sampleValues,
+      },
+    ];
+  }
 
   const base: Partial<GraficoDatosBlock> = {
     id: `grafico-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -263,7 +349,7 @@ export function createDefaultGraficoBlock(
     modo: 'contenido',
     soloLecturaEnViewer: true,
     chartType: 'column',
-    categorias: [...DEFAULT_GRAFICO_CATEGORIAS],
+    categorias: defaultCategorias,
     series: defaultSeries,
     colorPaleta: DEFAULT_GRAFICO_PALETA_ID,
     titulo: 'Gráfico de datos',

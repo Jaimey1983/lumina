@@ -30,6 +30,10 @@ export function GraficoDataDialog({
   const isScatterOrBubble = block.chartType === 'scatter' || block.chartType === 'bubble';
   const isBubble = block.chartType === 'bubble';
   const isCombo = block.chartType === 'combo';
+  const isBoxPlot = block.chartType === 'boxPlot';
+  const isHistogram = block.chartType === 'histogram';
+
+  const defaultCaja = { min: 0, q1: 0, mediana: 0, q3: 0, max: 0 } as const;
 
   // Manipulación de Categorias (Filas)
   const handleCategoryNameChange = (catIdx: number, newName: string) => {
@@ -43,6 +47,7 @@ export function GraficoDataDialog({
     const nextSeries = block.series.map((s) => ({
       ...s,
       valores: [...s.valores, 0],
+      ...(s.cajas ? { cajas: [...s.cajas, { ...defaultCaja }] } : {}),
     }));
     commitChange({ ...block, categorias: nextCategorias, series: nextSeries }, true);
   };
@@ -53,8 +58,26 @@ export function GraficoDataDialog({
     const nextSeries = block.series.map((s) => ({
       ...s,
       valores: s.valores.filter((_, idx) => idx !== catIdx),
+      ...(s.cajas ? { cajas: s.cajas.filter((_, idx) => idx !== catIdx) } : {}),
     }));
     commitChange({ ...block, categorias: nextCategorias, series: nextSeries }, true);
+  };
+
+  // Manipulación de Cajas (boxPlot)
+  const handleCajaFieldChange = (
+    serieIdx: number,
+    catIdx: number,
+    field: 'min' | 'q1' | 'mediana' | 'q3' | 'max',
+    rawVal: string,
+  ) => {
+    const val = Number(rawVal);
+    const num = Number.isFinite(val) ? val : 0;
+    const nextSeries = [...block.series];
+    const cajas = [...(nextSeries[serieIdx].cajas || [])];
+    const current = cajas[catIdx] ?? { ...defaultCaja };
+    cajas[catIdx] = { ...current, [field]: num };
+    nextSeries[serieIdx] = { ...nextSeries[serieIdx], cajas };
+    commitChange({ ...block, series: nextSeries });
   };
 
   // Manipulación de Series (Columnas)
@@ -99,6 +122,9 @@ export function GraficoDataDialog({
                 { x: 20, y: 40, ...(isBubble ? { z: 25 } : {}) },
               ],
             }
+          : {}),
+        ...(isBoxPlot
+          ? { cajas: Array.from({ length: block.categorias.length }, () => ({ ...defaultCaja })) }
           : {}),
       },
     ];
@@ -153,7 +179,11 @@ export function GraficoDataDialog({
           <DialogDescription className="text-xs text-muted-foreground">
             {isScatterOrBubble
               ? 'Edita las coordenadas (X, Y' + (isBubble ? ', Tamaño Z' : '') + ') de cada serie.'
-              : 'Edita los nombres de categorías (filas), series (columnas) y sus valores numéricos.'}
+              : isBoxPlot
+                ? 'Cada categoría es un grupo: ingresa su mínimo, Q1, mediana, Q3 y máximo.'
+                : isHistogram
+                  ? 'Ingresa los datos crudos (uno por fila); se agrupan automáticamente en intervalos.'
+                  : 'Edita los nombres de categorías (filas), series (columnas) y sus valores numéricos.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -166,8 +196,129 @@ export function GraficoDataDialog({
             </div>
           )}
 
+          {isHistogram && (
+            <div className="flex items-center gap-2 text-xs text-sky-700 dark:text-sky-300 bg-sky-500/10 border border-sky-500/20 p-2.5 rounded-md">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Este tipo de gráfico agrupa automáticamente los valores de la primera serie en intervalos (bins) — los nombres de fila son solo etiquetas de cada dato, no aparecen en el eje del gráfico.</span>
+            </div>
+          )}
 
-          {isScatterOrBubble ? (
+          {isBoxPlot ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  Filas = Grupos (categorías) · Columnas = Serie · Mín/Q1/Mediana/Q3/Máx
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddSeries}
+                  className="h-7 px-2.5 text-xs"
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Añadir Serie
+                </Button>
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-border bg-card">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/60 text-[11px] text-muted-foreground">
+                      <th className="p-2.5 min-w-[120px] font-semibold" rowSpan={2}>Categoría (Grupo)</th>
+                      {block.series.map((serie, sIdx) => (
+                        <th key={sIdx} colSpan={5} className="p-2 font-semibold border-l border-border/40 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <input
+                              type="text"
+                              value={serie.nombre}
+                              onChange={(e) => handleSeriesNameChange(sIdx, e.target.value)}
+                              className="w-24 bg-transparent text-center font-medium text-foreground border-b border-dashed border-border/60 hover:border-primary focus:border-primary focus:outline-hidden px-0.5 text-xs truncate"
+                              title="Editar nombre de la serie"
+                            />
+                            {block.series.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSeries(sIdx)}
+                                className="text-muted-foreground hover:text-destructive shrink-0 p-0.5"
+                                title="Eliminar serie"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="w-10 p-2 border-l border-border/40" rowSpan={2}></th>
+                    </tr>
+                    <tr className="border-b border-border bg-muted/40 text-[10px] text-muted-foreground">
+                      {block.series.map((_, sIdx) => (
+                        <React.Fragment key={sIdx}>
+                          <th className="p-1 border-l border-border/40 text-center">Mín</th>
+                          <th className="p-1 text-center">Q1</th>
+                          <th className="p-1 text-center">Mediana</th>
+                          <th className="p-1 text-center">Q3</th>
+                          <th className="p-1 text-center">Máx</th>
+                        </React.Fragment>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {block.categorias.map((cat, cIdx) => (
+                      <tr key={cIdx} className="border-b border-border/40 hover:bg-muted/20">
+                        <td className="p-1.5">
+                          <input
+                            type="text"
+                            value={cat}
+                            onChange={(e) => handleCategoryNameChange(cIdx, e.target.value)}
+                            className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                          />
+                        </td>
+                        {block.series.map((serie, sIdx) => {
+                          const caja = serie.cajas?.[cIdx] ?? defaultCaja;
+                          return (
+                            <React.Fragment key={sIdx}>
+                              {(['min', 'q1', 'mediana', 'q3', 'max'] as const).map((field) => (
+                                <td key={field} className="p-1 border-l border-border/40">
+                                  <input
+                                    type="number"
+                                    value={caja[field]}
+                                    onChange={(e) => handleCajaFieldChange(sIdx, cIdx, field, e.target.value)}
+                                    className="h-7 w-16 rounded border border-input bg-background px-1.5 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary font-mono text-right"
+                                  />
+                                </td>
+                              ))}
+                            </React.Fragment>
+                          );
+                        })}
+                        <td className="p-1.5 text-center border-l border-border/40">
+                          {block.categorias.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCategory(cIdx)}
+                              className="text-muted-foreground/70 hover:text-destructive transition-colors p-1 rounded-sm"
+                              title="Eliminar categoría"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddCategory}
+                className="w-full h-8 text-xs border-dashed"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Añadir Categoría (Grupo)
+              </Button>
+            </div>
+          ) : isScatterOrBubble ? (
             <div className="space-y-4">
               {block.series.map((serie, sIdx) => (
                 <div key={sIdx} className="rounded-lg border border-border bg-card p-3 space-y-3">
@@ -280,17 +431,21 @@ export function GraficoDataDialog({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
-                  Filas = Categorías (Eje X) · Columnas = Series de Datos
+                  {isHistogram
+                    ? 'Filas = Datos crudos (uno por fila) · solo se usa la primera serie'
+                    : 'Filas = Categorías (Eje X) · Columnas = Series de Datos'}
                 </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddSeries}
-                  className="h-7 px-2.5 text-xs"
-                >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Añadir Serie
-                </Button>
+                {!isHistogram && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddSeries}
+                    className="h-7 px-2.5 text-xs"
+                  >
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Añadir Serie
+                  </Button>
+                )}
               </div>
 
 
@@ -396,7 +551,7 @@ export function GraficoDataDialog({
                 onClick={handleAddCategory}
                 className="w-full h-8 text-xs border-dashed"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Añadir Categoría (Fila)
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> {isHistogram ? 'Añadir Dato' : 'Añadir Categoría (Fila)'}
               </Button>
             </div>
           )}
@@ -406,7 +561,11 @@ export function GraficoDataDialog({
           <div className="text-xs text-muted-foreground">
             {isScatterOrBubble
               ? `${block.series.length} ${block.series.length === 1 ? 'serie' : 'series'}`
-              : `${block.categorias.length} ${block.categorias.length === 1 ? 'categoría' : 'categorías'} · ${block.series.length} ${block.series.length === 1 ? 'serie' : 'series'}`}
+              : isHistogram
+                ? `${block.series[0]?.valores.length ?? 0} ${(block.series[0]?.valores.length ?? 0) === 1 ? 'dato' : 'datos'}`
+                : isBoxPlot
+                  ? `${block.categorias.length} ${block.categorias.length === 1 ? 'grupo' : 'grupos'} · ${block.series.length} ${block.series.length === 1 ? 'serie' : 'series'}`
+                  : `${block.categorias.length} ${block.categorias.length === 1 ? 'categoría' : 'categorías'} · ${block.series.length} ${block.series.length === 1 ? 'serie' : 'series'}`}
           </div>
           <Button
             type="button"

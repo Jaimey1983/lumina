@@ -37,6 +37,11 @@ export default function GraficoChartRenderer({
       animar: block.animar,
       ordenDatos: block.ordenDatos,
       exportarImagen: block.exportarImagen,
+      curva: block.curva,
+      modoSparkline: block.modoSparkline,
+      mostrarTotal: block.mostrarTotal,
+      angulo: block.angulo,
+      histogramBins: block.histogramBins,
       isThumbnail,
     }),
     [
@@ -56,6 +61,11 @@ export default function GraficoChartRenderer({
       block.animar,
       block.ordenDatos,
       block.exportarImagen,
+      block.curva,
+      block.modoSparkline,
+      block.mostrarTotal,
+      block.angulo,
+      block.histogramBins,
       isThumbnail,
     ],
   );

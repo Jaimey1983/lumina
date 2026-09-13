@@ -1257,12 +1257,28 @@ export type GraficoChartType =
   | 'radar'
   | 'treemap'
   | 'funnel'
-  | 'heatmap';
+  | 'heatmap'
+  | 'polarArea'
+  | 'waterfall'
+  | 'boxPlot'
+  | 'histogram';
 
 export interface GraficoPunto {
   x: number;
   y: number;
   z?: number;
+}
+
+/**
+ * Resumen de cinco números (mínimo, cuartiles, máximo) de un grupo del tipo
+ * `boxPlot`. Ignorado en cualquier otro tipo de gráfico (Etapa I, I3).
+ */
+export interface GraficoCaja {
+  min: number;
+  q1: number;
+  mediana: number;
+  q3: number;
+  max: number;
 }
 
 export interface GraficoSerie {
@@ -1272,6 +1288,8 @@ export interface GraficoSerie {
   tipoCombo?: 'column' | 'line' | 'area';
   ejeCombo?: 'primario' | 'secundario';
   puntos?: GraficoPunto[];
+  /** Un resumen de cinco números por categoría, para chartType `boxPlot`. Ignorado en otros tipos. */
+  cajas?: GraficoCaja[];
 }
 
 export interface GraficoLineaReferencia {
@@ -1307,6 +1325,15 @@ export interface GraficoDatosBlock {
   animar?: boolean;
   ordenDatos?: 'como-esta' | 'ascendente' | 'descendente';
   exportarImagen?: boolean;
+
+  // Variantes y configuración avanzada (Etapa I2)
+  curva?: 'recta' | 'suave' | 'escalon';
+  modoSparkline?: boolean;
+  mostrarTotal?: boolean;
+  angulo?: 'completo' | 'semicirculo';
+
+  /** Número de intervalos (bins) para chartType `histogram`. Ignorado en otros tipos. */
+  histogramBins?: number;
 }
 
 // ─── Bloque Diagrama (Grafos y Geometrías) ──────────────────────────────────
