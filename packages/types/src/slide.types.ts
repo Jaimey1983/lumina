@@ -1386,6 +1386,8 @@ export type DiagramaSubtipo =
   | 'flujo'
   | 'cronologia'
   | 'piramide'
+  | 'embudo'
+  | 'cebolla'
   | 'venn';
 
 export type DiagramaNodoForma =
@@ -1400,7 +1402,9 @@ export type DiagramaNodoForma =
   | 'root'
   | 'card-icon'
   | 'trapezoid'
-  | 'triangle';
+  | 'triangle'
+  | 'inverted-trapezoid'
+  | 'circle';
 
 export interface DiagramaNodo {
   id: string;
