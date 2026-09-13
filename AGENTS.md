@@ -805,7 +805,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I2 — Ampliar catálogo: variantes de Proporción, Evolución y Especiales (sin cambio de schema)
 - **Operador:** Antigravity.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Antigravity].
 - **Precondición:** I1 hecha (las variantes nuevas necesitan un lugar agrupado donde aparecer).
 - **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (nuevos valores de `LuminaChartType`: `polarArea`; nuevos campos de config: `curva?: 'recta'|'suave'|'escalon'` para line/area, `modoSparkline?: boolean` para line/area/column, `mostrarTotal?: boolean` para donut, `angulo?: 'completo'|'semicirculo'` para pie/donut); `packages/charts/src/apex/build-apex-options.ts` (nueva `buildPolarAreaChart`; ajustes en `buildCartesianChart` para `curva`/`modoSparkline`; ajustes en `buildCircularChart` para `mostrarTotal`/`angulo`); specs correspondientes. **Reconsiderar explícitamente** (no repetir en silencio) la decisión de H6 de no tener un `gauge` dedicado — evaluar si un semicírculo con aguja/zona de color vía `radialBar` + anotación cumple el pedido del plan, y documentar la decisión tomada (con o sin tipo nuevo) en el cierre de esta ficha. `waterfall` (cascada) — nuevo tipo vía la técnica de columna apilada con base invisible + conectores; requiere que `LuminaChartSeries` pueda expresar valores con signo (delta) — evaluar si entra en esta ficha (sin cambio de schema más allá de interpretar `valores` como deltas) o si necesita I3.
 - **Alcance — NO toca:** el schema de `GraficoDatosBlock` en `@lumina/types` más allá de campos opcionales aditivos ya cubiertos arriba; histograma/boxplot (I3).
@@ -814,7 +814,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I3 — Estadística: histograma y boxplot (requiere extensión de schema)
 - **Operador:** Claude Code.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Claude Code].
 - **Precondición:** I1 hecha. Puede ir en paralelo con I2 (archivos disjuntos: I2 no toca `@lumina/types`, esta sí).
 - **Contexto:** ninguno de los dos tipos es gratis — `histogram` exige lógica de *binning* (agrupar valores continuos en intervalos) que no es una opción de ApexCharts, es lógica propia antes de graficar; `boxplot` es nativo de ApexCharts (`boxPlot`) pero exige que el modelo de datos tenga min/Q1/mediana/Q3/máx por categoría, algo que `GraficoSerie.valores: number[]` no expresa hoy.
 - **Alcance — PUEDE tocar:** `packages/types/src/slide.types.ts` (nuevo campo opcional en `GraficoSerie` o una forma alternativa de serie para boxplot — aditivo); `packages/charts/src/types.ts` (`boxPlot`/`histogram` en `LuminaChartType`, tipo de datos correspondiente); `packages/charts/src/apex/build-apex-options.ts` (`buildBoxPlotChart`, `buildHistogramChart` con binning propio); `packages/element-kit/src/blocks/grafico/` (UI para cargar los 5 valores de boxplot por categoría, o para configurar el número de buckets del histograma); `grafico-defaults.ts` (sanitización aditiva y retrocompatible).
