@@ -693,10 +693,63 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
    Sin bajar el conteo de tests de ninguno de los 3 paquetes (`@lumina/charts` 36, `@lumina/element-kit` 380, frontend `test:unit` 287 / `test:visual` 33, al redactar esta ficha) ni subir errores de lint sobre el baseline (0 en todos, 39 warnings preexistentes en el frontend). Si se migra el embudo de `/analytics` a `funnel` (punto 8, opcional), verificación visual manual en un build de producción (`pnpm build && npm run start`, no `next dev`) del gráfico de distribución + el embudo, con captura o descripción en el cierre.
 - **Cierre:** no aplica Regla 4 (no es migración de elemento, es ampliación de un contrato ya migrado). Commit sugerido: `feat(charts): catálogo ampliado (combo/scatter/bubble/radar/treemap/funnel/heatmap) y configuración fina`.
 
-#### H7 — (diferida, no bloqueante) Extender el contrato a KPIs/sparklines de dashboard, gradebook y perfil
-- **Operador:** a definir
-- **Estado:** diferida — se redacta cuando se decida encarar esta parte, no bloquea el cierre de H1–H6.
-- **Contexto:** indicadores tipo KPI, barras de progreso y posibles sparklines de tendencia hoy son ad hoc por página (dashboard, gradebook, perfil docente) — candidatos a vivir como "primitivos chicos" de `@lumina/charts` una vez que el contrato principal esté probado en los dos consumidores reales (H3/H4).
+#### H7 — Consolidar las tarjetas KPI y barras de progreso duplicadas en un primitivo compartido
+- **Operador:** Antigravity
+- **Estado:** pendiente — ficha completa, lista para asignar (Regla 10: no se asigna incompleta).
+- **Precondición:** H1–H6 hechas (contrato de `@lumina/charts` ya probado en dos consumidores reales) — **cumplida**.
+
+**Contexto — relevado 2026-09-12 (corrige el esbozo original de esta ficha, que suponía "primitivos chicos de `@lumina/charts`" sin haber mirado el código):**
+
+La duplicación real, confirmada archivo por archivo:
+
+1. **Dos implementaciones independientes de "tarjeta KPI" (número + etiqueta), con estilos divergentes:**
+   - `StatCardLumina` — `lumina-frontend/src/app/(app)/dashboard/dashboard-client.tsx:105-125`. Shell `rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-lumina-xs`; valor en `text-2xl font-extrabold` con degradado `bg-gradient-to-r from-[#2563EB] to-[#60A5FA] bg-clip-text text-transparent`; etiqueta `text-lumina-sm font-medium text-[#6b7280]`; soporta un `delta` opcional (ver `DeltaLabel`, líneas 86-103: `+N`/`-N vs. mes anterior`, color `#34d399`/`#f87171` inline). **10 sitios de uso** (líneas 405, 418, 419, 423, 585, 589, 593, 663, 667, 671).
+   - `KpiCard` — `lumina-frontend/src/app/(app)/analytics/analytics-client.tsx:187-207`. Shell `cn(ANALYTICS_CARD, 'p-5')`; valor en `text-3xl font-bold leading-none text-[#111827]` (sin degradado); etiqueta `text-xs font-medium uppercase tracking-wide`; soporta `icon` y `loading` (con `<Skeleton>`) que `StatCardLumina` no tiene. **4 sitios de uso** (líneas 233-260, fila de resumen del curso: Estudiantes, Promedio general, Tasa de completitud, Clases activas).
+   - Mismo concepto visual, dos componentes, dos sistemas de className, features que no se cruzan (degradado+delta vs. icon+loading).
+2. **Dos barras de progreso armadas a mano** (`<div>` con `style={{width: '${pct}%'}}`), ninguna usa el primitivo ya existente:
+   - `dashboard-client.tsx:527-532` — lista "Desempeño por actividad": track `h-[3px] bg-[#f9fafb]`, relleno `bg-gradient-to-r from-[#2563EB] to-[#60A5FA]`.
+   - `analytics-client.tsx:699-704` — tabla "Mapa de calor por slide", columna "Tasa respuesta": track `h-2 bg-[#dbeafe]`, relleno `bg-[#2563EB]`.
+3. **Ya existe un primitivo de barra de progreso construido y sin usar:** `packages/ui/src/progress.tsx` exporta `Progress`, `ProgressCircle`, `ProgressRadial` (Radix, patrón shadcn ya establecido en el resto de `@lumina/ui`) — `grep` de `ui/progress`/`ProgressCircle`/`ProgressRadial` en todo `lumina-frontend/src` → **0 resultados**. Nadie lo importa; las 2 barras de arriba lo reinventan en vez de usarlo.
+4. **Gradebook** (`gradebook-client.tsx`, `edu/[courseId]/grade-book-client.tsx`), **perfil** (`profile-client.tsx`) y **Edu home** (`edu-home-client.tsx`) — relevados y confirmados **sin** tarjetas KPI ni barras de progreso propias hoy (el perfil no tiene la sección "estadísticas del docente" que menciona `CLAUDE.md` — esa referencia está desactualizada, no se corrige acá porque es un detalle menor fuera del alcance de esta ficha). No hay nada que migrar en esos archivos.
+5. **Sparklines**: no existe ningún sparkline hoy en ningún lugar del frontend — no hay un consumidor real que lo necesite. **Se descarta explícitamente de esta ficha** (el esbozo original los mencionaba como "posibles"): construir un primitivo sin un consumidor concreto es exactamente el tipo de anticipación especulativa que este repo evita. Si en el futuro aparece un caso de uso real, es una ficha nueva.
+
+**Decisión de arquitectura (ya tomada — no reabrir):** ni las tarjetas KPI ni las barras de progreso son gráficos — no usan ApexCharts, no tienen tipo/series/ejes. Consolidarlas dentro de `@lumina/charts` (como sugería el esbozo original) sería mezclar "el contrato de motor de gráficos" con "primitivos de UI genéricos", diluyendo el propósito que se fijó para ese paquete en H1. El hogar correcto es **`@lumina/ui`** — el mismo paquete donde ya vive (sin usar) `Progress`. Esta ficha:
+- **NO** toca `@lumina/charts`.
+- Crea `packages/ui/src/stat-card.tsx` — un único `StatCard`, API que cubre ambos casos existentes sin forzar un rediseño visual que nadie pidió:
+  ```ts
+  interface StatCardProps {
+    label: string;
+    value: ReactNode;
+    icon?: ReactNode;
+    trend?: { value: number; label?: string }; // reemplaza la lógica de DeltaLabel
+    loading?: boolean;
+    variant?: 'gradient' | 'flat'; // 'gradient' = look de StatCardLumina, 'flat' = look de KpiCard
+  }
+  ```
+  `variant` existe justamente para no forzar una decisión de diseño visual unificado que esta ficha no pide — consolida el **mecanismo** (un componente, un lugar para arreglar comportamiento), no necesariamente el **look**. Si al migrar los 14 sitios de uso (10 + 4) resulta que unificar a un solo variant visual es claramente mejor y trivial, es una mejora bienvenida — pero no es requisito de cierre.
+- Migra los 2 hand-rolled progress bars a `<Progress>` de `@lumina/ui/progress` (ya existe, solo hay que adoptarlo — revisar si sus props cubren "gradiente de color" o si hace falta una prop `className`/`indicatorClassName` para eso; si no la tiene, agregarla de forma aditiva sin romper los consumidores que no la usan).
+
+**Alcance — PUEDE tocar:**
+- **Nuevo** `packages/ui/src/stat-card.tsx` + spec (`stat-card.spec.tsx` si el paquete ya tiene precedente de tests de componente en `@lumina/ui`; si no lo tiene, un spec mínimo de render es aceptable — no inventar infraestructura de testing nueva para esto).
+- `packages/ui/src/index.ts` (si existe un barrel) o el `package.json`'s `exports` de `@lumina/ui` — exponer `@lumina/ui/stat-card` siguiendo el patrón wildcard ya usado por el resto del paquete.
+- `packages/ui/src/progress.tsx` — solo si hace falta una prop aditiva para soportar el degradado de color que usan los 2 call-sites migrados (opcional, evaluar antes de tocar; no romper la API existente).
+- `lumina-frontend/src/app/(app)/dashboard/dashboard-client.tsx` — reemplazar `StatCardLumina`+`DeltaLabel` por `StatCard` de `@lumina/ui/stat-card` en los 10 sitios de uso; reemplazar la barra de líneas 527-532 por `<Progress>`.
+- `lumina-frontend/src/app/(app)/analytics/analytics-client.tsx` — reemplazar `KpiCard` por `StatCard` en los 4 sitios de uso; reemplazar la barra de líneas 699-704 por `<Progress>`.
+- Specs existentes de esos 2 archivos si referencian `StatCardLumina`/`KpiCard`/`DeltaLabel` por nombre (verificar antes de tocar).
+
+**Alcance — NO toca:** `@lumina/charts` (ninguno de sus archivos); `gradebook-client.tsx`, `edu/[courseId]/grade-book-client.tsx`, `profile-client.tsx`, `edu-home-client.tsx` (confirmado sin duplicación que migrar — ver contexto punto 4); ningún sparkline (descartado, punto 5); el backend.
+
+**Entregable:**
+1. Un solo `StatCard` en `@lumina/ui`, con paridad visual con `StatCardLumina` (`variant="gradient"`, con `trend`) y con `KpiCard` (`variant="flat"`, con `icon`/`loading`) en sus respectivos sitios de uso — quien vea el dashboard o `/analytics` no debería notar un cambio visual no buscado.
+2. Los 2 hand-rolled progress bars reemplazados por `<Progress>` de `@lumina/ui/progress`, mismo aspecto visual (o mejor, si `Progress` ya lo permite).
+3. `StatCardLumina`, `KpiCard` y `DeltaLabel` **borrados** de sus archivos (Regla 4-style: no se dejan dos caminos — código viejo retirado, no un `TODO`).
+4. Verificación exacta:
+   ```bash
+   pnpm --filter @lumina/ui build && pnpm --filter @lumina/ui test && pnpm --filter @lumina/ui lint
+   cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build
+   ```
+   Sin bajar el conteo de tests (`lumina-frontend` `test:unit` 287 / `test:visual` 33 al redactar esta ficha) ni subir errores de lint sobre el baseline (0 en ambos paquetes, 39 warnings preexistentes en el frontend). **Verificación visual manual obligatoria en un build de producción** (`pnpm build && npm run start`, no `next dev` — ver el hallazgo de G2b sobre artefactos exclusivos de dev) de `/dashboard` y `/analytics`: las tarjetas y barras deben verse igual (o mejor) que antes, en claro y oscuro.
+- **Cierre (Regla 4-style):** `StatCardLumina`/`KpiCard`/`DeltaLabel` borrados, no conviviendo con `StatCard`. Commit sugerido: `refactor(ui): consolidar StatCard y adoptar Progress, retirar StatCardLumina/KpiCard duplicados`.
 
 ### Migración a Estructura Única — fichas por etapa
 
