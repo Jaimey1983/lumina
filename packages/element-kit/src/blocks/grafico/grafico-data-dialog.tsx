@@ -1,5 +1,5 @@
 'use client';
-//
+
 import React from 'react';
 import { Plus, Trash2, Table as TableIcon, AlertCircle } from 'lucide-react';
 import type { GraficoDatosBlock, GraficoSerie } from '@lumina/types/slide';
@@ -144,7 +144,7 @@ export function GraficoDataDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3l max-h-[85vh] flex flex-col p-6">
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6">
         <DialogHeader className="mb-3">
           <div className="flex items-center gap-2">
             <TableIcon className="h-5 w-5 text-primary" />
@@ -234,7 +234,7 @@ export function GraficoDataDialog({
                                   type="number"
                                   value={pt.z ?? 10}
                                   onChange={(e) => handlePointChange(sIdx, ptIdx, 'z', e.target.value)}
-                                  className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus)ring-primary font-mono text-right"
+                                  className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary font-mono text-right"
                                  />
                               </td>
                             )}
@@ -280,7 +280,7 @@ export function GraficoDataDialog({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
-                  Filas = Categoréas (Eje X) · Columnas = Series de Datos
+                  Filas = Categorías (Eje X) · Columnas = Series de Datos
                 </span>
                 <Button
                   type="button"
@@ -298,9 +298,9 @@ export function GraficoDataDialog({
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-muted/60 text-[11px] text-muted-foreground">
-                      <th className="p-2.5 min-w[140px] font-semibold">Categoréa</th>
+                      <th className="p-2.5 min-w-[140px] font-semibold">Categoría</th>
                       {block.series.map((serie, sIdx) => (
-                        <th key={sIdx} className="p-2.5 min-w[120px] font-semibold border-l border-border/40">
+                        <th key={sIdx} className="p-2.5 min-w-[120px] font-semibold border-l border-border/40">
                           <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-1">
                               <input

@@ -3,7 +3,6 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import {
-  AreaChart,
   BarChart2,
   BarChartHorizontal,
   BookOpen,
@@ -17,7 +16,6 @@ import {
   Milestone,
   Minus,
   Network,
-  PieChart,
   Quote,
   ScatterChart,
   Sparkles,
