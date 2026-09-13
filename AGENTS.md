@@ -781,7 +781,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I1 — Reestructurar el panel de propiedades: selector familia→variante + modal de datos
 - **Operador:** Antigravity.
-- **Estado:** pendiente.
+- **Estado:** [en curso: Antigravity]
 - **Precondición:** ninguna — es la primera ficha de la etapa.
 - **Contexto:** ver "Estado real del repo" de la raíz. El pedido es concreto: hoy el panel izquierdo (inserción) y el derecho (propiedades) son dos selectores de tipo independientes y planos; el usuario señaló el caso exacto — elegís "Dona" a la izquierda para insertar, y a la derecha te aparece una lista plana de 14 opciones sin relación jerárquica con lo que elegiste, en vez de ver las variantes de la familia "Proporción" (dona, dona-con-total, semicírculo, treemap, embudo, polar-area). Además la tabla de datos/editor de puntos ocupa el panel lateral angosto, mal lugar para editar una tabla.
 - **Alcance — PUEDE tocar:**
