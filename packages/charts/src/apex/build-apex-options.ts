@@ -399,6 +399,20 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
   const values = config.categorias.map((_, idx) => primary?.valores[idx] ?? 0);
   const colors = config.categorias.map((_, idx) => getSeriesColor(idx, config.paletaId));
 
+  // `plotOptions` NUNCA debe quedar `undefined` de forma explícita: el merge
+  // de config por defecto de ApexCharts asume que `plotOptions` es al menos
+  // `{}` y luego intenta leer `plotOptions.line.*` internamente — con la
+  // clave presente mismo valor `undefined` (a diferencia de omitirla del
+  // todo) ese merge deja `plotOptions` en `undefined` y revienta con
+  // "Cannot read properties of undefined (reading 'line')" en cuanto se monta
+  // un `pie` liso (bug real encontrado en producción, no artefacto de dev).
+  const plotOptions: ApexOptions['plotOptions'] =
+    config.type === 'radialBar'
+      ? { radialBar: { hollow: { size: '30%' } } }
+      : config.type === 'donut'
+        ? { pie: { donut: { size: '65%' } } }
+        : {};
+
   const options: ApexOptions = {
     chart: { ...baseChartOptions(config, theme), type: config.type as 'pie' | 'donut' | 'radialBar' },
     colors,
@@ -411,12 +425,7 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
     },
     tooltip: { enabled: !config.isThumbnail },
     dataLabels: buildDataLabels(config, config.type !== 'radialBar'),
-    plotOptions:
-      config.type === 'radialBar'
-        ? { radialBar: { hollow: { size: '30%' } } }
-        : config.type === 'donut'
-          ? { pie: { donut: { size: '65%' } } }
-          : undefined,
+    plotOptions,
   };
 
   return { chartType: config.type as 'pie' | 'donut' | 'radialBar', series: values, options };

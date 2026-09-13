@@ -107,6 +107,12 @@ describe('buildApexChart — tipos circulares (pie/donut/radialBar)', () => {
     expect(built.series).toEqual([30, 70, 0]);
   });
 
+  it('pie liso deja plotOptions como objeto vacío, nunca undefined (bug real: ApexCharts revienta leyendo plotOptions.line si la clave está presente con valor undefined)', () => {
+    const built = buildApexChart(circularConfig, theme);
+    expect(built.options.plotOptions).toBeDefined();
+    expect(built.options.plotOptions).toEqual({});
+  });
+
   it('donut usa plotOptions.pie.donut', () => {
     const built = buildApexChart({ ...circularConfig, type: 'donut' }, theme);
     expect(built.options.plotOptions?.pie?.donut).toBeDefined();
