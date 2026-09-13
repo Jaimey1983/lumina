@@ -23,6 +23,8 @@ export const VALID_GRAFO_SUBTIPOS: readonly string[] = [
   'flujo',
   'cronologia',
   'piramide',
+  'embudo',
+  'cebolla',
 ];
 
 // ─── Cronología pedagógica (layout lineal restringido sobre graph-core) ───────
@@ -1084,6 +1086,94 @@ export function createDefaultPiramideBlock(
     aristas: piramideAristas,
     opciones: {
       paleta: 'tecnologico',
+    },
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Embudo / Funnel (Método Científico).
+ */
+export function createDefaultEmbudoBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const embudoNodos: DiagramaNodo[] = [
+    { id: 'f-1', etiqueta: '1. Observación', cuerpo: 'Identificar el fenómeno o problema de estudio', x: 100, y: 40, ancho: 400, forma: 'inverted-trapezoid', estilo: { color: '#2563EB' } },
+    { id: 'f-2', etiqueta: '2. Pregunta de Investigación', cuerpo: 'Formular el interrogante clave a responder', x: 135, y: 105, ancho: 330, forma: 'inverted-trapezoid', estilo: { color: '#0D9488' } },
+    { id: 'f-3', etiqueta: '3. Formulación de Hipótesis', cuerpo: 'Plantear explicaciones tentativas contrastables', x: 170, y: 170, ancho: 260, forma: 'inverted-trapezoid', estilo: { color: '#D97706' } },
+    { id: 'f-4', etiqueta: '4. Experimentación y Prueba', cuerpo: 'Recoger datos bajo condiciones controladas', x: 205, y: 235, ancho: 190, forma: 'inverted-trapezoid', estilo: { color: '#7C3AED' } },
+    { id: 'f-5', etiqueta: '5. Conclusión y Tesis', cuerpo: 'Confirmar, refutar o formular nueva teoría', x: 235, y: 300, ancho: 130, forma: 'inverted-trapezoid', estilo: { color: '#059669' } },
+  ];
+
+  const embudoAristas: DiagramaArista[] = [
+    { id: 'e-f1-f2', desdeId: 'f-1', haciaId: 'f-2', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-f2-f3', desdeId: 'f-2', haciaId: 'f-3', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-f3-f4', desdeId: 'f-3', haciaId: 'f-4', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+    { id: 'e-f4-f5', desdeId: 'f-4', haciaId: 'f-5', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'solida' },
+  ];
+
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `embudo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'embudo',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Embudo de Procesos: Método Científico',
+    descripcionAccesible: 'Diagrama de embudo con fases deductivas y filtrado progresivo',
+    nodos: embudoNodos,
+    aristas: embudoAristas,
+    opciones: {
+      paleta: 'tecnologico',
+    },
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
+    ...partial,
+  };
+  return normalizeDiagramaBlock(base) as DiagramaGrafoBlock;
+}
+
+/**
+ * Crea una plantilla pedagógica de Círculos Concéntricos (Modelo Ecológico / Capas de Influencia).
+ */
+export function createDefaultCebollaBlock(
+  partial?: Partial<DiagramaGrafoBlock>,
+  marco?: BlockMarco,
+): DiagramaGrafoBlock {
+  const fb = BLOCK_FALLBACKS.diagrama;
+  const cebollaNodos: DiagramaNodo[] = [
+    { id: 'c-1', etiqueta: 'Individuo', cuerpo: 'Genética, valores y personalidad', x: 245, y: 135, ancho: 110, alto: 110, forma: 'circle', estilo: { color: '#2563EB' } },
+    { id: 'c-2', etiqueta: 'Microsistema', cuerpo: 'Familia, escuela y amigos cercanos', x: 210, y: 100, ancho: 180, alto: 180, forma: 'circle', estilo: { color: '#0D9488' } },
+    { id: 'c-3', etiqueta: 'Mesosistema', cuerpo: 'Interacciones comunitarias y vecindario', x: 175, y: 65, ancho: 250, alto: 250, forma: 'circle', estilo: { color: '#D97706' } },
+    { id: 'c-4', etiqueta: 'Macrosistema', cuerpo: 'Cultura, leyes y valores sociales', x: 140, y: 30, ancho: 320, alto: 320, forma: 'circle', estilo: { color: '#7C3AED' } },
+  ];
+
+  const cebollaAristas: DiagramaArista[] = [
+    { id: 'e-c1-c2', desdeId: 'c-1', haciaId: 'c-2', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+    { id: 'e-c2-c3', desdeId: 'c-2', haciaId: 'c-3', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+    { id: 'e-c3-c4', desdeId: 'c-3', haciaId: 'c-4', dirigida: true, tipoTrazado: 'straight', estiloLinea: 'discontinua' },
+  ];
+
+  const base: Partial<DiagramaGrafoBlock> = {
+    id: `cebolla-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    tipo: 'diagrama',
+    subtipo: 'cebolla',
+    modo: 'contenido',
+    soloLecturaEnViewer: true,
+    titulo: 'Modelo de Capas Concéntricas (Ecológico)',
+    descripcionAccesible: 'Capas concéntricas de influencia anidadas desde el núcleo hacia el exterior',
+    nodos: cebollaNodos,
+    aristas: cebollaAristas,
+    opciones: {
+      paleta: 'editorial',
     },
     x: marco ? marco.izquierdaPct : fb.x,
     y: marco ? marco.arribaPct : fb.y,

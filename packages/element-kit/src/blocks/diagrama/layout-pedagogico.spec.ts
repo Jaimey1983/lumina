@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutCiclo, layoutCuadrantes, layoutIshikawa, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
+import { layoutCebolla, layoutCiclo, layoutCuadrantes, layoutEmbudo, layoutIshikawa, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import type { DiagramaArista, DiagramaNodo } from '@lumina/types/slide';
 
 describe('layout-pedagogico', () => {
@@ -81,6 +81,35 @@ describe('layout-pedagogico', () => {
       expect(aristas).toHaveLength(3);
       expect(aristas[0].desdeId).toBe('n1');
       expect(aristas[0].haciaId).toBe('n2');
+    });
+  });
+
+  describe('layoutEmbudo', () => {
+    it('distribuye niveles apilados verticalmente con ancho decreciente hacia la base', () => {
+      const { nodos, aristas } = layoutEmbudo(sampleNodes);
+      expect(nodos).toHaveLength(4);
+      // Nivel 0 (boca) está más arriba que nivel 3 (filtro)
+      expect(nodos[0].y).toBeLessThan(nodos[3].y);
+      // El ancho del nivel 0 es mayor que el del nivel 3
+      expect(nodos[0].ancho).toBeGreaterThan(nodos[3].ancho!);
+      expect(aristas).toHaveLength(3);
+      expect(aristas[0].desdeId).toBe('n1');
+      expect(aristas[0].haciaId).toBe('n2');
+    });
+  });
+
+  describe('layoutCebolla', () => {
+    it('distribuye capas concéntricas con diámetros crecientes desde el núcleo', () => {
+      const { nodos, aristas } = layoutCebolla(sampleNodes);
+      expect(nodos).toHaveLength(4);
+      // Todos comparten el mismo centro: x + ancho/2 === 300, y + alto/2 === 190
+      for (const nodo of nodos) {
+        expect(Math.round(nodo.x + nodo.ancho! / 2)).toBe(300);
+        expect(Math.round(nodo.y + nodo.alto! / 2)).toBe(190);
+      }
+      // El núcleo interior tiene menor diámetro que la capa exterior
+      expect(nodos[0].ancho).toBeLessThan(nodos[3].ancho!);
+      expect(aristas).toHaveLength(3);
     });
   });
 });

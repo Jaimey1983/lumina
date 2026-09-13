@@ -455,7 +455,81 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
     );
   }
 
-  // 9. Por defecto: Rectángulo con esquinas suaves (rounded / rect)
+  // 9. Forma: Trapecio Invertido (Nivel de Embudo / Funnel)
+  if (forma === 'inverted-trapezoid') {
+    const customWidth = (nodeData.ancho as number | undefined) ?? 220;
+    return (
+      <div
+        onDoubleClick={() => setIsEditing(true)}
+        className={cn(
+          'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
+          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+        )}
+        style={{
+          borderColor: accent,
+          width: `${customWidth}px`,
+          clipPath: 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)',
+          backgroundColor: `color-mix(in srgb, ${accent} 12%, var(--card, white))`,
+        }}
+      >
+        {toolbar}
+        {handles}
+        <div className="w-full px-4 flex flex-col items-center">
+          {isEditing ? (
+            inlineInput
+          ) : (
+            <span className="text-xs font-bold text-foreground truncate max-w-full cursor-text">
+              {nodeData.label}
+            </span>
+          )}
+          {nodeData.body && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-full mt-0.5">
+              {nodeData.body}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 10. Forma: Círculo (Capas de Cebolla / Círculos Concéntricos)
+  if (forma === 'circle') {
+    const customWidth = (nodeData.ancho as number | undefined) ?? 120;
+    return (
+      <div
+        onDoubleClick={() => setIsEditing(true)}
+        className={cn(
+          'relative rounded-full border-2 bg-card/40 text-card-foreground shadow-xs transition-all flex flex-col items-center justify-center text-center p-2',
+          selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+        )}
+        style={{
+          borderColor: accent,
+          width: `${customWidth}px`,
+          height: `${customWidth}px`,
+          backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--card, white))`,
+        }}
+      >
+        {toolbar}
+        {handles}
+        <div className="w-full px-2 flex flex-col items-center">
+          {isEditing ? (
+            inlineInput
+          ) : (
+            <span className="text-xs font-bold text-foreground truncate max-w-[85%] cursor-text">
+              {nodeData.label}
+            </span>
+          )}
+          {nodeData.body && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-[80%] mt-0.5">
+              {nodeData.body}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 11. Por defecto: Rectángulo con esquinas suaves (rounded / rect)
   return (
     <div
       onDoubleClick={() => setIsEditing(true)}

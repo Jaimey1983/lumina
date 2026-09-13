@@ -256,3 +256,106 @@ export function layoutPiramide(
   return { nodos: laidOutNodes, aristas: nextAristas };
 }
 
+/**
+ * Layout de Embudo / Funnel (Procesos por etapas y filtrado deductivo):
+ * Distribuye los nodos en capas horizontales centradas con ancho decreciente desde la boca superior hasta la base.
+ */
+export function layoutEmbudo(
+  nodos: DiagramaNodo[],
+  _aristas?: DiagramaArista[],
+): { nodos: DiagramaNodo[]; aristas: DiagramaArista[] } {
+  void _aristas;
+  if (nodos.length === 0) return { nodos: [], aristas: [] };
+
+  const count = nodos.length;
+  const centerX = 300;
+  const startY = 40;
+  const stepY = Math.min(75, Math.max(50, Math.floor(340 / count)));
+  const minWidth = 140;
+  const maxWidth = 400;
+
+  const laidOutNodes: DiagramaNodo[] = nodos.map((nodo, idx) => {
+    // Proporción de 1 (boca ancha arriba) a 0 (salida estrecha abajo)
+    const ratio = count === 1 ? 0.5 : 1 - idx / (count - 1);
+    const ancho = Math.round(minWidth + ratio * (maxWidth - minWidth));
+    const x = Math.round(centerX - ancho / 2);
+    const y = Math.round(startY + idx * stepY);
+
+    return {
+      ...nodo,
+      x,
+      y,
+      ancho,
+      alto: Math.min(50, stepY - 10),
+      forma: (nodo.forma ?? 'inverted-trapezoid') as DiagramaNodo['forma'],
+    };
+  });
+
+  // Conexiones secuenciales hacia abajo
+  const nextAristas: DiagramaArista[] = [];
+  for (let i = 0; i < count - 1; i++) {
+    nextAristas.push({
+      id: `embudo-${laidOutNodes[i].id}-${laidOutNodes[i + 1].id}`,
+      desdeId: laidOutNodes[i].id,
+      haciaId: laidOutNodes[i + 1].id,
+      dirigida: true,
+      tipoTrazado: 'straight',
+      estiloLinea: 'solida',
+      color: '#CBD5E1',
+      grosor: 1.5,
+    });
+  }
+
+  return { nodos: laidOutNodes, aristas: nextAristas };
+}
+
+/**
+ * Layout de Círculos Concéntricos / Modelo Cebolla:
+ * Distribuye capas anidadas concéntricas desde el núcleo central hacia las capas exteriores.
+ */
+export function layoutCebolla(
+  nodos: DiagramaNodo[],
+  _aristas?: DiagramaArista[],
+): { nodos: DiagramaNodo[]; aristas: DiagramaArista[] } {
+  void _aristas;
+  if (nodos.length === 0) return { nodos: [], aristas: [] };
+
+  const count = nodos.length;
+  const centerX = 300;
+  const centerY = 190;
+  const baseDiameter = 110;
+  const stepRadius = Math.min(45, Math.max(28, Math.floor(160 / Math.max(1, count))));
+
+  const laidOutNodes: DiagramaNodo[] = nodos.map((nodo, idx) => {
+    const diametro = baseDiameter + idx * stepRadius * 2;
+    const x = Math.round(centerX - diametro / 2);
+    const y = Math.round(centerY - diametro / 2);
+
+    return {
+      ...nodo,
+      x,
+      y,
+      ancho: diametro,
+      alto: diametro,
+      forma: (nodo.forma ?? 'circle') as DiagramaNodo['forma'],
+    };
+  });
+
+  // Aristas secuenciales que enlazan capas hacia el exterior
+  const nextAristas: DiagramaArista[] = [];
+  for (let i = 0; i < count - 1; i++) {
+    nextAristas.push({
+      id: `cebolla-${laidOutNodes[i].id}-${laidOutNodes[i + 1].id}`,
+      desdeId: laidOutNodes[i].id,
+      haciaId: laidOutNodes[i + 1].id,
+      dirigida: true,
+      tipoTrazado: 'straight',
+      estiloLinea: 'discontinua',
+      color: '#94A3B8',
+      grosor: 1,
+    });
+  }
+
+  return { nodos: laidOutNodes, aristas: nextAristas };
+}
+

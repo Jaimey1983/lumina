@@ -9,6 +9,8 @@ export {
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
   createDefaultPiramideBlock,
+  createDefaultEmbudoBlock,
+  createDefaultCebollaBlock,
   normalizeDiagramaBlock,
 } from './diagrama-defaults.js';
 export { DiagramaEditor } from './diagrama-editor.js';

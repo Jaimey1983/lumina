@@ -8,6 +8,7 @@ import { normalizeDiagramaBlock } from './diagrama-defaults.js';
 import { assignElementoRegion, regionAtPoint } from './diagrama-regions.js';
 import { VennSvg } from './venn-svg.js';
 import { DIAGRAMA_NODE_TYPES } from './diagrama-shape-node.js';
+import { layoutCebolla, layoutEmbudo, layoutPiramide } from './layout-pedagogico.js';
 import type { GraphConnectAttempt, GraphNodePositionPatch } from '@lumina/editor-shared/graph-editor';
 import { Skeleton } from '@lumina/ui/skeleton';
 import { cn } from '@lumina/ui/lib/utils';
@@ -53,6 +54,7 @@ export function DiagramaEditor({
     y: number;
   } | null>(null);
 
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -62,6 +64,67 @@ export function DiagramaEditor({
       }
     };
   }, []);
+
+  // Atajos de teclado: Tab (añadir hijo) y Enter (añadir hermano)
+  useEffect(() => {
+    if (!isSelected || !grafoBlock || !onChange) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          (activeEl as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const parentId = selectedNodeId || grafoBlock.nodos[0]?.id;
+        if (!parentId) return;
+
+        window.dispatchEvent(
+          new CustomEvent('lumina-diagrama-add-child', {
+            detail: { parentId, blockId: block.id },
+          }),
+        );
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!selectedNodeId) {
+          const rootId = grafoBlock.nodos[0]?.id;
+          if (rootId) {
+            window.dispatchEvent(
+              new CustomEvent('lumina-diagrama-add-child', {
+                detail: { parentId: rootId, blockId: block.id },
+              }),
+            );
+          }
+          return;
+        }
+
+        const incomingEdge = grafoBlock.aristas.find((a) => a.haciaId === selectedNodeId);
+        const parentId = incomingEdge ? incomingEdge.desdeId : grafoBlock.nodos[0]?.id;
+        if (parentId) {
+          window.dispatchEvent(
+            new CustomEvent('lumina-diagrama-add-child', {
+              detail: { parentId, blockId: block.id },
+            }),
+          );
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSelected, selectedNodeId, grafoBlock, onChange, block.id]);
 
   // Escuchar eventos desacoplados desde los nodos del canvas (NodeToolbar y doble clic inline)
   useEffect(() => {
@@ -90,6 +153,48 @@ export function DiagramaEditor({
         return Number.isFinite(seq) && seq > max ? seq : max;
       }, 0);
       const newNodeId = `nodo-${grafoBlock.subtipo}-${Math.max(count, maxSeq + 1)}`;
+
+      if (grafoBlock.subtipo === 'piramide') {
+        const newNode = {
+          id: newNodeId,
+          etiqueta: `Nivel ${count}`,
+          x: 200,
+          y: 200,
+          forma: 'trapezoid' as import('@lumina/types/slide').DiagramaNodoForma,
+        };
+        const { nodos: pNodes, aristas: pEdges } = layoutPiramide([...grafoBlock.nodos, newNode]);
+        onChange({ ...grafoBlock, nodos: pNodes, aristas: pEdges });
+        setSelectedNodeId(newNodeId);
+        return;
+      }
+
+      if (grafoBlock.subtipo === 'embudo') {
+        const newNode = {
+          id: newNodeId,
+          etiqueta: `Fase ${count}`,
+          x: 200,
+          y: 200,
+          forma: 'inverted-trapezoid' as import('@lumina/types/slide').DiagramaNodoForma,
+        };
+        const { nodos: eNodes, aristas: eEdges } = layoutEmbudo([...grafoBlock.nodos, newNode]);
+        onChange({ ...grafoBlock, nodos: eNodes, aristas: eEdges });
+        setSelectedNodeId(newNodeId);
+        return;
+      }
+
+      if (grafoBlock.subtipo === 'cebolla') {
+        const newNode = {
+          id: newNodeId,
+          etiqueta: `Capa ${count}`,
+          x: 200,
+          y: 200,
+          forma: 'circle' as import('@lumina/types/slide').DiagramaNodoForma,
+        };
+        const { nodos: cNodes, aristas: cEdges } = layoutCebolla([...grafoBlock.nodos, newNode]);
+        onChange({ ...grafoBlock, nodos: cNodes, aristas: cEdges });
+        setSelectedNodeId(newNodeId);
+        return;
+      }
 
       // Posicionar el nuevo hijo cerca del padre con un offset
       const angle = ((grafoBlock.nodos.length * 45) * Math.PI) / 180;
@@ -131,6 +236,7 @@ export function DiagramaEditor({
         nodos: [...grafoBlock.nodos, newNode],
         aristas: [...grafoBlock.aristas, newArista],
       });
+      setSelectedNodeId(newNodeId);
     };
 
     const handleDeleteNode = (e: Event) => {
@@ -149,6 +255,7 @@ export function DiagramaEditor({
         nodos: nextNodos,
         aristas: nextAristas,
       });
+      if (selectedNodeId === id) setSelectedNodeId(null);
     };
 
     window.addEventListener('lumina-diagrama-node-update', handleNodeUpdate);
@@ -160,7 +267,7 @@ export function DiagramaEditor({
       window.removeEventListener('lumina-diagrama-add-child', handleAddChild);
       window.removeEventListener('lumina-diagrama-delete-node', handleDeleteNode);
     };
-  }, [block.id, grafoBlock, onChange]);
+  }, [block.id, grafoBlock, onChange, selectedNodeId]);
 
   const model = useMemo(() => {
     if (!grafoBlock) return { nodes: [], edges: [] };
@@ -346,6 +453,8 @@ export function DiagramaEditor({
             nodeTypes={DIAGRAMA_NODE_TYPES}
             onNodesMove={handleNodesMove}
             onConnect={handleConnect}
+            onNodeSelect={(id) => setSelectedNodeId(id)}
+            onPaneClick={() => setSelectedNodeId(null)}
             fitView={false}
             showControls={isSelected}
             showMiniMap={false}

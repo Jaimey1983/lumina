@@ -16,6 +16,8 @@ import {
   FileText,
   Triangle,
   Palette,
+  Filter,
+  Disc,
 } from 'lucide-react';
 import type {
   Block,
@@ -32,7 +34,7 @@ import {
   type GraphEdge,
   type GraphNode,
 } from '@lumina/editor-shared/graph-editor';
-import { layoutPiramide, layoutRadial } from './layout-pedagogico.js';
+import { layoutCebolla, layoutEmbudo, layoutPiramide, layoutRadial } from './layout-pedagogico.js';
 import { outlineToDiagrama } from './diagrama-outline-parser.js';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
@@ -48,6 +50,8 @@ import {
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
   createDefaultPiramideBlock,
+  createDefaultEmbudoBlock,
+  createDefaultCebollaBlock,
 } from './diagrama-defaults.js';
 import { PALETAS_DIAGRAMA, aplicarPaletaADiagrama } from './diagrama-temas.js';
 
@@ -77,7 +81,9 @@ const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
   { forma: 'parallelogram', label: 'Paralelogramo' },
   { forma: 'card-icon', label: 'Icono' },
   { forma: 'trapezoid', label: 'Trapecio' },
+  { forma: 'inverted-trapezoid', label: 'Trapecio Invertido' },
   { forma: 'triangle', label: 'Triángulo' },
+  { forma: 'circle', label: 'Círculo' },
 ];
 
 const TEMPLATES_CONFIG = [
@@ -87,6 +93,8 @@ const TEMPLATES_CONFIG = [
   { id: 'matriz2x2', label: 'Matriz 2×2', desc: 'Prioridades' },
   { id: 'tabla_t', label: 'Tabla T', desc: 'Pros y Contras' },
   { id: 'piramide', label: 'Pirámide de Bloom', desc: 'Jerarquía cognitiva' },
+  { id: 'embudo', label: 'Embudo de Proceso', desc: 'Filtrado progresivo' },
+  { id: 'cebolla', label: 'Círculos Concéntricos', desc: 'Capas de influencia' },
 ];
 
 const SUBTIPOS_CONFIG: Array<{
@@ -101,6 +109,8 @@ const SUBTIPOS_CONFIG: Array<{
   { subtipo: 'flujo', label: 'Flujo', Icon: GitMerge, nodeLabel: 'Paso' },
   { subtipo: 'cronologia', label: 'Cronología', Icon: Milestone, nodeLabel: 'Evento' },
   { subtipo: 'piramide', label: 'Pirámide', Icon: Triangle, nodeLabel: 'Nivel' },
+  { subtipo: 'embudo', label: 'Embudo', Icon: Filter, nodeLabel: 'Etapa' },
+  { subtipo: 'cebolla', label: 'Cebolla', Icon: Disc, nodeLabel: 'Capa' },
 ];
 
 /** Cronología: normaliza para reimponer el eje lineal y la cadena de conectores. */
@@ -240,6 +250,30 @@ export function DiagramaProperties({
       const { nodos: pNodes, aristas: pEdges } = layoutPiramide([...grafoBlock.nodos, newNode]);
       commitChange({ ...grafoBlock, nodos: pNodes, aristas: pEdges }, true);
       return;
+    } else if (currentSubtipo === 'embudo') {
+      const newNode: DiagramaNodo = {
+        id: newNodeId,
+        etiqueta: `Etapa ${count}`,
+        cuerpo: 'Descripción de la etapa',
+        x: 200,
+        y: 200,
+        forma: 'inverted-trapezoid',
+      };
+      const { nodos: eNodes, aristas: eEdges } = layoutEmbudo([...grafoBlock.nodos, newNode]);
+      commitChange({ ...grafoBlock, nodos: eNodes, aristas: eEdges }, true);
+      return;
+    } else if (currentSubtipo === 'cebolla') {
+      const newNode: DiagramaNodo = {
+        id: newNodeId,
+        etiqueta: `Capa ${count}`,
+        cuerpo: 'Influencia o alcance',
+        x: 200,
+        y: 200,
+        forma: 'circle',
+      };
+      const { nodos: cNodes, aristas: cEdges } = layoutCebolla([...grafoBlock.nodos, newNode]);
+      commitChange({ ...grafoBlock, nodos: cNodes, aristas: cEdges }, true);
+      return;
     } else if (currentSubtipo === 'organigrama') {
       newX = 100 + ((count - 1) % 3) * 160;
       newY = 130 + Math.floor((count - 1) / 3) * 110;
@@ -300,6 +334,20 @@ export function DiagramaProperties({
       const nextNodos = grafoBlock.nodos.filter((n) => n.id !== nodeId);
       const { nodos: pNodes, aristas: pEdges } = layoutPiramide(nextNodos);
       commitChange({ ...grafoBlock, nodos: pNodes, aristas: pEdges }, true);
+      return;
+    }
+
+    if (currentSubtipo === 'embudo') {
+      const nextNodos = grafoBlock.nodos.filter((n) => n.id !== nodeId);
+      const { nodos: eNodes, aristas: eEdges } = layoutEmbudo(nextNodos);
+      commitChange({ ...grafoBlock, nodos: eNodes, aristas: eEdges }, true);
+      return;
+    }
+
+    if (currentSubtipo === 'cebolla') {
+      const nextNodos = grafoBlock.nodos.filter((n) => n.id !== nodeId);
+      const { nodos: cNodes, aristas: cEdges } = layoutCebolla(nextNodos);
+      commitChange({ ...grafoBlock, nodos: cNodes, aristas: cEdges }, true);
       return;
     }
 
@@ -372,6 +420,18 @@ export function DiagramaProperties({
       return;
     }
 
+    if (currentSubtipo === 'embudo') {
+      const { nodos: eNodes, aristas: eEdges } = layoutEmbudo(grafoBlock.nodos, grafoBlock.aristas);
+      commitChange({ ...grafoBlock, nodos: eNodes, aristas: eEdges }, true);
+      return;
+    }
+
+    if (currentSubtipo === 'cebolla') {
+      const { nodos: cNodes, aristas: cEdges } = layoutCebolla(grafoBlock.nodos, grafoBlock.aristas);
+      commitChange({ ...grafoBlock, nodos: cNodes, aristas: cEdges }, true);
+      return;
+    }
+
     const graphNodes: GraphNode[] = grafoBlock.nodos.map((n) => ({
       id: n.id,
       x: n.x,
@@ -413,6 +473,8 @@ export function DiagramaProperties({
     else if (templateId === 'matriz2x2') newBlock = createDefaultMatriz2x2Block(coords);
     else if (templateId === 'tabla_t') newBlock = createDefaultTablaTBlock(coords);
     else if (templateId === 'piramide') newBlock = createDefaultPiramideBlock(coords);
+    else if (templateId === 'embudo') newBlock = createDefaultEmbudoBlock(coords);
+    else if (templateId === 'cebolla') newBlock = createDefaultCebollaBlock(coords);
     else return;
 
     commitChange(newBlock, true);
