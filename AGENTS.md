@@ -777,8 +777,10 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 **Orden:** I1 va primero — es la reestructuración estructural (familia→variante + modal) sobre la que insertan variantes I2/I3. I2/I3 pueden ir en paralelo entre sí una vez I1 esté hecha (I2 no toca schema, I3 sí — archivos disjuntos). I4/I5/I6/I7 (profundidad de configuración) son independientes de I2/I3 y entre sí, pero dependen de I1 (el modal y la agrupación cambian dónde vive cada control nuevo).
 
+**Reparto (definido 2026-09-12):** **Antigravity** — I1 (arranca primero, nada más puede tomarse hasta que cierre), I2, I6. **Claude Code** — I3, I4, I5, I7. Ninguna ficha de la segunda mitad se toma hasta que I1 esté `hecho` (todas dependen de la estructura que I1 crea — tomarla antes sería trabajar sobre un panel que va a cambiar de forma). Una vez I1 cierre: I2 (Antigravity) e I3 (Claude Code) pueden ir en paralelo (archivos disjuntos, confirmado en cada ficha); I4/I5/I7 (Claude Code) se hacen en secuencia entre sí porque las tres tocan `grafico-properties.tsx` y `build-apex-options.ts` (Regla 10 — no se solapan archivos en paralelo); I6 (Antigravity) es disjunta de las tres anteriores (vive mayormente en el modal nuevo de I1) y puede ir en paralelo con la secuencia de Claude Code.
+
 #### I1 — Reestructurar el panel de propiedades: selector familia→variante + modal de datos
-- **Operador:** Claude Code (reasignable — ver H6/H7 para el prompt canónico si se prefiere Antigravity).
+- **Operador:** Antigravity.
 - **Estado:** pendiente.
 - **Precondición:** ninguna — es la primera ficha de la etapa.
 - **Contexto:** ver "Estado real del repo" de la raíz. El pedido es concreto: hoy el panel izquierdo (inserción) y el derecho (propiedades) son dos selectores de tipo independientes y planos; el usuario señaló el caso exacto — elegís "Dona" a la izquierda para insertar, y a la derecha te aparece una lista plana de 14 opciones sin relación jerárquica con lo que elegiste, en vez de ver las variantes de la familia "Proporción" (dona, dona-con-total, semicírculo, treemap, embudo, polar-area). Además la tabla de datos/editor de puntos ocupa el panel lateral angosto, mal lugar para editar una tabla.
@@ -799,7 +801,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): selector de tipo por familia/variante y modal de datos para grafico`.
 
 #### I2 — Ampliar catálogo: variantes de Proporción, Evolución y Especiales (sin cambio de schema)
-- **Operador:** a definir.
+- **Operador:** Antigravity.
 - **Estado:** pendiente.
 - **Precondición:** I1 hecha (las variantes nuevas necesitan un lugar agrupado donde aparecer).
 - **Alcance — PUEDE tocar:** `packages/charts/src/types.ts` (nuevos valores de `LuminaChartType`: `polarArea`; nuevos campos de config: `curva?: 'recta'|'suave'|'escalon'` para line/area, `modoSparkline?: boolean` para line/area/column, `mostrarTotal?: boolean` para donut, `angulo?: 'completo'|'semicirculo'` para pie/donut); `packages/charts/src/apex/build-apex-options.ts` (nueva `buildPolarAreaChart`; ajustes en `buildCartesianChart` para `curva`/`modoSparkline`; ajustes en `buildCircularChart` para `mostrarTotal`/`angulo`); specs correspondientes. **Reconsiderar explícitamente** (no repetir en silencio) la decisión de H6 de no tener un `gauge` dedicado — evaluar si un semicírculo con aguja/zona de color vía `radialBar` + anotación cumple el pedido del plan, y documentar la decisión tomada (con o sin tipo nuevo) en el cierre de esta ficha. `waterfall` (cascada) — nuevo tipo vía la técnica de columna apilada con base invisible + conectores; requiere que `LuminaChartSeries` pueda expresar valores con signo (delta) — evaluar si entra en esta ficha (sin cambio de schema más allá de interpretar `valores` como deltas) o si necesita I3.
@@ -808,7 +810,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): polarArea, semicírculo, dona con total, curvas y cascada`.
 
 #### I3 — Estadística: histograma y boxplot (requiere extensión de schema)
-- **Operador:** a definir.
+- **Operador:** Claude Code.
 - **Estado:** pendiente.
 - **Precondición:** I1 hecha. Puede ir en paralelo con I2 (archivos disjuntos: I2 no toca `@lumina/types`, esta sí).
 - **Contexto:** ninguno de los dos tipos es gratis — `histogram` exige lógica de *binning* (agrupar valores continuos en intervalos) que no es una opción de ApexCharts, es lógica propia antes de graficar; `boxplot` es nativo de ApexCharts (`boxPlot`) pero exige que el modelo de datos tenga min/Q1/mediana/Q3/máx por categoría, algo que `GraficoSerie.valores: number[]` no expresa hoy.
@@ -818,7 +820,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): histograma y boxplot`.
 
 #### I4 — Configuración profunda: Ejes, Series y Etiquetas/Leyenda
-- **Operador:** a definir.
+- **Operador:** Claude Code.
 - **Estado:** pendiente.
 - **Precondición:** I1 hecha (el modal libera espacio en el panel lateral para estos controles nuevos).
 - **Contexto — lo que falta, confirmado contra el código real:** formato numérico de eje/tooltip (**`format.ts` de H1 existe, está probado, y no se importa en `build-apex-options.ts` — es la pieza más barata de esta ficha**), rotación de etiquetas de eje, ocultar eje, control de grillas (ambos ejes/solo Y/ninguna); color por serie (el campo `GraficoSerie.color` existe en el modelo pero no hay color picker en la UI — hoy el color siempre sale de la paleta por índice), forma de línea/grosor/mostrar puntos/opacidad de relleno por serie; posición de leyenda (hoy fija en "abajo"), formato de etiqueta de dato, formato de tooltip.
@@ -827,7 +829,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): formato numérico cableado, color por serie, ejes y leyenda configurables`.
 
 #### I5 — Configuración: Estilo y Anotaciones múltiples
-- **Operador:** a definir.
+- **Operador:** Claude Code.
 - **Estado:** pendiente.
 - **Precondición:** I1 hecha.
 - **Contexto:** hoy `LuminaChartConfig.lineaReferencia` es un solo objeto (una línea de referencia como máximo); esquinas/sombra/fuente/fondo están hardcodeados en `build-apex-options.ts` (`borderRadius:4`, `fontFamily:'inherit'`, `background:'transparent'`); no hay editor de paleta personalizada (las paletas son las 7 de H1 + la semántica de 4 roles, fijas).
@@ -836,7 +838,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(charts): anotaciones múltiples, bandas y estilo configurable`.
 
 #### I6 — Datos: pegar desde Excel/CSV, importar, transponer, ordenar + plantillas pedagógicas
-- **Operador:** a definir.
+- **Operador:** Antigravity.
 - **Estado:** pendiente.
 - **Precondición:** I1 hecha (el modal de datos es el lugar natural para esto — pegar una tabla ancha necesita espacio, no una barra lateral).
 - **Alcance — PUEDE tocar:** el modal de datos de I1 (`grafico-data-dialog.tsx`) — parseo de texto pegado (TSV/CSV, patrón de pegado desde Excel/Sheets), botón de importar `.csv`, transponer filas/columnas, ordenar por serie, control de decimales/unidad-sufijo por eje; **nueva** dependencia si hace falta un parser robusto (`papaparse`, ~7kB — evaluar si el parseo simple de `split('\t')`/`split(',')` alcanza antes de sumar una librería); **nuevo** `packages/element-kit/src/blocks/grafico/grafico-templates.ts` — plantillas pedagógicas con datasets de ejemplo (comparativa entre grupos, evolución en el tiempo, distribución porcentual, progreso hacia meta, encuesta/frecuencias, correlación), ofrecidas en el panel de inserción de I1 como alternativa a "insertar vacío".
@@ -844,7 +846,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): pegar/importar datos y plantillas pedagógicas para grafico`.
 
 #### I7 — Accesibilidad: resumen automático de los datos
-- **Operador:** a definir.
+- **Operador:** Claude Code.
 - **Estado:** pendiente.
 - **Precondición:** I1 hecha.
 - **Contexto:** hoy `descripcionAccesible` es un campo de texto libre que el docente escribe a mano (o queda con el default genérico "Gráfico de datos comparativos por categorías"). El plan pide generar automáticamente un resumen a partir de los datos reales (ej. "Gráfico de columnas: Grupo A varía entre 56 y 81, Grupo B entre 19 y 86, con el valor máximo en Mayo").
