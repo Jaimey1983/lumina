@@ -3,15 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Paquete interno dual (E6.1/E6.2). TS/ESM (frontend con transpilePackages, element-kit) se consumen desde `src/` vía `exports.types`/`import`/`default`. `main` + `types` de nivel superior → build CJS/`.d.ts` en `dist/` para lumina-backend (`moduleResolution: node` clásico, no lee `exports`). `exports` tiene prioridad para quien lo soporte.",
+  "//": "Paquete interno dual (E6.1/E6.2). Todos los consumidores (frontend con transpilePackages, element-kit, backend) se sirven desde `dist/` — igual que @lumina/ui/@lumina/editor-shared/@lumina/element-kit-core (patrón fijado en la regresión de E5.5 con element-kit-core: Turbopack no resuelve `.js`->`.ts` hermano al consumir un paquete desde `src/`, aunque webpack/Vite sí vía extensionAlias/resolución de bundler; index.ts ganó su primer import relativo interno en H2 (grade-bands.ts) y expuso el problema bajo `next dev --turbopack`). `main`+`types` de nivel superior sirven a lumina-backend (`moduleResolution: node` clásico, no lee `exports`).",
   "main": "./dist/cjs/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "require": "./dist/cjs/index.js",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./fixtures": "./src/activity-scoring.fixtures.json"
   },
