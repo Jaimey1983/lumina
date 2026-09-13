@@ -16,14 +16,12 @@ import {
   LayoutGrid,
   Filter,
   Grid,
-  Plus,
-  Trash2,
   Table as TableIcon,
   Palette,
   Eye,
   Settings2,
 } from 'lucide-react';
-import type { Block, GraficoChartType, GraficoDatosBlock, GraficoSerie } from '@lumina/types/slide';
+import type { Block, GraficoChartType, GraficoDatosBlock } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
@@ -36,8 +34,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@lumina/ui/select';
-import { LUMINA_CHART_PALETTES as GRAFICO_PALETAS } from '@lumina/charts';
+import {
+  LUMINA_CHART_FAMILIES,
+  LUMINA_CHART_TYPE_META,
+  LUMINA_CHART_PALETTES as GRAFICO_PALETAS,
+  getChartFamily,
+  getChartTypesByFamily,
+  type LuminaChartFamily,
+} from '@lumina/charts';
 import { cn } from '@lumina/ui/lib/utils';
+import { GraficoDataDialog } from './grafico-data-dialog.js';
 
 interface GraficoPropertiesProps {
   block: GraficoDatosBlock;
@@ -46,26 +52,22 @@ interface GraficoPropertiesProps {
   clearDebounce?: () => void;
 }
 
-const CHART_TYPES: Array<{
-  type: GraficoChartType;
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { type: 'column', label: 'Columnas', Icon: BarChart },
-  { type: 'bar', label: 'Barras', Icon: BarChartHorizontal },
-  { type: 'line', label: 'Líneas', Icon: LineChart },
-  { type: 'area', label: 'Área', Icon: AreaChart },
-  { type: 'pie', label: 'Circular', Icon: PieChart },
-  { type: 'donut', label: 'Dona', Icon: CircleDot },
-  { type: 'radialBar', label: 'Radial (progreso)', Icon: Gauge },
-  { type: 'combo', label: 'Combo', Icon: Layers },
-  { type: 'scatter', label: 'Dispersión', Icon: ScatterChart },
-  { type: 'bubble', label: 'Burbujas', Icon: Circle },
-  { type: 'radar', label: 'Radar', Icon: Radar },
-  { type: 'treemap', label: 'Treemap', Icon: LayoutGrid },
-  { type: 'funnel', label: 'Embudo', Icon: Filter },
-  { type: 'heatmap', label: 'Mapa calor', Icon: Grid },
-];
+const CHART_TYPE_ICONS: Record<GraficoChartType, React.ComponentType<{ className?: string }>> = {
+  column: BarChart,
+  bar: BarChartHorizontal,
+  line: LineChart,
+  area: AreaChart,
+  pie: PieChart,
+  donut: CircleDot,
+  radialBar: Gauge,
+  combo: Layers,
+  scatter: ScatterChart,
+  bubble: Circle,
+  radar: Radar,
+  treemap: LayoutGrid,
+  funnel: Filter,
+  heatmap: Grid,
+};
 
 export function GraficoProperties({
   block,
@@ -73,6 +75,7 @@ export function GraficoProperties({
 }: GraficoPropertiesProps) {
   // Estado local para edición interactiva y debounce de datos
   const [localBlock, setLocalBlock] = useState<GraficoDatosBlock>(block);
+  const [dataDialogOpen, setDataDialogOpen] = useState<boolean>(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sincronizar si cambia el id del bloque seleccionado
@@ -123,6 +126,15 @@ export function GraficoProperties({
       }));
     }
     commitChange({ ...localBlock, chartType, series }, true);
+  };
+
+  // Cambiar familia de gráfico
+  const handleFamilyChange = (familyId: LuminaChartFamily) => {
+    const familyMeta = LUMINA_CHART_FAMILIES.find((f) => f.id === familyId);
+    if (!familyMeta) return;
+    if (getChartFamily(localBlock.chartType) !== familyId) {
+      handleChartTypeChange(familyMeta.defaultType);
+    }
   };
 
   // Cambiar paleta de colores
@@ -215,158 +227,112 @@ export function GraficoProperties({
     }
   };
 
-  // ─── Manipulación de Categorías (Filas) ───
-  const handleCategoryNameChange = (catIdx: number, newName: string) => {
-    const nextCategorias = [...localBlock.categorias];
-    nextCategorias[catIdx] = newName;
-    commitChange({ ...localBlock, categorias: nextCategorias });
-  };
-
-  const handleAddCategory = () => {
-    const nextCategorias = [...localBlock.categorias, `Cat ${localBlock.categorias.length + 1}`];
-    const nextSeries = localBlock.series.map((s) => ({
-      ...s,
-      valores: [...s.valores, 0],
-    }));
-    commitChange({ ...localBlock, categorias: nextCategorias, series: nextSeries }, true);
-  };
-
-  const handleRemoveCategory = (catIdx: number) => {
-    if (localBlock.categorias.length <= 1) return;
-    const nextCategorias = localBlock.categorias.filter((_, idx) => idx !== catIdx);
-    const nextSeries = localBlock.series.map((s) => ({
-      ...s,
-      valores: s.valores.filter((_, idx) => idx !== catIdx),
-    }));
-    commitChange({ ...localBlock, categorias: nextCategorias, series: nextSeries }, true);
-  };
-
-  // ─── Manipulación de Series (Columnas) ───
-  const handleSeriesNameChange = (serieIdx: number, newName: string) => {
-    const nextSeries = [...localBlock.series];
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], nombre: newName };
-    commitChange({ ...localBlock, series: nextSeries });
-  };
-
-  const handleSeriesValueChange = (serieIdx: number, catIdx: number, rawVal: string) => {
-    const val = Number(rawVal);
-    const num = Number.isFinite(val) ? val : 0;
-    const nextSeries = [...localBlock.series];
-    const nextVals = [...nextSeries[serieIdx].valores];
-    nextVals[catIdx] = num;
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], valores: nextVals };
-    commitChange({ ...localBlock, series: nextSeries });
-  };
-
-  const handleSeriesTipoComboChange = (serieIdx: number, tipoCombo: 'column' | 'line' | 'area') => {
-    const nextSeries = [...localBlock.series];
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], tipoCombo };
-    commitChange({ ...localBlock, series: nextSeries }, true);
-  };
-
-  const handleSeriesEjeComboChange = (serieIdx: number, ejeCombo: 'primario' | 'secundario') => {
-    const nextSeries = [...localBlock.series];
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], ejeCombo };
-    commitChange({ ...localBlock, series: nextSeries }, true);
-  };
-
-  const handleAddSeries = () => {
-    const isScatterOrBubble = localBlock.chartType === 'scatter' || localBlock.chartType === 'bubble';
-    const nextSeries: GraficoSerie[] = [
-      ...localBlock.series,
-      {
-        nombre: `Serie ${localBlock.series.length + 1}`,
-        valores: Array.from({ length: localBlock.categorias.length }, () => 0),
-        ...(isScatterOrBubble
-          ? {
-              puntos: [
-                { x: 10, y: 20, ...(localBlock.chartType === 'bubble' ? { z: 15 } : {}) },
-                { x: 20, y: 40, ...(localBlock.chartType === 'bubble' ? { z: 25 } : {}) },
-              ],
-            }
-          : {}),
-      },
-    ];
-    commitChange({ ...localBlock, series: nextSeries }, true);
-  };
-
-  const handleRemoveSeries = (serieIdx: number) => {
-    if (localBlock.series.length <= 1) return;
-    const nextSeries = localBlock.series.filter((_, idx) => idx !== serieIdx);
-    commitChange({ ...localBlock, series: nextSeries }, true);
-  };
-
-  // ─── Manipulación de Puntos (Scatter / Bubble) ───
-  const handlePointChange = (serieIdx: number, ptIdx: number, field: 'x' | 'y' | 'z', rawVal: string) => {
-    const val = Number(rawVal);
-    const num = Number.isFinite(val) ? val : 0;
-    const nextSeries = [...localBlock.series];
-    const puntos = [...(nextSeries[serieIdx].puntos || [])];
-    puntos[ptIdx] = { ...puntos[ptIdx], [field]: num };
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], puntos };
-    commitChange({ ...localBlock, series: nextSeries });
-  };
-
-  const handleAddPoint = (serieIdx: number) => {
-    const nextSeries = [...localBlock.series];
-    const puntos = [...(nextSeries[serieIdx].puntos || [])];
-    const lastPt = puntos[puntos.length - 1];
-    puntos.push({
-      x: (lastPt?.x ?? 0) + 10,
-      y: (lastPt?.y ?? 0) + 15,
-      ...(localBlock.chartType === 'bubble' ? { z: 20 } : {}),
-    });
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], puntos };
-    commitChange({ ...localBlock, series: nextSeries }, true);
-  };
-
-  const handleRemovePoint = (serieIdx: number, ptIdx: number) => {
-    const nextSeries = [...localBlock.series];
-    const puntos = (nextSeries[serieIdx].puntos || []).filter((_, idx) => idx !== ptIdx);
-    nextSeries[serieIdx] = { ...nextSeries[serieIdx], puntos };
-    commitChange({ ...localBlock, series: nextSeries }, true);
-  };
+  const activeFamily = getChartFamily(localBlock.chartType);
+  const activeFamilyMeta = LUMINA_CHART_FAMILIES.find((f) => f.id === activeFamily);
+  const familyVariants = getChartTypesByFamily(activeFamily);
 
   const isScatterOrBubble = localBlock.chartType === 'scatter' || localBlock.chartType === 'bubble';
-  const isBubble = localBlock.chartType === 'bubble';
-  const isCombo = localBlock.chartType === 'combo';
   const supportsStacking = ['column', 'bar', 'area', 'combo'].includes(localBlock.chartType);
   const supportsAxes = ['column', 'bar', 'line', 'area', 'combo', 'scatter', 'bubble'].includes(localBlock.chartType);
   const supportsOrdering = !['pie', 'donut', 'radialBar', 'treemap'].includes(localBlock.chartType);
 
   return (
     <div className="space-y-5 text-xs">
-      {/* 1. Tipo de Gráfico */}
-      <div className="space-y-2">
-        <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Tipo de Gráfico
-        </Label>
-        <div className="grid grid-cols-4 gap-1">
-          {CHART_TYPES.map(({ type, label, Icon }) => {
-            const isSelected = localBlock.chartType === type;
-            return (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleChartTypeChange(type)}
-                className={cn(
-                  'flex flex-col items-center justify-center gap-1 rounded-md border p-1.5 text-center transition-all',
-                  isSelected
-                    ? 'border-primary bg-primary/10 text-primary font-medium shadow-xs'
-                    : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                )}
-                title={label}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="text-[9px] leading-none truncate max-w-full">{label}</span>
-              </button>
-            );
-          })}
+      {/* 1. Selector de Familia y Variantes */}
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Familia de Gráfico
+          </Label>
+          <Select
+            value={activeFamily}
+            onValueChange={(val) => handleFamilyChange(val as LuminaChartFamily)}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Selecciona una familia" />
+            </SelectTrigger>
+            <SelectContent>
+              {LUMINA_CHART_FAMILIES.map((family) => (
+                <SelectItem key={family.id} value={family.id} className="text-xs py-1.5">
+                  <div className="flex flex-col text-left">
+                    <span className="font-medium text-foreground">{family.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{family.descripcion}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Variantes dentro de la familia activa */}
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-medium text-muted-foreground">
+            Variantes de {activeFamilyMeta?.label || 'Familia'}
+          </Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {familyVariants.map((type) => {
+              const meta = LUMINA_CHART_TYPE_META[type];
+              const Icon = CHART_TYPE_ICONS[type] || BarChart;
+              const isSelected = localBlock.chartType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleChartTypeChange(type)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-md border p-2 text-left transition-all',
+                    isSelected
+                      ? 'border-primary bg-primary/10 text-primary font-medium shadow-xs'
+                      : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  )}
+                  title={meta?.descripcion || meta?.label}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="text-[11px] leading-tight truncate">{meta?.label || type}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* 2. Título y Accesibilidad */}
-      <div className="space-y-3">
+      {/* 2. Modal de Datos */}
+      <div className="space-y-2 border-t border-border pt-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <TableIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Datos del Gráfico
+            </span>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setDataDialogOpen(true)}
+          className="w-full h-9 flex items-center justify-between px-3 text-xs bg-muted/30 hover:bg-muted/60 border-border/80"
+        >
+          <div className="flex items-center gap-2">
+            <TableIcon className="h-4 w-4 text-primary" />
+            <span className="font-medium text-foreground">Abrir editor de datos</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border">
+            {isScatterOrBubble
+              ? `${localBlock.series.length} ${localBlock.series.length === 1 ? 'serie' : 'series'}`
+              : `${localBlock.categorias.length} cat · ${localBlock.series.length} ser`}
+          </span>
+        </Button>
+
+        <GraficoDataDialog
+          open={dataDialogOpen}
+          onOpenChange={setDataDialogOpen}
+          block={localBlock}
+          commitChange={commitChange}
+        />
+      </div>
+
+      {/* 3. Título y Accesibilidad */}
+      <div className="space-y-3 border-t border-border pt-3">
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">Título del Gráfico</Label>
           <Input
@@ -392,7 +358,7 @@ export function GraficoProperties({
         </div>
       </div>
 
-      {/* 3. Paleta y Visualización General */}
+      {/* 4. Paleta y Visualización General */}
       <div className="space-y-3 border-t border-border pt-3">
         <div className="space-y-1">
           <div className="flex items-center gap-1">
@@ -460,7 +426,7 @@ export function GraficoProperties({
         </div>
       </div>
 
-      {/* 4. Configuración Avanzada / Ejes / Apilado */}
+      {/* 5. Configuración Avanzada / Ejes / Apilado */}
       {(supportsStacking || supportsAxes || supportsOrdering) && (
         <div className="space-y-3 border-t border-border pt-3">
           <div className="flex items-center gap-1.5">
@@ -586,238 +552,8 @@ export function GraficoProperties({
           )}
         </div>
       )}
-
-      {/* 5. Tabla de Datos */}
-      <div className="space-y-2 border-t border-border pt-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <TableIcon className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {isScatterOrBubble ? 'Puntos de Datos (X, Y)' : 'Datos (Mini-Tabla)'}
-            </span>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddSeries}
-            className="h-6 px-2 text-[10px]"
-            title="Añadir nueva serie"
-          >
-            <Plus className="mr-1 h-3 w-3" /> Serie
-          </Button>
-        </div>
-
-        {['treemap', 'funnel'].includes(localBlock.chartType) && localBlock.series.length > 1 && (
-          <p className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 p-1.5 rounded-sm">
-            Nota: este tipo de gráfico utiliza únicamente la primera serie para dimensionar las áreas.
-          </p>
-        )}
-
-        {isScatterOrBubble ? (
-          /* Editor de puntos para Scatter / Bubble */
-          <div className="space-y-3">
-            {localBlock.series.map((serie, sIdx) => (
-              <div key={sIdx} className="rounded-md border border-border/80 bg-background/50 p-2 space-y-2">
-                <div className="flex items-center justify-between gap-1 border-b border-border/40 pb-1">
-                  <input
-                    type="text"
-                    value={serie.nombre}
-                    onChange={(e) => handleSeriesNameChange(sIdx, e.target.value)}
-                    className="font-semibold text-foreground bg-transparent text-xs focus:outline-hidden hover:underline"
-                    title="Editar nombre de la serie"
-                  />
-                  {localBlock.series.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSeries(sIdx)}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                      title="Eliminar serie"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/40 text-[10px] text-muted-foreground">
-                        <th className="p-1 font-medium">X</th>
-                        <th className="p-1 font-medium">Y</th>
-                        {isBubble && <th className="p-1 font-medium">Tamaño (Z)</th>}
-                        <th className="w-6 p-1"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(serie.puntos || []).map((pt, ptIdx) => (
-                        <tr key={ptIdx} className="border-b border-border/40 hover:bg-muted/20">
-                          <td className="p-1">
-                            <input
-                              type="number"
-                              value={pt.x}
-                              onChange={(e) => handlePointChange(sIdx, ptIdx, 'x', e.target.value)}
-                              className="h-6 w-full rounded border border-transparent bg-transparent px-1 text-xs text-foreground focus:border-primary focus:bg-background text-right font-mono"
-                            />
-                          </td>
-                          <td className="p-1">
-                            <input
-                              type="number"
-                              value={pt.y}
-                              onChange={(e) => handlePointChange(sIdx, ptIdx, 'y', e.target.value)}
-                              className="h-6 w-full rounded border border-transparent bg-transparent px-1 text-xs text-foreground focus:border-primary focus:bg-background text-right font-mono"
-                            />
-                          </td>
-                          {isBubble && (
-                            <td className="p-1">
-                              <input
-                                type="number"
-                                value={pt.z ?? 10}
-                                onChange={(e) => handlePointChange(sIdx, ptIdx, 'z', e.target.value)}
-                                className="h-6 w-full rounded border border-transparent bg-transparent px-1 text-xs text-foreground focus:border-primary focus:bg-background text-right font-mono"
-                              />
-                            </td>
-                          )}
-                          <td className="p-1 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePoint(sIdx, ptIdx)}
-                              className="text-muted-foreground/60 hover:text-destructive p-1"
-                              title="Eliminar punto"
-                            >
-                              <Trash2 className="h-2.5 w-2.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleAddPoint(sIdx)}
-                  className="w-full h-6 text-[10px] text-muted-foreground hover:text-foreground"
-                >
-                  <Plus className="mr-1 h-2.5 w-2.5" /> Añadir Punto (X, Y{isBubble ? ', Z' : ''})
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* Editor de categorías y series estándar */
-          <>
-            <div className="overflow-x-auto rounded-md border border-border/80 bg-background/50">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40 text-[10px] text-muted-foreground">
-                    <th className="p-1.5 min-w-[70px] font-medium">Categoría</th>
-                    {localBlock.series.map((serie, sIdx) => (
-                      <th key={sIdx} className="p-1.5 min-w-[90px] font-medium">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={serie.nombre}
-                              onChange={(e) => handleSeriesNameChange(sIdx, e.target.value)}
-                              className="w-full bg-transparent font-semibold text-foreground focus:outline-hidden hover:underline truncate"
-                              title="Clic para editar nombre de la serie"
-                            />
-                            {localBlock.series.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSeries(sIdx)}
-                                className="text-muted-foreground hover:text-destructive shrink-0"
-                                title="Eliminar serie"
-                              >
-                                <Trash2 className="h-2.5 w-2.5" />
-                              </button>
-                            )}
-                          </div>
-
-                          {isCombo && (
-                            <div className="flex gap-1">
-                              <select
-                                value={serie.tipoCombo || 'column'}
-                                onChange={(e) => handleSeriesTipoComboChange(sIdx, e.target.value as 'column' | 'line' | 'area')}
-                                className="text-[9px] bg-muted rounded px-1 py-0.5 border border-border/60"
-                              >
-                                <option value="column">Barras</option>
-                                <option value="line">Línea</option>
-                                <option value="area">Área</option>
-                              </select>
-                              <select
-                                value={serie.ejeCombo || 'primario'}
-                                onChange={(e) => handleSeriesEjeComboChange(sIdx, e.target.value as 'primario' | 'secundario')}
-                                className="text-[9px] bg-muted rounded px-1 py-0.5 border border-border/60"
-                              >
-                                <option value="primario">Eje 1</option>
-                                <option value="secundario">Eje 2</option>
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                    <th className="w-6 p-1"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {localBlock.categorias.map((cat, cIdx) => (
-                    <tr key={cIdx} className="border-b border-border/40 hover:bg-muted/20">
-                      <td className="p-1">
-                        <input
-                          type="text"
-                          value={cat}
-                          onChange={(e) => handleCategoryNameChange(cIdx, e.target.value)}
-                          className="h-7 w-full rounded border border-transparent bg-transparent px-1.5 text-xs text-foreground focus:border-primary focus:bg-background focus:outline-hidden"
-                        />
-                      </td>
-                      {localBlock.series.map((serie, sIdx) => (
-                        <td key={sIdx} className="p-1">
-                          <input
-                            type="number"
-                            value={serie.valores[cIdx] ?? 0}
-                            onChange={(e) =>
-                              handleSeriesValueChange(sIdx, cIdx, e.target.value)
-                            }
-                            className="h-7 w-full rounded border border-transparent bg-transparent px-1.5 text-xs text-foreground focus:border-primary focus:bg-background focus:outline-hidden text-right font-mono"
-                          />
-                        </td>
-                      ))}
-                      <td className="p-1 text-center">
-                        {localBlock.categorias.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveCategory(cIdx)}
-                            className="text-muted-foreground/60 hover:text-destructive transition-colors p-1"
-                            title="Eliminar categoría"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleAddCategory}
-              className="w-full h-7 text-[11px] text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="mr-1 h-3 w-3" /> Añadir Categoría (Fila)
-            </Button>
-          </>
-        )}
-      </div>
     </div>
   );
 }
+
 

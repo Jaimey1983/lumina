@@ -781,7 +781,7 @@ Todo lo demás del plan — incluyendo `boxplot`, `histogram`, `waterfall`, un `
 
 #### I1 — Reestructurar el panel de propiedades: selector familia→variante + modal de datos
 - **Operador:** Antigravity.
-- **Estado:** [en curso: Antigravity]
+- **Estado:** en revisión — selector de 7 familias pedagógicas implementado en flyout izquierdo y panel de propiedades; grilla de variantes filtrada por familia activa; modal `GraficoDataDialog` con tabla editable de categorías/series y puntos de dispersión; 56 tests en `@lumina/charts` (+5 nuevos en `families.spec.ts`), 383 en `@lumina/element-kit`, 287 unit + 33 visual en frontend (0 errores de lint y build limpio); verificación visual en producción completada con Playwright confirmando inserción por familia, cambio de variante, apertura/edición/guardado en modal y persistencia PATCH 200.
 - **Precondición:** ninguna — es la primera ficha de la etapa.
 - **Contexto:** ver "Estado real del repo" de la raíz. El pedido es concreto: hoy el panel izquierdo (inserción) y el derecho (propiedades) son dos selectores de tipo independientes y planos; el usuario señaló el caso exacto — elegís "Dona" a la izquierda para insertar, y a la derecha te aparece una lista plana de 14 opciones sin relación jerárquica con lo que elegiste, en vez de ver las variantes de la familia "Proporción" (dona, dona-con-total, semicírculo, treemap, embudo, polar-area). Además la tabla de datos/editor de puntos ocupa el panel lateral angosto, mal lugar para editar una tabla.
 - **Alcance — PUEDE tocar:**

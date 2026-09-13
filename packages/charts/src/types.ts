@@ -39,6 +39,111 @@ export const LUMINA_CHART_TYPES: readonly LuminaChartType[] = [
   'heatmap',
 ] as const;
 
+/**
+ * Familias pedagógicas y conceptuales de gráficos (Etapa I).
+ */
+export type LuminaChartFamily =
+  | 'comparar'
+  | 'evolucion'
+  | 'proporcion'
+  | 'relacion'
+  | 'estadistica'
+  | 'kpi'
+  | 'especiales';
+
+export interface LuminaChartFamilyMeta {
+  id: LuminaChartFamily;
+  label: string;
+  descripcion: string;
+  defaultType: LuminaChartType;
+  types: readonly LuminaChartType[];
+}
+
+export interface LuminaChartTypeMeta {
+  type: LuminaChartType;
+  familia: LuminaChartFamily;
+  label: string;
+  descripcion: string;
+}
+
+export const LUMINA_CHART_FAMILIES: readonly LuminaChartFamilyMeta[] = [
+  {
+    id: 'comparar',
+    label: 'Comparación',
+    descripcion: 'Comparar magnitudes entre categorías o grupos',
+    defaultType: 'column',
+    types: ['column', 'bar', 'combo'],
+  },
+  {
+    id: 'evolucion',
+    label: 'Evolución',
+    descripcion: 'Visualizar cambios y series temporales continuas',
+    defaultType: 'line',
+    types: ['line', 'area'],
+  },
+  {
+    id: 'proporcion',
+    label: 'Proporción',
+    descripcion: 'Representar partes de un todo y composiciones',
+    defaultType: 'donut',
+    types: ['donut', 'pie', 'radialBar', 'treemap', 'funnel'],
+  },
+  {
+    id: 'relacion',
+    label: 'Relación',
+    descripcion: 'Correlación y distribución entre dos o tres variables',
+    defaultType: 'scatter',
+    types: ['scatter', 'bubble'],
+  },
+  {
+    id: 'estadistica',
+    label: 'Estadística',
+    descripcion: 'Distribución de frecuencias y rangos de datos',
+    defaultType: 'column',
+    types: ['column', 'bar'],
+  },
+  {
+    id: 'kpi',
+    label: 'Progreso / KPI',
+    descripcion: 'Indicadores de avance hacia metas y métricas clave',
+    defaultType: 'radialBar',
+    types: ['radialBar'],
+  },
+  {
+    id: 'especiales',
+    label: 'Especiales',
+    descripcion: 'Matrices bidimensionales de calor y perfiles radar',
+    defaultType: 'heatmap',
+    types: ['heatmap', 'radar'],
+  },
+] as const;
+
+export const LUMINA_CHART_TYPE_META: Record<LuminaChartType, LuminaChartTypeMeta> = {
+  column: { type: 'column', familia: 'comparar', label: 'Columnas', descripcion: 'Barras verticales por categoría' },
+  bar: { type: 'bar', familia: 'comparar', label: 'Barras', descripcion: 'Barras horizontales' },
+  combo: { type: 'combo', familia: 'comparar', label: 'Combinado', descripcion: 'Columnas y líneas combinadas' },
+  line: { type: 'line', familia: 'evolucion', label: 'Líneas', descripcion: 'Tendencias y series de tiempo' },
+  area: { type: 'area', familia: 'evolucion', label: 'Área', descripcion: 'Volumen y evolución temporal' },
+  donut: { type: 'donut', familia: 'proporcion', label: 'Dona', descripcion: 'Proporciones con centro hueco' },
+  pie: { type: 'pie', familia: 'proporcion', label: 'Circular', descripcion: 'Distribución porcentual de un total' },
+  radialBar: { type: 'radialBar', familia: 'kpi', label: 'Radial (progreso)', descripcion: 'Medidor circular de progreso' },
+  treemap: { type: 'treemap', familia: 'proporcion', label: 'Treemap', descripcion: 'Jerarquía y áreas proporcionales' },
+  funnel: { type: 'funnel', familia: 'proporcion', label: 'Embudo', descripcion: 'Etapas de conversión descendentes' },
+  scatter: { type: 'scatter', familia: 'relacion', label: 'Dispersión', descripcion: 'Correlación entre dos variables (X, Y)' },
+  bubble: { type: 'bubble', familia: 'relacion', label: 'Burbujas', descripcion: 'Tres variables (X, Y, Tamaño Z)' },
+  heatmap: { type: 'heatmap', familia: 'especiales', label: 'Mapa de calor', descripcion: 'Matriz bidimensional de intensidad' },
+  radar: { type: 'radar', familia: 'especiales', label: 'Radar', descripcion: 'Perfil multidimensional' },
+};
+
+export function getChartFamily(type: LuminaChartType): LuminaChartFamily {
+  return LUMINA_CHART_TYPE_META[type]?.familia ?? 'comparar';
+}
+
+export function getChartTypesByFamily(family: LuminaChartFamily): LuminaChartType[] {
+  const fam = LUMINA_CHART_FAMILIES.find((f) => f.id === family);
+  return fam ? [...fam.types] : [];
+}
+
 export interface LuminaChartPoint {
   x: number;
   y: number;

@@ -10,13 +10,16 @@ import {
   Brain,
   CircleDot,
   Columns2,
+  Gauge,
   GitMerge,
+  Grid,
   LineChart,
   Milestone,
   Minus,
   Network,
   PieChart,
   Quote,
+  ScatterChart,
   Sparkles,
   Video,
   Volume2,
@@ -212,79 +215,92 @@ function ElementosPanel({
         <PanelSection title="Gráficos de Datos">
           <div className="grid grid-cols-2 gap-1.5">
             <InsertBtn
-              label="Columnas"
+              label="Comparación"
               icon={BarChart2}
               disabled={disabledNonText}
               onClick={() =>
                 add(
                   createDefaultGraficoBlock({
                     chartType: 'column',
-                    titulo: 'Gráfico de Columnas',
+                    titulo: 'Comparación de datos',
                   }),
                 )
               }
             />
             <InsertBtn
-              label="Barras"
-              icon={BarChartHorizontal}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'bar',
-                    titulo: 'Gráfico de Barras',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Líneas"
+              label="Evolución"
               icon={LineChart}
               disabled={disabledNonText}
               onClick={() =>
                 add(
                   createDefaultGraficoBlock({
                     chartType: 'line',
-                    titulo: 'Tendencia en Líneas',
+                    titulo: 'Evolución en el tiempo',
                   }),
                 )
               }
             />
             <InsertBtn
-              label="Área"
-              icon={AreaChart}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'area',
-                    titulo: 'Gráfico de Área',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Circular"
-              icon={PieChart}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'pie',
-                    titulo: 'Distribución Circular',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Dona"
+              label="Proporción"
               icon={CircleDot}
               disabled={disabledNonText}
               onClick={() =>
                 add(
                   createDefaultGraficoBlock({
                     chartType: 'donut',
-                    titulo: 'Gráfico de Dona',
+                    titulo: 'Distribución y proporción',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Relación"
+              icon={ScatterChart}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'scatter',
+                    titulo: 'Relación y dispersión',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Estadística"
+              icon={BarChartHorizontal}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'column',
+                    titulo: 'Distribución estadística',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Progreso / KPI"
+              icon={Gauge}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'radialBar',
+                    titulo: 'Progreso y métricas',
+                  }),
+                )
+              }
+            />
+            <InsertBtn
+              label="Especiales"
+              icon={Grid}
+              disabled={disabledNonText}
+              onClick={() =>
+                add(
+                  createDefaultGraficoBlock({
+                    chartType: 'heatmap',
+                    titulo: 'Matriz especial',
                   }),
                 )
               }

@@ -2,12 +2,21 @@
 
 export type {
   LuminaChartType,
+  LuminaChartFamily,
+  LuminaChartFamilyMeta,
+  LuminaChartTypeMeta,
   LuminaChartSeries,
   LuminaChartPoint,
   LuminaChartReferenceLine,
   LuminaChartConfig,
 } from './types.js';
-export { LUMINA_CHART_TYPES } from './types.js';
+export {
+  LUMINA_CHART_TYPES,
+  LUMINA_CHART_FAMILIES,
+  LUMINA_CHART_TYPE_META,
+  getChartFamily,
+  getChartTypesByFamily,
+} from './types.js';
 
 export { LuminaChart, type LuminaChartProps } from './chart-container.js';
 
