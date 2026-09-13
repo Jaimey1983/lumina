@@ -36,6 +36,11 @@ import {
   createDefaultMapaMentalBlock,
   createDefaultOrganigramaBlock,
   createDefaultVennBlock,
+  createDefaultFrayerBlock,
+  createDefaultIshikawaBlock,
+  createDefaultCicloBlock,
+  createDefaultMatriz2x2Block,
+  createDefaultTablaTBlock,
 } from '@lumina/element-kit/blocks/diagrama/diagrama-defaults';
 import {
   appendBlockToSlideContent,
@@ -344,6 +349,40 @@ function ElementosPanel({
               icon={Milestone}
               disabled={disabledNonText}
               onClick={() => add(createDefaultCronologiaBlock())}
+            />
+          </div>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Modelo Frayer"
+              icon={BookOpen}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultFrayerBlock())}
+            />
+            <InsertBtn
+              label="Ishikawa (Causa-Efecto)"
+              icon={GitMerge}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultIshikawaBlock())}
+            />
+            <InsertBtn
+              label="Ciclo Continuo"
+              icon={CircleDot}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultCicloBlock())}
+            />
+            <InsertBtn
+              label="Matriz 2×2"
+              icon={Grid}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultMatriz2x2Block())}
+            />
+          </div>
+          <div className="mt-1.5">
+            <InsertBtn
+              label="Tabla T (Pros y Contras)"
+              icon={Columns2}
+              disabled={disabledNonText}
+              onClick={() => add(createDefaultTablaTBlock())}
             />
           </div>
         </PanelSection>
