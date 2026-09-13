@@ -26,14 +26,21 @@ import type {
 
 /** `type` del nodo custom que renderiza `graph-canvas.tsx`. */
 export const GRAPH_CARD_NODE_TYPE = 'luminaGraphCard';
+export const LUMINA_EDGE_TYPE = 'luminaEdge';
 
-/** `data` que el bridge escribe y `GraphCardNode` lee. Sólo primitivos. */
+/** `data` que el bridge escribe y los nodos de React Flow leen. */
 export interface GraphCardNodeData {
   label?: string;
   sublabel?: string;
   body?: string;
   accent?: string;
   highlighted?: boolean;
+  forma?: string;
+  icono?: string;
+  imagen?: string;
+  blockId?: string;
+  isRoot?: boolean;
+  subtipo?: string;
   [key: string]: unknown;
 }
 
@@ -47,9 +54,12 @@ export function roundPos(value: number): number {
 // ─── GraphModel → React Flow ────────────────────────────────────────────────
 
 export function graphNodeToRF(node: GraphNode): RFGraphNode {
+  const nodeType =
+    (node.meta?.nodeType as string | undefined) ?? GRAPH_CARD_NODE_TYPE;
+
   return {
     id: node.id,
-    type: GRAPH_CARD_NODE_TYPE,
+    type: nodeType,
     position: { x: node.x, y: node.y },
     data: {
       label: node.label,
@@ -57,6 +67,12 @@ export function graphNodeToRF(node: GraphNode): RFGraphNode {
       body: node.body,
       accent: node.accent,
       highlighted: node.highlighted,
+      ...(node.meta?.forma ? { forma: String(node.meta.forma) } : {}),
+      ...(node.meta?.icono ? { icono: String(node.meta.icono) } : {}),
+      ...(node.meta?.imagen ? { imagen: String(node.meta.imagen) } : {}),
+      ...(node.meta?.blockId ? { blockId: String(node.meta.blockId) } : {}),
+      ...(node.meta?.isRoot !== undefined ? { isRoot: Boolean(node.meta.isRoot) } : {}),
+      ...(node.meta?.subtipo ? { subtipo: String(node.meta.subtipo) } : {}),
     },
   };
 }
@@ -68,15 +84,38 @@ export function graphNodesToRF(nodes: GraphNode[]): RFGraphNode[] {
 const ARROW_CLOSED = { type: 'arrowclosed' } as EdgeMarker;
 
 export function graphEdgeToRF(edge: GraphEdge): RFEdge {
+  const strokeColor = (edge.meta?.color as string | undefined) ?? '#9CA3AF';
+  const strokeWidth = (edge.meta?.grosor as number | undefined) ?? 1.5;
+  const strokeDasharray =
+    edge.meta?.estiloLinea === 'discontinua'
+      ? '5,5'
+      : edge.meta?.estiloLinea === 'punteada'
+        ? '2,2'
+        : undefined;
+
+  const edgeType =
+    (edge.meta?.edgeType as string | undefined) ??
+    (edge.meta?.tipoTrazado ? LUMINA_EDGE_TYPE : undefined);
+
   return {
     id: edge.id,
     source: edge.source,
     target: edge.target,
+    ...(edgeType ? { type: edgeType } : {}),
     label: edge.label,
     labelStyle: { fontSize: 10, fill: '#6B7280' },
-    style: { stroke: '#9CA3AF' },
-    animated: false,
+    style: {
+      stroke: strokeColor,
+      strokeWidth,
+      ...(strokeDasharray ? { strokeDasharray } : {}),
+    },
+    animated: Boolean(edge.meta?.animada),
     ...(edge.directed ? { markerEnd: ARROW_CLOSED } : null),
+    data: {
+      label: edge.label,
+      tipoTrazado: edge.meta?.tipoTrazado ?? 'smoothstep',
+      ...(edge.meta ?? {}),
+    },
   };
 }
 

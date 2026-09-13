@@ -9,8 +9,10 @@
  * de cliente. Los helpers de `lumina-rf-bridge` son puros (sin React).
  */
 
-export { GraphCanvas, default as GraphCanvasComponent } from './graph-canvas.js';
+export { GraphCanvas, LuminaEdge, default as GraphCanvasComponent } from './graph-canvas.js';
 export type { GraphCanvasProps } from './graph-canvas.js';
+export { Handle, Position, NodeToolbar, type NodeProps, type EdgeProps } from '@xyflow/react';
+export { computeDagreLayout, type DagreLayoutOptions } from './layout-dagre.js';
 
 export {
   GRAPH_CARD_NODE_TYPE,

@@ -13,7 +13,7 @@
  *   el bloque canvas seleccionado).
  */
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -21,12 +21,20 @@ import {
   MiniMap,
   Handle,
   Position,
+  BaseEdge,
+  EdgeLabelRenderer,
+  getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
   useNodesState,
   useEdgesState,
   type Connection,
   type NodeChange,
   type NodeMouseHandler,
   type NodeProps,
+  type EdgeProps,
+  type NodeTypes,
+  type EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -34,6 +42,7 @@ import { cn } from '@lumina/ui/lib/utils';
 
 import {
   GRAPH_CARD_NODE_TYPE,
+  LUMINA_EDGE_TYPE,
   graphNodesToRF,
   positionChangesToPatches,
   reconcileRFEdges,
@@ -67,50 +76,153 @@ export interface GraphCanvasProps {
   showControls?: boolean;
   showMiniMap?: boolean;
   showBackground?: boolean;
+  /** Tipos de nodo personalizados adicionales para este lienzo. */
+  nodeTypes?: NodeTypes;
+  /** Tipos de arista personalizados adicionales para este lienzo. */
+  edgeTypes?: EdgeTypes;
   /** Toolbar u overlays flotantes dentro del área del lienzo. */
   children?: React.ReactNode;
   className?: string;
 }
 
+export function LuminaEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+  label,
+  data,
+}: EdgeProps) {
+  const tipoTrazado = (data?.tipoTrazado as string | undefined) ?? 'smoothstep';
+
+  let edgePath = '';
+  let labelX = 0;
+  let labelY = 0;
+
+  if (tipoTrazado === 'straight') {
+    [edgePath, labelX, labelY] = getStraightPath({
+      sourceX,
+      sourceY,
+      targetX,
+      targetY,
+    });
+  } else if (tipoTrazado === 'bezier') {
+    [edgePath, labelX, labelY] = getBezierPath({
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition,
+    });
+  } else {
+    // smoothstep / orthogonal con esquinas redondeadas
+    [edgePath, labelX, labelY] = getSmoothStepPath({
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition,
+      borderRadius: 8,
+    });
+  }
+
+  const edgeLabel = label || (data?.label as string | undefined);
+
+  return (
+    <>
+      <BaseEdge id={id} path={edgePath} style={style} markerEnd={markerEnd} />
+      {edgeLabel && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all',
+            }}
+            className="nodrag nopan rounded-full border border-border/80 bg-card/95 px-2 py-0.5 text-[10px] font-medium text-card-foreground shadow-2xs backdrop-blur-xs select-none"
+          >
+            {edgeLabel}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
 function GraphCardNode({ data }: NodeProps<RFGraphNode>) {
-  const accent = data.accent ?? '#6B7280';
+  const accent = data.accent ?? 'var(--primary, #6B7280)';
   return (
     <div
+      className={cn(
+        'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-shadow min-w-[140px]',
+        data.highlighted &&
+          'ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/5',
+      )}
       style={{
-        border: `2px solid ${accent}`,
-        borderRadius: 10,
-        backgroundColor: data.highlighted ? '#EFF6FF' : '#FFFFFF',
-        minWidth: 140,
-        boxShadow: data.highlighted ? '0 0 0 3px #BFDBFE' : undefined,
+        borderColor: accent,
       }}
     >
-      <Handle type="target" position={Position.Top} />
-      <div className="flex flex-col items-start gap-0.5 p-1">
+      {/* Handles cuádruples: anclaje inteligente en 4 direcciones */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+      />
+      <div className="flex flex-col items-start gap-0.5 p-1.5">
         {data.label != null && (
           <span
-            className="text-xs font-bold px-1.5 py-0.5 rounded text-white"
+            className="text-xs font-semibold px-1.5 py-0.5 rounded text-white shadow-2xs"
             style={{ backgroundColor: accent }}
           >
             {data.label}
           </span>
         )}
         {data.sublabel != null && (
-          <span className="text-xs text-gray-700 font-medium mt-0.5">
+          <span className="text-xs text-foreground font-medium mt-0.5">
             {data.sublabel}
           </span>
         )}
         {data.body ? (
-          <span className="text-xs text-gray-400 leading-tight line-clamp-2">
+          <span className="text-xs text-muted-foreground leading-tight line-clamp-2 mt-0.5">
             {data.body}
           </span>
         ) : null}
       </div>
-      <Handle type="source" position={Position.Bottom} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+      />
     </div>
   );
 }
 
-const NODE_TYPES = { [GRAPH_CARD_NODE_TYPE]: GraphCardNode };
+const DEFAULT_NODE_TYPES: NodeTypes = {
+  [GRAPH_CARD_NODE_TYPE]: GraphCardNode,
+};
+
+const DEFAULT_EDGE_TYPES: EdgeTypes = {
+  [LUMINA_EDGE_TYPE]: LuminaEdge,
+};
 
 export function GraphCanvas({
   model,
@@ -125,9 +237,21 @@ export function GraphCanvas({
   showControls = true,
   showMiniMap = true,
   showBackground = true,
+  nodeTypes,
+  edgeTypes,
   children,
   className,
 }: GraphCanvasProps) {
+  const mergedNodeTypes = useMemo(
+    () => ({ ...DEFAULT_NODE_TYPES, ...nodeTypes }),
+    [nodeTypes],
+  );
+
+  const mergedEdgeTypes = useMemo(
+    () => ({ ...DEFAULT_EDGE_TYPES, ...edgeTypes }),
+    [edgeTypes],
+  );
+
   const [rfNodes, setRfNodes, onRfNodesChange] = useNodesState<RFGraphNode>(
     graphNodesToRF(model.nodes),
   );
@@ -181,7 +305,8 @@ export function GraphCanvas({
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
-        nodeTypes={NODE_TYPES}
+        nodeTypes={mergedNodeTypes}
+        edgeTypes={mergedEdgeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={onRfEdgesChange}
         onConnect={handleConnect}
@@ -197,12 +322,13 @@ export function GraphCanvas({
         fitView={fitView}
         attributionPosition="bottom-right"
       >
-        {showBackground && <Background color="#E5E7EB" gap={20} />}
-        {showControls && <Controls />}
+        {showBackground && <Background color="var(--border, #E5E7EB)" gap={20} />}
+        {showControls && <Controls className="!bg-card !border-border !fill-foreground !text-foreground shadow-xs" />}
         {showMiniMap && (
           <MiniMap
+            className="!bg-card/90 !border-border !rounded-md shadow-xs"
             nodeColor={(node) =>
-              (node.data as GraphCardNodeData | undefined)?.accent ?? '#6B7280'
+              (node.data as GraphCardNodeData | undefined)?.accent ?? 'var(--primary, #6B7280)'
             }
           />
         )}
