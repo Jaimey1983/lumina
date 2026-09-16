@@ -159,13 +159,26 @@ function normalizarParaBusqueda(s: string): string {
 }
 
 /**
+ * Unidades curadas (no placeholder) de una `CurriculumData` ya cargada — la
+ * lista que un selector de tema/subtema (frontend) o un match semántico
+ * (backend) pueden ofrecer como opciones reales, en vez del dataset entero
+ * (que puede tener unidades placeholder sin contenido, D1).
+ */
+export function listUnidadesCuradas(data: CurriculumData): UnidadCurricular[] {
+  return data.unidades.filter((u) => !esUnidadPlaceholder(u));
+}
+
+/**
  * Busca, dentro de una `CurriculumData` ya cargada, la unidad curada (no
  * placeholder) cuyo título/temas/subtemas/palabras clave coincidan con
  * `tema` (comparación insensible a mayúsculas/acentos, por inclusión en
- * cualquier sentido). `null` si no hay ninguna — no hace falta que el
- * llamador distinga "dataset sin cargar" de "sin coincidencia", ambos casos
- * significan lo mismo para quien la use: no hay contenido curado que ofrecer
- * como base.
+ * cualquier sentido — coincidencia LITERAL, no semántica: "la noticia" no
+ * encuentra una unidad de "medios de comunicación" aunque estén
+ * relacionadas; para eso hace falta un match semántico vía LLM, ver
+ * `CurriculumService.buildFromSemanticMatch` en el backend). `null` si no
+ * hay ninguna — no hace falta que el llamador distinga "dataset sin cargar"
+ * de "sin coincidencia", ambos casos significan lo mismo para quien la use:
+ * no hay contenido curado que ofrecer como base por esta vía.
  */
 export function findMatchingUnit(
   data: CurriculumData,
@@ -173,8 +186,7 @@ export function findMatchingUnit(
 ): UnidadCurricular | null {
   const needle = normalizarParaBusqueda(tema);
   if (!needle) return null;
-  for (const u of data.unidades) {
-    if (esUnidadPlaceholder(u)) continue;
+  for (const u of listUnidadesCuradas(data)) {
     const haystacks = [u.unidad_titulo, ...u.temas, ...u.subtemas, ...u.palabras_clave].map(
       normalizarParaBusqueda,
     );

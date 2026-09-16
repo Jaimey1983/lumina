@@ -7,6 +7,7 @@ import {
   loadCurriculum,
   buildCurriculumContext,
   findMatchingUnit,
+  listUnidadesCuradas,
 } from './index.js';
 
 describe('@lumina/curriculum-data', () => {
@@ -86,6 +87,18 @@ describe('@lumina/curriculum-data', () => {
     it('devuelve null con tema vacío', async () => {
       const data = await loadCurriculum('ciencias-naturales', '1');
       expect(findMatchingUnit(data!, '   ')).toBeNull();
+    });
+  });
+
+  describe('listUnidadesCuradas', () => {
+    it('devuelve las 4 unidades reales de ciencias-naturales-1', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      expect(listUnidadesCuradas(data!)).toHaveLength(4);
+    });
+
+    it('devuelve un array vacío para un área/grado 100% placeholder', async () => {
+      const data = await loadCurriculum('matematicas', '8');
+      expect(listUnidadesCuradas(data!)).toEqual([]);
     });
   });
 });

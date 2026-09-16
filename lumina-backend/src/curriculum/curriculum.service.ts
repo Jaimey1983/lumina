@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   loadCurriculum,
   findMatchingUnit,
+  listUnidadesCuradas,
   AREAS_LABELS,
   GRADOS_TODOS,
   type AreaCurricular,
@@ -11,6 +12,7 @@ import {
   type UnidadCurricular,
   type IndicadoresDesempeno,
 } from '@lumina/curriculum-data';
+import { LLM_MODELS } from '../ai-features/ai-provider.types';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 
 // ─── Tipos ────────────────────────────────────────────────
@@ -130,24 +132,74 @@ function buildDesempenoFromUnit(
   };
 }
 
+/**
+ * Extrae y parsea el primer objeto JSON de una respuesta de texto de
+ * Gemini. Con `responseMimeType: 'application/json'` (modo no-grounded) la
+ * respuesta ya es JSON puro; en modo `grounded` (sin ese mime type, D6 —
+ * Gemini no admite ambos a la vez) el modelo puede envolver el JSON en
+ * ```json ... ``` o agregar una frase antes/después pese a la instrucción
+ * del prompt — se recorta al primer `{`/último `}` como red de seguridad
+ * adicional a la limpieza de fences. `null` si no hay JSON válido.
+ */
+function extractJsonObject(raw: string): unknown {
+  const cleaned = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start === -1 || end === -1 || end <= start) return null;
+    try {
+      return JSON.parse(cleaned.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+}
+
 // ─── Service ──────────────────────────────────────────────
 
 @Injectable()
 export class CurriculumService {
   constructor(private readonly config: ConfigService) {}
 
+  /**
+   * `grounded: true` activa la herramienta de búsqueda de Google en Gemini
+   * (`google_search`) para que la respuesta se apoye en información real de
+   * internet, no solo en el conocimiento propio del modelo — para cuando ni
+   * el match literal (`findMatchingUnit`) ni el semántico
+   * (`buildFromSemanticMatch`) encontraron nada en el dataset curricular.
+   * La API de Gemini no admite `responseMimeType: 'application/json'` junto
+   * con `google_search` — por eso `forceJson` se apaga automáticamente
+   * cuando `grounded` está activo; el JSON se sigue pidiendo por prompt (los
+   * llamadores ya limpian los ```json ... ``` que Gemini a veces agrega).
+   */
   private async callGemini(
     systemInstruction: string,
     userMessage: string,
-    maxOutputTokens = 2000,
+    options: {
+      maxOutputTokens?: number;
+      grounded?: boolean;
+      temperature?: number;
+    } = {},
   ): Promise<string> {
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) return '';
 
-    const model = 'gemini-2.0-flash';
+    const {
+      maxOutputTokens = 2000,
+      grounded = false,
+      temperature = 0.7,
+    } = options;
+
+    const model = LLM_MODELS.GEMINI;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    const body = {
+    const body: Record<string, unknown> = {
       system_instruction: {
         parts: [{ text: systemInstruction }],
       },
@@ -158,10 +210,11 @@ export class CurriculumService {
         },
       ],
       generationConfig: {
-        temperature: 0.7,
+        temperature,
         maxOutputTokens,
-        responseMimeType: 'application/json',
+        ...(grounded ? {} : { responseMimeType: 'application/json' }),
       },
+      ...(grounded ? { tools: [{ google_search: {} }] } : {}),
       safetySettings: [
         { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
         { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -248,18 +301,84 @@ export class CurriculumService {
     return buildDesempenoFromUnit(unidad, tipoKey, dto);
   }
 
+  /**
+   * Si el match literal falló (p. ej. "la noticia" contra una unidad de
+   * "medios de comunicación" — relacionados, pero sin substring en común),
+   * le pide a Gemini que asocie el tema con alguna unidad curada por
+   * significado, no por texto. Una llamada corta y barata (no genera
+   * contenido, solo clasifica) — si acierta, se reusa el contenido curado
+   * real igual que en el match literal; si no hay ninguna razonable, sigue
+   * la cadena hacia la generación con búsqueda en internet.
+   */
+  private async buildFromSemanticMatch(
+    dto: GenerateDesempenoDto,
+  ): Promise<DesempenoResult | null> {
+    const area = resolveAreaCurricular(dto.area);
+    const tipoKey = resolveTipoKey(dto.tipo);
+    const grado = dto.grado.trim();
+    if (!area || !tipoKey || !GRADOS_TODOS.includes(grado as GradoEscolar)) {
+      return null;
+    }
+    const data = await loadCurriculum(area, grado as GradoEscolar);
+    if (!data) return null;
+    const candidatas = listUnidadesCuradas(data);
+    if (!candidatas.length) return null;
+
+    const system = `Eres un clasificador curricular ESTRICTO. Dado un tema o subtema de clase, determinás a cuál de las unidades curriculares dadas corresponde — pero SOLO si el tema es un caso concreto, una parte o una manifestación específica del contenido de esa unidad. Una palabra en común (p. ej. "gramatical", "texto", "comunicación") NO es un match — tiene que ser el mismo contenido pedagógico real.
+Ejemplo de match VÁLIDO: "la noticia" → unidad sobre "medios de comunicación" (la noticia ES uno de los medios/formatos que la unidad trata explícitamente).
+Ejemplos de NO-match (devolver -1, con la razón por la que un clasificador descuidado se equivocaría):
+- "el cómic" contra una unidad sobre "producción escrita en general" — ambos son "tipos de texto", pero la unidad no trata el cómic como género.
+- "reglas de uso de mayúsculas y minúsculas" (ortografía) contra una unidad que menciona "concordancia gramatical" — comparten la palabra "gramatical", pero ortografía (mayúsculas) y concordancia (género/número) son contenidos distintos; esa unidad NO enseña mayúsculas.
+Ante cualquier duda, preferí devolver -1 antes que forzar una asociación por palabras en común.
+Respondés SIEMPRE con JSON puro: {"unidad_id": <number>}, usando -1 si ninguna unidad aplica con certeza razonable. No inventes un id que no esté en la lista.`;
+
+    const user = `Tema/subtema de clase: "${dto.tema}"
+
+Unidades disponibles:
+${candidatas
+  .map(
+    (u) =>
+      `id=${u.unidad_id}: "${u.unidad_titulo}" — temas: ${u.temas.join(', ')} — subtemas: ${u.subtemas.join(', ')}`,
+  )
+  .join('\n')}`;
+
+    try {
+      const raw = await this.callGemini(system, user, {
+        maxOutputTokens: 100,
+        temperature: 0,
+      });
+      const cleaned = raw
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+      const parsed = JSON.parse(cleaned) as { unidad_id?: unknown };
+      const id = typeof parsed.unidad_id === 'number' ? parsed.unidad_id : -1;
+      if (id < 0) return null;
+      const unidad = candidatas.find((u) => u.unidad_id === id);
+      if (!unidad) return null;
+      return buildDesempenoFromUnit(unidad, tipoKey, dto);
+    } catch {
+      return null;
+    }
+  }
+
   async generateDesempeno(dto: GenerateDesempenoDto): Promise<DesempenoResult> {
-    const curado = await this.buildFromCuratedDataset(dto);
-    if (curado) return curado;
+    const curadoLiteral = await this.buildFromCuratedDataset(dto);
+    if (curadoLiteral) return curadoLiteral;
 
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
       return buildFallbackDesempeno(dto);
     }
 
+    const curadoSemantico = await this.buildFromSemanticMatch(dto);
+    if (curadoSemantico) return curadoSemantico;
+
     const system = `Eres un experto en diseño curricular colombiano basado en los Estándares Básicos de Competencias del MEN.
 Tu especialidad es redactar desempeños de aprendizaje siguiendo la estructura: Verbo de acción + Contenido + Condición + Finalidad.
-Respondes SIEMPRE en español y devuelves ÚNICAMENTE JSON válido.`;
+Tenés disponible búsqueda en Google — usala para fundamentar el desempeño y los indicadores en información real y confiable sobre el tema, especialmente si no coincide con ningún contenido curricular ya cargado.
+Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido, sin texto antes ni después, sin bloques de código markdown.`;
 
     const user = `Genera UN desempeño de aprendizaje para:
 - Área: ${dto.area}
@@ -301,15 +420,14 @@ Ejemplo de formato correcto: "Los estudiantes identifican las partes de la célu
 No uses ningún tipo de actividad fuera de la lista anterior.`;
 
     try {
-      const raw = await this.callGemini(system, user, 1200);
-
-      // Gemini a veces envuelve el JSON en ```json ... ``` aunque se pida JSON puro
-      const cleaned = raw
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-      const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+      const raw = await this.callGemini(system, user, {
+        maxOutputTokens: 1200,
+        grounded: true,
+      });
+      const parsed = extractJsonObject(raw) as Record<string, unknown> | null;
+      if (!parsed) {
+        return buildFallbackDesempeno(dto);
+      }
 
       const enunciado = parsed['enunciado'];
       const indicadores = parsed['indicadores'];

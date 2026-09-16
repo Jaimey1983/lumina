@@ -15,6 +15,7 @@ import {
   CompetenceScope,
   Prisma,
 } from '@prisma/client';
+import { LLM_MODELS } from '../ai-features/ai-provider.types';
 
 const COMPETENCE_TYPES_AUTO = [
   CompetenceType.COGNITIVE,
@@ -39,7 +40,7 @@ export class AchievementsService {
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) return '';
 
-    const model = 'gemini-2.0-flash';
+    const model = LLM_MODELS.GEMINI;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const body = {

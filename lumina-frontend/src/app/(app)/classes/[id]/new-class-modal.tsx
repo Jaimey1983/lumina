@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -8,7 +9,11 @@ import { api } from '@/lib/api';
 import { useUpdateClass } from '@/hooks/api/use-classes';
 import { useCourse } from '@/hooks/api/use-course';
 import { cn } from '@/lib/utils';
-import { AREAS_LABELS, type AreaCurricular } from '@lumina/curriculum-data';
+import {
+  AREAS_LABELS,
+  type AreaCurricular,
+  type CurriculumData,
+} from '@lumina/curriculum-data';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Textarea } from '@lumina/ui/textarea';
@@ -28,6 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@lumina/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@lumina/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@lumina/ui/command';
 
 // ─── Type ─────────────────────────────────────────────────────────────────────
 
@@ -222,6 +236,45 @@ export function NewClassModal({
     : null;
   const hasInheritedContext = !!inheritedAreaLabel && !!courseGrado;
 
+  // Plan de área real (J2) para el desplegable de temas/subtemas — el mismo
+  // endpoint que ya expone GET /curriculum/:area/:grado. Solo se pide con
+  // contexto heredado (el picker manual no tiene área/grado normalizados
+  // hasta que el docente elige, y ese caso no es el foco de esta mejora).
+  const { data: curriculumUnit } = useQuery({
+    queryKey: ['curriculum-unit', courseArea, courseGrado],
+    queryFn: async () => {
+      const { data } = await api.get<CurriculumData>(
+        `/curriculum/${courseArea}/${courseGrado}`,
+      );
+      return data;
+    },
+    enabled: hasInheritedContext,
+    staleTime: Infinity,
+  });
+
+  // Temas + subtemas de las unidades curadas (sin placeholders, D1), sin
+  // duplicados — el docente elige uno o escribe el suyo (D6: "si no está,
+  // buscar semántico/internet" ya lo resuelve el backend, J3-seguimiento).
+  const temaOptions = useMemo(() => {
+    if (!curriculumUnit?.unidades) return [];
+    const seen = new Set<string>();
+    const opciones: string[] = [];
+    for (const u of curriculumUnit.unidades) {
+      if (u.unidad_titulo.trim().toLowerCase().startsWith('placeholder')) continue;
+      for (const s of [u.unidad_titulo, ...u.temas, ...u.subtemas]) {
+        const v = s.trim();
+        const key = v.toLowerCase();
+        if (v && !seen.has(key)) {
+          seen.add(key);
+          opciones.push(v);
+        }
+      }
+    }
+    return opciones;
+  }, [curriculumUnit]);
+
+  const [temaPopoverOpen, setTemaPopoverOpen] = useState(false);
+
   // Form (solo se usa si el curso NO tiene área/grado — fallback manual)
   const [area, setArea] = useState('');
   const [grado, setGrado] = useState('');
@@ -240,6 +293,7 @@ export function NewClassModal({
       setTema('');
       setTipo('');
       setDraft(null);
+      setTemaPopoverOpen(false);
     }
   }, [isOpen]);
 
@@ -387,14 +441,73 @@ export function NewClassModal({
               <label className="text-[0.8125rem] font-medium leading-none">
                 Tema
               </label>
-              <Input
-                placeholder="Ej: Fracciones equivalentes, El Sistema Solar, La célula..."
-                value={tema}
-                onChange={(e) => setTema(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && canGenerate) handleGenerate();
-                }}
-              />
+              {temaOptions.length > 0 ? (
+                <Popover open={temaPopoverOpen} onOpenChange={setTemaPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-8.5 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-[0.8125rem] shadow-xs focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30 focus-visible:border-ring"
+                    >
+                      <span
+                        className={cn(
+                          'truncate text-left',
+                          !tema && 'text-muted-foreground',
+                        )}
+                      >
+                        {tema || 'Elegí un tema del plan de área o escribí el tuyo...'}
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-(--radix-popover-trigger-width) p-0"
+                    align="start"
+                  >
+                    <Command>
+                      <CommandInput
+                        placeholder="Buscar o escribir un tema..."
+                        value={tema}
+                        onValueChange={setTema}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && canGenerate) {
+                            setTemaPopoverOpen(false);
+                            handleGenerate();
+                          }
+                        }}
+                      />
+                      <CommandList>
+                        <CommandEmpty className="px-3 py-2 text-xs text-muted-foreground">
+                          Sin coincidencias en el plan de área — se puede escribir
+                          un tema propio; la IA busca la asociación o genera con
+                          información de internet.
+                        </CommandEmpty>
+                        <CommandGroup heading="Temas y subtemas del plan de área">
+                          {temaOptions.map((opt) => (
+                            <CommandItem
+                              key={opt}
+                              value={opt}
+                              onSelect={(v) => {
+                                setTema(v);
+                                setTemaPopoverOpen(false);
+                              }}
+                            >
+                              {opt}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Input
+                  placeholder="Ej: Fracciones equivalentes, El Sistema Solar, La célula..."
+                  value={tema}
+                  onChange={(e) => setTema(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && canGenerate) handleGenerate();
+                  }}
+                />
+              )}
             </div>
 
             {/* Tipo de desempeño */}
