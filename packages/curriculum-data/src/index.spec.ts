@@ -6,6 +6,7 @@ import {
   GRADOS_TODOS,
   loadCurriculum,
   buildCurriculumContext,
+  findMatchingUnit,
 } from './index.js';
 
 describe('@lumina/curriculum-data', () => {
@@ -50,5 +51,41 @@ describe('@lumina/curriculum-data', () => {
     const context = buildCurriculumContext(data!);
     expect(context).toContain('UNIDADES CURRICULARES');
     expect(context.length).toBeGreaterThan(0);
+  });
+
+  describe('findMatchingUnit', () => {
+    it('encuentra una unidad curada por título exacto', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const unidad = findMatchingUnit(data!, 'Los sentidos y la percepción del entorno');
+      expect(unidad?.unidad_id).toBe(0);
+    });
+
+    it('encuentra una unidad curada por un tema parcial, sin acentos ni mayúsculas', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const unidad = findMatchingUnit(data!, 'materiales de uso cotidiano');
+      expect(unidad?.unidad_id).toBe(1);
+    });
+
+    it('encuentra una unidad curada por un subtema', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const unidad = findMatchingUnit(data!, '¿Qué diferencia a un ser vivo de un objeto inerte?');
+      expect(unidad?.unidad_id).toBe(2);
+    });
+
+    it('devuelve null si el tema no coincide con ninguna unidad', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      expect(findMatchingUnit(data!, 'Fracciones equivalentes')).toBeNull();
+    });
+
+    it('ignora unidades placeholder (nunca las ofrece como "curadas")', async () => {
+      const data = await loadCurriculum('matematicas', '8');
+      expect(data?.unidades[0]?.unidad_titulo.toLowerCase()).toContain('placeholder');
+      expect(findMatchingUnit(data!, 'Placeholder')).toBeNull();
+    });
+
+    it('devuelve null con tema vacío', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      expect(findMatchingUnit(data!, '   ')).toBeNull();
+    });
   });
 });

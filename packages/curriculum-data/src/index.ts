@@ -4,9 +4,21 @@ import type {
   GradoPrimaria,
   GradoBachillerato,
   GradoEscolar,
+  UnidadCurricular,
+  IndicadoresDesempeno,
+  ActividadSugerida,
 } from '@lumina/types/curriculum';
 
-export type { CurriculumData, AreaCurricular, GradoPrimaria, GradoBachillerato, GradoEscolar };
+export type {
+  CurriculumData,
+  AreaCurricular,
+  GradoPrimaria,
+  GradoBachillerato,
+  GradoEscolar,
+  UnidadCurricular,
+  IndicadoresDesempeno,
+  ActividadSugerida,
+};
 
 // Mapa de carga dinámica — evita incluir todos los JSONs en el bundle inicial
 // para consumidores con bundler (lumina-frontend, ESM: Next/Turbopack/Vite
@@ -129,6 +141,48 @@ export async function loadCurriculum(
   } catch {
     return null;
   }
+}
+
+// Una unidad es "placeholder" (aún sin curar, D1) si su título literal lo dice
+// — convención ya usada por el propio dataset ("Placeholder — reemplazar con
+// JSON real"), no un campo estructurado dedicado.
+function esUnidadPlaceholder(u: UnidadCurricular): boolean {
+  return u.unidad_titulo.trim().toLowerCase().startsWith('placeholder');
+}
+
+function normalizarParaBusqueda(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+
+/**
+ * Busca, dentro de una `CurriculumData` ya cargada, la unidad curada (no
+ * placeholder) cuyo título/temas/subtemas/palabras clave coincidan con
+ * `tema` (comparación insensible a mayúsculas/acentos, por inclusión en
+ * cualquier sentido). `null` si no hay ninguna — no hace falta que el
+ * llamador distinga "dataset sin cargar" de "sin coincidencia", ambos casos
+ * significan lo mismo para quien la use: no hay contenido curado que ofrecer
+ * como base.
+ */
+export function findMatchingUnit(
+  data: CurriculumData,
+  tema: string,
+): UnidadCurricular | null {
+  const needle = normalizarParaBusqueda(tema);
+  if (!needle) return null;
+  for (const u of data.unidades) {
+    if (esUnidadPlaceholder(u)) continue;
+    const haystacks = [u.unidad_titulo, ...u.temas, ...u.subtemas, ...u.palabras_clave].map(
+      normalizarParaBusqueda,
+    );
+    if (haystacks.some((h) => h.length > 0 && (h.includes(needle) || needle.includes(h)))) {
+      return u;
+    }
+  }
+  return null;
 }
 
 // Extrae un resumen compacto de unidades para inyectar en el prompt.

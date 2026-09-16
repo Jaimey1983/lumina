@@ -6,7 +6,9 @@ import { toast } from 'sonner';
 
 import { api } from '@/lib/api';
 import { useUpdateClass } from '@/hooks/api/use-classes';
+import { useCourse } from '@/hooks/api/use-course';
 import { cn } from '@/lib/utils';
+import { AREAS_LABELS, type AreaCurricular } from '@lumina/curriculum-data';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Textarea } from '@lumina/ui/textarea';
@@ -183,6 +185,14 @@ function buildMock(
 
 export interface NewClassModalProps {
   classId: string;
+  /**
+   * Curso dueño de la clase — J3 (D4/D6): si el curso ya tiene `area`/`grado`
+   * (J1), el modal los hereda y deja de pedirlos; solo pregunta tema (+
+   * tipo). Si el curso no los tiene (curso legado, creado antes de J1, o con
+   * un área fuera de las 5 del dataset MEN), se degrada al selector manual
+   * de siempre — no bloquea al docente.
+   */
+  courseId: string;
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (desempeno: DesempenoGenerado) => void;
@@ -194,14 +204,25 @@ export interface NewClassModalProps {
 
 export function NewClassModal({
   classId,
+  courseId,
   isOpen,
   onClose,
   onConfirm,
   required = false,
 }: NewClassModalProps) {
   const updateClass = useUpdateClass(classId, '');
+  const { data: course } = useCourse(courseId);
 
-  // Form
+  // Contexto heredado del curso (J1/J3) — `grado` ya viene en dígitos
+  // ("5", no "5°") porque así lo guarda `Course.grado` desde J1.
+  const courseArea = course?.area ?? null;
+  const courseGrado = course?.grado ?? null;
+  const inheritedAreaLabel = courseArea
+    ? (AREAS_LABELS[courseArea as AreaCurricular] ?? courseArea)
+    : null;
+  const hasInheritedContext = !!inheritedAreaLabel && !!courseGrado;
+
+  // Form (solo se usa si el curso NO tiene área/grado — fallback manual)
   const [area, setArea] = useState('');
   const [grado, setGrado] = useState('');
   const [tema, setTema] = useState('');
@@ -222,7 +243,16 @@ export function NewClassModal({
     }
   }, [isOpen]);
 
-  const canGenerate = !!area && !!grado && !!tema.trim() && !!tipo;
+  const effectiveArea = hasInheritedContext ? inheritedAreaLabel! : area;
+  // El picker manual usa "5°" (formato histórico de UI); el heredado ya es
+  // "5" (formato del dataset, J1). Se envía siempre sin el símbolo de grado.
+  const effectiveGrado = (hasInheritedContext ? courseGrado! : grado).replace(
+    '°',
+    '',
+  );
+
+  const canGenerate =
+    !!effectiveArea && !!effectiveGrado && !!tema.trim() && !!tipo;
 
   async function handleGenerate() {
     if (!canGenerate) return;
@@ -231,12 +261,12 @@ export function NewClassModal({
     try {
       const { data } = await api.post<DesempenoGenerado>(
         '/curriculum/generate-desempeno',
-        { area, grado, tema: tema.trim(), tipo },
+        { area: effectiveArea, grado: effectiveGrado, tema: tema.trim(), tipo },
       );
       setDraft(withActividadesSugeridas(data));
     } catch {
       // Endpoint not yet available — use mock data to unblock frontend development
-      setDraft(buildMock(area, grado, tema.trim(), tipo));
+      setDraft(buildMock(effectiveArea, effectiveGrado, tema.trim(), tipo));
     } finally {
       setIsGenerating(false);
     }
@@ -295,45 +325,62 @@ export function NewClassModal({
 
           {/* ── Form fields ────────────────────────────────────────────────── */}
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Área */}
+            {hasInheritedContext ? (
+              /* Heredado del curso (J1/J3) — ya no se vuelve a preguntar. */
               <div className="space-y-1.5">
                 <label className="text-[0.8125rem] font-medium leading-none">
-                  Área
+                  Área y grado del curso
                 </label>
-                <Select value={area} onValueChange={setArea}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar área" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AREAS.map((a) => (
-                      <SelectItem key={a} value={a}>
-                        {a}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                    {inheritedAreaLabel}
+                  </span>
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                    Grado {courseGrado}
+                  </span>
+                </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {/* Área */}
+                <div className="space-y-1.5">
+                  <label className="text-[0.8125rem] font-medium leading-none">
+                    Área
+                  </label>
+                  <Select value={area} onValueChange={setArea}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar área" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AREAS.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {a}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Grado */}
-              <div className="space-y-1.5">
-                <label className="text-[0.8125rem] font-medium leading-none">
-                  Grado
-                </label>
-                <Select value={grado} onValueChange={setGrado}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar grado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GRADOS.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Grado */}
+                <div className="space-y-1.5">
+                  <label className="text-[0.8125rem] font-medium leading-none">
+                    Grado
+                  </label>
+                  <Select value={grado} onValueChange={setGrado}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar grado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GRADOS.map((g) => (
+                        <SelectItem key={g} value={g}>
+                          {g}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tema */}
             <div className="space-y-1.5">

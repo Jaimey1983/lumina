@@ -3136,6 +3136,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
       <NewClassModal
         classId={classId}
+        courseId={courseId}
         isOpen={modalOpen}
         required={false}
         onClose={() => {

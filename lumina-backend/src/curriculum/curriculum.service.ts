@@ -2,11 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   loadCurriculum,
+  findMatchingUnit,
   AREAS_LABELS,
   GRADOS_TODOS,
   type AreaCurricular,
   type GradoEscolar,
   type CurriculumData as CurriculumUnitData,
+  type UnidadCurricular,
+  type IndicadoresDesempeno,
 } from '@lumina/curriculum-data';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 
@@ -72,6 +75,58 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
       bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
     },
     actividadesSugeridas: buildActividadesFallback(dto),
+  };
+}
+
+// ─── Dataset curado (J3 — prioridad sobre Gemini/fallback) ────
+
+/**
+ * `dto.area`/`dto.tipo` llegan en español "humano" (p. ej. "Matemáticas",
+ * "Cognitivo") — el mismo vocabulario que ya usa el prompt de Gemini y el
+ * fallback de plantilla (no se cambia, D6 dice que el modal hereda del curso
+ * pero el resto de la cadena no cambia de forma). El dataset curricular
+ * (`@lumina/curriculum-data`) usa claves normalizadas (`matematicas`) e
+ * `IndicadoresDesempeno` en minúsculas (`cognitivo`) — estos dos helpers
+ * traducen entre ambos vocabularios sin tocar ninguno de los dos.
+ */
+function resolveAreaCurricular(areaInput: string): AreaCurricular | null {
+  const needle = areaInput.trim().toLowerCase();
+  const entry = Object.entries(AREAS_LABELS).find(
+    ([, label]) => label.toLowerCase() === needle,
+  );
+  return entry ? (entry[0] as AreaCurricular) : null;
+}
+
+function resolveTipoKey(tipoInput: string): keyof IndicadoresDesempeno | null {
+  const key = tipoInput.trim().toLowerCase();
+  return key === 'cognitivo' || key === 'procedimental' || key === 'actitudinal'
+    ? key
+    : null;
+}
+
+function buildDesempenoFromUnit(
+  unidad: UnidadCurricular,
+  tipoKey: keyof IndicadoresDesempeno,
+  dto: GenerateDesempenoDto,
+): DesempenoResult {
+  const niveles = unidad.indicadores_desempeno[tipoKey];
+  return {
+    enunciado: unidad.dba_enunciado,
+    tipo: dto.tipo,
+    area: dto.area,
+    grado: dto.grado,
+    tema: dto.tema,
+    indicadores: {
+      superior: niveles.superior,
+      alto: niveles.alto,
+      basico: niveles.basico,
+      bajo: niveles.bajo,
+    },
+    actividadesSugeridas: unidad.actividades_sugeridas.length
+      ? unidad.actividades_sugeridas.map(
+          (a) => `${a.descripcion} [Tipo: ${a.tipo}]`,
+        )
+      : buildActividadesFallback(dto),
   };
 }
 
@@ -167,9 +222,36 @@ export class CurriculumService {
     return loadCurriculum(area as AreaCurricular, grado as GradoEscolar);
   }
 
-  // ── 2. Generar desempeño con Gemini (con fallback) ─────────
+  // ── 2. Generar desempeño: dataset curado > Gemini > fallback ─
+
+  /**
+   * Antes de improvisar (Gemini o plantilla), busca si el tema ya coincide
+   * con una unidad curada real del dataset único (J2/J3, D6) — si la hay, la
+   * usa como base y ni siquiera llama a Gemini. `null` si el área/grado no
+   * son del dataset MEN (p. ej. "Educación Física", fuera de las 5 áreas),
+   * si esa combinación no tiene contenido curado todavía (D1, placeholder),
+   * o si el tipo de desempeño no matchea los 3 tipos pedagógicos (D3).
+   */
+  private async buildFromCuratedDataset(
+    dto: GenerateDesempenoDto,
+  ): Promise<DesempenoResult | null> {
+    const area = resolveAreaCurricular(dto.area);
+    const tipoKey = resolveTipoKey(dto.tipo);
+    const grado = dto.grado.trim();
+    if (!area || !tipoKey || !GRADOS_TODOS.includes(grado as GradoEscolar)) {
+      return null;
+    }
+    const data = await loadCurriculum(area, grado as GradoEscolar);
+    if (!data) return null;
+    const unidad = findMatchingUnit(data, dto.tema);
+    if (!unidad) return null;
+    return buildDesempenoFromUnit(unidad, tipoKey, dto);
+  }
 
   async generateDesempeno(dto: GenerateDesempenoDto): Promise<DesempenoResult> {
+    const curado = await this.buildFromCuratedDataset(dto);
+    if (curado) return curado;
+
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
       return buildFallbackDesempeno(dto);
