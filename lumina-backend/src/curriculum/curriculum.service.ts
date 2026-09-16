@@ -10,7 +10,7 @@ import {
   type GradoEscolar,
   type CurriculumData as CurriculumUnitData,
   type UnidadCurricular,
-  type IndicadoresDesempeno,
+  type EscalaValoracionPorTipo,
 } from '@lumina/curriculum-data';
 import { LLM_MODELS } from '../ai-features/ai-provider.types';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
@@ -23,13 +23,83 @@ export interface DesempenoResult {
   area: string;
   grado: string;
   tema: string;
+  /**
+   * Escala de valoración de REFERENCIA para calificar el desempeño completo
+   * (Decreto 1290: Superior/Alto/Básico/Bajo) — NO son indicadores de
+   * desempeño reales (J4). Se mantiene el nombre de campo `indicadores` sin
+   * cambios porque esta forma ya está persistida tal cual en `Class.desempeno`
+   * (JSON libre, sin DTO tipado) para clases existentes — renombrar la clave
+   * exigiría migrar datos ya guardados; la corrección de nomenclatura se hizo
+   * donde no tiene ese costo: la etiqueta de UI (`new-class-modal.tsx`) y este
+   * comentario. Ver `packages/scoring/src/grade-bands.ts` para la escala real
+   * de valoración numérica de un estudiante — este campo es solo texto de
+   * referencia para planeación, no participa del cálculo de notas.
+   */
   indicadores: {
     superior: string;
     alto: string;
     basico: string;
     bajo: string;
   };
+  /**
+   * Indicadores de desempeño REALES (J4) — 3 a 5 enunciados observables y
+   * DISTINTOS entre sí (verbo + contenido + condición), del tipo pedagógico
+   * de `tipo` (D3). Cuando hay una unidad curada real (match literal o
+   * semántico), son `unidad.evidencias_aprendizaje` tal cual — ya están
+   * escritos así en el dataset. Si no, los genera Gemini (prompt) o, sin
+   * `GEMINI_API_KEY`, una plantilla determinista por banco de verbos (D3).
+   */
+  indicadoresDeDesempeno: string[];
   actividadesSugeridas: string[];
+}
+
+// ─── Indicadores de desempeño reales — banco de verbos (D3) ───
+
+const VERBOS_POR_TIPO: Record<
+  'cognitivo' | 'procedimental' | 'actitudinal',
+  string[]
+> = {
+  cognitivo: [
+    'Identifica',
+    'Explica',
+    'Analiza',
+    'Compara',
+    'Argumenta',
+    'Sustenta',
+  ],
+  procedimental: [
+    'Aplica',
+    'Utiliza',
+    'Desarrolla',
+    'Resuelve',
+    'Diseña',
+    'Construye',
+  ],
+  actitudinal: [
+    'Respeta',
+    'Participa',
+    'Reconoce',
+    'Asume',
+    'Coopera',
+    'Demuestra',
+  ],
+};
+
+/**
+ * Fallback determinista de indicadores de desempeño reales — sin llamar a
+ * Gemini. 4 enunciados DISTINTOS (verbo distinto de `VERBOS_POR_TIPO` +
+ * contenido + condición), no 4 niveles de intensidad del mismo enunciado
+ * (esa confusión es justamente la que J4 corrige).
+ */
+function buildIndicadoresFallback(dto: GenerateDesempenoDto): string[] {
+  const tipoKey = resolveTipoKey(dto.tipo) ?? 'cognitivo';
+  const [v1, v2, v3, v4] = VERBOS_POR_TIPO[tipoKey];
+  return [
+    `${v1} los conceptos fundamentales de ${dto.tema} en situaciones cotidianas de ${dto.area}.`,
+    `${v2} ${dto.tema} para resolver una situación propuesta en clase, propia del grado ${dto.grado}.`,
+    `${v3} relaciones entre ${dto.tema} y otros contenidos ya trabajados en ${dto.area}.`,
+    `${v4} lo aprendido sobre ${dto.tema} en una producción propia (oral, escrita o gráfica).`,
+  ];
 }
 
 // ─── Fallback hardcodeado ─────────────────────────────────
@@ -76,6 +146,7 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
       basico: `Comprende los conceptos básicos de ${dto.tema} y los aplica en situaciones guiadas con apoyo del docente.`,
       bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
     },
+    indicadoresDeDesempeno: buildIndicadoresFallback(dto),
     actividadesSugeridas: buildActividadesFallback(dto),
   };
 }
@@ -88,7 +159,7 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
  * fallback de plantilla (no se cambia, D6 dice que el modal hereda del curso
  * pero el resto de la cadena no cambia de forma). El dataset curricular
  * (`@lumina/curriculum-data`) usa claves normalizadas (`matematicas`) e
- * `IndicadoresDesempeno` en minúsculas (`cognitivo`) — estos dos helpers
+ * `EscalaValoracionPorTipo` en minúsculas (`cognitivo`) — estos dos helpers
  * traducen entre ambos vocabularios sin tocar ninguno de los dos.
  */
 function resolveAreaCurricular(areaInput: string): AreaCurricular | null {
@@ -99,7 +170,9 @@ function resolveAreaCurricular(areaInput: string): AreaCurricular | null {
   return entry ? (entry[0] as AreaCurricular) : null;
 }
 
-function resolveTipoKey(tipoInput: string): keyof IndicadoresDesempeno | null {
+function resolveTipoKey(
+  tipoInput: string,
+): keyof EscalaValoracionPorTipo | null {
   const key = tipoInput.trim().toLowerCase();
   return key === 'cognitivo' || key === 'procedimental' || key === 'actitudinal'
     ? key
@@ -108,7 +181,7 @@ function resolveTipoKey(tipoInput: string): keyof IndicadoresDesempeno | null {
 
 function buildDesempenoFromUnit(
   unidad: UnidadCurricular,
-  tipoKey: keyof IndicadoresDesempeno,
+  tipoKey: keyof EscalaValoracionPorTipo,
   dto: GenerateDesempenoDto,
 ): DesempenoResult {
   const niveles = unidad.indicadores_desempeno[tipoKey];
@@ -124,6 +197,13 @@ function buildDesempenoFromUnit(
       basico: niveles.basico,
       bajo: niveles.bajo,
     },
+    // `evidencias_aprendizaje` del dataset YA son indicadores de desempeño
+    // reales (enunciados observables distintos, no niveles de intensidad) —
+    // se usan tal cual, sin generar nada. Fallback determinista solo si la
+    // unidad curada no trae evidencias (no debería pasar con contenido real).
+    indicadoresDeDesempeno: unidad.evidencias_aprendizaje.length
+      ? unidad.evidencias_aprendizaje
+      : buildIndicadoresFallback(dto),
     actividadesSugeridas: unidad.actividades_sugeridas.length
       ? unidad.actividades_sugeridas.map(
           (a) => `${a.descripcion} [Tipo: ${a.tipo}]`,
@@ -387,17 +467,21 @@ Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido, sin
 - Tipo de desempeño: ${dto.tipo}
 
 El desempeño debe seguir la estructura colombiana: "Verbo de acción + Contenido + Condición + Finalidad".
-Genera también 4 indicadores de desempeño (superior, alto, básico, bajo) coherentes con el sistema de evaluación colombiano (escala 1.0 a 5.0).
+
+Genera también una escala de valoración de REFERENCIA (superior, alto, básico, bajo) para calificar el desempeño completo, coherente con el sistema de evaluación colombiano (escala 1.0 a 5.0). Esto NO son indicadores — son 4 niveles de intensidad del MISMO desempeño.
+
+Genera ADEMÁS entre 3 y 5 INDICADORES DE DESEMPEÑO reales — enunciados observables y DISTINTOS entre sí (cada uno con verbo + contenido + condición propios, NO una reescritura del mismo enunciado en distinta intensidad). Ejemplo de 3 indicadores válidos y distintos entre sí para un desempeño sobre "la célula": "Identifica las partes principales de la célula en un esquema", "Compara célula animal y vegetal señalando semejanzas y diferencias", "Explica la función de la membrana celular con sus palabras".
 
 Devuelve JSON con esta estructura exacta:
 {
   "enunciado": "string — el desempeño completo con la estructura: verbo + contenido + condición + finalidad",
   "indicadores": {
-    "superior": "string — desempeño para nivel superior (4.6 - 5.0)",
-    "alto": "string — desempeño para nivel alto (4.0 - 4.5)",
-    "basico": "string — desempeño para nivel básico (3.0 - 3.9)",
-    "bajo": "string — desempeño para nivel bajo (1.0 - 2.9)"
+    "superior": "string — escala de valoración de referencia, nivel superior (4.6 - 5.0)",
+    "alto": "string — escala de valoración de referencia, nivel alto (4.0 - 4.5)",
+    "basico": "string — escala de valoración de referencia, nivel básico (3.0 - 3.9)",
+    "bajo": "string — escala de valoración de referencia, nivel bajo (1.0 - 2.9)"
   },
+  "indicadoresDeDesempeno": ["string — indicador observable 1", "string — indicador observable 2 (distinto del 1)", "..."],
   "actividadesSugeridas": ["string", "..."]
 }
 Para "actividadesSugeridas" genera EXACTAMENTE 5 actividades de aula ESPECÍFICAS para el tema "${dto.tema}" en ${dto.area} de grado ${dto.grado}, tipo ${dto.tipo}.
@@ -432,6 +516,7 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
       const enunciado = parsed['enunciado'];
       const indicadores = parsed['indicadores'];
       const actRaw = parsed['actividadesSugeridas'];
+      const indDesempenoRaw = parsed['indicadoresDeDesempeno'];
 
       if (
         typeof enunciado !== 'string' ||
@@ -454,6 +539,19 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
           .slice(0, 5);
         if (fromAi.length >= 3) {
           actividadesSugeridas = fromAi;
+        }
+      }
+
+      let indicadoresDeDesempeno: string[] = buildIndicadoresFallback(dto);
+      if (Array.isArray(indDesempenoRaw)) {
+        const fromAi = indDesempenoRaw
+          .filter(
+            (x): x is string => typeof x === 'string' && x.trim().length > 0,
+          )
+          .map((s) => s.trim())
+          .slice(0, 5);
+        if (fromAi.length >= 3) {
+          indicadoresDeDesempeno = fromAi;
         }
       }
 
@@ -481,6 +579,7 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
               ? ind['bajo']
               : buildFallbackDesempeno(dto).indicadores.bajo,
         },
+        indicadoresDeDesempeno,
         actividadesSugeridas,
       };
     } catch {

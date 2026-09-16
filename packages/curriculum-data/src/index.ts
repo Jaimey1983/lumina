@@ -5,7 +5,7 @@ import type {
   GradoBachillerato,
   GradoEscolar,
   UnidadCurricular,
-  IndicadoresDesempeno,
+  EscalaValoracionPorTipo,
   ActividadSugerida,
 } from '@lumina/types/curriculum';
 
@@ -16,7 +16,7 @@ export type {
   GradoBachillerato,
   GradoEscolar,
   UnidadCurricular,
-  IndicadoresDesempeno,
+  EscalaValoracionPorTipo,
   ActividadSugerida,
 };
 

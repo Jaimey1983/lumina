@@ -104,6 +104,13 @@ describe('CurriculumService.generateDesempeno — dataset curado > Gemini > fall
       'Nombra los cinco sentidos con ayuda del docente.',
     );
     expect(result.indicadores.superior).toContain('distintos sentidos');
+    // indicadoresDeDesempeno (J4) = evidencias_aprendizaje real del dataset,
+    // 4 enunciados observables DISTINTOS (no niveles del mismo enunciado).
+    expect(result.indicadoresDeDesempeno).toHaveLength(4);
+    expect(new Set(result.indicadoresDeDesempeno).size).toBe(4);
+    expect(result.indicadoresDeDesempeno[0]).toContain(
+      'Describe y caracteriza',
+    );
   });
 
   it('encuentra la unidad curada por un tema parcial (subtema), no solo por título exacto', async () => {
@@ -151,6 +158,38 @@ describe('CurriculumService.generateDesempeno — dataset curado > Gemini > fall
       tipo: 'Cognitivo',
     });
     expect(result.enunciado).toContain('Analizar los conceptos fundamentales');
+  });
+});
+
+describe('CurriculumService.generateDesempeno — indicadoresDeDesempeno reales, distintos de los niveles de valoración (J4)', () => {
+  it('el fallback determinista genera 4 indicadores DISTINTOS entre sí, con verbos distintos', async () => {
+    const service = await createService();
+    const result = await service.generateDesempeno({
+      area: 'Ciencias Naturales',
+      grado: '1',
+      tema: 'Un tema que no existe en el dataset',
+      tipo: 'Cognitivo',
+    });
+    expect(result.indicadoresDeDesempeno).toHaveLength(4);
+    expect(new Set(result.indicadoresDeDesempeno).size).toBe(4);
+    // No son los 4 niveles de intensidad del mismo enunciado (esa es
+    // justamente la confusión que J4 corrige) — son oraciones con verbos
+    // iniciales distintos.
+    const primerasPalabras = result.indicadoresDeDesempeno.map(
+      (s) => s.split(' ')[0],
+    );
+    expect(new Set(primerasPalabras).size).toBe(4);
+  });
+
+  it('el fallback determinista usa el banco de verbos del tipo pedagógico correcto (Procedimental)', async () => {
+    const service = await createService();
+    const result = await service.generateDesempeno({
+      area: 'Ciencias Naturales',
+      grado: '1',
+      tema: 'Un tema que no existe en el dataset',
+      tipo: 'Procedimental',
+    });
+    expect(result.indicadoresDeDesempeno[0]).toMatch(/^Aplica /);
   });
 });
 
@@ -228,6 +267,28 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     ).toBeUndefined();
     // La llamada de clasificación semántica sí pide JSON puro (no tiene grounding).
     expect(semanticReq.body.tools).toBeUndefined();
+    // Gemini no devolvió "indicadoresDeDesempeno" en este mock -> fallback
+    // determinista (J4), no un array vacío ni el campo ausente.
+    expect(result.indicadoresDeDesempeno).toHaveLength(4);
+  });
+
+  it('usa los indicadoresDeDesempeno que devuelve Gemini cuando son 3 o más y válidos', async () => {
+    const service = await createServiceWithKey();
+    mockGeminiResponses([
+      '{"unidad_id": -1}',
+      '{"enunciado": "Generado con internet", "indicadores": {"superior":"s","alto":"a","basico":"b","bajo":"j"}, "indicadoresDeDesempeno": ["Identifica X", "Compara X con Y", "Explica por qué X"], "actividadesSugeridas": ["1","2","3"]}',
+    ]);
+    const result = await service.generateDesempeno({
+      area: 'Ciencias Naturales',
+      grado: '1',
+      tema: 'un tema que no está en el dataset',
+      tipo: 'Cognitivo',
+    });
+    expect(result.indicadoresDeDesempeno).toEqual([
+      'Identifica X',
+      'Compara X con Y',
+      'Explica por qué X',
+    ]);
   });
 
   it('respuesta grounded envuelta en prose/markdown igual se parsea (extractJsonObject)', async () => {

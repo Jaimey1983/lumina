@@ -7,7 +7,16 @@ export interface NivelCognitivo {
   nivel_numero: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
-export interface IndicadoresDesempeno {
+/**
+ * Pese al nombre de la clave JSON (`indicadores_desempeno`, no se cambia —
+ * es dato real ya persistido en los 55 archivos del dataset), esta
+ * estructura es la escala de valoración de REFERENCIA (Superior/Alto/
+ * Básico/Bajo) por tipo pedagógico (Cognitivo/Procedimental/Actitudinal,
+ * D3) — NO son indicadores de desempeño reales (enunciados observables
+ * distintos entre sí). Ver Etapa J / J4 en AGENTS.md. Los indicadores reales
+ * viven en `UnidadCurricular.evidencias_aprendizaje`.
+ */
+export interface EscalaValoracionPorTipo {
   cognitivo: { bajo: string; basico: string; alto: string; superior: string };
   procedimental: { bajo: string; basico: string; alto: string; superior: string };
   actitudinal: { bajo: string; basico: string; alto: string; superior: string };
@@ -30,7 +39,7 @@ export interface UnidadCurricular {
   palabras_clave: string[];
   dba_enunciado: string;
   evidencias_aprendizaje: string[];
-  indicadores_desempeno: IndicadoresDesempeno;
+  indicadores_desempeno: EscalaValoracionPorTipo;
   actividades_sugeridas: ActividadSugerida[];
   ebc_factor: string;
   ebc_estandar: string;

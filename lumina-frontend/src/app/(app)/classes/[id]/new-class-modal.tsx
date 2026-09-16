@@ -48,12 +48,22 @@ import {
 export interface DesempenoGenerado {
   tipo: string;
   enunciado: string;
+  /**
+   * Escala de valoración de REFERENCIA (Decreto 1290) para calificar el
+   * desempeño completo — NO son indicadores de desempeño reales (J4). Ver
+   * `indicadoresDeDesempeno` para los indicadores observables distintos.
+   */
   indicadores: {
     superior: string;
     alto: string;
     basico: string;
     bajo: string;
   };
+  /**
+   * Indicadores de desempeño reales (J4) — 3 a 5 enunciados observables y
+   * distintos entre sí, del tipo pedagógico de `tipo` (D3).
+   */
+  indicadoresDeDesempeno: string[];
   area: string;
   grado: string;
   tema: string;
@@ -165,6 +175,53 @@ export function withActividadesSugeridas(d: DesempenoGenerado): DesempenoGenerad
   };
 }
 
+// ─── Indicadores de desempeño reales simulados (J4, mismo banco de verbos
+// determinista que `buildIndicadoresFallback` en curriculum.service.ts) ──────
+
+const VERBOS_POR_TIPO_SIMULADO: Record<string, [string, string, string, string]> = {
+  Cognitivo: ['Identifica', 'Explica', 'Analiza', 'Compara'],
+  Procedimental: ['Aplica', 'Utiliza', 'Desarrolla', 'Resuelve'],
+  Actitudinal: ['Respeta', 'Participa', 'Reconoce', 'Asume'],
+};
+
+function buildIndicadoresDeDesempenoSimulados(
+  tipo: string,
+  tema: string,
+  area: string,
+  grado: string,
+): string[] {
+  const [v1, v2, v3, v4] =
+    VERBOS_POR_TIPO_SIMULADO[tipo] ?? VERBOS_POR_TIPO_SIMULADO.Cognitivo;
+  return [
+    `${v1} los conceptos fundamentales de ${tema} en situaciones cotidianas de ${area}.`,
+    `${v2} ${tema} para resolver una situación propuesta en clase, propia del grado ${grado}.`,
+    `${v3} relaciones entre ${tema} y otros contenidos ya trabajados en ${area}.`,
+    `${v4} lo aprendido sobre ${tema} en una producción propia (oral, escrita o gráfica).`,
+  ];
+}
+
+export function withIndicadoresDeDesempeno(d: DesempenoGenerado): DesempenoGenerado {
+  const raw = d.indicadoresDeDesempeno;
+  if (Array.isArray(raw) && raw.length >= 3) {
+    const cleaned = raw
+      .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+      .map((s) => s.trim())
+      .slice(0, 5);
+    if (cleaned.length >= 3) {
+      return { ...d, indicadoresDeDesempeno: cleaned };
+    }
+  }
+  return {
+    ...d,
+    indicadoresDeDesempeno: buildIndicadoresDeDesempenoSimulados(
+      d.tipo,
+      d.tema,
+      d.area,
+      d.grado,
+    ),
+  };
+}
+
 // ─── Mock fallback ────────────────────────────────────────────────────────────
 
 function buildMock(
@@ -179,20 +236,23 @@ function buildMock(
       : tipo === 'Procedimental'
         ? 'aplica y desarrolla procedimientos para trabajar con'
         : 'valora y asume una actitud crítica frente a';
-  return withActividadesSugeridas({
-    tipo,
-    area,
-    grado,
-    tema,
-    enunciado: `El estudiante ${verbo} los conceptos fundamentales de "${tema}" en el área de ${area}, integrando saberes propios del grado ${grado} para construir aprendizajes significativos en su contexto.`,
-    indicadores: {
-      superior: `Analiza de manera autónoma los conceptos de "${tema}", establece relaciones con situaciones del entorno real y propone soluciones creativas, sustentando sus argumentos con rigor y originalidad.`,
-      alto: `Comprende y aplica los conceptos de "${tema}" en contextos conocidos, demuestra dominio de los contenidos del grado ${grado} y resuelve situaciones con seguridad y fluidez.`,
-      basico: `Identifica los conceptos esenciales de "${tema}" y los aplica en situaciones sencillas con orientación del docente, alcanzando los mínimos requeridos para el grado ${grado}.`,
-      bajo: `Presenta dificultades para comprender y aplicar los conceptos de "${tema}", requiere acompañamiento permanente y no alcanza los desempeños mínimos establecidos para el grado ${grado}.`,
-    },
-    actividadesSugeridas: [],
-  });
+  return withActividadesSugeridas(
+    withIndicadoresDeDesempeno({
+      tipo,
+      area,
+      grado,
+      tema,
+      enunciado: `El estudiante ${verbo} los conceptos fundamentales de "${tema}" en el área de ${area}, integrando saberes propios del grado ${grado} para construir aprendizajes significativos en su contexto.`,
+      indicadores: {
+        superior: `Analiza de manera autónoma los conceptos de "${tema}", establece relaciones con situaciones del entorno real y propone soluciones creativas, sustentando sus argumentos con rigor y originalidad.`,
+        alto: `Comprende y aplica los conceptos de "${tema}" en contextos conocidos, demuestra dominio de los contenidos del grado ${grado} y resuelve situaciones con seguridad y fluidez.`,
+        basico: `Identifica los conceptos esenciales de "${tema}" y los aplica en situaciones sencillas con orientación del docente, alcanzando los mínimos requeridos para el grado ${grado}.`,
+        bajo: `Presenta dificultades para comprender y aplicar los conceptos de "${tema}", requiere acompañamiento permanente y no alcanza los desempeños mínimos establecidos para el grado ${grado}.`,
+      },
+      indicadoresDeDesempeno: [],
+      actividadesSugeridas: [],
+    }),
+  );
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -317,7 +377,7 @@ export function NewClassModal({
         '/curriculum/generate-desempeno',
         { area: effectiveArea, grado: effectiveGrado, tema: tema.trim(), tipo },
       );
-      setDraft(withActividadesSugeridas(data));
+      setDraft(withActividadesSugeridas(withIndicadoresDeDesempeno(data)));
     } catch {
       // Endpoint not yet available — use mock data to unblock frontend development
       setDraft(buildMock(effectiveArea, effectiveGrado, tema.trim(), tipo));
@@ -337,6 +397,15 @@ export function NewClassModal({
     setDraft((p) =>
       p ? { ...p, indicadores: { ...p.indicadores, [key]: value } } : p,
     );
+  }
+
+  function updateIndicadorDeDesempeno(index: number, value: string) {
+    setDraft((p) => {
+      if (!p) return p;
+      const siguiente = [...p.indicadoresDeDesempeno];
+      siguiente[index] = value;
+      return { ...p, indicadoresDeDesempeno: siguiente };
+    });
   }
 
   function handleConfirm() {
@@ -586,10 +655,45 @@ export function NewClassModal({
                 />
               </div>
 
-              {/* Indicadores — 2×2 grid */}
+              {/* Indicadores de desempeño reales (J4) — enunciados observables
+                  distintos entre sí, NO niveles de intensidad. */}
               <div className="space-y-1.5">
                 <p className="text-[0.8125rem] font-medium leading-none">
                   Indicadores de desempeño
+                </p>
+                <p className="text-[10px] leading-snug text-muted-foreground">
+                  Enunciados observables — cada uno distinto, no una reescritura
+                  del mismo desempeño en otra intensidad.
+                </p>
+                <div className="space-y-2">
+                  {draft.indicadoresDeDesempeno.map((ind, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="mt-2 flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                        {i + 1}
+                      </span>
+                      <Textarea
+                        rows={2}
+                        variant="sm"
+                        value={ind}
+                        onChange={(e) => updateIndicadorDeDesempeno(i, e.target.value)}
+                        className="flex-1 resize-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Escala de valoración de referencia (Decreto 1290) — NO son
+                  indicadores de desempeño (J4); son niveles de intensidad del
+                  MISMO desempeño, para calificar el conjunto. */}
+              <div className="space-y-1.5">
+                <p className="text-[0.8125rem] font-medium leading-none">
+                  Escala de valoración de referencia
+                </p>
+                <p className="text-[10px] leading-snug text-muted-foreground">
+                  Niveles de intensidad del desempeño completo (Superior/Alto/
+                  Básico/Bajo) para orientar la calificación — no son
+                  indicadores distintos.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {INDICATORS.map(({ key, label, labelClass, badgeClass }) => (
