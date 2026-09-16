@@ -1494,6 +1494,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const selectoDragCondition = useCallback((e: { inputEvent?: unknown }) => {
     const target = (e.inputEvent as { target?: unknown } | null | undefined)?.target;
     if (!(target instanceof Element)) return true;
+    // Mismo motivo que el guard de onClickCapture, más abajo: un control
+    // interno (p. ej. el doble clic "vacío" del editor de nodos Paper.js)
+    // puede desmontarse en el mismo mousedown que lo originó, antes de que
+    // Selecto llegue a evaluar esta condición — `target` queda desconectado
+    // del documento y `closest()` no encuentra ningún ancestro (ni siquiera
+    // `[data-canvas-target]`), lo que dejaba arrancar el rubber-band sobre
+    // un gesto que en realidad pertenecía a ese control interno.
+    if (!target.isConnected) return false;
     return !(
       target.closest('[data-canvas-target]') ||
       target.closest('[class*="moveable"]') ||
@@ -1784,6 +1792,16 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     if (!root) return;
     const onClickCapture = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
+      // Un control interno puede desmontarse (React) en el mismo gesto que lo
+      // originó — p. ej. el doble clic "vacío" del editor de nodos Paper.js
+      // (clip-path-node-editor-paper.tsx) entra a innerEdit dentro de su
+      // propio mousedown, lo que desmonta ese overlay antes de que el
+      // 'click' nativo del mismo clic llegue a dispararse. `e.target` queda
+      // entonces DESCONECTADO del documento — `closest()` sobre un nodo
+      // desconectado no encuentra ningún ancestro (su parentNode es null),
+      // así que sin este guard se interpretaba como "clic fuera de todo
+      // bloque" y deseleccionaba, deshaciendo el innerEdit recién aplicado.
+      if (!t.isConnected) return;
       if (t.closest('[data-block-id]')) return;
       dispatchEditor({ type: 'SELECCIONAR', id: null });
       onBlockSelectRef.current?.('');

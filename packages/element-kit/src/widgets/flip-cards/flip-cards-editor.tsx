@@ -273,6 +273,12 @@ function FlipCardImageLayer({
         isSelected && styles.fcInnerHighlight,
       )}
       style={imageWrapperStyle(data, cardRadius)}
+      // Mismo contrato que `widget-slide-panel.tsx` / `render-clip-group.tsx`:
+      // el pan/zoom de esta imagen gestiona su propio puntero, y sin
+      // `data-moveable-ignore` <Moveable> del lienzo arma el drag del bloque
+      // completo en el `mousedown` nativo antes de que el `stopPropagation()`
+      // del `onPointerDown` de abajo pueda hacer nada (son eventos distintos).
+      data-moveable-ignore={isEditing ? '' : undefined}
       onPointerDown={(e) => {
         e.stopPropagation();
         onSelect();
@@ -431,6 +437,13 @@ function CardTextElement({
         isSelected && styles.fcInnerHighlight,
       )}
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+      // Este texto puede posicionarse libremente ENCIMA de la imagen de la
+      // tarjeta (título/cuerpo sobre fondo con imagen) — sin este marcador,
+      // un click/drag acá (para seleccionar el texto o usar su asa de
+      // arrastre) es interceptado por <Moveable> del lienzo antes de llegar
+      // a este elemento, y arrastra el bloque completo. Mismo contrato que
+      // el contenedor de imagen, más arriba en este archivo.
+      data-moveable-ignore={isEditing ? '' : undefined}
     >
       {isEditing ? (
         <span

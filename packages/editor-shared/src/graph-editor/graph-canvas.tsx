@@ -304,6 +304,14 @@ export function GraphCanvas({
     <div
       className={cn('relative h-full w-full', className)}
       style={{ minHeight, pointerEvents: interactive ? undefined : 'none' }}
+      // El consumidor (p. ej. diagrama-editor.tsx en el canvas de Lumina) puede
+      // estar bajo <Moveable target={…}> del lienzo — sin este atributo,
+      // arrastrar un nodo o hacer pan sobre el lienzo de xyflow arma un drag
+      // del bloque completo en vez de que React Flow gestione su propio
+      // gesto. Inerte en cualquier otro consumidor (Edu, viewers) que no
+      // esté envuelto por CanvasMoveable. Mismo contrato que
+      // clip-path-node-editor-paper.tsx / render-clip-group.tsx.
+      data-moveable-ignore={interactive ? '' : undefined}
     >
       <ReactFlow
         nodes={rfNodes}

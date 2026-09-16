@@ -432,6 +432,12 @@ export function DiagramaEditor({
           'relative min-h-0 flex-1 w-full overflow-hidden rounded-md',
           !isSelected && 'pointer-events-none',
         )}
+        // GraphCanvas ya se protege a sí mismo (graph-canvas.tsx), pero los
+        // chips de VennSvg (handleVennChipDown/PointerMove/Up) sólo hacían
+        // stopPropagation en bubble — no alcanza contra <Moveable target={…}>
+        // del lienzo, que arma el drag del bloque en cada pointerdown sin
+        // umbral de movimiento. Mismo contrato que render-clip-group.tsx.
+        data-moveable-ignore={isSelected ? '' : undefined}
       >
         {isVenn && vennBlock && (
           <VennSvg

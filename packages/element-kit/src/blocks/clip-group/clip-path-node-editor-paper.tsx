@@ -47,6 +47,14 @@ export interface ClipPathNodeEditorPaperProps {
   path: FreeformMaskPath;
   onCommit: (path: FreeformMaskPath) => void;
   onLiveChange?: (path: FreeformMaskPath) => void;
+  /**
+   * Doble clic sobre el INTERIOR de la máscara (lejos de cualquier nodo,
+   * manija, esquina o borde) — entra al modo pan de la imagen. Este overlay
+   * cubre todo el bloque (`inset-0`, `z-30`) mientras la forma está
+   * seleccionada, así que sin este callback un doble clic para ajustar la
+   * imagen nunca llega al contenedor de imagen (ver render-clip-group.tsx).
+   */
+  onEnterInnerEdit?: () => void;
 }
 
 type DragState =
@@ -70,8 +78,11 @@ export function ClipPathNodeEditorPaper({
   path,
   onCommit,
   onLiveChange,
+  onEnterInnerEdit,
 }: ClipPathNodeEditorPaperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const onEnterInnerEditRef = useRef(onEnterInnerEdit);
+  onEnterInnerEditRef.current = onEnterInnerEdit;
   const scopeRef = useRef<paper.PaperScope | null>(null);
   const geoRef = useRef<paper.Path | null>(null);
   const uiLayerRef = useRef<paper.Layer | null>(null);
@@ -344,6 +355,7 @@ export function ClipPathNodeEditorPaper({
     let lastTap: { id: string; t: number } | null = null;
 
     const tool = new paperjs.Tool();
+    let lastEmptyClickAt: number | null = null;
 
     tool.onMouseMove = (e: paper.ToolEvent) => {
       const geo = geoRef.current;
@@ -463,6 +475,23 @@ export function ClipPathNodeEditorPaper({
         dragRef.current = { kind: 'draw', index: geo.segments.length - 1 };
         redrawUi();
         live();
+        return;
+      }
+
+      // Forma cerrada, sin hit en nodo/manija/esquina/borde: es un clic sobre
+      // el interior "vacío" de la máscara — Paper.js no tiene nada que hacer
+      // acá. Detecta el doble clic a mano (mismo criterio que el toggle de
+      // manijas de un nodo, arriba) para entrar al modo pan de la imagen —
+      // este overlay cubre todo el bloque, así que sin esto el doble clic
+      // nunca llega al contenedor de imagen debajo (ver render-clip-group).
+      if (onEnterInnerEditRef.current) {
+        const now = Date.now();
+        if (lastEmptyClickAt != null && now - lastEmptyClickAt < 600) {
+          lastEmptyClickAt = null;
+          onEnterInnerEditRef.current();
+          return;
+        }
+        lastEmptyClickAt = now;
       }
     };
 

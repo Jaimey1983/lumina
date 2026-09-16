@@ -115,6 +115,21 @@ describe('selección', () => {
     state = editorSlideReducer(state, { type: 'SELECCIONAR', id: '1' });
     expect(state.inner.clipGroupBlockId).toBeNull();
   });
+
+  it('re-seleccionar el mismo bloque ya seleccionado NO limpia inner-selection', () => {
+    // Regresión: el segundo `click` nativo de un doble clic (entrar a modo
+    // pan de imagen en clip-group) re-selecciona el mismo bloque ya
+    // seleccionado — ese SELECCIONAR no debe deshacer el INNER_SELECTION que
+    // el mousedown anterior ya aplicó en el mismo gesto.
+    let state = reduce(
+      createInitialEditorSlideState(slideCon([texto(0), texto(1)])),
+      { type: 'SELECCIONAR', id: '0' },
+      { type: 'INNER_SELECTION', inner: { clipGroupBlockId: '0' } },
+    );
+    expect(state.inner.clipGroupBlockId).toBe('0');
+    state = editorSlideReducer(state, { type: 'SELECCIONAR', id: '0' });
+    expect(state.inner.clipGroupBlockId).toBe('0');
+  });
 });
 
 describe('mover / clamp / undo manual', () => {

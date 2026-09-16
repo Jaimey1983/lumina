@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -279,6 +280,13 @@ export function RenderClipGroup({
   const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [livePan, setLivePan] = useState<{ offsetX: number; offsetY: number } | null>(null);
+  // Doble clic manual para entrar al modo pan (ver handleContainerPointerDownCapture
+  // más abajo): no se puede confiar en el `dblclick` nativo porque, mientras
+  // `imagePanActive` es falso, este contenedor no tiene `data-moveable-ignore` y
+  // <Moveable target={…}> arma un drag del bloque en cada pointerdown (sin umbral
+  // de movimiento) — eso se queda con el puntero y el `click`/`dblclick` nativo
+  // puede no llegar a disparar nunca.
+  const lastPointerDownRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const [liveScale, setLiveScale] = useState<number | null>(null);
 
   const commitImg = isCompFillImage ? onFillCommit : onContentCommit;
@@ -484,6 +492,37 @@ export function RenderClipGroup({
     [imagePanActive, activeImg, commitImg, imgNaturalSize],
   );
 
+  const handleContainerMouseDownCapture = useCallback(
+    (e: ReactMouseEvent) => {
+      if (!editorMode || !canEditImage || !onEnterInnerEdit || imagePanActive) return;
+      const now = e.timeStamp;
+      const prev = lastPointerDownRef.current;
+      const isDoubleClick =
+        prev != null &&
+        now - prev.time < 400 &&
+        Math.abs(e.clientX - prev.x) < 6 &&
+        Math.abs(e.clientY - prev.y) < 6;
+      lastPointerDownRef.current = { time: now, x: e.clientX, y: e.clientY };
+      if (isDoubleClick) {
+        // Segundo `mousedown` del doble clic: cede el gesto antes de que
+        // <Moveable> lo arme como drag del bloque completo.
+        //
+        // El drag de Moveable lo arma `gesto` (dependencia interna de
+        // react-moveable) escuchando el evento nativo `mousedown` en el
+        // target del bloque — NO `pointerdown`. Son dos eventos separados
+        // que el navegador dispara por la misma pulsación, cada uno con su
+        // propia cadena de propagación; cortar uno no afecta al otro. Por
+        // eso este guard usa `onMouseDownCapture`, no `onPointerDownCapture`
+        // (el pan en sí, más abajo, sigue en Pointer Events a propósito —
+        // necesita `setPointerCapture`, que no existe en MouseEvent).
+        e.stopPropagation();
+        lastPointerDownRef.current = null;
+        onEnterInnerEdit();
+      }
+    },
+    [editorMode, canEditImage, onEnterInnerEdit, imagePanActive],
+  );
+
   const handleShapeCommit = useCallback(
     (next: FreeformMaskPath) => {
       if (!onShapeCommit) return;
@@ -516,14 +555,6 @@ export function RenderClipGroup({
               clipPath: `url(#${clipId})`,
               WebkitClipPath: `url(#${clipId})`,
             }}
-            onDoubleClick={
-              editorMode && canEditImage && onEnterInnerEdit
-                ? (e) => {
-                    e.stopPropagation();
-                    onEnterInnerEdit();
-                  }
-                : undefined
-            }
             onWheel={handleWheel}
           >
             <div
@@ -534,6 +565,7 @@ export function RenderClipGroup({
               // contenedor gestiona su propio puntero (setPointerCapture) y
               // no debe cederle el gesto a <Moveable target={…}> del lienzo.
               data-moveable-ignore={imagePanActive ? '' : undefined}
+              onMouseDownCapture={handleContainerMouseDownCapture}
               onPointerDown={imagePanActive ? handleImagePointerDown : undefined}
               onPointerMove={imagePanActive ? handleImagePointerMove : undefined}
               onPointerUp={imagePanActive ? handleImagePointerUp : undefined}
@@ -593,6 +625,14 @@ export function RenderClipGroup({
           path={freeformPath}
           onCommit={handleShapeCommit}
           onLiveChange={setLiveFreeform}
+          // Forma libre + contenido de imagen: este overlay cubre TODO el
+          // bloque (inset-0, z-30) y con eso intercepta hasta un doble clic
+          // sobre el interior de la máscara (lejos de cualquier nodo) — sin
+          // esto, jamás llega a `handleContainerMouseDownCapture` de más
+          // abajo y el modo pan nunca se puede activar en formas libres.
+          onEnterInnerEdit={
+            canEditImage && onEnterInnerEdit ? onEnterInnerEdit : undefined
+          }
         />
       ) : null}
 

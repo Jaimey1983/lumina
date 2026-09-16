@@ -39,15 +39,20 @@ function selectPrimary(
   ids: string[],
 ): EditorSlideState {
   const nextId = id && id !== '' ? id : null;
-  const inner =
-    state.selectedBlockId !== nextId
-      ? { ...EMPTY_INNER_SELECTION }
-      : state.inner;
+  const selectionChanged = state.selectedBlockId !== nextId;
+  // Re-seleccionar el MISMO bloque ya seleccionado (id sin cambiar) no debe
+  // tocar `inner` — en particular, no debe pisar `clipGroupBlockId`. El
+  // segundo `click` nativo de un doble clic sobre un clip-group con imagen
+  // llega a este reducer (vía handleRendererBlockSelect) DESPUÉS del
+  // `mousedown` que ya entró a modo pan (ver render-clip-group.tsx); si acá
+  // se forzara `clipGroupBlockId: null` sin condición, ese SELECCIONAR
+  // deshacía la entrada al modo pan en el mismo gesto.
+  const inner = selectionChanged ? { ...EMPTY_INNER_SELECTION } : state.inner;
   return {
     ...state,
     selectedBlockId: nextId,
     selectedBlockIds: nextId ? ids : [],
-    inner: nextId ? { ...inner, clipGroupBlockId: null } : { ...EMPTY_INNER_SELECTION },
+    inner: nextId ? inner : { ...EMPTY_INNER_SELECTION },
   };
 }
 

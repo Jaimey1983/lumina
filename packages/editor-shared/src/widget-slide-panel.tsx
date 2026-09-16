@@ -216,6 +216,14 @@ function TabImageLayer({
         isSelected && chromeStyles.whInnerHighlight,
       )}
       style={imageWrapperStyles}
+      // El pan/zoom de esta imagen (más abajo, onPointerDown/Move/Up) gestiona
+      // su propio puntero. Sin `data-moveable-ignore`, `<Moveable target={…}>`
+      // del lienzo (CanvasMoveable) arma el drag del bloque completo en cada
+      // `mousedown` (sin umbral de movimiento) — el `stopPropagation()` del
+      // `onPointerDown` de abajo llega tarde: Moveable escucha el nativo
+      // `mousedown`, no `pointerdown` (son eventos separados). Mismo contrato
+      // que render-clip-group.tsx / clip-path-node-editor-paper.tsx.
+      data-moveable-ignore={isEditing ? '' : undefined}
       onPointerDown={(e) => {
         if (!isEditing) return;
         e.stopPropagation();
@@ -580,6 +588,12 @@ function TabTextElement({
           isSelected && chromeStyles.whInnerHighlight,
         )}
         style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+        // Este texto se posiciona libremente ENCIMA de la imagen de fondo del
+        // slide — sin este marcador, seleccionarlo o arrastrarlo (asa más
+        // abajo) es interceptado por <Moveable> del lienzo antes de llegar
+        // acá, y arrastra el bloque completo. Mismo contrato que
+        // TabImageLayer, más arriba en este archivo.
+        data-moveable-ignore={isEditing ? '' : undefined}
       >
         <span
           className={slideStyles.wspTextDragHandle}
