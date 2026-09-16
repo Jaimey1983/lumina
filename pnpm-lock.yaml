@@ -31,6 +31,9 @@ importers:
 
   lumina-backend:
     dependencies:
+      '@lumina/curriculum-data':
+        specifier: workspace:*
+        version: link:../packages/curriculum-data
       '@lumina/scoring':
         specifier: workspace:*
         version: link:../packages/scoring
@@ -233,6 +236,9 @@ importers:
       '@lumina/charts':
         specifier: workspace:*
         version: link:../packages/charts
+      '@lumina/curriculum-data':
+        specifier: workspace:*
+        version: link:../packages/curriculum-data
       '@lumina/editor-shared':
         specifier: workspace:*
         version: link:../packages/editor-shared
@@ -458,6 +464,22 @@ importers:
       react-dom:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@22.19.15)(@vitest/browser-playwright@4.1.11)(jsdom@26.1.0(supports-color@8.1.1))(vite@8.2.2(@types/node@22.19.15)(jiti@2.7.0)(terser@5.46.1))
+
+  packages/curriculum-data:
+    dependencies:
+      '@lumina/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      eslint:
+        specifier: ^9
+        version: 9.39.4(jiti@2.7.0)(supports-color@8.1.1)
       typescript:
         specifier: ^5
         version: 5.9.3

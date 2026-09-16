@@ -95,7 +95,7 @@ import {
 } from '@/components/ai/ai-preferred-select';
 import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
-import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@/data/curriculum/index';
+import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@lumina/curriculum-data';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';

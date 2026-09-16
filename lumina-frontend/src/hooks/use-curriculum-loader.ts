@@ -6,7 +6,7 @@ import type {
   GradoEscolar,
   CurriculumData,
 } from '@lumina/types/curriculum';
-import { loadCurriculum, buildCurriculumContext } from '@/data/curriculum/index';
+import { loadCurriculum, buildCurriculumContext } from '@lumina/curriculum-data';
 
 interface UseCurriculumLoaderReturn {
   curriculumData: CurriculumData | null;

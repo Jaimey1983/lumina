@@ -1,0 +1,30 @@
+{
+  "name": "@lumina/curriculum-data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Dataset curricular único (Etapa J, D1/D2) — 55 JSON (5 áreas x 11 grados MEN Colombia) + `loadCurriculum`/`buildCurriculumContext`. Paquete dual (patrón @lumina/scoring/E6.1): `dist/index.js` (ESM, `import()` dinámico — preserva code-splitting para lumina-frontend) y `dist/cjs/index.js` (CJS, para lumina-backend con moduleResolution clásico — el mismo `import()` compila a `require()` de los .json, Node lo soporta nativo sin bundler).",
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node scripts/copy-assets.mjs && node scripts/finish-cjs.mjs",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@lumina/types": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

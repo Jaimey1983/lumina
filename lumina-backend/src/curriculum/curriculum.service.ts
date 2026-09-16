@@ -1,16 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  loadCurriculum,
+  AREAS_LABELS,
+  GRADOS_TODOS,
+  type AreaCurricular,
+  type GradoEscolar,
+  type CurriculumData as CurriculumUnitData,
+} from '@lumina/curriculum-data';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 
 // ─── Tipos ────────────────────────────────────────────────
-
-export interface DbaItem {
-  id: string;
-  area: string;
-  grado: string;
-  enunciado: string;
-  codigo: string;
-}
 
 export interface DesempenoResult {
   enunciado: string;
@@ -26,169 +26,6 @@ export interface DesempenoResult {
   };
   actividadesSugeridas: string[];
 }
-
-// ─── Banco de DBA simulados ───────────────────────────────
-
-const DBA_BANCO: DbaItem[] = [
-  // Matemáticas — Grado 5
-  {
-    id: 'mat-5-01',
-    area: 'Matemáticas',
-    grado: '5',
-    enunciado:
-      'Resuelve y formula problemas de multiplicación y división con números naturales.',
-    codigo: 'MAT.5.01',
-  },
-  {
-    id: 'mat-5-02',
-    area: 'Matemáticas',
-    grado: '5',
-    enunciado:
-      'Interpreta y usa fracciones en contextos de medición y repartición equitativa.',
-    codigo: 'MAT.5.02',
-  },
-  {
-    id: 'mat-5-03',
-    area: 'Matemáticas',
-    grado: '5',
-    enunciado:
-      'Identifica, describe y argumenta patrones y regularidades en secuencias numéricas.',
-    codigo: 'MAT.5.03',
-  },
-  {
-    id: 'mat-5-04',
-    area: 'Matemáticas',
-    grado: '5',
-    enunciado:
-      'Calcula perímetros y áreas de figuras planas en situaciones del entorno.',
-    codigo: 'MAT.5.04',
-  },
-  // Lenguaje — Grado 5
-  {
-    id: 'len-5-01',
-    area: 'Lenguaje',
-    grado: '5',
-    enunciado:
-      'Produce textos escritos coherentes y con intención comunicativa definida.',
-    codigo: 'LEN.5.01',
-  },
-  {
-    id: 'len-5-02',
-    area: 'Lenguaje',
-    grado: '5',
-    enunciado:
-      'Lee con fluidez y comprende textos narrativos, descriptivos e informativos.',
-    codigo: 'LEN.5.02',
-  },
-  {
-    id: 'len-5-03',
-    area: 'Lenguaje',
-    grado: '5',
-    enunciado:
-      'Identifica la estructura y propósito comunicativo de diferentes tipos de texto.',
-    codigo: 'LEN.5.03',
-  },
-  // Ciencias Naturales — Grado 5
-  {
-    id: 'cn-5-01',
-    area: 'Ciencias Naturales',
-    grado: '5',
-    enunciado:
-      'Explica la función de los órganos del cuerpo humano y su relación con los sistemas.',
-    codigo: 'CN.5.01',
-  },
-  {
-    id: 'cn-5-02',
-    area: 'Ciencias Naturales',
-    grado: '5',
-    enunciado:
-      'Describe el ciclo del agua y su importancia para los ecosistemas.',
-    codigo: 'CN.5.02',
-  },
-  {
-    id: 'cn-5-03',
-    area: 'Ciencias Naturales',
-    grado: '5',
-    enunciado:
-      'Reconoce la cadena alimentaria y las relaciones entre productores y consumidores.',
-    codigo: 'CN.5.03',
-  },
-  // Ciencias Sociales — Grado 5
-  {
-    id: 'cs-5-01',
-    area: 'Ciencias Sociales',
-    grado: '5',
-    enunciado:
-      'Ubica en el mapa político de Colombia sus departamentos, capitales y regiones naturales.',
-    codigo: 'CS.5.01',
-  },
-  {
-    id: 'cs-5-02',
-    area: 'Ciencias Sociales',
-    grado: '5',
-    enunciado:
-      'Identifica los procesos de independencia de Colombia y sus causas históricas.',
-    codigo: 'CS.5.02',
-  },
-  {
-    id: 'cs-5-03',
-    area: 'Ciencias Sociales',
-    grado: '5',
-    enunciado:
-      'Comprende los derechos y deberes del ciudadano colombiano establecidos en la Constitución.',
-    codigo: 'CS.5.03',
-  },
-  // Matemáticas — Grado 9
-  {
-    id: 'mat-9-01',
-    area: 'Matemáticas',
-    grado: '9',
-    enunciado:
-      'Resuelve sistemas de ecuaciones lineales mediante métodos algebraicos y gráficos.',
-    codigo: 'MAT.9.01',
-  },
-  {
-    id: 'mat-9-02',
-    area: 'Matemáticas',
-    grado: '9',
-    enunciado:
-      'Aplica los conceptos de función lineal y cuadrática en la resolución de problemas.',
-    codigo: 'MAT.9.02',
-  },
-  {
-    id: 'mat-9-03',
-    area: 'Matemáticas',
-    grado: '9',
-    enunciado:
-      'Usa razones trigonométricas para calcular medidas en triángulos rectángulos.',
-    codigo: 'MAT.9.03',
-  },
-  // Lenguaje — Grado 9
-  {
-    id: 'len-9-01',
-    area: 'Lenguaje',
-    grado: '9',
-    enunciado:
-      'Analiza textos literarios identificando recursos narrativos, estilísticos y contexto histórico.',
-    codigo: 'LEN.9.01',
-  },
-  {
-    id: 'len-9-02',
-    area: 'Lenguaje',
-    grado: '9',
-    enunciado:
-      'Produce textos argumentativos con tesis, argumentos y conclusión bien estructurados.',
-    codigo: 'LEN.9.02',
-  },
-  {
-    id: 'len-9-03',
-    area: 'Lenguaje',
-    grado: '9',
-    enunciado:
-      'Comprende e interpreta textos académicos y científicos de mediana complejidad.',
-    codigo: 'LEN.9.03',
-  },
-];
 
 // ─── Fallback hardcodeado ─────────────────────────────────
 
@@ -307,24 +144,27 @@ export class CurriculumService {
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
   }
 
-  // ── 1. Consultar DBA del banco ─────────────────────────────
+  // ── 1. Consultar la unidad curricular real (dataset único, J2) ──
 
-  getDba(area: string, grado: string): DbaItem[] {
-    const areaLower = area.toLowerCase();
-    const gradoLower = grado.toLowerCase();
-
-    const results = DBA_BANCO.filter(
-      (d) =>
-        d.area.toLowerCase().includes(areaLower) &&
-        d.grado.toLowerCase() === gradoLower,
-    );
-
-    // Si no hay coincidencias exactas, devolver primeros 3 del banco como muestra
-    if (!results.length) {
-      return DBA_BANCO.slice(0, 3).map((d) => ({ ...d, area, grado }));
+  /**
+   * `GET /curriculum/:area/:grado` — unidad curricular real del dataset
+   * único (`@lumina/curriculum-data`, D1/D2), o `null` si el área/grado son
+   * válidos pero todavía no tienen JSON (no debería pasar: las 55
+   * combinaciones existen, curadas o placeholder). Área/grado inválidos →
+   * 400, para distinguir "no está cargado todavía" (D1, placeholder válido)
+   * de "esa combinación no existe" (error del llamador).
+   */
+  async getCurriculumUnit(
+    area: string,
+    grado: string,
+  ): Promise<CurriculumUnitData | null> {
+    if (!(area in AREAS_LABELS)) {
+      throw new BadRequestException(`Área curricular desconocida: ${area}`);
     }
-
-    return results;
+    if (!GRADOS_TODOS.includes(grado as GradoEscolar)) {
+      throw new BadRequestException(`Grado escolar desconocido: ${grado}`);
+    }
+    return loadCurriculum(area as AreaCurricular, grado as GradoEscolar);
   }
 
   // ── 2. Generar desempeño con Gemini (con fallback) ─────────

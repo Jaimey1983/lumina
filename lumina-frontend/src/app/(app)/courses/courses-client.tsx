@@ -15,7 +15,7 @@ import { useCourses, type Course } from '@/hooks/api/use-courses';
 import { useCourse } from '@/hooks/api/use-course';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { AREAS_LABELS, GRADOS_TODOS } from '@/data/curriculum';
+import { AREAS_LABELS, GRADOS_TODOS } from '@lumina/curriculum-data';
 
 import {
   Card,

@@ -12,6 +12,16 @@
     "./autonomous": { "types": "./dist/autonomous.types.d.ts", "import": "./dist/autonomous.types.js" },
     "./curriculum": { "types": "./dist/curriculum.types.d.ts", "import": "./dist/curriculum.types.js" }
   },
+  "typesVersions": {
+    "*": {
+      "slide": ["dist/slide.types.d.ts"],
+      "rich-text": ["dist/rich-text.types.d.ts"],
+      "widget": ["dist/widget.types.d.ts"],
+      "animation": ["dist/animation.types.d.ts"],
+      "autonomous": ["dist/autonomous.types.d.ts"],
+      "curriculum": ["dist/curriculum.types.d.ts"]
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "tsc --noEmit",

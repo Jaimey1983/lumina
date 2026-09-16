@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@lumina/curriculum-data": "workspace:*",
     "@lumina/scoring": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
@@ -95,11 +96,13 @@
     },
     "moduleNameMapper": {
       "^@lumina/scoring$": "<rootDir>/../node_modules/@lumina/scoring/dist/cjs/index.js",
-      "^@lumina/scoring/fixtures$": "<rootDir>/../node_modules/@lumina/scoring/src/activity-scoring.fixtures.json"
+      "^@lumina/scoring/fixtures$": "<rootDir>/../node_modules/@lumina/scoring/src/activity-scoring.fixtures.json",
+      "^@lumina/curriculum-data$": "<rootDir>/../node_modules/@lumina/curriculum-data/dist/cjs/index.js"
     },
     "transformIgnorePatterns": [
       "/node_modules/",
-      "[/\\\\]packages[/\\\\]scoring[/\\\\]dist[/\\\\]"
+      "[/\\\\]packages[/\\\\]scoring[/\\\\]dist[/\\\\]",
+      "[/\\\\]packages[/\\\\]curriculum-data[/\\\\]dist[/\\\\]"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
