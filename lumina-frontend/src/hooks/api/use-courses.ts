@@ -5,6 +5,8 @@ export interface Course {
   id: string;
   name: string;
   code: string;
+  area?: string | null;
+  grado?: string | null;
   isActive: boolean;
   teacherId: string;
   createdAt: string;

@@ -15,6 +15,7 @@ import { useCourses, type Course } from '@/hooks/api/use-courses';
 import { useCourse } from '@/hooks/api/use-course';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { AREAS_LABELS, GRADOS_TODOS } from '@/data/curriculum';
 
 import {
   Card,
@@ -53,13 +54,25 @@ import {
   FormLabel,
   FormMessage,
 } from '@lumina/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@lumina/ui/select';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
+
+// Sentinel para "sin especificar" — Radix Select no admite value="".
+const UNSET = '__unset__';
 
 const courseSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
   code: z.string().min(1, 'El código es obligatorio'),
   description: z.string().optional(),
+  area: z.string().optional(),
+  grado: z.string().optional(),
 });
 type CourseFormData = z.infer<typeof courseSchema>;
 
@@ -80,7 +93,7 @@ function CourseFormContent({
 
   const form = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
-    defaultValues: { name: '', code: '', description: '' },
+    defaultValues: { name: '', code: '', description: '', area: UNSET, grado: UNSET },
   });
 
   useEffect(() => {
@@ -89,16 +102,23 @@ function CourseFormContent({
         name: courseDetail.name,
         code: courseDetail.code,
         description: courseDetail.description ?? '',
+        area: courseDetail.area ?? UNSET,
+        grado: courseDetail.grado ?? UNSET,
       });
     }
   }, [courseDetail, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: CourseFormData) => {
+      const payload = {
+        ...data,
+        area: data.area === UNSET ? undefined : data.area,
+        grado: data.grado === UNSET ? undefined : data.grado,
+      };
       if (isEdit) {
-        return api.patch(`/courses/${courseId}`, data);
+        return api.patch(`/courses/${courseId}`, payload);
       }
-      return api.post('/courses', data);
+      return api.post('/courses', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
@@ -153,6 +173,62 @@ function CourseFormContent({
               </FormItem>
             )}
           />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="area"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Área <span className="font-normal text-muted-foreground">(opcional)</span>
+                  </FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin especificar" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNSET}>Sin especificar</SelectItem>
+                      {Object.entries(AREAS_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="grado"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Grado <span className="font-normal text-muted-foreground">(opcional)</span>
+                  </FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin especificar" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNSET}>Sin especificar</SelectItem>
+                      {GRADOS_TODOS.map((g) => (
+                        <SelectItem key={g} value={g}>
+                          {g}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
             name="description"

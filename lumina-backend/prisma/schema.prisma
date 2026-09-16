@@ -115,6 +115,18 @@ model Course {
   code               String                 @unique
   isActive           Boolean                @default(true)
   teacherId          String
+  /**
+   * Área curricular (clave de `@lumina/types` `AreaCurricular`, p. ej.
+   * "matematicas" | "lenguaje" | "ciencias-naturales" | "ciencias-sociales" |
+   * "ingles"). Opcional: cursos existentes quedan en null. Se captura una sola
+   * vez al crear el curso (Etapa J, D4) — el resto de la cadena curricular lo
+   * hereda de acá, no lo vuelve a pedir.
+   */
+  area               String?
+  /**
+   * Grado escolar (clave de `@lumina/types` `GradoEscolar`, "1".."11").
+   */
+  grado              String?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   achievements       Achievement[]
