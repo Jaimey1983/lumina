@@ -24,6 +24,34 @@ const COMPETENCE_TYPES_AUTO = [
   CompetenceType.INSTRUMENTAL,
 ] as const;
 
+/**
+ * Fallback determinista por tipo de competencia (J5) — reemplaza el
+ * `['','','','']` que se guardaba en `PerformanceIndicator.statement`
+ * cuando Gemini no está disponible o falla (a diferencia de Pieza 1,
+ * `generatePIStatements` nunca tuvo plantilla de respaldo — guardaba
+ * indicadores VACÍOS en producción). Cada plantilla es un enunciado
+ * observable real y distinto de los otros 3, no una reescritura del logro
+ * en distinta intensidad — el mismo error conceptual que corrigió J4 en
+ * Pieza 1, acá aplicado al eje de competencias de Edu (COG/MET/INT/INS,
+ * NO el eje pedagógico Cognitivo/Procedimental/Actitudinal de D3 — son
+ * ejes distintos, J4).
+ */
+const FALLBACK_INDICADOR_POR_COMPETENCIA: Record<
+  CompetenceType,
+  (statement: string) => string
+> = {
+  COGNITIVE: (s) =>
+    `Explica con sus propias palabras los conceptos centrales de: "${s}".`,
+  METHODOLOGICAL: (s) =>
+    `Organiza un procedimiento claro, paso a paso, para abordar: "${s}".`,
+  INTERPERSONAL: (s) =>
+    `Participa activamente y coopera con sus compañeros al trabajar en: "${s}".`,
+  INSTRUMENTAL: (s) =>
+    `Utiliza las herramientas o recursos adecuados para desarrollar: "${s}".`,
+  SUBJECT_SPECIFIC: (s) =>
+    `Profundiza en los aspectos disciplinares específicos de: "${s}".`,
+};
+
 @Injectable()
 export class AchievementsService {
   constructor(
@@ -391,34 +419,59 @@ export class AchievementsService {
     return { message: 'Logro eliminado correctamente' };
   }
 
+  /**
+   * Genera un indicador REAL por cada tipo de competencia de
+   * `COMPETENCE_TYPES_AUTO` (J5) — enunciados observables distintos entre
+   * sí, no 4 reescrituras del mismo logro en distinta intensidad (esa
+   * confusión ya la corrigió J4 en Pieza 1). Nunca devuelve strings vacíos:
+   * sin `GEMINI_API_KEY`, o si Gemini falla/devuelve algo inválido para un
+   * tipo puntual, ese tipo cae a `FALLBACK_INDICADOR_POR_COMPETENCIA`
+   * (fallback por-elemento, no por-lote — un solo tipo mal generado no tira
+   * el resto).
+   */
   private async generatePIStatements(
     achievementStatement: string,
   ): Promise<string[]> {
+    const fallback = COMPETENCE_TYPES_AUTO.map((ct) =>
+      FALLBACK_INDICADOR_POR_COMPETENCIA[ct](achievementStatement),
+    );
     if (!this.config.get<string>('GEMINI_API_KEY')) {
-      return ['', '', '', ''];
+      return fallback;
     }
     try {
       const content = await this.callGemini(
-        'Eres un asistente pedagógico especializado en el sistema educativo colombiano. Genera indicadores de logro concisos (máximo 150 caracteres cada uno) basados en un enunciado de logro.',
-        `Para el siguiente logro: "${achievementStatement}"\n\nGenera exactamente 4 indicadores de logro, uno para cada tipo de competencia. Responde SOLO con un JSON array de 4 strings en este orden: [cognitivo, metodológico, interpersonal, instrumental]. Sin explicaciones adicionales.`,
+        'Eres un asistente pedagógico especializado en el sistema educativo colombiano. Generas indicadores de logro que son enunciados OBSERVABLES y DISTINTOS entre sí — cada uno describe un comportamiento concreto del estudiante, no una variación de intensidad del mismo enunciado. Responde en español, máximo 150 caracteres por indicador.',
+        `Para el siguiente logro: "${achievementStatement}"
+
+Genera exactamente 4 indicadores de logro DISTINTOS entre sí, uno por cada tipo de competencia:
+1. Cognitivo (comprensión/análisis del contenido)
+2. Metodológico (organización de un proceso o procedimiento)
+3. Interpersonal (colaboración, comunicación con otros)
+4. Instrumental (uso de herramientas, recursos o técnicas)
+
+Ejemplo de 4 indicadores VÁLIDOS y distintos para un logro sobre "el ciclo del agua": ["Explica las fases del ciclo del agua con sus propias palabras", "Organiza un experimento paso a paso para representar la evaporación", "Comparte sus hallazgos con el grupo y escucha otras interpretaciones", "Usa un diagrama o maqueta para representar el ciclo del agua"].
+Ejemplo INVÁLIDO (rechazar este patrón): ["Comprende el ciclo del agua de forma básica", "Comprende el ciclo del agua de forma satisfactoria", "Comprende el ciclo del agua de forma sobresaliente", "Comprende el ciclo del agua de forma excepcional"] — son 4 niveles del MISMO enunciado, no 4 indicadores distintos.
+
+Responde SOLO con un JSON array de 4 strings en este orden: [cognitivo, metodológico, interpersonal, instrumental]. Sin explicaciones adicionales, sin bloques de código markdown.`,
         500,
       );
 
-      // Gemini a veces envuelve el JSON en ```json ... ``` aunque se pida JSON puro
       const cleaned = content
         .replace(/^```json\s*/i, '')
         .replace(/^```\s*/i, '')
         .replace(/```\s*$/i, '')
         .trim();
-      const parsed: unknown = JSON.parse(cleaned || '[]');
-      if (Array.isArray(parsed) && parsed.length === 4) {
-        return parsed.map((s: unknown) =>
-          typeof s === 'string' ? s.slice(0, 150) : '',
-        );
+      const parsed: unknown = cleaned ? JSON.parse(cleaned) : null;
+      if (!Array.isArray(parsed) || parsed.length !== 4) {
+        return fallback;
       }
-      return ['', '', '', ''];
+      return parsed.map((s: unknown, i) =>
+        typeof s === 'string' && s.trim().length > 0
+          ? s.trim().slice(0, 150)
+          : fallback[i],
+      );
     } catch {
-      return ['', '', '', ''];
+      return fallback;
     }
   }
 }
