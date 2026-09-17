@@ -21,6 +21,27 @@
    dummy: el proceso ya no crashea por `MODULE_NOT_FOUND` (cuelga en la
    conexión a Postgres/Redis, que es el comportamiento esperado sin una base
    real — eso no es parte de este fix).
+3. **`Cannot find module 'express'` — dependencia fantasma.**
+   `src/main.ts:5` hace `import { json, urlencoded } from 'express'`
+   directo, pero `express` **no está declarado** en las `dependencies` de
+   `lumina-backend/package.json` — solo llega de forma transitiva vía
+   `@nestjs/platform-express` (que sí lo trae en su propio `package.json`).
+   Localmente esto "funcionaba" solo porque pnpm hoistea paquetes
+   transitivos al `node_modules` de la **raíz del workspace**
+   (`node_modules/express` en la raíz, no en `lumina-backend/node_modules/`),
+   y `require('express')` desde `lumina-backend/dist/src/main.js` resuelve
+   subiendo directorios hasta encontrarlo ahí — un patrón de "phantom
+   dependency" que no está garantizado y evidentemente no se reprodujo igual
+   en el contenedor de Railway. Fix real (no un parche): declarar `express`
+   como dependencia directa en `lumina-backend/package.json`, con la misma
+   versión ya resuelta en el lockfile (`^5.2.1`, confirmado en
+   `pnpm-lock.yaml` — no se cambió ninguna resolución). Verificado con
+   `ls -la lumina-backend/node_modules/express` (symlink real al store de
+   pnpm, ya no depende de hoisting a la raíz) y arrancando el proceso
+   completo: bootea Nest, mapea todas las rutas, y llega a
+   `Nest application successfully started` / `🚀 Lumina Backend corriendo en
+   puerto ...` — solo queda el `ECONNREFUSED` esperado de Redis (sin
+   instancia local en esta verificación).
 
 ## Causa raíz confirmada (fix 1 — pnpm vs npm)
 
