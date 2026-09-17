@@ -1,6 +1,28 @@
 # Despliegue de `lumina-backend` en Railway
 
-## Causa raíz confirmada
+## Historial de fixes
+
+1. `npm` en vez de `pnpm` (Root Directory ocultaba el lockfile raíz) — ver
+   "Causa raíz confirmada" abajo.
+2. **`start:prod` apuntaba a un archivo que nunca existió.** El build
+   pasaba con pnpm, pero el contenedor moría al arrancar:
+   `Error: Cannot find module '/app/lumina-backend/dist/main'`.
+   `lumina-backend/tsconfig.build.json` no excluye `prisma/*.ts` (los scripts
+   de seed), así que `tsc` calcula el `rootDir` implícito como la raíz del
+   paquete (no `src/`) y refleja esa estructura en el output:
+   `dist/src/main.js` + `dist/prisma/*.js`, no `dist/main.js`. El script
+   `start:prod` (`node dist/main`) apuntaba mal desde siempre — nunca se
+   había ejecutado antes: el dev local usa `nest start`/`start:dev` (no pasa
+   por `dist/`) y el job `backend` de CI solo corre `pnpm build`, nunca
+   `start:prod`. Confirmado corriendo el build chain completo en local:
+   `dist/main.js` no existe, `dist/src/main.js` sí. Fix: `start:prod` pasa a
+   `"node dist/src/main"` en `lumina-backend/package.json` (commit que agrega
+   esta línea). Verificado arrancando `node dist/src/main` con env vars
+   dummy: el proceso ya no crashea por `MODULE_NOT_FOUND` (cuelga en la
+   conexión a Postgres/Redis, que es el comportamiento esperado sin una base
+   real — eso no es parte de este fix).
+
+## Causa raíz confirmada (fix 1 — pnpm vs npm)
 
 El build en Railway fallaba con:
 
