@@ -117,6 +117,40 @@ function dirFromMoveable(direction: number[]): ResizeHandleDir {
 }
 
 /**
+ * `OnResize.dist` de react-moveable es el delta del tamaño resultante del
+ * bloque (ancho/alto), ya normalizado por dirección: positivo siempre
+ * significa "creció", sin importar qué tirador se usó (confirmado contra
+ * el fuente de react-moveable@0.56.0: `distWidth = boundingWidth -
+ * startOffsetWidth`). `computeNewCoords`/`resize-coords.ts` en cambio está
+ * diseñado para delta CRUDO de puntero (ver su otro consumidor real,
+ * `resize-handles.tsx`, que usa `clientX - startMouseX`) — ahí mover el
+ * puntero a la derecha sobre el tirador W achica, no agranda.
+ *
+ * Para los tiradores que tocan el borde oeste/norte (W, NW, SW / N, NW, NE)
+ * ambas convenciones tienen signo opuesto; para los que no lo tocan
+ * (E, S, SE) coinciden. Sin este ajuste, agrandar hacia la izquierda o
+ * hacia arriba encoge el bloque en la dirección contraria.
+ *
+ * Se corrige acá (no en `resize-coords.ts`) para no tocar el contrato que
+ * ya usa correctamente la ruta legacy de Escape Room
+ * (`resize-handles.tsx`), y sin reintroducir tracking crudo de puntero:
+ * `dist` ya viene en el frame local del bloque (correcto incluso rotado),
+ * un pointer tracking propio necesitaría des-rotar el delta a mano.
+ */
+function toPointerDeltaConvention(
+  dir: ResizeHandleDir,
+  distWidthPct: number,
+  distHeightPct: number,
+): { dxPct: number; dyPct: number } {
+  const westTouching = dir === 'W' || dir === 'NW' || dir === 'SW';
+  const northTouching = dir === 'N' || dir === 'NW' || dir === 'NE';
+  return {
+    dxPct: westTouching ? -distWidthPct : distWidthPct,
+    dyPct: northTouching ? -distHeightPct : distHeightPct,
+  };
+}
+
+/**
  * Contrato: un control interno que gestiona su propio puntero (p. ej. los
  * nodos del editor de contorno Paper.js de una máscara de recorte, o el
  * marcador de un hotspot) se marca con `data-moveable-ignore` en el DOM.
@@ -337,8 +371,11 @@ export function CanvasMoveable({
       if (!rect || origins.length !== 1) return;
       const o = origins[0];
       const dir = dirFromMoveable(e.direction);
-      const dxPct = (e.dist[0] / rect.width) * 100;
-      const dyPct = (e.dist[1] / rect.height) * 100;
+      const { dxPct, dyPct } = toPointerDeltaConvention(
+        dir,
+        (e.dist[0] / rect.width) * 100,
+        (e.dist[1] / rect.height) * 100,
+      );
       const enabled = !snapSuppressedRef?.current;
       const minDim = getBlockResizeMinDim(liveBlocksRef.current[o.index].tipo);
 
