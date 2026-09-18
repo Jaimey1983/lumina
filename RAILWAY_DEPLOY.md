@@ -77,6 +77,21 @@
    así que Railway nunca construyó ni desplegó ese commit. El
    `preDeployCommand` literalmente nunca corrió. Fix: `railway.json` se
    agrega a su propio `watchPatterns`.
+
+   **Segundo bug propio, encontrado tras corregir el anterior:** con el
+   watch pattern arreglado, el deploy sí corrió sobre el commit correcto
+   (confirmado por timestamp — mismo minuto exacto del push) y llegó a
+   `Nest application successfully started`, pero **ningún** rastro de
+   `prisma migrate deploy` apareció en Deploy Logs, ni con marcadores
+   `echo` explícitos agregados a propósito para diagnosticar. Causa real:
+   `deploy.preDeployCommand` en el schema de `railway.json` es un
+   **array de strings**, no un string plano — la doc oficial de Railway lo
+   muestra como `"preDeployCommand": ["npm run db:migrate"]`. Lo tenía como
+   string suelto (`"preDeployCommand": "echo ... && pnpm ..."`), que
+   Railway aparentemente descarta en silencio por no matchear el schema (a
+   diferencia de `build.buildCommand`, que sí es string plano — por eso ese
+   funcionaba desde el principio). Fix: envolver el valor en un array de un
+   solo elemento.
 5. **Redis: `NOAUTH Authentication required` en loop** —
    `session-gamification.service.ts` / `torneo.service.ts` conectan con
    `new Redis({ host: REDIS_HOST, port: REDIS_PORT })`, sin password, pero
