@@ -92,6 +92,26 @@
    diferencia de `build.buildCommand`, que sí es string plano — por eso ese
    funcionaba desde el principio). Fix: envolver el valor en un array de un
    solo elemento.
+
+   **Tercer intento — se abandonó `preDeployCommand` por completo.** Con el
+   array ya correcto, se volvió a desplegar y se confirmó con el timestamp
+   exacto de `Starting Container` vs. `Nest application successfully
+   started` (**39ms** de diferencia entre ambas líneas en Deploy Logs) que
+   no hay ningún paso intermedio corriendo — `preDeployCommand` sigue sin
+   ejecutarse, aun con el tipo correcto. No se investigó más a fondo por qué
+   (posible limitación específica de esta combinación
+   Railpack+monorepo+pnpm, o algo del lado de Railway no documentado) — se
+   optó por la vía más robusta: **`prisma migrate deploy` pasa a ser parte
+   del `startCommand`**, encadenado antes de `start:prod`
+   (`"pnpm --filter lumina-backend exec prisma migrate deploy && pnpm
+   --filter lumina-backend start:prod"`). `startCommand` ya está confirmado
+   al 100% que se ejecuta (es donde corre `node dist/src/main`, fix 2). Esto
+   corre la migración en cada arranque/restart del contenedor, no solo en
+   deploys — aceptable porque `prisma migrate deploy` es idempotente y usa
+   un lock a nivel de tabla de migraciones (seguro incluso si llegara a
+   correr en paralelo con más de 1 réplica, aunque hoy el servicio corre con
+   1 réplica). `deploy.preDeployCommand` se **eliminó** de `railway.json`
+   (Regla 4 — no se dejan dos caminos a medias).
 5. **Redis: `NOAUTH Authentication required` en loop** —
    `session-gamification.service.ts` / `torneo.service.ts` conectan con
    `new Redis({ host: REDIS_HOST, port: REDIS_PORT })`, sin password, pero
