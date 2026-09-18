@@ -10,7 +10,8 @@
       "packages/scoring/**",
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
-      "package.json"
+      "package.json",
+      "railway.json"
     ]
   },
   "deploy": {

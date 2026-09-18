@@ -60,10 +60,37 @@
    contenedor, con las variables de entorno reales del deploy — a
    diferencia del build, donde no es tan seguro que `DATABASE_URL` esté
    disponible). `prisma migrate deploy` es idempotente — no rompe nada si
-   ya estaban aplicadas. **Pendiente de confirmar** tras el próximo deploy:
-   si el 500 persiste, revisar los Deploy Logs reales (la causa sería otra —
-   ver la nota sobre Redis sin password más abajo, o una variable de
-   entorno faltante).
+   ya estaban aplicadas.
+
+   **Confirmado con el log real** (Deploy Logs de Railway, no supuesto):
+   `[Nest] ERROR [ExceptionsHandler] PrismaClientKnownRequestError: Invalid
+   'prisma.user.findUnique()' invocation: The table 'public.users' does not
+   exist in the current database.` — coincide exacto con `@@map("users")`
+   del modelo `User` en `schema.prisma` (no es un desajuste de nombre, la
+   tabla lisa y llanamente no existe).
+
+   **Bug propio, encontrado al verificar el fix anterior:** el commit que
+   agregó `preDeployCommand` (el que solo tocaba `railway.json` y este
+   archivo) quedó **`SKIPPED — No changes to watched files`** en el historial
+   de Deployments de Railway — `watchPatterns` (agregado en el fix 1 para no
+   redesplegar en cada cambio ajeno) no incluía `railway.json` a sí mismo,
+   así que Railway nunca construyó ni desplegó ese commit. El
+   `preDeployCommand` literalmente nunca corrió. Fix: `railway.json` se
+   agrega a su propio `watchPatterns`.
+5. **Redis: `NOAUTH Authentication required` en loop** —
+   `session-gamification.service.ts` / `torneo.service.ts` conectan con
+   `new Redis({ host: REDIS_HOST, port: REDIS_PORT })`, sin password, pero
+   el Redis de Railway sí exige auth (confirmado por el error real en Deploy
+   Logs — ya no es la hipótesis de la sección de variables de entorno de
+   abajo, es el comportamiento observado). Railway inyecta `REDIS_HOST` /
+   `REDIS_PORT` como variables del servicio, pero **no** una de password
+   mapeada a lo que el código espera — hay que revisar qué variable expone
+   el plugin de Redis para la password (`REDISPASSWORD` u otra) y pasarla al
+   constructor de `ioredis` en esos dos archivos. **No se arregló en esta
+   sesión** — el `curl` a `/auth/register` no depende de Redis, así que no
+   bloquea la creación del usuario de prueba, pero se deja documentado para
+   no perderlo: sin este fix, cualquier feature de gamificación/torneo en
+   vivo va a fallar en producción.
 
 ## Causa raíz confirmada (fix 1 — pnpm vs npm)
 
