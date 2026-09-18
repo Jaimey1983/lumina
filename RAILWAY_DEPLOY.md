@@ -42,6 +42,28 @@
    `Nest application successfully started` / `🚀 Lumina Backend corriendo en
    puerto ...` — solo queda el `ECONNREFUSED` esperado de Redis (sin
    instancia local en esta verificación).
+4. **`POST /auth/register` devuelve 500 — probable falta de migraciones en
+   la base de Railway.** Con los 3 fixes anteriores el proceso ya arranca y
+   escucha, pero un `curl` real contra `/auth/register` devolvió
+   `{"statusCode":500,"message":"Internal server error"}`. **No confirmado
+   con el log real** (no hay acceso desde acá a
+   `postgres.railway.internal`, solo alcanzable dentro de la red de
+   Railway, ni a los Deploy Logs) — pero el pipeline nunca corrió
+   `prisma migrate deploy` contra la base de producción: `buildCommand`
+   solo hace `prisma generate` (genera el cliente, no toca el schema real),
+   y no había ningún `preDeployCommand`. Con un Postgres nuevo del plugin de
+   Railway (vacío) y 34 carpetas en `prisma/migrations/` nunca aplicadas,
+   la tabla `User` probablemente no existe — cualquier query de Prisma
+   explota con un error que Nest devuelve como 500 genérico. Fix: se agregó
+   `deploy.preDeployCommand: "pnpm --filter lumina-backend exec prisma
+   migrate deploy"` a `railway.json` (corre justo antes de arrancar el
+   contenedor, con las variables de entorno reales del deploy — a
+   diferencia del build, donde no es tan seguro que `DATABASE_URL` esté
+   disponible). `prisma migrate deploy` es idempotente — no rompe nada si
+   ya estaban aplicadas. **Pendiente de confirmar** tras el próximo deploy:
+   si el 500 persiste, revisar los Deploy Logs reales (la causa sería otra —
+   ver la nota sobre Redis sin password más abajo, o una variable de
+   entorno faltante).
 
 ## Causa raíz confirmada (fix 1 — pnpm vs npm)
 
