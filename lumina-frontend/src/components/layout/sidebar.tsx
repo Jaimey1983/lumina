@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -11,8 +12,10 @@ import {
   ShieldCheck,
   User,
   LogOut,
+  Menu,
   type LucideIcon,
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTitle } from '@lumina/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
@@ -95,11 +98,14 @@ function NavLink({
   label,
   iconKey,
   pathname,
+  onNavigate,
 }: {
   href: string;
   label: string;
   iconKey: IconKey;
   pathname: string;
+  /** Cierra el drawer móvil al navegar — no-op en el sidebar fijo de escritorio. */
+  onNavigate?: () => void;
 }) {
   const active = isActivePath(pathname, href);
   const Icon = icons[iconKey];
@@ -107,6 +113,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       className={cn(
         'flex items-center gap-2.5 rounded-lumina-lg px-2 py-2 text-sm font-medium transition-colors',
         active
@@ -123,33 +130,32 @@ function NavLink({
   );
 }
 
-export function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    router.replace('/login');
-  };
-
-  const displayName = userDisplayName(user) || '?';
-  const initials = userInitials(user);
-  const roleLabel = user?.role
-    ? ROLE_LABELS[user.role.toUpperCase()] ?? user.role
-    : '';
-  const admin = isAdminRole(user?.role);
-  const navItems = NAV_ITEMS.filter((item) => {
-    if (item.adminOnly && !admin) return false;
-    if (item.hideForAdmin && admin) return false;
-    return true;
-  });
-
+/** Contenido compartido entre el `<aside>` fijo de escritorio y el drawer móvil. */
+function SidebarContent({
+  pathname,
+  navItems,
+  displayName,
+  roleLabel,
+  initials,
+  avatar,
+  onLogout,
+  onNavigate,
+}: {
+  pathname: string;
+  navItems: NavItem[];
+  displayName: string;
+  roleLabel: string;
+  initials: string;
+  avatar?: string | null;
+  onLogout: () => void;
+  onNavigate?: () => void;
+}) {
   return (
-    <aside className="flex h-full w-52 shrink-0 flex-col border-r border-[#e5e7eb] bg-[#ffffff]">
+    <>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-5">
         <Link
           href="/dashboard"
+          onClick={onNavigate}
           className="mb-6 flex items-center gap-2 border-b border-[#e5e7eb] px-1 pb-4"
         >
           <img
@@ -174,6 +180,7 @@ export function Sidebar() {
               label={item.label}
               iconKey={item.icon}
               pathname={pathname}
+              onNavigate={onNavigate}
             />
           ))}
         </nav>
@@ -181,10 +188,10 @@ export function Sidebar() {
 
       <div className="shrink-0 border-t border-[#e5e7eb]">
         <div className="flex items-center gap-3 p-3">
-          {user?.avatar ? (
+          {avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={user.avatar}
+              src={avatar}
               alt={displayName}
               className="size-9 shrink-0 rounded-full object-cover"
             />
@@ -214,7 +221,7 @@ export function Sidebar() {
           </div>
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={onLogout}
             title="Cerrar sesión"
             className="rounded p-1 text-[#9ca3af] transition-colors hover:text-[#f87171]"
             aria-label="Cerrar sesión"
@@ -223,6 +230,96 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Cambiar de ruta (click en un link, o cualquier navegación programática)
+  // siempre cierra el drawer — evita que quede abierto tapando la página nueva.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const handleLogout = () => {
+    logout();
+    router.replace('/login');
+  };
+
+  const displayName = userDisplayName(user) || '?';
+  const initials = userInitials(user);
+  const roleLabel = user?.role
+    ? ROLE_LABELS[user.role.toUpperCase()] ?? user.role
+    : '';
+  const admin = isAdminRole(user?.role);
+  const navItems = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly && !admin) return false;
+    if (item.hideForAdmin && admin) return false;
+    return true;
+  });
+
+  return (
+    <>
+      {/* Barra superior móvil — reemplaza al <aside> fijo por debajo de `lg`. */}
+      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-[#e5e7eb] bg-[#ffffff] px-3 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Abrir menú"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lumina-lg text-[#374151] transition-colors hover:bg-[#eff6ff]"
+        >
+          <Menu className="size-5" />
+        </button>
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-2">
+          <img
+            src="/LM-e5004c.svg"
+            alt="Lumina"
+            className="h-6 w-auto shrink-0"
+            draggable={false}
+          />
+          <span className="truncate text-sm font-extrabold tracking-tight text-[#111827]">
+            Lumina
+          </span>
+        </Link>
+      </div>
+
+      {/* Sidebar fijo — solo desde `lg` (1024px), mismo umbral que useIsMobile(). */}
+      <aside className="hidden h-full w-52 shrink-0 flex-col border-r border-[#e5e7eb] bg-[#ffffff] lg:flex">
+        <SidebarContent
+          pathname={pathname}
+          navItems={navItems}
+          displayName={displayName}
+          roleLabel={roleLabel}
+          initials={initials}
+          avatar={user?.avatar}
+          onLogout={handleLogout}
+        />
+      </aside>
+
+      {/* Drawer móvil — mismo contenido, disparado por el botón de la barra superior. */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent
+          side="left"
+          className="flex w-72 max-w-[85vw] flex-col gap-0 border-[#e5e7eb] bg-[#ffffff] p-0"
+        >
+          <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
+          <SidebarContent
+            pathname={pathname}
+            navItems={navItems}
+            displayName={displayName}
+            roleLabel={roleLabel}
+            initials={initials}
+            avatar={user?.avatar}
+            onLogout={handleLogout}
+            onNavigate={() => setMobileOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
