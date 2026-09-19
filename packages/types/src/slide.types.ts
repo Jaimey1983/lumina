@@ -1330,6 +1330,8 @@ export interface GraficoEstilo {
   fuente?: string;
   fondo?: 'transparente' | 'tarjeta';
   duracionAnimacion?: number;
+  /** Grosor del anillo (0-100, % del radio) en gráficos `radialBar`. Ignorado en otros tipos. */
+  grosorAnillo?: number;
 }
 
 export interface GraficoDatosBlock {

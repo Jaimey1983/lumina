@@ -288,7 +288,7 @@ function ElementosPanel({
               onClick={() =>
                 add(
                   createDefaultGraficoBlock({
-                    chartType: 'column',
+                    chartType: 'histogram',
                     titulo: 'Distribución estadística',
                   }),
                 )

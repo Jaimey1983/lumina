@@ -109,7 +109,7 @@ export const LUMINA_CHART_FAMILIES: readonly LuminaChartFamilyMeta[] = [
     id: 'estadistica',
     label: 'Estadística',
     descripcion: 'Distribución de frecuencias y rangos de datos',
-    defaultType: 'column',
+    defaultType: 'histogram',
     types: ['column', 'bar', 'boxPlot', 'histogram'],
   },
   {
@@ -228,6 +228,8 @@ export interface LuminaChartStyle {
   fondo?: 'transparente' | 'tarjeta';
   /** Duración de la animación de entrada en ms. Solo aplica si `animar: true`. */
   duracionAnimacion?: number;
+  /** Grosor del anillo (0-100, % del radio) en gráficos `radialBar`. Ignorado en otros tipos. Por defecto 30. */
+  grosorAnillo?: number;
 }
 
 /**
