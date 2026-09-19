@@ -7,14 +7,16 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto, Role } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import { ImpersonationBlockedGuard } from './impersonation-blocked.guard';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { CurrentUser } from './current-user.decorator';
@@ -26,7 +28,23 @@ export class AuthController {
 
   // POST /auth/register
   @Post('register')
-  register(@Body() dto: RegisterDto) {
+  @UseGuards(OptionalJwtAuthGuard)
+  register(
+    @Body() dto: RegisterDto,
+    @CurrentUser() caller: JwtAuthUser | null,
+  ) {
+    // Roles privilegiados: sólo los puede crear un admin autenticado
+    // (el registro público no puede autoasignarse ADMIN/SUPERADMIN).
+    const privileged = dto.role === Role.SUPERADMIN || dto.role === Role.ADMIN;
+    if (privileged) {
+      const callerRole = caller?.role as string | undefined;
+      const allowed =
+        callerRole === 'SUPERADMIN' ||
+        (callerRole === 'ADMIN' && dto.role !== Role.SUPERADMIN);
+      if (!allowed) {
+        throw new ForbiddenException('No puedes crear usuarios con ese rol');
+      }
+    }
     return this.authService.register(dto);
   }
 
