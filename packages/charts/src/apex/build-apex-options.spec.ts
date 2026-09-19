@@ -967,5 +967,46 @@ describe('buildApexChart — Estilo y Anotaciones múltiples (Etapa I5)', () => 
     const enPie = buildApexChart({ ...baseConfig, type: 'pie', estilo: { grosorAnillo: 55 } }, theme);
     expect(enPie.options.plotOptions?.radialBar).toBeUndefined();
   });
+
+  it('estilo.puntasRedondeadas: activa stroke.lineCap "round" solo en radialBar', () => {
+    const radialConfig: LuminaChartConfig = {
+      type: 'radialBar',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    };
+
+    const redondeado = buildApexChart({ ...radialConfig, estilo: { puntasRedondeadas: true } }, theme);
+    expect(redondeado.options.stroke?.lineCap).toBe('round');
+
+    // Por defecto no se setea `stroke` (ApexCharts usa su default 'butt').
+    const sinRedondear = buildApexChart(radialConfig, theme);
+    expect(sinRedondear.options.stroke).toBeUndefined();
+
+    // No aplica fuera de radialBar, aunque se pida.
+    const enPie = buildApexChart({ ...baseConfig, type: 'pie', estilo: { puntasRedondeadas: true } }, theme);
+    expect(enPie.options.stroke).toBeUndefined();
+  });
+
+  it('angulo "semicirculo" en radialBar mueve el fallback de leyenda a "bottom" (evita el achicamiento de Dimensions.js con legend a la derecha + chart.height:"auto")', () => {
+    const radialConfig: LuminaChartConfig = {
+      type: 'radialBar',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+      mostrarLeyenda: true,
+    };
+
+    const circuloCompleto = buildApexChart(radialConfig, theme);
+    expect(circuloCompleto.options.legend?.position).toBe('right');
+
+    const semicirculo = buildApexChart({ ...radialConfig, angulo: 'semicirculo' }, theme);
+    expect(semicirculo.options.legend?.position).toBe('bottom');
+
+    // Un `posicionLeyenda` explícito del docente sigue ganando sobre el fallback.
+    const semicirculoConPosicionExplicita = buildApexChart(
+      { ...radialConfig, angulo: 'semicirculo', posicionLeyenda: 'derecha' },
+      theme,
+    );
+    expect(semicirculoConPosicionExplicita.options.legend?.position).toBe('right');
+  });
 });
 
