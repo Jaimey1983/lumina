@@ -397,37 +397,35 @@ export function GraficoProperties({
 
   return (
     <div className="space-y-5 text-xs">
-      {/* 1. Selector de Familia y Variantes */}
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Familia de Gráfico
-          </Label>
-          <Select
-            value={activeFamily}
-            onValueChange={(val) => handleFamilyChange(val as LuminaChartFamily)}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Selecciona una familia" />
-            </SelectTrigger>
-            <SelectContent>
-              {LUMINA_CHART_FAMILIES.map((family) => (
-                <SelectItem key={family.id} value={family.id} className="text-xs py-1.5">
-                  <div className="flex flex-col text-left">
-                    <span className="font-medium text-foreground">{family.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{family.descripcion}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Variantes dentro de la familia activa */}
-        <div className="space-y-1.5">
-          <Label className="text-[10px] font-medium text-muted-foreground">
-            Variantes de {activeFamilyMeta?.label || 'Familia'}
-          </Label>
+      {/* 1. Variantes de la familia activa, con cambio de familia como acción secundaria */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+            <Label className="text-[10px] font-medium text-muted-foreground">
+              Variantes de {activeFamilyMeta?.label || 'Familia'}
+            </Label>
+            <Select
+              value={activeFamily}
+              onValueChange={(val) => handleFamilyChange(val as LuminaChartFamily)}
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-6 w-auto gap-1 border-none bg-transparent px-1.5 text-[10px] font-normal text-muted-foreground shadow-none hover:bg-muted/60 hover:text-foreground [&>span]:line-clamp-none"
+                title="Cambiar la familia de gráfico"
+              >
+                <SelectValue placeholder="Cambiar familia">Cambiar familia</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {LUMINA_CHART_FAMILIES.map((family) => (
+                  <SelectItem key={family.id} value={family.id} className="text-xs py-1.5">
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium text-foreground">{family.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{family.descripcion}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-1.5">
             {familyVariants.map((type) => {
               const meta = LUMINA_CHART_TYPE_META[type];
@@ -451,7 +449,6 @@ export function GraficoProperties({
                 </button>
               );
             })}
-          </div>
         </div>
       </div>
 
