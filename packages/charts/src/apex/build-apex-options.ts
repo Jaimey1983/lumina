@@ -550,9 +550,11 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
   let plotOptions: ApexOptions['plotOptions'] = {};
 
   if (isRadial) {
+    const grosorAnillo = config.estilo?.grosorAnillo;
+    const hollowSize = grosorAnillo !== undefined ? Math.min(Math.max(grosorAnillo, 0), 100) : 30;
     plotOptions = {
       radialBar: {
-        hollow: { size: '30%' },
+        hollow: { size: `${hollowSize}%` },
         ...(isSemicircle
           ? {
               startAngle: -90,

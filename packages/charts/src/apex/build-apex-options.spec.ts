@@ -945,5 +945,27 @@ describe('buildApexChart — Estilo y Anotaciones múltiples (Etapa I5)', () => 
     expect(sinAnimar.options.chart?.animations?.enabled).toBe(false);
     expect(sinAnimar.options.chart?.animations?.speed).toBeUndefined();
   });
+
+  it('estilo.grosorAnillo: controla plotOptions.radialBar.hollow.size (%); ignorado fuera de radialBar', () => {
+    const radialConfig: LuminaChartConfig = {
+      type: 'radialBar',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    };
+
+    const conGrosor = buildApexChart({ ...radialConfig, estilo: { grosorAnillo: 55 } }, theme);
+    expect(conGrosor.options.plotOptions?.radialBar?.hollow?.size).toBe('55%');
+
+    const sinGrosor = buildApexChart(radialConfig, theme);
+    expect(sinGrosor.options.plotOptions?.radialBar?.hollow?.size).toBe('30%');
+
+    // Se acota a [0, 100] contra valores fuera de rango.
+    const fueraDeRango = buildApexChart({ ...radialConfig, estilo: { grosorAnillo: 150 } }, theme);
+    expect(fueraDeRango.options.plotOptions?.radialBar?.hollow?.size).toBe('100%');
+
+    // No aplica a otros tipos circulares (pie no tiene plotOptions.radialBar).
+    const enPie = buildApexChart({ ...baseConfig, type: 'pie', estilo: { grosorAnillo: 55 } }, theme);
+    expect(enPie.options.plotOptions?.radialBar).toBeUndefined();
+  });
 });
 

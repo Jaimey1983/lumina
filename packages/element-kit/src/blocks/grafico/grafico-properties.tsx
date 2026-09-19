@@ -92,9 +92,19 @@ export function GraficoProperties({
   const [dataDialogOpen, setDataDialogOpen] = useState<boolean>(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Familia que el usuario está navegando en la grilla de variantes — NO se
+  // deriva de `localBlock.chartType` en cada render (eso rompía la
+  // navegación: varios tipos están listados como variante de más de una
+  // familia — p. ej. `radialBar` aparece en Proporción pero su familia
+  // "dueña" en `LUMINA_CHART_TYPE_META` es KPI — así que elegir esa
+  // variante saltaba de familia solo). Solo se resincroniza al cambiar de
+  // bloque (`block.id`) o cuando el usuario cambia de familia a propósito.
+  const [browsingFamily, setBrowsingFamily] = useState<LuminaChartFamily>(() => getChartFamily(block.chartType));
+
   // Sincronizar si cambia el id del bloque seleccionado
   useEffect(() => {
     setLocalBlock(block);
+    setBrowsingFamily(getChartFamily(block.chartType));
   }, [block.id]);
 
   // Limpiar temporizador al desmontar
@@ -146,6 +156,7 @@ export function GraficoProperties({
   const handleFamilyChange = (familyId: LuminaChartFamily) => {
     const familyMeta = LUMINA_CHART_FAMILIES.find((f) => f.id === familyId);
     if (!familyMeta) return;
+    setBrowsingFamily(familyId);
     if (getChartFamily(localBlock.chartType) !== familyId) {
       handleChartTypeChange(familyMeta.defaultType);
     }
@@ -311,6 +322,11 @@ export function GraficoProperties({
     updateEstilo({ duracionAnimacion: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
   };
 
+  const handleEstiloGrosorAnilloChange = (raw: string) => {
+    const val = Number(raw);
+    updateEstilo({ grosorAnillo: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
+  };
+
   // Paleta personalizada (Etapa I5)
   const handleAddPaletaColor = () => {
     const nextPaleta = [...(localBlock.paletaPersonalizada ?? []), '#3B82F6'];
@@ -378,7 +394,7 @@ export function GraficoProperties({
     commitChange({ ...localBlock, posicionLeyenda }, true);
   };
 
-  const activeFamily = getChartFamily(localBlock.chartType);
+  const activeFamily = browsingFamily;
   const activeFamilyMeta = LUMINA_CHART_FAMILIES.find((f) => f.id === activeFamily);
   const familyVariants = getChartTypesByFamily(activeFamily);
 
@@ -1003,6 +1019,21 @@ export function GraficoProperties({
             />
           </div>
         </div>
+
+        {localBlock.chartType === 'radialBar' && (
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Grosor del Anillo (%)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={localBlock.estilo?.grosorAnillo ?? ''}
+              placeholder="30 (por defecto)"
+              onChange={(e) => handleEstiloGrosorAnilloChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        )}
 
         <div className="space-y-1">
           <Label className="text-[10px] text-muted-foreground">Fondo</Label>

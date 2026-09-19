@@ -72,4 +72,16 @@ describe('Lumina Chart Families (Etapa I)', () => {
       expect(fam.descripcion).toBeTruthy();
     }
   });
+
+  it('el defaultType de cada familia es "dueño" (canónico) de esa misma familia', () => {
+    // Insertar desde una familia debe aterrizar en esa familia (no en otra):
+    // si `defaultType` fuera un tipo cuya familia canónica en
+    // `LUMINA_CHART_TYPE_META` es distinta (p. ej. Estadística insertando
+    // `column`, cuya familia real es Comparación), el panel de propiedades
+    // muestra la familia equivocada apenas se inserta el elemento — el bug
+    // real que motivó este test.
+    for (const fam of LUMINA_CHART_FAMILIES) {
+      expect(getChartFamily(fam.defaultType)).toBe(fam.id);
+    }
+  });
 });

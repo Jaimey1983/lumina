@@ -275,6 +275,10 @@ function sanitizeEstilo(raw: unknown): GraficoEstilo | undefined {
   const fondo = r.fondo === 'transparente' || r.fondo === 'tarjeta' ? r.fondo : undefined;
   const duracionAnimacion =
     typeof r.duracionAnimacion === 'number' && Number.isFinite(r.duracionAnimacion) ? r.duracionAnimacion : undefined;
+  const grosorAnillo =
+    typeof r.grosorAnillo === 'number' && Number.isFinite(r.grosorAnillo)
+      ? Math.min(Math.max(r.grosorAnillo, 0), 100)
+      : undefined;
 
   const result: GraficoEstilo = {
     ...(esquinas !== undefined ? { esquinas } : {}),
@@ -282,6 +286,7 @@ function sanitizeEstilo(raw: unknown): GraficoEstilo | undefined {
     ...(fuente ? { fuente } : {}),
     ...(fondo ? { fondo } : {}),
     ...(duracionAnimacion !== undefined ? { duracionAnimacion } : {}),
+    ...(grosorAnillo !== undefined ? { grosorAnillo } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
@@ -416,6 +421,7 @@ export function createDefaultGraficoBlock(
   const isPolarArea = partial?.chartType === 'polarArea';
   const isBoxPlot = partial?.chartType === 'boxPlot';
   const isHistogram = partial?.chartType === 'histogram';
+  const isRadialBar = partial?.chartType === 'radialBar';
 
   let defaultCategorias = [...DEFAULT_GRAFICO_CATEGORIAS];
   let defaultSeries: GraficoSerie[] = [
@@ -481,6 +487,19 @@ export function createDefaultGraficoBlock(
       {
         nombre: 'Puntajes',
         valores: sampleValues,
+      },
+    ];
+  } else if (isRadialBar) {
+    // Un solo anillo por defecto — un medidor de progreso claro, no la
+    // plantilla genérica de 5 categorías/2 series (que producía un
+    // `radialBar` de 5 anillos confuso al insertar desde "Progreso / KPI").
+    // Se pueden agregar más anillos añadiendo categorías desde el editor de
+    // datos — cada categoría es un anillo, tomado de la primera serie.
+    defaultCategorias = ['Progreso'];
+    defaultSeries = [
+      {
+        nombre: 'Progreso',
+        valores: [72],
       },
     ];
   }

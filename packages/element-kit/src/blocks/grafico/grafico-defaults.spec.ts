@@ -224,6 +224,15 @@ describe('grafico-defaults', () => {
     expect(histogram.categorias).toHaveLength(histogram.series[0].valores.length);
   });
 
+  it('createDefaultGraficoBlock genera un solo anillo para radialBar (no la plantilla genérica de 5 categorías)', () => {
+    const radialBar = createDefaultGraficoBlock({ chartType: 'radialBar' });
+    expect(radialBar.chartType).toBe('radialBar');
+    expect(radialBar.categorias).toHaveLength(1);
+    expect(radialBar.series[0].valores).toHaveLength(1);
+    expect(radialBar.series[0].valores[0]).toBeGreaterThanOrEqual(0);
+    expect(radialBar.series[0].valores[0]).toBeLessThanOrEqual(100);
+  });
+
   it('normalizeGraficoBlock sanitiza `cajas` de boxPlot alineándolas a la cantidad de categorías', () => {
     const raw = {
       tipo: 'grafico',
@@ -391,7 +400,7 @@ describe('grafico-defaults', () => {
     expect(sinBandas.bandas).toBeUndefined();
   });
 
-  it('normalizeGraficoBlock: sanitiza `estilo` (esquinas/sombra/fuente/fondo/duracionAnimacion), descartando campos inválidos', () => {
+  it('normalizeGraficoBlock: sanitiza `estilo` (esquinas/sombra/fuente/fondo/duracionAnimacion/grosorAnillo), descartando campos inválidos', () => {
     const normalized = normalizeGraficoBlock({
       tipo: 'grafico',
       chartType: 'column',
@@ -401,6 +410,7 @@ describe('grafico-defaults', () => {
         fuente: '  Georgia  ',
         fondo: 'tarjeta',
         duracionAnimacion: 500,
+        grosorAnillo: 55,
       },
     });
     expect(normalized.estilo).toEqual({
@@ -409,7 +419,15 @@ describe('grafico-defaults', () => {
       fuente: 'Georgia',
       fondo: 'tarjeta',
       duracionAnimacion: 500,
+      grosorAnillo: 55,
     });
+
+    const fueraDeRango = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'radialBar',
+      estilo: { grosorAnillo: -20 },
+    });
+    expect(fueraDeRango.estilo).toEqual({ grosorAnillo: 0 });
 
     const invalido = normalizeGraficoBlock({
       tipo: 'grafico',
