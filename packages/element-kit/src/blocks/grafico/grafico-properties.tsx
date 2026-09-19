@@ -49,6 +49,7 @@ import {
   getChartFamily,
   getChartTypesByFamily,
   generarResumenAccesible,
+  isPartialArcChart,
   type LuminaChartFamily,
   type LuminaChartConfig,
 } from '@lumina/charts';
@@ -433,6 +434,12 @@ export function GraficoProperties({
   const supportsAngulo = ['pie', 'donut', 'radialBar'].includes(localBlock.chartType);
   const supportsTotal = localBlock.chartType === 'donut';
   const supportsLeyenda = !['treemap', 'funnel', 'waterfall', 'histogram'].includes(localBlock.chartType);
+  // Con un arco parcial (semicírculo/personalizado) `build-apex-options.ts`
+  // apaga la leyenda nativa de ApexCharts por completo (su cálculo de
+  // posición no es confiable ahí) y dibuja una propia siempre debajo del
+  // gráfico — "Posición de la Leyenda" no tiene ningún efecto en ese caso.
+  const isPartialArc = isPartialArcChart({ type: localBlock.chartType, angulo: localBlock.angulo });
+  const supportsPosicionLeyenda = supportsLeyenda && !isPartialArc;
   const supportsGrillas = ['column', 'bar', 'line', 'area', 'combo', 'scatter', 'bubble', 'funnel', 'heatmap', 'waterfall', 'boxPlot', 'histogram'].includes(localBlock.chartType);
   // Tipos donde `estilo.esquinas` realmente afecta el render (ver
   // build-apex-options.ts): column/bar/combo (plotOptions.bar.borderRadius),
@@ -620,7 +627,7 @@ export function GraficoProperties({
           />
         </div>
 
-        {supportsLeyenda && localBlock.mostrarLeyenda !== false && (
+        {supportsPosicionLeyenda && localBlock.mostrarLeyenda !== false && (
           <div className="space-y-1">
             <Label className="text-[11px] text-muted-foreground">Posición de la Leyenda</Label>
             <Select

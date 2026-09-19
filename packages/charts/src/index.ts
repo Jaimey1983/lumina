@@ -21,7 +21,7 @@ export {
   getChartTypesByFamily,
 } from './types.js';
 
-export { LuminaChart, type LuminaChartProps } from './chart-container.js';
+export { LuminaChart, isPartialArcChart, type LuminaChartProps } from './chart-container.js';
 
 export {
   LUMINA_CHART_PALETTES,

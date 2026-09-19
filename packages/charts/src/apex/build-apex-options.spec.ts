@@ -1055,5 +1055,36 @@ describe('buildApexChart — Estilo y Anotaciones múltiples (Etapa I5)', () => 
     const completo = buildApexChart(radialConfig, theme);
     expect(completo.options.plotOptions?.radialBar?.startAngle).toBeUndefined();
   });
+
+  it('angulo "personalizado": un fin <= inicio se normaliza sumando 360° (barrido hacia adelante, no un arco chico invertido)', () => {
+    const radialConfig: LuminaChartConfig = {
+      type: 'radialBar',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    };
+
+    // Caso real reportado: inicio=90, fin=45 (fin < inicio) daba un barrido
+    // de solo 45° invertido, no el gauge grande esperado.
+    const invertido = buildApexChart(
+      { ...radialConfig, angulo: 'personalizado', anguloInicio: 90, anguloFin: 45 },
+      theme,
+    );
+    expect(invertido.options.plotOptions?.radialBar?.startAngle).toBe(90);
+    expect(invertido.options.plotOptions?.radialBar?.endAngle).toBe(405); // 45 + 360 → barrido de 315°
+
+    // fin === inicio (span 0) también se normaliza.
+    const igual = buildApexChart(
+      { ...radialConfig, angulo: 'personalizado', anguloInicio: 30, anguloFin: 30 },
+      theme,
+    );
+    expect(igual.options.plotOptions?.radialBar?.endAngle).toBe(390);
+
+    // Un orden ya ascendente no se toca.
+    const ascendente = buildApexChart(
+      { ...radialConfig, angulo: 'personalizado', anguloInicio: -90, anguloFin: 90 },
+      theme,
+    );
+    expect(ascendente.options.plotOptions?.radialBar?.endAngle).toBe(90);
+  });
 });
 
