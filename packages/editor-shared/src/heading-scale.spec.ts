@@ -6,6 +6,7 @@ import {
   effectiveFontSizePx,
   typographyPatchFromHeadingLevel,
   isDerivedHeadingSize,
+  resolveHeadingSizeDerived,
 } from './heading-scale.js';
 
 describe('HEADING_SCALE', () => {
@@ -110,5 +111,27 @@ describe('isDerivedHeadingSize', () => {
   it('un tamaño manual distinto de cuerpo y de la escala previa se respeta', () => {
     expect(isDerivedHeadingSize(24)).toBe(false);
     expect(isDerivedHeadingSize(55, 1)).toBe(false);
+  });
+});
+
+describe('resolveHeadingSizeDerived', () => {
+  it('manual=true nunca reescala, sin importar el tamaño', () => {
+    expect(resolveHeadingSizeDerived(true, 40, 1)).toBe(false);
+    expect(resolveHeadingSizeDerived(true, undefined, undefined)).toBe(false);
+  });
+
+  it('manual=false siempre reescala, aunque el tamaño no coincida con ninguna escala', () => {
+    // Caso real: preset "pie" (13px, sin nivel) o "cita" (20px, sin nivel) —
+    // ninguno coincide con isDerivedHeadingSize (ni 18 ni una escala previa),
+    // pero al venir de un preset (no de un tecleo del docente) sí debe reescalar.
+    expect(resolveHeadingSizeDerived(false, 13, undefined)).toBe(true);
+    expect(resolveHeadingSizeDerived(false, 20, undefined)).toBe(true);
+  });
+
+  it('manual=undefined (bloque anterior a este campo) recae en isDerivedHeadingSize', () => {
+    expect(resolveHeadingSizeDerived(undefined, 18, undefined)).toBe(true);
+    expect(resolveHeadingSizeDerived(undefined, 40, 1)).toBe(true);
+    expect(resolveHeadingSizeDerived(undefined, 24, undefined)).toBe(false);
+    expect(resolveHeadingSizeDerived(undefined, 55, 1)).toBe(false);
   });
 });

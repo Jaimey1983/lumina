@@ -130,3 +130,30 @@ export function isDerivedHeadingSize(
   if (prevNivel !== undefined && curPx === HEADING_SCALE[prevNivel].sizePx) return true;
   return false;
 }
+
+/**
+ * ¿Un cambio de nivel de encabezado puede reescalar el tamaño?
+ *
+ * `isDerivedHeadingSize` adivina por coincidencia numérica (¿el tamaño actual
+ * es 18px o el de la escala del nivel anterior?) — funciona para texto que ya
+ * pasó por un nivel de encabezado, pero falla para cualquier tamaño de
+ * arranque que no esté en esa escala (p. ej. los presets "pie" 13px o "cita"
+ * 20px, sin `nivel`): el primer clic en un nivel nunca los reescala, aunque
+ * el docente jamás haya tocado el campo "Tamaño (px)".
+ *
+ * `manual` (`TextBlock.tamanoFuenteManual`) es la señal explícita que
+ * reemplaza esa adivinanza cuando existe: `true` = el docente lo escribió a
+ * mano, nunca reescalar; `false` = lo puso un preset/el sistema, siempre se
+ * puede reescalar. `undefined` (bloque creado antes de este campo) recae en
+ * la heurística numérica de siempre — sin cambio de comportamiento para
+ * contenido ya persistido.
+ */
+export function resolveHeadingSizeDerived(
+  manual: boolean | undefined,
+  curPx: number | undefined,
+  prevNivel?: HeadingLevel,
+): boolean {
+  if (manual === true) return false;
+  if (manual === false) return true;
+  return isDerivedHeadingSize(curPx, prevNivel);
+}

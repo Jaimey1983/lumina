@@ -110,6 +110,27 @@ describe('Formato por selección (Fase 2C/2D — resuelve P1)', () => {
     expect(editor.getAttributes('heading').fontSize).toBe(55);
   });
 
+  it('manualSizeOverride=false reescala aunque el tamaño no coincida con ninguna escala (presets "pie"/"cita")', async () => {
+    const editor = await mountAndGetEditor('Pie de página');
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    // 13px (preset "pie") no es 18 ni la escala de ningún nivel, y no hay
+    // nivel previo — sin el 3er parámetro esto NO reescalaría (ver el test
+    // "un tamaño manual..." arriba). Con manualSizeOverride:false (el
+    // preset, no el docente, puso el tamaño) sí debe reescalar.
+    applyTypographyToSelection(editor, { fontSize: 13 });
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    applyHeadingLevelToSelection(editor, 2, false);
+    expect(editor.getAttributes('heading').fontSize).toBe(32);
+  });
+
+  it('manualSizeOverride=true nunca reescala, aunque el tamaño coincida con la escala', async () => {
+    const editor = await mountAndGetEditor('Con override');
+    editor.commands.setTextSelection({ from: 3, to: 3 });
+    applyHeadingLevelToSelection(editor, 1, true); // sin override sí reescalaría a 40
+    expect(editor.isActive('heading', { level: 1 })).toBe(true);
+    expect(editor.getAttributes('heading').fontSize).toBeFalsy(); // default del nodo, no 40
+  });
+
   it('sangría de primera línea / francesa sobrevive getJSON → RichDoc', async () => {
     const editor = await mountAndGetEditor('párrafo de prueba');
     editor.chain().focus().updateAttributes('paragraph', { textIndent: 1.5 }).run();

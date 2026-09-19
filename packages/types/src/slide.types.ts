@@ -667,6 +667,14 @@ export interface TextBlock {
   nivel?: HeadingLevel;
   alineacion?: TextAlign;
   tamanoFuente?: string;
+  /**
+   * `true` si el docente fijó `tamanoFuente` a mano (el input "Tamaño (px)" del
+   * panel) — un cambio de nivel de encabezado no debe reescalarlo. `false` =
+   * tamaño puesto por un preset/el sistema (sí se reescala). `undefined` =
+   * bloque anterior a este campo — se infiere por heurística numérica
+   * (`isDerivedHeadingSize`), como antes.
+   */
+  tamanoFuenteManual?: boolean;
   negrita?: boolean;
   cursiva?: boolean;
   /** Familia tipográfica (p. ej. Inter, Georgia). */
