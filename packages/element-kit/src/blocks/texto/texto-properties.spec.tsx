@@ -36,13 +36,17 @@ describe('TextoProperties — "Estilo" no acopla "Nivel" (regresión)', () => {
     });
     const { rerender } = render(<TextoProperties block={current} onChange={onChange} />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Título' })[0]!); // Estilo → 32px, bundle
+    // "Estilo → Cuerpo" (BODY_TEXT_SCALE, 18px) — un valor distinto al de
+    // H1 (40px) para que el siguiente assert distinga de verdad "se reescaló
+    // con Nivel" de "quedó pegado al número que puso Estilo".
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cuerpo' })[0]!);
+    expect(current.tamanoFuente).toBe('18px');
     expect(current.tamanoFuenteManual).toBe(false); // preset del sistema, no un tecleo manual
     rerender(<TextoProperties block={current} onChange={onChange} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'H1' })); // Nivel → H1
     expect(current.nivel).toBe(1);
-    expect(current.tamanoFuente).toBe('40px'); // reescalado a la escala de H1, no congelado en 32px
+    expect(current.tamanoFuente).toBe('40px'); // reescalado a la escala de H1, no congelado en 18px
   });
 
   it('el input "Tamaño (px)" sí marca tamanoFuenteManual:true (y por lo tanto SÍ se respeta frente a Nivel)', () => {
