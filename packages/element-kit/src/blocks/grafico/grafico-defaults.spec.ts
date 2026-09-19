@@ -160,6 +160,45 @@ describe('grafico-defaults', () => {
     expect(normalized.series[1].ejeCombo).toBe('secundario');
   });
 
+  it('sanitiza angulo "personalizado" con anguloInicio/anguloFin (Custom Angle)', () => {
+    const normalized = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'radialBar',
+      angulo: 'personalizado',
+      anguloInicio: -135,
+      anguloFin: 45,
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    });
+
+    expect(normalized.angulo).toBe('personalizado');
+    expect(normalized.anguloInicio).toBe(-135);
+    expect(normalized.anguloFin).toBe(45);
+
+    // Sin anguloInicio/anguloFin numéricos válidos, quedan undefined (el
+    // consumidor — build-apex-options.ts — aplica el default -90/90).
+    const sinAngulos = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'radialBar',
+      angulo: 'personalizado',
+      anguloInicio: 'no-numero',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    });
+    expect(sinAngulos.anguloInicio).toBeUndefined();
+    expect(sinAngulos.anguloFin).toBeUndefined();
+
+    // "personalizado" no es un valor de angulo reconocido si viene mal escrito.
+    const invalido = normalizeGraficoBlock({
+      tipo: 'grafico',
+      chartType: 'radialBar',
+      angulo: 'a-medias',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    });
+    expect(invalido.angulo).toBeUndefined();
+  });
+
   it('sanitiza y preserva puntos para scatter y bubble', () => {
     const raw = {
       tipo: 'grafico',

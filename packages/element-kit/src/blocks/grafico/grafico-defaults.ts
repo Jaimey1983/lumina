@@ -372,7 +372,12 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
         : undefined,
     modoSparkline: typeof raw.modoSparkline === 'boolean' ? raw.modoSparkline : undefined,
     mostrarTotal: typeof raw.mostrarTotal === 'boolean' ? raw.mostrarTotal : undefined,
-    angulo: raw.angulo === 'completo' || raw.angulo === 'semicirculo' ? raw.angulo : undefined,
+    angulo:
+      raw.angulo === 'completo' || raw.angulo === 'semicirculo' || raw.angulo === 'personalizado'
+        ? raw.angulo
+        : undefined,
+    anguloInicio: typeof raw.anguloInicio === 'number' && Number.isFinite(raw.anguloInicio) ? raw.anguloInicio : undefined,
+    anguloFin: typeof raw.anguloFin === 'number' && Number.isFinite(raw.anguloFin) ? raw.anguloFin : undefined,
 
     // Estadística (Etapa I3)
     histogramBins:

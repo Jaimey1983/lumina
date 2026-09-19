@@ -1008,5 +1008,52 @@ describe('buildApexChart — Estilo y Anotaciones múltiples (Etapa I5)', () => 
     );
     expect(semicirculoConPosicionExplicita.options.legend?.position).toBe('right');
   });
+
+  it('la leyenda nativa de ApexCharts se apaga para arcos parciales (posicionamiento no confiable — ver PartialArcLegend en chart-container.tsx)', () => {
+    const radialConfig: LuminaChartConfig = {
+      type: 'radialBar',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+      mostrarLeyenda: true,
+    };
+
+    expect(buildApexChart(radialConfig, theme).options.legend?.show).toBe(true);
+    expect(buildApexChart({ ...radialConfig, angulo: 'semicirculo' }, theme).options.legend?.show).toBe(false);
+    expect(
+      buildApexChart({ ...radialConfig, angulo: 'personalizado', anguloInicio: -60, anguloFin: 60 }, theme).options
+        .legend?.show,
+    ).toBe(false);
+  });
+
+  it('angulo "personalizado": usa anguloInicio/anguloFin, con default -90/90 si faltan', () => {
+    const radialConfig: LuminaChartConfig = {
+      type: 'radialBar',
+      categorias: ['Progreso'],
+      series: [{ nombre: 'Progreso', valores: [72] }],
+    };
+
+    const personalizado = buildApexChart(
+      { ...radialConfig, angulo: 'personalizado', anguloInicio: -135, anguloFin: 45 },
+      theme,
+    );
+    expect(personalizado.options.plotOptions?.radialBar?.startAngle).toBe(-135);
+    expect(personalizado.options.plotOptions?.radialBar?.endAngle).toBe(45);
+
+    const sinAngulosExplicitos = buildApexChart({ ...radialConfig, angulo: 'personalizado' }, theme);
+    expect(sinAngulosExplicitos.options.plotOptions?.radialBar?.startAngle).toBe(-90);
+    expect(sinAngulosExplicitos.options.plotOptions?.radialBar?.endAngle).toBe(90);
+
+    // También aplica a pie/donut, igual que "semicirculo".
+    const donutPersonalizado = buildApexChart(
+      { ...baseConfig, type: 'donut', angulo: 'personalizado', anguloInicio: 0, anguloFin: 270 },
+      theme,
+    );
+    expect(donutPersonalizado.options.plotOptions?.pie?.startAngle).toBe(0);
+    expect(donutPersonalizado.options.plotOptions?.pie?.endAngle).toBe(270);
+
+    // Círculo completo: sin overrides de ángulo.
+    const completo = buildApexChart(radialConfig, theme);
+    expect(completo.options.plotOptions?.radialBar?.startAngle).toBeUndefined();
+  });
 });
 

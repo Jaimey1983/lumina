@@ -531,12 +531,32 @@ function buildHeatmapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
   return { chartType: 'heatmap', series, options };
 }
 
+/**
+ * Ángulos de inicio/fin del arco para pie/donut/radialBar. `null` = círculo
+ * completo (sin overrides). `'semicirculo'` es un atajo fijo a -90/90;
+ * `'personalizado'` deja que el docente elija cualquier apertura angular
+ * (Etapa I8 — "Custom Angle"), acotada a un span < 360° (si el docente pide
+ * exactamente 360 o más, ApexCharts lo trata como círculo completo de todos
+ * modos — no hace falta clamping especial, `resizeNonAxisCharts` de
+ * ApexCharts ya solo activa su ajuste de arco parcial cuando el span < 360).
+ */
+function resolveArcAngles(config: LuminaChartConfig): { startAngle: number; endAngle: number } | null {
+  if (config.angulo === 'semicirculo') return { startAngle: -90, endAngle: 90 };
+  if (config.angulo === 'personalizado') {
+    const startAngle = typeof config.anguloInicio === 'number' && Number.isFinite(config.anguloInicio) ? config.anguloInicio : -90;
+    const endAngle = typeof config.anguloFin === 'number' && Number.isFinite(config.anguloFin) ? config.anguloFin : 90;
+    return { startAngle, endAngle };
+  }
+  return null;
+}
+
 function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme): BuiltApexChart {
   const primary = config.series[0];
   const values = config.categorias.map((_, idx) => primary?.valores[idx] ?? 0);
   const colors = config.categorias.map((_, idx) => resolveColor(idx, config));
 
-  const isSemicircle = config.angulo === 'semicirculo';
+  const arcAngles = resolveArcAngles(config);
+  const isPartialArc = arcAngles !== null;
   const isRadial = config.type === 'radialBar';
   const isDonut = config.type === 'donut';
 
@@ -555,25 +575,13 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
     plotOptions = {
       radialBar: {
         hollow: { size: `${hollowSize}%` },
-        ...(isSemicircle
-          ? {
-              startAngle: -90,
-              endAngle: 90,
-              offsetY: -10,
-            }
-          : {}),
+        ...(arcAngles ? { ...arcAngles, offsetY: -10 } : {}),
       },
     };
   } else {
     const pieOrDonutOptions: NonNullable<NonNullable<ApexOptions['plotOptions']>['pie']> = {
       ...(isDonut ? { donut: { size: '65%' } } : {}),
-      ...(isSemicircle
-        ? {
-            startAngle: -90,
-            endAngle: 90,
-            offsetY: 10,
-          }
-        : {}),
+      ...(arcAngles ? { ...arcAngles, offsetY: 10 } : {}),
     };
 
     if (isDonut && config.mostrarTotal) {
@@ -595,23 +603,28 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
     plotOptions = Object.keys(pieOrDonutOptions).length > 0 ? { pie: pieOrDonutOptions } : {};
   }
 
-  // Leyenda a la derecha (default histórico de radialBar) + `chart.height:
-  // 'auto'` (necesario para posicionar bien el semicírculo, ver
-  // `isPartialArcChart`) hacen que ApexCharts iguale gridHeight a gridWidth
-  // (`Dimensions.js`, rama legend.position==='right'/'left') — el radio del
-  // arco termina limitado por (ancho de la tarjeta − ancho de la leyenda) en
-  // vez de por el alto real disponible, y como el semicírculo no crece para
-  // aprovechar el alto que le sobra, se ve chico. Con leyenda arriba/abajo
-  // esa rama nunca se activa. Solo cambia el *fallback*: un `posicionLeyenda`
-  // explícito del docente sigue ganando (`resolveLegendPosition`).
-  const legendFallback = isRadial && isSemicircle ? 'bottom' : config.type === 'radialBar' ? 'right' : 'bottom';
+  const legendFallback = isRadial && !isPartialArc ? 'right' : 'bottom';
+
+  // La leyenda nativa de ApexCharts para pie/donut/radialBar calcula su
+  // posición (`top` en px) una sola vez, a partir del alto ANTES de recortar
+  // — el recorte a medida que hace `resizeNonAxisCharts()` para un arco
+  // parcial (ver `isPartialArcChart`) ajusta el SVG y el wrapper visible,
+  // pero nunca recalcula esa posición de la leyenda. Con un arco parcial la
+  // diferencia entre el alto "adivinado" y el alto real recortado puede ser
+  // grande, y la leyenda termina flotando muy por debajo del gráfico visible
+  // (confirmado con Playwright contra un caso real: leyenda a cientos de px
+  // fuera de la tarjeta). Se apaga la leyenda nativa de ApexCharts para
+  // arcos parciales y `<LuminaChart>` (chart-container.tsx) dibuja una
+  // propia con `built.options.labels`/`colors` — un `<div>` normal, sin la
+  // lógica de posicionamiento interna de ApexCharts.
+  const showNativeLegend = Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline && !isPartialArc;
 
   const options: ApexOptions = {
     chart: { ...baseChartOptions(config, theme), type: config.type as 'pie' | 'donut' | 'radialBar' },
     colors,
     labels: config.categorias,
     legend: {
-      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
+      show: showNativeLegend,
       position: resolveLegendPosition(config, legendFallback),
       fontSize: '11px',
       labels: { colors: theme.foreColor },

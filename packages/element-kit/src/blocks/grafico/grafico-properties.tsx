@@ -359,8 +359,29 @@ export function GraficoProperties({
     commitChange({ ...localBlock, mostrarTotal: mostrarTotal || undefined }, true);
   };
 
-  const handleAnguloChange = (angulo: 'completo' | 'semicirculo') => {
-    commitChange({ ...localBlock, angulo: angulo === 'completo' ? undefined : angulo }, true);
+  const handleAnguloChange = (angulo: 'completo' | 'semicirculo' | 'personalizado') => {
+    commitChange(
+      {
+        ...localBlock,
+        angulo: angulo === 'completo' ? undefined : angulo,
+        // Semillas razonables al entrar a "Personalizado" por primera vez —
+        // arranca idéntico al semicírculo, el docente ajusta desde ahí.
+        ...(angulo === 'personalizado' && localBlock.anguloInicio === undefined && localBlock.anguloFin === undefined
+          ? { anguloInicio: -90, anguloFin: 90 }
+          : {}),
+      },
+      true,
+    );
+  };
+
+  const handleAnguloInicioChange = (raw: string) => {
+    const val = Number(raw);
+    commitChange({ ...localBlock, anguloInicio: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
+  };
+
+  const handleAnguloFinChange = (raw: string) => {
+    const val = Number(raw);
+    commitChange({ ...localBlock, anguloFin: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
   };
 
   const handleHistogramBinsChange = (raw: string) => {
@@ -754,7 +775,7 @@ export function GraficoProperties({
               <Label className="text-[11px] text-muted-foreground">Apertura Angular</Label>
               <Select
                 value={localBlock.angulo || 'completo'}
-                onValueChange={(val) => handleAnguloChange(val as 'completo' | 'semicirculo')}
+                onValueChange={(val) => handleAnguloChange(val as 'completo' | 'semicirculo' | 'personalizado')}
               >
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Círculo completo (360°)" />
@@ -762,8 +783,36 @@ export function GraficoProperties({
                 <SelectContent>
                   <SelectItem value="completo" className="text-xs">Círculo completo (360°)</SelectItem>
                   <SelectItem value="semicirculo" className="text-xs">Semicírculo (180° / Medidor)</SelectItem>
+                  <SelectItem value="personalizado" className="text-xs">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {supportsAngulo && localBlock.angulo === 'personalizado' && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Ángulo Inicio (°)</Label>
+                <Input
+                  type="number"
+                  min={-360}
+                  max={360}
+                  value={localBlock.anguloInicio ?? -90}
+                  onChange={(e) => handleAnguloInicioChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Ángulo Fin (°)</Label>
+                <Input
+                  type="number"
+                  min={-360}
+                  max={360}
+                  value={localBlock.anguloFin ?? 90}
+                  onChange={(e) => handleAnguloFinChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
             </div>
           )}
 

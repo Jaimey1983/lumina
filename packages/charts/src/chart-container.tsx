@@ -11,21 +11,21 @@ import { resolveChartTheme, type LuminaChartTheme } from './chart-theme.js';
 import type { LuminaChartConfig } from './types.js';
 
 /**
- * Arco parcial (`angulo: 'semicirculo'` en pie/donut/radialBar): ApexCharts
- * 5.16 trae una lógica de auto-ajuste específica para arcos parciales (mide
- * la geometría real del arco dibujado y redimensiona/centra el SVG a su
- * alrededor, en vez de asumir un círculo completo) — pero esa lógica se
- * salta por completo cuando `chart.height` es un porcentaje (`'100%'`, lo
- * que `<LuminaChart>` siempre pasaba): sin saber cuánto necesita el arco,
- * ApexCharts centra y dimensiona como si fuera un círculo entero, y el
- * semicírculo queda confinado a la mitad superior de esa caja completa —
- * chico y pegado arriba, con la mitad inferior (invisible) vacía. Pasar
- * `height="auto"` para este caso activa la lógica nativa de ApexCharts.
+ * Arco parcial (`angulo: 'semicirculo'` o `'personalizado'` en
+ * pie/donut/radialBar): ApexCharts 5.16 trae una lógica de auto-ajuste
+ * específica para arcos parciales (mide la geometría real del arco dibujado
+ * y redimensiona/centra el SVG a su alrededor, en vez de asumir un círculo
+ * entero) — pero esa lógica se salta por completo cuando `chart.height` es
+ * un porcentaje (`'100%'`, lo que `<LuminaChart>` siempre pasaba): sin saber
+ * cuánto necesita el arco, ApexCharts centra y dimensiona como si fuera un
+ * círculo entero, y el arco queda confinado a su mitad de esa caja completa
+ * — chico y pegado arriba/abajo según el ángulo. Pasar `height="auto"` para
+ * este caso activa la lógica nativa de ApexCharts.
  */
 export function isPartialArcChart(config: Pick<LuminaChartConfig, 'type' | 'angulo'>): boolean {
   return (
     (config.type === 'pie' || config.type === 'donut' || config.type === 'radialBar') &&
-    config.angulo === 'semicirculo'
+    (config.angulo === 'semicirculo' || config.angulo === 'personalizado')
   );
 }
 
@@ -121,6 +121,29 @@ function ChartDataTable({ config }: { config: LuminaChartConfig }) {
 }
 
 /**
+ * Reemplazo de la leyenda nativa de ApexCharts para arcos parciales (ver el
+ * comentario sobre por qué se apaga `legend.show` en `buildCircularChart`)
+ * — mismo aspecto visual (punto de color + nombre, 11px), pero como HTML
+ * plano nuestro, sin la lógica de posicionamiento interna de ApexCharts que
+ * falla para arcos parciales.
+ */
+function PartialArcLegend({ config, colors }: { config: LuminaChartConfig; colors: string[] }) {
+  return (
+    <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-foreground">
+      {config.categorias.map((cat, idx) => (
+        <span key={cat} className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: colors[idx % colors.length] }}
+          />
+          {cat}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Único componente público de render de `@lumina/charts`. Encapsula la carga
  * perezosa, el theming claro/oscuro y la tabla de datos accesible — el
  * consumidor (`grafico`, `/analytics`) solo entrega un `LuminaChartConfig`.
@@ -168,7 +191,20 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
         </div>
       )}
 
-      <div className={cn('relative min-h-0 flex-1', isPartialArc && 'flex items-center justify-center')}>
+      <div
+        className={cn(
+          'relative min-h-0 flex-1',
+          // `flex-col` + `justify-center` centra verticalmente el arco
+          // parcial en el alto que sobra sin tocar el eje principal (ancho):
+          // `justify-content` en un flex ROW centra por ANCHO (colapsa el
+          // div de `react-apexcharts`, que no trae su propio CSS de tamaño,
+          // a su contenido — 0px — antes de que ApexCharts lo mida, dándole
+          // un ancho de referencia minúsculo). En columna, `justify-content`
+          // centra por ALTO y el ancho sigue el `align-items` por defecto
+          // (`stretch`), así el hijo mide el 100% del ancho real disponible.
+          isPartialArc && 'flex flex-col justify-center',
+        )}
+      >
         {showTable ? (
           <div className="h-full w-full overflow-auto">
             <ChartDataTable config={config} />
@@ -185,6 +221,11 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
             />
           </Suspense>
         )}
+        {isPartialArc &&
+          !showTable &&
+          Boolean(config.mostrarLeyenda) &&
+          !config.isThumbnail &&
+          !config.modoSparkline && <PartialArcLegend config={config} colors={(built.options.colors as string[]) ?? []} />}
       </div>
 
       {!config.isThumbnail && (
