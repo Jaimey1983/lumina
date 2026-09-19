@@ -177,10 +177,15 @@ export function TypographyInspector({
     sizeMax,
   );
 
+  // "Estilo" aplica solo un bundle tipográfico (tamaño/peso/interlineado/
+  // tracking/alineación) — NO toca "Nivel" (el H1…H6 semántico). Antes
+  // llamaba a `onHeadingLevelChange` acá también (H1 forzado en "Título",
+  // párrafo forzado en cualquier otro) — un clic en "Estilo" podía demover
+  // en silencio un H2/H3 ya elegido a párrafo, o viceversa. Son dos ejes
+  // independientes: "Nivel" decide el tag semántico, "Estilo" solo la
+  // apariencia.
   const applyPreset = (id: TypographyPresetId) => {
     onChange(applyTypographyPreset(id, sizeMin, sizeMax));
-    if (!onHeadingLevelChange) return;
-    onHeadingLevelChange(id === 'titulo' ? 1 : undefined);
   };
 
   return (
