@@ -112,6 +112,20 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
 
   const built = useMemo(() => buildApexChart(config, theme), [config, theme]);
 
+  // Clave de remount: `config` completo (dato plano, sin funciones), no solo
+  // `config.type`. `react-apexcharts` reconfigura la instancia existente vía
+  // `updateOptions()` cuando solo cambian las `options`, y el merge interno
+  // de ApexCharts únicamente sobreescribe claves PRESENTES en el objeto
+  // nuevo — una clave que existía (`plotOptions.pie.startAngle`, el
+  // `formatter` de `yaxis.labels`/`tooltip.y`…) y que ahora simplemente ya
+  // no está (porque `angulo`/`formatoValor` volvieron a su valor por
+  // defecto) no se resetea, queda con el valor de la instancia vieja hasta
+  // recargar la página. Antes esto solo se resolvía para `config.type`
+  // (Etapa H6, cambios de tipo entre formas de eje muy distintas); se
+  // generaliza a cualquier cambio de `config` para no tener que perseguir
+  // cada campo opcional nuevo uno por uno.
+  const chartKey = useMemo(() => JSON.stringify(config), [config]);
+
   const hasData =
     config.type === 'scatter' || config.type === 'bubble'
       ? config.series.length > 0 && config.series.some((s) => (s.puntos?.length ?? 0) > 0)
@@ -140,19 +154,8 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
           </div>
         ) : (
           <Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}>
-            {/*
-              `key={config.type}` fuerza un remount de <Chart> al cambiar de
-              tipo. Sin esto, react-apexcharts intenta reconfigurar la misma
-              instancia vía `updateOptions()` — funciona entre tipos afines
-              (column↔bar) pero deja geometría obsoleta al saltar entre
-              formas de eje muy distintas (scatter numérico → combo
-              categórico, combo → heatmap): confirmado en vivo (H6) que la
-              única forma de recuperar el render correcto sin este `key` era
-              recargar la página — los datos persistidos siempre eran
-              correctos, solo el DOM del chart montado quedaba stale.
-            */}
             <ApexChart
-              key={config.type}
+              key={chartKey}
               type={built.chartType}
               series={built.series as ApexOptions['series']}
               options={built.options}
