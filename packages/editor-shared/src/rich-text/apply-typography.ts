@@ -2,7 +2,7 @@ import type { Editor } from '@tiptap/core';
 import type { HeadingLevel } from '@lumina/types/slide';
 import type { TypographyValue } from '../typography.js';
 import { isBoldWeight } from '../typography.js';
-import { BODY_TEXT_SCALE, HEADING_SCALE, isDerivedHeadingSize } from '../heading-scale.js';
+import { BODY_TEXT_SCALE, HEADING_SCALE, resolveHeadingSizeDerived } from '../heading-scale.js';
 
 const ALIGN_TO_BLOCK: Record<string, string> = {
   left: 'izquierda',
@@ -157,10 +157,15 @@ export function applyTypographyToSelection(
  * reescala la tipografía del nodo: si el tamaño actual coincide con la escala
  * del nivel anterior (o no está fijado) se sustituye por la del nuevo nivel; un
  * tamaño manual distinto se conserva.
+ *
+ * `manualSizeOverride` es `TextBlock.tamanoFuenteManual` — cuando el llamador
+ * lo tiene (siempre que edita desde el panel), decide sin adivinar; si no se
+ * pasa, se recae en la heurística numérica de siempre.
  */
 export function applyHeadingLevelToSelection(
   editor: Editor,
   nivel: HeadingLevel | undefined,
+  manualSizeOverride?: boolean,
 ): boolean {
   const { from, to } = editor.state.selection;
   const range = from === to ? wholeDocRange(editor) : { from, to };
@@ -176,7 +181,8 @@ export function applyHeadingLevelToSelection(
       : typeof curHeading.fontSize === 'number'
         ? curHeading.fontSize
         : undefined;
-  const sizeIsDerived = isDerivedHeadingSize(
+  const sizeIsDerived = resolveHeadingSizeDerived(
+    manualSizeOverride,
     curSize,
     prevLevel as HeadingLevel | undefined,
   );

@@ -48,4 +48,13 @@ describe('createTextBlock (Fase 0.2)', () => {
       expect(p).not.toHaveProperty('contenido');
     }
   });
+
+  it('todos los presets marcan tamanoFuenteManual:false (su tamaño lo puso el preset, no el docente)', () => {
+    // "pie" (13px) y "cita" (20px) no coinciden con ningún tamaño de
+    // HEADING_SCALE ni con el cuerpo (18px) y no traen `nivel` — sin este
+    // flag, un cambio de nivel de encabezado nunca los reescalaba.
+    for (const p of Object.values(TEXT_INSERT_PRESETS)) {
+      expect(p.tamanoFuenteManual).toBe(false);
+    }
+  });
 });

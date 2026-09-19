@@ -10,11 +10,17 @@ import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 export type TextInsertPreset = 'titulo' | 'subtitulo' | 'cuerpo' | 'pie' | 'cita';
 
 export const TEXT_INSERT_PRESETS: Record<TextInsertPreset, Partial<TextBlock>> = {
-  titulo: { tamanoFuente: '40px', negrita: true, nivel: 1 },
-  subtitulo: { tamanoFuente: '26px', negrita: true, nivel: 3 },
-  cuerpo: { tamanoFuente: '18px' },
-  pie: { tamanoFuente: '13px', color: '#6b7280' },
-  cita: { tamanoFuente: '20px', cursiva: true },
+  // `tamanoFuenteManual: false` — el tamaño lo pone el preset, no el docente:
+  // un cambio de nivel de encabezado (P/H1…H6) sí puede reescalarlo. Sin esto
+  // "pie" (13px) y "cita" (20px) no coinciden con ningún tamaño de la escala
+  // de encabezados ni tienen `nivel` previo — la heurística numérica de
+  // `isDerivedHeadingSize` los trataba como "el docente lo fijó a mano" desde
+  // el primer clic, y el tamaño nunca cambiaba entre niveles (ver heading-scale.ts).
+  titulo: { tamanoFuente: '40px', negrita: true, nivel: 1, tamanoFuenteManual: false },
+  subtitulo: { tamanoFuente: '26px', negrita: true, nivel: 3, tamanoFuenteManual: false },
+  cuerpo: { tamanoFuente: '18px', tamanoFuenteManual: false },
+  pie: { tamanoFuente: '13px', color: '#6b7280', tamanoFuenteManual: false },
+  cita: { tamanoFuente: '20px', cursiva: true, tamanoFuenteManual: false },
 };
 
 export interface CreateTextBlockOptions {

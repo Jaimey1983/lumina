@@ -26,7 +26,7 @@ import {
   BODY_TEXT_SCALE,
   HEADING_SCALE,
   effectiveFontSizePx,
-  isDerivedHeadingSize,
+  resolveHeadingSizeDerived,
 } from '@lumina/editor-shared/heading-scale';
 import { getRichDoc } from './rich-text.js';
 import {
@@ -64,7 +64,7 @@ function rescaleBlockForLevel(b: TextBlock, nivel?: HeadingLevel): TextBlock {
     b.tamanoFuente && b.tamanoFuente.trim() !== ''
       ? effectiveFontSizePx(b.tamanoFuente, b.nivel)
       : undefined;
-  const derived = isDerivedHeadingSize(curPx, b.nivel);
+  const derived = resolveHeadingSizeDerived(b.tamanoFuenteManual, curPx, b.nivel);
   if (derived) {
     const scale = nivel ? HEADING_SCALE[nivel] : BODY_TEXT_SCALE;
     next.tamanoFuente = `${scale.sizePx}px`;
@@ -86,6 +86,9 @@ function applyTypographyToTextBlock(
   patch: Partial<TypographyValue>,
 ): TextBlock {
   const mapped: TextBlock = { ...b, ...textBlockPatchFromTypography(patch) };
+  // El docente tocó el campo "Tamaño (px)" a mano — un cambio de nivel de
+  // encabezado después de esto no debe reescalarlo (ver heading-scale.ts).
+  if (patch.fontSize !== undefined) mapped.tamanoFuenteManual = true;
   const baseDoc = b.contenidoRich ? sanitizeRichDoc(b.contenidoRich) : getRichDoc(b);
   const patchedDoc = applyTypographyPatchToRichDoc(baseDoc, patch);
   mapped.contenidoRich = patchedDoc;
@@ -163,6 +166,21 @@ function effectiveTypography(block: TextBlock): TypographyValue {
   return out;
 }
 
+/**
+ * Nivel de encabezado del nodo bajo el cursor — no de todo el bloque. Sin
+ * esto los botones P/H1…H6 del panel se quedan en `block.nivel` (el último
+ * nivel que un clic haya escrito ahí) y nunca reflejan en qué nodo está el
+ * cursor realmente, exactamente el mismo desajuste que `effectiveTypography`
+ * ya evita para tamaño/negrita/cursiva/etc.
+ */
+function effectiveHeadingLevel(block: TextBlock): HeadingLevel | undefined {
+  const ed = getActiveRichEditor()?.editor;
+  if (!ed) return block.nivel;
+  if (!ed.isActive('heading')) return undefined;
+  const level = ed.getAttributes('heading').level;
+  return typeof level === 'number' ? (level as HeadingLevel) : undefined;
+}
+
 export function TextoProperties({
   block,
   applyNow,
@@ -191,7 +209,7 @@ export function TextoProperties({
   const handleHeadingLevelChange = (nivel?: HeadingLevel) => {
     const editor = activeEditor();
     if (editor) {
-      applyHeadingLevelToSelection(editor, nivel);
+      applyHeadingLevelToSelection(editor, nivel, block.tamanoFuenteManual);
     }
     // El bloque siempre se reescala (panel + render sin editor + tras el commit).
     const apply = (b: Block): Block =>
@@ -238,7 +256,7 @@ export function TextoProperties({
       sizeMax={TEXT_BLOCK_FONT_SIZE_MAX}
       defaultSize={24}
       defaultColor="#000000"
-      headingLevel={block.nivel}
+      headingLevel={effectiveHeadingLevel(block)}
       enableList
       contrastBackground={slideBackground}
       metaText={block.contenido}
