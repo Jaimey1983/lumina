@@ -6,12 +6,20 @@ import { cva, VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 
+// `max-h-[calc(100vh-2rem)] overflow-y-auto` — sin esto, un modal mas alto que
+// el viewport (comun en movil con el teclado abierto) queda con contenido
+// inaccesible: `position: fixed` + top-50%/translate no da ningun scroll.
+// `w-[calc(100%-2rem)]` (solo en la variante `default`, no en `fullscreen`,
+// que ya se dimensiona por `inset-5`) deja 1rem de aire a cada lado en vez de
+// `w-full` pegado a los bordes de la pantalla; en escritorio no cambia nada
+// porque `max-w-lg` sigue ganando antes de llegar a ese ancho.
 const dialogContentVariants = cva(
-  'flex flex-col fixed outline-0 z-50 border border-border bg-background p-6 shadow-lg shadow-black/5 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg',
+  'flex flex-col fixed outline-0 z-50 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg border border-border bg-background p-6 shadow-lg shadow-black/5 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
   {
     variants: {
       variant: {
-        default: 'left-[50%] top-[50%] max-w-lg translate-x-[-50%] translate-y-[-50%] w-full',
+        default:
+          'left-[50%] top-[50%] w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%]',
         fullscreen: 'inset-5',
       },
     },

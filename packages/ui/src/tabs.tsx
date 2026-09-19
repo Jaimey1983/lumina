@@ -6,7 +6,12 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Tabs as TabsPrimitive } from 'radix-ui';
 
 // Variants for TabsList
-const tabsListVariants = cva('flex items-center shrink-0', {
+// `overflow-x-auto` — cada TabsTrigger es `whitespace-nowrap shrink-0`; sin
+// esto, una lista con 4+ tabs (ver /courses/[id], /admin) desborda cualquier
+// viewport de telefono y los ultimos tabs quedan fuera de pantalla sin forma
+// de llegar a ellos. Con esto, el propio TabsList se vuelve scrolleable
+// horizontalmente cuando no entra.
+const tabsListVariants = cva('flex items-center shrink-0 overflow-x-auto', {
   variants: {
     variant: {
       default: 'bg-accent p-1',
