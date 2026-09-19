@@ -595,19 +595,33 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
     plotOptions = Object.keys(pieOrDonutOptions).length > 0 ? { pie: pieOrDonutOptions } : {};
   }
 
+  // Leyenda a la derecha (default histórico de radialBar) + `chart.height:
+  // 'auto'` (necesario para posicionar bien el semicírculo, ver
+  // `isPartialArcChart`) hacen que ApexCharts iguale gridHeight a gridWidth
+  // (`Dimensions.js`, rama legend.position==='right'/'left') — el radio del
+  // arco termina limitado por (ancho de la tarjeta − ancho de la leyenda) en
+  // vez de por el alto real disponible, y como el semicírculo no crece para
+  // aprovechar el alto que le sobra, se ve chico. Con leyenda arriba/abajo
+  // esa rama nunca se activa. Solo cambia el *fallback*: un `posicionLeyenda`
+  // explícito del docente sigue ganando (`resolveLegendPosition`).
+  const legendFallback = isRadial && isSemicircle ? 'bottom' : config.type === 'radialBar' ? 'right' : 'bottom';
+
   const options: ApexOptions = {
     chart: { ...baseChartOptions(config, theme), type: config.type as 'pie' | 'donut' | 'radialBar' },
     colors,
     labels: config.categorias,
     legend: {
       show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
-      position: resolveLegendPosition(config, config.type === 'radialBar' ? 'right' : 'bottom'),
+      position: resolveLegendPosition(config, legendFallback),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
     },
     tooltip: buildTooltip(config),
     dataLabels: buildDataLabels(config, config.type !== 'radialBar'),
     plotOptions,
+    ...(isRadial && config.estilo?.puntasRedondeadas
+      ? { stroke: { lineCap: 'round' as const } }
+      : {}),
   };
 
   return { chartType: config.type as 'pie' | 'donut' | 'radialBar', series: values, options };

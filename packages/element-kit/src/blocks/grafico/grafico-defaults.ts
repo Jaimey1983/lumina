@@ -279,6 +279,7 @@ function sanitizeEstilo(raw: unknown): GraficoEstilo | undefined {
     typeof r.grosorAnillo === 'number' && Number.isFinite(r.grosorAnillo)
       ? Math.min(Math.max(r.grosorAnillo, 0), 100)
       : undefined;
+  const puntasRedondeadas = typeof r.puntasRedondeadas === 'boolean' ? r.puntasRedondeadas : undefined;
 
   const result: GraficoEstilo = {
     ...(esquinas !== undefined ? { esquinas } : {}),
@@ -287,6 +288,7 @@ function sanitizeEstilo(raw: unknown): GraficoEstilo | undefined {
     ...(fondo ? { fondo } : {}),
     ...(duracionAnimacion !== undefined ? { duracionAnimacion } : {}),
     ...(grosorAnillo !== undefined ? { grosorAnillo } : {}),
+    ...(puntasRedondeadas !== undefined ? { puntasRedondeadas } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;

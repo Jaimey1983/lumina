@@ -1332,6 +1332,8 @@ export interface GraficoEstilo {
   duracionAnimacion?: number;
   /** Grosor del anillo (0-100, % del radio) en gráficos `radialBar`. Ignorado en otros tipos. */
   grosorAnillo?: number;
+  /** Puntas del arco redondeadas (`stroke.lineCap: 'round'`) en `radialBar`. Ignorado en otros tipos. */
+  puntasRedondeadas?: boolean;
 }
 
 export interface GraficoDatosBlock {

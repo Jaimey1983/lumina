@@ -327,6 +327,9 @@ export function GraficoProperties({
     updateEstilo({ grosorAnillo: Number.isFinite(val) && raw.trim() !== '' ? val : undefined });
   };
 
+  const handleEstiloPuntasRedondeadasToggle = (puntasRedondeadas: boolean) =>
+    updateEstilo({ puntasRedondeadas: puntasRedondeadas || undefined }, true);
+
   // Paleta personalizada (Etapa I5)
   const handleAddPaletaColor = () => {
     const nextPaleta = [...(localBlock.paletaPersonalizada ?? []), '#3B82F6'];
@@ -1040,6 +1043,16 @@ export function GraficoProperties({
               placeholder="30 (por defecto)"
               onChange={(e) => handleEstiloGrosorAnilloChange(e.target.value)}
               className="h-7 text-xs"
+            />
+          </div>
+        )}
+
+        {localBlock.chartType === 'radialBar' && (
+          <div className="flex items-center justify-between pt-1">
+            <Label className="text-[11px] text-muted-foreground">Puntas Redondeadas</Label>
+            <Switch
+              checked={Boolean(localBlock.estilo?.puntasRedondeadas)}
+              onCheckedChange={handleEstiloPuntasRedondeadasToggle}
             />
           </div>
         )}

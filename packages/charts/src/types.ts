@@ -230,6 +230,8 @@ export interface LuminaChartStyle {
   duracionAnimacion?: number;
   /** Grosor del anillo (0-100, % del radio) en gráficos `radialBar`. Ignorado en otros tipos. Por defecto 30. */
   grosorAnillo?: number;
+  /** Puntas del arco redondeadas (`stroke.lineCap: 'round'`) en `radialBar`. Ignorado en otros tipos. Por defecto `false` (puntas rectas, el default de ApexCharts). */
+  puntasRedondeadas?: boolean;
 }
 
 /**
