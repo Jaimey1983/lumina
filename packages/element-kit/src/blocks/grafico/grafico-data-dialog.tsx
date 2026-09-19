@@ -272,7 +272,7 @@ export function GraficoDataDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6">
+      <DialogContent className="max-w-2xl max-h-[70vh] flex flex-col p-6">
         <DialogHeader className="mb-3">
           <div className="flex items-center gap-2">
             <TableIcon className="h-5 w-5 text-primary" />
@@ -470,6 +470,7 @@ export function GraficoDataDialog({
                                 <td key={field} className="p-1 border-l border-border/40">
                                   <input
                                     type="number"
+                                    step="0.1"
                                     value={caja[field]}
                                     onChange={(e) => handleCajaFieldChange(sIdx, cIdx, field, e.target.value)}
                                     className="h-7 w-16 rounded border border-input bg-background px-1.5 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary font-mono text-right"
@@ -562,6 +563,7 @@ export function GraficoDataDialog({
                             <td className="p-1.5">
                               <input
                                 type="number"
+                                step="0.1"
                                 value={pt.x}
                                 onChange={(e) => handlePointChange(sIdx, ptIdx, 'x', e.target.value)}
                                 className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary font-mono text-right"
@@ -570,6 +572,7 @@ export function GraficoDataDialog({
                             <td className="p-1.5">
                               <input
                                 type="number"
+                                step="0.1"
                                 value={pt.y}
                                 onChange={(e) => handlePointChange(sIdx, ptIdx, 'y', e.target.value)}
                                 className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary font-mono text-right"
@@ -579,6 +582,7 @@ export function GraficoDataDialog({
                               <td className="p-1.5">
                                 <input
                                   type="number"
+                                  step="0.1"
                                   value={pt.z ?? 10}
                                   onChange={(e) => handlePointChange(sIdx, ptIdx, 'z', e.target.value)}
                                   className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary font-mono text-right"
@@ -724,6 +728,7 @@ export function GraficoDataDialog({
                           <td key={sIdx} className="p-1.5 border-l border-border/40">
                             <input
                               type="number"
+                              step="0.1"
                               value={serie.valores[cIdx] ?? 0}
                               onChange={(e) => handleSeriesValueChange(sIdx, cIdx, e.target.value)}
                               className="h-7 w-full rounded border border-input bg-background px-2 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary text-right font-mono"
