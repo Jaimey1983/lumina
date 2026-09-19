@@ -10,6 +10,25 @@ import { buildApexChart } from './apex/build-apex-options.js';
 import { resolveChartTheme, type LuminaChartTheme } from './chart-theme.js';
 import type { LuminaChartConfig } from './types.js';
 
+/**
+ * Arco parcial (`angulo: 'semicirculo'` en pie/donut/radialBar): ApexCharts
+ * 5.16 trae una lógica de auto-ajuste específica para arcos parciales (mide
+ * la geometría real del arco dibujado y redimensiona/centra el SVG a su
+ * alrededor, en vez de asumir un círculo completo) — pero esa lógica se
+ * salta por completo cuando `chart.height` es un porcentaje (`'100%'`, lo
+ * que `<LuminaChart>` siempre pasaba): sin saber cuánto necesita el arco,
+ * ApexCharts centra y dimensiona como si fuera un círculo entero, y el
+ * semicírculo queda confinado a la mitad superior de esa caja completa —
+ * chico y pegado arriba, con la mitad inferior (invisible) vacía. Pasar
+ * `height="auto"` para este caso activa la lógica nativa de ApexCharts.
+ */
+export function isPartialArcChart(config: Pick<LuminaChartConfig, 'type' | 'angulo'>): boolean {
+  return (
+    (config.type === 'pie' || config.type === 'donut' || config.type === 'radialBar') &&
+    config.angulo === 'semicirculo'
+  );
+}
+
 // Único punto del paquete que importa `react-apexcharts` — ver el comentario
 // de package.json y la decisión de motor en AGENTS.md (Etapa H). `ssr:false`
 // porque ApexCharts necesita `window` (SVG.js) al montar, mismo patrón que
@@ -126,6 +145,8 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
   // cada campo opcional nuevo uno por uno.
   const chartKey = useMemo(() => JSON.stringify(config), [config]);
 
+  const isPartialArc = isPartialArcChart(config);
+
   const hasData =
     config.type === 'scatter' || config.type === 'bubble'
       ? config.series.length > 0 && config.series.some((s) => (s.puntos?.length ?? 0) > 0)
@@ -147,7 +168,7 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
         </div>
       )}
 
-      <div className="relative min-h-0 flex-1">
+      <div className={cn('relative min-h-0 flex-1', isPartialArc && 'flex items-center justify-center')}>
         {showTable ? (
           <div className="h-full w-full overflow-auto">
             <ChartDataTable config={config} />
@@ -160,7 +181,7 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
               series={built.series as ApexOptions['series']}
               options={built.options}
               width="100%"
-              height="100%"
+              height={isPartialArc ? 'auto' : '100%'}
             />
           </Suspense>
         )}

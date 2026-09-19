@@ -6,11 +6,15 @@
 // `column`/`bar` en Comparación y Estadística), eso expulsaba al usuario de
 // la familia que eligió apenas seleccionaba una variante "prestada".
 
-import { render, screen, fireEvent, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, cleanup, screen, fireEvent, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GraficoProperties } from './grafico-properties.js';
 import { createDefaultGraficoBlock } from './grafico-defaults.js';
 import type { Block, GraficoChartType } from '@lumina/types/slide';
+
+afterEach(() => {
+  cleanup();
+});
 
 function renderProperties(chartType: GraficoChartType) {
   const block = createDefaultGraficoBlock({ chartType });
