@@ -86,9 +86,18 @@ function applyTypographyToTextBlock(
   patch: Partial<TypographyValue>,
 ): TextBlock {
   const mapped: TextBlock = { ...b, ...textBlockPatchFromTypography(patch) };
-  // El docente tocó el campo "Tamaño (px)" a mano — un cambio de nivel de
-  // encabezado después de esto no debe reescalarlo (ver heading-scale.ts).
-  if (patch.fontSize !== undefined) mapped.tamanoFuenteManual = true;
+  if (patch.fontSize !== undefined) {
+    // El único llamador que manda un patch de UNA sola clave `{ fontSize }`
+    // es el input "Tamaño (px)" (ver FontSizeInput en typography-inspector.tsx)
+    // — ahí el docente lo tecleó a mano, no debe reescalarse con el nivel.
+    // Un patch con más claves junto a fontSize viene del botón "Estilo"
+    // (bundle de fontSize+peso+interlineado+tracking+alineación, ver
+    // applyPreset) — es un preset del sistema, igual que TEXT_INSERT_PRESETS:
+    // sí puede reescalarse. Antes esto marcaba `true` para AMBOS casos, lo
+    // que dejaba cualquier bloque tocado por "Estilo" con el tamaño
+    // congelado para siempre frente a cambios de "Nivel".
+    mapped.tamanoFuenteManual = isTypographySizeOnlyPatch(patch);
+  }
   const baseDoc = b.contenidoRich ? sanitizeRichDoc(b.contenidoRich) : getRichDoc(b);
   const patchedDoc = applyTypographyPatchToRichDoc(baseDoc, patch);
   mapped.contenidoRich = patchedDoc;
