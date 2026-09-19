@@ -410,6 +410,13 @@ export function GraficoProperties({
   const supportsTotal = localBlock.chartType === 'donut';
   const supportsLeyenda = !['treemap', 'funnel', 'waterfall', 'histogram'].includes(localBlock.chartType);
   const supportsGrillas = ['column', 'bar', 'line', 'area', 'combo', 'scatter', 'bubble', 'funnel', 'heatmap', 'waterfall', 'boxPlot', 'histogram'].includes(localBlock.chartType);
+  // Tipos donde `estilo.esquinas` realmente afecta el render (ver
+  // build-apex-options.ts): column/bar/combo (plotOptions.bar.borderRadius),
+  // heatmap (radius de celda), waterfall e histogram (barras). El resto
+  // (pie/donut/radialBar/polarArea/treemap/radar/scatter/bubble/boxPlot) no
+  // tiene ningún wiring — y funnel lo ignora a propósito (fuerza radius 0,
+  // es la forma del embudo) — mostrar el control ahí no tenía ningún efecto.
+  const supportsEsquinas = ['column', 'bar', 'combo', 'heatmap', 'waterfall', 'histogram'].includes(localBlock.chartType);
 
   return (
     <div className="space-y-5 text-xs">
@@ -997,17 +1004,19 @@ export function GraficoProperties({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Radio de Esquinas (px)</Label>
-            <Input
-              type="number"
-              min={0}
-              value={localBlock.estilo?.esquinas ?? ''}
-              placeholder="Auto"
-              onChange={(e) => handleEstiloEsquinasChange(e.target.value)}
-              className="h-7 text-xs"
-            />
-          </div>
+          {supportsEsquinas && (
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Radio de Esquinas (px)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={localBlock.estilo?.esquinas ?? ''}
+                placeholder="Auto"
+                onChange={(e) => handleEstiloEsquinasChange(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </div>
+          )}
           <div className="space-y-1">
             <Label className="text-[10px] text-muted-foreground">Fuente Tipográfica</Label>
             <Input
