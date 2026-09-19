@@ -221,12 +221,25 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
             />
           </Suspense>
         )}
-        {isPartialArc &&
-          !showTable &&
-          Boolean(config.mostrarLeyenda) &&
-          !config.isThumbnail &&
-          !config.modoSparkline && <PartialArcLegend config={config} colors={(built.options.colors as string[]) ?? []} />}
       </div>
+
+      {/*
+       * Fuera del contenedor que centra el gráfico (arriba) — a propósito.
+       * El recorte de ApexCharts para arcos parciales (`resizeNonAxisCharts`)
+       * está probado para el semicírculo simétrico (-90/90), pero para un
+       * ángulo personalizado/asimétrico el alto final que le queda a esa
+       * caja no es predecible; si la leyenda viviera ADENTRO de esa misma
+       * caja centrada, podía terminar sin espacio propio y quedar recortada
+       * por el `overflow-hidden` de la tarjeta (bug real, reportado en
+       * producción). Como hermano al mismo nivel que el botón "Ver tabla de
+       * datos", siempre tiene su propia fila en el flujo normal, sin
+       * depender de cuánto midió el arco.
+       */}
+      {isPartialArc &&
+        !showTable &&
+        Boolean(config.mostrarLeyenda) &&
+        !config.isThumbnail &&
+        !config.modoSparkline && <PartialArcLegend config={config} colors={(built.options.colors as string[]) ?? []} />}
 
       {!config.isThumbnail && (
         <Button

@@ -544,7 +544,14 @@ function resolveArcAngles(config: LuminaChartConfig): { startAngle: number; endA
   if (config.angulo === 'semicirculo') return { startAngle: -90, endAngle: 90 };
   if (config.angulo === 'personalizado') {
     const startAngle = typeof config.anguloInicio === 'number' && Number.isFinite(config.anguloInicio) ? config.anguloInicio : -90;
-    const endAngle = typeof config.anguloFin === 'number' && Number.isFinite(config.anguloFin) ? config.anguloFin : 90;
+    let endAngle = typeof config.anguloFin === 'number' && Number.isFinite(config.anguloFin) ? config.anguloFin : 90;
+    // Un fin <= inicio (ej. 90 → 45) da un barrido invertido de solo unos
+    // grados en vez del arco grande que el docente probablemente espera —
+    // se ve como comas sueltas en un rincón, no como un medidor. Se
+    // normaliza sumando 360° al fin para forzar siempre un barrido hacia
+    // adelante (horario); con inicio=90/fin=45 da un barrido de 315°, un
+    // gauge casi completo con un corte chico, mucho más reconocible.
+    if (endAngle <= startAngle) endAngle += 360;
     return { startAngle, endAngle };
   }
   return null;
