@@ -506,7 +506,7 @@ export function ClassesClient() {
 
       <div className="px-6 pt-4 space-y-4">
       {/* Course selector */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <label
           htmlFor="course-select"
           className="text-sm font-medium text-foreground shrink-0"
@@ -522,7 +522,7 @@ export function ClassesClient() {
             id="course-select"
             value={selectedCourseId}
             onChange={(e) => setCoursePick(e.target.value)}
-            className="h-8.5 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground min-w-[14rem]"
+            className="h-8.5 min-w-0 w-full flex-1 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground sm:w-auto sm:min-w-[14rem] sm:flex-none"
           >
             <option value="" disabled>
               Selecciona un curso

@@ -8,6 +8,7 @@ import { AlertCircle, BookOpen, CalendarRange, CheckCircle2, ChevronLeft, Chevro
 import { toast } from 'sonner';
 
 import { PageBanner } from '@lumina/ui/page-banner';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useCourses } from '@/hooks/api/use-courses';
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import {
@@ -375,6 +376,11 @@ export function GradebookClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
   const [filtersSidebarExpanded, setFiltersSidebarExpanded] = useState(true);
+  // Bajo `lg` el panel de filtros se apila arriba de la tabla en vez de al
+  // costado (ver abajo) -- ahi el estado de expandir/contraer no aplica,
+  // siempre se ve expandido para poder elegir curso/periodo.
+  const isMobile = useIsMobile();
+  const filtersExpanded = filtersSidebarExpanded || isMobile;
   const [coursePick, setCoursePick] = useState<string | null>(null);
   const [periodPick, setPeriodPick] = useState<string | null>(null);
 
@@ -422,15 +428,18 @@ export function GradebookClient() {
         backHref="/dashboard"
       />
       <div className="px-4 pt-4">
-      <div className="flex gap-0 overflow-hidden rounded-lg border border-border bg-background">
-        {/* ── Filtros: 240px expandido / 48px contraído (mismo patrón que el editor) ── */}
+      <div className="flex flex-col gap-0 overflow-hidden rounded-lg border border-border bg-background lg:flex-row">
+        {/* ── Filtros: se apilan arriba de la tabla en movil (siempre expandidos,
+             sin el toggle -- no tiene sentido colapsar algo que ya no le roba
+             ancho a la tabla); desde `lg` vuelven al costado, 240px expandido /
+             48px contraido (mismo patron que el editor). ── */}
         <aside
           className={cn(
-            'flex shrink-0 flex-col border-r border-border bg-muted/15 transition-[width] duration-200',
-            filtersSidebarExpanded ? 'w-[240px]' : 'w-[48px]',
+            'flex w-full shrink-0 flex-col border-b border-border bg-muted/15 transition-[width] duration-200 lg:w-auto lg:border-b-0 lg:border-r',
+            filtersSidebarExpanded ? 'lg:w-[240px]' : 'lg:w-[48px]',
           )}
         >
-          <div className="flex h-10 shrink-0 items-center border-b border-border px-0.5">
+          <div className="hidden h-10 shrink-0 items-center border-b border-border px-0.5 lg:flex">
             <Button
               type="button"
               size="icon"
@@ -453,9 +462,9 @@ export function GradebookClient() {
             )}
           </div>
 
-          {!filtersSidebarExpanded && (
+          {!filtersExpanded && (
             <div
-              className="flex flex-col items-center gap-2 border-b border-border py-2 text-muted-foreground"
+              className="hidden flex-col items-center gap-2 border-b border-border py-2 text-muted-foreground lg:flex"
               title="Curso y período"
             >
               <BookOpen className="size-5" aria-hidden />
@@ -463,9 +472,9 @@ export function GradebookClient() {
             </div>
           )}
 
-          {filtersSidebarExpanded && (
-            <div className="flex flex-col gap-4 p-3">
-              <div className="space-y-1.5">
+          {filtersExpanded && (
+            <div className="flex flex-col gap-4 p-3 sm:flex-row sm:gap-3 lg:flex-col lg:gap-4">
+              <div className="min-w-0 flex-1 space-y-1.5 lg:flex-none">
                 <label htmlFor="course-select" className="text-xs font-medium text-muted-foreground">
                   Curso
                 </label>
@@ -492,7 +501,7 @@ export function GradebookClient() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="min-w-0 flex-1 space-y-1.5 lg:flex-none">
                 <label htmlFor="period-select" className="text-xs font-medium text-muted-foreground">
                   Período
                 </label>

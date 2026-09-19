@@ -1008,9 +1008,9 @@ export function AnalyticsClient() {
 
       <div className="px-6 pt-4 space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Course selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="course-select" className="text-sm font-medium shrink-0 text-[#111827]">
               Curso:
             </label>
@@ -1026,7 +1026,7 @@ export function AnalyticsClient() {
                   setCoursePick(e.target.value);
                   setSelectedSessionId(null);
                 }}
-                className={`${SELECT_CLS} min-w-[14rem]`}
+                className={`${SELECT_CLS} min-w-0 w-full flex-1 sm:w-auto sm:min-w-[14rem] sm:flex-none`}
               >
                 <option value="" disabled>
                   Selecciona un curso
