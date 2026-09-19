@@ -1370,7 +1370,11 @@ export interface GraficoDatosBlock {
   curva?: 'recta' | 'suave' | 'escalon';
   modoSparkline?: boolean;
   mostrarTotal?: boolean;
-  angulo?: 'completo' | 'semicirculo';
+  angulo?: 'completo' | 'semicirculo' | 'personalizado';
+  /** Solo aplica con `angulo: 'personalizado'`. Por defecto -90. */
+  anguloInicio?: number;
+  /** Solo aplica con `angulo: 'personalizado'`. Por defecto 90. */
+  anguloFin?: number;
 
   /** Número de intervalos (bins) para chartType `histogram`. Ignorado en otros tipos. */
   histogramBins?: number;

@@ -285,8 +285,12 @@ export interface LuminaChartConfig {
   modoSparkline?: boolean;
   /** Mostrar la suma total en el centro del gráfico donut. */
   mostrarTotal?: boolean;
-  /** Apertura angular para gráficos circulares (pie/donut/radialBar: 'completo' = 360°, 'semicirculo' = 180°). */
-  angulo?: 'completo' | 'semicirculo';
+  /** Apertura angular para gráficos circulares (pie/donut/radialBar: 'completo' = 360°, 'semicirculo' = 180°, 'personalizado' = `anguloInicio`/`anguloFin`). */
+  angulo?: 'completo' | 'semicirculo' | 'personalizado';
+  /** Ángulo de inicio en grados (-360 a 360). Solo aplica con `angulo: 'personalizado'`. Por defecto -90. */
+  anguloInicio?: number;
+  /** Ángulo de fin en grados (-360 a 360). Solo aplica con `angulo: 'personalizado'`. Por defecto 90. */
+  anguloFin?: number;
 
   // ─── Estadística (Etapa I3) ───
   /** Número de intervalos (bins) para type `histogram`. Ignorado en otros tipos; por defecto 8. */
