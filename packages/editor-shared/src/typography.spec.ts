@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TextBlock } from '@lumina/types/slide';
+import { BODY_TEXT_SCALE, HEADING_SCALE } from './heading-scale.js';
 import {
   applyTypographyPreset,
   clampFontSize,
   commitFontSizeDraft,
+  isBoldWeight,
   isTypographySizeOnlyPatch,
   liveFontSizeDraft,
   matchTypographyPreset,
@@ -211,5 +213,23 @@ describe('presets tipográficos', () => {
     expect(
       matchTypographyPreset({ fontSize: 18, fontWeight: 'bold', lineHeight: 1.45 }, 10, 48),
     ).toBeNull();
+  });
+
+  it('"Título"/"Cuerpo" no duplican números propios — coinciden con HEADING_SCALE/BODY_TEXT_SCALE (regresión)', () => {
+    // Antes: "Estilo → Título" era 32px/1.15/-0.5 tipeado a mano, mientras que
+    // HEADING_SCALE[1] (Nivel H1) es 40px/1.1/-0.5 — dos escalas con el mismo
+    // nombre nominal ("Título") y valores distintos. Sin `sizeMax` de por medio
+    // (rango amplio) el preset debe dar exactamente los números de la escala.
+    const titulo = applyTypographyPreset('titulo', 10, 400);
+    expect(titulo.fontSize).toBe(HEADING_SCALE[1].sizePx);
+    expect(titulo.lineHeight).toBe(HEADING_SCALE[1].lineHeight);
+    expect(titulo.letterSpacing).toBe(HEADING_SCALE[1].trackingPx);
+    expect(isBoldWeight(titulo.fontWeight)).toBe(HEADING_SCALE[1].weight >= 600);
+
+    const cuerpo = applyTypographyPreset('cuerpo', 10, 400);
+    expect(cuerpo.fontSize).toBe(BODY_TEXT_SCALE.sizePx);
+    expect(cuerpo.lineHeight).toBe(BODY_TEXT_SCALE.lineHeight);
+    expect(cuerpo.letterSpacing).toBe(BODY_TEXT_SCALE.trackingPx);
+    expect(isBoldWeight(cuerpo.fontWeight)).toBe(BODY_TEXT_SCALE.weight >= 600);
   });
 });

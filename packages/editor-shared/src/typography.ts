@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 
 import type { TextAlign, TextBlock } from '@lumina/types/slide';
 import type { WidgetCampoEstilo } from '@lumina/types/widget';
-import { HEADING_SCALE } from './heading-scale.js';
+import { BODY_TEXT_SCALE, HEADING_SCALE } from './heading-scale.js';
 
 export type TypographyAlign = 'left' | 'center' | 'right' | 'justify';
 export type TypographyTransform = 'none' | 'uppercase' | 'capitalize';
@@ -249,6 +249,16 @@ export function isTypographySizeOnlyPatch(patch: Partial<TypographyValue>): bool
 
 export type TypographyPresetId = 'titulo' | 'cuerpo' | 'pie';
 
+// "Estilo → Título/Cuerpo" tenían sus propios números tipeados a mano,
+// independientes de `HEADING_SCALE`/`BODY_TEXT_SCALE` (la fuente única de la
+// jerarquía visual — ver heading-scale.ts): "Título" acá era 32px/1.15/-0.5,
+// mientras que `HEADING_SCALE[1]` (Nivel H1) es 40px/1.1/-0.5 — dos escalas
+// con el mismo nombre nominal y valores distintos. Como "Estilo" ya no toca
+// "Nivel" (ver applyPreset en typography-inspector.tsx), un docente que
+// clickea "Estilo → Título" esperando el aspecto de un H1 real se encontraba
+// con un tamaño más chico sin ninguna pista de por qué. Se deriva de la
+// misma escala en vez de duplicar los números — si `HEADING_SCALE`/
+// `BODY_TEXT_SCALE` cambian, "Estilo" cambia con ellos, sin quedar desfasado.
 export const TYPOGRAPHY_PRESETS: Record<
   TypographyPresetId,
   { label: string; style: TypographyValue }
@@ -256,24 +266,24 @@ export const TYPOGRAPHY_PRESETS: Record<
   titulo: {
     label: 'Título',
     style: {
-      fontSize: 32,
-      fontWeight: 'bold',
+      fontSize: HEADING_SCALE[1].sizePx,
+      fontWeight: HEADING_SCALE[1].weight >= 600 ? 'bold' : 'normal',
       fontStyle: 'normal',
       underline: false,
-      lineHeight: 1.15,
-      letterSpacing: -0.5,
+      lineHeight: HEADING_SCALE[1].lineHeight,
+      letterSpacing: HEADING_SCALE[1].trackingPx,
       align: 'left',
     },
   },
   cuerpo: {
     label: 'Cuerpo',
     style: {
-      fontSize: 18,
-      fontWeight: 'normal',
+      fontSize: BODY_TEXT_SCALE.sizePx,
+      fontWeight: BODY_TEXT_SCALE.weight >= 600 ? 'bold' : 'normal',
       fontStyle: 'normal',
       underline: false,
-      lineHeight: 1.45,
-      letterSpacing: 0,
+      lineHeight: BODY_TEXT_SCALE.lineHeight,
+      letterSpacing: BODY_TEXT_SCALE.trackingPx,
       align: 'left',
     },
   },
