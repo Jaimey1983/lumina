@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AppWindow,
+  CheckSquare,
   Columns2,
   GalleryHorizontal,
   GitCommitHorizontal,
@@ -10,6 +11,8 @@ import {
   MousePointer2,
   PanelTop,
   RotateCw,
+  Sparkles,
+  SplitSquareVertical,
   Target,
   Timer,
 } from 'lucide-react';
@@ -115,6 +118,24 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Columns2,
     rowClassName: 'hover:bg-lime-50/90 dark:hover:bg-lime-950/25',
     iconClassName: 'text-lime-600 dark:text-lime-400',
+  },
+  'image-compare': {
+    group: 'lienzo',
+    Icon: SplitSquareVertical,
+    rowClassName: 'hover:bg-teal-50/90 dark:hover:bg-teal-950/25',
+    iconClassName: 'text-teal-600 dark:text-teal-400',
+  },
+  'interactive-checklist': {
+    group: 'control',
+    Icon: CheckSquare,
+    rowClassName: 'hover:bg-emerald-50/90 dark:hover:bg-emerald-950/25',
+    iconClassName: 'text-emerald-600 dark:text-emerald-400',
+  },
+  'scratch-card': {
+    group: 'lienzo',
+    Icon: Sparkles,
+    rowClassName: 'hover:bg-amber-50/90 dark:hover:bg-amber-950/25',
+    iconClassName: 'text-amber-600 dark:text-amber-400',
   },
 };
 

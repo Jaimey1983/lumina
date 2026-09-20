@@ -1,3 +1,4 @@
+import type { BlockMarco } from "@lumina/types/slide";
 import {
   CHECKLIST_TIPO,
   type ChecklistConfiguracion,
@@ -42,13 +43,15 @@ export const DEFAULT_CHECKLIST_CONFIG: ChecklistConfiguracion = {
   estiloVisual: "tarjetas",
 };
 
-export function createDefaultChecklistBlock(): ChecklistEstado {
+export function createDefaultChecklistBlock(
+  marco?: BlockMarco,
+): ChecklistEstado {
   return {
     tipo: CHECKLIST_TIPO,
-    x: 10,
-    y: 10,
-    ancho: 80,
-    alto: 80,
+    x: marco ? marco.izquierdaPct : 10,
+    y: marco ? marco.arribaPct : 10,
+    ancho: marco ? marco.anchoPct : 80,
+    alto: marco ? marco.altoPct : 80,
     tituloWidget: "Lista de Verificación",
     subtituloWidget: "Sigue los pasos y marca cada casilla a medida que avances.",
     instruccion: "Haz clic en cada elemento para marcarlo como completado.",

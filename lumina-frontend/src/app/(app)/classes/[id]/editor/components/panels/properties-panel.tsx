@@ -1158,6 +1158,90 @@ export function PropertiesPanel({
     );
   }
 
+  if (block.tipo === 'image-compare') {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>('image-compare');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Comparador de imágenes">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
+  if (block.tipo === 'interactive-checklist') {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>('interactive-checklist');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Lista de verificación">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
+  if (block.tipo === 'scratch-card') {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>('scratch-card');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Tarjeta rasca y revela">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
   if (block.tipo === 'popup') {
     const popupBlock = block as PopupWidget;
     const inner = popupInnerSelection;

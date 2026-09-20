@@ -46,6 +46,12 @@ function widgetCanvasFallback(type: WidgetTipo): { ancho: number; alto: number }
       return BLOCK_FALLBACKS.progreso;
     case 'ruleta':
       return BLOCK_FALLBACKS.ruleta;
+    case 'image-compare':
+      return BLOCK_FALLBACKS.imageCompare;
+    case 'interactive-checklist':
+      return BLOCK_FALLBACKS.interactiveChecklist;
+    case 'scratch-card':
+      return BLOCK_FALLBACKS.scratchCard;
   }
 }
 

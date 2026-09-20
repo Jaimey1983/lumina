@@ -1144,6 +1144,9 @@ import type {
   ContadorWidget,
   ProgresoWidget,
   RuletaWidget,
+  ImageCompareWidget,
+  InteractiveChecklistWidget,
+  ScratchCardWidget,
   WidgetCampoEstilo,
   WidgetElementPos,
 } from './widget.types.js';
@@ -1566,6 +1569,9 @@ export type Block = (
   | ContadorWidget
   | ProgresoWidget
   | RuletaWidget
+  | ImageCompareWidget
+  | InteractiveChecklistWidget
+  | ScratchCardWidget
 ) & {
   animaciones?: import('./animation.types.js').Animacion[];
   /**
@@ -1580,7 +1586,7 @@ export type Block = (
 export type BlockTipo = Block['tipo'];
 
 /**
- * Unión de los 12 bloques de widget del canvas (E7.2 — vino de
+ * Unión de los bloques de widget del canvas (E7.2 — vino de
  * `widget-registry.ts`). El nombre `isCaptivateWidgetBlock` se conserva por
  * compatibilidad aunque incluye Flip Cards, que no es Captivate.
  */
@@ -1596,7 +1602,10 @@ export type WidgetBlock =
   | BotonWidget
   | ContadorWidget
   | ProgresoWidget
-  | RuletaWidget;
+  | RuletaWidget
+  | ImageCompareWidget
+  | InteractiveChecklistWidget
+  | ScratchCardWidget;
 
 export function isCaptivateWidgetBlock(block: {
   tipo: string;
@@ -1729,6 +1738,9 @@ export const BLOCK_FALLBACKS = {
   grafico: { x: 15, y: 15, ancho: 70, alto: 65 },
   diagrama: { x: 10, y: 10, ancho: 80, alto: 75 },
   timeline: { x: 5, y: 5, ancho: 90, alto: 90 },
+  imageCompare: { x: 10, y: 10, ancho: 80, alto: 75 },
+  interactiveChecklist: { x: 10, y: 10, ancho: 80, alto: 80 },
+  scratchCard: { x: 15, y: 10, ancho: 70, alto: 75 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */

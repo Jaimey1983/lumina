@@ -1,3 +1,4 @@
+import type { BlockMarco } from "@lumina/types/slide";
 import {
   IMAGE_COMPARE_TIPO,
   type ImageCompareConfiguracion,
@@ -24,13 +25,15 @@ export const DEFAULT_IMAGE_COMPARE_CONFIG: ImageCompareConfiguracion = {
   mostrarBotonDeslizador: true,
 };
 
-export function createDefaultImageCompareBlock(): ImageCompareEstado {
+export function createDefaultImageCompareBlock(
+  marco?: BlockMarco,
+): ImageCompareEstado {
   return {
     tipo: IMAGE_COMPARE_TIPO,
-    x: 10,
-    y: 10,
-    ancho: 80,
-    alto: 75,
+    x: marco ? marco.izquierdaPct : 10,
+    y: marco ? marco.arribaPct : 10,
+    ancho: marco ? marco.anchoPct : 80,
+    alto: marco ? marco.altoPct : 75,
     tituloWidget: "Comparador de imágenes",
     subtituloWidget:
       "Desplaza la barra divisoria para observar los cambios en detalle.",

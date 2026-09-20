@@ -197,7 +197,22 @@ export type WidgetSlideInnerSelection =
 
 // ─── Familia de widgets ─────────────────────────────────────────────────────────
 
-export type WidgetTipo = 'flip-cards' | 'tabs' | 'carousel' | 'click-reveal' | 'timeline' | 'popup' | 'hotspot' | 'tooltip' | 'boton' | 'contador' | 'progreso' | 'ruleta';
+export type WidgetTipo =
+  | 'flip-cards'
+  | 'tabs'
+  | 'carousel'
+  | 'click-reveal'
+  | 'timeline'
+  | 'popup'
+  | 'hotspot'
+  | 'tooltip'
+  | 'boton'
+  | 'contador'
+  | 'progreso'
+  | 'ruleta'
+  | 'image-compare'
+  | 'interactive-checklist'
+  | 'scratch-card';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -213,6 +228,9 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'contador',
   'progreso',
   'ruleta',
+  'image-compare',
+  'interactive-checklist',
+  'scratch-card',
 ] as const;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {
@@ -661,6 +679,76 @@ export interface TimelineWidget extends WidgetHeaderFields, WidgetCanvasPosition
   nodos: TimelineNodo[];
 }
 
+// ─── Comparador de imágenes ───────────────────────────────────────────────────
+
+export interface ImageCompareConfiguracion {
+  imagenAntesUrl: string;
+  imagenDespuesUrl: string;
+  imagenAntesAlt?: string;
+  imagenDespuesAlt?: string;
+  etiquetaAntes: string;
+  etiquetaDespues: string;
+  posicionInicial: number;
+  orientacion: 'horizontal' | 'vertical';
+  mostrarEtiquetas: boolean;
+  estiloLinea: 'solida' | 'discreta';
+  colorLinea?: string;
+  mostrarBotonDeslizador: boolean;
+}
+
+export interface ImageCompareWidget extends WidgetHeaderFields, WidgetCanvasPosition {
+  tipo: 'image-compare';
+  configuracion: ImageCompareConfiguracion;
+}
+
+// ─── Lista de verificación interactiva ────────────────────────────────────────
+
+export interface ChecklistItem {
+  id: string;
+  texto: string;
+  descripcion?: string;
+  completadoPorDefecto?: boolean;
+}
+
+export interface ChecklistConfiguracion {
+  items: ChecklistItem[];
+  mostrarBarraProgreso: boolean;
+  mostrarContador: boolean;
+  permitirReinicio: boolean;
+  mostrarCelebracion: boolean;
+  mensajeCelebracion?: string;
+  estiloVisual: 'tarjetas' | 'minimal' | 'numerado';
+}
+
+export interface InteractiveChecklistWidget extends WidgetHeaderFields, WidgetCanvasPosition {
+  tipo: 'interactive-checklist';
+  configuracion: ChecklistConfiguracion;
+}
+
+// ─── Tarjeta rasca y revela ───────────────────────────────────────────────────
+
+export type ScratchContenidoTipo = 'texto' | 'imagen' | 'premio';
+
+export interface ScratchCardConfiguracion {
+  contenidoTipo: ScratchContenidoTipo;
+  textoSecreto?: string;
+  imagenSecretaUrl?: string;
+  imagenSecretaAlt?: string;
+  premioTitulo?: string;
+  premioSubtitulo?: string;
+  colorCobertura: string;
+  textoCobertura: string;
+  grosorPincel: number;
+  umbralAutoRevelado: number;
+  permitirBotonRevelar: boolean;
+  permitirReinicio: boolean;
+}
+
+export interface ScratchCardWidget extends WidgetHeaderFields, WidgetCanvasPosition {
+  tipo: 'scratch-card';
+  configuracion: ScratchCardConfiguracion;
+}
+
 export type CaptivateWidget =
   | TabsWidget
   | CarouselWidget
@@ -672,4 +760,7 @@ export type CaptivateWidget =
   | BotonWidget
   | ContadorWidget
   | ProgresoWidget
-  | RuletaWidget;
+  | RuletaWidget
+  | ImageCompareWidget
+  | InteractiveChecklistWidget
+  | ScratchCardWidget;

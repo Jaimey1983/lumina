@@ -1,3 +1,4 @@
+import type { BlockMarco } from "@lumina/types/slide";
 import {
   SCRATCH_CARD_TIPO,
   type ScratchCardConfiguracion,
@@ -20,13 +21,15 @@ export const DEFAULT_SCRATCH_CONFIG: ScratchCardConfiguracion = {
   permitirReinicio: true,
 };
 
-export function createDefaultScratchCardBlock(): ScratchCardEstado {
+export function createDefaultScratchCardBlock(
+  marco?: BlockMarco,
+): ScratchCardEstado {
   return {
     tipo: SCRATCH_CARD_TIPO,
-    x: 15,
-    y: 10,
-    ancho: 70,
-    alto: 75,
+    x: marco ? marco.izquierdaPct : 15,
+    y: marco ? marco.arribaPct : 10,
+    ancho: marco ? marco.anchoPct : 70,
+    alto: marco ? marco.altoPct : 75,
     tituloWidget: "Tarjeta Rasca y Revela",
     subtituloWidget: "Piensa tu respuesta antes de descubrir el secreto.",
     instruccion: "Arrastra sobre el área plateada para raspar la superficie.",

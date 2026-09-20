@@ -89,6 +89,11 @@ import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ru
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
+import {
+  createDefaultImageCompareBlock,
+  createDefaultChecklistBlock,
+  createDefaultScratchCardBlock,
+} from '@lumina/element-kit';
 import { createDefaultClasificar } from '@lumina/element-kit/activities/clasificar/clasificar-defaults';
 import { createDefaultMemoria } from '@lumina/element-kit/activities/memoria/memoria-defaults';
 import { createDefaultPuzzleImagen } from '@lumina/element-kit/activities/puzzle-imagen/puzzle-imagen-defaults';
@@ -2003,6 +2008,15 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       } else if (type === 'timeline') {
         block = createDefaultTimelineBlock(dropMarco);
         successLabel = 'Línea de tiempo agregada al slide';
+      } else if (type === 'image-compare') {
+        block = createDefaultImageCompareBlock(dropMarco) as unknown as Block;
+        successLabel = 'Comparador de imágenes agregado al slide';
+      } else if (type === 'interactive-checklist') {
+        block = createDefaultChecklistBlock(dropMarco) as unknown as Block;
+        successLabel = 'Lista de verificación agregada al slide';
+      } else if (type === 'scratch-card') {
+        block = createDefaultScratchCardBlock(dropMarco) as unknown as Block;
+        successLabel = 'Tarjeta rasca y revela agregada al slide';
       } else {
         toast.info(`Widget "${type}" próximamente`);
         return;
