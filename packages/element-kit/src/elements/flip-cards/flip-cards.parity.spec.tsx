@@ -111,4 +111,13 @@ describe("FlipCards — paridad E3.3", () => {
     expect(elementRegistry.obtener("flip-cards")).toBe(flipCardsDefinition);
     expect(flipCardsDefinition).not.toHaveProperty("puntuacion");
   });
+
+  it("expone los presets formales mapeados desde las plantillas", () => {
+    expect(flipCardsDefinition.presets).toBeDefined();
+    expect(flipCardsDefinition.presets?.length).toBe(8);
+    const clasico = flipCardsDefinition.presets?.find((p) => p.id === "clasico");
+    expect(clasico).toBeDefined();
+    expect(clasico?.label).toBe("Clásico");
+    expect(clasico?.patch?.configuracion?.plantillaId).toBe("clasico");
+  });
 });

@@ -30,7 +30,7 @@
   width: 100%;
   transform: translateY(-50%);
   height: var(--tl-grosor-linea, 3px);
-  background-color: var(--tl-color-linea, #2563EB);
+  background-color: var(--tl-color-linea, var(--lw-color-primary, #2563EB));
   z-index: 0;
 }
 
@@ -135,7 +135,7 @@
   width: var(--tl-grosor-conector, var(--tl-grosor-linea, 2px));
   min-height: var(--tl-connector-min, 6px);
   max-height: var(--tl-connector-max, 32px);
-  background-color: var(--tl-color-conector, var(--tl-color-linea, #2563eb));
+  background-color: var(--tl-color-conector, var(--tl-color-linea, var(--lw-color-primary, #2563eb)));
   align-self: center;
   border-radius: 1px;
 }
@@ -178,8 +178,8 @@
 
 .tlNodeHalo {
   position: absolute;
-  border-radius: 50%;
-  background-color: var(--tl-node-accent, var(--tl-color-nodo, #2563eb));
+  border-radius: var(--lw-radius-full, 50%);
+  background-color: var(--tl-node-accent, var(--tl-color-nodo, var(--lw-color-primary, #2563eb)));
   opacity: 0;
   transform: scale(0.6);
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -190,8 +190,8 @@
   position: relative;
   width: calc(var(--tl-radio-nodo, 10px) * 2);
   height: calc(var(--tl-radio-nodo, 10px) * 2);
-  background-color: var(--tl-node-accent, var(--tl-color-nodo, #2563EB));
-  border-radius: 50%;
+  background-color: var(--tl-node-accent, var(--tl-color-nodo, var(--lw-color-primary, #2563EB)));
+  border-radius: var(--lw-radius-full, 50%);
   flex-shrink: 0;
   z-index: 1;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -235,9 +235,9 @@
 }
 
 .tlCard {
-  background-color: var(--tl-color-card-fondo, #ffffff);
-  border: 1px solid var(--tl-color-card-borde, #e2e8f0);
-  border-radius: var(--tl-radio-card, 8px);
+  background-color: var(--tl-color-card-fondo, var(--lw-color-surface, #ffffff));
+  border: 1px solid var(--tl-color-card-borde, var(--lw-color-border, #e2e8f0));
+  border-radius: var(--tl-radio-card, var(--lw-radius-md, 8px));
   padding: var(--tl-padding-card, 12px);
   display: flex;
   flex-direction: column;
@@ -246,24 +246,25 @@
   max-width: min(200px, 100%);
   min-width: 0;
   box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--lw-shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
   text-align: center;
   position: relative;
   z-index: 2;
   overflow: visible;
   height: auto;
   max-height: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .tlNodeSelected .tlCard {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--lw-color-primary, #3b82f6);
+  box-shadow: 0 0 0 2px var(--lw-focus-ring-color, rgba(59, 130, 246, 0.25));
 }
 
 .tlCardEtiqueta {
   font-weight: 600;
   font-size: 0.875rem;
-  color: var(--tl-color-etiqueta, #2563EB);
+  color: var(--tl-color-etiqueta, var(--lw-color-primary, #2563EB));
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -274,7 +275,7 @@
 
 .tlCardCuerpo {
   font-size: 0.875rem;
-  color: var(--tl-color-cuerpo, #334155);
+  color: var(--tl-color-cuerpo, var(--lw-color-text, #334155));
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -300,7 +301,7 @@
 .tlCardTitulo {
   font-weight: 700;
   font-size: 0.875rem;
-  color: var(--tl-node-accent, var(--tl-color-etiqueta, #2563eb));
+  color: var(--tl-node-accent, var(--tl-color-etiqueta, var(--lw-color-primary, #2563eb)));
   width: 100%;
   min-width: 0;
   overflow-wrap: anywhere;

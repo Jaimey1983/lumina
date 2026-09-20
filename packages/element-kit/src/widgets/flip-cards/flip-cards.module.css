@@ -7,7 +7,7 @@
   width: 100%;
   min-height: 0;
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: var(--lw-radius-lg, 0.75rem);
 }
 
 .fcHeader {
@@ -54,7 +54,7 @@
 }
 
 .flipSceneInteractive:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--lw-color-primary, #2563eb);
   outline-offset: 2px;
 }
 
@@ -254,9 +254,9 @@
   height: 36px;
   padding: 0;
   border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  border-radius: var(--lw-radius-full, 50%);
+  background: var(--lw-color-surface, rgba(255, 255, 255, 0.95));
+  box-shadow: var(--lw-shadow-md, 0 2px 8px rgba(15, 23, 42, 0.18));
   pointer-events: none;
   z-index: 2;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -264,11 +264,11 @@
 
 .flipBtn:hover {
   transform: scale(1.06);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.22);
+  box-shadow: var(--lw-shadow-lg, 0 4px 12px rgba(15, 23, 42, 0.22));
 }
 
 .flipBtn:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
 }
 
 /* Navegación */
@@ -287,17 +287,21 @@
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(148, 163, 184, 0.6);
-  background: rgba(255, 255, 255, 0.9);
-  color: #334155;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  border-radius: var(--lw-radius-full, 9999px);
+  border: 1px solid var(--lw-color-border, rgba(148, 163, 184, 0.6));
+  background: var(--lw-color-surface, rgba(255, 255, 255, 0.9));
+  color: var(--lw-color-text, #334155);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
 }
 
 .fcNavBtn:hover:not(:disabled) {
   background: #fff;
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: var(--lw-color-primary, #2563eb);
+  color: var(--lw-color-primary, #2563eb);
+}
+
+.fcNavBtn:active:not(:disabled) {
+  transform: scale(0.92);
 }
 
 .fcNavBtn:disabled {
@@ -323,11 +327,11 @@
 }
 
 .fcEditorCardSelected {
-  box-shadow: 0 0 0 2px #2563eb;
+  box-shadow: 0 0 0 2px var(--lw-color-primary, #2563eb);
 }
 
 .fcInnerHighlight {
-  outline: 2px dashed #2563eb;
+  outline: 2px dashed var(--lw-color-primary, #2563eb);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -337,8 +341,8 @@
   left: 0.5rem;
   top: 0.5rem;
   z-index: 10;
-  border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--lw-radius-sm, 0.25rem);
+  background: var(--lw-color-surface, rgba(255, 255, 255, 0.92));
   padding: 0.125rem 0.375rem;
   font-size: 10px;
   font-weight: 600;
@@ -356,7 +360,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 0.375rem;
+  border-radius: var(--lw-radius-sm, 0.375rem);
   border: 1px dashed #94a3b8;
   font-size: 0.75rem;
   color: #64748b;
@@ -364,17 +368,17 @@
 }
 
 .fcImagePlaceholder:hover {
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: var(--lw-color-primary, #2563eb);
+  color: var(--lw-color-primary, #2563eb);
 }
 
 .fcGlobalFaceBar {
   display: flex;
   flex-shrink: 0;
   justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--lw-radius-md, 0.5rem);
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  background: var(--lw-color-surface, rgba(255, 255, 255, 0.95));
   padding: 0.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--lw-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.06));
 }

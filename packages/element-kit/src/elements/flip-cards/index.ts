@@ -1,6 +1,7 @@
 export {
   flipCardsDefinition,
   type FlipCardsDefinition,
+  FLIP_CARDS_PRESETS,
 } from "./flip-cards-definition.js";
 export {
   FlipCardsEditor,

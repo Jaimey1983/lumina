@@ -1,6 +1,7 @@
 export {
   timelineDefinition,
   type TimelineDefinition,
+  TIMELINE_PRESETS,
 } from "./timeline-definition.js";
 export {
   TimelineEditor,

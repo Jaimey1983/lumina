@@ -111,4 +111,13 @@ describe("Timeline — paridad E3.3", () => {
     expect(elementRegistry.obtener("timeline")).toBe(timelineDefinition);
     expect(timelineDefinition).not.toHaveProperty("puntuacion");
   });
+
+  it("expone los presets formales mapeados desde las variantes", () => {
+    expect(timelineDefinition.presets).toBeDefined();
+    expect(timelineDefinition.presets?.length).toBe(8);
+    const tarjetas = timelineDefinition.presets?.find((p) => p.id === "tarjetas");
+    expect(tarjetas).toBeDefined();
+    expect(tarjetas?.label).toBe("Tarjetas");
+    expect(tarjetas?.patch?.configuracion?.variante).toBe("tarjetas");
+  });
 });
