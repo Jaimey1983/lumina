@@ -143,6 +143,13 @@ export function DiagramaProperties({
   // ocasional — mostrarla siempre abierta era buena parte del "desorden"
   // del panel (siempre visible junto a Tipo de Diagrama, Paleta y Estilo).
   const [plantillasOpen, setPlantillasOpen] = useState(false);
+  // "Tipo de Diagrama" es el selector primario (refleja el estado actual
+  // del bloque) — arranca abierto. "Paleta de Colores" (+ Estilo Visual
+  // Global, que vive dentro del mismo bloque) es de uso ocasional como
+  // Plantillas — arranca cerrada, con la paleta activa igual visible en el
+  // trigger vía el badge existente.
+  const [tipoOpen, setTipoOpen] = useState(true);
+  const [paletaOpen, setPaletaOpen] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -630,49 +637,69 @@ export function DiagramaProperties({
       )}
 
       {/* Selector de Subtipo */}
-      <div className="space-y-2">
-        <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Tipo de Diagrama
-        </Label>
-        <div className="grid grid-cols-2 gap-1.5">
-          {SUBTIPOS_CONFIG.map(({ subtipo, label, Icon }) => {
-            const isSelected = currentSubtipo === subtipo;
-            return (
-              <button
-                key={subtipo}
-                type="button"
-                onClick={() => handleSubtipoChange(subtipo)}
-                className={cn(
-                  'flex items-center gap-2 rounded-md border p-2 text-left transition-all',
-                  isSelected
-                    ? 'border-primary bg-primary/10 text-primary font-medium shadow-xs'
-                    : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="min-w-0 text-[11px] leading-tight break-words">{label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <Collapsible open={tipoOpen} onOpenChange={setTipoOpen} className="space-y-2">
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-1.5 text-left">
+          <span className="flex items-center gap-1.5">
+            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Tipo de Diagrama
+            </Label>
+            <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 h-4 font-mono">
+              {subtipoMeta.label}
+            </Badge>
+          </span>
+          <ChevronDown
+            className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', tipoOpen && 'rotate-180')}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="grid grid-cols-2 gap-1.5">
+            {SUBTIPOS_CONFIG.map(({ subtipo, label, Icon }) => {
+              const isSelected = currentSubtipo === subtipo;
+              return (
+                <button
+                  key={subtipo}
+                  type="button"
+                  onClick={() => handleSubtipoChange(subtipo)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-md border p-2 text-left transition-all',
+                    isSelected
+                      ? 'border-primary bg-primary/10 text-primary font-medium shadow-xs'
+                      : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 text-[11px] leading-tight break-words">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
-      {/* Selector de Paletas Armónicas */}
+      {/* Selector de Paletas Armónicas (+ Estilo Visual Global, mismo bloque) */}
       {grafoBlock && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
+        <Collapsible
+          open={paletaOpen}
+          onOpenChange={setPaletaOpen}
+          className="space-y-2 border-t border-border pt-3"
+        >
+          <CollapsibleTrigger className="flex w-full items-center justify-between gap-1.5 text-left">
+            <span className="flex items-center gap-1.5">
               <Palette className="h-3.5 w-3.5 text-muted-foreground" />
               <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Paleta de Colores
               </Label>
-            </div>
-            {grafoBlock.opciones?.paleta && (
-              <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 h-4 font-mono">
-                {PALETAS_DIAGRAMA[grafoBlock.opciones.paleta]?.nombre.split(' ')[0] ?? 'Auto'}
-              </Badge>
-            )}
-          </div>
+              {grafoBlock.opciones?.paleta && (
+                <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 h-4 font-mono">
+                  {PALETAS_DIAGRAMA[grafoBlock.opciones.paleta]?.nombre.split(' ')[0] ?? 'Auto'}
+                </Badge>
+              )}
+            </span>
+            <ChevronDown
+              className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', paletaOpen && 'rotate-180')}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
           <div className="grid grid-cols-2 gap-1.5">
             {(Object.keys(PALETAS_DIAGRAMA) as DiagramaPaletaId[]).map((paletaKey) => {
               const pal = PALETAS_DIAGRAMA[paletaKey];
@@ -785,7 +812,8 @@ export function DiagramaProperties({
               </div>
             </div>
           </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Plantillas Pedagógicas — colapsada por defecto (ver plantillasOpen) */}
