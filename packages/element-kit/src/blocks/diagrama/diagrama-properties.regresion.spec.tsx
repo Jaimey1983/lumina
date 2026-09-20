@@ -11,6 +11,10 @@
 //    plantillas) estaba siempre expandido de punta a punta — "un desorden".
 //    "Plantillas Pedagógicas" (la sección más larga, de uso ocasional) pasa
 //    a ser colapsable, cerrada por defecto.
+// 3. "Tipo de Diagrama" (el selector primario) y "Paleta de Colores"
+//    (+ Estilo Visual Global) también pasan a colapsables — Tipo abierta por
+//    defecto (refleja el estado actual del bloque), Paleta cerrada (uso
+//    ocasional, como Plantillas).
 
 import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -49,5 +53,25 @@ describe('DiagramaProperties — sin plantillas duplicadas y panel colapsable (r
     fireEvent.click(screen.getByText('Plantillas Pedagógicas'));
     screen.getByText('Modelo Frayer');
     screen.getByText('Ishikawa');
+  });
+
+  it('"Tipo de Diagrama" arranca expandida (selector primario) y se puede colapsar', () => {
+    renderProperties();
+    // Abierta por defecto: los botones de tipo ya están montados (el badge
+    // del trigger también dice "Mapa Mental" — "Organigrama" es unívoco).
+    screen.getByText('Organigrama');
+
+    fireEvent.click(screen.getByText('Tipo de Diagrama'));
+    expect(screen.queryByText('Organigrama')).toBeNull();
+  });
+
+  it('"Paleta de Colores" arranca colapsada (uso ocasional, como Plantillas) y se expande al hacer clic', () => {
+    renderProperties();
+    expect(screen.queryByText('Editorial Académico')).toBeNull();
+
+    fireEvent.click(screen.getByText('Paleta de Colores'));
+    screen.getByText('Editorial Académico');
+    // Estilo Visual Global vive dentro del mismo bloque colapsable.
+    screen.getByText('Estilo Visual Global');
   });
 });
