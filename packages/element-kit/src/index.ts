@@ -1,5 +1,7 @@
 export * from "./elements/timeline/index.js";
 import { timelineDefinition } from "./elements/timeline/timeline-definition.js";
+export * from "./elements/image-compare/index.js";
+import { imageCompareDefinition } from "./elements/image-compare/image-compare-definition.js";
 export * from "./elements/click-reveal/index.js";
 import { clickRevealDefinition } from "./elements/click-reveal/click-reveal-definition.js";
 export * from "./elements/carousel/index.js";
@@ -530,3 +532,4 @@ elementRegistry.registrar(codigoDefinition);
 elementRegistry.registrar(citaDefinition);
 elementRegistry.registrar(separadorDefinition);
 elementRegistry.registrar(columnasDefinition);
+elementRegistry.registrar(imageCompareDefinition);
