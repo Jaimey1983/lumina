@@ -21,6 +21,7 @@ import {
   Grid,
   Sliders,
   Spline,
+  ChevronDown,
 } from 'lucide-react';
 import type {
   Block,
@@ -44,6 +45,7 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { Badge } from '@lumina/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@lumina/ui/collapsible';
 import { cn } from '@lumina/ui/lib/utils';
 import {
   normalizeDiagramaBlock,
@@ -53,9 +55,6 @@ import {
   createDefaultCicloBlock,
   createDefaultMatriz2x2Block,
   createDefaultTablaTBlock,
-  createDefaultPiramideBlock,
-  createDefaultEmbudoBlock,
-  createDefaultCebollaBlock,
   createDefaultArbolProblemasBlock,
   createDefaultEisenhowerBlock,
   createDefaultEmpatiaBlock,
@@ -93,6 +92,13 @@ const FORMAS_CONFIG: Array<{ forma: DiagramaNodoForma; label: string }> = [
   { forma: 'circle', label: 'Círculo' },
 ];
 
+// `piramide`/`embudo`/`cebolla` NO están acá — `handleLoadTemplate` los
+// resuelve con exactamente los mismos `createDefault*Block` que ya
+// disparan los botones base de "Tipo de Diagrama" (mismo contenido, mismo
+// layout, sin ninguna diferencia): mostrarlos también acá era el mismo
+// elemento duplicado dos veces en el panel ("Pirámide" y "Pirámide de
+// Bloom" con idéntico resultado). Estas 8 sí son plantillas reales — un
+// `subtipo` base con contenido/forma propios que el botón base no ofrece.
 const TEMPLATES_CONFIG = [
   { id: 'frayer', label: 'Modelo Frayer', desc: 'Concepto + 4 cuadrantes' },
   { id: 'ishikawa', label: 'Ishikawa', desc: 'Causa y Efecto' },
@@ -102,9 +108,6 @@ const TEMPLATES_CONFIG = [
   { id: 'ciclo', label: 'Ciclo PDCA', desc: 'Bucle continuo' },
   { id: 'matriz2x2', label: 'Matriz 2×2', desc: 'Prioridades' },
   { id: 'tabla_t', label: 'Tabla T', desc: 'Pros y Contras' },
-  { id: 'piramide', label: 'Pirámide de Bloom', desc: 'Jerarquía cognitiva' },
-  { id: 'embudo', label: 'Embudo de Proceso', desc: 'Filtrado progresivo' },
-  { id: 'cebolla', label: 'Círculos Concéntricos', desc: 'Capas de influencia' },
 ];
 
 const SUBTIPOS_CONFIG: Array<{
@@ -136,6 +139,10 @@ export function DiagramaProperties({
 }: DiagramaPropertiesProps) {
   const [localBlock, setLocalBlock] = useState<DiagramaBlock>(block);
   const [outlineText, setOutlineText] = useState('');
+  // Colapsada por defecto: es una lista larga (8 plantillas) de uso
+  // ocasional — mostrarla siempre abierta era buena parte del "desorden"
+  // del panel (siempre visible junto a Tipo de Diagrama, Paleta y Estilo).
+  const [plantillasOpen, setPlantillasOpen] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -549,9 +556,6 @@ export function DiagramaProperties({
     else if (templateId === 'ciclo') newBlock = createDefaultCicloBlock(coords);
     else if (templateId === 'matriz2x2') newBlock = createDefaultMatriz2x2Block(coords);
     else if (templateId === 'tabla_t') newBlock = createDefaultTablaTBlock(coords);
-    else if (templateId === 'piramide') newBlock = createDefaultPiramideBlock(coords);
-    else if (templateId === 'embudo') newBlock = createDefaultEmbudoBlock(coords);
-    else if (templateId === 'cebolla') newBlock = createDefaultCebollaBlock(coords);
     else return;
 
     commitChange(newBlock, true);
@@ -784,28 +788,35 @@ export function DiagramaProperties({
         </div>
       )}
 
-      {/* Plantillas Pedagógicas */}
-      <div className="space-y-2 border-t border-border pt-3">
-        <div className="flex items-center gap-1.5">
-          <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Plantillas Pedagógicas
-          </Label>
-        </div>
-        <div className="grid grid-cols-2 gap-1.5">
-          {TEMPLATES_CONFIG.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() => handleLoadTemplate(tpl.id)}
-              className="flex flex-col items-start rounded border border-border/70 bg-card/60 p-2 text-left hover:bg-primary/5 hover:border-primary/50 transition-all"
-            >
-              <span className="font-semibold text-foreground text-[11px]">{tpl.label}</span>
-              <span className="text-[9px] text-muted-foreground line-clamp-1">{tpl.desc}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Plantillas Pedagógicas — colapsada por defecto (ver plantillasOpen) */}
+      <Collapsible open={plantillasOpen} onOpenChange={setPlantillasOpen} className="space-y-2 border-t border-border pt-3">
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-1.5 text-left">
+          <span className="flex items-center gap-1.5">
+            <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Plantillas Pedagógicas
+            </Label>
+          </span>
+          <ChevronDown
+            className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', plantillasOpen && 'rotate-180')}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
+            {TEMPLATES_CONFIG.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => handleLoadTemplate(tpl.id)}
+                className="flex flex-col items-start rounded border border-border/70 bg-card/60 p-2 text-left hover:bg-primary/5 hover:border-primary/50 transition-all"
+              >
+                <span className="font-semibold text-foreground text-[11px]">{tpl.label}</span>
+                <span className="text-[9px] text-muted-foreground line-clamp-1">{tpl.desc}</span>
+              </button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Modo Esquema (Texto / Markdown) */}
       {grafoBlock && (
