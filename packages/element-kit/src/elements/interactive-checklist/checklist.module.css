@@ -1,0 +1,281 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: var(--lw-font-family, inherit);
+  color: var(--lw-color-text, #0f172a);
+  user-select: none;
+}
+
+.header {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.subtitle {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  color: var(--lw-color-text-muted, #64748b);
+  line-height: 1.4;
+}
+
+.instruction {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--lw-color-text-muted, #64748b);
+  opacity: 0.9;
+}
+
+/* Barra de progreso y contador superior */
+.progressSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.progressInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--lw-color-text-muted, #64748b);
+}
+
+.progressPercent {
+  color: var(--lw-color-primary, #2563eb);
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--lw-radius-full, 9999px);
+  background: var(--lw-color-border, #e2e8f0);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: var(--lw-radius-full, 9999px);
+  background: var(--lw-color-primary, #2563eb);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Lista de ítems */
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* Estilo Tarjeta */
+.itemCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--lw-radius-md, 0.5rem);
+  background: var(--lw-color-surface, #ffffff);
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  box-shadow: var(--lw-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.itemCard:hover {
+  border-color: var(--lw-color-primary, #2563eb);
+  box-shadow: var(--lw-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.itemCardCompleted {
+  background: color-mix(in srgb, var(--lw-color-surface, #ffffff) 92%, var(--lw-color-primary, #2563eb) 8%);
+  border-color: color-mix(in srgb, var(--lw-color-border, #e2e8f0) 50%, var(--lw-color-primary, #2563eb) 50%);
+}
+
+/* Estilo Minimal */
+.itemMinimal {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--lw-color-border, #e2e8f0);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.itemMinimal:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.itemMinimalCompleted {
+  opacity: 0.75;
+}
+
+/* Estilo Numerado */
+.itemNumerado {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--lw-radius-md, 0.5rem);
+  background: var(--lw-color-surface, #ffffff);
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.itemNumerado:hover {
+  border-color: var(--lw-color-primary, #2563eb);
+}
+
+.numberBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--lw-radius-full, 50%);
+  background: var(--lw-color-border, #e2e8f0);
+  color: var(--lw-color-text, #0f172a);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.numberBadgeCompleted {
+  background: var(--lw-color-primary, #2563eb);
+  color: #ffffff;
+}
+
+/* Checkbox personalizado */
+.checkboxBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--lw-radius-sm, 0.25rem);
+  border: 2px solid var(--lw-color-border, #94a3b8);
+  background: var(--lw-color-surface, #ffffff);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.checkboxBox:hover {
+  border-color: var(--lw-color-primary, #2563eb);
+}
+
+.checkboxBoxCompleted {
+  background: var(--lw-color-primary, #2563eb);
+  border-color: var(--lw-color-primary, #2563eb);
+  color: #ffffff;
+}
+
+.checkboxBox:active {
+  transform: scale(0.9);
+}
+
+.checkboxBox:focus-visible {
+  outline: 2px solid var(--lw-color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Texto del ítem */
+.itemTextContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.itemText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  transition: color 0.15s ease;
+}
+
+.itemTextCompleted {
+  color: var(--lw-color-text-muted, #64748b);
+  text-decoration: line-through;
+}
+
+.itemDesc {
+  font-size: 0.75rem;
+  color: var(--lw-color-text-muted, #64748b);
+  line-height: 1.35;
+}
+
+/* Banner de celebración */
+.celebrationBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  margin-top: 0.5rem;
+  border-radius: var(--lw-radius-md, 0.5rem);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Botón de reinicio */
+.footerActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  flex-shrink: 0;
+}
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--lw-radius-sm, 0.25rem);
+  border: 1px solid var(--lw-color-border, #cbd5e1);
+  background: var(--lw-color-surface, #ffffff);
+  color: var(--lw-color-text-muted, #64748b);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.resetBtn:hover {
+  background: #f8fafc;
+  color: var(--lw-color-primary, #2563eb);
+  border-color: var(--lw-color-primary, #2563eb);
+}
+
+.resetBtn:active {
+  transform: scale(0.94);
+}

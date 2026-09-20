@@ -45,6 +45,11 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "control",
   },
+  "interactive-checklist": {
+    nombre: "Lista de verificación",
+    familia: "widget",
+    grupo: "control",
+  },
   progreso: {
     nombre: "Barra de progreso",
     familia: "widget",
