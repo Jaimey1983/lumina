@@ -97,10 +97,15 @@ export function graphEdgeToRF(edge: GraphEdge): RFEdge {
     (edge.meta?.edgeType as string | undefined) ??
     (edge.meta?.tipoTrazado ? LUMINA_EDGE_TYPE : undefined);
 
+  const sourceHandle = (edge.meta?.sourceHandle as string | undefined) ?? undefined;
+  const targetHandle = (edge.meta?.targetHandle as string | undefined) ?? undefined;
+
   return {
     id: edge.id,
     source: edge.source,
     target: edge.target,
+    ...(sourceHandle ? { sourceHandle } : {}),
+    ...(targetHandle ? { targetHandle } : {}),
     ...(edgeType ? { type: edgeType } : {}),
     label: edge.label,
     labelStyle: { fontSize: 10, fill: '#6B7280' },
@@ -110,7 +115,14 @@ export function graphEdgeToRF(edge: GraphEdge): RFEdge {
       ...(strokeDasharray ? { strokeDasharray } : {}),
     },
     animated: Boolean(edge.meta?.animada),
-    ...(edge.directed ? { markerEnd: ARROW_CLOSED } : null),
+    ...(edge.directed
+      ? {
+          markerEnd: {
+            type: 'arrowclosed' as const,
+            color: strokeColor,
+          },
+        }
+      : null),
     data: {
       label: edge.label,
       tipoTrazado: edge.meta?.tipoTrazado ?? 'smoothstep',

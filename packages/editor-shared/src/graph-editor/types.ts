@@ -61,6 +61,8 @@ export interface GraphNodePositionPatch {
 export interface GraphConnectAttempt {
   source: string;
   target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 }
 
 /**

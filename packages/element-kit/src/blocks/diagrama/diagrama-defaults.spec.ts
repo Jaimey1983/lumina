@@ -10,6 +10,9 @@ import {
   createDefaultArbolProblemasBlock,
   createDefaultEisenhowerBlock,
   createDefaultEmpatiaBlock,
+  createDefaultFrayerBlock,
+  createDefaultIshikawaBlock,
+  createDefaultPiramideBlock,
   layoutCronologiaLineal,
   normalizeDiagramaBlock,
 } from './diagrama-defaults.js';
@@ -322,5 +325,61 @@ describe('cronología pedagógica (layout lineal restringido)', () => {
     expect(block.opciones?.paleta).toBe('oceano');
     const centro = block.nodos.find((n) => n.id === 'emp-centro');
     expect(centro?.forma).toBe('circle');
+  });
+
+  it('preserva el ID provisto en partial al generar plantillas pedagógicas', () => {
+    const customId = 'bloque-persistente-123';
+    const frayer = createDefaultFrayerBlock({ id: customId });
+    const ishikawa = createDefaultIshikawaBlock({ id: customId });
+    const piramide = createDefaultPiramideBlock({ id: customId });
+
+    expect(frayer.id).toBe(customId);
+    expect(ishikawa.id).toBe(customId);
+    expect(piramide.id).toBe(customId);
+  });
+
+  it('calcula puertos inteligentes (sourceHandle y targetHandle) según la orientación geométrica', () => {
+    const block: import('@lumina/types/slide').DiagramaGrafoBlock = {
+      id: 'diag-routing',
+      tipo: 'diagrama',
+      subtipo: 'mapa_mental',
+      modo: 'contenido',
+      soloLecturaEnViewer: true,
+      nodos: [
+        { id: 'centro', etiqueta: 'Centro', x: 200, y: 200 },
+        { id: 'derecha', etiqueta: 'Derecha', x: 400, y: 200 },
+        { id: 'izquierda', etiqueta: 'Izquierda', x: 50, y: 200 },
+        { id: 'abajo', etiqueta: 'Abajo', x: 200, y: 380 },
+        { id: 'arriba', etiqueta: 'Arriba', x: 200, y: 30 },
+      ],
+      aristas: [
+        { id: 'e-der', desdeId: 'centro', haciaId: 'derecha' },
+        { id: 'e-izq', desdeId: 'centro', haciaId: 'izquierda' },
+        { id: 'e-aba', desdeId: 'centro', haciaId: 'abajo' },
+        { id: 'e-arr', desdeId: 'centro', haciaId: 'arriba' },
+      ],
+    };
+
+    const model = diagramaToGraphModel(block);
+    const edgeDer = model.edges.find((e) => e.id === 'e-der');
+    const edgeIzq = model.edges.find((e) => e.id === 'e-izq');
+    const edgeAba = model.edges.find((e) => e.id === 'e-aba');
+    const edgeArr = model.edges.find((e) => e.id === 'e-arr');
+
+    // Derecha: sale por la derecha, entra por la izquierda
+    expect(edgeDer?.meta?.sourceHandle).toBe('source-right');
+    expect(edgeDer?.meta?.targetHandle).toBe('left');
+
+    // Izquierda: sale por la izquierda, entra por la derecha
+    expect(edgeIzq?.meta?.sourceHandle).toBe('source-left');
+    expect(edgeIzq?.meta?.targetHandle).toBe('right');
+
+    // Abajo: sale por abajo, entra por arriba
+    expect(edgeAba?.meta?.sourceHandle).toBe('source-bottom');
+    expect(edgeAba?.meta?.targetHandle).toBe('top');
+
+    // Arriba: sale por arriba, entra por abajo
+    expect(edgeArr?.meta?.sourceHandle).toBe('source-top');
+    expect(edgeArr?.meta?.targetHandle).toBe('bottom');
   });
 });

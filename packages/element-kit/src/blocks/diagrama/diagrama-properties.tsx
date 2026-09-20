@@ -47,6 +47,7 @@ import { Badge } from '@lumina/ui/badge';
 import { cn } from '@lumina/ui/lib/utils';
 import {
   normalizeDiagramaBlock,
+  layoutCronologiaLineal,
   createDefaultFrayerBlock,
   createDefaultIshikawaBlock,
   createDefaultCicloBlock,
@@ -177,19 +178,64 @@ export function DiagramaProperties({
   const currentSubtipo = grafoBlock?.subtipo ?? 'mapa_mental';
   const subtipoMeta = SUBTIPOS_CONFIG.find((s) => s.subtipo === currentSubtipo) ?? SUBTIPOS_CONFIG[0];
 
-  // ─── Cambio de Subtipo ───
+  // ─── Cambio de Subtipo con Re-Layout Automático ───
   const handleSubtipoChange = (newSubtipo: Exclude<DiagramaSubtipo, 'venn'>) => {
     if (!grafoBlock) return;
     const isDirected = newSubtipo === 'flujo' || newSubtipo === 'organigrama';
-    const nextAristas = grafoBlock.aristas.map((a) => ({
+    let nextNodos: DiagramaNodo[] = [...grafoBlock.nodos];
+    let nextAristas: DiagramaArista[] = grafoBlock.aristas.map((a) => ({
       ...a,
       dirigida: isDirected,
     }));
+
+    if (newSubtipo === 'mapa_mental') {
+      nextNodos = layoutRadial(nextNodos, nextAristas);
+    } else if (newSubtipo === 'piramide') {
+      const { nodos: pNodes, aristas: pEdges } = layoutPiramide(nextNodos, nextAristas);
+      nextNodos = pNodes;
+      nextAristas = pEdges;
+    } else if (newSubtipo === 'embudo') {
+      const { nodos: eNodes, aristas: eEdges } = layoutEmbudo(nextNodos, nextAristas);
+      nextNodos = eNodes;
+      nextAristas = eEdges;
+    } else if (newSubtipo === 'cebolla') {
+      const { nodos: cNodes, aristas: cEdges } = layoutCebolla(nextNodos, nextAristas);
+      nextNodos = cNodes;
+      nextAristas = cEdges;
+    } else if (newSubtipo === 'cronologia') {
+      const { nodos: cNodes, aristas: cEdges } = layoutCronologiaLineal(nextNodos);
+      nextNodos = cNodes;
+      nextAristas = cEdges;
+    } else {
+      // flujo / organigrama / mapa_conceptual
+      const graphNodes: GraphNode[] = nextNodos.map((n) => ({
+        id: n.id,
+        x: n.x,
+        y: n.y,
+        label: n.etiqueta,
+        body: n.cuerpo,
+        accent: (n.estilo?.color as string) ?? '#2563EB',
+      }));
+      const graphEdges: GraphEdge[] = nextAristas.map((a) => ({
+        id: a.id,
+        source: a.desdeId,
+        target: a.haciaId,
+      }));
+      const laidOut = computeDagreLayout(graphNodes, graphEdges, {
+        direction: 'TB',
+      });
+      const posMap = new Map(laidOut.map((l) => [l.id, l]));
+      nextNodos = nextNodos.map((n) => {
+        const p = posMap.get(n.id);
+        return p ? { ...n, x: p.x, y: p.y } : n;
+      });
+    }
 
     commitChange(
       finalizeGrafo({
         ...grafoBlock,
         subtipo: newSubtipo,
+        nodos: nextNodos,
         aristas: nextAristas,
       }),
       true,
@@ -488,6 +534,7 @@ export function DiagramaProperties({
 
   const handleLoadTemplate = (templateId: string) => {
     const coords = {
+      id: localBlock.id,
       x: localBlock.x,
       y: localBlock.y,
       ancho: localBlock.ancho,

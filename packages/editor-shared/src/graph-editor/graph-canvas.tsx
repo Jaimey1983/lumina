@@ -175,13 +175,38 @@ function GraphCardNode({ data }: NodeProps<RFGraphNode>) {
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+        id="top"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="source-top"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="source-bottom"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="source-left"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
       />
       <div className="flex flex-col items-start gap-0.5 p-1.5">
         {data.label != null && (
@@ -204,15 +229,16 @@ function GraphCardNode({ data }: NodeProps<RFGraphNode>) {
         ) : null}
       </div>
       <Handle
-        type="source"
+        type="target"
         position={Position.Right}
         id="right"
-        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
       />
       <Handle
         type="source"
-        position={Position.Bottom}
-        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background"
+        position={Position.Right}
+        id="source-right"
+        className="!w-2 !h-2 !bg-muted-foreground/60 !border-background hover:!scale-125 transition-transform"
       />
     </div>
   );
@@ -288,7 +314,12 @@ export function GraphCanvas({
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
-      onConnect?.({ source: connection.source, target: connection.target });
+      onConnect?.({
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle ?? undefined,
+        targetHandle: connection.targetHandle ?? undefined,
+      });
     },
     [onConnect],
   );

@@ -70,30 +70,60 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
     }
   };
 
-  // Handles estándar en las 4 direcciones
+  // Handles omnidireccionales en las 4 orientaciones cardinales
   const handles = (
     <>
+      {/* Superior */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-2.5 !h-2.5 !bg-muted-foreground/70 !border-background hover:!scale-125 transition-transform"
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="left"
-        className="!w-2.5 !h-2.5 !bg-muted-foreground/70 !border-background hover:!scale-125 transition-transform"
+        id="top"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
       />
       <Handle
         type="source"
-        position={Position.Right}
-        id="right"
-        className="!w-2.5 !h-2.5 !bg-muted-foreground/70 !border-background hover:!scale-125 transition-transform"
+        position={Position.Top}
+        id="source-top"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
+      />
+      {/* Inferior */}
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-2.5 !h-2.5 !bg-muted-foreground/70 !border-background hover:!scale-125 transition-transform"
+        id="source-bottom"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
+      />
+      {/* Izquierda */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="source-left"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
+      />
+      {/* Derecha */}
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="right"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="source-right"
+        className="!w-2.5 !h-2.5 !bg-primary/70 hover:!bg-primary !border-2 !border-background hover:!scale-125 transition-transform"
       />
     </>
   );

@@ -72,9 +72,7 @@ export function DiagramaViewer({
           <GraphCanvas
             model={model}
             interactive={false}
-            positionAuthority={
-              grafoBlock.subtipo === 'cronologia' ? 'model' : 'rf'
-            }
+            positionAuthority="model"
             nodeTypes={DIAGRAMA_NODE_TYPES}
             fitView={true}
             showControls={false}

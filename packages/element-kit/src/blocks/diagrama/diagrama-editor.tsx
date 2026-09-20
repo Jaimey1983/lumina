@@ -453,9 +453,7 @@ export function DiagramaEditor({
           <GraphCanvas
             model={model}
             interactive={isSelected}
-            positionAuthority={
-              grafoBlock.subtipo === 'cronologia' ? 'model' : 'rf'
-            }
+            positionAuthority="model"
             nodeTypes={DIAGRAMA_NODE_TYPES}
             onNodesMove={handleNodesMove}
             onConnect={handleConnect}

@@ -38,32 +38,70 @@ export function diagramaToGraphModel(block: DiagramaGrafoBlock): GraphModel {
     };
   });
 
-  const edges: GraphEdge[] = block.aristas.map((a) => ({
-    id: a.id,
-    source: a.desdeId,
-    target: a.haciaId,
-    label: a.etiqueta,
-    directed:
-      a.dirigida !== undefined
-        ? a.dirigida
-        : block.subtipo === 'flujo' ||
-          block.subtipo === 'organigrama' ||
-          block.subtipo === 'mapa_conceptual' ||
-          block.subtipo === 'cronologia',
-    meta: {
-      tipoTrazado:
-        a.tipoTrazado ??
-        (block.subtipo === 'flujo' || block.subtipo === 'organigrama'
-          ? 'smoothstep'
-          : block.subtipo === 'cronologia'
-            ? 'straight'
-            : 'bezier'),
-      estiloLinea: a.estiloLinea ?? 'solida',
-      color: a.color,
-      grosor: a.grosor,
-      flechaInicio: a.flechaInicio,
-    },
-  }));
+  const nodeMap = new Map(block.nodos.map((n) => [n.id, n]));
+
+  const edges: GraphEdge[] = block.aristas.map((a) => {
+    const sourceNode = nodeMap.get(a.desdeId);
+    const targetNode = nodeMap.get(a.haciaId);
+
+    // Enrutamiento inteligente de puertos según la posición geométrica relativa
+    let sourceHandle = 'source-bottom';
+    let targetHandle = 'top';
+
+    if (sourceNode && targetNode) {
+      const dx = targetNode.x - sourceNode.x;
+      const dy = targetNode.y - sourceNode.y;
+
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        // Predominantemente horizontal
+        if (dx >= 0) {
+          sourceHandle = 'source-right';
+          targetHandle = 'left';
+        } else {
+          sourceHandle = 'source-left';
+          targetHandle = 'right';
+        }
+      } else {
+        // Predominantemente vertical
+        if (dy >= 0) {
+          sourceHandle = 'source-bottom';
+          targetHandle = 'top';
+        } else {
+          sourceHandle = 'source-top';
+          targetHandle = 'bottom';
+        }
+      }
+    }
+
+    return {
+      id: a.id,
+      source: a.desdeId,
+      target: a.haciaId,
+      label: a.etiqueta,
+      directed:
+        a.dirigida !== undefined
+          ? a.dirigida
+          : block.subtipo === 'flujo' ||
+            block.subtipo === 'organigrama' ||
+            block.subtipo === 'mapa_conceptual' ||
+            block.subtipo === 'cronologia',
+      meta: {
+        sourceHandle,
+        targetHandle,
+        tipoTrazado:
+          a.tipoTrazado ??
+          (block.subtipo === 'flujo' || block.subtipo === 'organigrama'
+            ? 'smoothstep'
+            : block.subtipo === 'cronologia'
+              ? 'straight'
+              : 'bezier'),
+        estiloLinea: a.estiloLinea ?? 'solida',
+        color: a.color,
+        grosor: a.grosor,
+        flechaInicio: a.flechaInicio,
+      },
+    };
+  });
 
   return { nodes, edges };
 }
