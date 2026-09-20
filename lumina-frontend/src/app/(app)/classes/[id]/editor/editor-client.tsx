@@ -440,7 +440,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   // Redirigir a estudiantes que intenten entrar por URL directa al editor de una clase de curso
   useEffect(() => {
     if (cls && isStudent && cls.courseId) {
-      router.replace(`/classes/${classId}/preview`);
+      router.replace(`/classes/${classId}`);
     }
   }, [cls, isStudent, classId, router]);
 
@@ -474,11 +474,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   // ─── Auto-open curricular modal once per session when class has no desempeño ─
 
   useEffect(() => {
-    if (cls && !isLoading && !hasDesempenoPersistido(cls.desempeno) && !autoOpenedRef.current) {
+    if (!isStudent && cls && !isLoading && !hasDesempenoPersistido(cls.desempeno) && !autoOpenedRef.current) {
       autoOpenedRef.current = true;
       setShowCurricularModal(true);
     }
-  }, [cls, isLoading]);
+  }, [cls, isLoading, isStudent]);
 
   // ─── Desempeño ──────────────────────────────────────────────────────────────
 
@@ -495,7 +495,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const desempeno = confirmedDesempeno ?? desempenoFromCls;
 
-  const modalOpen = showCurricularModal || modalUserOpen;
+  const modalOpen = !isStudent && (showCurricularModal || modalUserOpen);
 
   // ── Socket: single connection — join room, track connection state, listen for responses ──
 
@@ -2677,7 +2677,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                 type="button"
                 size="sm"
                 disabled={sortedSlides.length === 0}
-                onClick={() => window.open(`/classes/${classId}/preview`, '_blank')}
+                onClick={() => router.push(`/classes/${classId}/present`)}
                 className={cn(
                   'shrink-0 rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-[#2563EB] shadow-sm transition-all duration-200',
                   'hover:bg-emerald-600 hover:text-white hover:shadow-md disabled:pointer-events-none disabled:opacity-50',
@@ -3188,22 +3188,24 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         </DialogContent>
       </Dialog>
 
-      <NewClassModal
-        classId={classId}
-        courseId={courseId}
-        isOpen={modalOpen}
-        required={false}
-        onClose={() => {
-          setModalUserOpen(false);
-          setShowCurricularModal(false);
-        }}
-        onConfirm={(d) => {
-          const normalized = withActividadesSugeridas(d);
-          setConfirmedDesempeno(normalized);
-          setModalUserOpen(false);
-          setShowCurricularModal(false);
-        }}
-      />
+      {!isStudent && (
+        <NewClassModal
+          classId={classId}
+          courseId={courseId}
+          isOpen={modalOpen}
+          required={false}
+          onClose={() => {
+            setModalUserOpen(false);
+            setShowCurricularModal(false);
+          }}
+          onConfirm={(d) => {
+            const normalized = withActividadesSugeridas(d);
+            setConfirmedDesempeno(normalized);
+            setModalUserOpen(false);
+            setShowCurricularModal(false);
+          }}
+        />
+      )}
 
       {pptxModalOpen && (
         <ImportPptxModal

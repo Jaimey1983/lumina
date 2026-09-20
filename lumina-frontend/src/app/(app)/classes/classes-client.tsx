@@ -416,9 +416,8 @@ function ClassCard({
         >
           {isStudent && (
             <Link
-              href={`/classes/${cls.id}/preview`}
+              href={`/classes/${cls.id}/present`}
               onClick={(e) => e.stopPropagation()}
-              target="_blank"
               aria-label="Presentar"
               title="Presentar"
               className="relative z-10 inline-flex text-white/70 transition-colors hover:text-blue-400"

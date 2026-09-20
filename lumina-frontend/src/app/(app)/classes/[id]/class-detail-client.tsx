@@ -9,8 +9,11 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Pencil,
   LayoutList,
+  Play,
+  Radio,
   Send,
   Presentation,
 } from 'lucide-react';
@@ -26,6 +29,7 @@ import {
   useAutonomousSessions,
 } from '@/hooks/api/use-autonomous-sessions';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
+import { parseClassModoEntrega } from '@lumina/types/slide';
 
 import { Skeleton } from '@lumina/ui/skeleton';
 import { Alert, AlertContent, AlertIcon, AlertTitle } from '@lumina/ui/alert';
@@ -63,9 +67,9 @@ function statusLabel(status: string) {
 export function ClassDetailClient({ id }: { id: string }) {
   const { user } = useAuth();
   const isStudent = user?.role === 'STUDENT';
-  const { data: cls, isLoading, isError } = useClass(id);
+  const { data: cls, isLoading, isError } = useClass(id, { refetchInterval: 10_000 });
   const publishMutation = usePublishClass(cls?.courseId ?? '');
-  const { data: autonomousSessions } = useAutonomousSessions(id, { refetchInterval: 30_000 });
+  const { data: autonomousSessions } = useAutonomousSessions(id, { refetchInterval: 10_000 });
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [launchAutonomousOpen, setLaunchAutonomousOpen] = useState(false);
@@ -87,6 +91,13 @@ export function ClassDetailClient({ id }: { id: string }) {
   const isDraft = cls?.status?.toUpperCase() === 'DRAFT';
   const statusBadgeStyle =
     STATUS_BADGE_STYLE[cls?.status?.toUpperCase() ?? ''] ?? STATUS_BADGE_STYLE.DRAFT;
+
+  const modoEntrega = parseClassModoEntrega(cls?.modoEntrega);
+  const isCourseClass = Boolean(cls?.courseId);
+  const isEnVivo = modoEntrega !== 'autonomo';
+  const isLiveActive = Boolean(
+    cls?.sessionActive || cls?.status === 'LIVE' || cls?.liveSessionId || cls?.activeSessionId,
+  );
 
   const sortedSlides = useMemo(() => {
     if (!cls?.slides) return [];
@@ -141,21 +152,168 @@ export function ClassDetailClient({ id }: { id: string }) {
     <div className="w-full p-6">
       <div className="flex items-center gap-3 mb-6">
         <Link
-          href="/classes"
+          href={cls?.courseId ? `/courses/${cls.courseId}` : '/classes'}
           className="inline-flex items-center justify-center size-8 rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs hover:bg-[#f9fafb] text-[#6b7280] -ml-2"
         >
           <ArrowLeft className="size-4" />
           <span className="sr-only">Volver</span>
         </Link>
         <h1 className="text-xl font-extrabold tracking-tight text-[#111827]">
-          {isStudent ? 'Detalles de la Presentación' : 'Detalles de la Clase'}
+          {isStudent && !isCourseClass ? 'Detalles de la Presentación' : 'Detalles de la Clase'}
         </h1>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-        {/* Left Column - Slide Preview */}
+        {/* Left Column - Slide Preview or Student Gateway */}
         <div className="flex-1 w-full min-w-0 space-y-4">
-          {sortedSlides.length > 0 ? (
+          {isStudent && isCourseClass ? (
+            isEnVivo ? (
+              isLiveActive ? (
+                <div className="w-full rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-blue-50/40 p-8 shadow-lumina-sm flex flex-col items-center justify-center text-center gap-6 min-h-[380px]">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800 animate-pulse">
+                    <span className="size-2 rounded-full bg-emerald-500" />
+                    CLASE EN VIVO EN CURSO
+                  </div>
+
+                  <div className="space-y-2 max-w-lg">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-[#111827]">
+                      {cls?.title ?? 'Clase en vivo'}
+                    </h2>
+                    <p className="text-sm text-[#4b5563] leading-relaxed">
+                      {cls?.description ||
+                        'El docente ha iniciado la clase en vivo. Entra ahora para participar en tiempo real con las diapositivas y actividades.'}
+                    </p>
+                  </div>
+
+                  {cls?.codigo ? (
+                    <div className="flex items-center gap-2 rounded-lg bg-white/90 border border-[#e5e7eb] px-4 py-1.5 text-xs text-[#6b7280] shadow-xs">
+                      <span>Código de acceso:</span>
+                      <span className="font-mono font-bold text-[#111827]">{cls.codigo.toUpperCase()}</span>
+                    </div>
+                  ) : null}
+
+                  <Link
+                    href={`/classes/${id}/viewer`}
+                    className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#2563EB] px-8 py-3.5 text-base font-bold text-white shadow-md hover:bg-[#1d4ed8] transition-all"
+                  >
+                    <Radio className="size-5 text-white" />
+                    Unirse a la clase en vivo
+                  </Link>
+                </div>
+              ) : (
+                <div className="w-full rounded-2xl border border-[#e5e7eb] bg-gradient-to-br from-gray-50 via-white to-blue-50/30 p-8 shadow-lumina-sm flex flex-col items-center justify-center text-center gap-6 min-h-[380px]">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-800">
+                    <Clock className="size-3.5 text-amber-600" />
+                    Clase en vivo · En espera de inicio
+                  </div>
+
+                  <div className="space-y-2 max-w-lg">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-[#111827]">
+                      {cls?.title ?? 'Clase'}
+                    </h2>
+                    <p className="text-sm text-[#6b7280] leading-relaxed">
+                      La clase en vivo aún no ha comenzado. El docente iniciará la sesión en breve. Cuando comience, el acceso se habilitará automáticamente aquí.
+                    </p>
+                  </div>
+
+                  {cls?.codigo ? (
+                    <div className="flex items-center gap-2 rounded-lg bg-white border border-[#e5e7eb] px-4 py-1.5 text-xs text-[#6b7280] shadow-xs">
+                      <span>Código de la clase:</span>
+                      <span className="font-mono font-bold text-[#111827]">{cls.codigo.toUpperCase()}</span>
+                    </div>
+                  ) : null}
+
+                  <div className="inline-flex items-center gap-2.5 rounded-xl border border-[#e5e7eb] bg-white px-5 py-3 text-sm font-medium text-[#6b7280] shadow-xs">
+                    <span className="size-2 rounded-full bg-amber-400 animate-ping" />
+                    Esperando que el docente inicie la clase...
+                  </div>
+                </div>
+              )
+            ) : activeSession && activeSession.status === 'open' ? (
+              <div className="w-full rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 p-8 shadow-lumina-sm flex flex-col items-center justify-center text-center gap-6 min-h-[380px]">
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  TRABAJO AUTÓNOMO DISPONIBLE
+                </div>
+
+                <div className="space-y-2 max-w-lg">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-[#111827]">
+                    {cls?.title ?? 'Clase Autónoma'}
+                  </h2>
+                  <p className="text-sm text-[#4b5563] leading-relaxed">
+                    {cls?.description ||
+                      'Esta clase está configurada para trabajo autónomo. Puedes realizar las actividades y estudiar las diapositivas a tu propio ritmo.'}
+                  </p>
+                </div>
+
+                {activeSession.closesAt ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-white border border-[#e5e7eb] px-4 py-1.5 text-xs text-[#6b7280] shadow-xs">
+                    <Clock className="size-3.5 text-[#2563EB]" />
+                    <span>Disponible hasta:</span>
+                    <span className="font-semibold text-[#111827]">
+                      {new Date(activeSession.closesAt).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                ) : null}
+
+                <Link
+                  href={`/autonomo/${activeSession.id}`}
+                  className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#2563EB] px-8 py-3.5 text-base font-bold text-white shadow-md hover:bg-[#1d4ed8] transition-all"
+                >
+                  <Play className="size-5 fill-white text-white" />
+                  Iniciar clase autónoma
+                </Link>
+              </div>
+            ) : activeSession && activeSession.status === 'scheduled' ? (
+              <div className="w-full rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/40 via-white to-orange-50/20 p-8 shadow-lumina-sm flex flex-col items-center justify-center text-center gap-6 min-h-[380px]">
+                <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-800">
+                  <Clock className="size-3.5 text-amber-600" />
+                  Trabajo Autónomo · Programado
+                </div>
+
+                <div className="space-y-2 max-w-lg">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-[#111827]">
+                    {cls?.title ?? 'Clase Autónoma'}
+                  </h2>
+                  <p className="text-sm text-[#6b7280] leading-relaxed">
+                    Esta actividad autónoma está programada. Estará disponible para resolver a partir de:
+                  </p>
+                  <p className="font-bold text-[#111827] text-base">
+                    {activeSession.opensAt
+                      ? new Date(activeSession.opensAt).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'Próximamente'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full rounded-2xl border border-[#e5e7eb] bg-white p-8 shadow-lumina-sm flex flex-col items-center justify-center text-center gap-6 min-h-[380px]">
+                <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-xs font-semibold text-[#6b7280]">
+                  Modalidad Autónoma · No disponible
+                </div>
+
+                <div className="space-y-2 max-w-lg">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-[#111827]">
+                    {cls?.title ?? 'Clase Autónoma'}
+                  </h2>
+                  <p className="text-sm text-[#6b7280] leading-relaxed">
+                    La sesión autónoma para esta clase no está activa en este momento o ya ha finalizado.
+                  </p>
+                </div>
+              </div>
+            )
+          ) : sortedSlides.length > 0 ? (
             <>
               {/* Grand Preview */}
               <div className="relative group w-full bg-[#f9fafb] rounded-xl p-2 border border-[#e5e7eb] shadow-lumina-sm">
@@ -236,14 +394,14 @@ export function ClassDetailClient({ id }: { id: string }) {
               <div className="text-center space-y-1">
                 <h3 className="font-bold text-lumina-lg text-[#111827]">No hay slides</h3>
                 <p className="text-lumina-sm text-[#6b7280]">
-                  {isStudent && cls?.courseId
-                    ? 'Esta presentación no contiene diapositivas aún.'
+                  {isStudent && isCourseClass
+                    ? 'Esta clase no contiene diapositivas aún.'
                     : isStudent
                       ? 'Abre el editor para comenzar a crear tu presentación.'
                       : 'Abre el editor para comenzar a crear tu clase.'}
                 </p>
               </div>
-              {(!isStudent || !cls?.courseId) && (
+              {(!isStudent || !isCourseClass) && (
                 <Link
                   href={`/classes/${id}/editor`}
                   className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-lumina-sm font-bold text-white hover:bg-[#1d4ed8]"
@@ -271,6 +429,11 @@ export function ClassDetailClient({ id }: { id: string }) {
                       }}
                     >
                       {statusLabel(cls.status)}
+                    </span>
+                  )}
+                  {isCourseClass && (
+                    <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200/60">
+                      {isEnVivo ? 'En Vivo' : 'Autónomo'}
                     </span>
                   )}
                 </div>
@@ -329,14 +492,37 @@ export function ClassDetailClient({ id }: { id: string }) {
                 ) : null}
 
                 {isStudent ? (
-                  cls?.courseId ? (
-                    <Link
-                      href={`/classes/${id}/preview`}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-lumina-sm font-bold text-white shadow-lumina-xs hover:bg-[#1d4ed8]"
-                    >
-                      <Presentation className="size-4" />
-                      Ver presentación
-                    </Link>
+                  isCourseClass ? (
+                    isEnVivo ? (
+                      isLiveActive ? (
+                        <Link
+                          href={`/classes/${id}/viewer`}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-lumina-sm font-bold text-white shadow-lumina-xs hover:bg-[#1d4ed8]"
+                        >
+                          <Radio className="size-4 text-white" />
+                          Unirse a la clase en vivo
+                        </Link>
+                      ) : (
+                        <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-lumina-sm font-semibold text-[#9ca3af] cursor-not-allowed">
+                          <Clock className="size-4" />
+                          Esperando inicio de clase
+                        </div>
+                      )
+                    ) : activeSession && activeSession.status === 'open' ? (
+                      <Link
+                        href={`/autonomo/${activeSession.id}`}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-lumina-sm font-bold text-white shadow-lumina-xs hover:bg-[#1d4ed8]"
+                      >
+                        <Play className="size-4 fill-white text-white" />
+                        Iniciar clase autónoma
+                      </Link>
+                    ) : (
+                      <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-lumina-sm font-semibold text-[#9ca3af] cursor-not-allowed">
+                        {activeSession?.status === 'scheduled'
+                          ? 'Actividad autónoma programada'
+                          : 'Actividad no disponible'}
+                      </div>
+                    )
                   ) : (
                     <div className="flex gap-2">
                       <Link
@@ -347,10 +533,10 @@ export function ClassDetailClient({ id }: { id: string }) {
                         Editor
                       </Link>
                       <Link
-                        href={`/classes/${id}/preview`}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
+                        href={`/classes/${id}/present`}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-lumina-sm font-bold text-white shadow-lumina-xs hover:bg-[#1d4ed8]"
                       >
-                        <Presentation className="size-4 text-[#6b7280]" />
+                        <Presentation className="size-4" />
                         Presentar
                       </Link>
                     </div>
@@ -447,23 +633,27 @@ export function ClassDetailClient({ id }: { id: string }) {
 
       {/* Mantener el modal montado tras crear la sesión: si no, activeSession pasa a existir,
           el modal se desmonta y se pierde el paso 3 (enlace y PIN). */}
-      {cls?.codigo && (!activeSession || launchAutonomousOpen) ? (
-        <LaunchAutonomousModal
-          open={launchAutonomousOpen}
-          onOpenChange={setLaunchAutonomousOpen}
-          classId={id}
-          classCode={cls.codigo.toUpperCase()}
-        />
-      ) : null}
-      {activeSession ? (
-        <EditAutonomousModal
-          key={activeSession.id}
-          open={editAutonomousOpen}
-          onOpenChange={setEditAutonomousOpen}
-          classId={id}
-          session={activeSession}
-          classCode={(cls?.codigo ?? '').toUpperCase()}
-        />
+      {!isStudent ? (
+        <>
+          {cls?.codigo && (!activeSession || launchAutonomousOpen) ? (
+            <LaunchAutonomousModal
+              open={launchAutonomousOpen}
+              onOpenChange={setLaunchAutonomousOpen}
+              classId={id}
+              classCode={cls.codigo.toUpperCase()}
+            />
+          ) : null}
+          {activeSession ? (
+            <EditAutonomousModal
+              key={activeSession.id}
+              open={editAutonomousOpen}
+              onOpenChange={setEditAutonomousOpen}
+              classId={id}
+              session={activeSession}
+              classCode={(cls?.codigo ?? '').toUpperCase()}
+            />
+          ) : null}
+        </>
       ) : null}
     </div>
   );

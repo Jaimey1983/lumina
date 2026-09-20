@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Minimize2,
   XCircle,
 } from 'lucide-react';
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
@@ -115,7 +116,11 @@ export function PresentClient({ id }: { id: string }) {
 
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
-        router.push(`/classes/${id}`);
+        if (classData && !classData.courseId) {
+          router.push(`/classes/${id}/editor`);
+        } else {
+          router.push(`/classes/${id}`);
+        }
       }
     };
 
@@ -126,7 +131,7 @@ export function PresentClient({ id }: { id: string }) {
         document.exitFullscreen().catch(() => {});
       }
     };
-  }, [id, router]);
+  }, [id, router, classData]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -192,6 +197,25 @@ export function PresentClient({ id }: { id: string }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden">
+      <button
+        type="button"
+        aria-label="Salir de la presentación"
+        title="Salir de la presentación"
+        onClick={() => {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          }
+          if (classData && !classData.courseId) {
+            router.push(`/classes/${id}/editor`);
+          } else {
+            router.push(`/classes/${id}`);
+          }
+        }}
+        className="pointer-events-auto absolute top-4 right-4 z-50 inline-flex items-center justify-center rounded-xl border border-white/20 bg-black/40 p-2.5 text-white/80 backdrop-blur-sm transition hover:bg-black/70 hover:text-white"
+      >
+        <Minimize2 className="size-5" />
+      </button>
+
       {activeSlide ? (
         <div
           className={cn(

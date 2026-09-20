@@ -518,9 +518,9 @@ function ClassesTab({ courseId }: { courseId: string }) {
         <div className="flex items-center justify-end gap-2">
           {isStudent ? (
             <Button size="sm" variant="outline" asChild>
-              <Link href={`/classes/${row.original.id}/preview`}>
+              <Link href={`/classes/${row.original.id}`}>
                 <Eye className="size-3.5" />
-                Ver
+                Ingresar a la clase
               </Link>
             </Button>
           ) : (
