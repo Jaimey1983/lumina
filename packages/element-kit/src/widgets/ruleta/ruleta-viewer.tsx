@@ -79,14 +79,25 @@ export function RuletaViewer({ block }: RuletaViewerProps) {
   }, [items, configuracion.duracionGiro, configuracion.mostrarGanador]);
 
   return (
-    <div className="grid h-full min-h-0 w-full grid-rows-[minmax(0,1fr)_auto] gap-2 p-2">
-      <div className="relative min-h-0">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-between gap-3 p-2">
+      <div className="relative flex-1 min-h-0 w-full flex items-center justify-center">
         <RuletaWheel ref={wheelRef} items={items} colores={configuracion.colores} />
 
         {ganador && (
-          <div className="pointer-events-none absolute bottom-1 left-1/2 z-10 max-w-[92%] -translate-x-1/2 rounded-[var(--lw-radius-lg,0.75rem)] border border-yellow-200 bg-yellow-50/95 px-4 py-2 text-center shadow-[var(--lw-shadow-md,0_4px_12px_rgba(0,0,0,0.1))] backdrop-blur-sm">
+          <div
+            className="pointer-events-none absolute bottom-1 left-1/2 z-30 max-w-[92%] -translate-x-1/2 border border-yellow-200 bg-yellow-50/95 px-4 py-2 text-center shadow-lg backdrop-blur-sm"
+            style={{
+              borderRadius: 'var(--lw-radius-lg, 0.75rem)',
+              boxShadow: 'var(--lw-shadow-md, 0 4px 12px rgba(0,0,0,0.1))',
+            }}
+          >
             <p className="text-[10px] font-medium text-yellow-600">¡Ganador!</p>
-            <p className="truncate text-sm font-bold text-yellow-800" style={{ fontFamily: 'var(--lw-font-family, inherit)' }}>{ganador}</p>
+            <p
+              className="truncate text-sm font-bold text-yellow-800"
+              style={{ fontFamily: 'var(--lw-font-family, inherit)' }}
+            >
+              {ganador}
+            </p>
           </div>
         )}
       </div>
@@ -95,7 +106,11 @@ export function RuletaViewer({ block }: RuletaViewerProps) {
         type="button"
         onClick={handleGirar}
         disabled={girando}
-        className="relative z-20 mx-auto shrink-0 rounded-[var(--lw-radius-lg,0.75rem)] bg-[var(--lw-color-primary,#2563EB)] px-8 py-2 text-sm font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-[0.97] disabled:opacity-50"
+        className="relative z-20 mx-auto shrink-0 px-8 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-[0.97] disabled:opacity-50 cursor-pointer"
+        style={{
+          backgroundColor: 'var(--lw-color-primary, #2563EB)',
+          borderRadius: 'var(--lw-radius-lg, 0.75rem)',
+        }}
       >
         {girando ? 'Girando...' : 'Girar'}
       </button>

@@ -23,7 +23,7 @@ export const RuletaWheel = forwardRef<HTMLDivElement, RuletaWheelProps>(function
   const fontSize = n > 8 ? 14 : n > 6 ? 16 : 18;
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full max-h-full aspect-square flex items-center justify-center mx-auto">
       <div ref={ref} className="absolute inset-0 origin-center will-change-transform">
         <svg
           viewBox={`0 0 ${VIEW} ${VIEW}`}
