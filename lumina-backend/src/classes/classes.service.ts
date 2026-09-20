@@ -342,6 +342,17 @@ export class ClassesService {
       }
     }
 
+    if (cls.courseId && userId) {
+      await this.courseAuth.verifyCourseReadAccess(
+        cls.courseId,
+        userId,
+        userRole,
+      );
+      if (userRole === 'STUDENT' && cls.status === 'DRAFT') {
+        throw new NotFoundException('Clase no encontrada');
+      }
+    }
+
     const activeSession = await this.prisma.classSession.findFirst({
       where: { classId: id, endedAt: null },
       select: { id: true },
@@ -355,9 +366,14 @@ export class ClassesService {
     };
   }
 
-  async update(id: string, dto: UpdateClassDto, userId: string) {
+  async update(
+    id: string,
+    dto: UpdateClassDto,
+    userId: string,
+    userRole?: string,
+  ) {
     const cls = await this.findOneRaw(id);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const { desempeno, status, ...rest } = dto;
     return this.prisma.class.update({
@@ -382,9 +398,9 @@ export class ClassesService {
     });
   }
 
-  async publish(id: string, userId: string) {
+  async publish(id: string, userId: string, userRole?: string) {
     const cls = await this.findOneRaw(id);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     return this.prisma.class.update({
       where: { id },
@@ -393,9 +409,9 @@ export class ClassesService {
     });
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string, userRole?: string) {
     const cls = await this.findOneRaw(id);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     return this.prisma.class.update({
       where: { id },
@@ -958,9 +974,14 @@ export class ClassesService {
 
   // ─── SLIDES ────────────────────────────────────────────
 
-  async addSlide(classId: string, dto: CreateSlideDto, userId: string) {
+  async addSlide(
+    classId: string,
+    dto: CreateSlideDto,
+    userId: string,
+    userRole?: string,
+  ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const lastSlide = await this.prisma.slide.findFirst({
       where: { classId },
@@ -994,9 +1015,10 @@ export class ClassesService {
     slideId: string,
     dto: UpdateSlideDto,
     userId: string,
+    userRole?: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const slide = await this.prisma.slide.findUnique({
       where: { id: slideId },
@@ -1007,16 +1029,15 @@ export class ClassesService {
 
     const data: Prisma.SlideUpdateManyMutationInput = {
       contentVersion: { increment: 1 },
+      ...(dto.title !== undefined ? { title: dto.title } : {}),
+      ...(dto.type !== undefined ? { type: dto.type } : {}),
+      ...(dto.content !== undefined
+        ? { content: dto.content as Prisma.InputJsonValue }
+        : {}),
     };
-    if (dto.type !== undefined) data.type = dto.type;
-    if (dto.title !== undefined) data.title = dto.title;
-    if (dto.content !== undefined) {
-      data.content = dto.content as Prisma.InputJsonValue;
-    }
 
-    // Optimistic locking: updateMany con where de versión → 0 filas = conflicto
     if (dto.expectedVersion !== undefined) {
-      const result = await this.prisma.slide.updateMany({
+      const res = await this.prisma.slide.updateMany({
         where: {
           id: slideId,
           classId,
@@ -1024,14 +1045,12 @@ export class ClassesService {
         },
         data,
       });
-      if (result.count === 0) {
+      if (res.count === 0) {
         const current = await this.prisma.slide.findFirst({
           where: { id: slideId, classId },
           select: { contentVersion: true },
         });
-        if (!current) {
-          throw new NotFoundException('Slide no encontrado');
-        }
+        if (!current) throw new NotFoundException('Slide no encontrado');
         throw new ConflictException({
           message:
             'Conflicto de versión: el slide fue modificado por otra sesión',
@@ -1039,7 +1058,9 @@ export class ClassesService {
           expectedVersion: dto.expectedVersion,
         });
       }
-      return this.prisma.slide.findUniqueOrThrow({ where: { id: slideId } });
+      return this.prisma.slide.findUniqueOrThrow({
+        where: { id: slideId },
+      });
     }
 
     // Compat: sin expectedVersion sigue last-write-wins, pero incrementa versión
@@ -1049,9 +1070,14 @@ export class ClassesService {
     });
   }
 
-  async removeSlide(classId: string, slideId: string, userId: string) {
+  async removeSlide(
+    classId: string,
+    slideId: string,
+    userId: string,
+    userRole?: string,
+  ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const slide = await this.prisma.slide.findUnique({
       where: { id: slideId },
@@ -1083,9 +1109,10 @@ export class ClassesService {
     classId: string,
     userId: string,
     order: { id: string; order: number }[],
+    userRole?: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const slides = await this.prisma.slide.findMany({
       where: { classId },
@@ -1119,9 +1146,10 @@ export class ClassesService {
     userId: string,
     afterOrder: number,
     dto: CreateSlideDto,
+    userRole?: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.slide.updateMany({
@@ -1154,9 +1182,14 @@ export class ClassesService {
     });
   }
 
-  async getSlideVersions(classId: string, slideId: string, userId: string) {
+  async getSlideVersions(
+    classId: string,
+    slideId: string,
+    userId: string,
+    userRole?: string,
+  ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
@@ -1182,9 +1215,10 @@ export class ClassesService {
     slideId: string,
     content: Record<string, unknown>,
     userId: string,
+    userRole?: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
@@ -1219,9 +1253,10 @@ export class ClassesService {
     slideId: string,
     versionId: string,
     userId: string,
+    userRole?: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyOwnership(cls, userId);
+    await this.verifyOwnership(cls, userId, userRole);
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
@@ -1282,7 +1317,12 @@ export class ClassesService {
   private async verifyOwnership(
     cls: { id: string; courseId: string | null; authorId: string | null },
     userId: string,
+    userRole?: string,
   ) {
+    if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') {
+      return;
+    }
+
     // Si la clase no tiene courseId (presentación personal)
     if (!cls.courseId) {
       if (cls.authorId !== userId) {

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useAuth } from '@/hooks/use-auth';
 import { useClass } from '@/hooks/api/use-class';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { usePublishClass } from '@/hooks/api/use-classes';
@@ -60,6 +61,8 @@ function statusLabel(status: string) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function ClassDetailClient({ id }: { id: string }) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const { data: cls, isLoading, isError } = useClass(id);
   const publishMutation = usePublishClass(cls?.courseId ?? '');
   const { data: autonomousSessions } = useAutonomousSessions(id, { refetchInterval: 30_000 });
@@ -144,7 +147,9 @@ export function ClassDetailClient({ id }: { id: string }) {
           <ArrowLeft className="size-4" />
           <span className="sr-only">Volver</span>
         </Link>
-        <h1 className="text-xl font-extrabold tracking-tight text-[#111827]">Detalles de la Clase</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-[#111827]">
+          {isStudent ? 'Detalles de la Presentación' : 'Detalles de la Clase'}
+        </h1>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
@@ -230,15 +235,23 @@ export function ClassDetailClient({ id }: { id: string }) {
               </div>
               <div className="text-center space-y-1">
                 <h3 className="font-bold text-lumina-lg text-[#111827]">No hay slides</h3>
-                <p className="text-lumina-sm text-[#6b7280]">Abre el editor para comenzar a crear tu clase.</p>
+                <p className="text-lumina-sm text-[#6b7280]">
+                  {isStudent && cls?.courseId
+                    ? 'Esta presentación no contiene diapositivas aún.'
+                    : isStudent
+                      ? 'Abre el editor para comenzar a crear tu presentación.'
+                      : 'Abre el editor para comenzar a crear tu clase.'}
+                </p>
               </div>
-              <Link
-                href={`/classes/${id}/editor`}
-                className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-lumina-sm font-bold text-white hover:bg-[#1d4ed8]"
-              >
-                <Pencil className="size-4" />
-                Abrir editor
-              </Link>
+              {(!isStudent || !cls?.courseId) && (
+                <Link
+                  href={`/classes/${id}/editor`}
+                  className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-lumina-sm font-bold text-white hover:bg-[#1d4ed8]"
+                >
+                  <Pencil className="size-4" />
+                  Abrir editor
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -315,70 +328,116 @@ export function ClassDetailClient({ id }: { id: string }) {
                   </button>
                 ) : null}
 
-                <div className="flex gap-2">
-                  <Link
-                    href={`/classes/${id}/editor`}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
-                  >
-                    <Pencil className="size-4 text-[#2563EB]" />
-                    Editor
-                  </Link>
-                  <Link
-                    href={`/classes/${id}/present`}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
-                  >
-                    <Presentation className="size-4 text-[#6b7280]" />
-                    Presentar
-                  </Link>
-                </div>
-
-                {sortedSlides.length > 0 ? (
-                  <div className="space-y-1.5">
-                    <button
-                      type="button"
-                      disabled={sortedSlides.length === 0 || (!activeSession && !cls?.codigo)}
-                      title={
-                        !activeSession && !cls?.codigo
-                          ? 'Publica la clase para obtener código de acceso'
-                          : undefined
-                      }
-                      onClick={() =>
-                        activeSession ? setEditAutonomousOpen(true) : setLaunchAutonomousOpen(true)
-                      }
-                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb] disabled:opacity-50 disabled:cursor-not-allowed"
+                {isStudent ? (
+                  cls?.courseId ? (
+                    <Link
+                      href={`/classes/${id}/preview`}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-lumina-sm font-bold text-white shadow-lumina-xs hover:bg-[#1d4ed8]"
                     >
-                      Autónomo
-                    </button>
-                    {autonomousActionBadge.kind ? (
-                      <span
-                        className="flex w-full justify-center rounded-lumina-md px-2 py-1.5 text-center text-xs font-semibold"
-                        style={
-                          autonomousActionBadge.kind === 'scheduled'
-                            ? { backgroundColor: '#fef3c7', color: '#d97706' }
-                            : { backgroundColor: '#dcfce7', color: '#16a34a' }
-                        }
+                      <Presentation className="size-4" />
+                      Ver presentación
+                    </Link>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/classes/${id}/editor`}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
                       >
-                        {autonomousActionBadge.label}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
+                        <Pencil className="size-4 text-[#2563EB]" />
+                        Editor
+                      </Link>
+                      <Link
+                        href={`/classes/${id}/preview`}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
+                      >
+                        <Presentation className="size-4 text-[#6b7280]" />
+                        Presentar
+                      </Link>
+                    </div>
+                  )
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/classes/${id}/editor`}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
+                      >
+                        <Pencil className="size-4 text-[#2563EB]" />
+                        Editor
+                      </Link>
+                      <Link
+                        href={`/classes/${id}/present`}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb]"
+                      >
+                        <Presentation className="size-4 text-[#6b7280]" />
+                        Presentar
+                      </Link>
+                    </div>
 
-                {isDraft && (
-                  <button
-                    type="button"
-                    className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#6b7280] shadow-lumina-xs hover:bg-[#f9fafb] disabled:opacity-50"
-                    disabled={publishMutation.isPending}
-                    onClick={() => {
-                      publishMutation.mutate(id, {
-                        onSuccess: () => toast.success('Clase publicada correctamente'),
-                        onError: () => toast.error('Error al publicar la clase'),
-                      });
-                    }}
-                  >
-                    {publishMutation.isPending ? 'Publicando...' : 'Publicar clase'}
-                    <Send className="size-4" />
-                  </button>
+                    {sortedSlides.length > 0 ? (
+                      <div className="space-y-1.5">
+                        <button
+                          type="button"
+                          disabled={
+                            sortedSlides.length === 0 ||
+                            (!activeSession && !cls?.codigo)
+                          }
+                          title={
+                            !activeSession && !cls?.codigo
+                              ? 'Publica la clase para obtener código de acceso'
+                              : undefined
+                          }
+                          onClick={() =>
+                            activeSession
+                              ? setEditAutonomousOpen(true)
+                              : setLaunchAutonomousOpen(true)
+                          }
+                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#111827] shadow-lumina-xs hover:bg-[#f9fafb] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Autónomo
+                        </button>
+                        {autonomousActionBadge.kind ? (
+                          <span
+                            className="flex w-full justify-center rounded-lumina-md px-2 py-1.5 text-center text-xs font-semibold"
+                            style={
+                              autonomousActionBadge.kind === 'scheduled'
+                                ? {
+                                    backgroundColor: '#fef3c7',
+                                    color: '#d97706',
+                                  }
+                                : {
+                                    backgroundColor: '#dcfce7',
+                                    color: '#16a34a',
+                                  }
+                            }
+                          >
+                            {autonomousActionBadge.label}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {isDraft && (
+                      <button
+                        type="button"
+                        className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-lumina-sm font-semibold text-[#6b7280] shadow-lumina-xs hover:bg-[#f9fafb] disabled:opacity-50"
+                        disabled={publishMutation.isPending}
+                        onClick={() => {
+                          publishMutation.mutate(id, {
+                            onSuccess: () =>
+                              toast.success('Clase publicada correctamente'),
+                            onError: () =>
+                              toast.error('Error al publicar la clase'),
+                          });
+                        }}
+                      >
+                        {publishMutation.isPending
+                          ? 'Publicando...'
+                          : 'Publicar clase'}
+                        <Send className="size-4" />
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

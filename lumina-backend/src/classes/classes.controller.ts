@@ -86,14 +86,14 @@ export class ClassesController {
     @Body() dto: UpdateClassDto,
     @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.classesService.update(id, dto, user.id);
+    return this.classesService.update(id, dto, user.id, user.role);
   }
 
   @Post(':id/publish')
   @UseGuards(JwtAuthGuard, RolesGuard, TeacherVerifiedGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
   publish(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
-    return this.classesService.publish(id, user.id);
+    return this.classesService.publish(id, user.id, user.role);
   }
 
   @Delete(':id')
@@ -101,7 +101,7 @@ export class ClassesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   remove(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
-    return this.classesService.remove(id, user.id);
+    return this.classesService.remove(id, user.id, user.role);
   }
 
   // ─── SESIONES ──────────────────────────────────────────
@@ -183,7 +183,12 @@ export class ClassesController {
     @Body() body: { order: { id: string; order: number }[] },
     @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.classesService.reorderSlides(classId, user.id, body.order);
+    return this.classesService.reorderSlides(
+      classId,
+      user.id,
+      body.order,
+      user.role,
+    );
   }
 
   @Post(':id/slides/insert')
@@ -199,6 +204,7 @@ export class ClassesController {
       user.id,
       body.afterOrder,
       body.slide,
+      user.role,
     );
   }
 
@@ -210,7 +216,7 @@ export class ClassesController {
     @Body() dto: CreateSlideDto,
     @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.classesService.addSlide(classId, dto, user.id);
+    return this.classesService.addSlide(classId, dto, user.id, user.role);
   }
 
   @Get(':id/slides/:slideId/versions')
@@ -221,7 +227,12 @@ export class ClassesController {
     @Param('slideId') slideId: string,
     @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.classesService.getSlideVersions(classId, slideId, user.id);
+    return this.classesService.getSlideVersions(
+      classId,
+      slideId,
+      user.id,
+      user.role,
+    );
   }
 
   @Post(':id/slides/:slideId/versions')
@@ -238,6 +249,7 @@ export class ClassesController {
       slideId,
       dto.content,
       user.id,
+      user.role,
     );
   }
 
@@ -255,6 +267,7 @@ export class ClassesController {
       slideId,
       versionId,
       user.id,
+      user.role,
     );
   }
 
@@ -267,7 +280,13 @@ export class ClassesController {
     @Body() dto: UpdateSlideDto,
     @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.classesService.updateSlide(classId, slideId, dto, user.id);
+    return this.classesService.updateSlide(
+      classId,
+      slideId,
+      dto,
+      user.id,
+      user.role,
+    );
   }
 
   @Delete(':id/slides/:slideId')
@@ -279,6 +298,11 @@ export class ClassesController {
     @Param('slideId') slideId: string,
     @CurrentUser() user: JwtAuthUser,
   ) {
-    return this.classesService.removeSlide(classId, slideId, user.id);
+    return this.classesService.removeSlide(
+      classId,
+      slideId,
+      user.id,
+      user.role,
+    );
   }
 }

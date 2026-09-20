@@ -29,6 +29,9 @@ describe('ClassesService - Student Presentations', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    classSession: {
+      findFirst: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
@@ -188,8 +191,68 @@ describe('ClassesService - Student Presentations', () => {
           'slide-1',
           { title: 'Modificación no autorizada' },
           'student-1',
+          'STUDENT',
         ),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('permite a un ADMIN actualizar una presentación personal de un estudiante', async () => {
+      mockPrisma.class.findUnique.mockResolvedValueOnce({
+        id: 'pres-1',
+        courseId: null,
+        authorId: 'student-1',
+        status: 'PUBLISHED',
+      });
+      mockPrisma.class.update.mockResolvedValueOnce({
+        id: 'pres-1',
+        title: 'Título Corregido por Admin',
+      });
+
+      const res = await service.update(
+        'pres-1',
+        { title: 'Título Corregido por Admin' },
+        'admin-1',
+        'ADMIN',
+      );
+
+      expect(res.title).toBe('Título Corregido por Admin');
+    });
+  });
+
+  describe('validación de acceso a clases en findOne', () => {
+    it('verifica acceso al curso en findOne si la clase pertenece a un curso', async () => {
+      mockPrisma.class.findUnique.mockResolvedValueOnce({
+        id: 'class-curso-1',
+        title: 'Clase de Ciencias',
+        courseId: 'course-1',
+        authorId: 'teacher-1',
+        status: 'PUBLISHED',
+        slides: [],
+      });
+      mockPrisma.classSession.findFirst.mockResolvedValueOnce(null);
+
+      await service.findOne('class-curso-1', 'student-1', 'STUDENT');
+
+      expect(mockCourseAuth.verifyCourseReadAccess).toHaveBeenCalledWith(
+        'course-1',
+        'student-1',
+        'STUDENT',
+      );
+    });
+
+    it('oculta clases en DRAFT a estudiantes en findOne retornando NotFoundException', async () => {
+      mockPrisma.class.findUnique.mockResolvedValueOnce({
+        id: 'class-draft',
+        title: 'Clase en Borrador',
+        courseId: 'course-1',
+        authorId: 'teacher-1',
+        status: 'DRAFT',
+        slides: [],
+      });
+
+      await expect(
+        service.findOne('class-draft', 'student-1', 'STUDENT'),
+      ).rejects.toThrow('Clase no encontrada');
     });
   });
 });

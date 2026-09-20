@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Check,
   ChevronLeft,
@@ -432,8 +433,16 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const canvasSurfaceRef = useRef<HTMLDivElement>(null);
 
   const { user, token } = useAuth();
+  const router = useRouter();
   const isStudent = user?.role === 'STUDENT';
   const [torneoSocketRevision, setTorneoSocketRevision] = useState(0);
+
+  // Redirigir a estudiantes que intenten entrar por URL directa al editor de una clase de curso
+  useEffect(() => {
+    if (cls && isStudent && cls.courseId) {
+      router.replace(`/classes/${classId}/preview`);
+    }
+  }, [cls, isStudent, classId, router]);
 
   useEffect(() => {
     if (!activePanel && !rightPanel) return;
@@ -1796,6 +1805,10 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const handleAddActivity = useCallback(
     (type: ActivityType, dropMarco?: BlockMarco) => {
+      if (isStudent) {
+        toast.error('Las actividades evaluativas están reservadas para docentes');
+        return;
+      }
       const templates: Record<ActivityType, () => Activity> = {
         'quiz-multiple':    quizMultipleTemplate,
         'true-false':       trueFalseTemplate,
@@ -1890,21 +1903,30 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       }
       toast.success(`Slide con ${titles[type]} creado`);
     },
-    [activeSlide, handleCommitSlideContent, handleCreateSlideWithActivity],
+    [
+      isStudent,
+      activeSlide,
+      handleCommitSlideContent,
+      handleCreateSlideWithActivity,
+    ],
   );
 
   const handleActivityDrop = useCallback(
     (type: ActivityType, marco: BlockMarco) => {
-      if (activeSlideHasActivity) return;
+      if (isStudent || activeSlideHasActivity) return;
       handleAddActivity(type, marco);
     },
-    [activeSlideHasActivity, handleAddActivity],
+    [isStudent, activeSlideHasActivity, handleAddActivity],
   );
 
   // Inserta una actividad generada por IA (formato Activity de Lumina) en el slide
   // actual si está vacío; de lo contrario crea un slide nuevo con la actividad.
   const handleInsertAiActivity = useCallback(
     (activityContent: Record<string, unknown>) => {
+      if (isStudent) {
+        toast.error('La generación con IA está reservada para docentes');
+        return;
+      }
       const activity = activityContent as unknown as Activity;
       const block: Block = { tipo: 'actividad', actividad: activity };
       const title = activityTitleFromContent(activityContent);
@@ -1925,7 +1947,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         title,
       );
     },
-    [activeSlide, handleCommitSlideContent, handleCreateSlideWithActivity],
+    [
+      isStudent,
+      activeSlide,
+      handleCommitSlideContent,
+      handleCreateSlideWithActivity,
+    ],
   );
 
   const handleAddWidget = useCallback(
@@ -2186,7 +2213,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
-          <Link href={`/classes/${classId}`}>Volver a la clase</Link>
+          <Link href={isStudent ? '/classes' : `/classes/${classId}`}>
+            {isStudent ? 'Volver a mis presentaciones' : 'Volver a la clase'}
+          </Link>
         </Button>
       </div>
 
