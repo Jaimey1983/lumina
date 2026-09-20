@@ -3,6 +3,7 @@ export type {
   ElementCatalogo,
   ElementDefinition,
   ElementEditorProps,
+  ElementPreset,
   ElementPropsPanelProps,
   ElementViewerProps,
   PuntuacionDelegate,

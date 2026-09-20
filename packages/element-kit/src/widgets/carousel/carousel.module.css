@@ -7,20 +7,29 @@
 
 .carouselPageTab {
   appearance: none;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 0.25rem;
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  background: var(--lw-color-surface, #fff);
+  border-radius: var(--lw-radius-sm, 0.25rem);
   padding: 0.25rem 0.625rem;
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--widget-accent-muted, #cbd5e1);
+  color: var(--lw-color-text-muted, var(--widget-accent-muted, #cbd5e1));
   cursor: pointer;
+  transition:
+    background var(--lw-motion-fast, 0.15s),
+    border-color var(--lw-motion-fast, 0.15s),
+    color var(--lw-motion-fast, 0.15s),
+    transform var(--lw-motion-fast, 0.08s);
+}
+
+.carouselPageTab:active {
+  transform: scale(0.96);
 }
 
 .carouselPageTabActive {
-  color: var(--widget-accent, #2563eb);
-  border-color: var(--widget-accent, #2563eb);
+  color: var(--lw-color-primary, var(--widget-accent, #2563eb));
+  border-color: var(--lw-color-primary, var(--widget-accent, #2563eb));
   background: rgba(37, 99, 235, 0.06);
 }
 
@@ -73,11 +82,18 @@
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 9999px;
+  border-radius: var(--lw-radius-full, 9999px);
   border: none;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--lw-color-nav, rgba(15, 23, 42, 0.72));
   color: #fff;
   cursor: pointer;
+  transition:
+    transform var(--lw-motion-fast, 0.15s) ease,
+    opacity var(--lw-motion-fast, 0.15s) ease;
+}
+
+.carouselInnerNav:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.92);
 }
 
 .carouselInnerNavLeft {
@@ -104,17 +120,19 @@
 .carouselDot {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--lw-radius-full, 9999px);
   border: none;
-  background: var(--widget-accent-muted, #cbd5e1);
+  background: var(--lw-color-primary-muted, var(--widget-accent-muted, #cbd5e1));
   cursor: pointer;
   padding: 0;
-  transition: transform 0.15s, background-color 0.15s;
+  transition:
+    transform var(--lw-motion-fast, 0.15s),
+    background-color var(--lw-motion-fast, 0.15s);
 }
 
 .carouselDotActive {
-  background: var(--widget-accent, #2563eb);
-  transform: scale(1.15);
+  background: var(--lw-color-primary, var(--widget-accent, #2563eb));
+  transform: scale(1.25);
 }
 
 @media (max-width: 640px) {

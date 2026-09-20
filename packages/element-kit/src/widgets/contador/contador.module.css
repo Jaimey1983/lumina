@@ -13,15 +13,16 @@
   min-height: 0;
   box-sizing: border-box;
   padding: 0.45rem 0.6rem;
-  border-radius: 0.75rem;
+  border-radius: var(--lw-radius-lg, 0.75rem);
   border: 1px solid rgb(255 255 255 / 0.08);
-  box-shadow: 0 4px 18px rgb(15 23 42 / 0.28);
+  box-shadow: var(--lw-shadow-md, 0 4px 18px rgb(15 23 42 / 0.28));
   text-align: center;
   user-select: none;
   overflow: hidden;
 }
 
 .etiqueta {
+  font-family: var(--lw-font-family, inherit);
   font-size: clamp(0.55rem, 8cqi, 0.8rem);
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -59,15 +60,21 @@
   width: 1.55rem;
   height: 1.55rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--lw-radius-full, 999px);
   cursor: pointer;
   color: inherit;
   background: rgb(255 255 255 / 0.12);
-  transition: background 0.15s ease;
+  transition:
+    background var(--lw-motion-fast, 0.15s) ease,
+    transform var(--lw-motion-fast, 0.08s) ease;
 }
 
 .ctrlBtn:hover {
   background: rgb(255 255 255 / 0.22);
+}
+
+.ctrlBtn:active {
+  transform: scale(0.92);
 }
 
 .ctrlBtn:focus-visible {

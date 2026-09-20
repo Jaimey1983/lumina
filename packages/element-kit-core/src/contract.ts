@@ -47,6 +47,19 @@ export type PuntuacionDelegate<TState> = (
   respuesta?: unknown,
 ) => number;
 
+/**
+ * Plantilla o preset preconfigurado para un elemento (Fase 1 / E8).
+ * Permite al docente seleccionar un aspecto o variante inicial con un solo clic.
+ */
+export interface ElementPreset<TPatch = unknown> {
+  readonly id: string;
+  readonly label: string;
+  readonly description?: string;
+  readonly thumbnail?: string;
+  readonly configPatch?: Partial<TPatch>;
+  readonly patch?: Partial<TPatch>;
+}
+
 export interface ElementDefinition<TState, TConfig> {
   readonly tipo: string;
   crearPorDefecto(): TState;
@@ -57,4 +70,8 @@ export interface ElementDefinition<TState, TConfig> {
   readonly puntuacion?: PuntuacionDelegate<TState>;
   /** Metadata para los paneles de inserción del editor (E7.1). */
   readonly catalogo?: ElementCatalogo;
+  /** Galería de plantillas o presets preconfigurados para el elemento (E8). */
+  readonly presets?: readonly ElementPreset<any>[];
 }
+
+

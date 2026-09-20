@@ -6,8 +6,8 @@
   height: 100%;
   box-sizing: border-box;
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 400;
+  font-family: var(--lw-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  font-weight: 500;
   line-height: 1.5;
   text-align: center;
   text-decoration: none;
@@ -19,15 +19,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   transition:
-    color 0.15s ease-in-out,
-    background-color 0.15s ease-in-out,
-    border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+    color var(--lw-motion-fast, 0.15s) ease-in-out,
+    background-color var(--lw-motion-fast, 0.15s) ease-in-out,
+    border-color var(--lw-motion-fast, 0.15s) ease-in-out,
+    box-shadow var(--lw-motion-fast, 0.15s) ease-in-out,
+    transform var(--lw-motion-fast, 0.08s) ease;
+}
+
+.btn:active:not(:disabled):not(.btnDisabled) {
+  transform: scale(0.98);
 }
 
 .btn:focus-visible {
   outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem var(--lw-color-primary-muted, rgba(13, 110, 253, 0.25));
 }
 
 .btn:disabled,
@@ -52,23 +57,24 @@
 }
 
 .formaRedondeado {
-  border-radius: 0.375rem;
+  border-radius: var(--lw-radius-md, 0.375rem);
 }
 
 .formaPill {
-  border-radius: 50rem;
+  border-radius: var(--lw-radius-full, 50rem);
 }
 
 /* Solid */
 .primary {
   color: #fff;
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  background-color: var(--lw-color-primary, #0d6efd);
+  border-color: var(--lw-color-primary, #0d6efd);
 }
 .primary:hover:not(:disabled) {
   color: #fff;
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: var(--lw-color-primary, #0b5ed7);
+  border-color: var(--lw-color-primary, #0a58ca);
+  filter: brightness(0.92);
 }
 
 .secondary {
@@ -149,25 +155,26 @@
 }
 
 .link {
-  color: #0d6efd;
+  color: var(--lw-color-primary, #0d6efd);
   background-color: transparent;
   border-color: transparent;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .link:hover:not(:disabled) {
-  color: #0a58ca;
+  color: var(--lw-color-primary, #0a58ca);
+  filter: brightness(0.85);
 }
 
 /* Outline */
 .outlinePrimary {
-  color: #0d6efd;
+  color: var(--lw-color-primary, #0d6efd);
   background-color: transparent;
-  border-color: #0d6efd;
+  border-color: var(--lw-color-primary, #0d6efd);
 }
 .outlinePrimary:hover:not(:disabled) {
   color: #fff;
-  background-color: #0d6efd;
+  background-color: var(--lw-color-primary, #0d6efd);
 }
 
 .outlineSecondary {
