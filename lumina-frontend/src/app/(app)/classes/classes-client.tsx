@@ -25,12 +25,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCourses } from '@/hooks/api/use-courses';
 import {
   useClasses,
+  useEnrolledClasses,
   useCreateClass,
   useUpdateClass,
   useDeleteClass,
   type Class,
 } from '@/hooks/api/use-classes';
 import { useClass } from '@/hooks/api/use-class';
+import { StudentEnrolledClassCard } from './components/student-enrolled-class-card';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -524,6 +526,7 @@ export function ClassesClient() {
   const isStudent = user?.role === 'STUDENT';
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
+  const [studentTab, setStudentTab] = useState<'classes' | 'presentations'>('classes');
   const [coursePick, setCoursePick] = useState<string | null>(null);
   const selectedCourseId = isStudent ? '' : (coursePick ?? courses[0]?.id ?? '');
   const [formOpen, setFormOpen] = useState(false);
@@ -532,21 +535,38 @@ export function ClassesClient() {
     cls: null,
   });
 
+  // Clases matriculadas para estudiantes (GET /classes/enrolled)
+  const {
+    data: enrolledClasses = [],
+    isLoading: enrolledLoading,
+    isError: enrolledError,
+  } = useEnrolledClasses({
+    enabled: isStudent,
+  });
+
+  // Presentaciones personales para estudiantes o clases del curso para docentes
   const {
     data: classes = [],
     isLoading: classesLoading,
     isError: classesError,
   } = useClasses(isStudent ? undefined : selectedCourseId, {
-    enabled: isStudent || !!selectedCourseId,
+    enabled: isStudent ? studentTab === 'presentations' : !!selectedCourseId,
   });
 
   function handleDelete(cls: Class) {
     setDeleteDialog({ open: true, cls });
   }
 
-  const bannerTitle = isStudent ? 'Mis Presentaciones' : 'Mis Clases';
+  const bannerTitle = isStudent
+    ? studentTab === 'classes'
+      ? 'Mis Clases'
+      : 'Mis Presentaciones'
+    : 'Mis Clases';
+
   const bannerSubtitle = isStudent
-    ? `${classes.length} presentación${classes.length !== 1 ? 'es' : ''} · Crea y organiza tus presentaciones interactivas`
+    ? studentTab === 'classes'
+      ? `${enrolledClasses.length} clase${enrolledClasses.length !== 1 ? 's' : ''} en tus cursos matriculados`
+      : `${classes.length} presentación${classes.length !== 1 ? 'es' : ''} · Crea y organiza tus presentaciones interactivas`
     : selectedCourseId
       ? `${classes.length} clase${classes.length !== 1 ? 's' : ''} · Gestiona y organiza tu contenido`
       : 'Selecciona un curso para ver tus clases';
@@ -558,177 +578,274 @@ export function ClassesClient() {
         subtitle={bannerSubtitle}
         backHref="/dashboard"
         action={
-          <button
-            type="button"
-            disabled={!isStudent && !selectedCourseId}
-            onClick={() => {
-              setFormOpen(true);
-            }}
-            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isStudent ? '＋ Nueva presentación' : '＋ Nueva clase'}
-          </button>
+          isStudent ? (
+            studentTab === 'presentations' ? (
+              <button
+                type="button"
+                onClick={() => setFormOpen(true)}
+                className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+              >
+                ＋ Nueva presentación
+              </button>
+            ) : null
+          ) : (
+            <button
+              type="button"
+              disabled={!selectedCourseId}
+              onClick={() => {
+                setFormOpen(true);
+              }}
+              className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ＋ Nueva clase
+            </button>
+          )
         }
       />
 
       <div className="px-6 pt-4 space-y-4">
-      {/* Course selector (Docentes) */}
-      {!isStudent && (
-        <div className="flex flex-wrap items-center gap-3">
-          <label
-            htmlFor="course-select"
-            className="text-sm font-medium text-foreground shrink-0"
-          >
-            Curso:
-          </label>
-          {coursesLoading ? (
-            <Skeleton className="h-8.5 w-56" />
-          ) : courses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay cursos disponibles.</p>
-          ) : (
-            <select
-              id="course-select"
-              value={selectedCourseId}
-              onChange={(e) => setCoursePick(e.target.value)}
-              className="h-8.5 min-w-0 w-full flex-1 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground sm:w-auto sm:min-w-[14rem] sm:flex-none"
+        {/* Pestañas para estudiante (Mis Clases vs Mis Presentaciones) */}
+        {isStudent && (
+          <div className="flex border-b border-[#e5e7eb] gap-6 mb-2">
+            <button
+              type="button"
+              onClick={() => setStudentTab('classes')}
+              className={cn(
+                'pb-3 text-sm font-bold transition-all relative flex items-center gap-2',
+                studentTab === 'classes'
+                  ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
+                  : 'text-gray-500 hover:text-gray-800',
+              )}
             >
-              <option value="" disabled>
-                Selecciona un curso
-              </option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.code})
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
-
-      {/* Error */}
-      {classesError && (
-        <Alert variant="destructive" appearance="light">
-          <AlertIcon>
-            <AlertCircle />
-          </AlertIcon>
-          <AlertContent>
-            <AlertTitle>
-              {isStudent
-                ? 'No se pudieron cargar las presentaciones.'
-                : 'No se pudieron cargar las clases.'}
-            </AlertTitle>
-          </AlertContent>
-        </Alert>
-      )}
-
-      {/* Table card */}
-      <Card>
-        <CardHeader>
-          <CardHeading>
-            <CardTitle>
-              {isStudent
-                ? 'Mis presentaciones personales'
-                : selectedCourseId
-                  ? `Clases de ${courses.find((c) => c.id === selectedCourseId)?.name ?? 'curso seleccionado'}`
-                  : 'Clases'}
-            </CardTitle>
-          </CardHeading>
-          {(isStudent || selectedCourseId) && (
-            <CardToolbar>
-              <span className="text-sm text-muted-foreground">
-                {classesLoading
-                  ? '...'
-                  : `${classes.length} ${
-                      isStudent
-                        ? `presentación${classes.length !== 1 ? 'es' : ''}`
-                        : `clase${classes.length !== 1 ? 's' : ''}`
-                    }`}
+              <span>Clases de mis cursos</span>
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                {enrolledClasses.length}
               </span>
-            </CardToolbar>
-          )}
-        </CardHeader>
-        <CardContent className="p-4">
-          {!isStudent && !selectedCourseId ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <GraduationCap className="size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Selecciona un curso para ver sus clases.
-              </p>
-            </div>
-          ) : classesLoading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
-                >
-                  <Skeleton className="aspect-[4/3] w-full rounded-none" />
-                  <div className="space-y-2 p-3">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-3 w-24" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setStudentTab('presentations')}
+              className={cn(
+                'pb-3 text-sm font-bold transition-all relative flex items-center gap-2',
+                studentTab === 'presentations'
+                  ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
+                  : 'text-gray-500 hover:text-gray-800',
+              )}
+            >
+              <span>Mis presentaciones</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                {classes.length}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Selector de curso (Docentes) */}
+        {!isStudent && (
+          <div className="flex flex-wrap items-center gap-3">
+            <label
+              htmlFor="course-select"
+              className="text-sm font-medium text-foreground shrink-0"
+            >
+              Curso:
+            </label>
+            {coursesLoading ? (
+              <Skeleton className="h-8.5 w-56" />
+            ) : courses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay cursos disponibles.</p>
+            ) : (
+              <select
+                id="course-select"
+                value={selectedCourseId}
+                onChange={(e) => setCoursePick(e.target.value)}
+                className="h-8.5 min-w-0 w-full flex-1 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground sm:w-auto sm:min-w-[14rem] sm:flex-none"
+              >
+                <option value="" disabled>
+                  Selecciona un curso
+                </option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.code})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        {/* Error */}
+        {(classesError || enrolledError) && (
+          <Alert variant="destructive" appearance="light">
+            <AlertIcon>
+              <AlertCircle />
+            </AlertIcon>
+            <AlertContent>
+              <AlertTitle>
+                No se pudieron cargar los datos de las clases.
+              </AlertTitle>
+            </AlertContent>
+          </Alert>
+        )}
+
+        {/* Contenido: Si estudiante está en pestaña 'classes' */}
+        {isStudent && studentTab === 'classes' ? (
+          <Card>
+            <CardHeader>
+              <CardHeading>
+                <CardTitle>Clases asignadas en tus cursos</CardTitle>
+              </CardHeading>
+              <CardToolbar>
+                <span className="text-sm text-muted-foreground">
+                  {enrolledLoading ? '...' : `${enrolledClasses.length} clase${enrolledClasses.length !== 1 ? 's' : ''}`}
+                </span>
+              </CardToolbar>
+            </CardHeader>
+            <CardContent className="p-4">
+              {enrolledLoading ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="overflow-hidden rounded-xl border border-zinc-200"
+                    >
+                      <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                      <div className="space-y-2 p-3">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : enrolledClasses.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-16 text-center">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                    <BookOpen className="size-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium">No hay clases asignadas aún</p>
+                    <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+                      Cuando tus docentes publiquen clases en los cursos donde estás inscrito, las verás reflejadas aquí.
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : classes.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 py-16 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                {isStudent ? (
-                  <BookOpen className="size-6 text-muted-foreground" />
-                ) : (
-                  <GraduationCap className="size-6 text-muted-foreground" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">
-                  {isStudent ? 'No tienes presentaciones aún' : 'No hay clases aún'}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {enrolledClasses.map((cls, index) => (
+                    <StudentEnrolledClassCard key={cls.id} cls={cls} index={index} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardHeading>
+                <CardTitle>
                   {isStudent
-                    ? 'Crea tu primera presentación interactiva para comenzar.'
-                    : 'Crea la primera clase para este curso.'}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setFormOpen(true);
-                }}
-              >
-                <Plus className="size-4" />
-                {isStudent ? 'Crear primera presentación' : 'Crear primera clase'}
-              </Button>
-            </div>
-          ) : (
-            <ClassesGrid
-              classes={classes}
-              courseId={selectedCourseId}
-              onDelete={handleDelete}
-              isStudent={isStudent}
-            />
-          )}
-        </CardContent>
-      </Card>
+                    ? 'Mis presentaciones personales'
+                    : selectedCourseId
+                      ? `Clases de ${courses.find((c) => c.id === selectedCourseId)?.name ?? 'curso seleccionado'}`
+                      : 'Clases'}
+                </CardTitle>
+              </CardHeading>
+              {(isStudent || selectedCourseId) && (
+                <CardToolbar>
+                  <span className="text-sm text-muted-foreground">
+                    {classesLoading
+                      ? '...'
+                      : `${classes.length} ${
+                          isStudent
+                            ? `presentación${classes.length !== 1 ? 'es' : ''}`
+                            : `clase${classes.length !== 1 ? 's' : ''}`
+                        }`}
+                  </span>
+                </CardToolbar>
+              )}
+            </CardHeader>
+            <CardContent className="p-4">
+              {!isStudent && !selectedCourseId ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <GraduationCap className="size-10 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Selecciona un curso para ver sus clases.
+                  </p>
+                </div>
+              ) : classesLoading ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
+                    >
+                      <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                      <div className="space-y-2 p-3">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : classes.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-16 text-center">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                    {isStudent ? (
+                      <BookOpen className="size-6 text-muted-foreground" />
+                    ) : (
+                      <GraduationCap className="size-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {isStudent ? 'No tienes presentaciones aún' : 'No hay clases aún'}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {isStudent
+                        ? 'Crea tu primera presentación interactiva para comenzar.'
+                        : 'Crea la primera clase para este curso.'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setFormOpen(true);
+                    }}
+                  >
+                    <Plus className="size-4" />
+                    {isStudent ? 'Crear primera presentación' : 'Crear primera clase'}
+                  </Button>
+                </div>
+              ) : (
+                <ClassesGrid
+                  classes={classes}
+                  courseId={selectedCourseId}
+                  onDelete={handleDelete}
+                  isStudent={isStudent}
+                />
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Create / Edit modal */}
-      {(isStudent || selectedCourseId) && (
-        <ClassFormModal
+        {/* Create / Edit modal */}
+        {((isStudent && studentTab === 'presentations') || (!isStudent && selectedCourseId)) && (
+          <ClassFormModal
+            courseId={selectedCourseId}
+            open={formOpen}
+            onOpenChange={setFormOpen}
+            isStudent={isStudent}
+          />
+        )}
+
+        {/* Delete dialog */}
+        <DeleteDialog
+          cls={deleteDialog.cls}
           courseId={selectedCourseId}
-          open={formOpen}
-          onOpenChange={setFormOpen}
+          open={deleteDialog.open}
+          onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
           isStudent={isStudent}
         />
-      )}
-
-      {/* Delete dialog */}
-      <DeleteDialog
-        cls={deleteDialog.cls}
-        courseId={selectedCourseId}
-        open={deleteDialog.open}
-        onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
-        isStudent={isStudent}
-      />
       </div>
     </div>
   );

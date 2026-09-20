@@ -54,6 +54,13 @@ export class ClassesController {
     return this.classesService.findAllByCourse(courseId, user.id, user.role);
   }
 
+  @Get('enrolled')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STUDENT', 'ADMIN', 'SUPERADMIN')
+  findEnrolled(@CurrentUser() user: JwtAuthUser) {
+    return this.classesService.findEnrolledClasses(user.id);
+  }
+
   @Get('join/:codigo')
   findByCodigo(@Param('codigo') codigo: string) {
     return this.classesService.findByCodigo(codigo);

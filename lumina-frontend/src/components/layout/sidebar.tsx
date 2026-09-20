@@ -92,7 +92,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Cursos', href: '/courses', icon: 'courses', hideForAdmin: true },
   {
     label: 'Mis Clases',
-    studentLabel: 'Mis Presentaciones',
     href: '/classes',
     icon: 'classes',
     hideForAdmin: true,

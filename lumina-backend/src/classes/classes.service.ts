@@ -181,6 +181,107 @@ export class ClassesService {
     });
   }
 
+  async findEnrolledClasses(userId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId },
+      select: { courseId: true },
+    });
+
+    const courseIds = enrollments.map((e) => e.courseId);
+    if (courseIds.length === 0) {
+      return [];
+    }
+
+    const classes = await this.prisma.class.findMany({
+      where: {
+        courseId: { in: courseIds },
+        status: { notIn: ['ARCHIVED', 'DRAFT'] },
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        code: true,
+        codigo: true,
+        status: true,
+        modoEntrega: true,
+        courseId: true,
+        createdAt: true,
+        course: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        slides: {
+          orderBy: { order: 'asc' },
+          take: 1,
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            content: true,
+          },
+        },
+        sessions: {
+          where: { endedAt: null },
+          take: 1,
+          select: { id: true, startedAt: true },
+        },
+        autonomousSessions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            opensAt: true,
+            closesAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return classes.map((cls) => {
+      const isEnVivo = cls.modoEntrega !== 'autonomo';
+      const liveSession = cls.sessions[0];
+      const isLiveActive = Boolean(cls.status === 'LIVE' || liveSession);
+      const autonomousSession = cls.autonomousSessions[0] ?? null;
+
+      const isConfigured = isEnVivo
+        ? cls.status === 'PUBLISHED' || cls.status === 'LIVE'
+        : Boolean(
+            autonomousSession &&
+            (autonomousSession.status === 'open' ||
+              autonomousSession.status === 'scheduled'),
+          );
+
+      return {
+        id: cls.id,
+        title: cls.title,
+        description: cls.description,
+        codigo: cls.codigo ?? cls.code,
+        status: cls.status,
+        modoEntrega: cls.modoEntrega ?? 'clase',
+        courseId: cls.courseId,
+        createdAt: cls.createdAt,
+        course: cls.course,
+        coverSlide: cls.slides[0] ?? null,
+        isLiveActive,
+        autonomousSession: autonomousSession
+          ? {
+              id: autonomousSession.id,
+              status: autonomousSession.status,
+              opensAt: autonomousSession.opensAt,
+              closesAt: autonomousSession.closesAt,
+            }
+          : null,
+        isConfigured,
+      };
+    });
+  }
+
   async findByCodigo(codigo: string) {
     const codigoNormalizado = codigo.toUpperCase();
     const clase = await this.prisma.class.findFirst({

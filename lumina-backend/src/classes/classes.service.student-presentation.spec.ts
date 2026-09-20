@@ -32,6 +32,9 @@ describe('ClassesService - Student Presentations', () => {
     classSession: {
       findFirst: jest.fn(),
     },
+    enrollment: {
+      findMany: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
@@ -253,6 +256,89 @@ describe('ClassesService - Student Presentations', () => {
       await expect(
         service.findOne('class-draft', 'student-1', 'STUDENT'),
       ).rejects.toThrow('Clase no encontrada');
+    });
+  });
+
+  describe('findEnrolledClasses', () => {
+    it('retorna arreglo vacío si el estudiante no tiene cursos matriculados', async () => {
+      mockPrisma.enrollment.findMany.mockResolvedValueOnce([]);
+
+      const result = await service.findEnrolledClasses('student-sin-cursos');
+
+      expect(result).toEqual([]);
+      expect(mockPrisma.class.findMany).not.toHaveBeenCalled();
+    });
+
+    it('retorna clases matriculadas con bandera isConfigured y estado en vivo/autonomo', async () => {
+      mockPrisma.enrollment.findMany.mockResolvedValueOnce([
+        { courseId: 'course-1' },
+      ]);
+      mockPrisma.class.findMany.mockResolvedValueOnce([
+        {
+          id: 'class-1',
+          title: 'Historia 1',
+          description: 'Desc',
+          code: 'hist-1',
+          codigo: 'HIST1',
+          status: 'PUBLISHED',
+          modoEntrega: 'clase',
+          courseId: 'course-1',
+          createdAt: new Date(),
+          course: { id: 'course-1', name: 'Historia', code: 'HIS101' },
+          slides: [{ id: 's1', type: 'COVER', title: 'Portada', content: {} }],
+          sessions: [{ id: 'sess-live', startedAt: new Date() }],
+          autonomousSessions: [],
+        },
+        {
+          id: 'class-2',
+          title: 'Matemáticas Autónomo',
+          description: null,
+          code: 'mat-1',
+          codigo: 'MAT1',
+          status: 'PUBLISHED',
+          modoEntrega: 'autonomo',
+          courseId: 'course-1',
+          createdAt: new Date(),
+          course: { id: 'course-1', name: 'Matemáticas', code: 'MAT101' },
+          slides: [],
+          sessions: [],
+          autonomousSessions: [
+            {
+              id: 'auto-1',
+              status: 'scheduled',
+              opensAt: new Date(),
+              closesAt: new Date(),
+            },
+          ],
+        },
+        {
+          id: 'class-3',
+          title: 'Ciencias Sin Configurar',
+          description: null,
+          code: 'cie-1',
+          codigo: 'CIE1',
+          status: 'PUBLISHED',
+          modoEntrega: 'autonomo',
+          courseId: 'course-1',
+          createdAt: new Date(),
+          course: { id: 'course-1', name: 'Ciencias', code: 'CIE101' },
+          slides: [],
+          sessions: [],
+          autonomousSessions: [], // sin sesión autónoma
+        },
+      ]);
+
+      const result = await service.findEnrolledClasses('student-1');
+
+      expect(result).toHaveLength(3);
+      // Clase 1: En Vivo activa -> isConfigured = true, isLiveActive = true
+      expect(result[0].isConfigured).toBe(true);
+      expect(result[0].isLiveActive).toBe(true);
+      // Clase 2: Autónomo programado -> isConfigured = true
+      expect(result[1].isConfigured).toBe(true);
+      expect(result[1].autonomousSession?.status).toBe('scheduled');
+      // Clase 3: Autónomo sin sesión -> isConfigured = false
+      expect(result[2].isConfigured).toBe(false);
     });
   });
 });

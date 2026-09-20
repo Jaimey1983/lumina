@@ -58,6 +58,48 @@ export function useClassesByCourses(courseIds: string[]) {
   });
 }
 
+export interface EnrolledClass {
+  id: string;
+  title: string;
+  description?: string | null;
+  codigo?: string;
+  status: string;
+  modoEntrega: ClassModoEntrega;
+  courseId: string;
+  createdAt: string;
+  course: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  coverSlide?: {
+    id: string;
+    type: string;
+    title: string;
+    content?: unknown;
+  } | null;
+  isLiveActive: boolean;
+  autonomousSession?: {
+    id: string;
+    status: string;
+    opensAt: string;
+    closesAt: string;
+  } | null;
+  isConfigured: boolean;
+}
+
+export function useEnrolledClasses(options?: { enabled?: boolean; refetchInterval?: number }) {
+  return useQuery({
+    queryKey: ['classes', 'enrolled'],
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval ?? 15_000,
+    queryFn: async () => {
+      const { data } = await api.get<EnrolledClass[]>('/classes/enrolled');
+      return Array.isArray(data) ? data : [];
+    },
+  });
+}
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export interface CreateClassInput {
