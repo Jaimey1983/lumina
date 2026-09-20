@@ -24,7 +24,7 @@
 }
 
 .trigger:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--lw-color-primary, #2563eb);
   outline-offset: 2px;
 }
 
@@ -32,13 +32,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  color: var(--lw-color-primary, #2563eb);
 }
 
 .triggerText {
+  font-family: var(--lw-font-family, inherit);
   font-size: 14px;
   line-height: 1.2;
-  color: #2563eb;
+  color: var(--lw-color-primary, #2563eb);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-align: center;
@@ -52,8 +53,8 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+  background-color: var(--lw-color-primary, #2563eb);
+  box-shadow: 0 0 0 4px var(--lw-color-primary-muted, rgba(37, 99, 235, 0.2));
 }
 
 .bubble {
@@ -62,16 +63,17 @@
   width: max-content;
   max-width: var(--tooltip-width, 220px);
   padding: 8px 10px;
-  background-color: var(--tooltip-bg, #0f172a);
+  background-color: var(--tooltip-bg, var(--lw-color-nav, #0f172a));
   color: var(--tooltip-fg, #f8fafc);
-  border-radius: 6px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+  border-radius: var(--lw-radius-md, 6px);
+  box-shadow: var(--lw-shadow-md, 0 10px 25px -5px rgba(0, 0, 0, 0.2));
+  font-family: var(--lw-font-family, inherit);
   font-size: 12px;
   line-height: 1.4;
   white-space: pre-wrap;
   word-break: break-word;
   pointer-events: none;
-  transition: opacity 120ms ease, visibility 120ms ease;
+  transition: opacity var(--lw-motion-fast, 120ms) ease, visibility var(--lw-motion-fast, 120ms) ease;
 }
 
 .bubbleHidden {

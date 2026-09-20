@@ -22,10 +22,10 @@
 .markerDot {
   position: relative;
   border-radius: 50%;
-  background-color: var(--hotspot-pulse-color, #ef4444);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: var(--hotspot-pulse-color, var(--lw-color-primary, #ef4444));
+  box-shadow: var(--lw-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.2));
   z-index: 2;
-  transition: transform 0.2s ease;
+  transition: transform var(--lw-motion-fast, 0.2s) ease;
 }
 
 .markerDot:hover {
@@ -38,7 +38,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background-color: var(--hotspot-pulse-color, #ef4444);
+  background-color: var(--hotspot-pulse-color, var(--lw-color-primary, #ef4444));
   z-index: 1;
   opacity: 0;
   animation: hotspotPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -91,10 +91,11 @@
   z-index: 50;
   width: var(--hotspot-bubble-width, 280px);
   height: auto;
-  background-color: var(--hotspot-bubble-bg, #ffffff);
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: var(--hotspot-bubble-bg, var(--lw-color-surface, #ffffff));
+  border-radius: var(--lw-radius-lg, 8px);
+  box-shadow: var(--lw-shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--lw-color-border, rgba(0, 0, 0, 0.05));
+  font-family: var(--lw-font-family, inherit);
   display: flex;
   flex-direction: column;
   align-items: stretch;
