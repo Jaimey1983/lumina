@@ -9,6 +9,13 @@ import {
 } from "../../blocks/diagrama/index.js";
 import { diagramaDefinition } from "./diagrama-definition.js";
 
+/** Normaliza IDs de `useId` (Radix `Collapsible` de "Plantillas Pedagógicas") para comparar el DOM visible, no el handle React. */
+function domVisible(container: HTMLElement): string {
+  return container.innerHTML
+    .replace(/id="radix-[^"]+"/g, 'id="__radix__"')
+    .replace(/aria-[a-z]+="radix-[^"]+"/g, 'aria-attr="__radix__"');
+}
+
 describe("Diagrama — paridad legacy / ElementDefinition (E4.2)", () => {
   it("crea el mapa mental canónico sin puntuación y se registra una sola vez", async () => {
     expect({ ...diagramaDefinition.crearPorDefecto(), id: "" })
@@ -62,7 +69,7 @@ describe("Diagrama — paridad legacy / ElementDefinition (E4.2)", () => {
       const nuevo = render(
         <diagramaDefinition.Propiedades estado={estado} config={{}} onChange={nuevoChange} onConfigChange={() => undefined} />,
       );
-      expect(nuevo.container.innerHTML).toBe(legacy.container.innerHTML);
+      expect(domVisible(nuevo.container)).toBe(domVisible(legacy.container));
       vi.useFakeTimers();
       try {
         const inputLegacy = legacy.container.querySelector("input");
