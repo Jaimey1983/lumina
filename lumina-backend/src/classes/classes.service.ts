@@ -51,13 +51,48 @@ export class ClassesService {
 
   // ─── CLASES ────────────────────────────────────────────
 
-  async create(dto: CreateClassDto, userId: string) {
+  async create(dto: CreateClassDto, userId: string, userRole?: string) {
+    const isStudent = userRole === 'STUDENT';
+    const isPersonalPresentation = !dto.courseId || isStudent;
+
+    if (isPersonalPresentation) {
+      const codigo = await this.generarCodigoUnico();
+      return this.prisma.class.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          code: nanoid(8),
+          codigo: codigo.toUpperCase(),
+          courseId: null,
+          authorId: userId,
+          modoEntrega: 'presentacion',
+          status: 'PUBLISHED',
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          code: true,
+          codigo: true,
+          status: true,
+          modoEntrega: true,
+          courseId: true,
+          authorId: true,
+          createdAt: true,
+        },
+      });
+    }
+
     const course = await this.prisma.course.findUnique({
       where: { id: dto.courseId },
       select: { id: true, teacherId: true },
     });
     if (!course) throw new NotFoundException('Curso no encontrado');
-    if (course.teacherId !== userId) {
+    if (
+      course.teacherId !== userId &&
+      userRole !== 'ADMIN' &&
+      userRole !== 'SUPERADMIN'
+    ) {
       throw new ForbiddenException(
         'No tienes permiso para crear clases en este curso',
       );
@@ -72,6 +107,8 @@ export class ClassesService {
         code: nanoid(8),
         codigo: codigo.toUpperCase(),
         courseId: dto.courseId,
+        authorId: userId,
+        modoEntrega: dto.modoEntrega || 'clase',
       },
       select: {
         id: true,
@@ -80,26 +117,63 @@ export class ClassesService {
         code: true,
         codigo: true,
         status: true,
+        modoEntrega: true,
         courseId: true,
+        authorId: true,
         createdAt: true,
       },
     });
   }
 
-  async findAllByCourse(courseId: string, userId: string, userRole: string) {
+  async findAllByCourse(
+    courseId: string | undefined,
+    userId: string,
+    userRole: string,
+  ) {
+    if (!courseId) {
+      return this.prisma.class.findMany({
+        where: {
+          authorId: userId,
+          courseId: null,
+          status: { not: 'ARCHIVED' },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          code: true,
+          status: true,
+          modoEntrega: true,
+          authorId: true,
+          courseId: true,
+          createdAt: true,
+          _count: { select: { slides: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
 
+    const where: Prisma.ClassWhereInput = {
+      courseId,
+      status:
+        userRole === 'STUDENT'
+          ? { notIn: ['ARCHIVED', 'DRAFT'] }
+          : { not: 'ARCHIVED' },
+    };
+
     return this.prisma.class.findMany({
-      where: {
-        courseId,
-        status: { not: 'ARCHIVED' },
-      },
+      where,
       select: {
         id: true,
         title: true,
         description: true,
         code: true,
         status: true,
+        modoEntrega: true,
+        authorId: true,
+        courseId: true,
         createdAt: true,
         _count: { select: { slides: true } },
       },
@@ -222,7 +296,7 @@ export class ClassesService {
     return { valid: true, studentName: user.name };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string, userRole?: string) {
     const cls = await this.prisma.class.findUnique({
       where: { id },
       select: {
@@ -236,6 +310,7 @@ export class ClassesService {
         timerGlobal: true,
         background: true,
         courseId: true,
+        authorId: true,
         desempeno: true,
         createdAt: true,
         updatedAt: true,
@@ -255,6 +330,18 @@ export class ClassesService {
     });
     if (!cls) throw new NotFoundException('Clase no encontrada');
 
+    if (!cls.courseId && cls.authorId && userId) {
+      if (
+        cls.authorId !== userId &&
+        userRole !== 'ADMIN' &&
+        userRole !== 'SUPERADMIN'
+      ) {
+        throw new ForbiddenException(
+          'No tienes permiso para acceder a esta presentación',
+        );
+      }
+    }
+
     const activeSession = await this.prisma.classSession.findFirst({
       where: { classId: id, endedAt: null },
       select: { id: true },
@@ -270,7 +357,7 @@ export class ClassesService {
 
   async update(id: string, dto: UpdateClassDto, userId: string) {
     const cls = await this.findOneRaw(id);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const { desempeno, status, ...rest } = dto;
     return this.prisma.class.update({
@@ -297,7 +384,7 @@ export class ClassesService {
 
   async publish(id: string, userId: string) {
     const cls = await this.findOneRaw(id);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     return this.prisma.class.update({
       where: { id },
@@ -308,7 +395,7 @@ export class ClassesService {
 
   async remove(id: string, userId: string) {
     const cls = await this.findOneRaw(id);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     return this.prisma.class.update({
       where: { id },
@@ -873,7 +960,7 @@ export class ClassesService {
 
   async addSlide(classId: string, dto: CreateSlideDto, userId: string) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const lastSlide = await this.prisma.slide.findFirst({
       where: { classId },
@@ -909,7 +996,7 @@ export class ClassesService {
     userId: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const slide = await this.prisma.slide.findUnique({
       where: { id: slideId },
@@ -964,7 +1051,7 @@ export class ClassesService {
 
   async removeSlide(classId: string, slideId: string, userId: string) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const slide = await this.prisma.slide.findUnique({
       where: { id: slideId },
@@ -998,7 +1085,7 @@ export class ClassesService {
     order: { id: string; order: number }[],
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const slides = await this.prisma.slide.findMany({
       where: { classId },
@@ -1034,7 +1121,7 @@ export class ClassesService {
     dto: CreateSlideDto,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.slide.updateMany({
@@ -1069,7 +1156,7 @@ export class ClassesService {
 
   async getSlideVersions(classId: string, slideId: string, userId: string) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
@@ -1097,7 +1184,7 @@ export class ClassesService {
     userId: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
@@ -1134,7 +1221,7 @@ export class ClassesService {
     userId: string,
   ) {
     const cls = await this.findOneRaw(classId);
-    await this.verifyTeacherOwnership(cls.courseId, userId);
+    await this.verifyOwnership(cls, userId);
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
@@ -1186,13 +1273,50 @@ export class ClassesService {
   private async findOneRaw(id: string) {
     const cls = await this.prisma.class.findUnique({
       where: { id },
-      select: { id: true, courseId: true, status: true },
+      select: { id: true, courseId: true, authorId: true, status: true },
     });
     if (!cls) throw new NotFoundException('Clase no encontrada');
     return cls;
   }
 
-  private async verifyTeacherOwnership(courseId: string, userId: string) {
+  private async verifyOwnership(
+    cls: { id: string; courseId: string | null; authorId: string | null },
+    userId: string,
+  ) {
+    // Si la clase no tiene courseId (presentación personal)
+    if (!cls.courseId) {
+      if (cls.authorId !== userId) {
+        throw new ForbiddenException(
+          'No tienes permiso para modificar esta presentación',
+        );
+      }
+      return;
+    }
+    // Si el usuario es el autor directo de la clase/presentación
+    if (cls.authorId && cls.authorId === userId) {
+      return;
+    }
+    // Si es clase de curso, verificar que sea el profesor titular
+    const course = await this.prisma.course.findUnique({
+      where: { id: cls.courseId },
+      select: { teacherId: true },
+    });
+    if (!course || course.teacherId !== userId) {
+      throw new ForbiddenException(
+        'No tienes permiso para modificar esta clase',
+      );
+    }
+  }
+
+  private async verifyTeacherOwnership(
+    courseId: string | null | undefined,
+    userId: string,
+  ) {
+    if (!courseId) {
+      throw new ForbiddenException(
+        'Operación permitida únicamente para clases asociadas a un curso',
+      );
+    }
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       select: { teacherId: true },

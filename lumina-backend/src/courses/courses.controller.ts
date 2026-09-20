@@ -17,6 +17,7 @@ import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
+import { JoinCourseDto } from './dto/join-course.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -25,6 +26,13 @@ import { Roles } from '../auth/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
+
+  // POST /courses/join
+  @Post('join')
+  @Roles('STUDENT', 'TEACHER', 'ADMIN', 'SUPERADMIN')
+  joinByCode(@Body() dto: JoinCourseDto, @CurrentUser() user: JwtAuthUser) {
+    return this.coursesService.joinByCode(dto.code, user.id);
+  }
 
   // POST /courses
   @Post()

@@ -244,4 +244,47 @@ export class CoursesService {
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
+
+  async joinByCode(code: string, userId: string) {
+    const cleanCode = code?.trim();
+    if (!cleanCode) {
+      throw new BadRequestException('El código del curso es obligatorio');
+    }
+    const course = await this.prisma.course.findFirst({
+      where: {
+        code: { equals: cleanCode, mode: 'insensitive' },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        description: true,
+        area: true,
+        grado: true,
+        teacher: { select: { id: true, name: true, lastName: true } },
+      },
+    });
+    if (!course) {
+      throw new NotFoundException(
+        `No se encontró un curso activo con el código "${cleanCode}"`,
+      );
+    }
+
+    const existing = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId: course.id } },
+    });
+    if (existing) {
+      throw new ConflictException('Ya estás matriculado en este curso');
+    }
+
+    await this.prisma.enrollment.create({
+      data: { userId, courseId: course.id },
+    });
+
+    return {
+      message: 'Te has unido exitosamente al curso',
+      course,
+    };
+  }
 }

@@ -10,13 +10,19 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { isLoading, token } = useAuth();
+  const { isLoading, token, user } = useAuth();
   const router = useRouter();
 
   const isViewerRoute = /^\/classes\/[^/]+\/viewer/.test(pathname);
   const isPresentRoute = pathname.startsWith('/classes/') && pathname.endsWith('/present');
   const isJoinRoute = /^\/join\//.test(pathname);
   const isClassEndedRoute = pathname === '/class-ended';
+
+  const isForbiddenForStudent =
+    user?.role === 'STUDENT' &&
+    (pathname.startsWith('/edu') ||
+      pathname.startsWith('/analytics') ||
+      pathname.startsWith('/admin'));
 
   useEffect(() => {
     if (
@@ -28,10 +34,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       !token
     ) {
       router.replace('/login');
+      return;
+    }
+
+    if (!isLoading && token && isForbiddenForStudent) {
+      router.replace('/dashboard');
     }
   }, [
     isLoading,
     token,
+    isForbiddenForStudent,
     router,
     isViewerRoute,
     isPresentRoute,
@@ -43,7 +55,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  if (isLoading || !token) {
+  if (isLoading || !token || isForbiddenForStudent) {
     return <ScreenLoader />;
   }
 

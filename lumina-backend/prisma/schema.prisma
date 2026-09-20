@@ -36,6 +36,7 @@ model User {
   preferredAiProvider     AiProvider?
   teacherAiKeys           TeacherAiKey[]
   passwordResetTokens     PasswordResetToken[]
+  authoredClasses         Class[]                @relation("AuthorClasses")
 
   // ─── SUPERADMIN / verificación docente (PR1: solo estructura) ──────────────
   // Soft delete. Requiere filtrar `deletedAt: null` en TODAS las queries de
@@ -222,7 +223,8 @@ model Class {
    * Segundos por defecto del temporizador en vivo (0 = desactivado).
    */
   timerGlobal        Int                    @default(0)
-  courseId           String
+  courseId           String?
+  authorId           String?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   desempeno          Json?
@@ -234,7 +236,8 @@ model Class {
   results            ClassResult[]
   guests             ClassGuest[]
   sessions           ClassSession[]
-  course             Course                 @relation(fields: [courseId], references: [id])
+  course             Course?                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author             User?                  @relation("AuthorClasses", fields: [authorId], references: [id], onDelete: Cascade)
   collabNotes        CollabNote[]
   slides             Slide[]
   whiteboardSessions WhiteboardSession[]

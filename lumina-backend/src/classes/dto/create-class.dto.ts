@@ -13,6 +13,11 @@ export class CreateClassDto {
   @Transform(trimIfString)
   description?: string;
 
+  @IsOptional()
   @IsString()
-  courseId: string;
+  courseId?: string;
+
+  @IsOptional()
+  @IsString()
+  modoEntrega?: string;
 }

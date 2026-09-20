@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   BookOpen,
   Calendar,
+  Eye,
   GraduationCap,
   LayoutGrid,
   ListTree,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useAuth } from '@/hooks/use-auth';
 import { useCourse } from '@/hooks/api/use-course';
 import { useCourseStudents, type Student } from '@/hooks/api/use-students';
 import {
@@ -244,6 +246,8 @@ function EnrollModal({
 // ─── Students Tab ─────────────────────────────────────────────────────────────
 
 function StudentsTab({ courseId }: { courseId: string }) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const [enrollOpen, setEnrollOpen] = useState(false);
   const { data: students = [], isLoading, isError } = useCourseStudents(courseId);
 
@@ -298,12 +302,14 @@ function StudentsTab({ courseId }: { courseId: string }) {
           <CardHeading>
             <CardTitle>Estudiantes matriculados</CardTitle>
           </CardHeading>
-          <CardToolbar>
-            <Button size="sm" onClick={() => setEnrollOpen(true)}>
-              <Plus className="size-4" />
-              Matricular estudiante
-            </Button>
-          </CardToolbar>
+          {!isStudent && (
+            <CardToolbar>
+              <Button size="sm" onClick={() => setEnrollOpen(true)}>
+                <Plus className="size-4" />
+                Matricular estudiante
+              </Button>
+            </CardToolbar>
+          )}
         </CardHeader>
         <CardTable>
           {isLoading ? (
@@ -316,10 +322,12 @@ function StudentsTab({ courseId }: { courseId: string }) {
             <div className="flex flex-col items-center py-12 gap-3">
               <Users className="size-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">No hay estudiantes matriculados.</p>
-              <Button size="sm" variant="outline" onClick={() => setEnrollOpen(true)}>
-                <Plus className="size-4" />
-                Matricular primero
-              </Button>
+              {!isStudent && (
+                <Button size="sm" variant="outline" onClick={() => setEnrollOpen(true)}>
+                  <Plus className="size-4" />
+                  Matricular primero
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
@@ -352,7 +360,9 @@ function StudentsTab({ courseId }: { courseId: string }) {
         </CardTable>
       </Card>
 
-      <EnrollModal courseId={courseId} open={enrollOpen} onOpenChange={setEnrollOpen} />
+      {!isStudent && (
+        <EnrollModal courseId={courseId} open={enrollOpen} onOpenChange={setEnrollOpen} />
+      )}
     </div>
   );
 }
@@ -457,6 +467,8 @@ function NewClassModal({
 // ─── Classes Tab ──────────────────────────────────────────────────────────────
 
 function ClassesTab({ courseId }: { courseId: string }) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const [newClassOpen, setNewClassOpen] = useState(false);
   const { data: classes = [], isLoading, isError } = useClasses(courseId);
 
@@ -504,12 +516,21 @@ function ClassesTab({ courseId }: { courseId: string }) {
       header: '',
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <Link href={`/classes/${row.original.id}/editor`}>
-              <Pencil className="size-3.5" />
-              Editar
-            </Link>
-          </Button>
+          {isStudent ? (
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/classes/${row.original.id}/preview`}>
+                <Eye className="size-3.5" />
+                Ver
+              </Link>
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/classes/${row.original.id}/editor`}>
+                <Pencil className="size-3.5" />
+                Editar
+              </Link>
+            </Button>
+          )}
         </div>
       ),
     },
@@ -532,14 +553,16 @@ function ClassesTab({ courseId }: { courseId: string }) {
       <Card>
         <CardHeader>
           <CardHeading>
-            <CardTitle>Clases del curso</CardTitle>
+            <CardTitle>{isStudent ? 'Presentaciones del curso' : 'Clases del curso'}</CardTitle>
           </CardHeading>
-          <CardToolbar>
-            <Button size="sm" onClick={() => setNewClassOpen(true)}>
-              <Plus className="size-4" />
-              Nueva clase
-            </Button>
-          </CardToolbar>
+          {!isStudent && (
+            <CardToolbar>
+              <Button size="sm" onClick={() => setNewClassOpen(true)}>
+                <Plus className="size-4" />
+                Nueva clase
+              </Button>
+            </CardToolbar>
+          )}
         </CardHeader>
         <CardTable>
           {isLoading ? (
@@ -551,11 +574,17 @@ function ClassesTab({ courseId }: { courseId: string }) {
           ) : classes.length === 0 ? (
             <div className="flex flex-col items-center py-12 gap-3">
               <LayoutGrid className="size-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">No hay clases en este curso.</p>
-              <Button size="sm" variant="outline" onClick={() => setNewClassOpen(true)}>
-                <Plus className="size-4" />
-                Crear primera clase
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                {isStudent
+                  ? 'No hay presentaciones disponibles en este curso.'
+                  : 'No hay clases en este curso.'}
+              </p>
+              {!isStudent && (
+                <Button size="sm" variant="outline" onClick={() => setNewClassOpen(true)}>
+                  <Plus className="size-4" />
+                  Crear primera clase
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
@@ -588,7 +617,9 @@ function ClassesTab({ courseId }: { courseId: string }) {
         </CardTable>
       </Card>
 
-      <NewClassModal courseId={courseId} open={newClassOpen} onOpenChange={setNewClassOpen} />
+      {!isStudent && (
+        <NewClassModal courseId={courseId} open={newClassOpen} onOpenChange={setNewClassOpen} />
+      )}
     </div>
   );
 }
@@ -596,6 +627,8 @@ function ClassesTab({ courseId }: { courseId: string }) {
 // ─── Grades Tab ───────────────────────────────────────────────────────────────
 
 function GradesTab({ courseId }: { courseId: string }) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const [periodPick, setPeriodPick] = useState<string | null>(null);
   const { data: periods = [], isLoading: periodsLoading } = useCoursePeriods(courseId);
 
@@ -605,7 +638,10 @@ function GradesTab({ courseId }: { courseId: string }) {
       : (periods.find((p) => p.isActive)?.id ?? periods[0]?.id ?? '');
 
   const gradeQuery = useGradeCalculation(courseId, selectedPeriodId);
-  const grades = gradeQuery.data ?? [];
+  const allGrades = gradeQuery.data ?? [];
+  const grades = isStudent && user?.id
+    ? allGrades.filter((entry) => entry.studentId === user.id)
+    : allGrades;
 
   return (
     <div className="space-y-4">
@@ -700,6 +736,8 @@ function GradesTab({ courseId }: { courseId: string }) {
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export function CourseDetailClient({ id }: { id: string }) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const { data: course, isLoading } = useCourse(id);
 
   return (
@@ -736,16 +774,18 @@ export function CourseDetailClient({ id }: { id: string }) {
           </TabsTrigger>
           <TabsTrigger value="classes">
             <LayoutGrid />
-            Clases
+            {isStudent ? 'Presentaciones' : 'Clases'}
           </TabsTrigger>
           <TabsTrigger value="grades">
             <GraduationCap />
             Calificaciones
           </TabsTrigger>
-          <TabsTrigger value="structure">
-            <ListTree />
-            Estructura
-          </TabsTrigger>
+          {!isStudent && (
+            <TabsTrigger value="structure">
+              <ListTree />
+              Estructura
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="info">
@@ -760,9 +800,11 @@ export function CourseDetailClient({ id }: { id: string }) {
         <TabsContent value="grades">
           <GradesTab courseId={id} />
         </TabsContent>
-        <TabsContent value="structure">
-          <GradebookStructureTab courseId={id} />
-        </TabsContent>
+        {!isStudent && (
+          <TabsContent value="structure">
+            <GradebookStructureTab courseId={id} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

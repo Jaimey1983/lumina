@@ -40,15 +40,15 @@ export class ClassesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   create(@Body() dto: CreateClassDto, @CurrentUser() user: JwtAuthUser) {
-    return this.classesService.create(dto, user.id);
+    return this.classesService.create(dto, user.id, user.role);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
   findAll(
-    @Query('courseId') courseId: string,
+    @Query('courseId') courseId: string | undefined,
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.classesService.findAllByCourse(courseId, user.id, user.role);
@@ -73,13 +73,14 @@ export class ClassesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.classesService.findOne(id);
+  @UseGuards(JwtAuthGuard)
+  findOne(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
+    return this.classesService.findOne(id, user.id, user.role);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   update(
     @Param('id') id: string,
     @Body() dto: UpdateClassDto,
@@ -98,7 +99,7 @@ export class ClassesController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   remove(@Param('id') id: string, @CurrentUser() user: JwtAuthUser) {
     return this.classesService.remove(id, user.id);
   }
@@ -176,7 +177,7 @@ export class ClassesController {
 
   @Patch(':id/slides/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   reorderSlides(
     @Param('id') classId: string,
     @Body() body: { order: { id: string; order: number }[] },
@@ -187,7 +188,7 @@ export class ClassesController {
 
   @Post(':id/slides/insert')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   addSlideAtPosition(
     @Param('id') classId: string,
     @Body() body: { afterOrder: number; slide: CreateSlideDto },
@@ -203,7 +204,7 @@ export class ClassesController {
 
   @Post(':id/slides')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   addSlide(
     @Param('id') classId: string,
     @Body() dto: CreateSlideDto,
@@ -213,7 +214,8 @@ export class ClassesController {
   }
 
   @Get(':id/slides/:slideId/versions')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   getSlideVersions(
     @Param('id') classId: string,
     @Param('slideId') slideId: string,
@@ -223,7 +225,8 @@ export class ClassesController {
   }
 
   @Post(':id/slides/:slideId/versions')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   createSlideVersion(
     @Param('id') classId: string,
     @Param('slideId') slideId: string,
@@ -239,7 +242,8 @@ export class ClassesController {
   }
 
   @Post(':id/slides/:slideId/versions/:versionId/restore')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   restoreSlideVersion(
     @Param('id') classId: string,
     @Param('slideId') slideId: string,
@@ -256,7 +260,7 @@ export class ClassesController {
 
   @Patch(':id/slides/:slideId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   updateSlide(
     @Param('id') classId: string,
     @Param('slideId') slideId: string,
@@ -269,7 +273,7 @@ export class ClassesController {
   @Delete(':id/slides/:slideId')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN', 'STUDENT')
   removeSlide(
     @Param('id') classId: string,
     @Param('slideId') slideId: string,

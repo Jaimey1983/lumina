@@ -9,6 +9,7 @@ describe('CoursesService', () => {
   const mockPrisma = {
     course: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
       create: jest.fn(),
@@ -93,6 +94,51 @@ describe('CoursesService', () => {
         'course-1',
         'random-user',
         'TEACHER',
+      );
+    });
+  });
+
+  describe('joinByCode (auto-matriculación de estudiante)', () => {
+    it('matricula exitosamente al estudiante con código válido', async () => {
+      mockPrisma.course.findFirst = jest.fn().mockResolvedValueOnce({
+        id: 'c-1',
+        name: 'Matemáticas',
+        code: 'MAT-101',
+      });
+      mockPrisma.enrollment.findUnique.mockResolvedValueOnce(null);
+      mockPrisma.enrollment.create.mockResolvedValueOnce({
+        id: 'enr-1',
+        userId: 'student-1',
+        courseId: 'c-1',
+      });
+
+      const res = await service.joinByCode('MAT-101', 'student-1');
+      expect(res.message).toContain('exitosamente');
+      expect(mockPrisma.enrollment.create).toHaveBeenCalledWith({
+        data: { userId: 'student-1', courseId: 'c-1' },
+      });
+    });
+
+    it('falla con 404 si el curso no existe o no está activo', async () => {
+      mockPrisma.course.findFirst = jest.fn().mockResolvedValueOnce(null);
+      await expect(
+        service.joinByCode('INVALID-CODE', 'student-1'),
+      ).rejects.toThrow('No se encontró un curso activo');
+    });
+
+    it('falla con 409 si el estudiante ya está matriculado', async () => {
+      mockPrisma.course.findFirst = jest.fn().mockResolvedValueOnce({
+        id: 'c-1',
+        name: 'Matemáticas',
+        code: 'MAT-101',
+      });
+      mockPrisma.enrollment.findUnique.mockResolvedValueOnce({
+        userId: 'student-1',
+        courseId: 'c-1',
+      });
+
+      await expect(service.joinByCode('MAT-101', 'student-1')).rejects.toThrow(
+        'Ya estás matriculado en este curso',
       );
     });
   });

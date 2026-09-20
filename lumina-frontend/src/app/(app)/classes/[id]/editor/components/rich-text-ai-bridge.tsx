@@ -6,6 +6,7 @@ import {
   type RichTextAiBridge,
 } from '@lumina/editor-shared/rich-text';
 import { useTextAssist } from '@/hooks/api/use-ai';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Props {
   slideTitle?: string;
@@ -24,7 +25,9 @@ export function RichTextAiBridgeProvider({
   nivelEducativo,
   children,
 }: Props) {
+  const { user } = useAuth();
   const { mutateAsync } = useTextAssist();
+  const isStudent = user?.role === 'STUDENT';
 
   const value = useMemo<RichTextAiBridge>(
     () => ({
@@ -44,6 +47,10 @@ export function RichTextAiBridgeProvider({
     }),
     [mutateAsync, slideTitle, courseName, nivelEducativo],
   );
+
+  if (isStudent) {
+    return <>{children}</>;
+  }
 
   return <RichTextAiProvider value={value}>{children}</RichTextAiProvider>;
 }

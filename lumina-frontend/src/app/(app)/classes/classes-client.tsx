@@ -12,6 +12,7 @@ import {
   BookOpen,
   GraduationCap,
   Pencil,
+  Play,
   Plus,
   Send,
   Trash2,
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 
 import { SlideThumbnailPreview } from '@/app/(app)/classes/[id]/editor/components/slides-panel';
 import { STATUS_BADGE_STYLE } from '@/app/(app)/classes/class-status-badge-styles';
+import { useAuth } from '@/hooks/use-auth';
 import { useCourses } from '@/hooks/api/use-courses';
 import {
   useClasses,
@@ -94,11 +96,13 @@ function ClassFormModal({
   classId,
   open,
   onOpenChange,
+  isStudent = false,
 }: {
-  courseId: string;
+  courseId?: string;
   classId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isStudent?: boolean;
 }) {
   const isEdit = !!classId;
   const { data: classDetail, isLoading: detailLoading } = useClass(classId ?? '');
@@ -129,20 +133,30 @@ function ClassFormModal({
     if (isEdit) {
       updateMutation.mutate(data, {
         onSuccess: () => {
-          toast.success('Clase actualizada');
+          toast.success(isStudent ? 'Presentación actualizada' : 'Clase actualizada');
           onOpenChange(false);
         },
-        onError: () => toast.error('Error al actualizar la clase'),
+        onError: () =>
+          toast.error(
+            isStudent ? 'Error al actualizar la presentación' : 'Error al actualizar la clase',
+          ),
       });
     } else {
       createMutation.mutate(
-        { ...data, courseId },
+        {
+          ...data,
+          courseId: isStudent ? null : courseId,
+          modoEntrega: isStudent ? 'presentacion' : undefined,
+        },
         {
           onSuccess: () => {
-            toast.success('Clase creada');
+            toast.success(isStudent ? 'Presentación creada' : 'Clase creada');
             onOpenChange(false);
           },
-          onError: () => toast.error('Error al crear la clase'),
+          onError: () =>
+            toast.error(
+              isStudent ? 'Error al crear la presentación' : 'Error al crear la clase',
+            ),
         },
       );
     }
@@ -152,7 +166,15 @@ function ClassFormModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar clase' : 'Nueva clase'}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? isStudent
+                ? 'Editar presentación'
+                : 'Editar clase'
+              : isStudent
+                ? 'Nueva presentación'
+                : 'Nueva clase'}
+          </DialogTitle>
         </DialogHeader>
 
         {isEdit && detailLoading ? (
@@ -171,7 +193,12 @@ function ClassFormModal({
                     <FormItem>
                       <FormLabel>Título</FormLabel>
                       <FormControl>
-                        <Input placeholder="Título de la clase" {...field} />
+                        <Input
+                          placeholder={
+                            isStudent ? 'Título de la presentación' : 'Título de la clase'
+                          }
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -182,16 +209,9 @@ function ClassFormModal({
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Descripción{' '}
-                        <span className="font-normal text-muted-foreground">(opcional)</span>
-                      </FormLabel>
+                      <FormLabel>Descripción (opcional)</FormLabel>
                       <FormControl>
-                        <textarea
-                          className="flex w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-[0.8125rem] shadow-xs placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-60 resize-none"
-                          placeholder="Descripción de la clase..."
-                          {...field}
-                        />
+                        <Input placeholder="Descripción breve" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -203,7 +223,13 @@ function ClassFormModal({
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
-                  {isPending ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear clase'}
+                  {isPending
+                    ? 'Guardando...'
+                    : isEdit
+                      ? 'Guardar cambios'
+                      : isStudent
+                        ? 'Crear presentación'
+                        : 'Crear clase'}
                 </Button>
               </DialogFooter>
             </form>
@@ -221,11 +247,13 @@ function DeleteDialog({
   courseId,
   open,
   onOpenChange,
+  isStudent = false,
 }: {
   cls: Class | null;
-  courseId: string;
+  courseId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isStudent?: boolean;
 }) {
   const deleteMutation = useDeleteClass(courseId);
 
@@ -233,7 +261,7 @@ function DeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>¿Eliminar clase?</DialogTitle>
+          <DialogTitle>{isStudent ? '¿Eliminar presentación?' : '¿Eliminar clase?'}</DialogTitle>
         </DialogHeader>
         <DialogBody>
           <p className="text-sm text-muted-foreground">
@@ -253,10 +281,13 @@ function DeleteDialog({
               if (!cls) return;
               deleteMutation.mutate(cls.id, {
                 onSuccess: () => {
-                  toast.success('Clase eliminada');
+                  toast.success(isStudent ? 'Presentación eliminada' : 'Clase eliminada');
                   onOpenChange(false);
                 },
-                onError: () => toast.error('Error al eliminar la clase'),
+                onError: () =>
+                  toast.error(
+                    isStudent ? 'Error al eliminar la presentación' : 'Error al eliminar la clase',
+                  ),
               });
             }}
           >
@@ -281,11 +312,13 @@ function ClassCard({
   courseId,
   onDelete,
   index,
+  isStudent = false,
 }: {
   cls: Class;
-  courseId: string;
+  courseId?: string;
   onDelete: (c: Class) => void;
   index: number;
+  isStudent?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -302,7 +335,10 @@ function ClassCard({
       await api.patch(`/classes/${cls.id}`, { status: 'published' });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      if (courseId) {
+        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['classes', 'personal'] });
       queryClient.invalidateQueries({ queryKey: ['classes', 'detail', cls.id] });
       toast.success('Clase publicada');
     },
@@ -339,9 +375,11 @@ function ClassCard({
       }}
     >
       <Link
-        href={`/classes/${cls.id}`}
+        href={isStudent ? `/classes/${cls.id}/editor` : `/classes/${cls.id}`}
         className="absolute inset-0 z-0"
-        aria-label={`Abrir clase: ${cls.title}`}
+        aria-label={
+          isStudent ? `Abrir presentación: ${cls.title}` : `Abrir clase: ${cls.title}`
+        }
       />
 
       <div className="relative w-full overflow-hidden" style={{ height: '180px' }}>
@@ -376,15 +414,28 @@ function ClassCard({
             'group-hover:pointer-events-auto group-hover:opacity-100',
           )}
         >
+          {isStudent && (
+            <Link
+              href={`/classes/${cls.id}/preview`}
+              onClick={(e) => e.stopPropagation()}
+              target="_blank"
+              aria-label="Presentar"
+              title="Presentar"
+              className="relative z-10 inline-flex text-white/70 transition-colors hover:text-blue-400"
+            >
+              <Play size={18} className="cursor-pointer" aria-hidden />
+            </Link>
+          )}
           <Link
             href={`/classes/${cls.id}/editor`}
             onClick={(e) => e.stopPropagation()}
-            aria-label="Abrir editor"
+            aria-label={isStudent ? 'Editar presentación' : 'Abrir editor'}
+            title={isStudent ? 'Editar presentación' : 'Abrir editor'}
             className="relative z-10 inline-flex text-white/70 transition-colors hover:text-blue-400"
           >
             <Pencil size={18} className="cursor-pointer" aria-hidden />
           </Link>
-          {!published ? (
+          {!isStudent && !published ? (
             <button
               type="button"
               disabled={publishMutation.isPending}
@@ -407,7 +458,8 @@ function ClassCard({
               e.stopPropagation();
               onDelete(cls);
             }}
-            aria-label="Eliminar clase"
+            aria-label={isStudent ? 'Eliminar presentación' : 'Eliminar clase'}
+            title={isStudent ? 'Eliminar presentación' : 'Eliminar clase'}
             className="relative z-10 inline-flex border-0 bg-transparent p-0 text-red-400 transition-colors hover:text-red-300"
           >
             <Trash2 size={18} className="cursor-pointer" aria-hidden />
@@ -422,7 +474,7 @@ function ClassCard({
             className="text-xs font-medium px-2 py-0.5 rounded-full"
             style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
           >
-            {statusLabel(cls.status)}
+            {isStudent ? 'Presentación' : statusLabel(cls.status)}
           </span>
           <span className="text-xs text-[#9ca3af] shrink-0">
             {typeof slideCount === 'number'
@@ -443,15 +495,24 @@ function ClassesGrid({
   classes,
   courseId,
   onDelete,
+  isStudent = false,
 }: {
   classes: Class[];
-  courseId: string;
+  courseId?: string;
   onDelete: (cls: Class) => void;
+  isStudent?: boolean;
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {classes.map((cls, index) => (
-        <ClassCard key={cls.id} cls={cls} courseId={courseId} onDelete={onDelete} index={index} />
+        <ClassCard
+          key={cls.id}
+          cls={cls}
+          courseId={courseId}
+          onDelete={onDelete}
+          index={index}
+          isStudent={isStudent}
+        />
       ))}
     </div>
   );
@@ -460,10 +521,12 @@ function ClassesGrid({
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export function ClassesClient() {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
   const [coursePick, setCoursePick] = useState<string | null>(null);
-  const selectedCourseId = coursePick ?? courses[0]?.id ?? '';
+  const selectedCourseId = isStudent ? '' : (coursePick ?? courses[0]?.id ?? '');
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; cls: Class | null }>({
     open: false,
@@ -474,67 +537,74 @@ export function ClassesClient() {
     data: classes = [],
     isLoading: classesLoading,
     isError: classesError,
-  } = useClasses(selectedCourseId);
+  } = useClasses(isStudent ? undefined : selectedCourseId, {
+    enabled: isStudent || !!selectedCourseId,
+  });
 
   function handleDelete(cls: Class) {
     setDeleteDialog({ open: true, cls });
   }
 
-  const bannerSubtitle = selectedCourseId
-    ? `${classes.length} clase${classes.length !== 1 ? 's' : ''} · Gestiona y organiza tu contenido`
-    : 'Selecciona un curso para ver tus clases';
+  const bannerTitle = isStudent ? 'Mis Presentaciones' : 'Mis Clases';
+  const bannerSubtitle = isStudent
+    ? `${classes.length} presentación${classes.length !== 1 ? 'es' : ''} · Crea y organiza tus presentaciones interactivas`
+    : selectedCourseId
+      ? `${classes.length} clase${classes.length !== 1 ? 's' : ''} · Gestiona y organiza tu contenido`
+      : 'Selecciona un curso para ver tus clases';
 
   return (
     <div className="w-full flex flex-col gap-0 pb-6">
       <PageBanner
-        title="Mis Clases"
+        title={bannerTitle}
         subtitle={bannerSubtitle}
         backHref="/dashboard"
         action={
           <button
             type="button"
-            disabled={!selectedCourseId}
+            disabled={!isStudent && !selectedCourseId}
             onClick={() => {
               setFormOpen(true);
             }}
             className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ＋ Nueva clase
+            {isStudent ? '＋ Nueva presentación' : '＋ Nueva clase'}
           </button>
         }
       />
 
       <div className="px-6 pt-4 space-y-4">
-      {/* Course selector */}
-      <div className="flex flex-wrap items-center gap-3">
-        <label
-          htmlFor="course-select"
-          className="text-sm font-medium text-foreground shrink-0"
-        >
-          Curso:
-        </label>
-        {coursesLoading ? (
-          <Skeleton className="h-8.5 w-56" />
-        ) : courses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay cursos disponibles.</p>
-        ) : (
-          <select
-            id="course-select"
-            value={selectedCourseId}
-            onChange={(e) => setCoursePick(e.target.value)}
-            className="h-8.5 min-w-0 w-full flex-1 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground sm:w-auto sm:min-w-[14rem] sm:flex-none"
+      {/* Course selector (Docentes) */}
+      {!isStudent && (
+        <div className="flex flex-wrap items-center gap-3">
+          <label
+            htmlFor="course-select"
+            className="text-sm font-medium text-foreground shrink-0"
           >
-            <option value="" disabled>
-              Selecciona un curso
-            </option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.code})
+            Curso:
+          </label>
+          {coursesLoading ? (
+            <Skeleton className="h-8.5 w-56" />
+          ) : courses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay cursos disponibles.</p>
+          ) : (
+            <select
+              id="course-select"
+              value={selectedCourseId}
+              onChange={(e) => setCoursePick(e.target.value)}
+              className="h-8.5 min-w-0 w-full flex-1 px-3 rounded-md border border-input bg-background text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring text-foreground sm:w-auto sm:min-w-[14rem] sm:flex-none"
+            >
+              <option value="" disabled>
+                Selecciona un curso
               </option>
-            ))}
-          </select>
-        )}
-      </div>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.code})
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
 
       {/* Error */}
       {classesError && (
@@ -543,7 +613,11 @@ export function ClassesClient() {
             <AlertCircle />
           </AlertIcon>
           <AlertContent>
-            <AlertTitle>No se pudieron cargar las clases.</AlertTitle>
+            <AlertTitle>
+              {isStudent
+                ? 'No se pudieron cargar las presentaciones.'
+                : 'No se pudieron cargar las clases.'}
+            </AlertTitle>
           </AlertContent>
         </Alert>
       )}
@@ -553,21 +627,29 @@ export function ClassesClient() {
         <CardHeader>
           <CardHeading>
             <CardTitle>
-              {selectedCourseId
-                ? `Clases de ${courses.find((c) => c.id === selectedCourseId)?.name ?? 'curso seleccionado'}`
-                : 'Clases'}
+              {isStudent
+                ? 'Mis presentaciones personales'
+                : selectedCourseId
+                  ? `Clases de ${courses.find((c) => c.id === selectedCourseId)?.name ?? 'curso seleccionado'}`
+                  : 'Clases'}
             </CardTitle>
           </CardHeading>
-          {selectedCourseId && (
+          {(isStudent || selectedCourseId) && (
             <CardToolbar>
               <span className="text-sm text-muted-foreground">
-                {classesLoading ? '...' : `${classes.length} clase${classes.length !== 1 ? 's' : ''}`}
+                {classesLoading
+                  ? '...'
+                  : `${classes.length} ${
+                      isStudent
+                        ? `presentación${classes.length !== 1 ? 'es' : ''}`
+                        : `clase${classes.length !== 1 ? 's' : ''}`
+                    }`}
               </span>
             </CardToolbar>
           )}
         </CardHeader>
         <CardContent className="p-4">
-          {!selectedCourseId ? (
+          {!isStudent && !selectedCourseId ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <GraduationCap className="size-10 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
@@ -593,12 +675,20 @@ export function ClassesClient() {
           ) : classes.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                <GraduationCap className="size-6 text-muted-foreground" />
+                {isStudent ? (
+                  <BookOpen className="size-6 text-muted-foreground" />
+                ) : (
+                  <GraduationCap className="size-6 text-muted-foreground" />
+                )}
               </div>
               <div>
-                <p className="font-medium">No hay clases aún</p>
+                <p className="font-medium">
+                  {isStudent ? 'No tienes presentaciones aún' : 'No hay clases aún'}
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Crea la primera clase para este curso.
+                  {isStudent
+                    ? 'Crea tu primera presentación interactiva para comenzar.'
+                    : 'Crea la primera clase para este curso.'}
                 </p>
               </div>
               <Button
@@ -608,7 +698,7 @@ export function ClassesClient() {
                 }}
               >
                 <Plus className="size-4" />
-                Crear primera clase
+                {isStudent ? 'Crear primera presentación' : 'Crear primera clase'}
               </Button>
             </div>
           ) : (
@@ -616,17 +706,19 @@ export function ClassesClient() {
               classes={classes}
               courseId={selectedCourseId}
               onDelete={handleDelete}
+              isStudent={isStudent}
             />
           )}
         </CardContent>
       </Card>
 
       {/* Create / Edit modal */}
-      {selectedCourseId && (
+      {(isStudent || selectedCourseId) && (
         <ClassFormModal
           courseId={selectedCourseId}
           open={formOpen}
           onOpenChange={setFormOpen}
+          isStudent={isStudent}
         />
       )}
 
@@ -636,6 +728,7 @@ export function ClassesClient() {
         courseId={selectedCourseId}
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
+        isStudent={isStudent}
       />
       </div>
     </div>

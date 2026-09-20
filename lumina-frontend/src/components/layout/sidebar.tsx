@@ -81,14 +81,24 @@ type NavItem = {
   adminOnly?: boolean;
   /** Oculto para ADMIN / SUPERADMIN (contenido docente/estudiante). */
   hideForAdmin?: boolean;
+  /** Oculto para estudiantes. */
+  hideForStudent?: boolean;
+  /** Etiqueta específica para estudiantes. */
+  studentLabel?: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Inicio', href: '/dashboard', icon: 'home' },
   { label: 'Cursos', href: '/courses', icon: 'courses', hideForAdmin: true },
-  { label: 'Mis Clases', href: '/classes', icon: 'classes', hideForAdmin: true },
-  { label: 'Lumina Edu', href: '/edu', icon: 'edu', hideForAdmin: true },
-  { label: 'Analytics', href: '/analytics', icon: 'analytics', hideForAdmin: true },
+  {
+    label: 'Mis Clases',
+    studentLabel: 'Mis Presentaciones',
+    href: '/classes',
+    icon: 'classes',
+    hideForAdmin: true,
+  },
+  { label: 'Lumina Edu', href: '/edu', icon: 'edu', hideForAdmin: true, hideForStudent: true },
+  { label: 'Analytics', href: '/analytics', icon: 'analytics', hideForAdmin: true, hideForStudent: true },
   { label: 'Panel Admin', href: '/admin', icon: 'admin', adminOnly: true },
   { label: 'Perfil', href: '/profile', icon: 'profile' },
 ];
@@ -257,10 +267,17 @@ export function Sidebar() {
     ? ROLE_LABELS[user.role.toUpperCase()] ?? user.role
     : '';
   const admin = isAdminRole(user?.role);
+  const isStudent = user?.role === 'STUDENT';
   const navItems = NAV_ITEMS.filter((item) => {
     if (item.adminOnly && !admin) return false;
     if (item.hideForAdmin && admin) return false;
+    if (item.hideForStudent && isStudent) return false;
     return true;
+  }).map((item) => {
+    if (isStudent && item.studentLabel) {
+      return { ...item, label: item.studentLabel };
+    }
+    return item;
   });
 
   return (

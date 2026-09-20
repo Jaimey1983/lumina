@@ -16,6 +16,7 @@ import {
   Monitor,
   MoreHorizontal,
   Palette,
+  Play,
   Ruler,
   Save,
   Settings2,
@@ -431,6 +432,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const canvasSurfaceRef = useRef<HTMLDivElement>(null);
 
   const { user, token } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const [torneoSocketRevision, setTorneoSocketRevision] = useState(0);
 
   useEffect(() => {
@@ -722,7 +724,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   responsesLockedRef.current = responsesLocked;
 
   const queryClient = useQueryClient();
-  const canConfigureLiveTimer = ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(user?.role ?? '');
+  const canConfigureLiveTimer =
+    !isStudent && ['TEACHER', 'ADMIN', 'SUPERADMIN'].includes(user?.role ?? '');
   const [timerGlobalSaving, setTimerGlobalSaving] = useState(false);
   const [themeApplyBusy, setThemeApplyBusy] = useState(false);
   const [contentSaveEpoch, setContentSaveEpoch] = useState(0);
@@ -1032,13 +1035,21 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
-  const toggleLeftPanel = useCallback((id: LeftPanelId) => {
-    setActivePanel((prev) => (prev === id ? null : id));
-  }, []);
+  const toggleLeftPanel = useCallback(
+    (id: LeftPanelId) => {
+      if (isStudent && id === 'ia') return;
+      setActivePanel((prev) => (prev === id ? null : id));
+    },
+    [isStudent],
+  );
 
-  const toggleRightPanel = useCallback((id: RightPanelId) => {
-    setRightPanel((prev) => (prev === id ? null : id));
-  }, []);
+  const toggleRightPanel = useCallback(
+    (id: RightPanelId) => {
+      if (isStudent && id !== 'themes') return;
+      setRightPanel((prev) => (prev === id ? null : id));
+    },
+    [isStudent],
+  );
 
   const handlePasteBlockInSlide = useCallback(
     (slideId: string, block: Block) => {
@@ -2207,19 +2218,19 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               <>
                 <input
                   readOnly
-                  value={cls?.title ?? 'Editor'}
-                  title={desempeno ? desempeno.enunciado : (cls?.title ?? undefined)}
-                  aria-label="Título de la clase"
+                  value={cls?.title ?? (isStudent ? 'Presentación' : 'Editor')}
+                  title={!isStudent && desempeno ? desempeno.enunciado : (cls?.title ?? undefined)}
+                  aria-label={isStudent ? 'Título de la presentación' : 'Título de la clase'}
                   className="min-w-0 flex-1 truncate border-none bg-transparent text-sm font-bold text-white outline-none"
                 />
-                {cls?.codigo?.trim() ? (
+                {!isStudent && cls?.codigo?.trim() ? (
                   <span className="hidden shrink-0 rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold text-white sm:inline">
                     {cls.codigo.toUpperCase().startsWith('LUM')
                       ? cls.codigo.toUpperCase()
                       : `LUM-${cls.codigo.toUpperCase()}`}
                   </span>
                 ) : null}
-                {cls?.narrativa?.nombreMision ? (
+                {!isStudent && cls?.narrativa?.nombreMision ? (
                   <span
                     title={`Misión: ${cls.narrativa.nombreMision}`}
                     className="hidden shrink-0 items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-400/20 px-2 py-0.5 text-xs font-semibold text-amber-100 xl:flex"
@@ -2631,8 +2642,22 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               </Popover>
             ) : null}
 
-            {/* CTA principal: iniciar / finalizar clase */}
-            {sessionId === null ? (
+            {/* CTA principal: iniciar / finalizar clase o Presentar para estudiantes */}
+            {isStudent ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={sortedSlides.length === 0}
+                onClick={() => window.open(`/classes/${classId}/preview`, '_blank')}
+                className={cn(
+                  'shrink-0 rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-[#2563EB] shadow-sm transition-all duration-200',
+                  'hover:bg-emerald-600 hover:text-white hover:shadow-md disabled:pointer-events-none disabled:opacity-50',
+                )}
+              >
+                <Play className="mr-1 inline size-3.5 align-middle" aria-hidden />
+                Presentar
+              </Button>
+            ) : sessionId === null ? (
               <Button
                 type="button"
                 size="sm"
@@ -2772,7 +2797,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             />
             <FlyoutPanel
               ref={flyoutPanelRef}
-              activePanel={activePanel}
+              activePanel={isStudent && activePanel === 'ia' ? null : activePanel}
               onClose={() => setActivePanel(null)}
               apiSlide={activeSlide as ApiSlide}
               onCommitSlideContent={handleCommitSlideContent}
@@ -2785,7 +2810,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               }))}
               activeSlideIndex={resolvedSlideIndex}
               onSelectSlide={setActiveSlideIndex}
-              desempenoEnunciado={desempeno?.enunciado}
+              desempenoEnunciado={isStudent ? undefined : desempeno?.enunciado}
               isSlideSaving={updateSlide.isPending}
               slideHasActivity={activeSlideHasActivity}
               onApplyLayout={handleApplyLayout}
@@ -2855,7 +2880,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           {/* Flyout panel derecho */}
           <RightFlyoutPanel
             ref={rightFlyoutPanelRef}
-            activePanel={rightPanel}
+            activePanel={isStudent && rightPanel !== 'themes' ? null : rightPanel}
             onClose={() => setRightPanel(null)}
             onAddActivity={handleAddActivity}
             activeSlide={activeSlide as ApiSlide | null}
@@ -2865,7 +2890,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onApplyThemeToSlide={handleApplyThemeToSlide}
             onApplyThemeToAllSlides={handleApplyThemeToAllSlides}
             onSaveCustomThemes={handleSaveCustomThemes}
-            desempenoEnunciado={desempeno?.enunciado}
+            desempenoEnunciado={isStudent ? undefined : desempeno?.enunciado}
             hasActivity={activeSlideHasActivity}
             onInsertActivity={handleInsertAiActivity}
             liveResponses={liveResponses}
@@ -2874,7 +2899,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             activeActivity={activeActivity}
             activeBlockId={activeBlockId}
             showAutonomousSlideProgress={
-              sessionActive && modoEntrega === 'autonomo'
+              !isStudent && sessionActive && modoEntrega === 'autonomo'
             }
             autonomousStudentsPerSlide={autonomousStudentsPerSlide}
             liveSocket={rightFlyoutLiveSocket}

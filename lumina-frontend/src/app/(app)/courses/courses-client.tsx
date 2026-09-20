@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 import { useCourses, type Course } from '@/hooks/api/use-courses';
 import { useCourse } from '@/hooks/api/use-course';
+import { useAuth } from '@/hooks/use-auth';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { AREAS_LABELS, GRADOS_TODOS } from '@lumina/curriculum-data';
@@ -320,14 +321,92 @@ function DeleteDialog({
   );
 }
 
+// ─── Join Course Dialog (Students) ─────────────────────────────────────────────
+
+function JoinCourseDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [code, setCode] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: async (joinCode: string) => {
+      const { data } = await api.post('/courses/join', { code: joinCode.trim() });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      toast.success('¡Te has unido al curso exitosamente!');
+      setCode('');
+      onOpenChange(false);
+    },
+    onError: (error: unknown) => {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const msg = axiosError?.response?.data?.message || 'Código de curso inválido o ya estás inscrito';
+      toast.error(typeof msg === 'string' ? msg : 'Error al unirse al curso');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    mutation.mutate(code.trim());
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Unirse a un curso</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <DialogBody className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Ingresa el código proporcionado por tu docente para inscribirte en el curso.
+            </p>
+            <div className="space-y-2">
+              <label htmlFor="join-course-code" className="text-xs font-semibold text-foreground">
+                Código del curso
+              </label>
+              <Input
+                id="join-course-code"
+                placeholder="Ej. MAT-101"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                autoFocus
+                required
+              />
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!code.trim() || mutation.isPending}>
+              {mutation.isPending ? 'Uniéndose...' : 'Unirme'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export function CoursesClient() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
   const { data: courses = [], isLoading, isError } = useCourses();
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [editingCourseId, setEditingCourseId] = useState<string | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; course: Course | null }>({
     open: false,
@@ -406,32 +485,36 @@ export function CoursesClient() {
               <Eye className="size-4 shrink-0" />
               Ver
             </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6b7280] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6b7280]/30"
-              onClick={() => {
-                setEditingCourseId(row.original.id);
-                setFormOpen(true);
-              }}
-              title="Editar curso"
-            >
-              <Pencil className="size-4 shrink-0" />
-              Editar
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#f87171] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f87171]/30"
-              onClick={() => setDeleteDialog({ open: true, course: row.original })}
-              title="Eliminar curso"
-            >
-              <Trash2 className="size-4 shrink-0" />
-              Eliminar
-            </button>
+            {!isStudent ? (
+              <>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6b7280] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6b7280]/30"
+                  onClick={() => {
+                    setEditingCourseId(row.original.id);
+                    setFormOpen(true);
+                  }}
+                  title="Editar curso"
+                >
+                  <Pencil className="size-4 shrink-0" />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[#f87171] cursor-pointer rounded-md px-1 py-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f87171]/30"
+                  onClick={() => setDeleteDialog({ open: true, course: row.original })}
+                  title="Eliminar curso"
+                >
+                  <Trash2 className="size-4 shrink-0" />
+                  Eliminar
+                </button>
+              </>
+            ) : null}
           </div>
         ),
       },
     ],
-    [router],
+    [router, isStudent],
   );
 
   const table = useReactTable({
@@ -440,7 +523,9 @@ export function CoursesClient() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const coursesBannerSubtitle = `${courses.length} curso${courses.length !== 1 ? 's' : ''} · Gestiona todos tus cursos desde aquí`;
+  const coursesBannerSubtitle = isStudent
+    ? `${courses.length} curso${courses.length !== 1 ? 's' : ''} · Cursos en los que estás inscrito`
+    : `${courses.length} curso${courses.length !== 1 ? 's' : ''} · Gestiona todos tus cursos desde aquí`;
 
   return (
     <div className="w-full flex flex-col gap-0 pb-6">
@@ -449,16 +534,26 @@ export function CoursesClient() {
         subtitle={coursesBannerSubtitle}
         backHref="/dashboard"
         action={
-          <button
-            type="button"
-            className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
-            onClick={() => {
-              setEditingCourseId(undefined);
-              setFormOpen(true);
-            }}
-          >
-            ＋ Nuevo curso
-          </button>
+          isStudent ? (
+            <button
+              type="button"
+              className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+              onClick={() => setJoinDialogOpen(true)}
+            >
+              ＋ Unirme a un curso
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+              onClick={() => {
+                setEditingCourseId(undefined);
+                setFormOpen(true);
+              }}
+            >
+              ＋ Nuevo curso
+            </button>
+          )
         }
       />
 
@@ -512,20 +607,32 @@ export function CoursesClient() {
                 <p className="text-sm text-muted-foreground mt-1">
                   {search
                     ? 'Intenta con otro término de búsqueda.'
-                    : 'Crea tu primer curso para comenzar.'}
+                    : isStudent
+                      ? 'Únete a un curso con el código que te dio tu docente.'
+                      : 'Crea tu primer curso para comenzar.'}
                 </p>
               </div>
               {!search && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingCourseId(undefined);
-                    setFormOpen(true);
-                  }}
-                >
-                  <Plus className="size-4" />
-                  Crear primer curso
-                </Button>
+                isStudent ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setJoinDialogOpen(true)}
+                  >
+                    <Plus className="size-4" />
+                    Unirme a un curso
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingCourseId(undefined);
+                      setFormOpen(true);
+                    }}
+                  >
+                    <Plus className="size-4" />
+                    Crear primer curso
+                  </Button>
+                )
               )}
             </div>
           ) : (
@@ -599,6 +706,12 @@ export function CoursesClient() {
         course={deleteDialog.course}
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
+      />
+
+      {/* Join Course dialog (Students) */}
+      <JoinCourseDialog
+        open={joinDialogOpen}
+        onOpenChange={setJoinDialogOpen}
       />
       </div>
     </div>

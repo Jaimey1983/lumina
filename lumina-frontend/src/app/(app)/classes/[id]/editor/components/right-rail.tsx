@@ -4,6 +4,7 @@ import { LayoutGrid, Palette, Radio, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,10 +33,16 @@ export interface RightRailProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function RightRail({ activePanel, onPanelToggle }: RightRailProps) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'STUDENT';
+  const visibleItems = isStudent
+    ? ITEMS.filter((item) => item.id === 'themes')
+    : ITEMS;
+
   return (
     <aside className="flex h-full min-h-0 w-full min-w-0 flex-col border-l border-[#e5e7eb] bg-white">
       <div className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
-        {ITEMS.map(({ id, label, Icon }) => (
+        {visibleItems.map(({ id, label, Icon }) => (
           <button
             key={id}
             type="button"

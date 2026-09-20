@@ -26,13 +26,13 @@ function normalizeClasses(data: unknown): Class[] {
   return [];
 }
 
-export function useClasses(courseId?: string) {
+export function useClasses(courseId?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: courseId ? ['classes', courseId] : ['classes'],
-    enabled: !!courseId,
+    queryKey: courseId ? ['classes', courseId] : ['classes', 'personal'],
+    enabled: options?.enabled !== undefined ? options.enabled : !!courseId,
     queryFn: async () => {
       const { data } = await api.get<Class[]>('/classes', {
-        params: { courseId },
+        params: courseId ? { courseId } : {},
       });
       return normalizeClasses(data);
     },
@@ -63,7 +63,8 @@ export function useClassesByCourses(courseIds: string[]) {
 export interface CreateClassInput {
   title: string;
   description?: string;
-  courseId: string;
+  courseId?: string | null;
+  modoEntrega?: ClassModoEntrega;
 }
 
 export interface UpdateClassInput {
@@ -78,7 +79,7 @@ export interface UpdateClassInput {
   temasPersonalizados?: unknown;
 }
 
-export function useCreateClass(courseId: string) {
+export function useCreateClass(courseId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateClassInput) => {
@@ -86,12 +87,16 @@ export function useCreateClass(courseId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      if (courseId) {
+        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['classes', 'personal'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
     },
   });
 }
 
-export function useUpdateClass(classId: string, courseId: string) {
+export function useUpdateClass(classId: string, courseId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: UpdateClassInput) => {
@@ -102,24 +107,29 @@ export function useUpdateClass(classId: string, courseId: string) {
       if (courseId) {
         queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
       }
+      queryClient.invalidateQueries({ queryKey: ['classes', 'personal'] });
       queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
     },
   });
 }
 
-export function useDeleteClass(courseId: string) {
+export function useDeleteClass(courseId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (classId: string) => {
       await api.delete(`/classes/${classId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      if (courseId) {
+        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['classes', 'personal'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
     },
   });
 }
 
-export function usePublishClass(courseId: string) {
+export function usePublishClass(courseId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (classId: string) => {
@@ -127,7 +137,10 @@ export function usePublishClass(courseId: string) {
       return data;
     },
     onSuccess: (_published, classId) => {
-      queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      if (courseId) {
+        queryClient.invalidateQueries({ queryKey: ['classes', courseId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['classes', 'personal'] });
       queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
     },
   });

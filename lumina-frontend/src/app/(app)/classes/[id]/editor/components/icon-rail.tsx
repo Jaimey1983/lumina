@@ -100,12 +100,15 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
   const userInitials = user ? getInitials(`${user.name} ${user.lastName ?? ''}`) : '?';
   const userName = user ? `${user.name}${user.lastName ? ` ${user.lastName}` : ''}` : '';
 
+  const isStudent = user?.role === 'STUDENT';
+  const visibleItems = isStudent ? ITEMS.filter((item) => item.id !== 'ia') : ITEMS;
+
   return (
     <aside className="flex h-full min-h-0 w-full min-w-0 flex-col border-r border-[#e5e7eb] bg-white">
 
       {/* ── Top: panel icons ────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col items-center gap-1 pt-2">
-        {ITEMS.map(({ id, label, Icon }) => (
+        {visibleItems.map(({ id, label, Icon }) => (
           <RailButton
             key={id}
             id={id}
@@ -120,16 +123,18 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
       {/* ── Bottom: RefreshCw + Avatar ──────────────────────────────────────── */}
       <div className="flex flex-col items-center gap-1 pb-3">
 
-        {/* Cambiar desempeño */}
-        <button
-          type="button"
-          title="Cambiar desempeño"
-          onClick={onRefreshDesempeno}
-          aria-label="Cambiar desempeño"
-          className={ICON_BTN}
-        >
-          <RefreshCw className="size-5 shrink-0" aria-hidden />
-        </button>
+        {/* Cambiar desempeño (solo docentes) */}
+        {!isStudent ? (
+          <button
+            type="button"
+            title="Cambiar desempeño"
+            onClick={onRefreshDesempeno}
+            aria-label="Cambiar desempeño"
+            className={ICON_BTN}
+          >
+            <RefreshCw className="size-5 shrink-0" aria-hidden />
+          </button>
+        ) : null}
 
         {/* Avatar con dropdown */}
         <DropdownMenu>
