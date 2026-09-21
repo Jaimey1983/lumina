@@ -11,6 +11,7 @@ export {
   type ImageCompareEstado,
   type ImageCompareConfig,
   type ImageCompareConfiguracion,
+  type ImageCompareInnerSelection,
 } from "./image-compare-types.js";
 export {
   createDefaultImageCompareBlock,

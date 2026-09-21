@@ -15,7 +15,34 @@ export interface ImageCompareConfiguracion {
   estiloLinea: "solida" | "discreta";
   colorLinea?: string;
   mostrarBotonDeslizador: boolean;
+
+  // Cabecera del widget
+  mostrarTituloWidget?: boolean;
+  mostrarSubtitulo?: boolean;
+  mostrarInstruccion?: boolean;
+
+  // Encuadre y Zoom — Imagen Antes
+  imagenAntesOffsetX?: number; // -40 a +40 (%)
+  imagenAntesOffsetY?: number; // -40 a +40 (%)
+  imagenAntesEscala?: number; // 50 a 200 (%)
+  imagenAntesObjectFit?: "cover" | "contain";
+  imagenAntesObjectPosition?: string;
+
+  // Encuadre y Zoom — Imagen Después
+  imagenDespuesOffsetX?: number; // -40 a +40 (%)
+  imagenDespuesOffsetY?: number; // -40 a +40 (%)
+  imagenDespuesEscala?: number; // 50 a 200 (%)
+  imagenDespuesObjectFit?: "cover" | "contain";
+  imagenDespuesObjectPosition?: string;
+
+  // Sincronización de encuadre entre ambas imágenes
+  sincronizarEncuadre?: boolean;
 }
+
+export type ImageCompareInnerSelection =
+  | { kind: "widget" }
+  | { kind: "header-text"; field: "tituloWidget" | "subtituloWidget" | "instruccion" }
+  | { kind: "image"; side: "antes" | "despues" };
 
 export interface ImageCompareEstado {
   id?: string;

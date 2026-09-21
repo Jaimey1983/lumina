@@ -114,19 +114,42 @@ export function ImageCompareViewer({
     ? { top: `${position}%` }
     : { left: `${position}%` };
 
+  const showTitle = (cfg.mostrarTituloWidget ?? true) && !!estado.tituloWidget;
+  const showSubtitle = (cfg.mostrarSubtitulo ?? true) && !!estado.subtituloWidget;
+  const showInstruction = (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
+  const showHeader = showTitle || showSubtitle || showInstruction;
+
+  const scaleAntes = (cfg.imagenAntesEscala ?? 100) / 100;
+  const offsetAntesX = cfg.imagenAntesOffsetX ?? 0;
+  const offsetAntesY = cfg.imagenAntesOffsetY ?? 0;
+  const styleAntes: CSSProperties = {
+    objectFit: cfg.imagenAntesObjectFit ?? "cover",
+    objectPosition: cfg.imagenAntesObjectPosition ?? "center center",
+    transform: `translate(${offsetAntesX}%, ${offsetAntesY}%) scale(${scaleAntes})`,
+    transformOrigin: "center center",
+  };
+
+  const scaleDespues = (cfg.imagenDespuesEscala ?? 100) / 100;
+  const offsetDespuesX = cfg.imagenDespuesOffsetX ?? 0;
+  const offsetDespuesY = cfg.imagenDespuesOffsetY ?? 0;
+  const styleDespues: CSSProperties = {
+    objectFit: cfg.imagenDespuesObjectFit ?? "cover",
+    objectPosition: cfg.imagenDespuesObjectPosition ?? "center center",
+    transform: `translate(${offsetDespuesX}%, ${offsetDespuesY}%) scale(${scaleDespues})`,
+    transformOrigin: "center center",
+  };
+
   return (
     <div className={styles.root}>
-      {(estado.tituloWidget ||
-        estado.subtituloWidget ||
-        estado.instruccion) && (
+      {showHeader && (
         <div className={styles.header}>
-          {estado.tituloWidget && (
+          {showTitle && (
             <h3 className={styles.title}>{estado.tituloWidget}</h3>
           )}
-          {estado.subtituloWidget && (
+          {showSubtitle && (
             <p className={styles.subtitle}>{estado.subtituloWidget}</p>
           )}
-          {estado.instruccion && (
+          {showInstruction && (
             <p className={styles.instruction}>{estado.instruccion}</p>
           )}
         </div>
@@ -142,10 +165,12 @@ export function ImageCompareViewer({
       >
         {/* Capa de imagen "Después" (base) */}
         <div className={`${styles.imageLayer} ${styles.layerDespues}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cfg.imagenDespuesUrl}
             alt={cfg.imagenDespuesAlt ?? cfg.etiquetaDespues}
             className={styles.image}
+            style={styleDespues}
             draggable={false}
           />
         </div>
@@ -155,10 +180,12 @@ export function ImageCompareViewer({
           className={`${styles.imageLayer} ${styles.layerAntes}`}
           style={clipPathStyle}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cfg.imagenAntesUrl}
             alt={cfg.imagenAntesAlt ?? cfg.etiquetaAntes}
             className={styles.image}
+            style={styleAntes}
             draggable={false}
           />
         </div>

@@ -23,6 +23,26 @@ export const DEFAULT_IMAGE_COMPARE_CONFIG: ImageCompareConfiguracion = {
   estiloLinea: "solida",
   colorLinea: "#ffffff",
   mostrarBotonDeslizador: true,
+
+  // Cabecera por defecto visible
+  mostrarTituloWidget: true,
+  mostrarSubtitulo: true,
+  mostrarInstruccion: true,
+
+  // Encuadre y Zoom por defecto
+  imagenAntesOffsetX: 0,
+  imagenAntesOffsetY: 0,
+  imagenAntesEscala: 100,
+  imagenAntesObjectFit: "cover",
+  imagenAntesObjectPosition: "center center",
+
+  imagenDespuesOffsetX: 0,
+  imagenDespuesOffsetY: 0,
+  imagenDespuesEscala: 100,
+  imagenDespuesObjectFit: "cover",
+  imagenDespuesObjectPosition: "center center",
+
+  sincronizarEncuadre: true,
 };
 
 export function createDefaultImageCompareBlock(

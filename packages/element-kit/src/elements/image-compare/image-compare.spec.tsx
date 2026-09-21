@@ -175,4 +175,60 @@ describe("ImageCompare — ElementDefinition", () => {
       }),
     );
   });
+
+  it("Viewer oculta cabeceras cuando las banderas son falsas", () => {
+    const estado = createDefaultImageCompareBlock();
+    estado.tituloWidget = "Título Test";
+    estado.subtituloWidget = "Subtítulo Test";
+    estado.instruccion = "Instrucción Test";
+    estado.configuracion.mostrarTituloWidget = false;
+    estado.configuracion.mostrarSubtitulo = false;
+    estado.configuracion.mostrarInstruccion = false;
+
+    render(<ImageCompareViewer estado={estado} config={{}} />);
+
+    expect(screen.queryByText("Título Test")).toBeNull();
+    expect(screen.queryByText("Subtítulo Test")).toBeNull();
+    expect(screen.queryByText("Instrucción Test")).toBeNull();
+  });
+
+  it("Viewer aplica estilos de traslación y escala según la configuración", () => {
+    const estado = createDefaultImageCompareBlock();
+    estado.configuracion.imagenAntesOffsetX = 15;
+    estado.configuracion.imagenAntesOffsetY = -10;
+    estado.configuracion.imagenAntesEscala = 130;
+
+    render(<ImageCompareViewer estado={estado} config={{}} />);
+
+    const imgs = screen.getAllByRole("img");
+    const imgAntes = imgs[1]; // Antes
+    expect(imgAntes?.style.transform).toContain("translate(15%, -10%)");
+    expect(imgAntes?.style.transform).toContain("scale(1.3)");
+  });
+
+  it("Propiedades permite alternar flags en la sección Componentes", () => {
+    const estado = createDefaultImageCompareBlock();
+    const onChange = vi.fn();
+
+    render(
+      <ImageComparePropiedades
+        estado={estado}
+        config={{}}
+        onChange={onChange}
+        onConfigChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText("Componentes")).toBeTruthy();
+    const checkboxes = screen.getAllByRole("checkbox");
+    // Primer checkbox de Componentes es "Título"
+    fireEvent.click(checkboxes[0]!);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configuracion: expect.objectContaining({
+          mostrarTituloWidget: false,
+        }),
+      }),
+    );
+  });
 });
