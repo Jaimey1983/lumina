@@ -46,12 +46,12 @@
       "notaEsperada": 3.0
     },
     {
-      "case": "blancos_minimo_pedagogico",
+      "case": "blancos_todas_incorrectas_sin_piso",
       "activityType": "completar_blancos",
       "correctas": 0,
       "total": 4,
       "respondio": true,
-      "notaEsperada": 1.0
+      "notaEsperada": 0
     },
     {
       "case": "un_cuarto_redondeo",
@@ -94,6 +94,15 @@
         { "activityType": "ruleta", "respondio": true }
       ],
       "promedioEsperado": 5.0
+    },
+    {
+      "case": "todas_las_actividades_en_cero_piso_solo_en_promedio",
+      "_comment": "Corrección de nota: cada actividad puede valer 0 real (ver notaCases.blancos_todas_incorrectas_sin_piso); el piso de 1.0 solo aplica acá, al promedio final, y solo si hubo intentos.",
+      "slides": [
+        { "activityType": "quiz_multiple", "correctas": 0, "total": 5, "respondio": true },
+        { "activityType": "completar_blancos", "correctas": 0, "total": 4, "respondio": true }
+      ],
+      "promedioEsperado": 1.0
     }
   ],
   "evaluationCases": [
@@ -242,7 +251,7 @@
       "respuesta": "b",
       "correctEsperado": false,
       "detailsEsperados": 1,
-      "scoreEsperado": 1.0
+      "scoreEsperado": 0
     },
     {
       "case": "quiz_parcial_2_de_3",

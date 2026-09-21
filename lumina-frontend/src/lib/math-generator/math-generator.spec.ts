@@ -77,7 +77,7 @@ describe('generateMathActivities — suma grado 2 sin llevar', () => {
       const wrongId = q0.opciones.find((o) => !o.esCorrecta)?.id;
       const bad = evaluateActivityResponse('quiz_multiple', quiz, wrongId);
       expect(bad.correct).toBe(false);
-      expect(bad.score).toBe(1.0);
+      expect(bad.score).toBe(0);
     }
   });
 });

@@ -61,8 +61,8 @@ interface ContractCase {
 const fixtures = fixturesJson as unknown as FixturesFile;
 
 describe('notaColombiana', () => {
-  it('mínimo pedagógico si respondió y todo mal', () => {
-    expect(notaColombiana(0, 5, true)).toBe(1.0);
+  it('sin mínimo pedagógico por actividad: respondió y todo mal → 0.0', () => {
+    expect(notaColombiana(0, 5, true)).toBe(0);
   });
 
   it('todo correcto → 5.0', () => {

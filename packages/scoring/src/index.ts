@@ -25,12 +25,19 @@ export type ActivityScoringKind =
 /**
  * ÚNICA fuente de verdad para convertir (correctas, total) en nota colombiana 0.0–5.0.
  *
- * DECISIÓN FIJADA (no cambiar sin migrar datos históricos primero):
+ * DECISIÓN FIJADA (corregida — ver commit que agrega este comentario):
  *   - Multiplicador: × 5 (consistente con la planilla ya existente en BD).
- *   - Mínimo pedagógico: si el estudiante respondió pero todo estuvo mal, la nota
- *     no baja de 1.0 (no hay "cero" pedagógico salvo no-respuesta).
+ *   - Sin mínimo pedagógico por actividad: si el estudiante respondió y todo
+ *     estuvo mal, la nota de ESA actividad es 0.0. El "no hay cero" es una
+ *     garantía del PROMEDIO final de la clase (ver `computeClassGradebookPromedio`),
+ *     no de cada actividad individual — antes se aplicaba acá por error, lo que
+ *     hacía que ninguna actividad mostrara nunca un 0 real aunque el estudiante
+ *     hubiera fallado todo.
  *   - No respondió → 0 (política de ausencia se resuelve en el denominador, Fase 1,
  *     no aquí: esta función solo puntúa lo que SÍ se intentó).
+ *
+ * Nota histórica: registros ya persistidos antes de esta corrección pueden tener
+ * el piso de 1.0 aplicado por actividad — no se migran retroactivamente.
  *
  * Todo evaluador (overlay, vivo, autónomo, Edu, XP) DEBE llamar esta función.
  * Ningún otro archivo debe tener su propia fórmula de conversión a nota.
@@ -43,7 +50,7 @@ export function notaColombiana(
   if (!respondio) return 0;
   if (total <= 0) return 0;
   const bruta = (correctas / total) * 5;
-  return Math.round(Math.max(1, bruta) * 10) / 10;
+  return Math.round(bruta * 10) / 10;
 }
 
 /**
@@ -180,8 +187,13 @@ export function countsTowardClassGradebookAverage(
 }
 
 /**
- * Promedio 0–5 de las entradas que sí cuentan. `null` si el denominador queda vacío.
- * Redondeo a 1 decimal (misma escala que Edu muestra).
+ * Promedio 0–5 de las entradas que sí cuentan. `null` si el denominador queda vacío
+ * (nadie respondió nada — eso es "sin datos", no un promedio en 0).
+ *
+ * Mínimo pedagógico: si SÍ hubo actividades contestadas (denominador > 0) pero
+ * el promedio resultante da 0.0 (todo estuvo mal), se eleva a 1.0 — esta es la
+ * ÚNICA capa donde se aplica ese piso; cada actividad individual puede valer 0
+ * en `notaColombiana`. Redondeo a 1 decimal (misma escala que Edu muestra).
  */
 export function computeClassGradebookPromedio(
   entries: readonly GradebookAverageEntry[],
@@ -195,7 +207,8 @@ export function computeClassGradebookPromedio(
     denominator += 1;
   }
   if (denominator === 0) return null;
-  return Math.round((sum / denominator) * 10) / 10;
+  const promedio = Math.round((sum / denominator) * 10) / 10;
+  return Math.max(1, promedio);
 }
 
 export interface ScoringFixtureSlide {
