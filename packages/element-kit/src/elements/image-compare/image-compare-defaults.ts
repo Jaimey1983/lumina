@@ -42,7 +42,7 @@ export const DEFAULT_IMAGE_COMPARE_CONFIG: ImageCompareConfiguracion = {
   imagenDespuesObjectFit: "cover",
   imagenDespuesObjectPosition: "center center",
 
-  sincronizarEncuadre: true,
+  sincronizarEncuadre: false,
 };
 
 export function createDefaultImageCompareBlock(

@@ -54,18 +54,15 @@ export function ImageComparePropiedades({
       objectPosition?: string;
     },
   ) => {
-    const isSync = cfg.sincronizarEncuadre !== false;
     const next: Partial<ImageCompareConfiguracion> = {};
 
-    if (isSync || selectedSide === "antes") {
+    if (selectedSide === "antes") {
       if (patch.offsetX !== undefined) next.imagenAntesOffsetX = patch.offsetX;
       if (patch.offsetY !== undefined) next.imagenAntesOffsetY = patch.offsetY;
       if (patch.escala !== undefined) next.imagenAntesEscala = patch.escala;
       if (patch.objectFit !== undefined) next.imagenAntesObjectFit = patch.objectFit;
       if (patch.objectPosition !== undefined) next.imagenAntesObjectPosition = patch.objectPosition;
-    }
-
-    if (isSync || selectedSide === "despues") {
+    } else {
       if (patch.offsetX !== undefined) next.imagenDespuesOffsetX = patch.offsetX;
       if (patch.offsetY !== undefined) next.imagenDespuesOffsetY = patch.offsetY;
       if (patch.escala !== undefined) next.imagenDespuesEscala = patch.escala;
@@ -205,38 +202,26 @@ export function ImageComparePropiedades({
           <WidgetSectionTitle>Encuadre de imagen</WidgetSectionTitle>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 text-xs">
-          <Checkbox
-            checked={cfg.sincronizarEncuadre !== false}
-            onCheckedChange={(checked) =>
-              updateConfig({ sincronizarEncuadre: checked === true })
-            }
-          />
-          Sincronizar encuadre (mover ambas fotos)
-        </label>
-
-        {cfg.sincronizarEncuadre === false && (
-          <div className="flex gap-1 pt-1">
-            <Button
-              type="button"
-              size="sm"
-              variant={selectedSide === "antes" ? "secondary" : "outline"}
-              className="flex-1 text-xs"
-              onClick={() => setSelectedSide("antes")}
-            >
-              Foto Antes
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={selectedSide === "despues" ? "secondary" : "outline"}
-              className="flex-1 text-xs"
-              onClick={() => setSelectedSide("despues")}
-            >
-              Foto Después
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-1 pt-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={selectedSide === "antes" ? "secondary" : "outline"}
+            className="flex-1 text-xs font-medium"
+            onClick={() => setSelectedSide("antes")}
+          >
+            Foto: {cfg.etiquetaAntes || "Antes"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={selectedSide === "despues" ? "secondary" : "outline"}
+            className="flex-1 text-xs font-medium"
+            onClick={() => setSelectedSide("despues")}
+          >
+            Foto: {cfg.etiquetaDespues || "Después"}
+          </Button>
+        </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">

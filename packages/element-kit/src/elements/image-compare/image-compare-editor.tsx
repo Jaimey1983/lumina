@@ -1,5 +1,7 @@
 import {
   useCallback,
+  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -9,7 +11,11 @@ import {
 } from "react";
 import type { ElementEditorProps } from "@lumina/element-kit-core";
 import { WidgetHeaderEditorField } from "@lumina/editor-shared/widget-header-editor";
-import { Link, Unlink, Check, Move } from "lucide-react";
+import {
+  computeImagePanClamp,
+  getImageStyle,
+} from "@lumina/editor-shared/widget-image-styles";
+import { Move } from "lucide-react";
 import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
 import type {
   ImageCompareConfig,
@@ -37,13 +43,63 @@ export function ImageCompareEditor({
     clamp(cfg.posicionInicial ?? 50, 0, 100),
   );
   const [isDraggingDivider, setIsDraggingDivider] = useState(false);
-  const [selectedImageSide, setSelectedImageSide] = useState<
-    "antes" | "despues" | null
-  >(null);
+  const [activeSide, setActiveSide] = useState<"antes" | "despues">("antes");
 
   const stageRef = useRef<HTMLDivElement>(null);
   const imgAntesRef = useRef<HTMLImageElement>(null);
   const imgDespuesRef = useRef<HTMLImageElement>(null);
+
+  const [containerDims, setContainerDims] = useState<{ w: number; h: number }>({
+    w: 0,
+    h: 0,
+  });
+  const [imgAntesDims, setImgAntesDims] = useState<{ w: number; h: number }>({
+    w: 0,
+    h: 0,
+  });
+  const [imgDespuesDims, setImgDespuesDims] = useState<{
+    w: number;
+    h: number;
+  }>({ w: 0, h: 0 });
+
+  const measureContainer = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setContainerDims((prev) =>
+        prev.w === Math.round(rect.width) && prev.h === Math.round(rect.height)
+          ? prev
+          : { w: Math.round(rect.width), h: Math.round(rect.height) },
+      );
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    measureContainer();
+  }, [measureContainer]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const ro = new ResizeObserver(() => measureContainer());
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, [measureContainer]);
+
+  const handleImageLoad = (
+    side: "antes" | "despues",
+    img: HTMLImageElement,
+  ) => {
+    measureContainer();
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      if (side === "antes") {
+        setImgAntesDims({ w: img.naturalWidth, h: img.naturalHeight });
+      } else {
+        setImgDespuesDims({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    }
+  };
 
   const imagePanRef = useRef<{
     side: "antes" | "despues";
@@ -51,8 +107,6 @@ export function ImageCompareEditor({
     startY: number;
     ox: number;
     oy: number;
-    width: number;
-    height: number;
     pendingX: number;
     pendingY: number;
   } | null>(null);
@@ -75,30 +129,6 @@ export function ImageCompareEditor({
       });
     },
     [estado, cfg, onChange],
-  );
-
-  const applyLiveImageTransform = useCallback(
-    (
-      targetSide: "antes" | "despues",
-      ox: number,
-      oy: number,
-      scale: number,
-    ) => {
-      const isSync = cfg.sincronizarEncuadre !== false;
-      const transformValue = `translate(${ox}%, ${oy}%) scale(${scale / 100})`;
-
-      if (isSync || targetSide === "antes") {
-        if (imgAntesRef.current) {
-          imgAntesRef.current.style.transform = transformValue;
-        }
-      }
-      if (isSync || targetSide === "despues") {
-        if (imgDespuesRef.current) {
-          imgDespuesRef.current.style.transform = transformValue;
-        }
-      }
-    },
-    [cfg.sincronizarEncuadre],
   );
 
   const updateDividerFromPointer = useCallback(
@@ -144,19 +174,15 @@ export function ImageCompareEditor({
     }
   };
 
-  // 2. Manejo del paneo / arrastre de imagen (Mismo contrato que TabImageLayer / FlipCardImageLayer)
+  // 2. Manejo de paneo individual de imagen con límites matemáticos (computeImagePanClamp)
   const handleImagePointerDown = (
     side: "antes" | "despues",
     e: ReactPointerEvent<HTMLDivElement>,
   ) => {
     e.stopPropagation();
     config.onEnsureBlockSelected?.();
-    setSelectedImageSide(side);
+    setActiveSide(side);
     setInnerSelection({ kind: "image", side });
-
-    const stage = stageRef.current;
-    if (!stage) return;
-    const rect = stage.getBoundingClientRect();
 
     const ox =
       side === "antes"
@@ -173,8 +199,6 @@ export function ImageCompareEditor({
       startY: e.clientY,
       ox,
       oy,
-      width: Math.max(rect.width, 1),
-      height: Math.max(rect.height, 1),
       pendingX: ox,
       pendingY: oy,
     };
@@ -185,21 +209,49 @@ export function ImageCompareEditor({
     const pan = imagePanRef.current;
     if (!pan) return;
 
-    const dx = ((e.clientX - pan.startX) / pan.width) * 100;
-    const dy = ((e.clientY - pan.startY) / pan.height) * 100;
+    const dims = pan.side === "antes" ? imgAntesDims : imgDespuesDims;
+    const scale =
+      (pan.side === "antes"
+        ? (cfg.imagenAntesEscala ?? 100)
+        : (cfg.imagenDespuesEscala ?? 100)) / 100;
 
-    const nextX = clamp(Math.round(pan.ox + dx), -40, 40);
-    const nextY = clamp(Math.round(pan.oy + dy), -40, 40);
+    const { maxPanX, maxPanY } = computeImagePanClamp(
+      dims.w,
+      dims.h,
+      containerDims.w,
+      containerDims.h,
+      scale,
+    );
+
+    const dx = e.clientX - pan.startX;
+    const dy = e.clientY - pan.startY;
+
+    // Límite estricto en píxeles: jamás sobrepasa los bordes, jamás deja blanco
+    const nextX = Math.round(
+      Math.max(-maxPanX, Math.min(maxPanX, pan.ox + dx)),
+    );
+    const nextY = Math.round(
+      Math.max(-maxPanY, Math.min(maxPanY, pan.oy + dy)),
+    );
 
     pan.pendingX = nextX;
     pan.pendingY = nextY;
 
-    const currentScale =
-      pan.side === "antes"
-        ? (cfg.imagenAntesEscala ?? 100)
-        : (cfg.imagenDespuesEscala ?? 100);
-
-    applyLiveImageTransform(pan.side, nextX, nextY, currentScale);
+    // Mutación directa al DOM del elemento específico a 60 FPS
+    const img =
+      pan.side === "antes" ? imgAntesRef.current : imgDespuesRef.current;
+    if (img) {
+      const liveStyle = getImageStyle(
+        dims.w,
+        dims.h,
+        containerDims.w,
+        containerDims.h,
+        scale,
+        nextX,
+        nextY,
+      );
+      Object.assign(img.style, liveStyle);
+    }
   };
 
   const handleImagePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -212,34 +264,32 @@ export function ImageCompareEditor({
       // ignore
     }
 
-    const isSync = cfg.sincronizarEncuadre !== false;
-    const patch: Partial<typeof cfg> = {};
-
-    if (isSync || pan.side === "antes") {
-      patch.imagenAntesOffsetX = pan.pendingX;
-      patch.imagenAntesOffsetY = pan.pendingY;
-    }
-    if (isSync || pan.side === "despues") {
-      patch.imagenDespuesOffsetX = pan.pendingX;
-      patch.imagenDespuesOffsetY = pan.pendingY;
+    // Movimiento 100% individual: solo actualiza la foto que se arrastró
+    if (pan.side === "antes") {
+      patchConfig({
+        imagenAntesOffsetX: pan.pendingX,
+        imagenAntesOffsetY: pan.pendingY,
+      });
+    } else {
+      patchConfig({
+        imagenDespuesOffsetX: pan.pendingX,
+        imagenDespuesOffsetY: pan.pendingY,
+      });
     }
 
     imagePanRef.current = null;
-    patchConfig(patch);
   };
 
-  // 3. Manejo del tirador de zoom en esquina
+  // 3. Manejo del tirador de zoom en esquina (con re-clamp de posición)
   const handleZoomPointerDown = (e: ReactPointerEvent<HTMLSpanElement>) => {
     e.stopPropagation();
-    if (!selectedImageSide) return;
-
     const initialScale =
-      selectedImageSide === "antes"
+      activeSide === "antes"
         ? (cfg.imagenAntesEscala ?? 100)
         : (cfg.imagenDespuesEscala ?? 100);
 
     zoomResizeRef.current = {
-      side: selectedImageSide,
+      side: activeSide,
       startY: e.clientY,
       initialScale,
       pendingScale: initialScale,
@@ -254,21 +304,45 @@ export function ImageCompareEditor({
     const dy = zoom.startY - e.clientY;
     const nextScale = clamp(
       Math.round(zoom.initialScale + dy * 0.5),
-      50,
-      200,
+      100,
+      250,
     );
     zoom.pendingScale = nextScale;
 
-    const currentOffsetX =
+    const dims = zoom.side === "antes" ? imgAntesDims : imgDespuesDims;
+    const ox =
       zoom.side === "antes"
         ? (cfg.imagenAntesOffsetX ?? 0)
         : (cfg.imagenDespuesOffsetX ?? 0);
-    const currentOffsetY =
+    const oy =
       zoom.side === "antes"
         ? (cfg.imagenAntesOffsetY ?? 0)
         : (cfg.imagenDespuesOffsetY ?? 0);
 
-    applyLiveImageTransform(zoom.side, currentOffsetX, currentOffsetY, nextScale);
+    const { maxPanX, maxPanY } = computeImagePanClamp(
+      dims.w,
+      dims.h,
+      containerDims.w,
+      containerDims.h,
+      nextScale / 100,
+    );
+    const clampedX = Math.round(Math.max(-maxPanX, Math.min(maxPanX, ox)));
+    const clampedY = Math.round(Math.max(-maxPanY, Math.min(maxPanY, oy)));
+
+    const img =
+      zoom.side === "antes" ? imgAntesRef.current : imgDespuesRef.current;
+    if (img) {
+      const liveStyle = getImageStyle(
+        dims.w,
+        dims.h,
+        containerDims.w,
+        containerDims.h,
+        nextScale / 100,
+        clampedX,
+        clampedY,
+      );
+      Object.assign(img.style, liveStyle);
+    }
   };
 
   const handleZoomPointerUp = (e: ReactPointerEvent<HTMLSpanElement>) => {
@@ -281,17 +355,13 @@ export function ImageCompareEditor({
       // ignore
     }
 
-    const isSync = cfg.sincronizarEncuadre !== false;
-    const patch: Partial<typeof cfg> = {};
-    if (isSync || zoom.side === "antes") {
-      patch.imagenAntesEscala = zoom.pendingScale;
-    }
-    if (isSync || zoom.side === "despues") {
-      patch.imagenDespuesEscala = zoom.pendingScale;
+    if (zoom.side === "antes") {
+      patchConfig({ imagenAntesEscala: zoom.pendingScale });
+    } else {
+      patchConfig({ imagenDespuesEscala: zoom.pendingScale });
     }
 
     zoomResizeRef.current = null;
-    patchConfig(patch);
   };
 
   const handleDividerKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -332,32 +402,33 @@ export function ImageCompareEditor({
   const showSubtitle = cfg.mostrarSubtitulo ?? true;
   const showInstruction = cfg.mostrarInstruccion ?? true;
 
-  const scaleAntes = (cfg.imagenAntesEscala ?? 100) / 100;
-  const offsetAntesX = cfg.imagenAntesOffsetX ?? 0;
-  const offsetAntesY = cfg.imagenAntesOffsetY ?? 0;
-  const styleAntes: CSSProperties = {
-    objectFit: cfg.imagenAntesObjectFit ?? "cover",
-    objectPosition: cfg.imagenAntesObjectPosition ?? "center center",
-    transform: `translate(${offsetAntesX}%, ${offsetAntesY}%) scale(${scaleAntes})`,
-    transformOrigin: "center center",
-  };
+  // Estilos de cover calculados matemáticamente (idéntico a TabImageLayer)
+  const styleAntes = getImageStyle(
+    imgAntesDims.w,
+    imgAntesDims.h,
+    containerDims.w,
+    containerDims.h,
+    (cfg.imagenAntesEscala ?? 100) / 100,
+    cfg.imagenAntesOffsetX ?? 0,
+    cfg.imagenAntesOffsetY ?? 0,
+  );
 
-  const scaleDespues = (cfg.imagenDespuesEscala ?? 100) / 100;
-  const offsetDespuesX = cfg.imagenDespuesOffsetX ?? 0;
-  const offsetDespuesY = cfg.imagenDespuesOffsetY ?? 0;
-  const styleDespues: CSSProperties = {
-    objectFit: cfg.imagenDespuesObjectFit ?? "cover",
-    objectPosition: cfg.imagenDespuesObjectPosition ?? "center center",
-    transform: `translate(${offsetDespuesX}%, ${offsetDespuesY}%) scale(${scaleDespues})`,
-    transformOrigin: "center center",
-  };
+  const styleDespues = getImageStyle(
+    imgDespuesDims.w,
+    imgDespuesDims.h,
+    containerDims.w,
+    containerDims.h,
+    (cfg.imagenDespuesEscala ?? 100) / 100,
+    cfg.imagenDespuesOffsetX ?? 0,
+    cfg.imagenDespuesOffsetY ?? 0,
+  );
 
   return (
     <div
       className={styles.root}
       onClick={() => config.onEnsureBlockSelected?.()}
     >
-      {/* Cabecera editable con WidgetHeaderEditorField */}
+      {/* Cabecera editable */}
       {(showTitle || showSubtitle || showInstruction) && (
         <div className={styles.header}>
           {showTitle && (
@@ -421,9 +492,7 @@ export function ImageCompareEditor({
         <div
           className={`${styles.imageLayer} ${styles.layerDespues} ${
             styles.imageLayerInteractive
-          } ${
-            selectedImageSide === "despues" ? styles.imageLayerSelected : ""
-          }`}
+          } ${activeSide === "despues" ? styles.imageLayerSelected : ""}`}
           onPointerDown={(e) => handleImagePointerDown("despues", e)}
           onPointerMove={handleImagePointerMove}
           onPointerUp={handleImagePointerUp}
@@ -436,6 +505,7 @@ export function ImageCompareEditor({
             alt={cfg.imagenDespuesAlt ?? cfg.etiquetaDespues}
             className={styles.image}
             style={styleDespues}
+            onLoad={(e) => handleImageLoad("despues", e.currentTarget)}
             draggable={false}
           />
         </div>
@@ -444,7 +514,7 @@ export function ImageCompareEditor({
         <div
           className={`${styles.imageLayer} ${styles.layerAntes} ${
             styles.imageLayerInteractive
-          } ${selectedImageSide === "antes" ? styles.imageLayerSelected : ""}`}
+          } ${activeSide === "antes" ? styles.imageLayerSelected : ""}`}
           style={clipPathStyle}
           onPointerDown={(e) => handleImagePointerDown("antes", e)}
           onPointerMove={handleImagePointerMove}
@@ -458,8 +528,38 @@ export function ImageCompareEditor({
             alt={cfg.imagenAntesAlt ?? cfg.etiquetaAntes}
             className={styles.image}
             style={styleAntes}
+            onLoad={(e) => handleImageLoad("antes", e.currentTarget)}
             draggable={false}
           />
+        </div>
+
+        {/* Selector de foto activa para encuadre individual */}
+        <div
+          className="absolute top-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 rounded-full bg-slate-900/80 p-1 shadow-md backdrop-blur-sm pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+              activeSide === "antes"
+                ? "bg-blue-600 text-white"
+                : "text-slate-300 hover:text-white"
+            }`}
+            onClick={() => setActiveSide("antes")}
+          >
+            Editar: {cfg.etiquetaAntes || "Antes"}
+          </button>
+          <button
+            type="button"
+            className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+              activeSide === "despues"
+                ? "bg-blue-600 text-white"
+                : "text-slate-300 hover:text-white"
+            }`}
+            onClick={() => setActiveSide("despues")}
+          >
+            Editar: {cfg.etiquetaDespues || "Después"}
+          </button>
         </div>
 
         {/* Etiquetas flotantes */}
@@ -556,65 +656,19 @@ export function ImageCompareEditor({
           )}
         </div>
 
-        {/* Tirador de Zoom en esquina (aparece cuando hay una imagen seleccionada) */}
-        {selectedImageSide && (
-          <span
-            className={styles.resizeHandle}
-            title="Arrastra verticalmente para cambiar el zoom"
-            onPointerDown={handleZoomPointerDown}
-            onPointerMove={handleZoomPointerMove}
-            onPointerUp={handleZoomPointerUp}
-            onPointerCancel={handleZoomPointerUp}
-          >
-            <Move className="size-3.5" />
-          </span>
-        )}
-
-        {/* Badge flotante de control cuando una imagen está seleccionada */}
-        {selectedImageSide && (
-          <div
-            className={styles.imageControlBadge}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span>
-              Ajustando:{" "}
-              <strong>
-                {selectedImageSide === "antes" ? "Antes" : "Después"}
-              </strong>
-            </span>
-            <button
-              type="button"
-              className="flex items-center gap-1 text-[10px] text-blue-300 hover:text-white"
-              onClick={() =>
-                patchConfig({
-                  sincronizarEncuadre: !(cfg.sincronizarEncuadre !== false),
-                })
-              }
-              title="Alternar sincronización de encuadre"
-            >
-              {cfg.sincronizarEncuadre !== false ? (
-                <>
-                  <Link className="size-3" /> Sincronizado
-                </>
-              ) : (
-                <>
-                  <Unlink className="size-3" /> Independiente
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              className="ml-1 rounded bg-white/20 p-1 hover:bg-white/30 text-white"
-              onClick={() => {
-                setSelectedImageSide(null);
-                setInnerSelection({ kind: "widget" });
-              }}
-              title="Listo"
-            >
-              <Check className="size-3" />
-            </button>
-          </div>
-        )}
+        {/* Tirador de Zoom en esquina para la foto activa */}
+        <span
+          className={styles.resizeHandle}
+          title={`Arrastra verticalmente para cambiar zoom de ${
+            activeSide === "antes" ? "Antes" : "Después"
+          }`}
+          onPointerDown={handleZoomPointerDown}
+          onPointerMove={handleZoomPointerMove}
+          onPointerUp={handleZoomPointerUp}
+          onPointerCancel={handleZoomPointerUp}
+        >
+          <Move className="size-3.5" />
+        </span>
       </div>
     </div>
   );

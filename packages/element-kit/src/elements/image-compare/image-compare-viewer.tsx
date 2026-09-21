@@ -1,5 +1,7 @@
 import {
   useCallback,
+  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -8,6 +10,7 @@ import {
   type ReactElement,
 } from "react";
 import type { ElementViewerProps } from "@lumina/element-kit-core";
+import { getImageStyle } from "@lumina/editor-shared/widget-image-styles";
 import type {
   ImageCompareConfig,
   ImageCompareEstado,
@@ -31,6 +34,58 @@ export function ImageCompareViewer({
   );
   const [isDragging, setIsDragging] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
+
+  const [containerDims, setContainerDims] = useState<{ w: number; h: number }>({
+    w: 0,
+    h: 0,
+  });
+  const [imgAntesDims, setImgAntesDims] = useState<{ w: number; h: number }>({
+    w: 0,
+    h: 0,
+  });
+  const [imgDespuesDims, setImgDespuesDims] = useState<{
+    w: number;
+    h: number;
+  }>({ w: 0, h: 0 });
+
+  const measureContainer = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setContainerDims((prev) =>
+        prev.w === Math.round(rect.width) && prev.h === Math.round(rect.height)
+          ? prev
+          : { w: Math.round(rect.width), h: Math.round(rect.height) },
+      );
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    measureContainer();
+  }, [measureContainer]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const ro = new ResizeObserver(() => measureContainer());
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, [measureContainer]);
+
+  const handleImageLoad = (
+    side: "antes" | "despues",
+    img: HTMLImageElement,
+  ) => {
+    measureContainer();
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      if (side === "antes") {
+        setImgAntesDims({ w: img.naturalWidth, h: img.naturalHeight });
+      } else {
+        setImgDespuesDims({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    }
+  };
 
   const updatePositionFromPointer = useCallback(
     (clientX: number, clientY: number) => {
@@ -115,37 +170,38 @@ export function ImageCompareViewer({
     : { left: `${position}%` };
 
   const showTitle = (cfg.mostrarTituloWidget ?? true) && !!estado.tituloWidget;
-  const showSubtitle = (cfg.mostrarSubtitulo ?? true) && !!estado.subtituloWidget;
-  const showInstruction = (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
+  const showSubtitle =
+    (cfg.mostrarSubtitulo ?? true) && !!estado.subtituloWidget;
+  const showInstruction =
+    (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
   const showHeader = showTitle || showSubtitle || showInstruction;
 
-  const scaleAntes = (cfg.imagenAntesEscala ?? 100) / 100;
-  const offsetAntesX = cfg.imagenAntesOffsetX ?? 0;
-  const offsetAntesY = cfg.imagenAntesOffsetY ?? 0;
-  const styleAntes: CSSProperties = {
-    objectFit: cfg.imagenAntesObjectFit ?? "cover",
-    objectPosition: cfg.imagenAntesObjectPosition ?? "center center",
-    transform: `translate(${offsetAntesX}%, ${offsetAntesY}%) scale(${scaleAntes})`,
-    transformOrigin: "center center",
-  };
+  // Cover matemático con offsets en píxeles (idéntico a getImageStyle de TabImageLayer)
+  const styleAntes = getImageStyle(
+    imgAntesDims.w,
+    imgAntesDims.h,
+    containerDims.w,
+    containerDims.h,
+    (cfg.imagenAntesEscala ?? 100) / 100,
+    cfg.imagenAntesOffsetX ?? 0,
+    cfg.imagenAntesOffsetY ?? 0,
+  );
 
-  const scaleDespues = (cfg.imagenDespuesEscala ?? 100) / 100;
-  const offsetDespuesX = cfg.imagenDespuesOffsetX ?? 0;
-  const offsetDespuesY = cfg.imagenDespuesOffsetY ?? 0;
-  const styleDespues: CSSProperties = {
-    objectFit: cfg.imagenDespuesObjectFit ?? "cover",
-    objectPosition: cfg.imagenDespuesObjectPosition ?? "center center",
-    transform: `translate(${offsetDespuesX}%, ${offsetDespuesY}%) scale(${scaleDespues})`,
-    transformOrigin: "center center",
-  };
+  const styleDespues = getImageStyle(
+    imgDespuesDims.w,
+    imgDespuesDims.h,
+    containerDims.w,
+    containerDims.h,
+    (cfg.imagenDespuesEscala ?? 100) / 100,
+    cfg.imagenDespuesOffsetX ?? 0,
+    cfg.imagenDespuesOffsetY ?? 0,
+  );
 
   return (
     <div className={styles.root}>
       {showHeader && (
         <div className={styles.header}>
-          {showTitle && (
-            <h3 className={styles.title}>{estado.tituloWidget}</h3>
-          )}
+          {showTitle && <h3 className={styles.title}>{estado.tituloWidget}</h3>}
           {showSubtitle && (
             <p className={styles.subtitle}>{estado.subtituloWidget}</p>
           )}
@@ -171,6 +227,7 @@ export function ImageCompareViewer({
             alt={cfg.imagenDespuesAlt ?? cfg.etiquetaDespues}
             className={styles.image}
             style={styleDespues}
+            onLoad={(e) => handleImageLoad("despues", e.currentTarget)}
             draggable={false}
           />
         </div>
@@ -186,6 +243,7 @@ export function ImageCompareViewer({
             alt={cfg.imagenAntesAlt ?? cfg.etiquetaAntes}
             className={styles.image}
             style={styleAntes}
+            onLoad={(e) => handleImageLoad("antes", e.currentTarget)}
             draggable={false}
           />
         </div>
