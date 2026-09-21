@@ -487,6 +487,18 @@ interface BlockNodeProps {
   viewerClassId?: string;
   canvasRef?: React.RefObject<HTMLDivElement | null>;
   currentCoords?: { x: number; y: number; ancho: number; alto: number };
+  /**
+   * Factor de escala del `transform: scale()` ancestro en `viewerFill`
+   * (ver `isViewerFillScaled`/`viewerFillScale` en `SlideRenderer`). `grafico`
+   * (ApexCharts, arco parcial) y `clip-group` (SVG `clip-path`) miden su
+   * geometría con APIs que se desincronizan bajo un ancestro escalado
+   * (`getBoundingClientRect()` post-transform vs. `clientWidth` inmune al
+   * transform) — un bug real de ApexCharts y de WebKit respectivamente, no
+   * de este código. Con este valor, `BlockNode` neutraliza el scale
+   * ancestro SOLO para esos dos tipos (ver más abajo). `undefined` fuera de
+   * `viewerFill` (editor/preview no lo necesitan: no se reportó el bug ahí).
+   */
+  viewerFillScale?: number;
   onResize?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
   onResizeEnd?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
   /** Etapa G · G2a — oculta `<ResizeHandles>` propio (react-moveable los provee). */
@@ -565,6 +577,7 @@ function BlockNode({
   viewerClassId,
   canvasRef,
   currentCoords,
+  viewerFillScale,
   onResize,
   onResizeEnd,
   suppressCanvasHandles,
@@ -931,6 +944,34 @@ function BlockNode({
         }
       : {};
 
+  // `grafico` (ApexCharts, arco parcial) y `clip-group` (SVG clip-path) bajo
+  // el `transform: scale()` de `viewerFill` (ver `viewerFillScale` arriba):
+  // se envuelve el contenido en un div con tamaño real en px (el tamaño
+  // VISUAL final) + `transform: scale(1/viewerFillScale)` propio, que
+  // cancela exactamente el scale del ancestro para todo lo que está debajo
+  // — `clientWidth` (inmune a transform) y `getBoundingClientRect()`
+  // (post-transform) vuelven a coincidir para ese subárbol, evitando la
+  // medición inconsistente que produce el gráfico/máscara chicos o mal
+  // recortados. `transformOrigin: 'top left'` para que el resultado llene
+  // exactamente la caja del bloque, sin desplazamiento.
+  const rawContent = renderContent();
+  const content =
+    viewerFillScale !== undefined &&
+    viewerFillScale > 0 &&
+    currentCoords &&
+    (block.tipo === 'grafico' || block.tipo === 'clip-group') ? (
+      <div
+        style={{
+          width: (currentCoords.ancho / 100) * 1280 * viewerFillScale,
+          height: (currentCoords.alto / 100) * 720 * viewerFillScale,
+          transform: `scale(${1 / viewerFillScale})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {rawContent}
+      </div>
+    ) : rawContent;
+
   return (
     <>
     <div
@@ -1009,7 +1050,7 @@ function BlockNode({
           'flex h-full min-h-0 w-full flex-col',
       )}
     >
-      {renderContent()}
+      {content}
       {editorMode &&
         !suppressCanvasHandles &&
         isSelected &&
@@ -1743,6 +1784,7 @@ export function SlideRenderer({
             onResponse={onResponse}
             canvasRef={measureCanvasRef}
             currentCoords={currentCoords}
+            viewerFillScale={isViewerFillScaled ? viewerFillScale : undefined}
             onResize={handleResize}
             onResizeEnd={handleResizeEnd}
             editingId={editingId}
