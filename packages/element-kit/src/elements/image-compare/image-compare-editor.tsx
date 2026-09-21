@@ -42,17 +42,26 @@ export function ImageCompareEditor({
   >(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
+  const imgAntesRef = useRef<HTMLImageElement>(null);
+  const imgDespuesRef = useRef<HTMLImageElement>(null);
+
   const imagePanRef = useRef<{
+    side: "antes" | "despues";
     startX: number;
     startY: number;
     ox: number;
     oy: number;
     width: number;
     height: number;
+    pendingX: number;
+    pendingY: number;
   } | null>(null);
+
   const zoomResizeRef = useRef<{
+    side: "antes" | "despues";
     startY: number;
     initialScale: number;
+    pendingScale: number;
   } | null>(null);
 
   const patchConfig = useCallback(
@@ -66,6 +75,30 @@ export function ImageCompareEditor({
       });
     },
     [estado, cfg, onChange],
+  );
+
+  const applyLiveImageTransform = useCallback(
+    (
+      targetSide: "antes" | "despues",
+      ox: number,
+      oy: number,
+      scale: number,
+    ) => {
+      const isSync = cfg.sincronizarEncuadre !== false;
+      const transformValue = `translate(${ox}%, ${oy}%) scale(${scale / 100})`;
+
+      if (isSync || targetSide === "antes") {
+        if (imgAntesRef.current) {
+          imgAntesRef.current.style.transform = transformValue;
+        }
+      }
+      if (isSync || targetSide === "despues") {
+        if (imgDespuesRef.current) {
+          imgDespuesRef.current.style.transform = transformValue;
+        }
+      }
+    },
+    [cfg.sincronizarEncuadre],
   );
 
   const updateDividerFromPointer = useCallback(
@@ -86,7 +119,7 @@ export function ImageCompareEditor({
     [isVertical],
   );
 
-  // Manejo del arrastre del divisor
+  // 1. Manejo del arrastre del divisor central
   const handleDividerPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     config.onEnsureBlockSelected?.();
@@ -111,7 +144,7 @@ export function ImageCompareEditor({
     }
   };
 
-  // Manejo de paneo de imagen
+  // 2. Manejo del paneo / arrastre de imagen (Mismo contrato que TabImageLayer / FlipCardImageLayer)
   const handleImagePointerDown = (
     side: "antes" | "despues",
     e: ReactPointerEvent<HTMLDivElement>,
@@ -135,52 +168,67 @@ export function ImageCompareEditor({
         : (cfg.imagenDespuesOffsetY ?? 0);
 
     imagePanRef.current = {
+      side,
       startX: e.clientX,
       startY: e.clientY,
       ox,
       oy,
       width: Math.max(rect.width, 1),
       height: Math.max(rect.height, 1),
+      pendingX: ox,
+      pendingY: oy,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handleImagePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!imagePanRef.current || !selectedImageSide) return;
-    const { startX, startY, ox, oy, width, height } = imagePanRef.current;
-    const dx = ((e.clientX - startX) / width) * 100;
-    const dy = ((e.clientY - startY) / height) * 100;
+    const pan = imagePanRef.current;
+    if (!pan) return;
 
-    const nextX = clamp(Math.round(ox + dx), -40, 40);
-    const nextY = clamp(Math.round(oy + dy), -40, 40);
+    const dx = ((e.clientX - pan.startX) / pan.width) * 100;
+    const dy = ((e.clientY - pan.startY) / pan.height) * 100;
+
+    const nextX = clamp(Math.round(pan.ox + dx), -40, 40);
+    const nextY = clamp(Math.round(pan.oy + dy), -40, 40);
+
+    pan.pendingX = nextX;
+    pan.pendingY = nextY;
+
+    const currentScale =
+      pan.side === "antes"
+        ? (cfg.imagenAntesEscala ?? 100)
+        : (cfg.imagenDespuesEscala ?? 100);
+
+    applyLiveImageTransform(pan.side, nextX, nextY, currentScale);
+  };
+
+  const handleImagePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const pan = imagePanRef.current;
+    if (!pan) return;
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
 
     const isSync = cfg.sincronizarEncuadre !== false;
     const patch: Partial<typeof cfg> = {};
 
-    if (isSync || selectedImageSide === "antes") {
-      patch.imagenAntesOffsetX = nextX;
-      patch.imagenAntesOffsetY = nextY;
+    if (isSync || pan.side === "antes") {
+      patch.imagenAntesOffsetX = pan.pendingX;
+      patch.imagenAntesOffsetY = pan.pendingY;
     }
-    if (isSync || selectedImageSide === "despues") {
-      patch.imagenDespuesOffsetX = nextX;
-      patch.imagenDespuesOffsetY = nextY;
+    if (isSync || pan.side === "despues") {
+      patch.imagenDespuesOffsetX = pan.pendingX;
+      patch.imagenDespuesOffsetY = pan.pendingY;
     }
 
+    imagePanRef.current = null;
     patchConfig(patch);
   };
 
-  const handleImagePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (imagePanRef.current) {
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-      imagePanRef.current = null;
-    }
-  };
-
-  // Manejo del tirador de zoom en esquina
+  // 3. Manejo del tirador de zoom en esquina
   const handleZoomPointerDown = (e: ReactPointerEvent<HTMLSpanElement>) => {
     e.stopPropagation();
     if (!selectedImageSide) return;
@@ -191,41 +239,59 @@ export function ImageCompareEditor({
         : (cfg.imagenDespuesEscala ?? 100);
 
     zoomResizeRef.current = {
+      side: selectedImageSide,
       startY: e.clientY,
       initialScale,
+      pendingScale: initialScale,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handleZoomPointerMove = (e: ReactPointerEvent<HTMLSpanElement>) => {
-    if (!zoomResizeRef.current || !selectedImageSide) return;
-    const dy = zoomResizeRef.current.startY - e.clientY;
+    const zoom = zoomResizeRef.current;
+    if (!zoom) return;
+
+    const dy = zoom.startY - e.clientY;
     const nextScale = clamp(
-      Math.round(zoomResizeRef.current.initialScale + dy * 0.5),
+      Math.round(zoom.initialScale + dy * 0.5),
       50,
       200,
     );
+    zoom.pendingScale = nextScale;
 
-    const isSync = cfg.sincronizarEncuadre !== false;
-    const patch: Partial<typeof cfg> = {};
-    if (isSync || selectedImageSide === "antes") {
-      patch.imagenAntesEscala = nextScale;
-    }
-    if (isSync || selectedImageSide === "despues") {
-      patch.imagenDespuesEscala = nextScale;
-    }
-    patchConfig(patch);
+    const currentOffsetX =
+      zoom.side === "antes"
+        ? (cfg.imagenAntesOffsetX ?? 0)
+        : (cfg.imagenDespuesOffsetX ?? 0);
+    const currentOffsetY =
+      zoom.side === "antes"
+        ? (cfg.imagenAntesOffsetY ?? 0)
+        : (cfg.imagenDespuesOffsetY ?? 0);
+
+    applyLiveImageTransform(zoom.side, currentOffsetX, currentOffsetY, nextScale);
   };
 
   const handleZoomPointerUp = (e: ReactPointerEvent<HTMLSpanElement>) => {
-    if (zoomResizeRef.current) {
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-      zoomResizeRef.current = null;
+    const zoom = zoomResizeRef.current;
+    if (!zoom) return;
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
     }
+
+    const isSync = cfg.sincronizarEncuadre !== false;
+    const patch: Partial<typeof cfg> = {};
+    if (isSync || zoom.side === "antes") {
+      patch.imagenAntesEscala = zoom.pendingScale;
+    }
+    if (isSync || zoom.side === "despues") {
+      patch.imagenDespuesEscala = zoom.pendingScale;
+    }
+
+    zoomResizeRef.current = null;
+    patchConfig(patch);
   };
 
   const handleDividerKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -345,11 +411,11 @@ export function ImageCompareEditor({
         </div>
       )}
 
-      {/* Escenario de comparación */}
+      {/* Escenario de comparación con data-moveable-ignore incondicional */}
       <div
         ref={stageRef}
         className={styles.comparisonStage}
-        data-moveable-ignore={selectedImageSide ? "" : undefined}
+        data-moveable-ignore=""
       >
         {/* Capa de imagen "Después" */}
         <div
@@ -365,6 +431,7 @@ export function ImageCompareEditor({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            ref={imgDespuesRef}
             src={cfg.imagenDespuesUrl}
             alt={cfg.imagenDespuesAlt ?? cfg.etiquetaDespues}
             className={styles.image}
@@ -386,6 +453,7 @@ export function ImageCompareEditor({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            ref={imgAntesRef}
             src={cfg.imagenAntesUrl}
             alt={cfg.imagenAntesAlt ?? cfg.etiquetaAntes}
             className={styles.image}
