@@ -978,30 +978,161 @@ J11 (incremental, sobre J3/J5/J8)
 - **Entregable:** crear un logro genera 4 indicadores reales y distintos (uno por competencia), nunca vacíos aunque Gemini falle. Sin cambios en `gradebook-structure-tab.tsx` — la forma del resultado no cambió (siguen siendo 4 `PerformanceIndicator`), así que no hizo falta ajustar el modal "+ Logro". **Nuevo** `achievements.service.spec.ts` (el módulo no tenía specs — Regla 7, primera prueba de paridad de este flujo sensible): 6 casos — sin API key genera 4 reales y distintos, el fallback incluye el enunciado del logro, usa el modelo Gemini vigente + `responseMimeType` JSON, un array con menos de 4 elementos cae al fallback completo, un elemento inválido dentro de un array de 4 válido cae solo ese elemento, un 503 de Gemini no revienta. Verificación: `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test` (**273/273**, +6) — sin cambios en `lumina-frontend` (no se tocó ningún archivo del frontend, confirmado por `git status`).
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(achievements): generador real de indicadores de desempeño`.
 
-#### J6 — vincular Clase a Indicador(es) de desempeño
-- **Operador:** Claude Code
-- **Estado:** pendiente
-- **Precondición:** J3 hecho, J5 hecho.
-- **Contexto:** hoy no existe relación entre `Class` y `PerformanceIndicator` — el flujo de creación de clase (Pieza 1) siempre parte de cero (genera un desempeño nuevo) en vez de permitir elegir un indicador ya existente del curso. D5/D6: el indicador es el nivel correcto para anclar el tema de una clase puntual.
-- **Alcance — PUEDE tocar:** `lumina-backend/prisma/schema.prisma` — relación `Class ↔ PerformanceIndicator` (probablemente muchos-a-muchos, o un `classId` opcional en `PerformanceIndicator`/tabla puente — decidir en ejecución según cardinalidad real: ¿una clase puede cubrir varios indicadores?); migración aditiva. `new-class-modal.tsx` — nuevo paso/selector: elegir un indicador ya existente del curso (lista de `PerformanceIndicator` vía `Achievement.courseId`) en vez de partir de cero; si se elige uno, el tema de la clase se sugiere desde `temas`/`subtemas` de la unidad curricular ligada a ese indicador (vía J2).
-- **Alcance — NO toca:** el generador de indicadores en sí (J5, ya cerrado), `IaPanel` (J7 hereda el contexto, no J6).
-- **Entregable:** al crear una clase, el docente puede elegir un indicador existente del curso; el tema se sugiere automáticamente desde la unidad curricular correspondiente. Verificación: `cd lumina-backend && pnpm prisma migrate dev && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
-- **Cierre:** no aplica Regla 4 (aditivo). Commit sugerido: `feat(classes): vincular clase a indicador de desempeño`.
+#### J6 — Motor curricular único (4 puntos de entrada con herencia) · **RAÍZ REDACTADA** (2026-09-21) · reemplaza el J6 original y absorbe el alcance del J7 original
 
-#### J7 — panel IA del editor hereda contexto; pulir el chat de refinamiento existente
+**Por qué se reescribe:** un análisis externo (sesión sin memoria compartida con esta) identificó que los 3 puntos donde hoy se toca contenido curricular (crear clase, panel IA del editor, generador de actividades) son sistemas desconectados que regeneran o ignoran lo que el anterior ya produjo — confirmado leyendo el código real (`curriculum.service.ts`, `IaPanel`, `ActivitiesAiPanel`, los 2 modales de clase). El J6 original ("vincular Clase a `PerformanceIndicator`") y el J7 original ("`IaPanel` hereda contexto") quedan **absorbidos** por esta ficha — no se ejecutan por separado. El diagnóstico completo, con archivos y líneas exactas, vive en el historial de esta conversación; lo que sigue es el diseño ya cerrado.
+
+**Decisión de terminología (no reabrir):** es **un solo motor**, no 4 motores — un estado curricular compartido por clase que se completa progresivamente en 4 momentos de UI (curso → clase → editor → actividades). Cada momento posterior **lee** lo que el anterior escribió; ninguno regenera lo ya decidido.
+
+##### Flujo objetivo (cerrado en conversación, no se reabre en ejecución)
+
+```
+Entrada 1 — CREAR CURSO
+  Docente da: área + grado (ya existen, J1) + componente EBC + competencia ICFES
+  → IA genera un DESEMPEÑO (un curso admite varios — uno por combinación
+    componente+competencia que el docente agregue)
+  → persiste en tabla Desempeno, FK a Course
+
+Entrada 2 — CREAR CLASE (un solo modal, fusiona los 2 actuales)
+  Hereda: lista de Desempeno del curso → docente elige UNO
+  Docente escoge un camino, EXCLUYENTE (nunca los dos a la vez):
+    (a) DBA → se muestran solo SUS evidencias de aprendizaje, o
+    (b) EBC → se muestran TODOS los subprocesos del componente (incluye
+        los que ningún DBA cubre — es el único camino para llegar a esos)
+  → IA genera INDICADORES (cognitivo, procedimental, actitudinal)
+  → persiste en Class: FK al Desempeno elegido + camino + selección + indicadores
+
+Entrada 3 — EDITOR, panel IA (rail izquierdo, IaPanel)
+  Hereda: desempeño + indicadores de la Class (nunca los regenera)
+  Docente escoge: qué indicadores aborda ESTA clase + temas/subtemas
+  → IA genera CONTENIDO de la clase (slides/bloques)
+  → persiste la selección en Class (para que la Entrada 4 la herede)
+
+Entrada 4 — GENERADOR DE ACTIVIDADES (ActivitiesAiPanel)
+  Hereda: desempeño + indicadores + temas/subtemas elegidos en la Entrada 3
+  → IA genera actividades CONTEXTUALIZADAS (no un texto libre suelto)
+```
+
+##### Decisiones cerradas en esta conversación (no se reabren en ejecución)
+
+- **DBA y EBC son mutuamente excluyentes.** El docente elige uno u otro, nunca ambos. Esto es lo que **elimina** la necesidad de cualquier tabla o lógica de "subprocesos huérfanos"/emparejamiento DBA↔subproceso: el camino DBA nunca muestra subprocesos (solo evidencias de la unidad elegida); el camino EBC muestra **todos** los subprocesos del componente sin filtrar por si tienen o no un DBA que los respalde (ahí es donde aparecen los que en el camino DBA nunca se verían). No hay intersección que calcular ni nada que ocultar.
+- **La generación de la Entrada 1 usa una estrategia de IA distinta a la del `generateDesempeno` actual.** El motor de match de J3 (`findMatchingUnit`, literal → semántico → grounding) está anclado **por unidad/tema** — no sirve tal cual para generar un desempeño a partir de solo componente+competencia, **antes** de que el docente elija ninguna unidad concreta. La Entrada 1 necesita su propia estrategia (Gemini con componente+competencia+grado como contexto, posiblemente con grounding y/o resumiendo los `dba_enunciado` de las unidades curadas que comparten ese componente) — se diseña en **J6.2**, no se improvisa reusando el prompt de `curriculum.service.ts` sin cambios.
+- **Toda clase relevante tiene curso.** Aunque el schema ya permite `Class.courseId: null` vía `Class.authorId` (migración `20260920000000_add_author_id_and_optional_course_id_to_class`), **no hay ningún camino en el frontend hoy que lo dispare** — toda clase se asocia directamente a un grupo/curso. El motor nuevo asume siempre curso y siempre lista de `Desempeno` disponible; el camino `authorId` sin curso queda **fuera de alcance** de esta ficha (capacidad de schema sin consumidor de producto).
+- **`componenteEbc`/`competenciaIcfes` no son taxonomía inventada — son catálogos MEN/ICFES reales y externos**, fijos por área (3-5 componentes EBC y 3-4 competencias ICFES por área, ya publicados por el MEN/ICFES para Pruebas Saber). El trabajo no es diseñar la taxonomía, es **curarla como catálogo de código** (ver J6.0) — igual de acotado que J10, no es una decisión de arquitectura abierta.
+- **El eje de notas (`Achievement`/`PerformanceIndicator`, manual, libro de calificaciones) y el eje pedagógico nuevo (`Desempeno`/indicadores de Class) permanecen desconectados**, igual que J4 ya decidió para el eje viejo. Esta ficha **no** toca `Achievement`/`PerformanceIndicator`. Quedan **tres** nociones de "indicador" corriendo en paralelo sin puente (`indicadoresDeDesempeno` legado de J4 dentro de `Class.desempeno` Json, `PerformanceIndicator.competenceType` de J5, y los indicadores cognitivo/procedimental/actitudinal nuevos de la Entrada 2) — deuda consciente, documentada, candidata a una ficha futura (no antes de que el motor de 4 entradas esté estable).
+- **`Class.desempeno` (Json legado) se congela, no se migra.** Las clases creadas antes de esta ficha lo siguen leyendo tal cual; las clases nuevas escriben en el modelo relacional nuevo. No hay reescritura de datos existentes.
+
+##### Modelo de datos objetivo (referencia para J6.1 — no bloqueante, se ajusta en ejecución si el schema real difiere)
+
+```prisma
+model Desempeno {
+  id               String   @id @default(cuid())
+  courseId         String
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  area             String   // copiado de Course al generar, para historial si el curso cambia de área
+  grado            String
+  componenteEbc    String   // código del catálogo fijo (ver J6.0), ej. "entorno_vivo"
+  competenciaIcfes String   // código del catálogo fijo (ver J6.0), ej. "indagacion"
+  enunciado        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  classes          Class[]
+
+  @@index([courseId])
+}
+
+// Class — campos nuevos, aditivos
+model Class {
+  // ...campos existentes sin tocar, incluido el Json legado `desempeno`...
+  desempenoId      String?
+  desempenoRef     Desempeno? @relation(fields: [desempenoId], references: [id])
+  caminoCurricular String?    // "dba" | "ebc" — excluyente
+  dbaSeleccionado  Json?      // { unidadId, evidenciasElegidas: string[] } — solo si caminoCurricular = "dba"
+  ebcSeleccionado  Json?      // { subprocesosElegidos: string[] } — solo si caminoCurricular = "ebc"
+  indicadores      Json?      // { cognitivo: string[], procedimental: string[], actitudinal: string[] }
+  contextoClase    Json?      // poblado en la Entrada 3: { indicadoresAbordados: string[], temas: string[], subtemas: string[] }
+}
+```
+
+**Migración:** aditiva pura (tabla nueva + columnas nullable en `Class`). Regla 7 satisfecha por diseño — confirmado además que **ningún test backend depende de la forma de `Class.desempeno`** (`grep -rn "desempeno" lumina-backend/src --include="*.spec.ts"` → 0), así que convivir con el campo legado no rompe cobertura existente.
+
+##### Orden de ejecución
+
+`J6.0` (catálogo) y el trabajo de schema en `J6.1` pueden ir en paralelo. `J6.2` (Entrada 1) depende de `J6.0`+`J6.1`. `J6.3` (Entrada 2) depende de `J6.2` (necesita `Desempeno` ya persistible) — reutiliza el motor de match de J3 para el contenido de las unidades DBA/EBC, pero es código nuevo de selección, no una extensión del modal viejo. `J6.4` (Entrada 3, absorbe el J7 original) depende de `J6.3`. `J6.5` (Entrada 4) depende de `J6.4`. `J6.6` retira el código/modal viejo (Regla 4). Cada sub-ficha se redacta con el estado real del código a la vista en el momento de tomarla (Regla 10) — el detalle de archivos exactos de `J6.2`–`J6.6` no se fija de antemano en esta raíz porque el propio flujo de J6.2/J6.3 puede revelar ajustes de forma.
+
+##### J6.0 — Catálogo fijo de componentes EBC y competencias ICFES por área
 - **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
+- **Precondición:** ninguna. Puede ir en paralelo con J6.1.
+- **Contexto:** `componenteEbc`/`competenciaIcfes` son catálogos MEN/ICFES reales (ej. Ciencias Naturales: componentes `Entorno vivo`/`Entorno físico`/`CTS`, competencias `Indagación`/`Explicación de fenómenos`/`Uso comprensivo del conocimiento científico`) — no existen hoy en ningún lado del repo (`grep -ri icfes` → 0). Se necesita un catálogo real por las 5 áreas del dataset (`ciencias-naturales`, `ciencias-sociales`, `ingles`, `lenguaje`, `matematicas`), aunque el contenido curado de unidades (J10) todavía no cubra las 55 combinaciones.
+- **Alcance — PUEDE tocar:** nuevo módulo en `@lumina/curriculum-data` (ej. `src/ebc-icfes-catalog.ts`) — `EBC_COMPONENTES: Record<AreaCurricular, {codigo, label}[]>` y `ICFES_COMPETENCIAS: Record<AreaCurricular, {codigo, label}[]>`, con los valores reales publicados por el MEN/ICFES para cada área. Export desde el índice del paquete. Spec de forma (todas las áreas tienen al menos 1 componente y 1 competencia, sin duplicados de código).
+- **Alcance — NO toca:** el dataset de unidades (`ciencias-naturales-1.json`, etc.), el schema Prisma, ningún endpoint.
+- **Entregable:** catálogo real y verificado (no placeholder) para las 5 áreas. Verificación: `pnpm --filter @lumina/curriculum-data build && test && lint`.
+- **Cierre:** no aplica Regla 4 (aditivo). Commit sugerido: `feat(curriculum-data): catálogo EBC/ICFES por área`.
+
+##### J6.1 — Modelo de datos: tabla `Desempeno` + campos nuevos en `Class`
+- **Operador:** a definir
 - **Estado:** pendiente
-- **Precondición:** J1 hecho, J3 hecho.
-- **Contexto:** `IaPanel` (`flyout-left-panels.tsx:874`) ya tiene un chat de refinamiento funcional (`conversationHistory`/`refinementInput`/`handleRefinar`, líneas 898-1175) pero (a) pide área/grado/tema como si no existieran ya en el curso/clase, y (b) el chat solo aparece DESPUÉS de la primera generación, con una ventana de historial chica (`max-h-32`, línea 1175).
-- **Alcance — PUEDE tocar:** `flyout-left-panels.tsx` (`IaPanel`) — heredar área/grado (del curso, J1) y tema/indicador (de la clase, J3/J6) sin volver a pedirlos; hacer visible el chat de refinamiento desde el inicio (no solo post-generación); agrandar la ventana de historial (`max-h-32` → algo más generoso, revisar layout del panel).
-- **Alcance — NO toca:** `ai-features.service.ts` `refineStructure`/`contentAssistant` en sí (la lógica de backend no cambia, solo el contexto que recibe y la UI que lo muestra).
-- **Entregable:** el panel IA del editor no vuelve a pedir área/grado/tema si ya existen; el chat de refinamiento es visible y usable desde el inicio con más espacio. Verificación: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`. QA manual en el editor: abrir el panel IA en una clase con indicador ya asignado (J6) y confirmar que no repregunta contexto.
-- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): panel IA hereda contexto curricular, mejora el chat de refinamiento`.
+- **Precondición:** ninguna. Puede ir en paralelo con J6.0.
+- **Alcance — PUEDE tocar:** `lumina-backend/prisma/schema.prisma` (modelo `Desempeno` + campos nuevos en `Class`, ver referencia arriba — ajustar nombres/tipos si al leer el schema real algo ya cambió desde que se redactó esta raíz); migración Prisma aditiva; DTOs nuevos (`CreateDesempenoDto`, `UpdateClassCurricularContextDto` o equivalente) con `@IsIn` contra el catálogo de `J6.0`.
+- **Alcance — NO toca:** `Achievement`/`PerformanceIndicator` (permanecen desconectados, decisión cerrada); `Class.desempeno` (Json legado, no se migra ni se borra).
+- **Entregable:** `pnpm prisma migrate dev` aditivo, sin romper ninguna clase existente. Verificación: `cd lumina-backend && npx prisma generate && npx tsc --noEmit && pnpm lint && pnpm test`.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(prisma): modelo Desempeno y contexto curricular de Class`.
+
+##### J6.2 — Entrada 1: crear curso genera Desempeño(s)
+- **Operador:** a definir
+- **Estado:** pendiente
+- **Precondición:** J6.0 hecho, J6.1 hecho.
+- **Contexto:** estrategia de IA nueva (ver "Decisiones cerradas" arriba) — genera un enunciado de desempeño a partir de área+grado+componente+competencia, sin unidad/tema todavía elegido. Diseño de detalle (a redactar al tomar esta ficha, con el código de `curriculum.service.ts` a la vista): probablemente Gemini con grounding, usando como contexto los `dba_enunciado` de las unidades curadas del dataset que comparten ese componente (si existen) más un fallback de plantilla si el área/componente no tiene contenido curado.
+- **Alcance — PUEDE tocar:** `curriculum.service.ts` (nuevo método de generación por componente+competencia, separado de `generateDesempeno`), nuevo endpoint (`POST /curriculum/generate-desempeno-curso` o equivalente), UI en `courses-client.tsx`/`course-detail-client.tsx` para agregar uno o más desempeños al curso (decidir en ejecución si es un paso del modal de creación o una sección aparte en el detalle del curso — un curso admite varios desempeños, así que probablemente conviene una sección "Desempeños del curso" accesible después de crear el curso, no solo en el modal inicial).
+- **Alcance — NO toca:** el modal de clase (`J6.3`), `IaPanel`/`ActivitiesAiPanel`.
+- **Entregable:** desde el curso, el docente puede generar y ver una lista de `Desempeno` persistidos. Verificación: `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(curriculum): generar Desempeno a nivel de curso`.
+
+##### J6.3 — Entrada 2: modal de clase fusionado (DBA/EBC excluyente → indicadores)
+- **Operador:** a definir
+- **Estado:** pendiente
+- **Precondición:** J6.2 hecho.
+- **Contexto (D4):** se fusionan los 2 modales actuales (`course-detail-client.tsx`'s `NewClassModal` local, que solo crea `{title, courseId}`, y `new-class-modal.tsx`, que hoy genera un desempeño por clase desde texto libre) en **uno solo**: título → elegir `Desempeno` del curso → camino DBA-o-EBC excluyente → generar indicadores → un solo submit. **Regla 7:** el modal viejo no se borra hasta que el nuevo tenga cobertura equivalente a `curriculum.service.spec.ts` para el flujo completo.
+- **Alcance — PUEDE tocar:** nuevos endpoints de listado (`listUnidadesPorComponente`/`listSubprocesosPorComponente` en `@lumina/curriculum-data` + backend) filtrados por área+grado+componente del `Desempeno` elegido; `curriculum.service.ts` (generación de indicadores cognitivo/procedimental/actitudinal, con el DBA/evidencias o EBC/subprocesos elegidos como contexto del prompt); reescritura de `new-class-modal.tsx` como el modal único; `course-detail-client.tsx` deja de tener su `NewClassModal` local propio (o lo redirige al nuevo).
+- **Alcance — NO toca:** `Achievement`/`PerformanceIndicator` (J5, cerrado); `IaPanel`/`ActivitiesAiPanel` (Entradas 3/4).
+- **Entregable:** un solo modal de creación de clase, con el flujo completo D4. Prueba de paridad del flujo completo antes de retirar el modal viejo (Regla 7 — puede quedar para `J6.6`). Verificación: `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
+- **Cierre:** parcial — no se borra el modal viejo todavía (`TODO(migración-J6)` con referencia a `J6.6`, Regla 4).
+
+##### J6.4 — Entrada 3: `IaPanel` hereda desempeño + indicadores + temas/subtemas (absorbe el J7 original)
+- **Operador:** a definir
+- **Estado:** pendiente
+- **Precondición:** J6.3 hecho.
+- **Contexto:** `IaPanel` (`flyout-left-panels.tsx:874`) tiene hoy su propio selector de área/grado/DBA, totalmente independiente del curso/clase, y solo muestra el desempeño como texto decorativo (nunca lo inyecta en el payload real de `/ai/content-assistant`). Esta entrada retira ese selector duplicado, agrega un checklist de indicadores (cognitivo/procedimental/actitudinal, los generados en la Entrada 2) para que el docente marque cuáles aborda esta clase, un selector de temas/subtemas, e inyecta todo eso en el payload real enviado al backend. La selección se persiste en `Class.contextoClase` para que la Entrada 4 la herede.
+- **Alcance — PUEDE tocar:** `flyout-left-panels.tsx` (`IaPanel`) — quitar el selector propio de área/grado/DBA; agregar checklist de indicadores + selector de temas/subtemas; `use-ai.ts`/`ai-features.service.ts` DTO de `content-assistant` ampliado para aceptar el contexto curricular estructurado (desempeño + indicadores abordados + temas/subtemas), no solo `topic` de texto libre; persistencia de la selección en `Class.contextoClase`.
+- **Alcance — NO toca:** `refineStructure`/`generate-from-document` en sí (salvo que también deban recibir el contexto — decidir en ejecución si aplica igual).
+- **Entregable:** el panel IA del editor no vuelve a pedir área/grado/DBA si la clase ya los tiene (heredados desde la Entrada 2); genera contenido usando el contexto curricular real, no solo un tema libre. Verificación: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`. QA manual: abrir el panel IA en una clase con desempeño/indicadores ya asignados y confirmar que no repregunta contexto y que el contenido generado refleja los indicadores elegidos.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): IaPanel hereda contexto curricular completo (absorbe J7)`.
+
+##### J6.5 — Entrada 4: generador de actividades contextualizado
+- **Operador:** a definir
+- **Estado:** pendiente
+- **Precondición:** J6.4 hecho.
+- **Contexto:** `GenerateActivityDto` hoy es solo `{ text: string, type, count? }` — ni siquiera separa grado/tema, es un `text` libre puro que `ActivitiesAiPanel` precarga con el enunciado del desempeño como valor editable de arranque. Esta entrada reemplaza ese contrato por uno estructurado que hereda desempeño + indicadores abordados + temas/subtemas de `Class.contextoClase` (poblado en la Entrada 3), sin que el docente tenga que reescribirlo a mano. La ampliación del catálogo de 7 a 22 tipos (J8 original) puede hacerse en esta misma ficha o quedar como trabajo separado — decidir en ejecución; no es bloqueante para la contextualización.
+- **Alcance — PUEDE tocar:** `generate-activity.dto.ts` (contrato nuevo, estructurado); `ai-features.service.ts` `generateActivity()` (prompt que usa el contexto heredado); `activities-ai-panel.tsx` (deja de exponer un textarea libre editable como fuente principal de contexto — el contexto heredado es de solo lectura, el docente elige tipo/cantidad).
+- **Alcance — NO toca:** el catálogo de 22 tipos si se decide dejarlo para J8 aparte.
+- **Entregable:** las actividades generadas reflejan el desempeño/indicadores/temas reales de la clase, no un texto libre desconectado. Verificación: `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(ai-features): actividades contextualizadas por desempeño/indicadores/temas`.
+
+##### J6.6 — Cierre: retirar el modal de clase viejo y el camino de generación por clase suelto
+- **Operador:** a definir
+- **Estado:** pendiente
+- **Precondición:** J6.3 hecho con paridad probada (Regla 7).
+- **Contexto:** cierre de Regla 4 para `J6.3` — una vez el modal fusionado tenga cobertura de test equivalente al flujo completo (`curriculum.service.spec.ts` + specs del modal nuevo), se retira cualquier código muerto del modal viejo (`course-detail-client.tsx`'s `NewClassModal` local si quedó sin uso, cualquier rama de `new-class-modal.tsx` que ya no aplique).
+- **Alcance — PUEDE tocar:** los archivos que J6.3 dejó con `TODO(migración-J6)`.
+- **Entregable:** `grep -rn "TODO(migración-J6)"` → 0. Verificación: la del alcance de J6.3.
+- **Cierre (Regla 4):** código viejo borrado, no `TODO` indefinido. Commit sugerido: `chore(classes): retirar el modal de creación de clase legado (cierra J6)`.
 
 #### J8 — panel de actividades: ampliar a los 22 tipos + chat de refinamiento nuevo
 - **Operador:** Claude Code (o el operador de mayor disponibilidad — sin precondición, puede arrancar ya)
 - **Estado:** pendiente
-- **Precondición:** ninguna. Ficha de mayor esfuerzo — priorizar temprano si hay más de un operador.
+- **Precondición:** ninguna. Ficha de mayor esfuerzo — priorizar temprano si hay más de un operador. **Nota de solapamiento (J6):** `J6.5` reemplaza el contrato de `GenerateActivityDto` para que herede desempeño/indicadores/temas — si `J6.5` ya se ejecutó, esta ficha se redacta/ajusta sobre ese DTO ya estructurado, no sobre el `{ text: string }` original; no dupliques el trabajo de contextualización, solo el catálogo de 22 tipos + el chat de refinamiento.
 - **Contexto:** `AI_ACTIVITY_TYPES` (`generate-activity.dto.ts:6-14`) cubre 7 de los 22 tipos reales del `elementRegistry` (`packages/element-kit/src/index.ts:482-532`). `activities-ai-panel.tsx` no tiene ningún chat de refinamiento (a diferencia de `IaPanel`, Pieza 2) — solo genera una vez.
 - **Alcance — PUEDE tocar:** `lumina-backend/src/ai-features/dto/generate-activity.dto.ts` — ampliar `AI_ACTIVITY_TYPES` a los 22 tipos. `lumina-backend/src/ai-features/ai-features.service.ts` — un `schema`+`instruccion` de generación nuevo por cada uno de los 15 tipos faltantes (`anagrama`, `clasificar`, `memoria`, `puzzleImagen`, `sopaLetras`, `crucigrama`, `abrirCaja`, `ahorcado`, `puzzlePalabras`, `globos`, `topo`, `videoInteractivo`, `encuestaViva`, `nubePalabras`, `historiaRamificada`), respetando la forma de datos que cada `ElementDefinition.crearPorDefecto()` ya espera (leer `packages/element-kit/src/activities/<tipo>/` para la forma exacta de cada uno antes de escribir el schema — no inventar la forma). Nueva función backend `refineActivity` (patrón de `refineStructure`, Pieza 2) + su endpoint. `activities-ai-panel.tsx` — nueva UI de chat de refinamiento (replicando el patrón de `IaPanel`: `conversationHistory`/input/historial visible).
 - **Alcance — NO toca:** `IaPanel`/`refineStructure` en sí (se replica el patrón, no se comparte código a la fuerza si las formas de datos difieren demasiado — evaluar si conviene extraer un hook/componente compartido de "chat de refinamiento" entre ambos paneles; si se hace, documentarlo como mejora adicional, no como requisito de esta ficha), el modelo de `Achievement`/`PerformanceIndicator`.
