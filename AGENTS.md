@@ -1072,8 +1072,8 @@ model Class {
 - **Cierre:** no aplica Regla 4 (aditivo). Commit sugerido: `feat(curriculum-data): catálogo EBC/ICFES por área`.
 
 ##### J6.1 — Modelo de datos: tabla `Desempeno` + campos nuevos en `Class`
-- **Operador:** a definir
-- **Estado:** pendiente
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna. Puede ir en paralelo con J6.0.
 - **Alcance — PUEDE tocar:** `lumina-backend/prisma/schema.prisma` (modelo `Desempeno` + campos nuevos en `Class`, ver referencia arriba — ajustar nombres/tipos si al leer el schema real algo ya cambió desde que se redactó esta raíz); migración Prisma aditiva; DTOs nuevos (`CreateDesempenoDto`, `UpdateClassCurricularContextDto` o equivalente) con `@IsIn` contra el catálogo de `J6.0`.
 - **Alcance — NO toca:** `Achievement`/`PerformanceIndicator` (permanecen desconectados, decisión cerrada); `Class.desempeno` (Json legado, no se migra ni se borra).
