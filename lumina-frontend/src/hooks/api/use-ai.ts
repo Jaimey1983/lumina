@@ -18,6 +18,8 @@ export interface GenerateActivityInput {
   text: string;
   type: AiActivityType;
   count?: number;
+  /** Desempeño + indicadores abordados + temas/subtemas de la Entrada 3 (J6.4/J6.5). */
+  curriculumContext?: string;
 }
 
 export interface GenerateActivityResult {

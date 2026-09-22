@@ -150,10 +150,14 @@ Para FillInTheBlanks, marca cada hueco con "____" en question y pon las respuest
 Responde SIEMPRE en español. Devuelve ÚNICAMENTE JSON válido con el objeto de la actividad.
 No envuelvas el resultado en { "activity": ... } ni agregues texto fuera del JSON.`;
 
+    const curriculumSection = dto.curriculumContext
+      ? `\nCONTEXTO CURRICULAR DE ESTA CLASE (desempeño + indicadores + temas):\n${dto.curriculumContext}\n\nLa actividad debe evaluar específicamente los indicadores de desempeño listados arriba, no un tema genérico.\n`
+      : '';
+
     const user = `Genera una actividad Lumina de tipo "${dto.type}" basada en este tema o texto:
 
 "${dto.text}"
-
+${curriculumSection}
 ${spec.instruccion(count)}
 
 El JSON debe cumplir EXACTAMENTE este esquema:

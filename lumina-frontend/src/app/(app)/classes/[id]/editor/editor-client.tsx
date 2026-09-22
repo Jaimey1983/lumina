@@ -2977,6 +2977,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             onApplyThemeToAllSlides={handleApplyThemeToAllSlides}
             onSaveCustomThemes={handleSaveCustomThemes}
             desempenoEnunciado={isStudent ? undefined : desempeno?.enunciado}
+            curricularContext={isStudent ? undefined : iaPanelCurricularContext}
             hasActivity={activeSlideHasActivity}
             onInsertActivity={handleInsertAiActivity}
             liveResponses={liveResponses}

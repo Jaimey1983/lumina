@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import type { RightPanelId } from './right-rail';
 import type { ActivityType } from './panels/activities-panel';
 import { ActivitiesAiPanel } from './panels/activities-ai-panel';
+import type { IaPanelCurricularContext } from './panels/flyout-left-panels';
 import { ActivitiesPanel } from './panels/activities-panel';
 import { SlideThemesPanel } from './panels/themes-panel';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
@@ -47,6 +48,8 @@ export interface RightFlyoutPanelProps {
   onApplyThemeToAllSlides?: (theme: SlideTheme) => void;
   onSaveCustomThemes?: (themes: SlideTheme[]) => void;
   desempenoEnunciado?: string;
+  /** Motor curricular único (J6.4/J6.5) — contexto heredado de la Entrada 2/3. */
+  curricularContext?: IaPanelCurricularContext;
   hasActivity?: boolean;
   /** Inserta una actividad generada por IA en el slide actual (o crea uno nuevo). */
   onInsertActivity?: (activityContent: Record<string, unknown>) => void;
@@ -83,6 +86,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       onApplyThemeToAllSlides,
       onSaveCustomThemes,
       desempenoEnunciado,
+      curricularContext,
       hasActivity,
       onInsertActivity,
       liveResponses,
@@ -145,6 +149,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
             {activePanel === 'ia' && (
               <ActivitiesAiPanel
                 desempenoEnunciado={desempenoEnunciado}
+                curricularContext={curricularContext}
                 hasActivity={hasActivity}
                 onInsertActivity={onInsertActivity}
               />

@@ -96,6 +96,7 @@ import {
 import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { useUnidadesDbaParaDesempeno } from '@/hooks/api/use-desempenos';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
+import { buildCurricularContextTexto } from '../../lib/curricular-context-texto';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@lumina/curriculum-data';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
@@ -1084,24 +1085,12 @@ function IaPanel({
   /** Texto de contexto curricular real para inyectar en el prompt de Gemini. */
   const buildContextoCurricularTexto = useCallback((): string | undefined => {
     if (!tieneContextoCurricularJ6) return undefined;
-    const partes: string[] = [];
-    if (curricularContext?.desempenoEnunciado) {
-      partes.push(`Desempeño del curso: ${curricularContext.desempenoEnunciado}`);
-    }
-    if (indicadoresAbordados.length > 0) {
-      partes.push(
-        `Indicadores de desempeño que esta clase debe abordar:\n${indicadoresAbordados
-          .map((i) => `- ${i}`)
-          .join('\n')}`,
-      );
-    }
-    if (temasClase.length > 0) {
-      partes.push(`Temas de esta clase: ${temasClase.join(', ')}`);
-    }
-    if (subtemasClase.length > 0) {
-      partes.push(`Subtemas de esta clase: ${subtemasClase.join(', ')}`);
-    }
-    return partes.length > 0 ? partes.join('\n\n') : undefined;
+    return buildCurricularContextTexto({
+      desempenoEnunciado: curricularContext?.desempenoEnunciado,
+      indicadoresAbordados,
+      temas: temasClase,
+      subtemas: subtemasClase,
+    });
   }, [tieneContextoCurricularJ6, curricularContext, indicadoresAbordados, temasClase, subtemasClase]);
 
   // ── Estado del formulario ─────────────────────────────────────────────────

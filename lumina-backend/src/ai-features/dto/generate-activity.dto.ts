@@ -28,4 +28,14 @@ export class GenerateActivityDto {
   @Min(1)
   @Max(20)
   count?: number;
+
+  /**
+   * Desempeño + indicadores abordados + temas/subtemas de la Entrada 3
+   * (J6.4), inyectado desde el frontend (buildCurricularContextTexto).
+   * Mismo patrón que `ContentAssistantDto.curriculumContext`.
+   */
+  @IsOptional()
+  @IsString()
+  @Transform(trimIfString)
+  curriculumContext?: string;
 }
