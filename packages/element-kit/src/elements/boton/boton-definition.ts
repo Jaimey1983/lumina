@@ -1,35 +1,35 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultBotonBlock } from "../../widgets/boton/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import { BotonEditor, BotonPropiedades, BotonViewer } from "./boton-adapters.js";
 import { BOTON_TIPO, type BotonConfig, type BotonEstado } from "./boton-types.js";
 
-export const BOTON_PRESETS = [
+export const BOTON_PRESETS: readonly ElementPreset<BotonEstado>[] = [
   {
     id: "primario",
     label: "Primario Tema",
     description: "Sólido con el color de acento del tema",
-    patch: { variante: "primary", outline: false, forma: "redondeado" },
+    patch: { variante: "primary", outline: false, forma: "redondeado" } as unknown as Partial<BotonEstado>,
   },
   {
     id: "contorno",
     label: "Contorno Elegante",
     description: "Líneas finas con fondo transparente",
-    patch: { variante: "primary", outline: true, forma: "redondeado" },
+    patch: { variante: "primary", outline: true, forma: "redondeado" } as unknown as Partial<BotonEstado>,
   },
   {
     id: "pill",
     label: "Pill Destacado",
     description: "Bordes completamente redondeados",
-    patch: { variante: "primary", outline: false, forma: "pill" },
+    patch: { variante: "primary", outline: false, forma: "pill" } as unknown as Partial<BotonEstado>,
   },
   {
     id: "secundario",
     label: "Sutil / Secundario",
     description: "Tono neutro para acciones de menor jerarquía",
-    patch: { variante: "secondary", outline: false, forma: "redondeado" },
+    patch: { variante: "secondary", outline: false, forma: "redondeado" } as unknown as Partial<BotonEstado>,
   },
-] as const;
+];
 
 /**
  * Piloto E1.4 — Botón como `ElementDefinition`.

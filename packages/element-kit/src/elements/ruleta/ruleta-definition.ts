@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultRuletaWidget } from "../../widgets/ruleta/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import {
   RuletaEditor,
   RuletaPropiedades,
@@ -8,7 +8,7 @@ import {
 } from "./ruleta-adapters.js";
 import { RULETA_TIPO, type RuletaConfig, type RuletaEstado } from "./ruleta-types.js";
 
-export const RULETA_PRESETS = [
+export const RULETA_PRESETS: readonly ElementPreset<RuletaEstado>[] = [
   {
     id: "sorteo-clasico",
     label: "Sorteo Clásico",
@@ -18,7 +18,7 @@ export const RULETA_PRESETS = [
         duracionGiro: 4000,
         mostrarGanador: true,
       },
-    },
+    } as unknown as Partial<RuletaEstado>,
   },
   {
     id: "dinamica-rapida",
@@ -29,7 +29,7 @@ export const RULETA_PRESETS = [
         duracionGiro: 2000,
         mostrarGanador: true,
       },
-    },
+    } as unknown as Partial<RuletaEstado>,
   },
   {
     id: "suspense",
@@ -40,9 +40,9 @@ export const RULETA_PRESETS = [
         duracionGiro: 6500,
         mostrarGanador: true,
       },
-    },
+    } as unknown as Partial<RuletaEstado>,
   },
-] as const;
+];
 
 /** Piloto E3.1 — Ruleta como ElementDefinition, sin puntuación. */
 export const ruletaDefinition = {

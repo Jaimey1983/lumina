@@ -70,8 +70,14 @@ export interface ElementDefinition<TState, TConfig> {
   readonly puntuacion?: PuntuacionDelegate<TState>;
   /** Metadata para los paneles de inserción del editor (E7.1). */
   readonly catalogo?: ElementCatalogo;
-  /** Galería de plantillas o presets preconfigurados para el elemento (E8). */
-  readonly presets?: readonly ElementPreset<any>[];
+  /**
+   * Galería de plantillas o presets preconfigurados para el elemento (E8).
+   * `ElementPreset` acepta parches tanto de estado (`patch`) como de
+   * configuración (`configPatch`) bajo un solo genérico — algunos elementos
+   * solo parchean estado, otros solo configuración (ver
+   * `contract-presets.spec.ts`), por eso acá se acepta cualquiera de los dos.
+   */
+  readonly presets?: readonly ElementPreset<TState | TConfig>[];
 }
 
 
