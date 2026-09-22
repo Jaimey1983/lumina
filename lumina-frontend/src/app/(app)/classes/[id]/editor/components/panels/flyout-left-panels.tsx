@@ -97,7 +97,12 @@ import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { useUnidadesDbaParaDesempeno } from '@/hooks/api/use-desempenos';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { buildCurricularContextTexto } from '../../lib/curricular-context-texto';
-import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@lumina/curriculum-data';
+import {
+  AREAS_LABELS,
+  GRADOS_PRIMARIA,
+  GRADOS_BACHILLERATO,
+  resolverEstandarEbc,
+} from '@lumina/curriculum-data';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
@@ -677,6 +682,7 @@ const PLACEHOLDER_SLIDE_IMG =
 
 function buildSlideContextoCurricular(
   curriculumData: CurriculumData,
+  area: AreaCurricular,
   topicKeywords: string,
 ): { bloques: Block[]; layout: SlidePersistedLayoutKey; titulo: string } | null {
   if (!curriculumData?.unidades?.length) return null;
@@ -690,7 +696,6 @@ function buildSlideContextoCurricular(
     const searchable = [
       ...unidad.temas,
       ...unidad.subtemas,
-      ...unidad.palabras_clave,
       unidad.unidad_titulo,
       unidad.dba_enunciado,
     ].join(' ').toLowerCase();
@@ -715,28 +720,28 @@ function buildSlideContextoCurricular(
   bloques.push(buildTemplateTextBlock(encabezado, 5, 15, 90, 12, 14, 'centro'));
 
   bloques.push(buildTemplateTextBlock(
-    `DBA ${u.dba_asociados.join(', ')}:\n${u.dba_enunciado}`,
+    `${u.dba_codigo}:\n${u.dba_enunciado}`,
     5, 29, 90, 18, 14,
   ));
 
+  const estandarEbc = resolverEstandarEbc(
+    area,
+    curriculumData.grado as GradoEscolar,
+    u.ebc_factor,
+  );
   bloques.push(buildTemplateTextBlock(
-    `EBC — ${u.ebc_factor}:\n${u.ebc_estandar}`,
+    `EBC — ${u.ebc_factor}:\n${estandarEbc?.estandar ?? ''}`,
     5, 49, 90, 12, 13,
   ));
 
   bloques.push(buildTemplateTextBlock(
-    `Nivel Bloom: ${u.nivel_cognitivo.nivel} · Verbos: ${u.nivel_cognitivo.verbo_bloom.join(', ')}`,
-    5, 63, 55, 8, 13,
-  ));
-
-  bloques.push(buildTemplateTextBlock(
     `Temas: ${u.temas.join(' · ')}`,
-    5, 72, 90, 8, 13,
+    5, 63, 90, 8, 13,
   ));
 
   bloques.push(buildTemplateTextBlock(
-    `Desempeño básico: ${u.indicadores_desempeno.cognitivo.basico}`,
-    5, 82, 90, 12, 12,
+    `Indicador de desempeño: ${u.evidencias_aprendizaje[0] ?? ''}`,
+    5, 73, 90, 20, 12,
   ));
 
   return {
@@ -1207,8 +1212,8 @@ function IaPanel({
         slidesCreadosCount++;
 
         // Después de la portada (índice 0), insertar slide curricular si hay datos DBA
-        if (index === 0 && curriculumData) {
-          const slideCurricular = buildSlideContextoCurricular(curriculumData, keywords);
+        if (index === 0 && curriculumData && area) {
+          const slideCurricular = buildSlideContextoCurricular(curriculumData, area, keywords);
           if (slideCurricular) {
             onCreateActivitySlide?.(
               { bloques: slideCurricular.bloques, layout: slideCurricular.layout },
@@ -1223,7 +1228,7 @@ function IaPanel({
       setResultado(null);
       setConversationHistory([]);
     },
-    [onCreateActivitySlide, curriculumData, topic, docTopico, ultimaFuente],
+    [onCreateActivitySlide, curriculumData, area, topic, docTopico, ultimaFuente],
   );
 
   // ── Generar desde tema ────────────────────────────────────────────────────

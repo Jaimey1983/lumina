@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultHotspotBlock } from "../../widgets/hotspot/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import {
   HotspotEditor,
   HotspotPropiedades,
@@ -8,7 +8,7 @@ import {
 } from "./hotspot-adapters.js";
 import { HOTSPOT_TIPO, type HotspotConfig, type HotspotEstado } from "./hotspot-types.js";
 
-export const HOTSPOT_PRESETS = [
+export const HOTSPOT_PRESETS: readonly ElementPreset<HotspotEstado>[] = [
   {
     id: "pulso-alerta",
     label: "Pulso Dinámico",
@@ -19,7 +19,7 @@ export const HOTSPOT_PRESETS = [
         triggerEvento: "click",
         efectoApertura: "slide-up",
       },
-    },
+    } as unknown as Partial<HotspotEstado>,
   },
   {
     id: "hover-sutil",
@@ -31,7 +31,7 @@ export const HOTSPOT_PRESETS = [
         triggerEvento: "hover",
         efectoApertura: "fade",
       },
-    },
+    } as unknown as Partial<HotspotEstado>,
   },
   {
     id: "destacado-grande",
@@ -43,9 +43,9 @@ export const HOTSPOT_PRESETS = [
         triggerEvento: "click",
         efectoApertura: "slide-up",
       },
-    },
+    } as unknown as Partial<HotspotEstado>,
   },
-] as const;
+];
 
 /** E3.2 — Hotspot como ElementDefinition, sin puntuación. */
 export const hotspotDefinition = {

@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultCarouselBlock } from "../../widgets/carousel/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import {
   CarouselEditor,
   CarouselViewer,
@@ -12,7 +12,7 @@ import {
   type CarouselConfig,
 } from "./carousel-types.js";
 
-export const CAROUSEL_PRESETS = [
+export const CAROUSEL_PRESETS: readonly ElementPreset<CarouselEstado>[] = [
   {
     id: "estandar-dots",
     label: "Puntos Inferiores",
@@ -23,7 +23,7 @@ export const CAROUSEL_PRESETS = [
         mostrarTabsPagina: false,
         mostrarFlechasInternas: true,
       },
-    },
+    } as unknown as Partial<CarouselEstado>,
   },
   {
     id: "tabs-superiores",
@@ -35,7 +35,7 @@ export const CAROUSEL_PRESETS = [
         mostrarDots: false,
         mostrarFlechasInternas: true,
       },
-    },
+    } as unknown as Partial<CarouselEstado>,
   },
   {
     id: "minimal-flechas",
@@ -47,9 +47,9 @@ export const CAROUSEL_PRESETS = [
         mostrarTabsPagina: false,
         mostrarFlechasInternas: true,
       },
-    },
+    } as unknown as Partial<CarouselEstado>,
   },
-] as const;
+];
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */
 export const carouselDefinition = {

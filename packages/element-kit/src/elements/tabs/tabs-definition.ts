@@ -1,10 +1,10 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTabsBlock } from "../../widgets/tabs/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
 import { TABS_TIPO, type TabsEstado, type TabsConfig } from "./tabs-types.js";
 
-export const TABS_PRESETS = [
+export const TABS_PRESETS: readonly ElementPreset<TabsEstado>[] = [
   {
     id: "horizontal-clasico",
     label: "Pestañas Clásicas",
@@ -13,7 +13,7 @@ export const TABS_PRESETS = [
       configuracion: {
         posicionTabs: "arriba",
       },
-    },
+    } as unknown as Partial<TabsEstado>,
   },
   {
     id: "tabs-inferiores",
@@ -23,9 +23,9 @@ export const TABS_PRESETS = [
       configuracion: {
         posicionTabs: "abajo",
       },
-    },
+    } as unknown as Partial<TabsEstado>,
   },
-] as const;
+];
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */
 export const tabsDefinition = {

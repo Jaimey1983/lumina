@@ -1,12 +1,6 @@
 // Estructura del JSON generado por el Prompt Maestro v2
 // Usada para inyectar contexto DBA en los prompts de Gemini
 
-export interface NivelCognitivo {
-  nivel: string;
-  verbo_bloom: string[];
-  nivel_numero: 1 | 2 | 3 | 4 | 5 | 6;
-}
-
 /**
  * Pese al nombre de la clave JSON (`indicadores_desempeno`, no se cambia —
  * es dato real ya persistido en los 55 archivos del dataset), esta
@@ -30,20 +24,24 @@ export interface ActividadSugerida {
 export interface UnidadCurricular {
   unidad_id: number;
   unidad_titulo: string;
-  dba_asociados: number[];
-  dba_relacionados: number[];
+  /** Código oficial del DBA (p. ej. "DBA 1", según la numeración del propio documento MEN). */
+  dba_codigo: string;
   enfoque_men: string;
-  nivel_cognitivo: NivelCognitivo;
   temas: string[];
   subtemas: string[];
-  palabras_clave: string[];
   dba_enunciado: string;
   evidencias_aprendizaje: string[];
-  indicadores_desempeno: EscalaValoracionPorTipo;
   actividades_sugeridas: ActividadSugerida[];
+  /**
+   * Componente EBC en texto humano (p. ej. "Entorno físico") — mismo
+   * vocabulario que `EBC_COMPONENTES[area]` (`@lumina/curriculum-data`,
+   * J6.0). El estándar/subprocesos de ese componente para el grado de esta
+   * unidad NO se repiten acá — se resuelven por ciclo de grados vía
+   * `resolverEstandarEbc(area, grado, ebc_factor)`, catálogo único en
+   * `ebc-estandares.ts` (evita repetir el mismo bloque de texto en cada
+   * unidad y cada grado de un mismo ciclo EBC).
+   */
   ebc_factor: string;
-  ebc_estandar: string;
-  subprocesos_ebc: string[];
 }
 
 export interface CurriculumData {

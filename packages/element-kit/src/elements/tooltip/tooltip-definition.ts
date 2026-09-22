@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTooltipBlock } from "../../widgets/tooltip/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import {
   TooltipEditor,
   TooltipPropiedades,
@@ -8,7 +8,7 @@ import {
 } from "./tooltip-adapters.js";
 import { TOOLTIP_TIPO, type TooltipConfig, type TooltipEstado } from "./tooltip-types.js";
 
-export const TOOLTIP_PRESETS = [
+export const TOOLTIP_PRESETS: readonly ElementPreset<TooltipEstado>[] = [
   {
     id: "icono-info",
     label: "Ícono de Ayuda",
@@ -17,7 +17,7 @@ export const TOOLTIP_PRESETS = [
       triggerTipo: "icono",
       icono: "help",
       posicion: "auto",
-    },
+    } as unknown as Partial<TooltipEstado>,
   },
   {
     id: "texto-subrayado",
@@ -26,7 +26,7 @@ export const TOOLTIP_PRESETS = [
     patch: {
       triggerTipo: "texto_subrayado",
       posicion: "auto",
-    },
+    } as unknown as Partial<TooltipEstado>,
   },
   {
     id: "punto-discreto",
@@ -35,9 +35,9 @@ export const TOOLTIP_PRESETS = [
     patch: {
       triggerTipo: "punto",
       posicion: "auto",
-    },
+    } as unknown as Partial<TooltipEstado>,
   },
-] as const;
+];
 
 /** E3.2 — Tooltip como ElementDefinition, sin puntuación. */
 export const tooltipDefinition = {

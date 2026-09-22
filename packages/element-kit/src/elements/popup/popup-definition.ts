@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultPopupBlock } from "../../widgets/popup/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import {
   PopupEditor,
   PopupPropiedades,
@@ -8,7 +8,7 @@ import {
 } from "./popup-adapters.js";
 import { POPUP_TIPO, type PopupConfig, type PopupEstado } from "./popup-types.js";
 
-export const POPUP_PRESETS = [
+export const POPUP_PRESETS: readonly ElementPreset<PopupEstado>[] = [
   {
     id: "modal-boton",
     label: "Botón de Disparo",
@@ -19,7 +19,7 @@ export const POPUP_PRESETS = [
         tamanoModal: "medio",
         efectoEntrada: "slide-up",
       },
-    },
+    } as unknown as Partial<PopupEstado>,
   },
   {
     id: "modal-icono",
@@ -31,7 +31,7 @@ export const POPUP_PRESETS = [
         tamanoModal: "medio",
         efectoEntrada: "fade",
       },
-    },
+    } as unknown as Partial<PopupEstado>,
   },
   {
     id: "modal-imagen",
@@ -43,9 +43,9 @@ export const POPUP_PRESETS = [
         tamanoModal: "grande",
         efectoEntrada: "slide-up",
       },
-    },
+    } as unknown as Partial<PopupEstado>,
   },
-] as const;
+];
 
 /** E3.4 — Overlay Popup como ElementDefinition, sin puntuación. */
 export const popupDefinition = {

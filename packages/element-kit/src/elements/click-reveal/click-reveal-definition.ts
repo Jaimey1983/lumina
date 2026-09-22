@@ -1,6 +1,6 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultClickRevealBlock } from "../../widgets/click-reveal/index.js";
-import type { ElementDefinition } from "@lumina/element-kit-core";
+import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
 import {
   ClickRevealEditor,
   ClickRevealViewer,
@@ -12,7 +12,7 @@ import {
   type ClickRevealConfig,
 } from "./click-reveal-types.js";
 
-export const CLICK_REVEAL_PRESETS = [
+export const CLICK_REVEAL_PRESETS: readonly ElementPreset<ClickRevealEstado>[] = [
   {
     id: "tarjetas-revelado",
     label: "Tarjetas con Modal",
@@ -22,7 +22,7 @@ export const CLICK_REVEAL_PRESETS = [
         tipoInteraccion: "modal",
         animacionModal: "slide-up",
       },
-    },
+    } as unknown as Partial<ClickRevealEstado>,
   },
   {
     id: "fade-suave",
@@ -33,9 +33,9 @@ export const CLICK_REVEAL_PRESETS = [
         tipoInteraccion: "modal",
         animacionModal: "fade",
       },
-    },
+    } as unknown as Partial<ClickRevealEstado>,
   },
-] as const;
+];
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */
 export const clickRevealDefinition = {

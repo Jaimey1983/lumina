@@ -10,6 +10,7 @@ import {
   listUnidadesCuradas,
   listUnidadesPorComponente,
   listSubprocesosPorComponente,
+  resolverEstandarEbc,
   AREAS_LABELS,
   GRADOS_TODOS,
   EBC_COMPONENTES,
@@ -146,6 +147,24 @@ function buildActividadesFallback(dto: GenerateDesempenoDto): string[] {
   ];
 }
 
+/**
+ * Escala de valoración de REFERENCIA (Superior/Alto/Básico/Bajo, texto de
+ * planeación) — plantilla determinista a partir de `dto`. Ya no viene del
+ * dataset curado (el campo `indicadores_desempeno` se retiró de
+ * `UnidadCurricular` — era la confusión conceptual de J4, ver comentario en
+ * `DesempenoResult.indicadores`), así que también la usa `buildDesempenoFromUnit`.
+ */
+function buildEscalaValoracionFallback(
+  dto: GenerateDesempenoDto,
+): DesempenoResult['indicadores'] {
+  return {
+    superior: `Crea y sustenta de forma autónoma propuestas innovadoras sobre ${dto.tema}, estableciendo relaciones complejas con otros conceptos del área.`,
+    alto: `Aplica correctamente los conceptos de ${dto.tema} en situaciones nuevas y explica el proceso seguido con argumentos sólidos.`,
+    basico: `Comprende los conceptos básicos de ${dto.tema} y los aplica en situaciones guiadas con apoyo del docente.`,
+    bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
+  };
+}
+
 function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
   return {
     enunciado: `Analizar los conceptos fundamentales de ${dto.tema} mediante el estudio de casos del entorno, para desarrollar pensamiento crítico en ${dto.area} de grado ${dto.grado}.`,
@@ -153,12 +172,7 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
     area: dto.area,
     grado: dto.grado,
     tema: dto.tema,
-    indicadores: {
-      superior: `Crea y sustenta de forma autónoma propuestas innovadoras sobre ${dto.tema}, estableciendo relaciones complejas con otros conceptos del área.`,
-      alto: `Aplica correctamente los conceptos de ${dto.tema} en situaciones nuevas y explica el proceso seguido con argumentos sólidos.`,
-      basico: `Comprende los conceptos básicos de ${dto.tema} y los aplica en situaciones guiadas con apoyo del docente.`,
-      bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
-    },
+    indicadores: buildEscalaValoracionFallback(dto),
     indicadoresDeDesempeno: buildIndicadoresFallback(dto),
     actividadesSugeridas: buildActividadesFallback(dto),
   };
@@ -194,22 +208,15 @@ function resolveTipoKey(
 
 function buildDesempenoFromUnit(
   unidad: UnidadCurricular,
-  tipoKey: keyof EscalaValoracionPorTipo,
   dto: GenerateDesempenoDto,
 ): DesempenoResult {
-  const niveles = unidad.indicadores_desempeno[tipoKey];
   return {
     enunciado: unidad.dba_enunciado,
     tipo: dto.tipo,
     area: dto.area,
     grado: dto.grado,
     tema: dto.tema,
-    indicadores: {
-      superior: niveles.superior,
-      alto: niveles.alto,
-      basico: niveles.basico,
-      bajo: niveles.bajo,
-    },
+    indicadores: buildEscalaValoracionFallback(dto),
     // `evidencias_aprendizaje` del dataset YA son indicadores de desempeño
     // reales (enunciados observables distintos, no niveles de intensidad) —
     // se usan tal cual, sin generar nada. Fallback determinista solo si la
@@ -302,10 +309,6 @@ function extractJsonObject(raw: string): unknown {
 // internet); si no hay contenido curado, se recurre a grounding igual que
 // `generateDesempeno` para temas fuera del dataset. Sin `GEMINI_API_KEY`,
 // fallback determinista en los dos casos.
-
-function normalizarEtiqueta(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
 
 function buildFallbackDesempenoCurso(params: {
   areaLabel: string;
@@ -510,7 +513,7 @@ export class CurriculumService {
     if (!data) return null;
     const unidad = findMatchingUnit(data, dto.tema);
     if (!unidad) return null;
-    return buildDesempenoFromUnit(unidad, tipoKey, dto);
+    return buildDesempenoFromUnit(unidad, dto);
   }
 
   /**
@@ -564,7 +567,7 @@ ${candidatas
       if (id < 0) return null;
       const unidad = candidatas.find((u) => u.unidad_id === id);
       if (!unidad) return null;
-      return buildDesempenoFromUnit(unidad, tipoKey, dto);
+      return buildDesempenoFromUnit(unidad, dto);
     } catch {
       return null;
     }
@@ -743,34 +746,19 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) return fallback();
 
-    const data = await loadCurriculum(area, grado);
-    const unidadesDelComponente = data
-      ? listUnidadesCuradas(data).filter(
-          (u) =>
-            normalizarEtiqueta(u.ebc_factor) ===
-            normalizarEtiqueta(componenteLabel),
-        )
-      : [];
-
-    const tieneContextoCurado = unidadesDelComponente.length > 0;
+    // Sale del catálogo por ciclo (ebc-estandares.ts), no del dataset de
+    // unidades — el desempeño de curso es general (D6), no ancla a un DBA
+    // puntual, así que el estándar/subprocesos del ciclo bastan como
+    // contexto real sin necesitar unidades curadas para este grado exacto.
+    const estandarEbc = resolverEstandarEbc(area, grado, componenteLabel);
+    const tieneContextoCurado = estandarEbc !== null;
 
     const system = tieneContextoCurado
       ? `Eres un experto en diseño curricular colombiano (MEN). Redactas UN desempeño de aprendizaje GENERAL, a nivel de curso completo (no de una sola clase) — debe poder abarcar CUALQUIER tema del componente y la competencia dados en este grado, no solo los ejemplos puntuales que se te entregan como referencia de alcance. PROHIBIDO nombrar objetos, aparatos, técnicas o procedimientos concretos de un solo ejemplo (p. ej. "palancas y poleas", "circuitos eléctricos") — eso ancla el desempeño a un único tema en vez del componente completo. Usa el vocabulario general del estándar EBC (el nivel de abstracción de la competencia, no el de un DBA puntual). Estructura: Verbo de acción + Contenido + Condición + Finalidad. Respondes SIEMPRE con JSON puro: {"enunciado": "string"}, sin texto adicional ni bloques de código.`
       : `Eres un experto en diseño curricular colombiano basado en los Estándares Básicos de Competencias del MEN. Redactas UN desempeño de aprendizaje GENERAL, a nivel de curso completo — debe poder abarcar CUALQUIER tema del componente y la competencia dados en este grado, no un ejemplo puntual. PROHIBIDO nombrar objetos, aparatos, técnicas o procedimientos concretos de un solo tema — usa el vocabulario general del estándar EBC de esta área y grado, no el de un DBA puntual. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Tenés disponible búsqueda en Google — usala para fundamentar el desempeño en los Estándares Básicos de Competencias reales del MEN para esta área y grado. Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido: {"enunciado": "string"}, sin texto antes ni después, sin bloques de código markdown.`;
 
-    const estandaresUnicos = Array.from(
-      new Set(unidadesDelComponente.map((u) => u.ebc_estandar)),
-    );
-    const subprocesosUnicos = Array.from(
-      new Set(unidadesDelComponente.flatMap((u) => u.subprocesos_ebc)),
-    );
-
-    const contexto = tieneContextoCurado
-      ? `\n\nEstándar(es) EBC de este componente en este grado — define el ALCANCE general que el desempeño debe poder cubrir completo, no solo una parte:\n${estandaresUnicos
-          .map((e) => `- ${e}`)
-          .join(
-            '\n',
-          )}\n\nMUESTRA de subprocesos que este componente puede abarcar en este grado (son solo ejemplos de la variedad de temas posibles — NO los enumeres ni redactes el desempeño en torno a uno de ellos en particular):\n${subprocesosUnicos
+    const contexto = estandarEbc
+      ? `\n\nEstándar EBC de este componente en este ciclo — define el ALCANCE general que el desempeño debe poder cubrir completo, no solo una parte:\n- ${estandarEbc.estandar}\n\nMUESTRA de subprocesos que este componente puede abarcar en este ciclo (son solo ejemplos de la variedad de temas posibles — NO los enumeres ni redactes el desempeño en torno a uno de ellos en particular):\n${estandarEbc.subprocesos
           .slice(0, 8)
           .map((s) => `- ${s}`)
           .join('\n')}`
@@ -990,12 +978,14 @@ Redacta el desempeño de curso.`;
     const desempeno = await this.loadDesempenoOrThrow(courseId, desempenoId);
     const componenteLabel = this.componenteLabelDe(desempeno);
     if (!componenteLabel) return [];
-    const data = await loadCurriculum(
+    // Sale del catálogo por ciclo (ebc-estandares.ts), no del dataset de
+    // unidades — existe aunque esta área/grado todavía no tenga unidades
+    // curadas.
+    return listSubprocesosPorComponente(
       desempeno.area as AreaCurricular,
       desempeno.grado as GradoEscolar,
+      componenteLabel,
     );
-    if (!data) return [];
-    return listSubprocesosPorComponente(data, componenteLabel);
   }
 
   /**
