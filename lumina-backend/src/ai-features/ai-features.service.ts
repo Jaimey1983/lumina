@@ -11,6 +11,7 @@ import {
   GenerateActivityDto,
   type AiActivityType,
 } from './dto/generate-activity.dto';
+import { RefineActivityDto } from './dto/refine-activity.dto';
 import { StudentFeedbackDto } from './dto/student-feedback.dto';
 import { ClassSummaryDto } from './dto/class-summary.dto';
 import { ContentAssistantDto } from './dto/content-assistant.dto';
@@ -179,6 +180,53 @@ Reglas:
     return {
       tipo: dto.type,
       activity: { ...activity, tipo: dto.type },
+    };
+  }
+
+  // ── 1c. Refinar actividad Lumina por chat (J8) ─────────────
+  // Mismo patrón que refineStructure (Pieza 2): manda la actividad actual +
+  // el historial de la conversación, pide de vuelta el JSON completo
+  // actualizado (no un diff).
+
+  async refineActivity(
+    dto: RefineActivityDto,
+    userId: string,
+    userRole: string,
+  ) {
+    assertAiStaff(userRole);
+    const spec = ACTIVITY_GENERATION_SPECS[dto.type];
+
+    const system = `Eres un asistente educativo experto en diseñar actividades interactivas para el aula.
+Tu tarea es MODIFICAR una actividad Lumina existente de tipo "${dto.type}" según la instrucción del docente.
+Responde ÚNICAMENTE con el JSON completo actualizado de la actividad — nunca solo los cambios, nunca texto fuera del JSON.
+Mantén el mismo esquema JSON de la actividad original.`;
+
+    const historyLines = dto.conversationHistory
+      .slice(-6)
+      .map((h) => `${h.role === 'user' ? 'Docente' : 'IA'}: ${h.content}`)
+      .join('\n');
+
+    const user = `ACTIVIDAD ACTUAL (tipo "${dto.type}"):
+${JSON.stringify(dto.currentActivity, null, 2).slice(0, 4000)}
+${historyLines ? `HISTORIAL DE AJUSTES ANTERIORES:\n${historyLines}\n` : ''}
+NUEVA INSTRUCCIÓN DEL DOCENTE: "${dto.instruction}"
+
+El JSON debe seguir cumpliendo EXACTAMENTE este esquema:
+${spec.schema}
+
+Aplica la instrucción y devuelve el JSON completo actualizado. "tipo" debe seguir siendo exactamente "${dto.type}".`;
+
+    const parsed = await this.callLlmJson(userId, system, user);
+    const nested = parsed['activity'];
+    const activity =
+      nested && typeof nested === 'object' && !Array.isArray(nested)
+        ? (nested as Record<string, unknown>)
+        : parsed;
+
+    return {
+      tipo: dto.type,
+      activity: { ...activity, tipo: dto.type },
+      instruction: dto.instruction,
     };
   }
 
@@ -750,6 +798,36 @@ function defaultActivityCount(type: AiActivityType): number {
       return 4;
     case 'ordenar_pasos':
       return 5;
+    case 'video_interactivo':
+      return 2;
+    case 'encuesta_viva':
+      return 4;
+    case 'nube_palabras':
+      return 1;
+    case 'anagrama':
+      return 3;
+    case 'clasificar':
+      return 6;
+    case 'memoria':
+      return 6;
+    case 'puzzle_imagen':
+      return 1;
+    case 'sopa_letras':
+      return 5;
+    case 'crucigrama':
+      return 5;
+    case 'abrir_caja':
+      return 6;
+    case 'ahorcado':
+      return 1;
+    case 'puzzle_palabras':
+      return 3;
+    case 'globos':
+      return 3;
+    case 'topo':
+      return 3;
+    case 'historia_ramificada':
+      return 4;
   }
 }
 
@@ -849,6 +927,194 @@ const ACTIVITY_GENERATION_SPECS: Record<
     { "id": "s1", "contenido": "primer paso", "ordenCorrecto": 1 }
   ],
   "puntos": 10
+}`,
+  },
+  video_interactivo: {
+    instruccion: (count) =>
+      `Crea ${count} pregunta(s) de opción múltiple (2 a 4 opciones, exactamente una correcta) para insertar como pausas interactivas en un video sobre el tema, en tiempos crecientes (ej. 15, 45, 90 segundos). NO inventes una URL real de video — deja "urlVideo" vacío, el docente la completa después.`,
+    schema: `{
+  "tipo": "video_interactivo",
+  "urlVideo": "",
+  "plataforma": "youtube",
+  "preguntas": [
+    {
+      "id": "q1",
+      "tiempoSegundos": 30,
+      "pregunta": "pregunta",
+      "opciones": [
+        { "id": "a", "texto": "A", "esCorrecta": true },
+        { "id": "b", "texto": "B", "esCorrecta": false }
+      ],
+      "pausarVideo": true
+    }
+  ],
+  "debeResponderParaContinuar": false
+}`,
+  },
+  encuesta_viva: {
+    instruccion: (count) =>
+      `Crea UNA pregunta de encuesta en vivo sobre el tema con ${count} opciones de respuesta distintas. Es una encuesta de opinión, no evaluable — ninguna opción es "correcta".`,
+    schema: `{
+  "tipo": "encuesta_viva",
+  "pregunta": "pregunta de encuesta",
+  "opciones": [{ "id": "o1", "texto": "opción 1" }],
+  "mostrarResultadosEnTiempoReal": true,
+  "mostrarResultadosAlFinalizar": true
+}`,
+  },
+  nube_palabras: {
+    instruccion: () =>
+      'Crea una instrucción breve y motivadora para que los estudiantes aporten palabras relacionadas con el tema en una nube de palabras colaborativa.',
+    schema: `{
+  "tipo": "nube_palabras",
+  "instruccion": "instrucción breve para los estudiantes"
+}`,
+  },
+  anagrama: {
+    instruccion: (count) =>
+      `Crea ${count} palabra(s) para el juego de adivinar el anagrama: cada una es UNA sola palabra (sin espacios, en mayúsculas), relacionada con el tema, con una pista breve.`,
+    schema: `{
+  "tipo": "anagrama",
+  "palabras": [{ "texto": "PALABRA", "pista": "pista breve" }]
+}`,
+  },
+  clasificar: {
+    instruccion: (count) =>
+      `Crea una actividad de clasificación con 3 categorías del tema y ${count} elementos en total repartidos entre esas 3 categorías (mínimo 2 por categoría).`,
+    schema: `{
+  "tipo": "clasificar",
+  "categorias": [
+    { "id": "cat-1", "nombre": "Categoría 1" },
+    { "id": "cat-2", "nombre": "Categoría 2" },
+    { "id": "cat-3", "nombre": "Categoría 3" }
+  ],
+  "items": [{ "id": "item-1", "texto": "elemento", "categoriaId": "cat-1" }]
+}`,
+  },
+  memoria: {
+    instruccion: (count) =>
+      `Crea ${count} pares para un juego de memoria: cada par relaciona un término del tema con su definición breve o un ejemplo, ambos en texto (sin emojis).`,
+    schema: `{
+  "tipo": "memoria",
+  "pares": [
+    { "id": "par-1", "lado1": { "texto": "término" }, "lado2": { "texto": "definición o ejemplo" } }
+  ]
+}`,
+  },
+  puzzle_imagen: {
+    instruccion: () =>
+      'Esta actividad requiere que el docente suba una imagen manualmente después — no generes ninguna URL ni contenido, solo confirma en "notaDocente" qué tipo de imagen sería apropiada para un rompecabezas sobre el tema.',
+    schema: `{
+  "tipo": "puzzle_imagen",
+  "notaDocente": "breve sugerencia de qué imagen buscar o subir"
+}`,
+  },
+  sopa_letras: {
+    instruccion: (count) =>
+      `Crea ${count} palabra(s) para una sopa de letras: cada una es UNA sola palabra (sin espacios, en mayúsculas), relacionada con el tema, con una pista breve.`,
+    schema: `{
+  "tipo": "sopa_letras",
+  "tema": "nombre corto del tema",
+  "palabras": [{ "texto": "PALABRA", "pista": "pista breve" }]
+}`,
+  },
+  crucigrama: {
+    instruccion: (count) =>
+      `Crea ${count} palabra(s) para un crucigrama: cada una es UNA sola palabra (sin espacios, mínimo 3 letras, en mayúsculas), relacionada con el tema, con una pista clara. Prefiere palabras que compartan letras entre sí (mejora el cruce del crucigrama). La posición en el grid (fila/columna/dirección) la calcula el sistema, no la incluyas.`,
+    schema: `{
+  "tipo": "crucigrama",
+  "palabras": [{ "texto": "PALABRA", "pista": "pista breve" }]
+}`,
+  },
+  abrir_caja: {
+    instruccion: (count) =>
+      `Crea ${count} cajas para un juego de "abrir la caja": cada caja tiene un texto corto (dato, curiosidad o mini-reto sobre el tema) y una marca esCorrecta — aproximadamente la mitad deben ser premiadas (esCorrecta:true).`,
+    schema: `{
+  "tipo": "abrir_caja",
+  "cajas": [
+    { "id": "caja-1", "etiqueta": "Caja 1", "contenido": { "texto": "dato o mini-reto", "esCorrecta": true } }
+  ]
+}`,
+  },
+  ahorcado: {
+    instruccion: () =>
+      'Elige UNA sola palabra (sin espacios, en mayúsculas) representativa del tema para el juego del ahorcado, con una pista y, si aplica, una categoría breve.',
+    schema: `{
+  "tipo": "ahorcado",
+  "palabra": "PALABRA",
+  "pista": "pista breve",
+  "categoria": "categoría breve"
+}`,
+  },
+  puzzle_palabras: {
+    instruccion: (count) =>
+      `Crea ${count} oración(es) completas y coherentes sobre el tema, de 5 a 10 palabras cada una, para que el estudiante reordene sus palabras.`,
+    schema: `{
+  "tipo": "puzzle_palabras",
+  "oraciones": [{ "texto": "oración completa" }]
+}`,
+  },
+  globos: {
+    instruccion: (count) =>
+      `Crea ${count} pregunta(s) de opción múltiple (3 a 5 opciones cada una, exactamente una correcta) para un juego de globos que suben por la pantalla.`,
+    schema: `{
+  "tipo": "globos",
+  "preguntas": [
+    {
+      "id": "q-1",
+      "enunciado": "pregunta",
+      "opciones": [
+        { "texto": "A", "correcta": true },
+        { "texto": "B", "correcta": false }
+      ]
+    }
+  ]
+}`,
+  },
+  topo: {
+    instruccion: (count) =>
+      `Crea ${count} pregunta(s) de opción múltiple (2 a 4 opciones cada una, exactamente una correcta) para un juego de "golpea al topo".`,
+    schema: `{
+  "tipo": "topo",
+  "preguntas": [
+    {
+      "id": "q-1",
+      "enunciado": "pregunta",
+      "opciones": [
+        { "texto": "A", "correcta": true },
+        { "texto": "B", "correcta": false }
+      ]
+    }
+  ]
+}`,
+  },
+  historia_ramificada: {
+    instruccion: (count) =>
+      `Crea una historia interactiva ramificada con ${count} nodos sobre el tema: al menos una decisión que ramifique en dos caminos, un final tipo "final_bueno" y un final tipo "final_malo". Los nodos "narracion"/"decision"/"pregunta" llevan 2 opciones cada uno (marca esCorrecta:true en la opción pedagógicamente correcta cuando aplique); los nodos "final_bueno"/"final_malo" NO llevan opciones. No incluyas editorX/editorY — el sistema calcula la posición en el lienzo.`,
+    schema: `{
+  "tipo": "historia_ramificada",
+  "nodoInicial": "nodo-1",
+  "nodos": [
+    {
+      "id": "nodo-1",
+      "tipo": "narracion",
+      "titulo": "título breve",
+      "contenido": { "texto": "texto narrativo" },
+      "opciones": [
+        { "id": "op-1a", "texto": "opción A" },
+        { "id": "op-1b", "texto": "opción B" }
+      ]
+    },
+    {
+      "id": "nodo-final-bueno",
+      "tipo": "final_bueno",
+      "titulo": "título breve",
+      "contenido": { "texto": "texto de cierre" }
+    }
+  ],
+  "conexiones": [
+    { "id": "con-1", "desdeNodoId": "nodo-1", "opcionId": "op-1a", "haciaNodoId": "nodo-final-bueno" }
+  ]
 }`,
   },
 };

@@ -7,6 +7,7 @@ import { AiStaffGuard } from './ai-staff';
 import { AiFeaturesService } from './ai-features.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { GenerateActivityDto } from './dto/generate-activity.dto';
+import { RefineActivityDto } from './dto/refine-activity.dto';
 import { ContentAssistantDto } from './dto/content-assistant.dto';
 import { EvaluateResponseDto } from './dto/evaluate-response.dto';
 import { GenerateFromDocumentDto } from './dto/generate-from-document.dto';
@@ -40,6 +41,15 @@ export class AiFeaturesController {
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.aiService.generateActivity(dto, user.id, user.role);
+  }
+
+  /** POST /ai/refine-activity — Ajuste conversacional de una actividad ya generada (J8) */
+  @Post('refine-activity')
+  refineActivity(
+    @Body() dto: RefineActivityDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.aiService.refineActivity(dto, user.id, user.role);
   }
 
   /** POST /ai/content-assistant — Generar estructura de clase a partir de un tema */

@@ -6,13 +6,30 @@ import { api } from '@/lib/api';
 export type QuizType = 'MultipleChoice' | 'TrueFalse' | 'FillInTheBlanks';
 
 export type AiActivityType =
+  // Clásicas
   | 'quiz_multiple'
   | 'verdadero_falso'
   | 'completar_blancos'
   | 'short_answer'
   | 'arrastrar_soltar'
   | 'emparejar'
-  | 'ordenar_pasos';
+  | 'ordenar_pasos'
+  | 'video_interactivo'
+  | 'encuesta_viva'
+  | 'nube_palabras'
+  // Grupo 4 (J8 — catálogo completo, 2026-09-22)
+  | 'anagrama'
+  | 'clasificar'
+  | 'memoria'
+  | 'puzzle_imagen'
+  | 'sopa_letras'
+  | 'crucigrama'
+  | 'abrir_caja'
+  | 'ahorcado'
+  | 'puzzle_palabras'
+  | 'globos'
+  | 'topo'
+  | 'historia_ramificada';
 
 export interface GenerateActivityInput {
   text: string;
@@ -145,6 +162,31 @@ export function useGenerateActivity() {
       input: GenerateActivityInput,
     ): Promise<GenerateActivityResult> => {
       const { data } = await api.post('/ai/activity', input);
+      return data;
+    },
+  });
+}
+
+export interface RefineActivityInput {
+  type: AiActivityType;
+  currentActivity: Record<string, unknown>;
+  instruction: string;
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[];
+}
+
+export interface RefineActivityResult {
+  tipo: AiActivityType;
+  activity: Record<string, unknown>;
+  instruction: string;
+}
+
+/** POST /ai/refine-activity — ajuste conversacional de una actividad ya generada (J8) */
+export function useRefineActivity() {
+  return useMutation({
+    mutationFn: async (
+      input: RefineActivityInput,
+    ): Promise<RefineActivityResult> => {
+      const { data } = await api.post('/ai/refine-activity', input);
       return data;
     },
   });

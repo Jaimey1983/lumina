@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Check, Sparkles, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@lumina/ui/button';
@@ -14,12 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@lumina/ui/select';
-import { useGenerateActivity, type AiActivityType } from '@/hooks/api/use-ai';
+import { cn } from '@/lib/utils';
+import {
+  useGenerateActivity,
+  useRefineActivity,
+  type AiActivityType,
+} from '@/hooks/api/use-ai';
 import { buildCurricularContextTexto } from '../../lib/curricular-context-texto';
 import type { IaPanelCurricularContext } from './flyout-left-panels';
 
 import {
   AI_ACTIVITY_OPTIONS,
+  activityTitleFromContent,
   aiActivityHasUsableContent,
   defaultCountForAiActivity,
   normalizeAiActivity,
@@ -33,6 +39,11 @@ interface Props {
   onInsertActivity?: (activityContent: Record<string, unknown>) => void;
   /** Motor curricular único (J6.4/J6.5) — contexto heredado de la Entrada 3. */
   curricularContext?: IaPanelCurricularContext;
+}
+
+interface PreviewState {
+  tipo: AiActivityType;
+  content: Record<string, unknown>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -59,6 +70,15 @@ export function ActivitiesAiPanel({
   const [tipo, setTipo] = useState<AiActivityType>('quiz_multiple');
   const { mutate: generateActivity, isPending } = useGenerateActivity();
   const selected = AI_ACTIVITY_OPTIONS.find((o) => o.value === tipo);
+
+  // ── J8 — vista previa + chat de refinamiento (mismo patrón que IaPanel:
+  // generar NO inserta de inmediato, el docente ajusta y luego inserta) ──────
+  const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<
+    { role: 'user' | 'assistant'; content: string }[]
+  >([]);
+  const [refinementInput, setRefinementInput] = useState('');
+  const { mutate: refineActivity, isPending: isRefining } = useRefineActivity();
 
   const curriculumContextTexto = useMemo(() => {
     if (!tieneContextoJ6) return undefined;
@@ -94,13 +114,55 @@ export function ActivitiesAiPanel({
             toast.error('La IA no generó contenido usable. Intenta con un texto más específico.');
             return;
           }
-          onInsertActivity?.(activityContent);
-          toast.success('Actividad generada e insertada');
+          setPreview({ tipo, content: activityContent });
+          setConversationHistory([]);
+          toast.success('Actividad generada. Revísala y ajústala antes de insertar.');
         },
         onError: () => toast.error('Error al generar. Intenta de nuevo.'),
       },
     );
   };
+
+  const handleRefinar = useCallback(() => {
+    if (!refinementInput.trim() || !preview) return;
+    const instruction = refinementInput.trim();
+    setRefinementInput('');
+    const newHistory = [...conversationHistory, { role: 'user' as const, content: instruction }];
+    setConversationHistory(newHistory);
+    refineActivity(
+      {
+        type: preview.tipo,
+        currentActivity: preview.content,
+        instruction,
+        conversationHistory: newHistory,
+      },
+      {
+        onSuccess: (data) => {
+          const activityContent = normalizeAiActivity(preview.tipo, data.activity ?? data);
+          setPreview({ tipo: preview.tipo, content: activityContent });
+          setConversationHistory((prev) => [
+            ...prev,
+            { role: 'assistant' as const, content: `Ajustado: "${instruction}".` },
+          ]);
+        },
+        onError: () => toast.error('Error al ajustar. Intenta de nuevo.'),
+      },
+    );
+  }, [refinementInput, preview, conversationHistory, refineActivity]);
+
+  const handleInsertar = () => {
+    if (!preview) return;
+    onInsertActivity?.(preview.content);
+    toast.success(
+      preview.tipo === 'puzzle_imagen'
+        ? 'Actividad insertada — sube la imagen desde las propiedades del bloque.'
+        : 'Actividad insertada',
+    );
+    setPreview(null);
+    setConversationHistory([]);
+  };
+
+  const previewTitle = preview ? activityTitleFromContent(preview.content) : '';
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -120,7 +182,11 @@ export function ActivitiesAiPanel({
         <Label className="text-[11px] text-muted-foreground">Tipo de actividad</Label>
         <Select
           value={tipo}
-          onValueChange={(v) => setTipo(v as AiActivityType)}
+          onValueChange={(v) => {
+            setTipo(v as AiActivityType);
+            setPreview(null);
+            setConversationHistory([]);
+          }}
           disabled={hasActivity || isPending}
         >
           <SelectTrigger className="h-8 text-xs" size="sm">
@@ -159,7 +225,7 @@ export function ActivitiesAiPanel({
         onClick={() => handleGenerar(false)}
       >
         <Sparkles className="size-3.5" />
-        {isPending ? 'Generando…' : 'Generar e insertar'}
+        {isPending ? 'Generando…' : preview ? 'Generar de nuevo' : 'Generar'}
       </Button>
       <Button
         variant="outline"
@@ -171,6 +237,68 @@ export function ActivitiesAiPanel({
         <Wand2 className="size-3.5" />
         {isPending ? 'Generando…' : 'Generar actividad completa'}
       </Button>
+
+      {preview && (
+        <div className="flex flex-col gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+              Vista previa
+            </p>
+            <p className="text-[11px] leading-snug text-foreground line-clamp-3">{previewTitle}</p>
+          </div>
+          <Button
+            size="sm"
+            className="w-full gap-2"
+            onClick={handleInsertar}
+          >
+            <Check className="size-3.5" />
+            Insertar en el slide
+          </Button>
+
+          {/* ── J8 — chat de refinamiento (mismo patrón que IaPanel) ── */}
+          <div className="space-y-2 border-t border-border pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Ajustar con IA
+            </p>
+            {conversationHistory.length > 0 && (
+              <div className="max-h-32 space-y-1.5 overflow-y-auto">
+                {conversationHistory.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'rounded-md px-2.5 py-1.5 text-[11px] leading-snug',
+                      msg.role === 'user'
+                        ? 'ml-4 bg-primary/10 text-primary'
+                        : 'mr-4 bg-muted/50 text-muted-foreground',
+                    )}
+                  >
+                    {msg.content}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <Input
+                placeholder='Ej: "agrega dos preguntas más", "hazla más fácil"'
+                value={refinementInput}
+                onChange={(e) => setRefinementInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !isRefining && handleRefinar()}
+                className="h-8 flex-1 text-xs"
+                disabled={isRefining}
+              />
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 px-2.5"
+                disabled={!refinementInput.trim() || isRefining}
+                onClick={handleRefinar}
+              >
+                {isRefining ? '…' : 'Ajustar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {tieneContextoJ6 ? (
         <div className="flex flex-col gap-2 mt-1">
