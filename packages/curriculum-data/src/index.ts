@@ -20,6 +20,9 @@ export type {
   ActividadSugerida,
 };
 
+export { EBC_COMPONENTES, ICFES_COMPETENCIAS } from './ebc-icfes-catalog.js';
+export type { CatalogoItem } from './ebc-icfes-catalog.js';
+
 // Mapa de carga dinámica — evita incluir todos los JSONs en el bundle inicial
 // para consumidores con bundler (lumina-frontend, ESM: Next/Turbopack/Vite
 // transforman `import()` de `.json` sin pedir el atributo `with: {type:
