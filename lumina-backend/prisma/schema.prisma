@@ -146,8 +146,43 @@ model Course {
    */
   progressMap        Json?
   classProgress      StudentClassProgress[]
+  desempenos         Desempeno[]
 
   @@map("courses")
+}
+
+/**
+ * Desempeño curricular a nivel de CURSO (Etapa J / J6, Entrada 1) — un curso
+ * admite varios, uno por cada combinación componente EBC + competencia
+ * ICFES que el docente agregue. Independiente de `Achievement` (D3 de la
+ * ficha raíz J6): ciclo de vida distinto (generado por IA en un punto fijo
+ * del flujo curricular nuevo, no manual desde el libro de notas) y
+ * cardinalidad distinta con `Class` (selección de contexto pedagógico, no
+ * evaluación de nota). `componenteEbc`/`competenciaIcfes` son códigos del
+ * catálogo fijo de `@lumina/curriculum-data` (`EBC_COMPONENTES`/
+ * `ICFES_COMPETENCIAS`, J6.0), validados contra el área en la capa de
+ * servicio (J6.2) — no en el schema.
+ */
+model Desempeno {
+  id               String   @id @default(cuid())
+  courseId         String
+  /**
+   * Copiado de `Course.area`/`Course.grado` al momento de generar, para que
+   * el desempeño mantenga su contexto histórico si el curso cambia de área
+   * o grado más adelante.
+   */
+  area             String
+  grado            String
+  componenteEbc    String
+  competenciaIcfes String
+  enunciado        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  classes          Class[]
+
+  @@index([courseId])
+  @@map("desempenos")
 }
 
 model Period {
@@ -227,17 +262,63 @@ model Class {
   authorId           String?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
+  /**
+   * LEGADO (Pieza 1, pre-Etapa J6) — desempeño generado por clase, sin
+   * relación al curso. Se CONGELA, no se migra (J6, decisión cerrada): las
+   * clases creadas antes del motor curricular único lo siguen leyendo tal
+   * cual; las clases nuevas usan `desempenoId`/`desempenoRef` en su lugar.
+   */
   desempeno          Json?
   codigo             String                 @unique @default(cuid())
   /**
    * Id del fondo del canvas en viewer (`none`, `blanco`, …).
    */
   background         String?                @default("none")
+  /**
+   * Motor curricular único (Etapa J / J6, Entrada 2) — FK al `Desempeno` de
+   * curso elegido por el docente al crear la clase. `null` en clases legado
+   * (que usan `desempeno` Json) y en clases sin curso (`courseId: null`,
+   * fuera de alcance de J6 — D2 de la ficha raíz).
+   */
+  desempenoId        String?
+  /**
+   * Camino curricular elegido para llegar al contenido del `Desempeno`,
+   * EXCLUYENTE (J6, decisión cerrada — nunca los dos a la vez):
+   * `"dba"` | `"ebc"`. `null` mientras no se haya completado la Entrada 2.
+   */
+  caminoCurricular   String?
+  /**
+   * Solo si `caminoCurricular = "dba"` — `{ unidadId: number, evidenciasElegidas: string[] }`,
+   * el DBA/unidad de `@lumina/curriculum-data` elegido y el subconjunto de
+   * `evidencias_aprendizaje` que el docente marcó.
+   */
+  dbaSeleccionado    Json?
+  /**
+   * Solo si `caminoCurricular = "ebc"` — `{ subprocesosElegidos: string[] }`,
+   * el subconjunto de `subprocesos_ebc` del componente que el docente marcó
+   * (incluye los que ningún DBA cubre — es el único camino donde aparecen).
+   */
+  ebcSeleccionado    Json?
+  /**
+   * Generados en la Entrada 2 a partir del camino elegido —
+   * `{ cognitivo: string[], procedimental: string[], actitudinal: string[] }`.
+   * Eje pedagógico nuevo, desconectado a propósito de
+   * `PerformanceIndicator.competenceType` (eje de notas de Edu, J4/J5/D3).
+   */
+  indicadores        Json?
+  /**
+   * Poblado en la Entrada 3 (panel IA del editor) — qué indicadores de
+   * `indicadores` aborda ESTA clase + los temas/subtemas que el docente
+   * eligió para generar contenido. La Entrada 4 (generador de actividades)
+   * lo hereda de acá.
+   */
+  contextoClase      Json?
   results            ClassResult[]
   guests             ClassGuest[]
   sessions           ClassSession[]
   course             Course?                @relation(fields: [courseId], references: [id], onDelete: Cascade)
   author             User?                  @relation("AuthorClasses", fields: [authorId], references: [id], onDelete: Cascade)
+  desempenoRef       Desempeno?             @relation(fields: [desempenoId], references: [id])
   collabNotes        CollabNote[]
   slides             Slide[]
   whiteboardSessions WhiteboardSession[]
