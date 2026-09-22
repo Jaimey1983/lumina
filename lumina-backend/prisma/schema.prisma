@@ -313,6 +313,12 @@ model Class {
    * lo hereda de acá.
    */
   contextoClase      Json?
+  /**
+   * Trazabilidad curricular (Etapa J / J9) — vínculo opcional al
+   * `PerformanceIndicator` de origen del curso/logro.
+   */
+  performanceIndicatorId String?
+  performanceIndicator   PerformanceIndicator?  @relation(fields: [performanceIndicatorId], references: [id], onDelete: SetNull)
   results            ClassResult[]
   guests             ClassGuest[]
   sessions           ClassSession[]
@@ -326,6 +332,7 @@ model Class {
   autonomousGrades   AutonomousGrade[]
   studentProgress    StudentClassProgress[]
 
+  @@index([performanceIndicatorId])
   @@map("classes")
 }
 
@@ -502,23 +509,30 @@ model SlideEngagement {
 }
 
 model ClassResult {
-  id           String       @id @default(cuid())
-  classId      String
-  studentId    String
-  slideId      String
-  activityType String
-  score        Float?
-  maxScore     Float        @default(5)
-  isManual     Boolean      @default(false)
-  response     Json?
-  sessionId    String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  class        Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id                     String                @id @default(cuid())
+  classId                String
+  studentId              String
+  slideId                String
+  activityType           String
+  score                  Float?
+  maxScore               Float                 @default(5)
+  isManual               Boolean               @default(false)
+  response               Json?
+  sessionId              String
+  /**
+   * Trazabilidad curricular (Etapa J / J9) — vínculo directo al
+   * `PerformanceIndicator` que evalúa esta actividad / resultado.
+   */
+  performanceIndicatorId String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  class                  Class                 @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student                User                  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session                ClassSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  performanceIndicator   PerformanceIndicator? @relation(fields: [performanceIndicatorId], references: [id], onDelete: SetNull)
 
   @@unique([classId, studentId, slideId, sessionId])
+  @@index([performanceIndicatorId])
   @@map("class_results")
 }
 
@@ -586,6 +600,8 @@ model PerformanceIndicator {
   createdAt       DateTime        @default(now())
   activities      Activity[]
   achievement     Achievement     @relation(fields: [achievementId], references: [id])
+  classResults    ClassResult[]
+  classes         Class[]
 
   @@map("performance_indicators")
 }

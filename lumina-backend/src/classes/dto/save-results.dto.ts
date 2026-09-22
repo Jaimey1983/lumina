@@ -50,6 +50,14 @@ export class StudentResultDto {
   @Allow()
   @IsOptional()
   response?: unknown;
+
+  /**
+   * Trazabilidad curricular (Etapa J / J9) — vínculo explícito al
+   * `PerformanceIndicator` si el cliente o actividad lo proporciona.
+   */
+  @IsString()
+  @IsOptional()
+  performanceIndicatorId?: string;
 }
 
 export class EndSessionDto {

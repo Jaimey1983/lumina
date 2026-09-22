@@ -421,6 +421,15 @@ export class ClassesService {
         ebcSeleccionado: true,
         indicadores: true,
         contextoClase: true,
+        performanceIndicatorId: true,
+        performanceIndicator: {
+          select: {
+            id: true,
+            statement: true,
+            competenceType: true,
+            competenceScope: true,
+          },
+        },
         desempenoRef: {
           select: {
             enunciado: true,
@@ -497,6 +506,7 @@ export class ClassesService {
       desempeno,
       status,
       desempenoId,
+      performanceIndicatorId,
       caminoCurricular,
       dbaSeleccionado,
       ebcSeleccionado,
@@ -520,6 +530,28 @@ export class ClassesService {
       }
     }
 
+    // Trazabilidad curricular (J9) — si se especifica un `performanceIndicatorId`,
+    // se valida que exista y pertenezca al curso de esta clase si la clase tiene curso.
+    if (
+      performanceIndicatorId !== undefined &&
+      performanceIndicatorId !== null
+    ) {
+      const pi = await this.prisma.performanceIndicator.findUnique({
+        where: { id: performanceIndicatorId },
+        select: { id: true, achievement: { select: { courseId: true } } },
+      });
+      if (!pi) {
+        throw new BadRequestException(
+          'El indicador de desempeño elegido no existe.',
+        );
+      }
+      if (cls.courseId && pi.achievement.courseId !== cls.courseId) {
+        throw new BadRequestException(
+          'El indicador de desempeño no pertenece al curso de esta clase.',
+        );
+      }
+    }
+
     return this.prisma.class.update({
       where: { id },
       data: {
@@ -529,6 +561,9 @@ export class ClassesService {
           ? { desempeno: desempeno as Prisma.InputJsonValue }
           : {}),
         ...(desempenoId !== undefined ? { desempenoId } : {}),
+        ...(performanceIndicatorId !== undefined
+          ? { performanceIndicatorId }
+          : {}),
         ...(caminoCurricular !== undefined ? { caminoCurricular } : {}),
         ...(dbaSeleccionado !== undefined
           ? {
@@ -557,6 +592,7 @@ export class ClassesService {
         description: true,
         desempeno: true,
         desempenoId: true,
+        performanceIndicatorId: true,
         caminoCurricular: true,
         dbaSeleccionado: true,
         ebcSeleccionado: true,
@@ -803,6 +839,14 @@ export class ClassesService {
           response: true,
           createdAt: true,
           updatedAt: true,
+          performanceIndicatorId: true,
+          performanceIndicator: {
+            select: {
+              id: true,
+              statement: true,
+              competenceType: true,
+            },
+          },
           student: {
             select: { id: true, name: true },
           },
@@ -908,6 +952,9 @@ export class ClassesService {
       dto.sessionId,
     );
 
+    const performanceIndicatorId =
+      dto.performanceIndicatorId ?? cls.performanceIndicatorId ?? null;
+
     return this.prisma.classResult.upsert({
       where: {
         classId_studentId_slideId_sessionId: {
@@ -926,11 +973,13 @@ export class ClassesService {
         maxScore: 5.0,
         isManual: true,
         sessionId,
+        performanceIndicatorId,
       },
       update: {
         score: dto.score,
         maxScore: 5.0,
         isManual: true,
+        ...(performanceIndicatorId ? { performanceIndicatorId } : {}),
       },
     });
   }
@@ -994,9 +1043,19 @@ export class ClassesService {
 
     const slide = await this.prisma.slide.findFirst({
       where: { id: slideId, classId },
-      select: { content: true },
+      select: {
+        content: true,
+        class: { select: { performanceIndicatorId: true } },
+      },
     });
     const definicion = extractActivityDefinition(slide?.content);
+    const activityPiId =
+      typeof definicion?.performanceIndicatorId === 'string'
+        ? definicion.performanceIndicatorId
+        : null;
+    const performanceIndicatorId =
+      activityPiId || slide?.class?.performanceIndicatorId || null;
+
     const evaluated = evaluateActivityResponse(
       activityType,
       definicion ?? { tipo: activityType },
@@ -1037,12 +1096,17 @@ export class ClassesService {
         },
       },
       update: existing?.isManual
-        ? { activityType, response: responseValue }
+        ? {
+            activityType,
+            response: responseValue,
+            ...(performanceIndicatorId ? { performanceIndicatorId } : {}),
+          }
         : {
             activityType,
             response: responseValue,
             score,
             maxScore,
+            ...(performanceIndicatorId ? { performanceIndicatorId } : {}),
           },
       create: {
         classId,
@@ -1054,6 +1118,7 @@ export class ClassesService {
         response: responseValue,
         sessionId: active.id,
         isManual: false,
+        performanceIndicatorId,
       },
     });
   }
@@ -1064,10 +1129,35 @@ export class ClassesService {
     writeSessionId: string,
     items: StudentResultDto[],
   ) {
+    const cls = await this.prisma.class.findUnique({
+      where: { id: classId },
+      select: {
+        performanceIndicatorId: true,
+        slides: { select: { id: true, content: true } },
+      },
+    });
+    const slideIndicatorMap = new Map<string, string | null>();
+    if (cls?.slides) {
+      for (const s of cls.slides) {
+        const def = extractActivityDefinition(s.content);
+        const pi =
+          typeof def?.performanceIndicatorId === 'string'
+            ? def.performanceIndicatorId
+            : (cls.performanceIndicatorId ?? null);
+        slideIndicatorMap.set(s.id, pi);
+      }
+    }
+
     for (const item of items) {
       const responseValue = toPrismaJsonValue(toPersistedResponseJson(item));
       const maxScore = resolvePersistedMaxScore(item);
       const score = resolvePersistedClassResultScore(item);
+      const performanceIndicatorId =
+        item.performanceIndicatorId ??
+        slideIndicatorMap.get(item.slideId) ??
+        cls?.performanceIndicatorId ??
+        null;
+
       await db.classResult.upsert({
         where: {
           classId_studentId_slideId_sessionId: {
@@ -1083,6 +1173,7 @@ export class ClassesService {
           sessionId: writeSessionId,
           score,
           maxScore,
+          ...(performanceIndicatorId ? { performanceIndicatorId } : {}),
         },
         create: {
           classId,
@@ -1094,6 +1185,7 @@ export class ClassesService {
           response: responseValue,
           sessionId: writeSessionId,
           isManual: false,
+          performanceIndicatorId,
         },
       });
     }
@@ -1480,7 +1572,13 @@ export class ClassesService {
   private async findOneRaw(id: string) {
     const cls = await this.prisma.class.findUnique({
       where: { id },
-      select: { id: true, courseId: true, authorId: true, status: true },
+      select: {
+        id: true,
+        courseId: true,
+        authorId: true,
+        status: true,
+        performanceIndicatorId: true,
+      },
     });
     if (!cls) throw new NotFoundException('Clase no encontrada');
     return cls;

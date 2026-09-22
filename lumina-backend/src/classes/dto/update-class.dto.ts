@@ -47,6 +47,14 @@ export class UpdateClassDto {
   @IsString()
   desempenoId?: string;
 
+  /**
+   * Trazabilidad curricular (Etapa J / J9) — vínculo opcional al
+   * `PerformanceIndicator` de origen del curso/logro.
+   */
+  @IsOptional()
+  @IsString()
+  performanceIndicatorId?: string;
+
   /** Camino curricular EXCLUYENTE (J6, "Decisiones cerradas"): "dba" | "ebc". */
   @IsOptional()
   @IsIn(['dba', 'ebc'])

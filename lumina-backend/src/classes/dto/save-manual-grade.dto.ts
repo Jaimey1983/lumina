@@ -15,4 +15,8 @@ export class NotaManualDto {
   @Min(0)
   @Max(5)
   score: number;
+
+  @IsString()
+  @IsOptional()
+  performanceIndicatorId?: string;
 }
