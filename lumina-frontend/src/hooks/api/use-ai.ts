@@ -48,6 +48,8 @@ export interface ContentAssistantInput {
   topic: string;
   slideCount?: number; // default 6
   level?: 'beginner' | 'intermediate' | 'advanced';
+  /** Resumen DBA/EBC o contexto curricular de la Entrada 3 (J6.4), inyectado en el prompt. */
+  curriculumContext?: string;
 }
 
 export interface SlideContenidoGenerado {

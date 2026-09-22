@@ -151,6 +151,10 @@ import {
 } from '@/lib/canvas-zoom';
 import { IconRail, type LeftPanelId } from './components/icon-rail';
 import { FlyoutPanel } from './components/flyout-panel';
+import type {
+  IaPanelCurricularContext,
+  SaveContextoClaseInput,
+} from './components/panels/flyout-left-panels';
 import { SlidesPanel } from './components/slides-panel';
 import { CanvasArea, type CanvasAreaHandle } from './components/canvas-area';
 import { RichTextAiBridgeProvider } from './components/rich-text-ai-bridge';
@@ -499,6 +503,23 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   }, [cls?.desempeno]);
 
   const desempeno = confirmedDesempeno ?? desempenoFromCls;
+
+  // ─── Motor curricular único (Etapa J / J6.4, Entrada 3) ─────────────────────
+  // `IaPanel` hereda esto de la Entrada 2 (J6.3) en vez de volver a pedir
+  // área/grado/DBA — `null` si la clase no tiene `desempenoId` (legado o sin
+  // configurar), caso en el que el panel se degrada al selector manual.
+  const iaPanelCurricularContext: IaPanelCurricularContext | undefined = useMemo(() => {
+    if (!cls?.desempenoId) return undefined;
+    return {
+      desempenoId: cls.desempenoId,
+      desempenoEnunciado: cls.desempenoRef?.enunciado ?? null,
+      caminoCurricular: cls.caminoCurricular ?? null,
+      dbaSeleccionado: cls.dbaSeleccionado ?? null,
+      ebcSeleccionado: cls.ebcSeleccionado ?? null,
+      indicadores: cls.indicadores ?? null,
+      contextoClase: cls.contextoClase ?? null,
+    };
+  }, [cls]);
 
   const modalOpen = !isStudent && (showCurricularModal || modalUserOpen);
 
@@ -2201,6 +2222,25 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [classId, cls?.desempeno, queryClient, updateClassMutation],
   );
 
+  const handleSaveContextoClase = useCallback(
+    (contextoClase: SaveContextoClaseInput) => {
+      queryClient.setQueryData<ClassDetail | null | undefined>(
+        ['classes', 'detail', classId],
+        (prev) => (prev ? { ...prev, contextoClase } : prev),
+      );
+      updateClassMutation.mutate(
+        { contextoClase },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+            toast.error('No se pudo guardar el contexto de la clase para la IA');
+          },
+        },
+      );
+    },
+    [classId, queryClient, updateClassMutation],
+  );
+
   // ─── Error state ─────────────────────────────────────────────────────────────
 
   if (isError) {
@@ -2854,6 +2894,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               activeSlideIndex={resolvedSlideIndex}
               onSelectSlide={setActiveSlideIndex}
               desempenoEnunciado={isStudent ? undefined : desempeno?.enunciado}
+              curricularContext={isStudent ? undefined : iaPanelCurricularContext}
+              onSaveContextoClase={isStudent ? undefined : handleSaveContextoClase}
+              courseId={cls?.courseId}
               isSlideSaving={updateSlide.isPending}
               slideHasActivity={activeSlideHasActivity}
               onApplyLayout={handleApplyLayout}

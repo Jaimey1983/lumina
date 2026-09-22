@@ -413,6 +413,23 @@ export class ClassesService {
         courseId: true,
         authorId: true,
         desempeno: true,
+        // Motor curricular único (Etapa J / J6.4, Entrada 3) — el panel IA
+        // del editor hereda esto para no volver a pedir área/grado/DBA.
+        desempenoId: true,
+        caminoCurricular: true,
+        dbaSeleccionado: true,
+        ebcSeleccionado: true,
+        indicadores: true,
+        contextoClase: true,
+        desempenoRef: {
+          select: {
+            enunciado: true,
+            area: true,
+            grado: true,
+            componenteEbc: true,
+            competenciaIcfes: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
         slides: {
@@ -484,6 +501,7 @@ export class ClassesService {
       dbaSeleccionado,
       ebcSeleccionado,
       indicadores,
+      contextoClase,
       ...rest
     } = dto;
 
@@ -527,6 +545,11 @@ export class ClassesService {
         ...(indicadores !== undefined
           ? { indicadores: indicadores as unknown as Prisma.InputJsonValue }
           : {}),
+        ...(contextoClase !== undefined
+          ? {
+              contextoClase: contextoClase as unknown as Prisma.InputJsonValue,
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -538,6 +561,7 @@ export class ClassesService {
         dbaSeleccionado: true,
         ebcSeleccionado: true,
         indicadores: true,
+        contextoClase: true,
         background: true,
         timerGlobal: true,
         status: true,

@@ -12,6 +12,7 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { trimIfString } from '../../common/trim-if-string';
 import {
+  ContextoClaseDto,
   DbaSeleccionadoDto,
   EbcSeleccionadoDto,
   IndicadoresGeneradosDto,
@@ -65,6 +66,16 @@ export class UpdateClassDto {
   @ValidateNested()
   @Type(() => IndicadoresGeneradosDto)
   indicadores?: IndicadoresGeneradosDto;
+
+  /**
+   * Entrada 3 (panel IA del editor, J6.4) — qué indicadores de `indicadores`
+   * aborda ESTA clase puntual + temas/subtemas elegidos. La Entrada 4
+   * (generador de actividades, J6.5) hereda esto de acá.
+   */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ContextoClaseDto)
+  contextoClase?: ContextoClaseDto;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }): unknown =>

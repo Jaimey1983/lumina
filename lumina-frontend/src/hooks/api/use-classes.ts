@@ -130,6 +130,12 @@ export interface UpdateClassInput {
     procedimental: string[];
     actitudinal: string[];
   };
+  /** Entrada 3 (J6.4, panel IA del editor) — selección para ESTA clase puntual. */
+  contextoClase?: {
+    indicadoresAbordados: string[];
+    temas: string[];
+    subtemas: string[];
+  };
 }
 
 export function useCreateClass(courseId?: string) {

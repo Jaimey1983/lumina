@@ -94,6 +94,7 @@ import {
   describeAiResolvedStatus,
 } from '@/components/ai/ai-preferred-select';
 import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
+import { useUnidadesDbaParaDesempeno } from '@/hooks/api/use-desempenos';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@lumina/curriculum-data';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
@@ -153,6 +154,120 @@ function InsertBtn({
   );
 }
 
+// ─── Motor curricular único (Etapa J / J6.4, Entrada 3) ────────────────────────
+
+/**
+ * Contexto curricular que `Class` ya trae de la Entrada 2 (J6.3) — el panel
+ * IA lo hereda en vez de volver a pedir área/grado/DBA. `null`/`undefined` si
+ * la clase no tiene `desempenoId` (legado o sin configurar aún) — en ese caso
+ * `IaPanel` se degrada al selector manual de siempre.
+ */
+export interface IaPanelCurricularContext {
+  desempenoId: string | null;
+  desempenoEnunciado: string | null;
+  caminoCurricular: 'dba' | 'ebc' | null;
+  dbaSeleccionado: { unidadId: number; evidenciasElegidas: string[] } | null;
+  ebcSeleccionado: { subprocesosElegidos: string[] } | null;
+  indicadores: {
+    cognitivo: string[];
+    procedimental: string[];
+    actitudinal: string[];
+  } | null;
+  contextoClase: {
+    indicadoresAbordados: string[];
+    temas: string[];
+    subtemas: string[];
+  } | null;
+}
+
+export type SaveContextoClaseInput = NonNullable<
+  IaPanelCurricularContext['contextoClase']
+>;
+
+/** Lista de chips editable (agregar/quitar) con sugerencias clicables. */
+function TagListEditor({
+  label,
+  values,
+  suggestions,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  values: string[];
+  suggestions: string[];
+  onAdd: (v: string) => void;
+  onRemove: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState('');
+  const pendingSuggestions = suggestions.filter((s) => !values.includes(s));
+
+  const commit = () => {
+    const v = draft.trim();
+    if (!v) return;
+    onAdd(v);
+    setDraft('');
+  };
+
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {values.map((v) => (
+            <span
+              key={v}
+              className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+            >
+              {v}
+              <button
+                type="button"
+                onClick={() => onRemove(v)}
+                className="text-primary/60 hover:text-primary"
+                aria-label={`Quitar ${v}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {pendingSuggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {pendingSuggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onAdd(s)}
+              className="rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary hover:text-primary"
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-1.5">
+        <Input
+          placeholder={`Agregar ${label.toLowerCase()}…`}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && commit()}
+          className="h-7 flex-1 text-xs"
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-xs"
+          disabled={!draft.trim()}
+          onClick={commit}
+        >
+          Añadir
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface FlyoutLeftPanelsProps {
@@ -166,6 +281,10 @@ export interface FlyoutLeftPanelsProps {
   activeSlideIndex: number;
   onSelectSlide: (index: number) => void;
   desempenoEnunciado?: string;
+  /** Motor curricular único (J6.4) — contexto heredado de la Entrada 2, para `IaPanel`. */
+  curricularContext?: IaPanelCurricularContext;
+  onSaveContextoClase?: (ctx: SaveContextoClaseInput) => void;
+  courseId?: string;
   busy?: boolean;
   slideHasActivity?: boolean;
   onApplyLayout: (layoutKey: SlidePersistedLayoutKey) => void;
@@ -874,10 +993,117 @@ function IaProviderBar() {
 function IaPanel({
   desempenoEnunciado,
   onCreateActivitySlide,
+  curricularContext,
+  onSaveContextoClase,
+  courseId,
 }: {
   desempenoEnunciado?: string;
   onCreateActivitySlide?: (content: Record<string, unknown>, title: string) => void;
+  curricularContext?: IaPanelCurricularContext;
+  onSaveContextoClase?: (ctx: SaveContextoClaseInput) => void;
+  courseId?: string;
 }) {
+  // ── Motor curricular único (J6.4) — la clase ya trae desempeño/indicadores
+  // de la Entrada 2 (J6.3): en ese caso NO se vuelve a pedir área/grado/DBA,
+  // se hereda todo. Si la clase no tiene `desempenoId` (legado o sin
+  // configurar), se degrada al selector manual de siempre.
+  const tieneContextoCurricularJ6 = Boolean(curricularContext?.desempenoId);
+
+  const [indicadoresAbordados, setIndicadoresAbordados] = useState<string[]>(
+    () => curricularContext?.contextoClase?.indicadoresAbordados ?? [],
+  );
+  const [temasClase, setTemasClase] = useState<string[]>(
+    () => curricularContext?.contextoClase?.temas ?? [],
+  );
+  const [subtemasClase, setSubtemasClase] = useState<string[]>(
+    () => curricularContext?.contextoClase?.subtemas ?? [],
+  );
+
+  const persistContexto = useCallback(
+    (indicadores: string[], temas: string[], subtemas: string[]) => {
+      onSaveContextoClase?.({
+        indicadoresAbordados: indicadores,
+        temas,
+        subtemas,
+      });
+    },
+    [onSaveContextoClase],
+  );
+
+  const toggleIndicador = (ind: string) => {
+    const next = indicadoresAbordados.includes(ind)
+      ? indicadoresAbordados.filter((x) => x !== ind)
+      : [...indicadoresAbordados, ind];
+    setIndicadoresAbordados(next);
+    persistContexto(next, temasClase, subtemasClase);
+  };
+  const addTemaClase = (v: string) => {
+    if (temasClase.includes(v)) return;
+    const next = [...temasClase, v];
+    setTemasClase(next);
+    persistContexto(indicadoresAbordados, next, subtemasClase);
+  };
+  const removeTemaClase = (v: string) => {
+    const next = temasClase.filter((t) => t !== v);
+    setTemasClase(next);
+    persistContexto(indicadoresAbordados, next, subtemasClase);
+  };
+  const addSubtemaClase = (v: string) => {
+    if (subtemasClase.includes(v)) return;
+    const next = [...subtemasClase, v];
+    setSubtemasClase(next);
+    persistContexto(indicadoresAbordados, temasClase, next);
+  };
+  const removeSubtemaClase = (v: string) => {
+    const next = subtemasClase.filter((t) => t !== v);
+    setSubtemasClase(next);
+    persistContexto(indicadoresAbordados, temasClase, next);
+  };
+
+  // Sugerencias de temas/subtemas: camino DBA → los reales de la unidad
+  // curada elegida en la Entrada 2; camino EBC → los subprocesos elegidos
+  // (no hay "unidad" puntual en ese camino, son el equivalente más cercano).
+  const { data: unidadesDbaJ6 } = useUnidadesDbaParaDesempeno(
+    courseId ?? '',
+    curricularContext?.caminoCurricular === 'dba'
+      ? curricularContext.desempenoId
+      : null,
+  );
+  const unidadDbaActualJ6 = unidadesDbaJ6?.find(
+    (u) => u.unidadId === curricularContext?.dbaSeleccionado?.unidadId,
+  );
+  const temasSugeridosJ6 =
+    curricularContext?.caminoCurricular === 'dba'
+      ? (unidadDbaActualJ6?.temas ?? [])
+      : (curricularContext?.ebcSeleccionado?.subprocesosElegidos ?? []);
+  const subtemasSugeridosJ6 =
+    curricularContext?.caminoCurricular === 'dba'
+      ? (unidadDbaActualJ6?.subtemas ?? [])
+      : [];
+
+  /** Texto de contexto curricular real para inyectar en el prompt de Gemini. */
+  const buildContextoCurricularTexto = useCallback((): string | undefined => {
+    if (!tieneContextoCurricularJ6) return undefined;
+    const partes: string[] = [];
+    if (curricularContext?.desempenoEnunciado) {
+      partes.push(`Desempeño del curso: ${curricularContext.desempenoEnunciado}`);
+    }
+    if (indicadoresAbordados.length > 0) {
+      partes.push(
+        `Indicadores de desempeño que esta clase debe abordar:\n${indicadoresAbordados
+          .map((i) => `- ${i}`)
+          .join('\n')}`,
+      );
+    }
+    if (temasClase.length > 0) {
+      partes.push(`Temas de esta clase: ${temasClase.join(', ')}`);
+    }
+    if (subtemasClase.length > 0) {
+      partes.push(`Subtemas de esta clase: ${subtemasClase.join(', ')}`);
+    }
+    return partes.length > 0 ? partes.join('\n\n') : undefined;
+  }, [tieneContextoCurricularJ6, curricularContext, indicadoresAbordados, temasClase, subtemasClase]);
+
   // ── Estado del formulario ─────────────────────────────────────────────────
   const [topic, setTopic] = useState('');
   const [plantilla, setPlantilla] = useState<PlantillaPedagogica>('libre');
@@ -1025,6 +1251,7 @@ function IaPanel({
         topic: effectiveTopic,
         slideCount: plantillaConfig.slideCount,
         level,
+        curriculumContext: buildContextoCurricularTexto() ?? curriculumContext ?? undefined,
       },
       {
         onSuccess: (data) => {
@@ -1048,7 +1275,7 @@ function IaPanel({
         subject: area ? AREAS_LABELS[area] : undefined,
         slideCount: plantillaConfig.slideCount,
         level,
-        curriculumContext: curriculumContext ?? undefined,
+        curriculumContext: buildContextoCurricularTexto() ?? curriculumContext ?? undefined,
       },
       {
         onSuccess: (data) => {
@@ -1243,6 +1470,64 @@ function IaPanel({
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-2">
         <IaProviderBar />
+        {tieneContextoCurricularJ6 && (
+          <div className="mb-3 space-y-2.5 rounded-md border border-border bg-muted/30 p-2">
+            {curricularContext?.desempenoEnunciado && (
+              <div>
+                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Desempeño del curso
+                </p>
+                <p className="line-clamp-3 text-[11px] leading-snug text-foreground">
+                  {curricularContext.desempenoEnunciado}
+                </p>
+              </div>
+            )}
+            {curricularContext?.indicadores && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Indicadores que aborda esta clase
+                </p>
+                {(['cognitivo', 'procedimental', 'actitudinal'] as const).map((tipo) => {
+                  const items = curricularContext.indicadores?.[tipo] ?? [];
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={tipo} className="space-y-0.5">
+                      <p className="text-[9px] font-semibold uppercase text-muted-foreground/80">{tipo}</p>
+                      {items.map((ind) => (
+                        <label
+                          key={ind}
+                          className="flex items-start gap-1.5 text-[11px] leading-snug text-foreground"
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-0.5"
+                            checked={indicadoresAbordados.includes(ind)}
+                            onChange={() => toggleIndicador(ind)}
+                          />
+                          <span>{ind}</span>
+                        </label>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <TagListEditor
+              label="Temas de esta clase"
+              values={temasClase}
+              suggestions={temasSugeridosJ6}
+              onAdd={addTemaClase}
+              onRemove={removeTemaClase}
+            />
+            <TagListEditor
+              label="Subtemas"
+              values={subtemasClase}
+              suggestions={subtemasSugeridosJ6}
+              onAdd={addSubtemaClase}
+              onRemove={removeSubtemaClase}
+            />
+          </div>
+        )}
         <Tabs defaultValue="clase">
           <TabsList className="w-full mb-3 h-auto">
             <TabsTrigger value="clase" className="flex-1 text-[11px] px-1 py-1.5 truncate">
@@ -1275,59 +1560,63 @@ function IaPanel({
                 <p className="text-[10px] text-muted-foreground leading-snug">{plantillaConfig.estructura}</p>
               )}
             </div>
-            {/* Área y grado (DBA) */}
-            <div className="grid grid-cols-2 gap-1.5 w-full">
-              <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Área</Label>
-                <Select value={area} onValueChange={handleAreaChange}>
-                  <SelectTrigger className="h-8 text-xs w-full" size="sm">
-                    <SelectValue placeholder="Área" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(AREAS_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key} className="text-xs">
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Grado</Label>
-                <Select value={grado} onValueChange={handleGradoChange}>
-                  <SelectTrigger className="h-8 text-xs w-full" size="sm">
-                    <SelectValue placeholder="Grado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Primaria
-                    </div>
-                    {GRADOS_PRIMARIA.map((g) => (
-                      <SelectItem key={g} value={g} className="text-xs">Grado {g}°</SelectItem>
-                    ))}
-                    <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border-t mt-1 pt-2">
-                      Bachillerato
-                    </div>
-                    {GRADOS_BACHILLERATO.map((g) => (
-                      <SelectItem key={g} value={g} className="text-xs">Grado {g}°</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {/* Indicador DBA cargado */}
-            {loadingCurriculum && (
-              <p className="text-[10px] text-muted-foreground">Cargando contexto DBA...</p>
+            {/* Área y grado (DBA) — legado: se degrada acá solo si la clase NO tiene contexto curricular J6 */}
+            {!tieneContextoCurricularJ6 && (
+              <>
+                <div className="grid grid-cols-2 gap-1.5 w-full">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Área</Label>
+                    <Select value={area} onValueChange={handleAreaChange}>
+                      <SelectTrigger className="h-8 text-xs w-full" size="sm">
+                        <SelectValue placeholder="Área" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(AREAS_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key} className="text-xs">
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Grado</Label>
+                    <Select value={grado} onValueChange={handleGradoChange}>
+                      <SelectTrigger className="h-8 text-xs w-full" size="sm">
+                        <SelectValue placeholder="Grado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          Primaria
+                        </div>
+                        {GRADOS_PRIMARIA.map((g) => (
+                          <SelectItem key={g} value={g} className="text-xs">Grado {g}°</SelectItem>
+                        ))}
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border-t mt-1 pt-2">
+                          Bachillerato
+                        </div>
+                        {GRADOS_BACHILLERATO.map((g) => (
+                          <SelectItem key={g} value={g} className="text-xs">Grado {g}°</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {/* Indicador DBA cargado */}
+                {loadingCurriculum && (
+                  <p className="text-[10px] text-muted-foreground">Cargando contexto DBA...</p>
+                )}
+                {curriculumData && !loadingCurriculum && Array.isArray(curriculumData.unidades) && (
+                  <div className="flex items-center gap-1.5 rounded-md bg-green-50 px-2 py-1.5 dark:bg-green-950/30">
+                    <div className="size-1.5 rounded-full bg-green-500" />
+                    <p className="text-[10px] text-green-700 dark:text-green-400">
+                      {curriculumData.unidades.length} unidades DBA cargadas — la clase se alineará al MEN
+                    </p>
+                  </div>
+                )}
+                {errorCurriculum && <p className="text-[10px] text-amber-600">{errorCurriculum}</p>}
+              </>
             )}
-            {curriculumData && !loadingCurriculum && Array.isArray(curriculumData.unidades) && (
-              <div className="flex items-center gap-1.5 rounded-md bg-green-50 px-2 py-1.5 dark:bg-green-950/30">
-                <div className="size-1.5 rounded-full bg-green-500" />
-                <p className="text-[10px] text-green-700 dark:text-green-400">
-                  {curriculumData.unidades.length} unidades DBA cargadas — la clase se alineará al MEN
-                </p>
-              </div>
-            )}
-            {errorCurriculum && <p className="text-[10px] text-amber-600">{errorCurriculum}</p>}
             {/* Tema */}
             <div className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">Tema de la clase</Label>
@@ -1361,7 +1650,7 @@ function IaPanel({
                 </SelectContent>
               </Select>
             </div>
-            {desempenoEnunciado && (
+            {!tieneContextoCurricularJ6 && desempenoEnunciado && (
               <div className="rounded-md border border-border bg-muted/30 p-2">
                 <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Desempeño
@@ -1424,46 +1713,50 @@ function IaPanel({
                 className="text-xs"
               />
             </div>
-            {/* Área y grado reutilizados */}
-            <div className="grid grid-cols-2 gap-1.5 w-full">
-              <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Área (opcional)</Label>
-                <Select value={area} onValueChange={handleAreaChange}>
-                  <SelectTrigger className="h-8 text-xs w-full" size="sm">
-                    <SelectValue placeholder="Área" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(AREAS_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key} className="text-xs">
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">Grado (opcional)</Label>
-                <Select value={grado} onValueChange={handleGradoChange}>
-                  <SelectTrigger className="h-8 text-xs w-full" size="sm">
-                    <SelectValue placeholder="Grado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GRADOS_BACHILLERATO.map((g) => (
-                      <SelectItem key={g} value={g} className="text-xs">
-                        Grado {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {curriculumData && !loadingCurriculum && Array.isArray(curriculumData.unidades) && (
-              <div className="flex items-center gap-1.5 rounded-md bg-green-50 px-2 py-1.5 dark:bg-green-950/30">
-                <div className="size-1.5 rounded-full bg-green-500" />
-                <p className="text-[10px] text-green-700 dark:text-green-400">
-                  Contexto DBA cargado — alineación MEN activa
-                </p>
-              </div>
+            {/* Área y grado reutilizados — legado: se degrada acá solo si la clase NO tiene contexto curricular J6 */}
+            {!tieneContextoCurricularJ6 && (
+              <>
+                <div className="grid grid-cols-2 gap-1.5 w-full">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Área (opcional)</Label>
+                    <Select value={area} onValueChange={handleAreaChange}>
+                      <SelectTrigger className="h-8 text-xs w-full" size="sm">
+                        <SelectValue placeholder="Área" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(AREAS_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key} className="text-xs">
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Grado (opcional)</Label>
+                    <Select value={grado} onValueChange={handleGradoChange}>
+                      <SelectTrigger className="h-8 text-xs w-full" size="sm">
+                        <SelectValue placeholder="Grado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GRADOS_BACHILLERATO.map((g) => (
+                          <SelectItem key={g} value={g} className="text-xs">
+                            Grado {g}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {curriculumData && !loadingCurriculum && Array.isArray(curriculumData.unidades) && (
+                  <div className="flex items-center gap-1.5 rounded-md bg-green-50 px-2 py-1.5 dark:bg-green-950/30">
+                    <div className="size-1.5 rounded-full bg-green-500" />
+                    <p className="text-[10px] text-green-700 dark:text-green-400">
+                      Contexto DBA cargado — alineación MEN activa
+                    </p>
+                  </div>
+                )}
+              </>
             )}
             <Button
               type="button"
@@ -1584,6 +1877,9 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
     activeSlideIndex,
     onSelectSlide,
     desempenoEnunciado,
+    curricularContext,
+    onSaveContextoClase,
+    courseId,
     busy,
     slideHasActivity,
     onApplyLayout,
@@ -1637,6 +1933,9 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
         <IaPanel
           desempenoEnunciado={desempenoEnunciado}
           onCreateActivitySlide={props.onCreateActivitySlide}
+          curricularContext={curricularContext}
+          onSaveContextoClase={onSaveContextoClase}
+          courseId={courseId}
         />
       );
     case 'paginas':

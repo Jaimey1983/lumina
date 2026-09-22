@@ -31,6 +31,9 @@ export interface UnidadDbaParaClase {
   unidadId: number;
   titulo: string;
   evidenciasAprendizaje: string[];
+  /** Temas/subtemas reales de la unidad (J6.4) — sugeridos en la Entrada 3. */
+  temas: string[];
+  subtemas: string[];
 }
 
 /** Camino curricular EXCLUYENTE (J6, "Decisiones cerradas"): nunca los dos a la vez. */

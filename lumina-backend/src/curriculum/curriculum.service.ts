@@ -327,6 +327,13 @@ export interface UnidadDbaParaClase {
   unidadId: number;
   titulo: string;
   evidenciasAprendizaje: string[];
+  /**
+   * Temas/subtemas reales de la unidad curada (J6.4, Entrada 3) — sugeridos
+   * como punto de partida al docente al elegir temas/subtemas de ESTA clase
+   * puntual, sin obligarlo a escribir desde cero cuando el camino es DBA.
+   */
+  temas: string[];
+  subtemas: string[];
 }
 
 export interface IndicadoresClaseResult {
@@ -962,6 +969,8 @@ Redacta el desempeño de curso.`;
       unidadId: u.unidad_id,
       titulo: u.unidad_titulo,
       evidenciasAprendizaje: u.evidencias_aprendizaje,
+      temas: u.temas,
+      subtemas: u.subtemas,
     }));
   }
 

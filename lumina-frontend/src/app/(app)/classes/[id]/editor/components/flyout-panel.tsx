@@ -17,7 +17,11 @@ import type { Background, Block } from '@lumina/types/slide';
 import type { WidgetTipo } from '@lumina/types/widget';
 import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
-import { FlyoutLeftPanels } from './panels/flyout-left-panels';
+import {
+  FlyoutLeftPanels,
+  type IaPanelCurricularContext,
+  type SaveContextoClaseInput,
+} from './panels/flyout-left-panels';
 import type { LeftPanelId } from './icon-rail';
 import type { SlidePersistedLayoutKey } from './templates-panel';
 
@@ -76,6 +80,10 @@ export interface FlyoutPanelProps {
   activeSlideIndex: number;
   onSelectSlide: (index: number) => void;
   desempenoEnunciado?: string;
+  /** Motor curricular único (J6.4) — contexto heredado de la Entrada 2, para `IaPanel`. */
+  curricularContext?: IaPanelCurricularContext;
+  onSaveContextoClase?: (ctx: SaveContextoClaseInput) => void;
+  courseId?: string;
   isSlideSaving?: boolean;
   slideHasActivity?: boolean;
   onApplyLayout: (layoutKey: SlidePersistedLayoutKey) => void;
@@ -101,6 +109,9 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       activeSlideIndex,
       onSelectSlide,
       desempenoEnunciado,
+      curricularContext,
+      onSaveContextoClase,
+      courseId,
       isSlideSaving,
       slideHasActivity,
       onApplyLayout,
@@ -166,6 +177,9 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 activeSlideIndex={activeSlideIndex}
                 onSelectSlide={onSelectSlide}
                 desempenoEnunciado={desempenoEnunciado}
+                curricularContext={curricularContext}
+                onSaveContextoClase={onSaveContextoClase}
+                courseId={courseId}
                 busy={isSlideSaving}
                 slideHasActivity={slideHasActivity}
                 onApplyLayout={onApplyLayout}
