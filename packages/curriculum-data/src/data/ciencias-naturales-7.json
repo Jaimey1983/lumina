@@ -2,69 +2,119 @@
   "grado": "7",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA v2 + EBC",
-  "version": "placeholder-1.0",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 6°-7°",
+  "version": "1.0",
   "unidades": [
     {
       "unidad_id": 0,
-      "unidad_titulo": "Placeholder — reemplazar con JSON real",
-      "dba_asociados": [
-        1
+      "unidad_titulo": "Energía mecánica y su transformación en un sistema",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende las formas y las transformaciones de energía en un sistema mecánico y la manera como, en los casos reales, la energía se disipa en el medio (calor, sonido).",
+      "evidencias_aprendizaje": [
+        "Relaciona las variables velocidad y posición para describir las formas de energía mecánica (cinética y potencial gravitacional) que tiene un cuerpo en movimiento.",
+        "Identifica las formas de energía mecánica (cinética y potencial) que tienen lugar en diferentes puntos del movimiento en un sistema mecánico (caída libre, montaña rusa, péndulo).",
+        "Representa gráficamente las energías cinética y potencial gravitacional en función del tiempo."
       ],
-      "dba_relacionados": [],
-      "enfoque_men": "Producción Textual",
-      "nivel_cognitivo": {
-        "nivel": "Comprender",
-        "verbo_bloom": [
-          "identificar"
-        ],
-        "nivel_numero": 2
-      },
+      "ebc_factor": "Entorno físico",
       "temas": [
-        "Placeholder tema"
+        "Energía cinética y energía potencial gravitacional",
+        "Disipación de energía (calor, sonido)"
       ],
       "subtemas": [
-        "Placeholder subtema"
+        "Relación entre velocidad, posición y formas de energía mecánica de un cuerpo en movimiento",
+        "Energía cinética y potencial en distintos puntos de un sistema mecánico (caída libre, montaña rusa, péndulo)",
+        "Representación gráfica de energía cinética y potencial en función del tiempo"
       ],
-      "palabras_clave": [
-        "ciencias naturales",
-        "grado 7",
-        "Colombia"
-      ],
-      "dba_enunciado": "Placeholder DBA — reemplazar con JSON real generado por Prompt Maestro v2",
-      "evidencias_aprendizaje": [
-        "Placeholder evidencia"
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "procedimental": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "actitudinal": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        }
-      },
       "actividades_sugeridas": [
-        {
-          "descripcion": "Placeholder actividad",
-          "tipo": "Quiz opción múltiple"
-        }
+        { "descripcion": "Clasificar situaciones cotidianas según predomine energía cinética o potencial", "tipo": "Clasificar" },
+        { "descripcion": "Ordenar los puntos de una montaña rusa según la energía potencial disponible", "tipo": "Ordenar" },
+        { "descripcion": "Quiz sobre transformación y disipación de energía mecánica", "tipo": "Quiz opción múltiple" }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Estructura del átomo y la tabla periódica",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Explica cómo las sustancias se forman a partir de la interacción de los elementos y que estos se encuentran agrupados en un sistema periódico.",
+      "evidencias_aprendizaje": [
+        "Ubica a los elementos en la Tabla Periódica con relación a los números atómicos (Z) y másicos (A).",
+        "Usa modelos y representaciones (Bohr, Lewis) que le permiten reconocer la estructura del átomo y su relación con su ubicación en la Tabla Periódica.",
+        "Explica la variación de algunas de las propiedades (densidad, temperatura de ebullición y fusión) de sustancias simples (metales, no metales, metaloides y gases nobles) en la tabla periódica."
       ],
-      "ebc_factor": "Producción Textual",
-      "ebc_estandar": "Placeholder EBC",
-      "subprocesos_ebc": [
-        "Placeholder subproceso"
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Números atómico y másico",
+        "Modelos atómicos de Bohr y de Lewis",
+        "Propiedades periódicas de los elementos"
+      ],
+      "subtemas": [
+        "Ubicación de elementos en la tabla periódica según su número atómico (Z) y másico (A)",
+        "Estructura del átomo representada con el modelo de Bohr y con el de Lewis",
+        "Variación de densidad, punto de ebullición y punto de fusión según el tipo de elemento (metales, no metales, metaloides, gases nobles)"
+      ],
+      "actividades_sugeridas": [
+        { "descripcion": "Ubicar elementos en la tabla periódica según su número atómico", "tipo": "Clasificar" },
+        { "descripcion": "Emparejar cada elemento con su modelo de Bohr o de Lewis correspondiente", "tipo": "Emparejar" },
+        { "descripcion": "Quiz sobre propiedades periódicas de metales, no metales, metaloides y gases nobles", "tipo": "Quiz opción múltiple" }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Flujo de materia y energía en cadenas y redes tróficas",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende que en las cadenas y redes tróficas existen flujos de materia y energía, y los relaciona con procesos de nutrición, fotosíntesis y respiración celular.",
+      "evidencias_aprendizaje": [
+        "Explica tipos de nutrición (autótrofa y heterótrofa) en las cadenas y redes tróficas dentro de los ecosistemas.",
+        "Explica la fotosíntesis como un proceso de construcción de materia orgánica a partir del aprovechamiento de la energía solar y su combinación con el dióxido de carbono del aire y el agua, y predice qué efectos sobre la composición de la atmósfera terrestre podría tener su disminución a nivel global (por ejemplo, a partir de la tala masiva de bosques).",
+        "Compara el proceso de fotosíntesis con el de respiración celular, considerando sus reactivos y productos y su función en los organismos."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Nutrición autótrofa y heterótrofa",
+        "Fotosíntesis y respiración celular"
+      ],
+      "subtemas": [
+        "Tipos de nutrición en las cadenas y redes tróficas de un ecosistema",
+        "Fotosíntesis como proceso de construcción de materia orgánica a partir de la energía solar",
+        "Efecto de la disminución de la fotosíntesis (tala masiva de bosques) sobre la atmósfera",
+        "Comparación entre fotosíntesis y respiración celular (reactivos, productos, función)"
+      ],
+      "actividades_sugeridas": [
+        { "descripcion": "Clasificar organismos de una red trófica según su tipo de nutrición", "tipo": "Clasificar" },
+        { "descripcion": "Relacionar reactivos y productos de la fotosíntesis y de la respiración celular", "tipo": "Relacionar columnas" },
+        { "descripcion": "Predecir por escrito el efecto de la tala masiva de bosques sobre la atmósfera", "tipo": "Respuesta abierta" }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Ciclos biogeoquímicos y su importancia en el ecosistema",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende la relación entre los ciclos del carbono, el nitrógeno y del agua, explicando su importancia en el mantenimiento de los ecosistemas.",
+      "evidencias_aprendizaje": [
+        "Establece relaciones entre los ciclos del Carbono y Nitrógeno con el mantenimiento de los suelos en un ecosistema.",
+        "Explica a partir de casos los efectos de la intervención humana (erosión, contaminación, deforestación) en los ciclos biogeoquímicos del suelo (Carbono, Nitrógeno) y del agua y sus consecuencias ambientales y propone posibles acciones para mitigarlas o remediarlas.",
+        "Reconoce las principales funciones de los microorganismos, para identificar casos en los que se relacionen con los ciclos biogeoquímicos y su utilidad en la vida diaria.",
+        "Propone acciones de uso responsable del agua en su hogar, en la escuela y en sus contextos cercanos."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Ciclo del carbono y del nitrógeno",
+        "Ciclo del agua e intervención humana"
+      ],
+      "subtemas": [
+        "Relación entre los ciclos del carbono y del nitrógeno con el mantenimiento de los suelos",
+        "Efectos de la erosión, la contaminación y la deforestación en los ciclos biogeoquímicos",
+        "Funciones de los microorganismos en los ciclos biogeoquímicos",
+        "Uso responsable del agua en el hogar, la escuela y el entorno cercano"
+      ],
+      "actividades_sugeridas": [
+        { "descripcion": "Relacionar cada ciclo biogeoquímico con la función que cumple en el ecosistema", "tipo": "Relacionar columnas" },
+        { "descripcion": "Verdadero o falso sobre el efecto de la intervención humana en los ciclos del carbono, nitrógeno y agua", "tipo": "Verdadero/Falso" },
+        { "descripcion": "Proponer por escrito una acción de uso responsable del agua en la escuela", "tipo": "Respuesta abierta" }
       ]
     }
   ]
