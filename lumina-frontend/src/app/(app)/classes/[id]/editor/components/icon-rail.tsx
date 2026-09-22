@@ -9,7 +9,6 @@ import {
   LayoutTemplate,
   LogOut,
   Palette,
-  RefreshCw,
   Shapes,
   Sparkles,
   User,
@@ -50,7 +49,6 @@ const ITEMS: RailItem[] = [
 export interface IconRailProps {
   activePanel: LeftPanelId | null;
   onPanelToggle: (panel: LeftPanelId) => void;
-  onRefreshDesempeno: () => void;
 }
 
 // ─── Shared button class ──────────────────────────────────────────────────────
@@ -93,7 +91,7 @@ const RailButton = memo(function RailButton({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: IconRailProps) {
+export function IconRail({ activePanel, onPanelToggle }: IconRailProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -120,21 +118,8 @@ export function IconRail({ activePanel, onPanelToggle, onRefreshDesempeno }: Ico
         ))}
       </div>
 
-      {/* ── Bottom: RefreshCw + Avatar ──────────────────────────────────────── */}
+      {/* ── Bottom: Avatar ───────────────────────────────────────────────────── */}
       <div className="flex flex-col items-center gap-1 pb-3">
-
-        {/* Cambiar desempeño (solo docentes) */}
-        {!isStudent ? (
-          <button
-            type="button"
-            title="Cambiar desempeño"
-            onClick={onRefreshDesempeno}
-            aria-label="Cambiar desempeño"
-            className={ICON_BTN}
-          >
-            <RefreshCw className="size-5 shrink-0" aria-hidden />
-          </button>
-        ) : null}
 
         {/* Avatar con dropdown */}
         <DropdownMenu>

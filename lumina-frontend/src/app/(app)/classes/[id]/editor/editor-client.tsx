@@ -63,7 +63,7 @@ import {
   useSlideVersions,
   type SlideVersion,
 } from '@/hooks/api/use-slide-versions';
-import { NewClassModal, type DesempenoGenerado, withActividadesSugeridas } from '../new-class-modal';
+import { type DesempenoGenerado, withActividadesSugeridas } from './lib/desempeno-legado';
 import {
   appendBlockToSlideContent,
   buildContentDocumentForNewActivitySlide,
@@ -361,9 +361,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     writeStoredGuidesVisible(next);
   }, []);
   const [saveError, setSaveError] = useState(false);
-  const [modalUserOpen,      setModalUserOpen]      = useState(false);
-  const [confirmedDesempeno, setConfirmedDesempeno] = useState<DesempenoGenerado | null>(null);
-  const [showCurricularModal, setShowCurricularModal] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
 
@@ -432,7 +429,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const torneoSocketRef = useRef<Socket | null>(null);
 
   const leftRailWrapRef = useRef<HTMLDivElement>(null);
-  const autoOpenedRef = useRef(false);
   const flyoutPanelRef = useRef<HTMLElement>(null);
   const rightRailWrapRef = useRef<HTMLDivElement>(null);
   const rightFlyoutPanelRef = useRef<HTMLElement>(null);
@@ -480,18 +476,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     return () => document.removeEventListener('pointerdown', handlePointerDown, true);
   }, [activePanel, rightPanel]);
 
-  // ─── Auto-open curricular modal once per session when class has no desempeño ─
-
-  useEffect(() => {
-    if (!isStudent && cls && !isLoading && !hasDesempenoPersistido(cls.desempeno) && !autoOpenedRef.current) {
-      autoOpenedRef.current = true;
-      setShowCurricularModal(true);
-    }
-  }, [cls, isLoading, isStudent]);
-
   // ─── Desempeño ──────────────────────────────────────────────────────────────
+  // LEGADO (Json congelado, J6.6) — solo lectura para clases pre-J6.1, que
+  // nunca tuvieron `desempenoId`. Sin modal de generación/edición: el camino
+  // vigente para desempeño+indicadores es el motor curricular único (abajo).
 
-  const desempenoFromCls = useMemo(() => {
+  const desempeno = useMemo(() => {
     if (!cls?.desempeno || !hasDesempenoPersistido(cls.desempeno)) return null;
     const raw = cls.desempeno as DesempenoGenerado;
     return withActividadesSugeridas({
@@ -501,8 +491,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         : [],
     });
   }, [cls?.desempeno]);
-
-  const desempeno = confirmedDesempeno ?? desempenoFromCls;
 
   // ─── Motor curricular único (Etapa J / J6.4, Entrada 3) ─────────────────────
   // `IaPanel` hereda esto de la Entrada 2 (J6.3) en vez de volver a pedir
@@ -520,8 +508,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       contextoClase: cls.contextoClase ?? null,
     };
   }, [cls]);
-
-  const modalOpen = !isStudent && (showCurricularModal || modalUserOpen);
 
   // ── Socket: single connection — join room, track connection state, listen for responses ──
 
@@ -1106,10 +1092,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [sortedSlides, activeSlide?.id],
   );
 
-  const handleRefreshDesempeno = useCallback(() => {
-    setModalUserOpen(true);
-  }, []);
-
   const handleSave = useCallback(async () => {
     if (!activeSlide) return;
     const payload = buildSlidePayload(
@@ -1165,7 +1147,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       const mod = e.ctrlKey || e.metaKey;
 
       if (e.key === 'Escape') {
-        if (modalOpen || previewOpen) return;
+        if (previewOpen) return;
         if (activePanel) {
           e.preventDefault();
           setActivePanel(null);
@@ -1266,7 +1248,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
     handleSave,
-    modalOpen,
     previewOpen,
     activePanel,
     rightPanel,
@@ -2841,7 +2822,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <IconRail
               activePanel={activePanel}
               onPanelToggle={toggleLeftPanel}
-              onRefreshDesempeno={handleRefreshDesempeno}
             />
           </div>
 
@@ -3245,25 +3225,6 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           </DialogBody>
         </DialogContent>
       </Dialog>
-
-      {!isStudent && (
-        <NewClassModal
-          classId={classId}
-          courseId={courseId}
-          isOpen={modalOpen}
-          required={false}
-          onClose={() => {
-            setModalUserOpen(false);
-            setShowCurricularModal(false);
-          }}
-          onConfirm={(d) => {
-            const normalized = withActividadesSugeridas(d);
-            setConfirmedDesempeno(normalized);
-            setModalUserOpen(false);
-            setShowCurricularModal(false);
-          }}
-        />
-      )}
 
       {pptxModalOpen && (
         <ImportPptxModal
