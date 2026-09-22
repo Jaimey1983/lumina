@@ -1157,8 +1157,8 @@ model Class {
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(ai-features): catálogo completo de actividades generables + chat de refinamiento`.
 
 #### J9 — trazabilidad actividad → indicador de desempeño
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Antigravity
+- **Estado:** [en curso: Antigravity]
 - **Precondición:** J6 hecho, J8 hecho.
 - **Contexto:** `ClassResult` (`schema.prisma:408`) no tiene relación con `PerformanceIndicator`/`Achievement` — hoy es imposible saber, desde el resultado de un estudiante, a qué indicador de desempeño responde esa actividad. Con J6 (clase↔indicador) y J8 (catálogo completo de generación) ya en pie, esta ficha cierra la trazabilidad completa.
 - **Alcance — PUEDE tocar:** `lumina-backend/prisma/schema.prisma` — la actividad generada desde el panel derecho (J8), dentro de una clase ya ligada a un indicador (J6), guarda esa referencia (probablemente en el bloque de actividad persistido en el slide, o en una tabla de relación — decidir según cómo está modelada la actividad en el slide hoy); `ClassResult` hereda la trazabilidad hasta el indicador de origen (campo nuevo o relación derivada vía la clase). Migración Prisma.
