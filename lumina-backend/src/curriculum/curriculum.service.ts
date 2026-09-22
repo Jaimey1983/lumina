@@ -226,13 +226,25 @@ function buildDesempenoFromUnit(
 }
 
 /**
- * Extrae y parsea el primer objeto JSON de una respuesta de texto de
- * Gemini. Con `responseMimeType: 'application/json'` (modo no-grounded) la
- * respuesta ya es JSON puro; en modo `grounded` (sin ese mime type, D6 —
- * Gemini no admite ambos a la vez) el modelo puede envolver el JSON en
- * ```json ... ``` o agregar una frase antes/después pese a la instrucción
- * del prompt — se recorta al primer `{`/último `}` como red de seguridad
- * adicional a la limpieza de fences. `null` si no hay JSON válido.
+ * Extrae y parsea el primer objeto JSON BALANCEADO de una respuesta de texto
+ * de Gemini, descartando todo lo que venga después de su `}` de cierre real.
+ *
+ * Necesario porque `gemini-2.5-flash-lite` con `responseMimeType:
+ * 'application/json'` puede emitir el JSON correcto y, acto seguido, entrar
+ * en un loop de repetición degenerada (fragmentos sueltos del final de la
+ * respuesta, con `}` de más) — confirmado en vivo, reproducible: 3/3
+ * llamadas idénticas devolvieron `{"enunciado": "..."}` seguido de basura
+ * como `.\"}\nprocesos.\"}\n}` o 15 repeticiones de `ada.\"}\n.\"}\n...`. Un
+ * `lastIndexOf('}')` ingenuo (la implementación anterior) agarra uno de esos
+ * `}` sueltos de la basura en vez del que de verdad cierra el objeto, y el
+ * slice resultante queda con sintaxis rota → `JSON.parse` vuelve a fallar →
+ * se pierde una respuesta que en realidad SÍ era válida.
+ *
+ * Este parser cuenta llaves desde el primer `{`, respetando el contenido de
+ * los strings (para que un `}` dentro de un valor de texto no descuadre el
+ * conteo) y para en cuanto encuentra el `}` que balancea exactamente ese
+ * primer `{` — todo lo posterior (markdown, basura, repetición) se ignora
+ * sin más intentos. `null` si no hay ningún objeto JSON balanceado.
  */
 function extractJsonObject(raw: string): unknown {
   const cleaned = raw
@@ -240,18 +252,43 @@ function extractJsonObject(raw: string): unknown {
     .replace(/^```\s*/i, '')
     .replace(/```\s*$/i, '')
     .trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start === -1 || end === -1 || end <= start) return null;
-    try {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    } catch {
-      return null;
+
+  const start = cleaned.indexOf('{');
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(cleaned.slice(start, i + 1));
+        } catch {
+          return null;
+        }
+      }
     }
   }
+  return null;
 }
 
 // ─── Entrada 1 (Etapa J / J6.2) — desempeño de CURSO, sin unidad/tema ──
@@ -515,13 +552,8 @@ ${candidatas
         maxOutputTokens: 100,
         temperature: 0,
       });
-      const cleaned = raw
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-      const parsed = JSON.parse(cleaned) as { unidad_id?: unknown };
-      const id = typeof parsed.unidad_id === 'number' ? parsed.unidad_id : -1;
+      const parsed = extractJsonObject(raw) as { unidad_id?: unknown } | null;
+      const id = typeof parsed?.unidad_id === 'number' ? parsed.unidad_id : -1;
       if (id < 0) return null;
       const unidad = candidatas.find((u) => u.unidad_id === id);
       if (!unidad) return null;
