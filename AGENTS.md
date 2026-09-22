@@ -1089,8 +1089,8 @@ model Class {
 - **Cierre:** no aplica Regla 4. Commit: `feat(curriculum): generar Desempeno a nivel de curso (J6.2)`.
 
 ##### J6.3 — Entrada 2: modal de clase fusionado (DBA/EBC excluyente → indicadores)
-- **Operador:** a definir
-- **Estado:** pendiente
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** J6.2 hecho.
 - **Contexto (D4):** se fusionan los 2 modales actuales (`course-detail-client.tsx`'s `NewClassModal` local, que solo crea `{title, courseId}`, y `new-class-modal.tsx`, que hoy genera un desempeño por clase desde texto libre) en **uno solo**: título → elegir `Desempeno` del curso → camino DBA-o-EBC excluyente → generar indicadores → un solo submit. **Regla 7:** el modal viejo no se borra hasta que el nuevo tenga cobertura equivalente a `curriculum.service.spec.ts` para el flujo completo.
 - **Alcance — PUEDE tocar:** nuevos endpoints de listado (`listUnidadesPorComponente`/`listSubprocesosPorComponente` en `@lumina/curriculum-data` + backend) filtrados por área+grado+componente del `Desempeno` elegido; `curriculum.service.ts` (generación de indicadores cognitivo/procedimental/actitudinal, con el DBA/evidencias o EBC/subprocesos elegidos como contexto del prompt); reescritura de `new-class-modal.tsx` como el modal único; `course-detail-client.tsx` deja de tener su `NewClassModal` local propio (o lo redirige al nuevo).
