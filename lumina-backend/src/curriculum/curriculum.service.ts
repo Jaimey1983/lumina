@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   loadCurriculum,
@@ -6,14 +10,20 @@ import {
   listUnidadesCuradas,
   AREAS_LABELS,
   GRADOS_TODOS,
+  EBC_COMPONENTES,
+  ICFES_COMPETENCIAS,
   type AreaCurricular,
   type GradoEscolar,
   type CurriculumData as CurriculumUnitData,
   type UnidadCurricular,
   type EscalaValoracionPorTipo,
 } from '@lumina/curriculum-data';
+import type { Desempeno } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
 import { LLM_MODELS } from '../ai-features/ai-provider.types';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
+import { CreateDesempenoDto } from './dto/create-desempeno.dto';
 
 // ─── Tipos ────────────────────────────────────────────────
 
@@ -241,11 +251,41 @@ function extractJsonObject(raw: string): unknown {
   }
 }
 
+// ─── Entrada 1 (Etapa J / J6.2) — desempeño de CURSO, sin unidad/tema ──
+// aún elegido. Estrategia distinta de `generateDesempeno` (Entrada 2): no
+// hay un `tema` para matchear contra una unidad puntual — la entrada es
+// componente EBC + competencia ICFES (catálogo fijo, J6.0). Si el dataset
+// curado tiene unidades de ese componente en esa área/grado, sus
+// `dba_enunciado` se usan como contexto real para que Gemini sintetice un
+// desempeño de curso más amplio que cualquier DBA individual (sin
+// grounding — ya hay contenido MEN real como base, no hace falta buscar en
+// internet); si no hay contenido curado, se recurre a grounding igual que
+// `generateDesempeno` para temas fuera del dataset. Sin `GEMINI_API_KEY`,
+// fallback determinista en los dos casos.
+
+function normalizarEtiqueta(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+function buildFallbackDesempenoCurso(params: {
+  areaLabel: string;
+  grado: string;
+  componenteLabel: string;
+  competenciaLabel: string;
+}): string {
+  const { areaLabel, grado, componenteLabel, competenciaLabel } = params;
+  return `Desarrollar la competencia de ${competenciaLabel} en el componente de ${componenteLabel}, propio de ${areaLabel} de grado ${grado}, mediante situaciones de aprendizaje que permitan al estudiante avanzar de manera progresiva en su comprensión y aplicación a lo largo del curso.`;
+}
+
 // ─── Service ──────────────────────────────────────────────
 
 @Injectable()
 export class CurriculumService {
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+    private readonly courseAuth: CourseAuthorizationService,
+  ) {}
 
   /**
    * `grounded: true` activa la herramienta de búsqueda de Google en Gemini
@@ -585,5 +625,199 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
     } catch {
       return buildFallbackDesempeno(dto);
     }
+  }
+
+  // ── 3. Entrada 1 (J6.2) — Desempeño de CURSO ─────────────
+
+  /**
+   * Redacta el enunciado del desempeño de curso. Separado de
+   * `generateDesempeno` a propósito (J6, "Decisiones cerradas" — estrategia
+   * de IA distinta): acá no hay un `tema`/unidad puntual, solo componente +
+   * competencia; cuando hay unidades curadas de ese componente se le pasan
+   * como contexto real (sin grounding), y solo se recurre a `google_search`
+   * cuando el área/componente no tiene contenido curado todavía.
+   */
+  private async buildEnunciadoDesempenoCurso(params: {
+    area: AreaCurricular;
+    grado: GradoEscolar;
+    componenteLabel: string;
+    competenciaLabel: string;
+  }): Promise<string> {
+    const { area, grado, componenteLabel, competenciaLabel } = params;
+    const areaLabel = AREAS_LABELS[area];
+    const fallback = () =>
+      buildFallbackDesempenoCurso({
+        areaLabel,
+        grado,
+        componenteLabel,
+        competenciaLabel,
+      });
+
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (!apiKey) return fallback();
+
+    const data = await loadCurriculum(area, grado);
+    const unidadesDelComponente = data
+      ? listUnidadesCuradas(data).filter(
+          (u) =>
+            normalizarEtiqueta(u.ebc_factor) ===
+            normalizarEtiqueta(componenteLabel),
+        )
+      : [];
+
+    const tieneContextoCurado = unidadesDelComponente.length > 0;
+
+    const system = tieneContextoCurado
+      ? `Eres un experto en diseño curricular colombiano (MEN). Redactas UN desempeño de aprendizaje AMPLIO, a nivel de curso completo (no de una sola clase), que integre el componente y la competencia dados, apoyándote en los DBA reales que se te entregan como referencia. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Respondes SIEMPRE con JSON puro: {"enunciado": "string"}, sin texto adicional ni bloques de código.`
+      : `Eres un experto en diseño curricular colombiano basado en los Estándares Básicos de Competencias del MEN. Redactas UN desempeño de aprendizaje AMPLIO, a nivel de curso completo, que integre el componente y la competencia dados. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Tenés disponible búsqueda en Google — usala para fundamentar el desempeño en los Estándares Básicos de Competencias reales del MEN para esta área y grado. Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido: {"enunciado": "string"}, sin texto antes ni después, sin bloques de código markdown.`;
+
+    const contexto = tieneContextoCurado
+      ? `\n\nDBA de referencia de este componente en este grado:\n${unidadesDelComponente
+          .map((u) => `- DBA ${u.dba_asociados.join(',')}: ${u.dba_enunciado}`)
+          .join('\n')}`
+      : '';
+
+    const user = `Área: ${areaLabel}
+Grado: ${grado}
+Componente EBC: ${componenteLabel}
+Competencia ICFES: ${competenciaLabel}${contexto}
+
+Redacta el desempeño de curso.`;
+
+    try {
+      const raw = await this.callGemini(system, user, {
+        maxOutputTokens: 400,
+        temperature: tieneContextoCurado ? 0.5 : 0.7,
+        grounded: !tieneContextoCurado,
+      });
+      const parsed = extractJsonObject(raw) as { enunciado?: unknown } | null;
+      if (
+        parsed &&
+        typeof parsed.enunciado === 'string' &&
+        parsed.enunciado.trim().length > 0
+      ) {
+        return parsed.enunciado.trim();
+      }
+      return fallback();
+    } catch {
+      return fallback();
+    }
+  }
+
+  /**
+   * `POST /curriculum/courses/:courseId/desempenos` — genera y persiste un
+   * `Desempeno` de curso (Entrada 1). `componenteEbc`/`competenciaIcfes`
+   * llegan como códigos del catálogo (J6.0) — acá se valida que pertenezcan
+   * al ÁREA del curso (el DTO solo valida que existan en ALGÚN área, ver
+   * `create-desempeno.dto.ts`). `area`/`grado` se leen de `Course`, nunca se
+   * vuelven a pedir (D4).
+   */
+  async generateDesempenoCurso(
+    courseId: string,
+    dto: CreateDesempenoDto,
+    userId: string,
+    userRole: string,
+  ): Promise<Desempeno> {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'courseSettings',
+    );
+
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { area: true, grado: true },
+    });
+    if (!course) throw new NotFoundException('Curso no encontrado');
+    if (!course.area || !course.grado) {
+      throw new BadRequestException(
+        'El curso no tiene área/grado configurados — no se puede generar un desempeño (J1).',
+      );
+    }
+    if (!(course.area in AREAS_LABELS)) {
+      throw new BadRequestException(
+        `Área curricular desconocida: ${course.area}`,
+      );
+    }
+    const area = course.area as AreaCurricular;
+    const grado = course.grado as GradoEscolar;
+
+    const componenteItem = EBC_COMPONENTES[area].find(
+      (c) => c.codigo === dto.componenteEbc,
+    );
+    if (!componenteItem) {
+      throw new BadRequestException(
+        `El componente EBC "${dto.componenteEbc}" no pertenece al área ${AREAS_LABELS[area]}.`,
+      );
+    }
+    const competenciaItem = ICFES_COMPETENCIAS[area].find(
+      (c) => c.codigo === dto.competenciaIcfes,
+    );
+    if (!competenciaItem) {
+      throw new BadRequestException(
+        `La competencia ICFES "${dto.competenciaIcfes}" no pertenece al área ${AREAS_LABELS[area]}.`,
+      );
+    }
+
+    const enunciado = await this.buildEnunciadoDesempenoCurso({
+      area,
+      grado,
+      componenteLabel: componenteItem.label,
+      competenciaLabel: competenciaItem.label,
+    });
+
+    return this.prisma.desempeno.create({
+      data: {
+        courseId,
+        area: course.area,
+        grado: course.grado,
+        componenteEbc: dto.componenteEbc,
+        competenciaIcfes: dto.competenciaIcfes,
+        enunciado,
+      },
+    });
+  }
+
+  /** `GET /curriculum/courses/:courseId/desempenos` — lista los `Desempeno` del curso. */
+  async listDesempenosCurso(
+    courseId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<Desempeno[]> {
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
+    return this.prisma.desempeno.findMany({
+      where: { courseId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * `DELETE /curriculum/courses/:courseId/desempenos/:desempenoId` — borra
+   * un `Desempeno` de curso. Seguro incluso si alguna `Class` ya lo
+   * referencia: la FK es `onDelete: SetNull` (J6.1) — la clase no se borra,
+   * solo pierde la referencia.
+   */
+  async removeDesempenoCurso(
+    courseId: string,
+    desempenoId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<{ success: true }> {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'courseSettings',
+    );
+    const desempeno = await this.prisma.desempeno.findUnique({
+      where: { id: desempenoId },
+      select: { courseId: true },
+    });
+    if (!desempeno || desempeno.courseId !== courseId) {
+      throw new NotFoundException('Desempeño no encontrado en este curso');
+    }
+    await this.prisma.desempeno.delete({ where: { id: desempenoId } });
+    return { success: true };
   }
 }

@@ -3,12 +3,21 @@ import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import { CurriculumService } from './curriculum.service';
 import { LLM_MODELS } from '../ai-features/ai-provider.types';
+import { PrismaService } from '../prisma/prisma.service';
+import { CourseAuthorizationService } from '../common/course-authorization.service';
+
+// `PrismaService`/`CourseAuthorizationService` (J6.2) no los ejercita ningún
+// test de este archivo — son solo para que Nest resuelva el constructor.
+const PRISMA_STUB = { provide: PrismaService, useValue: {} };
+const COURSE_AUTH_STUB = { provide: CourseAuthorizationService, useValue: {} };
 
 async function createService(): Promise<CurriculumService> {
   const module: TestingModule = await Test.createTestingModule({
     providers: [
       CurriculumService,
       { provide: ConfigService, useValue: { get: () => undefined } },
+      PRISMA_STUB,
+      COURSE_AUTH_STUB,
     ],
   }).compile();
   return module.get(CurriculumService);
@@ -24,6 +33,8 @@ async function createServiceWithKey(): Promise<CurriculumService> {
           get: (k: string) => (k === 'GEMINI_API_KEY' ? 'fake-key' : undefined),
         },
       },
+      PRISMA_STUB,
+      COURSE_AUTH_STUB,
     ],
   }).compile();
   return module.get(CurriculumService);

@@ -19,6 +19,9 @@ import {
   Pencil,
   Plus,
   Search,
+  Sparkles,
+  Target,
+  Trash2,
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -35,10 +38,21 @@ import {
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import { useUsers } from '@/hooks/api/use-users';
 import { useGradeCalculation } from '@/hooks/api/use-grade-calculation';
+import {
+  useDesempenosCurso,
+  useCreateDesempenoCurso,
+  useDeleteDesempenoCurso,
+} from '@/hooks/api/use-desempenos';
 import { api } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/api-error-message';
 import { GradebookStructureTab } from './gradebook-structure-tab';
 import { STATUS_LABELS } from '@/app/(app)/classes/class-status-badge-styles';
+import {
+  AREAS_LABELS,
+  EBC_COMPONENTES,
+  ICFES_COMPETENCIAS,
+  type AreaCurricular,
+} from '@lumina/curriculum-data';
 
 import { Card, CardContent, CardHeader, CardHeading, CardTable, CardTitle, CardToolbar } from '@lumina/ui/card';
 import { Badge } from '@lumina/ui/badge';
@@ -50,6 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lumina/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@lumina/ui/table';
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@lumina/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@lumina/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@lumina/ui/select';
 import { Separator } from '@lumina/ui/separator';
 
 // ─── Info Tab ─────────────────────────────────────────────────────────────────
@@ -115,6 +130,239 @@ function InfoTab({ courseId }: { courseId: string }) {
         </dl>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Desempeños del curso (Etapa J / J6.2, Entrada 1) ──────────────────────────
+
+const desempenoSchema = z.object({
+  componenteEbc: z.string().min(1, 'Selecciona un componente'),
+  competenciaIcfes: z.string().min(1, 'Selecciona una competencia'),
+});
+type DesempenoFormData = z.infer<typeof desempenoSchema>;
+
+function NewDesempenoModal({
+  courseId,
+  area,
+  onClose,
+}: {
+  courseId: string;
+  area: AreaCurricular;
+  onClose: () => void;
+}) {
+  const createMutation = useCreateDesempenoCurso(courseId);
+  const form = useForm<DesempenoFormData>({
+    resolver: zodResolver(desempenoSchema),
+    defaultValues: { componenteEbc: '', competenciaIcfes: '' },
+  });
+
+  const onSubmit = form.handleSubmit((data) => {
+    createMutation.mutate(data, {
+      onSuccess: () => {
+        toast.success('Desempeño generado');
+        onClose();
+      },
+      onError: (err) => {
+        toast.error(apiErrorMessage(err, 'No se pudo generar el desempeño'));
+      },
+    });
+  });
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Nuevo desempeño</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={onSubmit}>
+            <DialogBody className="space-y-4">
+              <FormField
+                control={form.control}
+                name="componenteEbc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Componente EBC</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un componente" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {EBC_COMPONENTES[area].map((c) => (
+                          <SelectItem key={c.codigo} value={c.codigo}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="competenciaIcfes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Competencia ICFES</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una competencia" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ICFES_COMPETENCIAS[area].map((c) => (
+                          <SelectItem key={c.codigo} value={c.codigo}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                <Sparkles />
+                {createMutation.isPending ? 'Generando…' : 'Generar con IA'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DesempenosTab({ courseId }: { courseId: string }) {
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const {
+    data: desempenos = [],
+    isLoading: listLoading,
+    isError,
+  } = useDesempenosCurso(courseId);
+  const deleteMutation = useDeleteDesempenoCurso(courseId);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  if (courseLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  const area = course?.area as AreaCurricular | undefined;
+  if (!course || !area || !course.grado) {
+    return (
+      <Alert appearance="light">
+        <AlertIcon>
+          <AlertCircle />
+        </AlertIcon>
+        <AlertContent>
+          <AlertTitle>
+            Este curso no tiene área/grado configurados — edítalo desde{' '}
+            <Link href="/courses" className="underline">
+              la lista de cursos
+            </Link>{' '}
+            para poder generar desempeños.
+          </AlertTitle>
+        </AlertContent>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {AREAS_LABELS[area]} · Grado {course.grado}
+        </p>
+        <Button size="sm" onClick={() => setModalOpen(true)}>
+          <Plus />
+          Nuevo desempeño
+        </Button>
+      </div>
+
+      {listLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+      ) : isError ? (
+        <Alert variant="destructive" appearance="light">
+          <AlertIcon>
+            <AlertCircle />
+          </AlertIcon>
+          <AlertContent>
+            <AlertTitle>No se pudieron cargar los desempeños.</AlertTitle>
+          </AlertContent>
+        </Alert>
+      ) : desempenos.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Todavía no hay desempeños generados para este curso.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {desempenos.map((d) => {
+            const componenteLabel =
+              EBC_COMPONENTES[area].find((c) => c.codigo === d.componenteEbc)
+                ?.label ?? d.componenteEbc;
+            const competenciaLabel =
+              ICFES_COMPETENCIAS[area].find(
+                (c) => c.codigo === d.competenciaIcfes,
+              )?.label ?? d.competenciaIcfes;
+            return (
+              <Card key={d.id}>
+                <CardContent className="flex items-start justify-between gap-4 p-4">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge appearance="light">
+                        <Target className="size-3" />
+                        {componenteLabel}
+                      </Badge>
+                      <Badge appearance="light" variant="info">
+                        {competenciaLabel}
+                      </Badge>
+                    </div>
+                    <p className="text-sm">{d.enunciado}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMutation.mutate(d.id)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {modalOpen && (
+        <NewDesempenoModal
+          courseId={courseId}
+          area={area}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </div>
   );
 }
 
@@ -786,6 +1034,12 @@ export function CourseDetailClient({ id }: { id: string }) {
               Estructura
             </TabsTrigger>
           )}
+          {!isStudent && (
+            <TabsTrigger value="desempenos">
+              <Target />
+              Desempeños
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="info">
@@ -803,6 +1057,11 @@ export function CourseDetailClient({ id }: { id: string }) {
         {!isStudent && (
           <TabsContent value="structure">
             <GradebookStructureTab courseId={id} />
+          </TabsContent>
+        )}
+        {!isStudent && (
+          <TabsContent value="desempenos">
+            <DesempenosTab courseId={id} />
           </TabsContent>
         )}
       </Tabs>
