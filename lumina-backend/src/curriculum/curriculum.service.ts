@@ -748,12 +748,24 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
     const tieneContextoCurado = unidadesDelComponente.length > 0;
 
     const system = tieneContextoCurado
-      ? `Eres un experto en diseño curricular colombiano (MEN). Redactas UN desempeño de aprendizaje AMPLIO, a nivel de curso completo (no de una sola clase), que integre el componente y la competencia dados, apoyándote en los DBA reales que se te entregan como referencia. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Respondes SIEMPRE con JSON puro: {"enunciado": "string"}, sin texto adicional ni bloques de código.`
-      : `Eres un experto en diseño curricular colombiano basado en los Estándares Básicos de Competencias del MEN. Redactas UN desempeño de aprendizaje AMPLIO, a nivel de curso completo, que integre el componente y la competencia dados. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Tenés disponible búsqueda en Google — usala para fundamentar el desempeño en los Estándares Básicos de Competencias reales del MEN para esta área y grado. Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido: {"enunciado": "string"}, sin texto antes ni después, sin bloques de código markdown.`;
+      ? `Eres un experto en diseño curricular colombiano (MEN). Redactas UN desempeño de aprendizaje GENERAL, a nivel de curso completo (no de una sola clase) — debe poder abarcar CUALQUIER tema del componente y la competencia dados en este grado, no solo los ejemplos puntuales que se te entregan como referencia de alcance. PROHIBIDO nombrar objetos, aparatos, técnicas o procedimientos concretos de un solo ejemplo (p. ej. "palancas y poleas", "circuitos eléctricos") — eso ancla el desempeño a un único tema en vez del componente completo. Usa el vocabulario general del estándar EBC (el nivel de abstracción de la competencia, no el de un DBA puntual). Estructura: Verbo de acción + Contenido + Condición + Finalidad. Respondes SIEMPRE con JSON puro: {"enunciado": "string"}, sin texto adicional ni bloques de código.`
+      : `Eres un experto en diseño curricular colombiano basado en los Estándares Básicos de Competencias del MEN. Redactas UN desempeño de aprendizaje GENERAL, a nivel de curso completo — debe poder abarcar CUALQUIER tema del componente y la competencia dados en este grado, no un ejemplo puntual. PROHIBIDO nombrar objetos, aparatos, técnicas o procedimientos concretos de un solo tema — usa el vocabulario general del estándar EBC de esta área y grado, no el de un DBA puntual. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Tenés disponible búsqueda en Google — usala para fundamentar el desempeño en los Estándares Básicos de Competencias reales del MEN para esta área y grado. Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido: {"enunciado": "string"}, sin texto antes ni después, sin bloques de código markdown.`;
+
+    const estandaresUnicos = Array.from(
+      new Set(unidadesDelComponente.map((u) => u.ebc_estandar)),
+    );
+    const subprocesosUnicos = Array.from(
+      new Set(unidadesDelComponente.flatMap((u) => u.subprocesos_ebc)),
+    );
 
     const contexto = tieneContextoCurado
-      ? `\n\nDBA de referencia de este componente en este grado:\n${unidadesDelComponente
-          .map((u) => `- DBA ${u.dba_asociados.join(',')}: ${u.dba_enunciado}`)
+      ? `\n\nEstándar(es) EBC de este componente en este grado — define el ALCANCE general que el desempeño debe poder cubrir completo, no solo una parte:\n${estandaresUnicos
+          .map((e) => `- ${e}`)
+          .join(
+            '\n',
+          )}\n\nMUESTRA de subprocesos que este componente puede abarcar en este grado (son solo ejemplos de la variedad de temas posibles — NO los enumeres ni redactes el desempeño en torno a uno de ellos en particular):\n${subprocesosUnicos
+          .slice(0, 8)
+          .map((s) => `- ${s}`)
           .join('\n')}`
       : '';
 
