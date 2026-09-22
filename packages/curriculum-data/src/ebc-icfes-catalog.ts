@@ -5,30 +5,41 @@ import type { AreaCurricular } from '@lumina/types/curriculum';
  * y competencias ICFES (Pruebas Saber) por área — Etapa J / J6.0.
  *
  * No es taxonomía inventada: son categorías publicadas por el MEN/ICFES.
+ * **Verificado con WebSearch contra fuentes oficiales el 2026-09-21**
+ * (mineducacion.gov.co, icfes.gov.co — Marco de Referencia y Guías de
+ * Orientación Saber 11), no solo de memoria de entrenamiento como en la
+ * primera versión de este archivo. Esa verificación encontró y corrigió un
+ * error real: las competencias ICFES de `matematicas` tenían la
+ * nomenclatura genérica vieja (Comunicación/Razonamiento/Resolución de
+ * problemas) en vez de las 3 vigentes del Marco de Referencia 2019
+ * (Interpretación y representación / Formulación y ejecución / Razonamiento
+ * y argumentación).
+ *
  * Nivel de confianza por área (documentado a propósito, no silenciado):
  *
- * - `ciencias-naturales`: **alto** — los 3 componentes (`Entorno vivo`,
- *   `Entorno físico`, `Ciencia, tecnología y sociedad`) están confirmados
- *   contra el propio dataset curado (`ebc_factor` real en
- *   `ciencias-naturales-{1..5}.json`, ver `loadCurriculum`). Las 3
- *   competencias ICFES (Indagación / Explicación de fenómenos / Uso
- *   comprensivo del conocimiento científico) son las oficiales de Pruebas
- *   Saber Ciencias Naturales.
- * - `matematicas`, `lenguaje`, `ciencias-sociales`: **medio-alto** — de los
- *   Estándares Básicos de Competencias (2006) y las competencias oficiales
- *   de Pruebas Saber para cada área; el dataset curado hoy no tiene
- *   `ebc_factor` variado en esas áreas (grado 6 es el único grado real de
- *   `lenguaje` y coincide con 4 de los 5 factores de acá — el 5º, `Ética de
- *   la comunicación`, no aparece en ese grado pero es un factor oficial).
- * - `ingles`: **adaptado, revisar con un especialista antes de tratarlo como
- *   definitivo** — Colombia no organiza inglés por "componentes EBC" como
- *   las demás áreas; usa destrezas alineadas al Marco Común Europeo
- *   (`Estándares Básicos de Competencias en Lenguas Extranjeras: Inglés`,
- *   2006). Acá se usan esas destrezas como `componenteEbc` y las bandas de
- *   nivel que reporta ICFES Saber 11 Inglés como `competenciaIcfes` — es una
- *   adaptación deliberada para encajar en el mismo contrato de datos que las
- *   demás áreas, no un mapeo 1:1 con un documento MEN de "competencias" en
- *   el mismo sentido que ciencias/matemáticas/lenguaje/sociales.
+ * - `ciencias-naturales`: **alto** — los 3 componentes EBC y las 3
+ *   competencias ICFES confirmados contra fuente oficial, y los componentes
+ *   además contra el propio dataset curado (`ebc_factor` real en
+ *   `ciencias-naturales-{1..5}.json`, ver `loadCurriculum`).
+ * - `matematicas`: **alto** — 5 pensamientos EBC y 3 competencias ICFES
+ *   confirmados contra fuente oficial (ver corrección arriba).
+ * - `lenguaje`: **alto** — 5 factores EBC y las 3 competencias de Lectura
+ *   Crítica (identificar y entender contenidos locales / comprender cómo se
+ *   articulan las partes de un texto / reflexionar a partir de un texto)
+ *   confirmados contra fuente oficial; el dataset curado solo tiene `lenguaje`
+ *   grado 6 real, que coincide con 4 de los 5 factores — el 5º, `Ética de la
+ *   comunicación`, no aparece en ese grado pero es un factor oficial.
+ * - `ciencias-sociales`: **alto** — los 3 ejes EBC y las 3 competencias
+ *   ICFES de Sociales y Ciudadanas confirmados contra fuente oficial.
+ * - `ingles`: **niveles ICFES verificados** (A-/A1/A2/B1/B+, alineados al
+ *   Marco Común Europeo) — **componentes adaptados, no verificados como
+ *   taxonomía MEN literal**: la búsqueda confirma que el MEN clasifica los
+ *   estándares de inglés por competencia lingüística / pragmática /
+ *   sociolingüística, no por las 5 destrezas
+ *   (Listening/Reading/Spoken interaction/Spoken production/Writing) que se
+ *   usan acá. Se mantienen esas 5 destrezas como `componenteEbc` por ser la
+ *   forma más usable para un selector de UI, pero **revisar con un
+ *   especialista curricular antes de tratarlo como definitivo**.
  *
  * Un `codigo` es estable y sirve de valor persistido (`Course`/`Desempeno`);
  * el `label` es lo que ve el docente.
@@ -86,9 +97,9 @@ export const ICFES_COMPETENCIAS: Record<AreaCurricular, CatalogoItem[]> = {
     { codigo: 'uso_comprensivo', label: 'Uso comprensivo del conocimiento científico' },
   ],
   matematicas: [
-    { codigo: 'razonamiento', label: 'Razonamiento' },
-    { codigo: 'comunicacion', label: 'Comunicación' },
-    { codigo: 'resolucion_problemas', label: 'Planteamiento y resolución de problemas' },
+    { codigo: 'interpretacion_representacion', label: 'Interpretación y representación' },
+    { codigo: 'formulacion_ejecucion', label: 'Formulación y ejecución' },
+    { codigo: 'razonamiento_argumentacion', label: 'Razonamiento y argumentación' },
   ],
   lenguaje: [
     { codigo: 'identificacion_contenidos', label: 'Identificación de contenidos locales de un texto' },
