@@ -1101,8 +1101,8 @@ model Class {
 - **Cierre (Regla 4 — parcial, a propósito):** el modal legado (`classes/[id]/new-class-modal.tsx`, consumido por `editor-client.tsx`) **no se tocó ni se borró** — sigue siendo el único camino para clases que ya existían antes de esta ficha o que se crean sin pasar por `course-detail-client.tsx`. Queda pendiente para `J6.6`: retirarlo una vez se confirme que `NewClassCurricularModal` cubre todos sus casos de uso reales (Regla 7). `TODO(migración-J6)` no se agregó como comentario de código porque el archivo no cambió — la referencia queda documentada acá y en la ficha `J6.6`.
 
 ##### J6.4 — Entrada 3: `IaPanel` hereda desempeño + indicadores + temas/subtemas (absorbe el J7 original)
-- **Operador:** a definir
-- **Estado:** pendiente
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** J6.3 hecho.
 - **Contexto:** `IaPanel` (`flyout-left-panels.tsx:874`) tiene hoy su propio selector de área/grado/DBA, totalmente independiente del curso/clase, y solo muestra el desempeño como texto decorativo (nunca lo inyecta en el payload real de `/ai/content-assistant`). Esta entrada retira ese selector duplicado, agrega un checklist de indicadores (cognitivo/procedimental/actitudinal, los generados en la Entrada 2) para que el docente marque cuáles aborda esta clase, un selector de temas/subtemas, e inyecta todo eso en el payload real enviado al backend. La selección se persiste en `Class.contextoClase` para que la Entrada 4 la herede.
 - **Alcance — PUEDE tocar:** `flyout-left-panels.tsx` (`IaPanel`) — quitar el selector propio de área/grado/DBA; agregar checklist de indicadores + selector de temas/subtemas; `use-ai.ts`/`ai-features.service.ts` DTO de `content-assistant` ampliado para aceptar el contexto curricular estructurado (desempeño + indicadores abordados + temas/subtemas), no solo `topic` de texto libre; persistencia de la selección en `Class.contextoClase`.
