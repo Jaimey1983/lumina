@@ -487,6 +487,18 @@ interface BlockNodeProps {
   viewerClassId?: string;
   canvasRef?: React.RefObject<HTMLDivElement | null>;
   currentCoords?: { x: number; y: number; ancho: number; alto: number };
+  /**
+   * Factor de escala del `transform: scale()` ancestro en `viewerFill`
+   * (ver `isViewerFillScaled`/`viewerFillScale` en `SlideRenderer`). `grafico`
+   * (ApexCharts, arco parcial) y `clip-group` (SVG `clip-path`) miden su
+   * geometría con APIs que se desincronizan bajo un ancestro escalado
+   * (`getBoundingClientRect()` post-transform vs. `clientWidth` inmune al
+   * transform) — un bug real de ApexCharts y de WebKit respectivamente, no
+   * de este código. Con este valor, `BlockNode` neutraliza el scale
+   * ancestro SOLO para esos dos tipos (ver más abajo). `undefined` fuera de
+   * `viewerFill` (editor/preview no lo necesitan: no se reportó el bug ahí).
+   */
+  viewerFillScale?: number;
   onResize?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
   onResizeEnd?: (blockId: string, newCoords: { x: number; y: number; ancho: number; alto: number }) => void;
   /** Etapa G · G2a — oculta `<ResizeHandles>` propio (react-moveable los provee). */
@@ -565,6 +577,7 @@ function BlockNode({
   viewerClassId,
   canvasRef,
   currentCoords,
+  viewerFillScale,
   onResize,
   onResizeEnd,
   suppressCanvasHandles,
@@ -868,6 +881,7 @@ function BlockNode({
                     }}
                     modo="viewer"
                     viewerFill
+                    viewerFillScaleFit={false}
                     variant={variant}
                     liveSocket={liveSocket}
                     torneoSocket={torneoSocket}
@@ -929,6 +943,34 @@ function BlockNode({
           animationDelay: `${blockIndex * 80}ms`,
         }
       : {};
+
+  // `grafico` (ApexCharts, arco parcial) y `clip-group` (SVG clip-path) bajo
+  // el `transform: scale()` de `viewerFill` (ver `viewerFillScale` arriba):
+  // se envuelve el contenido en un div con tamaño real en px (el tamaño
+  // VISUAL final) + `transform: scale(1/viewerFillScale)` propio, que
+  // cancela exactamente el scale del ancestro para todo lo que está debajo
+  // — `clientWidth` (inmune a transform) y `getBoundingClientRect()`
+  // (post-transform) vuelven a coincidir para ese subárbol, evitando la
+  // medición inconsistente que produce el gráfico/máscara chicos o mal
+  // recortados. `transformOrigin: 'top left'` para que el resultado llene
+  // exactamente la caja del bloque, sin desplazamiento.
+  const rawContent = renderContent();
+  const content =
+    viewerFillScale !== undefined &&
+    viewerFillScale > 0 &&
+    currentCoords &&
+    (block.tipo === 'grafico' || block.tipo === 'clip-group') ? (
+      <div
+        style={{
+          width: (currentCoords.ancho / 100) * 1280 * viewerFillScale,
+          height: (currentCoords.alto / 100) * 720 * viewerFillScale,
+          transform: `scale(${1 / viewerFillScale})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {rawContent}
+      </div>
+    ) : rawContent;
 
   return (
     <>
@@ -1008,7 +1050,7 @@ function BlockNode({
           'flex h-full min-h-0 w-full flex-col',
       )}
     >
-      {renderContent()}
+      {content}
       {editorMode &&
         !suppressCanvasHandles &&
         isSelected &&
@@ -1216,6 +1258,13 @@ export interface SlideRendererProps {
   variant?: 'dark' | 'light';
   /** En modo viewer, permite llenar el contenedor padre sin forzar 16:9. */
   viewerFill?: boolean;
+  /**
+   * Con `viewerFill`, ajusta el lienzo virtual 1280×720 al contenedor real con
+   * letterbox (`contain`) en vez de estirarlo. Default `true`. Ponerlo en
+   * `false` solo para la composición interna de `clip-group` (el contenido
+   * debe llenar la caja del recorte tal cual, sin barras).
+   */
+  viewerFillScaleFit?: boolean;
   /** Socket.IO del viewer en vivo (p. ej. torneo). */
   liveSocket?: Socket | null;
   /** Socket al namespace `/live` para eventos del torneo (viewer). */
@@ -1282,6 +1331,7 @@ export function SlideRenderer({
   suppressCanvasHandles,
   variant: variantProp,
   viewerFill = false,
+  viewerFillScaleFit = true,
   liveSocket,
   torneoSocket,
   viewerStudentId,
@@ -1544,6 +1594,35 @@ export function SlideRenderer({
     return () => observer.disconnect();
   }, [modo]);
 
+  // ─── Viewer-fill mode: lienzo fijo 1280×720 encajado (letterbox) ──────────
+  // `viewerFill` deja que el contenedor tenga cualquier aspect-ratio (celular
+  // en vertical, ventana angosta, etc.), pero los bloques se posicionan en %
+  // sobre un lienzo virtual de 1280×720 y el tamaño de fuente de los bloques
+  // de texto está en px ABSOLUTOS de ese lienzo (ver render-texto.tsx). Sin
+  // este escalado, el texto queda a tamaño "de escritorio" literal contra un
+  // viewport angosto: se superpone, se corta, y los bloques con contenido
+  // intrínseco (gráficos ApexCharts, diagramas @xyflow) se desbordan del
+  // contenedor real durante su primera medición. Replica el patrón de
+  // `previewScale`, pero con `Math.min(w/1280, h/720)` (contain, con barras)
+  // en vez de solo `w/1280` (el contenedor de preview siempre es 16:9).
+  const viewerFillContainerRef = useRef<HTMLDivElement>(null);
+  const [viewerFillScale, setViewerFillScale] = useState(0);
+  const isViewerFillScaled = modo === 'viewer' && viewerFill && viewerFillScaleFit;
+
+  useLayoutEffect(() => {
+    if (!isViewerFillScaled) return;
+    const el = viewerFillContainerRef.current;
+    if (!el) return;
+    const update = () => {
+      const { clientWidth: w, clientHeight: h } = el;
+      if (w > 0 && h > 0) setViewerFillScale(Math.min(w / 1280, h / 720));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isViewerFillScaled]);
+
   if (modo === 'preview') {
     return (
       <SlideThemeProvider value={{ theme: slideTheme }}>
@@ -1615,46 +1694,20 @@ export function SlideRenderer({
   }
 
   // ─── Editor / viewer mode ─────────────────────────────────────────────────
-  return (
-    <SlideThemeProvider value={{ theme: slideTheme }}>
-    <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
-    <div
-      data-slide-root
-      className={cn('canvas-slide', editorMode ? 'overflow-visible' : 'overflow-hidden', className)}
-      style={{
-        ...bgStyle,
-        ...(editorMode
-          ? {
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              minHeight: 0,
-              minWidth: 0,
-              overflow: 'visible',
-            }
-          : viewerFill
-            ? {
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
-              }
-            : {
-                position: 'relative',
-                width: '100%',
-                aspectRatio: '16 / 9',
-                overflow: 'hidden',
-              }),
-      }}
-      onMouseDown={handleCanvasPointerDown}
-      onClick={handleCanvasClick}
-      ref={bindSlideRootRef}
-    >
-      {slide.fondo?.tipo === 'imagen' && typeof slide.fondo.rotacion === 'number' && slide.fondo.rotacion % 360 !== 0 && (
-        <BackgroundImageLayer fondo={slide.fondo} className="rounded-md" />
-      )}
-      {/* key={slide.id} forces full remount of blocks on slide change → re-triggers entry animation */}
-      {blocks.map((block, index) => {
+  const backgroundLayer = slide.fondo?.tipo === 'imagen' &&
+    typeof slide.fondo.rotacion === 'number' &&
+    slide.fondo.rotacion % 360 !== 0 ? (
+    <BackgroundImageLayer fondo={slide.fondo} className="rounded-md" />
+  ) : null;
+
+  const emptyState = blocks.length === 0 && editorMode ? (
+    <div className="flex h-full items-center justify-center text-sm text-neutral-400 select-none pointer-events-none">
+      Sin bloques — agrega contenido desde el panel lateral
+    </div>
+  ) : null;
+
+  // key={slide.id} forces full remount of blocks on slide change → re-triggers entry animation
+  const blockNodes = blocks.map((block, index) => {
         const blockId = String(index);
         const posStyleObj = getBlockPositionStyle(block);
         const currentCoords = resizingCoords[blockId] ?? getBlockRawCoords(block);
@@ -1731,6 +1784,7 @@ export function SlideRenderer({
             onResponse={onResponse}
             canvasRef={measureCanvasRef}
             currentCoords={currentCoords}
+            viewerFillScale={isViewerFillScaled ? viewerFillScale : undefined}
             onResize={handleResize}
             onResizeEnd={handleResizeEnd}
             editingId={editingId}
@@ -1753,14 +1807,79 @@ export function SlideRenderer({
             isLiveDragging={draggingBlockId === blockId}
           />
         );
-      })}
+      });
 
-      {blocks.length === 0 && editorMode && (
-        <div className="flex h-full items-center justify-center text-sm text-neutral-400 select-none pointer-events-none">
-          Sin bloques — agrega contenido desde el panel lateral
-        </div>
-      )}
-    </div>
+  return (
+    <SlideThemeProvider value={{ theme: slideTheme }}>
+    <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
+    {isViewerFillScaled ? (
+      <div
+        ref={viewerFillContainerRef}
+        className={cn('relative overflow-hidden', className)}
+        style={{ width: '100%', height: '100%' }}
+      >
+        {viewerFillScale > 0 && (
+          <div
+            data-slide-root
+            className="canvas-slide overflow-hidden"
+            style={{
+              ...bgStyle,
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: 1280,
+              height: 720,
+              transform: `translate(-50%, -50%) scale(${viewerFillScale})`,
+              transformOrigin: 'center center',
+            }}
+            onMouseDown={handleCanvasPointerDown}
+            onClick={handleCanvasClick}
+            ref={bindSlideRootRef}
+          >
+            {backgroundLayer}
+            {blockNodes}
+            {emptyState}
+          </div>
+        )}
+      </div>
+    ) : (
+      <div
+        data-slide-root
+        className={cn('canvas-slide', editorMode ? 'overflow-visible' : 'overflow-hidden', className)}
+        style={{
+          ...bgStyle,
+          ...(editorMode
+            ? {
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                minHeight: 0,
+                minWidth: 0,
+                overflow: 'visible',
+              }
+            : viewerFill
+              ? {
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'hidden',
+                }
+              : {
+                  position: 'relative',
+                  width: '100%',
+                  aspectRatio: '16 / 9',
+                  overflow: 'hidden',
+                }),
+        }}
+        onMouseDown={handleCanvasPointerDown}
+        onClick={handleCanvasClick}
+        ref={bindSlideRootRef}
+      >
+        {backgroundLayer}
+        {blockNodes}
+        {emptyState}
+      </div>
+    )}
     </SlideCanvasRootContext.Provider>
     </SlideThemeProvider>
   );
