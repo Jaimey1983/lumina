@@ -97,7 +97,12 @@ import { useCurriculumLoader } from '@/hooks/use-curriculum-loader';
 import { useUnidadesDbaParaDesempeno } from '@/hooks/api/use-desempenos';
 import { PLANTILLAS, type PlantillaPedagogica } from '@/lib/ia-templates';
 import { buildCurricularContextTexto } from '../../lib/curricular-context-texto';
-import { AREAS_LABELS, GRADOS_PRIMARIA, GRADOS_BACHILLERATO } from '@lumina/curriculum-data';
+import {
+  AREAS_LABELS,
+  GRADOS_PRIMARIA,
+  GRADOS_BACHILLERATO,
+  resolverEstandarEbc,
+} from '@lumina/curriculum-data';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
@@ -677,6 +682,7 @@ const PLACEHOLDER_SLIDE_IMG =
 
 function buildSlideContextoCurricular(
   curriculumData: CurriculumData,
+  area: AreaCurricular,
   topicKeywords: string,
 ): { bloques: Block[]; layout: SlidePersistedLayoutKey; titulo: string } | null {
   if (!curriculumData?.unidades?.length) return null;
@@ -718,8 +724,13 @@ function buildSlideContextoCurricular(
     5, 29, 90, 18, 14,
   ));
 
+  const estandarEbc = resolverEstandarEbc(
+    area,
+    curriculumData.grado as GradoEscolar,
+    u.ebc_factor,
+  );
   bloques.push(buildTemplateTextBlock(
-    `EBC — ${u.ebc_factor}:\n${u.ebc_estandar}`,
+    `EBC — ${u.ebc_factor}:\n${estandarEbc?.estandar ?? ''}`,
     5, 49, 90, 12, 13,
   ));
 
@@ -1201,8 +1212,8 @@ function IaPanel({
         slidesCreadosCount++;
 
         // Después de la portada (índice 0), insertar slide curricular si hay datos DBA
-        if (index === 0 && curriculumData) {
-          const slideCurricular = buildSlideContextoCurricular(curriculumData, keywords);
+        if (index === 0 && curriculumData && area) {
+          const slideCurricular = buildSlideContextoCurricular(curriculumData, area, keywords);
           if (slideCurricular) {
             onCreateActivitySlide?.(
               { bloques: slideCurricular.bloques, layout: slideCurricular.layout },
@@ -1217,7 +1228,7 @@ function IaPanel({
       setResultado(null);
       setConversationHistory([]);
     },
-    [onCreateActivitySlide, curriculumData, topic, docTopico, ultimaFuente],
+    [onCreateActivitySlide, curriculumData, area, topic, docTopico, ultimaFuente],
   );
 
   // ── Generar desde tema ────────────────────────────────────────────────────

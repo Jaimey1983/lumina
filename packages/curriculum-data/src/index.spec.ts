@@ -127,25 +127,39 @@ describe('@lumina/curriculum-data', () => {
   });
 
   describe('listSubprocesosPorComponente (J6.3, Entrada 2 — camino EBC)', () => {
-    it('deduplica subprocesos repetidos entre unidades del mismo componente', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const subprocesos = listSubprocesosPorComponente(data!, 'Entorno vivo');
-      // Las unidades 2 y 3 comparten sus 11 subprocesos exactos (mismo
-      // ebc_estandar) — deduplicado da 11, no 22.
-      expect(subprocesos).toHaveLength(11);
-    });
-
-    it('devuelve los subprocesos tal cual de una unidad sin solapamiento', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const subprocesos = listSubprocesosPorComponente(data!, 'Entorno físico');
-      expect(subprocesos).toHaveLength(13);
-    });
-
-    it('devuelve vacío si el componente no tiene ninguna unidad curada', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      expect(listSubprocesosPorComponente(data!, 'Componente inexistente')).toEqual(
-        [],
+    // Sale de EBC_ESTANDARES (catálogo por ciclo), no del dataset de
+    // unidades — por eso se prueba con grado 6 (único ciclo curado hoy),
+    // no con grado 1 como antes de mover el catálogo a ebc-estandares.ts.
+    it('devuelve los subprocesos del ciclo para un componente curado', () => {
+      const subprocesos = listSubprocesosPorComponente(
+        'ciencias-naturales',
+        '6',
+        'Entorno vivo',
       );
+      expect(subprocesos).toHaveLength(17);
+      expect(subprocesos[0]).toContain('estructura de la célula');
+    });
+
+    it('un componente distinto del mismo ciclo devuelve una lista distinta', () => {
+      const subprocesos = listSubprocesosPorComponente(
+        'ciencias-naturales',
+        '6',
+        'Entorno físico',
+      );
+      expect(subprocesos).toHaveLength(16);
+    });
+
+    it('devuelve vacío si el componente no existe en el catálogo del área', () => {
+      expect(
+        listSubprocesosPorComponente('ciencias-naturales', '6', 'Componente inexistente'),
+      ).toEqual([]);
+    });
+
+    it('devuelve vacío si el ciclo de ese grado todavía no tiene catálogo curado', () => {
+      // Grado 1 cae en el ciclo 1-3, sin entradas en EBC_ESTANDARES todavía.
+      expect(
+        listSubprocesosPorComponente('ciencias-naturales', '1', 'Entorno vivo'),
+      ).toEqual([]);
     });
   });
 });

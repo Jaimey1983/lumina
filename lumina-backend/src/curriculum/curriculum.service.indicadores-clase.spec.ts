@@ -83,9 +83,14 @@ describe('CurriculumService — Entrada 2 (J6.3, camino DBA/EBC + indicadores de
   });
 
   describe('listSubprocesosEbcParaDesempeno', () => {
-    it('devuelve los subprocesos deduplicados del componente', async () => {
+    it('devuelve los subprocesos del ciclo EBC del componente (catálogo por ciclo, no por unidad)', async () => {
       const { service, prisma } = await createService();
-      prisma.desempeno.findUnique.mockResolvedValue(DESEMPENO_CN);
+      // Sale de EBC_ESTANDARES (ebc-estandares.ts), catálogo por ciclo de
+      // grados — solo el ciclo 6-7 de ciencias-naturales está curado hoy.
+      prisma.desempeno.findUnique.mockResolvedValue({
+        ...DESEMPENO_CN,
+        grado: '6',
+      });
 
       const result = await service.listSubprocesosEbcParaDesempeno(
         'curso-1',
@@ -94,8 +99,21 @@ describe('CurriculumService — Entrada 2 (J6.3, camino DBA/EBC + indicadores de
         'TEACHER',
       );
 
-      // Unidades 2+3 comparten sus 11 subprocesos exactos -> deduplicado da 11.
-      expect(result).toHaveLength(11);
+      expect(result).toHaveLength(17);
+    });
+
+    it('devuelve vacío si el ciclo de ese grado todavía no está curado en el catálogo', async () => {
+      const { service, prisma } = await createService();
+      prisma.desempeno.findUnique.mockResolvedValue(DESEMPENO_CN); // grado 1, ciclo 1-3
+
+      const result = await service.listSubprocesosEbcParaDesempeno(
+        'curso-1',
+        'd1',
+        'user-1',
+        'TEACHER',
+      );
+
+      expect(result).toEqual([]);
     });
   });
 

@@ -16,25 +16,6 @@
         "Identifica si los cuerpos tienen cargas iguales o contrarias a partir de los efectos de atracción o repulsión que se producen."
       ],
       "ebc_factor": "Entorno físico",
-      "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
-      "subprocesos_ebc": [
-        "Clasifico y verifico las propiedades de la materia.",
-        "Verifico la acción de fuerzas electrostáticas y magnéticas y explico su relación con la carga eléctrica.",
-        "Describo el desarrollo de modelos que explican la estructura de la materia.",
-        "Clasifico materiales en sustancias puras o mezclas.",
-        "Verifico diferentes métodos de separación de mezclas.",
-        "Explico cómo un número limitado de elementos hace posible la diversidad de la materia conocida.",
-        "Explico el desarrollo de modelos de organización de los elementos químicos.",
-        "Explico y utilizo la tabla periódica como herramienta para predecir procesos químicos.",
-        "Explico la formación de moléculas y los estados de la materia a partir de fuerzas electrostáticas.",
-        "Relaciono energía y movimiento.",
-        "Verifico relaciones entre distancia recorrida, velocidad y fuerza involucrada en diversos tipos de movimiento.",
-        "Comparo masa, peso y densidad de diferentes materiales mediante experimentos.",
-        "Explico el modelo planetario desde las fuerzas gravitacionales.",
-        "Describo el proceso de formación y extinción de estrellas.",
-        "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
-        "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
-      ],
       "temas": [
         "Carga eléctrica de los cuerpos",
         "Atracción y repulsión eléctrica"
@@ -71,25 +52,6 @@
         "Diseña y realiza experiencias para separar mezclas homogéneas y heterogéneas utilizando técnicas (vaporización, cristalización, destilación), para justificar la elección de las mismas a partir de las propiedades fisicoquímicas de las sustancias involucradas."
       ],
       "ebc_factor": "Entorno físico",
-      "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
-      "subprocesos_ebc": [
-        "Clasifico y verifico las propiedades de la materia.",
-        "Verifico la acción de fuerzas electrostáticas y magnéticas y explico su relación con la carga eléctrica.",
-        "Describo el desarrollo de modelos que explican la estructura de la materia.",
-        "Clasifico materiales en sustancias puras o mezclas.",
-        "Verifico diferentes métodos de separación de mezclas.",
-        "Explico cómo un número limitado de elementos hace posible la diversidad de la materia conocida.",
-        "Explico el desarrollo de modelos de organización de los elementos químicos.",
-        "Explico y utilizo la tabla periódica como herramienta para predecir procesos químicos.",
-        "Explico la formación de moléculas y los estados de la materia a partir de fuerzas electrostáticas.",
-        "Relaciono energía y movimiento.",
-        "Verifico relaciones entre distancia recorrida, velocidad y fuerza involucrada en diversos tipos de movimiento.",
-        "Comparo masa, peso y densidad de diferentes materiales mediante experimentos.",
-        "Explico el modelo planetario desde las fuerzas gravitacionales.",
-        "Describo el proceso de formación y extinción de estrellas.",
-        "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
-        "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
-      ],
       "temas": [
         "Efecto de la temperatura y la presión en las propiedades de las sustancias",
         "Técnicas de separación de mezclas"
@@ -128,25 +90,6 @@
         "Reconoce la importancia de los coloides (como ejemplo de mezcla heterogénea) en los procesos industriales (Pinturas, lacas) y biomédicos (Alimentos y medicinas)."
       ],
       "ebc_factor": "Entorno físico",
-      "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
-      "subprocesos_ebc": [
-        "Clasifico y verifico las propiedades de la materia.",
-        "Verifico la acción de fuerzas electrostáticas y magnéticas y explico su relación con la carga eléctrica.",
-        "Describo el desarrollo de modelos que explican la estructura de la materia.",
-        "Clasifico materiales en sustancias puras o mezclas.",
-        "Verifico diferentes métodos de separación de mezclas.",
-        "Explico cómo un número limitado de elementos hace posible la diversidad de la materia conocida.",
-        "Explico el desarrollo de modelos de organización de los elementos químicos.",
-        "Explico y utilizo la tabla periódica como herramienta para predecir procesos químicos.",
-        "Explico la formación de moléculas y los estados de la materia a partir de fuerzas electrostáticas.",
-        "Relaciono energía y movimiento.",
-        "Verifico relaciones entre distancia recorrida, velocidad y fuerza involucrada en diversos tipos de movimiento.",
-        "Comparo masa, peso y densidad de diferentes materiales mediante experimentos.",
-        "Explico el modelo planetario desde las fuerzas gravitacionales.",
-        "Describo el proceso de formación y extinción de estrellas.",
-        "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
-        "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
-      ],
       "temas": [
         "Clasificación de las sustancias: elementos, compuestos y mezclas",
         "El agua como solvente",
@@ -186,26 +129,6 @@
         "Predice qué ocurre a nivel de transporte de membrana, obtención de energía y división celular en caso de daño de alguna de las organelas celulares."
       ],
       "ebc_factor": "Entorno vivo",
-      "ebc_estandar": "Identifico condiciones de cambio y de equilibrio en los seres vivos y en los ecosistemas.",
-      "subprocesos_ebc": [
-        "Explico la estructura de la célula y las funciones básicas de sus componentes.",
-        "Verifico y explico los procesos de ósmosis y difusión.",
-        "Clasifico membranas de los seres vivos de acuerdo con su permeabilidad frente a diversas sustancias.",
-        "Clasifico organismos en grupos taxonómicos de acuerdo con las características de sus células.",
-        "Comparo sistemas de división celular y argumento su importancia en la generación de nuevos organismos y tejidos.",
-        "Explico las funciones de los seres vivos a partir de las relaciones entre diferentes sistemas de órganos.",
-        "Comparo mecanismos de obtención de energía en los seres vivos.",
-        "Reconozco en diversos grupos taxonómicos la presencia de las mismas moléculas orgánicas.",
-        "Explico el origen del universo y de la vida a partir de varias teorías.",
-        "Caracterizo ecosistemas y analizo el equilibrio dinámico entre sus poblaciones.",
-        "Propongo explicaciones sobre la diversidad biológica teniendo en cuenta el movimiento de placas tectónicas y las características climáticas.",
-        "Establezco las adaptaciones de algunos seres vivos en ecosistemas de Colombia.",
-        "Formulo hipótesis sobre las causas de extinción de un grupo taxonómico.",
-        "Justifico la importancia del agua en el sostenimiento de la vida.",
-        "Describo y relaciono los ciclos del agua, de algunos elementos y de la energía en los ecosistemas.",
-        "Explico la función del suelo como depósito de nutrientes.",
-        "Evalúo el potencial de los recursos naturales, la forma como se han utilizado en desarrollos tecnológicos y las consecuencias de la acción del ser humano sobre ellos."
-      ],
       "temas": [
         "Transporte de membrana: ósmosis y difusión",
         "Obtención de energía: respiración celular",
@@ -245,26 +168,6 @@
         "Explica la clasificación taxonómica como mecanismo que permite reconocer la biodiversidad en el planeta y las relaciones de parentesco entre los organismos."
       ],
       "ebc_factor": "Entorno vivo",
-      "ebc_estandar": "Identifico condiciones de cambio y de equilibrio en los seres vivos y en los ecosistemas.",
-      "subprocesos_ebc": [
-        "Explico la estructura de la célula y las funciones básicas de sus componentes.",
-        "Verifico y explico los procesos de ósmosis y difusión.",
-        "Clasifico membranas de los seres vivos de acuerdo con su permeabilidad frente a diversas sustancias.",
-        "Clasifico organismos en grupos taxonómicos de acuerdo con las características de sus células.",
-        "Comparo sistemas de división celular y argumento su importancia en la generación de nuevos organismos y tejidos.",
-        "Explico las funciones de los seres vivos a partir de las relaciones entre diferentes sistemas de órganos.",
-        "Comparo mecanismos de obtención de energía en los seres vivos.",
-        "Reconozco en diversos grupos taxonómicos la presencia de las mismas moléculas orgánicas.",
-        "Explico el origen del universo y de la vida a partir de varias teorías.",
-        "Caracterizo ecosistemas y analizo el equilibrio dinámico entre sus poblaciones.",
-        "Propongo explicaciones sobre la diversidad biológica teniendo en cuenta el movimiento de placas tectónicas y las características climáticas.",
-        "Establezco las adaptaciones de algunos seres vivos en ecosistemas de Colombia.",
-        "Formulo hipótesis sobre las causas de extinción de un grupo taxonómico.",
-        "Justifico la importancia del agua en el sostenimiento de la vida.",
-        "Describo y relaciono los ciclos del agua, de algunos elementos y de la energía en los ecosistemas.",
-        "Explico la función del suelo como depósito de nutrientes.",
-        "Evalúo el potencial de los recursos naturales, la forma como se han utilizado en desarrollos tecnológicos y las consecuencias de la acción del ser humano sobre ellos."
-      ],
       "temas": [
         "Grupos taxonómicos según el tipo de célula",
         "Diversidad de especies y relaciones de parentesco"

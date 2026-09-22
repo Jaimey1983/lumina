@@ -10,6 +10,7 @@ import {
   listUnidadesCuradas,
   listUnidadesPorComponente,
   listSubprocesosPorComponente,
+  resolverEstandarEbc,
   AREAS_LABELS,
   GRADOS_TODOS,
   EBC_COMPONENTES,
@@ -308,10 +309,6 @@ function extractJsonObject(raw: string): unknown {
 // internet); si no hay contenido curado, se recurre a grounding igual que
 // `generateDesempeno` para temas fuera del dataset. Sin `GEMINI_API_KEY`,
 // fallback determinista en los dos casos.
-
-function normalizarEtiqueta(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
 
 function buildFallbackDesempenoCurso(params: {
   areaLabel: string;
@@ -749,34 +746,19 @@ No uses ningún tipo de actividad fuera de la lista anterior.`;
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) return fallback();
 
-    const data = await loadCurriculum(area, grado);
-    const unidadesDelComponente = data
-      ? listUnidadesCuradas(data).filter(
-          (u) =>
-            normalizarEtiqueta(u.ebc_factor) ===
-            normalizarEtiqueta(componenteLabel),
-        )
-      : [];
-
-    const tieneContextoCurado = unidadesDelComponente.length > 0;
+    // Sale del catálogo por ciclo (ebc-estandares.ts), no del dataset de
+    // unidades — el desempeño de curso es general (D6), no ancla a un DBA
+    // puntual, así que el estándar/subprocesos del ciclo bastan como
+    // contexto real sin necesitar unidades curadas para este grado exacto.
+    const estandarEbc = resolverEstandarEbc(area, grado, componenteLabel);
+    const tieneContextoCurado = estandarEbc !== null;
 
     const system = tieneContextoCurado
       ? `Eres un experto en diseño curricular colombiano (MEN). Redactas UN desempeño de aprendizaje GENERAL, a nivel de curso completo (no de una sola clase) — debe poder abarcar CUALQUIER tema del componente y la competencia dados en este grado, no solo los ejemplos puntuales que se te entregan como referencia de alcance. PROHIBIDO nombrar objetos, aparatos, técnicas o procedimientos concretos de un solo ejemplo (p. ej. "palancas y poleas", "circuitos eléctricos") — eso ancla el desempeño a un único tema en vez del componente completo. Usa el vocabulario general del estándar EBC (el nivel de abstracción de la competencia, no el de un DBA puntual). Estructura: Verbo de acción + Contenido + Condición + Finalidad. Respondes SIEMPRE con JSON puro: {"enunciado": "string"}, sin texto adicional ni bloques de código.`
       : `Eres un experto en diseño curricular colombiano basado en los Estándares Básicos de Competencias del MEN. Redactas UN desempeño de aprendizaje GENERAL, a nivel de curso completo — debe poder abarcar CUALQUIER tema del componente y la competencia dados en este grado, no un ejemplo puntual. PROHIBIDO nombrar objetos, aparatos, técnicas o procedimientos concretos de un solo tema — usa el vocabulario general del estándar EBC de esta área y grado, no el de un DBA puntual. Estructura: Verbo de acción + Contenido + Condición + Finalidad. Tenés disponible búsqueda en Google — usala para fundamentar el desempeño en los Estándares Básicos de Competencias reales del MEN para esta área y grado. Respondes SIEMPRE en español y devuelves ÚNICAMENTE el objeto JSON pedido: {"enunciado": "string"}, sin texto antes ni después, sin bloques de código markdown.`;
 
-    const estandaresUnicos = Array.from(
-      new Set(unidadesDelComponente.map((u) => u.ebc_estandar)),
-    );
-    const subprocesosUnicos = Array.from(
-      new Set(unidadesDelComponente.flatMap((u) => u.subprocesos_ebc)),
-    );
-
-    const contexto = tieneContextoCurado
-      ? `\n\nEstándar(es) EBC de este componente en este grado — define el ALCANCE general que el desempeño debe poder cubrir completo, no solo una parte:\n${estandaresUnicos
-          .map((e) => `- ${e}`)
-          .join(
-            '\n',
-          )}\n\nMUESTRA de subprocesos que este componente puede abarcar en este grado (son solo ejemplos de la variedad de temas posibles — NO los enumeres ni redactes el desempeño en torno a uno de ellos en particular):\n${subprocesosUnicos
+    const contexto = estandarEbc
+      ? `\n\nEstándar EBC de este componente en este ciclo — define el ALCANCE general que el desempeño debe poder cubrir completo, no solo una parte:\n- ${estandarEbc.estandar}\n\nMUESTRA de subprocesos que este componente puede abarcar en este ciclo (son solo ejemplos de la variedad de temas posibles — NO los enumeres ni redactes el desempeño en torno a uno de ellos en particular):\n${estandarEbc.subprocesos
           .slice(0, 8)
           .map((s) => `- ${s}`)
           .join('\n')}`
@@ -996,12 +978,14 @@ Redacta el desempeño de curso.`;
     const desempeno = await this.loadDesempenoOrThrow(courseId, desempenoId);
     const componenteLabel = this.componenteLabelDe(desempeno);
     if (!componenteLabel) return [];
-    const data = await loadCurriculum(
+    // Sale del catálogo por ciclo (ebc-estandares.ts), no del dataset de
+    // unidades — existe aunque esta área/grado todavía no tenga unidades
+    // curadas.
+    return listSubprocesosPorComponente(
       desempeno.area as AreaCurricular,
       desempeno.grado as GradoEscolar,
+      componenteLabel,
     );
-    if (!data) return [];
-    return listSubprocesosPorComponente(data, componenteLabel);
   }
 
   /**

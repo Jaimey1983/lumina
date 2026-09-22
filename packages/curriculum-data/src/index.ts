@@ -8,6 +8,7 @@ import type {
   EscalaValoracionPorTipo,
   ActividadSugerida,
 } from '@lumina/types/curriculum';
+import { resolverEstandarEbc } from './ebc-estandares.js';
 
 export type {
   CurriculumData,
@@ -22,6 +23,13 @@ export type {
 
 export { EBC_COMPONENTES, ICFES_COMPETENCIAS } from './ebc-icfes-catalog.js';
 export type { CatalogoItem } from './ebc-icfes-catalog.js';
+
+export {
+  EBC_ESTANDARES,
+  cicloDeGrado,
+  resolverEstandarEbc,
+} from './ebc-estandares.js';
+export type { CicloEbc, EstandarEbc } from './ebc-estandares.js';
 
 // Mapa de carga dinámica — evita incluir todos los JSONs en el bundle inicial
 // para consumidores con bundler (lumina-frontend, ESM: Next/Turbopack/Vite
@@ -220,31 +228,21 @@ export function listUnidadesPorComponente(
 }
 
 /**
- * Subprocesos EBC de todas las unidades curadas de un componente,
- * deduplicados — camino EBC (J6.3): la lista completa de subprocesos del
- * componente, sin filtrar por si tienen o no un DBA que los respalde (esa
- * es justamente la diferencia con el camino DBA, que solo expone
- * `evidencias_aprendizaje` de la unidad elegida — ver `AGENTS.md`, Etapa J,
- * "Decisiones cerradas").
+ * Subprocesos EBC de un componente — camino EBC (J6.3): la lista completa
+ * del componente en el ciclo del `grado`, sin filtrar por si tienen o no un
+ * DBA que los respalde (esa es justamente la diferencia con el camino DBA,
+ * que solo expone `evidencias_aprendizaje` de la unidad elegida — ver
+ * `AGENTS.md`, Etapa J, "Decisiones cerradas"). Sale del catálogo único
+ * `EBC_ESTANDARES` (agrupado por ciclo de grados, no por unidad curricular —
+ * ver `ebc-estandares.ts`), no de las unidades: existe aunque el dataset de
+ * unidades para esta área/grado todavía no tenga contenido curado.
  */
 export function listSubprocesosPorComponente(
-  data: CurriculumData,
+  area: AreaCurricular,
+  grado: GradoEscolar,
   componenteLabel: string,
 ): string[] {
-  const unidades = listUnidadesPorComponente(data, componenteLabel);
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const u of unidades) {
-    for (const s of u.subprocesos_ebc) {
-      const v = s.trim();
-      const key = v.toLowerCase();
-      if (v && !seen.has(key)) {
-        seen.add(key);
-        result.push(v);
-      }
-    }
-  }
-  return result;
+  return [...(resolverEstandarEbc(area, grado, componenteLabel)?.subprocesos ?? [])];
 }
 
 // Extrae un resumen compacto de unidades para inyectar en el prompt.
