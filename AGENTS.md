@@ -1078,8 +1078,8 @@ model Class {
 - **Cierre:** no aplica Regla 4. Commit: `feat(prisma): modelo Desempeno y contexto curricular de Class (J6.1)`.
 
 ##### J6.2 — Entrada 1: crear curso genera Desempeño(s)
-- **Operador:** a definir
-- **Estado:** pendiente
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** J6.0 hecho, J6.1 hecho.
 - **Contexto:** estrategia de IA nueva (ver "Decisiones cerradas" arriba) — genera un enunciado de desempeño a partir de área+grado+componente+competencia, sin unidad/tema todavía elegido. Diseño de detalle (a redactar al tomar esta ficha, con el código de `curriculum.service.ts` a la vista): probablemente Gemini con grounding, usando como contexto los `dba_enunciado` de las unidades curadas del dataset que comparten ese componente (si existen) más un fallback de plantilla si el área/componente no tiene contenido curado.
 - **Alcance — PUEDE tocar:** `curriculum.service.ts` (nuevo método de generación por componente+competencia, separado de `generateDesempeno`), nuevo endpoint (`POST /curriculum/generate-desempeno-curso` o equivalente), UI en `courses-client.tsx`/`course-detail-client.tsx` para agregar uno o más desempeños al curso (decidir en ejecución si es un paso del modal de creación o una sección aparte en el detalle del curso — un curso admite varios desempeños, así que probablemente conviene una sección "Desempeños del curso" accesible después de crear el curso, no solo en el modal inicial).
