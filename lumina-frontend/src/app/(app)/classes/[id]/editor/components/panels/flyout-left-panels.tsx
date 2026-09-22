@@ -690,7 +690,6 @@ function buildSlideContextoCurricular(
     const searchable = [
       ...unidad.temas,
       ...unidad.subtemas,
-      ...unidad.palabras_clave,
       unidad.unidad_titulo,
       unidad.dba_enunciado,
     ].join(' ').toLowerCase();
@@ -715,7 +714,7 @@ function buildSlideContextoCurricular(
   bloques.push(buildTemplateTextBlock(encabezado, 5, 15, 90, 12, 14, 'centro'));
 
   bloques.push(buildTemplateTextBlock(
-    `DBA ${u.dba_asociados.join(', ')}:\n${u.dba_enunciado}`,
+    `${u.dba_codigo}:\n${u.dba_enunciado}`,
     5, 29, 90, 18, 14,
   ));
 
@@ -725,18 +724,13 @@ function buildSlideContextoCurricular(
   ));
 
   bloques.push(buildTemplateTextBlock(
-    `Nivel Bloom: ${u.nivel_cognitivo.nivel} · Verbos: ${u.nivel_cognitivo.verbo_bloom.join(', ')}`,
-    5, 63, 55, 8, 13,
-  ));
-
-  bloques.push(buildTemplateTextBlock(
     `Temas: ${u.temas.join(' · ')}`,
-    5, 72, 90, 8, 13,
+    5, 63, 90, 8, 13,
   ));
 
   bloques.push(buildTemplateTextBlock(
-    `Desempeño básico: ${u.indicadores_desempeno.cognitivo.basico}`,
-    5, 82, 90, 12, 12,
+    `Indicador de desempeño: ${u.evidencias_aprendizaje[0] ?? ''}`,
+    5, 73, 90, 20, 12,
   ));
 
   return {

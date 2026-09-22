@@ -173,7 +173,7 @@ export function listUnidadesCuradas(data: CurriculumData): UnidadCurricular[] {
 
 /**
  * Busca, dentro de una `CurriculumData` ya cargada, la unidad curada (no
- * placeholder) cuyo título/temas/subtemas/palabras clave coincidan con
+ * placeholder) cuyo título/temas/subtemas coincidan con
  * `tema` (comparación insensible a mayúsculas/acentos, por inclusión en
  * cualquier sentido — coincidencia LITERAL, no semántica: "la noticia" no
  * encuentra una unidad de "medios de comunicación" aunque estén
@@ -190,7 +190,7 @@ export function findMatchingUnit(
   const needle = normalizarParaBusqueda(tema);
   if (!needle) return null;
   for (const u of listUnidadesCuradas(data)) {
-    const haystacks = [u.unidad_titulo, ...u.temas, ...u.subtemas, ...u.palabras_clave].map(
+    const haystacks = [u.unidad_titulo, ...u.temas, ...u.subtemas].map(
       normalizarParaBusqueda,
     );
     if (haystacks.some((h) => h.length > 0 && (h.includes(needle) || needle.includes(h)))) {
@@ -253,7 +253,7 @@ export function buildCurriculumContext(data: CurriculumData): string {
   const unidades = data.unidades
     .map(
       (u) =>
-        `DBA ${u.dba_asociados.join(',')}: ${u.dba_enunciado}\nTemas: ${u.temas.join(', ')}\nSubtemas: ${u.subtemas.join(', ')}`,
+        `DBA ${u.dba_codigo}: ${u.dba_enunciado}\nTemas: ${u.temas.join(', ')}\nSubtemas: ${u.subtemas.join(', ')}`,
     )
     .join('\n\n');
   return `Área: ${data.asignatura} — Grado ${data.grado} (Colombia, MEN)

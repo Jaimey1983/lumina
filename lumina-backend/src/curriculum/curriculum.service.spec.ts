@@ -111,10 +111,17 @@ describe('CurriculumService.generateDesempeno — dataset curado > Gemini > fall
     expect(result.enunciado).toBe(
       'Comprende que los sentidos le permiten percibir algunas características de los objetos que nos rodean (temperatura, sabor, sonidos, olor, color, texturas y formas).',
     );
-    expect(result.indicadores.bajo).toBe(
-      'Nombra los cinco sentidos con ayuda del docente.',
+    // `indicadores` (escala de valoración de referencia, Decreto 1290) ya no
+    // sale del dataset curado — `UnidadCurricular` no la trae (se retiró
+    // junto con `nivel_cognitivo`/`dba_relacionados`/`palabras_clave`, no
+    // formaban parte de la ruta Curso→Desempeño→Clase). Es la plantilla
+    // determinista a partir de `dto.tema`, igual que el fallback sin dataset.
+    expect(result.indicadores.bajo).toContain(
+      'Los sentidos y la percepción del entorno',
     );
-    expect(result.indicadores.superior).toContain('distintos sentidos');
+    expect(result.indicadores.superior).toContain(
+      'Los sentidos y la percepción del entorno',
+    );
     // indicadoresDeDesempeno (J4) = evidencias_aprendizaje real del dataset,
     // 4 enunciados observables DISTINTOS (no niveles del mismo enunciado).
     expect(result.indicadoresDeDesempeno).toHaveLength(4);

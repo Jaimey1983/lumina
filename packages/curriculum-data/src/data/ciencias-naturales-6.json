@@ -8,53 +8,12 @@
     {
       "unidad_id": 0,
       "unidad_titulo": "Carga eléctrica por fricción y contacto",
-      "dba_asociados": [1],
-      "dba_relacionados": [2],
       "enfoque_men": "Entorno físico",
-      "nivel_cognitivo": {
-        "nivel": "Aplicar",
-        "verbo_bloom": ["utiliza", "identifica"],
-        "nivel_numero": 3
-      },
-      "temas": [
-        "Carga eléctrica de los cuerpos",
-        "Atracción y repulsión eléctrica"
-      ],
-      "subtemas": [
-        "Cómo cargar un cuerpo por frotamiento (barra de vidrio con seda, barra de plástico con un paño)",
-        "Cómo cargar un cuerpo por contacto (barra de vidrio cargada con una bola de icopor)",
-        "Cuándo dos cuerpos se atraen y cuándo se repelen según su carga"
-      ],
-      "palabras_clave": ["carga eléctrica", "electrostática", "atracción", "repulsión", "frotamiento", "contacto", "grado 6"],
+      "dba_codigo": "DBA 1",
       "dba_enunciado": "Comprende cómo los cuerpos pueden ser cargados eléctricamente asociando esta carga a efectos de atracción y repulsión.",
       "evidencias_aprendizaje": [
         "Utiliza procedimientos (frotar barra de vidrio con seda, barra de plástico con un paño, contacto entre una barra de vidrio cargada eléctricamente con una bola de icopor) con diferentes materiales para cargar eléctricamente un cuerpo.",
         "Identifica si los cuerpos tienen cargas iguales o contrarias a partir de los efectos de atracción o repulsión que se producen."
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "Reconoce, con ayuda, que un cuerpo puede quedar cargado eléctricamente.",
-          "basico": "Identifica si dos cuerpos se atraen o se repelen a partir de su carga.",
-          "alto": "Explica por qué un procedimiento (frotar o poner en contacto) carga eléctricamente un cuerpo.",
-          "superior": "Predice el efecto (atracción o repulsión) entre dos cuerpos a partir de cómo fueron cargados."
-        },
-        "procedimental": {
-          "bajo": "Observa un procedimiento de carga eléctrica con acompañamiento.",
-          "basico": "Reproduce, con ayuda, un procedimiento de carga eléctrica por frotamiento o contacto.",
-          "alto": "Utiliza de forma autónoma distintos procedimientos para cargar eléctricamente varios materiales.",
-          "superior": "Diseña un procedimiento propio para determinar si dos cuerpos quedaron con cargas iguales o contrarias."
-        },
-        "actitudinal": {
-          "bajo": "Participa en la actividad experimental cuando se le invita.",
-          "basico": "Muestra interés por explorar los efectos de la carga eléctrica.",
-          "alto": "Sigue normas de seguridad al manipular los materiales del experimento.",
-          "superior": "Promueve el manejo cuidadoso de los materiales entre sus compañeros."
-        }
-      },
-      "actividades_sugeridas": [
-        { "descripcion": "Clasificar pares de cuerpos cargados según se atraen o se repelen", "tipo": "Clasificar" },
-        { "descripcion": "Ordenar los pasos del procedimiento para cargar un cuerpo por frotamiento", "tipo": "Ordenar" },
-        { "descripcion": "Quiz sobre atracción y repulsión eléctrica", "tipo": "Quiz opción múltiple" }
       ],
       "ebc_factor": "Entorno físico",
       "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
@@ -75,19 +34,62 @@
         "Describo el proceso de formación y extinción de estrellas.",
         "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
         "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
+      ],
+      "temas": [
+        "Carga eléctrica de los cuerpos",
+        "Atracción y repulsión eléctrica"
+      ],
+      "subtemas": [
+        "Cómo cargar un cuerpo por frotamiento (barra de vidrio con seda, barra de plástico con un paño)",
+        "Cómo cargar un cuerpo por contacto (barra de vidrio cargada con una bola de icopor)",
+        "Cuándo dos cuerpos se atraen y cuándo se repelen según su carga"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar pares de cuerpos cargados según se atraen o se repelen",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Ordenar los pasos del procedimiento para cargar un cuerpo por frotamiento",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Quiz sobre atracción y repulsión eléctrica",
+          "tipo": "Quiz opción múltiple"
+        }
       ]
     },
     {
       "unidad_id": 1,
       "unidad_titulo": "Temperatura, presión y separación de mezclas",
-      "dba_asociados": [2],
-      "dba_relacionados": [1, 3],
       "enfoque_men": "Entorno físico",
-      "nivel_cognitivo": {
-        "nivel": "Analizar",
-        "verbo_bloom": ["interpreta", "explica", "diseña"],
-        "nivel_numero": 4
-      },
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende que la temperatura (T) y la presión (P) influyen en algunas propiedades fisicoquímicas (solubilidad, viscosidad, densidad, puntos de ebullición y fusión) de las sustancias, y que estas pueden ser aprovechadas en las técnicas de separación de mezclas.",
+      "evidencias_aprendizaje": [
+        "Interpreta los resultados de experimentos en los que se observa la influencia de la variación de la temperatura (T) y la presión (P) en los cambios de estado de un grupo de sustancias, representándolos mediante el uso de gráficos y tablas.",
+        "Explica la relación entre la temperatura (T) y la presión (P) con algunas propiedades (densidad, solubilidad, viscosidad, puntos de ebullición y de fusión) de las sustancias a partir de ejemplos.",
+        "Diseña y realiza experiencias para separar mezclas homogéneas y heterogéneas utilizando técnicas (vaporización, cristalización, destilación), para justificar la elección de las mismas a partir de las propiedades fisicoquímicas de las sustancias involucradas."
+      ],
+      "ebc_factor": "Entorno físico",
+      "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
+      "subprocesos_ebc": [
+        "Clasifico y verifico las propiedades de la materia.",
+        "Verifico la acción de fuerzas electrostáticas y magnéticas y explico su relación con la carga eléctrica.",
+        "Describo el desarrollo de modelos que explican la estructura de la materia.",
+        "Clasifico materiales en sustancias puras o mezclas.",
+        "Verifico diferentes métodos de separación de mezclas.",
+        "Explico cómo un número limitado de elementos hace posible la diversidad de la materia conocida.",
+        "Explico el desarrollo de modelos de organización de los elementos químicos.",
+        "Explico y utilizo la tabla periódica como herramienta para predecir procesos químicos.",
+        "Explico la formación de moléculas y los estados de la materia a partir de fuerzas electrostáticas.",
+        "Relaciono energía y movimiento.",
+        "Verifico relaciones entre distancia recorrida, velocidad y fuerza involucrada en diversos tipos de movimiento.",
+        "Comparo masa, peso y densidad de diferentes materiales mediante experimentos.",
+        "Explico el modelo planetario desde las fuerzas gravitacionales.",
+        "Describo el proceso de formación y extinción de estrellas.",
+        "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
+        "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
+      ],
       "temas": [
         "Efecto de la temperatura y la presión en las propiedades de las sustancias",
         "Técnicas de separación de mezclas"
@@ -98,37 +100,32 @@
         "Vaporización, cristalización y destilación como técnicas de separación de mezclas",
         "Por qué se elige una técnica de separación según las propiedades fisicoquímicas de las sustancias"
       ],
-      "palabras_clave": ["temperatura", "presión", "solubilidad", "viscosidad", "densidad", "punto de ebullición", "punto de fusión", "vaporización", "cristalización", "destilación", "grado 6"],
-      "dba_enunciado": "Comprende que la temperatura (T) y la presión (P) influyen en algunas propiedades fisicoquímicas (solubilidad, viscosidad, densidad, puntos de ebullición y fusión) de las sustancias, y que estas pueden ser aprovechadas en las técnicas de separación de mezclas.",
-      "evidencias_aprendizaje": [
-        "Interpreta los resultados de experimentos en los que se observa la influencia de la variación de la temperatura (T) y la presión (P) en los cambios de estado de un grupo de sustancias, representándolos mediante el uso de gráficos y tablas.",
-        "Explica la relación entre la temperatura (T) y la presión (P) con algunas propiedades (densidad, solubilidad, viscosidad, puntos de ebullición y de fusión) de las sustancias a partir de ejemplos.",
-        "Diseña y realiza experiencias para separar mezclas homogéneas y heterogéneas utilizando técnicas (vaporización, cristalización, destilación), para justificar la elección de las mismas a partir de las propiedades fisicoquímicas de las sustancias involucradas."
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "Reconoce, con ayuda, que la temperatura afecta el estado de una sustancia.",
-          "basico": "Identifica cómo cambia una propiedad (por ejemplo, la densidad) al variar la temperatura o la presión.",
-          "alto": "Explica la relación entre T y P con propiedades como solubilidad, viscosidad o puntos de ebullición y fusión a partir de ejemplos.",
-          "superior": "Justifica la elección de una técnica de separación de mezclas a partir de las propiedades fisicoquímicas de las sustancias involucradas."
-        },
-        "procedimental": {
-          "bajo": "Observa un experimento sobre cambios de estado con acompañamiento.",
-          "basico": "Interpreta, con ayuda, gráficos y tablas de resultados de un experimento sobre T y P.",
-          "alto": "Diseña y realiza, de forma autónoma, una experiencia para separar una mezcla mediante vaporización, cristalización o destilación.",
-          "superior": "Diseña un experimento propio para comparar dos técnicas de separación distintas sobre la misma mezcla."
-        },
-        "actitudinal": {
-          "bajo": "Participa en la actividad experimental cuando se le invita.",
-          "basico": "Muestra interés por indagar el efecto de la temperatura y la presión en las sustancias.",
-          "alto": "Sigue normas de seguridad al manipular sustancias y fuentes de calor.",
-          "superior": "Promueve el manejo seguro de sustancias y equipos de laboratorio entre sus compañeros."
-        }
-      },
       "actividades_sugeridas": [
-        { "descripcion": "Relacionar cada técnica de separación con el tipo de mezcla que permite separar", "tipo": "Relacionar columnas" },
-        { "descripcion": "Verdadero o falso sobre el efecto de la temperatura y la presión en las propiedades de las sustancias", "tipo": "Verdadero/Falso" },
-        { "descripcion": "Justificar por escrito la elección de una técnica de separación para una mezcla dada", "tipo": "Respuesta abierta" }
+        {
+          "descripcion": "Relacionar cada técnica de separación con el tipo de mezcla que permite separar",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre el efecto de la temperatura y la presión en las propiedades de las sustancias",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Justificar por escrito la elección de una técnica de separación para una mezcla dada",
+          "tipo": "Respuesta abierta"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Sustancias puras y mezclas",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende la clasificación de los materiales a partir de grupos de sustancias (elementos y compuestos) y mezclas (homogéneas y heterogéneas).",
+      "evidencias_aprendizaje": [
+        "Diferencia sustancias puras (elementos y compuestos) de mezclas (homogéneas y heterogéneas) en ejemplos de uso cotidiano.",
+        "Identifica sustancias de uso cotidiano (sal de cocina, agua, cobre, entre otros) con sus símbolos químicos (NaCl, H2O, Cu).",
+        "Explica la importancia de las propiedades del agua como solvente para los ecosistemas y los organismos vivos, dando ejemplos de distintas soluciones acuosas.",
+        "Reconoce la importancia de los coloides (como ejemplo de mezcla heterogénea) en los procesos industriales (Pinturas, lacas) y biomédicos (Alimentos y medicinas)."
       ],
       "ebc_factor": "Entorno físico",
       "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
@@ -149,19 +146,7 @@
         "Describo el proceso de formación y extinción de estrellas.",
         "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
         "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
-      ]
-    },
-    {
-      "unidad_id": 2,
-      "unidad_titulo": "Sustancias puras y mezclas",
-      "dba_asociados": [3],
-      "dba_relacionados": [1, 2],
-      "enfoque_men": "Entorno físico",
-      "nivel_cognitivo": {
-        "nivel": "Analizar",
-        "verbo_bloom": ["diferencia", "identifica", "explica"],
-        "nivel_numero": 4
-      },
+      ],
       "temas": [
         "Clasificación de las sustancias: elementos, compuestos y mezclas",
         "El agua como solvente",
@@ -173,71 +158,54 @@
         "Importancia del agua como solvente para los ecosistemas y los organismos vivos",
         "Coloides en procesos industriales (pinturas, lacas) y biomédicos (alimentos, medicinas)"
       ],
-      "palabras_clave": ["sustancia pura", "elemento", "compuesto", "mezcla homogénea", "mezcla heterogénea", "solvente", "coloide", "símbolo químico", "grado 6"],
-      "dba_enunciado": "Comprende la clasificación de los materiales a partir de grupos de sustancias (elementos y compuestos) y mezclas (homogéneas y heterogéneas).",
-      "evidencias_aprendizaje": [
-        "Diferencia sustancias puras (elementos y compuestos) de mezclas (homogéneas y heterogéneas) en ejemplos de uso cotidiano.",
-        "Identifica sustancias de uso cotidiano (sal de cocina, agua, cobre, entre otros) con sus símbolos químicos (NaCl, H2O, Cu).",
-        "Explica la importancia de las propiedades del agua como solvente para los ecosistemas y los organismos vivos, dando ejemplos de distintas soluciones acuosas.",
-        "Reconoce la importancia de los coloides (como ejemplo de mezcla heterogénea) en los procesos industriales (Pinturas, lacas) y biomédicos (Alimentos y medicinas)."
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "Reconoce, con ayuda, que existen sustancias puras y mezclas.",
-          "basico": "Identifica sustancias de uso cotidiano con su símbolo químico.",
-          "alto": "Diferencia sustancias puras de mezclas homogéneas y heterogéneas en ejemplos de uso cotidiano.",
-          "superior": "Explica la importancia del agua como solvente para los ecosistemas y los organismos vivos, con ejemplos propios."
-        },
-        "procedimental": {
-          "bajo": "Observa ejemplos de sustancias y mezclas con acompañamiento.",
-          "basico": "Clasifica, con ayuda, un conjunto de materiales en sustancias puras o mezclas.",
-          "alto": "Clasifica de forma autónoma sustancias de uso cotidiano según su tipo.",
-          "superior": "Investiga y expone un caso real del uso de coloides en la industria o la biomedicina."
-        },
-        "actitudinal": {
-          "bajo": "Participa en la actividad sobre sustancias y mezclas cuando se le invita.",
-          "basico": "Muestra interés por reconocer sustancias de su entorno cotidiano.",
-          "alto": "Valora la importancia del agua como recurso para los seres vivos.",
-          "superior": "Promueve el uso responsable del agua y de otras sustancias entre sus compañeros."
-        }
-      },
       "actividades_sugeridas": [
-        { "descripcion": "Clasificar sustancias de uso cotidiano en elementos, compuestos o mezclas", "tipo": "Clasificar" },
-        { "descripcion": "Emparejar sustancias de uso cotidiano con su símbolo químico", "tipo": "Emparejar" },
-        { "descripcion": "Quiz sobre sustancias puras, mezclas y coloides", "tipo": "Quiz opción múltiple" }
-      ],
-      "ebc_factor": "Entorno físico",
-      "ebc_estandar": "Establezco relaciones entre las características macroscópicas y microscópicas de la materia y las propiedades físicas y químicas de las sustancias que la constituyen.",
-      "subprocesos_ebc": [
-        "Clasifico y verifico las propiedades de la materia.",
-        "Verifico la acción de fuerzas electrostáticas y magnéticas y explico su relación con la carga eléctrica.",
-        "Describo el desarrollo de modelos que explican la estructura de la materia.",
-        "Clasifico materiales en sustancias puras o mezclas.",
-        "Verifico diferentes métodos de separación de mezclas.",
-        "Explico cómo un número limitado de elementos hace posible la diversidad de la materia conocida.",
-        "Explico el desarrollo de modelos de organización de los elementos químicos.",
-        "Explico y utilizo la tabla periódica como herramienta para predecir procesos químicos.",
-        "Explico la formación de moléculas y los estados de la materia a partir de fuerzas electrostáticas.",
-        "Relaciono energía y movimiento.",
-        "Verifico relaciones entre distancia recorrida, velocidad y fuerza involucrada en diversos tipos de movimiento.",
-        "Comparo masa, peso y densidad de diferentes materiales mediante experimentos.",
-        "Explico el modelo planetario desde las fuerzas gravitacionales.",
-        "Describo el proceso de formación y extinción de estrellas.",
-        "Relaciono masa, peso y densidad con la aceleración de la gravedad en distintos puntos del sistema solar.",
-        "Explico las consecuencias del movimiento de las placas tectónicas sobre la corteza de la Tierra."
+        {
+          "descripcion": "Clasificar sustancias de uso cotidiano en elementos, compuestos o mezclas",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Emparejar sustancias de uso cotidiano con su símbolo químico",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Quiz sobre sustancias puras, mezclas y coloides",
+          "tipo": "Quiz opción múltiple"
+        }
       ]
     },
     {
       "unidad_id": 3,
       "unidad_titulo": "Estructura y funciones básicas de la célula",
-      "dba_asociados": [4],
-      "dba_relacionados": [5],
       "enfoque_men": "Entorno vivo",
-      "nivel_cognitivo": {
-        "nivel": "Analizar",
-        "verbo_bloom": ["explica", "interpreta", "predice"],
-        "nivel_numero": 4
-      },
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende algunas de las funciones básicas de la célula (transporte de membrana, obtención de energía y división celular) a partir del análisis de su estructura.",
+      "evidencias_aprendizaje": [
+        "Explica el rol de la membrana plasmática en el mantenimiento del equilibrio interno de la célula, y describe la interacción del agua y las partículas (ósmosis y difusión) que entran y salen de la célula mediante el uso de modelos.",
+        "Explica el proceso de respiración celular e identifica el rol de la mitocondria en dicho proceso.",
+        "Interpreta modelos sobre los procesos de división celular (mitosis), como mecanismos que permiten explicar la regeneración de tejidos y el crecimiento de los organismos.",
+        "Predice qué ocurre a nivel de transporte de membrana, obtención de energía y división celular en caso de daño de alguna de las organelas celulares."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "ebc_estandar": "Identifico condiciones de cambio y de equilibrio en los seres vivos y en los ecosistemas.",
+      "subprocesos_ebc": [
+        "Explico la estructura de la célula y las funciones básicas de sus componentes.",
+        "Verifico y explico los procesos de ósmosis y difusión.",
+        "Clasifico membranas de los seres vivos de acuerdo con su permeabilidad frente a diversas sustancias.",
+        "Clasifico organismos en grupos taxonómicos de acuerdo con las características de sus células.",
+        "Comparo sistemas de división celular y argumento su importancia en la generación de nuevos organismos y tejidos.",
+        "Explico las funciones de los seres vivos a partir de las relaciones entre diferentes sistemas de órganos.",
+        "Comparo mecanismos de obtención de energía en los seres vivos.",
+        "Reconozco en diversos grupos taxonómicos la presencia de las mismas moléculas orgánicas.",
+        "Explico el origen del universo y de la vida a partir de varias teorías.",
+        "Caracterizo ecosistemas y analizo el equilibrio dinámico entre sus poblaciones.",
+        "Propongo explicaciones sobre la diversidad biológica teniendo en cuenta el movimiento de placas tectónicas y las características climáticas.",
+        "Establezco las adaptaciones de algunos seres vivos en ecosistemas de Colombia.",
+        "Formulo hipótesis sobre las causas de extinción de un grupo taxonómico.",
+        "Justifico la importancia del agua en el sostenimiento de la vida.",
+        "Describo y relaciono los ciclos del agua, de algunos elementos y de la energía en los ecosistemas.",
+        "Explico la función del suelo como depósito de nutrientes.",
+        "Evalúo el potencial de los recursos naturales, la forma como se han utilizado en desarrollos tecnológicos y las consecuencias de la acción del ser humano sobre ellos."
+      ],
       "temas": [
         "Transporte de membrana: ósmosis y difusión",
         "Obtención de energía: respiración celular",
@@ -250,38 +218,31 @@
         "Mitosis como mecanismo de regeneración de tejidos y crecimiento de los organismos",
         "Qué ocurre si se daña una organela celular"
       ],
-      "palabras_clave": ["célula", "membrana plasmática", "ósmosis", "difusión", "mitocondria", "respiración celular", "mitosis", "organelas", "grado 6"],
-      "dba_enunciado": "Comprende algunas de las funciones básicas de la célula (transporte de membrana, obtención de energía y división celular) a partir del análisis de su estructura.",
-      "evidencias_aprendizaje": [
-        "Explica el rol de la membrana plasmática en el mantenimiento del equilibrio interno de la célula, y describe la interacción del agua y las partículas (ósmosis y difusión) que entran y salen de la célula mediante el uso de modelos.",
-        "Explica el proceso de respiración celular e identifica el rol de la mitocondria en dicho proceso.",
-        "Interpreta modelos sobre los procesos de división celular (mitosis), como mecanismos que permiten explicar la regeneración de tejidos y el crecimiento de los organismos.",
-        "Predice qué ocurre a nivel de transporte de membrana, obtención de energía y división celular en caso de daño de alguna de las organelas celulares."
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "Reconoce, con ayuda, que la célula tiene una membrana y organelas.",
-          "basico": "Identifica el rol de la membrana plasmática y de la mitocondria en un modelo de célula.",
-          "alto": "Explica el proceso de ósmosis y difusión y el proceso de respiración celular con sus propias palabras.",
-          "superior": "Predice qué ocurre en el transporte de membrana, la obtención de energía o la división celular si se daña una organela."
-        },
-        "procedimental": {
-          "bajo": "Observa un modelo o representación de la célula con acompañamiento.",
-          "basico": "Interpreta, con ayuda, un modelo sobre la división celular (mitosis).",
-          "alto": "Interpreta de forma autónoma modelos sobre ósmosis, difusión y mitosis.",
-          "superior": "Construye un modelo propio para explicar el transporte de membrana o la división celular."
-        },
-        "actitudinal": {
-          "bajo": "Participa en la actividad sobre la célula cuando se le invita.",
-          "basico": "Muestra interés por comprender el funcionamiento de la célula.",
-          "alto": "Reconoce la importancia de cuidar el propio cuerpo a partir de comprender el funcionamiento celular.",
-          "superior": "Comparte con sus compañeros lo que comprende sobre el funcionamiento de la célula."
-        }
-      },
       "actividades_sugeridas": [
-        { "descripcion": "Relacionar cada organela celular con la función que cumple", "tipo": "Relacionar columnas" },
-        { "descripcion": "Ordenar las etapas de la mitosis", "tipo": "Ordenar" },
-        { "descripcion": "Predecir por escrito qué pasaría si se daña la mitocondria de una célula", "tipo": "Respuesta abierta" }
+        {
+          "descripcion": "Relacionar cada organela celular con la función que cumple",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Ordenar las etapas de la mitosis",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Predecir por escrito qué pasaría si se daña la mitocondria de una célula",
+          "tipo": "Respuesta abierta"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Clasificación taxonómica y diversidad de especies",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Comprende la clasificación de los organismos en grupos taxonómicos, de acuerdo con el tipo de células que poseen y reconoce la diversidad de especies que constituyen nuestro planeta y las relaciones de parentesco entre ellas.",
+      "evidencias_aprendizaje": [
+        "Identifica organismos (animales o plantas) de su entorno y los clasifica usando gráficos, tablas y otras representaciones siguiendo claves taxonómicas simples.",
+        "Clasifica los organismos en diferentes dominios, de acuerdo con sus tipos de células (procariota, eucariota, animal, vegetal).",
+        "Explica la clasificación taxonómica como mecanismo que permite reconocer la biodiversidad en el planeta y las relaciones de parentesco entre los organismos."
       ],
       "ebc_factor": "Entorno vivo",
       "ebc_estandar": "Identifico condiciones de cambio y de equilibrio en los seres vivos y en los ecosistemas.",
@@ -303,19 +264,7 @@
         "Describo y relaciono los ciclos del agua, de algunos elementos y de la energía en los ecosistemas.",
         "Explico la función del suelo como depósito de nutrientes.",
         "Evalúo el potencial de los recursos naturales, la forma como se han utilizado en desarrollos tecnológicos y las consecuencias de la acción del ser humano sobre ellos."
-      ]
-    },
-    {
-      "unidad_id": 4,
-      "unidad_titulo": "Clasificación taxonómica y diversidad de especies",
-      "dba_asociados": [5],
-      "dba_relacionados": [4],
-      "enfoque_men": "Entorno vivo",
-      "nivel_cognitivo": {
-        "nivel": "Aplicar",
-        "verbo_bloom": ["identifica", "clasifica", "explica"],
-        "nivel_numero": 3
-      },
+      ],
       "temas": [
         "Grupos taxonómicos según el tipo de célula",
         "Diversidad de especies y relaciones de parentesco"
@@ -325,58 +274,19 @@
         "Dominios según el tipo de célula (procariota, eucariota, animal, vegetal)",
         "La clasificación taxonómica como mecanismo para reconocer la biodiversidad y el parentesco entre organismos"
       ],
-      "palabras_clave": ["taxonomía", "dominio", "reino", "clasificación biológica", "biodiversidad", "parentesco entre organismos", "célula procariota", "célula eucariota", "grado 6"],
-      "dba_enunciado": "Comprende la clasificación de los organismos en grupos taxonómicos, de acuerdo con el tipo de células que poseen y reconoce la diversidad de especies que constituyen nuestro planeta y las relaciones de parentesco entre ellas.",
-      "evidencias_aprendizaje": [
-        "Identifica organismos (animales o plantas) de su entorno y los clasifica usando gráficos, tablas y otras representaciones siguiendo claves taxonómicas simples.",
-        "Clasifica los organismos en diferentes dominios, de acuerdo con sus tipos de células (procariota, eucariota, animal, vegetal).",
-        "Explica la clasificación taxonómica como mecanismo que permite reconocer la biodiversidad en el planeta y las relaciones de parentesco entre los organismos."
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "Reconoce, con ayuda, que los organismos se pueden agrupar por características comunes.",
-          "basico": "Identifica organismos de su entorno y los ubica en una clave taxonómica simple.",
-          "alto": "Clasifica organismos en dominios de acuerdo con su tipo de célula.",
-          "superior": "Explica la clasificación taxonómica como mecanismo para reconocer la biodiversidad y el parentesco entre organismos."
-        },
-        "procedimental": {
-          "bajo": "Observa ejemplos de clasificación de organismos con acompañamiento.",
-          "basico": "Clasifica, con ayuda, organismos de su entorno usando gráficos o tablas.",
-          "alto": "Clasifica de forma autónoma un conjunto de organismos en dominios según su tipo de célula.",
-          "superior": "Establece relaciones de parentesco entre organismos a partir de su clasificación taxonómica."
-        },
-        "actitudinal": {
-          "bajo": "Participa en la actividad de clasificación cuando se le invita.",
-          "basico": "Muestra interés por reconocer la diversidad de organismos de su entorno.",
-          "alto": "Valora la diversidad de especies como parte del patrimonio natural.",
-          "superior": "Promueve el respeto y cuidado de la biodiversidad entre sus compañeros."
-        }
-      },
       "actividades_sugeridas": [
-        { "descripcion": "Clasificar organismos de su entorno según el dominio al que pertenecen", "tipo": "Clasificar" },
-        { "descripcion": "Relacionar cada organismo con su tipo de célula (procariota, eucariota, animal, vegetal)", "tipo": "Relacionar columnas" },
-        { "descripcion": "Quiz sobre clasificación taxonómica y biodiversidad", "tipo": "Quiz opción múltiple" }
-      ],
-      "ebc_factor": "Entorno vivo",
-      "ebc_estandar": "Identifico condiciones de cambio y de equilibrio en los seres vivos y en los ecosistemas.",
-      "subprocesos_ebc": [
-        "Explico la estructura de la célula y las funciones básicas de sus componentes.",
-        "Verifico y explico los procesos de ósmosis y difusión.",
-        "Clasifico membranas de los seres vivos de acuerdo con su permeabilidad frente a diversas sustancias.",
-        "Clasifico organismos en grupos taxonómicos de acuerdo con las características de sus células.",
-        "Comparo sistemas de división celular y argumento su importancia en la generación de nuevos organismos y tejidos.",
-        "Explico las funciones de los seres vivos a partir de las relaciones entre diferentes sistemas de órganos.",
-        "Comparo mecanismos de obtención de energía en los seres vivos.",
-        "Reconozco en diversos grupos taxonómicos la presencia de las mismas moléculas orgánicas.",
-        "Explico el origen del universo y de la vida a partir de varias teorías.",
-        "Caracterizo ecosistemas y analizo el equilibrio dinámico entre sus poblaciones.",
-        "Propongo explicaciones sobre la diversidad biológica teniendo en cuenta el movimiento de placas tectónicas y las características climáticas.",
-        "Establezco las adaptaciones de algunos seres vivos en ecosistemas de Colombia.",
-        "Formulo hipótesis sobre las causas de extinción de un grupo taxonómico.",
-        "Justifico la importancia del agua en el sostenimiento de la vida.",
-        "Describo y relaciono los ciclos del agua, de algunos elementos y de la energía en los ecosistemas.",
-        "Explico la función del suelo como depósito de nutrientes.",
-        "Evalúo el potencial de los recursos naturales, la forma como se han utilizado en desarrollos tecnológicos y las consecuencias de la acción del ser humano sobre ellos."
+        {
+          "descripcion": "Clasificar organismos de su entorno según el dominio al que pertenecen",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada organismo con su tipo de célula (procariota, eucariota, animal, vegetal)",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre clasificación taxonómica y biodiversidad",
+          "tipo": "Quiz opción múltiple"
+        }
       ]
     }
   ]

@@ -146,6 +146,24 @@ function buildActividadesFallback(dto: GenerateDesempenoDto): string[] {
   ];
 }
 
+/**
+ * Escala de valoración de REFERENCIA (Superior/Alto/Básico/Bajo, texto de
+ * planeación) — plantilla determinista a partir de `dto`. Ya no viene del
+ * dataset curado (el campo `indicadores_desempeno` se retiró de
+ * `UnidadCurricular` — era la confusión conceptual de J4, ver comentario en
+ * `DesempenoResult.indicadores`), así que también la usa `buildDesempenoFromUnit`.
+ */
+function buildEscalaValoracionFallback(
+  dto: GenerateDesempenoDto,
+): DesempenoResult['indicadores'] {
+  return {
+    superior: `Crea y sustenta de forma autónoma propuestas innovadoras sobre ${dto.tema}, estableciendo relaciones complejas con otros conceptos del área.`,
+    alto: `Aplica correctamente los conceptos de ${dto.tema} en situaciones nuevas y explica el proceso seguido con argumentos sólidos.`,
+    basico: `Comprende los conceptos básicos de ${dto.tema} y los aplica en situaciones guiadas con apoyo del docente.`,
+    bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
+  };
+}
+
 function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
   return {
     enunciado: `Analizar los conceptos fundamentales de ${dto.tema} mediante el estudio de casos del entorno, para desarrollar pensamiento crítico en ${dto.area} de grado ${dto.grado}.`,
@@ -153,12 +171,7 @@ function buildFallbackDesempeno(dto: GenerateDesempenoDto): DesempenoResult {
     area: dto.area,
     grado: dto.grado,
     tema: dto.tema,
-    indicadores: {
-      superior: `Crea y sustenta de forma autónoma propuestas innovadoras sobre ${dto.tema}, estableciendo relaciones complejas con otros conceptos del área.`,
-      alto: `Aplica correctamente los conceptos de ${dto.tema} en situaciones nuevas y explica el proceso seguido con argumentos sólidos.`,
-      basico: `Comprende los conceptos básicos de ${dto.tema} y los aplica en situaciones guiadas con apoyo del docente.`,
-      bajo: `Identifica con dificultad los conceptos elementales de ${dto.tema} y requiere acompañamiento constante para avanzar.`,
-    },
+    indicadores: buildEscalaValoracionFallback(dto),
     indicadoresDeDesempeno: buildIndicadoresFallback(dto),
     actividadesSugeridas: buildActividadesFallback(dto),
   };
@@ -194,22 +207,15 @@ function resolveTipoKey(
 
 function buildDesempenoFromUnit(
   unidad: UnidadCurricular,
-  tipoKey: keyof EscalaValoracionPorTipo,
   dto: GenerateDesempenoDto,
 ): DesempenoResult {
-  const niveles = unidad.indicadores_desempeno[tipoKey];
   return {
     enunciado: unidad.dba_enunciado,
     tipo: dto.tipo,
     area: dto.area,
     grado: dto.grado,
     tema: dto.tema,
-    indicadores: {
-      superior: niveles.superior,
-      alto: niveles.alto,
-      basico: niveles.basico,
-      bajo: niveles.bajo,
-    },
+    indicadores: buildEscalaValoracionFallback(dto),
     // `evidencias_aprendizaje` del dataset YA son indicadores de desempeño
     // reales (enunciados observables distintos, no niveles de intensidad) —
     // se usan tal cual, sin generar nada. Fallback determinista solo si la
@@ -510,7 +516,7 @@ export class CurriculumService {
     if (!data) return null;
     const unidad = findMatchingUnit(data, dto.tema);
     if (!unidad) return null;
-    return buildDesempenoFromUnit(unidad, tipoKey, dto);
+    return buildDesempenoFromUnit(unidad, dto);
   }
 
   /**
@@ -564,7 +570,7 @@ ${candidatas
       if (id < 0) return null;
       const unidad = candidatas.find((u) => u.unidad_id === id);
       if (!unidad) return null;
-      return buildDesempenoFromUnit(unidad, tipoKey, dto);
+      return buildDesempenoFromUnit(unidad, dto);
     } catch {
       return null;
     }
