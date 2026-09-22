@@ -136,7 +136,7 @@ describe('@lumina/curriculum-data', () => {
         '6',
         'Entorno vivo',
       );
-      expect(subprocesos).toHaveLength(17);
+      expect(subprocesos).toHaveLength(16);
       expect(subprocesos[0]).toContain('estructura de la célula');
     });
 
@@ -147,6 +147,15 @@ describe('@lumina/curriculum-data', () => {
         'Entorno físico',
       );
       expect(subprocesos).toHaveLength(16);
+    });
+
+    it('CTS del mismo ciclo también resuelve (catálogo completo, los 3 componentes)', () => {
+      const subprocesos = listSubprocesosPorComponente(
+        'ciencias-naturales',
+        '6',
+        'Ciencia, Tecnología y Sociedad',
+      );
+      expect(subprocesos).toHaveLength(13);
     });
 
     it('devuelve vacío si el componente no existe en el catálogo del área', () => {

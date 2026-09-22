@@ -99,7 +99,7 @@ describe('CurriculumService — Entrada 2 (J6.3, camino DBA/EBC + indicadores de
         'TEACHER',
       );
 
-      expect(result).toHaveLength(17);
+      expect(result).toHaveLength(16);
     });
 
     it('devuelve vacío si el ciclo de ese grado todavía no está curado en el catálogo', async () => {

@@ -54,14 +54,25 @@ describe('resolverEstandarEbc', () => {
 });
 
 describe('EBC_ESTANDARES — forma del catálogo curado', () => {
-  it('ciencias-naturales 6-7 tiene entorno_fisico y entorno_vivo, sin duplicados', () => {
+  it('ciencias-naturales 6-7 tiene los 3 componentes (entorno_fisico, entorno_vivo, cts), sin duplicados', () => {
     const ciclo = EBC_ESTANDARES['ciencias-naturales']?.['6-7'];
     expect(ciclo).toBeDefined();
     const claves = Object.keys(ciclo!).sort();
-    expect(claves).toEqual(['entorno_fisico', 'entorno_vivo']);
+    expect(claves).toEqual(['cts', 'entorno_fisico', 'entorno_vivo']);
     for (const entrada of Object.values(ciclo!)) {
       const subprocesos = entrada!.subprocesos;
       expect(new Set(subprocesos).size).toBe(subprocesos.length);
     }
+  });
+
+  it('cts (6-7) resuelve con el estándar y los 13 subprocesos reales del documento', () => {
+    const r = resolverEstandarEbc(
+      'ciencias-naturales',
+      '6',
+      'Ciencia, Tecnología y Sociedad',
+    );
+    expect(r).not.toBeNull();
+    expect(r?.estandar).toContain('potencial de los recursos naturales');
+    expect(r?.subprocesos).toHaveLength(13);
   });
 });
