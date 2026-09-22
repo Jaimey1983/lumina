@@ -8,6 +8,8 @@ import {
   buildCurriculumContext,
   findMatchingUnit,
   listUnidadesCuradas,
+  listUnidadesPorComponente,
+  listSubprocesosPorComponente,
 } from './index.js';
 
 describe('@lumina/curriculum-data', () => {
@@ -99,6 +101,51 @@ describe('@lumina/curriculum-data', () => {
     it('devuelve un array vacío para un área/grado 100% placeholder', async () => {
       const data = await loadCurriculum('matematicas', '8');
       expect(listUnidadesCuradas(data!)).toEqual([]);
+    });
+  });
+
+  describe('listUnidadesPorComponente (J6.3, Entrada 2)', () => {
+    it('filtra las unidades curadas cuyo ebc_factor coincide (insensible a mayúsculas)', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const unidades = listUnidadesPorComponente(data!, 'entorno vivo');
+      expect(unidades.map((u) => u.unidad_id).sort()).toEqual([2, 3]);
+    });
+
+    it('un solo match para un componente con una sola unidad', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const unidades = listUnidadesPorComponente(
+        data!,
+        'Ciencia, Tecnología y Sociedad',
+      );
+      expect(unidades.map((u) => u.unidad_id)).toEqual([1]);
+    });
+
+    it('devuelve vacío si el componente no tiene ninguna unidad curada', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      expect(listUnidadesPorComponente(data!, 'Componente inexistente')).toEqual([]);
+    });
+  });
+
+  describe('listSubprocesosPorComponente (J6.3, Entrada 2 — camino EBC)', () => {
+    it('deduplica subprocesos repetidos entre unidades del mismo componente', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const subprocesos = listSubprocesosPorComponente(data!, 'Entorno vivo');
+      // Las unidades 2 y 3 comparten sus 11 subprocesos exactos (mismo
+      // ebc_estandar) — deduplicado da 11, no 22.
+      expect(subprocesos).toHaveLength(11);
+    });
+
+    it('devuelve los subprocesos tal cual de una unidad sin solapamiento', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      const subprocesos = listSubprocesosPorComponente(data!, 'Entorno físico');
+      expect(subprocesos).toHaveLength(13);
+    });
+
+    it('devuelve vacío si el componente no tiene ninguna unidad curada', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '1');
+      expect(listSubprocesosPorComponente(data!, 'Componente inexistente')).toEqual(
+        [],
+      );
     });
   });
 });

@@ -200,6 +200,53 @@ export function findMatchingUnit(
   return null;
 }
 
+/**
+ * Unidades curadas cuyo `ebc_factor` coincida (insensible a acentos/mayúsculas)
+ * con `componenteLabel` — Etapa J / J6.3, Entrada 2, camino EBC/DBA. El
+ * `ebc_factor` de una unidad es su componente EBC en texto humano (p. ej.
+ * "Entorno físico"), el mismo vocabulario que `EBC_COMPONENTES[area]` usa
+ * como `label` (`ebc-icfes-catalog.ts`, J6.0) — se compara por label, no por
+ * código, porque el dataset no conoce los códigos del catálogo.
+ */
+export function listUnidadesPorComponente(
+  data: CurriculumData,
+  componenteLabel: string,
+): UnidadCurricular[] {
+  const needle = normalizarParaBusqueda(componenteLabel);
+  if (!needle) return [];
+  return listUnidadesCuradas(data).filter(
+    (u) => normalizarParaBusqueda(u.ebc_factor) === needle,
+  );
+}
+
+/**
+ * Subprocesos EBC de todas las unidades curadas de un componente,
+ * deduplicados — camino EBC (J6.3): la lista completa de subprocesos del
+ * componente, sin filtrar por si tienen o no un DBA que los respalde (esa
+ * es justamente la diferencia con el camino DBA, que solo expone
+ * `evidencias_aprendizaje` de la unidad elegida — ver `AGENTS.md`, Etapa J,
+ * "Decisiones cerradas").
+ */
+export function listSubprocesosPorComponente(
+  data: CurriculumData,
+  componenteLabel: string,
+): string[] {
+  const unidades = listUnidadesPorComponente(data, componenteLabel);
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const u of unidades) {
+    for (const s of u.subprocesos_ebc) {
+      const v = s.trim();
+      const key = v.toLowerCase();
+      if (v && !seen.has(key)) {
+        seen.add(key);
+        result.push(v);
+      }
+    }
+  }
+  return result;
+}
+
 // Extrae un resumen compacto de unidades para inyectar en el prompt.
 // Evita enviar el JSON completo (demasiado grande para el contexto de Gemini).
 export function buildCurriculumContext(data: CurriculumData): string {

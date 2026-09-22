@@ -7,9 +7,15 @@ import {
   IsInt,
   Min,
   Max,
+  ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { trimIfString } from '../../common/trim-if-string';
+import {
+  DbaSeleccionadoDto,
+  EbcSeleccionadoDto,
+  IndicadoresGeneradosDto,
+} from '../../curriculum/dto/update-class-curricular-context.dto';
 
 export class UpdateClassDto {
   @IsOptional()
@@ -23,9 +29,42 @@ export class UpdateClassDto {
   @Transform(trimIfString)
   description?: string;
 
+  /**
+   * LEGADO (Pieza 1, pre-Etapa J6) — se congela, no se migra. Ver
+   * `desempenoId` para el motor curricular único (J6).
+   */
   @IsOptional()
   @IsObject()
   desempeno?: Record<string, unknown>;
+
+  /**
+   * Motor curricular único (Etapa J / J6.3, Entrada 2) — FK al `Desempeno`
+   * de curso elegido. El servicio verifica que pertenezca al mismo curso
+   * que la clase antes de persistir.
+   */
+  @IsOptional()
+  @IsString()
+  desempenoId?: string;
+
+  /** Camino curricular EXCLUYENTE (J6, "Decisiones cerradas"): "dba" | "ebc". */
+  @IsOptional()
+  @IsIn(['dba', 'ebc'])
+  caminoCurricular?: 'dba' | 'ebc';
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DbaSeleccionadoDto)
+  dbaSeleccionado?: DbaSeleccionadoDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EbcSeleccionadoDto)
+  ebcSeleccionado?: EbcSeleccionadoDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => IndicadoresGeneradosDto)
+  indicadores?: IndicadoresGeneradosDto;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }): unknown =>

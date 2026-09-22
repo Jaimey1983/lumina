@@ -29,12 +29,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { useCourse } from '@/hooks/api/use-course';
 import { useCourseStudents, type Student } from '@/hooks/api/use-students';
-import {
-  useClasses,
-  useCreateClass,
-  usePublishClass,
-  type Class,
-} from '@/hooks/api/use-classes';
+import { useClasses, type Class } from '@/hooks/api/use-classes';
 import { useCoursePeriods } from '@/hooks/api/use-periods';
 import { useUsers } from '@/hooks/api/use-users';
 import { useGradeCalculation } from '@/hooks/api/use-grade-calculation';
@@ -46,6 +41,7 @@ import {
 import { api } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/api-error-message';
 import { GradebookStructureTab } from './gradebook-structure-tab';
+import { NewClassCurricularModal } from './new-class-curricular-modal';
 import { STATUS_LABELS } from '@/app/(app)/classes/class-status-badge-styles';
 import {
   AREAS_LABELS,
@@ -615,104 +611,11 @@ function StudentsTab({ courseId }: { courseId: string }) {
   );
 }
 
-// ─── New Class Modal ──────────────────────────────────────────────────────────
-
-const classSchema = z.object({
-  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
-  status: z.enum(['draft', 'published']),
-});
-type ClassFormData = z.infer<typeof classSchema>;
-
-function NewClassModal({
-  courseId,
-  open,
-  onOpenChange,
-}: {
-  courseId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const createClass = useCreateClass(courseId);
-  const publishClass = usePublishClass(courseId);
-  const form = useForm<ClassFormData>({
-    resolver: zodResolver(classSchema),
-    defaultValues: { title: '', status: 'draft' },
-  });
-
-  const isPending = createClass.isPending || publishClass.isPending;
-
-  async function onSubmit(data: ClassFormData) {
-    try {
-      const created = await createClass.mutateAsync({ title: data.title, courseId });
-      if (data.status === 'published' && created?.id) {
-        await publishClass.mutateAsync(created.id);
-      }
-      toast.success('Clase creada');
-      form.reset();
-      onOpenChange(false);
-    } catch (err) {
-      toast.error(apiErrorMessage(err, 'Error al crear la clase'));
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nueva clase</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogBody className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Título de la clase" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-8.5 w-full rounded-md border border-input bg-background px-3 text-[0.8125rem] shadow-xs focus:outline-none focus:ring-[3px] focus:ring-ring/30 focus:border-ring"
-                        {...field}
-                      >
-                        <option value="draft">Borrador</option>
-                        <option value="published">Publicada</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </DialogBody>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Creando...' : 'Crear clase'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ─── Classes Tab ──────────────────────────────────────────────────────────────
+// El modal local viejo (solo título+estado) se reemplazó por
+// `NewClassCurricularModal` (Etapa J / J6.3, Entrada 2 — flujo completo D4:
+// título → elegir Desempeño del curso → camino DBA/EBC excluyente →
+// generar indicadores → un solo submit).
 
 function ClassesTab({ courseId }: { courseId: string }) {
   const { user } = useAuth();
@@ -866,7 +769,11 @@ function ClassesTab({ courseId }: { courseId: string }) {
       </Card>
 
       {!isStudent && (
-        <NewClassModal courseId={courseId} open={newClassOpen} onOpenChange={setNewClassOpen} />
+        <NewClassCurricularModal
+          courseId={courseId}
+          open={newClassOpen}
+          onOpenChange={setNewClassOpen}
+        />
       )}
     </div>
   );

@@ -8,6 +8,8 @@ import {
   loadCurriculum,
   findMatchingUnit,
   listUnidadesCuradas,
+  listUnidadesPorComponente,
+  listSubprocesosPorComponente,
   AREAS_LABELS,
   GRADOS_TODOS,
   EBC_COMPONENTES,
@@ -24,6 +26,7 @@ import { CourseAuthorizationService } from '../common/course-authorization.servi
 import { LLM_MODELS } from '../ai-features/ai-provider.types';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 import { CreateDesempenoDto } from './dto/create-desempeno.dto';
+import { GenerateIndicadoresClaseDto } from './dto/generate-indicadores-clase.dto';
 
 // ─── Tipos ────────────────────────────────────────────────
 
@@ -275,6 +278,51 @@ function buildFallbackDesempenoCurso(params: {
 }): string {
   const { areaLabel, grado, componenteLabel, competenciaLabel } = params;
   return `Desarrollar la competencia de ${competenciaLabel} en el componente de ${componenteLabel}, propio de ${areaLabel} de grado ${grado}, mediante situaciones de aprendizaje que permitan al estudiante avanzar de manera progresiva en su comprensión y aplicación a lo largo del curso.`;
+}
+
+// ─── Entrada 2 (Etapa J / J6.3) — indicadores de CLASE a partir del camino ──
+// DBA/evidencias o EBC/subprocesos elegido por el docente (excluyentes). Los
+// 3 tipos pedagógicos (cognitivo/procedimental/actitudinal, D3) se generan
+// juntos en una sola llamada — más barato que 3 llamadas y coherente entre
+// sí (mismo contexto, misma pasada).
+
+export interface UnidadDbaParaClase {
+  unidadId: number;
+  titulo: string;
+  evidenciasAprendizaje: string[];
+}
+
+export interface IndicadoresClaseResult {
+  cognitivo: string[];
+  procedimental: string[];
+  actitudinal: string[];
+}
+
+/**
+ * Fallback determinista por tipo pedagógico — mismo banco de verbos que
+ * `buildIndicadoresFallback` (D3), pero contextualizado con el contenido
+ * curricular elegido (evidencia o subproceso) en vez del `tema` libre de
+ * `generateDesempeno`.
+ */
+function buildIndicadorClaseFallback(
+  tipo: 'cognitivo' | 'procedimental' | 'actitudinal',
+  contexto: string,
+): string[] {
+  const [v1, v2, v3, v4] = VERBOS_POR_TIPO[tipo];
+  return [
+    `${v1} los elementos clave de "${contexto}" durante el desarrollo de la clase.`,
+    `${v2} lo trabajado sobre "${contexto}" en una actividad propuesta por el docente.`,
+    `${v3} relaciones entre "${contexto}" y lo visto previamente en la clase.`,
+    `${v4} lo aprendido sobre "${contexto}" en una producción propia (oral, escrita o gráfica).`,
+  ];
+}
+
+function sanitizeIndicadoresArray(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    .map((s) => s.trim())
+    .slice(0, 5);
 }
 
 // ─── Service ──────────────────────────────────────────────
@@ -819,5 +867,201 @@ Redacta el desempeño de curso.`;
     }
     await this.prisma.desempeno.delete({ where: { id: desempenoId } });
     return { success: true };
+  }
+
+  // ── 4. Entrada 2 (J6.3) — camino DBA/EBC + indicadores de CLASE ──
+
+  /** Carga un `Desempeno` verificando que pertenezca al curso — 404 si no. */
+  private async loadDesempenoOrThrow(
+    courseId: string,
+    desempenoId: string,
+  ): Promise<Desempeno> {
+    const desempeno = await this.prisma.desempeno.findUnique({
+      where: { id: desempenoId },
+    });
+    if (!desempeno || desempeno.courseId !== courseId) {
+      throw new NotFoundException('Desempeño no encontrado en este curso');
+    }
+    return desempeno;
+  }
+
+  private componenteLabelDe(desempeno: Desempeno): string | null {
+    const area = desempeno.area as AreaCurricular;
+    return (
+      EBC_COMPONENTES[area]?.find((c) => c.codigo === desempeno.componenteEbc)
+        ?.label ?? null
+    );
+  }
+
+  /**
+   * `GET /curriculum/courses/:courseId/desempenos/:desempenoId/unidades-dba`
+   * — unidades curadas (DBA) del componente del `Desempeno`, cada una con
+   * sus `evidencias_aprendizaje` (camino DBA, J6.3: solo evidencias, nunca
+   * subprocesos — ver "Decisiones cerradas" en `AGENTS.md`).
+   */
+  async listUnidadesDbaParaDesempeno(
+    courseId: string,
+    desempenoId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<UnidadDbaParaClase[]> {
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
+    const desempeno = await this.loadDesempenoOrThrow(courseId, desempenoId);
+    const componenteLabel = this.componenteLabelDe(desempeno);
+    if (!componenteLabel) return [];
+    const data = await loadCurriculum(
+      desempeno.area as AreaCurricular,
+      desempeno.grado as GradoEscolar,
+    );
+    if (!data) return [];
+    return listUnidadesPorComponente(data, componenteLabel).map((u) => ({
+      unidadId: u.unidad_id,
+      titulo: u.unidad_titulo,
+      evidenciasAprendizaje: u.evidencias_aprendizaje,
+    }));
+  }
+
+  /**
+   * `GET /curriculum/courses/:courseId/desempenos/:desempenoId/subprocesos-ebc`
+   * — todos los subprocesos EBC del componente del `Desempeno` (camino EBC,
+   * J6.3: la lista completa, sin filtrar por si tienen o no un DBA que los
+   * respalde — es el único camino donde aparecen los que ningún DBA cubre).
+   */
+  async listSubprocesosEbcParaDesempeno(
+    courseId: string,
+    desempenoId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<string[]> {
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
+    const desempeno = await this.loadDesempenoOrThrow(courseId, desempenoId);
+    const componenteLabel = this.componenteLabelDe(desempeno);
+    if (!componenteLabel) return [];
+    const data = await loadCurriculum(
+      desempeno.area as AreaCurricular,
+      desempeno.grado as GradoEscolar,
+    );
+    if (!data) return [];
+    return listSubprocesosPorComponente(data, componenteLabel);
+  }
+
+  /**
+   * Redacta los 3 indicadores (cognitivo/procedimental/actitudinal) a partir
+   * del desempeño + el contenido curricular elegido (evidencias o
+   * subprocesos). Sin `GEMINI_API_KEY`, fallback determinista por tipo
+   * (D3), contextualizado con el primer ítem elegido.
+   */
+  private async buildIndicadoresClase(params: {
+    enunciadoDesempeno: string;
+    contextoItems: string[];
+  }): Promise<IndicadoresClaseResult> {
+    const { enunciadoDesempeno, contextoItems } = params;
+    const contextoRepresentativo =
+      contextoItems[0] ?? 'el contenido de la clase';
+    const fallback = (): IndicadoresClaseResult => ({
+      cognitivo: buildIndicadorClaseFallback(
+        'cognitivo',
+        contextoRepresentativo,
+      ),
+      procedimental: buildIndicadorClaseFallback(
+        'procedimental',
+        contextoRepresentativo,
+      ),
+      actitudinal: buildIndicadorClaseFallback(
+        'actitudinal',
+        contextoRepresentativo,
+      ),
+    });
+
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (!apiKey) return fallback();
+
+    const system = `Eres un experto en diseño curricular colombiano (MEN). A partir de un desempeño de aprendizaje y del contenido curricular seleccionado para UNA clase puntual, redactas entre 3 y 5 INDICADORES DE DESEMPEÑO reales por cada uno de los 3 tipos pedagógicos: cognitivo, procedimental, actitudinal. Cada indicador es un enunciado observable (verbo + contenido + condición) y DEBE ser distinto de los demás dentro del mismo tipo — nunca una reescritura del mismo enunciado en otra intensidad. Respondes SIEMPRE con JSON puro: {"cognitivo": ["..."], "procedimental": ["..."], "actitudinal": ["..."]}, sin texto adicional ni bloques de código.`;
+
+    const user = `Desempeño del curso: ${enunciadoDesempeno}
+
+Contenido curricular seleccionado para esta clase:
+${contextoItems.map((s) => `- ${s}`).join('\n')}
+
+Redacta los indicadores de esta clase puntual.`;
+
+    try {
+      const raw = await this.callGemini(system, user, {
+        maxOutputTokens: 900,
+        temperature: 0.6,
+      });
+      const parsed = extractJsonObject(raw) as Record<string, unknown> | null;
+      if (!parsed) return fallback();
+      const fb = fallback();
+      const cognitivo = sanitizeIndicadoresArray(parsed['cognitivo']);
+      const procedimental = sanitizeIndicadoresArray(parsed['procedimental']);
+      const actitudinal = sanitizeIndicadoresArray(parsed['actitudinal']);
+      return {
+        cognitivo: cognitivo.length >= 3 ? cognitivo : fb.cognitivo,
+        procedimental:
+          procedimental.length >= 3 ? procedimental : fb.procedimental,
+        actitudinal: actitudinal.length >= 3 ? actitudinal : fb.actitudinal,
+      };
+    } catch {
+      return fallback();
+    }
+  }
+
+  /**
+   * `POST /curriculum/courses/:courseId/desempenos/:desempenoId/generar-indicadores`
+   * — valida la exclusividad DBA/EBC (J6, "Decisiones cerradas") y genera
+   * los 3 indicadores de la clase. No persiste nada — el frontend confirma
+   * el borrador junto con la creación de la `Class` (J6.3, `UpdateClassCurricularContextDto`).
+   */
+  async generateIndicadoresClase(
+    courseId: string,
+    desempenoId: string,
+    dto: GenerateIndicadoresClaseDto,
+    userId: string,
+    userRole: string,
+  ): Promise<IndicadoresClaseResult> {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
+    const desempeno = await this.loadDesempenoOrThrow(courseId, desempenoId);
+
+    if (dto.caminoCurricular === 'dba') {
+      if (!dto.dbaSeleccionado) {
+        throw new BadRequestException('Falta la selección de DBA/evidencias.');
+      }
+      if (dto.ebcSeleccionado) {
+        throw new BadRequestException(
+          'DBA y EBC son excluyentes — no se pueden combinar (J6).',
+        );
+      }
+    } else {
+      if (!dto.ebcSeleccionado) {
+        throw new BadRequestException('Falta la selección de subprocesos EBC.');
+      }
+      if (dto.dbaSeleccionado) {
+        throw new BadRequestException(
+          'DBA y EBC son excluyentes — no se pueden combinar (J6).',
+        );
+      }
+    }
+
+    const contextoItems =
+      dto.caminoCurricular === 'dba'
+        ? dto.dbaSeleccionado.evidenciasElegidas
+        : dto.ebcSeleccionado.subprocesosElegidos;
+
+    if (contextoItems.length === 0) {
+      throw new BadRequestException(
+        'Elegí al menos una evidencia o subproceso antes de generar los indicadores.',
+      );
+    }
+
+    return this.buildIndicadoresClase({
+      enunciadoDesempeno: desempeno.enunciado,
+      contextoItems,
+    });
   }
 }

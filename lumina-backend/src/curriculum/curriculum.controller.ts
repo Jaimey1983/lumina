@@ -15,6 +15,7 @@ import type { JwtAuthUser } from '../auth/jwt-auth-user';
 import { CurriculumService } from './curriculum.service';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 import { CreateDesempenoDto } from './dto/create-desempeno.dto';
+import { GenerateIndicadoresClaseDto } from './dto/generate-indicadores-clase.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('curriculum')
@@ -71,6 +72,65 @@ export class CurriculumController {
     return this.curriculumService.removeDesempenoCurso(
       courseId,
       desempenoId,
+      user.id,
+      user.role,
+    );
+  }
+
+  /**
+   * GET /curriculum/courses/:courseId/desempenos/:desempenoId/unidades-dba
+   * — Entrada 2 (J6.3), camino DBA: unidades curadas del componente del
+   * `Desempeno`, cada una con sus evidencias de aprendizaje.
+   */
+  @Get('courses/:courseId/desempenos/:desempenoId/unidades-dba')
+  listUnidadesDbaParaDesempeno(
+    @Param('courseId') courseId: string,
+    @Param('desempenoId') desempenoId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.curriculumService.listUnidadesDbaParaDesempeno(
+      courseId,
+      desempenoId,
+      user.id,
+      user.role,
+    );
+  }
+
+  /**
+   * GET /curriculum/courses/:courseId/desempenos/:desempenoId/subprocesos-ebc
+   * — Entrada 2 (J6.3), camino EBC: todos los subprocesos del componente.
+   */
+  @Get('courses/:courseId/desempenos/:desempenoId/subprocesos-ebc')
+  listSubprocesosEbcParaDesempeno(
+    @Param('courseId') courseId: string,
+    @Param('desempenoId') desempenoId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.curriculumService.listSubprocesosEbcParaDesempeno(
+      courseId,
+      desempenoId,
+      user.id,
+      user.role,
+    );
+  }
+
+  /**
+   * POST /curriculum/courses/:courseId/desempenos/:desempenoId/generar-indicadores
+   * — Entrada 2 (J6.3): genera (sin persistir) los 3 indicadores de la clase
+   * a partir del camino DBA/EBC elegido.
+   */
+  @Post('courses/:courseId/desempenos/:desempenoId/generar-indicadores')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  generateIndicadoresClase(
+    @Param('courseId') courseId: string,
+    @Param('desempenoId') desempenoId: string,
+    @Body() dto: GenerateIndicadoresClaseDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.curriculumService.generateIndicadoresClase(
+      courseId,
+      desempenoId,
+      dto,
       user.id,
       user.role,
     );

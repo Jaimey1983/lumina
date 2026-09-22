@@ -112,6 +112,7 @@ export interface CreateClassInput {
 export interface UpdateClassInput {
   title?: string;
   description?: string;
+  /** LEGADO (Pieza 1, pre-Etapa J6) — se congela, no se migra. */
   desempeno?: unknown;
   /** Segundos; 0 = temporizador global desactivado. */
   timerGlobal?: number;
@@ -119,6 +120,16 @@ export interface UpdateClassInput {
   background?: string;
   /** Temas de diapositiva personalizados (también se persiste dentro de `desempeno`). */
   temasPersonalizados?: unknown;
+  /** Motor curricular único (Etapa J / J6.3, Entrada 2) — ver `hooks/api/use-desempenos.ts`. */
+  desempenoId?: string;
+  caminoCurricular?: 'dba' | 'ebc';
+  dbaSeleccionado?: { unidadId: number; evidenciasElegidas: string[] };
+  ebcSeleccionado?: { subprocesosElegidos: string[] };
+  indicadores?: {
+    cognitivo: string[];
+    procedimental: string[];
+    actitudinal: string[];
+  };
 }
 
 export function useCreateClass(courseId?: string) {

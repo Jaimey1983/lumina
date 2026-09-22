@@ -476,7 +476,32 @@ export class ClassesService {
     const cls = await this.findOneRaw(id);
     await this.verifyOwnership(cls, userId, userRole);
 
-    const { desempeno, status, ...rest } = dto;
+    const {
+      desempeno,
+      status,
+      desempenoId,
+      caminoCurricular,
+      dbaSeleccionado,
+      ebcSeleccionado,
+      indicadores,
+      ...rest
+    } = dto;
+
+    // Motor curricular único (J6.3) — un `desempenoId` solo es válido si
+    // pertenece al MISMO curso que la clase (evita referenciar el Desempeno
+    // de otro curso por error o de forma maliciosa).
+    if (desempenoId !== undefined) {
+      const desempenoRef = await this.prisma.desempeno.findUnique({
+        where: { id: desempenoId },
+        select: { courseId: true },
+      });
+      if (!desempenoRef || desempenoRef.courseId !== cls.courseId) {
+        throw new BadRequestException(
+          'El desempeño elegido no pertenece al curso de esta clase.',
+        );
+      }
+    }
+
     return this.prisma.class.update({
       where: { id },
       data: {
@@ -485,12 +510,34 @@ export class ClassesService {
         ...(desempeno !== undefined
           ? { desempeno: desempeno as Prisma.InputJsonValue }
           : {}),
+        ...(desempenoId !== undefined ? { desempenoId } : {}),
+        ...(caminoCurricular !== undefined ? { caminoCurricular } : {}),
+        ...(dbaSeleccionado !== undefined
+          ? {
+              dbaSeleccionado:
+                dbaSeleccionado as unknown as Prisma.InputJsonValue,
+            }
+          : {}),
+        ...(ebcSeleccionado !== undefined
+          ? {
+              ebcSeleccionado:
+                ebcSeleccionado as unknown as Prisma.InputJsonValue,
+            }
+          : {}),
+        ...(indicadores !== undefined
+          ? { indicadores: indicadores as unknown as Prisma.InputJsonValue }
+          : {}),
       },
       select: {
         id: true,
         title: true,
         description: true,
         desempeno: true,
+        desempenoId: true,
+        caminoCurricular: true,
+        dbaSeleccionado: true,
+        ebcSeleccionado: true,
+        indicadores: true,
         background: true,
         timerGlobal: true,
         status: true,
