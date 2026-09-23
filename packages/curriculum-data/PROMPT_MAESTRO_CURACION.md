@@ -48,14 +48,21 @@ documento DBA aportado cubra). Se puede repetir para cada una de las 5
 ## Estado del dataset al escribir esto (2026-09-23) — verificar antes de arrancar
 
 De los 55 archivos (`area-grado.json`, 5 áreas × 11 grados) en
-`packages/curriculum-data/src/data/`, **8 ya están curados** con contenido
-real, transcripción literal de los documentos oficiales:
+`packages/curriculum-data/src/data/`, **solo 2 están curados y son
+confiables** — transcripción literal verificada contra los documentos
+oficiales, dentro de esta misma sesión de curación:
 
-- `ciencias-naturales-1.json` … `ciencias-naturales-7.json` (7 grados)
-- `lenguaje-6.json`
+- `ciencias-naturales-6.json`
+- `ciencias-naturales-7.json`
 
-El resto (47 archivos) es **placeholder** — no sirven de referencia de
-contenido (sí de formato general, con matices, ver más abajo). Antes de
+**Usalos como único ejemplo de referencia de formato y estilo.**
+`ciencias-naturales-1.json` … `-5.json` y `lenguaje-6.json` tenían
+contenido de sesiones anteriores que **no** se pudo verificar como
+transcripción confiable de los documentos oficiales — se resetearon a
+placeholder (2026-09-23) y están pendientes de recurarse desde cero con
+este mismo prompt. El resto (47 archivos) siempre fue placeholder. Ningún
+archivo salvo los 2 de arriba sirve de referencia de **contenido** (sí de
+formato general del placeholder, con matices, ver más abajo). Antes de
 curar un área/grado, comprobá si ya está hecho:
 
 ```bash
@@ -220,11 +227,9 @@ documento que te dieron — mirá el propio PDF, dice la versión en la
 portada o pie de página.
 
 `tipo` de `actividades_sugeridas` — no inventes tipos nuevos; usá uno de
-los que ya aparecen en los 8 archivos curados (`Clasificar`, `Ordenar`,
-`Emparejar`, `Relacionar columnas`, `Verdadero/Falso`, `Quiz opción
-múltiple`, `Respuesta abierta`, `Quiz de arrastrar y soltar` — revisá
-`ciencias-naturales-3.json`/`-4.json` para más ejemplos si hacen falta
-variantes).
+los que ya aparecen en `ciencias-naturales-6.json`/`-7.json` (`Clasificar`,
+`Ordenar`, `Emparejar`, `Relacionar columnas`, `Verdadero/Falso`, `Quiz
+opción múltiple`, `Respuesta abierta`).
 
 ## Verificación (obligatoria antes de cerrar, Regla 7 de `AGENTS.md`)
 
