@@ -45,7 +45,7 @@ describe('resolverEstandarEbc', () => {
   });
 
   it('null si el ciclo de ese grado todavía no está curado en EBC_ESTANDARES', () => {
-    expect(resolverEstandarEbc('ciencias-naturales', '1', 'Entorno vivo')).toBeNull();
+    expect(resolverEstandarEbc('ciencias-sociales', '1', 'Relaciones con la historia y las culturas')).toBeNull();
   });
 
   it('null si el área no tiene ningún ciclo curado', () => {

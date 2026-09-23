@@ -169,9 +169,13 @@ describe('@lumina/curriculum-data', () => {
     });
 
     it('devuelve vacío si el ciclo de ese grado todavía no tiene catálogo curado', () => {
-      // Grado 1 cae en el ciclo 1-3, sin entradas en EBC_ESTANDARES todavía.
+      // ciencias-sociales todavía no tiene ningún ciclo curado en EBC_ESTANDARES.
       expect(
-        listSubprocesosPorComponente('ciencias-naturales', '1', 'Entorno vivo'),
+        listSubprocesosPorComponente(
+          'ciencias-sociales',
+          '1',
+          'Relaciones con la historia y las culturas',
+        ),
       ).toEqual([]);
     });
   });
