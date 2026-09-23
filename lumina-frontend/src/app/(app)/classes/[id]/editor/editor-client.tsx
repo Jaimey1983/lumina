@@ -141,6 +141,10 @@ import {
 import { COLUMN_GRID_PRESETS, normalizeSlideGrilla } from '@/lib/canvas-grid';
 import { readStoredGuidesVisible, writeStoredGuidesVisible } from '@/lib/canvas-guides';
 import {
+  readStoredSlidesPanelCollapsed,
+  writeStoredSlidesPanelCollapsed,
+} from '@/lib/slides-panel-prefs';
+import {
   CANVAS_ZOOM_DEFAULT,
   CANVAS_ZOOM_STEP,
   clampCanvasZoom,
@@ -197,6 +201,7 @@ import {
   DialogTitle,
 } from '@lumina/ui/dialog';
 import { Skeleton } from '@lumina/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@lumina/ui/tooltip';
 import {
   Sheet,
   SheetBody,
@@ -344,10 +349,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const [canvasZoom,         setCanvasZoom]         = useState(CANVAS_ZOOM_DEFAULT);
   const [copiedBlock,        setCopiedBlock]        = useState<Block | null>(null);
   const [activeSlideIndex,   setActiveSlideIndex]   = useState(0);
+  const [slidesPanelCollapsed, setSlidesPanelCollapsed] = useState(false);
 
   useEffect(() => {
     setCanvasZoom(readStoredCanvasZoom());
     setGuidesVisible(readStoredGuidesVisible());
+    setSlidesPanelCollapsed(readStoredSlidesPanelCollapsed());
   }, []);
 
   const handleCanvasZoomChange = useCallback((next: number) => {
@@ -359,6 +366,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
   const handleGuidesVisibleChange = useCallback((next: boolean) => {
     setGuidesVisible(next);
     writeStoredGuidesVisible(next);
+  }, []);
+
+  const handleSlidesPanelCollapsedChange = useCallback((next: boolean) => {
+    setSlidesPanelCollapsed(next);
+    writeStoredSlidesPanelCollapsed(next);
   }, []);
   const [saveError, setSaveError] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -2834,30 +2846,66 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             getActivityDragOverlay={getActivityDragOverlay}
             getWidgetDragOverlay={getWidgetDragOverlay}
           >
-          {/* Slides + flyout — 14rem fijo; canvas absorbe el resto (min-w-0) */}
-          <div className="relative h-full min-h-0 w-48 min-w-48 max-w-48 shrink-0 overflow-visible">
-            <SlidesPanel
-              slides={sortedSlides}
-              activeIndex={resolvedSlideIndex}
-              activeSlideLiveContent={activeSlideLiveContent}
-              isLoading={isLoading}
-              isAddingSlide={insertSlide.isPending}
-              onSelect={setActiveSlideIndex}
-              onAddSlide={handleAddSlideWithLayout}
-              onRemoveSlide={handleRemoveSlide}
-              onDuplicateSlide={handleDuplicateSlide}
-              onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
-              onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
-              onReorderSlides={handleReorderSlides}
-              copiedBlock={copiedBlock}
-              onPasteBlockInSlide={(slideId, block) => {
-                if (slideId === activeSlide?.id) {
-                  canvasAreaRef.current?.pasteCopiedBlock(block);
-                  return;
-                }
-                handlePasteBlockInSlide(slideId, block);
-              }}
-            />
+          {/*
+           * Slides + flyout — 14rem fijo (colapsable a una tira de 1.25rem,
+           * útil en laptops de 13"-15" donde compite por espacio con el
+           * canvas y el panel de propiedades); canvas absorbe el resto (min-w-0).
+           */}
+          <div
+            className={cn(
+              'relative h-full min-h-0 shrink-0 overflow-visible transition-[width] duration-150',
+              slidesPanelCollapsed ? 'w-5 min-w-5 max-w-5' : 'w-48 min-w-48 max-w-48',
+            )}
+          >
+            {!slidesPanelCollapsed && (
+              <SlidesPanel
+                slides={sortedSlides}
+                activeIndex={resolvedSlideIndex}
+                activeSlideLiveContent={activeSlideLiveContent}
+                isLoading={isLoading}
+                isAddingSlide={insertSlide.isPending}
+                onSelect={setActiveSlideIndex}
+                onAddSlide={handleAddSlideWithLayout}
+                onRemoveSlide={handleRemoveSlide}
+                onDuplicateSlide={handleDuplicateSlide}
+                onMoveSlideUp={(id) => handleMoveSlide(id, 'up')}
+                onMoveSlideDown={(id) => handleMoveSlide(id, 'down')}
+                onReorderSlides={handleReorderSlides}
+                copiedBlock={copiedBlock}
+                onPasteBlockInSlide={(slideId, block) => {
+                  if (slideId === activeSlide?.id) {
+                    canvasAreaRef.current?.pasteCopiedBlock(block);
+                    return;
+                  }
+                  handlePasteBlockInSlide(slideId, block);
+                }}
+              />
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={slidesPanelCollapsed ? 'Mostrar panel de slides' : 'Ocultar panel de slides'}
+                  aria-pressed={slidesPanelCollapsed}
+                  onClick={() => handleSlidesPanelCollapsedChange(!slidesPanelCollapsed)}
+                  className={cn(
+                    'absolute top-1/2 z-30 flex size-5 -translate-y-1/2 items-center justify-center',
+                    'rounded-full border border-border bg-background text-muted-foreground shadow-sm',
+                    'hover:bg-accent hover:text-foreground',
+                    slidesPanelCollapsed ? 'left-0' : '-right-2.5',
+                  )}
+                >
+                  {slidesPanelCollapsed ? (
+                    <ChevronRight className="size-3" aria-hidden />
+                  ) : (
+                    <ChevronLeft className="size-3" aria-hidden />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {slidesPanelCollapsed ? 'Mostrar slides' : 'Ocultar slides'}
+              </TooltipContent>
+            </Tooltip>
             <FlyoutPanel
               ref={flyoutPanelRef}
               activePanel={isStudent && activePanel === 'ia' ? null : activePanel}
