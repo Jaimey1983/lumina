@@ -60,6 +60,20 @@ export interface GenerarIndicadoresClaseInput {
   ebcSeleccionado?: EbcSeleccionado;
 }
 
+/**
+ * Banco reutilizable de indicadores (seguimiento a J6.3) — a diferencia de
+ * `IndicadoresClase` (borrador efímero de una generación), estos ya están
+ * persistidos a nivel del `Desempeno` y se pueden reutilizar en otra clase
+ * del mismo curso.
+ */
+export interface IndicadorGuardado {
+  id: string;
+  desempenoId: string;
+  tipo: keyof IndicadoresClase;
+  enunciado: string;
+  createdAt: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function normalizeList<T>(data: unknown): T[] {
@@ -175,6 +189,49 @@ export function useGenerarIndicadoresClase(
         input,
       );
       return data;
+    },
+  });
+}
+
+// ─── Banco reutilizable de indicadores (seguimiento a J6.3) ────────────────────
+
+function indicadoresGuardadosKey(courseId: string, desempenoId: string | null) {
+  return ['courses', courseId, 'desempenos', desempenoId, 'indicadores'] as const;
+}
+
+export function useIndicadoresGuardados(
+  courseId: string,
+  desempenoId: string | null,
+) {
+  return useQuery({
+    queryKey: indicadoresGuardadosKey(courseId, desempenoId),
+    enabled: !!courseId && !!desempenoId,
+    queryFn: async () => {
+      const { data } = await api.get(
+        `/curriculum/courses/${courseId}/desempenos/${desempenoId}/indicadores`,
+      );
+      return normalizeList<IndicadorGuardado>(data);
+    },
+  });
+}
+
+export function useGuardarIndicadores(
+  courseId: string,
+  desempenoId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: IndicadoresClase) => {
+      const { data } = await api.post(
+        `/curriculum/courses/${courseId}/desempenos/${desempenoId}/indicadores`,
+        input,
+      );
+      return normalizeList<IndicadorGuardado>(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: indicadoresGuardadosKey(courseId, desempenoId),
+      });
     },
   });
 }

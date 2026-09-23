@@ -180,9 +180,33 @@ model Desempeno {
   updatedAt        DateTime @updatedAt
   course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   classes          Class[]
+  indicadoresGuardados IndicadorGuardado[]
 
   @@index([courseId])
   @@map("desempenos")
+}
+
+/**
+ * Banco reutilizable de indicadores de desempeño (Etapa J, seguimiento a
+ * J6.3) — a diferencia de `Class.indicadores` (borrador efímero de UNA
+ * clase, sobrescrito en cada generación), estos quedan guardados a nivel
+ * del `Desempeno` para que el docente los reutilice al crear OTRA clase
+ * del mismo curso sin tener que regenerarlos con IA cada vez. Se
+ * deduplican por texto exacto dentro del mismo `desempenoId` + `tipo` en
+ * la capa de servicio (no hay `@@unique` — el texto puede variar en
+ * mayúsculas/espacios de forma legítima).
+ */
+model IndicadorGuardado {
+  id          String    @id @default(cuid())
+  desempenoId String
+  /** "cognitivo" | "procedimental" | "actitudinal" (D3). */
+  tipo        String
+  enunciado   String
+  createdAt   DateTime  @default(now())
+  desempeno   Desempeno @relation(fields: [desempenoId], references: [id], onDelete: Cascade)
+
+  @@index([desempenoId])
+  @@map("indicadores_guardados")
 }
 
 model Period {
