@@ -18,15 +18,26 @@ sesión) — junto con **los 2 PDFs oficiales del MEN** de una sola área:
    agrupado por **ciclo de grados** (no por grado individual, ver abajo).
 
 **Antes de pedirle los PDFs al usuario, revisá
-`packages/curriculum-data/src/info/`** — ahí vive (o puede ya vivir) el
-repositorio local de PDFs oficiales que el usuario fue subiendo al repo,
-uno por área/documento. Si el PDF del área que vas a curar ya está ahí, usá
-ese archivo directo (no hace falta que te lo vuelvan a subir por chat). Si
-el área no tiene todavía su DBA o su EBC en esa carpeta, pedíselos al
-usuario — dos caminos posibles, según el entorno en el que corras: que te
-los suba directo en la conversación (si tu sesión soporta adjuntar
-archivos), o que los agregue a `packages/curriculum-data/src/info/` y
-pushee esa carpeta antes de que arranques.
+`packages/curriculum-data/src/info/`** — ahí viven los PDFs oficiales del
+MEN, ya subidos al repo (2026-09-23). Si el que necesitás ya está ahí, usá
+ese archivo directo, no hace falta que te lo vuelvan a subir por chat:
+
+| Archivo | Cubre |
+|---|---|
+| `DBA_c.naturales-min.pdf` | DBA — Ciencias Naturales |
+| `DBA_C.Sociales.pdf` | DBA — Ciencias Sociales |
+| `DBA_Lenguaje-min.pdf` | DBA — Lenguaje |
+| `DBA_matematicas-min.pdf` | DBA — Matemáticas |
+| `DBA-ingles.pdf` | DBA — Inglés |
+| `EBC_Ciencias-naturales_y_sociales.pdf` | EBC — Ciencias Naturales **y** Ciencias Sociales (documento MEN combinado — cada sección está rotulada por área dentro del PDF, no son dos archivos separados) |
+| `EBC_lenguaje_Matematicas.pdf` | EBC — Lenguaje **y** Matemáticas (mismo caso: documento oficial "Estándares Básicos de Competencias en Lenguaje, Matemáticas, Ciencias y Ciudadanas" del MEN, un solo archivo para varias áreas — navegá a la sección correcta por el título de cada bloque, no asumas que el archivo entero es de una sola área) |
+| `EBC_ingles.pdf` | EBC — Inglés |
+
+Si el área que vas a curar no tiene su DBA o su EBC ahí (todavía no subido),
+pedíselo al usuario — que lo suba directo en la conversación (si tu sesión
+soporta adjuntar archivos) o que lo agregue a
+`packages/curriculum-data/src/info/` y pushee la carpeta antes de que
+arranques.
 
 Una ejecución de este prompt cura **un área completa** (los grados que el
 operador tenga tiempo de cubrir en esa sesión, idealmente todos los que el
