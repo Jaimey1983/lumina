@@ -104,12 +104,12 @@ describe('CurriculumService.generateDesempeno — dataset curado > Gemini > fall
     const service = await createService();
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
-      tema: 'Los sentidos y la percepción del entorno',
+      grado: '6',
+      tema: 'Carga eléctrica por fricción y contacto',
       tipo: 'Cognitivo',
     });
     expect(result.enunciado).toBe(
-      'Comprende que los sentidos le permiten percibir algunas características de los objetos que nos rodean (temperatura, sabor, sonidos, olor, color, texturas y formas).',
+      'Comprende cómo los cuerpos pueden ser cargados eléctricamente asociando esta carga a efectos de atracción y repulsión.',
     );
     // `indicadores` (escala de valoración de referencia, Decreto 1290) ya no
     // sale del dataset curado — `UnidadCurricular` no la trae (se retiró
@@ -117,17 +117,17 @@ describe('CurriculumService.generateDesempeno — dataset curado > Gemini > fall
     // formaban parte de la ruta Curso→Desempeño→Clase). Es la plantilla
     // determinista a partir de `dto.tema`, igual que el fallback sin dataset.
     expect(result.indicadores.bajo).toContain(
-      'Los sentidos y la percepción del entorno',
+      'Carga eléctrica por fricción y contacto',
     );
     expect(result.indicadores.superior).toContain(
-      'Los sentidos y la percepción del entorno',
+      'Carga eléctrica por fricción y contacto',
     );
     // indicadoresDeDesempeno (J4) = evidencias_aprendizaje real del dataset,
-    // 4 enunciados observables DISTINTOS (no niveles del mismo enunciado).
-    expect(result.indicadoresDeDesempeno).toHaveLength(4);
-    expect(new Set(result.indicadoresDeDesempeno).size).toBe(4);
+    // enunciados observables DISTINTOS (no niveles del mismo enunciado).
+    expect(result.indicadoresDeDesempeno).toHaveLength(2);
+    expect(new Set(result.indicadoresDeDesempeno).size).toBe(2);
     expect(result.indicadoresDeDesempeno[0]).toContain(
-      'Describe y caracteriza',
+      'Utiliza procedimientos',
     );
   });
 
@@ -135,8 +135,8 @@ describe('CurriculumService.generateDesempeno — dataset curado > Gemini > fall
     const service = await createService();
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
-      tema: 'Materiales de uso cotidiano',
+      grado: '6',
+      tema: 'Técnicas de separación de mezclas',
       tipo: 'Procedimental',
     });
     expect(result.enunciado).not.toContain(
@@ -222,14 +222,15 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     const { requests } = mockGeminiResponses(['{"unidad_id": 0}']);
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
-      // "la piel" no es substring literal de ningún tema/subtema de la unidad 0
-      // (Los sentidos) — solo un LLM podría asociarlo semánticamente.
-      tema: 'la piel',
+      grado: '6',
+      // "electrizar un globo" no es substring literal de ningún tema/subtema
+      // de la unidad 0 (Carga eléctrica) — solo un LLM podría asociarlo
+      // semánticamente.
+      tema: 'electrizar un globo',
       tipo: 'Cognitivo',
     });
     expect(result.enunciado).toBe(
-      'Comprende que los sentidos le permiten percibir algunas características de los objetos que nos rodean (temperatura, sabor, sonidos, olor, color, texturas y formas).',
+      'Comprende cómo los cuerpos pueden ser cargados eléctricamente asociando esta carga a efectos de atracción y repulsión.',
     );
     // Solo 1 llamada a Gemini (la de clasificación) — no llegó a la de generación.
     expect(requests).toHaveLength(1);
@@ -243,7 +244,7 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     ]);
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
+      grado: '6',
       tema: 'algo sin relación',
       tipo: 'Cognitivo',
     });
@@ -258,7 +259,7 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     ]);
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
+      grado: '6',
       tema: 'un tema que no está en el dataset',
       tipo: 'Cognitivo',
     });
@@ -298,7 +299,7 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     ]);
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
+      grado: '6',
       tema: 'un tema que no está en el dataset',
       tipo: 'Cognitivo',
     });
@@ -317,7 +318,7 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     ]);
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
+      grado: '6',
       tema: 'un tema que no está en el dataset',
       tipo: 'Cognitivo',
     });
@@ -335,7 +336,7 @@ describe('CurriculumService.generateDesempeno — match semántico + generación
     ) as unknown as typeof fetch;
     const result = await service.generateDesempeno({
       area: 'Ciencias Naturales',
-      grado: '1',
+      grado: '6',
       tema: 'un tema que no está en el dataset',
       tipo: 'Cognitivo',
     });

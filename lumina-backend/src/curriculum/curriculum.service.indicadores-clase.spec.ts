@@ -50,7 +50,11 @@ describe('CurriculumService — Entrada 2 (J6.3, camino DBA/EBC + indicadores de
   describe('listUnidadesDbaParaDesempeno', () => {
     it('verifica acceso de lectura y devuelve las unidades del componente con sus evidencias', async () => {
       const { service, prisma, courseAuth } = await createService();
-      prisma.desempeno.findUnique.mockResolvedValue(DESEMPENO_CN);
+      // grado 6 (no el 1 de DESEMPENO_CN) — es el único con dataset real hoy.
+      prisma.desempeno.findUnique.mockResolvedValue({
+        ...DESEMPENO_CN,
+        grado: '6',
+      });
 
       const result = await service.listUnidadesDbaParaDesempeno(
         'curso-1',
@@ -64,8 +68,8 @@ describe('CurriculumService — Entrada 2 (J6.3, camino DBA/EBC + indicadores de
         'user-1',
         'STUDENT',
       );
-      // ciencias-naturales-1: unidades 2 y 3 son "Entorno vivo" (dataset real)
-      expect(result.map((u) => u.unidadId).sort()).toEqual([2, 3]);
+      // ciencias-naturales-6: unidades 3 y 4 son "Entorno vivo" (dataset real)
+      expect(result.map((u) => u.unidadId).sort()).toEqual([3, 4]);
       expect(result[0].evidenciasAprendizaje.length).toBeGreaterThan(0);
     });
 

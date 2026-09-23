@@ -41,10 +41,10 @@ describe('ICFES_COMPETENCIAS', () => {
 });
 
 describe('paridad con el dataset real (ciencias-naturales)', () => {
-  it('los 3 componentes coinciden con los ebc_factor reales de ciencias-naturales-1..5', async () => {
+  it('los componentes coinciden con los ebc_factor reales de ciencias-naturales-6/7', async () => {
     const { loadCurriculum } = await import('./index.js');
     const factoresReales = new Set<string>();
-    for (const grado of ['1', '2', '3', '4', '5'] as const) {
+    for (const grado of ['6', '7'] as const) {
       const data = await loadCurriculum('ciencias-naturales', grado);
       for (const u of data?.unidades ?? []) {
         if (u.ebc_factor) factoresReales.add(u.ebc_factor);

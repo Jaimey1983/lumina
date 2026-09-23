@@ -35,8 +35,8 @@ describe('@lumina/curriculum-data', () => {
     await expect(loadCurriculum('quimica', '1')).resolves.toBeNull();
   });
 
-  it('loadCurriculum lee un archivo real (ciencias-naturales-1, contenido curado)', async () => {
-    const data = await loadCurriculum('ciencias-naturales', '1');
+  it('loadCurriculum lee un archivo real (ciencias-naturales-6, contenido curado)', async () => {
+    const data = await loadCurriculum('ciencias-naturales', '6');
     expect(data).not.toBeNull();
     expect(data?.asignatura).toBeTruthy();
     expect(Array.isArray(data?.unidades)).toBe(true);
@@ -49,7 +49,7 @@ describe('@lumina/curriculum-data', () => {
   });
 
   it('buildCurriculumContext arma un resumen legible a partir del dataset real', async () => {
-    const data = await loadCurriculum('ciencias-naturales', '1');
+    const data = await loadCurriculum('ciencias-naturales', '6');
     expect(data).not.toBeNull();
     const context = buildCurriculumContext(data!);
     expect(context).toContain('UNIDADES CURRICULARES');
@@ -58,25 +58,25 @@ describe('@lumina/curriculum-data', () => {
 
   describe('findMatchingUnit', () => {
     it('encuentra una unidad curada por título exacto', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const unidad = findMatchingUnit(data!, 'Los sentidos y la percepción del entorno');
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      const unidad = findMatchingUnit(data!, 'Carga eléctrica por fricción y contacto');
       expect(unidad?.unidad_id).toBe(0);
     });
 
     it('encuentra una unidad curada por un tema parcial, sin acentos ni mayúsculas', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const unidad = findMatchingUnit(data!, 'materiales de uso cotidiano');
-      expect(unidad?.unidad_id).toBe(1);
-    });
-
-    it('encuentra una unidad curada por un subtema', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const unidad = findMatchingUnit(data!, '¿Qué diferencia a un ser vivo de un objeto inerte?');
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      const unidad = findMatchingUnit(data!, 'el agua como solvente');
       expect(unidad?.unidad_id).toBe(2);
     });
 
+    it('encuentra una unidad curada por un subtema', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      const unidad = findMatchingUnit(data!, '¿Qué ocurre si se daña una organela celular?');
+      expect(unidad?.unidad_id).toBe(3);
+    });
+
     it('devuelve null si el tema no coincide con ninguna unidad', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
+      const data = await loadCurriculum('ciencias-naturales', '6');
       expect(findMatchingUnit(data!, 'Fracciones equivalentes')).toBeNull();
     });
 
@@ -87,15 +87,15 @@ describe('@lumina/curriculum-data', () => {
     });
 
     it('devuelve null con tema vacío', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
+      const data = await loadCurriculum('ciencias-naturales', '6');
       expect(findMatchingUnit(data!, '   ')).toBeNull();
     });
   });
 
   describe('listUnidadesCuradas', () => {
-    it('devuelve las 4 unidades reales de ciencias-naturales-1', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      expect(listUnidadesCuradas(data!)).toHaveLength(4);
+    it('devuelve las 5 unidades reales de ciencias-naturales-6', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      expect(listUnidadesCuradas(data!)).toHaveLength(5);
     });
 
     it('devuelve un array vacío para un área/grado 100% placeholder', async () => {
@@ -106,22 +106,26 @@ describe('@lumina/curriculum-data', () => {
 
   describe('listUnidadesPorComponente (J6.3, Entrada 2)', () => {
     it('filtra las unidades curadas cuyo ebc_factor coincide (insensible a mayúsculas)', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const unidades = listUnidadesPorComponente(data!, 'entorno vivo');
-      expect(unidades.map((u) => u.unidad_id).sort()).toEqual([2, 3]);
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      const unidades = listUnidadesPorComponente(data!, 'entorno fisico');
+      expect(unidades.map((u) => u.unidad_id).sort()).toEqual([0, 1, 2]);
     });
 
-    it('un solo match para un componente con una sola unidad', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
-      const unidades = listUnidadesPorComponente(
-        data!,
-        'Ciencia, Tecnología y Sociedad',
-      );
-      expect(unidades.map((u) => u.unidad_id)).toEqual([1]);
+    it('coincide también con el otro componente del mismo grado', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      const unidades = listUnidadesPorComponente(data!, 'Entorno vivo');
+      expect(unidades.map((u) => u.unidad_id).sort()).toEqual([3, 4]);
     });
 
-    it('devuelve vacío si el componente no tiene ninguna unidad curada', async () => {
-      const data = await loadCurriculum('ciencias-naturales', '1');
+    it('devuelve vacío si el componente existe en el catálogo pero ninguna unidad curada lo usa', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '6');
+      expect(
+        listUnidadesPorComponente(data!, 'Ciencia, Tecnología y Sociedad'),
+      ).toEqual([]);
+    });
+
+    it('devuelve vacío si el componente no existe en el catálogo', async () => {
+      const data = await loadCurriculum('ciencias-naturales', '6');
       expect(listUnidadesPorComponente(data!, 'Componente inexistente')).toEqual([]);
     });
   });
