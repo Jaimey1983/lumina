@@ -16,6 +16,8 @@ import {
   useUnidadesDbaParaDesempeno,
   useSubprocesosEbcParaDesempeno,
   useGenerarIndicadoresClase,
+  useIndicadoresGuardados,
+  useGuardarIndicadores,
   type CaminoCurricular,
   type IndicadoresClase,
 } from '@/hooks/api/use-desempenos';
@@ -125,7 +127,12 @@ export function NewClassCurricularModal({
   const [selectedSubprocesos, setSelectedSubprocesos] = useState<Set<string>>(
     new Set(),
   );
-  const [indicadores, setIndicadores] = useState<IndicadoresClase | null>(null);
+  // Borrador de la última tanda generada con IA — editable antes de
+  // guardarla en el banco reutilizable del desempeño.
+  const [borrador, setBorrador] = useState<IndicadoresClase | null>(null);
+  // Composite key `${tipo}\u0000${enunciado}` → incluido en la selección
+  // final de ESTA clase (guardados reutilizados + recién generados).
+  const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const effectiveDesempenoId =
@@ -144,6 +151,17 @@ export function NewClassCurricularModal({
     courseId,
     effectiveDesempenoId,
   );
+  // Banco reutilizable del desempeño (seguimiento a J6.3) — indicadores ya
+  // guardados por esta u otra clase del mismo curso, disponibles para
+  // reutilizar sin volver a generarlos con IA.
+  const { data: indicadoresGuardados = [] } = useIndicadoresGuardados(
+    courseId,
+    effectiveDesempenoId,
+  );
+  const guardarIndicadores = useGuardarIndicadores(
+    courseId,
+    effectiveDesempenoId,
+  );
 
   const unidadElegida = unidadesDba.find((u) => u.unidadId === selectedUnidadId);
   const evidenciasDisponibles = unidadElegida?.evidenciasAprendizaje ?? [];
@@ -157,24 +175,37 @@ export function NewClassCurricularModal({
       setSelectedUnidadId(null);
       setSelectedEvidencias(new Set());
       setSelectedSubprocesos(new Set());
-      setIndicadores(null);
+      setBorrador(null);
+      setSeleccionados(new Set());
     }
   }, [open]);
 
   // Cambiar de camino o de unidad DBA reinicia la selección de contexto y el
   // borrador de indicadores — ya no corresponden al nuevo contexto elegido.
+  // El banco guardado del desempeño NO se pierde (vive en el servidor, es
+  // reutilizable entre clases), solo la selección puntual de esta clase.
   function handleCaminoChange(next: CaminoCurricular) {
     setCamino(next);
     setSelectedUnidadId(null);
     setSelectedEvidencias(new Set());
     setSelectedSubprocesos(new Set());
-    setIndicadores(null);
+    setBorrador(null);
+    setSeleccionados(new Set());
   }
 
   function handleUnidadChange(unidadId: number) {
     setSelectedUnidadId(unidadId);
     setSelectedEvidencias(new Set());
-    setIndicadores(null);
+    setBorrador(null);
+    setSeleccionados(new Set());
+  }
+
+  function indicadorKey(tipo: keyof IndicadoresClase, enunciado: string) {
+    return `${tipo}\u0000${enunciado}`;
+  }
+
+  function toggleSeleccionado(tipo: keyof IndicadoresClase, enunciado: string) {
+    setSeleccionados((prev) => toggleInSet(prev, indicadorKey(tipo, enunciado)));
   }
 
   const contextoSeleccionado =
@@ -202,14 +233,14 @@ export function NewClassCurricularModal({
             }
           : { ebcSeleccionado: { subprocesosElegidos: [...selectedSubprocesos] } }),
       });
-      setIndicadores(result);
+      setBorrador(result);
     } catch (err) {
       toast.error(apiErrorMessage(err, 'No se pudieron generar los indicadores'));
     }
   }
 
-  function updateIndicador(tipo: keyof IndicadoresClase, index: number, value: string) {
-    setIndicadores((prev) => {
+  function updateBorrador(tipo: keyof IndicadoresClase, index: number, value: string) {
+    setBorrador((prev) => {
       if (!prev) return prev;
       const siguiente = [...prev[tipo]];
       siguiente[index] = value;
@@ -217,9 +248,49 @@ export function NewClassCurricularModal({
     });
   }
 
+  // El borrador se identifica por posición (el texto es editable); al
+  // marcarlo, la clave real usada en `seleccionados` es la del texto vigente
+  // en ese momento — así queda unificado con los indicadores del banco
+  // guardado sin necesitar dos mecanismos de selección distintos.
+  function toggleBorrador(tipo: keyof IndicadoresClase, index: number) {
+    const enunciado = borrador?.[tipo][index]?.trim();
+    if (!enunciado) return;
+    toggleSeleccionado(tipo, enunciado);
+  }
+
+  // Grupos disponibles para elegir: el banco guardado del desempeño + el
+  // borrador recién generado (si lo hay), sin repetir texto dentro del
+  // mismo tipo.
+  const gruposDisponibles = TIPOS_INDICADOR.map(({ key, label }) => {
+    const deGuardados = indicadoresGuardados
+      .filter((i) => i.tipo === key)
+      .map((i) => ({ enunciado: i.enunciado, editable: false, indexBorrador: -1 }));
+    const textosGuardados = new Set(deGuardados.map((i) => i.enunciado));
+    const deBorrador = (borrador?.[key] ?? [])
+      .map((enunciado, indexBorrador) => ({ enunciado, editable: true, indexBorrador }))
+      .filter((i) => i.enunciado.trim().length > 0 && !textosGuardados.has(i.enunciado));
+    return { key, label, items: [...deGuardados, ...deBorrador] };
+  });
+  const hayIndicadoresParaElegir = gruposDisponibles.some((g) => g.items.length > 0);
+
   const requiresIndicadores = !!effectiveDesempenoId;
   const canSubmit =
-    title.trim().length > 0 && (!requiresIndicadores || !!indicadores);
+    title.trim().length > 0 && (!requiresIndicadores || seleccionados.size > 0);
+
+  /** Agrupa por tipo los indicadores marcados en `seleccionados`. */
+  function indicadoresFinales(): IndicadoresClase {
+    const resultado: IndicadoresClase = {
+      cognitivo: [],
+      procedimental: [],
+      actitudinal: [],
+    };
+    for (const grupo of gruposDisponibles) {
+      resultado[grupo.key] = grupo.items
+        .filter((i) => seleccionados.has(indicadorKey(grupo.key, i.enunciado)))
+        .map((i) => i.enunciado);
+    }
+    return resultado;
+  }
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -232,7 +303,17 @@ export function NewClassCurricularModal({
       if (status === 'published') {
         await publishClass.mutateAsync(created.id);
       }
-      if (effectiveDesempenoId && camino && indicadores) {
+      if (effectiveDesempenoId && camino && seleccionados.size > 0) {
+        const indicadoresElegidos = indicadoresFinales();
+        // Persistir en el banco reutilizable (dedupe por texto en el
+        // servicio) antes de asociarlos a la clase — así quedan disponibles
+        // para elegir de nuevo al crear otra clase del mismo curso.
+        try {
+          await guardarIndicadores.mutateAsync(indicadoresElegidos);
+        } catch {
+          // No bloquea la creación de la clase si falla el guardado del
+          // banco — los indicadores igual quedan asociados a esta clase.
+        }
         const payload: UpdateClassInput = {
           desempenoId: effectiveDesempenoId,
           caminoCurricular: camino,
@@ -246,7 +327,16 @@ export function NewClassCurricularModal({
             : {
                 ebcSeleccionado: { subprocesosElegidos: [...selectedSubprocesos] },
               }),
-          indicadores,
+          indicadores: indicadoresElegidos,
+          contextoClase: {
+            indicadoresAbordados: [
+              ...indicadoresElegidos.cognitivo,
+              ...indicadoresElegidos.procedimental,
+              ...indicadoresElegidos.actitudinal,
+            ],
+            temas: [],
+            subtemas: [],
+          },
         };
         await api.patch(`/classes/${created.id}`, payload);
       }
@@ -443,27 +533,71 @@ export function NewClassCurricularModal({
                 </Button>
               )}
 
-              {indicadores && (
+              {hayIndicadoresParaElegir && (
                 <div className="space-y-3">
-                  {TIPOS_INDICADOR.map(({ key, label }) => (
-                    <div key={key} className="space-y-1.5">
-                      <p className="text-[0.8125rem] font-medium leading-none">
-                        {label}
-                      </p>
-                      <div className="space-y-2">
-                        {indicadores[key].map((ind, i) => (
-                          <Textarea
-                            key={i}
-                            rows={2}
-                            variant="sm"
-                            value={ind}
-                            onChange={(e) => updateIndicador(key, i, e.target.value)}
-                            className="resize-none"
-                          />
-                        ))}
+                  <p className="text-[0.8125rem] font-medium leading-none">
+                    Indicadores de esta clase
+                  </p>
+                  <p className="text-[10px] leading-snug text-muted-foreground">
+                    Marcá los que va a abordar esta clase puntual — solo esos
+                    van a aparecer en el panel de IA del editor. Los que
+                    dejes sin marcar quedan igual guardados en el banco del
+                    desempeño, listos para otra clase.
+                  </p>
+                  {gruposDisponibles.map(({ key, label, items }) => {
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={key} className="space-y-1.5">
+                        <p className="text-[0.8125rem] font-medium leading-none">
+                          {label}
+                        </p>
+                        <div className="space-y-1.5">
+                          {items.map((item) =>
+                            item.editable ? (
+                              <div key={`borrador-${item.indexBorrador}`} className="flex items-start gap-2">
+                                <Checkbox
+                                  className="mt-2"
+                                  checked={seleccionados.has(indicadorKey(key, item.enunciado))}
+                                  onCheckedChange={() => toggleBorrador(key, item.indexBorrador)}
+                                />
+                                <Textarea
+                                  rows={2}
+                                  variant="sm"
+                                  value={item.enunciado}
+                                  onChange={(e) => {
+                                    const anterior = item.enunciado;
+                                    updateBorrador(key, item.indexBorrador, e.target.value);
+                                    // Si el texto viejo estaba marcado, mover la marca al texto nuevo.
+                                    setSeleccionados((prev) => {
+                                      const k = indicadorKey(key, anterior);
+                                      if (!prev.has(k)) return prev;
+                                      const next = new Set(prev);
+                                      next.delete(k);
+                                      next.add(indicadorKey(key, e.target.value));
+                                      return next;
+                                    });
+                                  }}
+                                  className="flex-1 resize-none"
+                                />
+                              </div>
+                            ) : (
+                              <label
+                                key={item.enunciado}
+                                className="flex items-start gap-2 text-sm"
+                              >
+                                <Checkbox
+                                  className="mt-0.5"
+                                  checked={seleccionados.has(indicadorKey(key, item.enunciado))}
+                                  onCheckedChange={() => toggleSeleccionado(key, item.enunciado)}
+                                />
+                                <span>{item.enunciado}</span>
+                              </label>
+                            ),
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

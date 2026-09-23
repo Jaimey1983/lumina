@@ -1107,4 +1107,77 @@ Redacta los indicadores de esta clase puntual.`;
       contextoItems,
     });
   }
+
+  /**
+   * `GET /curriculum/courses/:courseId/desempenos/:desempenoId/indicadores`
+   * — banco reutilizable de indicadores ya guardados para este `Desempeno`
+   * (seguimiento a J6.3). A diferencia de `generateIndicadoresClase` (que no
+   * persiste nada), estos sobreviven entre clases del mismo curso.
+   */
+  async listIndicadoresGuardados(
+    courseId: string,
+    desempenoId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    await this.courseAuth.verifyCourseReadAccess(courseId, userId, userRole);
+    await this.loadDesempenoOrThrow(courseId, desempenoId);
+    return this.prisma.indicadorGuardado.findMany({
+      where: { desempenoId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * `POST /curriculum/courses/:courseId/desempenos/:desempenoId/indicadores`
+   * — guarda un lote de indicadores en el banco del `Desempeno`, deduplicando
+   * por texto exacto dentro de cada tipo (el docente puede mandar el lote
+   * completo repetidas veces sin generar filas duplicadas). Devuelve el
+   * banco completo ya actualizado.
+   */
+  async guardarIndicadores(
+    courseId: string,
+    desempenoId: string,
+    dto: IndicadoresClaseResult,
+    userId: string,
+    userRole: string,
+  ) {
+    await this.courseAuth.assertStaffCanManageCourse(
+      courseId,
+      userId,
+      userRole,
+      'classEditor',
+    );
+    await this.loadDesempenoOrThrow(courseId, desempenoId);
+
+    const existentes = await this.prisma.indicadorGuardado.findMany({
+      where: { desempenoId },
+      select: { tipo: true, enunciado: true },
+    });
+    const yaExiste = new Set(
+      existentes.map((e) => `${e.tipo}\u0000${e.enunciado}`),
+    );
+
+    const tipos: Array<keyof IndicadoresClaseResult> = [
+      'cognitivo',
+      'procedimental',
+      'actitudinal',
+    ];
+    const nuevos = tipos.flatMap((tipo) =>
+      (dto[tipo] ?? [])
+        .map((enunciado) => enunciado.trim())
+        .filter((enunciado) => enunciado.length > 0)
+        .filter((enunciado) => !yaExiste.has(`${tipo}\u0000${enunciado}`))
+        .map((enunciado) => ({ desempenoId, tipo, enunciado })),
+    );
+
+    if (nuevos.length > 0) {
+      await this.prisma.indicadorGuardado.createMany({ data: nuevos });
+    }
+
+    return this.prisma.indicadorGuardado.findMany({
+      where: { desempenoId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
 }

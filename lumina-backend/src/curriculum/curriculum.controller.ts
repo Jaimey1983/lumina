@@ -16,6 +16,7 @@ import { CurriculumService } from './curriculum.service';
 import { GenerateDesempenoDto } from './dto/generate-desempeno.dto';
 import { CreateDesempenoDto } from './dto/create-desempeno.dto';
 import { GenerateIndicadoresClaseDto } from './dto/generate-indicadores-clase.dto';
+import { SaveIndicadoresGuardadosDto } from './dto/save-indicadores-guardados.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('curriculum')
@@ -128,6 +129,46 @@ export class CurriculumController {
     @CurrentUser() user: JwtAuthUser,
   ) {
     return this.curriculumService.generateIndicadoresClase(
+      courseId,
+      desempenoId,
+      dto,
+      user.id,
+      user.role,
+    );
+  }
+
+  /**
+   * GET /curriculum/courses/:courseId/desempenos/:desempenoId/indicadores
+   * — banco de indicadores ya guardados para este desempeño, reutilizables
+   * al crear otra clase del mismo curso (seguimiento a J6.3).
+   */
+  @Get('courses/:courseId/desempenos/:desempenoId/indicadores')
+  listIndicadoresGuardados(
+    @Param('courseId') courseId: string,
+    @Param('desempenoId') desempenoId: string,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.curriculumService.listIndicadoresGuardados(
+      courseId,
+      desempenoId,
+      user.id,
+      user.role,
+    );
+  }
+
+  /**
+   * POST /curriculum/courses/:courseId/desempenos/:desempenoId/indicadores
+   * — guarda un lote de indicadores en el banco reutilizable del desempeño.
+   */
+  @Post('courses/:courseId/desempenos/:desempenoId/indicadores')
+  @Roles('TEACHER', 'ADMIN', 'SUPERADMIN')
+  guardarIndicadores(
+    @Param('courseId') courseId: string,
+    @Param('desempenoId') desempenoId: string,
+    @Body() dto: SaveIndicadoresGuardadosDto,
+    @CurrentUser() user: JwtAuthUser,
+  ) {
+    return this.curriculumService.guardarIndicadores(
       courseId,
       desempenoId,
       dto,

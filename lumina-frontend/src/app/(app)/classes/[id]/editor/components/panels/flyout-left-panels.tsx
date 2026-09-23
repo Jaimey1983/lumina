@@ -191,6 +191,10 @@ export type SaveContextoClaseInput = NonNullable<
 >;
 
 /** Lista de chips editable (agregar/quitar) con sugerencias clicables. */
+/** Tope de chips de sugerencia visibles antes de "mostrar más" — una unidad
+ * curada puede traer muchos temas/subtemas y saturar el panel angosto. */
+const MAX_SUGERENCIAS_VISIBLES = 5;
+
 function TagListEditor({
   label,
   values,
@@ -205,7 +209,12 @@ function TagListEditor({
   onRemove: (v: string) => void;
 }) {
   const [draft, setDraft] = useState('');
+  const [mostrarTodas, setMostrarTodas] = useState(false);
   const pendingSuggestions = suggestions.filter((s) => !values.includes(s));
+  const suggestionsVisibles = mostrarTodas
+    ? pendingSuggestions
+    : pendingSuggestions.slice(0, MAX_SUGERENCIAS_VISIBLES);
+  const restantes = pendingSuggestions.length - suggestionsVisibles.length;
 
   const commit = () => {
     const v = draft.trim();
@@ -237,9 +246,9 @@ function TagListEditor({
           ))}
         </div>
       )}
-      {pendingSuggestions.length > 0 && (
+      {suggestionsVisibles.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {pendingSuggestions.map((s) => (
+          {suggestionsVisibles.map((s) => (
             <button
               key={s}
               type="button"
@@ -249,6 +258,15 @@ function TagListEditor({
               + {s}
             </button>
           ))}
+          {restantes > 0 && (
+            <button
+              type="button"
+              onClick={() => setMostrarTodas(true)}
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium text-primary hover:underline"
+            >
+              +{restantes} más…
+            </button>
+          )}
         </div>
       )}
       <div className="flex gap-1.5">
@@ -1233,13 +1251,21 @@ function IaPanel({
 
   // ── Generar desde tema ────────────────────────────────────────────────────
   const handleGenerarClase = () => {
-    if (!topic.trim()) return;
+    // Si el docente ya eligió temas/subtemas arriba y no escribió nada acá,
+    // no lo obligamos a repetirlo — se deriva de esa selección (evita el
+    // "¿qué pongo acá?" cuando ya hay contexto curricular real).
+    const topicBase =
+      topic.trim() ||
+      (tieneContextoCurricularJ6
+        ? [...temasClase, ...subtemasClase].join(', ')
+        : '');
+    if (!topicBase) return;
     setConversationHistory([]);
     // Inyectar plantilla pedagógica en el topic cuando no es libre
     const effectiveTopic =
       plantilla !== 'libre'
-        ? `${topic.trim()}\n\nEstructura pedagógica requerida: ${plantillaConfig.estructura}`
-        : topic.trim();
+        ? `${topicBase}\n\nEstructura pedagógica requerida: ${plantillaConfig.estructura}`
+        : topicBase;
     generateClase(
       {
         topic: effectiveTopic,
@@ -1613,10 +1639,25 @@ function IaPanel({
             )}
             {/* Tema */}
             <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Tema de la clase</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-[11px] text-muted-foreground">Tema de la clase</Label>
+                {tieneContextoCurricularJ6 && temasClase.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTopic(temasClase.join(', '))}
+                    className="text-[10px] font-medium text-primary hover:underline"
+                  >
+                    Usar temas seleccionados
+                  </button>
+                )}
+              </div>
               <Input
                 placeholder={
-                  desempenoEnunciado ? 'O escribe un tema personalizado…' : 'Ej: La célula eucariota, Grado 7'
+                  tieneContextoCurricularJ6
+                    ? 'Ej: La célula eucariota — o dejá el campo y usamos los temas de arriba'
+                    : desempenoEnunciado
+                      ? 'O escribe un tema personalizado…'
+                      : 'Ej: La célula eucariota, Grado 7'
                 }
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
@@ -1656,7 +1697,11 @@ function IaPanel({
               type="button"
               size="sm"
               className="w-full gap-2"
-              disabled={!topic.trim() || pendingClase}
+              disabled={
+                (!topic.trim() &&
+                  !(tieneContextoCurricularJ6 && (temasClase.length > 0 || subtemasClase.length > 0))) ||
+                pendingClase
+              }
               onClick={handleGenerarClase}
             >
               <Sparkles className="size-3.5" />
