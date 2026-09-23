@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Bricolage_Grotesque } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@lumina/ui/sonner';
@@ -9,19 +8,16 @@ import { ReactNode, Suspense } from 'react';
 
 import '@/styles/globals.css';
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-plus-jakarta',
-  display: 'swap',
-});
-
-const bricolage = Bricolage_Grotesque({
-  subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-display',
-  display: 'swap',
-});
+// Autohospedadas vía @fontsource (sin egress a fonts.googleapis.com en build,
+// a diferencia de next/font/google) — pesos usados en el resto de la app.
+import '@fontsource/plus-jakarta-sans/400.css';
+import '@fontsource/plus-jakarta-sans/500.css';
+import '@fontsource/plus-jakarta-sans/600.css';
+import '@fontsource/plus-jakarta-sans/700.css';
+import '@fontsource/plus-jakarta-sans/800.css';
+import '@fontsource/bricolage-grotesque/600.css';
+import '@fontsource/bricolage-grotesque/700.css';
+import '@fontsource/bricolage-grotesque/800.css';
 
 export const metadata: Metadata = {
   title: {
@@ -33,11 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="es"
-      className={cn('h-full', plusJakarta.variable, bricolage.variable)}
-      suppressHydrationWarning
-    >
+    <html lang="es" className={cn('h-full')} suppressHydrationWarning>
       <body
         className={cn(
           'antialiased flex h-full min-w-0 flex-col text-base text-foreground bg-background',

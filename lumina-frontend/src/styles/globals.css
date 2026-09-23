@@ -16,6 +16,11 @@
 
 /** Colors - https://tailwindcss.com/docs/colors **/
 :root {
+  /* Autohospedadas vía @fontsource (ver src/app/layout.tsx) — nombres de
+     familia declarados por los .css de @fontsource/plus-jakarta-sans y
+     @fontsource/bricolage-grotesque. */
+  --font-plus-jakarta: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Bricolage Grotesque', sans-serif;
   --background: var(--color-white);
   --foreground: var(--color-zinc-950);
   --card: var(--color-white);

@@ -375,7 +375,7 @@ export function ScratchCardPropiedades({
               updateConfig({ permitirBotonRevelar: e.target.checked })
             }
           />
-          Mostrar botón "Revelar todo"
+          Mostrar botón &quot;Revelar todo&quot;
         </label>
         <label
           style={{
@@ -394,7 +394,7 @@ export function ScratchCardPropiedades({
               updateConfig({ permitirReinicio: e.target.checked })
             }
           />
-          Mostrar botón "Rascar de nuevo"
+          Mostrar botón &quot;Rascar de nuevo&quot;
         </label>
       </div>
     </div>

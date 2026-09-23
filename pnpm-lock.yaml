@@ -224,6 +224,12 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.4)
+      '@fontsource/bricolage-grotesque':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/plus-jakarta-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@headless-tree/core':
         specifier: ^1.6.3
         version: 1.7.0
@@ -1250,6 +1256,12 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@fontsource/bricolage-grotesque@5.3.0':
+    resolution: {integrity: sha512-MdOVb/5in11IfN/IQJOExMuu6AroCIQbirl0yX7NUvKk+h0HYIKfGaVAXRS/gCPil4aFxWhjZnOw28tUwv7tFw==}
+
+  '@fontsource/plus-jakarta-sans@5.3.0':
+    resolution: {integrity: sha512-9WRw3G74Ve4cyPApAZSXLPY5DiLOZXDn7Q7dIBjFBpA0Pj56ljDItEdy2UUajjJxRuTg2HkMLO5C3K2nAQORWg==}
 
   '@hapi/address@5.1.1':
     resolution: {integrity: sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA==}
@@ -8654,6 +8666,10 @@ snapshots:
       react-dom: 19.2.4(react@19.2.4)
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@fontsource/bricolage-grotesque@5.3.0': {}
+
+  '@fontsource/plus-jakarta-sans@5.3.0': {}
 
   '@hapi/address@5.1.1':
     dependencies:
