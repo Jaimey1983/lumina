@@ -110,6 +110,58 @@ type CatalogoEstandares = Partial<
  */
 export const EBC_ESTANDARES: CatalogoEstandares = {
   'ciencias-naturales': {
+    '1-3': {
+      entorno_vivo: {
+        estandar:
+          'Me identifico como un ser vivo que comparte algunas características con otros seres vivos y que se relaciona con ellos en un entorno en el que todos nos desarrollamos.',
+        subprocesos: [
+          'Establezco relaciones entre las funciones de los cinco sentidos.',
+          'Describo mi cuerpo y el de mis compañeros y compañeras.',
+          'Describo características de seres vivos y objetos inertes, establezco semejanzas y diferencias entre ellos y los clasifico.',
+          'Propongo y verifico necesidades de los seres vivos.',
+          'Observo y describo cambios en mi desarrollo y en el de otros seres vivos.',
+          'Describo y verifico ciclos de vida de seres vivos.',
+          'Reconozco que los hijos y las hijas se parecen a sus padres y describo algunas características que se heredan.',
+          'Identifico y describo la flora, la fauna, el agua y el suelo de mi entorno.',
+          'Explico adaptaciones de los seres vivos al ambiente.',
+          'Comparo fósiles y seres vivos; identifico características que se mantienen en el tiempo.',
+          'Identifico patrones comunes a los seres vivos.',
+        ],
+      },
+      entorno_fisico: {
+        estandar:
+          'Reconozco en el entorno fenómenos físicos que me afectan y desarrollo habilidades para aproximarme a ellos.',
+        subprocesos: [
+          'Describo y clasifico objetos según características que percibo con los cinco sentidos.',
+          'Propongo y verifico diversas formas de medir sólidos y líquidos.',
+          'Establezco relaciones entre magnitudes y unidades de medida apropiadas.',
+          'Identifico diferentes estados físicos de la materia (el agua, por ejemplo) y verifico causas para cambios de estado.',
+          'Identifico y comparo fuentes de luz, calor y sonido y su efecto sobre diferentes seres vivos.',
+          'Identifico situaciones en las que ocurre transferencia de energía térmica y realizo experiencias para verificar el fenómeno.',
+          'Clasifico luces según color, intensidad y fuente.',
+          'Clasifico sonidos según tono, volumen y fuente.',
+          'Propongo experiencias para comprobar la propagación de la luz y del sonido.',
+          'Identifico tipos de movimiento en seres vivos y objetos, y las fuerzas que los producen.',
+          'Verifico las fuerzas a distancia generadas por imanes sobre diferentes objetos.',
+          'Construyo circuitos eléctricos simples con pilas.',
+          'Registro el movimiento del Sol, la Luna y las estrellas en el cielo, en un periodo de tiempo.',
+        ],
+      },
+      cts: {
+        estandar:
+          'Valoro la utilidad de algunos objetos y técnicas desarrollados por el ser humano y reconozco que somos agentes de cambio en el entorno y en la sociedad.',
+        subprocesos: [
+          'Clasifico y comparo objetos según sus usos.',
+          'Diferencio objetos naturales de objetos creados por el ser humano.',
+          'Identifico objetos que emitan luz o sonido.',
+          'Identifico circuitos eléctricos en mi entorno.',
+          'Analizo la utilidad de algunos aparatos eléctricos a mi alrededor.',
+          'Identifico aparatos que utilizamos hoy y que no se utilizaban en épocas pasadas.',
+          'Asocio el clima con la forma de vida de diferentes comunidades.',
+          'Identifico necesidades de cuidado de mi cuerpo y el de otras personas.',
+        ],
+      },
+    },
     '6-7': {
       entorno_fisico: {
         estandar:

@@ -108,7 +108,12 @@ describe('CurriculumService — Entrada 2 (J6.3, camino DBA/EBC + indicadores de
 
     it('devuelve vacío si el ciclo de ese grado todavía no está curado en el catálogo', async () => {
       const { service, prisma } = await createService();
-      prisma.desempeno.findUnique.mockResolvedValue(DESEMPENO_CN); // grado 1, ciclo 1-3
+      // ciencias-sociales todavía no tiene ningún ciclo curado en EBC_ESTANDARES.
+      prisma.desempeno.findUnique.mockResolvedValue({
+        ...DESEMPENO_CN,
+        area: 'ciencias-sociales',
+        componenteEbc: 'historia_culturas',
+      });
 
       const result = await service.listSubprocesosEbcParaDesempeno(
         'curso-1',

@@ -2,7 +2,228 @@
   "grado": "3",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.1",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 1°-3°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Propagación de la luz en distintos materiales",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende la forma en que se propaga la luz a través de diferentes materiales (opacos, transparentes como el aire, translúcidos como el papel y reflectivos como el espejo).",
+      "evidencias_aprendizaje": [
+        "Compara, en un experimento, distintos materiales de acuerdo con la cantidad de luz que dejan pasar (opacos, transparentes, translúcidos y reflectivos) y selecciona el tipo de material que elegiría para un cierto fin (por ejemplo, un frasco que no permita ver su contenido).",
+        "Selecciona la fuente apropiada para iluminar completamente una determinada superficie teniendo en cuenta que la luz se propaga en todas las direcciones y viaja en línea recta.",
+        "Describe las precauciones que debe tener presentes frente a la exposición de los ojos a rayos de luz directa (rayos láser, luz del sol) que pueden causarle daño."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Propagación de la luz a través de materiales",
+        "Materiales opacos, transparentes, translúcidos y reflectivos"
+      ],
+      "subtemas": [
+        "Comparar materiales según la cantidad de luz que dejan pasar",
+        "Elegir el material adecuado según su transparencia u opacidad",
+        "La luz se propaga en línea recta y en todas direcciones",
+        "Precauciones frente a la exposición a rayos de luz directa"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar materiales en opacos, transparentes, translúcidos o reflectivos",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre la propagación de la luz",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre precauciones frente a la exposición a la luz directa",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Formación de sombras",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende la forma en que se produce la sombra y la relación de su tamaño con las distancias entre la fuente de luz, el objeto interpuesto y el lugar donde se produce la sombra.",
+      "evidencias_aprendizaje": [
+        "Predice dónde se producirá la sombra de acuerdo con la posición de la fuente de luz y del objeto.",
+        "Desplaza la fuente de luz y el objeto para aumentar o reducir el tamaño de la sombra que se produce según las necesidades.",
+        "Explica los datos obtenidos mediante observaciones y mediciones, que registra en tablas y otros formatos, de lo que sucede con el tamaño de la sombra de un objeto variando la distancia a la fuente de luz."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Formación de la sombra",
+        "Relación entre distancia y tamaño de la sombra"
+      ],
+      "subtemas": [
+        "Cómo la posición de la fuente de luz y del objeto determina la sombra",
+        "Cómo cambiar la distancia aumenta o reduce el tamaño de la sombra",
+        "Registro de datos en tablas sobre el tamaño de la sombra"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Predecir por escrito dónde se producirá la sombra según la posición de la fuente de luz",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Relacionar la distancia a la fuente de luz con el tamaño de la sombra resultante",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre formación de sombras",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Naturaleza y propagación del sonido",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende la naturaleza (fenómeno de la vibración) y las características del sonido (altura, timbre, intensidad) y que este se propaga en distintos medios (sólidos, líquidos, gaseosos).",
+      "evidencias_aprendizaje": [
+        "Demuestra que el sonido es una vibración mediante el uso de fuentes para producirlo: cuerdas (guitarra), parches (tambor) y tubos de aire (flauta), identificando en cada una el elemento que vibra.",
+        "Describe y compara sonidos según su altura (grave o agudo) y su intensidad (fuerte o débil).",
+        "Compara y describe cómo se atenúa (reduce su intensidad) el sonido al pasar por diferentes medios (agua, aire, sólidos) y cómo influye la distancia en este proceso.",
+        "Clasifica materiales de acuerdo con la manera como atenúan un sonido."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "El sonido como vibración",
+        "Propagación del sonido en distintos medios"
+      ],
+      "subtemas": [
+        "Fuentes de sonido (cuerdas, parches, tubos de aire) y el elemento que vibra",
+        "Altura (grave o agudo) e intensidad (fuerte o débil) del sonido",
+        "Atenuación del sonido al pasar por distintos medios (agua, aire, sólidos)",
+        "Materiales que atenúan más o menos el sonido"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar sonidos según su altura (grave o agudo) e intensidad (fuerte o débil)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Emparejar cada instrumento (guitarra, tambor, flauta) con el elemento que vibra para producir sonido",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Quiz sobre la propagación del sonido en distintos medios",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Temperatura y cambios de estado del agua",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende la influencia de la variación de la temperatura en los cambios de estado de la materia, considerando como ejemplo el caso del agua.",
+      "evidencias_aprendizaje": [
+        "Interpreta los resultados de experimentos en los que se analizan los cambios de estado del agua al predecir lo qué ocurrirá con el estado de una sustancia dada una variación de la temperatura.",
+        "Explica fenómenos cotidianos en los que se pone de manifiesto el cambio de estado del agua a partir de las variaciones de temperatura (la evaporación del agua en el paso de líquido a gas y los vidrios empañados en el paso de gas a líquido, entre otros).",
+        "Utiliza instrumentos convencionales (balanza, probeta, termómetro) para hacer mediciones de masa, volumen y temperatura del agua que le permitan diseñar e interpretar experiencias sobre los cambios de estado del agua en función de las variaciones de temperatura."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Influencia de la temperatura en los cambios de estado del agua",
+        "Fenómenos cotidianos de cambio de estado"
+      ],
+      "subtemas": [
+        "Predicción del estado del agua ante una variación de temperatura",
+        "Evaporación (líquido a gas) y condensación (gas a líquido, vidrios empañados)",
+        "Uso de instrumentos convencionales (balanza, probeta, termómetro) para medir masa, volumen y temperatura"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar los cambios de estado del agua según aumenta la temperatura",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre fenómenos cotidianos de cambio de estado del agua",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre instrumentos para medir masa, volumen y temperatura",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Factores bióticos y abióticos de un ecosistema",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Explica la influencia de los factores abióticos (luz, temperatura, suelo y aire) en el desarrollo de los factores bióticos (fauna y flora) de un ecosistema.",
+      "evidencias_aprendizaje": [
+        "Diferencia los factores bióticos (plantas y animales) de los abióticos (luz, agua, temperatura, suelo y aire) de un ecosistema propio de su región.",
+        "Interpreta el ecosistema de su región describiendo relaciones entre factores bióticos (plantas y animales) y abióticos (luz, agua, temperatura, suelo y aire).",
+        "Predice los efectos que ocurren en los organismos al alterarse un factor abiótico en un ecosistema."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Factores bióticos y abióticos de un ecosistema",
+        "Influencia de los factores abióticos sobre los seres vivos"
+      ],
+      "subtemas": [
+        "Diferencia entre factores bióticos (plantas y animales) y abióticos (luz, agua, temperatura, suelo, aire)",
+        "Relaciones entre factores bióticos y abióticos de un ecosistema de su región",
+        "Efectos de alterar un factor abiótico en un ecosistema"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar elementos de un ecosistema en factores bióticos o abióticos",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Predecir por escrito qué le ocurriría a los seres vivos si se altera un factor abiótico",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Relacionar cada factor abiótico con su efecto sobre los seres vivos de un ecosistema",
+          "tipo": "Relacionar columnas"
+        }
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Relaciones entre los seres vivos de un ecosistema",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 6",
+      "dba_enunciado": "Comprende las relaciones de los seres vivos con otros organismos de su entorno (intra e interespecíficas) y las explica como esenciales para su supervivencia en un ambiente determinado.",
+      "evidencias_aprendizaje": [
+        "Interpreta las relaciones de competencia, territorialidad, gregarismo, depredación, parasitismo, comensalismo, amensalismo y mutualismo, como esenciales para la supervivencia de los organismos en un ecosistema, dando ejemplos.",
+        "Observa y describe características que le permiten a algunos organismos camuflarse con el entorno, para explicar cómo mejoran su posibilidad de supervivencia.",
+        "Predice qué ocurrirá con otros organismos del mismo ecosistema, dada una variación en sus condiciones ambientales o en una población de organismos.",
+        "Describe y registra las relaciones intra e interespecíficas que le permiten sobrevivir como ser humano en un ecosistema."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Relaciones intraespecíficas e interespecíficas",
+        "Supervivencia de los organismos en un ecosistema"
+      ],
+      "subtemas": [
+        "Competencia, territorialidad, gregarismo, depredación, parasitismo, comensalismo, amensalismo y mutualismo",
+        "Camuflaje como estrategia de supervivencia",
+        "Efectos de una variación ambiental sobre otros organismos del ecosistema"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Emparejar cada tipo de relación (depredación, parasitismo, mutualismo...) con su ejemplo",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Clasificar ejemplos de organismos según el tipo de relación que establecen entre sí",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre relaciones intra e interespecíficas",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }
