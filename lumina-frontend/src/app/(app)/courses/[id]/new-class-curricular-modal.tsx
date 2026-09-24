@@ -305,14 +305,18 @@ export function NewClassCurricularModal({
       }
       if (effectiveDesempenoId && camino && seleccionados.size > 0) {
         const indicadoresElegidos = indicadoresFinales();
-        // Persistir en el banco reutilizable (dedupe por texto en el
-        // servicio) antes de asociarlos a la clase — así quedan disponibles
-        // para elegir de nuevo al crear otra clase del mismo curso.
-        try {
-          await guardarIndicadores.mutateAsync(indicadoresElegidos);
-        } catch {
-          // No bloquea la creación de la clase si falla el guardado del
-          // banco — los indicadores igual quedan asociados a esta clase.
+        // Guardar en el banco reutilizable TODO lo que la IA generó en este
+        // intento (no solo lo marcado para esta clase) — los indicadores no
+        // usados acá son justo los que hacen falta para otras clases del
+        // mismo desempeño. Los que ya venían del banco (`indicadoresGuardados`)
+        // no hace falta reenviarlos, el servicio deduplica por texto igual.
+        if (borrador) {
+          try {
+            await guardarIndicadores.mutateAsync(borrador);
+          } catch {
+            // No bloquea la creación de la clase si falla el guardado del
+            // banco — los indicadores igual quedan asociados a esta clase.
+          }
         }
         const payload: UpdateClassInput = {
           desempenoId: effectiveDesempenoId,
