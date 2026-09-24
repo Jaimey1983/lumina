@@ -96,6 +96,22 @@ function InfoTab({ courseId }: { courseId: string }) {
     { label: 'Nombre', value: course.name },
     { label: 'Código', value: <span className="font-mono text-sm">{course.code}</span> },
     {
+      label: 'Área',
+      value: course.area ? (
+        AREAS_LABELS[course.area as AreaCurricular]
+      ) : (
+        <span className="text-muted-foreground">Sin especificar</span>
+      ),
+    },
+    {
+      label: 'Grado',
+      value: course.grado ? (
+        `Grado ${course.grado}`
+      ) : (
+        <span className="text-muted-foreground">Sin especificar</span>
+      ),
+    },
+    {
       label: 'Estado',
       value: (
         <Badge variant={course.isActive ? 'success' : 'secondary'} appearance="light">
