@@ -136,6 +136,9 @@ export class ClassesService {
           authorId: userId,
           courseId: null,
           status: { not: 'ARCHIVED' },
+          // "Guía de Lumina" (X.2) — defensivo: nunca aparece en "mis clases"
+          // aunque el usuario sea el SUPERADMIN dueño de la plantilla.
+          isSystemTemplate: false,
         },
         select: {
           id: true,
@@ -500,6 +503,7 @@ export class ClassesService {
     userRole?: string,
   ) {
     const cls = await this.findOneRaw(id);
+    this.assertNotSystemTemplate(cls);
     await this.verifyOwnership(cls, userId, userRole);
 
     const {
@@ -608,6 +612,7 @@ export class ClassesService {
 
   async publish(id: string, userId: string, userRole?: string) {
     const cls = await this.findOneRaw(id);
+    this.assertNotSystemTemplate(cls);
     await this.verifyOwnership(cls, userId, userRole);
 
     return this.prisma.class.update({
@@ -619,6 +624,7 @@ export class ClassesService {
 
   async remove(id: string, userId: string, userRole?: string) {
     const cls = await this.findOneRaw(id);
+    this.assertNotSystemTemplate(cls);
     await this.verifyOwnership(cls, userId, userRole);
 
     return this.prisma.class.update({
@@ -632,6 +638,7 @@ export class ClassesService {
 
   async startSession(id: string, userId: string) {
     const cls = await this.findOneRaw(id);
+    this.assertNotSystemTemplate(cls);
     await this.verifyTeacherOwnership(cls.courseId, userId);
 
     const activeSession = await this.prisma.classSession.findFirst({
@@ -1578,10 +1585,26 @@ export class ClassesService {
         authorId: true,
         status: true,
         performanceIndicatorId: true,
+        isSystemTemplate: true,
       },
     });
     if (!cls) throw new NotFoundException('Clase no encontrada');
     return cls;
+  }
+
+  /**
+   * "Guía de Lumina" (X.2) — la clase de sistema no se edita, publica,
+   * elimina ni inicia en vivo por ningún endpoint de usuario (solo el seed
+   * la modifica). Se chequea ANTES de `verifyOwnership`/`verifyTeacherOwnership`
+   * porque esas dejan pasar a ADMIN/SUPERADMIN — y el dueño de la clase de
+   * sistema es justamente un SUPERADMIN.
+   */
+  private assertNotSystemTemplate(cls: { isSystemTemplate: boolean }) {
+    if (cls.isSystemTemplate) {
+      throw new ForbiddenException(
+        'La guía de Lumina es de solo lectura — usa "Duplicar a mis clases" para editar tu propia copia.',
+      );
+    }
   }
 
   private async verifyOwnership(

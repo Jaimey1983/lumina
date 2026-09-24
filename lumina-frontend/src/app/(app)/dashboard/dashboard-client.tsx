@@ -23,6 +23,7 @@ import { useUsers } from '@/hooks/api/use-users';
 import { useMyGrades } from '@/hooks/api/use-grades';
 import { useMyBadges } from '@/hooks/api/use-badges';
 import { type AuthUser } from '@/contexts/auth-context';
+import { HelpGuideDashboardCard } from './help-guide-dashboard-card';
 
 import { Badge } from '@lumina/ui/badge';
 import { Button } from '@lumina/ui/button';
@@ -350,6 +351,8 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
       <div className="px-6 pt-4 space-y-5">
         {coursesQuery.isError && <ErrorAlert message="No se pudieron cargar los cursos." />}
         {classesQuery.isError && <ErrorAlert message="No se pudieron cargar las clases." />}
+
+        <HelpGuideDashboardCard />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingLists ? (

@@ -60,6 +60,13 @@ model User {
   documentUrl           String?
   documentIssuedAt      DateTime?
 
+  /**
+   * "Guía de Lumina" (X.2) — el docente cerró la tarjeta fijada del
+   * dashboard. Cierre permanente por diseño: subir `Class.templateVersion`
+   * NO la reabre (decisión cerrada, ver la ficha).
+   */
+  welcomeGuideDismissedAt DateTime?
+
   invitationCodesCreated  InvitationCode[]            @relation("InvitationCreatedBy")
   invitationCodesUsed     InvitationCode[]            @relation("InvitationUsedBy")
   adminAuditLogsMade      AdminAuditLog[]             @relation("AuditAdmin")
@@ -282,6 +289,25 @@ model Class {
    * Segundos por defecto del temporizador en vivo (0 = desactivado).
    */
   timerGlobal        Int                    @default(0)
+  /**
+   * "Guía de Lumina" (X.2) — clase de sistema de solo lectura, propiedad de un
+   * SUPERADMIN, sin curso. Solo el seed (`seed-help-guide.ts`) la modifica —
+   * `update`/`publish`/`remove`/`startSession` la bloquean explícitamente
+   * ANTES del chequeo de propiedad (que deja pasar a SUPERADMIN).
+   */
+  isSystemTemplate   Boolean                @default(false)
+  /**
+   * Clave estable de la plantilla (ej. "welcome-teacher"). Única — el
+   * endpoint de lectura (`GET /help/guide`) busca por esta clave, nunca por
+   * `id` hardcodeado (que difiere entre entornos).
+   */
+  templateKey        String?                @unique
+  /**
+   * Sube cuando cambia el hash del JSON versionado de la plantilla
+   * (`seed-help-guide.ts`). No reabre la tarjeta cerrada del dashboard —
+   * ese es un cierre permanente por diseño (X.2).
+   */
+  templateVersion    Int?
   courseId           String?
   authorId           String?
   createdAt          DateTime               @default(now())

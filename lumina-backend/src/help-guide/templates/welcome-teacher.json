@@ -1,0 +1,103 @@
+{
+  "templateKey": "welcome-teacher",
+  "title": "Guía de Lumina",
+  "description": "Una introducción rápida a Lumina para docentes nuevos.",
+  "background": "none",
+  "slides": [
+    {
+      "order": 1,
+      "type": "COVER",
+      "title": "Bienvenida",
+      "content": {
+        "bloques": [
+          {
+            "id": "welcome-teacher-s1-titulo",
+            "tipo": "texto",
+            "contenido": "¡Bienvenido a Lumina!",
+            "x": 10,
+            "y": 30,
+            "ancho": 80,
+            "alto": 20,
+            "tamanoFuente": "40px",
+            "negrita": true,
+            "nivel": 1,
+            "alineacion": "centro"
+          },
+          {
+            "id": "welcome-teacher-s1-subtitulo",
+            "tipo": "texto",
+            "contenido": "Esta guía es de solo lectura — puedes duplicarla a tus clases y editarla como quieras.",
+            "x": 10,
+            "y": 55,
+            "ancho": 80,
+            "alto": 20,
+            "tamanoFuente": "18px",
+            "alineacion": "centro"
+          }
+        ]
+      }
+    },
+    {
+      "order": 2,
+      "type": "CONTENT",
+      "title": "Tu espacio",
+      "content": {
+        "bloques": [
+          {
+            "id": "welcome-teacher-s2-titulo",
+            "tipo": "texto",
+            "contenido": "Tu espacio en Lumina",
+            "x": 10,
+            "y": 8,
+            "ancho": 80,
+            "alto": 15,
+            "tamanoFuente": "26px",
+            "negrita": true,
+            "nivel": 2
+          },
+          {
+            "id": "welcome-teacher-s2-cuerpo",
+            "tipo": "texto",
+            "contenido": "Cada curso agrupa clases; cada clase es una secuencia de diapositivas con widgets, actividades y bloques de contenido. Todo se edita en el mismo lienzo, y puedes convertir cualquier diapositiva en una actividad interactiva.",
+            "x": 10,
+            "y": 30,
+            "ancho": 80,
+            "alto": 50,
+            "tamanoFuente": "18px"
+          }
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "type": "CONTENT",
+      "title": "Primeros pasos",
+      "content": {
+        "bloques": [
+          {
+            "id": "welcome-teacher-s3-titulo",
+            "tipo": "texto",
+            "contenido": "Primeros pasos",
+            "x": 10,
+            "y": 8,
+            "ancho": 80,
+            "alto": 15,
+            "tamanoFuente": "26px",
+            "negrita": true,
+            "nivel": 2
+          },
+          {
+            "id": "welcome-teacher-s3-cuerpo",
+            "tipo": "texto",
+            "contenido": "1. Crea un curso con área y grado.\n2. Crea una clase dentro de ese curso.\n3. Abre el editor y arrastra tu primer bloque al lienzo.\n4. Usa \"Duplicar a mis clases\" en esta guía para tener una clase de práctica propia.",
+            "x": 10,
+            "y": 30,
+            "ancho": 80,
+            "alto": 55,
+            "tamanoFuente": "18px"
+          }
+        ]
+      }
+    }
+  ]
+}
