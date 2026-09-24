@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 
 import { SlideThumbnailPreview } from '@/app/(app)/classes/[id]/editor/components/slides-panel';
+import { NewClassCurricularModal } from '@/app/(app)/courses/[id]/new-class-curricular-modal';
 import { STATUS_BADGE_STYLE } from '@/app/(app)/classes/class-status-badge-styles';
 import { useAuth } from '@/hooks/use-auth';
 import { useCourses } from '@/hooks/api/use-courses';
@@ -828,13 +829,22 @@ export function ClassesClient() {
           </Card>
         )}
 
-        {/* Create / Edit modal */}
-        {((isStudent && studentTab === 'presentations') || (!isStudent && selectedCourseId)) && (
+        {/* Nueva presentación (alumno, sin curso) — modal simple título+descripción */}
+        {isStudent && studentTab === 'presentations' && (
           <ClassFormModal
             courseId={selectedCourseId}
             open={formOpen}
             onOpenChange={setFormOpen}
-            isStudent={isStudent}
+            isStudent
+          />
+        )}
+
+        {/* Nueva clase (docente) — único camino de creación, motor curricular (Etapa J / J6) */}
+        {!isStudent && selectedCourseId && (
+          <NewClassCurricularModal
+            courseId={selectedCourseId}
+            open={formOpen}
+            onOpenChange={setFormOpen}
           />
         )}
 

@@ -12,6 +12,8 @@ import {
   ArrowLeft,
   BookOpen,
   Calendar,
+  ChevronDown,
+  ChevronUp,
   Eye,
   GraduationCap,
   LayoutGrid,
@@ -37,6 +39,9 @@ import {
   useDesempenosCurso,
   useCreateDesempenoCurso,
   useDeleteDesempenoCurso,
+  useIndicadoresGuardados,
+  type DesempenoCurso,
+  type IndicadoresClase,
 } from '@/hooks/api/use-desempenos';
 import { api } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/api-error-message';
@@ -90,6 +95,22 @@ function InfoTab({ courseId }: { courseId: string }) {
   const rows = [
     { label: 'Nombre', value: course.name },
     { label: 'Código', value: <span className="font-mono text-sm">{course.code}</span> },
+    {
+      label: 'Área',
+      value: course.area ? (
+        AREAS_LABELS[course.area as AreaCurricular]
+      ) : (
+        <span className="text-muted-foreground">Sin especificar</span>
+      ),
+    },
+    {
+      label: 'Grado',
+      value: course.grado ? (
+        `Grado ${course.grado}`
+      ) : (
+        <span className="text-muted-foreground">Sin especificar</span>
+      ),
+    },
     {
       label: 'Estado',
       value: (
@@ -238,6 +259,118 @@ function NewDesempenoModal({
   );
 }
 
+// Indicadores guardados por desempeño (Etapa J / J6, banco reutilizable) — se
+// generan y persisten desde "Nueva clase"; acá solo se ven y se exponen como
+// disponibles para reutilizar en otra clase del mismo curso (punto 4).
+const TIPOS_INDICADOR_LABELS: Array<{ key: keyof IndicadoresClase; label: string }> = [
+  { key: 'cognitivo', label: 'Cognitivo' },
+  { key: 'procedimental', label: 'Procedimental' },
+  { key: 'actitudinal', label: 'Actitudinal' },
+];
+
+function DesempenoCard({
+  desempeno: d,
+  area,
+  courseId,
+  onDelete,
+  deleting,
+}: {
+  desempeno: DesempenoCurso;
+  area: AreaCurricular;
+  courseId: string;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: indicadoresGuardados = [], isLoading: indicadoresLoading } =
+    useIndicadoresGuardados(courseId, expanded ? d.id : null);
+
+  const componenteLabel =
+    EBC_COMPONENTES[area].find((c) => c.codigo === d.componenteEbc)?.label ??
+    d.componenteEbc;
+  const competenciaLabel =
+    ICFES_COMPETENCIAS[area].find((c) => c.codigo === d.competenciaIcfes)?.label ??
+    d.competenciaIcfes;
+
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <Badge appearance="light">
+                <Target className="size-3" />
+                {componenteLabel}
+              </Badge>
+              <Badge appearance="light" variant="info">
+                {competenciaLabel}
+              </Badge>
+            </div>
+            <p className="text-sm">{d.enunciado}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setExpanded((v) => !v)}
+              title={expanded ? 'Ocultar indicadores guardados' : 'Ver indicadores guardados'}
+            >
+              {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete} disabled={deleting}>
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="space-y-3 border-t border-border pt-3">
+            {indicadoresLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ) : indicadoresGuardados.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Todavía no hay indicadores guardados para este desempeño — se
+                guardan automáticamente al generarlos con IA desde
+                &quot;Nueva clase&quot;.
+              </p>
+            ) : (
+              <div className="space-y-2.5">
+                {TIPOS_INDICADOR_LABELS.map(({ key, label }) => {
+                  const items = indicadoresGuardados.filter((i) => i.tipo === key);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={key} className="space-y-1">
+                      <p className="text-xs font-medium leading-none">
+                        {label}{' '}
+                        <span className="font-normal text-muted-foreground">
+                          ({items.length})
+                        </span>
+                      </p>
+                      <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                        {items.map((i) => (
+                          <li key={i.id}>{i.enunciado}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              Se ofrecen automáticamente para reutilizar al elegir este
+              desempeño en &quot;Nueva clase&quot; — no hace falta volver a
+              generarlos con IA.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function DesempenosTab({ courseId }: { courseId: string }) {
   const { data: course, isLoading: courseLoading } = useCourse(courseId);
   const {
@@ -313,41 +446,16 @@ function DesempenosTab({ courseId }: { courseId: string }) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {desempenos.map((d) => {
-            const componenteLabel =
-              EBC_COMPONENTES[area].find((c) => c.codigo === d.componenteEbc)
-                ?.label ?? d.componenteEbc;
-            const competenciaLabel =
-              ICFES_COMPETENCIAS[area].find(
-                (c) => c.codigo === d.competenciaIcfes,
-              )?.label ?? d.competenciaIcfes;
-            return (
-              <Card key={d.id}>
-                <CardContent className="flex items-start justify-between gap-4 p-4">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge appearance="light">
-                        <Target className="size-3" />
-                        {componenteLabel}
-                      </Badge>
-                      <Badge appearance="light" variant="info">
-                        {competenciaLabel}
-                      </Badge>
-                    </div>
-                    <p className="text-sm">{d.enunciado}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate(d.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {desempenos.map((d) => (
+            <DesempenoCard
+              key={d.id}
+              desempeno={d}
+              area={area}
+              courseId={courseId}
+              onDelete={() => deleteMutation.mutate(d.id)}
+              deleting={deleteMutation.isPending}
+            />
+          ))}
         </div>
       )}
 
