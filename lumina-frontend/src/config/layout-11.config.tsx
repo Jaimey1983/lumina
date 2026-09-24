@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Users,
   User,
+  HelpCircle,
 } from 'lucide-react';
 
 export const MENU_SIDEBAR: MenuConfig = [
@@ -48,6 +49,18 @@ export const MENU_SIDEBAR: MenuConfig = [
         title: 'Analytics',
         path: '/analytics',
         icon: BarChart3,
+      },
+    ],
+  },
+  {
+    title: 'Ayuda',
+    children: [
+      {
+        title: 'Guía de Lumina',
+        path: '/help/guide',
+        icon: HelpCircle,
+        // X.2 — decisión cerrada: solo TEACHER, STUDENT queda fuera de alcance.
+        roles: ['TEACHER'],
       },
     ],
   },

@@ -32,6 +32,7 @@ import { PptxModule } from './pptx/pptx.module';
 import { ProgressMapModule } from './progress-map/progress-map.module';
 import { VerificationModule } from './verification/verification.module';
 import { SuperadminModule } from './superadmin/superadmin.module';
+import { HelpGuideModule } from './help-guide/help-guide.module';
 
 @Module({
   imports: [
@@ -91,6 +92,9 @@ import { SuperadminModule } from './superadmin/superadmin.module';
     // ── SUPERADMIN — verificación docente + gestión (PR2) ─────────────────
     VerificationModule,
     SuperadminModule,
+
+    // ── X.2 — "Guía de Lumina" (clase de sistema de solo lectura) ─────────
+    HelpGuideModule,
   ],
 })
 export class AppModule {}
