@@ -2,69 +2,192 @@
   "grado": "11",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA v2 + EBC",
-  "version": "placeholder-1.0",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 10°-11°",
+  "version": "1.0",
   "unidades": [
     {
       "unidad_id": 0,
-      "unidad_titulo": "Placeholder — reemplazar con JSON real",
-      "dba_asociados": [
-        1
+      "unidad_titulo": "Naturaleza ondulatoria del sonido y la luz",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende la naturaleza de la propagación del sonido y de la luz como fenómenos ondulatorios (ondas mecánicas y electromagnéticas, respectivamente).",
+      "evidencias_aprendizaje": [
+        "Clasifica las ondas de luz y sonido según el medio de propagación (mecánicas y electromagnéticas) y la dirección de la oscilación (longitudinales y transversales).",
+        "Aplica las leyes y principios del movimiento ondulatorio (ley de reflexión, de refracción y principio de Huygens) para predecir el comportamiento de una onda y los hace visibles en casos prácticos, al incluir cambio de medio de propagación.",
+        "Explica los fenómenos ondulatorios de sonido y luz en casos prácticos (reflexión, refracción, interferencia, difracción, polarización).",
+        "Explica las cualidades del sonido (tono, intensidad, audibilidad) y de la luz (color y visibilidad) a partir de las características del fenómeno ondulatorio (longitud de onda, frecuencia, amplitud)."
       ],
-      "dba_relacionados": [],
-      "enfoque_men": "Producción Textual",
-      "nivel_cognitivo": {
-        "nivel": "Comprender",
-        "verbo_bloom": [
-          "identificar"
-        ],
-        "nivel_numero": 2
-      },
+      "ebc_factor": "Entorno físico",
       "temas": [
-        "Placeholder tema"
+        "Ondas mecánicas y electromagnéticas",
+        "Fenómenos ondulatorios del sonido y la luz"
       ],
       "subtemas": [
-        "Placeholder subtema"
+        "Clasificar ondas según su medio de propagación y la dirección de la oscilación",
+        "Leyes de reflexión, refracción y principio de Huygens en el movimiento ondulatorio",
+        "Fenómenos ondulatorios: reflexión, refracción, interferencia, difracción, polarización",
+        "Cualidades del sonido (tono, intensidad, audibilidad) y de la luz (color, visibilidad)"
       ],
-      "palabras_clave": [
-        "ciencias naturales",
-        "grado 11",
-        "Colombia"
-      ],
-      "dba_enunciado": "Placeholder DBA — reemplazar con JSON real generado por Prompt Maestro v2",
-      "evidencias_aprendizaje": [
-        "Placeholder evidencia"
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "procedimental": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "actitudinal": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        }
-      },
       "actividades_sugeridas": [
         {
-          "descripcion": "Placeholder actividad",
+          "descripcion": "Clasificar ondas de luz y sonido según su medio de propagación (mecánicas o electromagnéticas)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada fenómeno ondulatorio (reflexión, refracción, interferencia, difracción, polarización) con un ejemplo cotidiano",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre la naturaleza ondulatoria del sonido y la luz",
           "tipo": "Quiz opción múltiple"
         }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Cargas en reposo y en movimiento: fuerzas eléctricas y magnéticas",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende que la interacción de las cargas en reposo genera fuerzas eléctricas y que cuando las cargas están en movimiento genera fuerzas magnéticas.",
+      "evidencias_aprendizaje": [
+        "Identifica el tipo de carga eléctrica (positiva o negativa) que adquiere un material cuando se somete a procedimientos de fricción o contacto.",
+        "Reconoce que las fuerzas eléctricas y magnéticas pueden ser de atracción y repulsión, mientras que las gravitacionales solo generan efectos de atracción.",
+        "Construye y explica el funcionamiento de un electroimán."
       ],
-      "ebc_factor": "Producción Textual",
-      "ebc_estandar": "Placeholder EBC",
-      "subprocesos_ebc": [
-        "Placeholder subproceso"
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Fuerzas eléctricas entre cargas en reposo",
+        "Fuerzas magnéticas generadas por cargas en movimiento"
+      ],
+      "subtemas": [
+        "Carga eléctrica positiva o negativa adquirida por fricción o contacto",
+        "Fuerzas de atracción y repulsión eléctricas y magnéticas frente a la atracción gravitacional",
+        "Construcción y funcionamiento de un electroimán"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar interacciones entre cargas como fuerza eléctrica o fuerza magnética",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre las fuerzas eléctricas, magnéticas y gravitacionales",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre el funcionamiento de un electroimán",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Circuitos resistivos en serie, paralelo y mixtos",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende las relaciones entre corriente y voltaje en circuitos resistivos sencillos en serie, en paralelo y mixtos.",
+      "evidencias_aprendizaje": [
+        "Determina las corrientes y los voltajes en elementos resistivos de un circuito eléctrico utilizando la ley de Ohm.",
+        "Identifica configuraciones en serie, en paralelo y mixtas en diferentes circuitos representados en esquemas.",
+        "Identifica características de circuitos en serie y paralelo a partir de la construcción de circuitos con resistencias.",
+        "Predice los cambios de iluminación en bombillos resistivos en un circuito al alterarlo (eliminar o agregar componentes en diferentes lugares)."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Ley de Ohm en circuitos resistivos",
+        "Circuitos en serie, en paralelo y mixtos"
+      ],
+      "subtemas": [
+        "Calcular corriente y voltaje en un circuito resistivo con la ley de Ohm",
+        "Identificar configuraciones en serie, paralelo y mixtas en esquemas de circuitos",
+        "Predecir el cambio de iluminación de los bombillos al alterar un circuito"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar esquemas de circuitos según su configuración (serie, paralelo, mixta)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Predecir por escrito qué ocurre con la iluminación de los bombillos al eliminar un componente del circuito",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre la ley de Ohm y los circuitos resistivos",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Reacciones y compuestos orgánicos",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende que los diferentes mecanismos de reacción química (oxido-reducción, homólisis, heterólisis y pericíclicas) posibilitan la formación de distintos tipos de compuestos orgánicos.",
+      "evidencias_aprendizaje": [
+        "Representa las reacciones químicas entre compuestos orgánicos utilizando fórmulas y ecuaciones químicas y la nomenclatura propuesta por la Unión Internacional de Química Pura y Aplicada (IUPAC).",
+        "Clasifica compuestos orgánicos y moléculas de interés biológico (alcoholes, fenoles, cetonas, aldehídos, carbohidratos, lípidos, proteínas) a partir de la aplicación de pruebas químicas.",
+        "Explica el comportamiento exotérmico o endotérmico en una reacción química debido a la naturaleza de los reactivos, la variación de la temperatura, la presencia de catalizadores y los mecanismos propios de un grupo orgánico específico."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Mecanismos de reacción orgánica (oxido-reducción, homólisis, heterólisis, pericíclicas)",
+        "Clasificación de compuestos orgánicos y moléculas de interés biológico"
+      ],
+      "subtemas": [
+        "Fórmulas, ecuaciones y nomenclatura IUPAC de compuestos orgánicos",
+        "Clasificar alcoholes, fenoles, cetonas, aldehídos, carbohidratos, lípidos y proteínas por pruebas químicas",
+        "Comportamiento exotérmico o endotérmico de una reacción química orgánica"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar compuestos orgánicos según su grupo funcional (alcoholes, cetonas, aldehídos, carbohidratos, lípidos, proteínas)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada reacción química con su clasificación como exotérmica o endotérmica",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre mecanismos de reacción y compuestos orgánicos",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Cuestiones ambientales desde una visión sistémica",
+      "enfoque_men": "Ciencia, tecnología y sociedad",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Analiza cuestiones ambientales actuales, como el calentamiento global, contaminación, tala de bosques y minería, desde una visión sistémica (económico, social, ambiental y cultural).",
+      "evidencias_aprendizaje": [
+        "Explica el fenómeno del calentamiento global, identificando sus causas y proponiendo acciones locales y globales para controlarlo.",
+        "Identifica las implicaciones que tiene para Colombia, en los ámbitos social, ambiental y cultural el hecho de ser \"un país mega diverso\".",
+        "Argumenta con base en evidencias sobre los efectos que tienen algunas actividades humanas (contaminación, minería, ganadería, agricultura, la construcción de carreteras y ciudades, tala de bosques) en la biodiversidad del país.",
+        "Diseña y propone investigaciones, en las que plantea acciones individuales y colectivas que promuevan el reconocimiento de las especies de su entorno para evitar su tala (plantas), captura y maltrato (animales) con fines de consumo o tráfico ilegal."
+      ],
+      "ebc_factor": "Ciencia, tecnología y sociedad",
+      "temas": [
+        "Calentamiento global y su causa",
+        "Impacto de las actividades humanas en la biodiversidad de Colombia"
+      ],
+      "subtemas": [
+        "Causas del calentamiento global y acciones locales y globales para controlarlo",
+        "Colombia como país mega diverso: implicaciones sociales, ambientales y culturales",
+        "Efectos de la contaminación, minería, ganadería, agricultura y tala de bosques en la biodiversidad",
+        "Acciones individuales y colectivas para proteger las especies del entorno"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar actividades humanas (minería, ganadería, agricultura, tala de bosques) según su efecto sobre la biodiversidad",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Proponer por escrito una acción individual o colectiva para proteger una especie del entorno",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre el calentamiento global y su impacto en la biodiversidad",
+          "tipo": "Quiz opción múltiple"
+        }
       ]
     }
   ]

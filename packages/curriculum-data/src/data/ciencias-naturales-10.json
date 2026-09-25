@@ -2,69 +2,151 @@
   "grado": "10",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA v2 + EBC",
-  "version": "placeholder-1.0",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 10°-11°",
+  "version": "1.0",
   "unidades": [
     {
       "unidad_id": 0,
-      "unidad_titulo": "Placeholder — reemplazar con JSON real",
-      "dba_asociados": [
-        1
+      "unidad_titulo": "Leyes de Newton y equilibrio de fuerzas",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende, que el reposo o el movimiento rectilíneo uniforme, se presentan cuando las fuerzas aplicadas sobre el sistema se anulan entre ellas, y que en presencia de fuerzas resultantes no nulas se producen cambios de velocidad.",
+      "evidencias_aprendizaje": [
+        "Predice el equilibrio (de reposo o movimiento uniforme en línea recta) de un cuerpo a partir del análisis de las fuerzas que actúan sobre él (primera ley de Newton).",
+        "Estima, a partir de las expresiones matemáticas, los cambios de velocidad (aceleración) que experimenta un cuerpo a partir de la relación entre fuerza y masa (segunda ley de Newton).",
+        "Identifica, en diferentes situaciones de interacción entre cuerpos (de forma directa y a distancia), la fuerza de acción y la de reacción e indica sus valores y direcciones (tercera ley de Newton)."
       ],
-      "dba_relacionados": [],
-      "enfoque_men": "Producción Textual",
-      "nivel_cognitivo": {
-        "nivel": "Comprender",
-        "verbo_bloom": [
-          "identificar"
-        ],
-        "nivel_numero": 2
-      },
+      "ebc_factor": "Entorno físico",
       "temas": [
-        "Placeholder tema"
+        "Primera, segunda y tercera leyes de Newton",
+        "Equilibrio de fuerzas y cambios de velocidad"
       ],
       "subtemas": [
-        "Placeholder subtema"
+        "Equilibrio de un cuerpo (reposo o movimiento rectilíneo uniforme) según la primera ley de Newton",
+        "Relación entre fuerza, masa y aceleración según la segunda ley de Newton",
+        "Fuerza de acción y reacción entre cuerpos según la tercera ley de Newton"
       ],
-      "palabras_clave": [
-        "ciencias naturales",
-        "grado 10",
-        "Colombia"
-      ],
-      "dba_enunciado": "Placeholder DBA — reemplazar con JSON real generado por Prompt Maestro v2",
-      "evidencias_aprendizaje": [
-        "Placeholder evidencia"
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "procedimental": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "actitudinal": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        }
-      },
       "actividades_sugeridas": [
         {
-          "descripcion": "Placeholder actividad",
+          "descripcion": "Relacionar cada ley de Newton (primera, segunda, tercera) con la situación física que describe",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar situaciones de interacción entre cuerpos según se identifique la fuerza de acción o la de reacción",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre las leyes de Newton y el equilibrio de fuerzas",
           "tipo": "Quiz opción múltiple"
         }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Conservación de la energía mecánica",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende la conservación de la energía mecánica como un principio que permite cuantificar y explicar diferentes fenómenos mecánicos: choques entre cuerpos, movimiento pendular, caída libre, deformación de un sistema masa-resorte.",
+      "evidencias_aprendizaje": [
+        "Predice cualitativa y cuantitativamente el movimiento de un cuerpo al hacer uso del principio de conservación de la energía mecánica en diferentes situaciones físicas.",
+        "Identifica, en sistemas no conservativos (fricción, choques no elásticos, deformación, vibraciones) las transformaciones de energía que se producen en concordancia con la conservación de la energía."
       ],
-      "ebc_factor": "Producción Textual",
-      "ebc_estandar": "Placeholder EBC",
-      "subprocesos_ebc": [
-        "Placeholder subproceso"
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Principio de conservación de la energía mecánica",
+        "Sistemas conservativos y no conservativos"
+      ],
+      "subtemas": [
+        "Predecir el movimiento de un cuerpo (choques, péndulo, caída libre, masa-resorte) con el principio de conservación de la energía",
+        "Transformaciones de energía en sistemas no conservativos (fricción, choques no elásticos, deformación, vibraciones)"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar fenómenos mecánicos (choques, péndulo, caída libre, masa-resorte) según conserven o no la energía mecánica",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Predecir por escrito el movimiento de un cuerpo usando el principio de conservación de la energía mecánica",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre la conservación de la energía mecánica",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Mecanismos de reacción y compuestos inorgánicos",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende que los diferentes mecanismos de reacción química (oxido-reducción, descomposición, neutralización y precipitación) posibilitan la formación de compuestos inorgánicos.",
+      "evidencias_aprendizaje": [
+        "Establece la relación entre la distribución de los electrones en el átomo y el comportamiento químico de los elementos, explicando cómo esta distribución determina la formación de compuestos, dados en ejemplos de elementos de la Tabla Periódica.",
+        "Balancea ecuaciones químicas dadas por el docente, teniendo en cuenta la ley de conservación de la masa y la conservación de la carga, al determinar cuantitativamente las relaciones molares entre reactivos y productos de una reacción (a partir de sus coeficientes).",
+        "Utiliza fórmulas y ecuaciones químicas para representar las reacciones entre compuestos inorgánicos (óxidos, ácidos, hidróxidos, sales) y posteriormente nombrarlos con base en la nomenclatura propuesta por la Unión Internacional de Química Pura y Aplicada (IUPAC).",
+        "Explica a partir de relaciones cuantitativas y reacciones químicas (oxido-reducción, descomposición, neutralización y precipitación) la formación de nuevos compuestos, dando ejemplos de cada tipo de reacción."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Mecanismos de reacción química (oxido-reducción, descomposición, neutralización, precipitación)",
+        "Formación y nomenclatura de compuestos inorgánicos"
+      ],
+      "subtemas": [
+        "Relación entre la distribución de electrones y el comportamiento químico de los elementos",
+        "Balancear ecuaciones químicas según la ley de conservación de la masa y la carga",
+        "Fórmulas, ecuaciones y nomenclatura IUPAC de óxidos, ácidos, hidróxidos y sales",
+        "Formación de compuestos a partir de reacciones de oxido-reducción, descomposición, neutralización y precipitación"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar compuestos inorgánicos según el tipo (óxidos, ácidos, hidróxidos, sales)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada mecanismo de reacción química (oxido-reducción, descomposición, neutralización, precipitación) con un ejemplo",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre la formación de compuestos inorgánicos",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Biotecnología e implicaciones bioéticas",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende que la biotecnología conlleva el uso y manipulación de la información genética a través de distintas técnicas (fertilización asistida, clonación reproductiva y terapéutica, modificación genética, terapias génicas), y que tiene implicaciones sociales, bioéticas y ambientales.",
+      "evidencias_aprendizaje": [
+        "Describe distintas técnicas biotecnológicas (fertilización asistida, clonación reproductiva y terapéutica, modificación genética, terapias génicas), explicando cómo funcionan y qué características generan en los organismos desarrollados.",
+        "Explica los usos de la biotecnología y sus efectos en diferentes contextos (salud, agricultura, producción energética y ambiente).",
+        "Argumenta, basado en evidencias, los impactos bioéticos, legales, sociales y ambientales generados por el uso de transgénicos, clonación y terapias génicas."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Técnicas biotecnológicas (fertilización asistida, clonación, modificación genética, terapias génicas)",
+        "Implicaciones bioéticas, sociales y ambientales de la biotecnología"
+      ],
+      "subtemas": [
+        "Cómo funcionan la fertilización asistida, la clonación reproductiva/terapéutica y la modificación genética",
+        "Usos de la biotecnología en salud, agricultura, producción energética y ambiente",
+        "Impactos bioéticos, legales, sociales y ambientales de transgénicos, clonación y terapias génicas"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada técnica biotecnológica (fertilización asistida, clonación, modificación genética, terapia génica) con su definición",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar usos de la biotecnología según el contexto (salud, agricultura, producción energética, ambiente)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre las implicaciones bioéticas y ambientales de la biotecnología",
+          "tipo": "Quiz opción múltiple"
+        }
       ]
     }
   ]
