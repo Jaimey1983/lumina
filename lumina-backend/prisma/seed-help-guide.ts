@@ -60,7 +60,12 @@ async function main() {
     const raw = readFileSync(TEMPLATE_PATH, 'utf-8');
     const template = JSON.parse(raw) as TemplateFile;
     const contentHash = createHash('sha256').update(raw).digest('hex');
-    const version = parseInt(contentHash.slice(0, 8), 16);
+    // `Class.templateVersion` es `Int` en Postgres (32 bits CON signo, máximo
+    // 2147483647) — 8 hex chars son 32 bits SIN signo y pueden desbordarlo
+    // (bug real encontrado corriendo el seed contra una DB real). Enmascarar
+    // a 31 bits mantiene el propósito (detectar cambio de contenido) con
+    // colisión ~1/2^31, insignificante para este uso.
+    const version = parseInt(contentHash.slice(0, 8), 16) & 0x7fffffff;
 
     const existing = await prisma.class.findUnique({
       where: { templateKey: template.templateKey },
