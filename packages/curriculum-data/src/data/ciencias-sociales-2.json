@@ -2,7 +2,312 @@
   "grado": "2",
   "asignatura": "Ciencias Sociales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Sociales Ciclo 1°-3°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "El paisaje como resultado de las acciones humanas",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende que el paisaje que vemos es resultado de las acciones humanas que se realizan en un espacio geográfico y que por esta razón, dicho paisaje cambia.",
+      "evidencias_aprendizaje": [
+        "Identifica las formas del relieve que se encuentran en la superficie terrestre (montaña, valle, llanura, meseta e islas) y nombra aquellas que se observan en su localidad, comuna o vereda.",
+        "Expresa sus apreciaciones sobre los paisajes que observa en fotografías, folletos, revistas, periódicos y señala aquellos que prefiere.",
+        "Traza las formas básicas del paisaje de su municipio a través de dibujos y la elaboración de maquetas con barro, plastilina o materiales reutilizables que consiga en su contexto.",
+        "Explica los cambios que se han realizado en el paisaje del municipio debido a cultivos, construcciones recientes, carreteras, caminos, edificaciones y parques, entre otros."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "El paisaje como resultado de las acciones humanas",
+        "Formas del relieve de la superficie terrestre"
+      ],
+      "subtemas": [
+        "Montaña, valle, llanura, meseta e islas en la localidad",
+        "Apreciación de paisajes en fotografías, folletos y revistas",
+        "Representación del paisaje del municipio con dibujos y maquetas",
+        "Cambios en el paisaje por cultivos, construcciones y vías"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar formas de relieve según se trate de montaña, valle, llanura, meseta o isla",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada cambio en el paisaje (cultivos, carreteras, edificaciones) con su causa",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre el paisaje como resultado de las acciones humanas",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Puntos cardinales y orientación espacial",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Reconoce los puntos cardinales y los usa para orientarse en el desplazamiento de un lugar a otro.",
+      "evidencias_aprendizaje": [
+        "Establece relaciones entre el espacio físico del salón de clases y otros espacios que hacen parte de la Institución Educativa a través de dibujos, gráficos o planos, utilizando los puntos cardinales.",
+        "Traza las rutas seguidas por algunos de sus compañeros de clase para llegar a la escuela y las representa en un dibujo.",
+        "Mide distancias reales entre varios lugares, con pasos y otras medidas que pueden inventarse en el grupo, identificando la distancia - cerca o lejos- entre dichos lugares.",
+        "Da orientaciones espaciales verbalmente o de otras formas para llegar a un lugar específico, utilizando expresiones de lateralidad (izquierda, derecha, adelante, atrás) y los puntos cardinales."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Los puntos cardinales para orientarse",
+        "Rutas y distancias entre lugares cercanos"
+      ],
+      "subtemas": [
+        "Ubicación de espacios de la institución educativa con puntos cardinales",
+        "Rutas entre la casa y la escuela representadas en un dibujo",
+        "Medición de distancias reales entre lugares",
+        "Orientaciones espaciales con expresiones de lateralidad y puntos cardinales"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada punto cardinal con la dirección hacia la que apunta en un plano sencillo",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Ordenar los pasos para dar una orientación espacial hasta un lugar específico",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Quiz sobre los puntos cardinales y la orientación espacial",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Fuentes históricas y memoria familiar",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende la importancia de las fuentes históricas para la construcción de la memoria individual, familiar y colectiva.",
+      "evidencias_aprendizaje": [
+        "Describe las características de la conformación de su familia antes de su nacimiento.",
+        "Reconoce las procedencias y los recorridos de los integrantes de su núcleo familiar antes de llegar al municipio donde viven actualmente, a través de relatos.",
+        "Establece secuencias de datos históricos a nivel personal y familiar desde la lectura de su registro civil de nacimiento y elabora un árbol genealógico.",
+        "Indaga por los lugares de origen y las razones de los desplazamientos de la población en su comunidad."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Las fuentes históricas y la memoria familiar",
+        "Procedencia y desplazamientos de la población de la comunidad"
+      ],
+      "subtemas": [
+        "Conformación de la familia antes del nacimiento",
+        "Procedencias y recorridos del núcleo familiar",
+        "Registro civil de nacimiento y árbol genealógico",
+        "Lugares de origen y razones de los desplazamientos de la población"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar los datos históricos de la familia (nacimiento, procedencia, llegada al municipio) en una secuencia",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Describir por escrito los lugares de origen de los integrantes de su núcleo familiar",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre las fuentes históricas y la memoria familiar",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Cambios en los medios de transporte",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Explica cambios y continuidades en los medios empleados por las personas para transportarse en su municipio, vereda o lugar donde vive.",
+      "evidencias_aprendizaje": [
+        "Diferencia los cambios vividos en los medios de transporte en su entorno cercano, a partir de relatos de su familia.",
+        "Clasifica las formas de transportarse de las personas según el medio utilizado.",
+        "Describe el medio de transporte que más usa para llegar o salir de su casa y expone sus ventajas y desventajas.",
+        "Representa gráficamente la movilidad en su comunidad e identifica sus ventajas y desventajas."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Cambios y continuidades en los medios de transporte",
+        "Ventajas y desventajas de los medios de transporte"
+      ],
+      "subtemas": [
+        "Cambios en los medios de transporte a partir de relatos familiares",
+        "Medios de transporte acuáticos, terrestres y aéreos",
+        "Medio de transporte más usado y sus ventajas y desventajas",
+        "Movilidad en la comunidad"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar medios de transporte según sean acuáticos, terrestres o aéreos",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre los cambios en los medios de transporte a través del tiempo",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre los cambios en los medios de transporte",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Actividades económicas del entorno",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Analiza las actividades económicas de su entorno y el impacto de estas en la comunidad.",
+      "evidencias_aprendizaje": [
+        "Identifica los trabajos u oficios que las personas de su comunidad realizan para obtener su sustento y el de la familia.",
+        "Describe las actividades económicas que realizan los adultos en su hogar y los beneficios que éstas traen para todos los integrantes de la familia.",
+        "Compara los oficios que los abuelos realizaban anteriormente respecto de cómo se realizan hoy y diferencia los trabajos característicos de las zonas urbanas y rurales.",
+        "Reconoce experiencias donde algunos niños son explotados laboralmente y expresa razones para rechazar estas situaciones."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Las actividades económicas del entorno",
+        "El trabajo infantil y su rechazo"
+      ],
+      "subtemas": [
+        "Trabajos u oficios de las personas de la comunidad",
+        "Actividades económicas del hogar y sus beneficios",
+        "Oficios de antes y de ahora en zonas urbanas y rurales",
+        "Situaciones de explotación laboral infantil"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar oficios según correspondan a la zona urbana o a la zona rural",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Emparejar cada oficio con el beneficio que trae a la familia",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Quiz sobre las actividades económicas de la comunidad",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Características de las viviendas de distintos lugares",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 6",
+      "dba_enunciado": "Compara las características de las viviendas de su municipio, vereda o lugar donde vive con las de otros lugares.",
+      "evidencias_aprendizaje": [
+        "Reconoce características de las viviendas rurales y urbanas a partir de los materiales utilizados para su construcción.",
+        "Describe y diferencia características de las viviendas de los grupos étnicos, a partir de la lectura de imágenes.",
+        "Identifica los cambios que se dan en las viviendas con el paso del tiempo.",
+        "Describe las ventajas y desventajas que representa tener vivienda en zona urbana o rural."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Características de las viviendas urbanas y rurales",
+        "Viviendas de los grupos étnicos de Colombia"
+      ],
+      "subtemas": [
+        "Materiales de construcción de viviendas rurales y urbanas",
+        "Viviendas de comunidades embera, afrocolombianas, wayú y de la Sierra Nevada",
+        "Cambios en las viviendas con el paso del tiempo",
+        "Ventajas y desventajas de la vivienda urbana o rural"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada tipo de vivienda con el grupo étnico o la región a la que pertenece",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar viviendas según correspondan a zona urbana o rural",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre las características de las viviendas de distintos lugares",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Organización territorial del municipio",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 7",
+      "dba_enunciado": "Reconoce la organización territorial en su municipio, desde: comunas, corregimientos, veredas, localidades y territorios indígenas.",
+      "evidencias_aprendizaje": [
+        "Identifica el croquis de su municipio y lo diferencia entre los demás municipios del departamento.",
+        "Ubica las comunas, corregimientos, localidades y/o territorios indígenas en los que está organizado el territorio de su municipio, teniendo en cuenta los puntos cardinales.",
+        "Nombra topónimos (nombres propios que adoptan los lugares geográficos) en su municipio y diferencia su ubicación en el medio urbano o rural.",
+        "Diferencia la organización de grupos pequeños como la familia, salón de clase, colegio con las de los grupos más grandes como resguardo, territorios afrocolombianos y municipio."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "La organización territorial del municipio",
+        "Grupos pequeños y grupos grandes de organización social"
+      ],
+      "subtemas": [
+        "El croquis del municipio y su diferencia con otros municipios",
+        "Comunas, corregimientos, localidades y territorios indígenas",
+        "Topónimos del municipio en el medio urbano y rural",
+        "Organización de grupos pequeños frente a resguardos y territorios afrocolombianos"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar formas de organización territorial (comuna, corregimiento, vereda, localidad, territorio indígena)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada grupo pequeño (familia, salón de clase, colegio) con el grupo grande al que pertenece",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre la organización territorial del municipio",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 7,
+      "unidad_titulo": "Exclusión y discriminación en el entorno cercano",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 8",
+      "dba_enunciado": "Reconoce y rechaza situaciones de exclusión o discriminación en su familia, entre sus amigos y en los compañeros del salón de clase.",
+      "evidencias_aprendizaje": [
+        "Describe diversas características de los grupos humanos (etnia, edad, religión, género) y explica aquello que más le gusta de sus compañeros y lo que pudiera cambiarse para mejorar la convivencia en el grupo.",
+        "Establece semejanzas y diferencias entre los alimentos preferidos (en los integrantes de su familia) y en las preferencias en los juegos entre los compañeros del grupo en la escuela.",
+        "Expresa sus sentimientos cuando es discriminado o aceptado en una actividad escolar y reconoce la importancia que tiene conocer y aceptar a las personas.",
+        "Identifica las acciones que generan discriminación en su entorno y sabe a quién acudir para pedir ayuda y protección."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "Reconocimiento y rechazo de la exclusión y la discriminación",
+        "Semejanzas y diferencias entre las personas del entorno"
+      ],
+      "subtemas": [
+        "Características de los grupos humanos: etnia, edad, religión, género",
+        "Semejanzas y diferencias de gustos entre compañeros y familia",
+        "Sentimientos ante la discriminación o la aceptación",
+        "Acciones que generan discriminación y a quién acudir"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar situaciones del entorno escolar como de aceptación o de discriminación",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Describir por escrito cómo se siente cuando es aceptado o discriminado en una actividad escolar",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre el reconocimiento y el rechazo de la discriminación",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }

@@ -2,7 +2,312 @@
   "grado": "5",
   "asignatura": "Ciencias Sociales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Sociales Ciclo 4°-5°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Organización territorial y regiones geográficas de Colombia",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende la organización territorial existente en Colombia y las particularidades geográficas de las regiones.",
+      "evidencias_aprendizaje": [
+        "Explica las formas de división territorial en Colombia: corregimiento, municipio, área metropolitana, departamento, región y territorio indígena.",
+        "Caracteriza los territorios colombianos denominados distritos (capital, especial, industrial, portuario, turístico, histórico y biodiverso) y los diferencia de los municipios y de las ciudades capitales.",
+        "Diferencia las regiones geográficas en las que está dividido el territorio colombiano y las reconoce a partir de la lectura de mapas temáticos.",
+        "Relaciona la existencia de los pisos térmicos con los recursos naturales de cada región e identifica su incidencia en la diversidad de cultivos y actividades humanas."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Formas de división territorial de Colombia",
+        "Regiones geográficas y pisos térmicos de Colombia"
+      ],
+      "subtemas": [
+        "Corregimiento, municipio, área metropolitana, departamento, región y territorio indígena",
+        "Distritos capital, especial, industrial, portuario, turístico, histórico y biodiverso",
+        "Regiones geográficas de Colombia en mapas temáticos",
+        "Pisos térmicos y su incidencia en los cultivos y actividades humanas"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada forma de división territorial (corregimiento, municipio, departamento, región) con su definición",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar regiones geográficas de Colombia según sus características principales",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre la organización territorial y las regiones geográficas de Colombia",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Posición geográfica y astronómica de Colombia",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende las ventajas que tiene para Colombia su posición geográfica y astronómica en relación con la economía nacional.",
+      "evidencias_aprendizaje": [
+        "Identifica la posición geográfica y astronómica del país, sus límites y extensión de sus fronteras terrestres y marítimas, mediante la lectura de mapas temáticos.",
+        "Establece relaciones entre latitud, longitud, altitud y la proximidad al mar, con la diversidad de climas en Colombia.",
+        "Explica la presencia de la órbita geoestacionaria y su importancia para las telecomunicaciones del país.",
+        "Plantea preguntas que le permiten reconocer la importancia que tiene para el territorio colombiano y la economía nacional, el hecho de contar con dos océanos."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Posición geográfica y astronómica de Colombia",
+        "Importancia de contar con dos océanos"
+      ],
+      "subtemas": [
+        "Límites y extensión de las fronteras terrestres y marítimas de Colombia",
+        "Latitud, longitud, altitud y proximidad al mar en relación con el clima",
+        "La órbita geoestacionaria y las telecomunicaciones del país",
+        "Ventajas económicas de contar con océanos Atlántico y Pacífico"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar factores (latitud, longitud, altitud, proximidad al mar) según influyan en el clima de una región",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Plantear por escrito una pregunta sobre la importancia de contar con dos océanos para la economía nacional",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre la posición geográfica y astronómica de Colombia",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Cambios en la comunicación por los avances tecnológicos",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende que los cambios en la comunicación originados por los avances tecnológicos han generado transformaciones en la forma como se relacionan las personas en la sociedad actual.",
+      "evidencias_aprendizaje": [
+        "Explica la importancia que ha tenido la comunicación para la sociedad colombiana en el siglo XX y XXI.",
+        "Compara las características de los medios de comunicación que emplearon sus padres (cuando eran niños), con los que él emplea en la actualidad.",
+        "Argumenta a partir de evidencias cómo el uso de diferentes medios de comunicación hace más fácil el acceso a la información y el aprendizaje.",
+        "Participa en discusiones sobre el uso adecuado y respetuoso de los medios de comunicación en la construcción de las relaciones con otras personas, grupos sociales o instituciones."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Cambios en la comunicación por los avances tecnológicos",
+        "Uso adecuado y respetuoso de los medios de comunicación"
+      ],
+      "subtemas": [
+        "Importancia de la comunicación en Colombia durante el siglo XX y XXI",
+        "Medios de comunicación de los padres frente a los actuales",
+        "Acceso a la información y el aprendizaje mediante los medios de comunicación",
+        "Uso adecuado y respetuoso de los medios de comunicación"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar medios de comunicación según correspondan al siglo XX o al siglo XXI",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre el uso adecuado y respetuoso de los medios de comunicación",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre los cambios en la comunicación por los avances tecnológicos",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "El periodo colonial en la Nueva Granada",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Analiza el periodo colonial en la Nueva Granada a partir de sus organizaciones políticas, económicas y sociales.",
+      "evidencias_aprendizaje": [
+        "Compara el papel de las organizaciones políticas y administrativas como el Consejo Supremo de Indias, la Casa de Contratación de Sevilla, la Real Audiencia, los Cabildos, la Real Hacienda y el Virreinato con las actuales instituciones en Colombia.",
+        "Diferencia las formas organizativas del trabajo en la Colonia (la encomienda, la mita y el resguardo) y sus transformaciones en el sistema económico actual en Colombia.",
+        "Explica las diferencias entre los grupos sociales existentes en la Nueva Granada durante el periodo colonial y las implicaciones que tuvo en la estratificación de la población colombiana.",
+        "Examina el papel de la religión católica y su impacto en la vida cotidiana de las personas durante la época colonial a través del uso de diversas fuentes de información."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Organizaciones políticas y administrativas de la Nueva Granada",
+        "Organización social y económica en la época colonial"
+      ],
+      "subtemas": [
+        "Consejo Supremo de Indias, Casa de Contratación, Real Audiencia, Cabildos, Real Hacienda y Virreinato",
+        "La encomienda, la mita y el resguardo como formas de trabajo colonial",
+        "Grupos sociales y estratificación de la población en la Nueva Granada",
+        "Papel de la religión católica en la vida cotidiana colonial"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada organización política colonial (Consejo Supremo de Indias, Real Audiencia, Cabildo, Virreinato) con su función",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar formas de trabajo de la Colonia según sean la encomienda, la mita o el resguardo",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre el periodo colonial en la Nueva Granada",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Origen y consolidación de Colombia como república",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Analiza el origen y consolidación de Colombia como república y sus cambios políticos, económicos y sociales.",
+      "evidencias_aprendizaje": [
+        "Plantea preguntas sobre los antecedentes que influenciaron el proceso de independencia de Colombia (revolución de los comuneros, invasiones napoleónicas, entre otras).",
+        "Explica los acontecimientos que permitieron el nacimiento de la República y cómo estos incidieron en la vida económica y social de Colombia.",
+        "Reconoce los cambios de fronteras que ha experimentado Colombia desde comienzos del siglo XIX hasta la actualidad (la Gran Colombia, la República de la Nueva Granada, la Confederación Granadina, los Estados Unidos de Colombia y la República de Colombia) a partir de la lectura de mapas temáticos.",
+        "Relaciona la aparición de los partidos políticos en Colombia con las luchas ideológicas que se dieron a lo largo del siglo XIX."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "El proceso de independencia y el nacimiento de la república",
+        "Cambios de fronteras y partidos políticos en el siglo XIX"
+      ],
+      "subtemas": [
+        "Antecedentes de la independencia: revolución de los comuneros e invasiones napoleónicas",
+        "Nacimiento de la República y su impacto económico y social",
+        "La Gran Colombia, la Nueva Granada, la Confederación Granadina y los Estados Unidos de Colombia",
+        "Aparición de los partidos políticos y las luchas ideológicas del siglo XIX"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar los nombres que ha tenido el territorio colombiano desde la Gran Colombia hasta la República de Colombia",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Plantear por escrito una pregunta sobre un antecedente del proceso de independencia de Colombia",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre el origen y la consolidación de Colombia como república",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Cambios en la sociedad colombiana en la primera mitad del siglo XX",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 6",
+      "dba_enunciado": "Analiza los cambios ocurridos en la sociedad colombiana en la primera mitad del siglo XX, asociados a la expansión de la industria y el establecimiento de nuevas redes de comunicación.",
+      "evidencias_aprendizaje": [
+        "Explica los cambios sociales y tecnológicos (radio, prensa escrita, telares y ferrocarriles) que se dieron en Colombia en la primera mitad del siglo XX y su incidencia en la reconfiguración de actividades económicas y sociales en el país.",
+        "Reconoce la influencia de los partidos políticos (liberal y conservador) en las dinámicas económicas y sociales de Colombia en la primera mitad del siglo XX a partir del uso de diferentes fuentes de información.",
+        "Identifica las consecuencias de los conflictos que afectaron la convivencia armónica de los ciudadanos colombianos en la primera mitad del siglo XX (Guerra de los Mil Días, masacre de las bananeras y la violencia partidista).",
+        "Participa en debates y propone acciones para vivir en una sociedad pacífica y constructora de una cultura de paz."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Expansión de la industria y nuevas redes de comunicación en el siglo XX",
+        "Conflictos de la primera mitad del siglo XX en Colombia"
+      ],
+      "subtemas": [
+        "Radio, prensa escrita, telares y ferrocarriles en la primera mitad del siglo XX",
+        "Influencia de los partidos liberal y conservador",
+        "Guerra de los Mil Días, masacre de las bananeras y violencia partidista",
+        "Acciones para una sociedad pacífica y una cultura de paz"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada avance tecnológico (radio, prensa, telares, ferrocarriles) con el ámbito de la sociedad que transformó",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar hechos de la primera mitad del siglo XX según correspondan a la Guerra de los Mil Días, la masacre de las bananeras o la violencia partidista",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre los cambios en la sociedad colombiana en la primera mitad del siglo XX",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Derechos, deberes y principios de la convivencia",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 7",
+      "dba_enunciado": "Comprende que en la sociedad colombiana existen derechos, deberes, principios y acciones para orientar y regular la convivencia de las personas.",
+      "evidencias_aprendizaje": [
+        "Describe los beneficios o ventajas que conlleva vivir en un Estado democrático a través del estudio de la Constitución de 1991.",
+        "Identifica los derechos fundamentales contemplados en la Constitución (Título II, capítulo 1), y su aplicabilidad en la vida cotidiana a partir del análisis de casos.",
+        "Compara los derechos y deberes planteados en la Constitución Política del país con los derechos y deberes contemplados en el manual de convivencia de su institución educativa.",
+        "Explica el valor que tiene conocer los derechos y los mecanismos constitucionales para reclamar su debido cumplimiento."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "Derechos, deberes y principios de la Constitución de 1991",
+        "Mecanismos constitucionales para reclamar los derechos"
+      ],
+      "subtemas": [
+        "Beneficios de vivir en un Estado democrático según la Constitución de 1991",
+        "Derechos fundamentales del Título II, capítulo 1 de la Constitución",
+        "Comparación entre la Constitución y el manual de convivencia escolar",
+        "Mecanismos constitucionales para reclamar el cumplimiento de los derechos"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar derechos y deberes según estén en la Constitución Política o en el manual de convivencia",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Explicar por escrito la importancia de conocer los derechos y los mecanismos para reclamarlos",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre los derechos, deberes y principios de la convivencia",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 7,
+      "unidad_titulo": "Organizaciones sociales y Derechos Humanos",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 8",
+      "dba_enunciado": "Analiza el papel de las organizaciones sociales en la preservación y el reconocimiento de los Derechos Humanos.",
+      "evidencias_aprendizaje": [
+        "Explica las instituciones que defienden los Derechos Humanos y organizan proyectos en la comunidad (cabildos, juntas de acción comunal y juntas administradoras locales).",
+        "Reconoce la importancia de proteger la organización social y los derechos de las colectividades a través de los mecanismos estipulados en la Constitución nacional.",
+        "Describe el funcionamiento de las instituciones que protegen los Derechos Humanos en Colombia (Personería y Defensoría del Pueblo).",
+        "Participa en proyectos colectivos (Gobierno Escolar, ambientales, convivencia y paz entre otros) orientados a alcanzar el bien común y a promover la solidaridad en su comunidad."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "Organizaciones sociales y la defensa de los Derechos Humanos",
+        "Proyectos colectivos para el bien común"
+      ],
+      "subtemas": [
+        "Cabildos, juntas de acción comunal y juntas administradoras locales",
+        "Mecanismos constitucionales para proteger los derechos de las colectividades",
+        "Funcionamiento de la Personería y la Defensoría del Pueblo",
+        "Proyectos colectivos de Gobierno Escolar, ambientales, convivencia y paz"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada institución (cabildo, junta de acción comunal, personería, defensoría) con su función en la defensa de los Derechos Humanos",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar proyectos colectivos según sean de Gobierno Escolar, ambientales o de convivencia y paz",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre las organizaciones sociales y los Derechos Humanos",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }

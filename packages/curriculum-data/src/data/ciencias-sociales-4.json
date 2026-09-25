@@ -2,7 +2,312 @@
   "grado": "4",
   "asignatura": "Ciencias Sociales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Sociales Ciclo 4°-5°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Límites geográficos y fronteras",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende la importancia de los límites geográficos y el establecimiento de las fronteras en la organización de los territorios.",
+      "evidencias_aprendizaje": [
+        "Reconoce los límites geográficos de Colombia a partir de la lectura de un mapa político.",
+        "Describe actividades económicas y culturales que se dan entre los países que comparten fronteras con Colombia.",
+        "Explica la importancia de las fronteras colombianas como un punto de encuentro con los pueblos vecinos y documenta situaciones vividas recientemente con los países limítrofes.",
+        "Contrasta los límites de los departamentos en que se divide el territorio colombiano con base en su ubicación geográfica y su extensión."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Límites geográficos y fronteras de Colombia",
+        "División política de Colombia en departamentos"
+      ],
+      "subtemas": [
+        "Límites geográficos de Colombia según el mapa político",
+        "Actividades económicas y culturales con los países limítrofes",
+        "Las fronteras como punto de encuentro con los pueblos vecinos",
+        "Límites y extensión de los departamentos de Colombia"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada país limítrofe con Colombia con la frontera que comparten",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar actividades entre países fronterizos según sean económicas o culturales",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre los límites geográficos y las fronteras de Colombia",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Medio urbano y medio rural",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Diferencia las características geográficas del medio urbano y el medio rural, mediante el reconocimiento de la concentración de la población y el uso del suelo, que se da en ellos.",
+      "evidencias_aprendizaje": [
+        "Reconoce los usos del suelo propios de las ciudades (comercial, industrial, habitacional, deportivo y educativo, entre otros) y los del campo (agrícola, ganadero, minero, forestal y turístico, entre otros) a partir de la lectura de mapas temáticos.",
+        "Identifica cambios generados en el uso del suelo tanto de las ciudades colombianas como de los espacios rurales en la última década.",
+        "Compara la cantidad de habitantes que viven en las ciudades colombianas con la población ubicada en los sectores rurales (a partir de la información del último censo de población realizado en el país o de otra fuente).",
+        "Expresa razones por las cuales actualmente la población se concentra más en las ciudades que en el campo."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Diferencias geográficas entre el medio urbano y el medio rural",
+        "Concentración de la población y uso del suelo"
+      ],
+      "subtemas": [
+        "Usos del suelo de las ciudades: comercial, industrial, habitacional, deportivo, educativo",
+        "Usos del suelo del campo: agrícola, ganadero, minero, forestal, turístico",
+        "Cambios en el uso del suelo urbano y rural en la última década",
+        "Concentración de la población en las ciudades frente al campo"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar usos del suelo según correspondan al medio urbano o al medio rural",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Explicar por escrito las razones por las que la población se concentra más en las ciudades",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre las diferencias entre el medio urbano y el medio rural",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Cambios socioculturales por el uso de la tecnología",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende las razones de algunos cambios socioculturales en Colombia, motivados en los últimos años por el uso de la tecnología.",
+      "evidencias_aprendizaje": [
+        "Explica cómo era la vida de los pueblos cuando no existía la energía eléctrica, el acueducto, el alcantarillado y el servicio de teléfono, entre otros.",
+        "Relaciona el acceso a las tecnologías de la salud como los hospitales, las vacunas, y los medicamentos, con el bienestar de las familias.",
+        "Describe la importancia de los medios de comunicación en el desarrollo de la política y la cultura ciudadana del país.",
+        "Expresa sus opiniones sobre los cambios generados en las relaciones con su familia, desde el uso del teléfono, la TV y el Internet entre otras tecnologías y, deduce los efectos que han tenido en la vida de las personas."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Cambios socioculturales motivados por el uso de la tecnología",
+        "Acceso a servicios y tecnologías de la salud"
+      ],
+      "subtemas": [
+        "La vida de los pueblos antes de la energía eléctrica, el acueducto y el teléfono",
+        "Tecnologías de la salud y el bienestar de las familias",
+        "Medios de comunicación en el desarrollo de la política y la cultura ciudadana",
+        "Cambios en las relaciones familiares por el teléfono, la TV e Internet"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar servicios y tecnologías según pertenezcan a la vida de antes o a la vida actual",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre los cambios socioculturales generados por el uso de la tecnología",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre los cambios socioculturales por el uso de la tecnología",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Culturas ancestrales a la llegada de los españoles",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Analiza las características de las culturas ancestrales que a la llegada de los españoles, habitaban el territorio nacional.",
+      "evidencias_aprendizaje": [
+        "Reconoce los diferentes pueblos indígenas pertenecientes a las familias lingüísticas que habitaban el territorio colombiano (Chibcha, Caribe y Arawak) y los ubica espacialmente.",
+        "Compara las organizaciones sociales, económicas y religiosas de los pueblos ancestrales que habitaron el territorio colombiano (muiscas, tayronas, calimas y zenúes, entre otros).",
+        "Busca información en diferentes fuentes sobre los legados culturales de las comunidades indígenas y describe su situación actual.",
+        "Explica las razones por las cuales la población indígena se vio reducida con la llegada de los europeos."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Pueblos indígenas y familias lingüísticas del territorio colombiano",
+        "Organización social, económica y religiosa de los pueblos ancestrales"
+      ],
+      "subtemas": [
+        "Familias lingüísticas Chibcha, Caribe y Arawak",
+        "Organización de los muiscas, tayronas, calimas y zenúes",
+        "Legados culturales de las comunidades indígenas y su situación actual",
+        "Reducción de la población indígena con la llegada de los europeos"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada pueblo indígena (muisca, tayrona, calima, zenú) con su familia lingüística",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar aspectos de las culturas ancestrales según sean sociales, económicos o religiosos",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre las culturas ancestrales a la llegada de los españoles",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Diversidad étnica y cultural del pueblo colombiano",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Evalúa la diversidad étnica y cultural del pueblo colombiano desde el reconocimiento de los grupos humanos existentes en el país: afrodescendientes, raizales, mestizos, indígenas y blancos.",
+      "evidencias_aprendizaje": [
+        "Identifica las características de los diferentes grupos humanos presentes en el territorio nacional.",
+        "Explica tradiciones y costumbres propias de los diversos grupos humanos del país respecto de la alimentación, la vivienda y su cosmovisión.",
+        "Describe el intercambio de saberes que históricamente se ha dado entre las diversas culturas existentes en Colombia y sus aportes a la construcción de la idiosincrasia colombiana.",
+        "Reconoce la importancia de preservar y fomentar las manifestaciones culturales de los diferentes grupos humanos presentes en el territorio nacional y que contribuyen a construir una sociedad más justa."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Diversidad étnica y cultural del pueblo colombiano",
+        "Intercambio de saberes entre las culturas de Colombia"
+      ],
+      "subtemas": [
+        "Grupos humanos del país: afrodescendientes, raizales, mestizos, indígenas y blancos",
+        "Tradiciones y costumbres en la alimentación, la vivienda y la cosmovisión",
+        "Intercambio de saberes entre las culturas colombianas",
+        "Preservación de las manifestaciones culturales para una sociedad más justa"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar tradiciones y costumbres según el grupo humano al que pertenecen",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Emparejar cada grupo humano de Colombia con una característica cultural propia",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Quiz sobre la diversidad étnica y cultural del pueblo colombiano",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "División de poderes en la democracia colombiana",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 6",
+      "dba_enunciado": "Comprende la importancia de la división de poderes en una democracia y la forma como funciona en Colombia.",
+      "evidencias_aprendizaje": [
+        "Diferencia las ramas del poder público (Legislativa, Ejecutiva y Judicial), sus funciones e importancia en el equilibrio de poderes.",
+        "Reconoce la importancia del voto popular como mecanismo de participación para ejercer la democracia en Colombia a partir del análisis de casos.",
+        "Explica las responsabilidades de los cargos de elección popular (personeros estudiantiles, alcaldes, concejales, gobernadores, diputados, congresistas, presidente de la república).",
+        "Describe el papel de los órganos de control (procuraduría, contraloría y la defensoría del pueblo), para el funcionamiento de la democracia y el equilibrio de poderes."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "La división de poderes en la democracia colombiana",
+        "Cargos de elección popular y órganos de control"
+      ],
+      "subtemas": [
+        "Ramas del poder público: Legislativa, Ejecutiva y Judicial",
+        "El voto popular como mecanismo de participación democrática",
+        "Responsabilidades de los cargos de elección popular",
+        "Función de la procuraduría, la contraloría y la defensoría del pueblo"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada rama del poder público (Legislativa, Ejecutiva, Judicial) con su función principal",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar cargos de elección popular según pertenezcan al ámbito local, departamental o nacional",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre la división de poderes en la democracia colombiana",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Derechos y deberes de la niñez",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 7",
+      "dba_enunciado": "Analiza los derechos que protegen la niñez y los deberes que deben cumplirse en una sociedad democrática para el desarrollo de una sana convivencia.",
+      "evidencias_aprendizaje": [
+        "Describe los derechos de la niñez y asume una posición crítica frente a situaciones de discriminación y abuso por irrespeto a rasgos individuales de las personas.",
+        "Se identifica como un sujeto de derechos con unos deberes para con la comunidad educativa desde su participación en diferentes eventos escolares.",
+        "Reconoce las personas, instituciones y autoridades a las que puede acudir para la protección y defensa de los derechos de la niñez y explica cómo buscar apoyo de ser necesario, en la personería estudiantil, el comité de convivencia escolar, la comisaría de familia, el Instituto Colombiano de Bienestar Familiar (ICBF) y/o la Policía Nacional.",
+        "Describe situaciones en las que se ven vulnerados los derechos de la niñez y propone posibles soluciones para resolverlas."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "Los derechos que protegen la niñez",
+        "Deberes e instituciones de protección de la niñez"
+      ],
+      "subtemas": [
+        "Derechos de la niñez frente a la discriminación y el abuso",
+        "Deberes del sujeto de derechos en la comunidad educativa",
+        "Instituciones de protección: personería, comité de convivencia, comisaría de familia, ICBF, Policía Nacional",
+        "Situaciones de vulneración de los derechos de la niñez y sus soluciones"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada situación de vulneración de derechos con la institución a la que se debe acudir",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Proponer por escrito una solución frente a una situación donde se vulneran los derechos de la niñez",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre los derechos y deberes de la niñez",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 7,
+      "unidad_titulo": "Necesidades básicas y bienestar",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 8",
+      "dba_enunciado": "Evalúa la importancia de satisfacer las necesidades básicas para el bienestar individual, familiar y colectivo.",
+      "evidencias_aprendizaje": [
+        "Identifica las necesidades básicas de todo ser humano (vivienda, alimentación, salud, educación y empleo) y explica si se satisfacen en su comunidad.",
+        "Clasifica en orden de importancia las necesidades básicas que presentan los habitantes del territorio colombiano en la actualidad.",
+        "Reconoce los factores económicos, sociales y políticos que influyen en la satisfacción de las necesidades básicas de las personas en la sociedad colombiana.",
+        "Expresa la responsabilidad que conlleva ser parte de una comunidad y sugiere posibles actuaciones en la búsqueda de la satisfacción de las necesidades básicas."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "Las necesidades básicas para el bienestar",
+        "Factores que influyen en la satisfacción de las necesidades básicas"
+      ],
+      "subtemas": [
+        "Necesidades básicas: vivienda, alimentación, salud, educación y empleo",
+        "Orden de importancia de las necesidades básicas en Colombia",
+        "Factores económicos, sociales y políticos que influyen en su satisfacción",
+        "Responsabilidad comunitaria frente a la satisfacción de las necesidades básicas"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar las necesidades básicas (vivienda, alimentación, salud, educación, empleo) según su importancia",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Clasificar factores que influyen en la satisfacción de necesidades básicas como económicos, sociales o políticos",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre las necesidades básicas y el bienestar individual, familiar y colectivo",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }

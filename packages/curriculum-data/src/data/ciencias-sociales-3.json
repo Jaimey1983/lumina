@@ -2,7 +2,312 @@
   "grado": "3",
   "asignatura": "Ciencias Sociales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.2",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Sociales Ciclo 1°-3°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Océanos y mares en la organización económica y social",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende la importancia de los océanos y mares en la organización económica y social de los pueblos costeros en la actualidad.",
+      "evidencias_aprendizaje": [
+        "Identifica los nombres de los continentes y de los océanos que conforman el planeta Tierra y reconoce las actividades que se realizan en las zonas costeras.",
+        "Diferencia los mares como porciones de los océanos y su importancia en la fijación de límites entre países.",
+        "Plantea preguntas sobre las problemáticas ambientales que viven los océanos en la actualidad y explica el impacto en las poblaciones costeras.",
+        "Relaciona la ubicación geográfica de su departamento, municipio, resguardo o lugar donde vive, con la presencia o no de costas sobre los océanos, y reconoce las ventajas y desventajas de tenerlas."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Continentes y océanos del planeta Tierra",
+        "Importancia de los océanos y mares para los pueblos costeros"
+      ],
+      "subtemas": [
+        "Nombres de los continentes y océanos y actividades de las zonas costeras",
+        "Los mares como porciones de los océanos y los límites entre países",
+        "Problemáticas ambientales de los océanos y su impacto en las poblaciones costeras",
+        "Ventajas y desventajas de tener costas en el departamento"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada continente con el océano que lo bordea",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar problemáticas ambientales de los océanos según afecten más a las zonas costeras o al interior del país",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre los continentes, los océanos y su importancia para los pueblos costeros",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Características biogeográficas y actividades económicas",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Relaciona las características biogeográficas de su departamento, municipio, resguardo o lugar donde vive, con las actividades económicas que en ellos se realizan.",
+      "evidencias_aprendizaje": [
+        "Identifica la oferta de recursos naturales presentes en su región respecto del suelo, clima, flora, fauna y agua.",
+        "Reconoce las actividades que se realizan en su región: agricultura, ganadería, pesca, industria, minería o servicios.",
+        "Describe las formas de organización social y económica utilizadas para la explotación de los recursos naturales (empresas, asociaciones, corporaciones autónomas regionales).",
+        "Expresa por qué en espacios con determinados climas no se cuenta con ciertos productos y destaca la importancia del trabajo que realizan quienes producen los alimentos para el bienestar de todos."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Características biogeográficas del departamento",
+        "Actividades económicas relacionadas con los recursos naturales"
+      ],
+      "subtemas": [
+        "Recursos naturales de la región: suelo, clima, flora, fauna y agua",
+        "Agricultura, ganadería, pesca, industria, minería y servicios",
+        "Organizaciones que explotan los recursos naturales",
+        "Relación entre el clima y la disponibilidad de productos"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar actividades económicas según correspondan a agricultura, ganadería, pesca, industria, minería o servicios",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada recurso natural (suelo, clima, flora, fauna, agua) con una actividad económica que lo aprovecha",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre las características biogeográficas y las actividades económicas",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Acciones humanas y transformaciones del territorio",
+      "enfoque_men": "Relaciones espaciales y ambientales",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Explica las acciones humanas que han incidido en las transformaciones del territorio asociadas al número de habitantes e infraestructura, en su departamento, municipio, resguardo o lugar donde vive.",
+      "evidencias_aprendizaje": [
+        "Reconoce los cambios y/o permanencias que se presentan en espacios como la escuela, la plaza principal y el mercado, entre otros.",
+        "Diferencia cambios dados en el territorio local por la construcción de obras públicas (carreteras, parques, alcantarillado, acueducto y hospitales, entre otros).",
+        "Indaga sobre el aumento o disminución de la población en el departamento, municipio, resguardo o lugar donde vive, a partir de diferentes fuentes documentales.",
+        "Identifica problemas sociales relevantes en la población, originados en el uso de los recursos naturales."
+      ],
+      "ebc_factor": "Relaciones espaciales y ambientales",
+      "temas": [
+        "Transformaciones del territorio por la acción humana",
+        "Cambios en la población y en la infraestructura"
+      ],
+      "subtemas": [
+        "Cambios y permanencias en la escuela, la plaza principal y el mercado",
+        "Obras públicas: carreteras, parques, alcantarillado, acueducto y hospitales",
+        "Aumento o disminución de la población del territorio",
+        "Problemas sociales originados en el uso de los recursos naturales"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar cambios del territorio según se deban a obras públicas o al crecimiento de la población",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Explicar por escrito un cambio o permanencia observado en la escuela, la plaza o el mercado",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre las transformaciones del territorio por la acción humana",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "El legado de los grupos humanos en la gastronomía y la música",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende el legado de los grupos humanos en la gastronomía, la música y el paisaje de la región, municipio, resguardo o lugar donde vive.",
+      "evidencias_aprendizaje": [
+        "Identifica en su entorno algunos objetos, herramientas, aparatos, construcciones y documentos que brindan información acerca del pasado de su región.",
+        "Describe algunas costumbres y tradiciones que le permiten reconocerse como miembro de un grupo poblacional y de una nación a través de la historia oral con sus abuelos.",
+        "Compara las fiestas que se celebran en diferentes municipios de su departamento, en aspectos como: origen, propósito, duración y participantes.",
+        "Describe la diversidad en la gastronomía de diferentes regiones o provincias que conforman su departamento."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "El legado de los grupos humanos en la gastronomía y la música",
+        "Fiestas y tradiciones del departamento"
+      ],
+      "subtemas": [
+        "Objetos, herramientas y construcciones que informan sobre el pasado de la región",
+        "Costumbres y tradiciones transmitidas por la historia oral de los abuelos",
+        "Fiestas de diferentes municipios: origen, propósito, duración y participantes",
+        "Diversidad gastronómica de las regiones del departamento"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada fiesta o tradición con el municipio o la región a la que pertenece",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar objetos y construcciones según brinden información del pasado o del presente de la región",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre el legado de los grupos humanos en la gastronomía y la música",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "La importancia del tiempo en la organización de actividades",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Comprende la importancia del tiempo en la organización de las actividades sociales, económicas y culturales en su comunidad.",
+      "evidencias_aprendizaje": [
+        "Describe el tiempo dedicado en su familia a actividades como trabajar, estudiar, viajar, jugar, practicar deporte y leer.",
+        "Organiza las actividades personales y familiares con base en el uso del calendario.",
+        "Compara las actividades escolares, familiares y de uso del tiempo libre, llevadas a cabo el año pasado con las que realiza actualmente y expresa aquellas que quiere hacer el año próximo.",
+        "Elabora esquemas con la distribución del tiempo dedicado en procesos de producción y/o extracción de un producto típico en su región."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "El tiempo en la organización de las actividades sociales, económicas y culturales",
+        "El calendario y la planeación de actividades"
+      ],
+      "subtemas": [
+        "Tiempo dedicado a trabajar, estudiar, viajar, jugar, practicar deporte y leer",
+        "Organización de actividades personales y familiares con el calendario",
+        "Comparación de actividades del año pasado, del actual y del próximo",
+        "Distribución del tiempo en la producción de un producto típico de la región"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar las actividades de un día o una semana según el tiempo dedicado a cada una",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Describir por escrito cómo organiza su tiempo con ayuda del calendario",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre la importancia del tiempo en la organización de las actividades",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Contribuciones de los grupos humanos y diversidad cultural",
+      "enfoque_men": "Relaciones con la historia y las culturas",
+      "dba_codigo": "DBA 6",
+      "dba_enunciado": "Analiza las contribuciones de los grupos humanos que habitan en su departamento, municipio o lugar donde vive, a partir de sus características culturales: lengua, organización social, tipo de vivienda, cosmovisión y uso del suelo.",
+      "evidencias_aprendizaje": [
+        "Caracteriza aquellos grupos humanos que habitan en su región (afrodescendientes, raizales, blancos, indígenas, gitanos y/o mestizos).",
+        "Describe las expresiones culturales de cada uno de los grupos humanos identificados en su departamento, municipio, resguardo o lugar donde vive.",
+        "Reconoce la diversidad cultural como una característica del pueblo colombiano y explica los aportes de los diferentes grupos humanos.",
+        "Elabora conclusiones sobre la situación social y económica de los indígenas en su región haciendo uso de diferentes fuentes de información."
+      ],
+      "ebc_factor": "Relaciones con la historia y las culturas",
+      "temas": [
+        "Grupos humanos del departamento y sus características culturales",
+        "La diversidad cultural como característica del pueblo colombiano"
+      ],
+      "subtemas": [
+        "Afrodescendientes, raizales, blancos, indígenas, gitanos y mestizos",
+        "Expresiones culturales de los grupos humanos del departamento",
+        "Aportes de los diferentes grupos humanos a la diversidad cultural",
+        "Situación social y económica de los indígenas de la región"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar grupos humanos del departamento según su origen (afrodescendiente, raizal, indígena, gitano, mestizo)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada grupo humano con una expresión cultural que lo caracteriza",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre la diversidad cultural del pueblo colombiano",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Participación en las decisiones de la comunidad escolar",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 7",
+      "dba_enunciado": "Comprende la importancia de participar en las decisiones de su comunidad cercana (institución educativa) mediante la elección del gobierno escolar.",
+      "evidencias_aprendizaje": [
+        "Identifica los mecanismos de elección del gobierno escolar y la importancia de elegir y ser elegido.",
+        "Reconoce el papel que cumplen los representantes de los estudiantes y el consejo estudiantil en la vida de la institución educativa, mediante su participación en la elección de estos.",
+        "Compara las propuestas que presentan los diferentes candidatos a ocupar los cargos de personero estudiantil.",
+        "Explica la organización y el funcionamiento del consejo directivo de su institución educativa."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "El gobierno escolar y sus mecanismos de elección",
+        "Organización y funcionamiento del consejo directivo"
+      ],
+      "subtemas": [
+        "Mecanismos de elección del gobierno escolar",
+        "Papel de los representantes de los estudiantes y el consejo estudiantil",
+        "Propuestas de los candidatos a personero estudiantil",
+        "Organización y funcionamiento del consejo directivo"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada cargo del gobierno escolar (personero, representante, consejo estudiantil) con su función",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre la importancia de elegir y ser elegido en el gobierno escolar",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre el gobierno escolar y su elección",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 7,
+      "unidad_titulo": "Estructura y funcionamiento democrático del departamento",
+      "enfoque_men": "Relaciones ético-políticas",
+      "dba_codigo": "DBA 8",
+      "dba_enunciado": "Comprende la estructura y el funcionamiento democrático a nivel del departamento como entidad política, administrativa y jurídica.",
+      "evidencias_aprendizaje": [
+        "Diferencia los órganos y las funciones del poder público que tiene el departamento (gobernador, diputados y jueces) de los que tiene el municipio y los resguardos.",
+        "Explica la importancia del gobierno departamental en el mejoramiento de las condiciones de vida de los ciudadanos, en cuanto a educación, obras públicas, salud y recreación.",
+        "Emite sus opiniones frente a las problemáticas observadas en los procesos de elección de cargos políticos en la región.",
+        "Propone acciones que pueden desarrollar las instituciones departamentales para fortalecer la convivencia y la paz en las comunidades."
+      ],
+      "ebc_factor": "Relaciones ético-políticas",
+      "temas": [
+        "Estructura política, administrativa y jurídica del departamento",
+        "El gobierno departamental y las condiciones de vida de los ciudadanos"
+      ],
+      "subtemas": [
+        "Órganos y funciones del poder público del departamento, el municipio y los resguardos",
+        "Importancia del gobierno departamental en educación, obras públicas, salud y recreación",
+        "Problemáticas en los procesos de elección de cargos políticos",
+        "Acciones de las instituciones departamentales para la convivencia y la paz"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada órgano del poder público departamental (gobernador, diputados, jueces) con su función",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Proponer por escrito una acción para fortalecer la convivencia y la paz desde el departamento",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre la estructura y el funcionamiento democrático del departamento",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }
