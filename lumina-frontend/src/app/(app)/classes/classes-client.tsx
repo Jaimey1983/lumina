@@ -99,13 +99,17 @@ function ClassFormModal({
   classId,
   open,
   onOpenChange,
-  isStudent = false,
+  isPersonal = false,
 }: {
   courseId?: string;
   classId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isStudent?: boolean;
+  /** Sin curso (`courseId: null`) — el backend siempre trata esto como
+   * "presentación personal" (`isPersonalPresentation = !dto.courseId ||
+   * isStudent`), sin importar el rol real. Gobierna solo la redacción y el
+   * `courseId` enviado, no quién puede abrir el modal. */
+  isPersonal?: boolean;
 }) {
   const isEdit = !!classId;
   const { data: classDetail, isLoading: detailLoading } = useClass(classId ?? '');
@@ -136,29 +140,29 @@ function ClassFormModal({
     if (isEdit) {
       updateMutation.mutate(data, {
         onSuccess: () => {
-          toast.success(isStudent ? 'Presentación actualizada' : 'Clase actualizada');
+          toast.success(isPersonal ? 'Presentación actualizada' : 'Clase actualizada');
           onOpenChange(false);
         },
         onError: () =>
           toast.error(
-            isStudent ? 'Error al actualizar la presentación' : 'Error al actualizar la clase',
+            isPersonal ? 'Error al actualizar la presentación' : 'Error al actualizar la clase',
           ),
       });
     } else {
       createMutation.mutate(
         {
           ...data,
-          courseId: isStudent ? null : courseId,
-          modoEntrega: isStudent ? 'presentacion' : undefined,
+          courseId: isPersonal ? null : courseId,
+          modoEntrega: isPersonal ? 'presentacion' : undefined,
         },
         {
           onSuccess: () => {
-            toast.success(isStudent ? 'Presentación creada' : 'Clase creada');
+            toast.success(isPersonal ? 'Presentación creada' : 'Clase creada');
             onOpenChange(false);
           },
           onError: () =>
             toast.error(
-              isStudent ? 'Error al crear la presentación' : 'Error al crear la clase',
+              isPersonal ? 'Error al crear la presentación' : 'Error al crear la clase',
             ),
         },
       );
@@ -171,10 +175,10 @@ function ClassFormModal({
         <DialogHeader>
           <DialogTitle>
             {isEdit
-              ? isStudent
+              ? isPersonal
                 ? 'Editar presentación'
                 : 'Editar clase'
-              : isStudent
+              : isPersonal
                 ? 'Nueva presentación'
                 : 'Nueva clase'}
           </DialogTitle>
@@ -198,7 +202,7 @@ function ClassFormModal({
                       <FormControl>
                         <Input
                           placeholder={
-                            isStudent ? 'Título de la presentación' : 'Título de la clase'
+                            isPersonal ? 'Título de la presentación' : 'Título de la clase'
                           }
                           {...field}
                         />
@@ -230,7 +234,7 @@ function ClassFormModal({
                     ? 'Guardando...'
                     : isEdit
                       ? 'Guardar cambios'
-                      : isStudent
+                      : isPersonal
                         ? 'Crear presentación'
                         : 'Crear clase'}
                 </Button>
@@ -250,13 +254,13 @@ function DeleteDialog({
   courseId,
   open,
   onOpenChange,
-  isStudent = false,
+  isPersonal = false,
 }: {
   cls: Class | null;
   courseId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isStudent?: boolean;
+  isPersonal?: boolean;
 }) {
   const deleteMutation = useDeleteClass(courseId);
 
@@ -264,7 +268,7 @@ function DeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isStudent ? '¿Eliminar presentación?' : '¿Eliminar clase?'}</DialogTitle>
+          <DialogTitle>{isPersonal ? '¿Eliminar presentación?' : '¿Eliminar clase?'}</DialogTitle>
         </DialogHeader>
         <DialogBody>
           <p className="text-sm text-muted-foreground">
@@ -284,12 +288,12 @@ function DeleteDialog({
               if (!cls) return;
               deleteMutation.mutate(cls.id, {
                 onSuccess: () => {
-                  toast.success(isStudent ? 'Presentación eliminada' : 'Clase eliminada');
+                  toast.success(isPersonal ? 'Presentación eliminada' : 'Clase eliminada');
                   onOpenChange(false);
                 },
                 onError: () =>
                   toast.error(
-                    isStudent ? 'Error al eliminar la presentación' : 'Error al eliminar la clase',
+                    isPersonal ? 'Error al eliminar la presentación' : 'Error al eliminar la clase',
                   ),
               });
             }}
@@ -315,13 +319,13 @@ function ClassCard({
   courseId,
   onDelete,
   index,
-  isStudent = false,
+  isPersonal = false,
 }: {
   cls: Class;
   courseId?: string;
   onDelete: (c: Class) => void;
   index: number;
-  isStudent?: boolean;
+  isPersonal?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -378,10 +382,10 @@ function ClassCard({
       }}
     >
       <Link
-        href={isStudent ? `/classes/${cls.id}/editor` : `/classes/${cls.id}`}
+        href={isPersonal ? `/classes/${cls.id}/editor` : `/classes/${cls.id}`}
         className="absolute inset-0 z-0"
         aria-label={
-          isStudent ? `Abrir presentación: ${cls.title}` : `Abrir clase: ${cls.title}`
+          isPersonal ? `Abrir presentación: ${cls.title}` : `Abrir clase: ${cls.title}`
         }
       />
 
@@ -417,7 +421,7 @@ function ClassCard({
             'group-hover:pointer-events-auto group-hover:opacity-100',
           )}
         >
-          {isStudent && (
+          {isPersonal && (
             <Link
               href={`/classes/${cls.id}/present`}
               onClick={(e) => e.stopPropagation()}
@@ -431,13 +435,13 @@ function ClassCard({
           <Link
             href={`/classes/${cls.id}/editor`}
             onClick={(e) => e.stopPropagation()}
-            aria-label={isStudent ? 'Editar presentación' : 'Abrir editor'}
-            title={isStudent ? 'Editar presentación' : 'Abrir editor'}
+            aria-label={isPersonal ? 'Editar presentación' : 'Abrir editor'}
+            title={isPersonal ? 'Editar presentación' : 'Abrir editor'}
             className="relative z-10 inline-flex text-white/70 transition-colors hover:text-blue-400"
           >
             <Pencil size={18} className="cursor-pointer" aria-hidden />
           </Link>
-          {!isStudent && !published ? (
+          {!isPersonal && !published ? (
             <button
               type="button"
               disabled={publishMutation.isPending}
@@ -460,8 +464,8 @@ function ClassCard({
               e.stopPropagation();
               onDelete(cls);
             }}
-            aria-label={isStudent ? 'Eliminar presentación' : 'Eliminar clase'}
-            title={isStudent ? 'Eliminar presentación' : 'Eliminar clase'}
+            aria-label={isPersonal ? 'Eliminar presentación' : 'Eliminar clase'}
+            title={isPersonal ? 'Eliminar presentación' : 'Eliminar clase'}
             className="relative z-10 inline-flex border-0 bg-transparent p-0 text-red-400 transition-colors hover:text-red-300"
           >
             <Trash2 size={18} className="cursor-pointer" aria-hidden />
@@ -476,7 +480,7 @@ function ClassCard({
             className="text-xs font-medium px-2 py-0.5 rounded-full"
             style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
           >
-            {isStudent ? 'Presentación' : statusLabel(cls.status)}
+            {isPersonal ? 'Presentación' : statusLabel(cls.status)}
           </span>
           <span className="text-xs text-[#9ca3af] shrink-0">
             {typeof slideCount === 'number'
@@ -497,12 +501,12 @@ function ClassesGrid({
   classes,
   courseId,
   onDelete,
-  isStudent = false,
+  isPersonal = false,
 }: {
   classes: Class[];
   courseId?: string;
   onDelete: (cls: Class) => void;
-  isStudent?: boolean;
+  isPersonal?: boolean;
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -513,7 +517,7 @@ function ClassesGrid({
           courseId={courseId}
           onDelete={onDelete}
           index={index}
-          isStudent={isStudent}
+          isPersonal={isPersonal}
         />
       ))}
     </div>
@@ -528,6 +532,14 @@ export function ClassesClient() {
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
   const [studentTab, setStudentTab] = useState<'classes' | 'presentations'>('classes');
+  // Docente/admin: "Clases de mis cursos" (requiere curso) vs "Mis presentaciones
+  // personales" (courseId: null — el backend ya trata esto como presentación
+  // personal para cualquier rol, `isPersonalPresentation = !dto.courseId ||
+  // isStudent`). Antes de esta pestaña, una clase personal de docente — p. ej.
+  // la copia creada por "Duplicar a mis clases" en la Guía de Lumina — no tenía
+  // ningún camino de UI para volver a encontrarla (ver AGENTS.md, análisis del
+  // problema "todas las clases asociadas a un curso").
+  const [teacherTab, setTeacherTab] = useState<'courses' | 'presentations'>('courses');
   const [coursePick, setCoursePick] = useState<string | null>(null);
   const selectedCourseId = isStudent ? '' : (coursePick ?? courses[0]?.id ?? '');
   const [formOpen, setFormOpen] = useState(false);
@@ -535,6 +547,13 @@ export function ClassesClient() {
     open: false,
     cls: null,
   });
+
+  const isPersonalTab = isStudent
+    ? studentTab === 'presentations'
+    : teacherTab === 'presentations';
+  // Nunca pasar un `selectedCourseId` "colgado" de la pestaña de cursos hacia
+  // las presentaciones personales del docente (que son courseId: null).
+  const effectiveCourseId = isPersonalTab ? undefined : selectedCourseId;
 
   // Clases matriculadas para estudiantes (GET /classes/enrolled)
   const {
@@ -545,32 +564,31 @@ export function ClassesClient() {
     enabled: isStudent,
   });
 
-  // Presentaciones personales para estudiantes o clases del curso para docentes
+  // Presentaciones personales (alumno o docente, courseId: null) o clases del
+  // curso seleccionado (docente).
   const {
     data: classes = [],
     isLoading: classesLoading,
     isError: classesError,
-  } = useClasses(isStudent ? undefined : selectedCourseId, {
-    enabled: isStudent ? studentTab === 'presentations' : !!selectedCourseId,
+  } = useClasses(effectiveCourseId, {
+    enabled: isStudent
+      ? studentTab === 'presentations'
+      : isPersonalTab || !!selectedCourseId,
   });
 
   function handleDelete(cls: Class) {
     setDeleteDialog({ open: true, cls });
   }
 
-  const bannerTitle = isStudent
-    ? studentTab === 'classes'
-      ? 'Mis Clases'
-      : 'Mis Presentaciones'
-    : 'Mis Clases';
+  const bannerTitle = isPersonalTab ? 'Mis Presentaciones' : 'Mis Clases';
 
-  const bannerSubtitle = isStudent
-    ? studentTab === 'classes'
+  const bannerSubtitle = isPersonalTab
+    ? `${classes.length} presentación${classes.length !== 1 ? 'es' : ''} · Crea y organiza tus presentaciones interactivas`
+    : isStudent
       ? `${enrolledClasses.length} clase${enrolledClasses.length !== 1 ? 's' : ''} en tus cursos matriculados`
-      : `${classes.length} presentación${classes.length !== 1 ? 'es' : ''} · Crea y organiza tus presentaciones interactivas`
-    : selectedCourseId
-      ? `${classes.length} clase${classes.length !== 1 ? 's' : ''} · Gestiona y organiza tu contenido`
-      : 'Selecciona un curso para ver tus clases';
+      : selectedCourseId
+        ? `${classes.length} clase${classes.length !== 1 ? 's' : ''} · Gestiona y organiza tu contenido`
+        : 'Selecciona un curso para ver tus clases';
 
   return (
     <div className="w-full flex flex-col gap-0 pb-6">
@@ -579,17 +597,15 @@ export function ClassesClient() {
         subtitle={bannerSubtitle}
         backHref="/dashboard"
         action={
-          isStudent ? (
-            studentTab === 'presentations' ? (
-              <button
-                type="button"
-                onClick={() => setFormOpen(true)}
-                className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
-              >
-                ＋ Nueva presentación
-              </button>
-            ) : null
-          ) : (
+          isPersonalTab ? (
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="bg-white text-[#2563EB] font-extrabold text-[0.75rem] px-4 py-1.5 rounded-lg border-none cursor-pointer"
+            >
+              ＋ Nueva presentación
+            </button>
+          ) : isStudent ? null : (
             <button
               type="button"
               disabled={!selectedCourseId}
@@ -641,8 +657,41 @@ export function ClassesClient() {
           </div>
         )}
 
-        {/* Selector de curso (Docentes) */}
+        {/* Pestañas para docente/admin (Clases de mis cursos vs Mis presentaciones) */}
         {!isStudent && (
+          <div className="flex border-b border-[#e5e7eb] gap-6 mb-2">
+            <button
+              type="button"
+              onClick={() => setTeacherTab('courses')}
+              className={cn(
+                'pb-3 text-sm font-bold transition-all relative flex items-center gap-2',
+                teacherTab === 'courses'
+                  ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
+                  : 'text-gray-500 hover:text-gray-800',
+              )}
+            >
+              <span>Clases de mis cursos</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTeacherTab('presentations')}
+              className={cn(
+                'pb-3 text-sm font-bold transition-all relative flex items-center gap-2',
+                teacherTab === 'presentations'
+                  ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
+                  : 'text-gray-500 hover:text-gray-800',
+              )}
+            >
+              <span>Mis presentaciones personales</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                {teacherTab === 'presentations' ? classes.length : ''}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Selector de curso (Docentes, solo en la pestaña "Clases de mis cursos") */}
+        {!isStudent && teacherTab === 'courses' && (
           <div className="flex flex-wrap items-center gap-3">
             <label
               htmlFor="course-select"
@@ -743,20 +792,20 @@ export function ClassesClient() {
             <CardHeader>
               <CardHeading>
                 <CardTitle>
-                  {isStudent
+                  {isPersonalTab
                     ? 'Mis presentaciones personales'
                     : selectedCourseId
                       ? `Clases de ${courses.find((c) => c.id === selectedCourseId)?.name ?? 'curso seleccionado'}`
                       : 'Clases'}
                 </CardTitle>
               </CardHeading>
-              {(isStudent || selectedCourseId) && (
+              {(isPersonalTab || selectedCourseId) && (
                 <CardToolbar>
                   <span className="text-sm text-muted-foreground">
                     {classesLoading
                       ? '...'
                       : `${classes.length} ${
-                          isStudent
+                          isPersonalTab
                             ? `presentación${classes.length !== 1 ? 'es' : ''}`
                             : `clase${classes.length !== 1 ? 's' : ''}`
                         }`}
@@ -765,7 +814,7 @@ export function ClassesClient() {
               )}
             </CardHeader>
             <CardContent className="p-4">
-              {!isStudent && !selectedCourseId ? (
+              {!isStudent && !isPersonalTab && !selectedCourseId ? (
                 <div className="flex flex-col items-center gap-3 py-16 text-center">
                   <GraduationCap className="size-10 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
@@ -791,7 +840,7 @@ export function ClassesClient() {
               ) : classes.length === 0 ? (
                 <div className="flex flex-col items-center gap-4 py-16 text-center">
                   <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                    {isStudent ? (
+                    {isPersonalTab ? (
                       <BookOpen className="size-6 text-muted-foreground" />
                     ) : (
                       <GraduationCap className="size-6 text-muted-foreground" />
@@ -799,10 +848,10 @@ export function ClassesClient() {
                   </div>
                   <div>
                     <p className="font-medium">
-                      {isStudent ? 'No tienes presentaciones aún' : 'No hay clases aún'}
+                      {isPersonalTab ? 'No tienes presentaciones aún' : 'No hay clases aún'}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {isStudent
+                      {isPersonalTab
                         ? 'Crea tu primera presentación interactiva para comenzar.'
                         : 'Crea la primera clase para este curso.'}
                     </p>
@@ -814,33 +863,35 @@ export function ClassesClient() {
                     }}
                   >
                     <Plus className="size-4" />
-                    {isStudent ? 'Crear primera presentación' : 'Crear primera clase'}
+                    {isPersonalTab ? 'Crear primera presentación' : 'Crear primera clase'}
                   </Button>
                 </div>
               ) : (
                 <ClassesGrid
                   classes={classes}
-                  courseId={selectedCourseId}
+                  courseId={effectiveCourseId}
                   onDelete={handleDelete}
-                  isStudent={isStudent}
+                  isPersonal={isPersonalTab}
                 />
               )}
             </CardContent>
           </Card>
         )}
 
-        {/* Nueva presentación (alumno, sin curso) — modal simple título+descripción */}
-        {isStudent && studentTab === 'presentations' && (
+        {/* Nueva presentación personal (alumno o docente, sin curso) — modal
+            simple título+descripción, courseId: null (misma semántica que el
+            backend le da a cualquier rol sin curso). */}
+        {isPersonalTab && (
           <ClassFormModal
-            courseId={selectedCourseId}
+            courseId={effectiveCourseId}
             open={formOpen}
             onOpenChange={setFormOpen}
-            isStudent
+            isPersonal
           />
         )}
 
-        {/* Nueva clase (docente) — único camino de creación, motor curricular (Etapa J / J6) */}
-        {!isStudent && selectedCourseId && (
+        {/* Nueva clase (docente, con curso) — único camino de creación, motor curricular (Etapa J / J6) */}
+        {!isStudent && teacherTab === 'courses' && selectedCourseId && (
           <NewClassCurricularModal
             courseId={selectedCourseId}
             open={formOpen}
@@ -851,10 +902,10 @@ export function ClassesClient() {
         {/* Delete dialog */}
         <DeleteDialog
           cls={deleteDialog.cls}
-          courseId={selectedCourseId}
+          courseId={effectiveCourseId}
           open={deleteDialog.open}
           onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
-          isStudent={isStudent}
+          isPersonal={isPersonalTab}
         />
       </div>
     </div>
