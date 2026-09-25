@@ -2,7 +2,156 @@
   "grado": "5",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.1",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 4°-5°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Circuitos eléctricos básicos",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende que un circuito eléctrico básico está formado por un generador o fuente (pila), conductores (cables) y uno o más dispositivos (bombillos, motores, timbres), que deben estar conectados apropiadamente (por sus dos polos) para que funcionen y produzcan diferentes efectos.",
+      "evidencias_aprendizaje": [
+        "Realiza circuitos eléctricos simples que funcionan con fuentes (pilas), cables y dispositivos (bombillo, motores, timbres) y los representa utilizando los símbolos apropiados.",
+        "Identifica y soluciona dificultades cuando construye un circuito que no funciona.",
+        "Identifica los diferentes efectos que se producen en los componentes de un circuito como luz y calor en un bombillo, movimiento en un motor y sonido en un timbre."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Componentes de un circuito eléctrico básico",
+        "Efectos producidos por un circuito eléctrico"
+      ],
+      "subtemas": [
+        "Fuente (pila), conductores (cables) y dispositivos (bombillos, motores, timbres) de un circuito",
+        "Conexión apropiada de los dos polos de la fuente para que el circuito funcione",
+        "Identificar y solucionar por qué un circuito no funciona",
+        "Efectos de un circuito: luz y calor en un bombillo, movimiento en un motor, sonido en un timbre"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada componente de un circuito eléctrico (pila, cable, bombillo, motor, timbre) con su función",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar los efectos de un circuito según el dispositivo que los produce (luz, movimiento, sonido)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre los componentes y el funcionamiento de un circuito eléctrico básico",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Materiales conductores y aislantes",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende que algunos materiales son buenos conductores de la corriente eléctrica y otros no (denominados aislantes) y que el paso de la corriente siempre genera calor.",
+      "evidencias_aprendizaje": [
+        "Construye experimentalmente circuitos sencillos para establecer qué materiales son buenos conductores de la corriente eléctrica y cuáles no.",
+        "Identifica, en un conjunto de materiales dados, cuáles son buenos conductores de corriente y cuáles son aislantes de acuerdo a su comportamiento dentro de un circuito eléctrico básico.",
+        "Explica por qué algunos objetos se fabrican con ciertos materiales (por ejemplo, por qué los cables están recubiertos por plástico y formados por metal) en función de su capacidad para conducir electricidad.",
+        "Verifica, con el tacto, que los componentes de un circuito (cables, pilas, bombillos, motores) se calientan cuando están funcionando, y lo atribuye al paso de la corriente eléctrica."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Materiales conductores y aislantes de la corriente eléctrica",
+        "Generación de calor por el paso de la corriente"
+      ],
+      "subtemas": [
+        "Identificar materiales conductores y aislantes probándolos en un circuito eléctrico básico",
+        "Por qué los cables se fabrican con metal (conductor) recubierto de plástico (aislante)",
+        "El paso de la corriente eléctrica siempre genera calor en los componentes del circuito"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar materiales cotidianos como conductores o aislantes de la corriente eléctrica",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre por qué los cables están recubiertos de plástico y formados por metal",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre materiales conductores y aislantes",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Órganos, tejidos y células del cuerpo humano",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende que los sistemas del cuerpo humano están formados por órganos, tejidos y células y que la estructura de cada tipo de célula está relacionada con la función del tejido que forman.",
+      "evidencias_aprendizaje": [
+        "Explica la estructura (órganos, tejidos y células) y las funciones de los sistemas de su cuerpo.",
+        "Relaciona el funcionamiento de los tejidos de un ser vivo con los tipos de células que posee.",
+        "Asocia el cuidado de sus sistemas con una alimentación e higiene adecuadas."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Niveles de organización del cuerpo humano: célula, tejido, órgano, sistema",
+        "Cuidado de los sistemas del cuerpo"
+      ],
+      "subtemas": [
+        "Relación entre la estructura de una célula y la función del tejido que forma",
+        "Cómo se organizan las células en tejidos, los tejidos en órganos y los órganos en sistemas",
+        "Alimentación e higiene adecuadas para el cuidado de los sistemas del cuerpo"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar los niveles de organización del cuerpo humano de menor a mayor complejidad (célula, tejido, órgano, sistema)",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Relacionar cada sistema del cuerpo con los órganos que lo componen",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre los niveles de organización del cuerpo humano",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Sistemas digestivo, respiratorio y circulatorio en la nutrición",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende que en los seres humanos (y en muchos otros animales) la nutrición involucra el funcionamiento integrado de un conjunto de sistemas de órganos: digestivo, respiratorio y circulatorio.",
+      "evidencias_aprendizaje": [
+        "Explica el camino que siguen los alimentos en el organismo y los cambios que sufren durante el proceso de digestión desde que son ingeridos hasta que los nutrientes llegan a las células.",
+        "Relaciona las características de los órganos del sistema digestivo (tipos de dientes, características de intestinos y estómagos) de diferentes organismos con los tipos de alimento que consumen.",
+        "Explica por qué cuando se hace ejercicio físico aumentan tanto la frecuencia cardíaca como la respiratoria y vincula la explicación con los procesos de obtención de energía de las células.",
+        "Explica el intercambio gaseoso que ocurre en los alvéolos pulmonares, entre la sangre y el aire, y lo relaciona con los procesos de obtención de energía de las células."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Funcionamiento integrado de los sistemas digestivo, respiratorio y circulatorio",
+        "Proceso de digestión y obtención de energía de las células"
+      ],
+      "subtemas": [
+        "El camino de los alimentos en el organismo hasta que los nutrientes llegan a las células",
+        "Relación entre los órganos del sistema digestivo y el tipo de alimento que consume un organismo",
+        "Por qué el ejercicio físico aumenta la frecuencia cardíaca y respiratoria",
+        "Intercambio gaseoso en los alvéolos pulmonares entre la sangre y el aire"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar el camino que siguen los alimentos en el organismo desde que se ingieren hasta que los nutrientes llegan a las células",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Predecir por escrito por qué aumenta la frecuencia cardíaca y respiratoria al hacer ejercicio físico",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre el funcionamiento integrado de los sistemas digestivo, respiratorio y circulatorio",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }

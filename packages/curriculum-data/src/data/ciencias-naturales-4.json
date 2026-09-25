@@ -2,7 +2,263 @@
   "grado": "4",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA V.1",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 4°-5°",
   "version": "1.0",
-  "unidades": []
+  "unidades": [
+    {
+      "unidad_id": 0,
+      "unidad_titulo": "Fuerza, dirección y movimiento",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende que la magnitud y la dirección en que se aplica una fuerza puede producir cambios en la forma como se mueve un objeto (dirección y rapidez).",
+      "evidencias_aprendizaje": [
+        "Describe las características de las fuerzas (magnitud y dirección) que se deben aplicar para producir un efecto dado (detener, acelerar, cambiar de dirección).",
+        "Indica, a partir de pequeñas experiencias, cuando una fuerza aplicada sobre un cuerpo no produce cambios en su estado de reposo, de movimiento o en su dirección.",
+        "Comunica resultados sobre los efectos de la fuerza de fricción en el movimiento de los objetos al comparar superficies con distintos niveles de rozamiento.",
+        "Predice y explica en una situación de objetos desplazándose por diferentes superficies (lisas, rugosas) en cuál de ellas el cuerpo puede mantenerse por más tiempo en movimiento."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Magnitud y dirección de una fuerza",
+        "Efecto de la fricción sobre el movimiento"
+      ],
+      "subtemas": [
+        "Cómo la magnitud y dirección de una fuerza cambian la rapidez o dirección de un objeto",
+        "Cuándo una fuerza no produce cambios en el estado de reposo o movimiento de un cuerpo",
+        "Comparar el rozamiento entre superficies lisas y rugosas",
+        "Predecir en qué superficie un cuerpo se mantiene más tiempo en movimiento"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar situaciones según el efecto de la fuerza aplicada (detener, acelerar, cambiar de dirección)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Predecir por escrito en qué superficie (lisa o rugosa) un objeto se mantiene más tiempo en movimiento",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre los efectos de la fuerza de fricción en el movimiento de los objetos",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Máquinas simples",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende los efectos y las ventajas de utilizar máquinas simples en diferentes tareas que requieren la aplicación de una fuerza.",
+      "evidencias_aprendizaje": [
+        "Explora cómo los cambios en el tamaño de una palanca (longitud) o la posición del punto de apoyo afectan las fuerzas y los movimientos implicados.",
+        "Describe la función que cumplen fuerzas en una máquina simple para generar movimiento.",
+        "Identifica y observa máquinas simples en objetos cotidianos para explicar su utilidad (aplicar una fuerza pequeña para generar una fuerza grande, generar un pequeño movimiento para crear un gran movimiento).",
+        "Identifica y describe palancas presentes en su cuerpo, conformadas por sus sistemas óseo y muscular."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Máquinas simples y ventajas mecánicas",
+        "Palancas: longitud y punto de apoyo"
+      ],
+      "subtemas": [
+        "Cómo el tamaño de una palanca o la posición del punto de apoyo afectan la fuerza y el movimiento",
+        "Máquinas simples en objetos cotidianos: aplicar una fuerza pequeña para generar una fuerza grande",
+        "Palancas presentes en el cuerpo humano (sistema óseo y muscular)"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar objetos cotidianos según el tipo de máquina simple que utilizan",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Emparejar cada máquina simple con la palanca del cuerpo humano que le corresponde",
+          "tipo": "Emparejar"
+        },
+        {
+          "descripcion": "Quiz sobre la utilidad de las máquinas simples para generar una fuerza o un movimiento mayor",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Rotación de la Tierra: el día y la noche",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende que el fenómeno del día y la noche se debe a que la Tierra rota sobre su eje y en consecuencia el sol sólo ilumina la mitad de su superficie.",
+      "evidencias_aprendizaje": [
+        "Registra y realiza dibujos de las sombras que proyecta un objeto que recibe la luz del Sol en diferentes momentos del día, relacionándolas con el movimiento aparente del Sol en el cielo.",
+        "Explica cómo se producen el día y la noche por medio de una maqueta o modelo de la Tierra y del Sol.",
+        "Observa y registra algunos patrones de regularidad (ciclo del día y la noche), elabora tablas y comunica los resultados."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Rotación de la Tierra sobre su eje",
+        "Causa del día y la noche"
+      ],
+      "subtemas": [
+        "La Tierra rota sobre su eje y el Sol solo ilumina la mitad de su superficie",
+        "Relación entre la sombra de un objeto y el movimiento aparente del Sol",
+        "Registro de patrones de regularidad del ciclo día-noche en tablas"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar los momentos del día según la posición aparente del Sol en el cielo",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre la causa del día y la noche",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre la rotación de la Tierra y el ciclo día-noche",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Fases de la Luna",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Comprende que las fases de la Luna se deben a la posición relativa del Sol, la Luna y la Tierra a lo largo del mes.",
+      "evidencias_aprendizaje": [
+        "Realiza observaciones de la forma de la Luna y las registra mediante dibujos, explicando cómo varían a lo largo del mes.",
+        "Predice cuál sería la fase de la Luna que un observador vería desde la Tierra, dada una cierta posición relativa entre la Tierra, el Sol y la Luna."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Fases de la Luna a lo largo del mes",
+        "Posición relativa del Sol, la Luna y la Tierra"
+      ],
+      "subtemas": [
+        "Cómo varía la forma visible de la Luna a lo largo del mes",
+        "Predecir la fase de la Luna según la posición relativa Tierra-Sol-Luna"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Ordenar las fases de la Luna según su secuencia a lo largo del mes",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Predecir por escrito la fase de la Luna dada una posición relativa entre la Tierra, el Sol y la Luna",
+          "tipo": "Respuesta abierta"
+        },
+        {
+          "descripcion": "Quiz sobre las fases de la Luna",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Mezclas homogéneas y heterogéneas",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Comprende que existen distintos tipos de mezclas (homogéneas y heterogéneas) que de acuerdo con los materiales que las componen pueden separarse mediante diferentes técnicas (filtración, tamizado, decantación, evaporación).",
+      "evidencias_aprendizaje": [
+        "Clasifica como homogénea o heterogénea una mezcla dada, a partir del número de fases observadas.",
+        "Selecciona las técnicas para separar una mezcla dada, de acuerdo con las propiedades de sus componentes.",
+        "Predice el tipo de mezcla que se producirá a partir de la combinación de materiales, considerando ejemplos de materiales cotidianos en diferentes estados de agregación (agua-aceite, arena-gravilla, agua-piedras).",
+        "Compara las ventajas y desventajas de distintas técnicas de separación (filtración, tamizado, decantación, evaporación) de mezclas homogéneas y heterogéneas, considerando ejemplos de mezclas concretas."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Mezclas homogéneas y heterogéneas",
+        "Técnicas de separación de mezclas"
+      ],
+      "subtemas": [
+        "Clasificar una mezcla como homogénea o heterogénea según el número de fases observadas",
+        "Seleccionar la técnica de separación (filtración, tamizado, decantación, evaporación) según los componentes de la mezcla",
+        "Predecir el tipo de mezcla resultante al combinar materiales cotidianos",
+        "Ventajas y desventajas de cada técnica de separación"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar mezclas cotidianas como homogéneas o heterogéneas",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada mezcla con la técnica de separación más adecuada para sus componentes",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre técnicas de separación de mezclas",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 5,
+      "unidad_titulo": "Niveles tróficos, cadenas y redes alimenticias",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 6",
+      "dba_enunciado": "Comprende que los organismos cumplen distintas funciones en cada uno de los niveles tróficos y que las relaciones entre ellos pueden representarse en cadenas y redes alimenticias.",
+      "evidencias_aprendizaje": [
+        "Identifica los niveles tróficos en cadenas y redes alimenticias y establece la función de cada uno en un ecosistema.",
+        "Indica qué puede ocurrir con las distintas poblaciones que forman parte de una red alimenticia cuando se altera cualquiera de sus niveles.",
+        "Representa cadenas, pirámides o redes tróficas para establecer relaciones entre los niveles tróficos."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Niveles tróficos en un ecosistema",
+        "Cadenas y redes alimenticias"
+      ],
+      "subtemas": [
+        "Función de cada nivel trófico (productores, consumidores, descomponedores) en un ecosistema",
+        "Efecto de alterar un nivel trófico sobre las poblaciones de una red alimenticia",
+        "Representación de cadenas, pirámides y redes tróficas"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar organismos según el nivel trófico que ocupan en una cadena alimenticia",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Ordenar los eslabones de una cadena alimenticia desde el productor hasta el último consumidor",
+          "tipo": "Ordenar"
+        },
+        {
+          "descripcion": "Predecir por escrito qué ocurre con una red alimenticia si se altera uno de sus niveles tróficos",
+          "tipo": "Respuesta abierta"
+        }
+      ]
+    },
+    {
+      "unidad_id": 6,
+      "unidad_titulo": "Tipos de ecosistemas y sus características físicas",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 7",
+      "dba_enunciado": "Comprende que existen distintos tipos de ecosistemas (terrestres y acuáticos) y que sus características físicas (temperatura, humedad, tipos de suelo, altitud) permiten que habiten en ellos diferentes seres vivos.",
+      "evidencias_aprendizaje": [
+        "Diferencia tipos de ecosistemas (terrestres y acuáticos) correspondientes a distintas ubicaciones geográficas, para establecer sus principales características.",
+        "Explica cómo repercuten las características físicas (temperatura, humedad, tipo de suelo, altitud) de ecosistemas (acuáticos y terrestres) en la supervivencia de los organismos que allí habitan.",
+        "Propone representaciones de los ecosistemas representativos de su región, resaltando sus particularidades (especies endémicas, potencialidades ecoturísticas, entre otros) y plantea estrategias para su conservación."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Ecosistemas terrestres y acuáticos",
+        "Características físicas de un ecosistema y sus organismos"
+      ],
+      "subtemas": [
+        "Diferencias entre ecosistemas terrestres y acuáticos según su ubicación geográfica",
+        "Cómo la temperatura, humedad, tipo de suelo y altitud afectan la supervivencia de los seres vivos",
+        "Particularidades de los ecosistemas de la región (especies endémicas) y estrategias de conservación"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar ecosistemas de su región como terrestres o acuáticos",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Relacionar cada característica física del ecosistema (temperatura, humedad, suelo, altitud) con su efecto sobre los seres vivos",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Quiz sobre tipos de ecosistemas y sus características físicas",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    }
+  ]
 }
