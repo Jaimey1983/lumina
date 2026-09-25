@@ -17,7 +17,7 @@ import {
 
 import { useAuth } from '@/hooks/use-auth';
 import { useCourses, type Course } from '@/hooks/api/use-courses';
-import { useClassesByCourses, type Class } from '@/hooks/api/use-classes';
+import { useClasses, useClassesByCourses, type Class } from '@/hooks/api/use-classes';
 import { useAnalytics } from '@/hooks/api/use-analytics';
 import { useUsers } from '@/hooks/api/use-users';
 import { useMyGrades } from '@/hooks/api/use-grades';
@@ -293,9 +293,20 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
   const courses = useMemo(() => coursesQuery.data ?? [], [coursesQuery.data]);
 
   const classesQuery = useClassesByCourses(courses.map((c) => c.id));
+  // Presentaciones personales del docente (courseId: null) — sin esto quedan
+  // huérfanas en la UI, ver AGENTS.md / fix de la pestaña en /classes (#29).
+  const personalClassesQuery = useClasses(undefined, { enabled: true });
   const analyticsQuery = useAnalytics();
 
-  const classes = useMemo(() => classesQuery.data ?? [], [classesQuery.data]);
+  const courseClasses = useMemo(() => classesQuery.data ?? [], [classesQuery.data]);
+  const personalClasses = useMemo(
+    () => personalClassesQuery.data ?? [],
+    [personalClassesQuery.data],
+  );
+  const classes = useMemo(
+    () => [...courseClasses, ...personalClasses],
+    [courseClasses, personalClasses],
+  );
 
   const bounds = useMemo(() => monthBounds(), []);
   const sessionsThisMonth = useMemo(
@@ -332,7 +343,8 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
       : '—';
 
   const nombre = user.name?.trim() || 'docente';
-  const loadingLists = coursesQuery.isLoading || classesQuery.isLoading;
+  const loadingLists =
+    coursesQuery.isLoading || classesQuery.isLoading || personalClassesQuery.isLoading;
 
   return (
     <div className="w-full flex flex-col gap-0 pb-6">
@@ -350,7 +362,9 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
       />
       <div className="px-6 pt-4 space-y-5">
         {coursesQuery.isError && <ErrorAlert message="No se pudieron cargar los cursos." />}
-        {classesQuery.isError && <ErrorAlert message="No se pudieron cargar las clases." />}
+        {(classesQuery.isError || personalClassesQuery.isError) && (
+          <ErrorAlert message="No se pudieron cargar las clases." />
+        )}
 
         <HelpGuideDashboardCard />
 
@@ -430,7 +444,7 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-lumina-sm">
           <h2 className="mb-4 text-lumina-md font-bold text-[#1e1b4b]">Clases recientes</h2>
-          {classesQuery.isLoading ? (
+          {classesQuery.isLoading || personalClassesQuery.isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-14 w-full rounded-lg" />
@@ -443,7 +457,7 @@ function TeacherDashboard({ user }: { user: AuthUser }) {
               {recentClasses.map((cls, index) => {
                 const courseName = cls.courseId
                   ? courseById.get(cls.courseId)?.name ?? 'Curso'
-                  : 'Curso';
+                  : 'Presentación personal';
                 return (
                   <li key={cls.id}>
                     <Link
