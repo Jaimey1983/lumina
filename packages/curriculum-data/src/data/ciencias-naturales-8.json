@@ -2,69 +2,195 @@
   "grado": "8",
   "asignatura": "Ciencias Naturales",
   "pais": "Colombia",
-  "referente_normativo": "DBA v2 + EBC",
-  "version": "placeholder-1.0",
+  "referente_normativo": "DBA V.1 + EBC Ciencias Naturales Ciclo 8°-9°",
+  "version": "1.0",
   "unidades": [
     {
       "unidad_id": 0,
-      "unidad_titulo": "Placeholder — reemplazar con JSON real",
-      "dba_asociados": [
-        1
+      "unidad_titulo": "Máquinas térmicas y leyes de la termodinámica",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 1",
+      "dba_enunciado": "Comprende el funcionamiento de máquinas térmicas (motores de combustión, refrigeración) por medio de las leyes de la termodinámica (primera y segunda ley).",
+      "evidencias_aprendizaje": [
+        "Describe el cambio en la energía interna de un sistema a partir del trabajo mecánico realizado y del calor transferido.",
+        "Explica la primera ley de la termodinámica a partir de la energía interna de un sistema, el calor y el trabajo, con relación a la conservación de la energía.",
+        "Describe la eficiencia mecánica de una máquina a partir de las relaciones entre el calor y trabajo mecánico mediante la segunda ley de la termodinámica.",
+        "Explica, haciendo uso de las leyes termodinámicas, el funcionamiento térmico de diferentes máquinas (motor de combustión, refrigerador)."
       ],
-      "dba_relacionados": [],
-      "enfoque_men": "Producción Textual",
-      "nivel_cognitivo": {
-        "nivel": "Comprender",
-        "verbo_bloom": [
-          "identificar"
-        ],
-        "nivel_numero": 2
-      },
+      "ebc_factor": "Entorno físico",
       "temas": [
-        "Placeholder tema"
+        "Primera y segunda ley de la termodinámica",
+        "Funcionamiento de máquinas térmicas"
       ],
       "subtemas": [
-        "Placeholder subtema"
+        "Energía interna de un sistema a partir del trabajo mecánico y el calor transferido",
+        "Conservación de la energía según la primera ley de la termodinámica",
+        "Eficiencia mecánica de una máquina según la segunda ley de la termodinámica",
+        "Funcionamiento térmico de motores de combustión y refrigeradores"
       ],
-      "palabras_clave": [
-        "ciencias naturales",
-        "grado 8",
-        "Colombia"
-      ],
-      "dba_enunciado": "Placeholder DBA — reemplazar con JSON real generado por Prompt Maestro v2",
-      "evidencias_aprendizaje": [
-        "Placeholder evidencia"
-      ],
-      "indicadores_desempeno": {
-        "cognitivo": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "procedimental": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        },
-        "actitudinal": {
-          "bajo": "",
-          "basico": "",
-          "alto": "",
-          "superior": ""
-        }
-      },
       "actividades_sugeridas": [
         {
-          "descripcion": "Placeholder actividad",
+          "descripcion": "Relacionar cada máquina térmica (motor de combustión, refrigerador) con la ley termodinámica que explica su funcionamiento",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre la conservación de la energía en la primera ley de la termodinámica",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre las leyes de la termodinámica y el funcionamiento de máquinas térmicas",
           "tipo": "Quiz opción múltiple"
         }
+      ]
+    },
+    {
+      "unidad_id": 1,
+      "unidad_titulo": "Reacciones químicas y enlaces intramoleculares",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 2",
+      "dba_enunciado": "Comprende que en una reacción química se recombinan los átomos de las moléculas de los reactivos para generar productos nuevos, y que dichos productos se forman a partir de fuerzas intramoleculares (enlaces iónicos y covalentes).",
+      "evidencias_aprendizaje": [
+        "Explica con esquemas, dada una reacción química, cómo se recombinan los átomos de cada molécula para generar moléculas nuevas.",
+        "Representa los tipos de enlaces (iónico y covalente) para explicar la formación de compuestos dados, a partir de criterios como la electronegatividad y las relaciones entre los electrones de valencia.",
+        "Justifica si un cambio en un material es físico o químico a partir de características observables que indiquen, para el caso de los cambios químicos, la formación de nuevas sustancias (cambio de color, desprendimiento de gas, entre otros).",
+        "Predice algunas de las propiedades (estado de agregación, solubilidad, temperatura de ebullición y de fusión) de los compuestos químicos a partir del tipo de enlace de sus átomos dentro de sus moléculas."
       ],
-      "ebc_factor": "Producción Textual",
-      "ebc_estandar": "Placeholder EBC",
-      "subprocesos_ebc": [
-        "Placeholder subproceso"
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Recombinación de átomos en una reacción química",
+        "Enlaces iónicos y covalentes"
+      ],
+      "subtemas": [
+        "Cómo se recombinan los átomos de los reactivos para generar productos nuevos",
+        "Diferencia entre enlace iónico y enlace covalente según la electronegatividad",
+        "Diferenciar un cambio físico de un cambio químico por sus características observables",
+        "Predecir propiedades de un compuesto según el tipo de enlace de sus átomos"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar compuestos según el tipo de enlace (iónico o covalente) que los forma",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Clasificar cambios de materiales como físicos o químicos según sus características observables",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre la recombinación de átomos en una reacción química",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 2,
+      "unidad_titulo": "Comportamiento de un gas ideal",
+      "enfoque_men": "Entorno físico",
+      "dba_codigo": "DBA 3",
+      "dba_enunciado": "Comprende que el comportamiento de un gas ideal está determinado por las relaciones entre Temperatura (T), Presión (P), Volumen (V) y Cantidad de sustancia (n).",
+      "evidencias_aprendizaje": [
+        "Interpreta los resultados de experimentos en los cuales analiza el comportamiento de un gas ideal al variar su temperatura, volumen, presión y cantidad de gas, explicando cómo influyen estas variables en el comportamiento observado.",
+        "Explica el comportamiento (difusión, compresión, dilatación, fluidez) de los gases a partir de la teoría cinético molecular.",
+        "Explica eventos cotidianos (funcionamiento de un globo aerostático, pipetas de gas, inflar/explotar una bomba) a partir de relaciones matemáticas entre variables como la presión, la temperatura, la cantidad de gas y el volumen, identificando cómo las leyes de los gases (Boyle-Mariotte, Charles, Gay-Lussac, ley combinada, ecuación de estado) permiten establecer dichas relaciones."
+      ],
+      "ebc_factor": "Entorno físico",
+      "temas": [
+        "Relación entre temperatura, presión, volumen y cantidad de sustancia de un gas",
+        "Teoría cinético molecular y leyes de los gases"
+      ],
+      "subtemas": [
+        "Cómo influyen la temperatura, el volumen, la presión y la cantidad de gas en su comportamiento",
+        "Difusión, compresión, dilatación y fluidez de los gases según la teoría cinético molecular",
+        "Leyes de los gases (Boyle-Mariotte, Charles, Gay-Lussac, ley combinada) en eventos cotidianos"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada ley de los gases (Boyle-Mariotte, Charles, Gay-Lussac) con la relación entre variables que describe",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar eventos cotidianos según la propiedad del gas que explican (difusión, compresión, dilatación, fluidez)",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre el comportamiento de un gas ideal",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 3,
+      "unidad_titulo": "Sistemas de órganos y regulación homeostática",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 4",
+      "dba_enunciado": "Analiza relaciones entre sistemas de órganos (excretor, inmune, nervioso, endocrino, óseo y muscular) con los procesos de regulación de las funciones en los seres vivos.",
+      "evidencias_aprendizaje": [
+        "Relaciona los fenómenos homeostáticos de los organismos con el funcionamiento de órganos y sistemas.",
+        "Interpreta modelos de equilibrio existente entre algunos de los sistemas (excretor, inmune, nervioso, endocrino, óseo y muscular).",
+        "Relaciona el papel biológico de las hormonas y las neuronas en la regulación y coordinación del funcionamiento de los sistemas del organismo y el mantenimiento de la homeostasis, dando ejemplos para funciones como la reproducción sexual, la digestión de los alimentos, la regulación de la presión sanguínea y la respuesta de \"lucha o huida\".",
+        "Explica, a través de ejemplos, los efectos de hábitos no saludables en el funcionamiento adecuado de los sistemas excretor, nervioso, inmune, endocrino, óseo y muscular."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Homeostasis y regulación de los sistemas del organismo",
+        "Papel de hormonas y neuronas en la coordinación del cuerpo"
+      ],
+      "subtemas": [
+        "Relación entre los fenómenos homeostáticos y el funcionamiento de órganos y sistemas",
+        "Equilibrio entre los sistemas excretor, inmune, nervioso, endocrino, óseo y muscular",
+        "Rol de hormonas y neuronas en funciones como digestión, presión sanguínea y respuesta de \"lucha o huida\"",
+        "Efectos de hábitos no saludables sobre los sistemas del cuerpo"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Relacionar cada sistema del cuerpo (excretor, inmune, nervioso, endocrino, óseo, muscular) con su función homeostática",
+          "tipo": "Relacionar columnas"
+        },
+        {
+          "descripcion": "Clasificar hábitos como saludables o no saludables según su efecto sobre los sistemas del cuerpo",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Quiz sobre el papel de hormonas y neuronas en la regulación del organismo",
+          "tipo": "Quiz opción múltiple"
+        }
+      ]
+    },
+    {
+      "unidad_id": 4,
+      "unidad_titulo": "Reproducción asexual y sexual en los seres vivos",
+      "enfoque_men": "Entorno vivo",
+      "dba_codigo": "DBA 5",
+      "dba_enunciado": "Analiza la reproducción (asexual, sexual) de distintos grupos de seres vivos y su importancia para la preservación de la vida en el planeta.",
+      "evidencias_aprendizaje": [
+        "Diferencia los tipos de reproducción en plantas y propone su aplicación de acuerdo con las condiciones del medio donde se realiza.",
+        "Explica los sistemas de reproducción sexual y asexual en animales y reconoce sus efectos en la variabilidad y preservación de especies.",
+        "Identifica riesgos y consecuencias físicas y psicológicas de un embarazo en la adolescencia.",
+        "Explica la importancia de la aplicación de medidas preventivas de patologías relacionadas con el sistema reproductor."
+      ],
+      "ebc_factor": "Entorno vivo",
+      "temas": [
+        "Reproducción sexual y asexual en plantas y animales",
+        "Salud sexual y reproductiva"
+      ],
+      "subtemas": [
+        "Tipos de reproducción en plantas según las condiciones del medio",
+        "Reproducción sexual y asexual en animales y su efecto en la variabilidad de especies",
+        "Riesgos y consecuencias del embarazo en la adolescencia",
+        "Medidas preventivas de patologías del sistema reproductor"
+      ],
+      "actividades_sugeridas": [
+        {
+          "descripcion": "Clasificar ejemplos de reproducción en plantas y animales como sexual o asexual",
+          "tipo": "Clasificar"
+        },
+        {
+          "descripcion": "Verdadero o falso sobre riesgos y consecuencias del embarazo en la adolescencia",
+          "tipo": "Verdadero/Falso"
+        },
+        {
+          "descripcion": "Quiz sobre reproducción sexual y asexual y su importancia para la preservación de las especies",
+          "tipo": "Quiz opción múltiple"
+        }
       ]
     }
   ]
