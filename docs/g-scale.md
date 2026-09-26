@@ -6,7 +6,7 @@
 | **G-scale.1** | En `main` | `<VirtualSlideSurface>` |
 | **G-scale.1b** | En `main` | Editor (`canvas-area` + moveable) |
 | **G-scale.2** | En `main` | Solo lectura en `SlideRenderer` |
-| **G-scale.3** | PR #39 → `main` | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
+| **G-scale.3** | En `main` (#39) | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
 
 ## Nota historial Git
 
@@ -14,7 +14,7 @@ El commit `d1124f5` en `main` usa el mensaje «G-scale.2» pero corresponde a **
 
 ## Ramas feb4
 
-Las ramas `cursor/virtual-slide-*-feb4` y `cursor/editor-virtual-surface-feb4` eran la pila apilada #34–#36; el código ya está en `main`. Se pueden borrar tras confirmar que no hay trabajo abierto.
+Las ramas `cursor/virtual-slide-*-feb4` y `cursor/editor-virtual-surface-feb4` (pila #34–#36) fueron eliminadas del remoto; el código vive en `main`.
 
 ## Tests visuales
 
