@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { WidgetImagenAjuste } from '@lumina/types/widget';
 
 import {
   containerPercentToPanPx,
   framedCoverStyle,
   getImageStyle,
+  imageElementStyle,
   panPxToContainerPercent,
 } from './widget-image-styles';
 
@@ -85,5 +87,54 @@ describe('conversión px <-> % del contenedor', () => {
 
   it('es robusto ante contenedor 0', () => {
     expect(panPxToContainerPercent(100, 0)).toBe(0);
+  });
+});
+
+describe('imageElementStyle — lector unificado de la familia de widgets', () => {
+  const IMG = { w: 1200, h: 800 };
+  const imagen: WidgetImagenAjuste = {
+    imagen: 'x',
+    imagenEscala: 140,
+    imagenOffsetX: 16.7,
+    imagenOffsetY: -10,
+  };
+
+  it('interpreta imagenOffsetX/Y guardados como % del contenedor (portable)', () => {
+    const editor = imageElementStyle(imagen, IMG, { w: 720, h: 405 });
+    const mobile = imageElementStyle(imagen, IMG, { w: 320, h: 180 });
+
+    // Mismo % ⇒ mismo encuadre relativo, sin importar el tamaño en px.
+    expect(Math.abs(num(editor.left) / 720 - num(mobile.left) / 320)).toBeLessThan(0.01);
+    expect(Math.abs(num(editor.top) / 405 - num(mobile.top) / 180)).toBeLessThan(0.01);
+    // Cubre el contenedor (sin franja en blanco) en ambos tamaños.
+    expect(num(mobile.left)).toBeLessThanOrEqual(0.5);
+    expect(num(mobile.left) + num(mobile.width)).toBeGreaterThanOrEqual(320 - 0.5);
+  });
+
+  it('el mismo valor numérico como % (guardado) vs px (override) da resultados distintos', () => {
+    // Sin override: 40 se interpreta como 40% del contenedor.
+    const asPercent = imageElementStyle(
+      { ...imagen, imagenOffsetX: 40, imagenOffsetY: 0 },
+      IMG,
+      { w: 720, h: 405 },
+    );
+    // Con override: 40 se interpreta como 40px de pan.
+    const asPx = imageElementStyle(
+      { ...imagen, imagenOffsetX: 40, imagenOffsetY: 0 },
+      IMG,
+      { w: 720, h: 405 },
+      { offsetX: 40, offsetY: 0 },
+    );
+    expect(num(asPercent.left)).not.toBeCloseTo(num(asPx.left), 0);
+  });
+
+  it('el override en px se re-clampa al pan máximo (nunca deja blanco)', () => {
+    const style = imageElementStyle(imagen, IMG, { w: 320, h: 180 }, {
+      offsetX: 9999,
+      offsetY: 0,
+    });
+    // Aunque el override sea enorme, la imagen sigue cubriendo el contenedor.
+    expect(num(style.left)).toBeLessThanOrEqual(0.5);
+    expect(num(style.left) + num(style.width)).toBeGreaterThanOrEqual(320 - 0.5);
   });
 });

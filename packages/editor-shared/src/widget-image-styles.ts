@@ -191,18 +191,48 @@ export function imageElementStyle(
   }
 
   const escala = (imagen.imagenEscala ?? 100) / 100;
-  const offsetX = overrides?.offsetX ?? imagen.imagenOffsetX ?? 0;
-  const offsetY = overrides?.offsetY ?? imagen.imagenOffsetY ?? 0;
+  const extras = imageFilterStyle(imagen);
 
-  return getImageStyle(
+  // Preview en vivo del arrastre: `overrides` son px de pan directos (el editor
+  // muta el DOM en cada movimiento). Se re-clampan al pan máximo del contenedor.
+  if (
+    overrides &&
+    (overrides.offsetX !== undefined || overrides.offsetY !== undefined)
+  ) {
+    const { maxPanX, maxPanY } = computeImagePanClamp(
+      imgDims.w,
+      imgDims.h,
+      containerDims.w,
+      containerDims.h,
+      escala,
+    );
+    const px = Math.min(Math.max(overrides.offsetX ?? 0, -maxPanX), maxPanX);
+    const py = Math.min(Math.max(overrides.offsetY ?? 0, -maxPanY), maxPanY);
+    return getImageStyle(
+      imgDims.w,
+      imgDims.h,
+      containerDims.w,
+      containerDims.h,
+      escala,
+      px,
+      py,
+      extras,
+    );
+  }
+
+  // Render normal: los offsets guardados (imagenOffsetX/Y) son % del contenedor,
+  // igual que en clip-group e image-compare. framedCoverStyle los convierte a px
+  // según el tamaño real de render y re-clampa → encuadre idéntico en editor,
+  // viewer y móvil, e invariante al tamaño en px del canvas (zoom/rail).
+  return framedCoverStyle(
     imgDims.w,
     imgDims.h,
     containerDims.w,
     containerDims.h,
     escala,
-    offsetX,
-    offsetY,
-    imageFilterStyle(imagen),
+    imagen.imagenOffsetX ?? 0,
+    imagen.imagenOffsetY ?? 0,
+    extras,
   );
 }
 
