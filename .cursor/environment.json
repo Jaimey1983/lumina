@@ -1,0 +1,16 @@
+{
+  "name": "Lumina",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "backend",
+      "command": "pnpm --filter lumina-backend run start:dev"
+    },
+    {
+      "name": "frontend",
+      "command": "pnpm --filter lumina-frontend run dev"
+    }
+  ],
+  "ports": [3000, 3001]
+}
