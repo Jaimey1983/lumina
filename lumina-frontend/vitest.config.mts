@@ -37,6 +37,7 @@ export default defineConfig({
         test: {
           name: 'visual',
           include: ['src/visual-tests/**/*.visual.spec.tsx'],
+          setupFiles: ['src/visual-tests/setup-browser-env.ts'],
           browser: {
             enabled: true,
             provider: playwright(),
