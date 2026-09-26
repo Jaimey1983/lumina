@@ -35,14 +35,8 @@ export function HotspotEditor({
 /** Adapta el Viewer legacy (burbuja / pulso intactos). */
 export function HotspotViewer({
   estado,
-  config,
 }: ElementViewerProps<HotspotEstado, HotspotConfig>) {
-  return (
-    <LegacyHotspotViewer
-      block={estado}
-      isThumbnail={config.isThumbnail === true}
-    />
-  );
+  return <LegacyHotspotViewer block={estado} />;
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */

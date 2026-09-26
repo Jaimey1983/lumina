@@ -60,6 +60,14 @@ describe("Hotspot — paridad ElementDefinition vs legacy (E3.2)", () => {
     expect(within(nuevo.container).getByText("Punto de interés")).toBeTruthy();
   });
 
+  it("G-scale.5: el encabezado se muestra igual en miniatura (sin isThumbnail)", () => {
+    const estado = createDefaultHotspotBlock();
+    estado.overlay.encabezado = "Miniatura igual";
+    const NuevoViewer = hotspotDefinition.Viewer;
+    const { container } = render(<NuevoViewer estado={estado} config={{}} />);
+    expect(within(container).getByText("Miniatura igual")).toBeTruthy();
+  });
+
   it("está registrada sin puntuación", async () => {
     const { elementRegistry } = await import("../../index.js");
     const definicion = elementRegistry.obtener("hotspot") as
