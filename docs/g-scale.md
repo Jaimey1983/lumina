@@ -7,6 +7,10 @@
 | **G-scale.1b** | En `main` | Editor (`canvas-area` + moveable) |
 | **G-scale.2** | En `main` | Solo lectura en `SlideRenderer` |
 | **G-scale.3** | En `main` (#39) | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
+| **G-scale.4** | Planificado | Validar **grafico** / **diagrama** bajo `scale()`; fijar dimensiones virtuales si hace falta |
+| **G-scale.5** | Planificado | Retirar **`isThumbnail`** (~206 usos) por innecesario; **un elemento/familia por PR** + paridad |
+
+**Prueba transversal (todas las fichas):** paridad **multi-superficie** en Playwright (editor, preview, present, viewer, autónomo, miniatura) — debe atravesar G-scale.4 y G-scale.5.
 
 ## Nota historial Git
 
