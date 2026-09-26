@@ -27,7 +27,7 @@ export function GraficoEditor({
         className,
       )}
     >
-      <GraficoViewer block={block} isThumbnail={false} />
+      <GraficoViewer block={block} />
     </div>
   );
 }
