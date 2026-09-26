@@ -34,9 +34,8 @@ export function CarouselEditor({
 
 export function CarouselViewer({
   estado,
-  config,
 }: ElementViewerProps<CarouselEstado, CarouselConfig>) {
-  return <LegacyViewer block={estado} isThumbnail={config.isThumbnail} />;
+  return <LegacyViewer block={estado} />;
 }
 
 export function CarouselPropiedades({

@@ -8,7 +8,7 @@
 | **G-scale.2** | En `main` | Solo lectura en `SlideRenderer` |
 | **G-scale.3** | En `main` (#39) | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
 | **G-scale.4** | En curso | Neutralizador de escala para **grafico** / **diagrama** / **clip-group** + visual multi-superficie + CI `test:visual` |
-| **G-scale.5** | En curso | Retirar **`isThumbnail`**; **1 familia/PR** — ✅ grafico (#41), ✅ diagrama (#42), ✅ timeline (#43), ✅ click-reveal (#44), ✅ flip-cards (#45), ✅ popup (#46), ✅ tabs (#47) |
+| **G-scale.5** | En curso | Retirar **`isThumbnail`**; **1 familia/PR** — ✅ grafico (#41), ✅ diagrama (#42), ✅ timeline (#43), ✅ click-reveal (#44), ✅ flip-cards (#45), ✅ popup (#46), ✅ tabs (#47), ✅ carousel (#48) |
 
 **Prueba transversal (todas las fichas):** paridad **multi-superficie** en Playwright (editor, preview, present, viewer, autónomo, miniatura) — debe atravesar G-scale.4 y G-scale.5.
 
