@@ -25,7 +25,6 @@ export function TimelineCard({
   nodo,
   index = 0,
   config,
-  isThumbnail,
   imageStyle,
   computedImageLayout,
   containerRef,
@@ -40,7 +39,6 @@ export function TimelineCard({
   nodo: TimelineNodo;
   index?: number;
   config: TimelineConfiguracion;
-  isThumbnail?: boolean;
   imageStyle?: CSSProperties;
   computedImageLayout?: boolean;
   containerRef?: React.RefObject<HTMLDivElement | null>;
@@ -137,7 +135,6 @@ export function TimelineNodeDot({
   nodo: TimelineNodo;
   index: number;
   config: TimelineConfiguracion;
-  isThumbnail?: boolean;
   imageStyle?: CSSProperties;
   computedImageLayout?: boolean;
   imgRef?: React.RefObject<HTMLImageElement | null>;
