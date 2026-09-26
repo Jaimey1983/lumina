@@ -113,6 +113,60 @@ describe('VirtualSlideSurface — escala virtual uniforme (navegador real)', () 
     expect(fractionBig).toBeCloseTo(fractionSmall, 2);
   });
 
+  test('un bloque %-posicionado renderiza con el MISMO rect que en una caja fluida (react-moveable intacto) y su contenido px escala', async () => {
+    // Hipótesis de seguridad de G-scale.1b: como la caja del bloque es
+    // %-posicionada y la superficie virtual escalada llena exactamente el host,
+    // el rect renderizado del bloque es idéntico al del modelo fluido actual
+    // (react-moveable / guías miden ese rect → sin regresión). Lo único que
+    // cambia es el contenido en px virtuales, que ahora escala con el slide.
+    // Dos hosts 16:9 del MISMO tamaño, apilados (sin flex, para no distorsionar).
+    render(
+      <div>
+        {/* Referencia: caja fluida 16:9 (modelo actual). */}
+        <div style={{ width: 800, height: 450, position: 'relative' }}>
+          <div
+            data-testid="block-fluid"
+            style={{ position: 'absolute', left: '20%', top: '10%', width: '30%', height: '40%' }}
+          >
+            <span data-testid="font-fluid" style={{ fontSize: 40, lineHeight: 1 }}>
+              Aa
+            </span>
+          </div>
+        </div>
+        {/* Virtual: mismo tamaño de host; el bloque vive en la superficie 1280×720
+            escalada. El wrapper `absolute inset-0 h-full w-full` reproduce la raíz
+            de `SlideRenderer` en el editor. */}
+        <div style={{ width: 800, height: 450, position: 'relative' }}>
+          <VirtualSlideSurface>
+            <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+              <div
+                data-testid="block-virtual"
+                style={{ position: 'absolute', left: '20%', top: '10%', width: '30%', height: '40%' }}
+              >
+                <span data-testid="font-virtual" style={{ fontSize: 40, lineHeight: 1 }}>
+                  Aa
+                </span>
+              </div>
+            </div>
+          </VirtualSlideSurface>
+        </div>
+      </div>,
+    );
+    await settle();
+
+    const rf = el('[data-testid="block-fluid"]').getBoundingClientRect();
+    const rv = el('[data-testid="block-virtual"]').getBoundingClientRect();
+    // Caja del bloque: MISMO tamaño renderizado (±1 px) → react-moveable ve lo mismo.
+    expect(rv.width).toBeCloseTo(rf.width, 0);
+    expect(rv.height).toBeCloseTo(rf.height, 0);
+
+    // Contenido px: en la virtual escala (900/1280 ≈ 0.703) → claramente más chico.
+    const ff = el('[data-testid="font-fluid"]').getBoundingClientRect().height;
+    const fv = el('[data-testid="font-virtual"]').getBoundingClientRect().height;
+    expect(fv).toBeGreaterThan(0);
+    expect(fv).toBeLessThan(ff * 0.85);
+  });
+
   test('el zoom multiplica la escala renderizada', async () => {
     render(
       <div>

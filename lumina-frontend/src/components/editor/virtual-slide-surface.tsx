@@ -58,11 +58,16 @@ export function VirtualSlideSurface({
   const measure = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
-    const rect = el.getBoundingClientRect();
+    // `clientWidth/clientHeight` = tamaño de LAYOUT, **agnóstico a transforms**
+    // de ancestros (a diferencia de `getBoundingClientRect`). Esto es clave para
+    // el editor: la surface vive bajo `transform: scale(canvasZoom)`, y medir el
+    // layout (no el render) evita el doble conteo del zoom — el `canvasZoom`
+    // sigue aplicándolo el transform externo; la superficie virtual solo escala
+    // 1280→ancho-de-layout.
+    const width = el.clientWidth;
+    const height = el.clientHeight;
     setSize((prev) =>
-      prev.width === rect.width && prev.height === rect.height
-        ? prev
-        : { width: rect.width, height: rect.height },
+      prev.width === width && prev.height === height ? prev : { width, height },
     );
   }, []);
 
@@ -94,7 +99,8 @@ export function VirtualSlideSurface({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    // Sin `overflow` propio: el recorte lo decide el contenedor host (el editor
+    // usa `overflow-visible` a propósito; los visores ya recortan a 16:9).
   };
 
   return (
