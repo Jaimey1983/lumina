@@ -28,7 +28,7 @@ cd lumina-frontend && pnpm test:visual
 
 Proyecto `visual` usa solo **Chromium**. En CI: `playwright install chromium --with-deps` + `pnpm test:visual`.
 
-Specs G-scale: `g-scale-3-widgets.visual.spec.tsx` (widgets), `g-scale-4-canvas-blocks.visual.spec.tsx` (grafico/diagrama).
+Specs G-scale: `g-scale-3-widgets.visual.spec.tsx` (widgets), `g-scale-4-canvas-blocks.visual.spec.tsx` (grafico/diagrama), `g-scale-multi-surface.visual.spec.tsx` (paridad viewer / present / miniatura).
 
 ## G-scale.5 — miniaturas
 
