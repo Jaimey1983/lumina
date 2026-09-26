@@ -111,5 +111,8 @@ jobs:
       - run: pnpm --filter @lumina/element-kit build
       - run: pnpm --filter lumina-frontend lint
       - run: pnpm --filter lumina-frontend test:unit
+      - run: pnpm exec playwright install chromium --with-deps
+        working-directory: lumina-frontend
+      - run: pnpm --filter lumina-frontend test:visual
       - run: pnpm --filter lumina-frontend build
 

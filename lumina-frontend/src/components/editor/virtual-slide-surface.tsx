@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { virtualSlideLayout } from '@lumina/editor-shared/virtual-slide-scale';
+import { VirtualSlideSurfaceScaleProvider } from '@lumina/editor-shared/virtual-slide-scale-context';
 
 /**
  * `<VirtualSlideSurface>` (G-scale.1) — wrapper React de la escala virtual única.
@@ -126,7 +127,9 @@ export function VirtualSlideSurface({
             data-testid={surfaceTestId}
             data-virtual-slide-surface=""
           >
-            {children}
+            <VirtualSlideSurfaceScaleProvider scale={layout.scale}>
+              {children}
+            </VirtualSlideSurfaceScaleProvider>
           </div>
         </div>
       ) : null}

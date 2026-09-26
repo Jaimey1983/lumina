@@ -58,6 +58,11 @@ import {
 } from '@/lib/slide-background';
 import { BackgroundImageLayer } from './background-image-layer';
 import { VirtualSlideSurface } from '@/components/editor/virtual-slide-surface';
+import { useVirtualSlideSurfaceScale } from '@lumina/editor-shared/virtual-slide-scale-context';
+import {
+  blockNeedsVirtualSlideScaleNeutralizer,
+  virtualSlideScaleNeutralizerStyle,
+} from '@lumina/editor-shared/virtual-slide-scale-neutralizer';
 
 import { TorneoActivityEditor } from './activities/torneo-activity';
 import type { Socket } from 'socket.io-client';
@@ -598,6 +603,7 @@ function BlockNode({
   onRotate,
   onRotateEnd,
 }: BlockNodeProps) {
+  const virtualSurfaceScale = useVirtualSlideSurfaceScale();
   const isViewerMode = modo === 'viewer' || modo === 'preview';
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
@@ -945,33 +951,24 @@ function BlockNode({
         }
       : {};
 
-  // `grafico` (ApexCharts, arco parcial) y `clip-group` (SVG clip-path) bajo
-  // el `transform: scale()` de `viewerFill` (ver `viewerFillScale` arriba):
-  // se envuelve el contenido en un div con tamaño real en px (el tamaño
-  // VISUAL final) + `transform: scale(1/viewerFillScale)` propio, que
-  // cancela exactamente el scale del ancestro para todo lo que está debajo
-  // — `clientWidth` (inmune a transform) y `getBoundingClientRect()`
-  // (post-transform) vuelven a coincidir para ese subárbol, evitando la
-  // medición inconsistente que produce el gráfico/máscara chicos o mal
-  // recortados. `transformOrigin: 'top left'` para que el resultado llene
-  // exactamente la caja del bloque, sin desplazamiento.
+  // G-scale.4 — `grafico` / `diagrama` / `clip-group` bajo `<VirtualSlideSurface>`:
+  // neutralizar el `scale(S)` ancestro para librerías que mezclan clientWidth y
+  // getBoundingClientRect (ApexCharts, @xyflow, clip-path SVG).
   const rawContent = renderContent();
-  const content =
-    viewerFillScale !== undefined &&
-    viewerFillScale > 0 &&
-    currentCoords &&
-    (block.tipo === 'grafico' || block.tipo === 'clip-group') ? (
-      <div
-        style={{
-          width: (currentCoords.ancho / 100) * 1280 * viewerFillScale,
-          height: (currentCoords.alto / 100) * 720 * viewerFillScale,
-          transform: `scale(${1 / viewerFillScale})`,
-          transformOrigin: 'top left',
-        }}
-      >
-        {rawContent}
-      </div>
-    ) : rawContent;
+  const legacyViewerFillScale =
+    viewerFillScale !== undefined && viewerFillScale > 0 ? viewerFillScale : virtualSurfaceScale;
+  const neutralizerScale = blockNeedsVirtualSlideScaleNeutralizer(block.tipo, legacyViewerFillScale)
+    ? legacyViewerFillScale
+    : 0;
+  const neutralizerStyle =
+    neutralizerScale > 0 && currentCoords
+      ? virtualSlideScaleNeutralizerStyle(currentCoords, neutralizerScale)
+      : undefined;
+  const content = neutralizerStyle ? (
+    <div style={neutralizerStyle}>{rawContent}</div>
+  ) : (
+    rawContent
+  );
 
   return (
     <>
