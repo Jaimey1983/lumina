@@ -6,7 +6,7 @@ export type ContadorEstado = ContadorWidget;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).
- * `isThumbnail` desactiva el tick — mismo contrato que `ContadorViewer`.
+ * G-scale.5: sin `isThumbnail` — miniatura escala el mismo widget (VirtualSlideSurface).
  */
 export type ContadorConfig = WidgetCanvasConfig;
 

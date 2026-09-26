@@ -26,14 +26,8 @@ export function ContadorEditor({
 /** Adapta el Viewer legacy (tick / controles intactos). */
 export function ContadorViewer({
   estado,
-  config,
 }: ElementViewerProps<ContadorEstado, ContadorConfig>) {
-  return (
-    <LegacyContadorViewer
-      block={estado}
-      isThumbnail={config.isThumbnail === true}
-    />
-  );
+  return <LegacyContadorViewer block={estado} />;
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */

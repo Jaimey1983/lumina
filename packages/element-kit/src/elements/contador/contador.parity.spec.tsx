@@ -56,6 +56,15 @@ describe("Contador — paridad ElementDefinition vs legacy (E3.2)", () => {
     expect(nuevo.container.textContent).toContain("01:00");
   });
 
+  it("G-scale.5: la etiqueta se muestra igual en miniatura (sin isThumbnail)", () => {
+    const estado = createDefaultContadorBlock();
+    estado.autoIniciar = false;
+    estado.etiqueta = "Miniatura igual";
+    const NuevoViewer = contadorDefinition.Viewer;
+    const { container } = render(<NuevoViewer estado={estado} config={{}} />);
+    expect(container.textContent).toContain("Miniatura igual");
+  });
+
   it("está registrada sin puntuación", async () => {
     const { elementRegistry } = await import("../../index.js");
     const definicion = elementRegistry.obtener("contador") as
