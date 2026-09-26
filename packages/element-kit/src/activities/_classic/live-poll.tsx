@@ -9,6 +9,7 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
 import { cn, seeded01 } from '@lumina/ui/lib/utils';
+import { ACTIVITY_EDITOR_SHELL_MAX_H_CLASS } from '@lumina/editor-shared/activity-shell-max-height';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
@@ -400,7 +401,12 @@ export function LivePollActivityEditor({
   }
 
   return (
-    <div className="flex max-h-[min(42vh,400px)] min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs">
+    <div
+      className={cn(
+        'flex min-h-0 w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+        ACTIVITY_EDITOR_SHELL_MAX_H_CLASS.livePoll,
+      )}
+    >
       <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#f9fafb] px-2 py-1.5">
         <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-800">
           Encuesta en vivo

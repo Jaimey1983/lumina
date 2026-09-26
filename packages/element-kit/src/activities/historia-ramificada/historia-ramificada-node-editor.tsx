@@ -2,6 +2,7 @@
 
 import React, { useCallback } from 'react'
 import { HistoriaNodo, HistoriaOpcion, HistoriaNodoTipo } from '@lumina/types/slide'
+import { HISTORIA_RAMIFICADA_PANEL_MAX_H_CLASS } from '@lumina/editor-shared/activity-shell-max-height';
 import { generarIdHR, ETIQUETAS_NODO, esNodoFinal } from './historia-ramificada-config.js'
 
 interface NodeEditorProps {
@@ -35,7 +36,9 @@ export function HistoriaRamificadaNodeEditor({ nodo, onUpdate, onClose }: NodeEd
   const esFinal = esNodoFinal(nodo.tipo)
 
   return (
-    <div className="absolute right-4 top-4 z-50 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] overflow-hidden">
+    <div
+      className={`absolute right-4 top-4 z-50 flex w-72 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl ${HISTORIA_RAMIFICADA_PANEL_MAX_H_CLASS}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">

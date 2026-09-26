@@ -59,6 +59,27 @@ export function virtualClampCss(input: VirtualClampPxInput): string {
   return `${virtualClampPx(input)}px`;
 }
 
+/** Equivalente a `min(vh% del alto virtual 720, capPx)`. */
+export function virtualMinVhCapPx(vh: number, capPx: number): number {
+  return Math.round(Math.min(virtualPxFromVh(vh), capPx) * 10) / 10;
+}
+
+/**
+ * Equivalente a `clamp(minRem rem, pct% del ancho virtual, maxRem rem)` en el lienzo
+ * 1280×720 (asume `rem` = 16px).
+ */
+export function virtualClampPercentRemPx(
+  minRem: number,
+  widthPercent: number,
+  maxRem: number,
+  rootPx = DEFAULT_ROOT_FONT_PX,
+): number {
+  const minPx = remToVirtualPx(minRem, rootPx);
+  const maxPx = remToVirtualPx(maxRem, rootPx);
+  /** % del ancho del lienzo virtual ≈ el mismo número en `vw` sobre 1280. */
+  return virtualClampPx({ minPx, maxPx, vw: widthPercent });
+}
+
 // ─── Tokens G-scale.3 (sustituyen clamps con vw/vh en element-kit) ─────────
 
 /** `render-texto.tsx` — placeholder de bloque vacío en editor. */
@@ -88,3 +109,9 @@ export const TIMELINE_PROYECTO_NUM_FONT_PX = virtualClampPx({
   vw: 4,
   maxPx: remToVirtualPx(2.5),
 });
+
+/** `click-reveal` — padding vertical del trigger (era `clamp(0.5rem, 2%, 1rem)`). */
+export const CLICK_REVEAL_TRIGGER_PAD_Y_PX = virtualClampPercentRemPx(0.5, 2, 1);
+
+/** `click-reveal` — padding horizontal del trigger (era `clamp(0.375rem, 1.5%, 0.75rem)`). */
+export const CLICK_REVEAL_TRIGGER_PAD_X_PX = virtualClampPercentRemPx(0.375, 1.5, 0.75);

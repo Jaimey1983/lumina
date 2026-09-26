@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CLICK_REVEAL_TRIGGER_LABEL_FONT_PX,
+  CLICK_REVEAL_TRIGGER_PAD_X_PX,
+  CLICK_REVEAL_TRIGGER_PAD_Y_PX,
   CLICK_REVEAL_TRIGGER_TITLE_FONT_PX,
   TEXT_EMPTY_PLACEHOLDER_FONT_PX,
   TIMELINE_PROYECTO_NUM_FONT_PX,
   virtualClampPx,
+  virtualMinVhCapPx,
   virtualPxFromVh,
   virtualPxFromVw,
 } from './virtual-viewport-units';
@@ -38,5 +41,12 @@ describe('virtual-viewport-units (G-scale.3)', () => {
     expect(CLICK_REVEAL_TRIGGER_TITLE_FONT_PX).toBe(11.5);
     expect(CLICK_REVEAL_TRIGGER_LABEL_FONT_PX).toBe(18);
     expect(TIMELINE_PROYECTO_NUM_FONT_PX).toBe(40);
+    expect(CLICK_REVEAL_TRIGGER_PAD_Y_PX).toBe(16);
+    expect(CLICK_REVEAL_TRIGGER_PAD_X_PX).toBe(12);
+  });
+
+  it('virtualMinVhCapPx alinea actividades al alto virtual', () => {
+    expect(virtualMinVhCapPx(42, 280)).toBe(280);
+    expect(virtualMinVhCapPx(52, 380)).toBe(374.4);
   });
 });
