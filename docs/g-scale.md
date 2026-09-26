@@ -7,10 +7,10 @@
 | **G-scale.1b** | En `main` | Editor (`canvas-area` + moveable) |
 | **G-scale.2** | En `main` | Solo lectura en `SlideRenderer` |
 | **G-scale.3** | En `main` (#39) | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
-| **G-scale.4** | En curso | Neutralizador de escala para **grafico** / **diagrama** / **clip-group** + visual multi-superficie + CI `test:visual` |
-| **G-scale.5** | En curso | Retirar **`isThumbnail`** — familias en PRs #41–#51; cierre en **#52** (`SlideRenderer`, video, boton, progreso, scratch-card, image-compare, checklist, `editor-shared` slide-panel) |
+| **G-scale.4** | En `main` (#40) | Neutralizador de escala para **grafico** / **diagrama** / **clip-group** + `g-scale-4-canvas-blocks.visual.spec.tsx` + CI `test:visual` |
+| **G-scale.5** | En `main` (#55) | Sin **`isThumbnail`** (familias #41–#52, `SlideRenderer`, `@lumina/charts` #53, `g-scale-multi-surface.visual.spec.tsx` #54) |
 
-**Prueba transversal (todas las fichas):** paridad **multi-superficie** en Playwright (editor, preview, present, viewer, autónomo, miniatura) — debe atravesar G-scale.4 y G-scale.5.
+**Prueba transversal:** `g-scale-multi-surface.visual.spec.tsx` (viewer / present / miniatura). Ampliación futura: editor con moveable, present/viewer/autónomo de app.
 
 ## Nota historial Git
 
