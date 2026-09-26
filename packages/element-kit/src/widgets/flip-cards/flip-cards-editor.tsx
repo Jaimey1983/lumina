@@ -26,7 +26,12 @@ import type {
 import type { FlipCardsConfiguracionCompleta } from './flip-cards-config.js';
 import { imageElementStyle, imageWrapperStyle } from './flip-cards-image-styles.js';
 import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
-import { computeImagePanClamp, usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
+import {
+  computeImagePanClamp,
+  containerPercentToPanPx,
+  panPxToContainerPercent,
+  usesComputedImageLayout,
+} from '@lumina/editor-shared/widget-image-styles';
 import { PanelOnlyText } from '@lumina/editor-shared/panel-only-field';
 import {
   clampCardPos,
@@ -285,13 +290,16 @@ function FlipCardImageLayer({
         if (!isEditing) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         const rect = e.currentTarget.getBoundingClientRect();
+        const w = Math.max(rect.width, 1);
+        const h = Math.max(rect.height, 1);
+        // Offsets guardados en % del contenedor → px de pan para el arrastre.
         panRef.current = {
           startX: e.clientX,
           startY: e.clientY,
-          ox: data.imagenOffsetX ?? 0,
-          oy: data.imagenOffsetY ?? 0,
-          w: Math.max(rect.width, 1),
-          h: Math.max(rect.height, 1),
+          ox: containerPercentToPanPx(data.imagenOffsetX ?? 0, w),
+          oy: containerPercentToPanPx(data.imagenOffsetY ?? 0, h),
+          w,
+          h,
         };
       }}
       onPointerMove={(e) => {
@@ -306,9 +314,12 @@ function FlipCardImageLayer({
           );
           const dx = e.clientX - panRef.current.startX;
           const dy = e.clientY - panRef.current.startY;
+          const nextX = Math.max(-maxPanX, Math.min(maxPanX, panRef.current.ox + dx));
+          const nextY = Math.max(-maxPanY, Math.min(maxPanY, panRef.current.oy + dy));
+          // Persistir el pan como % del contenedor (portable entre tamaños).
           onPatch({
-            imagenOffsetX: Math.max(-maxPanX, Math.min(maxPanX, panRef.current.ox + dx)),
-            imagenOffsetY: Math.max(-maxPanY, Math.min(maxPanY, panRef.current.oy + dy)),
+            imagenOffsetX: panPxToContainerPercent(nextX, panRef.current.w),
+            imagenOffsetY: panPxToContainerPercent(nextY, panRef.current.h),
           });
           return;
         }

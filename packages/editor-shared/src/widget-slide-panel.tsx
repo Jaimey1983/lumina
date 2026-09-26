@@ -22,9 +22,11 @@ import { cn } from '@lumina/ui/lib/utils';
 import {
   applyImageElementStyle,
   computeImagePanClamp,
+  containerPercentToPanPx,
   imageElementStyle,
   imageThumbnailStyle,
   imageWrapperStyle,
+  panPxToContainerPercent,
   usesComputedImageLayout,
   type ImageWrapperCornerMode,
 } from './widget-image-styles.js';
@@ -137,9 +139,16 @@ function TabImageLayer({
 
   const finishPan = (el: HTMLElement, pointerId: number) => {
     if (panRef.current) {
+      // pendingX/Y están en px de pan; se persisten como % del contenedor.
       onPatch({
-        imagenOffsetX: panRef.current.pendingX,
-        imagenOffsetY: panRef.current.pendingY,
+        imagenOffsetX: panPxToContainerPercent(
+          panRef.current.pendingX,
+          panRef.current.w,
+        ),
+        imagenOffsetY: panPxToContainerPercent(
+          panRef.current.pendingY,
+          panRef.current.h,
+        ),
       });
     }
     panRef.current = null;
@@ -230,15 +239,21 @@ function TabImageLayer({
         onSelect();
         e.currentTarget.setPointerCapture(e.pointerId);
         const rect = e.currentTarget.getBoundingClientRect();
+        const w = Math.max(rect.width, 1);
+        const h = Math.max(rect.height, 1);
+        // Los offsets guardados están en % del contenedor: convertir a px de
+        // pan para el arrastre en vivo con el tamaño de contenedor actual.
+        const ox = containerPercentToPanPx(slide.imagenOffsetX ?? 0, w);
+        const oy = containerPercentToPanPx(slide.imagenOffsetY ?? 0, h);
         panRef.current = {
           startX: e.clientX,
           startY: e.clientY,
-          ox: slide.imagenOffsetX ?? 0,
-          oy: slide.imagenOffsetY ?? 0,
-          w: Math.max(rect.width, 1),
-          h: Math.max(rect.height, 1),
-          pendingX: slide.imagenOffsetX ?? 0,
-          pendingY: slide.imagenOffsetY ?? 0,
+          ox,
+          oy,
+          w,
+          h,
+          pendingX: ox,
+          pendingY: oy,
         };
       }}
       onPointerMove={(e) => {
