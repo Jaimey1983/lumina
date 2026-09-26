@@ -57,6 +57,7 @@ import {
   backgroundToCssStyle,
 } from '@/lib/slide-background';
 import { BackgroundImageLayer } from './background-image-layer';
+import { VirtualSlideSurface } from '@/components/editor/virtual-slide-surface';
 
 import { TorneoActivityEditor } from './activities/torneo-activity';
 import type { Socket } from 'socket.io-client';
@@ -1574,124 +1575,12 @@ export function SlideRenderer({
 
   const blocks = slide.bloques ?? [];
 
-  // ─── Preview mode: scaled-down thumbnail ──────────────────────────────────
-  // Render a fixed 1280×720 virtual canvas and scale it to fit the thumbnail
-  // container. This ensures fonts, images, and block positions are all
-  // proportionally correct — identical to how PowerPoint / Canva do it.
-  const previewContainerRef = useRef<HTMLDivElement>(null);
-  const [previewScale, setPreviewScale] = useState(0);
-
-  useLayoutEffect(() => {
-    if (modo !== 'preview') return;
-    const el = previewContainerRef.current;
-    if (!el) return;
-    const update = () => {
-      if (el.clientWidth > 0) setPreviewScale(el.clientWidth / 1280);
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [modo]);
-
-  // ─── Viewer-fill mode: lienzo fijo 1280×720 encajado (letterbox) ──────────
-  // `viewerFill` deja que el contenedor tenga cualquier aspect-ratio (celular
-  // en vertical, ventana angosta, etc.), pero los bloques se posicionan en %
-  // sobre un lienzo virtual de 1280×720 y el tamaño de fuente de los bloques
-  // de texto está en px ABSOLUTOS de ese lienzo (ver render-texto.tsx). Sin
-  // este escalado, el texto queda a tamaño "de escritorio" literal contra un
-  // viewport angosto: se superpone, se corta, y los bloques con contenido
-  // intrínseco (gráficos ApexCharts, diagramas @xyflow) se desbordan del
-  // contenedor real durante su primera medición. Replica el patrón de
-  // `previewScale`, pero con `Math.min(w/1280, h/720)` (contain, con barras)
-  // en vez de solo `w/1280` (el contenedor de preview siempre es 16:9).
-  const viewerFillContainerRef = useRef<HTMLDivElement>(null);
-  const [viewerFillScale, setViewerFillScale] = useState(0);
-  const isViewerFillScaled = modo === 'viewer' && viewerFill && viewerFillScaleFit;
-
-  useLayoutEffect(() => {
-    if (!isViewerFillScaled) return;
-    const el = viewerFillContainerRef.current;
-    if (!el) return;
-    const update = () => {
-      const { clientWidth: w, clientHeight: h } = el;
-      if (w > 0 && h > 0) setViewerFillScale(Math.min(w / 1280, h / 720));
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [isViewerFillScaled]);
-
-  if (modo === 'preview') {
-    return (
-      <SlideThemeProvider value={{ theme: slideTheme }}>
-      <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
-      <div
-        ref={previewContainerRef}
-        className={cn('relative overflow-hidden', className)}
-        style={{ aspectRatio: '16 / 9' }}
-      >
-        {previewScale > 0 && (
-          <div
-            ref={bindSlideRootRef}
-            data-slide-root
-            className="canvas-slide"
-            style={{
-              ...bgStyle,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: 1280,
-              height: 720,
-              transform: `scale(${previewScale})`,
-              transformOrigin: 'top left',
-            }}
-          >
-            {slide.fondo?.tipo === 'imagen' && typeof slide.fondo.rotacion === 'number' && slide.fondo.rotacion % 360 !== 0 && (
-              <BackgroundImageLayer fondo={slide.fondo} />
-            )}
-            {blocks.map((block, index) => {
-              const blockId = String(index);
-              return (
-                <BlockNode
-                  key={blockId}
-                  block={block}
-                  blockId={blockId}
-                  slideId={slide.id}
-                  isSelected={false}
-                  modo="preview"
-                  selectedId={null}
-                  onClick={() => {}}
-                  onBlockClick={() => {}}
-                  pathPrefix={blockId}
-                  positionStyle={getBlockPositionStyle(block)}
-                  canvasRef={measureCanvasRef}
-                  currentCoords={{ x: 0, y: 0, ancho: 0, alto: 0 }}
-                  onResize={() => {}}
-                  onResizeEnd={() => {}}
-                  editingId={null}
-                  variant={variant}
-                  blockIndex={index}
-                  liveSocket={liveSocket}
-                  torneoSocket={torneoSocket}
-                  viewerStudentId={viewerStudentId}
-                  viewerStudentName={viewerStudentName}
-            viewerClassId={viewerClassIdResolved}
-            isThumbnail={isThumbnail}
-            clipGroupInnerEditId={clipGroupInnerEditId}
-            onClipGroupInnerEditChange={onClipGroupInnerEditChange}
-            onClipGroupChange={onClipGroupChange}
-          />
-              );
-            })}
-          </div>
-        )}
-      </div>
-      </SlideCanvasRootContext.Provider>
-      </SlideThemeProvider>
-    );
-  }
+  /**
+   * G-scale.2 — superficie virtual en solo lectura (preview, present, viewer,
+   * autónomo, miniaturas). El editor la envuelve en `canvas-area`; aquí no.
+   * Excluir `viewerFillScaleFit={false}` (composición interna de `clip-group`).
+   */
+  const useVirtualSlideSurface = !editorMode && viewerFillScaleFit;
 
   // ─── Editor / viewer mode ─────────────────────────────────────────────────
   const backgroundLayer = slide.fondo?.tipo === 'imagen' &&
@@ -1784,7 +1673,6 @@ export function SlideRenderer({
             onResponse={onResponse}
             canvasRef={measureCanvasRef}
             currentCoords={currentCoords}
-            viewerFillScale={isViewerFillScaled ? viewerFillScale : undefined}
             onResize={handleResize}
             onResizeEnd={handleResizeEnd}
             editingId={editingId}
@@ -1809,53 +1697,31 @@ export function SlideRenderer({
         );
       });
 
-  return (
-    <SlideThemeProvider value={{ theme: slideTheme }}>
-    <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
-    {isViewerFillScaled ? (
-      <div
-        ref={viewerFillContainerRef}
-        className={cn('relative overflow-hidden', className)}
-        style={{ width: '100%', height: '100%' }}
-      >
-        {viewerFillScale > 0 && (
-          <div
-            data-slide-root
-            className="canvas-slide overflow-hidden"
-            style={{
-              ...bgStyle,
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: 1280,
-              height: 720,
-              transform: `translate(-50%, -50%) scale(${viewerFillScale})`,
-              transformOrigin: 'center center',
-            }}
-            onMouseDown={handleCanvasPointerDown}
-            onClick={handleCanvasClick}
-            ref={bindSlideRootRef}
-          >
-            {backgroundLayer}
-            {blockNodes}
-            {emptyState}
-          </div>
-        )}
-      </div>
-    ) : (
-      <div
-        data-slide-root
-        className={cn('canvas-slide', editorMode ? 'overflow-visible' : 'overflow-hidden', className)}
-        style={{
-          ...bgStyle,
-          ...(editorMode
+  const slideCanvas = (
+    <div
+      data-slide-root
+      className={cn(
+        'canvas-slide',
+        editorMode ? 'overflow-visible' : 'overflow-hidden',
+        useVirtualSlideSurface ? 'h-full w-full min-h-0 min-w-0' : className,
+      )}
+      style={{
+        ...bgStyle,
+        ...(editorMode
+          ? {
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              minHeight: 0,
+              minWidth: 0,
+              overflow: 'visible',
+            }
+          : useVirtualSlideSurface
             ? {
                 position: 'relative',
                 width: '100%',
                 height: '100%',
-                minHeight: 0,
-                minWidth: 0,
-                overflow: 'visible',
+                overflow: 'hidden',
               }
             : viewerFill
               ? {
@@ -1870,15 +1736,33 @@ export function SlideRenderer({
                   aspectRatio: '16 / 9',
                   overflow: 'hidden',
                 }),
-        }}
-        onMouseDown={handleCanvasPointerDown}
-        onClick={handleCanvasClick}
-        ref={bindSlideRootRef}
+      }}
+      onMouseDown={handleCanvasPointerDown}
+      onClick={handleCanvasClick}
+      ref={bindSlideRootRef}
+    >
+      {backgroundLayer}
+      {blockNodes}
+      {emptyState}
+    </div>
+  );
+
+  return (
+    <SlideThemeProvider value={{ theme: slideTheme }}>
+    <SlideCanvasRootContext.Provider value={slideCanvasRoot}>
+    {useVirtualSlideSurface ? (
+      <VirtualSlideSurface
+        className={cn(
+          'relative overflow-hidden',
+          viewerFill ? 'h-full w-full' : 'aspect-video w-full',
+          className,
+        )}
+        surfaceClassName="overflow-hidden"
       >
-        {backgroundLayer}
-        {blockNodes}
-        {emptyState}
-      </div>
+        {slideCanvas}
+      </VirtualSlideSurface>
+    ) : (
+      slideCanvas
     )}
     </SlideCanvasRootContext.Provider>
     </SlideThemeProvider>

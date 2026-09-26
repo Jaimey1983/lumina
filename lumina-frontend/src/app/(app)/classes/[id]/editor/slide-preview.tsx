@@ -81,26 +81,14 @@ function contentToRendererSlide(content: unknown): RendererSlide {
 
 export default function SlidePreviewCanvas({ content, displayWidth = 960 }: Props) {
   const slide = useMemo(() => contentToRendererSlide(content), [content]);
-  const scale = displayWidth / CANVAS_W;
-  const displayHeight = CANVAS_H * scale;
+  const displayHeight = (CANVAS_H / CANVAS_W) * displayWidth;
 
   return (
-    <div style={{ width: displayWidth, height: displayHeight, position: 'relative', flexShrink: 0 }}>
-      <div
-        style={{
-          width: CANVAS_W,
-          height: CANVAS_H,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-      >
-        <div className="relative h-full w-full overflow-hidden rounded-sm border border-border bg-card shadow-sm">
-          <SlideRenderer slide={slide} modo="viewer" viewerFill className="absolute inset-0 h-full w-full" />
-        </div>
-      </div>
+    <div
+      className="relative shrink-0 overflow-hidden rounded-sm border border-border bg-card shadow-sm"
+      style={{ width: displayWidth, height: displayHeight }}
+    >
+      <SlideRenderer slide={slide} modo="viewer" viewerFill className="absolute inset-0 h-full w-full" />
     </div>
   );
 }
