@@ -7,7 +7,7 @@
 | **G-scale.1b** | En `main` | Editor (`canvas-area` + moveable) |
 | **G-scale.2** | En `main` | Solo lectura en `SlideRenderer` |
 | **G-scale.3** | En `main` (#39) | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
-| **G-scale.4** | Planificado | Validar **grafico** / **diagrama** bajo `scale()`; fijar dimensiones virtuales si hace falta |
+| **G-scale.4** | En curso | Neutralizador de escala para **grafico** / **diagrama** / **clip-group** + visual multi-superficie + CI `test:visual` |
 | **G-scale.5** | Planificado | Retirar **`isThumbnail`** (~206 usos) por innecesario; **un elemento/familia por PR** + paridad |
 
 **Prueba transversal (todas las fichas):** paridad **multi-superficie** en Playwright (editor, preview, present, viewer, autónomo, miniatura) — debe atravesar G-scale.4 y G-scale.5.
@@ -26,4 +26,6 @@ Las ramas `cursor/virtual-slide-*-feb4` y `cursor/editor-virtual-surface-feb4` (
 cd lumina-frontend && pnpm test:visual
 ```
 
-Proyecto `visual` usa solo **Chromium** (evita `playwright install-deps` en agentes/CI ligeros).
+Proyecto `visual` usa solo **Chromium**. En CI: `playwright install chromium --with-deps` + `pnpm test:visual`.
+
+Specs G-scale: `g-scale-3-widgets.visual.spec.tsx` (widgets), `g-scale-4-canvas-blocks.visual.spec.tsx` (grafico/diagrama).
