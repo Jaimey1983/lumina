@@ -17,6 +17,7 @@ import { fontFamilyWithFallback } from '@lumina/editor-shared/font-catalog';
 import { useSlideTheme } from '@lumina/editor-shared/slide-theme-context';
 import { resolveThemeTextStyle } from '@lumina/editor-shared/theme-text-styles';
 import { headingFallbackCss, effectiveFontSizePx } from '@lumina/editor-shared/heading-scale';
+import { TEXT_EMPTY_PLACEHOLDER_FONT_PX } from '@lumina/editor-shared/virtual-viewport-units';
 import {
   textBlockBoxCss,
   textBlockColumnsCss,
@@ -236,7 +237,7 @@ export function RenderText({
           className="pointer-events-none absolute left-1/2 top-1/2 block w-[calc(100%-8px)] max-w-full -translate-x-1/2 -translate-y-1/2 px-1 text-center leading-snug"
           style={{
             color: '#bbb',
-            fontSize: 'clamp(10px, 1.6vw, 13px)',
+            fontSize: `${TEXT_EMPTY_PLACEHOLDER_FONT_PX}px`,
           }}
         >
           {emptyTextPlaceholderLabel(block)}
