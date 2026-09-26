@@ -425,6 +425,7 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
   return (
     <div
       ref={ref}
+      data-testid="g-scale-slide-thumb"
       className={cn('relative w-full overflow-hidden rounded-sm', className)}
       style={{ aspectRatio: '16/9', ...bgStyle }}
     >

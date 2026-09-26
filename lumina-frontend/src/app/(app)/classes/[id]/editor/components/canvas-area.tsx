@@ -2176,7 +2176,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
            * rects). `zoom={1}`: el zoom del usuario lo aplica el transform
            * externo, no la superficie virtual.
            */}
-          <VirtualSlideSurface zoom={1} onScaleChange={setSurfaceScale}>
+          <VirtualSlideSurface
+            zoom={1}
+            onScaleChange={setSurfaceScale}
+            surfaceTestId="g-scale-editor-surface"
+          >
           <SlideRenderer
             slide={liveSlide}
             modo="editor"

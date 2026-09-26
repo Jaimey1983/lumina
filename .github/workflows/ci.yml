@@ -116,3 +116,42 @@ jobs:
       - run: pnpm --filter lumina-frontend test:visual
       - run: pnpm --filter lumina-frontend build
 
+  frontend-g-scale-e2e:
+    name: Frontend (G-scale E2E Cypress)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lumina/types build
+      - run: pnpm --filter @lumina/curriculum-data build
+      - run: pnpm --filter @lumina/ui build
+      - run: pnpm --filter @lumina/charts build
+      - run: pnpm --filter @lumina/editor-shared build
+      - run: pnpm --filter @lumina/canvas-align build
+      - run: pnpm --filter @lumina/scoring build
+      - run: pnpm --filter @lumina/element-kit-core build
+      - run: pnpm --filter @lumina/element-kit build
+      - run: pnpm exec cypress install
+        working-directory: lumina-frontend
+      - name: Start Next.js dev server
+        run: |
+          pnpm --filter lumina-frontend dev &
+          for i in $(seq 1 72); do
+            if curl -sf -o /dev/null http://localhost:3001/login; then
+              echo "dev server ready"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "dev server failed to start"
+          exit 1
+      - run: pnpm --filter lumina-frontend test:e2e:g-scale
+
