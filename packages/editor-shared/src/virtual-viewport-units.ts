@@ -119,6 +119,21 @@ export function virtualClampCqiRemPx(
   return virtualClampContainerPercentRemPx(minRem, containerWidthPx, cqi, maxRem, rootPx);
 }
 
+/** `clamp(minRem, Ncqmin, maxRem)` con `1cqmin` = 1% del lado menor del contenedor (px virtual). */
+export function virtualClampCqminRemPx(
+  minRem: number,
+  cqmin: number,
+  maxRem: number,
+  containerMinSizePx: number,
+  rootPx = DEFAULT_ROOT_FONT_PX,
+): number {
+  const minPx = remToVirtualPx(minRem, rootPx);
+  const maxPx = remToVirtualPx(maxRem, rootPx);
+  const midPx = (cqmin / 100) * containerMinSizePx;
+  const clamped = Math.min(maxPx, Math.max(minPx, midPx));
+  return Math.round(clamped * 10) / 10;
+}
+
 // ─── Tokens G-scale.3 (sustituyen clamps con vw/vh en element-kit) ─────────
 
 /** `render-texto.tsx` — placeholder de bloque vacío en editor. */
@@ -184,3 +199,38 @@ export const CONTADOR_DIGITS_FONT_PX = virtualClampCqiRemPx(
 
 /** `grafico-data-dialog` — altura máx. del modal (era `70vh`). */
 export const GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX = Math.round(virtualPxFromVh(70) * 10) / 10;
+
+/** Tarjeta memoria: lado menor de referencia (~celda en grid sobre widget 90% del slide). */
+export const MEMORIA_CARD_REF_MIN_PX = Math.round(virtualBlockWidthPx(BLOCK_FALLBACKS.timeline.ancho) / 8);
+
+const TIMELINE_REF_WIDTH_PX = virtualBlockWidthPx(BLOCK_FALLBACKS.timeline.ancho);
+
+/** `timeline` — padding etapa (`clamp` con % del ancho del widget). */
+export const TIMELINE_STAGE_PAD_Y_PX = virtualClampContainerPercentRemPx(
+  0.25,
+  TIMELINE_REF_WIDTH_PX,
+  0.75,
+  0.625,
+);
+export const TIMELINE_STAGE_PAD_X_PX = virtualClampContainerPercentRemPx(
+  0.75,
+  TIMELINE_REF_WIDTH_PX,
+  3,
+  1.25,
+);
+
+/** `memoria` — texto de carta (`clamp(0.75rem, 32cqmin, 1.75rem)`). */
+export const MEMORIA_CARD_TEXT_FONT_PX = virtualClampCqminRemPx(
+  0.75,
+  32,
+  1.75,
+  MEMORIA_CARD_REF_MIN_PX,
+);
+
+/** `memoria` — símbolo (`clamp(1rem, 42cqmin, 3rem)`). */
+export const MEMORIA_CARD_SYMBOL_FONT_PX = virtualClampCqminRemPx(
+  1,
+  42,
+  3,
+  MEMORIA_CARD_REF_MIN_PX,
+);

@@ -41,11 +41,8 @@ export default defineConfig({
             enabled: true,
             provider: playwright(),
             headless: true,
-            instances: [
-              { browser: 'chromium' },
-              { browser: 'firefox' },
-              { browser: 'webkit' },
-            ],
+            // Chromium basta para G-scale; firefox/webkit requieren install-deps en CI.
+            instances: [{ browser: 'chromium' }],
           },
         },
       },

@@ -9,7 +9,8 @@
   text-align: center;
   line-height: 1.15;
   word-break: break-word;
-  font-size: clamp(0.75rem, 32cqmin, 1.75rem);
+  /* G-scale.3: clamp(0.75rem, 32cqmin, 1.75rem) → 28px virtual */
+  font-size: 28px;
   font-weight: 600;
 }
 
@@ -24,6 +25,7 @@
   display: block;
   text-align: center;
   line-height: 1;
-  font-size: clamp(1rem, 42cqmin, 3rem);
+  /* G-scale.3: clamp(1rem, 42cqmin, 3rem) → 48px virtual */
+  font-size: 48px;
   font-weight: 700;
 }

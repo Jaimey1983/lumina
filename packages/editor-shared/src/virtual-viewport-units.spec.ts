@@ -8,7 +8,11 @@ import {
   CONTADOR_DIGITS_FONT_PX,
   CONTADOR_ETIQUETA_FONT_PX,
   GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX,
+  MEMORIA_CARD_SYMBOL_FONT_PX,
+  MEMORIA_CARD_TEXT_FONT_PX,
   POPUP_TRIGGER_BUTTON_FONT_PX,
+  TIMELINE_STAGE_PAD_X_PX,
+  TIMELINE_STAGE_PAD_Y_PX,
   TEXT_EMPTY_PLACEHOLDER_FONT_PX,
   TIMELINE_PROYECTO_NUM_FONT_PX,
   virtualClampPx,
@@ -51,6 +55,10 @@ describe('virtual-viewport-units (G-scale.3)', () => {
     expect(CONTADOR_ETIQUETA_FONT_PX).toBe(12.8);
     expect(CONTADOR_DIGITS_FONT_PX).toBe(38.4);
     expect(GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX).toBeCloseTo(504, 5);
+    expect(TIMELINE_STAGE_PAD_Y_PX).toBe(8.6);
+    expect(TIMELINE_STAGE_PAD_X_PX).toBe(20);
+    expect(MEMORIA_CARD_TEXT_FONT_PX).toBe(28);
+    expect(MEMORIA_CARD_SYMBOL_FONT_PX).toBe(48);
   });
 
   it('virtualMinVhCapPx alinea actividades al alto virtual', () => {

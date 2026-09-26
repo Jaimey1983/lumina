@@ -45,7 +45,8 @@
   min-height: 0;
   position: relative;
   z-index: 2;
-  padding: clamp(0.25rem, 0.75%, 0.625rem) clamp(0.75rem, 3%, 1.25rem);
+  /* G-scale.3: padding % del ancho ref. timeline (90% slide) → 8.6px 20px virtual */
+  padding: 8.6px 20px;
   box-sizing: border-box;
 }
 
