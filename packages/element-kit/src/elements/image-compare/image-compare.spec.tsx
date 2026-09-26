@@ -116,11 +116,10 @@ describe("ImageCompare — ElementDefinition", () => {
     expect(slider.getAttribute("aria-valuenow")).toBe("52");
   });
 
-  it("Viewer en miniatura desactiva interacción", () => {
+  it("G-scale.5: Viewer muestra slider sin isThumbnail", () => {
     const estado = createDefaultImageCompareBlock();
-    render(<ImageCompareViewer estado={estado} config={{ isThumbnail: true }} />);
-
-    expect(screen.queryByRole("slider")).toBeNull();
+    render(<ImageCompareViewer estado={estado} config={{}} />);
+    expect(screen.getByRole("slider")).toBeTruthy();
   });
 
   it("Editor notifica selección del bloque al hacer clic", () => {

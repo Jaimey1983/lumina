@@ -8,7 +8,7 @@
 | **G-scale.2** | En `main` | Solo lectura en `SlideRenderer` |
 | **G-scale.3** | En `main` (#39) | `vw`/`vh`/`cqi`/`cqmin` → px virtual (`virtual-viewport-units.ts`) |
 | **G-scale.4** | En curso | Neutralizador de escala para **grafico** / **diagrama** / **clip-group** + visual multi-superficie + CI `test:visual` |
-| **G-scale.5** | En curso | Retirar **`isThumbnail`**; **1 familia/PR** — ✅ grafico (#41), ✅ diagrama (#42), ✅ timeline (#43), ✅ click-reveal (#44), ✅ flip-cards (#45), ✅ popup (#46), ✅ tabs (#47), ✅ carousel (#48), ✅ contador (#49), ✅ hotspot (#50), ✅ tooltip (#51) |
+| **G-scale.5** | En curso | Retirar **`isThumbnail`** — familias en PRs #41–#51; cierre en **#52** (`SlideRenderer`, video, boton, progreso, scratch-card, image-compare, checklist, `editor-shared` slide-panel) |
 
 **Prueba transversal (todas las fichas):** paridad **multi-superficie** en Playwright (editor, preview, present, viewer, autónomo, miniatura) — debe atravesar G-scale.4 y G-scale.5.
 
@@ -29,3 +29,7 @@ cd lumina-frontend && pnpm test:visual
 Proyecto `visual` usa solo **Chromium**. En CI: `playwright install chromium --with-deps` + `pnpm test:visual`.
 
 Specs G-scale: `g-scale-3-widgets.visual.spec.tsx` (widgets), `g-scale-4-canvas-blocks.visual.spec.tsx` (grafico/diagrama).
+
+## G-scale.5 — miniaturas
+
+El panel lateral escala el slide con `VirtualSlideSurface` y bloquea interacción con `pointer-events-none` en el contenedor (`slides-panel`), no con `isThumbnail` en cada viewer.

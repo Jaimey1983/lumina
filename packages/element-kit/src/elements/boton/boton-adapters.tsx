@@ -29,7 +29,7 @@ export function BotonViewer({
   config,
 }: ElementViewerProps<BotonEstado, BotonConfig>) {
   return (
-    <LegacyBotonViewer block={estado} isThumbnail={config.isThumbnail === true} />
+    <LegacyBotonViewer block={estado} />
   );
 }
 

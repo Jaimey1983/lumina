@@ -10,7 +10,6 @@ import {
   computeImagePanClamp,
   containerPercentToPanPx,
   imageElementStyle,
-  imageThumbnailStyle,
   imageWrapperStyle,
   panPxToContainerPercent,
   usesComputedImageLayout,
@@ -35,7 +34,6 @@ export type WidgetFramedImageLayerProps = {
   /** `overlay` = capa absoluta (tabs/popup); `column` = columna split. */
   layout?: 'overlay' | 'column';
   imageCornerMode?: ImageWrapperCornerMode;
-  isThumbnail?: boolean;
   imageFallbackBackground?: string;
   className?: string;
   /** Sustituye la clase base de columna/capa del slide-panel (p. ej. timeline). */
@@ -60,7 +58,6 @@ export function WidgetFramedImageLayer({
   imageRadius = 0,
   layout = 'column',
   imageCornerMode = 'all',
-  isThumbnail = false,
   imageFallbackBackground,
   className,
   layerClassName,
@@ -72,19 +69,16 @@ export function WidgetFramedImageLayer({
 }: WidgetFramedImageLayerProps) {
   const fillOverlay = layout === 'overlay';
   const { containerRef, imgRef, imgDims, containerDims, getEffectiveContainerDims, handleImageLoad, measureContainer } =
-    useWidgetImageDimensions(data.imagen, { isThumbnail });
+    useWidgetImageDimensions(data.imagen);
 
   const effectiveContainerDims = getEffectiveContainerDims();
-  const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims, {
-    isThumbnail,
-  });
+  const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims);
 
   useLayoutEffect(() => {
-    if (!data.imagen || isThumbnail) return;
+    if (!data.imagen) return;
     measureContainer();
   }, [
     data.imagen,
-    isThumbnail,
     measureContainer,
     imgDims.w,
     imgDims.h,
@@ -146,7 +140,7 @@ export function WidgetFramedImageLayer({
           className={cn(layerClass, className, isEditing && slideStyles.wspImageLayerInteractive)}
           style={style}
           onPointerDown={(e) => {
-            if (!isEditing || isThumbnail) return;
+            if (!isEditing) return;
             e.stopPropagation();
             onSelect();
           }}
@@ -166,7 +160,7 @@ export function WidgetFramedImageLayer({
         )}
         style={style}
         onPointerDown={(e) => {
-          if (!isEditing || isThumbnail) return;
+          if (!isEditing) return;
           e.stopPropagation();
           onSelect();
         }}
@@ -184,21 +178,6 @@ export function WidgetFramedImageLayer({
     backgroundColor: imageFallbackBackground ?? '#f1f5f9',
     ...style,
   };
-
-  if (isThumbnail) {
-    return (
-      <div className={cn(layerClass, className)} style={imageWrapperStyles}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={data.imagen}
-          alt={data.imagenAlt ?? ''}
-          className={slideStyles.wspImageFit}
-          style={imageThumbnailStyle(data)}
-          draggable={false}
-        />
-      </div>
-    );
-  }
 
   return (
     <div

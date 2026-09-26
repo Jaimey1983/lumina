@@ -121,11 +121,10 @@ describe("ScratchCard — ElementDefinition", () => {
     expect(screen.getByText("+100 Puntos")).toBeTruthy();
   });
 
-  it("Viewer en miniatura omite botones de interacción", () => {
+  it("G-scale.5: Viewer muestra controles sin isThumbnail", () => {
     const estado = createDefaultScratchCardBlock();
-    render(<ScratchCardViewer estado={estado} config={{ isThumbnail: true }} />);
-
-    expect(screen.queryByRole("button", { name: /revelar todo/i })).toBeNull();
+    render(<ScratchCardViewer estado={estado} config={{}} />);
+    expect(screen.getByRole("button", { name: /revelar todo/i })).toBeTruthy();
   });
 
   it("Editor notifica selección del bloque al hacer clic", () => {

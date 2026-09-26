@@ -20,64 +20,14 @@ export function buildEmbedUrl(url: string, autoplay?: boolean): string {
 
 export interface RenderVideoProps {
   block: VideoBlock;
-  isThumbnail?: boolean;
   editorMode?: boolean;
 }
 
 export function RenderVideo({
   block,
-  isThumbnail = false,
   editorMode = false,
 }: RenderVideoProps) {
   const isYoutube = block.url.includes('youtube') || block.url.includes('youtu.be');
-
-  if (isThumbnail) {
-    if (isYoutube) {
-      const ytMatch = block.url.match(
-        /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-      );
-      const videoId = ytMatch?.[1];
-      if (videoId) {
-        return (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
-            alt=""
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-        );
-      }
-    }
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          background: '#111827',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        aria-hidden
-      >
-        <svg
-          viewBox="0 0 24 24"
-          width="28%"
-          height="28%"
-          fill="white"
-          opacity={0.85}
-          aria-hidden
-        >
-          <path d="M8 5v14l11-7z" />
-        </svg>
-      </div>
-    );
-  }
 
   if (isYoutube) {
     const src = buildEmbedUrl(block.url, block.autoplay);

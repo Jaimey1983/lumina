@@ -18,11 +18,7 @@ export function VideoEditor({
   config,
 }: ElementEditorProps<VideoEstado, VideoConfig>): ReactElement {
   return (
-    <LegacyRenderVideo
-      block={estado}
-      isThumbnail={config.isThumbnail === true}
-      editorMode={true}
-    />
+    <LegacyRenderVideo block={estado} editorMode={true} />
   );
 }
 
@@ -32,11 +28,7 @@ export function VideoViewer({
   config,
 }: ElementViewerProps<VideoEstado, VideoConfig>): ReactElement {
   return (
-    <LegacyRenderVideo
-      block={estado}
-      isThumbnail={config.isThumbnail === true}
-      editorMode={false}
-    />
+    <LegacyRenderVideo block={estado} editorMode={false} />
   );
 }
 
