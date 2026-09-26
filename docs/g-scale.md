@@ -11,7 +11,7 @@
 | **G-scale.5** | En `main` (#55) | Sin **`isThumbnail`** (familias #41–#52, `SlideRenderer`, `@lumina/charts` #53, `g-scale-multi-surface.visual.spec.tsx` #54) |
 | **G-scale.6** | En `main` | `g-scale-6-slide-renderer.visual.spec.tsx` — `SlideRenderer` en preview / `viewerFill` / editor + `VirtualSlideSurface` |
 
-**Prueba transversal:** `g-scale-multi-surface.visual.spec.tsx` (viewers aislados) y **G-scale.6** (`SlideRenderer`). E2E Cypress en rutas reales sigue siendo opcional.
+**Prueba transversal:** `g-scale-multi-surface.visual.spec.tsx` (viewers aislados), **G-scale.6** (`SlideRenderer`) y **Cypress** `07-g-scale-present-viewer.cy.ts` (rutas `/present` y `/viewer` con API mockeada).
 
 ## Nota historial Git
 
@@ -41,6 +41,20 @@ Tras cambios en escala o miniaturas, revisar en local (`pnpm dev` en `lumina-fro
 4. **Autónomo** (si hay sesión de prueba) — un slide con widget interactivo escala bien.
 
 Automatizado en CI: `pnpm test:visual` (incluye G-scale.3–6).
+
+## E2E Cypress (present / viewer)
+
+Con el frontend en `http://localhost:3001` (`pnpm dev`):
+
+```bash
+cd lumina-frontend && pnpm test:e2e:g-scale
+```
+
+Fixture: `cypress/fixtures/g-scale.ts` — clase `e2e-g-scale-class` con bloque `grafico` «Notas del período». `seedGScaleSession()` intercepta `GET /auth/me` y `GET /classes/:id`.
+
+## Deuda imagen widgets (G-scale.5)
+
+`use-widget-image-dimensions` y `widget-image-styles` ya no exponen `isThumbnail` ni heurística de miniatura (&lt;50px): el encuadre cover usa siempre el mismo camino bajo `VirtualSlideSurface`.
 
 ## G-scale.5 — miniaturas
 

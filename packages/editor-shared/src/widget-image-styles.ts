@@ -70,27 +70,6 @@ export function imageFilterStyle(imagen: WidgetImagenAjuste): {
   };
 }
 
-/** Umbral por debajo del cual se trata el contenedor como miniatura. */
-export const WIDGET_IMAGE_THUMBNAIL_THRESHOLD = 50;
-
-export function isThumbnailContainer(containerDims: {
-  w: number;
-  h: number;
-}): boolean {
-  return (
-    containerDims.w < WIDGET_IMAGE_THUMBNAIL_THRESHOLD ||
-    containerDims.h < WIDGET_IMAGE_THUMBNAIL_THRESHOLD
-  );
-}
-
-export function imageThumbnailStyle(imagen: WidgetImagenAjuste): CSSProperties {
-  return {
-    ...imageLoadingFallbackStyle(),
-    objectPosition: 'center',
-    ...imageFilterStyle(imagen),
-  };
-}
-
 /** Fallback mientras la imagen o el contenedor aún no tienen dimensiones. */
 export function imageLoadingFallbackStyle(): CSSProperties {
   return {
@@ -163,11 +142,8 @@ export function getImageStyle(
 export function usesComputedImageLayout(
   imgDims: { w: number; h: number },
   containerDims: { w: number; h: number },
-  options?: { isThumbnail?: boolean },
 ): boolean {
   return !(
-    options?.isThumbnail ||
-    isThumbnailContainer(containerDims) ||
     imgDims.w <= 0 ||
     imgDims.h <= 0 ||
     containerDims.w <= 0 ||
@@ -180,9 +156,8 @@ export function imageElementStyle(
   imgDims: { w: number; h: number },
   containerDims: { w: number; h: number },
   overrides?: { offsetX?: number; offsetY?: number },
-  options?: { isThumbnail?: boolean },
 ): CSSProperties {
-  if (!usesComputedImageLayout(imgDims, containerDims, options)) {
+  if (!usesComputedImageLayout(imgDims, containerDims)) {
     return {
       ...imageLoadingFallbackStyle(),
       objectPosition: 'center',
@@ -246,9 +221,8 @@ export function applyImageElementStyle(
   imgDims: { w: number; h: number },
   containerDims: { w: number; h: number },
   overrides?: { offsetX?: number; offsetY?: number },
-  options?: { isThumbnail?: boolean },
 ): void {
-  const style = imageElementStyle(imagen, imgDims, containerDims, overrides, options);
+  const style = imageElementStyle(imagen, imgDims, containerDims, overrides);
   Object.assign(img.style, style);
 }
 

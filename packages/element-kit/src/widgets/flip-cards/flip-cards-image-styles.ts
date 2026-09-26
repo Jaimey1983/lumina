@@ -14,7 +14,6 @@ export function imageElementStyle(
   imgDims: { w: number; h: number },
   containerDims: { w: number; h: number },
   overrides?: { offsetX?: number; offsetY?: number },
-  options?: Parameters<typeof baseImageElementStyle>[4],
 ) {
-  return baseImageElementStyle(cara, imgDims, containerDims, overrides, options);
+  return baseImageElementStyle(cara, imgDims, containerDims, overrides);
 }
