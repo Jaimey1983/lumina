@@ -433,7 +433,6 @@ export const SlideCanvasThumb = memo(function SlideCanvasThumb({
           <SlideRenderer
             slide={rendererSlide}
             modo="preview"
-            isThumbnail
             className="absolute inset-0 h-full w-full"
           />
         </div>

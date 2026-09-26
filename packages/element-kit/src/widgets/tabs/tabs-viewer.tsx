@@ -21,10 +21,9 @@ import { TabsSlidePanelView } from './tabs-slide-panel.js';
 
 export interface TabsViewerProps {
   block: TabsWidget;
-  isThumbnail?: boolean;
 }
 
-export function TabsViewer({ block, isThumbnail = false }: TabsViewerProps) {
+export function TabsViewer({ block }: TabsViewerProps) {
   const widget = normalizeTabsWidget(block);
   const configuracion = mergedTabsConfig(block);
   const [activeIndex, setActiveIndex] = useState(() =>
@@ -48,7 +47,7 @@ export function TabsViewer({ block, isThumbnail = false }: TabsViewerProps) {
 
   return (
     <div
-      className={cn(chromeStyles.whRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
+      className={cn(chromeStyles.whRoot)}
       style={{ ...tabsContainerStyle(block), ...appearanceStyle }}
     >
       <div className={chromeStyles.whHeader} style={tabsHeaderPadding(configuracion)}>
@@ -78,13 +77,11 @@ export function TabsViewer({ block, isThumbnail = false }: TabsViewerProps) {
           <TabsSlidePanelView
             slide={activeSlide}
             configuracion={configuracion}
-            isThumbnail={isThumbnail}
             imageFallbackBackground={configuracion.colorFondoContenedor}
           />
         </div>
 
-        {!isThumbnail &&
-        (configuracion.mostrarBotonAnterior || configuracion.mostrarBotonSiguiente) && (
+        {(configuracion.mostrarBotonAnterior || configuracion.mostrarBotonSiguiente) && (
           <div className={chromeStyles.whNav}>
             {configuracion.mostrarBotonAnterior ? (
               <button

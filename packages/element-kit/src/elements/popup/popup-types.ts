@@ -6,7 +6,7 @@ export type PopupEstado = PopupWidget;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).
- * `isThumbnail` desactiva interacción / apertura automática — mismo contrato que `PopupViewer`.
+ * G-scale.5: sin `isThumbnail` — miniatura escala el mismo widget (VirtualSlideSurface).
  */
 export type PopupConfig = WidgetCanvasConfig;
 

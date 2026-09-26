@@ -34,9 +34,8 @@ export function TimelineEditor({
 
 export function TimelineViewer({
   estado,
-  config,
 }: ElementViewerProps<TimelineEstado, TimelineConfig>) {
-  return <LegacyViewer widget={estado} isThumbnail={config.isThumbnail} />;
+  return <LegacyViewer widget={estado} />;
 }
 
 export function TimelinePropiedades({

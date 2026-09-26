@@ -80,7 +80,7 @@ describe('G-scale.3 — timeline y click-reveal en superficie virtual', () => {
       960,
       540,
       'tl-surface',
-      <Viewer estado={proyectoTimelineFixture()} config={{ isThumbnail: false }} />,
+      <Viewer estado={proyectoTimelineFixture()} config={{}} />,
     );
 
     const num = view.container.querySelector('[class*="tlProyectoNum"]') as HTMLElement | null;
@@ -100,7 +100,7 @@ describe('G-scale.3 — timeline y click-reveal en superficie virtual', () => {
       960,
       540,
       'cr-surface',
-      <Viewer estado={block} config={{ isThumbnail: false }} />,
+      <Viewer estado={block} config={{}} />,
     );
 
     const label = view.container.querySelector('[class*="revealTriggerLabel"]') as HTMLElement | null;
@@ -120,7 +120,7 @@ describe('G-scale.3 — timeline y click-reveal en superficie virtual', () => {
       960,
       540,
       'cnt-surface',
-      <Viewer estado={estado} config={{ isThumbnail: false }} />,
+      <Viewer estado={estado} config={{}} />,
     );
 
     const digits = view.container.querySelector('[class*="digits"]') as HTMLElement | null;
@@ -141,13 +141,13 @@ describe('G-scale.3 — timeline y click-reveal en superficie virtual', () => {
       1000,
       562.5,
       'tl-big',
-      <Viewer estado={estado} config={{ isThumbnail: false }} />,
+      <Viewer estado={estado} config={{}} />,
     );
     const small = await mountOnSurface(
       400,
       225,
       'tl-small',
-      <Viewer estado={estado} config={{ isThumbnail: false }} />,
+      <Viewer estado={estado} config={{}} />,
     );
 
     const numBig = big.container.querySelector('[class*="tlProyectoNum"]') as HTMLElement;

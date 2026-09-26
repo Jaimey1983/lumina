@@ -27,14 +27,8 @@ export function GraficoEditor({
 /** Adapta el Viewer legacy (Recharts + paleta intactos). */
 export function GraficoViewer({
   estado,
-  config,
 }: ElementViewerProps<GraficoEstado, GraficoConfig>) {
-  return (
-    <LegacyGraficoViewer
-      block={estado}
-      isThumbnail={config.isThumbnail === true}
-    />
-  );
+  return <LegacyGraficoViewer block={estado} />;
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */

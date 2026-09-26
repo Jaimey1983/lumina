@@ -64,7 +64,6 @@ function TabImageLayer({
   imageRadius,
   fillOverlay,
   imageCornerMode = 'all',
-  isThumbnail = false,
   imageFallbackBackground,
   onSelect,
   onPatch,
@@ -75,7 +74,6 @@ function TabImageLayer({
   imageRadius: number;
   fillOverlay?: boolean;
   imageCornerMode?: ImageWrapperCornerMode;
-  isThumbnail?: boolean;
   imageFallbackBackground?: string;
   onSelect: () => void;
   onPatch: (patch: Partial<WidgetSlideContent>) => void;
@@ -88,7 +86,6 @@ function TabImageLayer({
       imageRadius={imageRadius}
       layout={fillOverlay ? 'overlay' : 'column'}
       imageCornerMode={imageCornerMode}
-      isThumbnail={isThumbnail}
       imageFallbackBackground={imageFallbackBackground}
       onSelect={onSelect}
       onPatch={onPatch}
@@ -481,14 +478,12 @@ function SlideImageEditorPopover({
 export interface WidgetSlidePanelViewProps {
   slide: WidgetSlideContent;
   configuracion: WidgetSlidePanelConfig;
-  isThumbnail?: boolean;
   imageFallbackBackground?: string;
 }
 
 export function WidgetSlidePanelView({
   slide,
   configuracion,
-  isThumbnail = false,
   imageFallbackBackground,
 }: WidgetSlidePanelViewProps) {
   const vis = resolveSlideVisibilidad(configuracion.defaultsSlide, slide);
@@ -559,7 +554,6 @@ export function WidgetSlidePanelView({
           slideStyles.wspSlideRow,
           slideStyles.wspSlideOverlay,
           slideStyles.wspPanelFill,
-          isThumbnail && 'pointer-events-none overflow-hidden',
         )}
         style={panelStyle}
         role="tabpanel"
@@ -573,7 +567,6 @@ export function WidgetSlidePanelView({
             imageRadius={slide.imagenRadio ?? 8}
             fillOverlay
             imageCornerMode={imageCornerMode}
-            isThumbnail={isThumbnail}
             imageFallbackBackground={imageFallbackBackground}
             onSelect={() => {}}
             onPatch={() => {}}
@@ -592,7 +585,6 @@ export function WidgetSlidePanelView({
         slideStyles.wspPanelFill,
         reverse && slideStyles.wspSlideRowReverse,
         soloTexto && slideStyles.wspSlideSoloTexto,
-        isThumbnail && 'pointer-events-none overflow-hidden',
       )}
       style={panelStyle}
       role="tabpanel"
@@ -605,7 +597,6 @@ export function WidgetSlidePanelView({
           isEditing={false}
           imageRadius={slide.imagenRadio ?? 8}
           imageCornerMode={imageCornerMode}
-          isThumbnail={isThumbnail}
           imageFallbackBackground={imageFallbackBackground}
           onSelect={() => {}}
           onPatch={() => {}}

@@ -101,7 +101,6 @@ type PrimitiveRuntimeConfig = {
   onCommit?: (doc: RichDoc) => void;
   onDiscard?: () => void;
   forceFill?: boolean;
-  isThumbnail?: boolean;
   renderInnerBlock?: (innerBlock: Block, colIdx: number, blockIdx: number) => ReactNode;
 };
 
@@ -112,7 +111,6 @@ type PrimitiveRuntimeConfig = {
  * `visual-tests/canvas-blocks.integration.visual.spec.tsx`.
  */
 type CanvasBlockRuntimeConfig = {
-  isThumbnail?: boolean;
   isSelected?: boolean;
   onEnsureBlockSelected?: () => void;
   innerEdit?: boolean;
@@ -521,8 +519,6 @@ interface BlockNodeProps {
   isResizing?: boolean;
   /** Position of this block in the slide's block array — used for staggered entry animation in viewer mode. */
   blockIndex?: number;
-  /** Miniatura del panel lateral: render simplificado de widgets e imágenes. */
-  isThumbnail?: boolean;
   /** Bloque clip-group en modo edición interna (pan/escala de imagen). */
   clipGroupInnerEditId?: string | null;
   onClipGroupInnerEditChange?: (blockId: string | null) => void;
@@ -593,7 +589,6 @@ function BlockNode({
   onEditCancel,
   isResizing,
   blockIndex,
-  isThumbnail = false,
   clipGroupInnerEditId = null,
   onClipGroupInnerEditChange,
   onClipGroupChange,
@@ -697,7 +692,6 @@ function BlockNode({
         viewerStudentId={viewerStudentId}
         viewerStudentName={viewerStudentName}
         viewerClassId={viewerClassId}
-        isThumbnail={isThumbnail}
       />
     );
   }
@@ -714,9 +708,6 @@ function BlockNode({
     }
     if (block.tipo === 'imagen') {
       return { forceFill: isResizing };
-    }
-    if (block.tipo === 'video') {
-      return { isThumbnail };
     }
     if (block.tipo === 'columnas') {
       return { renderInnerBlock: renderColumnInnerBlock };
@@ -764,7 +755,7 @@ function BlockNode({
       case 'scratch-card': {
         const def = elementRegistry.obtener<
           WidgetBlock,
-          { isThumbnail?: boolean; onEnsureBlockSelected?: () => void }
+          { onEnsureBlockSelected?: () => void }
         >(block.tipo);
         if (def) {
           // boton/contador/progreso/tooltip/ruleta: sus Editors no llaman onChange
@@ -838,7 +829,6 @@ function BlockNode({
             }
           })();
           const widgetConfig = {
-            isThumbnail,
             onEnsureBlockSelected: () => onClick(),
             ...widgetInnerConfig,
           };
@@ -849,10 +839,7 @@ function BlockNode({
               onChange={handleWidgetChange}
             />
           ) : (
-            <def.Viewer
-              estado={block}
-              config={{ isThumbnail }}
-            />
+            <def.Viewer estado={block} config={{}} />
           );
         }
         break;
@@ -873,7 +860,6 @@ function BlockNode({
         const canvasConfig: CanvasBlockRuntimeConfig =
           block.tipo === 'clip-group'
             ? {
-                isThumbnail,
                 isSelected,
                 innerEdit: clipInnerEdit,
                 renderComposicion: (bloques: Block[]) => (
@@ -895,7 +881,6 @@ function BlockNode({
                     viewerStudentId={viewerStudentId}
                     viewerStudentName={viewerStudentName}
                     viewerClassId={viewerClassId}
-                    isThumbnail={isThumbnail}
                     className="h-full w-full"
                   />
                 ),
@@ -908,7 +893,6 @@ function BlockNode({
                     : undefined,
               }
             : {
-                isThumbnail,
                 isSelected: selectedId === blockId,
                 onEnsureBlockSelected: () => onClick(),
               };
@@ -927,7 +911,7 @@ function BlockNode({
             onChange={handleCanvasChange}
           />
         ) : (
-          <def.Viewer estado={block} config={{ isThumbnail }} />
+          <def.Viewer estado={block} config={{}} />
         );
       }
       default: {
@@ -981,7 +965,7 @@ function BlockNode({
       data-canvas-target={
         // Primer nivel del editor: Moveable no debe resolver hijos de
         // clip-group/columnas que reutilizan el mismo data-block-id.
-        editorMode && !isThumbnail && positionStyle ? blockId : undefined
+        editorMode && positionStyle ? blockId : undefined
       }
       data-live-dragging={isLiveDragging ? 'true' : undefined}
       style={{
@@ -1270,8 +1254,6 @@ export interface SlideRendererProps {
   viewerStudentId?: string;
   viewerStudentName?: string;
   viewerClassId?: string;
-  /** Miniatura del panel lateral (SlideCanvasThumb). No confundir con modo preview escalado. */
-  isThumbnail?: boolean;
   /** Id de índice (`"0"`) del bloque en drag live — preview visible, sin opacity 0. */
   draggingBlockId?: string | null;
   clipGroupInnerEditId?: string | null;
@@ -1335,7 +1317,6 @@ export function SlideRenderer({
   viewerStudentId,
   viewerStudentName,
   viewerClassId: viewerClassIdProp,
-  isThumbnail = false,
   draggingBlockId = null,
   clipGroupInnerEditId = null,
   onClipGroupInnerEditChange,
@@ -1684,7 +1665,6 @@ export function SlideRenderer({
             viewerStudentId={viewerStudentId}
             viewerStudentName={viewerStudentName}
             viewerClassId={viewerClassIdResolved}
-            isThumbnail={isThumbnail}
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={onClipGroupInnerEditChange}
             onClipGroupChange={editorMode ? onClipGroupChange : undefined}

@@ -23,10 +23,8 @@ function clamp(value: number, min: number, max: number): number {
 
 export function ImageCompareViewer({
   estado,
-  config,
 }: ElementViewerProps<ImageCompareEstado, ImageCompareConfig>): ReactElement {
   const cfg = estado.configuracion;
-  const isThumbnail = Boolean(config?.isThumbnail);
   const isVertical = cfg.orientacion === "vertical";
 
   const [position, setPosition] = useState<number>(() =>
@@ -106,7 +104,6 @@ export function ImageCompareViewer({
   );
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (isThumbnail) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
     updatePositionFromPointer(e.clientX, e.clientY);
@@ -129,7 +126,6 @@ export function ImageCompareViewer({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (isThumbnail) return;
     const step = e.shiftKey ? 10 : 2;
 
     switch (e.key) {
@@ -274,8 +270,7 @@ export function ImageCompareViewer({
         )}
 
         {/* Divisor interactivo */}
-        {!isThumbnail && (
-          <div
+        <div
             className={
               isVertical ? styles.dividerVertical : styles.dividerHorizontal
             }
@@ -339,7 +334,6 @@ export function ImageCompareViewer({
               </div>
             )}
           </div>
-        )}
       </div>
     </div>
   );

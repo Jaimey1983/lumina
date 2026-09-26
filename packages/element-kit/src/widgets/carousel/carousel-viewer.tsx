@@ -25,10 +25,9 @@ import {
 
 export interface CarouselViewerProps {
   block: CarouselWidget;
-  isThumbnail?: boolean;
 }
 
-export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerProps) {
+export function CarouselViewer({ block }: CarouselViewerProps) {
   const widget = normalizeCarouselWidget(block);
   const configuracion = mergedCarouselConfig(block);
   const [activeIndex, setActiveIndex] = useState(() =>
@@ -54,7 +53,7 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
 
   return (
     <div
-      className={cn(chromeStyles.whRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
+      className={cn(chromeStyles.whRoot)}
       style={{ ...carouselContainerStyle(block), ...appearanceStyle }}
     >
       <div className={chromeStyles.whHeader} style={carouselHeaderPadding(configuracion)}>
@@ -91,10 +90,9 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
             <TabsSlidePanelView
               slide={activeSlide}
               configuracion={panelConfig}
-              isThumbnail={isThumbnail}
               imageFallbackBackground={configuracion.colorFondoContenedor}
             />
-            {!isThumbnail && configuracion.mostrarFlechasInternas ? (
+            {configuracion.mostrarFlechasInternas ? (
               <>
                 <button
                   type="button"
@@ -119,7 +117,7 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
           </div>
         </div>
 
-        {!isThumbnail && configuracion.mostrarDots ? (
+        {configuracion.mostrarDots ? (
           <div className={styles.carouselDots}>
             {slides.map((slide, index) => (
               <button
@@ -137,8 +135,7 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
           </div>
         ) : null}
 
-        {!isThumbnail &&
-        (configuracion.mostrarBotonAnterior || configuracion.mostrarBotonSiguiente) && (
+        {(configuracion.mostrarBotonAnterior || configuracion.mostrarBotonSiguiente) && (
           <div className={chromeStyles.whNav}>
             {configuracion.mostrarBotonAnterior ? (
               <button

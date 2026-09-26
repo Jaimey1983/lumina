@@ -12,10 +12,8 @@ import styles from "./checklist.module.css";
 
 export function ChecklistViewer({
   estado,
-  config,
 }: ElementViewerProps<ChecklistEstado, ChecklistConfig>): ReactElement {
   const cfg = estado.configuracion;
-  const isThumbnail = Boolean(config?.isThumbnail);
   const items = cfg.items ?? [];
 
   // Estado de ítems completados
@@ -30,7 +28,6 @@ export function ChecklistViewer({
   });
 
   const toggleItem = (id: string) => {
-    if (isThumbnail) return;
     setCompletedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -43,7 +40,6 @@ export function ChecklistViewer({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>, id: string) => {
-    if (isThumbnail) return;
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       toggleItem(id);
@@ -51,7 +47,6 @@ export function ChecklistViewer({
   };
 
   const resetList = () => {
-    if (isThumbnail) return;
     setCompletedIds(new Set());
   };
 
@@ -143,7 +138,7 @@ export function ChecklistViewer({
 
               <div
                 role="checkbox"
-                tabIndex={isThumbnail ? -1 : 0}
+                tabIndex={0}
                 aria-checked={isCompleted}
                 aria-label={item.texto}
                 className={`${styles.checkboxBox} ${
@@ -185,7 +180,7 @@ export function ChecklistViewer({
       </div>
 
       {/* Banner de felicitación / completado */}
-      {cfg.mostrarCelebracion && isAllCompleted && !isThumbnail && (
+      {cfg.mostrarCelebracion && isAllCompleted && (
         <div className={styles.celebrationBanner}>
           <svg
             width="20"
@@ -212,7 +207,7 @@ export function ChecklistViewer({
       )}
 
       {/* Botón de reinicio */}
-      {cfg.permitirReinicio && completedCount > 0 && !isThumbnail && (
+      {cfg.permitirReinicio && completedCount > 0 && (
         <div className={styles.footerActions}>
           <button
             type="button"
