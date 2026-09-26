@@ -112,6 +112,7 @@ import {
 import { VIRTUAL_CANVAS_HEIGHT, VIRTUAL_CANVAS_WIDTH } from '@lumina/editor-shared/virtual-canvas';
 import { AlignmentToolbar } from '@/components/editor/alignment-toolbar';
 import { LayersPanel } from '@/components/editor/layers-panel';
+import { VirtualSlideSurface } from '@/components/editor/virtual-slide-surface';
 import {
   applyLayerReorderAction,
   type LayerReorderAction,
@@ -2161,7 +2162,17 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             ref={setCanvasSurfaceRef}
             className={cn(SLIDE_SURFACE_CLASS, 'z-0')}
           >
-          {/* Contenido del slide — independiente de reglas/guías */}
+          {/*
+           * Contenido del slide — independiente de reglas/guías.
+           * G-scale.1b: superficie virtual fija 1280×720 escalada al ancho de
+           * LAYOUT de la surface (clientWidth, agnóstico a `scale(canvasZoom)`).
+           * Escala solo el CONTENIDO (fuentes px, paddings) de forma uniforme;
+           * la caja %-posicionada de cada bloque renderiza idéntica a antes →
+           * react-moveable / guías / Selecto quedan intactos (miden los mismos
+           * rects). `zoom={1}`: el zoom del usuario lo aplica el transform
+           * externo, no la superficie virtual.
+           */}
+          <VirtualSlideSurface zoom={1}>
           <SlideRenderer
             slide={liveSlide}
             modo="editor"
@@ -2221,6 +2232,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             suppressCanvasHandles
             className="absolute inset-0 h-full w-full min-h-0 min-w-0"
           />
+          </VirtualSlideSurface>
 
           {/* G2c — rubber-band de selección (reemplaza el marquee manual). */}
           {selectoContainer && (
