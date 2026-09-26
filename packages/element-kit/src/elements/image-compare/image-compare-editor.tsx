@@ -13,7 +13,10 @@ import type { ElementEditorProps } from "@lumina/element-kit-core";
 import { WidgetHeaderEditorField } from "@lumina/editor-shared/widget-header-editor";
 import {
   computeImagePanClamp,
+  containerPercentToPanPx,
+  framedCoverStyle,
   getImageStyle,
+  panPxToContainerPercent,
 } from "@lumina/editor-shared/widget-image-styles";
 import { Move } from "lucide-react";
 import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
@@ -184,14 +187,20 @@ export function ImageCompareEditor({
     setActiveSide(side);
     setInnerSelection({ kind: "image", side });
 
-    const ox =
+    // Los offsets se guardan como % del contenedor; convertir a px para el
+    // arrastre en vivo con el tamaño de contenedor actual.
+    const ox = containerPercentToPanPx(
       side === "antes"
         ? (cfg.imagenAntesOffsetX ?? 0)
-        : (cfg.imagenDespuesOffsetX ?? 0);
-    const oy =
+        : (cfg.imagenDespuesOffsetX ?? 0),
+      containerDims.w,
+    );
+    const oy = containerPercentToPanPx(
       side === "antes"
         ? (cfg.imagenAntesOffsetY ?? 0)
-        : (cfg.imagenDespuesOffsetY ?? 0);
+        : (cfg.imagenDespuesOffsetY ?? 0),
+      containerDims.h,
+    );
 
     imagePanRef.current = {
       side,
@@ -264,16 +273,19 @@ export function ImageCompareEditor({
       // ignore
     }
 
-    // Movimiento 100% individual: solo actualiza la foto que se arrastró
+    // Movimiento 100% individual: solo actualiza la foto que se arrastró.
+    // Se persiste como % del contenedor (portable entre tamaños de render).
+    const offsetXPct = panPxToContainerPercent(pan.pendingX, containerDims.w);
+    const offsetYPct = panPxToContainerPercent(pan.pendingY, containerDims.h);
     if (pan.side === "antes") {
       patchConfig({
-        imagenAntesOffsetX: pan.pendingX,
-        imagenAntesOffsetY: pan.pendingY,
+        imagenAntesOffsetX: offsetXPct,
+        imagenAntesOffsetY: offsetYPct,
       });
     } else {
       patchConfig({
-        imagenDespuesOffsetX: pan.pendingX,
-        imagenDespuesOffsetY: pan.pendingY,
+        imagenDespuesOffsetX: offsetXPct,
+        imagenDespuesOffsetY: offsetYPct,
       });
     }
 
@@ -310,14 +322,19 @@ export function ImageCompareEditor({
     zoom.pendingScale = nextScale;
 
     const dims = zoom.side === "antes" ? imgAntesDims : imgDespuesDims;
-    const ox =
+    // Offsets guardados en % → px para el clamp/preview con el zoom nuevo.
+    const ox = containerPercentToPanPx(
       zoom.side === "antes"
         ? (cfg.imagenAntesOffsetX ?? 0)
-        : (cfg.imagenDespuesOffsetX ?? 0);
-    const oy =
+        : (cfg.imagenDespuesOffsetX ?? 0),
+      containerDims.w,
+    );
+    const oy = containerPercentToPanPx(
       zoom.side === "antes"
         ? (cfg.imagenAntesOffsetY ?? 0)
-        : (cfg.imagenDespuesOffsetY ?? 0);
+        : (cfg.imagenDespuesOffsetY ?? 0),
+      containerDims.h,
+    );
 
     const { maxPanX, maxPanY } = computeImagePanClamp(
       dims.w,
@@ -402,8 +419,9 @@ export function ImageCompareEditor({
   const showSubtitle = cfg.mostrarSubtitulo ?? true;
   const showInstruction = cfg.mostrarInstruccion ?? true;
 
-  // Estilos de cover calculados matemáticamente (idéntico a TabImageLayer)
-  const styleAntes = getImageStyle(
+  // Estilos de cover con offsets en % del contenedor (mismo encuadre que el
+  // viewer/móvil, sin depender del tamaño en px del canvas).
+  const styleAntes = framedCoverStyle(
     imgAntesDims.w,
     imgAntesDims.h,
     containerDims.w,
@@ -413,7 +431,7 @@ export function ImageCompareEditor({
     cfg.imagenAntesOffsetY ?? 0,
   );
 
-  const styleDespues = getImageStyle(
+  const styleDespues = framedCoverStyle(
     imgDespuesDims.w,
     imgDespuesDims.h,
     containerDims.w,

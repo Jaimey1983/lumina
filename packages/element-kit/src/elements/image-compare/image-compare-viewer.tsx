@@ -10,7 +10,7 @@ import {
   type ReactElement,
 } from "react";
 import type { ElementViewerProps } from "@lumina/element-kit-core";
-import { getImageStyle } from "@lumina/editor-shared/widget-image-styles";
+import { framedCoverStyle } from "@lumina/editor-shared/widget-image-styles";
 import type {
   ImageCompareConfig,
   ImageCompareEstado,
@@ -176,8 +176,9 @@ export function ImageCompareViewer({
     (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
   const showHeader = showTitle || showSubtitle || showInstruction;
 
-  // Cover matemático con offsets en píxeles (idéntico a getImageStyle de TabImageLayer)
-  const styleAntes = getImageStyle(
+  // Cover matemático con offsets en % del contenedor (independiente de la
+  // resolución: mismo encuadre en editor, viewer y móvil, sin franjas en blanco).
+  const styleAntes = framedCoverStyle(
     imgAntesDims.w,
     imgAntesDims.h,
     containerDims.w,
@@ -187,7 +188,7 @@ export function ImageCompareViewer({
     cfg.imagenAntesOffsetY ?? 0,
   );
 
-  const styleDespues = getImageStyle(
+  const styleDespues = framedCoverStyle(
     imgDespuesDims.w,
     imgDespuesDims.h,
     containerDims.w,

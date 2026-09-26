@@ -240,3 +240,91 @@ export function computeImagePanClamp(
     maxPanY: Math.max(0, (renderedH - containerHeight) / 2),
   };
 }
+
+/**
+ * Estilo cover con desplazamiento de encuadre expresado como **porcentaje del
+ * contenedor** (no px absolutos). Convierte el % a px según el tamaño real de
+ * render y lo limita al pan máximo del contenedor.
+ *
+ * Esto lo hace independiente de la resolución: el mismo % produce el mismo
+ * encuadre en el editor, el viewer y en móvil, sin importar el tamaño en píxeles
+ * del contenedor (que cambia con el zoom del canvas, el ancho disponible del
+ * editor o el dispositivo). Pasar offsets en px absolutos a `getImageStyle`
+ * descuadra el recorte y puede dejar franjas en blanco al renderizar en un
+ * contenedor de distinto tamaño al de edición.
+ */
+export function framedCoverStyle(
+  imgNaturalWidth: number,
+  imgNaturalHeight: number,
+  containerWidth: number,
+  containerHeight: number,
+  escala: number,
+  offsetXPercent: number,
+  offsetYPercent: number,
+  extras?: { opacity?: number; filter?: string },
+): CSSProperties {
+  if (
+    !imgNaturalWidth ||
+    !imgNaturalHeight ||
+    !containerWidth ||
+    !containerHeight
+  ) {
+    return getImageStyle(
+      imgNaturalWidth,
+      imgNaturalHeight,
+      containerWidth,
+      containerHeight,
+      escala,
+      0,
+      0,
+      extras,
+    );
+  }
+
+  const { maxPanX, maxPanY } = computeImagePanClamp(
+    imgNaturalWidth,
+    imgNaturalHeight,
+    containerWidth,
+    containerHeight,
+    escala,
+  );
+  const rawX = (offsetXPercent / 100) * containerWidth;
+  const rawY = (offsetYPercent / 100) * containerHeight;
+  const px = Math.min(Math.max(rawX, -maxPanX), maxPanX);
+  const py = Math.min(Math.max(rawY, -maxPanY), maxPanY);
+
+  return getImageStyle(
+    imgNaturalWidth,
+    imgNaturalHeight,
+    containerWidth,
+    containerHeight,
+    escala,
+    px,
+    py,
+    extras,
+  );
+}
+
+/**
+ * Desplazamiento de pan en px (respecto al centro) → % del contenedor.
+ * Usar al persistir un arrastre para que el valor guardado sea portable entre
+ * tamaños de render. Redondea a 1 decimal.
+ */
+export function panPxToContainerPercent(
+  px: number,
+  containerDim: number,
+): number {
+  if (!containerDim) return 0;
+  return Math.round((px / containerDim) * 1000) / 10;
+}
+
+/**
+ * % del contenedor → px de pan, para inicializar un arrastre desde el valor
+ * guardado con el tamaño de contenedor actual.
+ */
+export function containerPercentToPanPx(
+  percent: number,
+  containerDim: number,
+): number {
+  return (percent / 100) * containerDim;
+}
