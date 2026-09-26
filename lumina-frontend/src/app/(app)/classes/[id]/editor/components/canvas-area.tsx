@@ -483,6 +483,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     guias: EMPTY_SLIDE_GUIAS,
   });
   const [historyTick, setHistoryTick] = useState(0);
+  // Escala de la superficie virtual (G-scale.1b): se usa para el zoom efectivo
+  // que recibe react-moveable (`canvasZoom × surfaceScale`), sin el cual el
+  // delta de drag/resize se interpreta mal (el bloque se mueve escalado).
+  const [surfaceScale, setSurfaceScale] = useState(1);
   const bumpHistory = useCallback(() => setHistoryTick((t) => t + 1), []);
 
   useEffect(() => {
@@ -2172,7 +2176,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
            * rects). `zoom={1}`: el zoom del usuario lo aplica el transform
            * externo, no la superficie virtual.
            */}
-          <VirtualSlideSurface zoom={1}>
+          <VirtualSlideSurface zoom={1} onScaleChange={setSurfaceScale}>
           <SlideRenderer
             slide={liveSlide}
             modo="editor"
@@ -2254,7 +2258,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             canvasRef={canvasRef}
             blocks={allBlocks}
             selectedIndices={moveableSelectedIndices}
-            zoom={canvasZoom}
+            zoom={canvasZoom * surfaceScale}
+            canvasZoom={canvasZoom}
             guias={liveSlide?.guias}
             snapSuppressedRef={snapSuppressedRef}
             onLiveChange={handleMoveableLiveChange}
@@ -2269,7 +2274,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
                 measurements={assistOverlay.measurements}
                 activeRect={assistOverlay.activeRect}
                 peerRects={assistOverlay.peerRects}
-                zoom={canvasZoom}
+                zoom={canvasZoom * surfaceScale}
               />
             </div>
           )}

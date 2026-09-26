@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -40,6 +41,13 @@ export interface VirtualSlideSurfaceProps {
   surfaceClassName?: string;
   /** `data-testid` opcional para la superficie interna (tests). */
   surfaceTestId?: string;
+  /**
+   * Notifica la escala aplicada (`S = ancho-layout / 1280`, ya multiplicada por
+   * `zoom`). El editor la necesita para pasarle a react-moveable el zoom
+   * efectivo (`= canvasZoom × S`): sin esto, react-moveable interpreta mal el
+   * delta del drag/resize porque desconoce la escala interna de la superficie.
+   */
+  onScaleChange?: (scale: number) => void;
 }
 
 export function VirtualSlideSurface({
@@ -48,6 +56,7 @@ export function VirtualSlideSurface({
   className,
   surfaceClassName,
   surfaceTestId,
+  onScaleChange,
 }: VirtualSlideSurfaceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({
@@ -91,6 +100,10 @@ export function VirtualSlideSurface({
     zoom,
     devicePixelRatio,
   });
+
+  useEffect(() => {
+    onScaleChange?.(layout.scale);
+  }, [layout.scale, onScaleChange]);
 
   const containerStyle: CSSProperties = {
     position: 'relative',
