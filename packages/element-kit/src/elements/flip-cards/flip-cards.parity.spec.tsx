@@ -46,20 +46,23 @@ describe("FlipCards — paridad E3.3", () => {
     ).toBeTruthy();
   });
 
-  it.each([false, true])(
-    "Viewer conserva el DOM visible (miniatura=%s)",
-    (isThumbnail) => {
-      const estado = createDefaultFlipCardsBlock();
-      estado.tituloWidget = "Contenido de prueba FlipCards";
-      const legacy = render(
-        <LegacyViewer block={estado} isThumbnail={isThumbnail} />,
-      );
-      const Viewer = flipCardsDefinition.Viewer;
-      const nuevo = render(<Viewer estado={estado} config={{ isThumbnail }} />);
-      expect(nuevo.container.innerHTML).toBe(legacy.container.innerHTML);
-      expect(nuevo.container.textContent).toContain(estado.tituloWidget);
-    },
-  );
+  it("Viewer conserva el DOM visible", () => {
+    const estado = createDefaultFlipCardsBlock();
+    estado.tituloWidget = "Contenido de prueba FlipCards";
+    const legacy = render(<LegacyViewer block={estado} />);
+    const Viewer = flipCardsDefinition.Viewer;
+    const nuevo = render(<Viewer estado={estado} config={{}} />);
+    expect(nuevo.container.innerHTML).toBe(legacy.container.innerHTML);
+    expect(nuevo.container.textContent).toContain(estado.tituloWidget);
+  });
+
+  it("G-scale.5: el título se muestra igual en miniatura (sin isThumbnail)", () => {
+    const estado = createDefaultFlipCardsBlock();
+    estado.tituloWidget = "Miniatura igual";
+    const Viewer = flipCardsDefinition.Viewer;
+    const { container } = render(<Viewer estado={estado} config={{}} />);
+    expect(container.textContent).toContain("Miniatura igual");
+  });
 
   it("la edición inline entrega el mismo cambio que legacy", () => {
     const estado = createDefaultFlipCardsBlock();
