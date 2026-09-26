@@ -34,9 +34,8 @@ export function TabsEditor({
 
 export function TabsViewer({
   estado,
-  config,
 }: ElementViewerProps<TabsEstado, TabsConfig>) {
-  return <LegacyViewer block={estado} isThumbnail={config.isThumbnail} />;
+  return <LegacyViewer block={estado} />;
 }
 
 export function TabsPropiedades({
