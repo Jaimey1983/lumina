@@ -5,6 +5,10 @@ import {
   CLICK_REVEAL_TRIGGER_PAD_X_PX,
   CLICK_REVEAL_TRIGGER_PAD_Y_PX,
   CLICK_REVEAL_TRIGGER_TITLE_FONT_PX,
+  CONTADOR_DIGITS_FONT_PX,
+  CONTADOR_ETIQUETA_FONT_PX,
+  GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX,
+  POPUP_TRIGGER_BUTTON_FONT_PX,
   TEXT_EMPTY_PLACEHOLDER_FONT_PX,
   TIMELINE_PROYECTO_NUM_FONT_PX,
   virtualClampPx,
@@ -43,6 +47,10 @@ describe('virtual-viewport-units (G-scale.3)', () => {
     expect(TIMELINE_PROYECTO_NUM_FONT_PX).toBe(40);
     expect(CLICK_REVEAL_TRIGGER_PAD_Y_PX).toBe(16);
     expect(CLICK_REVEAL_TRIGGER_PAD_X_PX).toBe(12);
+    expect(POPUP_TRIGGER_BUTTON_FONT_PX).toBe(14);
+    expect(CONTADOR_ETIQUETA_FONT_PX).toBe(12.8);
+    expect(CONTADOR_DIGITS_FONT_PX).toBe(38.4);
+    expect(GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX).toBeCloseTo(504, 5);
   });
 
   it('virtualMinVhCapPx alinea actividades al alto virtual', () => {

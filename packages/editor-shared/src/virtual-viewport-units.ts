@@ -1,3 +1,5 @@
+import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+
 import { VIRTUAL_CANVAS_HEIGHT, VIRTUAL_CANVAS_WIDTH } from './virtual-canvas';
 
 /**
@@ -80,6 +82,43 @@ export function virtualClampPercentRemPx(
   return virtualClampPx({ minPx, maxPx, vw: widthPercent });
 }
 
+/** Ancho de referencia en px virtual para un bloque con `ancho` en % del slide. */
+export function virtualBlockWidthPx(anchoPct: number): number {
+  return (anchoPct / 100) * VIRTUAL_CANVAS_WIDTH;
+}
+
+/**
+ * `clamp(minRem, pct% del contenedor, maxRem)` con contenedor de ancho fijo en px
+ * virtual (p. ej. caja del trigger popup).
+ */
+export function virtualClampContainerPercentRemPx(
+  minRem: number,
+  containerWidthPx: number,
+  widthPercent: number,
+  maxRem: number,
+  rootPx = DEFAULT_ROOT_FONT_PX,
+): number {
+  const minPx = remToVirtualPx(minRem, rootPx);
+  const maxPx = remToVirtualPx(maxRem, rootPx);
+  const midPx = (widthPercent / 100) * containerWidthPx;
+  const clamped = Math.min(maxPx, Math.max(minPx, midPx));
+  return Math.round(clamped * 10) / 10;
+}
+
+/**
+ * `clamp(minRem, Ncqi, maxRem)` evaluado con ancho de contenedor en px virtual
+ * (`1cqi` = 1% del inline-size del contenedor).
+ */
+export function virtualClampCqiRemPx(
+  minRem: number,
+  cqi: number,
+  maxRem: number,
+  containerWidthPx: number,
+  rootPx = DEFAULT_ROOT_FONT_PX,
+): number {
+  return virtualClampContainerPercentRemPx(minRem, containerWidthPx, cqi, maxRem, rootPx);
+}
+
 // ─── Tokens G-scale.3 (sustituyen clamps con vw/vh en element-kit) ─────────
 
 /** `render-texto.tsx` — placeholder de bloque vacío en editor. */
@@ -115,3 +154,33 @@ export const CLICK_REVEAL_TRIGGER_PAD_Y_PX = virtualClampPercentRemPx(0.5, 2, 1)
 
 /** `click-reveal` — padding horizontal del trigger (era `clamp(0.375rem, 1.5%, 0.75rem)`). */
 export const CLICK_REVEAL_TRIGGER_PAD_X_PX = virtualClampPercentRemPx(0.375, 1.5, 0.75);
+
+const POPUP_TRIGGER_REF_WIDTH_PX = virtualBlockWidthPx(BLOCK_FALLBACKS.popup.ancho);
+const CONTADOR_REF_WIDTH_PX = virtualBlockWidthPx(BLOCK_FALLBACKS.contador.ancho);
+
+/** `popup` — texto del botón trigger in-block (`clamp(0.65rem, 35%, 0.875rem)`). */
+export const POPUP_TRIGGER_BUTTON_FONT_PX = virtualClampContainerPercentRemPx(
+  0.65,
+  POPUP_TRIGGER_REF_WIDTH_PX,
+  35,
+  0.875,
+);
+
+/** `contador` — etiqueta (`clamp(0.55rem, 8cqi, 0.8rem)` @ ancho ref. del bloque). */
+export const CONTADOR_ETIQUETA_FONT_PX = virtualClampCqiRemPx(
+  0.55,
+  8,
+  0.8,
+  CONTADOR_REF_WIDTH_PX,
+);
+
+/** `contador` — dígitos (`clamp(1.05rem, 18cqi, 2.4rem)`). */
+export const CONTADOR_DIGITS_FONT_PX = virtualClampCqiRemPx(
+  1.05,
+  18,
+  2.4,
+  CONTADOR_REF_WIDTH_PX,
+);
+
+/** `grafico-data-dialog` — altura máx. del modal (era `70vh`). */
+export const GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX = Math.round(virtualPxFromVh(70) * 10) / 10;

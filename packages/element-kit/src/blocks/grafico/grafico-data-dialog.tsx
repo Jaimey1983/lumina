@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import type { GraficoDatosBlock, GraficoSerie } from '@lumina/types/slide';
 import { getSeriesColor } from '@lumina/charts';
+import { GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX } from '@lumina/editor-shared/virtual-viewport-units';
 import { Button } from '@lumina/ui/button';
+import { cn } from '@lumina/ui/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -272,7 +274,10 @@ export function GraficoDataDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[70vh] flex flex-col p-6">
+      <DialogContent
+        className={cn('flex max-w-2xl flex-col p-6')}
+        style={{ maxHeight: GRAFICO_DATA_DIALOG_MAX_HEIGHT_PX }}
+      >
         <DialogHeader className="mb-3">
           <div className="flex items-center gap-2">
             <TableIcon className="h-5 w-5 text-primary" />

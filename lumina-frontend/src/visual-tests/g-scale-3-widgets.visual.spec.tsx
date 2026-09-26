@@ -1,5 +1,5 @@
 /**
- * G-scale.3 — QA visual en navegador real: timeline (proyecto) y click-reveal.
+ * G-scale.3 — QA visual en navegador real: timeline, click-reveal y contador.
  *
  * Verifica que tipografía/padding en px virtual se mantienen en el layout 1280×720
  * y que la fracción renderizada (getBoundingClientRect) es estable entre
@@ -11,9 +11,14 @@ import { render } from 'vitest-browser-react';
 
 import {
   CLICK_REVEAL_TRIGGER_LABEL_FONT_PX,
+  CONTADOR_DIGITS_FONT_PX,
   TIMELINE_PROYECTO_NUM_FONT_PX,
 } from '@lumina/editor-shared/virtual-viewport-units';
-import { clickRevealDefinition, timelineDefinition } from '@lumina/element-kit';
+import {
+  clickRevealDefinition,
+  contadorDefinition,
+  timelineDefinition,
+} from '@lumina/element-kit';
 
 import { VirtualSlideSurface } from '@/components/editor/virtual-slide-surface';
 
@@ -104,6 +109,26 @@ describe('G-scale.3 — timeline y click-reveal en superficie virtual', () => {
 
     const layoutSize = parsePx(getComputedStyle(label).fontSize);
     expect(layoutSize).toBeCloseTo(CLICK_REVEAL_TRIGGER_LABEL_FONT_PX, 0);
+
+    await view.unmount();
+  });
+
+  test('contador: dígitos en px virtual de layout', async () => {
+    const Viewer = contadorDefinition.Viewer;
+    const estado = contadorDefinition.crearPorDefecto();
+    const view = await mountOnSurface(
+      960,
+      540,
+      'cnt-surface',
+      <Viewer estado={estado} config={{ isThumbnail: false }} />,
+    );
+
+    const digits = view.container.querySelector('[class*="digits"]') as HTMLElement | null;
+    expect(digits, 'visor contador con dígitos').toBeTruthy();
+    if (!digits) return;
+
+    const layoutSize = parsePx(getComputedStyle(digits).fontSize);
+    expect(layoutSize).toBeCloseTo(CONTADOR_DIGITS_FONT_PX, 0);
 
     await view.unmount();
   });
