@@ -60,6 +60,15 @@ describe("Gráfico — paridad ElementDefinition vs legacy (E4.1)", () => {
     ).toBeTruthy();
   });
 
+  it("G-scale.5: el título se muestra igual en miniatura (sin isThumbnail)", () => {
+    const estado = createDefaultGraficoBlock({ titulo: "Miniatura igual" });
+    const NuevoViewer = graficoDefinition.Viewer;
+    const { container } = render(
+      <NuevoViewer estado={estado} config={{}} />,
+    );
+    expect(within(container).getByText("Miniatura igual")).toBeTruthy();
+  });
+
   it("está registrada sin puntuación", async () => {
     const { elementRegistry } = await import("../../index.js");
     const definicion = elementRegistry.obtener("grafico") as
