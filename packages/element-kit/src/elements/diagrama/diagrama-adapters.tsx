@@ -29,14 +29,8 @@ export function DiagramaEditor({
 /** Adapta el Viewer legacy (grafo y Venn intactos). */
 export function DiagramaViewer({
   estado,
-  config,
 }: ElementViewerProps<DiagramaEstado, DiagramaConfig>) {
-  return (
-    <LegacyDiagramaViewer
-      block={estado}
-      isThumbnail={config.isThumbnail === true}
-    />
-  );
+  return <LegacyDiagramaViewer block={estado} />;
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */
