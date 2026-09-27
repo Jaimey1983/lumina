@@ -601,7 +601,6 @@ function ViewerScreen({
           <div className="flex min-h-0 w-full flex-1 overflow-hidden">
             {activeSlide ? (
               <div
-                data-testid="g-scale-slide-stage"
                 className="relative h-full w-full shrink-0 overflow-hidden"
                 style={bg.style}
               >

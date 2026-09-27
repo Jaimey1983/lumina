@@ -49,8 +49,6 @@ import {
   snapResizeSize,
   AlignmentOverlay,
   describeAlignmentAnnouncement,
-  VIRTUAL_CANVAS_WIDTH,
-  VIRTUAL_CANVAS_HEIGHT,
   type SnapLine,
   type Measurement,
   type AlignRect,
@@ -75,15 +73,8 @@ export interface CanvasMoveableProps {
   blocks: Block[];
   /** Índices (top-level) seleccionados. */
   selectedIndices: number[];
-  /** Escala visual efectiva del bloque (`canvasZoom × surfaceScale`) — para el control-box y el imán. */
+  /** Zoom del lienzo (1 = 100 %). */
   zoom: number;
-  /**
-   * Zoom del usuario (1 = 100 %). react-moveable calcula `e.dist` desde la
-   * matriz DOM del bloque **relativa al rootContainer** (= `surfaceScale`),
-   * ignorando el `scale(canvasZoom)` del ancestro; por eso el delta se divide
-   * aparte por `canvasZoom` para obtener px virtuales reales.
-   */
-  canvasZoom: number;
   guias?: SlideGuias | null;
   /** true mientras Alt está pulsado — desactiva el imán. */
   snapSuppressedRef?: RefObject<boolean>;
@@ -192,7 +183,6 @@ export function CanvasMoveable({
   blocks,
   selectedIndices,
   zoom,
-  canvasZoom,
   guias,
   snapSuppressedRef,
   onLiveChange,
@@ -338,14 +328,8 @@ export function CanvasMoveable({
       const rect = rectPx();
       const origins = originsRef.current;
       if (!rect || origins.length === 0) return;
-      // `e.dist` de react-moveable ya invierte la escala DOM del bloque relativa
-      // al rootContainer (= `surfaceScale`), pero NO el `scale(canvasZoom)` del
-      // ancestro. Dividiendo además por `canvasZoom` obtenemos px **virtuales**
-      // reales; el % se calcula contra las dimensiones del lienzo virtual fijo
-      // (1280×720). Zoom-invariante y sin el sobre-movimiento 1/escala que daba
-      // dividir por `rect.width` (px renderizados).
-      const dxPct = (e.dist[0] / canvasZoom / VIRTUAL_CANVAS_WIDTH) * 100;
-      const dyPct = (e.dist[1] / canvasZoom / VIRTUAL_CANVAS_HEIGHT) * 100;
+      const dxPct = (e.dist[0] / rect.width) * 100;
+      const dyPct = (e.dist[1] / rect.height) * 100;
       const enabled = !snapSuppressedRef?.current;
 
       const mut = new Map<number, Block>();
@@ -376,7 +360,7 @@ export function CanvasMoveable({
 
       onLiveChange?.(applyToBlocks(mut));
     },
-    [rectPx, snapSuppressedRef, guias, zoom, canvasZoom, onLiveChange, applyToBlocks, applyGuides, applyMeasurements, applyActiveRotation],
+    [rectPx, snapSuppressedRef, guias, zoom, onLiveChange, applyToBlocks, applyGuides, applyMeasurements, applyActiveRotation],
   );
 
   // ─── Resize ──────────────────────────────────────────────────────────────
@@ -389,9 +373,8 @@ export function CanvasMoveable({
       const dir = dirFromMoveable(e.direction);
       const { dxPct, dyPct } = toPointerDeltaConvention(
         dir,
-        // Igual que en drag: `e.dist / canvasZoom` = px virtuales → % contra 1280×720.
-        (e.dist[0] / canvasZoom / VIRTUAL_CANVAS_WIDTH) * 100,
-        (e.dist[1] / canvasZoom / VIRTUAL_CANVAS_HEIGHT) * 100,
+        (e.dist[0] / rect.width) * 100,
+        (e.dist[1] / rect.height) * 100,
       );
       const enabled = !snapSuppressedRef?.current;
       const minDim = getBlockResizeMinDim(liveBlocksRef.current[o.index].tipo);
@@ -438,7 +421,7 @@ export function CanvasMoveable({
       applyActiveRotation(o.rot % 360 !== 0 ? o.rot : undefined);
       onLiveChange?.(applyToBlocks(mut));
     },
-    [rectPx, snapSuppressedRef, guias, zoom, canvasZoom, onLiveChange, applyToBlocks, applyGuides, applyMeasurements, applyActiveRotation],
+    [rectPx, snapSuppressedRef, guias, zoom, onLiveChange, applyToBlocks, applyGuides, applyMeasurements, applyActiveRotation],
   );
 
   // ─── Rotate ──────────────────────────────────────────────────────────────

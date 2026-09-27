@@ -9,7 +9,7 @@ export type BotonEstado = BotonWidget;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).
- * G-scale.5: sin `isThumbnail` — miniatura escala el mismo widget (VirtualSlideSurface).
+ * `isThumbnail` desactiva interacción — mismo contrato que `BotonViewer`.
  */
 export type BotonConfig = WidgetCanvasConfig;
 

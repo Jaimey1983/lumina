@@ -8,28 +8,31 @@ import { ContadorParts } from './contador-parts.js';
 
 interface ContadorViewerProps {
   block: ContadorWidget;
+  isThumbnail?: boolean;
 }
 
-export function ContadorViewer({ block }: ContadorViewerProps) {
+export function ContadorViewer({ block, isThumbnail = false }: ContadorViewerProps) {
   const cfg = mergedContadorConfig(block);
   const { navigate } = useSlideNav();
   const initialMs = cfg.modo === 'temporizador' ? cfg.segundos * 1000 : 0;
   const [ms, setMs] = useState(initialMs);
   const [number, setNumber] = useState(cfg.valorInicial);
-  const [running, setRunning] = useState(cfg.autoIniciar && cfg.modo !== 'numero');
+  const [running, setRunning] = useState(
+    !isThumbnail && cfg.autoIniciar && cfg.modo !== 'numero',
+  );
   const endedRef = useRef(false);
   const ranRef = useRef(false);
 
   useEffect(() => {
     setMs(cfg.modo === 'temporizador' ? cfg.segundos * 1000 : 0);
     setNumber(cfg.valorInicial);
-    setRunning(cfg.autoIniciar && cfg.modo !== 'numero');
+    setRunning(!isThumbnail && cfg.autoIniciar && cfg.modo !== 'numero');
     endedRef.current = false;
     ranRef.current = false;
-  }, [cfg.modo, cfg.segundos, cfg.valorInicial, cfg.autoIniciar]);
+  }, [cfg.modo, cfg.segundos, cfg.valorInicial, cfg.autoIniciar, isThumbnail]);
 
   useEffect(() => {
-    if (!running || cfg.modo === 'numero') return;
+    if (!running || isThumbnail || cfg.modo === 'numero') return;
     ranRef.current = true;
     let last = performance.now();
     const id = window.setInterval(() => {
@@ -42,10 +45,10 @@ export function ContadorViewer({ block }: ContadorViewerProps) {
       });
     }, 100);
     return () => window.clearInterval(id);
-  }, [running, cfg.modo]);
+  }, [running, isThumbnail, cfg.modo]);
 
   useEffect(() => {
-    if (cfg.modo !== 'temporizador') return;
+    if (cfg.modo !== 'temporizador' || isThumbnail) return;
     if (ms > 0 || endedRef.current || !ranRef.current) return;
     endedRef.current = true;
     setRunning(false);
@@ -53,10 +56,10 @@ export function ContadorViewer({ block }: ContadorViewerProps) {
     if (cfg.alTerminar === 'siguiente' && navigate) {
       navigate({ kind: 'siguiente' });
     }
-  }, [ms, cfg.modo, cfg.alTerminar, navigate]);
+  }, [ms, cfg.modo, cfg.alTerminar, navigate, isThumbnail]);
 
   const displaySeconds = ms / 1000;
-  const ended = cfg.modo === 'temporizador' && ranRef.current && ms <= 0;
+  const ended = cfg.modo === 'temporizador' && ranRef.current && ms <= 0 && !isThumbnail;
 
   const handleReset = () => {
     endedRef.current = false;
@@ -77,7 +80,7 @@ export function ContadorViewer({ block }: ContadorViewerProps) {
         displayNumber={number}
         running={running}
         ended={ended}
-        showControls={cfg.mostrarControles}
+        showControls={!isThumbnail && cfg.mostrarControles}
         onToggleRunning={() => {
           if (cfg.modo === 'temporizador' && ms <= 0) return;
           setRunning((v) => !v);

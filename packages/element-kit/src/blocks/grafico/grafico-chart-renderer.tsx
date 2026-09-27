@@ -6,6 +6,7 @@ import type { GraficoDatosBlock } from '@lumina/types/slide';
 
 interface GraficoChartRendererProps {
   block: GraficoDatosBlock;
+  isThumbnail?: boolean;
 }
 
 /**
@@ -16,6 +17,7 @@ interface GraficoChartRendererProps {
  */
 export default function GraficoChartRenderer({
   block,
+  isThumbnail = false,
 }: GraficoChartRendererProps) {
   const config = useMemo<LuminaChartConfig>(
     () => ({
@@ -51,6 +53,7 @@ export default function GraficoChartRenderer({
       bandas: block.bandas,
       estilo: block.estilo,
       paletaPersonalizada: block.paletaPersonalizada,
+      isThumbnail,
     }),
     [
       block.chartType,
@@ -85,6 +88,7 @@ export default function GraficoChartRenderer({
       block.bandas,
       block.estilo,
       block.paletaPersonalizada,
+      isThumbnail,
     ],
   );
 

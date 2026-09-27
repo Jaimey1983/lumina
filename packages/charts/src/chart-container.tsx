@@ -238,17 +238,20 @@ export function LuminaChart({ config, className }: LuminaChartProps) {
       {isPartialArc &&
         !showTable &&
         Boolean(config.mostrarLeyenda) &&
+        !config.isThumbnail &&
         !config.modoSparkline && <PartialArcLegend config={config} colors={(built.options.colors as string[]) ?? []} />}
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="mt-1 h-6 self-end text-[10px] text-muted-foreground"
-        onClick={() => setShowTable((v) => !v)}
-      >
-        {showTable ? 'Ver gráfico' : 'Ver tabla de datos'}
-      </Button>
+      {!config.isThumbnail && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-1 h-6 self-end text-[10px] text-muted-foreground"
+          onClick={() => setShowTable((v) => !v)}
+        >
+          {showTable ? 'Ver gráfico' : 'Ver tabla de datos'}
+        </Button>
+      )}
     </div>
   );
 }

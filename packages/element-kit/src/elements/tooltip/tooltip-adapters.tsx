@@ -26,8 +26,14 @@ export function TooltipEditor({
 /** Adapta el Viewer legacy (burbuja / disparador intactos). */
 export function TooltipViewer({
   estado,
+  config,
 }: ElementViewerProps<TooltipEstado, TooltipConfig>) {
-  return <LegacyTooltipViewer block={estado} />;
+  return (
+    <LegacyTooltipViewer
+      block={estado}
+      isThumbnail={config.isThumbnail === true}
+    />
+  );
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */

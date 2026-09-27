@@ -8,6 +8,7 @@ const LEAVE_DELAY_MS = 180;
 
 interface TooltipViewerProps {
   block: TooltipWidget;
+  isThumbnail?: boolean;
 }
 
 function isCoarsePointer(): boolean {
@@ -15,7 +16,7 @@ function isCoarsePointer(): boolean {
   return window.matchMedia('(hover: none), (pointer: coarse)').matches;
 }
 
-export function TooltipViewer({ block }: TooltipViewerProps) {
+export function TooltipViewer({ block, isThumbnail = false }: TooltipViewerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -33,25 +34,28 @@ export function TooltipViewer({ block }: TooltipViewerProps) {
   }, []);
 
   const open = useCallback(() => {
+    if (isThumbnail) return;
     clearLeaveTimer();
     setIsOpen(true);
-  }, [clearLeaveTimer]);
+  }, [clearLeaveTimer, isThumbnail]);
 
   const close = useCallback(() => {
+    if (isThumbnail) return;
     clearLeaveTimer();
     setIsOpen(false);
-  }, [clearLeaveTimer]);
+  }, [clearLeaveTimer, isThumbnail]);
 
   const scheduleClose = useCallback(() => {
+    if (isThumbnail) return;
     clearLeaveTimer();
     leaveTimerRef.current = setTimeout(() => {
       setIsOpen(false);
       leaveTimerRef.current = null;
     }, LEAVE_DELAY_MS);
-  }, [clearLeaveTimer]);
+  }, [clearLeaveTimer, isThumbnail]);
 
   useEffect(() => () => clearLeaveTimer(), [clearLeaveTimer]);
-  useEscapeToClose(isOpen, close);
+  useEscapeToClose(isOpen && !isThumbnail, close);
 
   const handleFocus = () => {
     if (coarseRef.current) return;
@@ -64,7 +68,7 @@ export function TooltipViewer({ block }: TooltipViewerProps) {
   };
 
   useEffect(() => {
-    if (!isOpen || !coarseRef.current) return;
+    if (!isOpen || isThumbnail || !coarseRef.current) return;
 
     const handlePointerDown = (e: PointerEvent) => {
       if (rootRef.current?.contains(e.target as Node)) return;
@@ -73,7 +77,7 @@ export function TooltipViewer({ block }: TooltipViewerProps) {
 
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [isOpen]);
+  }, [isOpen, isThumbnail]);
 
   const handleMouseEnter = () => {
     if (coarseRef.current) return;
@@ -101,7 +105,7 @@ export function TooltipViewer({ block }: TooltipViewerProps) {
     >
       <TooltipParts
         block={block}
-        isOpen={isOpen}
+        isOpen={isThumbnail ? false : isOpen}
         isEditing={false}
         onToggle={handleToggle}
         onFocusTrigger={handleFocus}

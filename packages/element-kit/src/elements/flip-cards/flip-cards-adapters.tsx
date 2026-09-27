@@ -34,8 +34,9 @@ export function FlipCardsEditor({
 
 export function FlipCardsViewer({
   estado,
+  config,
 }: ElementViewerProps<FlipCardsEstado, FlipCardsConfig>) {
-  return <LegacyViewer block={estado} />;
+  return <LegacyViewer block={estado} isThumbnail={config.isThumbnail} />;
 }
 
 export function FlipCardsPropiedades({

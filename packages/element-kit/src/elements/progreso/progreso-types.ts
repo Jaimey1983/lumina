@@ -6,7 +6,7 @@ export type ProgresoEstado = ProgresoWidget;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).
- * G-scale.5: sin `isThumbnail` — miniatura escala el mismo widget (VirtualSlideSurface).
+ * `isThumbnail` fija el porcentaje de modo slides — mismo contrato que `ProgresoViewer`.
  */
 export type ProgresoConfig = WidgetCanvasConfig;
 

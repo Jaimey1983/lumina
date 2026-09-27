@@ -5,6 +5,7 @@ import { mergedBotonConfig } from './boton-config.js';
 
 interface BotonViewerProps {
   block: BotonWidget;
+  isThumbnail?: boolean;
 }
 
 function normalizeHref(url: string): string | null {
@@ -19,13 +20,13 @@ function isNavAccion(accion: BotonWidget['accion']): boolean {
   return accion === 'siguiente' || accion === 'anterior' || accion === 'ir_a';
 }
 
-export function BotonViewer({ block }: BotonViewerProps) {
+export function BotonViewer({ block, isThumbnail = false }: BotonViewerProps) {
   const cfg = mergedBotonConfig(block);
   const { navigate, slideCount } = useSlideNav();
 
   const href = cfg.accion === 'url' ? normalizeHref(cfg.url) : null;
   const navLocked = isNavAccion(cfg.accion) && !navigate;
-  const disabled = navLocked;
+  const disabled = isThumbnail || navLocked;
 
   const handleActivate = () => {
     if (disabled || cfg.deshabilitado) return;

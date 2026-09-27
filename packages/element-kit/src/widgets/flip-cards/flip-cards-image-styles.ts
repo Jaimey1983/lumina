@@ -2,6 +2,7 @@ import type { FlipCardCara } from '@lumina/types/slide';
 
 import {
   imageElementStyle as baseImageElementStyle,
+  imageThumbnailStyle,
   imageWrapperStyle as baseImageWrapperStyle,
 } from '@lumina/editor-shared/widget-image-styles';
 
@@ -14,6 +15,12 @@ export function imageElementStyle(
   imgDims: { w: number; h: number },
   containerDims: { w: number; h: number },
   overrides?: { offsetX?: number; offsetY?: number },
+  options?: { isThumbnail?: boolean },
 ) {
-  return baseImageElementStyle(cara, imgDims, containerDims, overrides);
+  if (options?.isThumbnail) {
+    return imageThumbnailStyle(cara);
+  }
+  return baseImageElementStyle(cara, imgDims, containerDims, overrides, options);
 }
+
+export { imageThumbnailStyle };

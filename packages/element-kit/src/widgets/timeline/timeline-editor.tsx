@@ -7,7 +7,6 @@ import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
 import { WidgetHeaderEditorField } from '@lumina/editor-shared/widget-header-editor';
 import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
 import { imageElementStyle, usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
-import { WidgetFramedImageLayer } from '@lumina/editor-shared/widget-framed-image-layer';
 import {
   stopWidgetInnerKeydown,
   stopWidgetInnerPointer,
@@ -34,57 +33,7 @@ import {
   timelineTituloTextStyle,
 } from './timeline-text-styles.js';
 import { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';
-function TimelineNodeFramedImage({
-  nodo,
-  layerClassName,
-  isImageSelected,
-  onSelectImage,
-  onPatch,
-}: {
-  nodo: TimelineNodo;
-  layerClassName: string;
-  isImageSelected: boolean;
-  onSelectImage: () => void;
-  onPatch: (patch: Partial<TimelineNodo>) => void;
-}) {
-  const cameraButton = nodo.imagen ? (
-    <ImageUrlPopover url={nodo.imagen} onCommit={(imagen) => onPatch({ imagen })}>
-      <button
-        type="button"
-        className="absolute right-0 top-0 z-[2] rounded-md bg-black/50 p-1 text-white"
-        aria-label="Cambiar imagen"
-        onPointerDown={stopWidgetInnerPointer}
-      >
-        <Camera className="size-3.5" />
-      </button>
-    </ImageUrlPopover>
-  ) : null;
-
-  return (
-    <WidgetFramedImageLayer
-      data={nodo}
-      isEditing
-      isSelected={isImageSelected}
-      layerClassName={layerClassName}
-      imageRadius={4}
-      onSelect={onSelectImage}
-      onPatch={onPatch}
-      emptySlot={
-        <ImageUrlPopover url={nodo.imagen} onCommit={(imagen) => onPatch({ imagen })}>
-          <button
-            type="button"
-            className="flex h-full min-h-[56px] w-full items-center justify-center gap-1 rounded bg-slate-100 text-xs text-slate-500 transition-colors hover:bg-slate-200"
-            onPointerDown={stopWidgetInnerPointer}
-          >
-            <Camera className="size-3.5" /> Añadir imagen
-          </button>
-        </ImageUrlPopover>
-      }
-    >
-      {cameraButton}
-    </WidgetFramedImageLayer>
-  );
-}
+import slideStyles from '@lumina/editor-shared/widget-slide-panel.module.css';
 
 export interface TimelineEditorProps {
   block: TimelineWidget;
@@ -189,12 +138,9 @@ function TimelineEditorNode({
   const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims);
   const imageStyle = imageElementStyle(nodo, imgDims, effectiveContainerDims);
 
-  const isImageSelected =
-    innerSelection?.kind === 'imagen' && innerSelection.nodoIndex === index;
-  const isSelected =
-    (innerSelection?.kind === 'nodo' && innerSelection.index === index) ||
-    (innerSelection?.kind === 'texto' && innerSelection.nodoIndex === index) ||
-    isImageSelected;
+  const isSelected = innerSelection?.kind === 'nodo' && innerSelection.index === index ||
+                     innerSelection?.kind === 'texto' && innerSelection.nodoIndex === index ||
+                     innerSelection?.kind === 'imagen' && innerSelection.nodoIndex === index;
 
   const v = config.variante;
   const isVerticalVariant = v === 'vertical';
@@ -273,27 +219,75 @@ function TimelineEditorNode({
       }
       imagenSlot={
         showCardImage ? (
-          <TimelineNodeFramedImage
-            nodo={nodo}
-            layerClassName={styles.tlCardImagen}
-            isImageSelected={isImageSelected}
-            onSelectImage={() => {
+          <div
+            className={styles.tlCardImagen}
+            ref={containerRef}
+            onPointerDown={(e) => {
+              stopWidgetInnerPointer(e);
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'imagen', nodoIndex: index });
             }}
-            onPatch={patchNodo}
-          />
+          >
+            {nodo.imagen ? (
+              <div className="relative flex size-full items-center justify-center">
+                <img
+                  ref={imgRef}
+                  src={nodo.imagen}
+                  alt=""
+                  className={slideStyles.wspImageFit}
+                  style={{ ...imageStyle, position: 'absolute', inset: 0 }}
+                  onLoad={handleImageLoad}
+                  draggable={false}
+                />
+                <ImageUrlPopover url={nodo.imagen} onCommit={(imagen) => patchNodo({ imagen })}>
+                  <button type="button" className="absolute right-0 top-0 z-[2] rounded-md bg-black/50 p-1 text-white" aria-label="Cambiar imagen" onPointerDown={stopWidgetInnerPointer}>
+                    <Camera className="size-3.5" />
+                  </button>
+                </ImageUrlPopover>
+              </div>
+            ) : (
+              <ImageUrlPopover url={nodo.imagen} onCommit={(imagen) => patchNodo({ imagen })}>
+                <button type="button" className="flex h-[60px] w-full items-center justify-center gap-1 rounded bg-slate-100 text-xs text-slate-500 transition-colors hover:bg-slate-200">
+                  <Camera className="size-3.5" /> Añadir imagen
+                </button>
+              </ImageUrlPopover>
+            )}
+          </div>
         ) : showDotOrProyectoImage ? (
-          <TimelineNodeFramedImage
-            nodo={nodo}
-            layerClassName={v === 'proyecto' ? styles.tlProyectoPhoto : styles.tlCardImagen}
-            isImageSelected={isImageSelected}
-            onSelectImage={() => {
+          <div
+            className={v === 'proyecto' ? styles.tlProyectoPhoto : styles.tlCardImagen}
+            ref={containerRef}
+            onPointerDown={(e) => {
+              stopWidgetInnerPointer(e);
               onEnsureBlockSelected();
               onInnerSelectionChange({ kind: 'imagen', nodoIndex: index });
             }}
-            onPatch={patchNodo}
-          />
+          >
+            {nodo.imagen ? (
+              <div className="relative flex size-full items-center justify-center">
+                <img
+                  ref={imgRef}
+                  src={nodo.imagen}
+                  alt=""
+                  className={cn(v === 'proyecto' ? 'size-full object-cover' : slideStyles.wspImageFit)}
+                  style={v === 'proyecto' ? imageStyle : { ...imageStyle, position: 'absolute', inset: 0 }}
+                  onLoad={handleImageLoad}
+                  draggable={false}
+                />
+                <ImageUrlPopover url={nodo.imagen} onCommit={(imagen) => patchNodo({ imagen })}>
+                  <button type="button" className="absolute right-0 top-0 z-[2] rounded-md bg-black/50 p-1 text-white" aria-label="Cambiar imagen" onPointerDown={stopWidgetInnerPointer}>
+                    <Camera className="size-3.5" />
+                  </button>
+                </ImageUrlPopover>
+              </div>
+            ) : (
+              <ImageUrlPopover url={nodo.imagen} onCommit={(imagen) => patchNodo({ imagen })}>
+                <button type="button" className="flex size-full min-h-[56px] items-center justify-center gap-1 rounded-full bg-slate-100 text-xs text-slate-500 hover:bg-slate-200">
+                  <Camera className="size-3.5" /> Imagen
+                </button>
+              </ImageUrlPopover>
+            )}
+          </div>
         ) : undefined
       }
       cuerpoSlot={

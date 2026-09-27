@@ -5,11 +5,12 @@ export type GraficoEstado = GraficoDatosBlock;
 
 /**
  * Config de runtime (no es apariencia del panel).
- * G-scale.5: sin `isThumbnail` — la miniatura escala el mismo slide (VirtualSlideSurface).
+ * `isThumbnail` oculta el título — mismo contrato que `GraficoViewer`.
  * `isSelected` / `onEnsureBlockSelected` los usa el Editor legacy para el anillo
  * de selección y el click-to-select del lienzo (E5.7).
  */
 export interface GraficoConfig {
+  readonly isThumbnail?: boolean;
   readonly isSelected?: boolean;
   readonly onEnsureBlockSelected?: () => void;
 }

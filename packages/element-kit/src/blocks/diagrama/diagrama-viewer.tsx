@@ -23,11 +23,13 @@ const GraphCanvas = dynamic(
 
 interface DiagramaViewerProps {
   block: DiagramaBlock;
+  isThumbnail?: boolean;
   className?: string;
 }
 
 export function DiagramaViewer({
   block,
+  isThumbnail = false,
   className,
 }: DiagramaViewerProps) {
   const { titulo, descripcionAccesible } = block;
@@ -51,7 +53,7 @@ export function DiagramaViewer({
         className,
       )}
     >
-      {titulo && (
+      {titulo && !isThumbnail && (
         <figcaption className="px-2 pt-1 pb-1.5 text-center text-sm font-semibold tracking-tight text-foreground">
           {titulo}
         </figcaption>
@@ -75,7 +77,7 @@ export function DiagramaViewer({
             fitView={true}
             showControls={false}
             showMiniMap={false}
-            showBackground={grafoBlock.opciones?.fondo !== 'vacio'}
+            showBackground={!isThumbnail && grafoBlock.opciones?.fondo !== 'vacio'}
             backgroundVariant={
               grafoBlock.opciones?.fondo === 'cuadricula'
                 ? ('lines' as const)

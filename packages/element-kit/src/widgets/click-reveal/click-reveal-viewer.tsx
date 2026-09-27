@@ -23,9 +23,10 @@ import {
 
 export interface ClickRevealViewerProps {
   block: ClickRevealWidget;
+  isThumbnail?: boolean;
 }
 
-export function ClickRevealViewer({ block }: ClickRevealViewerProps) {
+export function ClickRevealViewer({ block, isThumbnail = false }: ClickRevealViewerProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const handleClose = useCallback(() => setOpenIndex(null), []);
   const widget = normalizeClickRevealWidget(block);
@@ -43,7 +44,7 @@ export function ClickRevealViewer({ block }: ClickRevealViewerProps) {
 
   return (
     <div
-      className={cn(chromeStyles.whRoot)}
+      className={cn(chromeStyles.whRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
       style={{
         ...clickRevealContainerStyle(block),
         ...appearanceStyle,
@@ -62,6 +63,7 @@ export function ClickRevealViewer({ block }: ClickRevealViewerProps) {
               configuracion={configuracion}
               activeIndex={openIndex ?? -1}
               onSelectIndex={(index) => {
+                if (isThumbnail) return;
                 setOpenIndex(index);
               }}
             />
@@ -70,7 +72,7 @@ export function ClickRevealViewer({ block }: ClickRevealViewerProps) {
               <ClickRevealModalPanel
                 overlay={activeOverlay}
                 configuracion={configuracion}
-                visible
+                visible={!isThumbnail}
                 onClose={handleClose}
               />
             ) : null}

@@ -218,7 +218,6 @@ export function PresentClient({ id }: { id: string }) {
 
       {activeSlide ? (
         <div
-          data-testid="g-scale-slide-stage"
           className={cn(
             'relative w-full max-h-full max-w-[177.78vh] aspect-video shrink-0 overflow-hidden bg-black mx-auto',
             getTransitionClass(activeSlide?.transicion?.tipo, phase),

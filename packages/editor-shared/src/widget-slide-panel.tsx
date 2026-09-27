@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent,
@@ -18,8 +19,16 @@ import {
   PopoverTrigger,
 } from '@lumina/ui/popover';
 import { cn } from '@lumina/ui/lib/utils';
-import { type ImageWrapperCornerMode } from './widget-image-styles.js';
-import { WidgetFramedImageLayer } from './widget-framed-image-layer.js';
+import {
+  applyImageElementStyle,
+  computeImagePanClamp,
+  imageElementStyle,
+  imageThumbnailStyle,
+  imageWrapperStyle,
+  usesComputedImageLayout,
+  type ImageWrapperCornerMode,
+} from './widget-image-styles.js';
+import { readContainerDimsFromRef, useWidgetImageDimensions } from './use-widget-image-dimensions.js';
 import { textStyleToCss } from './widget-text-styles.js';
 
 import slideStyles from './widget-slide-panel.module.css';
@@ -64,6 +73,7 @@ function TabImageLayer({
   imageRadius,
   fillOverlay,
   imageCornerMode = 'all',
+  isThumbnail = false,
   imageFallbackBackground,
   onSelect,
   onPatch,
@@ -74,22 +84,229 @@ function TabImageLayer({
   imageRadius: number;
   fillOverlay?: boolean;
   imageCornerMode?: ImageWrapperCornerMode;
+  isThumbnail?: boolean;
   imageFallbackBackground?: string;
   onSelect: () => void;
   onPatch: (patch: Partial<WidgetSlideContent>) => void;
 }) {
+  const { containerRef, imgRef, imgDims, containerDims, getEffectiveContainerDims, handleImageLoad, measureContainer } =
+    useWidgetImageDimensions(slide.imagen, { isThumbnail });
+
+  const effectiveContainerDims = getEffectiveContainerDims();
+  const computedImageLayout = usesComputedImageLayout(
+    imgDims,
+    effectiveContainerDims,
+    { isThumbnail },
+  );
+
+  useLayoutEffect(() => {
+    if (!slide.imagen || isThumbnail) return;
+    measureContainer();
+  }, [
+    slide.imagen,
+    isThumbnail,
+    measureContainer,
+    imgDims.w,
+    imgDims.h,
+    slide.imagenEscala,
+    slide.imagenOffsetX,
+    slide.imagenOffsetY,
+  ]);
+
+  const panRef = useRef<{
+    startX: number;
+    startY: number;
+    ox: number;
+    oy: number;
+    w: number;
+    h: number;
+    pendingX: number;
+    pendingY: number;
+  } | null>(null);
+  const resizeRef = useRef<{ startY: number; scale: number } | null>(null);
+
+  const applyImagePosition = (offsetX: number, offsetY: number) => {
+    const img = imgRef.current;
+    if (!img) return;
+    const liveDims = readContainerDimsFromRef(containerRef, containerDims);
+    applyImageElementStyle(img, slide, imgDims, liveDims, {
+      offsetX,
+      offsetY,
+    });
+  };
+
+  const finishPan = (el: HTMLElement, pointerId: number) => {
+    if (panRef.current) {
+      onPatch({
+        imagenOffsetX: panRef.current.pendingX,
+        imagenOffsetY: panRef.current.pendingY,
+      });
+    }
+    panRef.current = null;
+    try {
+      el.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const finishResize = (el: HTMLElement, pointerId: number) => {
+    resizeRef.current = null;
+    try {
+      el.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (!slide.imagen) {
+    return (
+      <div
+        className={cn(
+          fillOverlay ? slideStyles.wspImageLayer : slideStyles.wspImageCol,
+          slideStyles.wspImageColEmpty,
+          isEditing && slideStyles.wspImageLayerInteractive,
+          isSelected && chromeStyles.whInnerHighlight,
+        )}
+        onPointerDown={(e) => {
+          if (!isEditing || isThumbnail) return;
+          e.stopPropagation();
+          onSelect();
+        }}
+        onClick={stopWidgetInnerPointer}
+      >
+        <div className={slideStyles.wspImagePlaceholder}>
+          {isEditing ? '＋ Clic en Imagen (abajo) o aquí para seleccionar' : 'Sin imagen'}
+        </div>
+      </div>
+    );
+  }
+
+  const imageWrapperStyles = {
+    ...imageWrapperStyle(slide, imageRadius, imageCornerMode),
+    backgroundColor: imageFallbackBackground ?? '#f1f5f9',
+  };
+
+  if (isThumbnail) {
+    return (
+      <div
+        className={cn(
+          fillOverlay ? slideStyles.wspImageLayer : slideStyles.wspImageCol,
+        )}
+        style={imageWrapperStyles}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={slide.imagen}
+          alt={slide.imagenAlt ?? ''}
+          className={slideStyles.wspImageFit}
+          style={imageThumbnailStyle(slide)}
+          draggable={false}
+        />
+      </div>
+    );
+  }
+
   return (
-    <WidgetFramedImageLayer
-      data={slide}
-      isSelected={isSelected}
-      isEditing={isEditing}
-      imageRadius={imageRadius}
-      layout={fillOverlay ? 'overlay' : 'column'}
-      imageCornerMode={imageCornerMode}
-      imageFallbackBackground={imageFallbackBackground}
-      onSelect={onSelect}
-      onPatch={onPatch}
-    />
+    <div
+      ref={containerRef}
+      className={cn(
+        fillOverlay ? slideStyles.wspImageLayer : slideStyles.wspImageCol,
+        isEditing && slideStyles.wspImageLayerInteractive,
+        isSelected && chromeStyles.whInnerHighlight,
+      )}
+      style={imageWrapperStyles}
+      // El pan/zoom de esta imagen (más abajo, onPointerDown/Move/Up) gestiona
+      // su propio puntero. Sin `data-moveable-ignore`, `<Moveable target={…}>`
+      // del lienzo (CanvasMoveable) arma el drag del bloque completo en cada
+      // `mousedown` (sin umbral de movimiento) — el `stopPropagation()` del
+      // `onPointerDown` de abajo llega tarde: Moveable escucha el nativo
+      // `mousedown`, no `pointerdown` (son eventos separados). Mismo contrato
+      // que render-clip-group.tsx / clip-path-node-editor-paper.tsx.
+      data-moveable-ignore={isEditing ? '' : undefined}
+      onPointerDown={(e) => {
+        if (!isEditing) return;
+        e.stopPropagation();
+        onSelect();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const rect = e.currentTarget.getBoundingClientRect();
+        panRef.current = {
+          startX: e.clientX,
+          startY: e.clientY,
+          ox: slide.imagenOffsetX ?? 0,
+          oy: slide.imagenOffsetY ?? 0,
+          w: Math.max(rect.width, 1),
+          h: Math.max(rect.height, 1),
+          pendingX: slide.imagenOffsetX ?? 0,
+          pendingY: slide.imagenOffsetY ?? 0,
+        };
+      }}
+      onPointerMove={(e) => {
+        if (panRef.current) {
+          const scale = (slide.imagenEscala ?? 100) / 100;
+          const { maxPanX, maxPanY } = computeImagePanClamp(
+            imgDims.w,
+            imgDims.h,
+            panRef.current.w,
+            panRef.current.h,
+            scale,
+          );
+          const dx = e.clientX - panRef.current.startX;
+          const dy = e.clientY - panRef.current.startY;
+          const nextX = Math.max(-maxPanX, Math.min(maxPanX, panRef.current.ox + dx));
+          const nextY = Math.max(-maxPanY, Math.min(maxPanY, panRef.current.oy + dy));
+          panRef.current.pendingX = nextX;
+          panRef.current.pendingY = nextY;
+          applyImagePosition(nextX, nextY);
+          return;
+        }
+        if (resizeRef.current) {
+          const dy = resizeRef.current.startY - e.clientY;
+          const next = Math.max(100, Math.min(200, resizeRef.current.scale + dy * 0.5));
+          onPatch({ imagenEscala: Math.round(next) });
+        }
+      }}
+      onPointerUp={(e) => {
+        if (panRef.current) finishPan(e.currentTarget, e.pointerId);
+        if (resizeRef.current) finishResize(e.currentTarget, e.pointerId);
+      }}
+      onPointerCancel={(e) => {
+        if (panRef.current) finishPan(e.currentTarget, e.pointerId);
+        if (resizeRef.current) finishResize(e.currentTarget, e.pointerId);
+      }}
+      onClick={(e) => {
+        if (!isEditing) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={slide.imagen}
+        alt={slide.imagenAlt ?? ''}
+        className={cn(
+          computedImageLayout ? slideStyles.wspImagePlaced : slideStyles.wspImageFit,
+        )}
+        style={imageElementStyle(slide, imgDims, effectiveContainerDims)}
+        onLoad={handleImageLoad}
+        draggable={false}
+      />
+      {isEditing && isSelected ? (
+        <span
+          className={slideStyles.wspImageResizeHandle}
+          title="Arrastra para cambiar el zoom"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            resizeRef.current = {
+              startY: e.clientY,
+              scale: Math.max(100, slide.imagenEscala ?? 100),
+            };
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -478,12 +695,14 @@ function SlideImageEditorPopover({
 export interface WidgetSlidePanelViewProps {
   slide: WidgetSlideContent;
   configuracion: WidgetSlidePanelConfig;
+  isThumbnail?: boolean;
   imageFallbackBackground?: string;
 }
 
 export function WidgetSlidePanelView({
   slide,
   configuracion,
+  isThumbnail = false,
   imageFallbackBackground,
 }: WidgetSlidePanelViewProps) {
   const vis = resolveSlideVisibilidad(configuracion.defaultsSlide, slide);
@@ -554,6 +773,7 @@ export function WidgetSlidePanelView({
           slideStyles.wspSlideRow,
           slideStyles.wspSlideOverlay,
           slideStyles.wspPanelFill,
+          isThumbnail && 'pointer-events-none overflow-hidden',
         )}
         style={panelStyle}
         role="tabpanel"
@@ -567,6 +787,7 @@ export function WidgetSlidePanelView({
             imageRadius={slide.imagenRadio ?? 8}
             fillOverlay
             imageCornerMode={imageCornerMode}
+            isThumbnail={isThumbnail}
             imageFallbackBackground={imageFallbackBackground}
             onSelect={() => {}}
             onPatch={() => {}}
@@ -585,6 +806,7 @@ export function WidgetSlidePanelView({
         slideStyles.wspPanelFill,
         reverse && slideStyles.wspSlideRowReverse,
         soloTexto && slideStyles.wspSlideSoloTexto,
+        isThumbnail && 'pointer-events-none overflow-hidden',
       )}
       style={panelStyle}
       role="tabpanel"
@@ -597,6 +819,7 @@ export function WidgetSlidePanelView({
           isEditing={false}
           imageRadius={slide.imagenRadio ?? 8}
           imageCornerMode={imageCornerMode}
+          isThumbnail={isThumbnail}
           imageFallbackBackground={imageFallbackBackground}
           onSelect={() => {}}
           onPatch={() => {}}

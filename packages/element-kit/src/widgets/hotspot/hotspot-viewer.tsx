@@ -5,24 +5,29 @@ import { hotspotChromeStyle } from './hotspot-config.js';
 
 interface HotspotViewerProps {
   block: HotspotWidget;
+  isThumbnail?: boolean;
 }
 
-export function HotspotViewer({ block }: HotspotViewerProps) {
+export function HotspotViewer({ block, isThumbnail = false }: HotspotViewerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggle = () => {
-    setIsOpen((prev) => !prev);
+    if (!isThumbnail) {
+      setIsOpen((prev) => !prev);
+    }
   };
 
   const handleClose = () => {
-    setIsOpen(false);
+    if (!isThumbnail) {
+      setIsOpen(false);
+    }
   };
 
   return (
     <div style={hotspotChromeStyle(block)} className="w-full h-full relative">
       <HotspotParts
         block={block}
-        isOpen={isOpen}
+        isOpen={isThumbnail ? false : isOpen}
         isEditing={false}
         onToggle={handleToggle}
         onClose={handleClose}

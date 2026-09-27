@@ -26,8 +26,14 @@ export function ProgresoEditor({
 /** Adapta el Viewer legacy (modo slides / manual intacto). */
 export function ProgresoViewer({
   estado,
+  config,
 }: ElementViewerProps<ProgresoEstado, ProgresoConfig>) {
-  return <LegacyProgresoViewer block={estado} />;
+  return (
+    <LegacyProgresoViewer
+      block={estado}
+      isThumbnail={config.isThumbnail === true}
+    />
+  );
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */
