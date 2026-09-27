@@ -9,5 +9,5 @@ const env = {
 if (typeof globalThis.process === 'undefined') {
   Object.assign(globalThis, { process: { env } });
 } else if (!globalThis.process.env) {
-  globalThis.process.env = env as NodeJS.ProcessEnv;
+  globalThis.process.env = env as unknown as NodeJS.ProcessEnv;
 }

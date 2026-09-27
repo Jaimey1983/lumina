@@ -210,7 +210,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-xl px-4 py-2.5 shadow-md border-2 bg-card text-card-foreground transition-all min-w-[150px] max-w-[220px]',
-          (selected || nodeData.highlighted) && 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg',
+          (selected || nodeData.highlighted) && 'ring-2 ring-primary shadow-lg',
         )}
         style={{ borderColor: accent }}
       >
@@ -244,7 +244,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-full px-3 py-1.5 shadow-2xs border bg-card text-card-foreground transition-all flex items-center gap-1.5 min-w-[100px] max-w-[180px]',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{ borderColor: accent, borderLeftWidth: 4 }}
       >
@@ -316,7 +316,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-full px-4 py-1.5 shadow-xs border-2 bg-card text-card-foreground transition-all flex items-center justify-center gap-1.5 min-w-[110px]',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{ borderColor: accent }}
       >
@@ -341,7 +341,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded border-2 bg-card text-card-foreground shadow-xs transition-all min-w-[130px] p-2.5 -skew-x-12',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{ borderColor: accent }}
       >
@@ -372,7 +372,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all min-w-[150px] p-2 flex items-center gap-2.5',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{ borderColor: accent }}
       >
@@ -419,7 +419,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{
           borderColor: accent,
@@ -456,7 +456,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{
           borderColor: accent,
@@ -493,7 +493,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-all p-2 flex flex-col items-center justify-center text-center',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{
           borderColor: accent,
@@ -530,7 +530,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
         onDoubleClick={() => setIsEditing(true)}
         className={cn(
           'relative rounded-full border-2 bg-card/40 text-card-foreground shadow-xs transition-all flex flex-col items-center justify-center text-center p-2',
-          selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+          selected && 'ring-2 ring-primary',
         )}
         style={{
           borderColor: accent,
@@ -565,7 +565,7 @@ export function DiagramaShapeNode({ id, data, selected }: NodeProps) {
       onDoubleClick={() => setIsEditing(true)}
       className={cn(
         'relative rounded-lg border-2 bg-card text-card-foreground shadow-xs transition-shadow min-w-[130px] max-w-[200px] p-2',
-        selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+        selected && 'ring-2 ring-primary',
       )}
       style={{ borderColor: accent }}
     >
