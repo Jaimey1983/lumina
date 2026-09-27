@@ -10,11 +10,13 @@ import GraficoChartRenderer from './grafico-chart-renderer.js';
 
 interface GraficoViewerProps {
   block: GraficoDatosBlock;
+  isThumbnail?: boolean;
   className?: string;
 }
 
 export function GraficoViewer({
   block,
+  isThumbnail = false,
   className,
 }: GraficoViewerProps) {
   const { titulo, descripcionAccesible, categorias, series } = block;
@@ -30,7 +32,7 @@ export function GraficoViewer({
         className,
       )}
     >
-      {titulo && (
+      {titulo && !isThumbnail && (
         <figcaption className="px-2 pt-1 pb-2 text-center text-sm font-semibold tracking-tight text-foreground">
           {titulo}
         </figcaption>
@@ -44,7 +46,7 @@ export function GraficoViewer({
 
       <div className="relative min-h-0 flex-1 w-full">
         {hasData ? (
-          <GraficoChartRenderer block={block} />
+          <GraficoChartRenderer block={block} isThumbnail={isThumbnail} />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
             Gráfico sin datos

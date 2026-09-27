@@ -10,7 +10,7 @@ import { usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styl
 
 import styles from './flip-cards.module.css';
 import type { FlipCardsConfiguracionCompleta } from './flip-cards-config.js';
-import { imageElementStyle, imageWrapperStyle } from './flip-cards-image-styles.js';
+import { imageElementStyle, imageThumbnailStyle, imageWrapperStyle } from './flip-cards-image-styles.js';
 import {
   resolveCaraVisibilidad,
   resolveTextPos,
@@ -29,20 +29,42 @@ import {
 
 export interface FlipCardsViewerProps {
   block: FlipCardsWidget;
+  isThumbnail?: boolean;
 }
 
 function FlipCardFaceImage({
   data,
   cardRadius,
+  isThumbnail = false,
 }: {
   data: FlipCardCara;
   cardRadius: number;
+  isThumbnail?: boolean;
 }) {
   const { containerRef, imgRef, imgDims, getEffectiveContainerDims, handleImageLoad } =
-    useWidgetImageDimensions(data.imagen);
+    useWidgetImageDimensions(data.imagen, { isThumbnail });
 
   const effectiveContainerDims = getEffectiveContainerDims();
-  const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims);
+  const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims, {
+    isThumbnail,
+  });
+
+  if (isThumbnail) {
+    return (
+      <div
+        className={styles.fcImageLayer}
+        style={imageWrapperStyle(data, cardRadius)}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={data.imagen}
+          alt={data.imagenAlt ?? ''}
+          className={styles.flipImageFit}
+          style={imageThumbnailStyle(data)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -68,11 +90,13 @@ function FlipCard3D({
   configuracion,
   flipped,
   onToggle,
+  isThumbnail = false,
 }: {
   card: FlipCard;
   configuracion: FlipCardsConfiguracionCompleta;
   flipped: boolean;
   onToggle: () => void;
+  isThumbnail?: boolean;
 }) {
   const chrome = flipCardsCardChromeStyle(configuracion);
 
@@ -102,7 +126,11 @@ function FlipCard3D({
       >
         <div className={styles.fcFaceStack}>
           {hasImage ? (
-            <FlipCardFaceImage data={data} cardRadius={configuracion.bordeTarjetaRadio} />
+            <FlipCardFaceImage
+              data={data}
+              cardRadius={configuracion.bordeTarjetaRadio}
+              isThumbnail={isThumbnail}
+            />
           ) : null}
           {vis.mostrarTitulo ? (
             <div
@@ -131,30 +159,40 @@ function FlipCard3D({
 
   return (
     <div
-      className={cn(styles.flipScene, styles.flipSceneInteractive)}
-      role="button"
-      tabIndex={0}
-      aria-pressed={flipped}
+      className={cn(styles.flipScene, !isThumbnail && styles.flipSceneInteractive)}
+      role={isThumbnail ? undefined : 'button'}
+      tabIndex={isThumbnail ? undefined : 0}
+      aria-pressed={isThumbnail ? undefined : flipped}
       aria-label={flipped ? 'Mostrar frente de la tarjeta' : 'Mostrar reverso de la tarjeta'}
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-          onToggle();
-        }
-      }}
+      onClick={
+        isThumbnail
+          ? undefined
+          : (e) => {
+              e.stopPropagation();
+              onToggle();
+            }
+      }
+      onKeyDown={
+        isThumbnail
+          ? undefined
+          : (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggle();
+              }
+            }
+      }
     >
       <div className={cn(styles.flipInner, flipped && styles.flipInnerFlipped)}>
         {renderFace('frente')}
         {renderFace('reverso')}
       </div>
-      <span className={styles.flipBtn} aria-hidden>
-        <RefreshCw size={18} color="#2563EB" strokeWidth={2.25} />
-      </span>
+      {!isThumbnail ? (
+        <span className={styles.flipBtn} aria-hidden>
+          <RefreshCw size={18} color="#2563EB" strokeWidth={2.25} />
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -205,7 +243,7 @@ function FlipCardsNav({
   );
 }
 
-export function FlipCardsViewer({ block: rawBlock }: FlipCardsViewerProps) {
+export function FlipCardsViewer({ block: rawBlock, isThumbnail = false }: FlipCardsViewerProps) {
   const block = normalizeFlipCardsWidget(rawBlock);
   const configuracion = mergedFlipCardsConfig(block);
   const { tarjetas } = block;
@@ -236,9 +274,9 @@ export function FlipCardsViewer({ block: rawBlock }: FlipCardsViewerProps) {
 
   return (
     <div
-      className={styles.fcRoot}
+      className={cn(styles.fcRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
       style={flipCardsContainerStyle(block)}
-      onClick={(e) => e.stopPropagation()}
+      onClick={isThumbnail ? undefined : (e) => e.stopPropagation()}
     >
       <div className={styles.fcHeader} style={flipCardsHeaderStyle(configuracion)}>
         <FlipCardsHeader block={block} />
@@ -252,11 +290,12 @@ export function FlipCardsViewer({ block: rawBlock }: FlipCardsViewerProps) {
             configuracion={configuracion}
             flipped={flipped.has(card.id)}
             onToggle={() => toggleFlip(card.id)}
+            isThumbnail={isThumbnail}
           />
         ))}
       </div>
 
-      {showPrev || showNext ? (
+      {!isThumbnail && (showPrev || showNext) ? (
         <FlipCardsNav
           safePage={safePage}
           totalPages={totalPages}

@@ -45,8 +45,7 @@
   min-height: 0;
   position: relative;
   z-index: 2;
-  /* G-scale.3: padding % del ancho ref. timeline (90% slide) → 8.6px 20px virtual */
-  padding: 8.6px 20px;
+  padding: clamp(0.25rem, 0.75%, 0.625rem) clamp(0.75rem, 3%, 1.25rem);
   box-sizing: border-box;
 }
 
@@ -658,8 +657,7 @@
 }
 
 .tlProyectoNum {
-  /* G-scale.3: clamp(1.75rem, 4vw, 2.5rem) → 40px virtual */
-  font-size: 40px;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 800;
   line-height: 1;
   color: #0f172a;

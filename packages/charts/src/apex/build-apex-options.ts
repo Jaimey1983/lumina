@@ -44,6 +44,7 @@ function baseChartOptions(config: LuminaChartConfig, theme: LuminaChartTheme): A
   const isSparkline = Boolean(config.modoSparkline);
   const showToolbar =
     (config.exportarImagen !== undefined ? config.exportarImagen : true) &&
+    !config.isThumbnail &&
     !isSparkline;
   const estilo = config.estilo;
 
@@ -82,7 +83,7 @@ function resolveColor(idx: number, config: LuminaChartConfig, explicitColor?: st
 }
 
 function buildDataLabels(config: LuminaChartConfig, defaultEnabled = false): ApexOptions['dataLabels'] {
-  if (config.type === 'radialBar') {
+  if (config.isThumbnail || config.type === 'radialBar') {
     return { enabled: false };
   }
   const enabled = config.mostrarEtiquetasDatos !== undefined
@@ -164,6 +165,9 @@ function resolveLegendPosition(config: LuminaChartConfig, fallback: 'top' | 'bot
 
 /** Tooltip compartido: respeta `formatoValor` (I4) cuando está definido. */
 function buildTooltip(config: LuminaChartConfig): ApexOptions['tooltip'] {
+  if (config.isThumbnail) {
+    return { enabled: false };
+  }
   if (!config.formatoValor) {
     return { enabled: true };
   }
@@ -181,7 +185,7 @@ function buildXAxis(config: LuminaChartConfig, theme: LuminaChartTheme, isNumeri
       ? {
           title: {
             text: config.ejeXTitulo,
-            style: { fontSize: '11px', color: theme.mutedColor },
+            style: { fontSize: config.isThumbnail ? '8px' : '11px', color: theme.mutedColor },
           },
         }
       : {}),
@@ -193,7 +197,7 @@ function buildXAxis(config: LuminaChartConfig, theme: LuminaChartTheme, isNumeri
       ...(isNumeric && config.formatoValor
         ? { formatter: (value: string) => formatChartValue(Number(value), config.formatoValor) }
         : {}),
-      style: { fontSize: '11px', colors: theme.mutedColor },
+      style: { fontSize: config.isThumbnail ? '8px' : '11px', colors: theme.mutedColor },
     },
   };
 }
@@ -206,7 +210,7 @@ function buildYAxis(config: LuminaChartConfig, theme: LuminaChartTheme): ApexOpt
     show: !hidden,
     labels: {
       show: !hidden,
-      style: { fontSize: '11px', colors: theme.mutedColor },
+      style: { fontSize: config.isThumbnail ? '8px' : '11px', colors: theme.mutedColor },
       ...(config.formatoValor
         ? { formatter: (value: number) => formatChartValue(value, config.formatoValor) }
         : {}),
@@ -216,7 +220,7 @@ function buildYAxis(config: LuminaChartConfig, theme: LuminaChartTheme): ApexOpt
   if (config.ejeYTitulo && !hidden) {
     primaryY.title = {
       text: config.ejeYTitulo,
-      style: { fontSize: '11px', color: theme.mutedColor },
+      style: { fontSize: config.isThumbnail ? '8px' : '11px', color: theme.mutedColor },
     };
   }
   if (config.ejeYMin !== undefined) {
@@ -237,10 +241,10 @@ function buildYAxis(config: LuminaChartConfig, theme: LuminaChartTheme): ApexOpt
     opposite: true,
     title: {
       text: 'Secundario',
-      style: { fontSize: '11px', color: theme.mutedColor },
+      style: { fontSize: config.isThumbnail ? '8px' : '11px', color: theme.mutedColor },
     },
     labels: {
-      style: { fontSize: '11px', colors: theme.mutedColor },
+      style: { fontSize: config.isThumbnail ? '8px' : '11px', colors: theme.mutedColor },
     },
   };
 
@@ -348,7 +352,7 @@ function buildCartesianChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     yaxis: buildYAxis(config, theme),
     grid: buildGrid(config, theme),
     legend: {
-      show: Boolean(config.mostrarLeyenda) && !config.modoSparkline,
+      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
       position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
@@ -395,7 +399,7 @@ function buildScatterOrBubbleChart(config: LuminaChartConfig, theme: LuminaChart
     yaxis: buildYAxis(config, theme),
     grid: buildGrid(config, theme),
     legend: {
-      show: Boolean(config.mostrarLeyenda),
+      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
       position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
@@ -417,11 +421,11 @@ function buildRadarChart(config: LuminaChartConfig, theme: LuminaChartTheme): Bu
     colors,
     xaxis: {
       categories: config.categorias,
-      labels: { style: { fontSize: '11px', colors: theme.mutedColor } },
+      labels: { style: { fontSize: config.isThumbnail ? '8px' : '11px', colors: theme.mutedColor } },
     },
     yaxis: { show: false },
     legend: {
-      show: Boolean(config.mostrarLeyenda),
+      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
       position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
@@ -509,7 +513,7 @@ function buildHeatmapChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
     yaxis: buildYAxis(config, theme),
     grid: buildGrid(config, theme),
     legend: {
-      show: Boolean(config.mostrarLeyenda),
+      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
       position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
@@ -620,7 +624,7 @@ function buildCircularChart(config: LuminaChartConfig, theme: LuminaChartTheme):
   // arcos parciales y `<LuminaChart>` (chart-container.tsx) dibuja una
   // propia con `built.options.labels`/`colors` — un `<div>` normal, sin la
   // lógica de posicionamiento interna de ApexCharts.
-  const showNativeLegend = Boolean(config.mostrarLeyenda) && !config.modoSparkline && !isPartialArc;
+  const showNativeLegend = Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline && !isPartialArc;
 
   const options: ApexOptions = {
     chart: { ...baseChartOptions(config, theme), type: config.type as 'pie' | 'donut' | 'radialBar' },
@@ -656,7 +660,7 @@ function buildPolarAreaChart(config: LuminaChartConfig, theme: LuminaChartTheme)
     fill: { opacity: 0.85 },
     yaxis: { show: false },
     legend: {
-      show: Boolean(config.mostrarLeyenda) && !config.modoSparkline,
+      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail && !config.modoSparkline,
       position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },
@@ -768,7 +772,7 @@ function buildBoxPlotChart(config: LuminaChartConfig, theme: LuminaChartTheme): 
     yaxis: buildYAxis(config, theme),
     grid: buildGrid(config, theme),
     legend: {
-      show: Boolean(config.mostrarLeyenda),
+      show: Boolean(config.mostrarLeyenda) && !config.isThumbnail,
       position: resolveLegendPosition(config, 'bottom'),
       fontSize: '11px',
       labels: { colors: theme.foreColor },

@@ -248,6 +248,9 @@ export interface LuminaChartConfig {
   titulo?: string;
   /** Texto para lectores de pantalla (se anuncia vía `aria-live`, no reemplaza la tabla de datos). */
   descripcionAccesible?: string;
+  /** Render reducido para miniaturas (panel de slides, tarjetas de listado): sin tooltip/leyenda/ejes densos. */
+  isThumbnail?: boolean;
+
   // ─── Configuración fina (H6) ───
   /** Modo de apilado para column/bar/area/combo. */
   apilado?: 'ninguno' | 'normal' | 'porcentaje';

@@ -6,7 +6,7 @@ export type HotspotEstado = HotspotWidget;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).
- * G-scale.5: sin `isThumbnail` — miniatura escala el mismo widget (VirtualSlideSurface).
+ * `isThumbnail` desactiva interacción — mismo contrato que `HotspotViewer`.
  */
 export type HotspotConfig = WidgetCanvasConfig;
 

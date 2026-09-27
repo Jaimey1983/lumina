@@ -63,6 +63,7 @@ export type TimelineNodeLayoutProps = {
   index: number;
   config: TimelineConfiguracion;
   isActive?: boolean;
+  isThumbnail?: boolean;
   imageStyle?: CSSProperties;
   computedImageLayout?: boolean;
   containerRef?: React.RefObject<HTMLDivElement | null>;
@@ -129,10 +130,15 @@ function TimelineCorporateIcon({ nodo, index, config }: { nodo: TimelineNodo; in
 
 function TimelineProyectoPhoto({
   nodo,
+  isThumbnail,
   imageStyle,
+  computedImageLayout,
   imgRef,
   onImageLoad,
-}: Pick<TimelineNodeLayoutProps, 'nodo' | 'imageStyle' | 'imgRef' | 'onImageLoad'>) {
+}: Pick<
+  TimelineNodeLayoutProps,
+  'nodo' | 'isThumbnail' | 'imageStyle' | 'computedImageLayout' | 'imgRef' | 'onImageLoad'
+>) {
   if (!nodo.mostrarImagen) return null;
   return (
     <div className={styles.tlProyectoPhoto}>
@@ -165,6 +171,7 @@ export function TimelineStandardLayout(props: TimelineNodeLayoutProps) {
       nodo={nodo}
       index={props.index}
       config={config}
+      isThumbnail={props.isThumbnail}
       imageStyle={props.imageStyle}
       computedImageLayout={props.computedImageLayout}
       containerRef={props.containerRef}

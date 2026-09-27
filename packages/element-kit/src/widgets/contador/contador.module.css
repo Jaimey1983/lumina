@@ -23,8 +23,7 @@
 
 .etiqueta {
   font-family: var(--lw-font-family, inherit);
-  /* G-scale.3: clamp(0.55rem, 8cqi, 0.8rem) @ ancho ref. bloque → 12.8px virtual */
-  font-size: 12.8px;
+  font-size: clamp(0.55rem, 8cqi, 0.8rem);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -40,8 +39,7 @@
 .digits {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  /* G-scale.3: clamp(1.05rem, 18cqi, 2.4rem) → 38.4px virtual */
-  font-size: 38.4px;
+  font-size: clamp(1.05rem, 18cqi, 2.4rem);
   letter-spacing: 0.06em;
   line-height: 1;
   text-align: center;

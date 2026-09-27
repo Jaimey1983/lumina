@@ -36,13 +36,19 @@ describe("Video — paridad ElementDefinition vs legacy (E5.6)", () => {
     expect(nuevo.container.querySelector("iframe")).toBeTruthy();
   });
 
-  it("G-scale.5: Viewer muestra embed en miniatura (sin isThumbnail)", () => {
+  it("Viewer nuevo y legacy producen el mismo DOM visible en thumbnail", () => {
     const estado = createDefaultVideoBlock({
       url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     });
     const NuevoViewer = videoDefinition.Viewer;
-    const { container } = render(<NuevoViewer estado={estado} config={{}} />);
-    expect(container.querySelector("iframe")).toBeTruthy();
+
+    const legacy = render(<LegacyRenderVideo block={estado} isThumbnail={true} />);
+    const nuevo = render(
+      <NuevoViewer estado={estado} config={{ isThumbnail: true }} />,
+    );
+
+    expect(domVisible(nuevo.container)).toBe(domVisible(legacy.container));
+    expect(nuevo.container.querySelector("img")).toBeTruthy();
   });
 
   it("está registrada sin puntuación", async () => {

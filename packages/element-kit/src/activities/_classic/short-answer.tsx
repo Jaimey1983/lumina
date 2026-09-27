@@ -10,7 +10,6 @@ import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
-import { ACTIVITY_EDITOR_SHELL_MAX_H_CLASS } from '@lumina/editor-shared/activity-shell-max-height';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
@@ -80,10 +79,7 @@ export function ShortAnswerActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : cn(
-              'flex min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-              ACTIVITY_EDITOR_SHELL_MAX_H_CLASS.shortAnswer,
-            ),
+          : 'flex max-h-[min(42vh,280px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
         !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >

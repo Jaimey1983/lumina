@@ -33,7 +33,6 @@ import {
 } from '@lumina/ui/select';
 import { Switch } from '@lumina/ui/switch';
 import { cn } from '@lumina/ui/lib/utils';
-import { ACTIVITY_EDITOR_SHELL_MAX_H_CLASS } from '@lumina/editor-shared/activity-shell-max-height';
 import { normalizarQuizMultiple } from '../quiz-multiple-normalize.js';
 
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
@@ -312,10 +311,7 @@ export function QuizMultipleActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : cn(
-              'flex min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
-              ACTIVITY_EDITOR_SHELL_MAX_H_CLASS.quizMultiple,
-            ),
+          : 'flex max-h-[min(70vh,520px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
         !canvasLayout && isSelected && 'ring-1 ring-[#2563EB]/45',
       )}
     >

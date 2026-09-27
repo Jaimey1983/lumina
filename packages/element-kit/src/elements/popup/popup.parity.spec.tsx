@@ -65,14 +65,16 @@ describe("Popup — paridad ElementDefinition vs legacy (E3.4)", () => {
     ).toBeTruthy();
   });
 
-  it("G-scale.5: el trigger se muestra igual en miniatura (sin isThumbnail)", () => {
+  it("Viewer thumbnail nuevo y legacy producen el mismo DOM visible", () => {
     const estado = createDefaultPopupBlock();
-    estado.configuracion.triggerTexto = "Miniatura igual";
     const NuevoViewer = popupDefinition.Viewer;
-    const { container } = render(<NuevoViewer estado={estado} config={{}} />);
-    expect(
-      within(container).getByRole("button", { name: "Miniatura igual" }),
-    ).toBeTruthy();
+
+    const legacy = render(<LegacyPopupViewer block={estado} isThumbnail />);
+    const nuevo = render(
+      <NuevoViewer estado={estado} config={{ isThumbnail: true }} />,
+    );
+
+    expect(domVisible(nuevo.container)).toBe(domVisible(legacy.container));
   });
 
   it("está registrada sin puntuación", async () => {

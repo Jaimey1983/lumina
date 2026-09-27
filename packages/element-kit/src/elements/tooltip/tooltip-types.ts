@@ -6,7 +6,7 @@ export type TooltipEstado = TooltipWidget;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).
- * G-scale.5: sin `isThumbnail` — miniatura escala el mismo widget (VirtualSlideSurface).
+ * `isThumbnail` desactiva interacción — mismo contrato que `TooltipViewer`.
  */
 export type TooltipConfig = WidgetCanvasConfig;
 

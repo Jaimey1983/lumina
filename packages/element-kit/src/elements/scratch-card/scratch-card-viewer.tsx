@@ -15,8 +15,10 @@ import styles from "./scratch-card.module.css";
 
 export function ScratchCardViewer({
   estado,
+  config,
 }: ElementViewerProps<ScratchCardEstado, ScratchCardConfig>): ReactElement {
   const cfg = estado.configuracion;
+  const isThumbnail = Boolean(config?.isThumbnail);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +50,7 @@ export function ScratchCardViewer({
       ctx.fillRect(0, 0, width, height);
 
       // Texto guía sobre la superficie
-      if (cfg.textoCobertura) {
+      if (cfg.textoCobertura && !isThumbnail) {
         ctx.fillStyle = "#334155";
         ctx.font = "bold 13px system-ui, sans-serif";
         ctx.textAlign = "center";
@@ -58,7 +60,7 @@ export function ScratchCardViewer({
     } catch {
       // Entornos de prueba como jsdom sin soporte de canvas 2d
     }
-  }, [cfg.colorCobertura, cfg.textoCobertura]);
+  }, [cfg.colorCobertura, cfg.textoCobertura, isThumbnail]);
 
   // Sincronizar dimensiones del canvas con el contenedor
   useEffect(() => {
@@ -150,7 +152,7 @@ export function ScratchCardViewer({
   };
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (isRevealed) return;
+    if (isThumbnail || isRevealed) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDrawing(true);
 
@@ -162,7 +164,7 @@ export function ScratchCardViewer({
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || isRevealed) return;
+    if (!isDrawing || isThumbnail || isRevealed) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -183,11 +185,13 @@ export function ScratchCardViewer({
   };
 
   const revealAll = () => {
+    if (isThumbnail) return;
     setIsRevealed(true);
     setScratchedPct(100);
   };
 
   const resetCard = () => {
+    if (isThumbnail) return;
     setIsRevealed(false);
     setScratchedPct(0);
     drawCover();
@@ -271,7 +275,8 @@ export function ScratchCardViewer({
       </div>
 
       {/* Barra de pie con porcentaje y botones de acción */}
-      <div className={styles.footerBar}>
+      {!isThumbnail && (
+        <div className={styles.footerBar}>
           <span className={styles.percentPill}>
             {isRevealed ? "100% revelado" : `${scratchedPct}% rascado`}
           </span>
@@ -297,7 +302,8 @@ export function ScratchCardViewer({
               </button>
             )}
           </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,7 +14,6 @@ const shared = {
       '@': resolve(root, 'src'),
       '@lumina/ui': resolve(root, '../packages/ui/src'),
       '@lumina/editor-shared': resolve(root, '../packages/editor-shared/src'),
-      '@lumina/element-kit': resolve(root, '../packages/element-kit/src'),
     },
   },
 };
@@ -37,13 +36,15 @@ export default defineConfig({
         test: {
           name: 'visual',
           include: ['src/visual-tests/**/*.visual.spec.tsx'],
-          setupFiles: ['src/visual-tests/setup-browser-env.ts'],
           browser: {
             enabled: true,
             provider: playwright(),
             headless: true,
-            // Chromium basta para G-scale; firefox/webkit requieren install-deps en CI.
-            instances: [{ browser: 'chromium' }],
+            instances: [
+              { browser: 'chromium' },
+              { browser: 'firefox' },
+              { browser: 'webkit' },
+            ],
           },
         },
       },

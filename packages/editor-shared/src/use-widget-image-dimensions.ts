@@ -15,6 +15,10 @@ export interface WidgetImageDims {
   h: number;
 }
 
+export interface UseWidgetImageDimensionsOptions {
+  isThumbnail?: boolean;
+}
+
 const LAYOUT_SETTLE_DELAYS_MS = [0, 100, 300] as const;
 const OBSERVE_ANCESTOR_DEPTH = 5;
 
@@ -42,39 +46,57 @@ export function readContainerDims(
   return fallback;
 }
 
-export function useWidgetImageDimensions(imageSrc?: string) {
+export function useWidgetImageDimensions(
+  imageSrc?: string,
+  options?: UseWidgetImageDimensionsOptions,
+) {
+  const isThumbnail = options?.isThumbnail ?? false;
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgDims, setImgDims] = useState<WidgetImageDims>({ w: 0, h: 0 });
   const [containerDims, setContainerDims] = useState<WidgetImageDims>({ w: 0, h: 0 });
 
   const measureContainer = useCallback(() => {
+    if (isThumbnail) return;
     const next = readContainerDims(containerRef.current);
     if (next.w <= 0 || next.h <= 0) return;
     setContainerDims((prev) =>
       prev.w === next.w && prev.h === next.h ? prev : next,
     );
-  }, []);
+  }, [isThumbnail]);
 
   const getEffectiveContainerDims = useCallback((): WidgetImageDims => {
+    if (isThumbnail) return containerDims;
     return readContainerDims(containerRef.current, containerDims);
-  }, [containerDims]);
+  }, [containerDims, isThumbnail]);
 
-  const syncImageDims = useCallback((img: HTMLImageElement) => {
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      setImgDims({ w: img.naturalWidth, h: img.naturalHeight });
-    }
-  }, []);
+  const syncImageDims = useCallback(
+    (img: HTMLImageElement) => {
+      if (isThumbnail) return;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setImgDims({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    },
+    [isThumbnail],
+  );
 
   useEffect(() => {
+    if (isThumbnail) {
+      setImgDims({ w: 0, h: 0 });
+      setContainerDims({ w: 0, h: 0 });
+      return;
+    }
     setImgDims({ w: 0, h: 0 });
-  }, [imageSrc]);
+  }, [imageSrc, isThumbnail]);
 
   useLayoutEffect(() => {
+    if (isThumbnail) return;
     measureContainer();
-  }, [measureContainer, imageSrc, imgDims.w, imgDims.h]);
+  }, [measureContainer, imageSrc, isThumbnail, imgDims.w, imgDims.h]);
 
   useLayoutEffect(() => {
+    if (isThumbnail) return;
+
     const observed = new Set<Element>();
     const ro = new ResizeObserver(() => measureContainer());
 
@@ -108,19 +130,21 @@ export function useWidgetImageDimensions(imageSrc?: string) {
       timeouts.forEach((id) => window.clearTimeout(id));
       ro.disconnect();
     };
-  }, [measureContainer, imageSrc]);
+  }, [measureContainer, imageSrc, isThumbnail]);
 
   useEffect(() => {
+    if (isThumbnail) return;
     const img = imgRef.current;
     if (img?.complete) syncImageDims(img);
-  }, [imageSrc, syncImageDims]);
+  }, [imageSrc, syncImageDims, isThumbnail]);
 
   const handleImageLoad = useCallback(
     (e: SyntheticEvent<HTMLImageElement>) => {
+      if (isThumbnail) return;
       syncImageDims(e.currentTarget);
       measureContainer();
     },
-    [measureContainer, syncImageDims],
+    [measureContainer, syncImageDims, isThumbnail],
   );
 
   return {
@@ -131,6 +155,7 @@ export function useWidgetImageDimensions(imageSrc?: string) {
     getEffectiveContainerDims,
     handleImageLoad,
     measureContainer,
+    isThumbnail,
   };
 }
 

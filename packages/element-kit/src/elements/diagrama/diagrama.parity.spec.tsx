@@ -52,13 +52,13 @@ describe("Diagrama — paridad legacy / ElementDefinition (E4.2)", () => {
       }
     });
 
-    it(`Viewer ${nombre}: DOM idéntico y título visible (G-scale.5)`, () => {
+    it.each([false, true])(`Viewer ${nombre}: DOM idéntico, miniatura=%s`, (isThumbnail) => {
       const estado = crear();
-      const legacy = render(<LegacyViewer block={estado} />);
-      const nuevo = render(<diagramaDefinition.Viewer estado={estado} config={{}} />);
+      const legacy = render(<LegacyViewer block={estado} isThumbnail={isThumbnail} />);
+      const nuevo = render(<diagramaDefinition.Viewer estado={estado} config={{ isThumbnail }} />);
       expect(nuevo.container.innerHTML).toBe(legacy.container.innerHTML);
       expect(nuevo.container.querySelector('[role="region"]')?.getAttribute("aria-label")).toBe(estado.titulo);
-      expect(nuevo.container.querySelector("figcaption")).not.toBeNull();
+      expect(Boolean(nuevo.container.querySelector("figcaption"))).toBe(!isThumbnail);
     });
 
     it(`Propiedades ${nombre}: DOM y cambio de título idénticos`, async () => {

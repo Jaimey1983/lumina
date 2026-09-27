@@ -61,15 +61,18 @@ describe('buildApexChart — tipos cartesianos (column/bar/line/area)', () => {
     expect(built.options.colors).toEqual(['#ABCDEF']);
   });
 
-  it('la animación está deshabilitada por defecto (determinismo de render)', () => {
+  it('la animación está siempre deshabilitada (determinismo de render, no ligado a isThumbnail)', () => {
     expect(buildApexChart(baseConfig, theme).options.chart?.animations).toEqual({ enabled: false });
+    expect(buildApexChart({ ...baseConfig, isThumbnail: true }, theme).options.chart?.animations).toEqual({
+      enabled: false,
+    });
   });
 
-  it('muestra leyenda y tooltip cuando mostrarLeyenda es true (G-scale.5: sin modo miniatura)', () => {
-    const built = buildApexChart(baseConfig, theme);
-    expect(built.options.legend?.show).toBe(true);
-    expect(built.options.tooltip?.enabled).toBe(true);
-    expect(built.options.chart?.toolbar).toEqual({ show: true });
+  it('oculta leyenda/tooltip/toolbar en miniatura', () => {
+    const built = buildApexChart({ ...baseConfig, isThumbnail: true }, theme);
+    expect(built.options.legend?.show).toBe(false);
+    expect(built.options.tooltip?.enabled).toBe(false);
+    expect(built.options.chart?.toolbar).toEqual({ show: false });
   });
 
   it('mostrarLeyenda: false oculta la leyenda aunque no sea miniatura', () => {

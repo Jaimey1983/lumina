@@ -7,9 +7,10 @@ import { ProgresoParts } from './progreso-parts.js';
 
 interface ProgresoViewerProps {
   block: ProgresoWidget;
+  isThumbnail?: boolean;
 }
 
-export function ProgresoViewer({ block }: ProgresoViewerProps) {
+export function ProgresoViewer({ block, isThumbnail = false }: ProgresoViewerProps) {
   const cfg = mergedProgresoConfig(block);
   const { slideIndex, slideCount } = useSlideNav();
   const percent = resolveProgresoPercent(cfg.porcentaje, cfg.modo, slideIndex, slideCount);
@@ -20,7 +21,11 @@ export function ProgresoViewer({ block }: ProgresoViewerProps) {
 
   return (
     <div className="relative h-full w-full">
-      <ProgresoParts block={block} percent={percent} fractionLabel={fractionLabel} />
+      <ProgresoParts
+        block={block}
+        percent={isThumbnail && cfg.modo === 'slides' ? 45 : percent}
+        fractionLabel={isThumbnail ? undefined : fractionLabel}
+      />
     </div>
   );
 }

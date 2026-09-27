@@ -38,8 +38,11 @@ export function PopupEditor({
 /** Adapta el Viewer legacy (backdrop + portal + bloqueo de slide intactos). */
 export function PopupViewer({
   estado,
+  config,
 }: ElementViewerProps<PopupEstado, PopupConfig>) {
-  return <LegacyPopupViewer block={estado} />;
+  return (
+    <LegacyPopupViewer block={estado} isThumbnail={config.isThumbnail === true} />
+  );
 }
 
 /** Adapta `applyNow` del canvas a `onChange` del contrato. */

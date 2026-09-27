@@ -14,6 +14,7 @@ interface GraficoEditorProps {
 
 export function GraficoEditor({
   block,
+  isSelected,
   onEnsureBlockSelected,
   className,
 }: GraficoEditorProps) {
@@ -22,10 +23,11 @@ export function GraficoEditor({
       onClick={onEnsureBlockSelected}
       className={cn(
         'relative flex h-full w-full select-none flex-col pointer-events-auto',
+        isSelected && 'ring-1 ring-primary/40',
         className,
       )}
     >
-      <GraficoViewer block={block} />
+      <GraficoViewer block={block} isThumbnail={false} />
     </div>
   );
 }

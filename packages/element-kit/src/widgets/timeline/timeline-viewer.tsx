@@ -22,12 +22,14 @@ function TimelineViewerNode({
   nodo,
   index,
   config,
+  isThumbnail,
   isActive,
   onActivate,
 }: {
   nodo: TimelineNodo;
   index: number;
   config: TimelineWidget['configuracion'];
+  isThumbnail?: boolean;
   isActive: boolean;
   onActivate: () => void;
 }) {
@@ -37,10 +39,10 @@ function TimelineViewerNode({
     imgDims,
     getEffectiveContainerDims,
     handleImageLoad,
-  } = useWidgetImageDimensions(nodo.imagen);
+  } = useWidgetImageDimensions(nodo.imagen, { isThumbnail });
 
   const effectiveContainerDims = getEffectiveContainerDims();
-  const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims);
+  const computedImageLayout = usesComputedImageLayout(imgDims, effectiveContainerDims, { isThumbnail });
   const imageStyle = imageElementStyle(nodo, imgDims, effectiveContainerDims);
 
   return (
@@ -49,7 +51,8 @@ function TimelineViewerNode({
       index={index}
       config={config}
       isActive={isActive}
-      interactive
+      isThumbnail={isThumbnail}
+      interactive={!isThumbnail}
       imageStyle={imageStyle}
       computedImageLayout={computedImageLayout}
       containerRef={containerRef}
@@ -60,13 +63,26 @@ function TimelineViewerNode({
   );
 }
 
-export function TimelineViewer({ widget }: { widget: TimelineWidget }) {
+export function TimelineViewer({
+  widget,
+  isThumbnail = false,
+}: {
+  widget: TimelineWidget;
+  isThumbnail?: boolean;
+}) {
   const normalizedWidget = normalizeTimelineWidget(widget);
   const { configuracion, nodos } = normalizedWidget;
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   return (
-    <div className={cn(chromeStyles.whRoot, styles.tlRoot)} style={TimelineContainerStyle(configuracion)}>
+    <div
+      className={cn(
+        chromeStyles.whRoot,
+        isThumbnail && 'pointer-events-none overflow-hidden',
+        styles.tlRoot,
+      )}
+      style={TimelineContainerStyle(configuracion)}
+    >
       <div className={chromeStyles.whHeader} style={timelineHeaderPadding(configuracion)}>
         <WidgetHeaderViewer {...normalizedWidget} config={configuracion} />
       </div>
@@ -84,6 +100,7 @@ export function TimelineViewer({ widget }: { widget: TimelineWidget }) {
                 nodo={nodo}
                 index={idx}
                 config={configuracion}
+                isThumbnail={isThumbnail}
                 isActive={activeIndex === idx}
                 onActivate={() => setActiveIndex((prev) => (prev === idx ? null : idx))}
               />

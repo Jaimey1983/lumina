@@ -10,7 +10,7 @@ import {
   type ReactElement,
 } from "react";
 import type { ElementViewerProps } from "@lumina/element-kit-core";
-import { framedCoverStyle } from "@lumina/editor-shared/widget-image-styles";
+import { getImageStyle } from "@lumina/editor-shared/widget-image-styles";
 import type {
   ImageCompareConfig,
   ImageCompareEstado,
@@ -23,8 +23,10 @@ function clamp(value: number, min: number, max: number): number {
 
 export function ImageCompareViewer({
   estado,
+  config,
 }: ElementViewerProps<ImageCompareEstado, ImageCompareConfig>): ReactElement {
   const cfg = estado.configuracion;
+  const isThumbnail = Boolean(config?.isThumbnail);
   const isVertical = cfg.orientacion === "vertical";
 
   const [position, setPosition] = useState<number>(() =>
@@ -104,6 +106,7 @@ export function ImageCompareViewer({
   );
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (isThumbnail) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
     updatePositionFromPointer(e.clientX, e.clientY);
@@ -126,6 +129,7 @@ export function ImageCompareViewer({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (isThumbnail) return;
     const step = e.shiftKey ? 10 : 2;
 
     switch (e.key) {
@@ -172,9 +176,8 @@ export function ImageCompareViewer({
     (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
   const showHeader = showTitle || showSubtitle || showInstruction;
 
-  // Cover matemático con offsets en % del contenedor (independiente de la
-  // resolución: mismo encuadre en editor, viewer y móvil, sin franjas en blanco).
-  const styleAntes = framedCoverStyle(
+  // Cover matemático con offsets en píxeles (idéntico a getImageStyle de TabImageLayer)
+  const styleAntes = getImageStyle(
     imgAntesDims.w,
     imgAntesDims.h,
     containerDims.w,
@@ -184,7 +187,7 @@ export function ImageCompareViewer({
     cfg.imagenAntesOffsetY ?? 0,
   );
 
-  const styleDespues = framedCoverStyle(
+  const styleDespues = getImageStyle(
     imgDespuesDims.w,
     imgDespuesDims.h,
     containerDims.w,
@@ -270,7 +273,8 @@ export function ImageCompareViewer({
         )}
 
         {/* Divisor interactivo */}
-        <div
+        {!isThumbnail && (
+          <div
             className={
               isVertical ? styles.dividerVertical : styles.dividerHorizontal
             }
@@ -334,6 +338,7 @@ export function ImageCompareViewer({
               </div>
             )}
           </div>
+        )}
       </div>
     </div>
   );
