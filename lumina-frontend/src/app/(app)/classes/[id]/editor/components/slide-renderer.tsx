@@ -935,14 +935,19 @@ function BlockNode({
         }
       : {};
 
-  // G-scale.4 — `grafico` / `diagrama` / `clip-group` bajo `<VirtualSlideSurface>`:
-  // neutralizar el `scale(S)` ancestro para librerías que mezclan clientWidth y
-  // getBoundingClientRect (ApexCharts, @xyflow, clip-path SVG).
+  // G-scale.4 — `grafico` / `diagrama` / `clip-group` bajo `<VirtualSlideSurface>`
+  // en solo lectura (present / viewer / autónomo): neutralizar el `scale(S)`
+  // ancestro para librerías que mezclan clientWidth y getBoundingClientRect.
+  // En el editor no: Moveable mide el wrapper (`data-canvas-target`) y este
+  // wrapper inverso deja el contenido en otro rect (doble marco y recorte).
   const rawContent = renderContent();
-  const legacyViewerFillScale =
-    viewerFillScale !== undefined && viewerFillScale > 0 ? viewerFillScale : virtualSurfaceScale;
-  const neutralizerScale = blockNeedsVirtualSlideScaleNeutralizer(block.tipo, legacyViewerFillScale)
-    ? legacyViewerFillScale
+  const readOnlySurfaceScale = editorMode
+    ? 0
+    : viewerFillScale !== undefined && viewerFillScale > 0
+      ? viewerFillScale
+      : virtualSurfaceScale;
+  const neutralizerScale = blockNeedsVirtualSlideScaleNeutralizer(block.tipo, readOnlySurfaceScale)
+    ? readOnlySurfaceScale
     : 0;
   const neutralizerStyle =
     neutralizerScale > 0 && currentCoords

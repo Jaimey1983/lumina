@@ -411,7 +411,6 @@ export function DiagramaEditor({
       onPointerUp={drag ? handleVennPointerUp : undefined}
       className={cn(
         'relative flex h-full w-full select-none flex-col overflow-hidden rounded-lg bg-background/50 border border-border/40 p-2 shadow-xs',
-        isSelected && 'ring-2 ring-primary/40',
         className,
       )}
     >
