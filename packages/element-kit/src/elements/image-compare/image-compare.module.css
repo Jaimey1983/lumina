@@ -6,7 +6,6 @@
   box-sizing: border-box;
   font-family: var(--lw-font-family, inherit);
   color: var(--lw-color-text, #0f172a);
-  user-select: none;
 }
 
 .header {
@@ -48,6 +47,7 @@
   border: 1px solid var(--lw-color-border, #e2e8f0);
   box-shadow: var(--lw-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
   touch-action: none;
+  user-select: none;
 }
 
 .imageLayer {

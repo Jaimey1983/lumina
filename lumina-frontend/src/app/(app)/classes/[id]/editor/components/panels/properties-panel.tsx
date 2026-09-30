@@ -28,6 +28,7 @@ import type {
   CarouselWidget,
   ClickRevealWidget,
   TimelineWidget,
+  ImageCompareWidget,
 } from '@lumina/types/slide';
 import { ClasificarProperties } from '@lumina/element-kit/activities/clasificar/clasificar-properties';
 import { MemoriaProperties } from '@lumina/element-kit/activities/memoria/memoria-properties';
@@ -117,6 +118,10 @@ import {
 } from '@lumina/element-kit/widgets/timeline/timeline-properties';
 import { TimelineAppearanceProperties } from '@lumina/element-kit/widgets/timeline/timeline-appearance-properties';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
+import {
+  ImageCompareTextInnerProperties,
+  type ImageCompareInnerSelection,
+} from '@lumina/element-kit';
 import { ClipGroupBlockFields } from '@lumina/element-kit/blocks/clip-group/clip-group-properties';
 import { GraficoProperties } from '@lumina/element-kit/blocks/grafico/grafico-properties';
 import { DiagramaProperties } from '@lumina/element-kit/blocks/diagrama/diagrama-properties';
@@ -162,6 +167,7 @@ export interface PropertiesPanelProps {
   popupInnerSelection?: PopupInnerSelection | null;
   hotspotInnerSelection?: HotspotInnerSelection | null;
   timelineInnerSelection?: TimelineInnerSelection | null;
+  imageCompareInnerSelection?: ImageCompareInnerSelection | null;
   /** Slide activo — necesario para configurar transición */
   slide?: import('@lumina/types/slide').Slide | null;
   onApplySlide?: (patch: Partial<import('@lumina/types/slide').Slide>) => Promise<boolean>;
@@ -185,6 +191,7 @@ export function PropertiesPanel({
   popupInnerSelection = null,
   hotspotInnerSelection = null,
   timelineInnerSelection = null,
+  imageCompareInnerSelection = null,
   slide = null,
   onApplySlide,
 }: PropertiesPanelProps) {
@@ -1159,11 +1166,15 @@ export function PropertiesPanel({
   }
 
   if (block.tipo === 'image-compare') {
+    const imageCompareBlock = block as ImageCompareWidget;
+    const inner = imageCompareInnerSelection;
+    const showTextInner = inner?.kind === 'header-text';
+    const panelTitle = showTextInner ? 'Texto' : 'Comparador de imágenes';
     const def = elementRegistry.obtener<Block, Record<string, unknown>>('image-compare');
-    if (def?.Propiedades) {
-      return (
-        <WidgetPropertiesPanelShell title="Comparador de imágenes">
-          <WidgetPropertiesPanelStack>
+    return (
+      <WidgetPropertiesPanelShell title={panelTitle}>
+        <WidgetPropertiesPanelStack>
+          {def?.Propiedades ? (
             <def.Propiedades
               estado={block}
               config={{}}
@@ -1172,18 +1183,27 @@ export function PropertiesPanel({
                 void applyNow(() => updated);
               }}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+          ) : null}
+          {inner?.kind === 'header-text' ? (
+            <WidgetPropertiesPanelSection hint={WIDGET_CONTEXT_TEXT_HINT}>
+              <ImageCompareTextInnerProperties
+                block={imageCompareBlock}
+                selection={inner}
+                applyNow={applyNow}
               />
-            </WidgetPropertiesPanelBlock>
-          </WidgetPropertiesPanelStack>
-        </WidgetPropertiesPanelShell>
-      );
-    }
+            </WidgetPropertiesPanelSection>
+          ) : null}
+          <WidgetPropertiesPanelBlock>
+            <AnimationPanel
+              block={block}
+              slide={slide}
+              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+            />
+          </WidgetPropertiesPanelBlock>
+        </WidgetPropertiesPanelStack>
+      </WidgetPropertiesPanelShell>
+    );
   }
 
   if (block.tipo === 'interactive-checklist') {

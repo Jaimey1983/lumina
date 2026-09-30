@@ -176,6 +176,26 @@ describe("ImageCompare — ElementDefinition", () => {
     );
   });
 
+  it("Editor persiste el título al escribir en el lienzo", () => {
+    const estado = createDefaultImageCompareBlock();
+    const onChange = vi.fn();
+
+    render(
+      <ImageCompareEditor
+        estado={estado}
+        config={{}}
+        onChange={onChange}
+      />,
+    );
+
+    const title = screen.getByDisplayValue("Comparador de imágenes");
+    fireEvent.change(title, { target: { value: "Mi comparador" } });
+    fireEvent.blur(title);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ tituloWidget: "Mi comparador" }),
+    );
+  });
+
   it("Viewer oculta cabeceras cuando las banderas son falsas", () => {
     const estado = createDefaultImageCompareBlock();
     estado.tituloWidget = "Título Test";

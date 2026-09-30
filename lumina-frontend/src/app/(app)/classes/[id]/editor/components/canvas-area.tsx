@@ -47,6 +47,7 @@ import type {
   CarouselWidget,
   ClickRevealWidget,
   TimelineWidget,
+  ImageCompareWidget,
   DiagramaBlock,
 } from '@lumina/types/slide';
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
@@ -189,6 +190,7 @@ export interface CanvasAreaProps {
   onPopupChange?: (blockId: string, block: PopupWidget) => void;
   onHotspotChange?: (blockId: string, block: HotspotWidget) => void;
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
+  onImageCompareChange?: (blockId: string, block: ImageCompareWidget) => void;
   onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onCopyBlock?: (block: Block) => void;
@@ -300,6 +302,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onPopupChange,
     onHotspotChange,
     onTimelineChange,
+    onImageCompareChange,
     onDiagramaChange,
     onCopyBlock,
     onEffectiveBloques,
@@ -365,6 +368,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const popupInnerSelection = editorState.inner.popup;
   const hotspotInnerSelection = editorState.inner.hotspot;
   const timelineInnerSelection = editorState.inner.timeline;
+  const imageCompareInnerSelection = editorState.inner.imageCompare;
   const clipGroupInnerEditId = editorState.inner.clipGroupBlockId;
   const layersPanelOpen = editorState.layersPanelOpen;
 
@@ -2206,6 +2210,11 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onTimelineInnerSelectionChange={(value) =>
               dispatchEditor({ type: 'INNER_SELECTION', inner: { timeline: value } })
             }
+            onImageCompareChange={onImageCompareChange}
+            imageCompareInnerSelection={imageCompareInnerSelection}
+            onImageCompareInnerSelectionChange={(value) =>
+              dispatchEditor({ type: 'INNER_SELECTION', inner: { imageCompare: value } })
+            }
             onDiagramaChange={onDiagramaChange}
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={(blockId) =>
@@ -2323,6 +2332,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         popupInnerSelection={popupInnerSelection}
         hotspotInnerSelection={hotspotInnerSelection}
         timelineInnerSelection={timelineInnerSelection}
+        imageCompareInnerSelection={imageCompareInnerSelection}
       />
     </div>
     </div>

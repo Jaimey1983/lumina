@@ -5,6 +5,7 @@ export {
 export { ImageCompareEditor } from "./image-compare-editor.js";
 export { ImageCompareViewer } from "./image-compare-viewer.js";
 export { ImageComparePropiedades } from "./image-compare-properties.js";
+export { ImageCompareTextInnerProperties } from "./image-compare-inner-properties.js";
 export { IMAGE_COMPARE_PRESETS } from "./image-compare-presets.js";
 export {
   IMAGE_COMPARE_TIPO,

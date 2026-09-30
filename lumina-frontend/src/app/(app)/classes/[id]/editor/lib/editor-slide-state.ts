@@ -5,6 +5,7 @@ import type { ClickRevealInnerSelection } from '@lumina/types/widget';
 import type { HotspotInnerSelection } from '@lumina/types/widget';
 import type { PopupInnerSelection } from '@lumina/types/widget';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
+import type { ImageCompareInnerSelection } from '@lumina/element-kit';
 import type { Background, Block, Slide, SlideGuias } from '@lumina/types/slide';
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 
@@ -19,6 +20,7 @@ export interface EditorInnerSelection {
   popup: PopupInnerSelection | null;
   hotspot: HotspotInnerSelection | null;
   timeline: TimelineInnerSelection | null;
+  imageCompare: ImageCompareInnerSelection | null;
   clipGroupBlockId: string | null;
 }
 
@@ -30,6 +32,7 @@ export const EMPTY_INNER_SELECTION: EditorInnerSelection = {
   popup: null,
   hotspot: null,
   timeline: null,
+  imageCompare: null,
   clipGroupBlockId: null,
 };
 

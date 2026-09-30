@@ -133,6 +133,7 @@ import {
   type ClickRevealWidget,
   type PopupWidget,
   type TimelineWidget,
+  type ImageCompareWidget,
   type DiagramaBlock,
   type HotspotWidget,
   EMPTY_SLIDE_GUIAS,
@@ -1716,6 +1717,20 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide, handleCommitSlideContent],
   );
 
+  const handleImageCompareChange = useCallback(
+    (blockPath: string, widget: ImageCompareWidget) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'image-compare') return b;
+        return widget;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
   const handleDiagramaChange = useCallback(
     (blockPath: string, diagrama: DiagramaBlock) => {
       if (!activeSlide) return;
@@ -2973,6 +2988,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onPopupChange={handlePopupChange}
               onHotspotChange={handleHotspotChange}
               onTimelineChange={handleTimelineChange}
+              onImageCompareChange={handleImageCompareChange}
               onDiagramaChange={handleDiagramaChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}

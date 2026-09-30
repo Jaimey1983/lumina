@@ -42,6 +42,7 @@ import type {
   ClickRevealWidget,
   PopupWidget,
   TimelineWidget,
+  ImageCompareWidget,
   DiagramaBlock,
   HotspotWidget,
 } from '@lumina/types/slide';
@@ -82,6 +83,7 @@ import { getPredefinedSlideTheme } from '@/lib/slide-themes';
 import { isWidgetTipo } from '@lumina/types/widget';
 import type { WidgetBlock } from '@lumina/types/slide';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
+import type { ImageCompareInnerSelection } from '@lumina/element-kit';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';
 
@@ -467,6 +469,9 @@ interface BlockNodeProps {
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   timelineInnerSelection?: TimelineInnerSelection | null;
   onTimelineInnerSelectionChange?: (selection: TimelineInnerSelection | null) => void;
+  onImageCompareChange?: (blockId: string, block: ImageCompareWidget) => void;
+  imageCompareInnerSelection?: ImageCompareInnerSelection | null;
+  onImageCompareInnerSelectionChange?: (selection: ImageCompareInnerSelection | null) => void;
   onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
@@ -562,6 +567,9 @@ function BlockNode({
   onTimelineChange,
   timelineInnerSelection,
   onTimelineInnerSelectionChange,
+  onImageCompareChange,
+  imageCompareInnerSelection,
+  onImageCompareInnerSelectionChange,
   onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
@@ -678,6 +686,9 @@ function BlockNode({
         onTimelineChange={onTimelineChange}
         timelineInnerSelection={timelineInnerSelection}
         onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
+        onImageCompareChange={onImageCompareChange}
+        imageCompareInnerSelection={imageCompareInnerSelection}
+        onImageCompareInnerSelectionChange={onImageCompareInnerSelectionChange}
         onDiagramaChange={onDiagramaChange}
         onRemoveBlock={onRemoveBlock}
         onDuplicateBlock={onDuplicateBlock}
@@ -785,6 +796,9 @@ function BlockNode({
               case 'timeline':
                 onTimelineChange?.(blockId, updated as TimelineWidget);
                 break;
+              case 'image-compare':
+                onImageCompareChange?.(blockId, updated as ImageCompareWidget);
+                break;
               default:
                 break;
             }
@@ -825,6 +839,11 @@ function BlockNode({
                 return {
                   innerSelection: timelineInnerSelection ?? null,
                   onInnerSelectionChange: onTimelineInnerSelectionChange,
+                };
+              case 'image-compare':
+                return {
+                  innerSelection: imageCompareInnerSelection ?? null,
+                  onInnerSelectionChange: onImageCompareInnerSelectionChange,
                 };
               default:
                 return {};
@@ -1219,6 +1238,9 @@ export interface SlideRendererProps {
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   timelineInnerSelection?: TimelineInnerSelection | null;
   onTimelineInnerSelectionChange?: (selection: TimelineInnerSelection | null) => void;
+  onImageCompareChange?: (blockId: string, block: ImageCompareWidget) => void;
+  imageCompareInnerSelection?: ImageCompareInnerSelection | null;
+  onImageCompareInnerSelectionChange?: (selection: ImageCompareInnerSelection | null) => void;
   onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
@@ -1315,6 +1337,9 @@ export function SlideRenderer({
   onTimelineChange,
   timelineInnerSelection,
   onTimelineInnerSelectionChange,
+  onImageCompareChange,
+  imageCompareInnerSelection,
+  onImageCompareInnerSelectionChange,
   onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
@@ -1773,6 +1798,9 @@ export function SlideRenderer({
             onTimelineChange={onTimelineChange}
             timelineInnerSelection={timelineInnerSelection}
             onTimelineInnerSelectionChange={onTimelineInnerSelectionChange}
+            onImageCompareChange={onImageCompareChange}
+            imageCompareInnerSelection={imageCompareInnerSelection}
+            onImageCompareInnerSelectionChange={onImageCompareInnerSelectionChange}
             onDiagramaChange={onDiagramaChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}

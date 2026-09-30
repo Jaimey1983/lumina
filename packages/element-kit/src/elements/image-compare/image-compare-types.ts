@@ -1,3 +1,4 @@
+import type { WidgetEstilosHeader } from "@lumina/types/widget";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 export const IMAGE_COMPARE_TIPO = "image-compare" as const;
@@ -52,10 +53,11 @@ export interface ImageCompareEstado {
   ancho: number;
   alto: number;
   zIndex?: number;
-  tituloWidget?: string;
-  subtituloWidget?: string;
-  instruccion?: string;
+  tituloWidget: string;
+  subtituloWidget: string;
+  instruccion: string;
+  estilosHeader?: WidgetEstilosHeader;
   configuracion: ImageCompareConfiguracion;
 }
 
-export type ImageCompareConfig = WidgetCanvasConfig;
+export type ImageCompareConfig = WidgetCanvasConfig<ImageCompareInnerSelection>;

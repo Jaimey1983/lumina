@@ -8,7 +8,13 @@ import {
   type ReactElement,
 } from "react";
 import type { ElementEditorProps } from "@lumina/element-kit-core";
-import { WidgetHeaderEditorField } from "@lumina/editor-shared/widget-header-editor";
+import {
+  chromeStyles,
+  WidgetHeaderEditorField,
+} from "@lumina/editor-shared/widget-header-editor";
+import { stopWidgetInnerPointer } from "@lumina/editor-shared/widget-editor-utils";
+import { textStyleToCss } from "@lumina/editor-shared/widget-text-styles";
+import { cn } from "@lumina/ui/lib/utils";
 import { Move } from "lucide-react";
 import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
 import {
@@ -69,7 +75,7 @@ export function ImageCompareEditor({
   const cfg = estado.configuracion;
   const isVertical = cfg.orientacion === "vertical";
 
-  const [, setInnerSelection] =
+  const [innerSelection, setInnerSelection] =
     useLiftedInnerSelection<ImageCompareInnerSelection>(config);
 
   const [position, setPosition] = useState<number>(() =>
@@ -337,22 +343,39 @@ export function ImageCompareEditor({
 
   const styleAntes = compareImageFrameStyle(frameInputForSide(cfg, "antes"));
   const styleDespues = compareImageFrameStyle(frameInputForSide(cfg, "despues"));
+  const titleCss = textStyleToCss(estado.estilosHeader?.tituloWidget);
+  const subtitleCss = textStyleToCss(estado.estilosHeader?.subtituloWidget);
+  const instructionCss = textStyleToCss(estado.estilosHeader?.instruccion);
+  const headerFieldSelected = innerSelection?.kind === "header-text";
 
   return (
     <div
       className={styles.root}
-      onClick={() => config.onEnsureBlockSelected?.()}
+      onClick={(e) => {
+        config.onEnsureBlockSelected?.();
+        if ((e.target as HTMLElement).closest("[data-widget-header-field]")) {
+          return;
+        }
+      }}
     >
       {(showTitle || showSubtitle || showInstruction) && (
-        <div className={styles.header}>
+        <div
+          className={cn(styles.header, chromeStyles.whHeader)}
+          data-moveable-ignore=""
+          onPointerDown={stopWidgetInnerPointer}
+        >
           {showTitle && (
             <WidgetHeaderEditorField
               value={estado.tituloWidget ?? ""}
               field="tituloWidget"
-              className={styles.title}
+              className={chromeStyles.whHeaderTitle}
+              style={titleCss}
               placeholder="Título del comparador"
+              isSelected={
+                headerFieldSelected && innerSelection.field === "tituloWidget"
+              }
               onCommit={(tituloWidget) =>
-                onChange({ ...estado, tituloWidget: tituloWidget || undefined })
+                onChange({ ...estado, tituloWidget })
               }
               onFocusSelect={(field) => {
                 config.onEnsureBlockSelected?.();
@@ -364,13 +387,16 @@ export function ImageCompareEditor({
             <WidgetHeaderEditorField
               value={estado.subtituloWidget ?? ""}
               field="subtituloWidget"
-              className={styles.subtitle}
+              className={chromeStyles.whHeaderSubtitle}
+              style={subtitleCss}
               placeholder="Subtítulo descriptivo"
+              multiline
+              isSelected={
+                headerFieldSelected &&
+                innerSelection.field === "subtituloWidget"
+              }
               onCommit={(subtituloWidget) =>
-                onChange({
-                  ...estado,
-                  subtituloWidget: subtituloWidget || undefined,
-                })
+                onChange({ ...estado, subtituloWidget })
               }
               onFocusSelect={(field) => {
                 config.onEnsureBlockSelected?.();
@@ -382,10 +408,15 @@ export function ImageCompareEditor({
             <WidgetHeaderEditorField
               value={estado.instruccion ?? ""}
               field="instruccion"
-              className={styles.instruction}
+              className={chromeStyles.whHeaderInstruction}
+              style={instructionCss}
               placeholder="Instrucción de interacción"
+              multiline
+              isSelected={
+                headerFieldSelected && innerSelection.field === "instruccion"
+              }
               onCommit={(instruccion) =>
-                onChange({ ...estado, instruccion: instruccion || undefined })
+                onChange({ ...estado, instruccion })
               }
               onFocusSelect={(field) => {
                 config.onEnsureBlockSelected?.();

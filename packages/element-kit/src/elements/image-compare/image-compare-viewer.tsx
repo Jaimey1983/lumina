@@ -8,6 +8,9 @@ import {
   type ReactElement,
 } from "react";
 import type { ElementViewerProps } from "@lumina/element-kit-core";
+import { chromeStyles } from "@lumina/editor-shared/widget-header-editor";
+import { WidgetHeaderViewer } from "@lumina/editor-shared/widget-header-viewer";
+import { cn } from "@lumina/ui/lib/utils";
 import { compareImageFrameStyle } from "./compare-image-frame-style.js";
 import type {
   ImageCompareConfig,
@@ -115,12 +118,13 @@ export function ImageCompareViewer({
     ? { top: `${position}%` }
     : { left: `${position}%` };
 
-  const showTitle = (cfg.mostrarTituloWidget ?? true) && !!estado.tituloWidget;
-  const showSubtitle =
-    (cfg.mostrarSubtitulo ?? true) && !!estado.subtituloWidget;
-  const showInstruction =
-    (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
-  const showHeader = showTitle || showSubtitle || showInstruction;
+  const showTitle = cfg.mostrarTituloWidget ?? true;
+  const showSubtitle = cfg.mostrarSubtitulo ?? true;
+  const showInstruction = cfg.mostrarInstruccion ?? true;
+  const showHeader =
+    (showTitle && !!estado.tituloWidget) ||
+    (showSubtitle && !!estado.subtituloWidget) ||
+    (showInstruction && !!estado.instruccion);
 
   const styleAntes = compareImageFrameStyle({
     objectFit: cfg.imagenAntesObjectFit,
@@ -141,14 +145,18 @@ export function ImageCompareViewer({
   return (
     <div className={styles.root}>
       {showHeader && (
-        <div className={styles.header}>
-          {showTitle && <h3 className={styles.title}>{estado.tituloWidget}</h3>}
-          {showSubtitle && (
-            <p className={styles.subtitle}>{estado.subtituloWidget}</p>
-          )}
-          {showInstruction && (
-            <p className={styles.instruction}>{estado.instruccion}</p>
-          )}
+        <div className={cn(styles.header, chromeStyles.whHeader)}>
+          <WidgetHeaderViewer
+            tituloWidget={estado.tituloWidget}
+            subtituloWidget={estado.subtituloWidget}
+            instruccion={estado.instruccion}
+            estilosHeader={estado.estilosHeader}
+            config={{
+              mostrarTituloWidget: showTitle,
+              mostrarSubtitulo: showSubtitle,
+              mostrarInstruccion: showInstruction,
+            }}
+          />
         </div>
       )}
 

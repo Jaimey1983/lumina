@@ -1115,6 +1115,7 @@ export type {
   ContadorWidget,
   ProgresoWidget,
   RuletaWidget,
+  ImageCompareWidget,
   WidgetAlineacion,
   WidgetCampoEstilo,
   WidgetCanvasPosition,
