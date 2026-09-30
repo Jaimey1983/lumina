@@ -33,6 +33,11 @@ describe("compareImageFrameStyle", () => {
     ).toBe("contain");
   });
 
+  it("el letterbox de contain es opaco (no deja ver la otra capa del wipe)", () => {
+    const style = compareImageFrameStyle({ objectFit: "contain" });
+    expect(style.backgroundColor).toBe("var(--lw-color-surface, #f8fafc)");
+  });
+
   it("clampCompareOffsetPct no sale de ±40", () => {
     expect(clampCompareOffsetPct(99)).toBe(40);
     expect(clampCompareOffsetPct(-99)).toBe(-40);

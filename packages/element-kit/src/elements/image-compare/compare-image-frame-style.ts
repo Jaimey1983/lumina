@@ -46,6 +46,8 @@ export function compareImageFrameStyle(
     maxHeight: "none",
     objectFit: fit,
     objectPosition,
+    /** Sin esto, `contain` deja bandas transparentes y se ve la otra foto del wipe. */
+    backgroundColor: "var(--lw-color-surface, #f8fafc)",
     transform: scale === 1 ? undefined : `scale(${scale})`,
     transformOrigin: "center center",
     pointerEvents: "none",
@@ -67,6 +69,9 @@ export function applyCompareImageFrameStyle(
   img.style.maxHeight = "none";
   img.style.objectFit = String(style.objectFit ?? "cover");
   img.style.objectPosition = String(style.objectPosition ?? "center center");
+  img.style.backgroundColor = String(
+    style.backgroundColor ?? "var(--lw-color-surface, #f8fafc)",
+  );
   img.style.transform = style.transform ? String(style.transform) : "";
   img.style.transformOrigin = "center center";
 }
