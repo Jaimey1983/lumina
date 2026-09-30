@@ -6,6 +6,7 @@ import {
   generateMathActivities,
   onesSumCarries,
   quizCorrectOptionId,
+  toSingleEditorActivity,
   type GeneratedMathQuiz,
   type GeneratedMathShortAnswer,
 } from './index';
@@ -219,5 +220,38 @@ describe('generateMathActivities — otros temas v1', () => {
       const expected = num === den ? '1' : `${num}/${den}`;
       expect(sa.expectedAnswer).toBe(expected);
     }
+  });
+});
+
+describe('toSingleEditorActivity', () => {
+  it('fusiona N quizzes en una actividad con N preguntas e ids únicos', () => {
+    const items = generateMathActivities({
+      tema: 'suma',
+      grado: 2,
+      cantidad: 8,
+      seed: 1,
+    });
+    const merged = toSingleEditorActivity(items);
+    expect(merged.tipo).toBe('quiz_multiple');
+    const quiz = merged as GeneratedMathQuiz;
+    expect(quiz.preguntas).toHaveLength(8);
+    const ids = quiz.preguntas.map((p) => p.id);
+    expect(new Set(ids).size).toBe(8);
+    for (const p of quiz.preguntas) {
+      expect(p.opciones.filter((o) => o.esCorrecta)).toHaveLength(1);
+    }
+  });
+
+  it('respuesta corta: un ítem (el schema no admite lista)', () => {
+    const items = generateMathActivities({
+      tema: 'ecuacion',
+      grado: 5,
+      cantidad: 5,
+      seed: 9,
+      formato: 'short_answer',
+    });
+    expect(items).toHaveLength(5);
+    const inserted = toSingleEditorActivity(items);
+    expect(inserted).toEqual(items[0]);
   });
 });

@@ -11,6 +11,7 @@ import type { ActivityType } from './panels/activities-panel';
 import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import type { IaPanelCurricularContext } from './panels/flyout-left-panels';
 import { ActivitiesPanel } from './panels/activities-panel';
+import { MathGeneratorPanel } from './panels/math-generator-panel';
 import { SlideThemesPanel } from './panels/themes-panel';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { SlideTheme } from '@lumina/types/slide';
@@ -30,6 +31,7 @@ import type { Activity } from '@lumina/types/slide';
 const PANEL_LABELS: Record<RightPanelId, string> = {
   ia:         'Actividades con IA',
   activities: 'Actividades',
+  math:       'Matemáticas',
   themes:     'Temas',
   live:       'En vivo',
 };
@@ -112,8 +114,8 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
           'motion-safe:transition-[width,box-shadow,opacity] motion-safe:duration-200 motion-safe:ease-out',
           'motion-reduce:transition-none',
           activePanel
-            ? activePanel === 'themes'
-              ? 'w-72 opacity-100'
+            ? activePanel === 'themes' || activePanel === 'math'
+              ? 'w-80 opacity-100'
               : 'w-64 opacity-100'
             : 'w-0 border-transparent opacity-0 shadow-none',
         )}
@@ -121,7 +123,9 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       {activePanel && (
         <div
           className={cn(
-            activePanel === 'themes' ? 'flex h-full w-72 flex-col' : 'flex h-full w-64 flex-col',
+            activePanel === 'themes' || activePanel === 'math'
+              ? 'flex h-full w-80 flex-col'
+              : 'flex h-full w-64 flex-col',
             'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200',
             'motion-reduce:animate-none',
           )}
@@ -158,6 +162,12 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
               <ActivitiesPanel
                 onAddActivity={onAddActivity}
                 hasActivity={hasActivity}
+              />
+            )}
+            {activePanel === 'math' && (
+              <MathGeneratorPanel
+                hasActivity={hasActivity}
+                onInsertActivity={onInsertActivity}
               />
             )}
             {activePanel === 'themes' && onApplyThemeToSlide && onApplyThemeToAllSlides && onSaveCustomThemes && (
