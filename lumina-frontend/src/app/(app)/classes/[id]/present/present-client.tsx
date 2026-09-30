@@ -16,6 +16,7 @@ import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import { cn } from '@/lib/utils';
+import { SlideStage16x9 } from '@/components/viewer/slide-stage-16x9';
 import styles from '@/components/viewer/slide-transition.module.css';
 import { useSlideTransition } from '@/hooks/use-slide-transition';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
@@ -217,16 +218,19 @@ export function PresentClient({ id }: { id: string }) {
       </button>
 
       {activeSlide ? (
-        <div
-          className={cn(
-            'relative w-full max-h-full max-w-[177.78vh] aspect-video shrink-0 overflow-hidden bg-black mx-auto',
+        <SlideStage16x9
+          className="absolute inset-0 h-full w-full"
+          innerClassName={cn(
+            'overflow-hidden bg-black',
             getTransitionClass(activeSlide?.transicion?.tipo, phase),
           )}
-          style={{
-            '--trans-dur': `${activeSlide?.transicion?.duracion ?? 500}ms`,
-          } as React.CSSProperties}
-          onClick={(e) => e.stopPropagation()}
+          innerStyle={
+            {
+              '--trans-dur': `${activeSlide?.transicion?.duracion ?? 500}ms`,
+            } as React.CSSProperties
+          }
         >
+          <div className="h-full w-full" onClick={(e) => e.stopPropagation()}>
           <SlideNavContext.Provider
             value={{
               navigate: navigateSlide,
@@ -243,6 +247,7 @@ export function PresentClient({ id }: { id: string }) {
               }}
             >
             <SlideRenderer
+              className="h-full w-full"
               slide={activeSlide}
               modo="viewer"
               viewerFill
@@ -256,7 +261,8 @@ export function PresentClient({ id }: { id: string }) {
             />
             </TextTokensProvider>
           </SlideNavContext.Provider>
-        </div>
+          </div>
+        </SlideStage16x9>
       ) : null}
 
       {slides.length > 0 ? (

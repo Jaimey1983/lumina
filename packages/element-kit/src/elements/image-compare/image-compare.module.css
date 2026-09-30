@@ -38,9 +38,10 @@
 
 .comparisonStage {
   position: relative;
-  flex: 1;
+  flex: 1 1 0%;
   width: 100%;
-  min-height: 160px;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   border-radius: var(--lw-radius-lg, 0.75rem);
   background: var(--lw-color-surface, #f8fafc);

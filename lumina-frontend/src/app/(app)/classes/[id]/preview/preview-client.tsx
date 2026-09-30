@@ -13,6 +13,7 @@ import {
 import { useClass, type Slide as ApiSlide } from '@/hooks/api/use-class';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
+import { SlideStage16x9 } from '@/components/viewer/slide-stage-16x9';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
@@ -174,13 +175,15 @@ export function PreviewClient({ id }: { id: string }) {
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden p-4">
           <div className="flex min-h-0 h-full w-full flex-1 items-center justify-center overflow-hidden">
             {activeSlide ? (
-              <div
-                className="relative h-full w-auto max-h-full max-w-full aspect-video shrink-0 select-none overflow-hidden"
-                style={bg.style}
+              <SlideStage16x9
+                className="h-full w-full"
+                innerClassName="select-none"
+                innerStyle={bg.style}
               >
                 <SlideNavContext.Provider value={{ navigate: navigateSlide, slideCount: slides.length, slideIndex: activeSlideIndex }}>
                 <TextTokensProvider value={{ extra: textTokenExtra({ clase: classData.title, codigoClase: (classData as { codigo?: string }).codigo }) }}>
                 <SlideRenderer
+                  className="h-full w-full"
                   slide={activeSlide}
                   modo="viewer"
                   viewerFill
@@ -194,7 +197,7 @@ export function PreviewClient({ id }: { id: string }) {
                 />
                 </TextTokensProvider>
                 </SlideNavContext.Provider>
-              </div>
+              </SlideStage16x9>
             ) : (
               <div className="flex flex-1 items-center justify-center py-12">
                 <p className="text-center text-sm font-medium text-slate-300">

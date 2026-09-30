@@ -1,7 +1,5 @@
 import {
   useCallback,
-  useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -11,12 +9,14 @@ import {
 } from "react";
 import type { ElementEditorProps } from "@lumina/element-kit-core";
 import { WidgetHeaderEditorField } from "@lumina/editor-shared/widget-header-editor";
-import {
-  computeImagePanClamp,
-  getImageStyle,
-} from "@lumina/editor-shared/widget-image-styles";
 import { Move } from "lucide-react";
 import { useLiftedInnerSelection } from "../_shared/use-lifted-inner-selection.js";
+import {
+  applyCompareImageFrameStyle,
+  clampCompareOffsetPct,
+  compareImageFrameStyle,
+  type CompareImageFrameInput,
+} from "./compare-image-frame-style.js";
 import type {
   ImageCompareConfig,
   ImageCompareEstado,
@@ -26,6 +26,39 @@ import styles from "./image-compare.module.css";
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+function ancestorScaleX(el: HTMLElement): number {
+  const visual = el.getBoundingClientRect().width;
+  const layout = el.clientWidth;
+  if (layout <= 0) return 1;
+  const k = visual / layout;
+  return k > 0.01 ? k : 1;
+}
+
+function frameInputForSide(
+  cfg: ImageCompareEstado["configuracion"],
+  side: "antes" | "despues",
+  overrides?: Partial<CompareImageFrameInput>,
+): CompareImageFrameInput {
+  if (side === "antes") {
+    return {
+      objectFit: cfg.imagenAntesObjectFit,
+      objectPosition: cfg.imagenAntesObjectPosition,
+      offsetXPct: cfg.imagenAntesOffsetX,
+      offsetYPct: cfg.imagenAntesOffsetY,
+      escalaPct: cfg.imagenAntesEscala,
+      ...overrides,
+    };
+  }
+  return {
+    objectFit: cfg.imagenDespuesObjectFit,
+    objectPosition: cfg.imagenDespuesObjectPosition,
+    offsetXPct: cfg.imagenDespuesOffsetX,
+    offsetYPct: cfg.imagenDespuesOffsetY,
+    escalaPct: cfg.imagenDespuesEscala,
+    ...overrides,
+  };
 }
 
 export function ImageCompareEditor({
@@ -48,58 +81,6 @@ export function ImageCompareEditor({
   const stageRef = useRef<HTMLDivElement>(null);
   const imgAntesRef = useRef<HTMLImageElement>(null);
   const imgDespuesRef = useRef<HTMLImageElement>(null);
-
-  const [containerDims, setContainerDims] = useState<{ w: number; h: number }>({
-    w: 0,
-    h: 0,
-  });
-  const [imgAntesDims, setImgAntesDims] = useState<{ w: number; h: number }>({
-    w: 0,
-    h: 0,
-  });
-  const [imgDespuesDims, setImgDespuesDims] = useState<{
-    w: number;
-    h: number;
-  }>({ w: 0, h: 0 });
-
-  const measureContainer = useCallback(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const rect = stage.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      setContainerDims((prev) =>
-        prev.w === Math.round(rect.width) && prev.h === Math.round(rect.height)
-          ? prev
-          : { w: Math.round(rect.width), h: Math.round(rect.height) },
-      );
-    }
-  }, []);
-
-  useLayoutEffect(() => {
-    measureContainer();
-  }, [measureContainer]);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const ro = new ResizeObserver(() => measureContainer());
-    ro.observe(stage);
-    return () => ro.disconnect();
-  }, [measureContainer]);
-
-  const handleImageLoad = (
-    side: "antes" | "despues",
-    img: HTMLImageElement,
-  ) => {
-    measureContainer();
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      if (side === "antes") {
-        setImgAntesDims({ w: img.naturalWidth, h: img.naturalHeight });
-      } else {
-        setImgDespuesDims({ w: img.naturalWidth, h: img.naturalHeight });
-      }
-    }
-  };
 
   const imagePanRef = useRef<{
     side: "antes" | "despues";
@@ -149,7 +130,6 @@ export function ImageCompareEditor({
     [isVertical],
   );
 
-  // 1. Manejo del arrastre del divisor central
   const handleDividerPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     config.onEnsureBlockSelected?.();
@@ -174,7 +154,6 @@ export function ImageCompareEditor({
     }
   };
 
-  // 2. Manejo de paneo individual de imagen con límites matemáticos (computeImagePanClamp)
   const handleImagePointerDown = (
     side: "antes" | "despues",
     e: ReactPointerEvent<HTMLDivElement>,
@@ -207,50 +186,30 @@ export function ImageCompareEditor({
 
   const handleImagePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const pan = imagePanRef.current;
-    if (!pan) return;
+    const stage = stageRef.current;
+    if (!pan || !stage) return;
 
-    const dims = pan.side === "antes" ? imgAntesDims : imgDespuesDims;
-    const scale =
-      (pan.side === "antes"
-        ? (cfg.imagenAntesEscala ?? 100)
-        : (cfg.imagenDespuesEscala ?? 100)) / 100;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
 
-    const { maxPanX, maxPanY } = computeImagePanClamp(
-      dims.w,
-      dims.h,
-      containerDims.w,
-      containerDims.h,
-      scale,
-    );
-
-    const dx = e.clientX - pan.startX;
-    const dy = e.clientY - pan.startY;
-
-    // Límite estricto en píxeles: jamás sobrepasa los bordes, jamás deja blanco
-    const nextX = Math.round(
-      Math.max(-maxPanX, Math.min(maxPanX, pan.ox + dx)),
-    );
-    const nextY = Math.round(
-      Math.max(-maxPanY, Math.min(maxPanY, pan.oy + dy)),
-    );
+    const dxPct = ((e.clientX - pan.startX) / rect.width) * 100;
+    const dyPct = ((e.clientY - pan.startY) / rect.height) * 100;
+    const nextX = clampCompareOffsetPct(pan.ox + dxPct);
+    const nextY = clampCompareOffsetPct(pan.oy + dyPct);
 
     pan.pendingX = nextX;
     pan.pendingY = nextY;
 
-    // Mutación directa al DOM del elemento específico a 60 FPS
     const img =
       pan.side === "antes" ? imgAntesRef.current : imgDespuesRef.current;
     if (img) {
-      const liveStyle = getImageStyle(
-        dims.w,
-        dims.h,
-        containerDims.w,
-        containerDims.h,
-        scale,
-        nextX,
-        nextY,
+      applyCompareImageFrameStyle(
+        img,
+        frameInputForSide(cfg, pan.side, {
+          offsetXPct: nextX,
+          offsetYPct: nextY,
+        }),
       );
-      Object.assign(img.style, liveStyle);
     }
   };
 
@@ -264,7 +223,6 @@ export function ImageCompareEditor({
       // ignore
     }
 
-    // Movimiento 100% individual: solo actualiza la foto que se arrastró
     if (pan.side === "antes") {
       patchConfig({
         imagenAntesOffsetX: pan.pendingX,
@@ -280,7 +238,6 @@ export function ImageCompareEditor({
     imagePanRef.current = null;
   };
 
-  // 3. Manejo del tirador de zoom en esquina (con re-clamp de posición)
   const handleZoomPointerDown = (e: ReactPointerEvent<HTMLSpanElement>) => {
     e.stopPropagation();
     const initialScale =
@@ -299,9 +256,11 @@ export function ImageCompareEditor({
 
   const handleZoomPointerMove = (e: ReactPointerEvent<HTMLSpanElement>) => {
     const zoom = zoomResizeRef.current;
-    if (!zoom) return;
+    const stage = stageRef.current;
+    if (!zoom || !stage) return;
 
-    const dy = zoom.startY - e.clientY;
+    const visualK = ancestorScaleX(stage);
+    const dy = (zoom.startY - e.clientY) / visualK;
     const nextScale = clamp(
       Math.round(zoom.initialScale + dy * 0.5),
       100,
@@ -309,39 +268,13 @@ export function ImageCompareEditor({
     );
     zoom.pendingScale = nextScale;
 
-    const dims = zoom.side === "antes" ? imgAntesDims : imgDespuesDims;
-    const ox =
-      zoom.side === "antes"
-        ? (cfg.imagenAntesOffsetX ?? 0)
-        : (cfg.imagenDespuesOffsetX ?? 0);
-    const oy =
-      zoom.side === "antes"
-        ? (cfg.imagenAntesOffsetY ?? 0)
-        : (cfg.imagenDespuesOffsetY ?? 0);
-
-    const { maxPanX, maxPanY } = computeImagePanClamp(
-      dims.w,
-      dims.h,
-      containerDims.w,
-      containerDims.h,
-      nextScale / 100,
-    );
-    const clampedX = Math.round(Math.max(-maxPanX, Math.min(maxPanX, ox)));
-    const clampedY = Math.round(Math.max(-maxPanY, Math.min(maxPanY, oy)));
-
     const img =
       zoom.side === "antes" ? imgAntesRef.current : imgDespuesRef.current;
     if (img) {
-      const liveStyle = getImageStyle(
-        dims.w,
-        dims.h,
-        containerDims.w,
-        containerDims.h,
-        nextScale / 100,
-        clampedX,
-        clampedY,
+      applyCompareImageFrameStyle(
+        img,
+        frameInputForSide(cfg, zoom.side, { escalaPct: nextScale }),
       );
-      Object.assign(img.style, liveStyle);
     }
   };
 
@@ -402,33 +335,14 @@ export function ImageCompareEditor({
   const showSubtitle = cfg.mostrarSubtitulo ?? true;
   const showInstruction = cfg.mostrarInstruccion ?? true;
 
-  // Estilos de cover calculados matemáticamente (idéntico a TabImageLayer)
-  const styleAntes = getImageStyle(
-    imgAntesDims.w,
-    imgAntesDims.h,
-    containerDims.w,
-    containerDims.h,
-    (cfg.imagenAntesEscala ?? 100) / 100,
-    cfg.imagenAntesOffsetX ?? 0,
-    cfg.imagenAntesOffsetY ?? 0,
-  );
-
-  const styleDespues = getImageStyle(
-    imgDespuesDims.w,
-    imgDespuesDims.h,
-    containerDims.w,
-    containerDims.h,
-    (cfg.imagenDespuesEscala ?? 100) / 100,
-    cfg.imagenDespuesOffsetX ?? 0,
-    cfg.imagenDespuesOffsetY ?? 0,
-  );
+  const styleAntes = compareImageFrameStyle(frameInputForSide(cfg, "antes"));
+  const styleDespues = compareImageFrameStyle(frameInputForSide(cfg, "despues"));
 
   return (
     <div
       className={styles.root}
       onClick={() => config.onEnsureBlockSelected?.()}
     >
-      {/* Cabecera editable */}
       {(showTitle || showSubtitle || showInstruction) && (
         <div className={styles.header}>
           {showTitle && (
@@ -482,13 +396,11 @@ export function ImageCompareEditor({
         </div>
       )}
 
-      {/* Escenario de comparación con data-moveable-ignore incondicional */}
       <div
         ref={stageRef}
         className={styles.comparisonStage}
         data-moveable-ignore=""
       >
-        {/* Capa de imagen "Después" */}
         <div
           className={`${styles.imageLayer} ${styles.layerDespues} ${
             styles.imageLayerInteractive
@@ -505,12 +417,10 @@ export function ImageCompareEditor({
             alt={cfg.imagenDespuesAlt ?? cfg.etiquetaDespues}
             className={styles.image}
             style={styleDespues}
-            onLoad={(e) => handleImageLoad("despues", e.currentTarget)}
             draggable={false}
           />
         </div>
 
-        {/* Capa de imagen "Antes" */}
         <div
           className={`${styles.imageLayer} ${styles.layerAntes} ${
             styles.imageLayerInteractive
@@ -528,12 +438,10 @@ export function ImageCompareEditor({
             alt={cfg.imagenAntesAlt ?? cfg.etiquetaAntes}
             className={styles.image}
             style={styleAntes}
-            onLoad={(e) => handleImageLoad("antes", e.currentTarget)}
             draggable={false}
           />
         </div>
 
-        {/* Selector de foto activa para encuadre individual */}
         <div
           className="absolute top-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 rounded-full bg-slate-900/80 p-1 shadow-md backdrop-blur-sm pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
@@ -562,7 +470,6 @@ export function ImageCompareEditor({
           </button>
         </div>
 
-        {/* Etiquetas flotantes */}
         {cfg.mostrarEtiquetas && (
           <>
             <span
@@ -586,7 +493,6 @@ export function ImageCompareEditor({
           </>
         )}
 
-        {/* Divisor interactivo con tirador */}
         <div
           className={
             isVertical ? styles.dividerVertical : styles.dividerHorizontal
@@ -656,7 +562,6 @@ export function ImageCompareEditor({
           )}
         </div>
 
-        {/* Tirador de Zoom en esquina para la foto activa */}
         <span
           className={styles.resizeHandle}
           title={`Arrastra verticalmente para cambiar zoom de ${

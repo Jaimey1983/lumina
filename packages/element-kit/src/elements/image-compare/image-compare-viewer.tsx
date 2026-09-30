@@ -1,7 +1,5 @@
 import {
   useCallback,
-  useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -10,7 +8,7 @@ import {
   type ReactElement,
 } from "react";
 import type { ElementViewerProps } from "@lumina/element-kit-core";
-import { getImageStyle } from "@lumina/editor-shared/widget-image-styles";
+import { compareImageFrameStyle } from "./compare-image-frame-style.js";
 import type {
   ImageCompareConfig,
   ImageCompareEstado,
@@ -34,58 +32,6 @@ export function ImageCompareViewer({
   );
   const [isDragging, setIsDragging] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
-
-  const [containerDims, setContainerDims] = useState<{ w: number; h: number }>({
-    w: 0,
-    h: 0,
-  });
-  const [imgAntesDims, setImgAntesDims] = useState<{ w: number; h: number }>({
-    w: 0,
-    h: 0,
-  });
-  const [imgDespuesDims, setImgDespuesDims] = useState<{
-    w: number;
-    h: number;
-  }>({ w: 0, h: 0 });
-
-  const measureContainer = useCallback(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const rect = stage.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      setContainerDims((prev) =>
-        prev.w === Math.round(rect.width) && prev.h === Math.round(rect.height)
-          ? prev
-          : { w: Math.round(rect.width), h: Math.round(rect.height) },
-      );
-    }
-  }, []);
-
-  useLayoutEffect(() => {
-    measureContainer();
-  }, [measureContainer]);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const ro = new ResizeObserver(() => measureContainer());
-    ro.observe(stage);
-    return () => ro.disconnect();
-  }, [measureContainer]);
-
-  const handleImageLoad = (
-    side: "antes" | "despues",
-    img: HTMLImageElement,
-  ) => {
-    measureContainer();
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      if (side === "antes") {
-        setImgAntesDims({ w: img.naturalWidth, h: img.naturalHeight });
-      } else {
-        setImgDespuesDims({ w: img.naturalWidth, h: img.naturalHeight });
-      }
-    }
-  };
 
   const updatePositionFromPointer = useCallback(
     (clientX: number, clientY: number) => {
@@ -176,26 +122,21 @@ export function ImageCompareViewer({
     (cfg.mostrarInstruccion ?? true) && !!estado.instruccion;
   const showHeader = showTitle || showSubtitle || showInstruction;
 
-  // Cover matemático con offsets en píxeles (idéntico a getImageStyle de TabImageLayer)
-  const styleAntes = getImageStyle(
-    imgAntesDims.w,
-    imgAntesDims.h,
-    containerDims.w,
-    containerDims.h,
-    (cfg.imagenAntesEscala ?? 100) / 100,
-    cfg.imagenAntesOffsetX ?? 0,
-    cfg.imagenAntesOffsetY ?? 0,
-  );
+  const styleAntes = compareImageFrameStyle({
+    objectFit: cfg.imagenAntesObjectFit,
+    objectPosition: cfg.imagenAntesObjectPosition,
+    offsetXPct: cfg.imagenAntesOffsetX,
+    offsetYPct: cfg.imagenAntesOffsetY,
+    escalaPct: cfg.imagenAntesEscala,
+  });
 
-  const styleDespues = getImageStyle(
-    imgDespuesDims.w,
-    imgDespuesDims.h,
-    containerDims.w,
-    containerDims.h,
-    (cfg.imagenDespuesEscala ?? 100) / 100,
-    cfg.imagenDespuesOffsetX ?? 0,
-    cfg.imagenDespuesOffsetY ?? 0,
-  );
+  const styleDespues = compareImageFrameStyle({
+    objectFit: cfg.imagenDespuesObjectFit,
+    objectPosition: cfg.imagenDespuesObjectPosition,
+    offsetXPct: cfg.imagenDespuesOffsetX,
+    offsetYPct: cfg.imagenDespuesOffsetY,
+    escalaPct: cfg.imagenDespuesEscala,
+  });
 
   return (
     <div className={styles.root}>
@@ -219,7 +160,6 @@ export function ImageCompareViewer({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Capa de imagen "Después" (base) */}
         <div className={`${styles.imageLayer} ${styles.layerDespues}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -227,12 +167,10 @@ export function ImageCompareViewer({
             alt={cfg.imagenDespuesAlt ?? cfg.etiquetaDespues}
             className={styles.image}
             style={styleDespues}
-            onLoad={(e) => handleImageLoad("despues", e.currentTarget)}
             draggable={false}
           />
         </div>
 
-        {/* Capa de imagen "Antes" (recortada) */}
         <div
           className={`${styles.imageLayer} ${styles.layerAntes}`}
           style={clipPathStyle}
@@ -243,12 +181,10 @@ export function ImageCompareViewer({
             alt={cfg.imagenAntesAlt ?? cfg.etiquetaAntes}
             className={styles.image}
             style={styleAntes}
-            onLoad={(e) => handleImageLoad("antes", e.currentTarget)}
             draggable={false}
           />
         </div>
 
-        {/* Etiquetas flotantes */}
         {cfg.mostrarEtiquetas && (
           <>
             <span
@@ -272,7 +208,6 @@ export function ImageCompareViewer({
           </>
         )}
 
-        {/* Divisor interactivo */}
         {!isThumbnail && (
           <div
             className={

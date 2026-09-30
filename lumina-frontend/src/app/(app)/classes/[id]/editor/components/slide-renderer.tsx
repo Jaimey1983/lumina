@@ -944,16 +944,12 @@ function BlockNode({
         }
       : {};
 
-  // `grafico` (ApexCharts, arco parcial) y `clip-group` (SVG clip-path) bajo
-  // el `transform: scale()` de `viewerFill` (ver `viewerFillScale` arriba):
-  // se envuelve el contenido en un div con tamaño real en px (el tamaño
-  // VISUAL final) + `transform: scale(1/viewerFillScale)` propio, que
-  // cancela exactamente el scale del ancestro para todo lo que está debajo
-  // — `clientWidth` (inmune a transform) y `getBoundingClientRect()`
-  // (post-transform) vuelven a coincidir para ese subárbol, evitando la
-  // medición inconsistente que produce el gráfico/máscara chicos o mal
-  // recortados. `transformOrigin: 'top left'` para que el resultado llene
-  // exactamente la caja del bloque, sin desplazamiento.
+  // `grafico` (ApexCharts) y `clip-group` (SVG clip-path) bajo el
+  // `transform: scale()` de `viewerFill`: el wrap cancela el scale del
+  // ancestro para que `clientWidth` y getBoundingClientRect coincidan.
+  // `image-compare` NO entra aquí: encuadra en % (object-fit). El wrap
+  // encogía su layout a px visuales; `min-height: 160px` y `rem` del
+  // header desbordaban y `overflow-hidden` recortaba las fotos a un sello.
   const rawContent = renderContent();
   const content =
     viewerFillScale !== undefined &&
@@ -1046,7 +1042,8 @@ function BlockNode({
             block.tipo === 'contador' ||
             block.tipo === 'ruleta' ||
             block.tipo === 'grafico' ||
-            block.tipo === 'diagrama') &&
+            block.tipo === 'diagrama' ||
+            block.tipo === 'image-compare') &&
           'flex h-full min-h-0 w-full flex-col',
       )}
     >

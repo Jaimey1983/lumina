@@ -192,7 +192,7 @@ describe("ImageCompare — ElementDefinition", () => {
     expect(screen.queryByText("Instrucción Test")).toBeNull();
   });
 
-  it("Viewer aplica estilos calculados con getImageStyle según la configuración", () => {
+  it("Viewer encuadra las fotos en % (object-position / scale), no en px medidos", () => {
     const estado = createDefaultImageCompareBlock();
     estado.configuracion.imagenAntesOffsetX = 15;
     estado.configuracion.imagenAntesOffsetY = -10;
@@ -201,9 +201,12 @@ describe("ImageCompare — ElementDefinition", () => {
     render(<ImageCompareViewer estado={estado} config={{}} />);
 
     const imgs = screen.getAllByRole("img");
-    const imgAntes = imgs[1]; // Antes
+    const imgAntes = imgs[1];
     expect(imgAntes).toBeDefined();
-    expect(imgAntes?.style.position).toBe("absolute");
+    expect(imgAntes?.style.width).toBe("100%");
+    expect(imgAntes?.style.height).toBe("100%");
+    expect(imgAntes?.style.objectPosition).toBe("65% 40%");
+    expect(imgAntes?.style.transform).toBe("scale(1.3)");
   });
 
   it("Propiedades permite alternar flags en la sección Componentes", () => {
