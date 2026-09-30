@@ -143,9 +143,9 @@ export function ImageCompareViewer({
   });
 
   return (
-    <div className={styles.root}>
+    <div className={cn(styles.root, chromeStyles.whRoot)}>
       {showHeader && (
-        <div className={cn(styles.header, chromeStyles.whHeader)}>
+        <div className={chromeStyles.whHeader}>
           <WidgetHeaderViewer
             tituloWidget={estado.tituloWidget}
             subtituloWidget={estado.subtituloWidget}
@@ -160,6 +160,7 @@ export function ImageCompareViewer({
         </div>
       )}
 
+      <div className={chromeStyles.whContent}>
       <div
         ref={stageRef}
         className={styles.comparisonStage}
@@ -282,6 +283,7 @@ export function ImageCompareViewer({
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

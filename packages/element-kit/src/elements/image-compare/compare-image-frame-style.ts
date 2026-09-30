@@ -21,6 +21,11 @@ export type CompareImageFrameInput = {
 /**
  * Encuadre del bitmap en unidades relativas al contenedor.
  *
+ * El wipe apila dos fotos a tamaño completo del escenario. `contain` deja
+ * letterbox: al mostrar título/subtítulo el escenario se achica y esas bandas
+ * se ven (o se transparentan hacia la otra capa). Por eso el pintado es
+ * siempre `cover`; pan/zoom siguen en object-position y scale.
+ *
  * No usa width/height/top/left en px. El preview/visor escala el lienzo
  * 1280×720 con `transform: scale(k)`; cualquier medida de getBoundingClientRect
  * escrita como CSS px deja las fotos a ~k del escenario.
@@ -28,7 +33,6 @@ export type CompareImageFrameInput = {
 export function compareImageFrameStyle(
   input: CompareImageFrameInput,
 ): CSSProperties {
-  const fit = input.objectFit ?? "cover";
   const ox = clampCompareOffsetPct(input.offsetXPct ?? 0);
   const oy = clampCompareOffsetPct(input.offsetYPct ?? 0);
   const scale = (input.escalaPct ?? 100) / 100;
@@ -44,9 +48,8 @@ export function compareImageFrameStyle(
     height: "100%",
     maxWidth: "none",
     maxHeight: "none",
-    objectFit: fit,
+    objectFit: "cover",
     objectPosition,
-    /** Sin esto, `contain` deja bandas transparentes y se ve la otra foto del wipe. */
     backgroundColor: "var(--lw-color-surface, #f8fafc)",
     transform: scale === 1 ? undefined : `scale(${scale})`,
     transformOrigin: "center center",

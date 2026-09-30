@@ -77,6 +77,18 @@ describe("ImageCompare — ElementDefinition", () => {
     expect(slider.getAttribute("aria-orientation")).toBe("horizontal");
   });
 
+  it("Viewer pinta cover aunque el JSON tenga contain (wipe + chrome)", () => {
+    const estado = createDefaultImageCompareBlock();
+    estado.configuracion.imagenAntesObjectFit = "contain";
+    estado.configuracion.imagenDespuesObjectFit = "contain";
+
+    render(<ImageCompareViewer estado={estado} config={{}} />);
+
+    for (const img of screen.getAllByRole("img")) {
+      expect(img.style.objectFit).toBe("cover");
+    }
+  });
+
   it("Viewer responde a navegación por teclado con ARIA", () => {
     const estado = createDefaultImageCompareBlock();
     render(<ImageCompareViewer estado={estado} config={{}} />);

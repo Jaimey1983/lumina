@@ -350,7 +350,7 @@ export function ImageCompareEditor({
 
   return (
     <div
-      className={styles.root}
+      className={cn(styles.root, chromeStyles.whRoot)}
       onClick={(e) => {
         config.onEnsureBlockSelected?.();
         if ((e.target as HTMLElement).closest("[data-widget-header-field]")) {
@@ -360,7 +360,7 @@ export function ImageCompareEditor({
     >
       {(showTitle || showSubtitle || showInstruction) && (
         <div
-          className={cn(styles.header, chromeStyles.whHeader)}
+          className={chromeStyles.whHeader}
           data-moveable-ignore=""
           onPointerDown={stopWidgetInnerPointer}
         >
@@ -427,6 +427,7 @@ export function ImageCompareEditor({
         </div>
       )}
 
+      <div className={chromeStyles.whContent}>
       <div
         ref={stageRef}
         className={styles.comparisonStage}
@@ -605,6 +606,7 @@ export function ImageCompareEditor({
         >
           <Move className="size-3.5" />
         </span>
+      </div>
       </div>
     </div>
   );

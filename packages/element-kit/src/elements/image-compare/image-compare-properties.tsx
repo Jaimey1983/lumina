@@ -88,11 +88,6 @@ export function ImageComparePropiedades({
       ? (cfg.imagenAntesOffsetY ?? 0)
       : (cfg.imagenDespuesOffsetY ?? 0);
 
-  const currentFit =
-    selectedSide === "antes"
-      ? (cfg.imagenAntesObjectFit ?? "cover")
-      : (cfg.imagenDespuesObjectFit ?? "cover");
-
   const currentPos =
     selectedSide === "antes"
       ? (cfg.imagenAntesObjectPosition ?? "center center")
@@ -277,23 +272,11 @@ export function ImageComparePropiedades({
           </Slider>
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-xs">Ajuste</Label>
-          <div className="flex gap-1">
-            {(["cover", "contain"] as const).map((fit) => (
-              <Button
-                key={fit}
-                type="button"
-                size="sm"
-                variant={currentFit === fit ? "secondary" : "outline"}
-                className="flex-1 text-xs capitalize"
-                onClick={() => updateFraming({ objectFit: fit })}
-              >
-                {fit}
-              </Button>
-            ))}
-          </div>
-        </div>
+        <p className="text-[11px] leading-snug text-slate-500">
+          Las fotos cubren todo el recuadro (cover). Con título o instrucción el
+          recuadro se achica: usa zoom y desplazamiento para el encuadre, no
+          «contener».
+        </p>
 
         <div className="space-y-1.5">
           <Label className="text-xs">Posición</Label>

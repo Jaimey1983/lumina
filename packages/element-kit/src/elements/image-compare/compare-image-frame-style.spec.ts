@@ -27,15 +27,10 @@ describe("compareImageFrameStyle", () => {
     expect(style.width).toBe("100%");
   });
 
-  it("respeta object-fit contain", () => {
+  it("contain se pinta como cover (el wipe no puede letterbox)", () => {
     expect(
       compareImageFrameStyle({ objectFit: "contain" }).objectFit,
-    ).toBe("contain");
-  });
-
-  it("el letterbox de contain es opaco (no deja ver la otra capa del wipe)", () => {
-    const style = compareImageFrameStyle({ objectFit: "contain" });
-    expect(style.backgroundColor).toBe("var(--lw-color-surface, #f8fafc)");
+    ).toBe("cover");
   });
 
   it("clampCompareOffsetPct no sale de ±40", () => {
