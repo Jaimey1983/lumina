@@ -12,6 +12,7 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { SlideRenderer } from '@/app/(app)/classes/[id]/editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import {
   useAutonomousSession,
@@ -461,6 +462,16 @@ function ViewerScreen({
     [allowBackNav, goNext, idx, slides.length],
   );
 
+  // Motor de interacción (K4). Navega con `navigateSlide` (respeta `allowBackNav`).
+  // Solo se usa para renderizar: la evaluación de respuestas sigue con `slides`.
+  const { slides: slidesConReglas, runtime } = useInteractionRuntime({
+    enabled: true,
+    slides,
+    slideId: activeSlide?.id ?? null,
+    navigate: navigateSlide,
+  });
+  const renderSlide = slidesConReglas[idx] ?? activeSlide;
+
   // Track which slides already triggered handleResponse so that handleAdvance
   // doesn't overwrite a captured drag-drop response with null.
   const respondedSlideIds = useRef<Set<string>>(new Set());
@@ -615,11 +626,12 @@ function ViewerScreen({
                     value={{ extra: textTokenExtra({ clase: claseTitle, codigoClase }) }}
                   >
                   <SlideRenderer
-                    slide={activeSlide}
+                    slide={renderSlide ?? activeSlide}
                     modo="viewer"
                     onResponse={handleResponse}
                     variant={slideVariant}
                     viewerFill
+                    runtime={runtime}
                   />
                   </TextTokensProvider>
                   </SlideNavContext.Provider>

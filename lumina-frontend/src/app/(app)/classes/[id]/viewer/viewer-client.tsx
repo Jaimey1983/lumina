@@ -20,6 +20,7 @@ import { getEffectiveTimerForApiSlide } from '@/lib/slide-timer-resolve';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from '../editor/components/slide-renderer';
@@ -144,7 +145,7 @@ export function ViewerClient({ id }: { id: string }) {
   }, []);
 
   // Convert API slides → renderer slides (extracts bloques/fondo/diseno from content)
-  const slides = useMemo(() => {
+  const baseSlides = useMemo(() => {
     const raw = classData?.slides ?? [];
     const sorted = [...raw].sort((a, b) => a.order - b.order);
     return sorted.map((s) => classSlideToRendererSlide(s as ApiSlide));
@@ -162,9 +163,6 @@ export function ViewerClient({ id }: { id: string }) {
     else setLiveTeacherSynced(false);
   }, [id, modoEntrega]);
 
-  const activeSlide = slides[activeSlideIndex] ?? null;
-  activeSlideRef.current = activeSlide;
-
   const canStudentNavigate = modoEntrega !== 'clase';
   const navigateSlide = useCallback(
     (action: SlideNavAction) => {
@@ -172,7 +170,7 @@ export function ViewerClient({ id }: { id: string }) {
       const transicion = activeSlideRef.current?.transicion;
       if (action.kind === 'siguiente') {
         runTransition(transicion, () => {
-          setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1));
+          setActiveSlideIndex((i) => Math.min(baseSlides.length - 1, i + 1));
         });
       } else if (action.kind === 'anterior') {
         runTransition(transicion, () => {
@@ -180,12 +178,24 @@ export function ViewerClient({ id }: { id: string }) {
         });
       } else {
         runTransition(transicion, () => {
-          setActiveSlideIndex(Math.min(slides.length - 1, Math.max(0, action.index)));
+          setActiveSlideIndex(Math.min(baseSlides.length - 1, Math.max(0, action.index)));
         });
       }
     },
-    [canStudentNavigate, runTransition, slides.length],
+    [canStudentNavigate, runTransition, baseSlides.length],
   );
+
+  // Motor de interacción (K4): solo en modo autónomo. En clase en vivo y en
+  // `presentacion` el runtime es inerte (D1) y rigen los caminos de siempre.
+  const { slides, runtime } = useInteractionRuntime({
+    enabled: modoEntrega === 'autonomo',
+    slides: baseSlides,
+    variables: classData?.variables,
+    slideId: baseSlides[activeSlideIndex]?.id ?? null,
+    navigate: canStudentNavigate ? navigateSlide : null,
+  });
+  const activeSlide = slides[activeSlideIndex] ?? null;
+  activeSlideRef.current = activeSlide;
 
   const liveSessionId =
     (typeof classData?.activeSessionId === 'string' && classData.activeSessionId.trim()) ||
@@ -705,6 +715,7 @@ export function ViewerClient({ id }: { id: string }) {
                     viewerStudentId={guestIdentity.studentId}
                     viewerStudentName={guestIdentity.studentName}
                     viewerClassId={id}
+                    runtime={runtime}
                   />
                   </TextTokensProvider>
                   </SlideNavContext.Provider>

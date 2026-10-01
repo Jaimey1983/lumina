@@ -9,6 +9,7 @@ import type {
   Slide,
   SlideGuias,
 } from '@lumina/types/slide';
+import type { Regla } from '@lumina/types/interaction';
 import type { TransicionSlide } from '@lumina/types/animation';
 import { parseSlideGuias } from '@/lib/canvas-guides';
 import { normalizarEmparejar } from '@lumina/element-kit/activities/emparejar/emparejar-config';
@@ -165,7 +166,28 @@ function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
   return syncTextBlockFromRichDoc(block, getRichDoc(block)) as Block;
 }
 
+/**
+ * Los `normalize*` de widgets reconstruyen el bloque campo por campo y
+ * descartarían los campos comunes del motor de interacción (Etapa K): sin esto
+ * un `id` o unos `disparadores` guardados se perderían al leer y al persistir.
+ */
+function conservarCamposDelMotor(original: Block, normalizado: Block): Block {
+  const o = original as { id?: unknown; disparadores?: unknown; estado?: unknown };
+  const n = normalizado as { id?: unknown; disparadores?: unknown; estado?: unknown };
+  const extra: Record<string, unknown> = {};
+  if (n.id === undefined && typeof o.id === 'string' && o.id !== '') extra.id = o.id;
+  if (n.disparadores === undefined && Array.isArray(o.disparadores)) {
+    extra.disparadores = o.disparadores;
+  }
+  if (n.estado === undefined && typeof o.estado === 'string') extra.estado = o.estado;
+  return Object.keys(extra).length > 0 ? ({ ...normalizado, ...extra } as Block) : normalizado;
+}
+
 function normalizeBlock(block: Block): Block {
+  return conservarCamposDelMotor(block, normalizeBlockBase(block));
+}
+
+function normalizeBlockBase(block: Block): Block {
   if (block.tipo === 'texto') {
     return normalizeTextBlock(block);
   }
@@ -262,8 +284,102 @@ export function classSlideToRendererSlide(api: ApiSlide): Slide {
     diseno: resolveDiseno(c),
     guias: parseSlideGuias(c.guias),
     transicion: resolveTransicion(c),
+    ...(Array.isArray(c.reglas) ? { reglas: c.reglas as Regla[] } : {}),
     content: null,
   };
+}
+
+// ─── Etapa K / K4: acciones legadas → reglas del motor (D6) ──────────────────
+
+/** Ids fijos de las reglas derivadas: hacen idempotente la migración. */
+export const REGLA_LEGACY_BOTON = 'legacy-boton-accion';
+export const REGLA_LEGACY_CONTADOR = 'legacy-contador-al-terminar';
+
+/** Id estable (en memoria) de un bloque legado sin `id`. */
+function idLegacyDeBloque(slideId: string, index: number): string {
+  return `${slideId}:b${index}`;
+}
+
+function reglaLegacyDeBloque(
+  block: Block,
+  slides: readonly Slide[],
+): Regla | null {
+  if (block.tipo === 'boton') {
+    const accion = block.accion;
+    if (accion === 'siguiente' || accion === 'anterior') {
+      return {
+        id: REGLA_LEGACY_BOTON,
+        evento: 'clic',
+        condiciones: [],
+        acciones: [{ tipo: accion }],
+        activa: true,
+      };
+    }
+    if (accion === 'ir_a') {
+      // Mismo clamp que el despacho legado: el índice se acota al rango real.
+      const max = Math.max(0, slides.length - 1);
+      const index = Math.min(Math.max(0, block.slideIndex ?? 0), max);
+      const destino = slides[index];
+      if (!destino) return null;
+      return {
+        id: REGLA_LEGACY_BOTON,
+        evento: 'clic',
+        condiciones: [],
+        acciones: [{ tipo: 'ir_a_slide', slideId: destino.id }],
+        activa: true,
+      };
+    }
+    return null;
+  }
+  if (block.tipo === 'contador' && block.alTerminar === 'siguiente') {
+    return {
+      id: REGLA_LEGACY_CONTADOR,
+      evento: 'fin_contador',
+      condiciones: [],
+      acciones: [{ tipo: 'siguiente' }],
+      activa: true,
+    };
+  }
+  return null;
+}
+
+/**
+ * Traduce `Boton.accion` y `Contador.alTerminar` a `Block.disparadores`.
+ *
+ * - **Idempotente**: la regla derivada tiene id fijo; si el bloque ya la trae
+ *   no se vuelve a agregar, y un `id` de bloque existente se respeta.
+ * - **No se persiste**: se aplica al armar el reproductor (autónomo / vista
+ *   previa). El editor sigue escribiendo `accion`/`alTerminar` hasta K6/K7, y
+ *   así no puede quedar una regla vieja guardada que contradiga al botón.
+ * - Un bloque legado sin `id` recibe uno determinista (`slideId:bN`, solo en
+ *   memoria) para poder ser dueño de la regla (D8).
+ * - Devuelve el mismo arreglo/objeto cuando nada cambia (referencias estables).
+ */
+export function migrarAccionesLegacyARegla(slides: readonly Slide[]): Slide[] {
+  let cambioGlobal = false;
+  const resultado = slides.map((slide) => {
+    const bloques = slide.bloques;
+    if (!bloques) return slide;
+    let cambio = false;
+    const nuevos = bloques.map((block, index) => {
+      const regla = reglaLegacyDeBloque(block, slides);
+      if (!regla) return block;
+      const actuales = (block as { disparadores?: Regla[] }).disparadores ?? [];
+      const yaTiene = actuales.some((r) => r.id === regla.id);
+      const id = (block as { id?: string }).id;
+      if (yaTiene && typeof id === 'string' && id !== '') return block;
+      cambio = true;
+      return {
+        ...block,
+        id: typeof id === 'string' && id !== '' ? id : idLegacyDeBloque(slide.id, index),
+        disparadores: yaTiene ? actuales : [...actuales, regla],
+      } as Block;
+    });
+    if (!cambio) return slide;
+    cambioGlobal = true;
+    return { ...slide, bloques: nuevos };
+  });
+  return cambioGlobal ? resultado : (slides as Slide[]);
 }
 
 export function mergeSlideContent(

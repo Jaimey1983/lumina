@@ -257,6 +257,9 @@ importers:
       '@lumina/element-kit-core':
         specifier: workspace:*
         version: link:../packages/element-kit-core
+      '@lumina/interactions':
+        specifier: workspace:*
+        version: link:../packages/interactions
       '@lumina/scoring':
         specifier: workspace:*
         version: link:../packages/scoring

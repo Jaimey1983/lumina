@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { ClassModoEntrega, ClassNarrativeMeta } from '@lumina/types/slide';
+import type { VariableDef } from '@lumina/types/interaction';
 
 export interface Slide {
   id: string;
@@ -52,6 +53,8 @@ export interface ClassDetail {
   /** Segundos por defecto del temporizador en vivo (0 = desactivado). */
   timerGlobal?: number;
   modoEntrega?: ClassModoEntrega;
+  /** Variables del motor de interacción (Etapa K, D3). Aún sin columna en el backend. */
+  variables?: VariableDef[];
   /** Id del fondo del canvas en viewer (`none`, `blanco`, …). */
   background?: string | null;
   /** Si el backend lo envía, sincroniza el estado de sesión en vivo en el editor. */

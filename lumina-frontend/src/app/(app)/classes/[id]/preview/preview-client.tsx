@@ -20,6 +20,7 @@ import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slid
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import type { Activity, Block } from '@lumina/types/slide';
 import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
+import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
 
 // ─── Local response evaluation (no socket, no backend) ────────────────────────
 
@@ -82,26 +83,35 @@ export function PreviewClient({ id }: { id: string }) {
     };
   }, []);
 
-  const slides = useMemo(() => {
+  const baseSlides = useMemo(() => {
     const raw = classData?.slides ?? [];
     const sorted = [...raw].sort((a, b) => a.order - b.order);
     return sorted.map((s) => classSlideToRendererSlide(s as ApiSlide));
   }, [classData?.slides]);
 
-  const activeSlide = slides[activeSlideIndex] ?? null;
-
   const navigateSlide = useCallback(
     (action: SlideNavAction) => {
       if (action.kind === 'siguiente') {
-        setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1));
+        setActiveSlideIndex((i) => Math.min(baseSlides.length - 1, i + 1));
       } else if (action.kind === 'anterior') {
         setActiveSlideIndex((i) => Math.max(0, i - 1));
       } else {
-        setActiveSlideIndex(Math.min(slides.length - 1, Math.max(0, action.index)));
+        setActiveSlideIndex(Math.min(baseSlides.length - 1, Math.max(0, action.index)));
       }
     },
-    [slides.length],
+    [baseSlides.length],
   );
+
+  // Motor de interacción (K4): activo en vista previa; navega por `navigateSlide`,
+  // la misma función que se publica en `SlideNavContext`.
+  const { slides, runtime } = useInteractionRuntime({
+    enabled: true,
+    slides: baseSlides,
+    variables: classData?.variables,
+    slideId: baseSlides[activeSlideIndex]?.id ?? null,
+    navigate: navigateSlide,
+  });
+  const activeSlide = slides[activeSlideIndex] ?? null;
 
   // Reset pill on slide change
   useEffect(() => {
@@ -194,6 +204,7 @@ export function PreviewClient({ id }: { id: string }) {
                   viewerStudentId=""
                   viewerStudentName="Vista previa"
                   viewerClassId={id}
+                  runtime={runtime}
                 />
                 </TextTokensProvider>
                 </SlideNavContext.Provider>

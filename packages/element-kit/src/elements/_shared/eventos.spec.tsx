@@ -58,7 +58,7 @@ describe("Botón", () => {
     expect(eventos()).toEqual(["clic"]);
   });
 
-  it("emite `clic` Y conserva la navegación legacy (siguiente)", () => {
+  it("con `emitir` solo emite `clic`: la navegación la decide el motor (K4), no el botón", () => {
     const { emitir, eventos } = espia();
     const navigate = vi.fn();
     const { container } = render(
@@ -68,7 +68,7 @@ describe("Botón", () => {
     );
     fireEvent.click(container.querySelector("button") as HTMLElement);
     expect(eventos()).toEqual(["clic"]);
-    expect(navigate).toHaveBeenCalledWith({ kind: "siguiente" });
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it("acción `url`: el clic en el enlace también emite `clic`", () => {
@@ -249,7 +249,7 @@ describe("Contador", () => {
     expect(navigate).toHaveBeenCalledWith({ kind: "siguiente" });
   });
 
-  it("con `emitir` y `alTerminar: siguiente` hace AMBAS cosas (la migración al motor es K4)", () => {
+  it("con `emitir` y `alTerminar: siguiente` solo emite `fin_contador` (el motor navega, K4)", () => {
     usarRelojFalso();
     const navigate = vi.fn();
     const { emitir, eventos } = espia();
@@ -260,6 +260,6 @@ describe("Contador", () => {
     );
     avanzar(2000);
     expect(eventos()).toEqual(["fin_contador"]);
-    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

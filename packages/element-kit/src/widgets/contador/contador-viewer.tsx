@@ -56,6 +56,10 @@ export function ContadorViewer({ block, isThumbnail = false, emitir }: ContadorV
     endedRef.current = true;
     setRunning(false);
     emitir?.('fin_contador');
+    // Con runtime, `alTerminar: 'siguiente'` es una regla `fin_contador → siguiente`
+    // (K4, D6). TODO(migración-etapa-K): retirar el camino directo cuando
+    // presentación adopte el motor.
+    if (emitir) return;
     // En clase en vivo `navigate` es null: el docente controla el avance.
     if (cfg.alTerminar === 'siguiente' && navigate) {
       navigate({ kind: 'siguiente' });

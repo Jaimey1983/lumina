@@ -2,6 +2,8 @@
 
 import {
   CSSProperties,
+  createContext,
+  useContext,
   useState,
   useRef,
   useCallback,
@@ -11,6 +13,8 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import type { SlideInteractionRuntime } from '@/hooks/use-interaction-runtime';
+import type { EventoTipo } from '@lumina/types/interaction';
 import { createPortal } from 'react-dom';
 import { Trash2, Copy, Pencil, Lock, LockOpen, Ungroup } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -533,6 +537,13 @@ interface BlockNodeProps {
   onRotateEnd?: (blockId: string, angle: number) => void;
 }
 
+/**
+ * Runtime del motor de interacción (Etapa K / K4). Solo lo provee un
+ * reproductor autónomo o la vista previa; en vivo, presentación y editor es
+ * `undefined` y los elementos se comportan como siempre (D1).
+ */
+const InteractionRuntimeContext = createContext<SlideInteractionRuntime | undefined>(undefined);
+
 function BlockNode({
   block,
   blockId,
@@ -606,6 +617,17 @@ function BlockNode({
   onRotateEnd,
 }: BlockNodeProps) {
   const isViewerMode = modo === 'viewer' || modo === 'preview';
+  const interactionRuntime = useContext(InteractionRuntimeContext);
+  /** Config de runtime para los emisores (K3): solo con runtime, id de bloque y fuera de miniatura. */
+  const emisorConfig = (() => {
+    const id = (block as { id?: string }).id;
+    if (!interactionRuntime || isThumbnail || typeof id !== 'string' || id === '') return {};
+    return {
+      bloqueId: id,
+      emitir: (evento: EventoTipo) => interactionRuntime.emitir(id, evento),
+      estadoObjeto: interactionRuntime.estadoDe(id),
+    };
+  })();
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
 
@@ -863,7 +885,7 @@ function BlockNode({
           ) : (
             <def.Viewer
               estado={block}
-              config={{ isThumbnail }}
+              config={{ isThumbnail, ...emisorConfig }}
             />
           );
         }
@@ -1293,6 +1315,8 @@ export interface SlideRendererProps {
   viewerClassId?: string;
   /** Miniatura del panel lateral (SlideCanvasThumb). No confundir con modo preview escalado. */
   isThumbnail?: boolean;
+  /** Runtime del motor de interacción (K4); `undefined` = inerte. */
+  runtime?: SlideInteractionRuntime;
   /** Id de índice (`"0"`) del bloque en drag live — preview visible, sin opacity 0. */
   draggingBlockId?: string | null;
   clipGroupInnerEditId?: string | null;
@@ -1308,7 +1332,7 @@ export interface SlideRendererProps {
   theme?: SlideTheme | null;
 }
 
-export function SlideRenderer({
+function SlideRendererBase({
   slide,
   modo,
   canvasRef: canvasRefProp,
@@ -1366,6 +1390,7 @@ export function SlideRenderer({
   onClipGroupChange,
   onUngroupClipGroup,
   theme: themeProp,
+  // `runtime` lo consume el wrapper `SlideRenderer`.
 }: SlideRendererProps) {
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
   const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
@@ -1907,5 +1932,16 @@ export function SlideRenderer({
     )}
     </SlideCanvasRootContext.Provider>
     </SlideThemeProvider>
+  );
+}
+
+export function SlideRenderer(props: SlideRendererProps) {
+  // Sin runtime no se abre un Provider: un `SlideRenderer` anidado (p. ej. la
+  // composición de un recorte) hereda el del padre en vez de anularlo.
+  if (props.runtime === undefined) return <SlideRendererBase {...props} />;
+  return (
+    <InteractionRuntimeContext.Provider value={props.runtime}>
+      <SlideRendererBase {...props} />
+    </InteractionRuntimeContext.Provider>
   );
 }

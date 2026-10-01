@@ -34,6 +34,11 @@ export function BotonViewer({ block, isThumbnail = false, emitir }: BotonViewerP
   const handleActivate = () => {
     if (disabled || cfg.deshabilitado) return;
     emitir?.('clic');
+    // Con runtime (autónomo / vista previa) la navegación la decide el motor
+    // por la regla `clic → …` derivada de `accion` (K4, D6). El camino directo
+    // queda solo para reproductores sin motor (presentación, en vivo).
+    // TODO(migración-etapa-K): retirar cuando presentación adopte el motor.
+    if (emitir) return;
     if (cfg.accion === 'ninguna' || cfg.accion === 'url') return;
     if (!navigate) return;
 
