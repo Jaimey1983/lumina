@@ -114,6 +114,34 @@ describe('normalización conserva los campos del motor (no se pierden al leer ni
     expect(b.disparadores).toEqual([regla]);
   });
 
+  it('animaciones, canvasLocked y rotacion también sobreviven (leer, guardar y dentro de columnas)', () => {
+    const comunes = { animaciones: [{ id: 'a' }], canvasLocked: true, rotacion: 33 };
+    const tipos: Record<string, unknown>[] = [
+      { tipo: 'boton', texto: 'x', variante: 'primario' },
+      { tipo: 'contador', modo: 'temporizador' },
+      { tipo: 'progreso' },
+      { tipo: 'tooltip' },
+      { tipo: 'hotspot' },
+      { tipo: 'popup' },
+      { tipo: 'ruleta' },
+      { tipo: 'grafico' },
+      { tipo: 'diagrama' },
+      { tipo: 'actividad', actividad: { tipo: 'ruleta' } },
+    ];
+    const bloques = tipos.map((t) => ({ ...t, ...comunes }));
+    const leidos = classSlideToRendererSlide(api(bloques)).bloques!;
+    const guardados = sanitizeSlideContentForPersistence({ bloques })!.bloques as unknown[];
+    for (const lista of [leidos, guardados]) {
+      lista.forEach((b, i) => {
+        expect(b, String(tipos[i]!.tipo)).toMatchObject(comunes);
+      });
+    }
+    const [col] = classSlideToRendererSlide(
+      api([{ tipo: 'columnas', columnas: [[{ tipo: 'boton', texto: 'y', variante: 'primario', ...comunes }]] }]),
+    ).bloques!;
+    expect((col as unknown as { columnas: unknown[][] }).columnas[0]![0]).toMatchObject(comunes);
+  });
+
   it('un bloque sin campos del motor no los gana', () => {
     const s = classSlideToRendererSlide(api([{ tipo: 'boton', texto: 'a', variante: 'primario' }]));
     expect(s.bloques![0]).not.toHaveProperty('id');

@@ -167,24 +167,27 @@ function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
 }
 
 /**
- * Los `normalize*` de widgets reconstruyen el bloque campo por campo y
- * descartarían los campos comunes del motor de interacción (Etapa K): sin esto
- * un `id` o unos `disparadores` guardados se perderían al leer y al persistir.
+ * Campos comunes a TODOS los bloques (la intersección `& { … }` de `Block`).
+ * Varios `normalize*` (ruleta, popup, hotspot, tooltip, boton, contador,
+ * progreso, grafico, diagrama) reconstruyen el bloque campo por campo y los
+ * descartaban, al leer y al guardar: se perdían animaciones, bloqueo de lienzo
+ * y rotación, y (Etapa K) `id`/`disparadores`/`estado`.
  */
-function conservarCamposDelMotor(original: Block, normalizado: Block): Block {
-  const o = original as { id?: unknown; disparadores?: unknown; estado?: unknown };
-  const n = normalizado as { id?: unknown; disparadores?: unknown; estado?: unknown };
+function conservarCamposComunes(original: Block, normalizado: Block): Block {
+  const o = original as unknown as Record<string, unknown>;
+  const n = normalizado as unknown as Record<string, unknown>;
   const extra: Record<string, unknown> = {};
   if (n.id === undefined && typeof o.id === 'string' && o.id !== '') extra.id = o.id;
-  if (n.disparadores === undefined && Array.isArray(o.disparadores)) {
-    extra.disparadores = o.disparadores;
-  }
+  if (n.disparadores === undefined && Array.isArray(o.disparadores)) extra.disparadores = o.disparadores;
   if (n.estado === undefined && typeof o.estado === 'string') extra.estado = o.estado;
+  if (n.animaciones === undefined && Array.isArray(o.animaciones)) extra.animaciones = o.animaciones;
+  if (n.canvasLocked === undefined && typeof o.canvasLocked === 'boolean') extra.canvasLocked = o.canvasLocked;
+  if (n.rotacion === undefined && typeof o.rotacion === 'number') extra.rotacion = o.rotacion;
   return Object.keys(extra).length > 0 ? ({ ...normalizado, ...extra } as Block) : normalizado;
 }
 
 function normalizeBlock(block: Block): Block {
-  return conservarCamposDelMotor(block, normalizeBlockBase(block));
+  return conservarCamposComunes(block, normalizeBlockBase(block));
 }
 
 function normalizeBlockBase(block: Block): Block {
