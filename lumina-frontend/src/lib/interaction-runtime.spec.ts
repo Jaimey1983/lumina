@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { recolectarReglas } from '@lumina/interactions';
-import type { Regla } from '@lumina/types/interaction';
+import type { Regla, VariableDef } from '@lumina/types/interaction';
 import type { Block, Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import {
@@ -14,7 +14,7 @@ import {
   migrarAccionesLegacyARegla,
   sanitizeSlideContentForPersistence,
 } from './class-slide-normalize';
-import { ejecutarEvento } from './interaction-runtime';
+import { ejecutarEvento, hidratarEstado } from './interaction-runtime';
 
 const boton = (extra: Record<string, unknown> = {}): Block =>
   ({ tipo: 'boton', texto: 'Ir', variante: 'primario', accion: 'ninguna', ...extra }) as unknown as Block;
@@ -201,4 +201,40 @@ describe('C1/C4: el runtime no conoce la nota ni la red', () => {
       expect(sinComentarios).not.toMatch(/@lumina\/scoring|@\/lib\/api|\bfetch\(|socket|useMutation|useSaveProgress/);
     });
   }
+});
+
+describe('hidratarEstado (K5)', () => {
+  const vars: VariableDef[] = [
+    { id: 'n', nombre: 'n', tipo: 'numero', valorInicial: 0 },
+    { id: 't', nombre: 't', tipo: 'texto', valorInicial: '' },
+  ];
+
+  it('devuelve null si no hay nada que restaurar', () => {
+    expect(hidratarEstado(null, vars, [])).toBeNull();
+    expect(hidratarEstado('x', vars, [])).toBeNull();
+  });
+
+  it('restaura variables y estados válidos', () => {
+    const e = hidratarEstado(
+      { variables: { n: 4 }, estados: { b1: 'visitado' }, capasAbiertas: ['c'], respuestas: { b2: true } },
+      vars,
+      [],
+    );
+    expect(e?.variables.n).toBe(4);
+    expect(e?.estados.b1).toBe('visitado');
+    expect(e?.capasAbiertas).toEqual(['c']);
+    expect(e?.respuestas.b2).toBe(true);
+  });
+
+  it('ignora variables inexistentes, tipos erróneos y estados inválidos', () => {
+    const e = hidratarEstado(
+      { variables: { n: 'x', fantasma: 1, t: 'hola' }, estados: { b1: 'roto' } },
+      vars,
+      [],
+    );
+    expect(e?.variables.n).toBe(0); // vuelve al valor inicial
+    expect(e?.variables.t).toBe('hola');
+    expect(e?.variables).not.toHaveProperty('fantasma');
+    expect(e?.estados).not.toHaveProperty('b1');
+  });
 });

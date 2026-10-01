@@ -9,7 +9,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAutonomousSessionDto } from './dto/create-autonomous-session.dto';
 import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto';
 import { JoinAutonomousSessionDto } from './dto/join-autonomous-session.dto';
-import { SaveProgressDto, CompleteSessionDto } from './dto/save-progress.dto';
+import {
+  SaveProgressDto,
+  CompleteSessionDto,
+  SaveInteractionStateDto,
+} from './dto/save-progress.dto';
+import {
+  leerVariablesDeclaradas,
+  validarEstadoMotor,
+} from './engine-state.validator';
 import { namesMatch } from './name-matcher.helper';
 import { extractActivityDefinition } from '@lumina/scoring';
 import { scoreActivityResponse } from '../classes/class-results-gradebook.helper';
@@ -154,6 +162,7 @@ export class AutonomousSessionsService {
             title: true,
             description: true,
             codigo: true,
+            variables: true,
             slides: {
               orderBy: { order: 'asc' },
             },
@@ -262,6 +271,8 @@ export class AutonomousSessionsService {
           studentId,
           attemptNumber: inProgress.attemptNumber,
           existingProgress,
+          // K5: estado del motor de interacción para hidratar el runtime.
+          interactionState: inProgress.interactionState ?? null,
           resuming: true,
         };
       }
@@ -309,6 +320,41 @@ export class AutonomousSessionsService {
       existingProgress: [],
       resuming: false,
     };
+  }
+
+  /**
+   * K5 — persiste el estado del motor de interacción del alumno. Solo flujo:
+   * no toca `AutonomousProgress.score` ni `finalScore` (C1/C4/C5). Ruta de
+   * alumno (sin JWT), igual que `saveProgress`; exige un intento en curso
+   * existente para ese alumno.
+   */
+  async saveInteractionState(sessionId: string, dto: SaveInteractionStateDto) {
+    const result = await this.prisma.autonomousResult.findFirst({
+      where: {
+        sessionId,
+        studentId: dto.studentId,
+        attemptNumber: dto.attemptNumber,
+        status: 'in_progress',
+      },
+    });
+    if (!result) {
+      throw new NotFoundException(
+        'No hay un intento en curso para este alumno',
+      );
+    }
+    const session = await this.prisma.autonomousSession.findUnique({
+      where: { id: sessionId },
+      select: { class: { select: { variables: true } } },
+    });
+    const estado = validarEstadoMotor(
+      dto.state,
+      leerVariablesDeclaradas(session?.class?.variables),
+    );
+    await this.prisma.autonomousResult.update({
+      where: { id: result.id },
+      data: { interactionState: toPrismaJsonValue(estado) },
+    });
+    return { saved: true };
   }
 
   async saveProgress(sessionId: string, dto: SaveProgressDto) {

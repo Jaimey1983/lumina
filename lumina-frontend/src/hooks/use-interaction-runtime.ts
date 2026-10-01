@@ -22,7 +22,7 @@ import type { EstadoObjeto, EventoTipo, VariableDef } from '@lumina/types/intera
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { migrarAccionesLegacyARegla } from '@/lib/class-slide-normalize';
-import { ejecutarEvento } from '@/lib/interaction-runtime';
+import { ejecutarEvento, hidratarEstado } from '@/lib/interaction-runtime';
 
 /** Lo que `SlideRenderer` reenvía a `config` de cada elemento. */
 export interface SlideInteractionRuntime {
@@ -39,6 +39,10 @@ export interface UseInteractionRuntimeOptions {
   slideId: string | null;
   /** Misma función que va en `SlideNavContext`; `null` = no se puede navegar. */
   navigate: ((action: SlideNavAction) => void) | null;
+  /** K5: estado persistido a restaurar al montar (se lee una sola vez). */
+  estadoInicial?: unknown;
+  /** K5: se llama tras cada evento con el estado nuevo (para persistirlo). */
+  onEstadoChange?: (estado: EstadoMotor) => void;
 }
 
 export interface UseInteractionRuntimeResult {
@@ -58,6 +62,8 @@ export function useInteractionRuntime({
   variables = SIN_VARIABLES,
   slideId,
   navigate,
+  estadoInicial,
+  onEstadoChange,
 }: UseInteractionRuntimeOptions): UseInteractionRuntimeResult {
   const slides = useMemo(
     () => (enabled ? migrarAccionesLegacyARegla(slidesEntrada) : (slidesEntrada as Slide[])),
@@ -67,14 +73,17 @@ export function useInteractionRuntime({
   const contexto = useMemo(() => ({ variables }), [variables]);
 
   /** `null` hasta el primer evento: mientras tanto el estado se deriva de los slides. */
-  const [estadoGuardado, setEstadoGuardado] = useState<EstadoMotor | null>(null);
-  const estadoRef = useRef<EstadoMotor | null>(null);
+  const [restaurado] = useState<EstadoMotor | null>(() =>
+    enabled ? hidratarEstado(estadoInicial, variables, slides) : null,
+  );
+  const [estadoGuardado, setEstadoGuardado] = useState<EstadoMotor | null>(restaurado);
+  const estadoRef = useRef<EstadoMotor | null>(restaurado);
 
   // Refs al último valor: los manejadores no deben quedar con una clausura vieja.
-  const vivo = useRef({ slides, reglas, contexto, navigate, enabled });
+  const vivo = useRef({ slides, reglas, contexto, navigate, enabled, onEstadoChange });
   // Declarado antes que los efectos que despachan: React los corre en orden.
   useEffect(() => {
-    vivo.current = { slides, reglas, contexto, navigate, enabled };
+    vivo.current = { slides, reglas, contexto, navigate, enabled, onEstadoChange };
   });
 
   const slideDeBloque = useMemo(() => {
@@ -102,6 +111,7 @@ export function useInteractionRuntime({
     });
     estadoRef.current = nuevo;
     setEstadoGuardado(nuevo);
+    v.onEstadoChange?.(nuevo);
   }, []);
 
   const emitir = useCallback(

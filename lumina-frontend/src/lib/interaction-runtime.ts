@@ -56,3 +56,70 @@ export function ejecutarEvento({
   }
   return res.estado;
 }
+
+const ESTADOS_OBJETO = new Set(['normal', 'visitado', 'seleccionado', 'deshabilitado']);
+
+function esRegistro(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * K5 — reconstruye un `EstadoMotor` a partir de lo que devolvió el backend.
+ * Parte siempre del estado inicial de la clase y solo pisa lo que sea
+ * coherente (variables declaradas con su tipo, estados válidos…): un estado
+ * viejo, corrupto o de una clase editada no puede romper el reproductor.
+ * Devuelve `null` si no hay nada que restaurar.
+ */
+export function hidratarEstado(
+  guardado: unknown,
+  variables: readonly VariableDef[],
+  slides: readonly Slide[],
+): EstadoMotor | null {
+  if (!esRegistro(guardado)) return null;
+  const base = crearEstadoInicial(variables, slides);
+  const defs = new Map(variables.map((v) => [v.id, v]));
+
+  const vars = { ...base.variables };
+  if (esRegistro(guardado.variables)) {
+    for (const [id, valor] of Object.entries(guardado.variables)) {
+      const def = defs.get(id);
+      if (!def) continue;
+      const ok =
+        (def.tipo === 'numero' && typeof valor === 'number' && Number.isFinite(valor)) ||
+        (def.tipo === 'texto' && typeof valor === 'string') ||
+        (def.tipo === 'booleano' && typeof valor === 'boolean');
+      if (ok) vars[id] = valor as number | string | boolean;
+    }
+  }
+
+  const estados = { ...base.estados };
+  if (esRegistro(guardado.estados)) {
+    for (const [id, valor] of Object.entries(guardado.estados)) {
+      if (typeof valor === 'string' && ESTADOS_OBJETO.has(valor)) {
+        estados[id] = valor as EstadoMotor['estados'][string];
+      }
+    }
+  }
+
+  const booleanos = (origen: unknown, inicial: Readonly<Record<string, boolean>>) => {
+    const out = { ...inicial };
+    if (esRegistro(origen)) {
+      for (const [id, valor] of Object.entries(origen)) {
+        if (typeof valor === 'boolean') out[id] = valor;
+      }
+    }
+    return out;
+  };
+
+  const capas = Array.isArray(guardado.capasAbiertas)
+    ? guardado.capasAbiertas.filter((c): c is string => typeof c === 'string')
+    : [...base.capasAbiertas];
+
+  return {
+    variables: vars,
+    estados,
+    visibles: booleanos(guardado.visibles, base.visibles),
+    capasAbiertas: capas,
+    respuestas: booleanos(guardado.respuestas, base.respuestas),
+  };
+}

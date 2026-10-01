@@ -13,11 +13,13 @@ import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { SlideRenderer } from '@/app/(app)/classes/[id]/editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
+import type { VariableDef } from '@lumina/types/interaction';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import {
   useAutonomousSession,
   useJoinSession,
   useSaveProgress,
+  useSaveInteractionState,
   useCompleteSession,
 } from '@/hooks/api/use-autonomous-viewer';
 import type { Slide } from '@/hooks/api/use-class';
@@ -355,12 +357,15 @@ interface ViewerProps {
   background: string;
   claseTitle?: string;
   codigoClase?: string;
+  /** K5: variables declaradas y estado del motor a restaurar (reanudación). */
+  variables: VariableDef[];
+  initialInteractionState?: unknown;
   onComplete: (finalNota?: number) => void;
 }
 
 function ViewerScreen({
   sessionId, studentId, attemptNumber, slides,
-  allowBackNav, timerBehavior, closesAt, background, claseTitle, codigoClase, onComplete,
+  allowBackNav, timerBehavior, closesAt, background, claseTitle, codigoClase, variables, initialInteractionState, onComplete,
 }: ViewerProps) {
   const [idx, setIdx]        = useState(0);
   const [locked, setLocked]  = useState(false);
@@ -369,6 +374,7 @@ function ViewerScreen({
   const pillClear            = useRef<ReturnType<typeof setTimeout> | null>(null);
   const torneoFinalNotaRef   = useRef<number | null>(null);
   const { saveProgress }     = useSaveProgress(sessionId);
+  const saveInteractionState = useSaveInteractionState(sessionId, studentId, attemptNumber);
   const closeCountdown       = useCountdown(closesAt);
   const activeSlide          = slides[idx] ?? null;
   const videoInteractiveHistorialRef = useRef<{ slideId: string; entries: unknown[] }>({
@@ -467,8 +473,11 @@ function ViewerScreen({
   const { slides: slidesConReglas, runtime } = useInteractionRuntime({
     enabled: true,
     slides,
+    variables,
     slideId: activeSlide?.id ?? null,
     navigate: navigateSlide,
+    estadoInicial: initialInteractionState,
+    onEstadoChange: saveInteractionState,
   });
   const renderSlide = slidesConReglas[idx] ?? activeSlide;
 
@@ -732,12 +741,18 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
   const [studentId,       setStudentId]       = useState('');
   const [attemptNumber,   setAttemptNumber]   = useState(1);
   const [hasExisting,     setHasExisting]     = useState(false);
+  const [interactionState, setInteractionState] = useState<unknown>(null);
   const [pinError,        setPinError]        = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [result,          setResult]          = useState<CompleteSessionResponse | null>(null);
   const [joinDebugMessage, setJoinDebugMessage] = useState<string | null>(null);
 
   // Slides vienen en session.class.slides[] (API autónomo / join).
+  const variablesDeClase = useMemo<VariableDef[]>(() => {
+    const raw = session?.class?.variables;
+    return Array.isArray(raw) ? (raw as VariableDef[]) : [];
+  }, [session]);
+
   const slides = useMemo<ReturnType<typeof classSlideToRendererSlide>[]>(() => {
     const list = session?.class?.slides ?? [];
     return [...list]
@@ -765,6 +780,8 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
       if (typeof window !== 'undefined') localStorage.setItem(LS_STUDENT_ID, res.studentId);
       setStudentId(res.studentId);
       setAttemptNumber(res.attemptNumber);
+      // K5: solo se restaura al reanudar el mismo intento, no en un intento nuevo.
+      setInteractionState(res.resuming && !newAttempt ? (res.interactionState ?? null) : null);
       // If backend says resuming and we're not starting a new attempt, show resume options
       setHasExisting(res.resuming && !newAttempt);
       setScreen('viewer');
@@ -832,6 +849,8 @@ export function AutonomoClient({ sessionId }: { sessionId: string }) {
         background={session.background ?? session.class.background ?? 'none'}
         claseTitle={session.class?.title}
         codigoClase={(session.class as { codigo?: string } | undefined)?.codigo}
+        variables={variablesDeClase}
+        initialInteractionState={interactionState}
         onComplete={handleComplete}
       />
     );

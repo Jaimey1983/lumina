@@ -364,6 +364,12 @@ model Class {
    */
   contextoClase      Json?
   /**
+   * Motor de interacción (Etapa K, D3): declaración de variables
+   * (`VariableDef[]`) a nivel de clase. Los valores viven por alumno
+   * (`AutonomousResult.interactionState`, D2).
+   */
+  variables          Json?
+  /**
    * Trazabilidad curricular (Etapa J / J9) — vínculo opcional al
    * `PerformanceIndicator` de origen del curso/logro.
    */
@@ -454,6 +460,11 @@ model AutonomousResult {
   finalScore    Float?
   completedAt   DateTime?
   createdAt     DateTime          @default(now())
+  /**
+   * Estado del motor de interacción (K5): variables, estados de objeto,
+   * visitados, capas. NUNCA participa en la nota (C1/C4/C5).
+   */
+  interactionState Json?
 
   @@map("autonomous_results")
 }

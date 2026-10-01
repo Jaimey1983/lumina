@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Param,
   Body,
@@ -16,7 +17,11 @@ import { AutonomousSessionsService } from './autonomous-sessions.service';
 import { CreateAutonomousSessionDto } from './dto/create-autonomous-session.dto';
 import { UpdateAutonomousSessionDto } from './dto/update-autonomous-session.dto';
 import { JoinAutonomousSessionDto } from './dto/join-autonomous-session.dto';
-import { SaveProgressDto, CompleteSessionDto } from './dto/save-progress.dto';
+import {
+  SaveProgressDto,
+  CompleteSessionDto,
+  SaveInteractionStateDto,
+} from './dto/save-progress.dto';
 import { UpdateAutonomousProgressScoreDto } from './dto/update-autonomous-progress-score.dto';
 
 // Routes: POST/GET /classes/:classId/autonomous-sessions
@@ -65,6 +70,15 @@ export class AutonomousSessionsController {
     @Body() dto: SaveProgressDto,
   ) {
     return this.service.saveProgress(sessionId, dto);
+  }
+
+  // K5: ruta de alumno (sin JWT/@Roles), como `progress` y `complete`.
+  @Put(':sessionId/interaction-state')
+  saveInteractionState(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SaveInteractionStateDto,
+  ) {
+    return this.service.saveInteractionState(sessionId, dto);
   }
 
   @Patch(':sessionId/progress/:progressId')
