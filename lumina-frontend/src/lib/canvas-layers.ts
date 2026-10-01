@@ -257,47 +257,63 @@ function stackingOrder(bloques: Block[]): number[] {
 }
 
 /**
- * Reordena un bloque dentro de la pila (`traer_frente`, `enviar_atras_total`,
- * `adelante_uno`, `atras_uno`) y renumera el `zIndex` de los bloques de primer
- * nivel como 1..N. Así cada acción mueve exactamente una posición (o va al
- * extremo), sin empates, huecos ni deriva. Solo se reescriben los bloques cuyo
- * z cambia; si la acción no tiene efecto devuelve el mismo array.
+ * Reordena uno o varios bloques dentro de la pila (`traer_frente`,
+ * `enviar_atras_total`, `adelante_uno`, `atras_uno`) y renumera el `zIndex` de
+ * los bloques de primer nivel como 1..N. Cada acción mueve exactamente una
+ * posición (o va al extremo), sin empates, huecos ni deriva.
+ *
+ * Con varios bloques se conserva su orden relativo. Un paso "adelante/atrás"
+ * salta al vecino más cercano que NO está seleccionado (como en Figma), y los
+ * bloques ya en el borde de la pila no se mueven.
+ *
+ * Solo se reescriben los bloques cuyo z cambia; si la acción no tiene efecto
+ * devuelve el mismo array. Los bloques fijados (`canvasLocked`) sí se pueden
+ * reordenar: el fijado protege posición y tamaño, no la capa.
  */
 export function applyLayerReorderAction(
   bloques: Block[],
-  targetIndex: number,
+  target: number | number[],
   action: LayerReorderAction,
 ): Block[] {
-  if (targetIndex < 0 || targetIndex >= bloques.length) return bloques;
+  const targets = new Set(
+    (Array.isArray(target) ? target : [target]).filter(
+      (i) => Number.isInteger(i) && i >= 0 && i < bloques.length,
+    ),
+  );
+  if (targets.size === 0) return bloques;
 
   const order = stackingOrder(bloques);
-  const pos = order.indexOf(targetIndex);
-  const last = order.length - 1;
+  const next = [...order];
+  const last = next.length - 1;
 
-  let to = pos;
   switch (action) {
     case 'traer_frente':
-      to = last;
+      next.splice(0, next.length, ...order.filter((i) => !targets.has(i)), ...order.filter((i) => targets.has(i)));
       break;
     case 'enviar_atras_total':
-      to = 0;
+      next.splice(0, next.length, ...order.filter((i) => targets.has(i)), ...order.filter((i) => !targets.has(i)));
       break;
     case 'adelante_uno':
-      to = Math.min(pos + 1, last);
+      for (let p = last - 1; p >= 0; p--) {
+        if (targets.has(next[p]!) && !targets.has(next[p + 1]!)) {
+          [next[p], next[p + 1]] = [next[p + 1]!, next[p]!];
+        }
+      }
       break;
     case 'atras_uno':
-      to = Math.max(pos - 1, 0);
+      for (let p = 1; p <= last; p++) {
+        if (targets.has(next[p]!) && !targets.has(next[p - 1]!)) {
+          [next[p], next[p - 1]] = [next[p - 1]!, next[p]!];
+        }
+      }
       break;
     default:
       return bloques;
   }
-  if (to === pos) return bloques;
-
-  order.splice(pos, 1);
-  order.splice(to, 0, targetIndex);
+  if (next.every((v, p) => v === order[p])) return bloques;
 
   const nextZ = new Map<number, number>();
-  order.forEach((blockIndex, rank) => nextZ.set(blockIndex, rank + 1));
+  next.forEach((blockIndex, rank) => nextZ.set(blockIndex, rank + 1));
 
   return bloques.map((b, i) => {
     const z = nextZ.get(i)!;

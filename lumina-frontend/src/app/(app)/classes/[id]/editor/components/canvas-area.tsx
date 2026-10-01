@@ -1344,17 +1344,29 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
   const handleLayerReorder = useCallback(
     (blockPath: string, action: LayerReorderAction) => {
       if (!liveSlide?.bloques) return;
-      const index = Number(blockPath);
-      if (!Number.isInteger(index) || index < 0) return;
-      const block = liveSlide.bloques[index];
-      if (!block || isBlockCanvasLocked(block)) return;
+      // Si la capa pulsada forma parte de la selección, se reordena toda la
+      // selección (conservando su orden relativo); si no, solo esa capa.
+      // Solo primer nivel: los paths anidados ("2.1") no son enteros.
+      const raw = selectedBlockIds.includes(blockPath)
+        ? selectedBlockIds
+        : [blockPath];
+      const indices = raw
+        .map(Number)
+        .filter((n) => Number.isInteger(n) && n >= 0);
+      if (indices.length === 0) return;
       const prev = cloneSlideBlocks(liveSlide.bloques);
-      const next = applyLayerReorderAction(prev, index, action);
-      void persistBloques(next, prev, true).then((ok) => {
-        if (!ok) toast.error('No se pudo actualizar el orden de capas');
-      });
+      const next = applyLayerReorderAction(prev, indices, action);
+      if (next === prev) return;
+      // Optimista: el cambio se ve al instante; si el guardado falla se vuelve
+      // a la versión del servidor (CLEAR_BLOQUES_OVERRIDE) y se avisa.
+      dispatchEditor({ type: 'MOVER', via: 'replace', bloques: next });
+      void persistBloques(next, prev, true)
+        .then((ok) => {
+          if (!ok) toast.error('No se pudo actualizar el orden de capas');
+        })
+        .finally(() => dispatchEditor({ type: 'CLEAR_BLOQUES_OVERRIDE' }));
     },
-    [liveSlide, persistBloques],
+    [liveSlide, selectedBlockIds, persistBloques],
   );
 
   const handleReorder = useCallback(
