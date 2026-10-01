@@ -398,11 +398,15 @@ export class AutonomousSessionsService {
       }
     }
 
-    // Si ya existe con score calculado y la nueva response es null → no actualizar
+    // C2: la nota usa solo la PRIMERA respuesta calificada. Si ya hay score
+    // fijado, ni un null ni una segunda respuesta real (p. ej. al volver atrás
+    // y reabrir el slide) lo recalculan. video_interactivo queda exento: su
+    // respuesta se va fusionando y el score se recalcula sobre el acumulado.
     if (
       existing?.score !== null &&
       existing?.score !== undefined &&
-      dto.response === null
+      (dto.response === null ||
+        (dto.draft !== true && dto.activityType !== 'video_interactivo'))
     ) {
       return { saved: true };
     }

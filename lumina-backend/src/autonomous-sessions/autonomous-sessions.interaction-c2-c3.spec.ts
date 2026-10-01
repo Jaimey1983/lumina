@@ -8,9 +8,9 @@ import type { PrismaService } from '../prisma/prisma.service';
  *
  *  - C3: un slide saltado (el alumno nunca llegó: ruta del motor de reglas)
  *    no genera fila de progreso ni entra al promedio; nunca se registra como 0.
- *  - C2 (parte que HOY está garantizada): un `null` posterior no pisa la nota ya
- *    fijada. (Una segunda respuesta real al mismo slide sí recalcula: ver el
- *    hallazgo de K4 en AGENTS.md; no se cambia acá porque K4 no toca backend.)
+ *  - C2: la nota usa solo la primera respuesta calificada; ni un `null` ni una
+ *    segunda respuesta real (volver atrás y reabrir) la pisan. Los borradores
+ *    (`draft`) y video_interactivo (respuesta fusionada) siguen actualizándose.
  */
 function crearServicio(opts: {
   existente?: { id: string; score: number | null; response: unknown } | null;
@@ -62,6 +62,53 @@ describe('K4 · C2/C3 con el backend autónomo', () => {
     });
     expect(prisma.autonomousProgress.update).not.toHaveBeenCalled();
     expect(prisma.autonomousProgress.create).not.toHaveBeenCalled();
+  });
+
+  it('C2: una segunda respuesta real al mismo slide no recalcula ni pisa la nota', async () => {
+    const { service, prisma } = crearServicio({
+      existente: { id: 'p1', score: 5, response: { a: 1 } },
+    });
+    await service.saveProgress('s1', {
+      studentId: 'u1',
+      slideId: 'sl1',
+      response: { a: 2 },
+      attemptNumber: 1,
+      activityType: 'quiz_multiple',
+    });
+    expect(prisma.autonomousProgress.update).not.toHaveBeenCalled();
+    expect(prisma.slide.findUnique).toHaveBeenCalled(); // se evalúa pero se descarta
+  });
+
+  it('C2: un borrador sí se guarda aunque ya exista score; y sin score previo la primera respuesta se registra', async () => {
+    const a = crearServicio({
+      existente: { id: 'p1', score: 5, response: { a: 1 } },
+    });
+    await a.service.saveProgress('s1', {
+      studentId: 'u1',
+      slideId: 'sl1',
+      response: { a: 2 },
+      attemptNumber: 1,
+      activityType: 'quiz_multiple',
+      draft: true,
+    });
+    expect(a.prisma.autonomousProgress.update).toHaveBeenCalledTimes(1);
+    const [llamada] = a.prisma.autonomousProgress.update.mock.calls as [
+      [{ data: Record<string, unknown> }],
+    ];
+    const data = llamada[0].data;
+    expect(data).not.toHaveProperty('score');
+
+    const b = crearServicio({
+      existente: { id: 'p2', score: null, response: null },
+    });
+    await b.service.saveProgress('s1', {
+      studentId: 'u1',
+      slideId: 'sl1',
+      response: { a: 1 },
+      attemptNumber: 1,
+      activityType: 'quiz_multiple',
+    });
+    expect(b.prisma.autonomousProgress.update).toHaveBeenCalledTimes(1);
   });
 
   it('C3: al completar, un slide saltado (sin fila) no cuenta ni baja el promedio', async () => {
