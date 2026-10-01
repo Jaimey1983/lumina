@@ -1291,7 +1291,7 @@ K1–K5 entregan un motor funcional **sin interfaz de edición**. **No se abre K
 
 #### K2 — `@lumina/interactions`: evaluador puro de reglas
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** K1 `hecho`.
 - **Contexto:** patrón de paquete dual de `@lumina/scoring` (E6.1: `build` emite ESM + CJS + `dist/cjs/package.json`, `exports` con `require`, `main`/`types` de nivel superior para el backend con `moduleResolution: node`). El motor es **una función pura**: recibe estado + evento y devuelve estado nuevo + lista de efectos; no toca DOM ni red.
 - **Alcance — PUEDE tocar:** nuevo `packages/interactions/**` (`@lumina/interactions`): `evaluarCondicion`, `ejecutarAcciones`, `procesarEvento(reglas, estado, evento) → { estado, efectos }`, `crearEstadoInicial(variables)`, `validarReglas(reglas, contexto)` (nombres de variable y ids de bloque/slide existentes, tipos coherentes). **Protecciones obligatorias:** profundidad máxima de encadenamiento (reglas que disparan reglas), detección de ciclos, límite de efectos por evento, orden determinista de evaluación. **Prohibido** `eval`/`new Function` (D5). Raíz: `pnpm-lock.yaml`; `.github/workflows/ci.yml` job `packages` (build/test/lint tras `@lumina/types`), build en los jobs `frontend` y `backend`.
