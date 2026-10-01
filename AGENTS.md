@@ -1214,6 +1214,176 @@ model Class {
 - **Entregable:** el docente puede ver, en cada resultado generado por IA en estas 4 piezas, si vino de contenido curado, de Gemini, o de un fallback de plantilla. Verificación: `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`.
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(ai): indicar origen (curado/IA/fallback) en resultados generados`.
 
+### Etapa K — Motor de interacción (variables, reglas, estados, capas) inspirado en Articulate Storyline
+
+Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: **Reglas 1–4 no aplican**; Reglas 0, 5–11 vigentes. Todo elemento nuevo de esta etapa nace como `ElementDefinition` (Regla 2/3), con prueba de paridad o comportamiento (Regla 7).
+
+**Por qué existe esta etapa:** análisis del 2026-09-30 (sesión de revisión de código, sin memoria compartida) comparó Lumina con Articulate Storyline. Lumina ya cubre bien el *contenido* (45 elementos: 15 widgets, 22 actividades, 3 bloques de canvas, 8 primitivos) y tiene lo que Storyline no tiene (motor de puntuación colombiano, trazabilidad hasta el indicador J9, clase en vivo, libro de notas). Lo que falta es la **lógica entre elementos**: cada elemento es una isla.
+
+**Estado real del repo (relevado 2026-09-30 — leído, no auditado línea por línea):**
+
+- **Sin variables, condiciones, estados de objeto ni capas.** `BotonAccion` = `'ninguna' | 'url' | 'siguiente' | 'anterior' | 'ir_a'` (`packages/types/src/widget.types.ts:522`). `Animacion.trigger` = `'auto' | 'click' | 'hover'`, solo sobre el propio bloque (`packages/types/src/animation.types.ts`, `hooks/use-block-animations.ts`). `ContadorAlTerminar` = `'ninguna' | 'siguiente'`. `Slide.type` = `'COVER' | 'CONTENT' | 'ACTIVITY' | 'VIDEO' | 'IMAGE'`. Las ramificaciones existen solo *dentro* de `historia_ramificada`. No se encontró exportación SCORM/xAPI.
+- **El contrato no tiene canal de eventos.** `ElementViewerProps<TState, TConfig>` = `{ estado, config }` (`packages/element-kit-core/src/contract.ts:26`). Un elemento no puede avisar «me hicieron clic» ni «respondí bien».
+- **Navegación en vivo controlada por el docente.** `viewer-client.tsx` escucha `onSlideChange` por socket (línea ~284). Una acción de navegación iniciada por el alumno chocaría con eso. Los 3 reproductores: `classes/[id]/viewer/viewer-client.tsx` (816 líneas, incluye el modo autónomo vía `modoEntrega`), `classes/[id]/present/present-client.tsx` (326), `classes/[id]/preview/preview-client.tsx`. Todos renderizan con `slide-renderer.tsx` (1911 líneas, `modo: 'editor' | 'viewer' | 'preview'`).
+- **Persistencia de progreso autónomo ya existe:** `autonomous-sessions.controller.ts` expone `POST :sessionId/progress` y `PATCH :sessionId/progress/:progressId`; el modelo es `AutonomousProgress` (`sessionId`, `studentId`, `slideId`, `response Json?`, `attemptNumber`, `activityType`, `score`). `ClassSession` (en vivo) no guarda estado por alumno más allá de `ClassResult`.
+- **Calificación:** `evaluateActivityResponse` (`@lumina/scoring`) → `ClassResult` (en vivo) / `AutonomousProgress` (autónomo). `ClassResult` tiene `@@unique([classId, studentId, slideId, sessionId])` — **un resultado por alumno, slide y sesión; un reintento sobrescribe**. `resolvePersistedClassResultScore`: fallido evaluable = `1.0` (mínimo de `notaColombiana`), sin respuesta = `null` (nunca se inventa `0`). `ClassResult.performanceIndicatorId` ya existe (J9).
+- **Historial por diferencia (E5.3)** compara bloques campo a campo en `editor/lib/slide-block-patch.ts`; los campos nuevos de los bloques no entran al diff si no se enseñan allí.
+- **No relevado (confirmar en la ficha indicada):** cuánto estado del reproductor está disperso dentro de `viewer-client.tsx` (K4); el cálculo ponderado de `grade-calculation.service.ts` línea por línea (K10 / ficha de reintentos).
+
+**Decisiones de diseño (D1–D7) — cerradas por esta raíz, no las reabre el operador (Regla 10):**
+
+- **D1. Alcance de modos en v1.** Las reglas se evalúan solo en **modo autónomo y vista previa**. En **clase en vivo y presentación** el runtime es *inerte* (no navega, no cambia estado): ahí manda el docente.
+- **D2. Propiedad de las variables.** **Locales por alumno.** No hay variables compartidas de clase en v1 (evita la carrera ya resuelta en F1.4 con locks Redis; candidata a etapa posterior).
+- **D3. Dónde se declaran.** A nivel de **clase** (`Class.variables`), para que persistan entre slides.
+- **D4. Dónde viven las reglas.** En el **bloque** (`Block.disparadores`) y en el **slide** (`Slide.reglas`, p. ej. «al entrar»).
+- **D5. Lenguaje de condiciones.** **Árbol de datos interpretado por Lumina.** Prohibido `eval`, `new Function` o cualquier cadena ejecutable (menores de edad, navegador del alumno).
+- **D6. Legado.** `Boton.accion` y `Contador.alTerminar` **migran** al motor (Regla 4: no quedan dos caminos). Las clases guardadas se normalizan en `class-slide-normalize.ts`.
+- **D7. Paquete.** `@lumina/interactions`: puro, sin React, dual ESM+CJS (patrón `@lumina/scoring`/E6.1) para que el backend pueda validar con el mismo evaluador.
+
+**Decisiones de calificación (C1–C5) — cerradas, vienen del análisis de impacto sobre el sistema de notas:**
+
+- **C1. Principio rector.** *El motor de reglas decide el flujo; `@lumina/scoring` decide la nota. Nunca al revés.* El motor no calcula, no corrige ni escribe puntajes. `@lumina/scoring` no se modifica en esta etapa salvo que una ficha lo declare.
+- **C2. Reintentos y pistas.** En v1 la nota usa **solo la primera respuesta** (comportamiento actual: el reintento no sobrescribe la nota ya fijada). No se agregan campos de intento por slide ni descuentos por pista. Los reintentos calificados (mejor intento, descuento) son una ficha posterior opcional, con decisión del docente por actividad (ver **K15**).
+- **C3. Slides no vistos por ruta adaptativa.** Un slide saltado **no genera `ClassResult` ni cuenta en el promedio**, igual que hoy una actividad `manual`/`exclude` (`countsTowardClassGradebookAverage`). Nunca se registra como `0`.
+- **C4. Variables de flujo nunca alimentan la nota.** Ninguna variable ni acción del motor escribe en `ClassResult`, `AutonomousProgress.score` ni en el libro de notas. La acción «sumar a variable» es solo de flujo. Si se quiere gamificación se usa el sistema existente (`xpFromEvaluation`, gamificación de sesión), que ya está separado de la nota.
+- **C5. El cliente informa, el backend califica.** El navegador solo envía la *respuesta*; el backend recalcula con `@lumina/scoring`, como hoy. Lo que el alumno altere localmente (variables, estado) no llega a la nota. La **trazabilidad por indicador (J9)** se hereda del bloque/clase de origen del slide: si una ruta lleva al alumno a otro slide, el resultado cuenta para el indicador *de ese slide*; el editor de rutas (K7/K10) debe hacerlo visible al docente.
+
+**Arquitectura objetivo:**
+
+```
+@lumina/types           VariableDef, Regla, Condicion, Accion, EventoTipo, EstadoObjeto, Capa
+      │
+@lumina/interactions    evaluar(regla, estado, evento) → { estado', efectos[] }   (puro)
+      │                 límite de profundidad, orden determinista, sin eval
+@lumina/element-kit     cada elemento declara `eventos` y recibe `config.emitir()`
+      │
+lumina-frontend         useInteractionRuntime(): estado + ejecuta efectos
+      │                 (navegar, abrir capa, cambiar estado) — inerte en vivo/presentación
+lumina-backend          persiste estado en el progreso autónomo (validado, acotado)
+```
+
+**Orden / dependencias:**
+
+```
+K1 → K2 → K3 → K4 → K5
+                K4 → K6 → K7
+                K4 → K8 → K9 → K10
+K11, K12, K13, K14: independientes entre sí (cada uno nace como ElementDefinition)
+K15: opcional, posterior a K10
+```
+
+K1–K5 entregan un motor funcional **sin interfaz de edición**. **No se abre K6 hasta que K5 esté verificado en un build de producción** (`pnpm build && next start`, no `next dev`). Las fichas K1–K5 están redactadas completas; **K6–K15 están acotadas pero se completan al cerrar K5** (Regla 10: las fichas de una fase futura se redactan con el estado real del código a la vista, no antes).
+
+**Fuera de alcance de la etapa (no pedirlo, no improvisarlo):** variables compartidas en clase en vivo; constructor libre de reglas (v1 usa plantillas, ver K7); exportación SCORM completa; trayectorias de movimiento; biblioteca de personajes; grabación de pantalla.
+
+#### K1 — Tipos del dominio en `@lumina/types`
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** ninguna.
+- **Contexto:** hoy no existe ningún tipo para variables, reglas, condiciones ni estados. `Block` ya admite campos opcionales aditivos (`animaciones?`, `bloqueado?`) y `Slide` también (`transicion?`) — se sigue ese patrón.
+- **Alcance — PUEDE tocar:** `packages/types/src/` — nuevo `interaction.types.ts` (+ subpath `@lumina/types/interaction` en `exports` y `typesVersions`, como `curriculum`): `VariableDef` (`id`, `nombre`, `tipo: 'numero' | 'texto' | 'booleano'`, `valorInicial`), `Condicion` (árbol: comparación `==, !=, <, <=, >, >=`, `y` / `o` / `no`, lectura de variable, de estado de bloque y de resultado de actividad), `Accion` (`ir_a_slide`, `siguiente`, `anterior`, `mostrar`/`ocultar` bloque, `cambiar_estado`, `abrir_capa`/`cerrar_capa`, `asignar_variable`, `sumar_variable`), `Regla` (`id`, `evento`, `condiciones`, `acciones`, `activa`), `EventoTipo` (`clic`, `visitado`, `respuesta_correcta`, `respuesta_incorrecta`, `fin_contador`, `seleccionado`, `al_entrar_slide`), `EstadoObjeto` (`normal | visitado | seleccionado | deshabilitado`), `Capa`. Campos **aditivos y opcionales**: `Class.variables?` (si el tipo de clase vive en `@lumina/types`; si no, documentarlo), `Block.disparadores?`, `Block.estado?`, `Slide.capas?`, `Slide.reglas?`. Specs de forma.
+- **Alcance — NO toca:** `@lumina/scoring`, `element-kit`, frontend, backend. Sin consumidores todavía.
+- **Entregable:** tipos publicados; un slide guardado antes de K1 sigue tipando igual. Verificación: `pnpm --filter @lumina/types build && pnpm --filter @lumina/types test && pnpm --filter @lumina/types lint && cd lumina-frontend && npx tsc --noEmit`.
+- **Cierre:** no aplica Regla 4 (aditivo). Commit sugerido: `feat(types): tipos del motor de interacción (K1)`.
+
+#### K2 — `@lumina/interactions`: evaluador puro de reglas
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** K1 `hecho`.
+- **Contexto:** patrón de paquete dual de `@lumina/scoring` (E6.1: `build` emite ESM + CJS + `dist/cjs/package.json`, `exports` con `require`, `main`/`types` de nivel superior para el backend con `moduleResolution: node`). El motor es **una función pura**: recibe estado + evento y devuelve estado nuevo + lista de efectos; no toca DOM ni red.
+- **Alcance — PUEDE tocar:** nuevo `packages/interactions/**` (`@lumina/interactions`): `evaluarCondicion`, `ejecutarAcciones`, `procesarEvento(reglas, estado, evento) → { estado, efectos }`, `crearEstadoInicial(variables)`, `validarReglas(reglas, contexto)` (nombres de variable y ids de bloque/slide existentes, tipos coherentes). **Protecciones obligatorias:** profundidad máxima de encadenamiento (reglas que disparan reglas), detección de ciclos, límite de efectos por evento, orden determinista de evaluación. **Prohibido** `eval`/`new Function` (D5). Raíz: `pnpm-lock.yaml`; `.github/workflows/ci.yml` job `packages` (build/test/lint tras `@lumina/types`), build en los jobs `frontend` y `backend`.
+- **Alcance — NO toca:** `@lumina/scoring` (C1/C4: el motor no puede importar ni escribir puntajes), frontend, backend runtime, `element-kit`.
+- **Entregable:** pruebas con reglas reales: contador de intentos, «visitar todo para avanzar», pista tras N fallos, **bucle A→B→A cortado por el límite**, tipos inválidos rechazados por `validarReglas`, y una prueba explícita de que **ninguna acción produce efecto sobre puntajes** (C4). Verificación: `pnpm --filter @lumina/interactions build && pnpm --filter @lumina/interactions test && pnpm --filter @lumina/interactions lint && pnpm -r build`.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(interactions): evaluador puro de reglas (K2)`.
+
+#### K3 — Canal de eventos en el contrato de elemento
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** K2 `hecho`.
+- **Contexto:** `ElementViewerProps` es `{ estado, config }` sin forma de emitir. Se agrega por `config` (sin cambiar la firma del contrato ni romper los 45 adapters). Primeros emisores: los más simples y ya con acción propia.
+- **Alcance — PUEDE tocar:** `packages/element-kit-core/src/contract.ts` — `ElementDefinition.eventos?: readonly EventoTipo[]` (los que el elemento puede emitir) y un tipo `ElementRuntimeConfig` con `emitir?(evento): void` y `estadoObjeto?`; `packages/element-kit/src/widgets/{boton,hotspot,contador}/` y sus `elements/*-adapters.tsx` — emitir `clic` / `visitado` / `fin_contador` cuando `config.emitir` exista (sin él, comportamiento idéntico al actual); `catalogo.parity.spec.ts` si el catálogo debe reflejar `eventos`.
+- **Alcance — NO toca:** el resto de elementos (se suman por ficha), `slide-renderer.tsx` (K4), backend.
+- **Entregable:** prueba de **paridad (Regla 7)**: sin `config.emitir`, `boton`/`hotspot`/`contador` rinden y se comportan igual que antes (DOM y acciones legacy). Con `emitir` mock, cada elemento lo llama con el evento esperado. Verificación: `pnpm --filter @lumina/element-kit-core build && test && lint && pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`; conteo de tests del kit sin bajar.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): canal de eventos en el contrato (K3)`.
+
+#### K4 — `useInteractionRuntime` en viewer autónomo y vista previa (+ migrar acciones legacy)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** K3 `hecho`.
+- **Contexto:** es la ficha de mayor riesgo de K1–K5. **Primer paso obligatorio de la ficha: relevar** cuánto estado del reproductor ya vive dentro de `viewer-client.tsx` (816 líneas) y cómo se integra con `preview-client.tsx`; si el estado está muy disperso, **parar** y partir K4 en K4a (runtime + preview) y K4b (viewer autónomo) — no ampliarla (Regla 10). D1: runtime **inerte** en vivo y presentación.
+- **Alcance — PUEDE tocar:** nuevo `lumina-frontend/src/hooks/use-interaction-runtime.ts` (+ spec): mantiene el estado (variables, estados de objeto, capas abiertas, visitados), procesa eventos con `@lumina/interactions`, ejecuta efectos (navegar, cambiar estado, abrir capa) y expone `emitir`/`estadoObjeto` para pasar por `config`; `viewer-client.tsx` y `preview-client.tsx` — instanciar el runtime solo en modo autónomo / `preview`; `slide-renderer.tsx` — **solo** recibir props nuevas (`runtime`) y reenviarlas a `config`, sin sumar lógica de reglas adentro; `lumina-frontend/src/lib/class-slide-normalize.ts` — normalizar `Boton.accion` y `Contador.alTerminar` legados a reglas equivalentes (D6) de forma idempotente; `lumina-frontend/package.json` + `next.config.ts` (`transpilePackages`) + `predev`/`prebuild`, CI job `frontend` — dep de `@lumina/interactions`.
+- **Alcance — NO toca:** `present-client.tsx` (runtime inerte allí, D1), `@lumina/scoring`, el flujo de `ClassResult` (C1/C4), el editor (K6/K7), backend.
+- **Entregable:** (1) en autónomo y preview, un botón con regla `clic → ir_a_slide` navega; hotspot marca `visitado`. (2) En presentación y en vivo, **no cambia nada**. (3) Paridad: las clases guardadas con `Boton.accion`/`Contador.alTerminar` se comportan igual tras la normalización. (4) **C2/C3:** un test confirma que reintentar o saltarse un slide no sobrescribe una nota ya registrada ni crea `ClassResult` para slides no vistos. Verificación: `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm test:visual && pnpm build`, sin bajar conteos de tests ni subir errores de lint; **QA manual en build de producción** (autónomo, preview y presentación) con evidencia de red (`PATCH`/`POST` 2xx) y capturas o descripción.
+- **Cierre (Regla 4):** `Boton.accion` y `Contador.alTerminar` ya no se interpretan por su camino viejo — se borra el despacho legacy en los adapters (o queda `TODO(migración-etapa-K)` con ticket y fecha). Commit sugerido: `feat(editor): runtime de interacción en autónomo y vista previa (K4)`.
+
+#### K5 — Persistencia del estado en modo autónomo
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** K4 `hecho`.
+- **Contexto:** al recargar, el alumno pierde variables y visitados. `AutonomousProgress` guarda una fila por slide con `response Json?`; `POST /autonomous-sessions/:sessionId/progress` ya existe. Hay que decidir (y documentar en el commit) si el estado del motor viaja en una fila propia del progreso o en un campo nuevo de `AutonomousSession`/`AutonomousResult` — **decisión de la ficha tras leer `autonomous-sessions.service.ts` y `save-progress.dto.ts`**.
+- **Alcance — PUEDE tocar:** `lumina-backend/prisma/schema.prisma` + migración **aditiva** (campo Json nullable para el estado del motor, solo si hace falta); `lumina-backend/src/autonomous-sessions/` — guardar y restaurar el estado con validación: nombres y tipos deben coincidir con `Class.variables`, tamaño del payload acotado, rechazo de claves desconocidas; `Roles` explícito en toda ruta nueva (Regla 5); frontend — hidratar `useInteractionRuntime` desde el estado restaurado y guardar con debounce; specs de backend.
+- **Alcance — NO toca:** `ClassResult`, `@lumina/scoring`, cualquier cálculo de nota (C1/C4). El estado del motor **no** participa en `score`.
+- **Entregable:** recargar a mitad de una clase autónoma restaura variables y visitados; un payload con variable inexistente o tipo erróneo se rechaza; manipular el estado en el cliente **no cambia ninguna nota** (C5, con test). Verificación: `cd lumina-backend && npx prisma migrate dev && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA manual en producción. Sin bajar conteos.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(autonomous): persistir estado del motor de interacción (K5)`. **Con K5 `hecho` y verificado en producción se redactan K6–K15 completas.**
+
+#### K6 — Panel de variables y estados de objeto en el editor
+- **Operador:** Claude Code / Cursor (a definir al cerrar K5)
+- **Estado:** pendiente — **acotada, se completa al cerrar K5** (Regla 10).
+- **Precondición:** K4 `hecho`, K5 `hecho` y verificado en producción.
+- **Alcance previsto:** declarar variables (nombre, tipo, valor inicial) en el editor; estados de objeto (`normal | visitado | seleccionado | deshabilitado`) en el panel de propiedades de los elementos que los soporten; **ampliar `editor/lib/slide-block-patch.ts` (+ spec) para que `disparadores`, `estado` y `capas` entren al historial por diferencia** (deshacer/rehacer no puede dejar reglas huérfanas).
+- **Riesgo declarado:** historial inconsistente si el diff no conoce los campos nuevos.
+
+#### K7 — Reglas por plantillas + integridad referencial
+- **Operador:** a definir al cerrar K5
+- **Estado:** pendiente — **acotada, se completa al cerrar K5**.
+- **Precondición:** K6 `hecho`.
+- **Alcance previsto:** plantillas fijas, **no** un constructor libre: «bloquear avance hasta visitar todo», «mostrar pista tras N intentos», «ir a refuerzo si falla». **Integridad referencial:** al borrar, duplicar, pegar o reordenar un bloque o slide, las reglas se limpian o se remapean (duplicar un slide con reglas remapea sus ids internos; borrar un bloque elimina o desactiva las reglas que lo referencian) — con pruebas dedicadas. Si una ruta lleva a un slide con **otro indicador**, el editor lo muestra (C5).
+- **Riesgo declarado:** referencias rotas silenciosas; usabilidad del editor de reglas.
+
+#### K8 — Capas de slide (generalizar `popup`)
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada, se completa al cerrar K5**.
+- **Precondición:** K4 `hecho`.
+- **Alcance previsto:** `Slide.capas` con acciones `abrir_capa`/`cerrar_capa`; `popup` pasa a ser un caso de capa o convive sin duplicar camino (Regla 4: decidir al ejecutar y documentar).
+
+#### K9 — Bloqueo de navegación y slide de resultados
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada, se completa al cerrar K5**.
+- **Precondición:** K7 `hecho`, K8 `hecho`.
+- **Alcance previsto:** bloqueo de «siguiente» por regla (solo autónomo/preview, D1); slide de resultados que **lee** las bandas de `@lumina/scoring` (`NOTA_COLOMBIANA_BANDAS`, `clasificarNotaColombiana`) sin recalcular nada propio (C1); bancos de preguntas al azar sobre las actividades de quiz existentes. **Aplica C3** (slides no vistos no cuentan).
+
+#### K10 — Ruta adaptativa por indicador de desempeño
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada, se completa al cerrar K5**.
+- **Precondición:** K9 `hecho`.
+- **Alcance previsto:** condiciones que leen el resultado por indicador (apoyadas en J9 / `performanceIndicatorId`) para encaminar al alumno (p. ej. «indicador X por debajo de Básico → slide de refuerzo»). **Antes de ejecutar:** leer `grade-calculation.service.ts` y confirmar que ninguna ruta distorsiona el cálculo ponderado; aplica **C3 y C5**. Es el diferenciador de Lumina frente a Storyline.
+
+#### K11 — Slider y dial (entrada numérica evaluable)
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada**, independiente del motor.
+- **Alcance previsto:** dos `ElementDefinition` nuevos (Regla 3) con `puntuacion` delegada a `@lumina/scoring` (nuevo `ActivityScoringKind` si hace falta, con fixture en `@lumina/scoring/fixtures` y paridad), paridad de DOM, registro único. Casos de uso: física, matemáticas, ciencias.
+
+#### K12 — Acordeón y panel con scroll
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada**, independiente del motor.
+- **Alcance previsto:** dos widgets del patrón `packages/element-kit/src/widgets/<w>/` (familia Lienzo), `ElementDefinition` completo, sin `puntuacion`, paridad de DOM.
+
+#### K13 — Escenas (agrupar slides)
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada**.
+- **Alcance previsto:** agrupación de slides con nombre; evaluar mapeo a unidad/indicador (J6/J9). Requiere decisión de modelo de datos (¿campo en `Slide` o entidad nueva?) al redactarla completa.
+
+#### K14 — Menú, glosario y recursos del reproductor + pasada de accesibilidad
+- **Operador:** a definir
+- **Estado:** pendiente — **acotada**.
+- **Alcance previsto:** menú de slides, glosario y recursos en el reproductor; pasada de accesibilidad (orden de foco, teclado, `alt`, lectores de pantalla) sobre el reproductor y los elementos nuevos. **No se relevó el estado actual de accesibilidad** — el primer paso de la ficha es medirlo (qué ya existe) antes de prometer alcance.
+
+#### K15 — Reintentos calificados (opcional, posterior a K10)
+- **Operador:** a definir
+- **Estado:** pendiente — **opcional; no se redacta completa sin decisión del docente/producto**.
+- **Precondición:** K10 `hecho`.
+- **Contexto:** C2 fija «solo la primera respuesta» para v1. Esta ficha existe para el día que se quiera «mejor intento» o «descuento por pista». Exige: campo de intento por slide (migración sobre `ClassResult`/`AutonomousProgress`, que hoy tienen unicidad por slide/sesión), decisión **del docente por actividad**, helper en `@lumina/scoring` con **fixtures de paridad nuevos** (Regla 7: reintento, pista, slide saltado) y revisión del cálculo ponderado de `grade-calculation.service.ts`. **No se ejecuta sin esa decisión explícita.**
+
 ### Migración a Estructura Única — fichas por etapa
 
 Regla 1: no se abre una etapa sin cerrar la anterior. Cada etapa arranca por su ficha «raíz»; las sub-fichas se redactan cuando la etapa se vuelve activa, con el estado real del código a la vista.
