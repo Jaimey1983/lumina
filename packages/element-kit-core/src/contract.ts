@@ -1,4 +1,8 @@
 import type { ComponentType } from "react";
+import type {
+  EstadoObjeto,
+  EventoTipo,
+} from "@lumina/types/interaction";
 
 /** Capacidades de apariencia que expone el panel de cada elemento. */
 export interface AparienciaSpec {
@@ -21,6 +25,35 @@ export interface ElementCatalogo {
   readonly grupo?: string;
   /** Identificador que usa el panel de drag&drop cuando difiere de `tipo`. */
   readonly panelType?: string;
+}
+
+/**
+ * Canal de runtime que el REPRODUCTOR le entrega a un elemento (Etapa K / K3).
+ * Es opcional por completo: sin él, el elemento se comporta exactamente como
+ * antes de existir el motor de interacción. El contrato no lo exige — los
+ * `TConfig` de cada elemento lo incluyen (p. ej. `WidgetCanvasConfig`).
+ *
+ * El elemento solo dice QUÉ pasó (`emitir('clic')`); no sabe de reglas, de
+ * variables ni de otros bloques. Quién escucha, y a qué bloque y slide
+ * corresponde el evento, lo resuelve el runtime (K4), que construye un
+ * `emitir` ya atado al bloque.
+ *
+ * C1/C4: el canal no transporta notas ni puntajes. Calificar sigue siendo
+ * trabajo de `PuntuacionDelegate` + `@lumina/scoring`.
+ */
+export interface ElementRuntimeConfig {
+  /**
+   * Id estable del bloque (D8). Informativo: `emitir` ya viene atado a él.
+   * Ausente = el bloque no participa en reglas.
+   */
+  readonly bloqueId?: string;
+  /** Avisa al motor de que ocurrió un evento. Ausente = no hay motor (clase en vivo, presentación, miniatura). */
+  readonly emitir?: (evento: EventoTipo) => void;
+  /**
+   * Estado de objeto actual del bloque según el motor. Sirve para no repetir
+   * eventos de una sola vez (p. ej. no volver a emitir `visitado` si ya lo está).
+   */
+  readonly estadoObjeto?: EstadoObjeto;
 }
 
 export interface ElementViewerProps<TState, TConfig> {
@@ -70,6 +103,12 @@ export interface ElementDefinition<TState, TConfig> {
   readonly puntuacion?: PuntuacionDelegate<TState>;
   /** Metadata para los paneles de inserción del editor (E7.1). */
   readonly catalogo?: ElementCatalogo;
+  /**
+   * Eventos que este elemento puede emitir por `ElementRuntimeConfig.emitir`
+   * (Etapa K / K3). El editor de reglas solo ofrece estos como disparadores.
+   * Ausente = el elemento no emite eventos.
+   */
+  readonly eventos?: readonly EventoTipo[];
   /**
    * Galería de plantillas o presets preconfigurados para el elemento (E8).
    * `ElementPreset` acepta parches tanto de estado (`patch`) como de

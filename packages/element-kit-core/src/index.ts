@@ -5,6 +5,7 @@ export type {
   ElementEditorProps,
   ElementPreset,
   ElementPropsPanelProps,
+  ElementRuntimeConfig,
   ElementViewerProps,
   PuntuacionDelegate,
 } from "./contract.js";

@@ -58,6 +58,8 @@ export const contadorDefinition = {
     animacion: false,
   },
   catalogo: CATALOGO_ELEMENTOS["contador"],
+  // Etapa K / K3: eventos que este elemento emite por `config.emitir`.
+  eventos: ["fin_contador"],
   presets: CONTADOR_PRESETS,
 } as const satisfies ElementDefinition<ContadorEstado, ContadorConfig>;
 

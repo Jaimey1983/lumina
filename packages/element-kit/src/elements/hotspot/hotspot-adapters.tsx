@@ -41,6 +41,8 @@ export function HotspotViewer({
     <LegacyHotspotViewer
       block={estado}
       isThumbnail={config.isThumbnail === true}
+      emitir={config.emitir}
+      estadoObjeto={config.estadoObjeto}
     />
   );
 }

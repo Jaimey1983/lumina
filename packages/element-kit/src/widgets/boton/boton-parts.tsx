@@ -42,6 +42,8 @@ interface BotonPartsProps {
   disabled?: boolean;
   href?: string | null;
   onActivate?: () => void;
+  /** Etapa K / K3: clic en el enlace (acción `url`), que no pasa por `onActivate`. */
+  onLinkClick?: () => void;
   onSelect?: () => void;
 }
 
@@ -51,6 +53,7 @@ export function BotonParts({
   disabled = false,
   href,
   onActivate,
+  onLinkClick,
   onSelect,
 }: BotonPartsProps) {
   const cfg = mergedBotonConfig(block);
@@ -83,7 +86,10 @@ export function BotonParts({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={(e) => stopWidgetInnerPointer(e)}
+        onClick={(e) => {
+          stopWidgetInnerPointer(e);
+          onLinkClick?.();
+        }}
       >
         {cfg.texto}
       </a>

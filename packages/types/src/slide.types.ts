@@ -1583,6 +1583,13 @@ export type Block = (
   /** Ángulo de rotación en grados (0–360). */
   rotacion?: number;
   /**
+   * Id estable del bloque (Etapa K / D8). Opcional: lo asigna el editor de
+   * forma perezosa cuando el bloque pasa a participar en una regla (K6/K7).
+   * Sin id, el bloque no puede ser dueño ni objetivo de reglas. Los bloques que
+   * ya lo traen (imagen, video, gráfico…) lo conservan.
+   */
+  id?: string;
+  /**
    * Reglas que reaccionan a eventos de este bloque (Etapa K / K1).
    * Solo se evalúan en modo autónomo y vista previa (D1).
    */
