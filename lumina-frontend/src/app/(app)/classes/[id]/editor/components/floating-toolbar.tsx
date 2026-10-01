@@ -58,6 +58,7 @@ import {
   type HistoryViewItem,
 } from '../lib/canvas-history';
 import type { LayerReorderAction } from '@/lib/canvas-layers';
+import { EDITOR_Z } from '@lumina/editor-shared/z-layers';
 import { backgroundToCssStyle } from '@/lib/slide-background';
 import { DesignBackgroundPopover } from './design-background-popover';
 
@@ -870,7 +871,7 @@ export function FloatingToolbar({
         position: 'fixed',
         left: position.x,
         top: position.y,
-        zIndex: 50,
+        zIndex: EDITOR_Z.blockActionsBar,
         transform: 'translateX(-50%)',
       }}
       className={cn(
