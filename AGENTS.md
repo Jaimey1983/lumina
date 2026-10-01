@@ -1278,7 +1278,7 @@ K1–K5 entregan un motor funcional **sin interfaz de edición**. **No se abre K
 
 #### K1 — Tipos del dominio en `@lumina/types`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Contexto:** hoy no existe ningún tipo para variables, reglas, condiciones ni estados. `Block` ya admite campos opcionales aditivos (`animaciones?`, `bloqueado?`) y `Slide` también (`transicion?`) — se sigue ese patrón.
 - **Alcance — PUEDE tocar:** `packages/types/src/` — nuevo `interaction.types.ts` (+ subpath `@lumina/types/interaction` en `exports` y `typesVersions`, como `curriculum`): `VariableDef` (`id`, `nombre`, `tipo: 'numero' | 'texto' | 'booleano'`, `valorInicial`), `Condicion` (árbol: comparación `==, !=, <, <=, >, >=`, `y` / `o` / `no`, lectura de variable, de estado de bloque y de resultado de actividad), `Accion` (`ir_a_slide`, `siguiente`, `anterior`, `mostrar`/`ocultar` bloque, `cambiar_estado`, `abrir_capa`/`cerrar_capa`, `asignar_variable`, `sumar_variable`), `Regla` (`id`, `evento`, `condiciones`, `acciones`, `activa`), `EventoTipo` (`clic`, `visitado`, `respuesta_correcta`, `respuesta_incorrecta`, `fin_contador`, `seleccionado`, `al_entrar_slide`), `EstadoObjeto` (`normal | visitado | seleccionado | deshabilitado`), `Capa`. Campos **aditivos y opcionales**: `Class.variables?` (si el tipo de clase vive en `@lumina/types`; si no, documentarlo), `Block.disparadores?`, `Block.estado?`, `Slide.capas?`, `Slide.reglas?`. Specs de forma.
