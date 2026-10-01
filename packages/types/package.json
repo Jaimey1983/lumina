@@ -10,7 +10,8 @@
     "./widget": { "types": "./dist/widget.types.d.ts", "import": "./dist/widget.types.js" },
     "./animation": { "types": "./dist/animation.types.d.ts", "import": "./dist/animation.types.js" },
     "./autonomous": { "types": "./dist/autonomous.types.d.ts", "import": "./dist/autonomous.types.js" },
-    "./curriculum": { "types": "./dist/curriculum.types.d.ts", "import": "./dist/curriculum.types.js" }
+    "./curriculum": { "types": "./dist/curriculum.types.d.ts", "import": "./dist/curriculum.types.js" },
+    "./interaction": { "types": "./dist/interaction.types.d.ts", "import": "./dist/interaction.types.js" }
   },
   "typesVersions": {
     "*": {
@@ -19,7 +20,8 @@
       "widget": ["dist/widget.types.d.ts"],
       "animation": ["dist/animation.types.d.ts"],
       "autonomous": ["dist/autonomous.types.d.ts"],
-      "curriculum": ["dist/curriculum.types.d.ts"]
+      "curriculum": ["dist/curriculum.types.d.ts"],
+      "interaction": ["dist/interaction.types.d.ts"]
     }
   },
   "scripts": {

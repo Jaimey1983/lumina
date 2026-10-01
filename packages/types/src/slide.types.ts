@@ -1582,6 +1582,13 @@ export type Block = (
   canvasLocked?: boolean;
   /** Ángulo de rotación en grados (0–360). */
   rotacion?: number;
+  /**
+   * Reglas que reaccionan a eventos de este bloque (Etapa K / K1).
+   * Solo se evalúan en modo autónomo y vista previa (D1).
+   */
+  disparadores?: import('./interaction.types.js').Regla[];
+  /** Estado de objeto inicial (Etapa K / K1). Por defecto `'normal'`. */
+  estado?: import('./interaction.types.js').EstadoObjeto;
 };
 
 export type BlockTipo = Block['tipo'];
@@ -1683,6 +1690,10 @@ export interface Slide {
    */
   timer?: number;
   transicion?: import('./animation.types.js').TransicionSlide;
+  /** Capas superpuestas al slide base (Etapa K / K1). */
+  capas?: import('./interaction.types.js').Capa[];
+  /** Reglas del slide, p. ej. `al_entrar_slide` (Etapa K / K1). */
+  reglas?: import('./interaction.types.js').Regla[];
 }
 
 // ─── SlideClass ───────────────────────────────────────────────────────────────
@@ -1712,6 +1723,12 @@ export interface SlideClass {
   modoEntrega?: ClassModoEntrega;
   status: SlideClassStatus;
   slides: Slide[];
+  /**
+   * Variables de la clase, locales por alumno (Etapa K / K1, D2–D3).
+   * Nota: `ClassDetail` del frontend (`use-class.ts`) es un tipo aparte;
+   * se alinea en K4/K5 cuando haya consumidor.
+   */
+  variables?: import('./interaction.types.js').VariableDef[];
   createdAt: string;
   updatedAt?: string;
 }
