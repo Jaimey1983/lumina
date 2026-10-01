@@ -8,6 +8,7 @@ const BLOCK_TIPO_LABEL: Record<string, string> = {
   audio: 'Audio',
   actividad: 'Actividad',
   separador: 'Línea',
+  ecuacion: 'Ecuación',
   'clip-group': 'Recorte',
   'flip-cards': 'Flip Cards',
   tabs: 'Tabs',

@@ -14,6 +14,7 @@ import {
   MousePointer2,
   PanelTop,
   ScanFace,
+  Sigma,
   Shapes,
   Target,
   RotateCw,
@@ -87,6 +88,7 @@ const BASIC_KIND: Partial<Record<BlockTipo, string>> = {
   codigo: 'Código',
   cita: 'Cita',
   separador: 'Separador',
+  ecuacion: 'Ecuación',
   columnas: 'Columnas',
   actividad: 'Actividad',
 };
@@ -100,6 +102,7 @@ const BASIC_ICON: Partial<Record<BlockTipo, LucideIcon>> = {
   codigo: FileText,
   cita: MessageSquare,
   separador: Minus,
+  ecuacion: Sigma,
   columnas: Columns2,
   actividad: Activity,
 };
@@ -178,6 +181,8 @@ export function getBlockLayerLabel(block: Block): string {
       return truncate(block.url || 'Video');
     case 'separador':
       return 'Línea';
+    case 'ecuacion':
+      return truncate(block.latex || 'Ecuación');
     case 'clip-group':
       return truncate(
         block.contenido.tipo === 'imagen'

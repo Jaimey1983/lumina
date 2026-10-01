@@ -5,6 +5,7 @@ import { Calculator, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@lumina/ui/button';
+import { EquationComposer } from '@lumina/editor-shared/rich-text/equation-composer';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Label } from '@lumina/ui/label';
 import {
@@ -49,14 +50,16 @@ function previewLine(item: {
 interface Props {
   hasActivity?: boolean;
   onInsertActivity?: (activityContent: Record<string, unknown>) => void;
+  onInsertEquation?: (latex: string) => void;
 }
 
-export function MathGeneratorPanel({ hasActivity, onInsertActivity }: Props) {
+export function MathGeneratorPanel({ hasActivity, onInsertActivity, onInsertEquation }: Props) {
   const [tema, setTema] = useState<MathTema>('suma');
   const [grado, setGrado] = useState('2');
   const [formato, setFormato] = useState<MathFormato>('quiz_multiple');
   const [cantidad, setCantidad] = useState('8');
   const [sinLlevar, setSinLlevar] = useState(true);
+  const [ecuacion, setEcuacion] = useState('');
   const [seed, setSeed] = useState(1);
 
   const esSumaResta = tema === 'suma' || tema === 'resta';
@@ -75,6 +78,15 @@ export function MathGeneratorPanel({ hasActivity, onInsertActivity }: Props) {
     [tema, grado, formato, cantidadEfectiva, seed, esSumaResta, sinLlevar],
   );
 
+  const handleColocarEcuacion = () => {
+    const tex = ecuacion.trim();
+    if (!tex) {
+      toast.error('Escribe una ecuación antes de colocarla');
+      return;
+    }
+    onInsertEquation?.(tex);
+  };
+
   const handleInsertar = () => {
     const activity = toSingleEditorActivity(items);
     onInsertActivity?.(activity as unknown as Record<string, unknown>);
@@ -86,7 +98,30 @@ export function MathGeneratorPanel({ hasActivity, onInsertActivity }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+      <section className="flex flex-col gap-2">
+        <div>
+          <p className="text-xs font-semibold text-foreground">Escribir ecuación</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            Arma la fórmula con los signos y colócala en el slide como un bloque.
+          </p>
+        </div>
+        <EquationComposer value={ecuacion} onChange={setEcuacion} density="panel" />
+        <Button
+          size="sm"
+          className="w-full"
+          disabled={hasActivity || ecuacion.trim() === ''}
+          onClick={handleColocarEcuacion}
+        >
+          Colocar en el slide
+        </Button>
+      </section>
+
+      <details className="rounded-md border border-border">
+        <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-foreground">
+          Quiz de ejercicios
+        </summary>
+        <div className="flex flex-col gap-3 border-t border-border p-3">
       {hasActivity && (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
           Este slide ya tiene una actividad. Elimínala para agregar otra.
@@ -215,6 +250,8 @@ export function MathGeneratorPanel({ hasActivity, onInsertActivity }: Props) {
         <Calculator className="size-3.5" />
         Insertar en el slide
       </Button>
+        </div>
+      </details>
     </div>
   );
 }

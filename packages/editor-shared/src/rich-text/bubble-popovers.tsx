@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -97,7 +96,13 @@ function PopoverFrame({
   label,
   children,
   onSubmit,
-}: PopoverShellProps & { label: string; children: ReactNode; onSubmit?: () => void }) {
+  frameStyle,
+}: PopoverShellProps & {
+  label: string;
+  children: ReactNode;
+  onSubmit?: () => void;
+  frameStyle?: CSSProperties;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.querySelector<HTMLElement>('input, textarea, select')?.focus();
@@ -108,7 +113,13 @@ function PopoverFrame({
       data-rich-text-safe=""
       role="dialog"
       aria-label={label}
-      style={{ ...shell, top: pos.top, left: pos.left, transform: 'translate(-50%, 0)' }}
+      style={{
+        ...shell,
+        ...frameStyle,
+        top: pos.top,
+        left: pos.left,
+        transform: 'translate(-50%, 0)',
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -376,115 +387,7 @@ export function CodeBlockPopover({ editor, pos, onClose }: PopoverShellProps) {
   );
 }
 
-// ─── Fórmula LaTeX (con preview en vivo) ─────────────────────────────────────
-
-type KatexModule = { renderToString: (tex: string, opts?: Record<string, unknown>) => string };
-
-export function MathPopover({ editor, pos, onClose }: PopoverShellProps) {
-  const [value, setValue] = useState(
-    (editor.getAttributes('math').latex as string | undefined) ?? '',
-  );
-  const [katex, setKatex] = useState<KatexModule | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    Promise.all([
-      import('katex'),
-      import('katex/dist/katex.min.css').catch(() => null),
-    ])
-      .then(([m]) => {
-        if (alive) setKatex((m as { default: KatexModule }).default);
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const preview = useMemo(() => {
-    const tex = value.trim();
-    if (!katex || tex === '') return null;
-    try {
-      return katex.renderToString(tex, {
-        throwOnError: false,
-        displayMode: true,
-        output: 'html',
-      });
-    } catch {
-      return null;
-    }
-  }, [katex, value]);
-
-  const apply = () => {
-    const tex = value.trim();
-    if (tex === '') {
-      onClose();
-      return;
-    }
-    if (editor.isActive('math')) {
-      editor.chain().focus().updateAttributes('math', { latex: tex }).run();
-    } else {
-      editor.chain().focus().insertContent({ type: 'math', attrs: { latex: tex } }).run();
-    }
-    onClose();
-  };
-
-  return (
-    <PopoverFrame
-      editor={editor}
-      pos={pos}
-      onClose={onClose}
-      label="Fórmula LaTeX"
-      onSubmit={apply}
-    >
-      <label style={{ fontWeight: 600 }}>Fórmula en LaTeX</label>
-      <textarea
-        style={{ ...inputStyle, height: 52, padding: 6, fontFamily: 'monospace', resize: 'vertical' }}
-        placeholder="\\frac{a}{b} = c^2"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-      <div
-        style={{
-          minHeight: 40,
-          padding: 8,
-          borderRadius: 6,
-          background: 'var(--muted, #f8fafc)',
-          overflowX: 'auto',
-          textAlign: 'center',
-        }}
-        aria-live="polite"
-      >
-        {preview ? (
-          <span dangerouslySetInnerHTML={{ __html: preview }} />
-        ) : (
-          <span style={{ color: 'var(--muted-foreground, #94a3b8)', fontFamily: 'monospace' }}>
-            {value.trim() === '' ? 'Vista previa' : value}
-          </span>
-        )}
-      </div>
-      <Row>
-        {editor.isActive('math') ? (
-          <Btn
-            variant="danger"
-            onClick={() => {
-              editor.chain().focus().deleteSelection().run();
-              onClose();
-            }}
-          >
-            Quitar
-          </Btn>
-        ) : null}
-        <Btn onClick={onClose}>Cancelar</Btn>
-        <Btn variant="primary" onClick={apply}>
-          {editor.isActive('math') ? 'Aplicar' : 'Insertar'}
-        </Btn>
-      </Row>
-    </PopoverFrame>
-  );
-}
-
-export type BubblePopoverId = 'link' | 'slideRef' | 'term' | 'codeBlock' | 'math';
+export type BubblePopoverId = 'link' | 'slideRef' | 'term' | 'codeBlock';
 
 export function BubblePopover({
   id,
@@ -499,7 +402,5 @@ export function BubblePopover({
       return <TermPopover {...props} />;
     case 'codeBlock':
       return <CodeBlockPopover {...props} />;
-    case 'math':
-      return <MathPopover {...props} />;
   }
 }

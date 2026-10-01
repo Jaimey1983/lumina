@@ -55,6 +55,8 @@ export interface RightFlyoutPanelProps {
   hasActivity?: boolean;
   /** Inserta una actividad generada por IA en el slide actual (o crea uno nuevo). */
   onInsertActivity?: (activityContent: Record<string, unknown>) => void;
+  /** Coloca un bloque de ecuación (texto con nodo math) en el slide actual. */
+  onInsertEquation?: (latex: string) => void;
   liveResponses?: Map<string, { activityType: string; responses: StudentResponse[] }>;
   activeSlideId?: string;
   activeSlideIndex?: number;
@@ -91,6 +93,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       curricularContext,
       hasActivity,
       onInsertActivity,
+      onInsertEquation,
       liveResponses,
       activeSlideId,
       activeSlideIndex,
@@ -114,18 +117,22 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
           'motion-safe:transition-[width,box-shadow,opacity] motion-safe:duration-200 motion-safe:ease-out',
           'motion-reduce:transition-none',
           activePanel
-            ? activePanel === 'themes' || activePanel === 'math'
-              ? 'w-80 opacity-100'
-              : 'w-64 opacity-100'
+            ? activePanel === 'math'
+              ? 'w-96 opacity-100'
+              : activePanel === 'themes'
+                ? 'w-80 opacity-100'
+                : 'w-64 opacity-100'
             : 'w-0 border-transparent opacity-0 shadow-none',
         )}
       >
       {activePanel && (
         <div
           className={cn(
-            activePanel === 'themes' || activePanel === 'math'
-              ? 'flex h-full w-80 flex-col'
-              : 'flex h-full w-64 flex-col',
+            activePanel === 'math'
+              ? 'flex h-full w-96 flex-col'
+              : activePanel === 'themes'
+                ? 'flex h-full w-80 flex-col'
+                : 'flex h-full w-64 flex-col',
             'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200',
             'motion-reduce:animate-none',
           )}
@@ -168,6 +175,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
               <MathGeneratorPanel
                 hasActivity={hasActivity}
                 onInsertActivity={onInsertActivity}
+                onInsertEquation={onInsertEquation}
               />
             )}
             {activePanel === 'themes' && onApplyThemeToSlide && onApplyThemeToAllSlides && onSaveCustomThemes && (

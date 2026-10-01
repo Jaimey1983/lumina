@@ -822,6 +822,33 @@ export interface QuoteBlock {
   fuente?: string;
 }
 
+/**
+ * Bloque de ecuación (LaTeX + KaTeX). Es un bloque propio del lienzo: se mueve,
+ * redimensiona y edita desde su panel de propiedades, sin pasar por el editor
+ * de texto enriquecido (las fórmulas viejas siguen siendo nodos `math`).
+ */
+export interface EquationBlock {
+  tipo: 'ecuacion';
+  id?: string;
+  /** Fórmula en LaTeX (sin delimitadores `$`). */
+  latex: string;
+  /** Tamaño base en px virtuales del lienzo (por defecto 36). */
+  tamano?: number;
+  color?: string;
+  alineacion?: 'izquierda' | 'centro' | 'derecha';
+  /** Fondo del bloque (hex); vacío = transparente. */
+  fondo?: string;
+  /** Si la fórmula no cabe en la caja, se reduce hasta caber (por defecto true). */
+  ajustar?: boolean;
+  /** Texto para lectores de pantalla; si falta se usa el LaTeX. */
+  descripcionAccesible?: string;
+  x?: number;
+  y?: number;
+  ancho?: number;
+  alto?: number;
+  zIndex?: number;
+}
+
 export interface DividerBlock {
   tipo: 'separador';
   id?: string;
@@ -1554,6 +1581,7 @@ export type Block = (
   | CodeBlock
   | QuoteBlock
   | DividerBlock
+  | EquationBlock
   | ColumnsBlock
   | ClipGroupBlock
   | GraficoDatosBlock
@@ -1723,6 +1751,7 @@ export const BLOCK_FALLBACKS = {
   text:  { x: 10, y: 10, ancho: 80, alto: 20 },
   image: { x: 25, y: 25, ancho: 50, alto: 50 },
   separador: { x: 15, y: 48, ancho: 70, alto: 3 },
+  ecuacion: { x: 12, y: 30, ancho: 76, alto: 22 },
   clipGroup: { x: 30, y: 25, ancho: 40, alto: 50 },
   video: { x: 10, y: 30, ancho: 80, alto: 40 },
   flipCards: { x: 5, y: 5, ancho: 90, alto: 90 },

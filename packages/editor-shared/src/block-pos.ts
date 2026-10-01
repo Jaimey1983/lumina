@@ -70,6 +70,15 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  block.alto  ?? fb.alto,
       };
     }
+    case 'ecuacion': {
+      const fb = BLOCK_FALLBACKS.ecuacion;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
     case 'clip-group': {
       const fb = BLOCK_FALLBACKS.clipGroup;
       return {

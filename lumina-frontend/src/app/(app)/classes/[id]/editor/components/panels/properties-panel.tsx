@@ -1402,6 +1402,7 @@ export function PropertiesPanel({
     block.tipo !== 'texto' &&
     block.tipo !== 'imagen' &&
     block.tipo !== 'separador' &&
+    block.tipo !== 'ecuacion' &&
     block.tipo !== 'clip-group' &&
     block.tipo !== 'video' &&
     block.tipo !== 'audio' &&
@@ -1473,6 +1474,7 @@ export function PropertiesPanel({
                 (block.tipo === 'texto' ||
                   block.tipo === 'imagen' ||
                   block.tipo === 'separador' ||
+                  block.tipo === 'ecuacion' ||
                   block.tipo === 'video' ||
                   block.tipo === 'audio' ||
                   block.tipo === 'codigo' ||

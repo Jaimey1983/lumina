@@ -13,6 +13,10 @@
       "types": "./dist/rich-text/index.d.ts",
       "default": "./dist/rich-text/index.js"
     },
+    "./rich-text/equation-composer": {
+      "types": "./dist/rich-text/equation-composer.d.ts",
+      "default": "./dist/rich-text/equation-composer.js"
+    },
     "./*.css": "./dist/*.css",
     "./*": {
       "types": "./dist/*.d.ts",

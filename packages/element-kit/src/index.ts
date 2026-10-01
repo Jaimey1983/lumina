@@ -26,6 +26,7 @@ export * from "./elements/audio/index.js";
 export * from "./elements/codigo/index.js";
 export * from "./elements/cita/index.js";
 export * from "./elements/separador/index.js";
+export * from "./elements/ecuacion/index.js";
 export * from "./elements/columnas/index.js";
 import { graficoDefinition } from "./elements/grafico/grafico-definition.js";
 import { diagramaDefinition } from "./elements/diagrama/diagrama-definition.js";
@@ -37,6 +38,7 @@ import { audioDefinition } from "./elements/audio/audio-definition.js";
 import { codigoDefinition } from "./elements/codigo/codigo-definition.js";
 import { citaDefinition } from "./elements/cita/cita-definition.js";
 import { separadorDefinition } from "./elements/separador/separador-definition.js";
+import { ecuacionDefinition } from "./elements/ecuacion/ecuacion-definition.js";
 import { columnasDefinition } from "./elements/columnas/columnas-definition.js";
 export type {
   AparienciaSpec,
@@ -483,6 +485,7 @@ export type ElementCatalog = {
   codigo: typeof codigoDefinition;
   cita: typeof citaDefinition;
   separador: typeof separadorDefinition;
+  ecuacion: typeof ecuacionDefinition;
   columnas: typeof columnasDefinition;
 };
 elementRegistry.registrar(botonDefinition);
@@ -535,6 +538,7 @@ elementRegistry.registrar(audioDefinition);
 elementRegistry.registrar(codigoDefinition);
 elementRegistry.registrar(citaDefinition);
 elementRegistry.registrar(separadorDefinition);
+elementRegistry.registrar(ecuacionDefinition);
 elementRegistry.registrar(columnasDefinition);
 elementRegistry.registrar(imageCompareDefinition);
 elementRegistry.registrar(checklistDefinition);

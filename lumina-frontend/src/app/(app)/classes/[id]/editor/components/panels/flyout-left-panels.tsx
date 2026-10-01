@@ -27,6 +27,7 @@ import {
   Disc,
   GitFork,
   HeartHandshake,
+  Sigma,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -105,6 +106,7 @@ import {
 } from '@lumina/curriculum-data';
 import type { AreaCurricular, GradoEscolar, CurriculumData, UnidadCurricular } from '@lumina/types/curriculum';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
+import { createDefaultEcuacionBlock } from '@lumina/element-kit/blocks/ecuacion/ecuacion-defaults';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { ImagesElementPanel } from './images-element-panel';
 import { ClipMasksPanel } from './clip-masks-panel';
@@ -640,6 +642,12 @@ function ElementosPanel({
             icon={Minus}
             disabled={disabledNonText}
             onClick={() => add(createDefaultSeparadorBlock())}
+          />
+          <InsertBtn
+            label="Ecuación"
+            icon={Sigma}
+            disabled={disabledNonText}
+            onClick={() => add(createDefaultEcuacionBlock())}
           />
           <InsertBtn
             label="Cita"
