@@ -8,6 +8,19 @@ import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 const ACTIVITY_FALLBACK = { x: 5, y: 5, ancho: 90, alto: 90 } as const;
 const DEFAULT_FALLBACK  = { x: 5, y: 5, ancho: 90, alto: 90 } as const;
 
+/**
+ * Capa (z-index) efectiva de un bloque sin `zIndex`. Fuente única: la usan el
+ * render (`blockPosToStyle`, `slide-renderer`) y la lógica de capas
+ * (`canvas-layers`), para que panel y lienzo no discrepen.
+ */
+export const DEFAULT_BLOCK_Z = 1;
+
+/** z efectivo de un bloque (el guardado, o `DEFAULT_BLOCK_Z` si no tiene). */
+export function getEffectiveBlockZ(block: Block): number {
+  const z = (block as { zIndex?: number }).zIndex;
+  return typeof z === 'number' && Number.isFinite(z) ? z : DEFAULT_BLOCK_Z;
+}
+
 export interface BlockPos {
   x: number;
   y: number;

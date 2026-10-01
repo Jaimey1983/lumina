@@ -23,6 +23,7 @@ import { getEqualGapSnapTargets } from '@/lib/canvas-spacing';
 import {
   getBlockPos,
   activityMarcoOrFallback,
+  getEffectiveBlockZ,
   type BlockPos,
 } from '@lumina/editor-shared/block-pos';
 export { getBlockPos, type BlockPos } from '@lumina/editor-shared/block-pos';
@@ -298,7 +299,7 @@ export function withRotation(block: Block, rotacion: number): Block {
 /** Estilo CSS absolute (% del lienzo) derivado del contrato canónico `getBlockPos`. */
 export function blockPosToStyle(
   block: Block,
-  zIndex = (block as { zIndex?: number }).zIndex ?? 1,
+  zIndex = getEffectiveBlockZ(block),
 ): {
   position: 'absolute';
   left: string;
