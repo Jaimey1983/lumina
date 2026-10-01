@@ -27,6 +27,7 @@ import {
 import { ResizeHandles } from './resize-handles';
 import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
+import { getEffectiveBlockZ } from '@lumina/editor-shared/block-pos';
 import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
 
 import type {
@@ -1743,7 +1744,7 @@ export function SlideRenderer({
           top: `${currentCoords.y}%`,
           width: `${currentCoords.ancho}%`,
           height: `${currentCoords.alto}%`,
-          zIndex: (block as { zIndex?: number }).zIndex ?? 1,
+          zIndex: getEffectiveBlockZ(block),
           transform: currentRot ? `rotate(${currentRot}deg)` : undefined,
           transformOrigin: currentRot ? 'center center' : undefined,
         } : rotatingAngles[blockId] !== undefined ? {

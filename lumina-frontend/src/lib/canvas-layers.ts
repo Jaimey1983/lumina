@@ -26,6 +26,7 @@ import {
 import { getWidgetPanelItem } from '@/app/(app)/classes/[id]/editor/components/panels/widget-panel-catalog';
 import { isUnimplementedInteractiveStub } from '@/lib/class-slide-normalize';
 import { isBlockCanvasLocked } from '@/hooks/use-block-drag';
+import { getEffectiveBlockZ } from '@lumina/editor-shared/block-pos';
 import type { Block, BlockTipo } from '@lumina/types/slide';
 
 export type LayerReorderAction =
@@ -44,23 +45,9 @@ export interface LayerListItem {
   Icon: LucideIcon;
 }
 
+/** z efectivo (el mismo que usa el render: sin `zIndex` ⇒ `DEFAULT_BLOCK_Z`). */
 export function getBlockZ(block: Block): number {
-  const z = (block as { zIndex?: number }).zIndex;
-  return typeof z === 'number' ? z : 0;
-}
-
-export function collectZIndices(blocks: Block[]): number[] {
-  const out: number[] = [];
-  function walk(arr: Block[]) {
-    for (const b of arr) {
-      out.push(getBlockZ(b));
-      if (b.tipo === 'columnas') {
-        for (const col of b.columnas) walk(col);
-      }
-    }
-  }
-  walk(blocks);
-  return out;
+  return getEffectiveBlockZ(block);
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -261,37 +248,61 @@ export function buildLayerList(bloques: Block[]): LayerListItem[] {
   return items.sort((a, b) => b.zIndex - a.zIndex || b.index - a.index);
 }
 
+/** Orden de apilado de los bloques de primer nivel: de atrás hacia adelante. */
+function stackingOrder(bloques: Block[]): number[] {
+  return bloques
+    .map((b, i) => ({ i, z: getBlockZ(b) }))
+    .sort((a, b) => a.z - b.z || a.i - b.i)
+    .map((e) => e.i);
+}
+
+/**
+ * Reordena un bloque dentro de la pila (`traer_frente`, `enviar_atras_total`,
+ * `adelante_uno`, `atras_uno`) y renumera el `zIndex` de los bloques de primer
+ * nivel como 1..N. Así cada acción mueve exactamente una posición (o va al
+ * extremo), sin empates, huecos ni deriva. Solo se reescriben los bloques cuyo
+ * z cambia; si la acción no tiene efecto devuelve el mismo array.
+ */
 export function applyLayerReorderAction(
   bloques: Block[],
   targetIndex: number,
   action: LayerReorderAction,
 ): Block[] {
   if (targetIndex < 0 || targetIndex >= bloques.length) return bloques;
-  const zs = collectZIndices(bloques);
-  if (zs.length === 0) return bloques;
-  const min = Math.min(...zs);
-  const max = Math.max(...zs);
-  const block = bloques[targetIndex];
-  if (!block) return bloques;
-  const z = getBlockZ(block);
-  let nz = z;
+
+  const order = stackingOrder(bloques);
+  const pos = order.indexOf(targetIndex);
+  const last = order.length - 1;
+
+  let to = pos;
   switch (action) {
     case 'traer_frente':
-      nz = max + 1;
+      to = last;
       break;
     case 'enviar_atras_total':
-      nz = min - 1;
+      to = 0;
       break;
     case 'adelante_uno':
-      nz = z + 1;
+      to = Math.min(pos + 1, last);
       break;
     case 'atras_uno':
-      nz = z - 1;
+      to = Math.max(pos - 1, 0);
       break;
     default:
       return bloques;
   }
-  return bloques.map((b, i) =>
-    i === targetIndex ? ({ ...b, zIndex: nz } as Block) : b,
-  );
+  if (to === pos) return bloques;
+
+  order.splice(pos, 1);
+  order.splice(to, 0, targetIndex);
+
+  const nextZ = new Map<number, number>();
+  order.forEach((blockIndex, rank) => nextZ.set(blockIndex, rank + 1));
+
+  return bloques.map((b, i) => {
+    const z = nextZ.get(i)!;
+    return (b as { zIndex?: number }).zIndex === z
+      ? b
+      : ({ ...b, zIndex: z } as Block);
+  });
 }
