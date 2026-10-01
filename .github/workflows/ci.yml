@@ -45,6 +45,9 @@ jobs:
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/scoring test
       - run: pnpm --filter @lumina/scoring lint
+      - run: pnpm --filter @lumina/interactions build
+      - run: pnpm --filter @lumina/interactions test
+      - run: pnpm --filter @lumina/interactions lint
       - run: pnpm --filter @lumina/element-kit-core build
       - run: pnpm --filter @lumina/element-kit-core test
       - run: pnpm --filter @lumina/element-kit-core lint
@@ -77,6 +80,7 @@ jobs:
       - run: pnpm --filter @lumina/types build
       - run: pnpm --filter @lumina/curriculum-data build
       - run: pnpm --filter @lumina/scoring build
+      - run: pnpm --filter @lumina/interactions build
       - run: pnpm --filter lumina-backend exec prisma generate
       - run: pnpm --filter lumina-backend lint
       - run: pnpm --filter lumina-backend test
@@ -107,6 +111,7 @@ jobs:
       - run: pnpm --filter @lumina/charts build
       - run: pnpm --filter @lumina/editor-shared build
       - run: pnpm --filter @lumina/scoring build
+      - run: pnpm --filter @lumina/interactions build
       - run: pnpm --filter @lumina/element-kit-core build
       - run: pnpm --filter @lumina/element-kit build
       - run: pnpm --filter lumina-frontend lint
