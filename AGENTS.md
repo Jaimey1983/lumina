@@ -1343,7 +1343,7 @@ K1–K5 entregan un motor funcional **sin interfaz de edición**. **No se abre K
 
 #### K5 — Persistencia del estado en modo autónomo
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** K4 `hecho`.
 - **Contexto:** al recargar, el alumno pierde variables y visitados. `AutonomousProgress` guarda una fila por slide con `response Json?`; `POST /autonomous-sessions/:sessionId/progress` ya existe. Hay que decidir (y documentar en el commit) si el estado del motor viaja en una fila propia del progreso o en un campo nuevo de `AutonomousSession`/`AutonomousResult` — **decisión de la ficha tras leer `autonomous-sessions.service.ts` y `save-progress.dto.ts`**.
 - **Alcance — PUEDE tocar:** `lumina-backend/prisma/schema.prisma` + migración **aditiva** (campo Json nullable para el estado del motor, solo si hace falta); `lumina-backend/src/autonomous-sessions/` — guardar y restaurar el estado con validación: nombres y tipos deben coincidir con `Class.variables`, tamaño del payload acotado, rechazo de claves desconocidas; `Roles` explícito en toda ruta nueva (Regla 5); frontend — hidratar `useInteractionRuntime` desde el estado restaurado y guardar con debounce; specs de backend.
