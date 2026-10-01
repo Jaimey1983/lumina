@@ -1326,7 +1326,7 @@ K1–K5 entregan un motor funcional **sin interfaz de edición**. **No se abre K
 
 #### K4 — `useInteractionRuntime` en viewer autónomo y vista previa (+ migrar acciones legacy)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** K3 `hecho`.
 - **Contexto:** es la ficha de mayor riesgo de K1–K5. **Primer paso obligatorio de la ficha: relevar** cuánto estado del reproductor ya vive dentro de `viewer-client.tsx` (816 líneas) y cómo se integra con `preview-client.tsx`; si el estado está muy disperso, **parar** y partir K4 en K4a (runtime + preview) y K4b (viewer autónomo) — no ampliarla (Regla 10). D1: runtime **inerte** en vivo y presentación.
 - **Alcance — PUEDE tocar:** nuevo `lumina-frontend/src/hooks/use-interaction-runtime.ts` (+ spec): mantiene el estado (variables, estados de objeto, capas abiertas, visitados), procesa eventos con `@lumina/interactions`, ejecuta efectos (navegar, cambiar estado, abrir capa) y expone `emitir`/`estadoObjeto` para pasar por `config`; `viewer-client.tsx` y `preview-client.tsx` — instanciar el runtime solo en modo autónomo / `preview`; `slide-renderer.tsx` — **solo** recibir props nuevas (`runtime`) y reenviarlas a `config`, sin sumar lógica de reglas adentro; `lumina-frontend/src/lib/class-slide-normalize.ts` — normalizar `Boton.accion` y `Contador.alTerminar` legados a reglas equivalentes (D6) de forma idempotente; `lumina-frontend/package.json` + `next.config.ts` (`transpilePackages`) + `predev`/`prebuild`, CI job `frontend` — dep de `@lumina/interactions`.
