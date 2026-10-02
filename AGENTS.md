@@ -2618,3 +2618,190 @@ Entorno: Postgres 16 y Redis efímeros, backend compilado (`node dist/src/main.j
 #### M2b — Aviso de eventos en el panel de la ecuación (parcial, 2026-10-02)
 - **Estado:** **en revisión** (solo la parte barata). El panel «Interactividad» de la ecuación ahora dice cuándo emite eventos: con «línea por línea» activado, que cada paso emite `clic` y que al final marca la fórmula como visitada; sin él, que una regla de clic sobre la ecuación no se activará. Spec `ecuacion-properties.aviso.spec.tsx`. Verif: `@lumina/element-kit` lint 0 error, tests de `blocks/ecuacion` 11/11.
 - **Pendiente (requiere decisión de K):** partes clicables de la fórmula (términos individuales). Los eventos del catálogo de K1 no llevan datos, así que una regla no puede distinguir qué término se tocó; exige ampliar ese catálogo.
+
+### Etapa N — Paridad y superación de Storyline en condicionales (constructor de reglas, variables en texto, eventos y estados)
+
+Trabajo **post-migración**. No es migración de elementos: **Reglas 1–4 no aplican**; Reglas 0, 5–11 vigentes. Continúa la Etapa K sin reemplazarla: lo ya construido en K1–K8a (modelo de reglas, evaluador puro, runtime, persistencia, variables, plantillas, capas) **se conserva** y esta etapa lo amplía. Todo cambio al contrato de reglas es **aditivo** (una clase guardada antes de N sigue abriendo igual).
+
+**Por qué existe esta etapa:** el 2026-10-02 se comparó el motor de Lumina con Articulate Storyline 360 (referencia que el dueño del tablero pidió igualar «y superar si es posible»). Hallazgo: el **modelo** de Lumina (evento → condiciones → acciones) coincide con el de Storyline, pero la **capacidad de configuración** es mucho menor: el docente solo puede aplicar 3 plantillas fijas, no hay constructor libre, ni acción «si no», ni variables dentro del texto, ni operaciones aritméticas completas, ni eventos de cambio de variable/hover/tecla/media, ni estados con apariencia propia, ni variables del sistema.
+
+**Fuente de la comparación (límites de verificación):** las páginas oficiales de Articulate estaban bloqueadas desde el entorno de trabajo; lo siguiente salió de resultados de búsqueda sobre su documentación. **Confirmado:** trigger = acción + cuándo + condiciones; condiciones sobre variable, objeto/estado y ventana; combinación Y/O; acción «else»; tipos de variable texto/número/verdadero-falso; operaciones set/sumar/restar/multiplicar/dividir/limpiar; operador «entre» (incluye extremos); variables del sistema (puntaje del quiz, tiempo transcurrido, número de slide, progreso de escena; la mayoría de solo lectura); referencias a variables dentro del texto; estados normal/hover/down/seleccionado/visitado/deshabilitado + personalizados; capas; eventos clic, hover, inicio/fin de línea de tiempo, fin de media, cambio de variable, cambio de estado, tecla; ~25 acciones. **De memoria, sin verificar** (se comprueban en N1 con la persona que tenga acceso a la documentación): lista completa de las 25 acciones, operadores de texto exactos, condiciones de «ventana». Nada de esto bloquea N0–N3.
+
+**Estado real del repo (relevado 2026-10-02, `main` en `6a81bf7`):**
+- `Regla = { id, evento, condiciones: Condicion[] (Y implícito), acciones, activa }`. `Condicion` ya soporta `y` / `o` / `no` anidados en el evaluador, **sin interfaz** para armarlos. **No hay `sino`.**
+- Operadores: `== != < <= > >=`. `Operando`: literal, variable, estado de bloque, respuesta correcta. Sin «entre», sin operadores de texto, sin variables del sistema.
+- Acciones (10, catálogo cerrado de K1): `ir_a_slide`, `siguiente`, `anterior`, `mostrar`, `ocultar`, `cambiar_estado`, `abrir_capa`, `cerrar_capa`, `asignar_variable`, `sumar_variable`. La Etapa M añadió **`asignarVariable(id, valor)` al runtime** (fuera del catálogo; solo variables de flujo, validada como K5).
+- Eventos (7): `clic`, `visitado`, `seleccionado`, `respuesta_correcta`, `respuesta_incorrecta`, `fin_contador`, `al_entrar_slide`. **Sin payload** (M2b lo dejó anotado: una regla no distingue qué término de una fórmula se tocó).
+- `EstadoObjeto` = `normal | visitado | seleccionado | deshabilitado`; solo `deshabilitado` tiene efecto visual (K6).
+- Editor: panel «Variables» (K6) y sección «Interacciones» con 3 plantillas (`plantillaBotonNavega`, `plantillaIrARefuerzo`, `plantillaRevelarAlVisitarTodo`). **La plantilla «pista tras N intentos» no existe.**
+- Estado de K: K1–K8a `en revisión`, **ninguna con QA manual en navegador** salvo K4, K5 y K8a (probadas en producción). K8b, K9a, K11–K15 pendientes; K9b cancelada; K10 bloqueada por D9.
+
+**Decisiones de diseño (D14–D18) — las fija esta raíz; el operador no las reabre (Regla 10):**
+- **D14. El catálogo de eventos y acciones deja de ser «cerrado de por vida».** Se amplía **por ficha**, siempre aditivo. La barrera C1/C4 se mantiene intacta: el chequeo de tipos (`interaction.types.check.ts`) y `sin-nota.spec.ts` siguen prohibiendo cualquier acción u operando que nombre puntaje, nota o score; cada ficha que añada acciones u operandos **ejecuta y actualiza esa guarda** (sumando los nuevos tipos al caso de prueba, no relajándola).
+- **D15. «Si no» = una lista de acciones, no una regla anidada.** `Regla.sino?: Accion[]`. Se ejecuta cuando el evento coincide **y** las condiciones dan falso. Una condición **rota** (variable borrada, tipos incompatibles) **no** ejecuta `sino`: el motor sigue fallando cerrado (no ejecuta nada y deja un `Aviso`). Sin anidar `sino` dentro de `sino`.
+- **D16. Eventos con parámetro y con detalle.** `Regla.parametro?: string | number` (p. ej. la tecla, el id de variable a observar, el segundo del temporizador) y `EventoMotor.detalle?: Record<string, VariableValor>`. Los eventos existentes no cambian de forma. Resuelve la limitación de M2b.
+- **D17. Variables dentro del texto con id estable.** El token persistido es `{{var:<variableId>}}` (D13: por id, no por nombre); el editor lo muestra como una **etiqueta con el nombre**. Se resuelve **solo en los modos con runtime** (autónomo y vista previa, D1). Variable inexistente → cadena vacía + `Aviso`, nunca el token crudo. La sustitución es **texto plano**, jamás HTML ni Markdown interpretado.
+- **D18. Variables del sistema de solo lectura.** Se leen con un operando nuevo `{ tipo: 'sistema'; clave }`, **no** se declaran en `Class.variables`, **no** se persisten (se derivan en cada evaluación) y **ninguna** es nota ni puntaje (C1/C4). Claves v1: `slide_numero`, `slide_total`, `progreso_pct`, `tiempo_s`, `intento`.
+
+**Decisiones que NO toma esta raíz (las toma el dueño del tablero; quedan marcadas en la ficha que las necesita):**
+- **D1 (reglas inertes en clase en vivo y presentación):** sigue vigente. Reabrirla es la ficha **N9**, bloqueada hasta que el dueño decida.
+- **D9 (el flujo no lee la nota):** sigue vigente. Reabrirla es la ficha **N10**, bloqueada hasta que el dueño decida. Storyline sí permite condiciones sobre el resultado del quiz.
+- **Plantillas vs. constructor:** esta raíz propone que **coexistan** (las plantillas pasan a ser atajos que generan reglas editables en el constructor). Si el dueño prefiere retirarlas, se hace en N3 con Regla 4.
+
+**Reorden respecto de la Etapa K (sin editar las fichas de K):**
+- **K11 (slider/dial)** sube de prioridad: es el control que cambia variables y es independiente del motor; puede hacerse en paralelo a N0–N3.
+- **K9a (bloqueo de avance)** se toma **después de N3**: D12 expresa el bloqueo como condición y conviene que el docente la arme con el mismo constructor.
+- **K8b (edición de capas)** es independiente de N; el constructor (N3) debe ofrecer `abrir_capa`/`cerrar_capa` con las capas que existan.
+- **K10** sigue bloqueada (se reemplaza por N10 si D9 se reabre).
+- **K13/K14/K15** no dependen de N.
+
+**Orden / dependencias:**
+```
+N0 ─→ N1 ─┬─→ N3 ─→ N8 ─→ (K9a)
+          └─→ N2 ─┘
+N0 ─→ N4 ; N0 ─→ N5 ; N0 ─→ N6 ; N1 ─→ N7
+N9 (bloqueada, D1) ; N10 (bloqueada, D9)
+```
+**No se abre N1 hasta cerrar N0** (la QA puede cambiar el modelo: no se construye un constructor sobre un runtime no probado). N4–N7 son independientes entre sí y pueden hacerse en paralelo **solo si tocan archivos disjuntos**; si dos fichas escriben `packages/interactions/src/tipos.ts` o `packages/types/src/interaction.types.ts`, van en secuencia (Regla 10).
+
+**Baselines (re-medir al tomar cada ficha; no se asumen):** `@lumina/interactions` 125 · `@lumina/element-kit` 508 · `lumina-backend` `pnpm test` 407 · `lumina-frontend` `test:unit` 429. Orden de build de paquetes (el de CI): scoring → types → element-kit-core → ui → editor-shared → curriculum-data → charts → canvas-align → interactions → element-kit. **QA obligatoria** en build de producción (`pnpm build && next start`, no `next dev`), con evidencia de red (`PUT`/`PATCH` 2xx) y de base cuando la ficha toque persistencia, probando **los cuatro modos** (preview, autónomo, presentación, en vivo) y confirmando que presentación y en vivo **no cambian** (salvo N9).
+
+#### N0 — QA en navegador de K4–K8a y corrección de lo que aparezca
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** ninguna.
+- **Contexto:** K6, K7a y K7b se cerraron `en revisión` sin ninguna prueba manual (sin Postgres/servidor sanos en esas sesiones); K4, K5 y K8a sí se probaron en producción pero K8a no demostró la recarga a mitad (la migración de K5 no estaba aplicada en la base local). Construir el constructor sobre un runtime no probado es el modo de falla más caro de la etapa.
+- **Alcance — PUEDE tocar:** solo lo necesario para **corregir defectos hallados** en `packages/interactions/**`, `packages/element-kit/src/widgets/**` (emisores de eventos), `lumina-frontend/src/hooks/use-interaction-runtime.ts`, `lumina-frontend/src/lib/interaction-runtime.ts`, `variables-panel.tsx`, `interactions-panel.tsx`, `slide-renderer.tsx` (solo ramas de runtime), `lumina-backend/src/autonomous-sessions/` y `classes/` (solo validación/guardado de `variables`). Cada defecto se arregla con su prueba de regresión.
+- **Alcance — NO toca:** ninguna función nueva. Un hallazgo que exija cambio de diseño **para** y se anota como ficha aparte (Regla 10).
+- **Entregable:** con la base migrada y backend + frontend en producción local, un **guion de QA** (se deja en el cierre de la ficha, paso por paso, con el resultado de cada uno) que cubra: (1) declarar, editar y borrar variables y recargar (`SELECT variables FROM classes`); (2) borrado bloqueado de una variable usada; (3) estado inicial `deshabilitado` no responde en autónomo/preview y sí en el editor; (4) cada una de las 3 plantillas de K7b ejecutándose en autónomo y preview; (5) duplicar slide con autorreferencia (dos `PATCH` 2xx y `content` de la copia), borrar slide de refuerzo con su aviso, borrar y pegar bloques con interacciones; (6) regla `respuesta_incorrecta → sumar_variable` en una actividad, **comparando el `POST …/progress` y `autonomous_progress.score` contra un intento sin regla (idénticos)**; (7) recargar a mitad de una clase autónoma y comprobar que variables, visitados, capas abiertas y bloques visibles se restauran (el `PUT …/interaction-state` con 2xx); (8) presentación y clase en vivo sin ninguna regla ejecutándose. Verificación automática: los comandos de K7b/K8a sin bajar conteos.
+- **Cierre:** no aplica Regla 4. Si algún punto no se pudo probar (p. ej. sin lector de pantalla), se dice, no se afirma. Commit sugerido: `test(interactions): QA en navegador de K4–K8a y correcciones (N0)`.
+
+#### N1 — Modelo de condiciones: «si no», operadores y operando de sistema
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N0 `hecho`.
+- **Contexto:** hoy una regla solo tiene el camino «sí». Storyline permite una acción «else», el operador «entre» y comparaciones de texto. Esta ficha amplía **solo** el modelo y el evaluador (sin interfaz).
+- **Alcance — PUEDE tocar:**
+  - `packages/types/src/interaction.types.ts` — `Regla.sino?: Accion[]` (D15); `OperadorComparacion` gana `'entre'`, `'contiene'`, `'no_contiene'`, `'empieza_con'`, `'termina_con'`; `Operando` gana `{ tipo: 'sistema'; clave: ClaveSistema }` (D18, el conjunto de claves se declara aquí aunque se rellena en N7) y `{ tipo: 'rango'; desde: Operando; hasta: Operando }` para «entre» (incluye los extremos, igual que Storyline). `interaction.types.check.ts` se actualiza: sigue prohibiendo nombres de nota/puntaje, y ahora **prueba** que `sino` solo acepta `Accion`.
+  - `packages/interactions/src/{condiciones,motor,validar,tipos}.ts` (+ specs) — evaluar los operadores nuevos con la regla de **falla cerrada** ya existente (tipos incompatibles → regla no dispara y `Aviso`); ejecutar `sino` cuando el evento coincide y las condiciones son falsas **sin error** (D15); contarlo en los topes de acciones y encadenamiento; `validarReglas` recorre `sino`. Operadores de texto: comparación **insensible a mayúsculas y acentos** (documentado) y solo sobre `texto`; «entre» solo sobre `numero`.
+  - `packages/interactions/src/integridad.ts` (+ spec) — `reglasConReferenciasRotas`, `limpiarReferenciasABloque/ASlide` y `remapearIds` **también recorren `sino`** (si no, el gesto de duplicar/borrar deja referencias colgantes).
+  - `lumina-frontend/src/lib/class-slide-normalize.ts` y `motor-roundtrip.spec` — conservar `sino` en el ida y vuelta de todos los tipos de bloque.
+- **Alcance — NO toca:** interfaz, backend, `@lumina/scoring`.
+- **Entregable:** pruebas con reglas reales: «si falla ir a refuerzo, si no, siguiente»; «entre 3 y 5»; contiene/empieza con sobre texto con acentos; condición rota **no** ejecuta `sino`; bucle A→B→A con `sino` cortado por el límite; `sin-nota.spec.ts` con las acciones nuevas; el chequeo de tipos falla si se añade una acción de nota. Verificación: `pnpm --filter @lumina/types build && test && lint` · `pnpm --filter @lumina/interactions build && test && lint` · `pnpm --filter @lumina/element-kit build && test` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit`.
+- **Cierre:** no aplica Regla 4 (aditivo). Commit sugerido: `feat(interactions): acción «si no», operadores de rango y texto (N1)`.
+
+#### N2 — Operaciones sobre variables
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N1 `hecho` (comparten `tipos.ts` y el catálogo: van en secuencia).
+- **Contexto:** hoy solo `asignar_variable` y `sumar_variable`. Storyline ofrece sumar, restar, multiplicar, dividir, limpiar y, para texto, concatenar y copiar de otra variable.
+- **Alcance — PUEDE tocar:**
+  - `packages/types/src/interaction.types.ts` — `Accion` gana `restar_variable`, `multiplicar_variable`, `dividir_variable` (todas con `{ variableId, cantidad: Operando }` y solo sobre `numero`), `limpiar_variable` (vuelve al `valorInicial`), `concatenar_variable` (solo `texto`, `{ variableId, texto: Operando }`) y `alternar_variable` (solo `booleano`, invierte). `sumar_variable` se mantiene tal cual (compatibilidad); `asignar_variable` ya admite copiar de otra variable (su `valor` es un `Operando`).
+  - `packages/interactions/src/{motor,validar,variables}.ts` (+ specs) — ejecución con las protecciones del motor. **División por cero → no ejecuta y deja `Aviso`** (nunca `Infinity`/`NaN` en el estado: el validador de K5 exige números finitos). Resultado no finito → igual. Límite de largo de texto de `concatenar` (el de K6, 200) con recorte documentado + `Aviso`.
+  - `lumina-backend/src/autonomous-sessions/engine-state.validator.ts` (+ spec) — sin cambios de contrato (el estado sigue siendo el mismo), pero **un test de regresión** que confirme que los valores producidos por las acciones nuevas siguen validando.
+  - `packages/interactions/src/uso.ts` — `usosDeVariable` cuenta los usos en las acciones nuevas y en `sino` (el panel de variables bloquea el borrado de una variable usada).
+- **Alcance — NO toca:** interfaz de reglas (N3), `@lumina/scoring`. `asignarVariable` del runtime (Etapa M) no cambia.
+- **Entregable:** specs de cada acción (feliz, tipo erróneo, límites, división por cero, texto largo, persistencia round-trip K5), guarda C1/C4 actualizada. Verificación: la de N1 + `cd lumina-backend && npx tsc --noEmit && pnpm lint && pnpm test`.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(interactions): operaciones aritméticas, texto y lógicas sobre variables (N2)`.
+
+#### N3 — Constructor libre de reglas
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N1 y N2 `hecho`. **Es la ficha de mayor valor y mayor riesgo de usabilidad de la etapa.**
+- **Contexto:** hoy el docente solo aplica plantillas. El constructor le deja armar una regla completa: elegir el evento, componer condiciones con Y/O/NO anidados, elegir acciones y, opcionalmente, acciones de «si no», sin escribir nada ejecutable (D5).
+- **Alcance — PUEDE tocar:**
+  - **Nuevo** `lumina-frontend/src/app/(app)/classes/[id]/editor/components/panels/rule-builder/` — editor de una `Regla`: selector de evento (solo los que declara el elemento en `ElementDefinition.eventos`), constructor de condiciones como **árbol visual** (grupos Y/O con botón de negar, filas «operando · operador · operando» con los operandos filtrados por tipo de variable), lista de acciones con un formulario por tipo, sección «Si no», interruptor de activa y orden (las reglas del bloque se ejecutan en el orden del arreglo: el panel permite reordenar y lo explica). Con `@lumina/ui`; sin librería nueva.
+  - `interactions-panel.tsx` (K7b) — muestra las reglas existentes como **tarjetas legibles en español** («Cuando se hace clic → si intentos ≥ 3 → mostrar Pista, si no → sumar 1 a intentos»), con «Editar» (abre el constructor), «Duplicar», «Quitar» y el aviso de referencias rotas ya existente. «Añadir interacción» ofrece **«Regla nueva»** además de las plantillas.
+  - `packages/interactions/src/plantillas.ts` — **las plantillas siguen**, pero sus reglas generadas son editables en el constructor (ids deterministas `tpl:…` se conservan para que reaplicar no duplique; al **editar** una regla de plantilla se le quita la marca de plantilla para que reaplicar no la pise, con test).
+  - **Nuevo** `packages/interactions/src/describir.ts` (+ spec) — `describirRegla(regla, contexto) → string`: función pura que arma el texto en español de las tarjetas y del simulador (N8), usando nombres de variables/bloques/slides/capas del contexto; referencia inexistente → «(eliminado)».
+  - `packages/interactions/src/validar.ts` — `validarRegla` devuelve avisos **por campo** para pintarlos en el formulario (evento sin acciones, variable de tipo incompatible con el operador, división por una constante 0, capa/slide/bloque inexistente).
+  - `lumina-frontend/.../lib/interacciones.ts` (K7b) — aplicar, reemplazar y borrar una regla desde el constructor con las mismas garantías de integridad referencial de K7b (los tres gestos: borrar bloque, duplicar y borrar slide, pegar bloque). Un bloque que pasa a participar en una regla recibe id perezoso (`asegurarIdBloque`, D8).
+- **Alcance — NO toca:** el evaluador (N1/N2), las capas (K8b), el backend, `@lumina/scoring`. **No** se añade ningún eventos/acciones nuevos aquí.
+- **Entregable:** el docente arma, sin plantillas, la regla «cuando se hace clic → si `intentos >= 3` **o** el bloque X está visitado → mostrar la pista; si no, sumar 1 a `intentos`», la guarda, la ve descrita en español, la edita, la reordena, la duplica y la borra; el motor la ejecuta en autónomo y preview con el mismo resultado que una regla armada a mano en los tests; las plantillas siguen funcionando. Spec de componentes con jsdom + testing-library (si el proyecto `unit` no lo permite, se declara y se cubre `describirRegla`/`validarRegla` puras + QA manual documentada). Verificación: `pnpm --filter @lumina/interactions build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA en producción con evidencia del `PATCH …/slides/:id` y del `content` guardado, **y una prueba de uso con un docente real** antes de dar la ficha por hecha.
+- **Riesgo declarado:** complejidad de interfaz (por eso las tarjetas en español y las plantillas como atajo); regla huérfana silenciosa si un `normalize*` pierde `sino`/`disparadores` (cubierto por la guarda de ida y vuelta de K6/N1).
+- **Cierre:** no aplica Regla 4 (las plantillas coexisten). Commit sugerido: `feat(editor): constructor libre de reglas con condiciones anidadas y «si no» (N3)`.
+
+#### N4 — Variables dentro del texto
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N0 `hecho`. Independiente de N1–N3 (archivos disjuntos con ellas: toca el texto, no `tipos.ts`).
+- **Contexto:** es el uso más visible de las variables para el alumno («Llevas {{intentos}} intentos», «Hola, {{nombre}}»). D17 fija el diseño.
+- **Alcance — PUEDE tocar:**
+  - **Primer paso obligatorio: relevar** cómo se persiste hoy el texto enriquecido del primitivo `texto` (la rama `feat/texto-enriquecido` y el nodo `math` pueden haber cambiado el formato) y dónde conviene resolver los tokens. Si el formato no admite un nodo/marca inline para variables sin migración, **parar** y reescribir la ficha (Regla 10).
+  - **Nuevo** en `@lumina/editor-shared` o `packages/interactions` (según el relevo): `interpolarVariables(texto, valores, defs) → { texto, avisos }` pura (+ spec): resuelve `{{var:<id>}}`; variable inexistente → `''` + `Aviso`; número con formato de la configuración regional **es-CO**; booleano como «Sí/No»; **texto plano siempre** (se escapa, D17).
+  - `packages/element-kit/src/blocks/texto/` (editor y viewer) — el editor inserta la variable desde un botón «Insertar variable» que muestra el nombre como etiqueta y persiste el token por id; el viewer, **solo en modo runtime**, sustituye con el valor vivo del runtime; en el editor y las miniaturas se ve la etiqueta con el nombre, no el valor. Los widgets con texto propio (botón, acordeón, etc.) **no** entran en esta ficha; se anotan como fichas posteriores.
+  - `lumina-frontend/.../slide-renderer.tsx` — solo pasar los valores de variables al `config` de runtime (como ya hace con `emitir`), sin lógica de reglas.
+  - `packages/interactions/src/uso.ts` — `usosDeVariable` cuenta los tokens en los textos (el panel de variables bloquea borrar una variable usada en un texto) y `reglasConReferenciasRotas`/duplicar slide **no** deben dejar tokens a variables inexistentes sin aviso.
+- **Alcance — NO toca:** el evaluador, el catálogo de acciones, las plantillas, el backend, el cálculo de nota.
+- **Entregable:** un texto con `{{var:…}}` muestra el valor vivo y **se actualiza** cuando una regla cambia la variable (autónomo y preview); en presentación y clase en vivo muestra el valor inicial o la etiqueta (no se ejecutan reglas, D1); exportar/imprimir y las miniaturas no muestran tokens crudos; un valor con `<script>` se muestra como texto. Verificación: `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA en producción en los cuatro modos.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): variables dentro del texto con token por id (N4)`.
+
+#### N5 — Eventos nuevos: cambio de variable, hover, tecla, temporizador y media
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N1 `hecho` (comparten `tipos.ts` y el catálogo: van en secuencia con N1/N2). Aplica D16.
+- **Contexto:** hoy son 7 eventos y sin datos. Storyline reacciona a cambio de variable, hover, tecla, línea de tiempo y media.
+- **Alcance — PUEDE tocar:**
+  - `packages/types/src/interaction.types.ts` — `EventoTipo` gana: `cambio_variable` (`parametro` = `variableId`), `hover_entra` y `hover_sale`, `tecla` (`parametro` = código de tecla, p. ej. `Enter`, `ArrowRight`, `KeyA`), `temporizador` (`parametro` = segundos desde que se entra al slide, 1–600), `salir_slide`, `media_inicia` y `media_termina` (`parametro` ausente: el evento lo emite el bloque de audio/video). `Regla.parametro?` y `EventoMotor.detalle?` (D16). Guarda C1/C4 actualizada.
+  - `packages/interactions/src/motor.ts` (+ spec) — `cambio_variable` se **emite por el propio motor** cuando una acción cambia el valor de una variable (solo si el valor realmente cambió), reutilizando el corte de ciclos y los topes existentes; test explícito de **bucle** «cambia A → cambia B → cambia A» cortado por el límite sin colgar. `asignarVariable` del runtime (Etapa M) también emite `cambio_variable`.
+  - `lumina-frontend/src/hooks/use-interaction-runtime.ts` — emisión de `hover_*` (con anti-rebote), `tecla` (listener **solo en modos con runtime**, solo cuando el foco no está en un `input`/`textarea`/`contenteditable`), `temporizador` (programado al entrar al slide y **cancelado** al salir; se re-programa tras restaurar K5, sin disparar dos veces el mismo en el mismo intento) y `salir_slide`.
+  - `packages/element-kit/src/blocks/{audio,video}/` y `activities/_classic/` (`video_interactivo`) — emitir `media_inicia`/`media_termina` cuando `config.emitir` exista; sin él, comportamiento idéntico (paridad, Regla 7).
+  - `packages/element-kit/src/elements/**/*-definition.ts` — declarar `eventos` en los elementos que ahora pueden emitir (`catalogo.parity.spec.ts` lo exige).
+- **Alcance — NO toca:** el constructor (N3) más allá de que **debe listar** los eventos nuevos y pedir su `parametro` (se ajusta en esa ficha si ya está hecha; si N3 va después, N5 deja el catálogo listo), el backend, `@lumina/scoring`.
+- **Entregable:** pruebas puras de cada evento y de los ciclos; pruebas del runtime con relojes simulados; paridad de audio/video/botón sin `emitir`. **El `parametro` de `tecla` se valida contra una lista cerrada de códigos** (no cadenas arbitrarias). Verificación: `pnpm --filter @lumina/types build && test && lint` · `pnpm --filter @lumina/interactions build && test && lint` · `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA en producción: cada evento en autónomo y preview, y **nada** en presentación y clase en vivo.
+- **Riesgo declarado:** `tecla` y `temporizador` pueden chocar con la accesibilidad (atajos que interfieren con lectores de pantalla): se documenta que un atajo nunca debe ser la **única** vía de acción y K14 lo revisa.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(interactions): eventos de cambio de variable, hover, tecla, temporizador y media (N5)`.
+
+#### N6 — Estados de objeto con apariencia y estados personalizados
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N0 `hecho`. Toca `slide-renderer.tsx`/`BlockNode`, no `tipos.ts` salvo la parte de estados personalizados (que va en secuencia con N1/N2/N5).
+- **Contexto:** hoy solo `deshabilitado` se ve distinto (K6). Storyline permite hover, clic, seleccionado y visitado con apariencia y estados propios.
+- **Alcance — PUEDE tocar:**
+  - `packages/types/src/slide.types.ts` — `Block.apariencias?: Partial<Record<EstadoObjeto | 'hover' | 'down', AparienciaEstado>>`, donde `AparienciaEstado` = `{ opacidad?, escala?, fondo?, borde?, sombra?, brillo? }` **declarativo** (valores acotados, color validado como hex/token; sin CSS libre ni `style` arbitrario). `Block.estadosPersonalizados?: { id; nombre; apariencia }[]` (máximo 8 por bloque) y `EstadoObjeto` pasa a `EstadoBase | string` **solo** a través de un tipo nuevo `EstadoDeBloque` (el union cerrado `EstadoObjeto` no cambia; los personalizados se identifican por `id`). Guarda C1/C4.
+  - `packages/interactions/src/{motor,validar}.ts` (+ spec) — `cambiar_estado` y `estado_bloque` aceptan un estado personalizado **declarado en ese bloque**; uno inexistente → `Aviso` y no ejecuta.
+  - `lumina-frontend/.../slide-renderer.tsx` (`BlockNode`, **solo en modos con runtime**) — aplicar `apariencias[estadoActual]` como estilo genérico del contenedor (capa superpuesta tipo «built-in states» de Storyline), `hover`/`down` por CSS con `prefers-reduced-motion` respetado; el editor y las miniaturas **no cambian**. Sin tocar la lógica de cada elemento.
+  - Propiedades (`properties-panel.tsx`) — pestaña «Estados» del bloque: elegir el estado a editar, ajustar la apariencia con vista previa y crear/renombrar/borrar estados personalizados (borrar uno usado por una regla se bloquea con el listado, como las variables).
+  - `class-slide-normalize.ts` + `motor-roundtrip.spec` — conservar `apariencias` y `estadosPersonalizados`.
+- **Alcance — NO toca:** los elementos individuales, el evaluador de condiciones, el backend.
+- **Entregable:** un botón cambia de color al pasar el mouse, se «hunde» al presionarse y queda «visitado» con otro aspecto tras usarse; un estado personalizado «correcto» se asigna desde una regla; contraste AA verificado con el medidor de contraste del propio panel (aviso, no bloqueo); el editor, las miniaturas, la presentación y la clase en vivo se ven **exactamente igual** que antes (test visual con capa/estado en modo `editor`). Verificación: la de N5 + `pnpm test:visual (chromium)`; QA en producción.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): apariencia por estado y estados personalizados de objeto (N6)`.
+
+#### N7 — Variables del sistema (solo lectura)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N1 `hecho` (el operando `sistema` ya existe en el modelo).
+- **Contexto:** D18. Permite reglas como «si es el último slide…», «si pasaron 60 segundos…», «si progreso ≥ 50 %…». **Ninguna es nota.**
+- **Alcance — PUEDE tocar:**
+  - `packages/interactions/src/{condiciones,tipos}.ts` (+ spec) — `ContextoEvaluacion` gana `sistema?: Partial<Record<ClaveSistema, number>>`; evaluar `{tipo:'sistema'}` **sin dato** falla cerrado (regla no dispara + `Aviso`). Claves v1: `slide_numero` (1-based), `slide_total`, `progreso_pct` (slides **visitados** ÷ total, 0–100, entero), `tiempo_s` (segundos activos del intento, sin contar pestaña oculta), `intento` (número de intento autónomo).
+  - `lumina-frontend/src/hooks/use-interaction-runtime.ts` — calcula y entrega el contexto de sistema en cada evaluación; `tiempo_s` y `progreso_pct` se **derivan del estado persistido** (K5: `visitados`) para que sobrevivan a una recarga sin guardar nada nuevo. En vista previa se simulan valores razonables y se marcan como simulados.
+  - `N4` (texto) — las variables del sistema se pueden insertar con el mismo botón como etiquetas especiales (**si N4 ya está hecha**; si no, se anota).
+- **Alcance — NO toca:** `Class.variables`, el backend, el validador de estado de K5 (no se persisten), `@lumina/scoring`. Prohibido añadir cualquier clave que derive de puntaje, nota, banda o resultado de actividad (eso es N10 y exige la decisión D9).
+- **Entregable:** pruebas de cada clave y de recarga a mitad (progreso y tiempo coherentes); una regla `slide_numero == slide_total → mostrar bloque` funciona en autónomo y preview. Verificación: `pnpm --filter @lumina/interactions build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA en producción.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(interactions): variables del sistema de solo lectura (N7)`.
+
+#### N8 — Simulador de reglas y validación en vivo (superar a Storyline)
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** N3 `hecho` (usa `describirRegla`). Idealmente después de N5/N7 para mostrar sus eventos.
+- **Contexto:** en Storyline, depurar un trigger que «no hace nada» es una queja conocida (el orden de evaluación y las condiciones que no se reevalúan). Lumina puede decirle al docente **por qué** una regla se disparó o no.
+- **Alcance — PUEDE tocar:**
+  - `packages/interactions/src/motor.ts` (+ spec) — modo **traza** opcional: `procesarEvento(..., { traza: true })` devuelve, para cada regla candidata, `{ reglaId, evaluada, resultado, motivo }` (qué condición dio falso y con qué valores, o por qué no coincidió el evento) sin cambiar el resultado normal. Cuando la traza está apagada el comportamiento y el rendimiento son **idénticos** (test de paridad).
+  - **Nuevo** panel «Probar reglas» en la vista previa del editor (`components/panels/rules-simulator.tsx`): lista cronológica de eventos y reglas disparadas con su descripción en español, valores de variables en vivo, y un control para **fijar manualmente el valor de una variable** y reiniciar el estado de la prueba. **Solo en vista previa, nunca en autónomo del alumno.**
+  - Validación en vivo en el editor: lista «Problemas de interacción» (referencias rotas, reglas que nunca pueden dispararse porque el evento no lo emite ningún elemento del slide, variables nunca usadas, ciclos potenciales detectados estáticamente) con salto al bloque o regla afectada. No bloquea el guardado (como K7b).
+- **Alcance — NO toca:** el estado persistido del alumno, el backend, la nota. **Fijar una variable en el simulador no se guarda** ni toca `interactionState`.
+- **Entregable:** el docente ve por qué una regla no se disparó; la traza apagada no altera ningún resultado (prueba de paridad sobre el mazo de ejemplos de K2/K7b); el panel de problemas muestra una referencia rota creada a propósito. Verificación: `pnpm --filter @lumina/interactions build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA en producción con una prueba de uso con un docente real.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): simulador de reglas con traza y panel de problemas (N8)`.
+
+#### N9 — Reglas en clase en vivo y presentación · **BLOQUEADA: requiere reabrir D1**
+- **Operador:** Claude Code
+- **Estado:** pendiente — **bloqueada hasta que el dueño del tablero decida por escrito.**
+- **Contexto:** D1 deja el runtime inerte en clase en vivo y presentación porque ahí el docente controla el avance y las variables son locales por alumno (D2). Storyline no tiene ese límite. Habilitarlo exige decidir: (a) **qué reglas corren** (¿las que no navegan? ¿las que solo cambian estado visual y variables del alumno?), (b) cómo convive la navegación del alumno con el `onSlideChange` por socket del docente, (c) dónde se persiste el estado por alumno en una sesión en vivo (`ClassSession` no guarda estado por alumno más allá de `ClassResult`), (d) variables compartidas de clase (D2) y la carrera ya resuelta en F1.4. **No se redacta el alcance técnico hasta que existan esas decisiones.**
+
+#### N10 — Condiciones sobre el rendimiento (banda parcial) · **BLOQUEADA: requiere reabrir D9**
+- **Operador:** Claude Code
+- **Estado:** pendiente — **bloqueada hasta que el dueño del tablero decida por escrito.**
+- **Contexto:** reemplaza a K10. Storyline permite condiciones sobre el resultado del quiz. Lumina lo prohíbe por D9/C1/C4 para que el motor no pueda afectar ni leer la nota. Si se reabre, el diseño ya analizado en K10 es el punto de partida: **un único operando de lectura, la banda parcial** (`bajo|basico|alto|superior`, nunca el número), calculada por el **backend** con `clasificarNotaColombiana` sobre las actividades ya calificadas del intento y devuelta al cliente en la respuesta de `POST …/progress` (C5: el cliente no la calcula); el motor sigue sin poder **escribir** ninguna nota. Hallazgos a tener a la vista: `grade-calculation.service.ts` no lee `ClassResult` ni `AutonomousProgress` (una ruta no puede distorsionar la nota de período) y J9 trazó hasta el indicador **a nivel de clase**, no de slide.
+
+#### Cierre de la Etapa N
+La etapa se cierra cuando N0–N8 estén `hecho`, con el constructor probado con docentes reales y QA en producción en los cuatro modos. N9 y N10 **no** bloquean el cierre: quedan como decisiones del dueño. Al cerrar, `K8b`, `K9a` y `K11–K15` continúan según la Etapa K con el motor ya ampliado.
