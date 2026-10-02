@@ -37,6 +37,11 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "lienzo",
   },
+  accordion: {
+    nombre: "Acordeón",
+    familia: "widget",
+    grupo: "lienzo",
+  },
   timeline: { nombre: "Línea de tiempo", familia: "widget", grupo: "lienzo" },
   popup: { nombre: "Popup", familia: "widget", grupo: "overlay" },
   hotspot: { nombre: "Hotspot", familia: "widget", grupo: "control" },
@@ -150,6 +155,12 @@ export const CATALOGO_ELEMENTOS = {
   codigo: { nombre: "Código", familia: "primitivo" },
   cita: { nombre: "Cita", familia: "primitivo" },
   separador: { nombre: "Separador", familia: "primitivo" },
+  ecuacion: {
+    nombre: "Ecuación",
+    descripcion:
+      "Fórmula matemática con teclado visual, vista previa y ajuste a la caja",
+    familia: "primitivo",
+  },
   columnas: { nombre: "Columnas", familia: "primitivo" },
 } as const satisfies Record<string, ElementCatalogo>;
 

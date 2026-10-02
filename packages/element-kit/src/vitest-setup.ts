@@ -28,6 +28,10 @@ vi.mock("./blocks/texto/math-block.js", () => ({
   default: ({ latex }: { latex: string }) => latex,
 }));
 
+vi.mock("./blocks/ecuacion/equation-view.js", () => ({
+  default: ({ block }: { block: { latex: string } }) => block.latex,
+}));
+
 /** jsdom no trae ResizeObserver / matchMedia — varios viewers de Grupo 4 los usan. */
 class ResizeObserverStub {
   observe(): void {}

@@ -88,11 +88,13 @@ import { createDefaultProgresoBlock } from '@lumina/element-kit/widgets/progreso
 import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
+import { createDefaultEcuacionBlock } from '@lumina/element-kit/blocks/ecuacion/ecuacion-defaults';
 import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
 import {
   createDefaultImageCompareBlock,
   createDefaultChecklistBlock,
   createDefaultScratchCardBlock,
+  createDefaultAccordionBlock,
 } from '@lumina/element-kit';
 import { createDefaultClasificar } from '@lumina/element-kit/activities/clasificar/clasificar-defaults';
 import { createDefaultMemoria } from '@lumina/element-kit/activities/memoria/memoria-defaults';
@@ -2137,6 +2139,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       } else if (type === 'scratch-card') {
         block = createDefaultScratchCardBlock(dropMarco) as unknown as Block;
         successLabel = 'Tarjeta rasca y revela agregada al slide';
+      } else if (type === 'accordion') {
+        block = createDefaultAccordionBlock(dropMarco) as unknown as Block;
+        successLabel = 'Acordeón agregado al slide';
       } else {
         toast.info(`Widget "${type}" próximamente`);
         return;
@@ -2175,6 +2180,35 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
     return true;
   }, [activeSlide, handleCommitSlideContent]);
+
+  const handleInsertEquation = useCallback((latex: string) => {
+    if (isStudent) {
+      toast.error('Escribir ecuaciones está reservado para docentes');
+      return;
+    }
+    const tex = latex.trim();
+    if (!tex) {
+      toast.error('Escribe una ecuación antes de colocarla');
+      return;
+    }
+    if (!activeSlide) {
+      toast.error('Selecciona un slide primero');
+      return;
+    }
+    if (activeSlideHasActivity) {
+      toast.warning('En un slide de actividad no se puede colocar un bloque de ecuación');
+      return;
+    }
+    const c = getSlideContentRecord(activeSlide as ApiSlide);
+    const bloques = Array.isArray(c.bloques) ? c.bloques : [];
+    const block = createDefaultEcuacionBlock({
+      latex: tex,
+      y: Math.min(62, 16 + bloques.length * 14),
+    });
+    handleCommitSlideContent(appendBlockToSlideContent(activeSlide as ApiSlide, block));
+    window.setTimeout(() => canvasAreaRef.current?.selectBlockByIndex(bloques.length), 50);
+    toast.success('Ecuación colocada en el slide');
+  }, [isStudent, activeSlide, activeSlideHasActivity, handleCommitSlideContent]);
 
   const getActivityDragOverlay = useCallback((type: ActivityType) => {
     const item = getActivityPanelItem(type);
@@ -3154,6 +3188,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             curricularContext={isStudent ? undefined : iaPanelCurricularContext}
             hasActivity={activeSlideHasActivity}
             onInsertActivity={handleInsertAiActivity}
+            onInsertEquation={handleInsertEquation}
             liveResponses={liveResponses}
             activeSlideId={activeSlide?.id ?? ''}
             activeSlideIndex={resolvedSlideIndex}

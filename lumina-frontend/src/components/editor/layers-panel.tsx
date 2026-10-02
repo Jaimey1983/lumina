@@ -60,7 +60,7 @@ export function LayersPanel({
               const isSelected = selectedBlockIds.includes(layer.blockId);
               const isPrimary = layer.blockId === primaryId;
               const Icon = layer.Icon;
-              const reorderDisabled = disabled || layer.locked;
+              const reorderDisabled = disabled;
 
               return (
                 <li key={layer.blockId}>

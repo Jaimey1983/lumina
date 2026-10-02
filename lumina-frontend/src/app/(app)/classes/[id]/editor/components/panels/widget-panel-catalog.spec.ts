@@ -29,6 +29,7 @@ describe('widget-panel-catalog', () => {
       'ruleta',
       'image-compare',
       'scratch-card',
+      'accordion',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

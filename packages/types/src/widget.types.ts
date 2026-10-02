@@ -212,7 +212,8 @@ export type WidgetTipo =
   | 'ruleta'
   | 'image-compare'
   | 'interactive-checklist'
-  | 'scratch-card';
+  | 'scratch-card'
+  | 'accordion';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -231,6 +232,7 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'image-compare',
   'interactive-checklist',
   'scratch-card',
+  'accordion',
 ] as const;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {
@@ -749,6 +751,36 @@ export interface ScratchCardWidget extends WidgetHeaderFields, WidgetCanvasPosit
   configuracion: ScratchCardConfiguracion;
 }
 
+// ─── Acordeón Interactivo ─────────────────────────────────────────────────────
+
+export interface AccordionSeccion {
+  id: string;
+  titulo: string;
+  contenido: string;
+  imagenUrl?: string;
+  imagenAlt?: string;
+  abiertoPorDefecto?: boolean;
+}
+
+export interface AccordionConfiguracion {
+  secciones: AccordionSeccion[];
+  modo: 'exclusivo' | 'multiple';
+  permitirColapsarTodo: boolean;
+  estiloVisual: 'tarjetas' | 'bordeado' | 'separadores' | 'minimal';
+  posicionIcono: 'derecha' | 'izquierda';
+  tamanoIcono: 'sm' | 'md' | 'lg';
+  animacionExpandir: boolean;
+  mostrarTituloWidget: boolean;
+  mostrarSubtitulo: boolean;
+  mostrarInstruccion: boolean;
+  mostrarImagenes: boolean;
+}
+
+export interface AccordionWidget extends WidgetHeaderFields, WidgetCanvasPosition {
+  tipo: 'accordion';
+  configuracion: AccordionConfiguracion;
+}
+
 export type CaptivateWidget =
   | TabsWidget
   | CarouselWidget
@@ -763,4 +795,5 @@ export type CaptivateWidget =
   | RuletaWidget
   | ImageCompareWidget
   | InteractiveChecklistWidget
-  | ScratchCardWidget;
+  | ScratchCardWidget
+  | AccordionWidget;

@@ -31,6 +31,8 @@ import {
 import { ResizeHandles } from './resize-handles';
 import { getBlockResizeMinDim } from '../lib/block-resize-min-dim';
 import { useBlockAnimations } from '@/hooks/use-block-animations';
+import { getEffectiveBlockZ } from '@lumina/editor-shared/block-pos';
+import { EDITOR_Z } from '@lumina/editor-shared/z-layers';
 import { withRect, withRotation, isBlockCanvasLocked, isBlockCanvasPositionable, getBlockPos, blockPosToStyle } from '@/hooks/use-block-drag';
 
 import type {
@@ -396,7 +398,7 @@ function BlockActionToolbarPortal({
         top,
         left,
         transform: 'translate(-50%, -100%)',
-        zIndex: 1000,
+        zIndex: EDITOR_Z.blockToolbarPortal,
       };
     });
   }, [blockRef, visible]);
@@ -893,7 +895,8 @@ function BlockNode({
       case 'timeline':
       case 'image-compare':
       case 'interactive-checklist':
-      case 'scratch-card': {
+      case 'scratch-card':
+      case 'accordion': {
         const def = elementRegistry.obtener<
           WidgetBlock,
           { isThumbnail?: boolean; onEnsureBlockSelected?: () => void }
@@ -1181,7 +1184,7 @@ function BlockNode({
           (!suppressCanvasHandles || canvasLocked) &&
           'ring-1 ring-blue-500 ring-offset-1',
         editorMode && canvasLocked && isSelected && 'ring-amber-500/90',
-        editorMode && isLiveDragging && 'z-20 opacity-100 shadow-lg ring-1 ring-[#2563EB]/50',
+        editorMode && isLiveDragging && 'opacity-100 shadow-lg ring-1 ring-[#2563EB]/50',
         isInteractiveStub && 'pointer-events-none',
         !editorMode && block.tipo !== 'hotspot' && block.tipo !== 'tooltip' && 'overflow-hidden max-w-full max-h-full',
         !editorMode && block.tipo === 'actividad' && 'min-h-0',
@@ -1938,7 +1941,7 @@ function SlideRendererBase({
           top: `${currentCoords.y}%`,
           width: `${currentCoords.ancho}%`,
           height: `${currentCoords.alto}%`,
-          zIndex: (block as { zIndex?: number }).zIndex ?? 1,
+          zIndex: getEffectiveBlockZ(block),
           transform: currentRot ? `rotate(${currentRot}deg)` : undefined,
           transformOrigin: currentRot ? 'center center' : undefined,
         } : rotatingAngles[blockId] !== undefined ? {

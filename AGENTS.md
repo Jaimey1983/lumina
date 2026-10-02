@@ -270,6 +270,11 @@ Antigravity bajó 120→76 problemas sobre los 53 archivos; los 6 `error` restan
 - **Entregable:** docente nuevo ve la tarjeta en el dashboard, la cierra (persiste), abre "Guía de Lumina" desde el menú lateral, la ve en solo lectura, la duplica a su espacio y edita la copia sin afectar el original. Verificación: `cd lumina-backend && npx prisma generate && npx tsc --noEmit && pnpm lint && pnpm test` + `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`, sin bajar conteos.
 - **Cierre:** no aplica Regla 4 (aditivo). Commit sugerido (sin ejecutar git en esta sesión salvo que el usuario lo pida): `feat(help-guide): guía de Lumina de solo lectura para docentes`.
 
+#### X.3 — Bloque propio «Ecuación» (`tipo: 'ecuacion'`) con panel de propiedades
+- **Operador:** Claude Code
+- **Estado:** **en revisión** — la ecuación pasa de nodo `math` dentro de un texto a `EquationBlock` (`@lumina/types`), `ElementDefinition` en `packages/element-kit/src/{blocks,elements}/ecuacion/` (Editor/Viewer/Propiedades, `catalogo`, registro único). Render KaTeX perezoso con ajuste a la caja (`ajustar`), tamaño/color/fondo/alineación y descripción accesible. Panel: `EquationComposer` (editor-shared) ampliado con 7 pestañas de símbolos y fórmulas frecuentes, vista previa con error visible, deshacer/rehacer propio y Tab entre huecos (`nextMathSlot`). Inserción desde el riel Matemáticas («Colocar en el slide») y desde «Ecuación» en el panel de elementos. Tocó los switches de posición (`block-pos`, `use-block-drag`, `canvas-layers`, `properties-panel`). Las fórmulas viejas (nodo `math` en texto) siguen renderizando; no hay migración automática.
+- **Verif:** `@lumina/editor-shared` test 301/301 · `@lumina/element-kit` build/lint 0 error/test 497/497 · `lumina-frontend` tsc limpio/lint 0 error/test:unit 337/337. **Sin QA manual en navegador** (pendiente: seleccionar la ecuación, editar en el panel, redimensionar, presentar en viewer).
+
 ### Etapa G — Alineación, guías y referencias de espaciado del editor de canvas
 
 Trabajo **post-migración** (E1–E7 cerradas). No es migración: **Reglas 1–4 no aplican**; Reglas 0, 5–11 vigentes. No hay `ElementDefinition` nuevo — es motor del editor.

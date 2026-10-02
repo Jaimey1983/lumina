@@ -14,6 +14,7 @@ import {
   MousePointer2,
   PanelTop,
   ScanFace,
+  Sigma,
   Shapes,
   Target,
   RotateCw,
@@ -26,6 +27,7 @@ import {
 import { getWidgetPanelItem } from '@/app/(app)/classes/[id]/editor/components/panels/widget-panel-catalog';
 import { isUnimplementedInteractiveStub } from '@/lib/class-slide-normalize';
 import { isBlockCanvasLocked } from '@/hooks/use-block-drag';
+import { getEffectiveBlockZ } from '@lumina/editor-shared/block-pos';
 import type { Block, BlockTipo } from '@lumina/types/slide';
 
 export type LayerReorderAction =
@@ -44,23 +46,9 @@ export interface LayerListItem {
   Icon: LucideIcon;
 }
 
+/** z efectivo (el mismo que usa el render: sin `zIndex` ⇒ `DEFAULT_BLOCK_Z`). */
 export function getBlockZ(block: Block): number {
-  const z = (block as { zIndex?: number }).zIndex;
-  return typeof z === 'number' ? z : 0;
-}
-
-export function collectZIndices(blocks: Block[]): number[] {
-  const out: number[] = [];
-  function walk(arr: Block[]) {
-    for (const b of arr) {
-      out.push(getBlockZ(b));
-      if (b.tipo === 'columnas') {
-        for (const col of b.columnas) walk(col);
-      }
-    }
-  }
-  walk(blocks);
-  return out;
+  return getEffectiveBlockZ(block);
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -100,6 +88,7 @@ const BASIC_KIND: Partial<Record<BlockTipo, string>> = {
   codigo: 'Código',
   cita: 'Cita',
   separador: 'Separador',
+  ecuacion: 'Ecuación',
   columnas: 'Columnas',
   actividad: 'Actividad',
 };
@@ -113,6 +102,7 @@ const BASIC_ICON: Partial<Record<BlockTipo, LucideIcon>> = {
   codigo: FileText,
   cita: MessageSquare,
   separador: Minus,
+  ecuacion: Sigma,
   columnas: Columns2,
   actividad: Activity,
 };
@@ -191,6 +181,8 @@ export function getBlockLayerLabel(block: Block): string {
       return truncate(block.url || 'Video');
     case 'separador':
       return 'Línea';
+    case 'ecuacion':
+      return truncate(block.latex || 'Ecuación');
     case 'clip-group':
       return truncate(
         block.contenido.tipo === 'imagen'
@@ -261,37 +253,77 @@ export function buildLayerList(bloques: Block[]): LayerListItem[] {
   return items.sort((a, b) => b.zIndex - a.zIndex || b.index - a.index);
 }
 
+/** Orden de apilado de los bloques de primer nivel: de atrás hacia adelante. */
+function stackingOrder(bloques: Block[]): number[] {
+  return bloques
+    .map((b, i) => ({ i, z: getBlockZ(b) }))
+    .sort((a, b) => a.z - b.z || a.i - b.i)
+    .map((e) => e.i);
+}
+
+/**
+ * Reordena uno o varios bloques dentro de la pila (`traer_frente`,
+ * `enviar_atras_total`, `adelante_uno`, `atras_uno`) y renumera el `zIndex` de
+ * los bloques de primer nivel como 1..N. Cada acción mueve exactamente una
+ * posición (o va al extremo), sin empates, huecos ni deriva.
+ *
+ * Con varios bloques se conserva su orden relativo. Un paso "adelante/atrás"
+ * salta al vecino más cercano que NO está seleccionado (como en Figma), y los
+ * bloques ya en el borde de la pila no se mueven.
+ *
+ * Solo se reescriben los bloques cuyo z cambia; si la acción no tiene efecto
+ * devuelve el mismo array. Los bloques fijados (`canvasLocked`) sí se pueden
+ * reordenar: el fijado protege posición y tamaño, no la capa.
+ */
 export function applyLayerReorderAction(
   bloques: Block[],
-  targetIndex: number,
+  target: number | number[],
   action: LayerReorderAction,
 ): Block[] {
-  if (targetIndex < 0 || targetIndex >= bloques.length) return bloques;
-  const zs = collectZIndices(bloques);
-  if (zs.length === 0) return bloques;
-  const min = Math.min(...zs);
-  const max = Math.max(...zs);
-  const block = bloques[targetIndex];
-  if (!block) return bloques;
-  const z = getBlockZ(block);
-  let nz = z;
+  const targets = new Set(
+    (Array.isArray(target) ? target : [target]).filter(
+      (i) => Number.isInteger(i) && i >= 0 && i < bloques.length,
+    ),
+  );
+  if (targets.size === 0) return bloques;
+
+  const order = stackingOrder(bloques);
+  const next = [...order];
+  const last = next.length - 1;
+
   switch (action) {
     case 'traer_frente':
-      nz = max + 1;
+      next.splice(0, next.length, ...order.filter((i) => !targets.has(i)), ...order.filter((i) => targets.has(i)));
       break;
     case 'enviar_atras_total':
-      nz = min - 1;
+      next.splice(0, next.length, ...order.filter((i) => targets.has(i)), ...order.filter((i) => !targets.has(i)));
       break;
     case 'adelante_uno':
-      nz = z + 1;
+      for (let p = last - 1; p >= 0; p--) {
+        if (targets.has(next[p]!) && !targets.has(next[p + 1]!)) {
+          [next[p], next[p + 1]] = [next[p + 1]!, next[p]!];
+        }
+      }
       break;
     case 'atras_uno':
-      nz = z - 1;
+      for (let p = 1; p <= last; p++) {
+        if (targets.has(next[p]!) && !targets.has(next[p - 1]!)) {
+          [next[p], next[p - 1]] = [next[p - 1]!, next[p]!];
+        }
+      }
       break;
     default:
       return bloques;
   }
-  return bloques.map((b, i) =>
-    i === targetIndex ? ({ ...b, zIndex: nz } as Block) : b,
-  );
+  if (next.every((v, p) => v === order[p])) return bloques;
+
+  const nextZ = new Map<number, number>();
+  next.forEach((blockIndex, rank) => nextZ.set(blockIndex, rank + 1));
+
+  return bloques.map((b, i) => {
+    const z = nextZ.get(i)!;
+    return (b as { zIndex?: number }).zIndex === z
+      ? b
+      : ({ ...b, zIndex: z } as Block);
+  });
 }

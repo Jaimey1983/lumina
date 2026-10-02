@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { EDITOR_Z } from '@lumina/editor-shared/z-layers';
 
 import { computeNewCoords } from '../lib/resize-coords';
 import { computeRotationAngle } from '../lib/rotate-coords';
@@ -234,7 +235,7 @@ export function ResizeHandles({
               height: 20,
               transform: 'translateX(-50%)',
               background: '#3b82f6',
-              zIndex: 49,
+              zIndex: EDITOR_Z.resizeGuide,
               pointerEvents: 'none',
             }}
           />
@@ -251,7 +252,7 @@ export function ResizeHandles({
               background: isRotating ? '#2563eb' : 'white',
               border: '1.5px solid #2563eb',
               transform: 'translate(-50%, -50%)',
-              zIndex: 50,
+              zIndex: EDITOR_Z.resizeHandle,
               cursor: isRotating ? 'grabbing' : 'grab',
               boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
             }}
@@ -269,7 +270,7 @@ export function ResizeHandles({
             background: 'white',
             border: '1px solid #3b82f6',
             borderRadius: 3,
-            zIndex: 50,
+            zIndex: EDITOR_Z.resizeHandle,
             cursor: handle.cursor,
             ...handle.style,
           }}

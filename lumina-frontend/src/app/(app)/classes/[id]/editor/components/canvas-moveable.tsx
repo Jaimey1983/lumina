@@ -166,7 +166,14 @@ function toPointerDeltaConvention(
  */
 function isMoveableIgnored(e: { inputEvent?: unknown }): boolean {
   const target = (e.inputEvent as { target?: unknown } | null | undefined)?.target;
-  return target instanceof Element && target.closest('[data-moveable-ignore]') != null;
+  if (!(target instanceof Element)) return false;
+  // Campos editables (inputs/textarea/select/contenteditable de actividades y
+  // widgets): Gesto hace preventDefault en mousedown y el campo nunca recibe
+  // foco, así que no se puede escribir. Ceder siempre el gesto a ellos.
+  if (target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) {
+    return true;
+  }
+  return target.closest('[data-moveable-ignore]') != null;
 }
 
 interface DragOrigin {
@@ -493,6 +500,7 @@ export function CanvasMoveable({
         target={single ? targets[0] : targets}
         zoom={zoom}
         useResizeObserver
+        checkInput
         origin={false}
         draggable
         resizable={single}

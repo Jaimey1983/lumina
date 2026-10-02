@@ -2,6 +2,7 @@ import type { QuizOption } from '@lumina/types/slide';
 
 import type { MathRng } from './rng';
 import type {
+  GeneratedMathActivity,
   GeneratedMathQuiz,
   GeneratedMathShortAnswer,
   MathFormato,
@@ -98,6 +99,28 @@ export function formatProblem(
   rng: MathRng,
 ): GeneratedMathQuiz | GeneratedMathShortAnswer {
   return formato === 'short_answer' ? toShortAnswer(problem, meta) : toQuiz(problem, meta, rng);
+}
+
+/**
+ * Un slide de Lumina admite una sola actividad. El generador emite N ítems;
+ * el quiz se fusiona en un `quiz_multiple` con N preguntas. Respuesta corta
+ * no tiene lista de ítems en el schema: se toma el primero.
+ */
+export function toSingleEditorActivity(
+  items: GeneratedMathActivity[],
+): GeneratedMathActivity {
+  const first = items[0];
+  if (!first) {
+    throw new Error('math-generator: no hay ítems para insertar');
+  }
+  if (first.tipo === 'short_answer') return first;
+
+  const preguntas = items.flatMap((item, i) =>
+    item.tipo === 'quiz_multiple'
+      ? item.preguntas.map((p, j) => ({ ...p, id: `q-${i + 1}-${j + 1}` }))
+      : [],
+  );
+  return { ...first, preguntas };
 }
 
 export function quizCorrectOptionId(activity: GeneratedMathQuiz): string {

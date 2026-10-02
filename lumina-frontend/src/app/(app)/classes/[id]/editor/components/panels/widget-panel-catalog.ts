@@ -7,6 +7,7 @@ import {
   GitCommitHorizontal,
   Hand,
   Layers,
+  ListCollapse,
   MessageSquare,
   MousePointer2,
   PanelTop,
@@ -136,6 +137,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Sparkles,
     rowClassName: 'hover:bg-amber-50/90 dark:hover:bg-amber-950/25',
     iconClassName: 'text-amber-600 dark:text-amber-400',
+  },
+  accordion: {
+    group: 'lienzo',
+    Icon: ListCollapse,
+    rowClassName: 'hover:bg-violet-50/90 dark:hover:bg-violet-950/25',
+    iconClassName: 'text-violet-600 dark:text-violet-400',
   },
 };
 
