@@ -19,6 +19,15 @@ export function shortAnswerTemplate(): Activity {
   };
 }
 
+export function respuestaMatematicaTemplate(): Activity {
+  return {
+    tipo: 'respuesta_matematica',
+    modo: 'numerico',
+    question: 'Nueva pregunta',
+    respuesta: '',
+  };
+}
+
 export function quizMultipleTemplate(): Activity {
   return {
     tipo: 'quiz_multiple',

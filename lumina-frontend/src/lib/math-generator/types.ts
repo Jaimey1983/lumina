@@ -1,8 +1,8 @@
-import type { QuizMultiple, ShortAnswerActivity } from '@lumina/types/slide';
+import type { MathAnswerActivity, QuizMultiple, ShortAnswerActivity } from '@lumina/types/slide';
 
 export type MathTema = 'suma' | 'resta' | 'multiplicacion' | 'fracciones' | 'ecuacion';
 
-export type MathFormato = 'quiz_multiple' | 'short_answer';
+export type MathFormato = 'quiz_multiple' | 'short_answer' | 'respuesta_matematica';
 
 export interface MathGeneratorMeta {
   generador: 'matematicas';
@@ -12,7 +12,11 @@ export interface MathGeneratorMeta {
 
 export type GeneratedMathQuiz = QuizMultiple & MathGeneratorMeta;
 export type GeneratedMathShortAnswer = ShortAnswerActivity & MathGeneratorMeta;
-export type GeneratedMathActivity = GeneratedMathQuiz | GeneratedMathShortAnswer;
+export type GeneratedMathRespuesta = MathAnswerActivity & MathGeneratorMeta;
+export type GeneratedMathActivity =
+  | GeneratedMathQuiz
+  | GeneratedMathShortAnswer
+  | GeneratedMathRespuesta;
 
 export interface GenerateMathOptions {
   tema: MathTema;

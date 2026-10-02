@@ -151,6 +151,7 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   quiz_multiple: 'Quiz · Opción múltiple',
   verdadero_falso: 'Actividad · Verdadero / Falso',
   short_answer: 'Actividad · Respuesta corta',
+  respuesta_matematica: 'Actividad · Respuesta matemática',
   completar_blancos: 'Actividad · Completar blancos',
   arrastrar_soltar: 'Actividad · Arrastrar y soltar',
   emparejar: 'Actividad · Emparejar',

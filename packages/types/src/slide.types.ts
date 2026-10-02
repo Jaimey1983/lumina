@@ -173,6 +173,25 @@ export interface ShortAnswerActivity {
   hint?: string;
 }
 
+/**
+ * Respuesta matemática autocalificable (Etapa M / M3a). Clase de puntuación
+ * `binary`: se compara el número del alumno con `respuesta` dentro de una
+ * tolerancia (exacta si es entera, ±0,01 si no, salvo que se declare otra).
+ * `short_answer` sigue siendo manual y no cambia.
+ */
+export interface MathAnswerActivity {
+  tipo: 'respuesta_matematica';
+  /** Solo `numerico` hoy; M4 añade `algebraico`. */
+  modo?: 'numerico';
+  question: string;
+  /** Respuesta modelo como texto numérico (`12`, `3,14`, `3/4`). */
+  respuesta: string;
+  tolerancia?: number;
+  toleranciaTipo?: 'absoluta' | 'porcentual';
+  unidad?: string;
+  hint?: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface FillBlank {
@@ -625,6 +644,7 @@ export type Activity =
   | QuizMultiple
   | TrueFalse
   | ShortAnswerActivity
+  | MathAnswerActivity
   | FillBlanks
   | DragDrop
   | MatchPairs

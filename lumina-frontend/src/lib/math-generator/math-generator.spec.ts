@@ -255,3 +255,37 @@ describe('toSingleEditorActivity', () => {
     expect(inserted).toEqual(items[0]);
   });
 });
+
+describe('formato respuesta_matematica (M3a)', () => {
+  const temas = ['suma', 'resta', 'multiplicacion', 'fracciones', 'ecuacion'] as const;
+
+  it.each(temas)('%s: la respuesta del generador se califica correcta y un número distinto no', (tema) => {
+    for (const grado of [2, 5, 9]) {
+      const [item] = generateMathActivities({
+        tema,
+        grado,
+        cantidad: 1,
+        formato: 'respuesta_matematica',
+        seed: 7,
+      });
+      expect(item?.tipo).toBe('respuesta_matematica');
+      if (item?.tipo !== 'respuesta_matematica') return;
+      const ok = evaluateActivityResponse('respuesta_matematica', item, item.respuesta);
+      expect(ok.correct).toBe(true);
+      expect(ok.score).toBe(5);
+      const mal = evaluateActivityResponse('respuesta_matematica', item, '999999');
+      expect(mal.correct).toBe(false);
+    }
+  });
+
+  it('toSingleEditorActivity conserva la actividad tal cual', () => {
+    const items = generateMathActivities({
+      tema: 'suma',
+      grado: 3,
+      cantidad: 1,
+      formato: 'respuesta_matematica',
+      seed: 1,
+    });
+    expect(toSingleEditorActivity(items)).toBe(items[0]);
+  });
+});

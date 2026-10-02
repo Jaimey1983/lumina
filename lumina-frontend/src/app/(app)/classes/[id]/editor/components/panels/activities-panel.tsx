@@ -6,6 +6,7 @@ import {
   Columns2,
   GripVertical,
   ListOrdered,
+  Calculator,
   MessageSquare,
   Radio,
   CircleDot,
@@ -37,6 +38,7 @@ export type ActivityType =
   | 'true-false'
   | 'fill-blank'
   | 'short-answer'
+  | 'respuesta-matematica'
   | 'drag-drop'
   | 'match'
   | 'sort-steps'
@@ -73,6 +75,7 @@ const EVALUATION: ActivityItem[] = [
   { type: 'true-false',    label: 'Verdadero / Falso',   Icon: CheckSquare },
   { type: 'fill-blank',    label: 'Llenar espacios',     Icon: AlignLeft },
   { type: 'short-answer',  label: 'Respuesta corta',     Icon: MessageSquare },
+  { type: 'respuesta-matematica', label: 'Respuesta matemática', Icon: Calculator },
 ];
 
 const INTERACTION: ActivityItem[] = [

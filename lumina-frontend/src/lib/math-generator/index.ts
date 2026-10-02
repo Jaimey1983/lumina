@@ -5,6 +5,7 @@ export type {
   GenerateMathOptions,
   GeneratedMathActivity,
   GeneratedMathQuiz,
+  GeneratedMathRespuesta,
   GeneratedMathShortAnswer,
   MathFormato,
   MathGeneratorMeta,

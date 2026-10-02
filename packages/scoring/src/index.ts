@@ -77,6 +77,9 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   // Evaluación — manual
   short_answer: 'manual',
 
+  // Evaluación — autocalificable (Etapa M / M3a): respuesta numérica con tolerancia
+  respuesta_matematica: 'binary',
+
   // Participación (no entra al promedio académico; columna opcional "participó")
   encuesta_viva: 'participation',
   nube_palabras: 'participation',
@@ -451,6 +454,84 @@ export function normalizeVideoAnswers(respuesta: unknown): { questionIndex: numb
     .map(([questionIndex, answer]) => ({ questionIndex, answer }));
 }
 
+
+// ─── Respuesta matemática (Etapa M / M3a) ───────────────────────────────────
+
+/**
+ * Lecturas posibles de lo que escribió el alumno (o el docente como respuesta
+ * modelo). Acepta coma decimal, el signo `−` unicode, espacios y fracciones
+ * `a/b`. Un solo punto con tres dígitos (`1.500`) es ambiguo en Colombia (miles
+ * o decimal): se devuelven AMBAS lecturas, la de miles primero, y quien califica
+ * acepta la que coincida. Vacío si no es un número. Sin `eval`, sin expresiones.
+ */
+function candidatosNumericos(entrada: unknown): number[] {
+  if (typeof entrada === 'number') return Number.isFinite(entrada) ? [entrada] : [];
+  if (typeof entrada !== 'string') return [];
+  const texto = entrada.replace(/[\s\u00a0]/g, '').replace(/[−–]/g, '-');
+  if (texto === '' || texto.length > 40) return [];
+
+  const fraccion = /^([+-]?[^/]+)\/([+-]?[^/]+)$/.exec(texto);
+  if (fraccion) {
+    const num = candidatosDecimal(fraccion[1]!)[0];
+    const den = candidatosDecimal(fraccion[2]!)[0];
+    if (num === undefined || den === undefined || den === 0) return [];
+    const v = num / den;
+    return Number.isFinite(v) ? [v] : [];
+  }
+  return candidatosDecimal(texto);
+}
+
+function candidatosDecimal(texto: string): number[] {
+  const finito = (t: string): number[] => {
+    const n = Number(t);
+    return Number.isFinite(n) ? [n] : [];
+  };
+  // 1.500.000 · 1.500,5 → miles con punto (sin ambigüedad si hay coma o más de un grupo)
+  if (/^[+-]?\d{1,3}(\.\d{3})+,\d+$/.test(texto) || /^[+-]?\d{1,3}(\.\d{3}){2,}$/.test(texto)) {
+    return finito(texto.replace(/\./g, '').replace(',', '.'));
+  }
+  // 1.500 → miles o decimal
+  if (/^[+-]?\d{1,3}\.\d{3}$/.test(texto)) {
+    return [...finito(texto.replace('.', '')), ...finito(texto)];
+  }
+  if (/^[+-]?\d+(,\d+)?$/.test(texto)) return finito(texto.replace(',', '.'));
+  if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(texto)) return finito(texto);
+  return [];
+}
+
+/** Primera lectura numérica de un texto, o `null` (API pública para editores y generadores). */
+export function parseRespuestaNumerica(entrada: unknown): number | null {
+  return candidatosNumericos(entrada)[0] ?? null;
+}
+
+/** Tolerancia efectiva: la declarada, o exacta si la respuesta es entera y ±0,01 si no. */
+function toleranciaMatematica(def: Record<string, unknown>, esperado: number): number {
+  const declarada = typeof def.tolerancia === 'number' && Number.isFinite(def.tolerancia) && def.tolerancia >= 0
+    ? def.tolerancia
+    : undefined;
+  if (declarada === undefined) return Number.isInteger(esperado) ? 0 : 0.01;
+  return def.toleranciaTipo === 'porcentual' ? (Math.abs(esperado) * declarada) / 100 : declarada;
+}
+
+function evaluateRespuestaMatematica(
+  def: Record<string, unknown>,
+  respuesta: unknown,
+): ActivityEvaluationResult {
+  const esperado = parseRespuestaNumerica(def.respuesta);
+  if (esperado === null) return UNEVALUABLE;
+  if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
+  if (typeof respuesta === 'string' && respuesta.trim() === '') return UNEVALUABLE;
+  const tolerancia = toleranciaMatematica(def, esperado);
+  const ok = candidatosNumericos(respuesta).some(
+    (dado) => Math.abs(dado - esperado) <= tolerancia + 1e-9,
+  );
+  return {
+    correct: ok,
+    details: [{ index: 0, correct: ok, label: 'Respuesta' }],
+    score: notaColombiana(ok ? 1 : 0, 1, true),
+  };
+}
+
 function evaluateBinary(
   activityType: string,
   definicion: unknown,
@@ -465,6 +546,9 @@ function evaluateBinary(
       details: [{ index: 0, correct: ok, label: 'V/F' }],
       score: notaColombiana(ok ? 1 : 0, 1, true),
     };
+  }
+  if (activityType === 'respuesta_matematica') {
+    return evaluateRespuestaMatematica(def, respuesta);
   }
   return UNEVALUABLE;
 }

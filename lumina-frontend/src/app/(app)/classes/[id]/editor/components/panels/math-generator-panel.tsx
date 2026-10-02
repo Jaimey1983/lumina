@@ -32,7 +32,8 @@ const TEMAS: { value: MathTema; label: string }[] = [
 
 const FORMATOS: { value: MathFormato; label: string }[] = [
   { value: 'quiz_multiple', label: 'Quiz (opción múltiple)' },
-  { value: 'short_answer', label: 'Respuesta corta' },
+  { value: 'respuesta_matematica', label: 'Respuesta numérica (se califica sola)' },
+  { value: 'short_answer', label: 'Respuesta corta (calificación manual)' },
 ];
 
 const GRADOS = Array.from({ length: 11 }, (_, i) => String(i + 1));
@@ -43,7 +44,7 @@ function previewLine(item: {
   question?: string;
   preguntas?: { texto?: string }[];
 }): string {
-  if (item.tipo === 'short_answer') return item.question ?? '';
+  if (item.tipo === 'short_answer' || item.tipo === 'respuesta_matematica') return item.question ?? '';
   return item.preguntas?.[0]?.texto ?? '';
 }
 
@@ -63,7 +64,7 @@ export function MathGeneratorPanel({ hasActivity, onInsertActivity, onInsertEqua
   const [seed, setSeed] = useState(1);
 
   const esSumaResta = tema === 'suma' || tema === 'resta';
-  const cantidadEfectiva = formato === 'short_answer' ? 1 : Number(cantidad);
+  const cantidadEfectiva = formato === 'quiz_multiple' ? Number(cantidad) : 1;
 
   const items = useMemo(
     () =>

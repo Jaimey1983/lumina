@@ -4,6 +4,7 @@ import type { MathRng } from './rng';
 import type {
   GeneratedMathActivity,
   GeneratedMathQuiz,
+  GeneratedMathRespuesta,
   GeneratedMathShortAnswer,
   MathFormato,
   MathGeneratorMeta,
@@ -92,13 +93,29 @@ export function toShortAnswer(
   };
 }
 
+/** Respuesta numérica autocalificable (M3a): la respuesta del generador es siempre un número o una fracción. */
+export function toRespuestaMatematica(
+  problem: MathProblem,
+  meta: MathGeneratorMeta,
+): GeneratedMathRespuesta {
+  return {
+    tipo: 'respuesta_matematica',
+    modo: 'numerico',
+    question: problem.enunciado,
+    respuesta: problem.respuesta,
+    ...meta,
+  };
+}
+
 export function formatProblem(
   problem: MathProblem,
   formato: MathFormato,
   meta: MathGeneratorMeta,
   rng: MathRng,
-): GeneratedMathQuiz | GeneratedMathShortAnswer {
-  return formato === 'short_answer' ? toShortAnswer(problem, meta) : toQuiz(problem, meta, rng);
+): GeneratedMathActivity {
+  if (formato === 'short_answer') return toShortAnswer(problem, meta);
+  if (formato === 'respuesta_matematica') return toRespuestaMatematica(problem, meta);
+  return toQuiz(problem, meta, rng);
 }
 
 /**
@@ -113,7 +130,7 @@ export function toSingleEditorActivity(
   if (!first) {
     throw new Error('math-generator: no hay ítems para insertar');
   }
-  if (first.tipo === 'short_answer') return first;
+  if (first.tipo === 'short_answer' || first.tipo === 'respuesta_matematica') return first;
 
   const preguntas = items.flatMap((item, i) =>
     item.tipo === 'quiz_multiple'

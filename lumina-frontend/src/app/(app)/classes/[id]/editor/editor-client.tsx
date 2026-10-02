@@ -108,6 +108,7 @@ import { createDefaultAhorcado } from '@lumina/element-kit/activities/ahorcado/a
 import { createDefaultPuzzlePalabras } from '@lumina/element-kit/activities/puzzle-palabras/puzzle-palabras-defaults';
 import {
   shortAnswerTemplate,
+  respuestaMatematicaTemplate,
   quizMultipleTemplate,
   trueFalseTemplate,
   fillBlanksTemplate,
@@ -1944,6 +1945,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'true-false':       trueFalseTemplate,
         'fill-blank':       fillBlanksTemplate,
         'short-answer':     shortAnswerTemplate,
+        'respuesta-matematica': respuestaMatematicaTemplate,
         'drag-drop':        dragDropTemplate,
         'match':            matchPairsTemplate,
         'sort-steps':       orderStepsTemplate,
@@ -1970,6 +1972,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'true-false':       'Verdadero o falso',
         'fill-blank':       'Completar blancos',
         'short-answer':     'Respuesta corta',
+        'respuesta-matematica': 'Respuesta matemática',
         'drag-drop':        'Arrastrar y soltar',
         'match':            'Emparejar',
         'sort-steps':       'Ordenar pasos',

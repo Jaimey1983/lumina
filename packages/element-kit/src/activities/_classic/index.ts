@@ -8,6 +8,7 @@ export type { Activity } from "@lumina/types/slide";
 
 export {
   shortAnswerTemplate,
+  respuestaMatematicaTemplate,
   quizMultipleTemplate,
   trueFalseTemplate,
   fillBlanksTemplate,
@@ -19,6 +20,10 @@ export {
   wordCloudTemplate,
 } from "./activity-templates.js";
 
+export {
+  RespuestaMatematicaEditor,
+  RespuestaMatematicaViewer,
+} from "./respuesta-matematica.js";
 export {
   ShortAnswerActivityEditor,
   ShortAnswerViewer,

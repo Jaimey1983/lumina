@@ -54,6 +54,7 @@ export function getBlockZ(block: Block): number {
 const ACTIVITY_LABELS: Record<string, string> = {
   quiz_multiple: 'Quiz opción múltiple',
   verdadero_falso: 'Verdadero / Falso',
+  respuesta_matematica: 'Respuesta matemática',
   llenar_espacios: 'Llenar espacios',
   respuesta_corta: 'Respuesta corta',
   arrastrar_soltar: 'Drag & Drop',

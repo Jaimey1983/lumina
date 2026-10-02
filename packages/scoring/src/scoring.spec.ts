@@ -6,6 +6,7 @@ import {
   getActivityScoringKind,
   isGradebookScoringDeferred,
   notaColombiana,
+  parseRespuestaNumerica,
   promedioFromFixtureSlides,
   xpFromEvaluation,
   type ActivityScoringKind,
@@ -228,5 +229,29 @@ describe('xpFromEvaluation (Fase 6)', () => {
     );
     expect(result.score).toBe(2.5);
     expect(xpFromEvaluation(result)).toBe(38);
+  });
+});
+
+describe('parseRespuestaNumerica (M3a)', () => {
+  it.each([
+    ['12', 12],
+    ['-2,5', -2.5],
+    ['−2,5', -2.5],
+    [' 3 / 4 ', 0.75],
+    ['1.500.000', 1500000],
+    ['1.500,5', 1500.5],
+    ['0,75', 0.75],
+    ['.5', 0.5],
+  ])('%s → %s', (entrada, esperado) => {
+    expect(parseRespuestaNumerica(entrada)).toBeCloseTo(esperado as number, 9);
+  });
+
+  it.each(['', 'abc', '1/0', '1,2,3', '2+2', '1e5x'])('%j no es un número', (e) => {
+    expect(parseRespuestaNumerica(e)).toBeNull();
+  });
+
+  it('no acepta objetos ni NaN', () => {
+    expect(parseRespuestaNumerica({})).toBeNull();
+    expect(parseRespuestaNumerica(Number.NaN)).toBeNull();
   });
 });

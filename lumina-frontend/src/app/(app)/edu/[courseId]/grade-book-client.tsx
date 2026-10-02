@@ -51,6 +51,7 @@ function canEditEduManualCells(role: string | undefined): boolean {
 const ACTIVITY_LABEL: Record<string, string> = {
   quiz_multiple: 'Quiz',
   verdadero_falso: 'V/F',
+  respuesta_matematica: 'Número',
   completar_blancos: 'Completar',
   arrastrar_soltar: 'Arrastrar',
   emparejar: 'Emparejar',

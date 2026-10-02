@@ -386,6 +386,19 @@ export {
 } from "./elements/short_answer/index.js";
 
 export {
+  respuestaMatematicaDefinition,
+  registrarRespuestaMatematica,
+  evaluarRespuestaMatematica,
+  RESPUESTA_MATEMATICA_TIPO,
+  RespuestaMatematicaEditor,
+  RespuestaMatematicaViewer,
+  RespuestaMatematicaPropiedades,
+  type RespuestaMatematicaConfig,
+  type RespuestaMatematicaEstado,
+  type RespuestaMatematicaDefinition,
+} from "./elements/respuesta_matematica/index.js";
+
+export {
   encuestaVivaDefinition,
   registrarEncuestaViva,
   evaluarEncuestaViva,
@@ -438,6 +451,7 @@ import { emparejarDefinition } from "./elements/emparejar/emparejar-definition.j
 import { ordenarPasosDefinition } from "./elements/ordenar_pasos/ordenar_pasos-definition.js";
 import { videoInteractivoDefinition } from "./elements/video_interactivo/video_interactivo-definition.js";
 import { shortAnswerDefinition } from "./elements/short_answer/short_answer-definition.js";
+import { respuestaMatematicaDefinition } from "./elements/respuesta_matematica/respuesta_matematica-definition.js";
 import { encuestaVivaDefinition } from "./elements/encuesta_viva/encuesta_viva-definition.js";
 import { nubePalabrasDefinition } from "./elements/nube_palabras/nube_palabras-definition.js";
 
@@ -478,6 +492,7 @@ export type ElementCatalog = {
   ordenar_pasos: typeof ordenarPasosDefinition;
   video_interactivo: typeof videoInteractivoDefinition;
   short_answer: typeof shortAnswerDefinition;
+  respuesta_matematica: typeof respuestaMatematicaDefinition;
   encuesta_viva: typeof encuestaVivaDefinition;
   nube_palabras: typeof nubePalabrasDefinition;
   texto: typeof textoDefinition;
@@ -516,6 +531,7 @@ elementRegistry.registrar(emparejarDefinition);
 elementRegistry.registrar(ordenarPasosDefinition);
 elementRegistry.registrar(videoInteractivoDefinition);
 elementRegistry.registrar(shortAnswerDefinition);
+elementRegistry.registrar(respuestaMatematicaDefinition);
 elementRegistry.registrar(encuestaVivaDefinition);
 elementRegistry.registrar(nubePalabrasDefinition);
 elementRegistry.registrar(historiaRamificadaDefinition);
