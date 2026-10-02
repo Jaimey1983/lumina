@@ -2668,7 +2668,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N0 — QA en navegador de K4–K8a y corrección de lo que aparezca
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Contexto:** K6, K7a y K7b se cerraron `en revisión` sin ninguna prueba manual (sin Postgres/servidor sanos en esas sesiones); K4, K5 y K8a sí se probaron en producción pero K8a no demostró la recarga a mitad (la migración de K5 no estaba aplicada en la base local). Construir el constructor sobre un runtime no probado es el modo de falla más caro de la etapa.
 - **Alcance — PUEDE tocar:** solo lo necesario para **corregir defectos hallados** en `packages/interactions/**`, `packages/element-kit/src/widgets/**` (emisores de eventos), `lumina-frontend/src/hooks/use-interaction-runtime.ts`, `lumina-frontend/src/lib/interaction-runtime.ts`, `variables-panel.tsx`, `interactions-panel.tsx`, `slide-renderer.tsx` (solo ramas de runtime), `lumina-backend/src/autonomous-sessions/` y `classes/` (solo validación/guardado de `variables`). Cada defecto se arregla con su prueba de regresión.
