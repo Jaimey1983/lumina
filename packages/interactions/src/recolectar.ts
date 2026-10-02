@@ -1,9 +1,32 @@
 import type { VariableDef } from '@lumina/types/interaction';
-import type { Slide } from '@lumina/types/slide';
+import type { Block, Slide } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
 import type { ReglaAplicable } from './tipos.js';
 
 type SlideConReglas = Pick<Slide, 'id' | 'bloques' | 'capas' | 'reglas'>;
+
+function visitarArbol(bloque: Block, visitar: (b: Block) => void): void {
+  visitar(bloque);
+  if (bloque.tipo === 'columnas') {
+    for (const columna of bloque.columnas) {
+      for (const hijo of columna) visitarArbol(hijo, visitar);
+    }
+  }
+}
+
+/**
+ * Bloques del slide y de sus capas, incluyendo los hijos de «columnas».
+ * No entra en `clip-group`: su contenido no es un `Block[]`.
+ */
+export function recorrerBloquesDeSlide(
+  slide: Pick<Slide, 'bloques' | 'capas'>,
+  visitar: (bloque: Block) => void,
+): void {
+  for (const bloque of slide.bloques ?? []) visitarArbol(bloque, visitar);
+  for (const capa of slide.capas ?? []) {
+    for (const bloque of capa.bloques) visitarArbol(bloque, visitar);
+  }
+}
 
 /**
  * Aplana las reglas de todos los slides en el orden en que se evalúan:

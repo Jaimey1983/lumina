@@ -13,10 +13,10 @@ import {
 /**
  * Etapa K / K6 — GUARDA DE IDA Y VUELTA.
  *
- * Una regla guardada sobre un bloque cuyo `id`/`disparadores`/`estado` se pierde
- * en el siguiente autoguardado es una regla huérfana silenciosa. Este spec
- * recorre TODOS los tipos registrados en `elementRegistry` y exige que esos tres
- * campos sobrevivan tanto a hidratar (`classSlideToRendererSlide`) como a
+ * Una regla guardada sobre un bloque cuyo `id`/`disparadores`/`estado`/`ocultoInicial`
+ * se pierde en el siguiente autoguardado es una regla huérfana silenciosa. Este spec
+ * recorre TODOS los tipos registrados en `elementRegistry` y exige que esos campos
+ * sobrevivan tanto a hidratar (`classSlideToRendererSlide`) como a
  * persistir (`sanitizeSlideContentForPersistence`). Si falla un tipo, se corrige
  * su `normalize*`, no este spec.
  */
@@ -45,6 +45,7 @@ function bloqueDe(def: Definicion): Block {
     id: 'bloque-guarda',
     disparadores: [REGLA],
     estado: 'visitado',
+    ocultoInicial: true,
   } as unknown as Block;
 }
 
@@ -63,8 +64,13 @@ const definiciones = (elementRegistry.listar() as readonly Definicion[]).filter(
 );
 
 function campos(b: Block) {
-  const r = b as unknown as { id?: unknown; disparadores?: unknown; estado?: unknown };
-  return { id: r.id, disparadores: r.disparadores, estado: r.estado };
+  const r = b as unknown as {
+    id?: unknown;
+    disparadores?: unknown;
+    estado?: unknown;
+    ocultoInicial?: unknown;
+  };
+  return { id: r.id, disparadores: r.disparadores, estado: r.estado, ocultoInicial: r.ocultoInicial };
 }
 
 describe('K6 · el motor sobrevive a hidratar y persistir, para todos los tipos', () => {
@@ -73,10 +79,15 @@ describe('K6 · el motor sobrevive a hidratar y persistir, para todos los tipos'
   });
 
   it.each(definiciones.map((d) => [d.tipo, d] as const))(
-    '%s conserva id, disparadores y estado',
+    '%s conserva id, disparadores, estado y ocultoInicial',
     (_tipo, def) => {
       const bloque = bloqueDe(def);
-      const esperado = { id: 'bloque-guarda', disparadores: [REGLA], estado: 'visitado' };
+      const esperado = {
+        id: 'bloque-guarda',
+        disparadores: [REGLA],
+        estado: 'visitado',
+        ocultoInicial: true,
+      };
 
       const hidratado = classSlideToRendererSlide(apiSlide([bloque])).bloques ?? [];
       expect(hidratado, 'hidratar').toHaveLength(1);
@@ -93,7 +104,12 @@ describe('K6 · el motor sobrevive a hidratar y persistir, para todos los tipos'
     const textoDef = definiciones.find((d) => d.tipo === 'texto')!;
     const hijo = bloqueDe(textoDef);
     const columnas = { tipo: 'columnas', columnas: [[hijo], []] } as unknown as Block;
-    const esperado = { id: 'bloque-guarda', disparadores: [REGLA], estado: 'visitado' };
+    const esperado = {
+      id: 'bloque-guarda',
+      disparadores: [REGLA],
+      estado: 'visitado',
+      ocultoInicial: true,
+    };
     const hidratado = (classSlideToRendererSlide(apiSlide([columnas])).bloques ?? [])[0] as unknown as {
       columnas: Block[][];
     };
@@ -101,5 +117,42 @@ describe('K6 · el motor sobrevive a hidratar y persistir, para todos los tipos'
     const persistido = sanitizeSlideContentForPersistence({ bloques: [columnas] });
     const col = (persistido?.bloques as unknown as Array<{ columnas: Block[][] }>)[0]!;
     expect(campos(col.columnas[0]![0]!)).toEqual(esperado);
+  });
+
+  it('K8a: classSlideToRendererSlide conserva capas y el ocultoInicial de sus bloques', () => {
+    const textoDef = definiciones.find((d) => d.tipo === 'texto')!;
+    const oculto = bloqueDe(textoDef);
+    const api = {
+      id: 's1',
+      order: 0,
+      type: 'CONTENT',
+      title: 'x',
+      content: {
+        bloques: [],
+        capas: [
+          {
+            id: 'c1',
+            nombre: 'Pista',
+            modal: true,
+            visibleInicial: true,
+            bloques: [oculto],
+          },
+        ],
+      },
+    } as ApiSlide;
+    const slide = classSlideToRendererSlide(api);
+    expect(slide.capas).toHaveLength(1);
+    expect(slide.capas?.[0]).toMatchObject({
+      id: 'c1',
+      nombre: 'Pista',
+      modal: true,
+      visibleInicial: true,
+    });
+    expect(campos(slide.capas![0]!.bloques[0]!)).toEqual({
+      id: 'bloque-guarda',
+      disparadores: [REGLA],
+      estado: 'visitado',
+      ocultoInicial: true,
+    });
   });
 });

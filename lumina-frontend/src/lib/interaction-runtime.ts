@@ -10,6 +10,7 @@
 
 import {
   crearEstadoInicial,
+  entrarASlide,
   procesarEvento,
   type EstadoMotor,
   type EventoMotor,
@@ -39,7 +40,11 @@ export function ejecutarEvento({
   evento,
   navigate,
 }: EjecutarEventoArgs): EstadoMotor {
-  const base = estado ?? crearEstadoInicial(variables, slides);
+  let base = estado ?? crearEstadoInicial(variables, slides);
+  if (evento.tipo === 'al_entrar_slide' && evento.slideId) {
+    const slide = slides.find((s) => s.id === evento.slideId);
+    if (slide) base = entrarASlide(base, slide);
+  }
   if (reglas.length === 0) return base;
   const res = procesarEvento(reglas, base, evento, { variables });
   if (navigate) {

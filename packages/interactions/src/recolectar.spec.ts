@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { crearEstadoInicial } from './estado.js';
+import { crearEstadoInicial, entrarASlide } from './estado.js';
 import { contextoDesdeSlides, recolectarReglas } from './recolectar.js';
 import { bloque, num, regla, slide } from './prueba-utils.js';
 
@@ -86,5 +86,72 @@ describe('crearEstadoInicial con slides', () => {
       { id: 'b', nombre: 'b', tipo: 'booleano', valorInicial: 'si' },
     ]);
     expect(e.variables).toEqual({ n: 0, t: '', b: false });
+  });
+
+  it('siembra ocultoInicial del slide, de la capa y de los hijos de columnas', () => {
+    const e = crearEstadoInicial(
+      [],
+      [
+        slide('s1', {
+          bloques: [
+            bloque('visible'),
+            bloque('pista', { ocultoInicial: true }),
+            bloque('cols', {
+              tipo: 'columnas',
+              columnas: [[bloque('hijo', { ocultoInicial: true })]],
+            }),
+          ],
+          capas: [
+            {
+              id: 'abierta',
+              nombre: 'A',
+              visibleInicial: true,
+              bloques: [bloque('en-capa', { ocultoInicial: true })],
+            },
+          ],
+        }),
+      ],
+    );
+    expect(e.visibles.pista).toBe(false);
+    expect(e.visibles.hijo).toBe(false);
+    expect(e.visibles['en-capa']).toBe(false);
+    expect(e.visibles).not.toHaveProperty('visible');
+    expect(e.capasAbiertas).toEqual(['abierta']);
+  });
+
+  it('no pisa un visibles que una acción ya escribió', () => {
+    const s = slide('s1', { bloques: [bloque('pista', { ocultoInicial: true })] });
+    const base = crearEstadoInicial([], [s]);
+    const tocado = { ...base, visibles: { ...base.visibles, pista: true } };
+    expect(entrarASlide(tocado, s).visibles.pista).toBe(true);
+  });
+
+  it('K5: un estado restaurado no se reabre al entrar de nuevo', () => {
+    const s = slide('s1', {
+      bloques: [bloque('pista', { ocultoInicial: true })],
+      capas: [{ id: 'abierta', nombre: 'A', visibleInicial: true, bloques: [] }],
+    });
+    const inicial = crearEstadoInicial([], [s]);
+    const restaurado = {
+      ...inicial,
+      visibles: { ...inicial.visibles, pista: true },
+      capasAbiertas: [] as string[],
+    };
+    const otra = entrarASlide(restaurado, s);
+    expect(otra.visibles.pista).toBe(true);
+    expect(otra.capasAbiertas).toEqual([]);
+  });
+
+  it('la primera entrada siembra y la segunda no reabre una capa cerrada', () => {
+    const s = slide('s1', {
+      bloques: [bloque('pista', { ocultoInicial: true })],
+      capas: [{ id: 'abierta', nombre: 'A', visibleInicial: true, bloques: [] }],
+    });
+    const primera = entrarASlide(crearEstadoInicial([]), s);
+    expect(primera.visibles.pista).toBe(false);
+    expect(primera.capasAbiertas).toEqual(['abierta']);
+    const segunda = entrarASlide({ ...primera, capasAbiertas: [] }, s);
+    expect(segunda.capasAbiertas).toEqual([]);
+    expect(segunda.visibles.pista).toBe(false);
   });
 });

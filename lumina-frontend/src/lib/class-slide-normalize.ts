@@ -9,7 +9,7 @@ import type {
   Slide,
   SlideGuias,
 } from '@lumina/types/slide';
-import type { Regla } from '@lumina/types/interaction';
+import type { Capa, Regla } from '@lumina/types/interaction';
 import type { TransicionSlide } from '@lumina/types/animation';
 import { parseSlideGuias } from '@/lib/canvas-guides';
 import { normalizarEmparejar } from '@lumina/element-kit/activities/emparejar/emparejar-config';
@@ -171,7 +171,7 @@ function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
  * Varios `normalize*` (ruleta, popup, hotspot, tooltip, boton, contador,
  * progreso, grafico, diagrama) reconstruyen el bloque campo por campo y los
  * descartaban, al leer y al guardar: se perdían animaciones, bloqueo de lienzo
- * y rotación, y (Etapa K) `id`/`disparadores`/`estado`.
+ * y rotación, y (Etapa K) `id`/`disparadores`/`estado`/`ocultoInicial`.
  */
 function conservarCamposComunes(original: Block, normalizado: Block): Block {
   const o = original as unknown as Record<string, unknown>;
@@ -180,6 +180,9 @@ function conservarCamposComunes(original: Block, normalizado: Block): Block {
   if (n.id === undefined && typeof o.id === 'string' && o.id !== '') extra.id = o.id;
   if (n.disparadores === undefined && Array.isArray(o.disparadores)) extra.disparadores = o.disparadores;
   if (n.estado === undefined && typeof o.estado === 'string') extra.estado = o.estado;
+  if (n.ocultoInicial === undefined && typeof o.ocultoInicial === 'boolean') {
+    extra.ocultoInicial = o.ocultoInicial;
+  }
   if (n.animaciones === undefined && Array.isArray(o.animaciones)) extra.animaciones = o.animaciones;
   if (n.canvasLocked === undefined && typeof o.canvasLocked === 'boolean') extra.canvasLocked = o.canvasLocked;
   if (n.rotacion === undefined && typeof o.rotacion === 'number') extra.rotacion = o.rotacion;
@@ -268,12 +271,40 @@ function normalizeBlocks(bloques: Block[]): Block[] {
   return withoutInteractiveStubs(bloques).map(normalizeBlock);
 }
 
+/**
+ * K8a — las capas viven en `content.capas` (K1) pero el reproductor pinta
+ * `Slide.capas`. Sin este paso, preview y autónomo nunca ven la capa.
+ * Los bloques de cada capa pasan por el mismo `normalizeBlock` que el slide
+ * base, así `ocultoInicial` sobrevive dentro de la capa.
+ */
+function normalizeCapas(raw: unknown): Capa[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const capas: Capa[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const c = item as Record<string, unknown>;
+    if (typeof c.id !== 'string' || c.id.length === 0) continue;
+    if (typeof c.nombre !== 'string') continue;
+    if (!Array.isArray(c.bloques)) continue;
+    const capa: Capa = {
+      id: c.id,
+      nombre: c.nombre,
+      bloques: normalizeBlocks(c.bloques as Block[]),
+    };
+    if (typeof c.modal === 'boolean') capa.modal = c.modal;
+    if (typeof c.visibleInicial === 'boolean') capa.visibleInicial = c.visibleInicial;
+    capas.push(capa);
+  }
+  return capas;
+}
+
 /** Convierte el slide tal como viene del API en el tipo `Slide` que usa `SlideRenderer`. */
 export function classSlideToRendererSlide(api: ApiSlide): Slide {
   const c = getSlideContentRecord(api);
   const rawBloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
   const bloques = normalizeBlocks(rawBloques);
   const temaId = typeof c.temaId === 'string' && c.temaId.length > 0 ? c.temaId : undefined;
+  const capas = normalizeCapas(c.capas);
 
   return {
     id: api.id,
@@ -288,6 +319,7 @@ export function classSlideToRendererSlide(api: ApiSlide): Slide {
     guias: parseSlideGuias(c.guias),
     transicion: resolveTransicion(c),
     ...(Array.isArray(c.reglas) ? { reglas: c.reglas as Regla[] } : {}),
+    ...(capas !== undefined ? { capas } : {}),
     content: null,
   };
 }

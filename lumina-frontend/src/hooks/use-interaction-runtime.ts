@@ -4,9 +4,10 @@
  * Runtime del motor de interacción (Etapa K / K4).
  *
  * Mantiene el estado del motor para UN alumno (D2), procesa los eventos que
- * emiten los elementos con `@lumina/interactions` y ejecuta el único efecto
- * posible, `navegar`, a través de la función `navigate` del reproductor — la
+ * emiten los elementos con `@lumina/interactions` y ejecuta el efecto
+ * `navegar` a través de la función `navigate` del reproductor — la
  * misma que se publica en `SlideNavContext` (`navigate: null` en clase en vivo).
+ * `cerrarCapa` (Escape sobre una capa, K8a) solo filtra `capasAbiertas`.
  *
  * Reglas de oro:
  *  - D1: `enabled: false` (clase en vivo, presentación) o `navigate: null` →
@@ -17,7 +18,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { recolectarReglas, type EstadoMotor, type EventoMotor } from '@lumina/interactions';
+import {
+  crearEstadoInicial,
+  recolectarReglas,
+  type EstadoMotor,
+  type EventoMotor,
+} from '@lumina/interactions';
 import type { EstadoObjeto, EventoTipo, VariableDef } from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
@@ -28,6 +34,12 @@ import { ejecutarEvento, hidratarEstado } from '@/lib/interaction-runtime';
 export interface SlideInteractionRuntime {
   emitir: (bloqueId: string, evento: EventoTipo) => void;
   estadoDe: (bloqueId: string) => EstadoObjeto | undefined;
+  /** K8a — `false` = el reproductor omite el bloque. Ausente = visible. */
+  visibles: Readonly<Record<string, boolean>>;
+  /** K8a — ids de capas abiertas, en orden de apertura. */
+  capasAbiertas: readonly string[];
+  /** K8a — Escape. Solo quita la capa; no navega ni puntúa. */
+  cerrarCapa: (capaId: string) => void;
 }
 
 export interface UseInteractionRuntimeOptions {
@@ -130,13 +142,35 @@ export function useInteractionRuntime({
     despachar({ tipo: 'al_entrar_slide', slideId });
   }, [enabled, slideId, despachar]);
 
+  const estadoParaPintar = useMemo(
+    () => (enabled ? (estadoGuardado ?? crearEstadoInicial(variables, slides)) : null),
+    [enabled, estadoGuardado, variables, slides],
+  );
+
+  const cerrarCapa = useCallback((capaId: string) => {
+    const v = vivo.current;
+    if (!v.enabled) return;
+    const base = estadoRef.current ?? crearEstadoInicial(v.contexto.variables, v.slides);
+    if (!base.capasAbiertas.includes(capaId)) return;
+    const nuevo: EstadoMotor = {
+      ...base,
+      capasAbiertas: base.capasAbiertas.filter((id) => id !== capaId),
+    };
+    estadoRef.current = nuevo;
+    setEstadoGuardado(nuevo);
+    v.onEstadoChange?.(nuevo);
+  }, []);
+
   const runtime = useMemo<SlideInteractionRuntime | undefined>(() => {
-    if (!enabled) return undefined;
+    if (!enabled || !estadoParaPintar) return undefined;
     return {
       emitir,
-      estadoDe: (bloqueId) => estadoGuardado?.estados[bloqueId],
+      estadoDe: (bloqueId) => estadoParaPintar.estados[bloqueId],
+      visibles: estadoParaPintar.visibles,
+      capasAbiertas: estadoParaPintar.capasAbiertas,
+      cerrarCapa,
     };
-  }, [enabled, emitir, estadoGuardado]);
+  }, [enabled, emitir, estadoParaPintar, cerrarCapa]);
 
   return { slides, runtime, estado: estadoGuardado };
 }

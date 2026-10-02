@@ -5,6 +5,7 @@ import type {
 } from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
+import { recorrerBloquesDeSlide } from './recolectar.js';
 import type { EstadoMotor } from './tipos.js';
 
 /** Copia mutable interna; nunca sale del paquete. */
@@ -72,11 +73,39 @@ export function clonarEstado(estado: EstadoMotor): EstadoTrabajo {
   };
 }
 
-type SlideInicial = Pick<Slide, 'bloques' | 'capas'>;
+type SlideInicial = Pick<Slide, 'bloques' | 'capas'> & { id?: string };
+
+/** Marca, dentro de `visibles`, que el slide ya se visitó en este intento. */
+const MARCA_VISITA = '\u001f';
+
+function marcaDeVisita(slideId: string): string {
+  return `${MARCA_VISITA}${slideId}`;
+}
+
+/** `ocultoInicial` solo se escribe si esa clave todavía no existe. */
+function sembrarVisibles(trabajo: EstadoTrabajo, slide: SlideInicial): void {
+  recorrerBloquesDeSlide(slide, (bloque) => {
+    if (bloque.ocultoInicial !== true) return;
+    const id = idDeBloque(bloque);
+    if (id === undefined || Object.hasOwn(trabajo.visibles, id)) return;
+    trabajo.visibles[id] = false;
+  });
+}
+
+/** Capas `visibleInicial`. Solo en la primera visita, para no reabrir las que el alumno cerró. */
+function sembrarCapasIniciales(trabajo: EstadoTrabajo, slide: SlideInicial): void {
+  for (const capa of slide.capas ?? []) {
+    if (capa.visibleInicial && !trabajo.capasAbiertas.includes(capa.id)) {
+      trabajo.capasAbiertas.push(capa.id);
+    }
+  }
+}
 
 /**
  * Estado con el que empieza un alumno: variables en su valor inicial, estado
- * de objeto de cada bloque (`Block.estado`) y capas con `visibleInicial`.
+ * de objeto de cada bloque (`Block.estado`), capas con `visibleInicial` y
+ * bloques `ocultoInicial` (`visibles[id] = false`). Una clave que ya exista
+ * en `visibles` no se pisa.
  *
  * Un `valorInicial` incoherente con su `tipo` se reemplaza por el valor neutro
  * del tipo (el error lo reporta `validarReglas`, que es quien debe correr al
@@ -118,9 +147,25 @@ export function crearEstadoInicial(
         }
       }
     }
+    sembrarVisibles(trabajo, slide);
+    if (slide.id) trabajo.visibles[marcaDeVisita(slide.id)] = true;
   }
 
   return trabajo;
+}
+
+/**
+ * Primera visita al slide en este intento: siembra lo que falte.
+ * Si el slide ya se visitó (o K5 restauró `visibles`/`capasAbiertas`), no reabre
+ * capas ni pisa un bloque que una acción ya mostró u ocultó.
+ */
+export function entrarASlide(estado: EstadoMotor, slide: SlideInicial & { id: string }): EstadoMotor {
+  const trabajo = clonarEstado(estado);
+  const primera = !Object.hasOwn(trabajo.visibles, marcaDeVisita(slide.id));
+  sembrarVisibles(trabajo, slide);
+  if (primera) sembrarCapasIniciales(trabajo, slide);
+  trabajo.visibles[marcaDeVisita(slide.id)] = true;
+  return congelar(trabajo);
 }
 
 export function congelar(trabajo: EstadoTrabajo): EstadoMotor {

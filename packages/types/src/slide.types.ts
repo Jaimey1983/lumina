@@ -1596,6 +1596,11 @@ export type Block = (
   disparadores?: import('./interaction.types.js').Regla[];
   /** Estado de objeto inicial (Etapa K / K1). Por defecto `'normal'`. */
   estado?: import('./interaction.types.js').EstadoObjeto;
+  /**
+   * K8a — el bloque no se pinta al entrar al slide hasta que una regla lo
+   * `mostrar`. Aditivo y opcional: si falta, el bloque es visible.
+   */
+  ocultoInicial?: boolean;
 };
 
 export type BlockTipo = Block['tipo'];

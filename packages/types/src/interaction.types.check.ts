@@ -26,7 +26,7 @@ type Assert<T extends true> = T;
 // `Record<never, never> extends Pick<…>` solo se cumple si TODAS las claves elegidas son opcionales,
 // es decir, un bloque/slide/clase guardado antes de K1 sigue tipando igual.
 export type _BlockAditivo = Assert<
-  Record<never, never> extends Pick<Block, 'disparadores' | 'estado'> ? true : false
+  Record<never, never> extends Pick<Block, 'disparadores' | 'estado' | 'ocultoInicial'> ? true : false
 >;
 export type _SlideAditivo = Assert<
   Record<never, never> extends Pick<Slide, 'capas' | 'reglas'> ? true : false
@@ -42,6 +42,7 @@ export type _TipoDisparadores = Assert<
 export type _TipoEstado = Assert<
   Equal<NonNullable<Block['estado']>, EstadoObjeto>
 >;
+export type _TipoOcultoInicial = Assert<Equal<NonNullable<Block['ocultoInicial']>, boolean>>;
 export type _TipoCapas = Assert<Equal<NonNullable<Slide['capas']>, Capa[]>>;
 export type _TipoVariables = Assert<
   Equal<NonNullable<SlideClass['variables']>, VariableDef[]>

@@ -14,7 +14,7 @@ import {
   type RefObject,
 } from 'react';
 import type { SlideInteractionRuntime } from '@/hooks/use-interaction-runtime';
-import type { EventoTipo } from '@lumina/types/interaction';
+import type { Capa, EventoTipo } from '@lumina/types/interaction';
 import { createPortal } from 'react-dom';
 import { Trash2, Copy, Pencil, Lock, LockOpen, Ungroup } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -544,6 +544,106 @@ interface BlockNodeProps {
  */
 const InteractionRuntimeContext = createContext<SlideInteractionRuntime | undefined>(undefined);
 
+/** El SlideRenderer más externo es el único que pinta capas (un recorte anidado hereda el runtime). */
+const CapaHostContext = createContext(false);
+
+const FOCALIZABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function bloqueOcultoEnRuntime(
+  block: Block,
+  runtime: SlideInteractionRuntime | undefined,
+  modo: string,
+  isThumbnail: boolean,
+): boolean {
+  if (!runtime || modo === 'editor' || isThumbnail) return false;
+  const id = (block as { id?: string }).id;
+  if (typeof id !== 'string' || id === '') return false;
+  return runtime.visibles[id] === false;
+}
+
+function CapaOverlay({
+  capa,
+  esTope,
+  onCerrar,
+  children,
+}: {
+  capa: Capa;
+  esTope: boolean;
+  onCerrar: () => void;
+  children: ReactNode;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const disparadorRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    disparadorRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const primero = dialog.querySelector<HTMLElement>(FOCALIZABLE);
+    (primero ?? dialog).focus();
+    return () => {
+      disparadorRef.current?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!esTope) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onCerrar();
+        return;
+      }
+      if (!capa.modal || e.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const lista = [dialog, ...dialog.querySelectorAll<HTMLElement>(FOCALIZABLE)];
+      const actual = document.activeElement instanceof HTMLElement ? document.activeElement : dialog;
+      const i = lista.indexOf(actual);
+      const desde = i < 0 ? 0 : i;
+      const siguiente = e.shiftKey
+        ? lista[(desde - 1 + lista.length) % lista.length]!
+        : lista[(desde + 1) % lista.length]!;
+      e.preventDefault();
+      siguiente.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [esTope, capa.modal, onCerrar]);
+
+  return (
+    <>
+      {capa.modal ? (
+        <div
+          aria-hidden
+          style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.45)' }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        />
+      ) : null}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal={capa.modal ? true : undefined}
+        aria-label={capa.nombre}
+        tabIndex={-1}
+        data-capa-id={capa.id}
+        style={{ position: 'absolute', inset: 0, zIndex: 41, pointerEvents: 'none' }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
 function BlockNode({
   block,
   blockId,
@@ -669,7 +769,10 @@ function BlockNode({
 
   useBlockAnimations(blockRef, block.animaciones, isViewerMode);
 
+  if (bloqueOcultoEnRuntime(block, interactionRuntime, modo, isThumbnail)) return null;
+
   function renderColumnInnerBlock(innerBlock: Block, colIdx: number, blockIdx: number) {
+    if (bloqueOcultoEnRuntime(innerBlock, interactionRuntime, modo, isThumbnail)) return null;
     const id = `${pathPrefix}-${colIdx}-${blockIdx}`;
     const isInnerSelected = editorMode && (
       selectedBlockIds && selectedBlockIds.length > 0
@@ -1031,7 +1134,12 @@ function BlockNode({
         ...positionStyle,
         ...animationStyle,
         ...(isLiveDragging ? { opacity: 1, visibility: 'visible' as const } : {}),
-        ...(estaDeshabilitado ? { pointerEvents: 'none' as const, opacity: 0.5 } : {}),
+        // La capa usa pointer-events:none en el diálogo para que el fondo
+        // modal reciba el clic. El bloque tiene que recuperarlos: la propiedad
+        // se hereda y, si no, el botón de la capa no se puede pulsar.
+        ...(estaDeshabilitado
+          ? { pointerEvents: 'none' as const, opacity: 0.5 }
+          : { pointerEvents: 'auto' as const }),
         // Etapa G · G2a fix — con react-moveable como target, el contenido de
         // texto (no contenteditable salvo isTextEditing) sigue siendo
         // seleccionable por el navegador por defecto: un click-drag en el
@@ -1322,6 +1430,11 @@ export interface SlideRendererProps {
   isThumbnail?: boolean;
   /** Runtime del motor de interacción (K4); `undefined` = inerte. */
   runtime?: SlideInteractionRuntime;
+  /**
+   * K8a — solo el wrapper lo pone en true, y solo en preview / visor autónomo.
+   * El editor, las miniaturas y un recorte anidado no pintan capas.
+   */
+  pintarCapas?: boolean;
   /** Id de índice (`"0"`) del bloque en drag live — preview visible, sin opacity 0. */
   draggingBlockId?: string | null;
   clipGroupInnerEditId?: string | null;
@@ -1395,8 +1508,10 @@ function SlideRendererBase({
   onClipGroupChange,
   onUngroupClipGroup,
   theme: themeProp,
+  pintarCapas = false,
   // `runtime` lo consume el wrapper `SlideRenderer`.
 }: SlideRendererProps) {
+  const interactionRuntime = useContext(InteractionRuntimeContext);
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
   const selectedId = selectedBlockIdProp !== undefined ? selectedBlockIdProp : selectedIdState;
   const slideFonts = useMemo(
@@ -1675,6 +1790,53 @@ function SlideRendererBase({
     return () => observer.disconnect();
   }, [isViewerFillScaled]);
 
+  const capasVisibles =
+    pintarCapas && interactionRuntime
+      ? interactionRuntime.capasAbiertas
+          .map((id) => (slide.capas ?? []).find((c) => c.id === id))
+          .filter((c): c is Capa => c !== undefined)
+      : [];
+  const capaOverlays = capasVisibles.map((capa, capaIndex) => (
+    <CapaOverlay
+      key={capa.id}
+      capa={capa}
+      esTope={capaIndex === capasVisibles.length - 1}
+      onCerrar={() => interactionRuntime?.cerrarCapa(capa.id)}
+    >
+      {capa.bloques.map((block, index) => {
+        const blockId = `capa:${capa.id}:${index}`;
+        return (
+          <BlockNode
+            key={blockId}
+            block={block}
+            blockId={blockId}
+            slideId={slide.id}
+            isSelected={false}
+            modo={modo === 'preview' ? 'preview' : 'viewer'}
+            selectedId={null}
+            onClick={() => {}}
+            onBlockClick={() => {}}
+            pathPrefix={blockId}
+            positionStyle={getBlockPositionStyle(block)}
+            canvasRef={measureCanvasRef}
+            currentCoords={{ x: 0, y: 0, ancho: 0, alto: 0 }}
+            onResize={() => {}}
+            onResizeEnd={() => {}}
+            editingId={null}
+            variant={variant}
+            blockIndex={index}
+            liveSocket={liveSocket}
+            torneoSocket={torneoSocket}
+            viewerStudentId={viewerStudentId}
+            viewerStudentName={viewerStudentName}
+            viewerClassId={viewerClassIdResolved}
+            isThumbnail={isThumbnail}
+          />
+        );
+      })}
+    </CapaOverlay>
+  ));
+
   if (modo === 'preview') {
     return (
       <SlideThemeProvider value={{ theme: slideTheme }}>
@@ -1704,6 +1866,7 @@ function SlideRendererBase({
               <BackgroundImageLayer fondo={slide.fondo} />
             )}
             {blocks.map((block, index) => {
+              if (bloqueOcultoEnRuntime(block, interactionRuntime, modo, isThumbnail)) return null;
               const blockId = String(index);
               return (
                 <BlockNode
@@ -1737,6 +1900,7 @@ function SlideRendererBase({
           />
               );
             })}
+            {capaOverlays}
           </div>
         )}
       </div>
@@ -1760,6 +1924,7 @@ function SlideRendererBase({
 
   // key={slide.id} forces full remount of blocks on slide change → re-triggers entry animation
   const blockNodes = blocks.map((block, index) => {
+        if (bloqueOcultoEnRuntime(block, interactionRuntime, modo, isThumbnail)) return null;
         const blockId = String(index);
         const posStyleObj = getBlockPositionStyle(block);
         const currentCoords = resizingCoords[blockId] ?? getBlockRawCoords(block);
@@ -1893,6 +2058,7 @@ function SlideRendererBase({
           >
             {backgroundLayer}
             {blockNodes}
+            {capaOverlays}
             {emptyState}
           </div>
         )}
@@ -1932,6 +2098,7 @@ function SlideRendererBase({
       >
         {backgroundLayer}
         {blockNodes}
+        {capaOverlays}
         {emptyState}
       </div>
     )}
@@ -1941,12 +2108,18 @@ function SlideRendererBase({
 }
 
 export function SlideRenderer(props: SlideRendererProps) {
+  const anidado = useContext(CapaHostContext);
+  const pintarCapas =
+    !anidado && props.runtime !== undefined && props.modo !== 'editor' && props.isThumbnail !== true;
+  const base = <SlideRendererBase {...props} pintarCapas={pintarCapas} />;
   // Sin runtime no se abre un Provider: un `SlideRenderer` anidado (p. ej. la
   // composición de un recorte) hereda el del padre en vez de anularlo.
-  if (props.runtime === undefined) return <SlideRendererBase {...props} />;
-  return (
-    <InteractionRuntimeContext.Provider value={props.runtime}>
-      <SlideRendererBase {...props} />
-    </InteractionRuntimeContext.Provider>
-  );
+  const conRuntime =
+    props.runtime === undefined ? (
+      base
+    ) : (
+      <InteractionRuntimeContext.Provider value={props.runtime}>{base}</InteractionRuntimeContext.Provider>
+    );
+  if (anidado) return conRuntime;
+  return <CapaHostContext.Provider value={true}>{conRuntime}</CapaHostContext.Provider>;
 }

@@ -191,6 +191,52 @@ describe('ejecutarEvento (runtime)', () => {
     expect(JSON.stringify(estado)).not.toMatch(/score|nota|puntaje/i);
     fetchSpy.mockRestore();
   });
+
+  it('abrir_capa y cerrar_capa no producen navegación', () => {
+    const abrir: Regla = {
+      id: 'abre-regla',
+      evento: 'clic',
+      condiciones: [],
+      acciones: [{ tipo: 'abrir_capa', capaId: 'c1' }],
+      activa: true,
+    };
+    const cerrar: Regla = {
+      id: 'cierra-regla',
+      evento: 'clic',
+      condiciones: [],
+      acciones: [{ tipo: 'cerrar_capa', capaId: 'c1' }],
+      activa: true,
+    };
+    const conCapas = [
+      slide(
+        's1',
+        [boton({ id: 'abre', disparadores: [abrir] }), boton({ id: 'cierra', disparadores: [cerrar] })],
+        { capas: [{ id: 'c1', nombre: 'Pista', bloques: [] }] },
+      ),
+    ];
+    const reglasCapa = recolectarReglas(conCapas);
+    const navigate = vi.fn<(a: SlideNavAction) => void>();
+    const abierto = ejecutarEvento({
+      reglas: reglasCapa,
+      estado: null,
+      variables: [],
+      slides: conCapas,
+      evento: { tipo: 'clic', bloqueId: 'abre', slideId: 's1' },
+      navigate,
+    });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(abierto.capasAbiertas).toContain('c1');
+    const cerrado = ejecutarEvento({
+      reglas: reglasCapa,
+      estado: abierto,
+      variables: [],
+      slides: conCapas,
+      evento: { tipo: 'clic', bloqueId: 'cierra', slideId: 's1' },
+      navigate,
+    });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(cerrado.capasAbiertas).not.toContain('c1');
+  });
 });
 
 describe('C1/C4: el runtime no conoce la nota ni la red', () => {
@@ -236,5 +282,26 @@ describe('hidratarEstado (K5)', () => {
     expect(e?.variables.t).toBe('hola');
     expect(e?.variables).not.toHaveProperty('fantasma');
     expect(e?.estados).not.toHaveProperty('b1');
+  });
+
+  it('restaura visibles y capas, y una entrada posterior no las pisa', () => {
+    const slides = [
+      slide('s1', [boton({ id: 'pista', ocultoInicial: true })], {
+        capas: [{ id: 'c1', nombre: 'C', visibleInicial: true, bloques: [] }],
+      }),
+    ];
+    const e = hidratarEstado({ visibles: { pista: true }, capasAbiertas: [] }, [], slides);
+    expect(e?.visibles.pista).toBe(true);
+    expect(e?.capasAbiertas).toEqual([]);
+    const despues = ejecutarEvento({
+      reglas: [],
+      estado: e,
+      variables: [],
+      slides,
+      evento: { tipo: 'al_entrar_slide', slideId: 's1' },
+      navigate: vi.fn(),
+    });
+    expect(despues.visibles.pista).toBe(true);
+    expect(despues.capasAbiertas).toEqual([]);
   });
 });

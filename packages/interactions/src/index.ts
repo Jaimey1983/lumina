@@ -1,7 +1,7 @@
 // @lumina/interactions — motor de interacción (Etapa K / K2).
 // Puro. Decide el FLUJO; la NOTA la decide @lumina/scoring (C1/C4).
 
-export { crearEstadoInicial } from './estado.js';
+export { crearEstadoInicial, entrarASlide } from './estado.js';
 export { evaluarCondicion, evaluarCondiciones, evaluarOperando } from './condiciones.js';
 export type { CtxEvaluacion } from './condiciones.js';
 export { procesarEvento } from './motor.js';
