@@ -2576,14 +2576,19 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración: **Reglas 1–4
 - **Entregable:** una fórmula `{{a}}x^2+…` con variables controlables se redibuja al ajustar, el valor se restaura al recargar (K5); los pasos se revelan de a uno y emiten `visitado` al final; sin `vinculos`/`pasos` el DOM es idéntico al de M1 (Regla 7). Verif: la de M1 + `@lumina/interactions` build/test/lint + QA en build de producción (autónomo y preview; en vivo y presentación sin variables).
 - **Cierre:** no aplica Regla 4.
 
-#### M3 — Generador con LaTeX real y respuesta corta autocalificable
+#### M3 — Respuesta matemática autocalificable (M3a) y generador con LaTeX (M3b)
 - **Operador:** Claude Code
-- **Estado:** pendiente — **bloqueada por decisión del dueño sobre scoring de `short_answer`** (hoy `manual`).
-- **Alcance previsto:** enunciados/opciones de `math-generator` con LaTeX (fracciones, ecuaciones) renderizados con el módulo de M1; ampliar temas a grados 6–11 (álgebra, funciones, trigonometría básica). Autocalificar `short_answer` numérico de forma **opt-in por actividad** (comparación numérica con tolerancia) en `@lumina/scoring` con fixtures de paridad cliente/backend; sin el flag, comportamiento actual intacto.
+- **Decisión del dueño (2026-10-02):** opción **B** (opt-in, nada existente cambia), tolerancia por defecto **exacta si la respuesta es entera y ±0,01 si no**.
+- **Corrección de alcance (Regla 10, antes de tocar código):** una casilla «calificar automáticamente» sobre `short_answer` obliga a distinguir, en cada sitio que hoy decide por `activityType === 'short_answer'`, si esa actividad concreta es manual o no: `countsTowardClassGradebookAverage` (`isManual`), `isShortAnswerPendingScore`, `classes.service.ts:962` (`esManual`), `autonomous-sessions.service.ts:667` y la persistencia de resultados. Son 6–7 puntos del cálculo de notas en producción. **Se implementa el opt-in como un tipo de actividad propio, `respuesta_matematica`, de clase `binary`:** quien no lo elige no cambia en nada, y toda la ruta de notas ya trata `binary` de forma genérica. Mismo efecto para el docente (elige «Respuesta matemática» en vez de marcar una casilla) con riesgo cero sobre `short_answer`. El tipo lleva `modo: 'numerico'` y deja el hueco para el modo `algebraico` de M4.
+- **M3a — Estado:** **[en curso: Claude Code]**
+  - **Alcance — PUEDE tocar:** `@lumina/types` (`MathAnswerActivity` en la unión `Activity`); `@lumina/scoring` (`parseRespuestaNumerica`, tipo `respuesta_matematica: 'binary'`, rama en `evaluateBinary`, casos nuevos en `activity-scoring.fixtures.json`; los existentes no se tocan); `@lumina/element-kit` (`ElementDefinition` con `puntuacion`, Editor/Viewer/Propiedades, plantilla, catálogo, registro, paridad); frontend (rótulos por tipo, panel de actividades, `editor-client`, `use-ai` si aplica); `math-generator` (nuevo formato `respuesta_matematica` con `expectedAnswer` y tolerancia; `short_answer` queda por compatibilidad).
+  - **Reglas del evaluador:** acepta coma decimal, `−` unicode, espacios, fracciones `a/b` y separador de miles `1.500` (solo con ese patrón exacto; documentado en el visor); sin respuesta → `score: null` (nunca `0`); texto no numérico → incorrecta; tolerancia absoluta o porcentual (`toleranciaTipo`).
+  - **Verif:** `@lumina/scoring` build/test/lint · `@lumina/element-kit` build/test/lint · backend `tsc`/`pnpm test` (la paridad usa `@lumina/scoring/fixtures`) · frontend `tsc`/`lint`/`test:unit`/`build`.
+- **M3b — Estado:** pendiente. Enunciados y opciones del generador con LaTeX real (fracciones, ecuaciones) renderizados con `latex-render`; ampliar temas a grados 6–11. Sin tocar scoring.
 - **Cierre:** no aplica Regla 4.
 
 #### M4 — Ecuación evaluable («completa la fórmula» / equivalencia algebraica)
 - **Operador:** Claude Code
-- **Estado:** pendiente — **bloqueada por DM4** (elección de librería, requiere confirmación).
+- **Estado:** pendiente. **DM4 decidida (2026-10-02): evaluador propio por evaluación en puntos, sin dependencia nueva.** Extiende `respuesta_matematica` con `modo: 'algebraico'` (M3a deja el tipo listo).
 - **Alcance previsto:** nueva actividad `ElementDefinition` (Regla 3) con huecos o respuesta libre, `puntuacion` → `@lumina/scoring` (clase `binary`) y equivalencia algebraica acotada (`2x+2` = `2(x+1)`), con fixtures nuevas y Regla 7 completa; el backend recalcula (C5).
 - **Cierre:** no aplica Regla 4.
