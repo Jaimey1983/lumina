@@ -99,6 +99,76 @@
   ],
   "evaluationCases": [
     {
+      "case": "m4_equivalente_factorizada",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "2x+2"},
+      "respuesta": "2(x+1)",
+      "correctEsperado": true
+    },
+    {
+      "case": "m4_equivalente_producto_notable",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x^2-1"},
+      "respuesta": "(x-1)(x+1)",
+      "correctEsperado": true
+    },
+    {
+      "case": "m4_asignacion_x_igual",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x=3"},
+      "respuesta": "3",
+      "correctEsperado": true
+    },
+    {
+      "case": "m4_no_equivalente",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "(x+1)^2"},
+      "respuesta": "x^2+1",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_variable_distinta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "respuesta": "y+1",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_dominio_distinto",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x"},
+      "respuesta": "sqrt(x^2)",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_expresion_ilegible_es_incorrecta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "respuesta": "x+(",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_codigo_no_se_ejecuta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "respuesta": "process.exit()",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_sin_respuesta_no_se_inventa_cero",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo":"algebraico","respuesta":"x+1"},
+      "respuesta": "  ",
+      "scoreEsperado": null
+    },
+    {
+      "case": "m4_respuesta_modelo_ilegible_no_se_califica",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo":"algebraico","respuesta":"x+("},
+      "respuesta": "x+1",
+      "scoreEsperado": null
+    },
+    {
       "case": "m3a_punto_ambiguo_decimal",
       "activityType": "respuesta_matematica",
       "definicion": {"respuesta": "3,141", "tolerancia": 0.001},

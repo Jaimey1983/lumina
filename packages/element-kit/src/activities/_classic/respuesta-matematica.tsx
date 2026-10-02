@@ -3,7 +3,7 @@
 import { Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { parseRespuestaNumerica } from '@lumina/scoring';
+import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
 import type { MathAnswerActivity } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
@@ -67,7 +67,15 @@ export function RespuestaMatematicaEditor({
   const updateImmediate = (partial: Partial<MathAnswerActivity>) =>
     commitImmediate({ ...local, ...partial, tipo: 'respuesta_matematica' as const });
 
-  const invalida = local.respuesta.trim() !== '' && parseRespuestaNumerica(local.respuesta) === null;
+  const algebraico = local.modo === 'algebraico';
+  const errorModelo =
+    local.respuesta.trim() === ''
+      ? null
+      : algebraico
+        ? validarExpresionAlgebraica(local.respuesta)
+        : parseRespuestaNumerica(local.respuesta) === null
+          ? 'No es un número. Usa dígitos, coma decimal o una fracción como 3/4.'
+          : null;
 
   return (
     <div
@@ -120,28 +128,66 @@ export function RespuestaMatematicaEditor({
         </div>
 
         <div className="space-y-1">
+          <Label htmlFor="rm-modo" className="text-[11px] font-medium">
+            Tipo de respuesta
+          </Label>
+          <select
+            id="rm-modo"
+            className="h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-xs"
+            value={algebraico ? 'algebraico' : 'numerico'}
+            onChange={(e) =>
+              updateImmediate({ modo: e.target.value === 'algebraico' ? 'algebraico' : 'numerico' })
+            }
+          >
+            <option value="numerico">Un número</option>
+            <option value="algebraico">Una expresión algebraica</option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
           <Label htmlFor="rm-respuesta" className="text-[11px] font-medium">
-            Respuesta correcta (número)
+            {algebraico ? 'Expresión correcta' : 'Respuesta correcta (número)'}
           </Label>
           <Input
             id="rm-respuesta"
-            inputMode="decimal"
+            inputMode={algebraico ? 'text' : 'decimal'}
             value={local.respuesta}
             onChange={(e) => updateText({ respuesta: e.target.value })}
             onBlur={flush}
-            aria-invalid={invalida || undefined}
+            aria-invalid={errorModelo !== null || undefined}
             className="h-8 text-xs tabular-nums"
-            placeholder="12 · 3,14 · 3/4"
+            placeholder={algebraico ? '2(x+1)' : '12 · 3,14 · 3/4'}
           />
-          {invalida ? (
+          {errorModelo ? (
             <p role="alert" className="text-[11px] text-destructive">
-              No es un número. Usa dígitos, coma decimal o una fracción como 3/4.
+              {errorModelo}
+            </p>
+          ) : algebraico ? (
+            <p className="text-[11px] text-[#6b7280]">
+              Se acepta cualquier expresión equivalente (2x+2 = 2(x+1)). Variables de una letra;
+              funciones: sqrt, abs, sin, cos, tan, ln, log, exp.
             </p>
           ) : (
             <p className="text-[11px] text-[#6b7280]">{describirTolerancia(local)}</p>
           )}
         </div>
 
+        {algebraico ? (
+          <div className="space-y-1">
+            <Label htmlFor="rm-hint" className="text-[11px] font-medium">
+              Pista (opc.)
+            </Label>
+            <Input
+              id="rm-hint"
+              value={local.hint ?? ''}
+              onChange={(e) => updateText({ hint: e.target.value || undefined })}
+              onBlur={flush}
+              className="h-8 text-xs"
+              placeholder="Opcional"
+            />
+          </div>
+        ) : (
+        <>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label htmlFor="rm-tol" className="text-[11px] font-medium">
@@ -208,6 +254,8 @@ export function RespuestaMatematicaEditor({
             />
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
@@ -226,11 +274,14 @@ export function RespuestaMatematicaViewer({
 }) {
   const [text, setText] = useState('');
   const [answered, setAnswered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { play } = useSound();
+  const algebraico = activity.modo === 'algebraico';
 
   useEffect(() => {
     setAnswered(false);
     setText('');
+    setError(null);
   }, [editorSyncKey]);
 
   const isDark = variant === 'dark';
@@ -238,6 +289,15 @@ export function RespuestaMatematicaViewer({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (answered || !text.trim()) return;
+    if (algebraico) {
+      // Una expresión ilegible no se envía: el alumno la corrige y vuelve a intentar.
+      const problema = validarExpresionAlgebraica(text);
+      if (problema) {
+        setError(problema);
+        return;
+      }
+    }
+    setError(null);
     setAnswered(true);
     play('submit');
     onResponse?.(text.trim());
@@ -265,7 +325,7 @@ export function RespuestaMatematicaViewer({
           <div className="flex items-center gap-2">
             <input
               type="text"
-              inputMode="decimal"
+              inputMode={algebraico ? 'text' : 'decimal'}
               autoComplete="off"
               aria-label="Tu respuesta"
               className={cn(
@@ -274,20 +334,30 @@ export function RespuestaMatematicaViewer({
                   ? 'border-white/30 bg-white/10 text-white placeholder:text-white/40 focus:border-white/60'
                   : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB]',
               )}
-              placeholder="Escribe un número"
-              maxLength={40}
+              placeholder={algebraico ? 'Escribe una expresión' : 'Escribe un número'}
+              maxLength={algebraico ? 200 : 40}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                setError(null);
+              }}
             />
-            {activity.unidad ? (
+            {!algebraico && activity.unidad ? (
               <span className={cn('text-sm', isDark ? 'text-white/80' : 'text-[#6b7280]')}>
                 {activity.unidad}
               </span>
             ) : null}
           </div>
           <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
-            Usa coma para los decimales. Puedes escribir fracciones como 3/4.
+            {algebraico
+              ? 'Escribe una expresión, por ejemplo 2(x+1), x^2−1 o sqrt(x).'
+              : 'Usa coma para los decimales. Puedes escribir fracciones como 3/4.'}
           </p>
+          {error ? (
+            <p role="alert" className="text-xs text-red-600">
+              Revisa tu expresión: {error}
+            </p>
+          ) : null}
           <button
             type="submit"
             disabled={!text.trim()}

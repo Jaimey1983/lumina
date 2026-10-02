@@ -181,10 +181,14 @@ export interface ShortAnswerActivity {
  */
 export interface MathAnswerActivity {
   tipo: 'respuesta_matematica';
-  /** Solo `numerico` hoy; M4 añade `algebraico`. */
-  modo?: 'numerico';
+  /**
+   * `numerico` (por defecto): se compara el número con una tolerancia.
+   * `algebraico` (M4): se comprueba que la expresión del alumno sea equivalente a
+   * la respuesta modelo (`2x+2` ≡ `2(x+1)`), evaluando en muchos puntos.
+   */
+  modo?: 'numerico' | 'algebraico';
   question: string;
-  /** Respuesta modelo como texto numérico (`12`, `3,14`, `3/4`). */
+  /** Respuesta modelo: texto numérico (`12`, `3,14`, `3/4`) o, en modo algebraico, una expresión (`2(x+1)`). */
   respuesta: string;
   tolerancia?: number;
   toleranciaTipo?: 'absoluta' | 'porcentual';

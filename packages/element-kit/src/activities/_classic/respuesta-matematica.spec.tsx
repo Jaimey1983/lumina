@@ -45,3 +45,40 @@ describe("Respuesta matemática", () => {
     expect(r2.getByText("Se acepta ±0,01 (decimal).")).toBeTruthy();
   });
 });
+
+describe("Respuesta matemática — modo algebraico (M4)", () => {
+  const algebraica = () => ({
+    ...base(),
+    modo: "algebraico" as const,
+    question: "Factoriza 2x+2",
+    respuesta: "2(x+1)",
+  });
+
+  it("califica expresiones equivalentes con @lumina/scoring", () => {
+    const a = algebraica();
+    expect(evaluateActivityResponse("respuesta_matematica", a, "2x+2").correct).toBe(true);
+    expect(evaluateActivityResponse("respuesta_matematica", a, "2x+3").correct).toBe(false);
+  });
+
+  it("el visor no envía una expresión ilegible y explica el problema", () => {
+    const onResponse = vi.fn();
+    const r = render(<RespuestaMatematicaViewer activity={algebraica()} onResponse={onResponse} />);
+    fireEvent.change(r.getByLabelText("Tu respuesta"), { target: { value: "2(x+1" } });
+    fireEvent.click(r.getByText("Enviar"));
+    expect(onResponse).not.toHaveBeenCalled();
+    expect(r.getByRole("alert").textContent).toContain("paréntesis");
+    fireEvent.change(r.getByLabelText("Tu respuesta"), { target: { value: "2(x+1)" } });
+    fireEvent.click(r.getByText("Enviar"));
+    expect(onResponse).toHaveBeenCalledWith("2(x+1)");
+  });
+
+  it("el editor valida la expresión modelo y oculta tolerancia y unidad", () => {
+    const mala = { ...algebraica(), respuesta: "2(x+1" };
+    const r = render(
+      <RespuestaMatematicaEditor editorSyncKey="m" activity={mala} onChange={() => undefined} />,
+    );
+    expect(r.getByRole("alert").textContent).toContain("paréntesis");
+    expect(r.queryByLabelText("Tolerancia (opc.)")).toBeNull();
+    expect(r.queryByText("Unidad (opc.)")).toBeNull();
+  });
+});

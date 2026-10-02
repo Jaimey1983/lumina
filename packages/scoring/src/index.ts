@@ -15,6 +15,10 @@
  * frontend y backend se borraron.
  */
 
+import { expresionesEquivalentes } from './algebra.js';
+
+export { expresionesEquivalentes, validarExpresionAlgebraica, ALGEBRA_MAX_LARGO } from './algebra.js';
+
 export type ActivityScoringKind =
   | 'binary'
   | 'partial'
@@ -517,6 +521,20 @@ function evaluateRespuestaMatematica(
   def: Record<string, unknown>,
   respuesta: unknown,
 ): ActivityEvaluationResult {
+  if (def.modo === 'algebraico') {
+    if (typeof def.respuesta !== 'string' || def.respuesta.trim() === '') return UNEVALUABLE;
+    if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
+    if (typeof respuesta !== 'string' || respuesta.trim() === '') return UNEVALUABLE;
+    // `null` = alguna de las dos no se puede leer o no hay puntos comparables.
+    const equivalentes = expresionesEquivalentes(def.respuesta, respuesta);
+    if (expresionesEquivalentes(def.respuesta, def.respuesta) === null) return UNEVALUABLE;
+    const ok = equivalentes === true;
+    return {
+      correct: ok,
+      details: [{ index: 0, correct: ok, label: 'Respuesta' }],
+      score: notaColombiana(ok ? 1 : 0, 1, true),
+    };
+  }
   const esperado = parseRespuestaNumerica(def.respuesta);
   if (esperado === null) return UNEVALUABLE;
   if (respuesta === null || respuesta === undefined) return UNEVALUABLE;
