@@ -1449,7 +1449,7 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K7b — Reglas por plantillas + integridad referencial
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** K6 y K7a `hecho`.
 - **Contexto:** la raíz decía «plantillas fijas, no un constructor libre» y «integridad referencial al borrar, duplicar, pegar o reordenar». Lo segundo es lo difícil, y el relevo (hallazgo 3) lo agrava: **los `slideId` de las reglas son ids de base de datos**, y la copia de un slide solo conoce el suyo después de que el servidor la crea. Reordenar slides **no** cambia ids (solo `order`), por lo que no rompe nada; sí lo rompen **borrar** y **duplicar** (y pegar un bloque en otro slide).
 - **Plantillas del v1 (todas generan `Regla[]` con ids deterministas derivados del id del bloque dueño, para que reaplicar la plantilla no duplique reglas):**
