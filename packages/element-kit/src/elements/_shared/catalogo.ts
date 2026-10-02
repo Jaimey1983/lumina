@@ -37,6 +37,11 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "lienzo",
   },
+  accordion: {
+    nombre: "Acordeón",
+    familia: "widget",
+    grupo: "lienzo",
+  },
   timeline: { nombre: "Línea de tiempo", familia: "widget", grupo: "lienzo" },
   popup: { nombre: "Popup", familia: "widget", grupo: "overlay" },
   hotspot: { nombre: "Hotspot", familia: "widget", grupo: "control" },

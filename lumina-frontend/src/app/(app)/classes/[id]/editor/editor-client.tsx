@@ -94,6 +94,7 @@ import {
   createDefaultImageCompareBlock,
   createDefaultChecklistBlock,
   createDefaultScratchCardBlock,
+  createDefaultAccordionBlock,
 } from '@lumina/element-kit';
 import { createDefaultClasificar } from '@lumina/element-kit/activities/clasificar/clasificar-defaults';
 import { createDefaultMemoria } from '@lumina/element-kit/activities/memoria/memoria-defaults';
@@ -2047,6 +2048,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       } else if (type === 'scratch-card') {
         block = createDefaultScratchCardBlock(dropMarco) as unknown as Block;
         successLabel = 'Tarjeta rasca y revela agregada al slide';
+      } else if (type === 'accordion') {
+        block = createDefaultAccordionBlock(dropMarco) as unknown as Block;
+        successLabel = 'Acordeón agregado al slide';
       } else {
         toast.info(`Widget "${type}" próximamente`);
         return;

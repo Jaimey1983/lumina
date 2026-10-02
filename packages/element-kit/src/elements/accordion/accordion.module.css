@@ -1,0 +1,218 @@
+.root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
+  position: relative;
+}
+
+.accordionContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ─── Estilos visuales ───────────────────────────────────────────── */
+
+/* Tarjetas individuales */
+.estiloTarjetas {
+  gap: 10px;
+}
+
+.estiloTarjetas .item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.estiloTarjetas .item:hover {
+  border-color: #cbd5e1;
+}
+
+.estiloTarjetas .itemAbierto {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+}
+
+/* Bordeado continuo */
+.estiloBordeado {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.estiloBordeado .item {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.estiloBordeado .item:last-child {
+  border-bottom: none;
+}
+
+/* Separadores editoriales */
+.estiloSeparadores {
+  gap: 0;
+}
+
+.estiloSeparadores .item {
+  border-bottom: 1px solid #e2e8f0;
+  background-color: transparent;
+}
+
+.estiloSeparadores .item:last-child {
+  border-bottom: none;
+}
+
+/* Minimal */
+.estiloMinimal {
+  gap: 6px;
+}
+
+.estiloMinimal .item {
+  border: none;
+  background-color: transparent;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.estiloMinimal .item:hover {
+  background-color: rgba(241, 245, 249, 0.6);
+}
+
+.estiloMinimal .itemAbierto {
+  background-color: #f8fafc;
+}
+
+/* ─── Trigger / Cabecera de ítem ─────────────────────────────────── */
+
+.trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  user-select: none;
+  font-family: inherit;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.trigger:hover {
+  background-color: rgba(248, 250, 252, 0.8);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.triggerLeftIcon {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+  flex: 1;
+  margin: 0;
+}
+
+.chevronWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.chevronAbierto {
+  transform: rotate(180deg);
+  color: #2563eb;
+}
+
+.chevronSm {
+  width: 16px;
+  height: 16px;
+}
+
+.chevronMd {
+  width: 20px;
+  height: 20px;
+}
+
+.chevronLg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ─── Contenido colapsable ───────────────────────────────────────── */
+
+.contentWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contentWrapperAbierto {
+  grid-template-rows: 1fr;
+}
+
+.contentWrapperNoAnim {
+  transition: none;
+}
+
+.contentInner {
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.contentBody {
+  padding: 0 16px 16px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+  white-space: pre-wrap;
+}
+
+.mediaContainer {
+  margin-top: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  max-height: 240px;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mediaImage {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+.emptyState {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+}

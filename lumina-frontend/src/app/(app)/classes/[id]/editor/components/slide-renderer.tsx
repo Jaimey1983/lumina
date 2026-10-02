@@ -767,7 +767,8 @@ function BlockNode({
       case 'timeline':
       case 'image-compare':
       case 'interactive-checklist':
-      case 'scratch-card': {
+      case 'scratch-card':
+      case 'accordion': {
         const def = elementRegistry.obtener<
           WidgetBlock,
           { isThumbnail?: boolean; onEnsureBlockSelected?: () => void }

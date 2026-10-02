@@ -1175,6 +1175,7 @@ import type {
   ImageCompareWidget,
   InteractiveChecklistWidget,
   ScratchCardWidget,
+  AccordionWidget,
   WidgetCampoEstilo,
   WidgetElementPos,
 } from './widget.types.js';
@@ -1601,6 +1602,7 @@ export type Block = (
   | ImageCompareWidget
   | InteractiveChecklistWidget
   | ScratchCardWidget
+  | AccordionWidget
 ) & {
   animaciones?: import('./animation.types.js').Animacion[];
   /**
@@ -1634,7 +1636,8 @@ export type WidgetBlock =
   | RuletaWidget
   | ImageCompareWidget
   | InteractiveChecklistWidget
-  | ScratchCardWidget;
+  | ScratchCardWidget
+  | AccordionWidget;
 
 export function isCaptivateWidgetBlock(block: {
   tipo: string;
@@ -1771,6 +1774,7 @@ export const BLOCK_FALLBACKS = {
   imageCompare: { x: 10, y: 10, ancho: 80, alto: 75 },
   interactiveChecklist: { x: 10, y: 10, ancho: 80, alto: 80 },
   scratchCard: { x: 15, y: 10, ancho: 70, alto: 75 },
+  accordion: { x: 10, y: 10, ancho: 80, alto: 80 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */

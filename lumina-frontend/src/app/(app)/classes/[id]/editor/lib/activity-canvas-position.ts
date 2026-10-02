@@ -52,6 +52,8 @@ function widgetCanvasFallback(type: WidgetTipo): { ancho: number; alto: number }
       return BLOCK_FALLBACKS.interactiveChecklist;
     case 'scratch-card':
       return BLOCK_FALLBACKS.scratchCard;
+    case 'accordion':
+      return BLOCK_FALLBACKS.accordion;
   }
 }
 

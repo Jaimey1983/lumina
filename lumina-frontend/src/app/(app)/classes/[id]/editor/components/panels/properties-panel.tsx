@@ -1262,6 +1262,34 @@ export function PropertiesPanel({
     }
   }
 
+  if (block.tipo === 'accordion') {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>('accordion');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Acordeón interactivo">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
   if (block.tipo === 'popup') {
     const popupBlock = block as PopupWidget;
     const inner = popupInnerSelection;
