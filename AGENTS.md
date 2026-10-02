@@ -1429,7 +1429,7 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K7a — Los elementos de actividad avisan al motor si la respuesta fue correcta (flujo, no nota)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** **[en curso: Claude Code]**
 - **Precondición:** K5 verificado en producción. Recomendado después de K6; puede ir en paralelo si hay dos operadores (archivos disjuntos, ver orden).
 - **Contexto:** hallazgo 5. `respuesta_correcta`/`respuesta_incorrecta` son eventos del catálogo cerrado de K1, `Operando.respuesta_correcta` existe, y **ningún emisor los produce**. El reproductor autónomo recibe la respuesta del alumno en `handleResponse` y la manda al backend; el motor no se entera. D10 fija cómo: cálculo **local** del booleano con `evaluateActivityResponse`, solo para flujo.
 - **Alcance — PUEDE tocar:**
