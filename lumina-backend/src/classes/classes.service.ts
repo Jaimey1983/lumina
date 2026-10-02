@@ -417,6 +417,8 @@ export class ClassesService {
         background: true,
         courseId: true,
         authorId: true,
+        // K6: variables del motor de interacción (preview, autónomo y panel «Variables»).
+        variables: true,
         desempeno: true,
         // Motor curricular único (Etapa J / J6.4, Entrada 3) — el panel IA
         // del editor hereda esto para no volver a pedir área/grado/DBA.

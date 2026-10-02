@@ -144,7 +144,7 @@ export function VariablesPanel({
                   <Trash2 className="size-4" aria-hidden />
                 </Button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={v.tipo}
                   disabled={enUso}
@@ -166,7 +166,7 @@ export function VariablesPanel({
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="flex min-w-0 flex-1 items-center gap-1">
+                <div className="flex min-w-[10rem] flex-1 basis-full items-center gap-1">
                   <Label className="shrink-0 text-xs text-muted-foreground">Empieza en</Label>
                   {v.tipo === 'booleano' ? (
                     <Switch

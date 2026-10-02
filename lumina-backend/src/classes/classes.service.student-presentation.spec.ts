@@ -223,6 +223,28 @@ describe('ClassesService - Student Presentations', () => {
   });
 
   describe('validación de acceso a clases en findOne', () => {
+    it('pide las variables del motor de interacción (K6): preview, autónomo y panel las necesitan', async () => {
+      mockPrisma.class.findUnique.mockResolvedValueOnce({
+        id: 'class-vars',
+        title: 'Con variables',
+        courseId: 'course-1',
+        authorId: 'teacher-1',
+        status: 'PUBLISHED',
+        variables: [{ id: 'v1', nombre: 'a', tipo: 'numero', valorInicial: 2 }],
+        slides: [],
+      });
+      mockPrisma.classSession.findFirst.mockResolvedValueOnce(null);
+
+      const res = await service.findOne('class-vars', 'teacher-1', 'TEACHER');
+
+      expect(mockPrisma.class.findUnique).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({ variables: true }) as unknown,
+        }),
+      );
+      expect(res.variables).toHaveLength(1);
+    });
+
     it('verifica acceso al curso en findOne si la clase pertenece a un curso', async () => {
       mockPrisma.class.findUnique.mockResolvedValueOnce({
         id: 'class-curso-1',

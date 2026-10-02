@@ -2601,3 +2601,10 @@ Entorno: Postgres 16 y Redis efímeros, backend compilado (`node dist/src/main.j
 - **M3b:** el enunciado `\( … \)` se ve renderizado como fórmula (`2x+2`, fracciones `3/4 + 1/4`) en los dos visores.
 - **K6 (parcial):** `PATCH /classes/:id` con `variables` → `200` y persistidas en `classes.variables`; el autónomo las recibe y el runtime las inicializa (antes solo probado con dato puesto a mano).
 - **No cubierto:** presentación y clase en vivo (D1: la fórmula debe verse con los símbolos y sin ajustadores), el panel «Interactividad» del editor, `test:visual`, lectura con lector de pantalla.
+
+**Segunda pasada de QA (2026-10-02) — editor, vista previa, presentación y en vivo.**
+- **Bug real hallado y corregido (K6):** `ClassesService.findOne` no incluía `variables` en el `select`, así que `GET /classes/:id` las devolvía vacías. Efecto: la vista previa no sustituía ni ofrecía ajustadores, y el panel «Variables» del editor arrancaba vacío (un guardado habría podido pisar las variables). Corregido (`variables: true`) con test de regresión en `classes.service.student-presentation.spec.ts`. Backend `tsc`/lint 0/`jest` **436/436**. Tras el fix: vista previa con `a = 2` y un ajustador «Aumentar a»; el panel muestra la variable `a`.
+- **Defecto cosmético corregido:** en el panel «Variables» el campo «Empieza en» medía 38 px y recortaba el valor; la fila ahora parte en dos líneas (135 px). Frontend `tsc`/lint 0 errores/`build` OK.
+- **Presentación y clase en vivo (D1):** la fórmula se ve con el símbolo (`y = ax² + 1`), sin ajustadores y con los pasos locales; sin errores de página.
+- **Editor:** carga sin errores; al seleccionar la ecuación aparecen «Interactividad», «Estado inicial» e «Interacciones». Un `PATCH …/slides/:id` → `200` tras abrir/seleccionar conservó `latex`, `pasos` y `vinculos` intactos (no se pudo atribuir a una causa concreta: no hubo edición del docente; probablemente el autoguardado de normalización al abrir).
+- **Sigue sin cubrir:** `test:visual`, lector de pantalla y edición de la ecuación desde el panel (escribir en «Interactividad»).
