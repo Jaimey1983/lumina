@@ -7,6 +7,7 @@ import {
   aplicarPlantilla,
   describirRegla,
   quitarRegla,
+  tipoDeElemento,
 } from './interacciones';
 
 const b = (tipo: string, extra: object = {}) => ({ tipo, ...extra }) as unknown as Block;
@@ -97,5 +98,18 @@ describe('describirRegla', () => {
     const base = aplicarPlantilla([b('actividad')], 0, { tipo: 'refuerzo', slideRefuerzoId: 's9' });
     const txt = describirRegla(base[0]!.disparadores![0]!, () => 'Slide 3', () => 'x');
     expect(txt).toBe('Si responde mal → ir a Slide 3');
+  });
+});
+
+describe('tipoDeElemento (N0: las actividades se registran por el tipo de la actividad)', () => {
+  it('un bloque de actividad se identifica por actividad.tipo', () => {
+    expect(tipoDeElemento(b('actividad', { actividad: { tipo: 'verdadero_falso' } }))).toBe('verdadero_falso');
+  });
+  it('los demás bloques se identifican por su propio tipo', () => {
+    expect(tipoDeElemento(b('boton'))).toBe('boton');
+    expect(tipoDeElemento(b('hotspot'))).toBe('hotspot');
+  });
+  it('una actividad sin tipo no revienta', () => {
+    expect(tipoDeElemento(b('actividad'))).toBe('actividad');
   });
 });

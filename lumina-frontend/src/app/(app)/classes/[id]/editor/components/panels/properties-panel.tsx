@@ -9,6 +9,7 @@ import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
 import type { EstadoObjeto } from '@lumina/types/interaction';
 import type { ReferenciaRota } from '@lumina/interactions';
 import { InteractionsPanel } from './interactions-panel';
+import { tipoDeElemento } from '../../lib/interacciones';
 import { useClassVariables } from '../../lib/class-variables-context';
 import { backgroundColorForContrast } from '@lumina/editor-shared/contrast';
 
@@ -418,6 +419,27 @@ export function PropertiesPanel({
     );
   }
 
+  // K6/K7b: «Estado inicial» e «Interacciones» deben verse en TODAS las ramas de
+  // propiedades (widgets y actividades devuelven antes del final del componente).
+  const tieneEventos = (elementRegistry.obtener(tipoDeElemento(block))?.eventos?.length ?? 0) > 0;
+  const motorSections =
+    tieneEventos && selectedBlockId && slide?.id ? (
+      <>
+        <BlockEstadoInicialSection
+          estado={(block as { estado?: EstadoObjeto }).estado ?? 'normal'}
+          applyNow={applyNow}
+        />
+        <InteractionsPanel
+          bloques={bloques}
+          blockPath={selectedBlockId}
+          slideId={slide.id}
+          slidesDelMazo={slidesDelMazo}
+          referenciasRotas={referenciasRotas}
+          onApplyBloques={onApplyBloques}
+        />
+      </>
+    ) : null;
+
   if (block.tipo === 'actividad') {
     const actBlock = block as ActivityBlock;
     const act = actBlock.actividad;
@@ -440,6 +462,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -463,6 +486,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -486,6 +510,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -509,6 +534,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -532,6 +558,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -555,6 +582,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -578,6 +606,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -601,6 +630,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -624,6 +654,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -647,6 +678,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -670,6 +702,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -693,6 +726,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -737,6 +771,7 @@ export function PropertiesPanel({
                 });
               }}
             />
+            {motorSections}
           </div>
         </aside>
       );
@@ -749,10 +784,11 @@ export function PropertiesPanel({
             Propiedades
           </h2>
         </div>
-        <div className="flex flex-1 items-start p-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <p className="p-4 text-sm text-muted-foreground">
             Las actividades se configuran en el panel lateral derecho.
           </p>
+          {motorSections}
         </div>
       </aside>
     );
@@ -1041,6 +1077,7 @@ export function PropertiesPanel({
       <WidgetPropertiesPanelShell title={panelTitle}>
         <WidgetPropertiesPanelStack>
           <HotspotProperties block={hotspotBlock} applyNow={applyNow} />
+          {motorSections ? <WidgetPropertiesPanelBlock>{motorSections}</WidgetPropertiesPanelBlock> : null}
           {showOverlayInner ? (
             <WidgetPropertiesPanelSection>
               <HotspotOverlayProperties block={hotspotBlock} applyNow={applyNow} />
@@ -1103,6 +1140,7 @@ export function PropertiesPanel({
       <WidgetPropertiesPanelShell title="Botón">
         <WidgetPropertiesPanelStack>
           <BotonProperties block={botonBlock} applyNow={applyNow} />
+          {motorSections ? <WidgetPropertiesPanelBlock>{motorSections}</WidgetPropertiesPanelBlock> : null}
           <WidgetPropertiesPanelBlock>
             <AnimationPanel
               block={botonBlock}
@@ -1123,6 +1161,7 @@ export function PropertiesPanel({
       <WidgetPropertiesPanelShell title="Contador / temporizador">
         <WidgetPropertiesPanelStack>
           <ContadorProperties block={contadorBlock} applyNow={applyNow} />
+          {motorSections ? <WidgetPropertiesPanelBlock>{motorSections}</WidgetPropertiesPanelBlock> : null}
           <WidgetPropertiesPanelBlock>
             <AnimationPanel
               block={contadorBlock}
@@ -1561,22 +1600,7 @@ export function PropertiesPanel({
                 clearDebounce={clearDebounce}
               />
             )}
-            {(elementRegistry.obtener(block.tipo)?.eventos?.length ?? 0) > 0 && (
-              <BlockEstadoInicialSection
-                estado={(block as { estado?: EstadoObjeto }).estado ?? 'normal'}
-                applyNow={applyNow}
-              />
-            )}
-            {(elementRegistry.obtener(block.tipo)?.eventos?.length ?? 0) > 0 && selectedBlockId && slide?.id && (
-              <InteractionsPanel
-                bloques={bloques}
-                blockPath={selectedBlockId}
-                slideId={slide.id}
-                slidesDelMazo={slidesDelMazo}
-                referenciasRotas={referenciasRotas}
-                onApplyBloques={onApplyBloques}
-              />
-            )}
+            {motorSections}
             {isBlockCanvasPositionable(block) && (
               <BlockRotationSection
                 rotacion={(block as { rotacion?: number }).rotacion ?? 0}

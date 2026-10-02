@@ -25,6 +25,17 @@ const idDe = (b: Block): string | undefined => {
   return typeof id === 'string' && id !== '' ? id : undefined;
 };
 
+/**
+ * Tipo de `ElementDefinition` de un bloque: las actividades se registran por el
+ * `tipo` de su actividad (`verdadero_falso`, `quiz_multiple`…), no por `'actividad'`.
+ */
+export function tipoDeElemento(b: Block): string {
+  if (b.tipo === 'actividad') {
+    return (b as { actividad?: { tipo?: string } }).actividad?.tipo ?? 'actividad';
+  }
+  return b.tipo;
+}
+
 /** Bloques que ya no deben llevar la acción legada equivalente (evita navegar dos veces). */
 function sinAccionLegada(b: Block): Block {
   if (b.tipo === 'boton') {

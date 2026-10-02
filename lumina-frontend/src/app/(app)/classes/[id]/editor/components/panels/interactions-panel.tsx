@@ -16,6 +16,7 @@ import {
   aplicarPlantilla,
   describirRegla,
   quitarRegla,
+  tipoDeElemento,
 } from '../../lib/interacciones';
 import type { PlantillaElegida } from '../../lib/interacciones';
 
@@ -57,7 +58,7 @@ export function InteractionsPanel({
   const nested = blockPath.includes('-');
   const ownerIndex = nested ? -1 : Number(blockPath);
   const eventos = useMemo(
-    () => (block ? (elementRegistry.obtener(block.tipo)?.eventos ?? []) : []),
+    () => (block ? (elementRegistry.obtener(tipoDeElemento(block))?.eventos ?? []) : []),
     [block],
   );
 
@@ -122,7 +123,7 @@ export function InteractionsPanel({
     .map((b, i) => ({ b, i }))
     .filter(
       ({ b, i }) =>
-        i !== ownerIndex && (elementRegistry.obtener(b.tipo)?.eventos ?? []).includes('visitado'),
+        i !== ownerIndex && (elementRegistry.obtener(tipoDeElemento(b))?.eventos ?? []).includes('visitado'),
     );
   const posiblesObjetivos = bloques
     .map((b, i) => ({ b, i }))
