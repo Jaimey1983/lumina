@@ -27,6 +27,16 @@ export function AccordionViewer({
   const cfg = estado.configuracion;
   const secciones = cfg.secciones ?? [];
 
+  const showTitle = cfg.mostrarTituloWidget ?? true;
+  const showSubtitle = cfg.mostrarSubtitulo ?? true;
+  const showInstruction = cfg.mostrarInstruccion ?? true;
+  const showImages = cfg.mostrarImagenes ?? true;
+
+  const hasAnyHeader =
+    (showTitle && Boolean(estado.tituloWidget)) ||
+    (showSubtitle && Boolean(estado.subtituloWidget)) ||
+    (showInstruction && Boolean(estado.instruccion));
+
   // Inicializar conjunto de IDs abiertos a partir de abiertoPorDefecto
   const [abiertos, setAbiertos] = useState<string[]>(() => {
     const porDefecto = secciones
@@ -85,14 +95,14 @@ export function AccordionViewer({
   })();
 
   const headerConfig = {
-    mostrarTituloWidget: Boolean(estado.tituloWidget),
-    mostrarSubtitulo: Boolean(estado.subtituloWidget),
-    mostrarInstruccion: Boolean(estado.instruccion),
+    mostrarTituloWidget: showTitle,
+    mostrarSubtitulo: showSubtitle,
+    mostrarInstruccion: showInstruction,
   };
 
   return (
     <div className={styles.root}>
-      {(estado.tituloWidget || estado.subtituloWidget || estado.instruccion) && (
+      {hasAnyHeader && (
         <div style={{ marginBottom: "16px" }}>
           <WidgetHeaderViewer
             tituloWidget={estado.tituloWidget ?? ""}
@@ -151,7 +161,7 @@ export function AccordionViewer({
                   <div className={styles.contentInner}>
                     <div className={styles.contentBody}>
                       {seccion.contenido}
-                      {seccion.imagenUrl && (
+                      {showImages && seccion.imagenUrl && (
                         <div className={styles.mediaContainer}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img

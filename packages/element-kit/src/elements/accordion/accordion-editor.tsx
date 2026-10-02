@@ -4,6 +4,7 @@ import {
   chromeStyles,
   WidgetHeaderEditorField,
 } from "@lumina/editor-shared/widget-header-editor";
+import { PanelOnlyText } from "@lumina/editor-shared/panel-only-field";
 import { stopWidgetInnerPointer } from "@lumina/editor-shared/widget-editor-utils";
 import { textStyleToCss } from "@lumina/editor-shared/widget-text-styles";
 import { ChevronDown } from "lucide-react";
@@ -33,6 +34,11 @@ export function AccordionEditor({
 }: ElementEditorProps<AccordionEstado, AccordionConfig>): ReactElement {
   const cfg = estado.configuracion;
   const secciones = cfg.secciones ?? [];
+
+  const showTitle = cfg.mostrarTituloWidget ?? true;
+  const showSubtitle = cfg.mostrarSubtitulo ?? true;
+  const showInstruction = cfg.mostrarInstruccion ?? true;
+  const showImages = cfg.mostrarImagenes ?? true;
 
   const [activeHeaderField, setActiveHeaderField] = useState<string | null>(null);
 
@@ -73,6 +79,16 @@ export function AccordionEditor({
     }
   };
 
+  const updateSeccion = (id: string, patch: Partial<AccordionSeccion>) => {
+    onChange({
+      ...estado,
+      configuracion: {
+        ...cfg,
+        secciones: secciones.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+      },
+    });
+  };
+
   const titleCss = textStyleToCss(estado.estilosHeader?.tituloWidget);
   const subtitleCss = textStyleToCss(estado.estilosHeader?.subtituloWidget);
   const instructionCss = textStyleToCss(estado.estilosHeader?.instruccion);
@@ -91,62 +107,72 @@ export function AccordionEditor({
     }
   })();
 
+  const hasAnyHeader = showTitle || showSubtitle || showInstruction;
+
   return (
     <div
       className={styles.root}
       onClick={() => config.onEnsureBlockSelected?.()}
     >
-      {/* Cabecera editable inline */}
-      <div
-        className={chromeStyles.whHeader}
-        data-moveable-ignore=""
-        onPointerDown={stopWidgetInnerPointer}
-        style={{ marginBottom: "16px" }}
-      >
-        <WidgetHeaderEditorField
-          value={estado.tituloWidget ?? ""}
-          field="tituloWidget"
-          className={chromeStyles.whHeaderTitle}
-          style={titleCss}
-          placeholder="Título del acordeón"
-          isSelected={activeHeaderField === "tituloWidget"}
-          onCommit={(tituloWidget) => onChange({ ...estado, tituloWidget })}
-          onFocusSelect={(field) => {
-            config.onEnsureBlockSelected?.();
-            setActiveHeaderField(field);
-          }}
-        />
-        <WidgetHeaderEditorField
-          value={estado.subtituloWidget ?? ""}
-          field="subtituloWidget"
-          className={chromeStyles.whHeaderSubtitle}
-          style={subtitleCss}
-          placeholder="Subtítulo explicativo"
-          multiline
-          isSelected={activeHeaderField === "subtituloWidget"}
-          onCommit={(subtituloWidget) => onChange({ ...estado, subtituloWidget })}
-          onFocusSelect={(field) => {
-            config.onEnsureBlockSelected?.();
-            setActiveHeaderField(field);
-          }}
-        />
-        <WidgetHeaderEditorField
-          value={estado.instruccion ?? ""}
-          field="instruccion"
-          className={chromeStyles.whHeaderInstruction}
-          style={instructionCss}
-          placeholder="Instrucción de interacción"
-          multiline
-          isSelected={activeHeaderField === "instruccion"}
-          onCommit={(instruccion) => onChange({ ...estado, instruccion })}
-          onFocusSelect={(field) => {
-            config.onEnsureBlockSelected?.();
-            setActiveHeaderField(field);
-          }}
-        />
-      </div>
+      {/* Cabecera editable inline en el slide respetando los flags de componentes */}
+      {hasAnyHeader && (
+        <div
+          className={chromeStyles.whHeader}
+          data-moveable-ignore=""
+          onPointerDown={stopWidgetInnerPointer}
+          style={{ marginBottom: "16px" }}
+        >
+          {showTitle && (
+            <WidgetHeaderEditorField
+              value={estado.tituloWidget ?? ""}
+              field="tituloWidget"
+              className={chromeStyles.whHeaderTitle}
+              style={titleCss}
+              placeholder="Título del acordeón"
+              isSelected={activeHeaderField === "tituloWidget"}
+              onCommit={(tituloWidget) => onChange({ ...estado, tituloWidget })}
+              onFocusSelect={(field) => {
+                config.onEnsureBlockSelected?.();
+                setActiveHeaderField(field);
+              }}
+            />
+          )}
+          {showSubtitle && (
+            <WidgetHeaderEditorField
+              value={estado.subtituloWidget ?? ""}
+              field="subtituloWidget"
+              className={chromeStyles.whHeaderSubtitle}
+              style={subtitleCss}
+              placeholder="Subtítulo explicativo"
+              multiline
+              isSelected={activeHeaderField === "subtituloWidget"}
+              onCommit={(subtituloWidget) => onChange({ ...estado, subtituloWidget })}
+              onFocusSelect={(field) => {
+                config.onEnsureBlockSelected?.();
+                setActiveHeaderField(field);
+              }}
+            />
+          )}
+          {showInstruction && (
+            <WidgetHeaderEditorField
+              value={estado.instruccion ?? ""}
+              field="instruccion"
+              className={chromeStyles.whHeaderInstruction}
+              style={instructionCss}
+              placeholder="Instrucción de interacción"
+              multiline
+              isSelected={activeHeaderField === "instruccion"}
+              onCommit={(instruccion) => onChange({ ...estado, instruccion })}
+              onFocusSelect={(field) => {
+                config.onEnsureBlockSelected?.();
+                setActiveHeaderField(field);
+              }}
+            />
+          )}
+        </div>
+      )}
 
-      {/* Cuerpo del acordeón */}
+      {/* Cuerpo del acordeón editable inline en el slide */}
       <div
         className={`${styles.accordionContainer} ${containerEstiloClass}`}
         data-moveable-ignore=""
@@ -165,36 +191,66 @@ export function AccordionEditor({
                 key={seccion.id}
                 className={`${styles.item} ${estaAbierto ? styles.itemAbierto : ""}`}
               >
-                <button
-                  type="button"
+                {/* Cabecera de la sección editable inline en el slide */}
+                <div
                   className={`${styles.trigger} ${
                     cfg.posicionIcono === "izquierda" ? styles.triggerLeftIcon : ""
                   }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    config.onEnsureBlockSelected?.();
-                    toggleSeccion(seccion.id);
-                  }}
+                  onClick={() => config.onEnsureBlockSelected?.()}
                 >
-                  <span className={styles.titulo}>{seccion.titulo}</span>
-                  <span
+                  <div
+                    className="flex-1 min-w-0"
+                    onPointerDown={stopWidgetInnerPointer}
+                  >
+                    <PanelOnlyText
+                      value={seccion.titulo}
+                      placeholder="Título de la sección..."
+                      className={styles.titulo}
+                      onSelect={() => config.onEnsureBlockSelected?.()}
+                      onChange={(titulo) => updateSeccion(seccion.id, { titulo })}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label={`Alternar sección ${seccion.titulo}`}
                     className={`${styles.chevronWrapper} ${
                       estaAbierto ? styles.chevronAbierto : ""
-                    } ${chevronSizeClass(cfg.tamanoIcono)}`}
+                    } ${chevronSizeClass(cfg.tamanoIcono)} cursor-pointer bg-transparent border-0 p-1 rounded hover:bg-slate-200/50 transition-colors`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      config.onEnsureBlockSelected?.();
+                      toggleSeccion(seccion.id);
+                    }}
+                    onPointerDown={stopWidgetInnerPointer}
                   >
                     <ChevronDown className={chevronSizeClass(cfg.tamanoIcono)} />
-                  </span>
-                </button>
+                  </button>
+                </div>
 
+                {/* Contenido colapsable editable inline en el slide */}
                 <div
                   className={`${styles.contentWrapper} ${
                     estaAbierto ? styles.contentWrapperAbierto : ""
                   } ${!cfg.animacionExpandir ? styles.contentWrapperNoAnim : ""}`}
                 >
                   <div className={styles.contentInner}>
-                    <div className={styles.contentBody}>
-                      {seccion.contenido}
-                      {seccion.imagenUrl && (
+                    <div
+                      className={styles.contentBody}
+                      onPointerDown={stopWidgetInnerPointer}
+                    >
+                      <PanelOnlyText
+                        value={seccion.contenido}
+                        placeholder="Escribe el contenido explicativo de esta sección..."
+                        multiline
+                        className="text-sm leading-relaxed text-slate-700 dark:text-slate-200"
+                        onSelect={() => config.onEnsureBlockSelected?.()}
+                        onChange={(contenido) =>
+                          updateSeccion(seccion.id, { contenido })
+                        }
+                      />
+
+                      {showImages && seccion.imagenUrl && (
                         <div className={styles.mediaContainer}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img

@@ -106,7 +106,7 @@ export function AccordionPropiedades({
 
   return (
     <div className="flex flex-col gap-6 p-1 text-xs">
-      {/* ─── Presets ─────────────────────────────────────────────────── */}
+      {/* ─── 1. Presets ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
         <WidgetSectionTitle>Plantillas / Presets</WidgetSectionTitle>
         <div className="grid grid-cols-2 gap-2">
@@ -124,7 +124,35 @@ export function AccordionPropiedades({
         </div>
       </div>
 
-      {/* ─── Estructura y Comportamiento ────────────────────────────── */}
+      {/* ─── 2. Componentes (consistencia de familia con los demás widgets) ─── */}
+      <div className="flex flex-col gap-3 border-t border-border pt-4">
+        <WidgetSectionTitle>Componentes</WidgetSectionTitle>
+        <div className="flex flex-col gap-2.5">
+          {(
+            [
+              ["mostrarTituloWidget", "Título"],
+              ["mostrarSubtitulo", "Subtítulo"],
+              ["mostrarInstruccion", "Instrucción"],
+              ["mostrarImagenes", "Imágenes de sección"],
+            ] as const
+          ).map(([key, label]) => (
+            <label
+              key={key}
+              className="flex cursor-pointer items-center gap-2 text-xs"
+            >
+              <Checkbox
+                checked={cfg[key] ?? true}
+                onCheckedChange={(checked) =>
+                  updateConfig({ [key]: checked === true })
+                }
+              />
+              <span className="text-foreground">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── 3. Estructura y Comportamiento ─────────────────────────── */}
       <div className="flex flex-col gap-3 border-t border-border pt-4">
         <WidgetSectionTitle>Comportamiento y Modo</WidgetSectionTitle>
 
@@ -173,7 +201,7 @@ export function AccordionPropiedades({
         </div>
       </div>
 
-      {/* ─── Estilo Visual e Iconografía ─────────────────────────────── */}
+      {/* ─── 4. Estilo Visual e Iconografía ──────────────────────────── */}
       <div className="flex flex-col gap-3 border-t border-border pt-4">
         <WidgetSectionTitle>Apariencia Visual</WidgetSectionTitle>
 
@@ -243,7 +271,7 @@ export function AccordionPropiedades({
         </div>
       </div>
 
-      {/* ─── Gestión de Secciones ────────────────────────────────────── */}
+      {/* ─── 5. Gestión de Secciones ─────────────────────────────────── */}
       <div className="flex flex-col gap-3 border-t border-border pt-4">
         <div className="flex items-center justify-between">
           <WidgetSectionTitle>Secciones ({secciones.length})</WidgetSectionTitle>
@@ -272,7 +300,7 @@ export function AccordionPropiedades({
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
-                    className="flex-1 text-left font-medium text-xs truncate hover:text-primary transition-colors"
+                    className="flex-1 text-left font-medium text-xs truncate hover:text-primary transition-colors cursor-pointer"
                     onClick={() =>
                       setSeccionExpandidaId(isExpanded ? null : sec.id)
                     }

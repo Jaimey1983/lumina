@@ -770,6 +770,10 @@ export interface AccordionConfiguracion {
   posicionIcono: 'derecha' | 'izquierda';
   tamanoIcono: 'sm' | 'md' | 'lg';
   animacionExpandir: boolean;
+  mostrarTituloWidget: boolean;
+  mostrarSubtitulo: boolean;
+  mostrarInstruccion: boolean;
+  mostrarImagenes: boolean;
 }
 
 export interface AccordionWidget extends WidgetHeaderFields, WidgetCanvasPosition {

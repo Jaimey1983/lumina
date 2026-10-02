@@ -17,6 +17,10 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
         posicionIcono: "derecha",
         tamanoIcono: "md",
         animacionExpandir: true,
+        mostrarTituloWidget: true,
+        mostrarSubtitulo: true,
+        mostrarInstruccion: true,
+        mostrarImagenes: false,
         secciones: [
           {
             id: "faq-1",
@@ -58,6 +62,10 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
         posicionIcono: "derecha",
         tamanoIcono: "sm",
         animacionExpandir: true,
+        mostrarTituloWidget: true,
+        mostrarSubtitulo: true,
+        mostrarInstruccion: true,
+        mostrarImagenes: false,
         secciones: [
           {
             id: "glo-1",
@@ -99,6 +107,10 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
         posicionIcono: "izquierda",
         tamanoIcono: "md",
         animacionExpandir: true,
+        mostrarTituloWidget: true,
+        mostrarSubtitulo: true,
+        mostrarInstruccion: true,
+        mostrarImagenes: false,
         secciones: [
           {
             id: "paso-1",
@@ -140,6 +152,10 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
         posicionIcono: "derecha",
         tamanoIcono: "md",
         animacionExpandir: true,
+        mostrarTituloWidget: true,
+        mostrarSubtitulo: true,
+        mostrarInstruccion: true,
+        mostrarImagenes: true,
         secciones: [
           {
             id: "mod-1",

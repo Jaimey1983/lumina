@@ -38,6 +38,10 @@ export const DEFAULT_ACCORDION_CONFIG: AccordionConfiguracion = {
   posicionIcono: "derecha",
   tamanoIcono: "md",
   animacionExpandir: true,
+  mostrarTituloWidget: true,
+  mostrarSubtitulo: true,
+  mostrarInstruccion: true,
+  mostrarImagenes: true,
 };
 
 export function createDefaultAccordionBlock(

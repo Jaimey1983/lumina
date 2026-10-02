@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe("Accordion — ElementDefinition", () => {
-  it("crearPorDefecto produce un bloque válido con tipo canónico", () => {
+  it("crearPorDefecto produce un bloque válido con tipo canónico y flags de componentes", () => {
     const estado = createDefaultAccordionBlock();
     expect(estado.tipo).toBe(ACCORDION_TIPO);
     expect(estado.x).toBe(10);
@@ -31,6 +31,11 @@ describe("Accordion — ElementDefinition", () => {
     expect(estado.configuracion.estiloVisual).toBe("tarjetas");
     expect(estado.configuracion.posicionIcono).toBe("derecha");
     expect(estado.configuracion.tamanoIcono).toBe("md");
+    // Flags de componentes consistentes con los demás widgets
+    expect(estado.configuracion.mostrarTituloWidget).toBe(true);
+    expect(estado.configuracion.mostrarSubtitulo).toBe(true);
+    expect(estado.configuracion.mostrarInstruccion).toBe(true);
+    expect(estado.configuracion.mostrarImagenes).toBe(true);
   });
 
   it("se registra en elementRegistry con catálogo correcto", () => {
@@ -41,13 +46,14 @@ describe("Accordion — ElementDefinition", () => {
     expect(accordionDefinition.catalogo.familia).toBe("widget");
   });
 
-  it("expone presets canónicos configurados", () => {
+  it("expone presets canónicos configurados con flags de componentes", () => {
     expect(accordionDefinition.presets).toBe(ACCORDION_PRESETS);
     expect(accordionDefinition.presets?.length).toBe(4);
 
     const faq = accordionDefinition.presets?.find((p) => p.id === "preguntas-frecuentes");
     expect(faq).toBeDefined();
     expect(faq?.patch?.configuracion?.modo).toBe("exclusivo");
+    expect(faq?.patch?.configuracion?.mostrarTituloWidget).toBe(true);
 
     const glosario = accordionDefinition.presets?.find((p) => p.id === "glosario-conceptos");
     expect(glosario).toBeDefined();
@@ -78,6 +84,33 @@ describe("Accordion — ElementDefinition", () => {
     const regions = screen.getAllByRole("region");
     expect(regions.length).toBe(3);
     expect(regions[0]?.getAttribute("aria-labelledby")).toBe(buttons[0]?.id);
+  });
+
+  it("Viewer oculta títulos e instrucciones cuando los flags de componentes están apagados", () => {
+    const estado = createDefaultAccordionBlock();
+    estado.tituloWidget = "Título Ocultable";
+    estado.subtituloWidget = "Subtítulo Ocultable";
+    estado.instruccion = "Instrucción Ocultable";
+    estado.configuracion.mostrarTituloWidget = false;
+    estado.configuracion.mostrarSubtitulo = false;
+    estado.configuracion.mostrarInstruccion = false;
+
+    render(<AccordionViewer estado={estado} config={{}} />);
+
+    expect(screen.queryByText("Título Ocultable")).toBeNull();
+    expect(screen.queryByText("Subtítulo Ocultable")).toBeNull();
+    expect(screen.queryByText("Instrucción Ocultable")).toBeNull();
+  });
+
+  it("Viewer oculta imágenes cuando mostrarImagenes es false", () => {
+    const estado = createDefaultAccordionBlock();
+    estado.configuracion.secciones[0]!.imagenUrl = "https://example.com/test.jpg";
+    estado.configuracion.secciones[0]!.imagenAlt = "Foto ilustrativa";
+    estado.configuracion.mostrarImagenes = false;
+
+    render(<AccordionViewer estado={estado} config={{}} />);
+
+    expect(screen.queryByAltText("Foto ilustrativa")).toBeNull();
   });
 
   it("Viewer en modo exclusivo cierra el panel anterior al abrir uno nuevo", () => {
@@ -143,7 +176,7 @@ describe("Accordion — ElementDefinition", () => {
     expect(buttons[2]?.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("Editor renderiza cabeceras editables y paneles interactivos", () => {
+  it("Editor permite editar inline las secciones desde el slide", () => {
     const estado = createDefaultAccordionBlock();
     const onChange = vi.fn();
     const onEnsureBlockSelected = vi.fn();
@@ -156,15 +189,43 @@ describe("Accordion — ElementDefinition", () => {
       />,
     );
 
+    // Cabecera editable en slide
     expect(screen.getByDisplayValue("Acordeón Interactivo")).toBeTruthy();
-    const triggers = screen.getAllByRole("button");
-    expect(triggers.length).toBe(3);
 
-    fireEvent.click(triggers[1]!);
+    // Título de sección editable inline en el slide
+    const inputs = screen.getAllByDisplayValue("¿Qué es el pensamiento crítico?");
+    expect(inputs.length).toBeGreaterThanOrEqual(1);
+
+    // Modificar título de sección desde el slide
+    fireEvent.change(inputs[0]!, { target: { value: "Nuevo Título desde Slide" } });
+
+    // Alternar sección desde el chevron en el slide
+    const toggleButtons = screen.getAllByRole("button", { name: /Alternar sección/i });
+    expect(toggleButtons.length).toBe(3);
+    fireEvent.click(toggleButtons[1]!);
     expect(onEnsureBlockSelected).toHaveBeenCalled();
   });
 
-  it("Propiedades permite aplicar presets y manipular secciones", () => {
+  it("Editor oculta cabeceras cuando los flags de componentes están apagados", () => {
+    const estado = createDefaultAccordionBlock();
+    estado.configuracion.mostrarTituloWidget = false;
+    estado.configuracion.mostrarSubtitulo = false;
+    estado.configuracion.mostrarInstruccion = false;
+
+    render(
+      <AccordionEditor
+        estado={estado}
+        onChange={vi.fn()}
+        config={{}}
+      />,
+    );
+
+    expect(screen.queryByPlaceholderText("Título del acordeón")).toBeNull();
+    expect(screen.queryByPlaceholderText("Subtítulo explicativo")).toBeNull();
+    expect(screen.queryByPlaceholderText("Instrucción de interacción")).toBeNull();
+  });
+
+  it("Propiedades incluye sección Componentes y permite alternar visibilidad", () => {
     const estado = createDefaultAccordionBlock();
     const onChange = vi.fn();
 
@@ -177,14 +238,25 @@ describe("Accordion — ElementDefinition", () => {
       />,
     );
 
-    // Comprobar que existe el botón del preset FAQ
+    // Sección Componentes presente
+    expect(screen.getByText("Componentes")).toBeTruthy();
+    expect(screen.getByText("Título")).toBeTruthy();
+    expect(screen.getByText("Subtítulo")).toBeTruthy();
+    expect(screen.getByText("Instrucción")).toBeTruthy();
+    expect(screen.getByText("Imágenes de sección")).toBeTruthy();
+
+    // Alternar visibilidad de Título
+    const checkboxes = screen.getAllByRole("checkbox");
+    fireEvent.click(checkboxes[0]!);
+    expect(onChange).toHaveBeenCalled();
+
+    // Presets presentes
     const faqBtn = screen.getByRole("button", { name: /Preguntas Frecuentes/i });
     expect(faqBtn).toBeTruthy();
-
     fireEvent.click(faqBtn);
     expect(onChange).toHaveBeenCalled();
 
-    // Comprobar botón agregar sección
+    // Botón agregar sección
     const addBtn = screen.getByRole("button", { name: /Agregar/i });
     fireEvent.click(addBtn);
     expect(onChange).toHaveBeenCalled();

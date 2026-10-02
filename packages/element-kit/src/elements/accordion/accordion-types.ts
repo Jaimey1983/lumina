@@ -25,6 +25,10 @@ export interface AccordionConfiguracion {
   posicionIcono: AccordionPosicionIcono;
   tamanoIcono: AccordionTamanoIcono;
   animacionExpandir: boolean;
+  mostrarTituloWidget: boolean;
+  mostrarSubtitulo: boolean;
+  mostrarInstruccion: boolean;
+  mostrarImagenes: boolean;
 }
 
 export interface AccordionEstado {
