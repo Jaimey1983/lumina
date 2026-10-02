@@ -1405,7 +1405,7 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K6 — Variables de clase y estados de objeto en el editor (+ ids estables y guarda de ida y vuelta)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** **[en curso: Claude Code]**
 - **Precondición:** K5 verificado en producción (cumplida, `en revisión`).
 - **Contexto:** hoy el motor funciona pero **nadie puede declarar una variable ni una regla desde el editor** (hallazgos 1 y 2). Para que K7 pueda ofrecer plantillas hace falta, antes, lo básico: (a) poder declarar variables y que persistan; (b) poder marcar el estado inicial de un bloque; (c) que un bloque pueda **tener id** cuando participa en una regla (D8, opción (a): asignación perezosa); (d) que ese id **sobreviva** a leer/guardar para **todos** los tipos de bloque. El punto (d) no es teórico: en K4 se descubrió que los `normalize*` de varios widgets descartaban `id`, `animaciones`, `canvasLocked` y `rotacion` al guardar (bug previo a K, ya corregido con `conservarCamposComunes`); no hay garantía de que **texto, imagen, video, audio, código, cita, separador, columnas, gráfico, diagrama ni las 22 actividades** conserven `id`/`disparadores`/`estado`. Una regla guardada sobre un bloque cuyo id se pierde en el siguiente autoguardado es una **regla huérfana silenciosa** — el peor modo de falla de toda la etapa.
 - **Alcance — PUEDE tocar:**
