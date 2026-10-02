@@ -338,6 +338,29 @@ describe('ClassesService — updateSlide — optimistic locking (F1.4)', () => {
     expect(slideUpdate).not.toHaveBeenCalled();
   });
 
+  it('K6: un guardado sin reglas/capas no las borra (se conservan del contenido existente)', async () => {
+    slideFindUnique.mockResolvedValue({
+      id: SLIDE_ID,
+      classId: CLASS_ID,
+      contentVersion: 3,
+      content: { bloques: [], reglas: [{ id: 'r1' }], capas: [{ id: 'c1' }] },
+    });
+    await service.updateSlide(
+      CLASS_ID,
+      SLIDE_ID,
+      { content: { bloques: [1] }, expectedVersion: 3 },
+      TEACHER_ID,
+    );
+    const calls = slideUpdateMany.mock.calls as unknown as Array<
+      [{ data: { content: Record<string, unknown> } }]
+    >;
+    expect(calls[0][0].data.content).toEqual({
+      bloques: [1],
+      reglas: [{ id: 'r1' }],
+      capas: [{ id: 'c1' }],
+    });
+  });
+
   it('con expectedVersion desfasada: 409 ConflictException (no pisa)', async () => {
     slideUpdateMany.mockResolvedValue({ count: 0 });
 

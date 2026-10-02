@@ -1,3 +1,4 @@
+import { conservarCamposDelMotor } from './slide-engine-fields';
 import { validarVariables } from '@lumina/interactions';
 import {
   Injectable,
@@ -1317,7 +1318,13 @@ export class ClassesService {
       ...(dto.title !== undefined ? { title: dto.title } : {}),
       ...(dto.type !== undefined ? { type: dto.type } : {}),
       ...(dto.content !== undefined
-        ? { content: dto.content as Prisma.InputJsonValue }
+        ? {
+            // K6: un guardado que no conoce `reglas`/`capas` no debe borrarlas.
+            content: conservarCamposDelMotor(
+              dto.content,
+              slide.content,
+            ) as Prisma.InputJsonValue,
+          }
         : {}),
     };
 
