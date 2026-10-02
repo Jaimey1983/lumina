@@ -194,6 +194,11 @@ export function EcuacionProperties({
           />
           Revelar la fórmula línea por línea (separa las líneas con \\)
         </label>
+        <p className="text-[11px] text-muted-foreground" data-ecuacion-aviso-eventos="">
+          {block.pasos === true
+            ? 'Cada paso avisa a las interacciones (clic) y, al terminar, marca la fórmula como visitada.'
+            : 'Sin «línea por línea» la fórmula no avisa a las interacciones: una regla de clic sobre ella no se activará.'}
+        </p>
         {simbolos.length === 0 ? (
           <p className="text-[11px] text-muted-foreground">
             Para que la fórmula cambie con una variable de la clase, escribe el símbolo entre
