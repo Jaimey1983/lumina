@@ -1481,8 +1481,8 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 - **Cierre (Regla 4):** al cerrar K7b el editor **deja de escribir** `Boton.accion` y `Contador.alTerminar` y los reemplaza por la plantilla 4; la **lectura** legada se mantiene (D6: las clases guardadas siguen normalizándose en `class-slide-normalize.ts`). El despacho directo en `boton-viewer.tsx`/`contador-viewer.tsx` con `TODO(migración-etapa-K)` (K4) **sigue vivo** mientras presentación/en vivo sean inertes (D1); no se borra aquí. Commit sugerido: `feat(editor): reglas por plantillas e integridad referencial de reglas (K7b)`.
 
 #### K8a — Capas de slide: render en el reproductor y bloques ocultos al empezar
-- **Operador:** Claude Code
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** [en curso: Cursor]
 - **Precondición:** K5 verificado en producción. (Independiente de K6/K7.)
 - **Contexto:** hallazgo 6. Los tipos (`Slide.capas`, `Capa`, acciones `abrir_capa`/`cerrar_capa`/`mostrar`/`ocultar`) y el estado (`capasAbiertas`, `visibles`) existen y se persisten (K5), pero **el renderer no pinta una capa ni respeta `visibles`**. D11: `popup` no se toca.
 - **Alcance — PUEDE tocar:**
