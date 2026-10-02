@@ -2563,13 +2563,15 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración: **Reglas 1–4
 - **Entregable:** specs de `renderLatex` (límites, macros, error), `speakLatex` (casos) y paridad de DOM del bloque/texto. Verif: `pnpm --filter @lumina/editor-shared build && test && lint` · `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit`. Sin bajar conteos.
 - **Cierre:** no aplica Regla 4. Commit: `refactor(math): render LaTeX único, accesible y con límites (M1)`.
 
-#### M2 — Fórmula interactiva: variables, pasos revelables y partes clicables
+#### M2 — Fórmula interactiva: variables de clase y pasos revelables
 - **Operador:** Claude Code
-- **Estado:** pendiente
-- **Precondición:** M1 `hecho`; K6 verificado en producción.
-- **Alcance previsto:** `EquationBlock` gana (aditivo) `vinculos?` (nombre de variable de clase ↔ símbolo LaTeX), `pasos?: boolean` (partir `aligned` por `\\` y revelar de a una línea) y `terminosClicables?`. Sustitución segura de variables en el LaTeX (parser propio, sin `eval`); `ecuacionDefinition.eventos` (`visitado`, `clic`, `seleccionado`) y `config.emitir`; `trust` por función solo para `\htmlData`. Editor: sección en `ecuacion-properties.tsx`. Backend no cambia (el estado del motor ya se persiste, K5). Paridad Regla 7: sin `vinculos`/`pasos` el DOM es idéntico al de M1.
-- **Verif:** la de M1 + QA en build de producción (autónomo y preview; presentación y en vivo inertes, D1).
-- **Cierre:** no aplica Regla 4. Se redacta el detalle al tomarla, con el código a la vista (Regla 10).
+- **Estado:** **[en curso: Claude Code]** — se toma por pedido explícito del dueño aunque K6 figura `en revisión` (sin QA en producción): M2 solo **lee** `Class.variables` y las muta a través del runtime ya existente.
+- **Precondición:** M1 `hecho`.
+- **Corrección de alcance (Regla 10, antes de tocar código):** (1) El motor **solo cambia variables vía reglas**, y no existe aún un control (slider, K11) que las mueva; para que la fórmula sea interactiva por sí sola el bloque ofrece **ajustadores propios** («− valor +») que llaman a una capacidad nueva y **aditiva** del runtime, `asignarVariable(id, valor)`: valida existencia y tipo (como el validador de K5), solo toca variables de flujo (C1/C4) y se persiste por K5. No es una acción nueva del catálogo cerrado de K1. (2) Las **partes clicables quedan fuera de M2**: los eventos de K1 no llevan payload, así que no distinguirían qué término se tocó; exige ampliar el catálogo de eventos (decisión de K, no de M). Se anota como M2b opcional.
+- **Alcance — PUEDE tocar:** `@lumina/types` (`EquationBlock.vinculos?: { simbolo; variableId; controlable?; paso?; min?; max?; decimales? }[]`, `EquationBlock.pasos?: boolean`); `@lumina/interactions` (`asignarVariable` pura + spec); `@lumina/element-kit-core` (`ElementRuntimeConfig.variables?`/`asignarVariable?`, aditivos); `editor-shared/rich-text/latex-render.ts` (`sustituirVariables`: tokens `{{símbolo}}`, sin `eval`, números finitos y texto filtrado; `dividirPasos`: parte por `\\` de nivel 0, desactivado si hay `\begin`) + spec; `element-kit` bloque `ecuacion` (vista con sustitución, ajustadores, «Siguiente paso»/«Reiniciar», `eventos: ['clic','visitado']` y emisión), panel de propiedades (activar pasos, vincular símbolos a variables de la clase); `lumina-frontend` (`use-interaction-runtime` expone `variables` y `asignarVariable`; `slide-renderer` arma la config de `ecuacion`; contexto con las variables de la clase para el panel).
+- **Alcance — NO toca:** `@lumina/scoring`, backend, catálogo de acciones/eventos de K1, validador de estado de K5.
+- **Entregable:** una fórmula `{{a}}x^2+…` con variables controlables se redibuja al ajustar, el valor se restaura al recargar (K5); los pasos se revelan de a uno y emiten `visitado` al final; sin `vinculos`/`pasos` el DOM es idéntico al de M1 (Regla 7). Verif: la de M1 + `@lumina/interactions` build/test/lint + QA en build de producción (autónomo y preview; en vivo y presentación sin variables).
+- **Cierre:** no aplica Regla 4.
 
 #### M3 — Generador con LaTeX real y respuesta corta autocalificable
 - **Operador:** Claude Code
