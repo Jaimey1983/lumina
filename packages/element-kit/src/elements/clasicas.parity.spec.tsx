@@ -12,6 +12,7 @@ import * as empar from "./emparejar/index.js";
 import * as orden from "./ordenar_pasos/index.js";
 import * as video from "./video_interactivo/index.js";
 import * as corta from "./short_answer/index.js";
+import * as respMat from "./respuesta_matematica/index.js";
 import * as encuesta from "./encuesta_viva/index.js";
 import * as nube from "./nube_palabras/index.js";
 
@@ -36,6 +37,7 @@ const CASOS: Caso[] = [
   { tipo: "ordenar_pasos", def: orden.ordenarPasosDefinition, evaluar: orden.evaluarOrdenarPasos, respuesta: ["s1", "s2", "s3", "s4"] },
   { tipo: "video_interactivo", def: video.videoInteractivoDefinition, evaluar: video.evaluarVideoInteractivo, respuesta: { historial: [{ questionIndex: 0, answer: "a" }] } },
   { tipo: "short_answer", def: corta.shortAnswerDefinition, evaluar: corta.evaluarShortAnswer, respuesta: "algo" },
+  { tipo: "respuesta_matematica", def: respMat.respuestaMatematicaDefinition, evaluar: respMat.evaluarRespuestaMatematica, respuesta: "7,5" },
   { tipo: "encuesta_viva", def: encuesta.encuestaVivaDefinition, evaluar: encuesta.evaluarEncuestaViva, respuesta: "o1" },
   { tipo: "nube_palabras", def: nube.nubePalabrasDefinition, evaluar: nube.evaluarNubePalabras, respuesta: "palabra" },
 ];

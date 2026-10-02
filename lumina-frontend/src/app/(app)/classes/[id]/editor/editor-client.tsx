@@ -64,6 +64,7 @@ import {
   type SlideVersion,
 } from '@/hooks/api/use-slide-versions';
 import { type DesempenoGenerado, withActividadesSugeridas } from './lib/desempeno-legado';
+import { ClassVariablesContext } from './lib/class-variables-context';
 import {
   appendBlockToSlideContent,
   buildContentDocumentForNewActivitySlide,
@@ -107,6 +108,7 @@ import { createDefaultAhorcado } from '@lumina/element-kit/activities/ahorcado/a
 import { createDefaultPuzzlePalabras } from '@lumina/element-kit/activities/puzzle-palabras/puzzle-palabras-defaults';
 import {
   shortAnswerTemplate,
+  respuestaMatematicaTemplate,
   quizMultipleTemplate,
   trueFalseTemplate,
   fillBlanksTemplate,
@@ -252,6 +254,8 @@ import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
 // Las 10 plantillas de la familia clásica viven en `@lumina/element-kit/activities/_classic/activity-templates`
 // (extraídas en E2.5 para que `@lumina/element-kit` las consuma como
 // `crearPorDefecto`). `torneo` y `escape_room` siguen acá — no son parte de E2.5.
+
+const EMPTY_CLASS_VARIABLES: readonly VariableDef[] = [];
 
 function torneoTemplate(): Activity {
   const fb = BLOCK_FALLBACKS.torneo;
@@ -1941,6 +1945,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'true-false':       trueFalseTemplate,
         'fill-blank':       fillBlanksTemplate,
         'short-answer':     shortAnswerTemplate,
+        'respuesta-matematica': respuestaMatematicaTemplate,
         'drag-drop':        dragDropTemplate,
         'match':            matchPairsTemplate,
         'sort-steps':       orderStepsTemplate,
@@ -1967,6 +1972,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'true-false':       'Verdadero o falso',
         'fill-blank':       'Completar blancos',
         'short-answer':     'Respuesta corta',
+        'respuesta-matematica': 'Respuesta matemática',
         'drag-drop':        'Arrastrar y soltar',
         'match':            'Emparejar',
         'sort-steps':       'Ordenar pasos',
@@ -3133,6 +3139,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               slideTitle={activeSlide?.title}
               courseName={cls?.title}
             >
+            <ClassVariablesContext.Provider value={cls?.variables ?? EMPTY_CLASS_VARIABLES}>
             <CanvasArea
               ref={canvasAreaRef}
               canvasSurfaceRef={canvasSurfaceRef}
@@ -3162,6 +3169,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               canvasZoom={canvasZoom}
               onCanvasZoomChange={handleCanvasZoomChange}
             />
+            </ClassVariablesContext.Provider>
             </RichTextAiBridgeProvider>
             </SlideNavContext.Provider>
             <SlideCountdownOverlay

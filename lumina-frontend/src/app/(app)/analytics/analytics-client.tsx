@@ -336,6 +336,7 @@ function StudentProgressSection({
 const ACTIVITY_LABEL: Record<string, string> = {
   quiz_multiple: 'Quiz múltiple',
   verdadero_falso: 'Verdadero/Falso',
+  respuesta_matematica: 'Respuesta matemática',
   completar_blancos: 'Completar blancos',
   arrastrar_soltar: 'Arrastrar y soltar',
   emparejar: 'Emparejar',

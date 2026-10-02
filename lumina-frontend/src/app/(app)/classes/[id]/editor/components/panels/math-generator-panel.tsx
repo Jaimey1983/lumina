@@ -28,11 +28,18 @@ const TEMAS: { value: MathTema; label: string }[] = [
   { value: 'multiplicacion', label: 'Multiplicación' },
   { value: 'fracciones', label: 'Fracciones' },
   { value: 'ecuacion', label: 'Ecuación' },
+  { value: 'potencias', label: 'Potencias (6.º–7.º)' },
+  { value: 'porcentajes', label: 'Porcentajes (6.º–7.º)' },
+  { value: 'ecuacion_lineal', label: 'Ecuación lineal (7.º–8.º)' },
+  { value: 'funcion_lineal', label: 'Función lineal (8.º–9.º)' },
+  { value: 'polinomio', label: 'Evaluar un polinomio (9.º–10.º)' },
+  { value: 'derivada', label: 'Derivada en un punto (11.º)' },
 ];
 
 const FORMATOS: { value: MathFormato; label: string }[] = [
   { value: 'quiz_multiple', label: 'Quiz (opción múltiple)' },
-  { value: 'short_answer', label: 'Respuesta corta' },
+  { value: 'respuesta_matematica', label: 'Respuesta numérica (se califica sola)' },
+  { value: 'short_answer', label: 'Respuesta corta (calificación manual)' },
 ];
 
 const GRADOS = Array.from({ length: 11 }, (_, i) => String(i + 1));
@@ -43,7 +50,7 @@ function previewLine(item: {
   question?: string;
   preguntas?: { texto?: string }[];
 }): string {
-  if (item.tipo === 'short_answer') return item.question ?? '';
+  if (item.tipo === 'short_answer' || item.tipo === 'respuesta_matematica') return item.question ?? '';
   return item.preguntas?.[0]?.texto ?? '';
 }
 
@@ -63,7 +70,7 @@ export function MathGeneratorPanel({ hasActivity, onInsertActivity, onInsertEqua
   const [seed, setSeed] = useState(1);
 
   const esSumaResta = tema === 'suma' || tema === 'resta';
-  const cantidadEfectiva = formato === 'short_answer' ? 1 : Number(cantidad);
+  const cantidadEfectiva = formato === 'quiz_multiple' ? Number(cantidad) : 1;
 
   const items = useMemo(
     () =>

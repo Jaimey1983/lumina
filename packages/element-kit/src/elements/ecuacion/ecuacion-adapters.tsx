@@ -14,14 +14,16 @@ import { primitivePropertyApplyProps } from "../_shared/primitive-property-bridg
 /** En el lienzo la ecuación se edita desde el panel de propiedades. */
 export function EcuacionEditor({
   estado,
+  config,
 }: ElementEditorProps<EcuacionEstado, EcuacionConfig>): ReactElement {
-  return <RenderEcuacion block={estado} modo="editor" />;
+  return <RenderEcuacion block={estado} modo="editor" runtime={config} />;
 }
 
 export function EcuacionViewer({
   estado,
+  config,
 }: ElementViewerProps<EcuacionEstado, EcuacionConfig>): ReactElement {
-  return <RenderEcuacion block={estado} modo="viewer" />;
+  return <RenderEcuacion block={estado} modo="viewer" runtime={config} />;
 }
 
 export function EcuacionPropiedades({
@@ -35,5 +37,11 @@ export function EcuacionPropiedades({
     estado,
     "ecuacion",
   );
-  return <EcuacionProperties block={estado} {...applyProps} />;
+  return (
+    <EcuacionProperties
+      block={estado}
+      variablesClase={config.variablesClase}
+      {...applyProps}
+    />
+  );
 }

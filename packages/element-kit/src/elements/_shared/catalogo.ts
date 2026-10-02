@@ -135,6 +135,11 @@ export const CATALOGO_ELEMENTOS = {
   verdadero_falso: { nombre: "Verdadero o falso", familia: "actividad" },
   completar_blancos: { nombre: "Completar blancos", familia: "actividad" },
   short_answer: { nombre: "Respuesta corta", familia: "actividad" },
+  respuesta_matematica: {
+    nombre: "Respuesta matemática",
+    descripcion: "El alumno escribe un número y se califica solo",
+    familia: "actividad",
+  },
   arrastrar_soltar: { nombre: "Arrastrar y soltar", familia: "actividad" },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },

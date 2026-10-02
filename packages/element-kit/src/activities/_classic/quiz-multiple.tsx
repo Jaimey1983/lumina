@@ -6,6 +6,7 @@ import { CheckCircle, Circle, XCircle } from 'lucide-react';
 import type { QuizMultiple, QuizOption } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { cn } from '@lumina/ui/lib/utils';
+import { MathText } from '@lumina/editor-shared/rich-text/math-text';
 import { firstPregunta } from './quiz/quiz-utils.js';
 
 export { QuizMultipleViewer } from './quiz/quiz-multiple-viewer.js';
@@ -42,7 +43,7 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
         )}
       </div>
 
-      <p className="text-sm font-medium">{pregunta.texto}</p>
+      <p className="text-sm font-medium"><MathText text={pregunta.texto} /></p>
 
       <ul className="space-y-1.5">
         {pregunta.opciones.map((op) => (
@@ -60,7 +61,7 @@ function EditorView({ actividad }: { actividad: QuizMultiple }) {
                 ? <CheckCircle className="size-3.5 shrink-0 text-green-600" />
                 : <Circle className="size-3.5 shrink-0 opacity-30" />
               }
-              {op.texto}
+              <MathText text={op.texto} />
             </span>
             {op.esCorrecta && (
               <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
@@ -126,7 +127,7 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
 
   return (
     <div className="space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-lumina-xs">
-      <p className="text-sm font-medium leading-snug">{firstPregunta(actividad).texto}</p>
+      <p className="text-sm font-medium leading-snug"><MathText text={firstPregunta(actividad).texto} /></p>
 
       <ul className="space-y-2">
         {firstPregunta(actividad).opciones.map((op) => {
@@ -148,7 +149,7 @@ function ViewerView({ actividad }: { actividad: QuizMultiple }) {
                 )}
               >
                 <OptionIcon op={op} isSelected={isSel} submitted={submitted} />
-                {op.texto}
+                <MathText text={op.texto} />
               </button>
             </li>
           );

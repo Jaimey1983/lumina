@@ -14,7 +14,12 @@ import {
   type RefObject,
 } from 'react';
 import type { SlideInteractionRuntime } from '@/hooks/use-interaction-runtime';
-import type { Capa, EventoTipo } from '@lumina/types/interaction';
+import type {
+  Capa,
+  EstadoObjeto,
+  EventoTipo,
+  VariableValor,
+} from '@lumina/types/interaction';
 import { createPortal } from 'react-dom';
 import { Trash2, Copy, Pencil, Lock, LockOpen, Ungroup } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -105,6 +110,12 @@ type PrimitiveRuntimeConfig = {
   forceFill?: boolean;
   isThumbnail?: boolean;
   renderInnerBlock?: (innerBlock: Block, colIdx: number, blockIdx: number) => ReactNode;
+  /** M2 — `ecuacion`: variables de clase y su escritura (solo con runtime). */
+  variables?: Readonly<Record<string, VariableValor>>;
+  asignarVariable?: (variableId: string, valor: VariableValor) => void;
+  bloqueId?: string;
+  emitir?: (evento: EventoTipo) => void;
+  estadoObjeto?: EstadoObjeto;
 };
 
 /**
@@ -140,6 +151,7 @@ const ACTIVITY_LABELS: Record<Activity['tipo'], string> = {
   quiz_multiple: 'Quiz · Opción múltiple',
   verdadero_falso: 'Actividad · Verdadero / Falso',
   short_answer: 'Actividad · Respuesta corta',
+  respuesta_matematica: 'Actividad · Respuesta matemática',
   completar_blancos: 'Actividad · Completar blancos',
   arrastrar_soltar: 'Actividad · Arrastrar y soltar',
   emparejar: 'Actividad · Emparejar',
@@ -854,6 +866,14 @@ function BlockNode({
     }
     if (block.tipo === 'columnas') {
       return { renderInnerBlock: renderColumnInnerBlock };
+    }
+    if (block.tipo === 'ecuacion') {
+      return {
+        ...emisorConfig,
+        isThumbnail,
+        variables: isThumbnail ? undefined : interactionRuntime?.variables,
+        asignarVariable: isThumbnail ? undefined : interactionRuntime?.asignarVariable,
+      };
     }
     return {};
   }

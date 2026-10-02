@@ -9,6 +9,7 @@
     "ordenar_pasos",
     "video_interactivo",
     "short_answer",
+    "respuesta_matematica",
     "encuesta_viva",
     "nube_palabras",
     "clasificar",
@@ -97,6 +98,188 @@
     }
   ],
   "evaluationCases": [
+    {
+      "case": "m4_equivalente_factorizada",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "2x+2"},
+      "respuesta": "2(x+1)",
+      "correctEsperado": true
+    },
+    {
+      "case": "m4_equivalente_producto_notable",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x^2-1"},
+      "respuesta": "(x-1)(x+1)",
+      "correctEsperado": true
+    },
+    {
+      "case": "m4_asignacion_x_igual",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x=3"},
+      "respuesta": "3",
+      "correctEsperado": true
+    },
+    {
+      "case": "m4_no_equivalente",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "(x+1)^2"},
+      "respuesta": "x^2+1",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_variable_distinta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "respuesta": "y+1",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_dominio_distinto",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x"},
+      "respuesta": "sqrt(x^2)",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_expresion_ilegible_es_incorrecta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "respuesta": "x+(",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_codigo_no_se_ejecuta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "respuesta": "process.exit()",
+      "correctEsperado": false
+    },
+    {
+      "case": "m4_sin_respuesta_no_se_inventa_cero",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo":"algebraico","respuesta":"x+1"},
+      "respuesta": "  ",
+      "scoreEsperado": null
+    },
+    {
+      "case": "m4_respuesta_modelo_ilegible_no_se_califica",
+      "activityType": "respuesta_matematica",
+      "definicion": {"modo":"algebraico","respuesta":"x+("},
+      "respuesta": "x+1",
+      "scoreEsperado": null
+    },
+    {
+      "case": "m3a_punto_ambiguo_decimal",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "3,141", "tolerancia": 0.001},
+      "respuesta": "3.141",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_punto_ambiguo_miles",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "1500"},
+      "respuesta": "1.500",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_miles_con_coma_decimal",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "1500,5"},
+      "respuesta": "1.500,5",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_entera_exacta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "12"},
+      "respuesta": "12",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_entera_no_tolera",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "12"},
+      "respuesta": "12,01",
+      "correctEsperado": false
+    },
+    {
+      "case": "m3a_decimal_tolerancia_por_defecto",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "3,14"},
+      "respuesta": "3.145",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_decimal_fuera_de_tolerancia",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "3,14"},
+      "respuesta": "3,2",
+      "correctEsperado": false
+    },
+    {
+      "case": "m3a_coma_decimal_y_signo_unicode",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "-2,5"},
+      "respuesta": "−2,5",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_fraccion",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "0,75"},
+      "respuesta": "3/4",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_fraccion_denominador_cero",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "1"},
+      "respuesta": "1/0",
+      "correctEsperado": false
+    },
+    {
+      "case": "m3a_tolerancia_absoluta",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "10", "tolerancia": 0.5},
+      "respuesta": "10,4",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_tolerancia_porcentual",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "200", "tolerancia": 5, "toleranciaTipo": "porcentual"},
+      "respuesta": "209",
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_tolerancia_porcentual_fuera",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "200", "tolerancia": 5, "toleranciaTipo": "porcentual"},
+      "respuesta": "211",
+      "correctEsperado": false
+    },
+    {
+      "case": "m3a_texto_no_numerico",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "4"},
+      "respuesta": "cuatro",
+      "correctEsperado": false
+    },
+    {
+      "case": "m3a_numero_directo",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "4"},
+      "respuesta": 4,
+      "correctEsperado": true
+    },
+    {
+      "case": "m3a_sin_respuesta_no_se_inventa_cero",
+      "activityType": "respuesta_matematica",
+      "definicion": {"respuesta": "4"},
+      "respuesta": "   ",
+      "scoreEsperado": null
+    },
     {
       "case": "fase2_blancos_trim_y_mayusculas",
       "activityType": "completar_blancos",
@@ -290,6 +473,7 @@
     "ordenar_pasos": "partial",
     "video_interactivo": "partial",
     "short_answer": "manual",
+    "respuesta_matematica": "binary",
     "encuesta_viva": "participation",
     "nube_palabras": "participation",
     "clasificar": "partial",
@@ -310,6 +494,12 @@
     "escape_room": "exclude"
   },
   "contractCases": [
+    {
+      "case": "contrato_respuesta_matematica_perfecta",
+      "activityType": "respuesta_matematica",
+      "definicion": { "respuesta": "7,5" },
+      "respuesta": "7,5"
+    },
     {
       "case": "contrato_quiz_multiple_perfecto",
       "activityType": "quiz_multiple",

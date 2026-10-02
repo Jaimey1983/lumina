@@ -4,6 +4,7 @@ import type { MathRng } from './rng';
 import type {
   GeneratedMathActivity,
   GeneratedMathQuiz,
+  GeneratedMathRespuesta,
   GeneratedMathShortAnswer,
   MathFormato,
   MathGeneratorMeta,
@@ -48,6 +49,12 @@ function padDistractors(correct: string, chosen: string[], rng: MathRng): string
   return rng.shuffle(out).slice(0, 3);
 }
 
+/** Las opciones que son fracciones se muestran como fracción (`3/4` → `\\(\\frac{3}{4}\\)`); el resto, tal cual. */
+export function opcionVisible(texto: string): string {
+  const m = /^(-?\d+)\/(\d+)$/.exec(texto);
+  return m ? `\\(\\frac{${m[1]}}{${m[2]}}\\)` : texto;
+}
+
 export function toQuiz(
   problem: MathProblem,
   meta: MathGeneratorMeta,
@@ -55,10 +62,10 @@ export function toQuiz(
 ): GeneratedMathQuiz {
   const wrong = padDistractors(problem.respuesta, distractorsFor(problem.respuesta, rng), rng);
   const opciones: QuizOption[] = rng.shuffle([
-    { id: OPTION_IDS[0], texto: problem.respuesta, esCorrecta: true },
+    { id: OPTION_IDS[0], texto: opcionVisible(problem.respuesta), esCorrecta: true },
     ...wrong.map((texto, i) => ({
       id: OPTION_IDS[i + 1],
-      texto,
+      texto: opcionVisible(texto),
       esCorrecta: false,
     })),
   ]);
@@ -92,13 +99,29 @@ export function toShortAnswer(
   };
 }
 
+/** Respuesta numérica autocalificable (M3a): la respuesta del generador es siempre un número o una fracción. */
+export function toRespuestaMatematica(
+  problem: MathProblem,
+  meta: MathGeneratorMeta,
+): GeneratedMathRespuesta {
+  return {
+    tipo: 'respuesta_matematica',
+    modo: 'numerico',
+    question: problem.enunciado,
+    respuesta: problem.respuesta,
+    ...meta,
+  };
+}
+
 export function formatProblem(
   problem: MathProblem,
   formato: MathFormato,
   meta: MathGeneratorMeta,
   rng: MathRng,
-): GeneratedMathQuiz | GeneratedMathShortAnswer {
-  return formato === 'short_answer' ? toShortAnswer(problem, meta) : toQuiz(problem, meta, rng);
+): GeneratedMathActivity {
+  if (formato === 'short_answer') return toShortAnswer(problem, meta);
+  if (formato === 'respuesta_matematica') return toRespuestaMatematica(problem, meta);
+  return toQuiz(problem, meta, rng);
 }
 
 /**
@@ -113,7 +136,7 @@ export function toSingleEditorActivity(
   if (!first) {
     throw new Error('math-generator: no hay ítems para insertar');
   }
-  if (first.tipo === 'short_answer') return first;
+  if (first.tipo === 'short_answer' || first.tipo === 'respuesta_matematica') return first;
 
   const preguntas = items.flatMap((item, i) =>
     item.tipo === 'quiz_multiple'

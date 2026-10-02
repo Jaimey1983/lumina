@@ -173,6 +173,29 @@ export interface ShortAnswerActivity {
   hint?: string;
 }
 
+/**
+ * Respuesta matemática autocalificable (Etapa M / M3a). Clase de puntuación
+ * `binary`: se compara el número del alumno con `respuesta` dentro de una
+ * tolerancia (exacta si es entera, ±0,01 si no, salvo que se declare otra).
+ * `short_answer` sigue siendo manual y no cambia.
+ */
+export interface MathAnswerActivity {
+  tipo: 'respuesta_matematica';
+  /**
+   * `numerico` (por defecto): se compara el número con una tolerancia.
+   * `algebraico` (M4): se comprueba que la expresión del alumno sea equivalente a
+   * la respuesta modelo (`2x+2` ≡ `2(x+1)`), evaluando en muchos puntos.
+   */
+  modo?: 'numerico' | 'algebraico';
+  question: string;
+  /** Respuesta modelo: texto numérico (`12`, `3,14`, `3/4`) o, en modo algebraico, una expresión (`2(x+1)`). */
+  respuesta: string;
+  tolerancia?: number;
+  toleranciaTipo?: 'absoluta' | 'porcentual';
+  unidad?: string;
+  hint?: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface FillBlank {
@@ -625,6 +648,7 @@ export type Activity =
   | QuizMultiple
   | TrueFalse
   | ShortAnswerActivity
+  | MathAnswerActivity
   | FillBlanks
   | DragDrop
   | MatchPairs
@@ -823,6 +847,23 @@ export interface QuoteBlock {
 }
 
 /**
+ * Enlace entre un símbolo de la fórmula (`{{a}}` en el LaTeX) y una variable de
+ * clase. Se referencia por `variableId` (D13): renombrar la variable no lo rompe.
+ */
+export interface EquationVinculo {
+  /** Nombre del token: `{{a}}` en el LaTeX. Letras, dígitos y guion bajo. */
+  simbolo: string;
+  variableId: string;
+  /** Si es `true` el visor ofrece «− valor +» para cambiarla (solo numéricas). */
+  controlable?: boolean;
+  paso?: number;
+  min?: number;
+  max?: number;
+  /** Decimales con los que se muestra el valor (0–4). */
+  decimales?: number;
+}
+
+/**
  * Bloque de ecuación (LaTeX + KaTeX). Es un bloque propio del lienzo: se mueve,
  * redimensiona y edita desde su panel de propiedades, sin pasar por el editor
  * de texto enriquecido (las fórmulas viejas siguen siendo nodos `math`).
@@ -842,6 +883,10 @@ export interface EquationBlock {
   ajustar?: boolean;
   /** Texto para lectores de pantalla; si falta se usa el LaTeX. */
   descripcionAccesible?: string;
+  /** M2: símbolos `{{a}}` de la fórmula ligados a variables de la clase. */
+  vinculos?: EquationVinculo[];
+  /** M2: revelar la fórmula línea a línea (se parte por `\\`). */
+  pasos?: boolean;
   x?: number;
   y?: number;
   ancho?: number;

@@ -2,6 +2,7 @@
 
 import { Suspense, lazy } from 'react';
 import type { EquationBlock } from '@lumina/types/slide';
+import type { EquationRuntime } from './equation-view.js';
 
 /** KaTeX (+ CSS) solo se carga cuando hay una ecuación en el slide. */
 const EquationViewLazy = lazy(() => import('./equation-view.js'));
@@ -9,9 +10,11 @@ const EquationViewLazy = lazy(() => import('./equation-view.js'));
 export interface RenderEcuacionProps {
   block: EquationBlock;
   modo?: 'editor' | 'viewer';
+  /** M2: variables, ajustadores y eventos del motor. Ausente = fórmula estática. */
+  runtime?: EquationRuntime;
 }
 
-export function RenderEcuacion({ block, modo = 'viewer' }: RenderEcuacionProps) {
+export function RenderEcuacion({ block, modo = 'viewer', runtime }: RenderEcuacionProps) {
   const latex = (block.latex ?? '').trim();
   if (latex === '') {
     if (modo !== 'editor') return null;
@@ -41,7 +44,7 @@ export function RenderEcuacion({ block, modo = 'viewer' }: RenderEcuacionProps) 
         </div>
       }
     >
-      <EquationViewLazy block={block} />
+      <EquationViewLazy block={block} modo={modo} runtime={runtime} />
     </Suspense>
   );
 }

@@ -13,6 +13,7 @@ import {
 
 import type { QuizLayoutVariant, QuizOption } from '@lumina/types/slide';
 import { cn } from '@lumina/ui/lib/utils';
+import { MathText } from '@lumina/editor-shared/rich-text/math-text';
 
 const KAHOOT_COLORS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c', '#8540df', '#0aa865'] as const;
 
@@ -190,7 +191,7 @@ function ClassicListLayout({
                     ) : (
                       <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
                     )}
-                    <span className="min-w-0 flex-1">{op.texto}</span>
+                    <span className="min-w-0 flex-1"><MathText text={op.texto} /></span>
                   </span>
                   <FeedbackIcons
                     isSel={flags.isSel}
@@ -206,7 +207,7 @@ function ClassicListLayout({
                   ) : (
                     <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
                   )}
-                  {op.texto}
+                  <MathText text={op.texto} />
                 </>
               )}
             </button>
@@ -251,7 +252,7 @@ function ColorGridLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
                 dimmed && 'opacity-50',
               )}
             >
-              <span className="line-clamp-3">{op.texto}</span>
+              <span className="line-clamp-3"><MathText text={op.texto} /></span>
             </button>
           </li>
         );
@@ -289,7 +290,7 @@ function IconCardsLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVariant'>) {
               )}
             >
               <Shape className="size-8 shrink-0 opacity-90" aria-hidden />
-              <span className="text-xs font-medium leading-snug">{op.texto}</span>
+              <span className="text-xs font-medium leading-snug"><MathText text={op.texto} /></span>
             </button>
           </li>
         );
@@ -327,7 +328,7 @@ function PillsHorizontalLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVarian
                 flags.showCorrectReveal && 'border-green-400 bg-green-50 text-green-800',
               )}
             >
-              {op.texto}
+              <MathText text={op.texto} />
             </button>
           </li>
         );
@@ -371,7 +372,7 @@ function TwoColColorListLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVarian
               ) : (
                 <Circle className="size-4 shrink-0 text-[#9ca3af]/40" />
               )}
-              <span className="min-w-0 flex-1">{op.texto}</span>
+              <span className="min-w-0 flex-1"><MathText text={op.texto} /></span>
             </button>
           </li>
         );
@@ -410,7 +411,7 @@ function TwoColNeutralGridLayout(props: Omit<QuizOptionsLayoutProps, 'layoutVari
                 flags.showCorrectReveal && 'border-green-400 bg-green-50 text-green-800',
               )}
             >
-              <span className="line-clamp-3">{op.texto}</span>
+              <span className="line-clamp-3"><MathText text={op.texto} /></span>
             </button>
           </li>
         );
@@ -456,7 +457,7 @@ function QuizQuestionText({
         className,
       )}
     >
-      {texto}
+      <MathText text={texto} />
     </p>
   );
 }
