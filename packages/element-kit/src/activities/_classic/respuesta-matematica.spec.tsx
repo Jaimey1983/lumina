@@ -82,3 +82,21 @@ describe("Respuesta matemática — modo algebraico (M4)", () => {
     expect(r.queryByText("Unidad (opc.)")).toBeNull();
   });
 });
+
+describe("Texto con fórmulas en línea (M3b)", () => {
+  it("una pregunta con \\( … \\) se dibuja con KaTeX y se lee en español", async () => {
+    const act = { ...base(), question: "¿Cuánto es \\(\\frac{1}{2}+\\frac{1}{4}\\)?", respuesta: "3/4" };
+    const r = render(<RespuestaMatematicaViewer activity={act} />);
+    const formula = await r.findByRole("img");
+    expect(formula.getAttribute("aria-label")).toBe("1 sobre 2 más 1 sobre 4");
+    expect(r.container.querySelector(".katex")).not.toBeNull();
+    expect(r.container.textContent).toContain("¿Cuánto es");
+  });
+
+  it("un texto sin fórmulas queda exactamente igual (paridad)", () => {
+    const act = { ...base(), question: "¿Cuánto es 3 + 4? Cuesta $5", respuesta: "7" };
+    const r = render(<RespuestaMatematicaViewer activity={act} />);
+    expect(r.container.querySelector("[data-math-inline]")).toBeNull();
+    expect(r.getByText("¿Cuánto es 3 + 4? Cuesta $5")).toBeTruthy();
+  });
+});

@@ -10,6 +10,7 @@ import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
+import { MathText } from '@lumina/editor-shared/rich-text/math-text';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
@@ -224,7 +225,7 @@ export function ShortAnswerViewer({
         isDark ? 'border border-white/20 bg-white/10' : 'border border-[#e5e7eb] bg-white/90',
       )}
     >
-      <p className={cn('text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>{activity.question}</p>
+      <p className={cn('text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}><MathText text={activity.question} /></p>
       {activity.hint && (
         <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>💡 {activity.hint}</p>
       )}

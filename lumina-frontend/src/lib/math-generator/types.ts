@@ -1,6 +1,18 @@
 import type { MathAnswerActivity, QuizMultiple, ShortAnswerActivity } from '@lumina/types/slide';
 
-export type MathTema = 'suma' | 'resta' | 'multiplicacion' | 'fracciones' | 'ecuacion';
+export type MathTema =
+  | 'suma'
+  | 'resta'
+  | 'multiplicacion'
+  | 'fracciones'
+  | 'ecuacion'
+  // Grados 6–11 (M3b). Todas tienen respuesta entera: se autocalifican sin ambigüedad.
+  | 'potencias'
+  | 'porcentajes'
+  | 'ecuacion_lineal'
+  | 'funcion_lineal'
+  | 'polinomio'
+  | 'derivada';
 
 export type MathFormato = 'quiz_multiple' | 'short_answer' | 'respuesta_matematica';
 

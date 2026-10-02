@@ -127,7 +127,7 @@ function buildFracciones(rng: MathRng, grado: number, seen: Set<string>): MathPr
       const n = rng.int(1, 6) * 2;
       return { a: n, b: 2 };
     });
-    return { enunciado: `¿Cuánto es 1/2 de ${halfOf}?`, respuesta: String(halfOf / 2) };
+    return { enunciado: `¿Cuánto es \\(\\frac{1}{2}\\) de ${halfOf}?`, respuesta: String(halfOf / 2) };
   }
 
   const den = rng.pick([2, 3, 4, 5, 6, 8]);
@@ -138,7 +138,10 @@ function buildFracciones(rng: MathRng, grado: number, seen: Set<string>): MathPr
   });
   const num = a + b;
   const respuesta = num === den ? '1' : `${num}/${den}`;
-  return { enunciado: `¿Cuánto es ${a}/${den} + ${b}/${den}?`, respuesta };
+  return {
+    enunciado: `¿Cuánto es \\(\\frac{${a}}{${den}}+\\frac{${b}}{${den}}\\)?`,
+    respuesta,
+  };
 }
 
 function buildEcuacion(rng: MathRng, grado: number, seen: Set<string>): MathProblem {
@@ -149,7 +152,118 @@ function buildEcuacion(rng: MathRng, grado: number, seen: Set<string>): MathProb
     return { a: addend, b: x + addend };
   });
   const x = b - a;
-  return { enunciado: `¿Cuál es el valor de x si x + ${a} = ${b}?`, respuesta: String(x) };
+  return {
+    enunciado: `¿Cuál es el valor de \\(x\\) si \\(x + ${a} = ${b}\\)?`,
+    respuesta: String(x),
+  };
+}
+
+// ─── Grados 6–11 (M3b) ──────────────────────────────────────────────────────
+
+/**
+ * Un problema que no se repite dentro de la tanda. Si el espacio de problemas es
+ * más chico que la cantidad pedida, repite en vez de lanzar (la tanda es
+ * decorativa para el docente, no una invariante).
+ */
+function uniqueProblem(
+  rng: MathRng,
+  seen: Set<string>,
+  make: () => MathProblem,
+): MathProblem {
+  let last = make();
+  for (let i = 0; i < 60; i++) {
+    if (!seen.has(last.enunciado)) break;
+    last = make();
+  }
+  seen.add(last.enunciado);
+  void rng;
+  return last;
+}
+
+/** `ax + b` sin ceros ni unos redundantes: 1x → x, +-3 → -3. */
+function lineal(m: number, n: number, v = 'x'): string {
+  const cuerpo = m === 1 ? v : m === -1 ? `-${v}` : `${m}${v}`;
+  if (n === 0) return cuerpo;
+  return `${cuerpo} ${n > 0 ? '+' : '-'} ${Math.abs(n)}`;
+}
+
+function buildPotencias(rng: MathRng, grado: number, seen: Set<string>): MathProblem {
+  const g = clampGrado(grado);
+  return uniqueProblem(rng, seen, () => {
+    const base = rng.int(2, g <= 6 ? 6 : 10);
+    const exp = rng.int(2, g <= 6 ? 3 : 4);
+    return {
+      enunciado: `¿Cuánto es \\(${base}^{${exp}}\\)?`,
+      respuesta: String(base ** exp),
+    };
+  });
+}
+
+function buildPorcentajes(rng: MathRng, grado: number, seen: Set<string>): MathProblem {
+  const g = clampGrado(grado);
+  return uniqueProblem(rng, seen, () => {
+    const pct = rng.pick(g <= 6 ? [10, 20, 25, 50, 75] : [5, 10, 15, 20, 25, 30, 40, 50, 60, 75]);
+    const base = rng.int(1, g <= 6 ? 10 : 25) * 20; // múltiplo de 20: el resultado es entero
+    return {
+      enunciado: `¿Cuánto es el \\(${pct}\\%\\) de ${base}?`,
+      respuesta: String((pct * base) / 100),
+    };
+  });
+}
+
+function buildEcuacionLineal(rng: MathRng, grado: number, seen: Set<string>): MathProblem {
+  const g = clampGrado(grado);
+  return uniqueProblem(rng, seen, () => {
+    const a = rng.int(2, g <= 7 ? 6 : 9);
+    const x = rng.int(g <= 7 ? 1 : -6, 9);
+    const b = rng.int(g <= 7 ? 1 : -9, 9);
+    const c = a * x + b;
+    return {
+      enunciado: `Resuelve \\(${lineal(a, b)} = ${c}\\). ¿Cuál es el valor de \\(x\\)?`,
+      respuesta: String(x),
+    };
+  });
+}
+
+function buildFuncionLineal(rng: MathRng, _grado: number, seen: Set<string>): MathProblem {
+  return uniqueProblem(rng, seen, () => {
+    const m = rng.pick([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]);
+    const n = rng.int(-9, 9);
+    const k = rng.int(-4, 6);
+    return {
+      enunciado: `Si \\(f(x) = ${lineal(m, n)}\\), ¿cuánto vale \\(f(${k})\\)?`,
+      respuesta: String(m * k + n),
+    };
+  });
+}
+
+function buildPolinomio(rng: MathRng, _grado: number, seen: Set<string>): MathProblem {
+  return uniqueProblem(rng, seen, () => {
+    const a = rng.int(1, 3);
+    const b = rng.int(-6, 6);
+    const c = rng.int(-6, 6);
+    const k = rng.int(-3, 4);
+    const termA = a === 1 ? 'x^{2}' : `${a}x^{2}`;
+    const termB = b === 0 ? '' : ` ${b > 0 ? '+' : '-'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}x`;
+    const termC = c === 0 ? '' : ` ${c > 0 ? '+' : '-'} ${Math.abs(c)}`;
+    return {
+      enunciado: `Si \\(p(x) = ${termA}${termB}${termC}\\), ¿cuánto vale \\(p(${k})\\)?`,
+      respuesta: String(a * k * k + b * k + c),
+    };
+  });
+}
+
+function buildDerivada(rng: MathRng, _grado: number, seen: Set<string>): MathProblem {
+  return uniqueProblem(rng, seen, () => {
+    const a = rng.int(1, 5);
+    const n = rng.int(2, 4);
+    const k = rng.int(1, 3);
+    const coef = a === 1 ? '' : String(a);
+    return {
+      enunciado: `Si \\(f(x) = ${coef}x^{${n}}\\), ¿cuánto vale \\(f'(${k})\\)?`,
+      respuesta: String(a * n * k ** (n - 1)),
+    };
+  });
 }
 
 export function buildProblem(
@@ -170,5 +284,17 @@ export function buildProblem(
       return buildFracciones(rng, grado, seen);
     case 'ecuacion':
       return buildEcuacion(rng, grado, seen);
+    case 'potencias':
+      return buildPotencias(rng, grado, seen);
+    case 'porcentajes':
+      return buildPorcentajes(rng, grado, seen);
+    case 'ecuacion_lineal':
+      return buildEcuacionLineal(rng, grado, seen);
+    case 'funcion_lineal':
+      return buildFuncionLineal(rng, grado, seen);
+    case 'polinomio':
+      return buildPolinomio(rng, grado, seen);
+    case 'derivada':
+      return buildDerivada(rng, grado, seen);
   }
 }

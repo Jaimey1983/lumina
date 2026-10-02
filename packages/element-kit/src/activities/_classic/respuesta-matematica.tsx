@@ -10,6 +10,7 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
+import { MathText } from '@lumina/editor-shared/rich-text/math-text';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
@@ -311,7 +312,7 @@ export function RespuestaMatematicaViewer({
       )}
     >
       <p className={cn('text-base font-medium', isDark ? 'text-white' : 'text-[#111827]')}>
-        {activity.question}
+        <MathText text={activity.question} />
       </p>
       {activity.hint && (
         <p className={cn('text-xs', isDark ? 'text-white/70' : 'text-[#6b7280]')}>💡 {activity.hint}</p>

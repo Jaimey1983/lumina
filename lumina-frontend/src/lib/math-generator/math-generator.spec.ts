@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateActivityResponse } from '@lumina/scoring';
+import { evaluateActivityResponse, expresionesEquivalentes } from '@lumina/scoring';
 
 import {
   generateMathActivities,
@@ -170,7 +170,7 @@ describe('generateMathActivities — otros temas v1', () => {
     for (const item of items) {
       const quiz = asQuiz(item);
       const q0 = quizP0(quiz);
-      const m = q0.texto.match(/¿Cuánto es 1\/2 de (\d+)\?/);
+      const m = q0.texto.match(/¿Cuánto es \\\(\\frac\{1\}\{2\}\\\) de (\d+)\?/);
       expect(m).not.toBeNull();
       const n = Number(m![1]);
       expect(n % 2).toBe(0);
@@ -212,7 +212,7 @@ describe('generateMathActivities — otros temas v1', () => {
     });
     for (const item of items) {
       const sa = item as GeneratedMathShortAnswer;
-      const m = sa.question.match(/¿Cuánto es (\d+)\/(\d+) \+ (\d+)\/(\d+)\?/);
+      const m = sa.question.match(/¿Cuánto es \\\(\\frac\{(\d+)\}\{(\d+)\}\+\\frac\{(\d+)\}\{(\d+)\}\\\)\?/);
       expect(m).not.toBeNull();
       expect(m![2]).toBe(m![4]);
       const num = Number(m![1]) + Number(m![3]);
@@ -287,5 +287,91 @@ describe('formato respuesta_matematica (M3a)', () => {
       seed: 1,
     });
     expect(toSingleEditorActivity(items)).toBe(items[0]);
+  });
+});
+
+describe('temas de grados 6–11 (M3b)', () => {
+  const gen = (tema: Parameters<typeof generateMathActivities>[0]['tema'], cantidad = 12, seed = 3) =>
+    generateMathActivities({ tema, grado: 8, cantidad, seed, formato: 'respuesta_matematica' }).map(
+      (i) => {
+        if (i.tipo !== 'respuesta_matematica') throw new Error('formato inesperado');
+        return i;
+      },
+    );
+  /** `\\(2x - 3\\)` → `2x - 3`, con `^{n}` llevado a `^(n)` para el evaluador. */
+  const expr = (latex: string) => latex.replace(/\^\{(-?\d+)\}/g, '^($1)');
+  const formulas = (q: string) => [...q.matchAll(/\\\((.+?)\\\)/g)].map((m) => m[1]!);
+
+  it('potencias: la respuesta es base^exp', () => {
+    for (const it of gen('potencias')) {
+      const m = /\\\((\d+)\^\{(\d+)\}\\\)/.exec(it.question)!;
+      expect(it.respuesta).toBe(String(Number(m[1]) ** Number(m[2])));
+    }
+  });
+
+  it('porcentajes: la respuesta es entera y es el porcentaje de la base', () => {
+    for (const it of gen('porcentajes')) {
+      const m = /\\\((\d+)\\%\\\) de (\d+)/.exec(it.question)!;
+      const v = (Number(m[1]) * Number(m[2])) / 100;
+      expect(Number.isInteger(v)).toBe(true);
+      expect(it.respuesta).toBe(String(v));
+    }
+  });
+
+  it('ecuación lineal: la solución satisface la ecuación', () => {
+    for (const it of gen('ecuacion_lineal')) {
+      const [eq] = formulas(it.question);
+      const [lhs, rhs] = eq!.split('=');
+      const reemplazada = expr(lhs!).replace(/x/g, `(${it.respuesta})`);
+      expect(expresionesEquivalentes(reemplazada, rhs!)).toBe(true);
+    }
+  });
+
+  it('función lineal y polinomio: f(k) coincide con la evaluación de la expresión', () => {
+    for (const tema of ['funcion_lineal', 'polinomio'] as const) {
+      for (const it of gen(tema)) {
+        const [def, llamada] = formulas(it.question);
+        const k = /\((-?\d+)\)$/.exec(llamada!)![1]!;
+        const cuerpo = expr(def!.split('=')[1]!).replace(/x/g, `(${k})`);
+        expect(expresionesEquivalentes(cuerpo, it.respuesta), it.question).toBe(true);
+      }
+    }
+  });
+
+  it('derivada: f\'(k) = a·n·k^(n−1)', () => {
+    for (const it of gen('derivada')) {
+      const m = /f\(x\) = (\d*)x\^\{(\d)\}.*f'\((\d)\)/.exec(it.question)!;
+      const a = m[1] === '' ? 1 : Number(m[1]);
+      const n = Number(m[2]);
+      const k = Number(m[3]);
+      expect(it.respuesta).toBe(String(a * n * k ** (n - 1)));
+    }
+  });
+
+  it('todos los temas nuevos: respuesta entera, autocalificable y determinista', () => {
+    for (const tema of ['potencias', 'porcentajes', 'ecuacion_lineal', 'funcion_lineal', 'polinomio', 'derivada'] as const) {
+      const a = gen(tema, 5, 11);
+      const b = gen(tema, 5, 11);
+      expect(a).toEqual(b);
+      for (const it of a) {
+        expect(/^-?\d+$/.test(it.respuesta)).toBe(true);
+        expect(evaluateActivityResponse('respuesta_matematica', it, it.respuesta).score).toBe(5);
+      }
+    }
+  });
+
+  it('pedir más problemas que combinaciones no lanza (repite)', () => {
+    expect(() =>
+      generateMathActivities({ tema: 'potencias', grado: 6, cantidad: 40, seed: 2 }),
+    ).not.toThrow();
+  });
+
+  it('el quiz muestra las fracciones como fracción y la correcta sigue siendo una sola', () => {
+    const [q] = generateMathActivities({ tema: 'fracciones', grado: 4, cantidad: 1, seed: 5 });
+    const quiz = q as GeneratedMathQuiz;
+    for (const o of quiz.preguntas[0]!.opciones) {
+      if (o.texto.includes('/')) throw new Error(`fracción sin formato: ${o.texto}`);
+    }
+    expect(quiz.preguntas[0]!.opciones.filter((o) => o.esCorrecta)).toHaveLength(1);
   });
 });

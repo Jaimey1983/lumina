@@ -28,6 +28,12 @@ const TEMAS: { value: MathTema; label: string }[] = [
   { value: 'multiplicacion', label: 'Multiplicación' },
   { value: 'fracciones', label: 'Fracciones' },
   { value: 'ecuacion', label: 'Ecuación' },
+  { value: 'potencias', label: 'Potencias (6.º–7.º)' },
+  { value: 'porcentajes', label: 'Porcentajes (6.º–7.º)' },
+  { value: 'ecuacion_lineal', label: 'Ecuación lineal (7.º–8.º)' },
+  { value: 'funcion_lineal', label: 'Función lineal (8.º–9.º)' },
+  { value: 'polinomio', label: 'Evaluar un polinomio (9.º–10.º)' },
+  { value: 'derivada', label: 'Derivada en un punto (11.º)' },
 ];
 
 const FORMATOS: { value: MathFormato; label: string }[] = [

@@ -49,6 +49,12 @@ function padDistractors(correct: string, chosen: string[], rng: MathRng): string
   return rng.shuffle(out).slice(0, 3);
 }
 
+/** Las opciones que son fracciones se muestran como fracción (`3/4` → `\\(\\frac{3}{4}\\)`); el resto, tal cual. */
+export function opcionVisible(texto: string): string {
+  const m = /^(-?\d+)\/(\d+)$/.exec(texto);
+  return m ? `\\(\\frac{${m[1]}}{${m[2]}}\\)` : texto;
+}
+
 export function toQuiz(
   problem: MathProblem,
   meta: MathGeneratorMeta,
@@ -56,10 +62,10 @@ export function toQuiz(
 ): GeneratedMathQuiz {
   const wrong = padDistractors(problem.respuesta, distractorsFor(problem.respuesta, rng), rng);
   const opciones: QuizOption[] = rng.shuffle([
-    { id: OPTION_IDS[0], texto: problem.respuesta, esCorrecta: true },
+    { id: OPTION_IDS[0], texto: opcionVisible(problem.respuesta), esCorrecta: true },
     ...wrong.map((texto, i) => ({
       id: OPTION_IDS[i + 1],
-      texto,
+      texto: opcionVisible(texto),
       esCorrecta: false,
     })),
   ]);
