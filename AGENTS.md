@@ -2668,7 +2668,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N0 — QA en navegador de K4–K8a y corrección de lo que aparezca
 - **Operador:** Claude Code
-- **Estado:** **en revisión** (2026-10-02) — QA ejecutada en un build de producción (`next build && next start`, backend compilado, Postgres 16 y Redis locales, Chromium con Playwright; clase demo «Clase QA N0» con 3 slides, 1 variable y reglas escritas a mano) y **2 defectos graves encontrados y corregidos** (1.ª pasada: secciones de interacción inalcanzables; 2.ª pasada: «duplicar slide» perdía el reapuntado). Detalle abajo.
+- **Estado:** **hecho** (2026-10-02, aceptada por el dueño del tablero; queda pendiente solo la prueba con lector de pantalla NVDA/VoiceOver, que se hace con una persona y se recoge en K14) — QA ejecutada en un build de producción (`next build && next start`, backend compilado, Postgres 16 y Redis locales, Chromium con Playwright; clase demo «Clase QA N0» con 3 slides, 1 variable y reglas escritas a mano) y **2 defectos graves encontrados y corregidos** (1.ª pasada: secciones de interacción inalcanzables; 2.ª pasada: «duplicar slide» perdía el reapuntado). Detalle abajo.
   - **DEFECTO (corregido): K6 y K7b no eran alcanzables desde el editor para los elementos que emiten eventos.** `properties-panel.tsx` devuelve antes del final del componente para `boton`, `contador`, `hotspot` y `actividad`; las secciones «Estado inicial» e «Interacciones» solo se habían puesto en el tramo final (genérico), así que **no se mostraban en ninguno de los elementos que sí emiten eventos** (el propio botón dice «usa «Interacciones» más abajo» y no existía). Además, el panel buscaba el elemento con `elementRegistry.obtener(block.tipo)`, y las actividades se registran por `actividad.tipo` (`verdadero_falso`…), no por `'actividad'`, así que **ninguna actividad habría ofrecido plantillas** aunque la sección se hubiera mostrado. Corrección: `tipoDeElemento(b)` en `lib/interacciones.ts` (+3 tests); `motorSections` en `properties-panel.tsx` renderizado en las ramas de `boton`, `contador`, `hotspot`, todas las de `actividad` y el tramo final; `interactions-panel.tsx` usa `tipoDeElemento`. **Lección:** ninguna prueba unitaria podía cazarlo (cada pieza estaba bien probada por separado; faltaba el cableado) — es exactamente el tipo de falla que justifica esta ficha.
   - **Guion de QA y resultado (producción):**
     1. **Declarar variables y recargar** — panel «Variables» muestra la variable y «En uso en: Slide 1 (un bloque), Slide 3 (un bloque)»; añadir `puntos_juego` + Guardar → `PATCH /classes/:id` 200 y `SELECT variables FROM classes` con las 2 variables (id uuid). ✅
@@ -2699,7 +2699,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N1 — Modelo de condiciones: «si no», operadores y operando de sistema
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** N0 `hecho`.
 - **Contexto:** hoy una regla solo tiene el camino «sí». Storyline permite una acción «else», el operador «entre» y comparaciones de texto. Esta ficha amplía **solo** el modelo y el evaluador (sin interfaz).
 - **Alcance — PUEDE tocar:**
