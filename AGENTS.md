@@ -1269,7 +1269,7 @@ lumina-backend          persiste estado en el progreso autónomo (validado, acot
 ```
 K1 → K2 → K3 → K4 → K5 → K6 → K7a → K7b → K9a → K10 (K10 exige D9)
                     K5 → K8a → K8b ;  K8a → K9a
-K9b (bancos al azar, toca @lumina/scoring): independiente del motor
+K9b (bancos al azar): CANCELADA (2026-10-02)
 K11, K12, K13, K14: independientes del motor (cada uno nace como ElementDefinition; K14 usa K13)
 K15: opcional, posterior a K10
 (el diagrama definitivo está en «Fichas K6–K15»; reemplaza a este)
@@ -1377,11 +1377,13 @@ K1–K5 entregan un motor funcional **sin interfaz de edición**. **No se abre K
 
 **Decisiones nuevas de esta redacción (D9–D13).** D10–D13 las fija esta redacción por ser consecuencia directa de los hallazgos; **D9 queda propuesta y bloquea K10** hasta que el dueño del tablero la confirme (Regla 10: nadie la reabre ni la improvisa en ejecución).
 
-- **D9 (PROPUESTA — bloquea K10).** Se permite **un único operando de lectura de rendimiento: la banda parcial** (`bajo | basico | alto | superior`, de `NOTA_COLOMBIANA_BANDAS`), nunca el número. La calcula el **backend** con `clasificarNotaColombiana` sobre el promedio de las actividades ya calificadas de ese intento y se la devuelve al cliente en la respuesta de `POST …/progress`; el cliente no la calcula (C5). Es una excepción acotada al comentario de K1 («el flujo no puede depender del score»): el motor sigue sin poder **escribir** ninguna nota (C1/C4 intactos) y solo puede **rutear** según una banda. Alternativa si el dueño no la acepta: K10 se cancela y la ruta adaptativa queda limitada a `respuesta_correcta`/`respuesta_incorrecta` de una actividad concreta (que ya existe en K1), sin nunca ver bandas.
+- **D9 (DIFERIDA por el dueño del tablero, 2026-10-02 — K10 sigue bloqueada).** Decisión: **no se confirma ahora.** Razones: rompe el invariante de K1 («el flujo nunca ve la nota») para un caso que K7a/K7b ya cubren sin leer nada de rendimiento («si falla *esta* pregunta, ir a refuerzo»); la banda parcial es ruidosa con pocas actividades calificadas; puede estigmatizar y aún no existe cómo medir cuántos alumnos pasan por cada rama. Se reabre solo si un docente pide rutear por rendimiento acumulado. Texto original de la propuesta, conservado para cuando se reabra: Se permite **un único operando de lectura de rendimiento: la banda parcial** (`bajo | basico | alto | superior`, de `NOTA_COLOMBIANA_BANDAS`), nunca el número. La calcula el **backend** con `clasificarNotaColombiana` sobre el promedio de las actividades ya calificadas de ese intento y se la devuelve al cliente en la respuesta de `POST …/progress`; el cliente no la calcula (C5). Es una excepción acotada al comentario de K1 («el flujo no puede depender del score»): el motor sigue sin poder **escribir** ninguna nota (C1/C4 intactos) y solo puede **rutear** según una banda. Alternativa si el dueño no la acepta: K10 se cancela y la ruta adaptativa queda limitada a `respuesta_correcta`/`respuesta_incorrecta` de una actividad concreta (que ya existe en K1), sin nunca ver bandas.
 - **D10.** `respuesta_correcta`/`respuesta_incorrecta` para **flujo** se calculan **en el cliente** con `evaluateActivityResponse` de `@lumina/scoring` (el mismo paquete que ya usa el frontend) y se reducen a un **booleano `correct`**. Nunca se envía al backend, nunca se persiste como nota, nunca se muestra como puntaje. La nota sigue siendo del backend (C5). El caso `kind: manual`/`participation`/`exclude` **no emite** ninguno de los dos eventos (no hay «correcta» que decir).
 - **D11.** **`popup` no se migra a capa.** `popup` es un *elemento autocontenido* (su propio disparador + su propio modal, en el bloque); `Slide.capas` es un mecanismo *a nivel de slide* con contenido de bloques completos y apertura por regla. Son dos cosas distintas y conviven sin duplicar camino: no hay código viejo que borrar (no aplica Regla 4). Se documenta en el propio `popup` para que nadie los fusione por error.
 - **D12.** **El avance bloqueado es una condición declarativa del slide, no una acción con estado:** `Slide.bloqueoAvance?: { condiciones: Condicion[]; mensaje?: string }`. El reproductor lo evalúa con `evaluarCondiciones` antes de permitir «Siguiente». Sin estado nuevo en `EstadoMotor` (el validador de K5 acepta exactamente 5 claves y no se toca), sin acción nueva en el catálogo cerrado de K1.
 - **D13.** Las reglas referencian variables por **`id` estable**; el `nombre` es solo etiqueta. Renombrar una variable no rompe reglas; borrarla sí, y K6/K7b lo impiden o lo avisan (nunca lo dejan pasar en silencio).
+
+**Orden de trabajo acordado (2026-10-02):** K6 → K7a → K7b → K8a → K8b → K9a. Lo demás queda fuera de la ruta crítica: K9b cancelada, K10 bloqueada (D9 diferida), K11–K14 independientes y reasignables, K15 opcional al final.
 
 **Orden / dependencias (reemplaza el diagrama de la raíz):**
 
@@ -1390,7 +1392,7 @@ K5 ─→ K6 ─→ K7a ─→ K7b ─→ K9a ─→ K10   (K10 además exige D9
 K5 ─→ K8a ─→ K8b
 K8a ─┬─→ K9a
 K7b ─┘
-K9b: independiente del motor; toca @lumina/scoring (declarado en su ficha)
+K9b: CANCELADA (2026-10-02)
 K11, K12, K13, K14: independientes entre sí y del motor
 K15: opcional, posterior a K10
 ```
@@ -1517,7 +1519,7 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K9b — Bancos de preguntas al azar sobre el quiz (**toca `@lumina/scoring`**)
 - **Operador:** Claude Code
-- **Estado:** pendiente — **requiere decisión del dueño del tablero antes de tomarla** (ver Riesgo).
+- **Estado:** **CANCELADA por el dueño del tablero (2026-10-02): «solo si es necesario», y no lo es.** No se toca `@lumina/scoring` en esta etapa. El beneficio buscado (que los alumnos no se copien) se puede cubrir con una ficha pequeña aparte que **solo ordene al azar preguntas y opciones al mostrarlas**, sin cambiar qué se califica; aun así debe revisarse antes de aceptarla porque el orden de opciones puede interactuar con la calificación por índice. Se reabre solo ante una necesidad real. El diseño de abajo se conserva como referencia.
 - **Precondición:** ninguna del motor (independiente de K6–K9a). Se sugiere tomarla después de K9a por orden de valor, no por dependencia.
 - **Contexto:** la raíz metió «bancos de preguntas al azar» dentro de K9 sin ver que **no es una función de flujo, es de calificación**. Si el alumno recibe 5 preguntas de un banco de 20, el backend —que recalcula la nota con `@lumina/scoring` sobre la definición de la actividad guardada (C5)— tiene que **saber cuáles 5** le tocaron; si no, puntúa 5 respuestas contra 20 preguntas. Por eso se separa de K9a y se declara explícitamente que modifica `@lumina/scoring` (C1 lo permite solo si la ficha lo declara) y, por ende, exige **fixtures de paridad nuevos y Regla 7**.
 - **Diseño:** `quiz_multiple` gana `seleccion?: { cantidad: number; aleatorio: boolean }`. La selección es **determinista por intento**: `seleccionarPreguntas(preguntas, cantidad, semilla)` donde `semilla = hash(sessionId + studentId + attemptNumber + slideId)`. La función es pura, vive en `@lumina/scoring` y la usan **el cliente (para mostrar) y el backend (para calificar)** — mismo código, misma semilla, mismas preguntas. Se descarta mandar los ids elegidos desde el cliente (el alumno podría elegir las fáciles: viola C5).
@@ -1534,7 +1536,7 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K10 — Ruta adaptativa por banda de rendimiento de la clase
 - **Operador:** Claude Code
-- **Estado:** pendiente — **BLOQUEADA hasta que el dueño del tablero confirme D9** (ver hallazgo 8). No se toma, no se improvisa.
+- **Estado:** pendiente — **BLOQUEADA: D9 fue diferida (2026-10-02).** No se toma, no se improvisa. Hasta que se reabra D9, el ruteo adaptativo del producto es el de K7a/K7b (por respuesta correcta/incorrecta de una actividad concreta).
 - **Precondición:** K9a `hecho` y **D9 confirmada**.
 - **Contexto (corrige la raíz, hallazgos 7 y 8):** la raíz pedía «condiciones que leen el resultado por indicador, apoyadas en J9». Lo que J9 dejó es trazabilidad **a nivel de clase** y solo en `ClassResult` (el autónomo no tiene columna de indicador). El libro de notas de período no lee resultados de clase, así que una ruta **no puede** distorsionar la nota de período. Por eso K10 v1 es más modesta y honesta: **rutear según la banda parcial del intento** (el «indicador» es el de la clase, que el editor muestra). Ruta por indicador **por slide** exigiría un campo de indicador en el bloque/slide y una columna en `AutonomousProgress`: queda **declarado fuera de v1**.
 - **Alcance — PUEDE tocar (solo si D9 se confirma):**
@@ -1618,19 +1620,19 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K15 — Reintentos calificados (opcional, posterior a K10)
 - **Operador:** Claude Code
-- **Estado:** pendiente — **opcional; NO se toma sin decisión explícita del docente/producto** (ver «Decisión que hay que tomar antes»).
+- **Estado:** pendiente — **opcional, posterior a K10/K9a. Decisiones del dueño del tablero tomadas el 2026-10-02** (ver «Decisión que hay que tomar antes», ahora resuelta).
 - **Precondición:** K10 `hecho` y la decisión de abajo tomada **por escrito** en esta ficha.
 - **Contexto:** C2 fija «solo la primera respuesta» para v1 y, desde el cierre de C2 (`33e218e`), **el backend lo impone**: una segunda respuesta real a un slide con nota ya fijada se descarta. Hoy, además, las tablas **impiden** otra cosa por construcción: `ClassResult` tiene `@@unique([classId, studentId, slideId, sessionId])` (un resultado por alumno-slide-sesión) y `AutonomousProgress` se busca por `{sessionId, studentId, slideId, attemptNumber}` con una sola fila. `video_interactivo` es la excepción documentada (respuesta fusionada).
-- **Decisión que hay que tomar antes (no la puede tomar el operador):**
+- **Decisiones tomadas (2026-10-02, mejor para la experiencia del alumno):** (1) política **por defecto «mejor intento»** con **2 o 3 intentos** como máximo; (2) **SIN descuento por intento** (castiga justo el comportamiento que se quiere fomentar); (3) **se muestra siempre al alumno qué intento cuenta**; (4) el docente puede elegir «solo la primera» para evaluación formal; la sugerencia es práctica → «mejor intento», evaluación → «primera» (**verificar al tomar la ficha** cómo `AutonomousSession.purpose` distingue ambos casos antes de ligar el valor por defecto a él); (5) **las pistas quedan fuera de K15**. El campo `descuentoPct` del alcance previsto **se elimina**. Texto original de las opciones, conservado como contexto:
   1. **Política por actividad**, elegida **por el docente** en el editor: `primera` (hoy, por defecto) · `mejor` (cuenta el mejor intento) · `ultima` · `promedio`; y opcionalmente `maxIntentos` (1–5) y **descuento por intento** (p. ej. −10 % de la nota por cada reintento, con tope).
   2. **«Descuento por pista»**: la raíz lo mencionaba; las pistas hoy son bloques que muestra una regla (K7b), no un evento de calificación. Para descontar hay que **definir qué es una pista** (¿un bloque marcado `esPista`? ¿una acción `mostrar` de una plantilla?). Se recomienda **no** incluir pistas en K15 y dejarlas como ficha propia.
   3. **¿Se muestra al alumno qué intento cuenta?** (transparencia pedagógica; recomendación: sí).
 - **Alcance previsto (una vez decidido):**
   - `lumina-backend/prisma/schema.prisma` + migración aditiva: `AutonomousProgress.intentoActividad Int @default(1)` y relajar la unicidad de lectura a `{sessionId, studentId, slideId, attemptNumber, intentoActividad}`; para el **en vivo**, `ClassResult` no se toca en v1 (el reintento calificado en vivo queda fuera: el docente controla el ritmo y el `@@unique` por sesión lo impide) — **K15 es solo autónomo**.
-  - `packages/scoring/src/` — helper `calificarConIntentos(intentos: Array<{ score: number|null }>, politica, opts)` (puro) + fixtures nuevas: reintento, sin respuesta (→ `null`, nunca `0`), descuento con tope, un solo intento, política `mejor`/`ultima`/`promedio`. **Regla 7 completa**, y se declara que modifica `@lumina/scoring`.
+  - `packages/scoring/src/` — helper `calificarConIntentos(intentos: Array<{ score: number|null }>, politica, opts)` (puro) + fixtures nuevas: reintento, sin respuesta (→ `null`, nunca `0`), un solo intento, política `mejor`/`ultima`/`promedio`. **Regla 7 completa**, y se declara que modifica `@lumina/scoring`.
   - `lumina-backend/src/autonomous-sessions/autonomous-sessions.service.ts` — `saveProgress` guarda cada intento como fila nueva si la política lo permite y la nota del slide es `calificarConIntentos`; `complete()` y `getProgressSummary` (K9a) usan **una sola función compartida** para el promedio. `bandaParcial` (K10) usa la nota resultante.
   - **Revisión del cálculo ponderado de `grade-calculation.service.ts`**: confirmar por test que sigue sin leer resultados de clase (hoy no lo hace); si K15 introdujera un `GradeEntry` derivado, esa es otra ficha.
-  - `packages/types/src/slide.types.ts` (+ `Actividad.reintentos?: { politica; maxIntentos?; descuentoPct? }` aditivo), el editor (sección «Reintentos» de las propiedades de las actividades evaluables) y el reproductor (botón «Reintentar» solo si la política lo permite y quedan intentos; deshabilita el bloqueo de C2 para esa actividad).
+  - `packages/types/src/slide.types.ts` (+ `Actividad.reintentos?: { politica; maxIntentos? }` (sin descuento: decisión del 2026-10-02) aditivo), el editor (sección «Reintentos» de las propiedades de las actividades evaluables) y el reproductor (botón «Reintentar» solo si la política lo permite y quedan intentos; deshabilita el bloqueo de C2 para esa actividad).
 - **Entregable (cuando se tome):** con `politica` ausente todo es **idéntico** a hoy (los 396 tests del backend y todas las fixtures siguen verdes sin tocarse); con `mejor` y 2 intentos, la nota es la mayor; `maxIntentos` se respeta en el servidor (no solo en el botón). Verificación: `pnpm --filter @lumina/scoring build && test && lint` · `cd lumina-backend && npx prisma generate && npx tsc --noEmit && pnpm lint && pnpm test` · `pnpm --filter @lumina/element-kit build && test` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit && pnpm build`; QA en producción con dos intentos y evidencia de las filas en `autonomous_progress`.
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(scoring): reintentos calificados por actividad en modo autónomo (K15)`.
 
