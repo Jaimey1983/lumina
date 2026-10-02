@@ -48,6 +48,8 @@ export const quizMultipleDefinition = {
   puntuacion: (estado: QuizMultipleEstado, respuesta?: unknown) =>
     evaluarQuizMultiple(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["quiz_multiple"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<QuizMultipleEstado, QuizMultipleConfig>;
 
 export type QuizMultipleDefinition = typeof quizMultipleDefinition;

@@ -1,4 +1,11 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class SaveProgressDto {
   @IsString()
@@ -40,4 +47,17 @@ export class CompleteSessionDto {
   @IsInt()
   @Min(1)
   attemptNumber: number;
+}
+
+/** K5: estado del motor de interacción (se valida a mano contra `Class.variables`). */
+export class SaveInteractionStateDto {
+  @IsString()
+  studentId: string;
+
+  @IsInt()
+  @Min(1)
+  attemptNumber: number;
+
+  @IsObject()
+  state: Record<string, unknown>;
 }

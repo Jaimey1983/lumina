@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { ClassModoEntrega } from '@lumina/types/slide';
+import type { VariableDef } from '@lumina/types/interaction';
 
 export interface Class {
   id: string;
@@ -130,6 +131,8 @@ export interface UpdateClassInput {
     procedimental: string[];
     actitudinal: string[];
   };
+  /** Etapa K / K6 — variables de clase del motor de interacción (D3). */
+  variables?: VariableDef[];
   /** Entrada 3 (J6.4, panel IA del editor) — selección para ESTA clase puntual. */
   contextoClase?: {
     indicadoresAbordados: string[];

@@ -32,6 +32,7 @@ export function ContadorViewer({
     <LegacyContadorViewer
       block={estado}
       isThumbnail={config.isThumbnail === true}
+      emitir={config.emitir}
     />
   );
 }

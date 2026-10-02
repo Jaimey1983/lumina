@@ -3,6 +3,7 @@
 import type { Block } from '@lumina/types/slide';
 import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
+import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
 import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
@@ -16,9 +17,17 @@ export interface BotonPropertiesProps {
   applyNow: (fn: (b: Block) => Block) => Promise<void>;
 }
 
+const ETIQUETA_ACCION_HEREDADA: Partial<Record<BotonAccion, string>> = {
+  siguiente: 'ir al siguiente slide',
+  anterior: 'volver al slide anterior',
+  ir_a: 'ir a un slide',
+};
+
 export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesProps) {
   const block = normalizeBotonWidget(rawBlock);
   const cfg = mergedBotonConfig(block);
+  const accionHeredada =
+    cfg.accion === 'siguiente' || cfg.accion === 'anterior' || cfg.accion === 'ir_a';
 
   const update = (fn: (w: BotonWidget) => BotonWidget) => {
     void applyNow((b) => (b.tipo === 'boton' ? fn(normalizeBotonWidget(b)) : b));
@@ -142,30 +151,46 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
         <div className="space-y-4 pt-2">
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">Al hacer clic</Label>
+            {/* K7b: el editor ya no ESCRIBE navegación en `accion` (siguiente / anterior /
+                ir_a): eso es una regla del motor («Interacciones»). Se conserva `url`,
+                que el catálogo cerrado de acciones del motor no tiene. La lectura de
+                `accion` legada sigue viva (D6). */}
             <ToggleGroup
               type="single"
-              value={cfg.accion}
+              value={accionHeredada ? '' : cfg.accion}
               onValueChange={(val: BotonAccion) => {
                 if (val) update((w) => ({ ...w, accion: val }));
               }}
               className="flex w-full flex-wrap justify-start gap-1 rounded-md bg-slate-100/50 p-1"
             >
-              <ToggleGroupItem value="siguiente" className="h-8 flex-1 text-xs">
-                Siguiente
-              </ToggleGroupItem>
-              <ToggleGroupItem value="anterior" className="h-8 flex-1 text-xs">
-                Anterior
-              </ToggleGroupItem>
-              <ToggleGroupItem value="ir_a" className="h-8 flex-1 text-xs">
-                Ir a slide
-              </ToggleGroupItem>
               <ToggleGroupItem value="url" className="h-8 flex-1 text-xs">
-                URL
+                Abrir URL
               </ToggleGroupItem>
               <ToggleGroupItem value="ninguna" className="h-8 flex-1 text-xs">
                 Ninguna
               </ToggleGroupItem>
             </ToggleGroup>
+            {accionHeredada ? (
+              <div className="space-y-2 rounded-md border border-border bg-muted/40 p-2">
+                <p className="text-[11px] text-muted-foreground">
+                  Acción heredada: <strong>{ETIQUETA_ACCION_HEREDADA[cfg.accion]}</strong>. Se
+                  mantiene tal cual. Para cambiarla, quítala y configura una interacción más abajo.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => update((w) => ({ ...w, accion: 'ninguna' }))}
+                >
+                  Quitar acción heredada
+                </Button>
+              </div>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Para llevar al alumno a otro slide usa «Interacciones» más abajo.
+              </p>
+            )}
           </div>
 
           {cfg.accion === 'url' ? (

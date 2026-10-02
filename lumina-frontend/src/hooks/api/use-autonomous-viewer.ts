@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type {
@@ -65,6 +65,38 @@ export function useSaveProgress(sessionId: string) {
   );
 
   return { saveProgress };
+}
+
+// ─── Save interaction-engine state (K5, debounced) ───────────────────────────
+
+/**
+ * Persiste el estado del motor de interacción. Solo flujo (C1/C4/C5): el
+ * backend lo valida y lo guarda aparte; no afecta ninguna nota. Fire-and-forget.
+ */
+export function useSaveInteractionState(sessionId: string, studentId: string, attemptNumber: number) {
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
+
+  return useCallback(
+    (state: unknown) => {
+      if (!studentId) return;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        api
+          .put(`/autonomous-sessions/${sessionId}/interaction-state`, { studentId, attemptNumber, state })
+          .catch(() => {
+            // No crítico: el siguiente evento vuelve a intentarlo.
+          });
+      }, 800);
+    },
+    [sessionId, studentId, attemptNumber],
+  );
 }
 
 // ─── Complete session ─────────────────────────────────────────────────────────

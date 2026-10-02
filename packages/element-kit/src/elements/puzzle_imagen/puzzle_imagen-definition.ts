@@ -29,6 +29,8 @@ export const puzzleImagenDefinition = {
   puntuacion: (estado: PuzzleImagenEstado, respuesta?: unknown) =>
     evaluarPuzzleImagen(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["puzzle_imagen"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<PuzzleImagenEstado, PuzzleImagenConfig>;
 
 export type PuzzleImagenDefinition = typeof puzzleImagenDefinition;

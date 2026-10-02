@@ -47,6 +47,8 @@ export const botonDefinition = {
     animacion: false,
   },
   catalogo: CATALOGO_ELEMENTOS["boton"],
+  // Etapa K / K3: eventos que este elemento emite por `config.emitir`.
+  eventos: ["clic"],
   presets: BOTON_PRESETS,
 } as const satisfies ElementDefinition<BotonEstado, BotonConfig>;
 

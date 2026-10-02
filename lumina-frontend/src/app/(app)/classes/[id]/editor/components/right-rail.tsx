@@ -1,6 +1,6 @@
 'use client';
 
-import { Calculator, LayoutGrid, Palette, Radio, Sparkles } from 'lucide-react';
+import { Calculator, LayoutGrid, Palette, Radio, Sparkles, Variable } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type RightPanelId = 'ia' | 'activities' | 'themes' | 'live' | 'math';
+export type RightPanelId = 'ia' | 'activities' | 'themes' | 'live' | 'variables' | 'math';
 
 interface RailItem {
   id: RightPanelId;
@@ -22,6 +22,7 @@ const ITEMS: RailItem[] = [
   { id: 'math',       label: 'Generador de matemáticas', Icon: Calculator },
   { id: 'themes',     label: 'Temas de diapositivas',    Icon: Palette },
   { id: 'live',       label: 'Respuestas en vivo',       Icon: Radio },
+  { id: 'variables',  label: 'Variables de la clase',    Icon: Variable },
 ];
 
 // ─── Props ────────────────────────────────────────────────────────────────────

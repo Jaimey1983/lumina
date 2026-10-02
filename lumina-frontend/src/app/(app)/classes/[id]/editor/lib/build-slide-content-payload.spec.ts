@@ -82,4 +82,10 @@ describe('parseContentVersion / parseSlideVersionConflict', () => {
 
     expect(parseSlideVersionConflict({ statusCode: 409 })).toBeNull();
   });
+
+  it('K7b: `reglas` de slide solo viaja si se pide (omitido = el backend conserva las del slide)', () => {
+    const state = createInitialEditorSlideState(slideConTexto());
+    expect('reglas' in buildSlideContentPayload(state)).toBe(false);
+    expect(buildSlideContentPayload(state, { reglas: [] }).reglas).toEqual([]);
+  });
 });

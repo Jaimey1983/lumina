@@ -5,6 +5,10 @@ import { cloneSlideBlocks } from '../../lib/canvas-history';
 import type { EditorPersistHost } from '@lumina/editor-shared/editor-persist-host';
 import { toast } from 'sonner';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
+import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
+import type { EstadoObjeto } from '@lumina/types/interaction';
+import type { ReferenciaRota } from '@lumina/interactions';
+import { InteractionsPanel } from './interactions-panel';
 import { backgroundColorForContrast } from '@lumina/editor-shared/contrast';
 
 import type {
@@ -171,6 +175,9 @@ export interface PropertiesPanelProps {
   /** Slide activo — necesario para configurar transición */
   slide?: import('@lumina/types/slide').Slide | null;
   onApplySlide?: (patch: Partial<import('@lumina/types/slide').Slide>) => Promise<boolean>;
+  /** K7b — slides del mazo (destinos de las interacciones) y referencias rotas del mazo. */
+  slidesDelMazo?: { id: string; titulo: string }[];
+  referenciasRotas?: ReferenciaRota[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -194,6 +201,8 @@ export function PropertiesPanel({
   imageCompareInnerSelection = null,
   slide = null,
   onApplySlide,
+  slidesDelMazo = [],
+  referenciasRotas = [],
 }: PropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState<'propiedades' | 'animaciones'>('propiedades');
 
@@ -1549,6 +1558,22 @@ export function PropertiesPanel({
                 clearDebounce={clearDebounce}
               />
             )}
+            {(elementRegistry.obtener(block.tipo)?.eventos?.length ?? 0) > 0 && (
+              <BlockEstadoInicialSection
+                estado={(block as { estado?: EstadoObjeto }).estado ?? 'normal'}
+                applyNow={applyNow}
+              />
+            )}
+            {(elementRegistry.obtener(block.tipo)?.eventos?.length ?? 0) > 0 && selectedBlockId && slide?.id && (
+              <InteractionsPanel
+                bloques={bloques}
+                blockPath={selectedBlockId}
+                slideId={slide.id}
+                slidesDelMazo={slidesDelMazo}
+                referenciasRotas={referenciasRotas}
+                onApplyBloques={onApplyBloques}
+              />
+            )}
             {isBlockCanvasPositionable(block) && (
               <BlockRotationSection
                 rotacion={(block as { rotacion?: number }).rotacion ?? 0}
@@ -1573,6 +1598,57 @@ export function PropertiesPanel({
 // ─── Sub-panels ───────────────────────────────────────────────────────────────
 
 
+
+const ESTADOS_INICIALES: Array<{ value: EstadoObjeto; label: string }> = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'deshabilitado', label: 'Deshabilitado (no responde a clics)' },
+  { value: 'visitado', label: 'Visitado' },
+  { value: 'seleccionado', label: 'Seleccionado' },
+];
+
+/**
+ * Etapa K / K6 — estado inicial del objeto para el motor de interacción.
+ * Solo «Deshabilitado» tiene efecto visual en v1; «Visitado» y «Seleccionado»
+ * se usan como condición de las reglas (aún sin apariencia propia).
+ * Asigna un id estable al bloque la primera vez que se toca (D8).
+ */
+function BlockEstadoInicialSection({
+  estado,
+  applyNow,
+}: {
+  estado: EstadoObjeto;
+  applyNow: (fn: (b: Block) => Block) => Promise<void>;
+}) {
+  return (
+    <div className="mt-4 space-y-2 border-t border-border pt-4">
+      <Label className="text-xs font-medium">Estado inicial (interacción)</Label>
+      <select
+        value={estado}
+        onChange={(e) => {
+          const next = e.target.value as EstadoObjeto;
+          void applyNow((b) => {
+            const conId = asegurarIdBloque(b);
+            if (next === 'normal') {
+              const { estado: _omit, ...rest } = conId as Block & { estado?: EstadoObjeto };
+              void _omit;
+              return rest as Block;
+            }
+            return { ...conId, estado: next } as Block;
+          });
+        }}
+        className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+      >
+        {ESTADOS_INICIALES.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <p className="text-[11px] text-muted-foreground">
+        Solo «Deshabilitado» cambia la apariencia. «Visitado» y «Seleccionado» sirven como
+        condición en las reglas.
+      </p>
+    </div>
+  );
+}
 
 function BlockRotationSection({
   rotacion = 0,

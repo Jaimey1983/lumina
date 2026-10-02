@@ -276,4 +276,32 @@ describe('canvas-history', () => {
       JSON.stringify(movedBlocks).length,
     );
   });
+
+  it('K6: reglas y capas del slide se deshacen y rehacen', () => {
+    const regla = {
+      id: 'r1',
+      evento: 'clic' as const,
+      condiciones: [],
+      acciones: [{ tipo: 'siguiente' as const }],
+      activa: true,
+    };
+    const capa = { id: 'c1', nombre: 'Pista', bloques: [] };
+    const inicio = captureSlideSnapshot({ bloques: bloques(1) }, 'edicion', 1);
+    const conReglas = captureSlideSnapshot(
+      { bloques: bloques(1), reglas: [regla], capas: [capa] },
+      'edicion',
+      2,
+    );
+    let h = createInitialHistory(inicio);
+    h = pushHistoryEntry(h, conReglas);
+    expect(materializeHistorySnapshot(h)?.reglas).toEqual([regla]);
+    expect(materializeHistorySnapshot(h)?.capas).toEqual([capa]);
+
+    const atras = undoHistory(h);
+    expect(atras?.snapshot.reglas).toBeUndefined();
+    expect(atras?.snapshot.capas).toBeUndefined();
+    const adelante = redoHistory(atras!.state);
+    expect(adelante?.snapshot.reglas).toEqual([regla]);
+    expect(adelante?.snapshot.capas).toEqual([capa]);
+  });
 });

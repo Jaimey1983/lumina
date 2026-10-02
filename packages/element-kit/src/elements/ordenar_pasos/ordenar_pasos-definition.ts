@@ -48,6 +48,8 @@ export const ordenarPasosDefinition = {
   puntuacion: (estado: OrdenarPasosEstado, respuesta?: unknown) =>
     evaluarOrdenarPasos(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["ordenar_pasos"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<OrdenarPasosEstado, OrdenarPasosConfig>;
 
 export type OrdenarPasosDefinition = typeof ordenarPasosDefinition;

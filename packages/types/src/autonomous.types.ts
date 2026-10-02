@@ -27,6 +27,8 @@ export interface AutonomousSession {
     title: string;
     description?: string;
     codigo: string;
+    /** K5: variables del motor de interacción (`VariableDef[]`, JSON de la clase). */
+    variables?: unknown;
     slides: ApiSlide[];
     /** Fondo del viewer (misma semántica que en detalle de clase). */
     background?: string | null;
@@ -46,6 +48,8 @@ export interface JoinSessionResponse {
   attemptNumber: number;
   resuming: boolean;
   existingProgress?: unknown;
+  /** K5: estado del motor de interacción del intento en curso (o null). */
+  interactionState?: unknown;
   /** Sesión anidada devuelta por POST /join (incluye `class.slides` sin GET extra). */
   session?: AutonomousSession;
 }

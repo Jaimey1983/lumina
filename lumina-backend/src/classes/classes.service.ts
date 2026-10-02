@@ -1,3 +1,5 @@
+import { conservarCamposDelMotor } from './slide-engine-fields';
+import { validarVariables } from '@lumina/interactions';
 import {
   Injectable,
   NotFoundException,
@@ -516,8 +518,17 @@ export class ClassesService {
       ebcSeleccionado,
       indicadores,
       contextoClase,
+      variables,
       ...rest
     } = dto;
+
+    // Motor de interacción (K6): se valida con el MISMO código que usa el editor.
+    if (variables !== undefined) {
+      const errores = validarVariables(variables);
+      if (errores.length > 0) {
+        throw new BadRequestException(errores.map((e) => e.mensaje).join(' '));
+      }
+    }
 
     // Motor curricular único (J6.3) — un `desempenoId` solo es válido si
     // pertenece al MISMO curso que la clase (evita referenciar el Desempeno
@@ -589,6 +600,9 @@ export class ClassesService {
               contextoClase: contextoClase as unknown as Prisma.InputJsonValue,
             }
           : {}),
+        ...(variables !== undefined
+          ? { variables: variables as unknown as Prisma.InputJsonValue }
+          : {}),
       },
       select: {
         id: true,
@@ -602,6 +616,7 @@ export class ClassesService {
         ebcSeleccionado: true,
         indicadores: true,
         contextoClase: true,
+        variables: true,
         background: true,
         timerGlobal: true,
         status: true,
@@ -1303,7 +1318,13 @@ export class ClassesService {
       ...(dto.title !== undefined ? { title: dto.title } : {}),
       ...(dto.type !== undefined ? { type: dto.type } : {}),
       ...(dto.content !== undefined
-        ? { content: dto.content as Prisma.InputJsonValue }
+        ? {
+            // K6: un guardado que no conoce `reglas`/`capas` no debe borrarlas.
+            content: conservarCamposDelMotor(
+              dto.content,
+              slide.content,
+            ) as Prisma.InputJsonValue,
+          }
         : {}),
     };
 

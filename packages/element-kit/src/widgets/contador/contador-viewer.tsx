@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { EventoTipo } from '@lumina/types/interaction';
 import type { ContadorWidget } from '@lumina/types/widget';
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { mergedContadorConfig } from './contador-config.js';
@@ -9,9 +10,11 @@ import { ContadorParts } from './contador-parts.js';
 interface ContadorViewerProps {
   block: ContadorWidget;
   isThumbnail?: boolean;
+  /** Etapa K / K3: avisa al motor de interacción. Sin él, el contador se comporta como siempre. */
+  emitir?: (evento: EventoTipo) => void;
 }
 
-export function ContadorViewer({ block, isThumbnail = false }: ContadorViewerProps) {
+export function ContadorViewer({ block, isThumbnail = false, emitir }: ContadorViewerProps) {
   const cfg = mergedContadorConfig(block);
   const { navigate } = useSlideNav();
   const initialMs = cfg.modo === 'temporizador' ? cfg.segundos * 1000 : 0;
@@ -52,11 +55,16 @@ export function ContadorViewer({ block, isThumbnail = false }: ContadorViewerPro
     if (ms > 0 || endedRef.current || !ranRef.current) return;
     endedRef.current = true;
     setRunning(false);
+    emitir?.('fin_contador');
+    // Con runtime, `alTerminar: 'siguiente'` es una regla `fin_contador → siguiente`
+    // (K4, D6). TODO(migración-etapa-K): retirar el camino directo cuando
+    // presentación adopte el motor.
+    if (emitir) return;
     // En clase en vivo `navigate` es null: el docente controla el avance.
     if (cfg.alTerminar === 'siguiente' && navigate) {
       navigate({ kind: 'siguiente' });
     }
-  }, [ms, cfg.modo, cfg.alTerminar, navigate, isThumbnail]);
+  }, [ms, cfg.modo, cfg.alTerminar, navigate, isThumbnail, emitir]);
 
   const displaySeconds = ms / 1000;
   const ended = cfg.modo === 'temporizador' && ranRef.current && ms <= 0 && !isThumbnail;

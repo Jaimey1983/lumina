@@ -7,6 +7,7 @@
  * entradas de más.
  */
 import { describe, expect, it } from "vitest";
+import { ACTIVITY_SCORING } from "@lumina/scoring";
 import { WIDGET_TIPOS } from "@lumina/types/widget";
 import { CATALOGO_ELEMENTOS } from "./catalogo.js";
 import { elementRegistry } from "../../index.js";
@@ -71,6 +72,17 @@ describe("ElementDefinition.catalogo (E7.1)", () => {
         registrados.has(tipo),
         `${tipo} en catálogo pero sin registrar`,
       ).toBe(true);
+    }
+  });
+});
+
+describe("K7a: actividades evaluables declaran los eventos de respuesta", () => {
+  it("toda actividad binary/partial registrada (salvo video) los declara", () => {
+    for (const def of elementRegistry.listar() as readonly { tipo: string; eventos?: readonly string[] }[]) {
+      const kind = ACTIVITY_SCORING[def.tipo];
+      if ((kind === "binary" || kind === "partial") && def.tipo !== "video_interactivo") {
+        expect(def.eventos, def.tipo).toEqual(["respuesta_correcta", "respuesta_incorrecta"]);
+      }
     }
   });
 });

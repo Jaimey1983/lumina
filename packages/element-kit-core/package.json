@@ -15,6 +15,9 @@
     "test": "tsc --noEmit && vitest run",
     "lint": "eslint ."
   },
+  "dependencies": {
+    "@lumina/types": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^19.0.0"
   },

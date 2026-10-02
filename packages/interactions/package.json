@@ -1,0 +1,31 @@
+{
+  "name": "@lumina/interactions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Motor de interacción (Etapa K / K2). Paquete interno DUAL (patrón @lumina/scoring, E6.1): ESM + CJS desde dist/, para que el frontend lo ejecute y el backend (CJS, moduleResolution node, K5) valide con EL MISMO evaluador. `main`+`types` de nivel superior sirven al backend. Es PURO: sin React, sin DOM, sin red y SIN dependencia de @lumina/scoring (C1/C4: el motor decide el flujo, nunca la nota). @lumina/types se usa solo como tipos (import type, se borra al compilar).",
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ./scripts/finish-cjs.mjs",
+    "test": "tsc --noEmit && vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@lumina/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

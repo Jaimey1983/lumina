@@ -1,3 +1,4 @@
+import type { EventoTipo } from '@lumina/types/interaction';
 import type { BotonWidget } from '@lumina/types/widget';
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
 import { BotonParts } from './boton-parts.js';
@@ -6,6 +7,8 @@ import { mergedBotonConfig } from './boton-config.js';
 interface BotonViewerProps {
   block: BotonWidget;
   isThumbnail?: boolean;
+  /** Etapa K / K3: avisa al motor de interacción. Sin él, el botón se comporta como siempre. */
+  emitir?: (evento: EventoTipo) => void;
 }
 
 function normalizeHref(url: string): string | null {
@@ -20,7 +23,7 @@ function isNavAccion(accion: BotonWidget['accion']): boolean {
   return accion === 'siguiente' || accion === 'anterior' || accion === 'ir_a';
 }
 
-export function BotonViewer({ block, isThumbnail = false }: BotonViewerProps) {
+export function BotonViewer({ block, isThumbnail = false, emitir }: BotonViewerProps) {
   const cfg = mergedBotonConfig(block);
   const { navigate, slideCount } = useSlideNav();
 
@@ -30,6 +33,12 @@ export function BotonViewer({ block, isThumbnail = false }: BotonViewerProps) {
 
   const handleActivate = () => {
     if (disabled || cfg.deshabilitado) return;
+    emitir?.('clic');
+    // Con runtime (autónomo / vista previa) la navegación la decide el motor
+    // por la regla `clic → …` derivada de `accion` (K4, D6). El camino directo
+    // queda solo para reproductores sin motor (presentación, en vivo).
+    // TODO(migración-etapa-K): retirar cuando presentación adopte el motor.
+    if (emitir) return;
     if (cfg.accion === 'ninguna' || cfg.accion === 'url') return;
     if (!navigate) return;
 
@@ -55,6 +64,7 @@ export function BotonViewer({ block, isThumbnail = false }: BotonViewerProps) {
         disabled={disabled}
         href={disabled ? null : href}
         onActivate={handleActivate}
+        onLinkClick={emitir ? () => emitir('clic') : undefined}
       />
     </div>
   );
