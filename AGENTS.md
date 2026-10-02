@@ -2533,3 +2533,52 @@ Objetivo (Regla 1 §7): barrer lo que la migración dejó vivo "de puente" y ya 
 - **Alcance — NO toca:** `element-kit-classic.ts` (E7.4); la lógica de scoring o de grade-calculation; los adapters del kit.
 - **Entregable:** `grep -rn "TODO(migración-etapa" --include="*.ts" --include="*.tsx"` → solo `element-kit-classic.ts`. `pnpm -r build && test && lint` verde. CI verde en los 3 jobs. Encabezado de `AGENTS.md` actualizado.
 - **Cierre (Regla 4):** `lib/activity-scoring.spec.ts` borrado. E7.7 es solo el barrido de higiene — **NO cierra E7**. E7 se cierra (y la migración termina) con **E7.6 vía A** hecha (grafo `lumina-frontend → @lumina/element-kit` sin ciclo, 0 shims) y **E7.4** (borrar `element-kit-classic.ts`). Commit de E7.7: `chore: barrido final de la migración a la Estructura Única (E7.7)`.
+
+### Etapa M — Motor matemático: base limpia, fórmulas interactivas y ejercicios evaluables
+
+Trabajo **post-migración** (E1–E7 cerradas). No es migración: **Reglas 1–4 no aplican**; Reglas 0, 5–11 vigentes. IDs `M1–M4` (no `L.n`: ese prefijo es de lint, Regla 10).
+
+**Por qué existe:** análisis del 2026-10-02. Lumina ya crea y muestra fórmulas (bloque `ecuacion` + `EquationComposer` + nodo `math` de texto + generador de ejercicios), pero son **estáticas**: `EcuacionViewer` solo recibe `estado`, el bloque no declara `eventos` y el motor de interacción (Etapa K) no lo ve.
+
+**Estado real del repo (relevado 2026-10-02):**
+- Tres sitios llaman a KaTeX con opciones propias y distintas: `element-kit/src/blocks/ecuacion/equation-view.tsx` (`htmlAndMathml`), `blocks/texto/math-block.tsx` (`html`, sin MathML) y `editor-shared/src/rich-text/equation-composer.tsx` (`throwOnError: true`, `html`). Ninguno fija `maxSize`/`maxExpand`/`strict`/`macros`. `katex.min.css` se importa en dos sitios.
+- `equation-view.tsx` pone `role="img"` + `aria-label` = LaTeX crudo: el lector de pantalla lee `\frac{a}{b}` literal y el MathML que KaTeX genera queda oculto.
+- `ajustar` reduce con `transform: scale` hasta 0.05 sin aviso.
+- `math-generator` (`lumina-frontend/src/lib/math-generator/`) emite enunciados en texto plano (0 usos de LaTeX) y `short_answer`, que en `ACTIVITY_SCORING` es `'manual'`: la respuesta esperada que el generador conoce no se autocalifica.
+
+**Decisiones (M0, cerradas por esta raíz, no las reabre el operador):**
+- **DM1.** Un único módulo de renderizado LaTeX en `@lumina/editor-shared` (`rich-text/latex-render.ts`); ningún otro archivo importa `katex` directo.
+- **DM2.** Nada de `eval`/`new Function` (D5). `trust` de KaTeX solo como función que acepta comandos concretos (nunca `true`).
+- **DM3.** Las fórmulas interactivas leen/escriben **solo variables de flujo** (C1/C4): nunca tocan la nota. Nacen sobre `Class.variables` y el motor de K, sin evaluador algebraico.
+- **DM4.** Equivalencia algebraica (M4) se evalúa en `@lumina/scoring` con fixtures (C5: el backend califica). La librería de CAS se decide en la propia M4 y exige confirmación del dueño del tablero antes de añadir dependencia.
+
+**Orden:** M1 → M2 → M3 → M4 (secuencial; M2/M3 tocan `ecuacion` y el generador respectivamente, pero M3 espera a la decisión de scoring de M4 para `short_answer`).
+
+#### M1 — Base limpia: render único, accesibilidad y límites de KaTeX
+- **Operador:** Claude Code
+- **Estado:** **[en curso: Claude Code]**
+- **Precondición:** ninguna.
+- **Alcance — PUEDE tocar:** nuevo `packages/editor-shared/src/rich-text/latex-render.ts` (+ spec): `renderLatex(latex, { throwOnError?, display? })` con `maxSize`, `maxExpand`, `strict: 'ignore'`, `trust: false`, `macros` compartidos (`\R \N \Z \Q`), `output: 'htmlAndMathml'`; `speakLatex(latex)` → lectura en español (fracción "a sobre b", raíz, potencia, sumatoria, símbolos comunes; cae al LaTeX limpio si no reconoce algo). `equation-view.tsx`, `math-block.tsx`, `equation-composer.tsx` consumen el módulo. Accesibilidad de `EquationView`: sin `role="img"` que oculte el MathML; `aria-label` solo con `descripcionAccesible` del docente o, si falta, `speakLatex`. Mínimo legible de `ajustar` (escala no baja de 0.3) + atributo `data-ecuacion-reducida` y aviso en el editor. Un único import de `katex.min.css`.
+- **Alcance — NO toca:** el schema `EquationBlock`, `@lumina/scoring`, backend, generador, motor de interacción.
+- **Entregable:** specs de `renderLatex` (límites, macros, error), `speakLatex` (casos) y paridad de DOM del bloque/texto. Verif: `pnpm --filter @lumina/editor-shared build && test && lint` · `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm lint && pnpm test:unit`. Sin bajar conteos.
+- **Cierre:** no aplica Regla 4. Commit: `refactor(math): render LaTeX único, accesible y con límites (M1)`.
+
+#### M2 — Fórmula interactiva: variables, pasos revelables y partes clicables
+- **Operador:** Claude Code
+- **Estado:** pendiente
+- **Precondición:** M1 `hecho`; K6 verificado en producción.
+- **Alcance previsto:** `EquationBlock` gana (aditivo) `vinculos?` (nombre de variable de clase ↔ símbolo LaTeX), `pasos?: boolean` (partir `aligned` por `\\` y revelar de a una línea) y `terminosClicables?`. Sustitución segura de variables en el LaTeX (parser propio, sin `eval`); `ecuacionDefinition.eventos` (`visitado`, `clic`, `seleccionado`) y `config.emitir`; `trust` por función solo para `\htmlData`. Editor: sección en `ecuacion-properties.tsx`. Backend no cambia (el estado del motor ya se persiste, K5). Paridad Regla 7: sin `vinculos`/`pasos` el DOM es idéntico al de M1.
+- **Verif:** la de M1 + QA en build de producción (autónomo y preview; presentación y en vivo inertes, D1).
+- **Cierre:** no aplica Regla 4. Se redacta el detalle al tomarla, con el código a la vista (Regla 10).
+
+#### M3 — Generador con LaTeX real y respuesta corta autocalificable
+- **Operador:** Claude Code
+- **Estado:** pendiente — **bloqueada por decisión del dueño sobre scoring de `short_answer`** (hoy `manual`).
+- **Alcance previsto:** enunciados/opciones de `math-generator` con LaTeX (fracciones, ecuaciones) renderizados con el módulo de M1; ampliar temas a grados 6–11 (álgebra, funciones, trigonometría básica). Autocalificar `short_answer` numérico de forma **opt-in por actividad** (comparación numérica con tolerancia) en `@lumina/scoring` con fixtures de paridad cliente/backend; sin el flag, comportamiento actual intacto.
+- **Cierre:** no aplica Regla 4.
+
+#### M4 — Ecuación evaluable («completa la fórmula» / equivalencia algebraica)
+- **Operador:** Claude Code
+- **Estado:** pendiente — **bloqueada por DM4** (elección de librería, requiere confirmación).
+- **Alcance previsto:** nueva actividad `ElementDefinition` (Regla 3) con huecos o respuesta libre, `puntuacion` → `@lumina/scoring` (clase `binary`) y equivalencia algebraica acotada (`2x+2` = `2(x+1)`), con fixtures nuevas y Regla 7 completa; el backend recalcula (C5).
+- **Cierre:** no aplica Regla 4.
