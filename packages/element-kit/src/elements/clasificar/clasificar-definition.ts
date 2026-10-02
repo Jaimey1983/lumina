@@ -29,6 +29,8 @@ export const clasificarDefinition = {
   puntuacion: (estado: ClasificarEstado, respuesta?: unknown) =>
     evaluarClasificar(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["clasificar"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<ClasificarEstado, ClasificarConfig>;
 
 export type ClasificarDefinition = typeof clasificarDefinition;

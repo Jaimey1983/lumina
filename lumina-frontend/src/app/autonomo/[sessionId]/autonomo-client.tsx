@@ -12,6 +12,7 @@ import { classSlideToRendererSlide } from '@/lib/class-slide-normalize';
 import { DARK_BACKGROUNDS, getBackground } from '@/lib/class-backgrounds';
 import { SlideRenderer } from '@/app/(app)/classes/[id]/editor/components/slide-renderer';
 import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+import { eventoDeRespuesta } from '@/lib/respuesta-a-evento';
 import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
 import type { VariableDef } from '@lumina/types/interaction';
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
@@ -555,7 +556,14 @@ function ViewerScreen({
     // Mark this slide as responded so handleAdvance won't overwrite with null
     respondedSlideIds.current.add(activeSlide.id);
     saveProgress({ studentId, slideId: activeSlide.id, response, attemptNumber, activityType });
-  }, [locked, activeSlide, studentId, attemptNumber, saveProgress, showPill]);
+    // K7a (D10): avisa al motor SOLO para flujo; no afecta lo enviado ni la nota.
+    // Un bloque sin id persistido no puede ser dueño de reglas: no emite.
+    const bloqueId = (actBlock as { id?: string }).id;
+    if (runtime && typeof bloqueId === 'string' && bloqueId !== '' && activityType) {
+      const ev = eventoDeRespuesta(activityType, actBlock.actividad, response);
+      if (ev) runtime.emitir(bloqueId, ev);
+    }
+  }, [locked, activeSlide, studentId, attemptNumber, saveProgress, showPill, runtime]);
 
   const handleAdvance = useCallback(() => {
     if (activeSlide) {

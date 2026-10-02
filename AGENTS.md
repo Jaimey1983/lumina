@@ -1429,7 +1429,11 @@ K7a es independiente de K6 en el código (no usa el panel de variables) pero se 
 
 #### K7a — Los elementos de actividad avisan al motor si la respuesta fue correcta (flujo, no nota)
 - **Operador:** Claude Code
-- **Estado:** **[en curso: Claude Code]**
+- **Estado:** **en revisión** — implementado; **QA manual en navegador NO realizada** (sin servidor/base sanos en esta sesión): verificado por tipos, pruebas y build.
+  - **Hecho:** nuevo `lib/respuesta-a-evento.ts` (`eventoDeRespuesta`): evalúa con `evaluateActivityResponse` y reduce a `respuesta_correcta` (solo si acertó TODO) / `respuesta_incorrecta` / `null` (sin respuesta, borrador, manual, participación, excluida, `video_interactivo`). `autonomo-client.tsx` y `preview-client.tsx` llaman `runtime.emitir(bloqueId, evento)` **después** de enviar la respuesta como siempre (el cuerpo del `POST …/progress` y la nota no cambian); un bloque sin `id` no emite. Las 18 actividades `binary`/`partial` (salvo video) declaran `eventos: ['respuesta_correcta','respuesta_incorrecta']`; `catalogo.parity.spec` lo exige.
+  - **Desvío:** el helper vive en un archivo nuevo en vez de `interaction-runtime.ts`, porque la guarda de K4 exige que el runtime NO importe `@lumina/scoring`; el archivo nuevo tiene su propia guarda (solo importa `evaluateActivityResponse`/`isActivityDraftResponse`, sin red ni `.score`). `video_interactivo` queda fuera (responde por pregunta, no hay «correcta» global).
+  - **Verificación:** `@lumina/element-kit` build, test **507/507** (+1 caso en `catalogo.parity.spec`), lint 0 · frontend `tsc` limpio, lint 0 errores (43 warnings), `test:unit` **411/411** (+8), `build` OK. Sin cambios en backend.
+  - **Pendiente de QA:** regla de ejemplo en una actividad con `id` en autónomo/preview, confirmar que el `POST …/progress` y `autonomous_progress.score` son idénticos a un intento sin regla; presentación y en vivo sin reglas.
 - **Precondición:** K5 verificado en producción. Recomendado después de K6; puede ir en paralelo si hay dos operadores (archivos disjuntos, ver orden).
 - **Contexto:** hallazgo 5. `respuesta_correcta`/`respuesta_incorrecta` son eventos del catálogo cerrado de K1, `Operando.respuesta_correcta` existe, y **ningún emisor los produce**. El reproductor autónomo recibe la respuesta del alumno en `handleResponse` y la manda al backend; el motor no se entera. D10 fija cómo: cálculo **local** del booleano con `evaluateActivityResponse`, solo para flujo.
 - **Alcance — PUEDE tocar:**

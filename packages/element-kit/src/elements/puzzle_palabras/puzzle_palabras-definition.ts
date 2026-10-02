@@ -29,6 +29,8 @@ export const puzzlePalabrasDefinition = {
   puntuacion: (estado: PuzzlePalabrasEstado, respuesta?: unknown) =>
     evaluarPuzzlePalabras(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["puzzle_palabras"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<PuzzlePalabrasEstado, PuzzlePalabrasConfig>;
 
 export type PuzzlePalabrasDefinition = typeof puzzlePalabrasDefinition;

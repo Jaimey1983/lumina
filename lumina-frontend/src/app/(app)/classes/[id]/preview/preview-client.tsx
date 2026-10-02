@@ -20,6 +20,7 @@ import { SlideNavContext, type SlideNavAction } from '@lumina/editor-shared/slid
 import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
 import type { Activity, Block } from '@lumina/types/slide';
 import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
+import { eventoDeRespuesta } from '@/lib/respuesta-a-evento';
 import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
 
 // ─── Local response evaluation (no socket, no backend) ────────────────────────
@@ -137,8 +138,14 @@ export function PreviewClient({ id }: { id: string }) {
           ? (evaluated.details.find((d) => d.index === questionIndex)?.correct ?? evaluated.correct)
           : evaluated.correct;
       showResponsePill(pillOutcomeForActivity(actividad, correct));
+      // K7a (D10): el motor se entera solo para flujo; un bloque sin id no emite.
+      const bloqueId = (actBlock as { id?: string }).id;
+      if (runtime && typeof bloqueId === 'string' && bloqueId !== '') {
+        const ev = eventoDeRespuesta(actividad.tipo, actividad, response);
+        if (ev) runtime.emitir(bloqueId, ev);
+      }
     },
-    [activeSlide, showResponsePill],
+    [activeSlide, showResponsePill, runtime],
   );
 
   if (isLoading) {

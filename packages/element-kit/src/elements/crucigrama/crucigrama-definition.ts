@@ -29,6 +29,8 @@ export const crucigramaDefinition = {
   puntuacion: (estado: CrucigramaEstado, respuesta?: unknown) =>
     evaluarCrucigrama(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["crucigrama"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<CrucigramaEstado, CrucigramaConfig>;
 
 export type CrucigramaDefinition = typeof crucigramaDefinition;

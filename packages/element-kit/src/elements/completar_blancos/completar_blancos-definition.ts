@@ -48,6 +48,8 @@ export const completarBlancosDefinition = {
   puntuacion: (estado: CompletarBlancosEstado, respuesta?: unknown) =>
     evaluarCompletarBlancos(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["completar_blancos"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<CompletarBlancosEstado, CompletarBlancosConfig>;
 
 export type CompletarBlancosDefinition = typeof completarBlancosDefinition;

@@ -48,6 +48,8 @@ export const verdaderoFalsoDefinition = {
   puntuacion: (estado: VerdaderoFalsoEstado, respuesta?: unknown) =>
     evaluarVerdaderoFalso(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["verdadero_falso"],
+  // Etapa K / K7a: la actividad avisa al motor si la respuesta fue correcta (flujo, no nota).
+  eventos: ["respuesta_correcta", "respuesta_incorrecta"],
 } as const satisfies ElementDefinition<VerdaderoFalsoEstado, VerdaderoFalsoConfig>;
 
 export type VerdaderoFalsoDefinition = typeof verdaderoFalsoDefinition;
