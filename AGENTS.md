@@ -2593,3 +2593,11 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración: **Reglas 1–4
   - **Límites declarados (no es un CAS):** no simplifica ni exige forma («factoriza» acepta también la forma expandida: `2x+2` vale para `2(x+1)`); `e` es una variable, no la constante; sin sumatorias, límites ni ecuaciones con incógnita (comprueba expresiones, no resuelve); la prueba es probabilística: dos expresiones distintas que coincidan en 48 puntos pseudoaleatorios son prácticamente imposibles pero no se demuestran.
   - **Pendiente (M4b, opcional):** exigir forma (factorizada/simplificada), completar huecos dentro de una fórmula y renderizar la respuesta con KaTeX.
 - **Cierre:** no aplica Regla 4.
+
+#### QA en producción de la Etapa M (2026-10-02, Claude Code) — M2, M3a, M3b y M4
+Entorno: Postgres 16 y Redis efímeros, backend compilado (`node dist/src/main.js`), frontend `next build && next start -p 3001`, Chromium con Playwright como alumno en `/autonomo/:sessionId` (PIN). Clase de prueba con 3 slides: ecuación `y = {{a}}x^2 + 1 \\ y = 2x` (variable `a` controlable + pasos), actividad algebraica (`2x+2`, respuesta modelo `2(x+1)`) y numérica (`\frac{3}{4}+\frac{1}{4}`, respuesta `1`).
+- **M2:** la fórmula se redibuja con `a = 2`, «− valor +» sube a `a = 4`, «Siguiente paso» pasa a «Paso 2 de 2». `PUT …/interaction-state` → `200`. **Recargar y reanudar restaura `a = 4`**; en BD `interactionState.variables = {"v_a": 4}`. La posición del paso **no** se restaura (vuelve a «Paso 1 de 2», límite ya conocido de K5).
+- **M3a/M4:** `2x+2` se acepta como equivalente de `2(x+1)` (`¡Correcto!`, `autonomous_progress.score = 5`); `0,75` contra `1` → `Incorrecto` (`score = 1`, el mínimo de la escala, nunca `0`). `POST …/progress` → `201`, `class_results = 0` (autónomo).
+- **M3b:** el enunciado `\( … \)` se ve renderizado como fórmula (`2x+2`, fracciones `3/4 + 1/4`) en los dos visores.
+- **K6 (parcial):** `PATCH /classes/:id` con `variables` → `200` y persistidas en `classes.variables`; el autónomo las recibe y el runtime las inicializa (antes solo probado con dato puesto a mano).
+- **No cubierto:** presentación y clase en vivo (D1: la fórmula debe verse con los símbolos y sin ajustadores), el panel «Interactividad» del editor, `test:visual`, lectura con lector de pantalla.
