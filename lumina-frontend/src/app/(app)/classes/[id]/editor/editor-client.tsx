@@ -175,7 +175,14 @@ import type { ActivityType, WidgetType } from './components/panels/activities-pa
 import { getActivityPanelItem } from './components/panels/activities-panel';
 import { getWidgetPanelItem } from './components/panels/widget-panel-catalog';
 import { EditorDndShell } from './components/editor-dnd-shell';
-import { recolectarReglas } from '@lumina/interactions';
+import { recolectarReglas, reglasConReferenciasRotas } from '@lumina/interactions';
+import {
+  contenidoParaCopia,
+  dependenciasDeSlide,
+  limpiarMazoTrasBorrarSlide,
+  reapuntarACopia,
+  slidesParaMotor,
+} from './lib/mazo-motor';
 import type { VariableDef } from '@lumina/types/interaction';
 import type { BlockMarco } from '@lumina/types/slide';
 import type { StudentResponse } from './components/panels/live-responses-panel';
@@ -689,6 +696,27 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     if (!slides?.length) return [];
     return [...slides].sort((a, b) => a.order - b.order);
   }, [cls?.slides]);
+
+  // Etapa K / K7b — el mazo visto por el motor, para integridad referencial y avisos.
+  const slidesMotor = useMemo(
+    () => slidesParaMotor(sortedSlides as ApiSlide[]),
+    [sortedSlides],
+  );
+  const slidesDelMazo = useMemo(
+    () => sortedSlides.map((sl, i) => ({ id: sl.id, titulo: `Slide ${i + 1} — ${sl.title}` })),
+    [sortedSlides],
+  );
+  const referenciasRotas = useMemo(
+    () => reglasConReferenciasRotas(slidesMotor, cls?.variables ?? []),
+    [slidesMotor, cls?.variables],
+  );
+  useEffect(() => {
+    // No bloquea el guardado (no se pierde trabajo por una referencia colgante): en
+    // desarrollo queda como aserción visible; en producción alimenta el panel.
+    if (process.env.NODE_ENV !== 'production' && referenciasRotas.length > 0) {
+      console.warn('[K7b] reglas con referencias rotas', referenciasRotas);
+    }
+  }, [referenciasRotas]);
 
   const resolvedSlideIndex = useMemo(() => {
     if (sortedSlides.length === 0) return 0;
@@ -1446,7 +1474,12 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             : (typeof record.tipo === 'string' ? record.tipo : 'contenido'),
       };
 
-      const sanitized = sanitizeSlideContentForPersistence(merged) ?? merged;
+      // K7b: la copia recibe ids propios de bloque/capa/regla y sus reglas internas
+      // se remapean. Las que iban al slide original siguen yendo a él hasta que el
+      // servidor da el id de la copia (segundo guardado, abajo).
+      const sanitized = sanitizeSlideContentForPersistence(
+        contenidoParaCopia(merged, slide.id),
+      ) ?? merged;
 
       insertSlide.mutate(
         {
@@ -1458,12 +1491,34 @@ export function SlideEditorClient({ classId }: { classId: string }) {
           },
         },
         {
-          onSuccess: () => setActiveSlideIndex(idx + 1),
+          onSuccess: (slides: unknown) => {
+            setActiveSlideIndex(idx + 1);
+            // La copia es el único slide que quedó en `order + 1`.
+            const copia = (Array.isArray(slides) ? (slides as ApiSlide[]) : []).find(
+              (s) => s.order === slide.order + 1 && s.id !== slide.id,
+            );
+            if (!copia) return;
+            const { contenido, cambio } = reapuntarACopia(
+              getSlideContentRecord(copia),
+              slide.id,
+              copia.id,
+            );
+            if (!cambio) return;
+            updateSlide.mutate(
+              { slideId: copia.id, content: contenido },
+              {
+                onError: () =>
+                  toast.warning(
+                    'El slide se duplicó, pero no se pudo reapuntar sus interacciones a la copia.',
+                  ),
+              },
+            );
+          },
           onError: () => toast.error('No se pudo duplicar el slide'),
         },
       );
     },
-    [sortedSlides, insertSlide],
+    [sortedSlides, insertSlide, updateSlide],
   );
 
   const handleApplyLayout = useCallback(
@@ -1782,15 +1837,49 @@ export function SlideEditorClient({ classId }: { classId: string }) {
 
   const handleRemoveSlide = useCallback(
     (slideId: string) => {
+      // K7b — integridad referencial: avisar de las interacciones que van a este slide.
+      const dependen = dependenciasDeSlide(slidesMotor, slideId);
+      if (
+        dependen.length > 0 &&
+        typeof window !== 'undefined' &&
+        !window.confirm(
+          `Otras ${dependen.length} interacción(es) llevan a este slide: se borrarán las que solo van a él y se desactivarán las demás.\n¿Eliminar el slide de todos modos?`,
+        )
+      ) {
+        return;
+      }
       removeSlide.mutate(slideId, {
         onSuccess: () => {
           toast.success('Slide eliminado');
           setActiveSlideIndex((prev) => Math.max(0, prev - 1));
+          // Primero se borra y DESPUÉS se limpia: si el borrado falla no se pierde ninguna regla.
+          const { cambios } = limpiarMazoTrasBorrarSlide(
+            sortedSlides.map((s) => ({
+              id: s.id,
+              content: getSlideContentRecord(s as ApiSlide),
+            })),
+            slideId,
+          );
+          if (cambios.length === 0) return;
+          void Promise.all(
+            cambios.map((c) =>
+              updateSlide.mutateAsync({
+                slideId: c.slideId,
+                content: c.contenido,
+                expectedVersion: (sortedSlides.find((s) => s.id === c.slideId) as ApiSlide | undefined)
+                  ?.contentVersion,
+              }),
+            ),
+          ).catch(() =>
+            toast.warning(
+              'No se pudieron actualizar las interacciones que llevaban al slide borrado: revísalas en el panel «Interacciones».',
+            ),
+          );
         },
         onError: () => toast.error('No se pudo eliminar el slide'),
       });
     },
-    [removeSlide],
+    [removeSlide, updateSlide, sortedSlides, slidesMotor],
   );
 
   const handleMoveSlide = useCallback(
@@ -3017,6 +3106,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onSlidePersisted={() => setContentSaveEpoch((e) => e + 1)}
               onSlidePersistBusyChange={setSlidePersistBusy}
               slide={rendererSlide}
+              slidesDelMazo={slidesDelMazo}
+              referenciasRotas={referenciasRotas}
               slideTheme={activeSlideTheme}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}

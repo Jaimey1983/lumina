@@ -51,6 +51,14 @@ import type {
   DiagramaBlock,
 } from '@lumina/types/slide';
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
+import type { Regla } from '@lumina/types/interaction';
+import { bloqueParaPegar } from '@lumina/interactions';
+import type { ReferenciaRota } from '@lumina/interactions';
+import {
+  comoSlideMotor,
+  dependenciasDeBloque,
+  limpiarSlideTrasBorrarBloque,
+} from '../lib/mazo-motor';
 import {
   getBlockAtPath,
   removeBlockAtPath,
@@ -163,21 +171,33 @@ function toSlideHistorySnapshot(
   };
 }
 
-function buildPastedBlock(source: Block): Block {
+/**
+ * Bloque para pegar/duplicar. Id nuevo y SIN `disparadores` (K7b): copiar una
+ * regla a otro bloque con el mismo objetivo es el modo de falla clásico.
+ */
+function buildPastedBlock(source: Block): { bloque: Block; teniaInteracciones: boolean } {
   const cloned =
     typeof structuredClone === 'function'
       ? structuredClone(source)
       : (JSON.parse(JSON.stringify(source)) as Block);
   const reminted = remintBlockChildIds(cloned);
-  return prepareBlockForPaste(reminted, {
-    newId: `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-  });
+  const { bloque, teniaInteracciones } = bloqueParaPegar(
+    reminted,
+    `block_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+  );
+  return { bloque: prepareBlockForPaste(bloque), teniaInteracciones };
 }
+
+const AVISO_SIN_INTERACCIONES =
+  'Las interacciones del bloque original no se copian: configura las del nuevo desde «Interacciones».';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface CanvasAreaProps {
   slide: Slide | null;
+  /** K7b — slides del mazo (destinos de interacciones) y reglas con referencias rotas. */
+  slidesDelMazo?: { id: string; titulo: string }[];
+  referenciasRotas?: ReferenciaRota[];
   /** Tema resuelto del slide (predefinido o personalizado) para `estiloTema`. */
   slideTheme?: SlideTheme | null;
   isLoading?: boolean;
@@ -291,6 +311,8 @@ const SLIDE_SURFACE_CLASS = cn(
 export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function CanvasArea(
   {
     slide,
+    slidesDelMazo = [],
+    referenciasRotas = [],
     slideTheme,
     isLoading,
     onBlockSelect,
@@ -724,6 +746,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       bloques: Block[],
       fondoOverride?: Background,
       guiasOverride?: SlideGuias,
+      reglasSlide?: Regla[],
     ) => {
       const current = editorStateRef.current;
       return buildSlideContentPayload(
@@ -733,7 +756,10 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
           guias: guiasOverride ?? current.guias,
           transicion: current.transicion,
         },
-        { diseno: slideDiseno },
+        {
+          diseno: slideDiseno,
+          ...(reglasSlide !== undefined ? { reglas: reglasSlide } : {}),
+        },
       );
     },
     [slideDiseno],
@@ -773,8 +799,9 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       previousBloques: Block[],
       recordHistory: boolean,
       kind: HistoryKind = 'edicion',
+      reglasSlide?: Regla[],
     ): Promise<boolean> => {
-      const content = buildContentPayload(nextBloques);
+      const content = buildContentPayload(nextBloques, undefined, undefined, reglasSlide);
       if (!slideId) return false;
       const ok = await flushAndEnqueueSlideContent(slideId, content);
       if (!ok) return false;
@@ -1006,13 +1033,14 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       const b = getBlockAtPath(prev, blockPath);
       if (!b) return;
 
-      const dup = buildPastedBlock(b);
+      const { bloque: dup, teniaInteracciones } = buildPastedBlock(b);
       const next = [...prev, dup];
       const newIndex = next.length - 1;
 
       try {
         const ok = await persistBloques(next, prev, true);
         if (ok) {
+          if (teniaInteracciones) toast.info(AVISO_SIN_INTERACCIONES);
           setTimeout(() => {
             const el = canvasRef.current?.querySelector(
               canvasTopLevelSelector(newIndex),
@@ -1248,11 +1276,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     async (block: Block) => {
       if (!slide?.id || !classId) return;
       const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide.bloques ?? []);
-      const dup = buildPastedBlock(block);
+      const { bloque: dup, teniaInteracciones } = buildPastedBlock(block);
       const next = [...prev, dup];
       const ok = await persistBloques(next, prev, true, 'pegar');
       if (ok) {
         toast.success('Bloque pegado');
+        if (teniaInteracciones) toast.info(AVISO_SIN_INTERACCIONES);
         const newIndex = next.length - 1;
         setTimeout(() => {
           const el = canvasRef.current?.querySelector(
@@ -1275,7 +1304,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     ) => {
       if (!classId) return;
       const prev = cloneSlideBlocks(slideMeta.bloques);
-      const dup = buildPastedBlock(block);
+      const { bloque: dup, teniaInteracciones } = buildPastedBlock(block);
       const next = [...prev, dup];
       const ok = await persistBloquesForSlide(
         slideId,
@@ -1290,6 +1319,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       );
       if (ok) {
         toast.success('Bloque pegado');
+        if (teniaInteracciones) toast.info(AVISO_SIN_INTERACCIONES);
       } else {
         toast.error('No se pudo pegar el bloque');
       }
@@ -1322,13 +1352,55 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     async (blockPath: string) => {
       if (!slide?.id || !classId) return;
       const prev = cloneSlideBlocks(liveSlide?.bloques ?? slide.bloques ?? []);
-      const next = removeBlockAtPath(prev, blockPath);
+      const removido = getBlockAtPath(prev, blockPath);
+      let next = removeBlockAtPath(prev, blockPath);
       if (next === prev) return;
+
+      // K7b — integridad referencial: las reglas que mencionaban el bloque no
+      // quedan colgando. Solo los bloques de primer nivel con id pueden ser objetivo.
+      const bloqueId =
+        removido && !blockPath.includes('-')
+          ? ((removido as { id?: unknown }).id as string | undefined)
+          : undefined;
+      let reglasSlide: Regla[] | undefined;
+      let resumen = '';
+      if (typeof bloqueId === 'string' && bloqueId !== '') {
+        const slideMotor = comoSlideMotor(slide.id, {
+          bloques: prev,
+          ...(slide.capas ? { capas: slide.capas } : {}),
+          ...(slide.reglas ? { reglas: slide.reglas } : {}),
+        });
+        const dependen = dependenciasDeBloque(slideMotor, bloqueId);
+        if (dependen.length > 0 || (removido?.disparadores?.length ?? 0) > 0) {
+          const propias = removido?.disparadores?.length ?? 0;
+          const msg = [
+            dependen.length > 0
+              ? `Otras ${dependen.length} interacción(es) de este slide usan este elemento: se borrarán las que solo dependen de él y se desactivarán las demás.`
+              : '',
+            propias > 0 ? `Sus ${propias} interacción(es) propias también se borran.` : '',
+            '¿Eliminar de todos modos?',
+          ]
+            .filter(Boolean)
+            .join('\n');
+          if (typeof window !== 'undefined' && !window.confirm(msg)) return;
+        }
+        const limpio = limpiarSlideTrasBorrarBloque(
+          slide.id,
+          next,
+          { capas: slide.capas, reglas: slide.reglas },
+          bloqueId,
+        );
+        next = limpio.bloques;
+        reglasSlide = limpio.reglas;
+        if (limpio.eliminadas.length + limpio.desactivadas.length > 0) {
+          resumen = ` ${limpio.eliminadas.length} interacción(es) eliminada(s) y ${limpio.desactivadas.length} desactivada(s).`;
+        }
+      }
       dispatchEditor({ type: 'SELECCIONAR', id: null });
       onBlockSelectRef.current?.('');
-      const ok = await persistBloques(next, prev, true, 'eliminar');
+      const ok = await persistBloques(next, prev, true, 'eliminar', reglasSlide);
       if (ok) {
-        toast.success('Actividad eliminada');
+        toast.success(`Actividad eliminada.${resumen}`.trim());
       } else {
         toast.error('No se pudo eliminar');
       }
@@ -2325,6 +2397,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         onFlushScheduledPersist={handleFlushScheduledPersist}
         slide={liveSlide}
         onApplySlide={handleApplySlide}
+        slidesDelMazo={slidesDelMazo}
+        referenciasRotas={referenciasRotas}
         flipCardsInnerSelection={flipCardsInnerSelection}
         tabsInnerSelection={tabsInnerSelection}
         carouselInnerSelection={carouselInnerSelection}

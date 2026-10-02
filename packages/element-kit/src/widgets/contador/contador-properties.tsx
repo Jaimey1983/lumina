@@ -1,7 +1,8 @@
 'use client';
 
 import type { Block } from '@lumina/types/slide';
-import type { ContadorAlTerminar, ContadorFormato, ContadorModo, ContadorWidget } from '@lumina/types/widget';
+import type { ContadorFormato, ContadorModo, ContadorWidget } from '@lumina/types/widget';
+import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
@@ -108,21 +109,29 @@ export function ContadorProperties({ block: rawBlock, applyNow }: ContadorProper
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Al terminar</Label>
-              <ToggleGroup
-                type="single"
-                value={cfg.alTerminar}
-                onValueChange={(val: ContadorAlTerminar) => {
-                  if (val) update((w) => ({ ...w, alTerminar: val }));
-                }}
-                className="w-full justify-start rounded-md bg-slate-100/50 p-1"
-              >
-                <ToggleGroupItem value="ninguna" className="h-8 flex-1 text-xs">
-                  Nada
-                </ToggleGroupItem>
-                <ToggleGroupItem value="siguiente" className="h-8 flex-1 text-xs">
-                  Siguiente slide
-                </ToggleGroupItem>
-              </ToggleGroup>
+              {/* K7b: el editor ya no ESCRIBE `alTerminar`; lo reemplaza una interacción
+                  («Interacciones»). La lectura de un valor legado sigue viva (D6). */}
+              {cfg.alTerminar === 'siguiente' ? (
+                <div className="space-y-2 rounded-md border border-border bg-muted/40 p-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    Acción heredada: <strong>ir al siguiente slide</strong>. Se mantiene tal cual.
+                    Para cambiarla, quítala y configura una interacción más abajo.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => update((w) => ({ ...w, alTerminar: 'ninguna' }))}
+                  >
+                    Quitar acción heredada
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Para que al terminar pase de slide usa «Interacciones» más abajo.
+                </p>
+              )}
             </div>
           </div>
         </div>

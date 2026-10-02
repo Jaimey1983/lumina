@@ -42,6 +42,17 @@ describe('plantillas (K7b)', () => {
     }
   });
 
+  it('con evento fin_contador sustituye a Contador.alTerminar', () => {
+    const r = plantillaBotonNavega({
+      bloqueId: 'cnt',
+      destino: { tipo: 'siguiente' },
+      evento: 'fin_contador',
+    });
+    expect(r.reglas[0]?.regla.evento).toBe('fin_contador');
+    const { aplicables, ctx } = montar(r, ['cnt']);
+    expect(validarReglas(aplicables, ctx)).toEqual([]);
+  });
+
   it('el botón ejecuta la navegación en el motor', () => {
     const r = plantillaBotonNavega({
       bloqueId: 'btn',

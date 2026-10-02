@@ -63,10 +63,15 @@ function accionDeDestino(destino: DestinoNavegacion): Accion {
   }
 }
 
-/** «Un botón que lleva a otro slide»: `clic → ir_a_slide | siguiente | anterior`. */
+/**
+ * «Un botón que lleva a otro slide»: `clic → ir_a_slide | siguiente | anterior`.
+ * Con `evento: 'fin_contador'` es el equivalente para el contador («al terminar,
+ * ir a…»): sustituye al campo legado `Contador.alTerminar`.
+ */
 export function plantillaBotonNavega(args: {
   bloqueId: string;
   destino: DestinoNavegacion;
+  evento?: 'clic' | 'fin_contador';
 }): ResultadoPlantilla {
   return {
     variables: [],
@@ -75,7 +80,7 @@ export function plantillaBotonNavega(args: {
         bloqueId: args.bloqueId,
         regla: {
           id: idReglaDePlantilla(PLANTILLAS.botonNavega, args.bloqueId),
-          evento: 'clic',
+          evento: args.evento ?? 'clic',
           condiciones: [],
           acciones: [accionDeDestino(args.destino)],
           activa: true,

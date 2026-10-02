@@ -1,5 +1,6 @@
 import { isAxiosError } from 'axios';
 
+import type { Regla } from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 
 import type { EditorSlideState } from './editor-slide-state';
@@ -10,6 +11,12 @@ export const SLIDE_VERSION_CONFLICT_MESSAGE =
 
 export type SlideContentExtras = {
   diseno?: Slide['diseno'];
+  /**
+   * Motor (K7b): `Slide.reglas`. OMITIRLO significa «no lo toco» (el backend conserva
+   * las reglas del slide; ver `conservarCamposDelMotor`); enviarlo — incluso `[]` —
+   * reemplaza. Solo lo manda quien cambió las reglas de slide (limpieza al borrar).
+   */
+  reglas?: Regla[];
 };
 
 /**
@@ -26,6 +33,7 @@ export function buildSlideContentPayload(
   };
   if (state.fondo !== undefined) payload.fondo = state.fondo;
   if (extras?.diseno) payload.diseno = extras.diseno;
+  if (extras?.reglas !== undefined) payload.reglas = extras.reglas;
   if (state.transicion !== undefined) payload.transicion = state.transicion;
   return payload;
 }

@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
 import type { EstadoObjeto } from '@lumina/types/interaction';
+import type { ReferenciaRota } from '@lumina/interactions';
+import { InteractionsPanel } from './interactions-panel';
 import { backgroundColorForContrast } from '@lumina/editor-shared/contrast';
 
 import type {
@@ -173,6 +175,9 @@ export interface PropertiesPanelProps {
   /** Slide activo — necesario para configurar transición */
   slide?: import('@lumina/types/slide').Slide | null;
   onApplySlide?: (patch: Partial<import('@lumina/types/slide').Slide>) => Promise<boolean>;
+  /** K7b — slides del mazo (destinos de las interacciones) y referencias rotas del mazo. */
+  slidesDelMazo?: { id: string; titulo: string }[];
+  referenciasRotas?: ReferenciaRota[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -196,6 +201,8 @@ export function PropertiesPanel({
   imageCompareInnerSelection = null,
   slide = null,
   onApplySlide,
+  slidesDelMazo = [],
+  referenciasRotas = [],
 }: PropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState<'propiedades' | 'animaciones'>('propiedades');
 
@@ -1525,6 +1532,16 @@ export function PropertiesPanel({
               <BlockEstadoInicialSection
                 estado={(block as { estado?: EstadoObjeto }).estado ?? 'normal'}
                 applyNow={applyNow}
+              />
+            )}
+            {(elementRegistry.obtener(block.tipo)?.eventos?.length ?? 0) > 0 && selectedBlockId && slide?.id && (
+              <InteractionsPanel
+                bloques={bloques}
+                blockPath={selectedBlockId}
+                slideId={slide.id}
+                slidesDelMazo={slidesDelMazo}
+                referenciasRotas={referenciasRotas}
+                onApplyBloques={onApplyBloques}
               />
             )}
             {isBlockCanvasPositionable(block) && (
