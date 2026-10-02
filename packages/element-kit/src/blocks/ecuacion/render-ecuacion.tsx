@@ -41,7 +41,7 @@ export function RenderEcuacion({ block, modo = 'viewer' }: RenderEcuacionProps) 
         </div>
       }
     >
-      <EquationViewLazy block={block} />
+      <EquationViewLazy block={block} modo={modo} />
     </Suspense>
   );
 }

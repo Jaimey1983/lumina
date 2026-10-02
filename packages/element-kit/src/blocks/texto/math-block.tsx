@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import 'katex/dist/katex.min.css';
-import katex from 'katex';
+import { renderLatex, speakLatex } from '@lumina/editor-shared/rich-text/latex-render';
 
 /**
  * Renderiza una fórmula LaTeX con KaTeX. Este módulo se carga de forma perezosa
@@ -16,11 +15,7 @@ export function MathBlock({ latex }: { latex: string }) {
   useEffect(() => {
     try {
       setHtml(
-        katex.renderToString(latex, {
-          throwOnError: false,
-          displayMode: true,
-          output: 'html',
-        }),
+        renderLatex(latex),
       );
       setError(false);
     } catch {
@@ -38,6 +33,8 @@ export function MathBlock({ latex }: { latex: string }) {
   return (
     <div
       data-math="1"
+      role="img"
+      aria-label={speakLatex(latex)}
       style={{ overflowX: 'auto', textAlign: 'center', margin: '0.4em 0' }}
       // KaTeX produce marcado seguro (spans con clases); el LaTeX de entrada ya
       // pasó por `sanitizeRichDoc`.

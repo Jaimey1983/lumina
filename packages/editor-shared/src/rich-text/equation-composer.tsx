@@ -18,9 +18,7 @@ import {
   type MathTemplate,
 } from './equation-insert.js';
 
-type KatexModule = {
-  renderToString: (tex: string, opts?: Record<string, unknown>) => string;
-};
+type LatexRenderer = (latex: string, opts?: { throwOnError?: boolean; display?: boolean }) => string;
 
 export interface EquationComposerProps {
   value: string;
@@ -89,7 +87,7 @@ export function EquationComposer({
 }: EquationComposerProps) {
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const caretRef = useRef<{ start: number; end: number } | null>(null);
-  const [katex, setKatex] = useState<KatexModule | null>(null);
+  const [renderer, setRenderer] = useState<LatexRenderer | null>(null);
   const [tabId, setTabId] = useState(MATH_TABS[0]!.id);
   const pastRef = useRef<string[]>([]);
   const futureRef = useRef<string[]>([]);
@@ -98,9 +96,10 @@ export function EquationComposer({
 
   useEffect(() => {
     let alive = true;
-    Promise.all([import('katex'), import('katex/dist/katex.min.css').catch(() => null)])
-      .then(([m]) => {
-        if (alive) setKatex((m as { default: KatexModule }).default);
+    // Carga perezosa: KaTeX (y su CSS) entran al bundle solo al abrir el compositor.
+    import('./latex-render.js')
+      .then((m) => {
+        if (alive) setRenderer(() => m.renderLatex);
       })
       .catch(() => undefined);
     return () => {
@@ -129,14 +128,10 @@ export function EquationComposer({
 
   const rendered = useMemo(() => {
     const tex = value.trim();
-    if (!katex || tex === '') return { html: null as string | null, error: null as string | null };
+    if (!renderer || tex === '') return { html: null as string | null, error: null as string | null };
     try {
       return {
-        html: katex.renderToString(tex, {
-          throwOnError: true,
-          displayMode: true,
-          output: 'html',
-        }),
+        html: renderer(tex, { throwOnError: true }),
         error: null,
       };
     } catch (e) {
@@ -145,7 +140,7 @@ export function EquationComposer({
         error: cleanKatexError(e instanceof Error ? e.message : String(e)),
       };
     }
-  }, [katex, value]);
+  }, [renderer, value]);
 
   const errorRef = useRef(onErrorChange);
   errorRef.current = onErrorChange;

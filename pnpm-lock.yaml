@@ -649,9 +649,6 @@ importers:
       highlight.js:
         specifier: 11.11.2
         version: 11.11.2
-      katex:
-        specifier: 0.16.11
-        version: 0.16.11
       lowlight:
         specifier: 3.3.0
         version: 3.3.0
@@ -683,9 +680,6 @@ importers:
       '@tiptap/pm':
         specifier: 3.31.3
         version: 3.31.3
-      '@types/katex':
-        specifier: 0.16.7
-        version: 0.16.7
       '@types/node':
         specifier: ^20
         version: 20.19.43

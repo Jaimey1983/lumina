@@ -1,10 +1,12 @@
 'use client';
 
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import 'katex/dist/katex.min.css';
-import katex from 'katex';
+import { renderLatex, speakLatex } from '@lumina/editor-shared/rich-text/latex-render';
 import type { EquationBlock } from '@lumina/types/slide';
 import { ecuacionTamano } from './ecuacion-defaults.js';
+
+/** Por debajo de este factor la fórmula deja de ser legible: se corta y, en el editor, se avisa. */
+const ESCALA_MINIMA = 0.3;
 
 const JUSTIFY = {
   izquierda: 'flex-start',
@@ -22,7 +24,13 @@ const ORIGIN = {
  * Dibuja la fórmula con KaTeX y, si `ajustar` (por defecto), la reduce hasta
  * que quepa en la caja del bloque. Módulo de carga perezosa (KaTeX + CSS).
  */
-export default function EquationView({ block }: { block: EquationBlock }) {
+export default function EquationView({
+  block,
+  modo = 'viewer',
+}: {
+  block: EquationBlock;
+  modo?: 'editor' | 'viewer';
+}) {
   const alineacion = block.alineacion ?? 'centro';
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -31,11 +39,7 @@ export default function EquationView({ block }: { block: EquationBlock }) {
 
   const html = useMemo(() => {
     try {
-      return katex.renderToString(block.latex, {
-        throwOnError: false,
-        displayMode: true,
-        output: 'htmlAndMathml',
-      });
+      return renderLatex(block.latex);
     } catch {
       return null;
     }
@@ -53,7 +57,7 @@ export default function EquationView({ block }: { block: EquationBlock }) {
       const h = inner.scrollHeight;
       if (w <= 0 || h <= 0) return;
       const next = Math.min(1, outer.clientWidth / w, outer.clientHeight / h);
-      setScale((prev) => (Math.abs(prev - next) < 0.005 ? prev : Math.max(0.05, next)));
+      setScale((prev) => (Math.abs(prev - next) < 0.005 ? prev : Math.max(ESCALA_MINIMA, next)));
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
@@ -69,6 +73,7 @@ export default function EquationView({ block }: { block: EquationBlock }) {
     justifyContent: JUSTIFY[alineacion],
     width: '100%',
     height: '100%',
+    position: 'relative',
     overflow: ajustar ? 'hidden' : 'auto',
     boxSizing: 'border-box',
     background: block.fondo || undefined,
@@ -97,9 +102,27 @@ export default function EquationView({ block }: { block: EquationBlock }) {
       ref={outerRef}
       data-ecuacion="1"
       role="img"
-      aria-label={block.descripcionAccesible?.trim() || block.latex}
+      aria-label={block.descripcionAccesible?.trim() || speakLatex(block.latex)}
+      data-ecuacion-reducida={scale <= ESCALA_MINIMA ? '1' : undefined}
       style={outer}
     >
+      {modo === 'editor' && scale <= ESCALA_MINIMA ? (
+        <span
+          role="status"
+          style={{
+            position: 'absolute',
+            top: 2,
+            right: 2,
+            fontSize: 11,
+            padding: '1px 5px',
+            borderRadius: 4,
+            background: '#fef3c7',
+            color: '#92400e',
+          }}
+        >
+          Fórmula demasiado grande: agranda la caja o reduce el tamaño
+        </span>
+      ) : null}
       <div
         ref={innerRef}
         style={inner}
