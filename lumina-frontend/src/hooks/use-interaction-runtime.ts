@@ -19,12 +19,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  asignarVariable as asignarVariableEnEstado,
   crearEstadoInicial,
   recolectarReglas,
   type EstadoMotor,
   type EventoMotor,
 } from '@lumina/interactions';
-import type { EstadoObjeto, EventoTipo, VariableDef } from '@lumina/types/interaction';
+import type {
+  EstadoObjeto,
+  EventoTipo,
+  VariableDef,
+  VariableValor,
+} from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { migrarAccionesLegacyARegla } from '@/lib/class-slide-normalize';
@@ -40,6 +46,10 @@ export interface SlideInteractionRuntime {
   capasAbiertas: readonly string[];
   /** K8a — Escape. Solo quita la capa; no navega ni puntúa. */
   cerrarCapa: (capaId: string) => void;
+  /** M2 — valor actual de cada variable de clase (solo lectura). */
+  variables?: Readonly<Record<string, VariableValor>>;
+  /** M2 — cambia una variable de flujo desde un elemento (valida existencia y tipo; nunca toca notas). */
+  asignarVariable?: (variableId: string, valor: VariableValor) => void;
 }
 
 export interface UseInteractionRuntimeOptions {
@@ -161,6 +171,17 @@ export function useInteractionRuntime({
     v.onEstadoChange?.(nuevo);
   }, []);
 
+  const asignarVariable = useCallback((variableId: string, valor: VariableValor) => {
+    const v = vivo.current;
+    if (!v.enabled) return;
+    const base = estadoRef.current ?? crearEstadoInicial(v.contexto.variables, v.slides);
+    const nuevo = asignarVariableEnEstado(base, v.contexto.variables, variableId, valor);
+    if (nuevo === base) return;
+    estadoRef.current = nuevo;
+    setEstadoGuardado(nuevo);
+    v.onEstadoChange?.(nuevo);
+  }, []);
+
   const runtime = useMemo<SlideInteractionRuntime | undefined>(() => {
     if (!enabled || !estadoParaPintar) return undefined;
     return {
@@ -169,8 +190,10 @@ export function useInteractionRuntime({
       visibles: estadoParaPintar.visibles,
       capasAbiertas: estadoParaPintar.capasAbiertas,
       cerrarCapa,
+      variables: estadoParaPintar.variables,
+      asignarVariable,
     };
-  }, [enabled, emitir, estadoParaPintar, cerrarCapa]);
+  }, [enabled, emitir, estadoParaPintar, cerrarCapa, asignarVariable]);
 
   return { slides, runtime, estado: estadoGuardado };
 }

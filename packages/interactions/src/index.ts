@@ -8,6 +8,7 @@ export { procesarEvento } from './motor.js';
 export { recolectarReglas, contextoDesdeSlides } from './recolectar.js';
 export type { ContextoValidacion } from './recolectar.js';
 export { validarReglas } from './validar.js';
+export { asignarVariable } from './asignar.js';
 export { validarVariables, MAX_VARIABLES, MAX_TEXTO_VARIABLE } from './variables.js';
 export { usosDeVariable } from './uso.js';
 export type { UsoDeVariable } from './uso.js';

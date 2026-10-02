@@ -9,6 +9,7 @@ import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
 import type { EstadoObjeto } from '@lumina/types/interaction';
 import type { ReferenciaRota } from '@lumina/interactions';
 import { InteractionsPanel } from './interactions-panel';
+import { useClassVariables } from '../../lib/class-variables-context';
 import { backgroundColorForContrast } from '@lumina/editor-shared/contrast';
 
 import type {
@@ -205,6 +206,7 @@ export function PropertiesPanel({
   referenciasRotas = [],
 }: PropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState<'propiedades' | 'animaciones'>('propiedades');
+  const variablesClase = useClassVariables();
 
   const bloquesRef = useRef(bloques);
   bloquesRef.current = bloques;
@@ -1524,6 +1526,7 @@ export function PropertiesPanel({
                     config={{
                       slideBackground: backgroundColorForContrast(slide?.fondo),
                       persistHost,
+                      variablesClase,
                     }}
                     onConfigChange={() => {}}
                     onChange={(updated) => {

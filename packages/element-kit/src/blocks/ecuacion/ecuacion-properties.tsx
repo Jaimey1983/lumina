@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Block, EquationBlock } from '@lumina/types/slide';
+import type { Block, EquationBlock, EquationVinculo } from '@lumina/types/slide';
+import { simbolosDeLatex } from '@lumina/editor-shared/rich-text/latex-render';
 import { EquationComposer } from '@lumina/editor-shared/rich-text/equation-composer';
 import { Checkbox } from '@lumina/ui/checkbox';
 import { Input } from '@lumina/ui/input';
@@ -15,6 +16,8 @@ import {
 
 export interface EcuacionPropertiesProps {
   block: EquationBlock;
+  /** Variables declaradas en la clase (M2). Sin ellas no hay nada que vincular. */
+  variablesClase?: readonly { id: string; nombre: string; tipo: 'numero' | 'texto' | 'booleano' }[];
   applyNow?: (fn: (b: Block) => Block) => Promise<void>;
   scheduleApply?: (fn: (b: Block) => Block) => void;
   clearDebounce?: () => void;
@@ -37,6 +40,7 @@ function toHex(color: string | undefined, fallback: string): string {
  */
 export function EcuacionProperties({
   block,
+  variablesClase,
   applyNow,
   scheduleApply,
   onChange,
@@ -57,6 +61,19 @@ export function EcuacionProperties({
     else if (applyNow) void applyNow(fn);
     else if (onChange) onChange({ ...block, ...partial });
   };
+
+  const simbolos = simbolosDeLatex(latex);
+
+  const setVinculos = (next: EquationVinculo[]) =>
+    patch({ vinculos: next.length > 0 ? next : undefined });
+  const setVinculo = (simbolo: string, variableId: string) => {
+    const resto = (block.vinculos ?? []).filter((x) => x.simbolo !== simbolo);
+    setVinculos(variableId === '' ? resto : [...resto, { simbolo, variableId }]);
+  };
+  const patchVinculo = (simbolo: string, partial: Partial<EquationVinculo>) =>
+    setVinculos(
+      (block.vinculos ?? []).map((x) => (x.simbolo === simbolo ? { ...x, ...partial } : x)),
+    );
 
   return (
     <div className="flex flex-col gap-4" data-ecuacion-properties="">
@@ -165,6 +182,90 @@ export function EcuacionProperties({
         />
         Reducir la fórmula para que quepa en la caja
       </label>
+
+      <div className="space-y-2" data-ecuacion-interactividad="">
+        <Label className="text-xs">Interactividad</Label>
+        <label className="flex cursor-pointer items-start gap-2 text-xs">
+          <Checkbox
+            size="sm"
+            className="mt-0.5"
+            checked={block.pasos === true}
+            onCheckedChange={(v) => patch({ pasos: v === true })}
+          />
+          Revelar la fórmula línea por línea (separa las líneas con \\)
+        </label>
+        {simbolos.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">
+            Para que la fórmula cambie con una variable de la clase, escribe el símbolo entre
+            dobles llaves: <code>{'{{a}}'}x^2</code>.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {simbolos.map((simbolo) => {
+              const v = block.vinculos?.find((x) => x.simbolo === simbolo);
+              const variable = variablesClase?.find((x) => x.id === v?.variableId);
+              const numerica = variable?.tipo === 'numero';
+              return (
+                <div key={simbolo} className="space-y-1 rounded-md border border-border p-2">
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs">{`{{${simbolo}}}`}</code>
+                    <select
+                      aria-label={`Variable de ${simbolo}`}
+                      className="h-8 flex-1 rounded-md border border-border bg-background px-2 text-xs"
+                      value={v?.variableId ?? ''}
+                      onChange={(e) => setVinculo(simbolo, e.target.value)}
+                    >
+                      <option value="">Sin vincular (se ve «{simbolo}»)</option>
+                      {(variablesClase ?? []).map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {v && numerica ? (
+                    <>
+                      <label className="flex cursor-pointer items-center gap-2 text-xs">
+                        <Checkbox
+                          size="sm"
+                          checked={v.controlable === true}
+                          onCheckedChange={(c) => patchVinculo(simbolo, { controlable: c === true })}
+                        />
+                        El alumno la cambia con − / +
+                      </label>
+                      {v.controlable === true ? (
+                        <div className="grid grid-cols-3 gap-1">
+                          {(['paso', 'min', 'max'] as const).map((campo) => (
+                            <Input
+                              key={campo}
+                              type="number"
+                              aria-label={`${campo} de ${simbolo}`}
+                              placeholder={campo}
+                              value={v[campo] ?? ''}
+                              onChange={(e) =>
+                                patchVinculo(simbolo, {
+                                  [campo]:
+                                    e.target.value === '' ? undefined : Number(e.target.value),
+                                })
+                              }
+                              className="h-8 text-xs"
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              );
+            })}
+            {(variablesClase?.length ?? 0) === 0 ? (
+              <p className="text-[11px] text-muted-foreground">
+                La clase no tiene variables. Decláralas en el panel «Variables».
+              </p>
+            ) : null}
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2">
         <Label className="text-xs" htmlFor="prop-ecuacion-desc">

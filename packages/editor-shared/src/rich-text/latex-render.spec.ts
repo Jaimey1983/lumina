@@ -62,3 +62,72 @@ describe('speakLatex', () => {
     expect(speakLatex('\\alpha + \\beta')).toBe('alpha más beta');
   });
 });
+
+import {
+  dividirPasos,
+  formatearNumeroLatex,
+  latexHastaPaso,
+  simbolosDeLatex,
+  sustituirVariables,
+} from './latex-render.js';
+
+describe('sustituirVariables', () => {
+  const vinculos = [
+    { simbolo: 'a', variableId: 'va' },
+    { simbolo: 'b', variableId: 'vb', decimales: 1 },
+    { simbolo: 't', variableId: 'vt' },
+  ];
+
+  it('sustituye números, con coma decimal y negativos agrupados', () => {
+    expect(sustituirVariables('{{a}}x+{{b}}', vinculos, { va: 3, vb: 2.5 })).toBe('3x+2{,}5');
+    expect(sustituirVariables('x+{{a}}', vinculos, { va: -3 })).toBe('x+{-3}');
+    expect(sustituirVariables('{{b}}', vinculos, { vb: 2 })).toBe('2{,}0');
+  });
+
+  it('un símbolo sin vínculo o sin valor se lee como la propia letra', () => {
+    expect(sustituirVariables('{{a}}x^2+{{c}}', vinculos, undefined)).toBe('ax^2+c');
+    expect(sustituirVariables('{{a}}', vinculos, {})).toBe('a');
+  });
+
+  it('filtra el texto: no se puede inyectar LaTeX', () => {
+    expect(sustituirVariables('{{t}}', vinculos, { vt: 'hola\\href{x}{y}$' })).toBe(
+      '\\text{holahrefxy}',
+    );
+    expect(sustituirVariables('{{t}}', vinculos, { vt: '\\{}' })).toBe('t');
+  });
+
+  it('booleanos y números no finitos', () => {
+    expect(sustituirVariables('{{t}}', vinculos, { vt: true })).toBe('\\text{verdadero}');
+    expect(formatearNumeroLatex(Number.NaN)).toBe('0');
+  });
+
+  it('ids como __proto__ no existen por herencia', () => {
+    expect(sustituirVariables('{{a}}', [{ simbolo: 'a', variableId: '__proto__' }], {})).toBe('a');
+  });
+
+  it('simbolosDeLatex lista los únicos en orden', () => {
+    expect(simbolosDeLatex('{{a}}{{b}}{{a}}')).toEqual(['a', 'b']);
+  });
+});
+
+describe('dividirPasos / latexHastaPaso', () => {
+  it('parte por \\\\ de nivel 0 y respeta llaves', () => {
+    expect(dividirPasos('2x+4=10 \\\\ 2x=6 \\\\ x=3')).toEqual(['2x+4=10', '2x=6', 'x=3']);
+    expect(dividirPasos('\\frac{a \\\\ b}{c} \\\\ d')).toEqual(['\\frac{a \\\\ b}{c}', 'd']);
+  });
+
+  it('no parte si ya hay un entorno ni descarta una fórmula sin separadores', () => {
+    expect(dividirPasos('\\begin{cases} a \\\\ b \\end{cases}')).toHaveLength(1);
+    expect(dividirPasos('x+1')).toEqual(['x+1']);
+    expect(dividirPasos(' \\\\ ')).toEqual(['\\\\']);
+  });
+
+  it('muestra las primeras k líneas', () => {
+    const p = ['a=1', 'b=2', 'c=3'];
+    expect(latexHastaPaso(p, 1)).toBe('a=1');
+    expect(latexHastaPaso(p, 2)).toBe('\\begin{array}{c} a=1 \\\\ b=2 \\end{array}');
+    expect(latexHastaPaso(['a&=1', 'b&=2'], 2)).toContain('aligned');
+    expect(latexHastaPaso(p, 99)).toContain('c=3');
+    expect(() => renderLatex(latexHastaPaso(p, 3), { throwOnError: true })).not.toThrow();
+  });
+});

@@ -823,6 +823,23 @@ export interface QuoteBlock {
 }
 
 /**
+ * Enlace entre un símbolo de la fórmula (`{{a}}` en el LaTeX) y una variable de
+ * clase. Se referencia por `variableId` (D13): renombrar la variable no lo rompe.
+ */
+export interface EquationVinculo {
+  /** Nombre del token: `{{a}}` en el LaTeX. Letras, dígitos y guion bajo. */
+  simbolo: string;
+  variableId: string;
+  /** Si es `true` el visor ofrece «− valor +» para cambiarla (solo numéricas). */
+  controlable?: boolean;
+  paso?: number;
+  min?: number;
+  max?: number;
+  /** Decimales con los que se muestra el valor (0–4). */
+  decimales?: number;
+}
+
+/**
  * Bloque de ecuación (LaTeX + KaTeX). Es un bloque propio del lienzo: se mueve,
  * redimensiona y edita desde su panel de propiedades, sin pasar por el editor
  * de texto enriquecido (las fórmulas viejas siguen siendo nodos `math`).
@@ -842,6 +859,10 @@ export interface EquationBlock {
   ajustar?: boolean;
   /** Texto para lectores de pantalla; si falta se usa el LaTeX. */
   descripcionAccesible?: string;
+  /** M2: símbolos `{{a}}` de la fórmula ligados a variables de la clase. */
+  vinculos?: EquationVinculo[];
+  /** M2: revelar la fórmula línea a línea (se parte por `\\`). */
+  pasos?: boolean;
   x?: number;
   y?: number;
   ancho?: number;

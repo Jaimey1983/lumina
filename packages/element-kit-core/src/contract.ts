@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type {
   EstadoObjeto,
   EventoTipo,
+  VariableValor,
 } from "@lumina/types/interaction";
 
 /** Capacidades de apariencia que expone el panel de cada elemento. */
@@ -54,6 +55,16 @@ export interface ElementRuntimeConfig {
    * eventos de una sola vez (p. ej. no volver a emitir `visitado` si ya lo está).
    */
   readonly estadoObjeto?: EstadoObjeto;
+  /**
+   * M2 — valores actuales de las variables de clase (por `VariableDef.id`).
+   * Solo lectura. Ausente = sin motor.
+   */
+  readonly variables?: Readonly<Record<string, VariableValor>>;
+  /**
+   * M2 — cambia una variable de flujo (valida existencia y tipo). No puede
+   * tocar notas (C1/C4). Ausente = el elemento no puede escribir variables.
+   */
+  readonly asignarVariable?: (variableId: string, valor: VariableValor) => void;
 }
 
 export interface ElementViewerProps<TState, TConfig> {

@@ -118,3 +118,94 @@ export function speakLatex(latex: string): string {
     .trim();
   return s;
 }
+
+// ─── M2: variables y pasos ──────────────────────────────────────────────────
+
+export interface LatexVinculo {
+  simbolo: string;
+  variableId: string;
+  decimales?: number;
+}
+
+const TOKEN = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
+
+/** Número → LaTeX: coma decimal (es-CO) y los negativos agrupados para que `x + {-3}` espacie bien. */
+export function formatearNumeroLatex(n: number, decimales?: number): string {
+  if (!Number.isFinite(n)) return '0';
+  const d = decimales === undefined ? 4 : Math.min(4, Math.max(0, Math.trunc(decimales)));
+  const base = decimales === undefined ? String(Number(n.toFixed(d))) : n.toFixed(d);
+  const texto = base.replace('.', '{,}');
+  return n < 0 ? `{${texto}}` : texto;
+}
+
+function textoSeguro(valor: string): string {
+  return valor.replace(/[^A-Za-z0-9 .,\-ÁÉÍÓÚÜáéíóúüñÑ]/g, '').slice(0, 60);
+}
+
+/**
+ * Reemplaza los tokens `{{símbolo}}` por el valor actual de su variable. No
+ * interpreta nada (D5): solo formatea números finitos y filtra el texto. Un
+ * símbolo sin vínculo o sin valor se deja como la propia letra, de modo que la
+ * plantilla se lee como álgebra (`a x^2`) en el editor y en visores sin motor.
+ */
+export function sustituirVariables(
+  latex: string,
+  vinculos: readonly LatexVinculo[] | undefined,
+  valores: Readonly<Record<string, number | string | boolean>> | undefined,
+): string {
+  return latex.replace(TOKEN, (_m, simbolo: string) => {
+    const v = vinculos?.find((x) => x.simbolo === simbolo);
+    const valor = v && valores && Object.hasOwn(valores, v.variableId) ? valores[v.variableId] : undefined;
+    if (typeof valor === 'number') return formatearNumeroLatex(valor, v?.decimales);
+    if (typeof valor === 'boolean') return valor ? '\\text{verdadero}' : '\\text{falso}';
+    if (typeof valor === 'string') {
+      const t = textoSeguro(valor);
+      return t === '' ? simbolo : `\\text{${t}}`;
+    }
+    return simbolo;
+  });
+}
+
+/** Símbolos `{{x}}` presentes en la fórmula (únicos, en orden). */
+export function simbolosDeLatex(latex: string): string[] {
+  const out: string[] = [];
+  for (const m of latex.matchAll(TOKEN)) if (!out.includes(m[1]!)) out.push(m[1]!);
+  return out;
+}
+
+/**
+ * Parte la fórmula en líneas por `\\` de nivel 0 (fuera de llaves). Si ya usa un
+ * entorno (`\begin`) no se toca: devuelve una sola línea.
+ */
+export function dividirPasos(latex: string): string[] {
+  if (latex.includes('\\begin')) return [latex.trim()];
+  const lineas: string[] = [];
+  let depth = 0;
+  let inicio = 0;
+  for (let i = 0; i < latex.length; i++) {
+    const c = latex[i]!;
+    if (c === '\\') {
+      if (latex[i + 1] === '\\' && depth === 0) {
+        lineas.push(latex.slice(inicio, i));
+        inicio = i + 2;
+      }
+      i++;
+    } else if (c === '{') depth++;
+    else if (c === '}') depth = Math.max(0, depth - 1);
+  }
+  lineas.push(latex.slice(inicio));
+  const limpias = lineas.map((l) => l.trim()).filter((l) => l !== '');
+  return limpias.length > 0 ? limpias : [latex.trim()];
+}
+
+/** LaTeX con las primeras `k` líneas visibles (`k` ya acotado a 1..n). */
+export function latexHastaPaso(pasos: readonly string[], k: number): string {
+  const n = Math.min(pasos.length, Math.max(1, Math.trunc(k)));
+  if (n === 1) return pasos[0] ?? '';
+  const visibles = pasos.slice(0, n);
+  const alineada = visibles.some((l) => l.includes('&'));
+  const cuerpo = visibles.join(' \\\\ ');
+  return alineada
+    ? `\\begin{aligned} ${cuerpo} \\end{aligned}`
+    : `\\begin{array}{c} ${cuerpo} \\end{array}`;
+}
