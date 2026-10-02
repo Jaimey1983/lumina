@@ -1,4 +1,5 @@
 import type { TransicionSlide } from '@lumina/types/animation';
+import type { Capa, Regla } from '@lumina/types/interaction';
 import type { Background, Block, SlideGuias } from '@lumina/types/slide';
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 
@@ -28,6 +29,9 @@ export interface SlideHistorySnapshot {
   fondo?: Background;
   guias: SlideGuias;
   transicion?: TransicionSlide;
+  /** Motor de interacción (K6): reglas y capas del SLIDE (las de un bloque van dentro del bloque). */
+  reglas?: Regla[];
+  capas?: Capa[];
 }
 
 type ValuePatch<T> = { op: 'set'; value?: T };
@@ -37,6 +41,8 @@ export interface SlideSnapshotPatch {
   fondo?: ValuePatch<Background>;
   guias?: ValuePatch<SlideGuias>;
   transicion?: ValuePatch<TransicionSlide>;
+  reglas?: ValuePatch<Regla[]>;
+  capas?: ValuePatch<Capa[]>;
 }
 
 export interface SlideHistoryInitialEntry extends SlideHistorySnapshot {
@@ -102,11 +108,15 @@ export function diffSlideSnapshots(
   const fondo = valuePatch(previous.fondo, next.fondo);
   const guias = valuePatch(previous.guias, next.guias);
   const transicion = valuePatch(previous.transicion, next.transicion);
+  const reglas = valuePatch(previous.reglas, next.reglas);
+  const capas = valuePatch(previous.capas, next.capas);
   return {
     bloques: diffSlideBlocks(previous.bloques, next.bloques),
     ...(fondo ? { fondo } : {}),
     ...(guias ? { guias } : {}),
     ...(transicion ? { transicion } : {}),
+    ...(reglas ? { reglas } : {}),
+    ...(capas ? { capas } : {}),
   };
 }
 
@@ -123,6 +133,8 @@ export function applySnapshot(
   const transicion = patch.transicion
     ? cloneJson(patch.transicion.value)
     : snapshot.transicion;
+  const reglas = patch.reglas ? cloneJson(patch.reglas.value) : snapshot.reglas;
+  const capas = patch.capas ? cloneJson(patch.capas.value) : snapshot.capas;
   return {
     kind: meta?.kind ?? snapshot.kind,
     at: meta?.at ?? snapshot.at,
@@ -130,6 +142,8 @@ export function applySnapshot(
     ...(fondo !== undefined ? { fondo } : {}),
     guias,
     ...(transicion !== undefined ? { transicion } : {}),
+    ...(reglas !== undefined ? { reglas } : {}),
+    ...(capas !== undefined ? { capas } : {}),
   };
 }
 
@@ -144,6 +158,8 @@ export function captureSlideSnapshot(
     fondo?: Background;
     guias?: SlideGuias;
     transicion?: TransicionSlide;
+    reglas?: Regla[];
+    capas?: Capa[];
   },
   kind: HistoryKind,
   at = Date.now(),
@@ -157,6 +173,8 @@ export function captureSlideSnapshot(
     ...(slide.transicion !== undefined
       ? { transicion: cloneJson(slide.transicion) }
       : {}),
+    ...(slide.reglas !== undefined ? { reglas: cloneJson(slide.reglas) } : {}),
+    ...(slide.capas !== undefined ? { capas: cloneJson(slide.capas) } : {}),
   };
 }
 

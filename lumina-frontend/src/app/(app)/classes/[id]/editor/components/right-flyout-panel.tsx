@@ -12,6 +12,9 @@ import { ActivitiesAiPanel } from './panels/activities-ai-panel';
 import type { IaPanelCurricularContext } from './panels/flyout-left-panels';
 import { ActivitiesPanel } from './panels/activities-panel';
 import { SlideThemesPanel } from './panels/themes-panel';
+import { VariablesPanel } from './panels/variables-panel';
+import type { VariableDef } from '@lumina/types/interaction';
+import type { ReglaAplicable } from '@lumina/interactions';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { SlideTheme } from '@lumina/types/slide';
 import {
@@ -32,6 +35,7 @@ const PANEL_LABELS: Record<RightPanelId, string> = {
   activities: 'Actividades',
   themes:     'Temas',
   live:       'En vivo',
+  variables:  'Variables',
 };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -68,6 +72,12 @@ export interface RightFlyoutPanelProps {
   classId?: string;
   gamificacionActiva?: boolean;
   gamificationLeaderboard?: EstudianteLeaderboard[];
+  /** Etapa K / K6 — variables de clase del motor de interacción. */
+  variables?: VariableDef[];
+  reglasDelMazo?: ReglaAplicable[];
+  tituloDeSlide?: (slideId: string) => string;
+  onSaveVariables?: (next: VariableDef[]) => void;
+  isSavingVariables?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -101,6 +111,11 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       classId,
       gamificacionActiva,
       gamificationLeaderboard = [],
+      variables = [],
+      reglasDelMazo = [],
+      tituloDeSlide,
+      onSaveVariables,
+      isSavingVariables,
     },
     ref,
   ) {
@@ -169,6 +184,15 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 onApplyToCurrentSlide={onApplyThemeToSlide}
                 onApplyToAllSlides={onApplyThemeToAllSlides}
                 onSaveCustomThemes={onSaveCustomThemes}
+              />
+            )}
+            {activePanel === 'variables' && onSaveVariables && (
+              <VariablesPanel
+                variables={variables}
+                reglas={reglasDelMazo}
+                tituloDeSlide={tituloDeSlide}
+                onSave={onSaveVariables}
+                isSaving={isSavingVariables}
               />
             )}
             {activePanel === 'live' &&

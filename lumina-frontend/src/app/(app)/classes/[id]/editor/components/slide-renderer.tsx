@@ -628,6 +628,9 @@ function BlockNode({
       estadoObjeto: interactionRuntime.estadoDe(id),
     };
   })();
+  /** K6 — «deshabilitado» solo se aplica en runtime (autónomo/preview); el editor y las miniaturas no. */
+  const estaDeshabilitado =
+    emisorConfig.estadoObjeto === 'deshabilitado' && modo !== 'editor' && !isThumbnail;
   const activityBlockForRender: ActivityBlock | null =
     block.tipo === 'actividad' ? (blockForActivityRender(block) as ActivityBlock) : null;
 
@@ -1023,10 +1026,12 @@ function BlockNode({
         editorMode && !isThumbnail && positionStyle ? blockId : undefined
       }
       data-live-dragging={isLiveDragging ? 'true' : undefined}
+      aria-disabled={estaDeshabilitado ? true : undefined}
       style={{
         ...positionStyle,
         ...animationStyle,
         ...(isLiveDragging ? { opacity: 1, visibility: 'visible' as const } : {}),
+        ...(estaDeshabilitado ? { pointerEvents: 'none' as const, opacity: 0.5 } : {}),
         // Etapa G · G2a fix — con react-moveable como target, el contenido de
         // texto (no contenteditable salvo isTextEditing) sigue siendo
         // seleccionable por el navegador por defecto: un click-drag en el

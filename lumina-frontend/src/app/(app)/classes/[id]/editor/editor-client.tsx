@@ -175,6 +175,8 @@ import type { ActivityType, WidgetType } from './components/panels/activities-pa
 import { getActivityPanelItem } from './components/panels/activities-panel';
 import { getWidgetPanelItem } from './components/panels/widget-panel-catalog';
 import { EditorDndShell } from './components/editor-dnd-shell';
+import { recolectarReglas } from '@lumina/interactions';
+import type { VariableDef } from '@lumina/types/interaction';
 import type { BlockMarco } from '@lumina/types/slide';
 import type { StudentResponse } from './components/panels/live-responses-panel';
 
@@ -2249,6 +2251,43 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [classId, queryClient, updateClassMutation],
   );
 
+  // Etapa K / K6 — variables de clase (D3) y reglas del mazo para decir dónde se usan.
+  const reglasDelMazo = useMemo(
+    () =>
+      recolectarReglas(
+        sortedSlides.map((s) => {
+          const r = classSlideToRendererSlide(s as ApiSlide);
+          return { id: s.id, bloques: r.bloques, reglas: r.reglas, capas: r.capas };
+        }),
+      ),
+    [sortedSlides],
+  );
+  const tituloDeSlide = useCallback(
+    (slideId: string) => {
+      const i = sortedSlides.findIndex((s) => s.id === slideId);
+      return i < 0 ? 'otro slide' : `Slide ${i + 1}`;
+    },
+    [sortedSlides],
+  );
+  const handleSaveVariables = useCallback(
+    (variables: VariableDef[]) => {
+      queryClient.setQueryData<ClassDetail | null | undefined>(
+        ['classes', 'detail', classId],
+        (prev) => (prev ? { ...prev, variables } : prev),
+      );
+      updateClassMutation.mutate(
+        { variables },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: ['classes', 'detail', classId] });
+            toast.error('No se pudieron guardar las variables de la clase');
+          },
+        },
+      );
+    },
+    [classId, queryClient, updateClassMutation],
+  );
+
   // ─── Error state ─────────────────────────────────────────────────────────────
 
   if (isError) {
@@ -3038,6 +3077,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             classId={classId}
             gamificacionActiva={gamificacionActiva}
             gamificationLeaderboard={gamificationLeaderboard}
+            variables={cls?.variables ?? []}
+            reglasDelMazo={reglasDelMazo}
+            tituloDeSlide={tituloDeSlide}
+            onSaveVariables={isStudent ? undefined : handleSaveVariables}
+            isSavingVariables={updateClassMutation.isPending}
           />
           </div>
           </EditorDndShell>
