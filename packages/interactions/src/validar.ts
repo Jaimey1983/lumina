@@ -19,6 +19,8 @@ export type CodigoError =
   | 'capa_inexistente'
   | 'tipo_incompatible'
   | 'cantidad_invalida'
+  | 'variable_invalida'
+  | 'demasiadas_variables'
   | 'condicion_demasiado_profunda'
   | 'evento_incoherente';
 

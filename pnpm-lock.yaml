@@ -34,6 +34,9 @@ importers:
       '@lumina/curriculum-data':
         specifier: workspace:*
         version: link:../packages/curriculum-data
+      '@lumina/interactions':
+        specifier: workspace:*
+        version: link:../packages/interactions
       '@lumina/scoring':
         specifier: workspace:*
         version: link:../packages/scoring

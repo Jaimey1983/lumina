@@ -8,6 +8,9 @@ import {
   Min,
   Max,
   ValidateNested,
+  IsDefined,
+  IsArray,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { trimIfString } from '../../common/trim-if-string';
@@ -17,6 +20,26 @@ import {
   EbcSeleccionadoDto,
   IndicadoresGeneradosDto,
 } from '../../curriculum/dto/update-class-curricular-context.dto';
+
+/**
+ * Variable del motor de interacción (Etapa K / K6, D3). La coherencia entre
+ * `tipo` y `valorInicial`, los nombres únicos y los topes los valida el
+ * servicio con `validarVariables` de `@lumina/interactions` (el mismo código
+ * que usa el editor); acá solo se asegura la forma.
+ */
+export class VariableDefDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  nombre: string;
+
+  @IsIn(['numero', 'texto', 'booleano'])
+  tipo: 'numero' | 'texto' | 'booleano';
+
+  @IsDefined()
+  valorInicial: number | string | boolean;
+}
 
 export class UpdateClassDto {
   @IsOptional()
@@ -84,6 +107,14 @@ export class UpdateClassDto {
   @ValidateNested()
   @Type(() => ContextoClaseDto)
   contextoClase?: ContextoClaseDto;
+
+  /** Motor de interacción (K6, D3): variables declaradas a nivel de clase. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => VariableDefDto)
+  variables?: VariableDefDto[];
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }): unknown =>
