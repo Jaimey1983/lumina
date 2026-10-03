@@ -2805,7 +2805,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N5 — Eventos nuevos: cambio de variable, hover, tecla, temporizador y media
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** **[en curso: Claude Code]**
 - **Precondición:** N1 `hecho` (comparten `tipos.ts` y el catálogo: van en secuencia con N1/N2). Aplica D16.
 - **Contexto:** hoy son 7 eventos y sin datos. Storyline reacciona a cambio de variable, hover, tecla, línea de tiempo y media.
 - **Alcance — PUEDE tocar:**
