@@ -1,12 +1,21 @@
 import {
+  bloqueIdsReferenciados,
+  describirRegla as describirReglaPuro,
+  duplicarRegla,
   fusionarReglas,
+  guardarEnLista,
+  moverEnLista,
   plantillaBotonNavega,
   plantillaIrARefuerzo,
   plantillaRevelarAlVisitarTodo,
 } from '@lumina/interactions';
-import type { DestinoNavegacion, ResultadoPlantilla } from '@lumina/interactions';
+import type {
+  ContextoDescripcion,
+  DestinoNavegacion,
+  ResultadoPlantilla,
+} from '@lumina/interactions';
 import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
-import type { Accion, EventoTipo, Regla } from '@lumina/types/interaction';
+import type { Capa, Regla, VariableDef } from '@lumina/types/interaction';
 import type { Block } from '@lumina/types/slide';
 
 /**
@@ -84,7 +93,13 @@ export function aplicarPlantilla(
       break;
   }
 
-  return conIds.map((b, i) => {
+  const objetivoRevelado = p.tipo === 'revelar' ? idDe(conIds[p.objetivoIndex]!) : undefined;
+  return conIds.map((b0, i) => {
+    // N3: «revelar» solo tiene sentido si el objetivo empieza oculto (K8a ya lo permite).
+    const b =
+      objetivoRevelado !== undefined && idDe(b0) === objetivoRevelado
+        ? ({ ...b0, ocultoInicial: true } as Block)
+        : b0;
     const propias = r.reglas.filter((x) => x.bloqueId === idDe(b)).map((x) => x.regla);
     if (propias.length === 0) return b;
     const base = p.tipo === 'boton-navega' && i === ownerIndex ? sinAccionLegada(b) : b;
@@ -123,67 +138,113 @@ export function alternarRegla(
   );
 }
 
-// ─── Texto para el docente ───────────────────────────────────────────────────
+// ─── Constructor (N3) ────────────────────────────────────────────────────────
 
-const EVENTOS: Record<EventoTipo, string> = {
-  clic: 'Al hacer clic',
-  visitado: 'Al visitarlo',
-  seleccionado: 'Al seleccionarlo',
-  respuesta_correcta: 'Si responde bien',
-  respuesta_incorrecta: 'Si responde mal',
-  fin_contador: 'Al terminar el contador',
-  al_entrar_slide: 'Al entrar al slide',
-};
-
-export function describirAccion(
-  a: Accion,
-  tituloSlide: (id: string) => string,
-  nombreBloque: (id: string) => string,
-): string {
-  switch (a.tipo) {
-    case 'ir_a_slide':
-      return `ir a ${tituloSlide(a.slideId)}`;
-    case 'siguiente':
-      return 'ir al siguiente slide';
-    case 'anterior':
-      return 'volver al slide anterior';
-    case 'mostrar':
-      return `mostrar ${nombreBloque(a.bloqueId)}`;
-    case 'ocultar':
-      return `ocultar ${nombreBloque(a.bloqueId)}`;
-    case 'cambiar_estado':
-      return `poner ${nombreBloque(a.bloqueId)} en «${a.estado}»`;
-    case 'abrir_capa':
-      return 'abrir una capa';
-    case 'cerrar_capa':
-      return 'cerrar una capa';
-    case 'asignar_variable':
-      return 'asignar una variable';
-    case 'sumar_variable':
-      return `sumar ${a.cantidad} a una variable`;
-    case 'restar_variable':
-      return 'restar de una variable';
-    case 'multiplicar_variable':
-      return 'multiplicar una variable';
-    case 'dividir_variable':
-      return 'dividir una variable';
-    case 'limpiar_variable':
-      return 'reiniciar una variable';
-    case 'concatenar_variable':
-      return 'añadir texto a una variable';
-    case 'alternar_variable':
-      return 'invertir una variable (sí/no)';
-  }
+export interface OpcionesGuardarRegla {
+  /** Id con el que la regla estaba guardada (si se está editando y el id cambió). */
+  idAnterior?: string;
+  /** Bloques que deben empezar ocultos (el objetivo de un «mostrar»). */
+  ocultarAlEmpezar?: readonly string[];
 }
 
-export function describirRegla(
-  r: Regla,
-  tituloSlide: (id: string) => string,
-  nombreBloque: (id: string) => string,
-): string {
-  const cond = r.condiciones.length > 0 ? ' (si se cumple la condición)' : '';
-  const acciones = r.acciones.map((a) => describirAccion(a, tituloSlide, nombreBloque)).join(', ');
-  // N2: la rama «si no» no puede quedar fuera del texto (N3 lo describe con nombres).
-  const sino = (r.sino ?? []).map((a) => describirAccion(a, tituloSlide, nombreBloque)).join(', ');
-  return `${EVENTOS[r.evento]}${cond} → ${acciones || 'sin acciones'}${sino ? ` · si no → ${sino}` : ''}`;
+/**
+ * Bloques de primer nivel con un id candidato: los que ya tenían id lo conservan
+ * y a los demás se les asigna uno. El constructor ofrece ESTOS ids como destinos;
+ * `guardarRegla` solo persiste los que la regla realmente nombra.
+ */
+export function conIdsCandidatos(bloques: readonly Block[]): Block[] {
+  return bloques.map((b) => asegurarIdBloque(b));
+}
+
+/**
+ * Guarda una regla armada en el constructor en `disparadores` del bloque dueño.
+ * `candidatos` es `conIdsCandidatos(bloques)`. El dueño y los bloques que la regla
+ * nombra reciben su id (D8-a); el resto de bloques queda EXACTAMENTE como estaba.
+ * Reemplaza por id (o `idAnterior`): no duplica.
+ */
+export function guardarRegla(
+  bloques: readonly Block[],
+  candidatos: readonly Block[],
+  ownerIndex: number,
+  regla: Regla,
+  opciones: OpcionesGuardarRegla = {},
+): Block[] {
+  const nombrados = new Set(bloqueIdsReferenciados(regla));
+  const ocultar = new Set(opciones.ocultarAlEmpezar ?? []);
+  return bloques.map((original, i) => {
+    const cand = candidatos[i] ?? original;
+    const idCand = idDe(cand);
+    const participa = i === ownerIndex || (idCand !== undefined && nombrados.has(idCand));
+    let out = participa ? cand : original;
+    if (idCand !== undefined && ocultar.has(idCand) && idDe(out) !== undefined) {
+      out = { ...out, ocultoInicial: true } as Block;
+    }
+    if (i === ownerIndex) {
+      out = { ...out, disparadores: guardarEnLista(out.disparadores, regla, opciones.idAnterior) } as Block;
+    }
+    return out;
+  });
+}
+
+/** Copia de la regla justo después de la original, con id propio. */
+export function duplicarReglaDeBloque(
+  bloques: readonly Block[],
+  ownerIndex: number,
+  reglaId: string,
+  idNuevo: string,
+): Block[] {
+  return bloques.map((b, i) => {
+    if (i !== ownerIndex) return b;
+    const reglas = b.disparadores ?? [];
+    const k = reglas.findIndex((r) => r.id === reglaId);
+    if (k < 0) return b;
+    const copia = duplicarRegla(reglas[k]!, idNuevo);
+    return { ...b, disparadores: [...reglas.slice(0, k + 1), copia, ...reglas.slice(k + 1)] } as Block;
+  });
+}
+
+/** Las reglas de un bloque se ejecutan en el orden del arreglo: este lo cambia. */
+export function moverReglaDeBloque(
+  bloques: readonly Block[],
+  ownerIndex: number,
+  reglaId: string,
+  delta: -1 | 1,
+): Block[] {
+  return bloques.map((b, i) => {
+    if (i !== ownerIndex) return b;
+    const reglas = b.disparadores ?? [];
+    const k = reglas.findIndex((r) => r.id === reglaId);
+    if (k < 0) return b;
+    return { ...b, disparadores: moverEnLista(reglas, k, k + delta) } as Block;
+  });
+}
+
+// ─── Texto para el docente ───────────────────────────────────────────────────
+
+/**
+ * Contexto de nombres para `describirRegla`: variables, bloques (por posición y
+ * tipo, que es lo que ve el docente en el lienzo), slides y capas.
+ */
+export function crearContextoDescripcion(args: {
+  variables: readonly VariableDef[];
+  bloques: readonly Block[];
+  capas?: readonly Pick<Capa, 'id' | 'nombre'>[];
+  slidesDelMazo: readonly { id: string; titulo: string }[];
+  /** Nombre legible del tipo de bloque (p. ej. «Botón»). */
+  etiquetaTipo?: (b: Block) => string;
+}): ContextoDescripcion {
+  const etiqueta = args.etiquetaTipo ?? ((b: Block) => tipoDeElemento(b));
+  return {
+    nombreVariable: (id) => args.variables.find((v) => v.id === id)?.nombre,
+    nombreBloque: (id) => {
+      const i = args.bloques.findIndex((x) => idDe(x) === id);
+      return i < 0 ? undefined : `${etiqueta(args.bloques[i]!)} (elemento ${i + 1})`;
+    },
+    tituloSlide: (id) => args.slidesDelMazo.find((s) => s.id === id)?.titulo,
+    nombreCapa: (id) => args.capas?.find((c) => c.id === id)?.nombre,
+  };
+}
+
+export function describirRegla(r: Regla, ctx: ContextoDescripcion): string {
+  return describirReglaPuro(r, ctx);
 }

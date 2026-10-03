@@ -24,7 +24,10 @@ export type CodigoError =
   | 'demasiadas_variables'
   | 'condicion_demasiado_profunda'
   | 'evento_incoherente'
-  | 'clave_sistema_invalida';
+  | 'clave_sistema_invalida'
+  | 'regla_sin_acciones'
+  | 'operando_incompleto'
+  | 'evento_no_soportado';
 
 export interface ErrorValidacion {
   codigo: CodigoError;
@@ -34,7 +37,7 @@ export interface ErrorValidacion {
 }
 
 /** Tipo de un operando, si se conoce sin ejecutar. */
-function tipoDeOperando(
+export function tipoDeOperando(
   op: Operando,
   vars: ReadonlyMap<string, VariableDef>,
 ): VariableTipo | 'desconocido' {

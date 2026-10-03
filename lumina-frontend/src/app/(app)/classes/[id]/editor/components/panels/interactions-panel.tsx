@@ -4,21 +4,31 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getBlockAtPath } from '@lumina/editor-shared/slide-block-path';
+import { ArrowDown, ArrowUp, Copy, Pencil, Plus } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
-import type { ReferenciaRota } from '@lumina/interactions';
+import { sinMarcaDePlantilla } from '@lumina/interactions';
+import type { ContextoValidacion, ReferenciaRota } from '@lumina/interactions';
+import type { Capa, Regla } from '@lumina/types/interaction';
 import type { Block } from '@lumina/types/slide';
 
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import {
   alternarRegla,
   aplicarPlantilla,
+  conIdsCandidatos,
+  crearContextoDescripcion,
   describirRegla,
+  duplicarReglaDeBloque,
+  guardarRegla,
+  moverReglaDeBloque,
   quitarRegla,
   tipoDeElemento,
 } from '../../lib/interacciones';
 import type { PlantillaElegida } from '../../lib/interacciones';
+import { useClassVariables } from '../../lib/class-variables-context';
+import { RuleBuilder } from './rule-builder/rule-builder';
 
 /**
  * Etapa K / K7b — «Interacciones» de un bloque: plantillas (no un constructor
@@ -33,6 +43,8 @@ export interface InteractionsPanelProps {
   /** Slides del mazo, para elegir destinos. */
   slidesDelMazo: { id: string; titulo: string }[];
   referenciasRotas: ReferenciaRota[];
+  /** Capas del slide activo (destinos de «abrir/cerrar capa» en el constructor). */
+  capas?: readonly Capa[];
   onApplyBloques: (next: Block[]) => Promise<boolean>;
 }
 
@@ -40,6 +52,11 @@ type Plantilla = 'boton-navega' | 'refuerzo' | 'revelar';
 
 const select =
   'h-8 w-full rounded-md border border-border bg-background px-2 text-xs';
+
+const nuevoIdDeRegla = (): string => `r_${crypto.randomUUID()}`;
+
+const etiquetaTipo = (b: Block): string =>
+  elementRegistry.obtener(tipoDeElemento(b))?.catalogo?.nombre ?? b.tipo;
 
 const idDe = (b: Block): string | undefined => {
   const id = (b as { id?: unknown }).id;
@@ -52,6 +69,7 @@ export function InteractionsPanel({
   slideId,
   slidesDelMazo,
   referenciasRotas,
+  capas = [],
   onApplyBloques,
 }: InteractionsPanelProps) {
   const block = getBlockAtPath(bloques, blockPath);
@@ -88,13 +106,51 @@ export function InteractionsPanel({
   const [hotspots, setHotspots] = useState<number[]>([]);
   const [objetivo, setObjetivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [editando, setEditando] = useState<{
+    regla: Regla;
+    esNueva: boolean;
+    idAnterior?: string;
+  } | null>(null);
 
-  const tituloSlide = (id: string) =>
-    slidesDelMazo.find((s) => s.id === id)?.titulo ?? 'un slide que ya no existe';
-  const nombreBloque = (id: string) => {
-    const i = bloques.findIndex((x) => idDe(x) === id);
-    return i < 0 ? 'un elemento que ya no existe' : `el elemento ${i + 1}`;
-  };
+  const variables = useClassVariables();
+  // Los ids candidatos se generan UNA vez por selección: el constructor ofrece estos
+  // destinos y `guardarRegla` solo persiste los que la regla nombra.
+  const candidatos = useMemo(() => conIdsCandidatos(bloques), [bloques]);
+  const descripcion = useMemo(
+    () =>
+      crearContextoDescripcion({
+        variables,
+        bloques: candidatos,
+        capas,
+        slidesDelMazo,
+        etiquetaTipo,
+      }),
+    [variables, candidatos, capas, slidesDelMazo],
+  );
+  const opciones = useMemo(
+    () => ({
+      variables,
+      bloques: candidatos.map((b, i) => ({
+        id: idDe(b) ?? '',
+        etiqueta: `${etiquetaTipo(b)} (elemento ${i + 1})`,
+        respondible: (elementRegistry.obtener(tipoDeElemento(b))?.eventos ?? []).includes(
+          'respuesta_correcta',
+        ),
+      })),
+      slides: slidesDelMazo,
+      capas: capas.map((c) => ({ id: c.id, nombre: c.nombre })),
+    }),
+    [variables, candidatos, capas, slidesDelMazo],
+  );
+  const validacion = useMemo<ContextoValidacion>(
+    () => ({
+      variables,
+      bloqueIds: new Set(candidatos.map((b) => idDe(b) ?? '').filter((x) => x !== '')),
+      slideIds: new Set([...slidesDelMazo.map((s) => s.id), slideId]),
+      capaIds: new Set(capas.map((c) => c.id)),
+    }),
+    [variables, candidatos, slidesDelMazo, slideId, capas],
+  );
 
   if (!block) return null;
 
@@ -209,15 +265,15 @@ export function InteractionsPanel({
         </p>
       ) : (
         <ul className="space-y-2">
-          {reglas.map((r) => (
+          {reglas.map((r, k) => (
             <li key={r.id} className="space-y-1 rounded-md border border-border p-2">
-              <p className="text-[11px]">{describirRegla(r, tituloSlide, nombreBloque)}</p>
+              <p className="text-[11px]">{describirRegla(r, descripcion)}</p>
               {rotasDelBloque.has(r.id) ? (
                 <p className="text-[11px] font-medium text-amber-700">
                   Apunta a algo que ya no existe.
                 </p>
               ) : null}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-1">
                 <label className="flex items-center gap-2 text-[11px]">
                   <Switch
                     checked={r.activa}
@@ -228,27 +284,113 @@ export function InteractionsPanel({
                   />
                   Activa
                 </label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-destructive"
-                  disabled={ocupado}
-                  onClick={() =>
-                    void aplicar(quitarRegla(bloques, ownerIndex, r.id), 'Interacción eliminada')
-                  }
-                >
-                  Quitar
-                </Button>
+                <div className="flex items-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Subir (se ejecuta antes)"
+                    title="Se ejecutan en este orden: de arriba hacia abajo"
+                    className="h-7 w-7"
+                    disabled={ocupado || k === 0}
+                    onClick={() =>
+                      void aplicar(moverReglaDeBloque(bloques, ownerIndex, r.id, -1), 'Orden actualizado')
+                    }
+                  >
+                    <ArrowUp className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Bajar (se ejecuta después)"
+                    className="h-7 w-7"
+                    disabled={ocupado || k === reglas.length - 1}
+                    onClick={() =>
+                      void aplicar(moverReglaDeBloque(bloques, ownerIndex, r.id, 1), 'Orden actualizado')
+                    }
+                  >
+                    <ArrowDown className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Editar interacción"
+                    className="h-7 w-7"
+                    disabled={ocupado}
+                    onClick={() =>
+                      setEditando({ regla: structuredClone(r), esNueva: false, idAnterior: r.id })
+                    }
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Duplicar interacción"
+                    className="h-7 w-7"
+                    disabled={ocupado}
+                    onClick={() =>
+                      void aplicar(
+                        duplicarReglaDeBloque(bloques, ownerIndex, r.id, nuevoIdDeRegla()),
+                        'Interacción duplicada',
+                      )
+                    }
+                  >
+                    <Copy className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-destructive"
+                    disabled={ocupado}
+                    onClick={() =>
+                      void aplicar(quitarRegla(bloques, ownerIndex, r.id), 'Interacción eliminada')
+                    }
+                  >
+                    Quitar
+                  </Button>
+                </div>
               </div>
             </li>
           ))}
+          {reglas.length > 1 ? (
+            <li className="text-[11px] text-muted-foreground">
+              Las interacciones se ejecutan en el orden de la lista, de arriba hacia abajo.
+            </li>
+          ) : null}
         </ul>
       )}
 
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-full gap-1 text-xs"
+        disabled={ocupado || eventos.length === 0}
+        onClick={() =>
+          setEditando({
+            regla: {
+              id: nuevoIdDeRegla(),
+              evento: eventos[0] ?? 'clic',
+              condiciones: [],
+              acciones: [],
+              activa: true,
+            },
+            esNueva: true,
+          })
+        }
+      >
+        <Plus className="size-3.5" />
+        Regla nueva
+      </Button>
+
       {plantillas.length === 0 ? (
         <p className="text-[11px] text-muted-foreground">
-          Este tipo de elemento todavía no tiene plantillas de interacción.
+          Este tipo de elemento todavía no tiene plantillas de interacción (sí puedes armar una regla nueva).
         </p>
       ) : !abierto ? (
         <Button
@@ -261,7 +403,7 @@ export function InteractionsPanel({
             setPlantilla(plantillas[0]?.id ?? '');
           }}
         >
-          Añadir interacción
+          Usar una plantilla
         </Button>
       ) : (
         <div className="space-y-2 rounded-md border border-border p-2">
@@ -361,8 +503,7 @@ export function InteractionsPanel({
                 ))}
               </select>
               <p className="text-[11px] text-muted-foreground">
-                Por ahora el elemento se ve desde el principio: «ocultarlo al empezar» llega con
-                las capas y la visibilidad inicial.
+                El elemento elegido empezará oculto y aparecerá al visitar todos los demás.
               </p>
             </>
           ) : null}
@@ -389,6 +530,31 @@ export function InteractionsPanel({
           </div>
         </div>
       )}
+
+      {editando ? (
+        <RuleBuilder
+          abierto
+          regla={editando.regla}
+          esNueva={editando.esNueva}
+          eventos={eventos}
+          opciones={opciones}
+          origen={{ tipo: 'bloque', bloqueId: idDe(candidatos[ownerIndex]!) ?? '', slideId }}
+          validacion={validacion}
+          descripcion={descripcion}
+          guardando={ocupado}
+          onCerrar={() => setEditando(null)}
+          onGuardar={async (regla, ocultarAlEmpezar) => {
+            // Una regla de plantilla que se edita deja de serlo: así reaplicar no la pisa.
+            const final = editando.esNueva ? regla : sinMarcaDePlantilla(regla, nuevoIdDeRegla());
+            const next = guardarRegla(bloques, candidatos, ownerIndex, final, {
+              idAnterior: editando.idAnterior,
+              ocultarAlEmpezar,
+            });
+            const ok = await aplicar(next, editando.esNueva ? 'Regla creada' : 'Regla actualizada');
+            if (ok) setEditando(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

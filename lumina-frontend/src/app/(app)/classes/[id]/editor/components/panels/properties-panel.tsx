@@ -435,6 +435,7 @@ export function PropertiesPanel({
           slideId={slide.id}
           slidesDelMazo={slidesDelMazo}
           referenciasRotas={referenciasRotas}
+          capas={slide.capas}
           onApplyBloques={onApplyBloques}
         />
       </>
