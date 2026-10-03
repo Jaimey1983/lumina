@@ -2720,7 +2720,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N2 — Operaciones sobre variables
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** N1 `hecho` (comparten `tipos.ts` y el catálogo: van en secuencia).
 - **Contexto:** hoy solo `asignar_variable` y `sumar_variable`. Storyline ofrece sumar, restar, multiplicar, dividir, limpiar y, para texto, concatenar y copiar de otra variable.
 - **Alcance — PUEDE tocar:**
