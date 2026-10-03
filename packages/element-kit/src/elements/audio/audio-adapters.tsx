@@ -22,8 +22,9 @@ export function AudioEditor({
 /** Adapta el Viewer legacy. */
 export function AudioViewer({
   estado,
+  config,
 }: ElementViewerProps<AudioEstado, AudioConfig>): ReactElement {
-  return <LegacyRenderAudio block={estado} />;
+  return <LegacyRenderAudio block={estado} emitir={config.emitir} />;
 }
 
 /** Adapta el panel de propiedades a `onChange` del contrato. */

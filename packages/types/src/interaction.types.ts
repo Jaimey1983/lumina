@@ -53,7 +53,17 @@ export type EventoTipo =
   | 'respuesta_correcta'
   | 'respuesta_incorrecta'
   | 'fin_contador'
-  | 'al_entrar_slide';
+  | 'al_entrar_slide'
+  // Etapa N / N5. `cambio_variable`, `tecla` y `temporizador` llevan
+  // `Regla.parametro`; los emite el motor o el runtime, no un elemento.
+  | 'cambio_variable'
+  | 'hover_entra'
+  | 'hover_sale'
+  | 'tecla'
+  | 'temporizador'
+  | 'salir_slide'
+  | 'media_inicia'
+  | 'media_termina';
 
 // ─── Condiciones (árbol de datos, D5) ────────────────────────────────────────
 
@@ -170,6 +180,12 @@ export interface Regla {
    * incompatibles) NO las ejecuta: el motor falla cerrado.
    */
   sino?: Accion[];
+  /**
+   * Parámetro del evento (N5, D16): `cambio_variable` → id de la variable
+   * observada; `tecla` → código de tecla (lista cerrada); `temporizador` →
+   * segundos (1–600) desde que se entra al slide. Se ignora en los demás.
+   */
+  parametro?: string | number;
 }
 
 // ─── Capas de slide ──────────────────────────────────────────────────────────

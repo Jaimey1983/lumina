@@ -8,6 +8,7 @@ import type {
   Regla,
   VariableValor,
 } from '@lumina/types/interaction';
+import { esSegundosValidos, esTeclaPermitida, etiquetaTecla } from './eventos.js';
 import { accionesDeRegla } from './reglas.js';
 
 /**
@@ -35,7 +36,35 @@ const EVENTOS: Record<EventoTipo, string> = {
   respuesta_incorrecta: 'se responde mal',
   fin_contador: 'termina el contador',
   al_entrar_slide: 'se entra al slide',
+  cambio_variable: 'cambia una variable',
+  hover_entra: 'el puntero entra en el elemento',
+  hover_sale: 'el puntero sale del elemento',
+  tecla: 'se pulsa una tecla',
+  temporizador: 'pasa un tiempo en el slide',
+  salir_slide: 'se sale del slide',
+  media_inicia: 'empieza la reproducción',
+  media_termina: 'termina la reproducción',
 };
+
+/** Texto del disparador, con su parámetro cuando lo tiene (N5). */
+export function describirEvento(r: Pick<Regla, 'evento' | 'parametro'>, ctx: ContextoDescripcion): string {
+  const p = r.parametro;
+  if (r.evento === 'cambio_variable') {
+    const nombre = typeof p === 'string' ? (ctx.nombreVariable(p) ?? ELIMINADO) : '…';
+    return `cambia la variable «${nombre}»`;
+  }
+  if (r.evento === 'tecla') {
+    return typeof p === 'string' && esTeclaPermitida(p)
+      ? `se pulsa la tecla ${etiquetaTecla(p)}`
+      : EVENTOS.tecla;
+  }
+  if (r.evento === 'temporizador') {
+    return typeof p === 'number' && esSegundosValidos(p)
+      ? `pasan ${p} ${p === 1 ? 'segundo' : 'segundos'} en el slide`
+      : EVENTOS.temporizador;
+  }
+  return EVENTOS[r.evento];
+}
 
 export function nombreEvento(e: EventoTipo): string {
   return EVENTOS[e];
@@ -161,7 +190,7 @@ const unir = (xs: readonly string[]): string => xs.join(', ');
 export function describirRegla(r: Regla, ctx: ContextoDescripcion): string {
   const acciones = r.acciones.map((a) => describirAccion(a, ctx));
   const sino = (r.sino ?? []).map((a) => describirAccion(a, ctx));
-  const cuando = `Cuando ${EVENTOS[r.evento]}`;
+  const cuando = `Cuando ${describirEvento(r, ctx)}`;
   const cond =
     r.condiciones.length === 0
       ? null

@@ -9,6 +9,10 @@ import { SlideNavContext, type SlideNavAction } from "../../widgets/boton/index.
 import { botonDefinition } from "../boton/boton-definition.js";
 import { contadorDefinition } from "../contador/contador-definition.js";
 import { hotspotDefinition } from "../hotspot/hotspot-definition.js";
+import { audioDefinition } from "../audio/audio-definition.js";
+import { videoDefinition } from "../video/video-definition.js";
+import { createDefaultAudioBlock } from "../../blocks/audio/index.js";
+import { createDefaultVideoBlock } from "../../blocks/video/index.js";
 
 afterEach(() => {
   cleanup();
@@ -36,9 +40,9 @@ function ConNav({
 
 describe("declaración de eventos en el contrato", () => {
   it("cada elemento declara los eventos que emite", () => {
-    expect(botonDefinition.eventos).toEqual(["clic"]);
-    expect(hotspotDefinition.eventos).toEqual(["clic", "visitado"]);
-    expect(contadorDefinition.eventos).toEqual(["fin_contador"]);
+    expect(botonDefinition.eventos).toEqual(["clic", "hover_entra", "hover_sale"]);
+    expect(hotspotDefinition.eventos).toEqual(["clic", "visitado", "hover_entra", "hover_sale"]);
+    expect(contadorDefinition.eventos).toEqual(["fin_contador", "hover_entra", "hover_sale"]);
   });
 });
 
@@ -261,5 +265,49 @@ describe("Contador", () => {
     avanzar(2000);
     expect(eventos()).toEqual(["fin_contador"]);
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+describe("N5: audio y video emiten media_inicia / media_termina", () => {
+  it("declaran los eventos de media", () => {
+    expect(audioDefinition.eventos).toContain("media_inicia");
+    expect(audioDefinition.eventos).toContain("media_termina");
+    expect(videoDefinition.eventos).toContain("media_termina");
+  });
+
+  it("audio: play emite media_inicia UNA vez por reproducción y ended emite media_termina", () => {
+    const { emitir, eventos } = espia();
+    const Viewer = audioDefinition.Viewer;
+    const { container } = render(
+      createElement(Viewer, { estado: createDefaultAudioBlock({ url: "https://e.test/a.mp3" }), config: { emitir } }),
+    );
+    const el = container.querySelector("audio") as HTMLAudioElement;
+    fireEvent.play(el);
+    fireEvent.play(el); // pausar y reanudar no repite
+    expect(eventos()).toEqual(["media_inicia"]);
+    fireEvent.ended(el);
+    expect(eventos()).toEqual(["media_inicia", "media_termina"]);
+    fireEvent.play(el); // una reproducción nueva sí emite
+    expect(eventos()).toEqual(["media_inicia", "media_termina", "media_inicia"]);
+  });
+
+  it("video nativo: play/ended emiten; en miniatura o sin emitir no emite nada", () => {
+    const { emitir, eventos } = espia();
+    const Viewer = videoDefinition.Viewer;
+    const estado = createDefaultVideoBlock({ url: "https://e.test/v.mp4" });
+    const { container } = render(createElement(Viewer, { estado, config: { emitir } }));
+    const el = container.querySelector("video") as HTMLVideoElement;
+    fireEvent.play(el);
+    fireEvent.ended(el);
+    expect(eventos()).toEqual(["media_inicia", "media_termina"]);
+
+    cleanup();
+    const sin = render(createElement(Viewer, { estado, config: {} }));
+    const v2 = sin.container.querySelector("video") as HTMLVideoElement;
+    expect(() => {
+      fireEvent.play(v2);
+      fireEvent.ended(v2);
+    }).not.toThrow();
+    expect(eventos()).toEqual(["media_inicia", "media_termina"]); // sin cambios
   });
 });

@@ -24,6 +24,8 @@ export const audioDefinition = {
     animacion: true,
   },
   catalogo: CATALOGO_ELEMENTOS["audio"],
+  // Etapa N / N5: los emite el visor por `config.emitir` (solo el <audio> nativo).
+  eventos: ["media_inicia", "media_termina", "hover_entra", "hover_sale"],
 } as const satisfies ElementDefinition<AudioEstado, AudioConfig>;
 
 export type AudioDefinition = typeof audioDefinition;

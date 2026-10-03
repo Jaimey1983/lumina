@@ -6,6 +6,7 @@ import type {
 } from '@lumina/types/interaction';
 import { coincideTipo } from './estado.js';
 import type { ContextoValidacion } from './recolectar.js';
+import { errorDeParametro } from './eventos.js';
 import { accionesDeRegla } from './reglas.js';
 import { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
 import type { ReglaAplicable } from './tipos.js';
@@ -27,7 +28,8 @@ export type CodigoError =
   | 'clave_sistema_invalida'
   | 'regla_sin_acciones'
   | 'operando_incompleto'
-  | 'evento_no_soportado';
+  | 'evento_no_soportado'
+  | 'parametro_invalido';
 
 export interface ErrorValidacion {
   codigo: CodigoError;
@@ -223,6 +225,18 @@ export function validarReglas(
       });
     }
     vistas.add(regla.id);
+
+    const errParam = errorDeParametro(regla, new Set(vars.keys()));
+    if (errParam !== undefined) {
+      errores.push({
+        codigo: 'parametro_invalido',
+        reglaId: regla.id,
+        mensaje: errParam,
+        ...(regla.evento === 'cambio_variable' && typeof regla.parametro === 'string'
+          ? { variableId: regla.parametro }
+          : {}),
+      });
+    }
 
     if (origen.tipo === 'bloque') {
       refBloque(origen.bloqueId, regla.id);

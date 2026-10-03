@@ -3,11 +3,13 @@ import type {
   EstadoObjeto,
   EventoTipo,
   VariableDef,
+  VariableValor,
 } from '@lumina/types/interaction';
 import { evaluarCondiciones, evaluarOperando } from './condiciones.js';
 import type { CtxEvaluacion } from './condiciones.js';
-import { clonarEstado, coincideTipo, leer, valorPorDefecto } from './estado.js';
+import { clonarEstado, coincideTipo, leer, marcaDeTemporizador, valorPorDefecto } from './estado.js';
 import type { EstadoTrabajo } from './estado.js';
+import { EVENTOS_DE_SLIDE, esSegundosValidos, esTeclaPermitida } from './eventos.js';
 import { LIMITES_POR_DEFECTO } from './tipos.js';
 import { MAX_TEXTO_VARIABLE } from './variables.js';
 import type {
@@ -21,8 +23,32 @@ import type {
   ResultadoMotor,
 } from './tipos.js';
 
+/** ¿El parámetro de la regla coincide con el detalle del evento? (D16) */
+function coincideParametro(ra: ReglaAplicable, ev: EventoMotor): boolean {
+  const p = ra.regla.parametro;
+  switch (ra.regla.evento) {
+    case 'cambio_variable':
+      return typeof p === 'string' && p !== '' && ev.detalle?.variableId === p;
+    case 'tecla':
+      return esTeclaPermitida(p) && ev.detalle?.tecla === p;
+    case 'temporizador':
+      return esSegundosValidos(p) && ev.detalle?.segundos === p;
+    default:
+      return true;
+  }
+}
+
 function coincideEvento(ra: ReglaAplicable, ev: EventoMotor): boolean {
   if (ra.regla.evento !== ev.tipo) return false;
+  if (!coincideParametro(ra, ev)) return false;
+  // `cambio_variable`: las variables son de la clase, así que reaccionan reglas
+  // de cualquier slide o bloque.
+  if (ev.tipo === 'cambio_variable') return true;
+  // Eventos «de slide» (tecla, temporizador, salir_slide): una regla de bloque
+  // o de slide reacciona cuando ocurren en SU slide.
+  if (EVENTOS_DE_SLIDE.has(ev.tipo)) {
+    return ev.slideId !== undefined && ev.slideId === ra.origen.slideId;
+  }
   if (ra.origen.tipo === 'bloque') {
     return ev.bloqueId !== undefined && ev.bloqueId === ra.origen.bloqueId;
   }
@@ -63,6 +89,13 @@ interface Corrida {
  *    `deshabilitado` no cambia; `visitado` no degrada a un `seleccionado`).
  */
 function sincronizarEntrada(ev: EventoMotor, w: EstadoTrabajo): void {
+  // N5: un temporizador dispara UNA vez por intento; se deja la marca en
+  // `visibles` (como la de visita de K8a) para que sobreviva a una recarga.
+  if (ev.tipo === 'temporizador' && ev.slideId !== undefined) {
+    const seg = ev.detalle?.segundos;
+    if (typeof seg === 'number') w.visibles[marcaDeTemporizador(ev.slideId, seg)] = true;
+    return;
+  }
   if (ev.bloqueId === undefined) return;
   if (ev.tipo === 'respuesta_correcta') w.respuestas[ev.bloqueId] = true;
   else if (ev.tipo === 'respuesta_incorrecta') w.respuestas[ev.bloqueId] = false;
@@ -73,6 +106,31 @@ function sincronizarEntrada(ev: EventoMotor, w: EstadoTrabajo): void {
   if (actual === 'deshabilitado') return;
   if (nuevo === 'visitado' && actual !== 'normal') return;
   w.estados[ev.bloqueId] = nuevo;
+}
+
+/**
+ * Escribe una variable y, SOLO si el valor realmente cambió, encadena el evento
+ * `cambio_variable` (N5). Una asignación sin efecto no puede alimentar un ciclo;
+ * el corte de ciclos y los topes del motor cubren el resto.
+ */
+function fijarVariable(
+  c: Corrida,
+  variableId: string,
+  valor: VariableValor,
+  origen: EventoMotor,
+  profundidad: number,
+): void {
+  const anterior = leer(c.w.variables, variableId);
+  c.w.variables[variableId] = valor;
+  if (anterior === valor) return;
+  c.cola.push({
+    evento: {
+      tipo: 'cambio_variable',
+      ...(origen.slideId !== undefined ? { slideId: origen.slideId } : {}),
+      detalle: { variableId },
+    },
+    profundidad: profundidad + 1,
+  });
 }
 
 function aviso(c: Corrida, a: Aviso): void {
@@ -92,6 +150,15 @@ function ejecutarAccion(
     case 'ir_a_slide':
     case 'siguiente':
     case 'anterior': {
+      if (origen.tipo === 'salir_slide') {
+        // Navegar mientras se sale de un slide encadenaría saltos: se ignora.
+        aviso(c, {
+          codigo: 'navegacion_ignorada',
+          reglaId,
+          mensaje: 'No se puede navegar desde «al salir del slide»; se ignora.',
+        });
+        return;
+      }
       if (c.navegacionEmitida) {
         aviso(c, {
           codigo: 'navegacion_ignorada',
@@ -163,7 +230,7 @@ function ejecutarAccion(
         });
         return;
       }
-      w.variables[accion.variableId] = valor;
+      fijarVariable(c, accion.variableId, valor, origen, profundidad);
       return;
     }
     case 'sumar_variable': {
@@ -189,7 +256,7 @@ function ejecutarAccion(
         });
         return;
       }
-      w.variables[accion.variableId] = suma;
+      fijarVariable(c, accion.variableId, suma, origen, profundidad);
       return;
     }
     case 'restar_variable':
@@ -242,7 +309,7 @@ function ejecutarAccion(
         });
         return;
       }
-      w.variables[accion.variableId] = resultado;
+      fijarVariable(c, accion.variableId, resultado, origen, profundidad);
       return;
     }
     case 'limpiar_variable': {
@@ -255,9 +322,9 @@ function ejecutarAccion(
         });
         return;
       }
-      w.variables[accion.variableId] = coincideTipo(def, def.valorInicial)
+      fijarVariable(c, accion.variableId, coincideTipo(def, def.valorInicial)
         ? def.valorInicial
-        : valorPorDefecto(def);
+        : valorPorDefecto(def), origen, profundidad);
       return;
     }
     case 'concatenar_variable': {
@@ -291,7 +358,7 @@ function ejecutarAccion(
           mensaje: `«${def.nombre}» superó ${MAX_TEXTO_VARIABLE} caracteres: se recortó.`,
         });
       }
-      w.variables[accion.variableId] = nuevo;
+      fijarVariable(c, accion.variableId, nuevo, origen, profundidad);
       return;
     }
     case 'alternar_variable': {
@@ -313,7 +380,7 @@ function ejecutarAccion(
         });
         return;
       }
-      w.variables[accion.variableId] = !actual;
+      fijarVariable(c, accion.variableId, !actual, origen, profundidad);
       return;
     }
     default:

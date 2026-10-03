@@ -69,6 +69,7 @@ export function usosDeVariable(
   const usos: UsoDeVariable[] = [];
   for (const { regla, origen } of reglas) {
     const usa =
+      (regla.evento === 'cambio_variable' && regla.parametro === variableId) ||
       regla.condiciones.some((c) => condicionUsa(c, variableId)) ||
       accionesDeRegla(regla).some((a) => accionUsa(a, variableId));
     if (!usa) continue;

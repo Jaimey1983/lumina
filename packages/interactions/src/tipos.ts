@@ -36,6 +36,11 @@ export interface EventoMotor {
   bloqueId?: string;
   /** Slide en el que ocurre. Las reglas de slide solo reaccionan a eventos de su slide. */
   slideId?: string;
+  /**
+   * Datos del evento (D16). `cambio_variable`: `{ variableId }`; `tecla`:
+   * `{ tecla }` (código); `temporizador`: `{ segundos }`. Solo valores simples.
+   */
+  detalle?: Readonly<Record<string, VariableValor>>;
 }
 
 /** De dónde sale una regla: determina a qué eventos reacciona. */

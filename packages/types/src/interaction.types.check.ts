@@ -60,6 +60,14 @@ export type _Eventos = Assert<
     | 'respuesta_incorrecta'
     | 'fin_contador'
     | 'al_entrar_slide'
+    | 'cambio_variable'
+    | 'hover_entra'
+    | 'hover_sale'
+    | 'tecla'
+    | 'temporizador'
+    | 'salir_slide'
+    | 'media_inicia'
+    | 'media_termina'
   >
 >;
 
@@ -99,6 +107,7 @@ type NombraNota<T extends string> = T extends `${string}${
 export type _SinNotaEnAcciones = Assert<
   Equal<NombraNota<AccionTipo>, never>
 >;
+export type _SinNotaEnEventos = Assert<Equal<NombraNota<EventoTipo>, never>>;
 export type _SinNotaEnOperandos = Assert<
   Equal<NombraNota<Operando['tipo']>, never>
 >;
@@ -120,6 +129,10 @@ export type _ClavesSistema = Assert<
 >;
 // `sino` es opcional (una regla guardada antes de N1 sigue tipando) y solo acepta Accion.
 export type _SinoAditivo = Assert<Record<never, never> extends Pick<Regla, 'sino'> ? true : false>;
+export type _ParametroAditivo = Assert<
+  Record<never, never> extends Pick<Regla, 'parametro'> ? true : false
+>;
+export type _TipoParametro = Assert<Equal<Regla['parametro'], string | number | undefined>>;
 export type _TipoSino = Assert<Equal<NonNullable<Regla['sino']>, Accion[]>>;
 
 // ─── Ejemplos reales: deben compilar ─────────────────────────────────────────

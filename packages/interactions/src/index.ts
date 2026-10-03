@@ -5,6 +5,19 @@ export { crearEstadoInicial, entrarASlide } from './estado.js';
 export { evaluarCondicion, evaluarCondiciones, evaluarOperando } from './condiciones.js';
 export type { CtxEvaluacion } from './condiciones.js';
 export { procesarEvento } from './motor.js';
+export {
+  EVENTOS_DE_ENTORNO,
+  EVENTOS_DE_SLIDE,
+  TECLAS_PERMITIDAS,
+  TEMPORIZADOR_MAX_S,
+  TEMPORIZADOR_MIN_S,
+  errorDeParametro,
+  esSegundosValidos,
+  esTeclaPermitida,
+  etiquetaTecla,
+  eventoUsaParametro,
+} from './eventos.js';
+export { hayReglaDeEvento, temporizadoresPendientes } from './temporizadores.js';
 export { recolectarReglas, contextoDesdeSlides } from './recolectar.js';
 export type { ContextoValidacion } from './recolectar.js';
 export { validarReglas, tipoDeOperando } from './validar.js';
@@ -15,6 +28,7 @@ export {
   CLAVES_SISTEMA_ETIQUETA,
   describirAccion,
   describirCondicion,
+  describirEvento,
   describirOperando,
   describirRegla,
   nombreEvento,
@@ -28,6 +42,7 @@ export {
   alternarGrupo,
   alternarNegacion,
   bloqueIdsReferenciados,
+  cambiarEvento,
   condicionEn,
   duplicarRegla,
   envolverEnGrupo,

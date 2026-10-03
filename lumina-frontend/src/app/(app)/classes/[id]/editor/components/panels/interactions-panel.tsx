@@ -8,7 +8,7 @@ import { ArrowDown, ArrowUp, Copy, Pencil, Plus } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
-import { sinMarcaDePlantilla } from '@lumina/interactions';
+import { EVENTOS_DE_ENTORNO, sinMarcaDePlantilla } from '@lumina/interactions';
 import type { ContextoValidacion, ReferenciaRota } from '@lumina/interactions';
 import type { Capa, Regla } from '@lumina/types/interaction';
 import type { Block } from '@lumina/types/slide';
@@ -78,6 +78,13 @@ export function InteractionsPanel({
   const eventos = useMemo(
     () => (block ? (elementRegistry.obtener(tipoDeElemento(block))?.eventos ?? []) : []),
     [block],
+  );
+
+  // N5: además de los del elemento, se ofrecen los eventos de entorno (cambio de
+  // variable, tecla, temporizador, salir del slide), que cualquier dueño puede usar.
+  const eventosConstructor = useMemo(
+    () => (eventos.length === 0 ? eventos : [...new Set([...eventos, ...EVENTOS_DE_ENTORNO])]),
+    [eventos],
   );
 
   const plantillas = useMemo(() => {
@@ -537,7 +544,7 @@ export function InteractionsPanel({
           abierto
           regla={editando.regla}
           esNueva={editando.esNueva}
-          eventos={eventos}
+          eventos={eventosConstructor}
           opciones={opciones}
           origen={{ tipo: 'bloque', bloqueId: idDe(candidatos[ownerIndex]!) ?? '', slideId }}
           validacion={validacion}

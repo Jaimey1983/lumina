@@ -48,7 +48,7 @@ export const botonDefinition = {
   },
   catalogo: CATALOGO_ELEMENTOS["boton"],
   // Etapa K / K3: eventos que este elemento emite por `config.emitir`.
-  eventos: ["clic"],
+  eventos: ["clic", "hover_entra", "hover_sale"],
   presets: BOTON_PRESETS,
 } as const satisfies ElementDefinition<BotonEstado, BotonConfig>;
 
