@@ -28,6 +28,7 @@ import {
   effectiveFontSizePx,
   resolveHeadingSizeDerived,
 } from '@lumina/editor-shared/heading-scale';
+import { variableToken } from '@lumina/editor-shared/rich-text';
 import { getRichDoc } from './rich-text.js';
 import {
   textBoxValueFromBlock,
@@ -43,6 +44,8 @@ export interface TextoPropertiesProps {
   onChange?: (updated: TextBlock) => void;
   /** Fondo del slide — para el aviso de contraste WCAG del panel. */
   slideBackground?: string;
+  /** N4 — variables de la clase; sin ellas el selector no se muestra. */
+  variablesClase?: readonly { id: string; nombre: string; tipo: 'numero' | 'texto' | 'booleano' }[];
 }
 
 /** Editor de texto enriquecido activo (con o sin selección de rango). */
@@ -197,6 +200,7 @@ export function TextoProperties({
   clearDebounce,
   onChange,
   slideBackground,
+  variablesClase,
 }: TextoPropertiesProps) {
   useActiveEditorTick();
   const applyBlockPatch = (patch: Partial<TypographyValue>) => {
@@ -259,6 +263,7 @@ export function TextoProperties({
   };
 
   return (
+    <>
     <TypographyInspector
       value={effectiveTypography(block)}
       sizeMin={TEXT_BLOCK_FONT_SIZE_MIN}
@@ -319,5 +324,56 @@ export function TextoProperties({
       onHeadingLevelChange={handleHeadingLevelChange}
       onChange={handleTypographyChange}
     />
+      {(variablesClase?.length ?? 0) > 0 && (
+        <InsertarVariable variables={variablesClase ?? []} />
+      )}
+    </>
+  );
+}
+
+/**
+ * N4 — inserta `{{var:<id>}}` en el cursor del texto que se está editando. El
+ * documento guarda el id; el editor muestra el nombre como etiqueta.
+ */
+function InsertarVariable({
+  variables,
+}: {
+  variables: readonly { id: string; nombre: string }[];
+}) {
+  const [listo, setListo] = useState(false);
+  useActiveEditorTick();
+  const ed = getActiveRichEditor()?.editor ?? null;
+  return (
+    <div style={{ padding: '8px 12px', display: 'grid', gap: 6 }}>
+      <label style={{ fontSize: 12, fontWeight: 600 }} htmlFor="texto-insertar-variable">
+        Insertar variable
+      </label>
+      <select
+        id="texto-insertar-variable"
+        aria-label="Insertar variable de la clase en el texto"
+        disabled={!ed}
+        value=""
+        onChange={(e) => {
+          const id = e.target.value;
+          if (!id || !ed) return;
+          ed.chain().focus().insertContent(variableToken(id)).run();
+          setListo(true);
+        }}
+        style={{ fontSize: 13, padding: '4px 6px' }}
+      >
+        <option value="">Elegir variable…</option>
+        {variables.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.nombre}
+          </option>
+        ))}
+      </select>
+      <span style={{ fontSize: 11, opacity: 0.7 }}>
+        {ed
+          ? 'El alumno verá el valor actual de la variable. Aquí se ve su nombre.'
+          : 'Haz doble clic en el texto y coloca el cursor donde quieras la variable.'}
+        {listo ? ' Variable insertada.' : ''}
+      </span>
+    </div>
   );
 }

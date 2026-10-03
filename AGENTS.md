@@ -2783,7 +2783,14 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N4 — Variables dentro del texto
 - **Operador:** Claude Code
-- **Estado:** **[en curso: Claude Code]** — arrancó el 2026-10-03; primer paso: relevar el formato del texto enriquecido.
+- **Estado:** **en revisión** (2026-10-03) — **QA manual en navegador NO realizada** (este entorno no tiene Postgres; verificado por tipos, pruebas y build de producción).
+  - **Relevo (primer paso de la ficha):** el texto ya guarda `{{token}}` como texto plano dentro de los runs y los resuelve solo fuera del editor (Fase 5A: `text-tokens.ts` + `TextTokensProvider`). No hizo falta migrar el formato: se reutiliza con la forma nueva `{{var:<variableId>}}` (D13/D17).
+  - **`@lumina/editor-shared`:** `interpolarVariables` pura (`{texto, avisos}`), `formatVariableValue` (es-CO: coma decimal, «Sí»/«No»), `variableToken`/`parseVariableToken`/`variableIdsEnTexto`; `makeTokenResolver` acepta `variables`; variable inexistente → cadena vacía + aviso (nunca el token crudo); el valor es siempre texto (React lo escapa). `TextTokensValue.variables` (`defs` + `valores` vivos). Etiqueta con el NOMBRE en el editor: decoración de ProseMirror `VariableLabels` (el documento guarda el id; no cambia el esquema) + `setVariableLabels`.
+  - **Texto (`element-kit`):** el viewer sustituye vía `useTextTokens().variables`; el panel de propiedades gana «Insertar variable» (inserta el token en el cursor del texto activo; sin cursor avisa).
+  - **Frontend:** `SlideRenderer` envuelve con valores VIVOS del runtime (autónomo/preview); presentación, clase en vivo, editor y detalle pasan solo `defs` → valor inicial (D1). `lib/variables-en-texto.ts` (+ spec): `usosDeVariable` ya no es lo único que bloquea el borrado — una variable usada dentro de un texto (incl. columnas y capas) también lo impide, con «(en un texto)» en el aviso.
+  - **Alcance:** los widgets con texto propio (botón, acordeón…) NO interpolan todavía (como pedía la ficha). N7 (variables del sistema) puede reutilizar este mismo mecanismo.
+  - **Verif:** `@lumina/editor-shared` build/test **347/347**/lint 0 error · `@lumina/element-kit` build/test **553/553**/lint 0 error · `lumina-frontend` `tsc` limpio, lint 0 error (43 warnings), `test:unit` **482/482**, `pnpm build` OK.
+  - **Pendiente de QA en producción:** insertar una variable en un texto y ver la etiqueta con el nombre; en autónomo/preview ver el valor cambiar cuando una regla lo modifica y restaurarse al recargar (K5); presentación y clase en vivo con el valor inicial; miniaturas sin token crudo; intentar borrar una variable usada en un texto.
 - **Precondición:** N0 `hecho`. Independiente de N1–N3 (archivos disjuntos con ellas: toca el texto, no `tipos.ts`).
 - **Contexto:** es el uso más visible de las variables para el alumno («Llevas {{intentos}} intentos», «Hola, {{nombre}}»). D17 fija el diseño.
 - **Alcance — PUEDE tocar:**

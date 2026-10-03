@@ -58,7 +58,12 @@ import type {
   HotspotWidget,
 } from '@lumina/types/slide';
 import type { RichDoc } from '@lumina/types/rich-text';
-import { richToPlain, sanitizeRichDoc } from '@lumina/editor-shared/rich-text';
+import {
+  richToPlain,
+  sanitizeRichDoc,
+  TextTokensProvider,
+  useTextTokens,
+} from '@lumina/editor-shared/rich-text';
 import { getRichDoc, syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
 import { cn } from '@/lib/utils';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@lumina/editor-shared/font-catalog';
@@ -2137,11 +2142,22 @@ export function SlideRenderer(props: SlideRendererProps) {
   const base = <SlideRendererBase {...props} pintarCapas={pintarCapas} />;
   // Sin runtime no se abre un Provider: un `SlideRenderer` anidado (p. ej. la
   // composición de un recorte) hereda el del padre en vez de anularlo.
+  // N4: con runtime (autónomo/preview) las variables de los textos `{{var:…}}`
+  // usan el valor VIVO; sin runtime quedan los valores iniciales del proveedor.
+  const tokens = useTextTokens();
+  const tokensVivos = props.runtime
+    ? {
+        ...tokens,
+        variables: { defs: tokens.variables?.defs, valores: props.runtime.variables },
+      }
+    : undefined;
   const conRuntime =
     props.runtime === undefined ? (
       base
     ) : (
-      <InteractionRuntimeContext.Provider value={props.runtime}>{base}</InteractionRuntimeContext.Provider>
+      <InteractionRuntimeContext.Provider value={props.runtime}>
+        <TextTokensProvider value={tokensVivos ?? tokens}>{base}</TextTokensProvider>
+      </InteractionRuntimeContext.Provider>
     );
   if (anidado) return conRuntime;
   return <CapaHostContext.Provider value={true}>{conRuntime}</CapaHostContext.Provider>;

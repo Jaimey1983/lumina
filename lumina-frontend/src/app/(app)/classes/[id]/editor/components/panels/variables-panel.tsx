@@ -31,6 +31,8 @@ export interface VariablesPanelProps {
   reglas: ReglaAplicable[];
   /** Título legible de un slide, para decir dónde se usa una variable. */
   tituloDeSlide?: (slideId: string) => string;
+  /** N4 — slides donde la variable aparece dentro de un texto (`{{var:id}}`). */
+  slidesConVariableEnTexto?: (variableId: string) => string[];
   onSave: (next: VariableDef[]) => void;
   isSaving?: boolean;
 }
@@ -61,6 +63,7 @@ export function VariablesPanel({
   variables,
   reglas,
   tituloDeSlide,
+  slidesConVariableEnTexto,
   onSave,
   isSaving = false,
 }: VariablesPanelProps) {
@@ -85,10 +88,13 @@ export function VariablesPanel({
         const donde = tituloDeSlide?.(u.slideId) ?? u.slideId;
         return u.bloqueId ? `${donde} (un bloque)` : donde;
       });
+      for (const slideId of slidesConVariableEnTexto?.(v.id) ?? []) {
+        lista.push(`${tituloDeSlide?.(slideId) ?? slideId} (en un texto)`);
+      }
       mapa.set(v.id, [...new Set(lista)]);
     }
     return mapa;
-  }, [variables, reglas, tituloDeSlide]);
+  }, [variables, reglas, tituloDeSlide, slidesConVariableEnTexto]);
 
   const cambiar = (id: string, parche: Partial<VariableDef>) => {
     setAviso(null);
@@ -99,7 +105,7 @@ export function VariablesPanel({
     const donde = usos.get(v.id) ?? [];
     if (donde.length > 0) {
       setAviso(
-        `No se puede borrar «${v.nombre}»: la usan reglas en ${donde.join(', ')}. Quita primero esas reglas.`,
+        `No se puede borrar «${v.nombre}»: la usan reglas o textos en ${donde.join(', ')}. Quita primero esos usos.`,
       );
       return;
     }

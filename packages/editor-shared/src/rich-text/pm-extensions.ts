@@ -41,6 +41,7 @@ import { Placeholder } from '@tiptap/extension-placeholder';
 
 const lowlight = createLowlight(common);
 import { isSafeHref } from './sanitize.js';
+import { VariableLabels } from './variable-labels.js';
 
 const ALIGN_TO_CSS: Record<string, string> = {
   izquierda: 'left',
@@ -476,6 +477,7 @@ export function richTextExtensions(opts: RichTextExtensionOptions = {}): Extensi
     Lang,
     Callout,
     MathBlock,
+    VariableLabels,
     Placeholder.configure({
       placeholder: opts.placeholder ?? 'Escribe…',
       showOnlyWhenEditable: true,

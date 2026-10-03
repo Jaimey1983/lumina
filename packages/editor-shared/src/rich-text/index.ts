@@ -44,13 +44,23 @@ export {
   interpolateTokens,
   hasTokens,
   textTokenExtra,
+  variableToken,
+  parseVariableToken,
+  variableIdsEnTexto,
+  formatVariableValue,
+  resolveVariableValue,
+  interpolarVariables,
+  VARIABLE_TOKEN_PREFIX,
   type TokenContext,
+  type TokenAviso,
+  type VariableTokenData,
 } from './text-tokens.js';
 export {
   TextTokensProvider,
   useTextTokens,
   type TextTokensValue,
 } from './text-tokens-context.js';
+export { setVariableLabels } from './variable-labels.js';
 export { richToPmDoc, pmDocToRich, type PmJSON } from './pm-serializers.js';
 export {
   registerActiveRichEditor,

@@ -80,6 +80,8 @@ export interface RightFlyoutPanelProps {
   variables?: VariableDef[];
   reglasDelMazo?: ReglaAplicable[];
   tituloDeSlide?: (slideId: string) => string;
+  /** N4 — slides donde una variable aparece dentro de un texto. */
+  slidesConVariableEnTexto?: (variableId: string) => string[];
   onSaveVariables?: (next: VariableDef[]) => void;
   isSavingVariables?: boolean;
 }
@@ -119,6 +121,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       variables = [],
       reglasDelMazo = [],
       tituloDeSlide,
+      slidesConVariableEnTexto,
       onSaveVariables,
       isSavingVariables,
     },
@@ -209,6 +212,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 variables={variables}
                 reglas={reglasDelMazo}
                 tituloDeSlide={tituloDeSlide}
+                slidesConVariableEnTexto={slidesConVariableEnTexto}
                 onSave={onSaveVariables}
                 isSaving={isSavingVariables}
               />

@@ -291,6 +291,7 @@ export function RenderText({
         : makeTokenResolver(
             { slideIndex: nav.slideIndex, slideCount: nav.slideCount },
             tokens.extra,
+            tokens.variables,
           ),
     spoilerRevealed: modo === 'editor',
     navSlide:
