@@ -2742,7 +2742,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N3 — Constructor libre de reglas
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** **[en curso: Claude Code]** (2026-10-03)
 - **Precondición:** N1 y N2 `hecho`. **Es la ficha de mayor valor y mayor riesgo de usabilidad de la etapa.**
 - **Contexto:** hoy el docente solo aplica plantillas. El constructor le deja armar una regla completa: elegir el evento, componer condiciones con Y/O/NO anidados, elegir acciones y, opcionalmente, acciones de «si no», sin escribir nada ejecutable (D5).
 - **Alcance — PUEDE tocar:**
