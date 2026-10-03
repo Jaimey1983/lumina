@@ -136,6 +136,7 @@ export function InteractionsPanel({
         respondible: (elementRegistry.obtener(tipoDeElemento(b))?.eventos ?? []).includes(
           'respuesta_correcta',
         ),
+        ocultoInicial: (b as { ocultoInicial?: boolean }).ocultoInicial === true,
       })),
       slides: slidesDelMazo,
       capas: capas.map((c) => ({ id: c.id, nombre: c.nombre })),

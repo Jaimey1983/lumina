@@ -8,7 +8,13 @@ import type { AvisoCampo } from '@lumina/interactions';
 export interface OpcionesBuilder {
   variables: readonly VariableDef[];
   /** Bloques de primer nivel que se pueden nombrar (ya con id candidato). */
-  bloques: readonly { id: string; etiqueta: string; respondible: boolean }[];
+  bloques: readonly {
+    id: string;
+    etiqueta: string;
+    respondible: boolean;
+    /** El bloque ya empieza oculto (`ocultoInicial`). */
+    ocultoInicial: boolean;
+  }[];
   slides: readonly { id: string; titulo: string }[];
   capas: readonly { id: string; nombre: string }[];
 }

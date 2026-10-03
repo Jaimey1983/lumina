@@ -13,6 +13,8 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
 } from '@lumina/ui/dialog';
 import { nombreEvento, validarRegla } from '@lumina/interactions';
@@ -51,9 +53,13 @@ export function RuleBuilder(props: RuleBuilderProps) {
   const { abierto, onCerrar } = props;
   return (
     <Dialog open={abierto} onOpenChange={(o) => (o ? undefined : onCerrar())}>
-      <DialogContent className="flex max-h-[85vh] max-w-xl flex-col p-6">
-        {abierto ? <Contenido {...props} /> : null}
-      </DialogContent>
+      {/* Por encima de la barra flotante del bloque (EDITOR_Z.blockActionsBar = 1050). */}
+      <DialogPortal>
+        <DialogOverlay className="z-[1190]" />
+        <DialogContent overlay={false} className="z-[1200] flex max-h-[85vh] max-w-xl flex-col p-6">
+          {abierto ? <Contenido {...props} /> : null}
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   );
 }
@@ -71,12 +77,11 @@ function Contenido({
   onCerrar,
 }: RuleBuilderProps) {
   const [regla, setRegla] = useState<Regla>(inicial);
-  const [ocultar, setOcultar] = useState<Set<string>>(
-    () =>
-      new Set(
-        // Si el objetivo de un «mostrar» ya empieza oculto no hace falta marcarlo de nuevo.
-        [],
-      ),
+  const [ocultar, setOcultar] = useState<Set<string>>(() => new Set());
+  // Un objetivo que ya empieza oculto no hace falta marcarlo de nuevo.
+  const yaOcultos = useMemo(
+    () => new Set(opciones.bloques.filter((x) => x.ocultoInicial).map((x) => x.id)),
+    [opciones.bloques],
   );
 
   const avisos = useMemo(
@@ -171,7 +176,8 @@ function Contenido({
                   <label key={id} className="flex items-center gap-2 text-[11px]">
                     <input
                       type="checkbox"
-                      checked={ocultar.has(id)}
+                      checked={yaOcultos.has(id) || ocultar.has(id)}
+                      disabled={yaOcultos.has(id)}
                       onChange={(e) =>
                         setOcultar((prev) => {
                           const n = new Set(prev);
@@ -182,6 +188,7 @@ function Contenido({
                       }
                     />
                     Ocultar «{etiqueta}» al empezar el slide
+                    {yaOcultos.has(id) ? ' (ya empieza oculto)' : ''}
                   </label>
                 );
               })}
@@ -218,7 +225,12 @@ function Contenido({
               type="button"
               size="sm"
               disabled={avisos.length > 0 || guardando}
-              onClick={() => onGuardar(regla, [...ocultar])}
+              onClick={() =>
+                onGuardar(
+                  regla,
+                  [...ocultar].filter((id) => objetivosMostrar.includes(id)),
+                )
+              }
             >
               Guardar regla
             </Button>
