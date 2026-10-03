@@ -332,6 +332,7 @@ export function ClassDetailClient({ id }: { id: string }) {
                             clase: cls?.title,
                             codigoClase: (cls as { codigo?: string } | undefined)?.codigo,
                           }),
+                          variables: { defs: cls?.variables },
                         }}
                       >
                         <SlideRenderer slide={rendererActiveSlide} modo="preview" />

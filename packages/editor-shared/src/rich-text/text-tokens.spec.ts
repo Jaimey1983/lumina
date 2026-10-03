@@ -5,6 +5,11 @@ import {
   interpolateTokens,
   hasTokens,
   textTokenExtra,
+  interpolarVariables,
+  formatVariableValue,
+  variableIdsEnTexto,
+  parseVariableToken,
+  variableToken,
 } from './text-tokens.js';
 
 const now = new Date('2026-09-09T14:30:00');
@@ -67,5 +72,49 @@ describe('interpolateTokens', () => {
   it('hasTokens', () => {
     expect(hasTokens('a {{b}} c')).toBe(true);
     expect(hasTokens('a { b } c')).toBe(false);
+  });
+});
+
+describe('N4 — variables dentro del texto', () => {
+  const defs = [
+    { id: 'v1', nombre: 'intentos', tipo: 'numero', valorInicial: 0 },
+    { id: 'v2', nombre: 'nombre', tipo: 'texto', valorInicial: 'Ana' },
+    { id: 'v3', nombre: 'listo', tipo: 'booleano', valorInicial: false },
+  ] as const;
+
+  it('usa el valor vivo y, sin él, el valor inicial', () => {
+    expect(interpolarVariables('Van {{var:v1}}', { defs, valores: { v1: 3 } }).texto).toBe('Van 3');
+    expect(interpolarVariables('Van {{var:v1}}', { defs }).texto).toBe('Van 0');
+  });
+
+  it('formato es-CO: coma decimal y Sí/No', () => {
+    expect(formatVariableValue(2.5)).toBe('2,5');
+    expect(formatVariableValue(true)).toBe('Sí');
+    expect(formatVariableValue(false)).toBe('No');
+  });
+
+  it('variable inexistente → vacío + aviso, nunca el token crudo', () => {
+    const r = interpolarVariables('a{{var:zz}}b', { defs });
+    expect(r.texto).toBe('ab');
+    expect(r.avisos).toEqual([{ codigo: 'variable_inexistente', variableId: 'zz' }]);
+  });
+
+  it('no toca otros tokens ni texto sin tokens', () => {
+    expect(interpolarVariables('{{fecha}} y {{var:v2}}', { defs }).texto).toBe('{{fecha}} y Ana');
+  });
+
+  it('el valor se devuelve como texto plano (sin interpretar HTML)', () => {
+    const ok = interpolarVariables('{{var:v2}}', { defs, valores: { v2: '<script>x</script>' } });
+    expect(ok.texto).toBe('<script>x</script>'); // React lo escapa al pintar
+  });
+
+  it('makeTokenResolver resuelve var: y detecta ids', () => {
+    const r = makeTokenResolver({ now }, undefined, { defs, valores: { v1: 7 } });
+    expect(r('var:v1')).toBe('7');
+    expect(r('var:nope')).toBe('');
+    expect(hasTokens('x {{var:v1}}')).toBe(true);
+    expect(variableIdsEnTexto('{{var:v1}} {{var:v1}} {{var:v2}} {{fecha}}')).toEqual(['v1', 'v2']);
+    expect(parseVariableToken(variableToken('abc'))).toBeUndefined();
+    expect(parseVariableToken('var:abc')).toBe('abc');
   });
 });

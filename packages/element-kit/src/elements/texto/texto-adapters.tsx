@@ -50,6 +50,7 @@ export function TextoPropiedades({
     <LegacyTextoProperties
       block={estado}
       slideBackground={config.slideBackground}
+      variablesClase={config.variablesClase}
       {...applyProps}
     />
   );

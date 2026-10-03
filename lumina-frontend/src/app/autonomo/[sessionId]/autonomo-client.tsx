@@ -640,7 +640,7 @@ function ViewerScreen({
                 >
                   <SlideNavContext.Provider value={{ navigate: navigateSlide, slideCount: slides.length, slideIndex: idx }}>
                   <TextTokensProvider
-                    value={{ extra: textTokenExtra({ clase: claseTitle, codigoClase }) }}
+                    value={{ extra: textTokenExtra({ clase: claseTitle, codigoClase }), variables: { defs: variables } }}
                   >
                   <SlideRenderer
                     slide={renderSlide ?? activeSlide}

@@ -244,6 +244,7 @@ export function PresentClient({ id }: { id: string }) {
                   clase: classData?.title,
                   codigoClase: (classData as { codigo?: string } | undefined)?.codigo,
                 }),
+                variables: { defs: classData?.variables },
               }}
             >
             <SlideRenderer

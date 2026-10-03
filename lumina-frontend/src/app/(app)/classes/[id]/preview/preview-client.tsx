@@ -198,7 +198,7 @@ export function PreviewClient({ id }: { id: string }) {
                 innerStyle={bg.style}
               >
                 <SlideNavContext.Provider value={{ navigate: navigateSlide, slideCount: slides.length, slideIndex: activeSlideIndex }}>
-                <TextTokensProvider value={{ extra: textTokenExtra({ clase: classData.title, codigoClase: (classData as { codigo?: string }).codigo }) }}>
+                <TextTokensProvider value={{ extra: textTokenExtra({ clase: classData.title, codigoClase: (classData as { codigo?: string }).codigo }), variables: { defs: classData.variables } }}>
                 <SlideRenderer
                   className="h-full w-full"
                   slide={activeSlide}

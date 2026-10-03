@@ -11,4 +11,6 @@ export type TextoConfig = PrimitivePanelConfig & {
   onDiscard?: () => void;
   /** Fondo del slide — para el aviso de contraste WCAG del panel de propiedades. */
   slideBackground?: string;
+  /** N4 — variables de la clase para «Insertar variable» en el texto. */
+  variablesClase?: readonly { id: string; nombre: string; tipo: 'numero' | 'texto' | 'booleano' }[];
 };

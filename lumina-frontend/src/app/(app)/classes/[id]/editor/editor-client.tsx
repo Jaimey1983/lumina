@@ -88,7 +88,8 @@ import { createDefaultContadorBlock } from '@lumina/element-kit/widgets/contador
 import { createDefaultProgresoBlock } from '@lumina/element-kit/widgets/progreso/progreso-defaults';
 import { createDefaultRuletaWidget } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
 import { SlideNavContext } from '@lumina/editor-shared/slide-nav-context';
-import { TextTokensProvider, textTokenExtra } from '@lumina/editor-shared/rich-text';
+import { TextTokensProvider, textTokenExtra, setVariableLabels } from '@lumina/editor-shared/rich-text';
+import { slidesPorVariableEnTexto } from './lib/variables-en-texto';
 import { createDefaultEcuacionBlock } from '@lumina/element-kit/blocks/ecuacion/ecuacion-defaults';
 import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
 import {
@@ -2407,6 +2408,25 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       ),
     [sortedSlides],
   );
+  // N4 — variables usadas dentro de textos: bloquean su borrado igual que las reglas.
+  const variablesEnTexto = useMemo(
+    () =>
+      slidesPorVariableEnTexto(
+        sortedSlides.map((s) => {
+          const r = classSlideToRendererSlide(s as ApiSlide);
+          return { id: s.id, bloques: r.bloques ?? [], capas: r.capas };
+        }),
+      ),
+    [sortedSlides],
+  );
+  const slidesConVariableEnTexto = useCallback(
+    (variableId: string) => [...(variablesEnTexto.get(variableId) ?? [])],
+    [variablesEnTexto],
+  );
+  // N4 — el editor de texto muestra el NOMBRE de cada variable (el doc guarda el id).
+  useEffect(() => {
+    setVariableLabels(cls?.variables);
+  }, [cls?.variables]);
   const tituloDeSlide = useCallback(
     (slideId: string) => {
       const i = sortedSlides.findIndex((s) => s.id === slideId);
@@ -3230,6 +3250,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             variables={cls?.variables ?? []}
             reglasDelMazo={reglasDelMazo}
             tituloDeSlide={tituloDeSlide}
+            slidesConVariableEnTexto={slidesConVariableEnTexto}
             onSaveVariables={isStudent ? undefined : handleSaveVariables}
             isSavingVariables={updateClassMutation.isPending}
           />
@@ -3428,6 +3449,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                             clase: cls?.title,
                             codigoClase: (cls as { codigo?: string } | undefined)?.codigo,
                           }),
+                          variables: { defs: cls?.variables },
                         }}
                       >
                       <SlideRenderer
