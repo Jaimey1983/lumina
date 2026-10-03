@@ -7,6 +7,7 @@ import type {
   Accion,
   AccionTipo,
   Capa,
+  ClaveSistema,
   Condicion,
   EstadoObjeto,
   EventoTipo,
@@ -75,6 +76,12 @@ export type _Acciones = Assert<
     | 'cerrar_capa'
     | 'asignar_variable'
     | 'sumar_variable'
+    | 'restar_variable'
+    | 'multiplicar_variable'
+    | 'dividir_variable'
+    | 'limpiar_variable'
+    | 'concatenar_variable'
+    | 'alternar_variable'
   >
 >;
 
@@ -95,6 +102,25 @@ export type _SinNotaEnAcciones = Assert<
 export type _SinNotaEnOperandos = Assert<
   Equal<NombraNota<Operando['tipo']>, never>
 >;
+export type _SinNotaEnSistema = Assert<Equal<NombraNota<ClaveSistema>, never>>;
+export type _SinNotaEnCondiciones = Assert<Equal<NombraNota<Condicion['tipo']>, never>>;
+
+// N1: catálogo de operandos y de condiciones (cambiarlos obliga a decidirlo).
+export type _Operandos = Assert<
+  Equal<
+    Operando['tipo'],
+    'literal' | 'variable' | 'estado_bloque' | 'respuesta_correcta' | 'sistema'
+  >
+>;
+export type _Condiciones = Assert<
+  Equal<Condicion['tipo'], 'comparacion' | 'entre' | 'y' | 'o' | 'no'>
+>;
+export type _ClavesSistema = Assert<
+  Equal<ClaveSistema, 'slide_numero' | 'slide_total' | 'progreso_pct' | 'tiempo_s' | 'intento'>
+>;
+// `sino` es opcional (una regla guardada antes de N1 sigue tipando) y solo acepta Accion.
+export type _SinoAditivo = Assert<Record<never, never> extends Pick<Regla, 'sino'> ? true : false>;
+export type _TipoSino = Assert<Equal<NonNullable<Regla['sino']>, Accion[]>>;
 
 // ─── Ejemplos reales: deben compilar ─────────────────────────────────────────
 export const variableIntentos: VariableDef = {
@@ -176,6 +202,15 @@ export function describirAccion(a: Accion): string {
       return `asignar ${a.variableId}`;
     case 'sumar_variable':
       return `sumar ${a.cantidad} a ${a.variableId}`;
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return `${a.tipo} ${a.variableId}`;
+    case 'limpiar_variable':
+    case 'alternar_variable':
+      return `${a.tipo} ${a.variableId}`;
+    case 'concatenar_variable':
+      return `concatenar a ${a.variableId}`;
     default: {
       const _nunca: never = a;
       return _nunca;

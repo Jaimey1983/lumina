@@ -57,7 +57,31 @@ export type EventoTipo =
 
 // ─── Condiciones (árbol de datos, D5) ────────────────────────────────────────
 
-export type OperadorComparacion = '==' | '!=' | '<' | '<=' | '>' | '>=';
+export type OperadorComparacion =
+  | '=='
+  | '!='
+  | '<'
+  | '<='
+  | '>'
+  | '>='
+  // Operadores de texto (Etapa N / N1): insensibles a mayúsculas y acentos, solo
+  // entre valores de tipo `texto`.
+  | 'contiene'
+  | 'no_contiene'
+  | 'empieza_con'
+  | 'termina_con';
+
+/**
+ * Variables del SISTEMA (Etapa N / N1, D18): de solo lectura, no se declaran en
+ * `Class.variables` y no se persisten (el runtime las deriva en cada
+ * evaluación). Ninguna es una nota ni un puntaje (C1/C4).
+ */
+export type ClaveSistema =
+  | 'slide_numero'
+  | 'slide_total'
+  | 'progreso_pct'
+  | 'tiempo_s'
+  | 'intento';
 
 /**
  * Valor que una comparación puede leer. Deliberadamente NO incluye ninguna
@@ -70,7 +94,9 @@ export type Operando =
   /** Estado actual (`EstadoObjeto`) de un bloque. */
   | { tipo: 'estado_bloque'; bloqueId: string }
   /** `true` si la última respuesta del alumno a esa actividad fue correcta. */
-  | { tipo: 'respuesta_correcta'; bloqueId: string };
+  | { tipo: 'respuesta_correcta'; bloqueId: string }
+  /** Variable del sistema de solo lectura (N1, D18). */
+  | { tipo: 'sistema'; clave: ClaveSistema };
 
 export type Condicion =
   | {
@@ -79,6 +105,11 @@ export type Condicion =
       izquierda: Operando;
       derecha: Operando;
     }
+  /**
+   * `desde <= valor <= hasta` (incluye los extremos, como en Storyline). Solo
+   * números; si `desde > hasta` se toman al revés (N1).
+   */
+  | { tipo: 'entre'; valor: Operando; desde: Operando; hasta: Operando }
   | { tipo: 'y'; condiciones: Condicion[] }
   | { tipo: 'o'; condiciones: Condicion[] }
   | { tipo: 'no'; condicion: Condicion };
@@ -101,7 +132,19 @@ export type Accion =
   | { tipo: 'cerrar_capa'; capaId: string }
   | { tipo: 'asignar_variable'; variableId: string; valor: Operando }
   /** Solo variables de tipo `numero`. Es de flujo, nunca de nota (C4). */
-  | { tipo: 'sumar_variable'; variableId: string; cantidad: number };
+  | { tipo: 'sumar_variable'; variableId: string; cantidad: number }
+  // ── Operaciones de la Etapa N / N2. Todas son de FLUJO, nunca de nota (C4).
+  /** Solo `numero`. Resultado no finito → no se aplica y deja un aviso. */
+  | { tipo: 'restar_variable'; variableId: string; cantidad: Operando }
+  | { tipo: 'multiplicar_variable'; variableId: string; cantidad: Operando }
+  /** Dividir por cero no se aplica (nunca `Infinity` ni `NaN` en el estado). */
+  | { tipo: 'dividir_variable'; variableId: string; cantidad: Operando }
+  /** Vuelve la variable a su `valorInicial`. */
+  | { tipo: 'limpiar_variable'; variableId: string }
+  /** Solo `texto`. El resultado se recorta al máximo de un valor de texto. */
+  | { tipo: 'concatenar_variable'; variableId: string; texto: Operando }
+  /** Solo `booleano`: invierte el valor. */
+  | { tipo: 'alternar_variable'; variableId: string };
 
 export type AccionTipo = Accion['tipo'];
 
@@ -121,6 +164,12 @@ export interface Regla {
   acciones: Accion[];
   /** Una regla inactiva se conserva pero no se evalúa. */
   activa: boolean;
+  /**
+   * Acciones «si no» (N1, D15): se ejecutan cuando el evento coincide y las
+   * condiciones dan FALSO. Una condición rota (variable borrada, tipos
+   * incompatibles) NO las ejecuta: el motor falla cerrado.
+   */
+  sino?: Accion[];
 }
 
 // ─── Capas de slide ──────────────────────────────────────────────────────────

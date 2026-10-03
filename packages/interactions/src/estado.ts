@@ -52,7 +52,7 @@ export function coincideTipo(def: VariableDef, valor: unknown): boolean {
   }
 }
 
-function valorPorDefecto(def: VariableDef): VariableValor {
+export function valorPorDefecto(def: VariableDef): VariableValor {
   switch (def.tipo) {
     case 'numero':
       return 0;

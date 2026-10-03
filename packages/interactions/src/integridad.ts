@@ -9,6 +9,7 @@ import type {
 import type { Block, Slide } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
 import { contextoDesdeSlides, recolectarReglas } from './recolectar.js';
+import { accionesDeRegla } from './reglas.js';
 import type { ReglaAplicable } from './tipos.js';
 import { validarReglas } from './validar.js';
 
@@ -130,6 +131,12 @@ function condicionRefiere(
         operandoRefiere(c.izquierda, esBloque) ||
         operandoRefiere(c.derecha, esBloque)
       );
+    case 'entre':
+      return (
+        operandoRefiere(c.valor, esBloque) ||
+        operandoRefiere(c.desde, esBloque) ||
+        operandoRefiere(c.hasta, esBloque)
+      );
     case 'y':
     case 'o':
       return c.condiciones.some((x) => condicionRefiere(x, esBloque, prof + 1));
@@ -155,6 +162,12 @@ function accionRefiere(a: Accion, o: Objetivo): boolean {
       return o.bloque?.(a.bloqueId) ?? false;
     case 'asignar_variable':
       return o.bloque !== undefined && operandoRefiere(a.valor, o.bloque);
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return o.bloque !== undefined && operandoRefiere(a.cantidad, o.bloque);
+    case 'concatenar_variable':
+      return o.bloque !== undefined && operandoRefiere(a.texto, o.bloque);
     default:
       return false;
   }
@@ -166,7 +179,7 @@ function condicionesRefieren(r: Regla, o: Objetivo): boolean {
 
 /** `true` si la regla menciona el objetivo en una condición o en una acción. */
 function reglaRefiere(r: Regla, o: Objetivo): boolean {
-  return condicionesRefieren(r, o) || r.acciones.some((a) => accionRefiere(a, o));
+  return condicionesRefieren(r, o) || accionesDeRegla(r).some((a) => accionRefiere(a, o));
 }
 
 /** Aplica `f` a cada lista de reglas del slide; conserva identidad si nada cambia. */
@@ -262,8 +275,8 @@ function limpiarReglas(
       salida.push(r);
       continue;
     }
-    const todasMuertas =
-      r.acciones.length > 0 && r.acciones.every((a) => accionRefiere(a, o));
+    const todas = accionesDeRegla(r);
+    const todasMuertas = todas.length > 0 && todas.every((a) => accionRefiere(a, o));
     if (todasMuertas) {
       eliminadas.push(r.id);
       continue;
@@ -386,6 +399,13 @@ function remapCondicion(c: Condicion, mapa: MapaIds, prof = 0): Condicion {
         izquierda: remapOperando(c.izquierda, mapa),
         derecha: remapOperando(c.derecha, mapa),
       };
+    case 'entre':
+      return {
+        ...c,
+        valor: remapOperando(c.valor, mapa),
+        desde: remapOperando(c.desde, mapa),
+        hasta: remapOperando(c.hasta, mapa),
+      };
     case 'y':
     case 'o':
       return { ...c, condiciones: c.condiciones.map((x) => remapCondicion(x, mapa, prof + 1)) };
@@ -409,6 +429,12 @@ function remapAccion(a: Accion, mapa: MapaIds): Accion {
       return { ...a, capaId: m(mapa.capas, a.capaId) };
     case 'asignar_variable':
       return { ...a, valor: remapOperando(a.valor, mapa) };
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return { ...a, cantidad: remapOperando(a.cantidad, mapa) };
+    case 'concatenar_variable':
+      return { ...a, texto: remapOperando(a.texto, mapa) };
     default:
       return a;
   }
@@ -420,6 +446,7 @@ function remapRegla(r: Regla, mapa: MapaIds): Regla {
     id: m(mapa.reglas, r.id),
     condiciones: r.condiciones.map((c) => remapCondicion(c, mapa)),
     acciones: r.acciones.map((a) => remapAccion(a, mapa)),
+    ...(r.sino !== undefined ? { sino: r.sino.map((a) => remapAccion(a, mapa)) } : {}),
   };
 }
 

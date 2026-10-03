@@ -7,7 +7,39 @@ export type { CtxEvaluacion } from './condiciones.js';
 export { procesarEvento } from './motor.js';
 export { recolectarReglas, contextoDesdeSlides } from './recolectar.js';
 export type { ContextoValidacion } from './recolectar.js';
-export { validarReglas } from './validar.js';
+export { validarReglas, tipoDeOperando } from './validar.js';
+export { validarRegla } from './validar-regla.js';
+export type { AvisoCampo, OpcionesValidarRegla } from './validar-regla.js';
+export {
+  ELIMINADO,
+  CLAVES_SISTEMA_ETIQUETA,
+  describirAccion,
+  describirCondicion,
+  describirOperando,
+  describirRegla,
+  nombreEvento,
+  nombreOperador,
+  totalAcciones,
+} from './describir.js';
+export type { ContextoDescripcion } from './describir.js';
+export {
+  actualizarCondicion,
+  agregarCondicion,
+  alternarGrupo,
+  alternarNegacion,
+  bloqueIdsReferenciados,
+  condicionEn,
+  duplicarRegla,
+  envolverEnGrupo,
+  guardarEnLista,
+  moverEnLista,
+  quitarCondicion,
+  quitarDeLista,
+  reemplazarEnLista,
+  reglaNueva,
+  sinMarcaDePlantilla,
+}  from './constructor.js';
+export type { RutaCondicion } from './constructor.js';
 export { asignarVariable } from './asignar.js';
 export { validarVariables, MAX_VARIABLES, MAX_TEXTO_VARIABLE } from './variables.js';
 export { usosDeVariable } from './uso.js';
@@ -44,7 +76,8 @@ export type {
   SlideMotor,
 } from './integridad.js';
 export type { CodigoError, ErrorValidacion } from './validar.js';
-export { LIMITES_POR_DEFECTO } from './tipos.js';
+export { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
+export { accionesDeRegla } from './reglas.js';
 export type {
   Aviso,
   CodigoAviso,

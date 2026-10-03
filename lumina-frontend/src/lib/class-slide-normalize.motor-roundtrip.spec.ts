@@ -23,8 +23,18 @@ import {
 const REGLA: Regla = {
   id: 'r-guarda',
   evento: 'clic',
-  condiciones: [],
+  // N1: una regla con condición «entre», variable de sistema y rama «si no» debe
+  // sobrevivir igual que una simple (si algún `normalize*` la reconstruyera, se perdería).
+  condiciones: [
+    {
+      tipo: 'entre',
+      valor: { tipo: 'sistema', clave: 'slide_numero' },
+      desde: { tipo: 'literal', valor: 1 },
+      hasta: { tipo: 'literal', valor: 3 },
+    },
+  ],
   acciones: [{ tipo: 'siguiente' }],
+  sino: [{ tipo: 'anterior' }],
   activa: true,
 };
 

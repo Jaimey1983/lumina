@@ -76,3 +76,73 @@ describe('validarEstadoMotor (K5)', () => {
     ).toEqual([{ id: 'a', tipo: 'numero' }]);
   });
 });
+
+// Etapa N / N2: lo que producen las acciones nuevas del motor debe seguir
+// validando al persistirse (K5): números finitos, texto acotado, booleanos.
+import { crearEstadoInicial, procesarEvento } from '@lumina/interactions';
+// El backend no depende de `@lumina/types`: los tipos se deducen del propio motor.
+type Accion = Parameters<
+  typeof procesarEvento
+>[0][number]['regla']['acciones'][number];
+type VariableDef = Parameters<typeof crearEstadoInicial>[0][number];
+
+describe('validarEstadoMotor con estados producidos por las acciones de N2', () => {
+  const variables: VariableDef[] = [
+    { id: 'n', nombre: 'n', tipo: 'numero', valorInicial: 10 },
+    { id: 't', nombre: 't', tipo: 'texto', valorInicial: 'Hola' },
+    { id: 'b', nombre: 'b', tipo: 'booleano', valorInicial: true },
+  ];
+  const declaradas = variables.map((v) => ({ id: v.id, tipo: v.tipo }));
+  const lit = (valor: number | string) => ({ tipo: 'literal' as const, valor });
+
+  it.each<[string, Accion]>([
+    ['restar', { tipo: 'restar_variable', variableId: 'n', cantidad: lit(3) }],
+    [
+      'multiplicar',
+      { tipo: 'multiplicar_variable', variableId: 'n', cantidad: lit(2) },
+    ],
+    [
+      'dividir (decimal)',
+      { tipo: 'dividir_variable', variableId: 'n', cantidad: lit(4) },
+    ],
+    [
+      'dividir por cero (no cambia)',
+      { tipo: 'dividir_variable', variableId: 'n', cantidad: lit(0) },
+    ],
+    ['limpiar', { tipo: 'limpiar_variable', variableId: 't' }],
+    [
+      'concatenar',
+      { tipo: 'concatenar_variable', variableId: 't', texto: lit(' mundo') },
+    ],
+    [
+      'concatenar (recorta a 200)',
+      {
+        tipo: 'concatenar_variable',
+        variableId: 't',
+        texto: lit('x'.repeat(500)),
+      },
+    ],
+    ['alternar', { tipo: 'alternar_variable', variableId: 'b' }],
+  ])('%s', (_n, accion) => {
+    const r = procesarEvento(
+      [
+        {
+          regla: {
+            id: 'r',
+            evento: 'clic',
+            condiciones: [],
+            acciones: [accion],
+            activa: true,
+          },
+          origen: { tipo: 'bloque', bloqueId: 'b1', slideId: 's1' },
+        },
+      ],
+      crearEstadoInicial(variables),
+      { tipo: 'clic', bloqueId: 'b1', slideId: 's1' },
+      { variables },
+    );
+    expect(() =>
+      validarEstadoMotor(JSON.parse(JSON.stringify(r.estado)), declaradas),
+    ).not.toThrow();
+  });
+});

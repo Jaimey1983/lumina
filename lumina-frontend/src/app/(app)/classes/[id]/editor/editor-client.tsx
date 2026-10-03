@@ -1498,25 +1498,41 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         },
         {
           onSuccess: (slides: unknown) => {
-            setActiveSlideIndex(idx + 1);
+            // N0: el editor solo pasa a la copia DESPUÉS del segundo guardado y de
+            // releer el slide. Si se activa antes, el lienzo carga el contenido sin
+            // reapuntar y su autoguardado (2 s) pisa el reapuntado.
+            const pasarALaCopia = () => setActiveSlideIndex(idx + 1);
             // La copia es el único slide que quedó en `order + 1`.
             const copia = (Array.isArray(slides) ? (slides as ApiSlide[]) : []).find(
               (s) => s.order === slide.order + 1 && s.id !== slide.id,
             );
-            if (!copia) return;
+            if (!copia) {
+              pasarALaCopia();
+              return;
+            }
             const { contenido, cambio } = reapuntarACopia(
               getSlideContentRecord(copia),
               slide.id,
               copia.id,
             );
-            if (!cambio) return;
+            if (!cambio) {
+              pasarALaCopia();
+              return;
+            }
             updateSlide.mutate(
               { slideId: copia.id, content: contenido },
               {
-                onError: () =>
+                onSuccess: () => {
+                  void queryClient
+                    .refetchQueries({ queryKey: ['classes', 'detail', classId] })
+                    .finally(pasarALaCopia);
+                },
+                onError: () => {
                   toast.warning(
                     'El slide se duplicó, pero no se pudo reapuntar sus interacciones a la copia.',
-                  ),
+                  );
+                  pasarALaCopia();
+                },
               },
             );
           },
@@ -1524,7 +1540,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         },
       );
     },
-    [sortedSlides, insertSlide, updateSlide],
+    [sortedSlides, insertSlide, updateSlide, queryClient, classId],
   );
 
   const handleApplyLayout = useCallback(

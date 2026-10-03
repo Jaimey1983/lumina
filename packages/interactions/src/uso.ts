@@ -1,3 +1,4 @@
+import { accionesDeRegla } from './reglas.js';
 import type { Accion, Condicion, Operando } from '@lumina/types/interaction';
 import type { ReglaAplicable } from './tipos.js';
 
@@ -21,6 +22,12 @@ function condicionUsa(c: Condicion, variableId: string, prof = 0): boolean {
         operandoUsa(c.izquierda, variableId) ||
         operandoUsa(c.derecha, variableId)
       );
+    case 'entre':
+      return (
+        operandoUsa(c.valor, variableId) ||
+        operandoUsa(c.desde, variableId) ||
+        operandoUsa(c.hasta, variableId)
+      );
     case 'y':
     case 'o':
       return c.condiciones.some((x) => condicionUsa(x, variableId, prof + 1));
@@ -36,7 +43,15 @@ function accionUsa(a: Accion, variableId: string): boolean {
     case 'asignar_variable':
       return a.variableId === variableId || operandoUsa(a.valor, variableId);
     case 'sumar_variable':
+    case 'limpiar_variable':
+    case 'alternar_variable':
       return a.variableId === variableId;
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return a.variableId === variableId || operandoUsa(a.cantidad, variableId);
+    case 'concatenar_variable':
+      return a.variableId === variableId || operandoUsa(a.texto, variableId);
     default:
       return false;
   }
@@ -55,7 +70,7 @@ export function usosDeVariable(
   for (const { regla, origen } of reglas) {
     const usa =
       regla.condiciones.some((c) => condicionUsa(c, variableId)) ||
-      regla.acciones.some((a) => accionUsa(a, variableId));
+      accionesDeRegla(regla).some((a) => accionUsa(a, variableId));
     if (!usa) continue;
     usos.push({
       reglaId: regla.id,
