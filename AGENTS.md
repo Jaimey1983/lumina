@@ -2783,7 +2783,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N4 — Variables dentro del texto
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** **[en curso: Claude Code]** — arrancó el 2026-10-03; primer paso: relevar el formato del texto enriquecido.
 - **Precondición:** N0 `hecho`. Independiente de N1–N3 (archivos disjuntos con ellas: toca el texto, no `tipos.ts`).
 - **Contexto:** es el uso más visible de las variables para el alumno («Llevas {{intentos}} intentos», «Hola, {{nombre}}»). D17 fija el diseño.
 - **Alcance — PUEDE tocar:**
