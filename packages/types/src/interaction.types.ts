@@ -132,7 +132,19 @@ export type Accion =
   | { tipo: 'cerrar_capa'; capaId: string }
   | { tipo: 'asignar_variable'; variableId: string; valor: Operando }
   /** Solo variables de tipo `numero`. Es de flujo, nunca de nota (C4). */
-  | { tipo: 'sumar_variable'; variableId: string; cantidad: number };
+  | { tipo: 'sumar_variable'; variableId: string; cantidad: number }
+  // ── Operaciones de la Etapa N / N2. Todas son de FLUJO, nunca de nota (C4).
+  /** Solo `numero`. Resultado no finito → no se aplica y deja un aviso. */
+  | { tipo: 'restar_variable'; variableId: string; cantidad: Operando }
+  | { tipo: 'multiplicar_variable'; variableId: string; cantidad: Operando }
+  /** Dividir por cero no se aplica (nunca `Infinity` ni `NaN` en el estado). */
+  | { tipo: 'dividir_variable'; variableId: string; cantidad: Operando }
+  /** Vuelve la variable a su `valorInicial`. */
+  | { tipo: 'limpiar_variable'; variableId: string }
+  /** Solo `texto`. El resultado se recorta al máximo de un valor de texto. */
+  | { tipo: 'concatenar_variable'; variableId: string; texto: Operando }
+  /** Solo `booleano`: invierte el valor. */
+  | { tipo: 'alternar_variable'; variableId: string };
 
 export type AccionTipo = Accion['tipo'];
 

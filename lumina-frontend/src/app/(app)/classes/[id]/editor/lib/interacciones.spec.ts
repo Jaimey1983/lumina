@@ -113,3 +113,22 @@ describe('tipoDeElemento (N0: las actividades se registran por el tipo de la act
     expect(tipoDeElemento(b('actividad'))).toBe('actividad');
   });
 });
+
+describe('describirRegla con las acciones de N2 y la rama «si no»', () => {
+  it('describe las acciones nuevas y no omite «si no»', () => {
+    const r = {
+      id: 'r',
+      evento: 'clic' as const,
+      condiciones: [],
+      activa: true,
+      acciones: [
+        { tipo: 'restar_variable' as const, variableId: 'v', cantidad: { tipo: 'literal' as const, valor: 1 } },
+        { tipo: 'limpiar_variable' as const, variableId: 'v' },
+      ],
+      sino: [{ tipo: 'alternar_variable' as const, variableId: 'b' }],
+    };
+    expect(describirRegla(r, () => 'S', () => 'B')).toBe(
+      'Al hacer clic → restar de una variable, reiniciar una variable · si no → invertir una variable (sí/no)',
+    );
+  });
+});

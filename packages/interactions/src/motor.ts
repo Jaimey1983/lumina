@@ -6,9 +6,10 @@ import type {
 } from '@lumina/types/interaction';
 import { evaluarCondiciones, evaluarOperando } from './condiciones.js';
 import type { CtxEvaluacion } from './condiciones.js';
-import { clonarEstado, coincideTipo, leer } from './estado.js';
+import { clonarEstado, coincideTipo, leer, valorPorDefecto } from './estado.js';
 import type { EstadoTrabajo } from './estado.js';
 import { LIMITES_POR_DEFECTO } from './tipos.js';
+import { MAX_TEXTO_VARIABLE } from './variables.js';
 import type {
   Aviso,
   ContextoMotor,
@@ -189,6 +190,130 @@ function ejecutarAccion(
         return;
       }
       w.variables[accion.variableId] = suma;
+      return;
+    }
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable': {
+      const def = c.defs.get(accion.variableId);
+      const actual = leer(w.variables, accion.variableId);
+      if (!def || actual === undefined) {
+        aviso(c, {
+          codigo: 'variable_inexistente',
+          reglaId,
+          mensaje: `La variable «${accion.variableId}» no existe.`,
+        });
+        return;
+      }
+      const cantidad = evaluarOperando(accion.cantidad, w, ctxEval);
+      if (cantidad === undefined) return; // ya se avisó (origen inexistente o sin dato)
+      if (
+        def.tipo !== 'numero' ||
+        typeof actual !== 'number' ||
+        typeof cantidad !== 'number' ||
+        !Number.isFinite(cantidad)
+      ) {
+        aviso(c, {
+          codigo: 'tipo_incompatible',
+          reglaId,
+          mensaje: `Solo se puede operar con números sobre una variable numérica («${def.nombre}»).`,
+        });
+        return;
+      }
+      if (accion.tipo === 'dividir_variable' && cantidad === 0) {
+        aviso(c, {
+          codigo: 'resultado_invalido',
+          reglaId,
+          mensaje: `No se puede dividir «${def.nombre}» por cero: no se cambia.`,
+        });
+        return;
+      }
+      const resultado =
+        accion.tipo === 'restar_variable'
+          ? actual - cantidad
+          : accion.tipo === 'multiplicar_variable'
+            ? actual * cantidad
+            : actual / cantidad;
+      if (!Number.isFinite(resultado)) {
+        aviso(c, {
+          codigo: 'resultado_invalido',
+          reglaId,
+          mensaje: `El resultado para «${def.nombre}» no es un número finito: no se cambia.`,
+        });
+        return;
+      }
+      w.variables[accion.variableId] = resultado;
+      return;
+    }
+    case 'limpiar_variable': {
+      const def = c.defs.get(accion.variableId);
+      if (!def || leer(w.variables, accion.variableId) === undefined) {
+        aviso(c, {
+          codigo: 'variable_inexistente',
+          reglaId,
+          mensaje: `La variable «${accion.variableId}» no existe.`,
+        });
+        return;
+      }
+      w.variables[accion.variableId] = coincideTipo(def, def.valorInicial)
+        ? def.valorInicial
+        : valorPorDefecto(def);
+      return;
+    }
+    case 'concatenar_variable': {
+      const def = c.defs.get(accion.variableId);
+      const actual = leer(w.variables, accion.variableId);
+      if (!def || actual === undefined) {
+        aviso(c, {
+          codigo: 'variable_inexistente',
+          reglaId,
+          mensaje: `La variable «${accion.variableId}» no existe.`,
+        });
+        return;
+      }
+      const extra = evaluarOperando(accion.texto, w, ctxEval);
+      if (extra === undefined) return;
+      if (def.tipo !== 'texto' || typeof actual !== 'string') {
+        aviso(c, {
+          codigo: 'tipo_incompatible',
+          reglaId,
+          mensaje: `Solo se puede concatenar sobre una variable de texto («${def.nombre}»).`,
+        });
+        return;
+      }
+      const piezas = typeof extra === 'boolean' ? (extra ? 'Sí' : 'No') : String(extra);
+      let nuevo = actual + piezas;
+      if (nuevo.length > MAX_TEXTO_VARIABLE) {
+        nuevo = nuevo.slice(0, MAX_TEXTO_VARIABLE);
+        aviso(c, {
+          codigo: 'texto_recortado',
+          reglaId,
+          mensaje: `«${def.nombre}» superó ${MAX_TEXTO_VARIABLE} caracteres: se recortó.`,
+        });
+      }
+      w.variables[accion.variableId] = nuevo;
+      return;
+    }
+    case 'alternar_variable': {
+      const def = c.defs.get(accion.variableId);
+      const actual = leer(w.variables, accion.variableId);
+      if (!def || actual === undefined) {
+        aviso(c, {
+          codigo: 'variable_inexistente',
+          reglaId,
+          mensaje: `La variable «${accion.variableId}» no existe.`,
+        });
+        return;
+      }
+      if (def.tipo !== 'booleano' || typeof actual !== 'boolean') {
+        aviso(c, {
+          codigo: 'tipo_incompatible',
+          reglaId,
+          mensaje: `Solo se puede alternar una variable verdadero/falso («${def.nombre}»).`,
+        });
+        return;
+      }
+      w.variables[accion.variableId] = !actual;
       return;
     }
     default:

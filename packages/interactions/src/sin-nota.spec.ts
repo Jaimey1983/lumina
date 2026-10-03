@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { Accion, AccionTipo } from '@lumina/types/interaction';
 import { crearEstadoInicial } from './estado.js';
 import { procesarEvento } from './motor.js';
-import { deBloque, num, regla } from './prueba-utils.js';
+import { bool, deBloque, num, regla, txt } from './prueba-utils.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const paquete = JSON.parse(
@@ -46,12 +46,18 @@ describe('C1/C4: el motor no puede calificar', () => {
     cerrar_capa: { tipo: 'cerrar_capa', capaId: 'c' },
     asignar_variable: { tipo: 'asignar_variable', variableId: 'n', valor: { tipo: 'literal', valor: 9 } },
     sumar_variable: { tipo: 'sumar_variable', variableId: 'n', cantidad: 5 },
+    restar_variable: { tipo: 'restar_variable', variableId: 'n', cantidad: { tipo: 'literal', valor: 1 } },
+    multiplicar_variable: { tipo: 'multiplicar_variable', variableId: 'n', cantidad: { tipo: 'literal', valor: 2 } },
+    dividir_variable: { tipo: 'dividir_variable', variableId: 'n', cantidad: { tipo: 'literal', valor: 2 } },
+    limpiar_variable: { tipo: 'limpiar_variable', variableId: 'n' },
+    concatenar_variable: { tipo: 'concatenar_variable', variableId: 't', texto: { tipo: 'literal', valor: 'x' } },
+    alternar_variable: { tipo: 'alternar_variable', variableId: 'b' },
   };
 
   it.each(Object.entries(una))(
     'la acción «%s» solo produce efectos de navegación y toca solo el estado de flujo',
     (_nombre, accion) => {
-      const variables = [num('n')];
+      const variables = [num('n'), txt('t'), bool('b')];
       const base = crearEstadoInicial(variables);
       const r = procesarEvento(
         [deBloque(regla('r', 'clic', [accion]), 'a')],
@@ -71,6 +77,6 @@ describe('C1/C4: el motor no puede calificar', () => {
   );
 
   it('cubre todas las acciones del catálogo', () => {
-    expect(Object.keys(una)).toHaveLength(10);
+    expect(Object.keys(una)).toHaveLength(16);
   });
 });

@@ -72,7 +72,9 @@ export type CodigoAviso =
   | 'limite_acciones'
   | 'navegacion_ignorada'
   | 'sistema_no_disponible'
-  | 'rango_invalido';
+  | 'rango_invalido'
+  | 'resultado_invalido'
+  | 'texto_recortado';
 
 /**
  * El motor NUNCA lanza por una regla mal formada (viene de JSON editable):

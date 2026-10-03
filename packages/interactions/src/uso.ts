@@ -43,7 +43,15 @@ function accionUsa(a: Accion, variableId: string): boolean {
     case 'asignar_variable':
       return a.variableId === variableId || operandoUsa(a.valor, variableId);
     case 'sumar_variable':
+    case 'limpiar_variable':
+    case 'alternar_variable':
       return a.variableId === variableId;
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return a.variableId === variableId || operandoUsa(a.cantidad, variableId);
+    case 'concatenar_variable':
+      return a.variableId === variableId || operandoUsa(a.texto, variableId);
     default:
       return false;
   }

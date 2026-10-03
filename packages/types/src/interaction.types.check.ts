@@ -76,6 +76,12 @@ export type _Acciones = Assert<
     | 'cerrar_capa'
     | 'asignar_variable'
     | 'sumar_variable'
+    | 'restar_variable'
+    | 'multiplicar_variable'
+    | 'dividir_variable'
+    | 'limpiar_variable'
+    | 'concatenar_variable'
+    | 'alternar_variable'
   >
 >;
 
@@ -196,6 +202,15 @@ export function describirAccion(a: Accion): string {
       return `asignar ${a.variableId}`;
     case 'sumar_variable':
       return `sumar ${a.cantidad} a ${a.variableId}`;
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return `${a.tipo} ${a.variableId}`;
+    case 'limpiar_variable':
+    case 'alternar_variable':
+      return `${a.tipo} ${a.variableId}`;
+    case 'concatenar_variable':
+      return `concatenar a ${a.variableId}`;
     default: {
       const _nunca: never = a;
       return _nunca;

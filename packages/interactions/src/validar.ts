@@ -301,6 +301,68 @@ export function validarReglas(
           }
           break;
         }
+        case 'restar_variable':
+        case 'multiplicar_variable':
+        case 'dividir_variable': {
+          const def = refVariable(accion.variableId, regla.id);
+          revisarOperando(accion.cantidad, regla.id);
+          if (def && def.tipo !== 'numero') {
+            errores.push({
+              codigo: 'tipo_incompatible',
+              reglaId: regla.id,
+              variableId: def.id,
+              mensaje: `Solo se puede operar con números sobre una variable numérica («${def.nombre}» es ${def.tipo}).`,
+            });
+          }
+          const t = tipoDeOperando(accion.cantidad, vars);
+          if (t !== 'numero' && t !== 'desconocido') {
+            errores.push({
+              codigo: 'tipo_incompatible',
+              reglaId: regla.id,
+              mensaje: 'La cantidad debe ser un número.',
+            });
+          }
+          if (
+            accion.tipo === 'dividir_variable' &&
+            accion.cantidad.tipo === 'literal' &&
+            accion.cantidad.valor === 0
+          ) {
+            errores.push({
+              codigo: 'cantidad_invalida',
+              reglaId: regla.id,
+              mensaje: 'No se puede dividir por cero.',
+            });
+          }
+          break;
+        }
+        case 'limpiar_variable':
+          refVariable(accion.variableId, regla.id);
+          break;
+        case 'concatenar_variable': {
+          const def = refVariable(accion.variableId, regla.id);
+          revisarOperando(accion.texto, regla.id);
+          if (def && def.tipo !== 'texto') {
+            errores.push({
+              codigo: 'tipo_incompatible',
+              reglaId: regla.id,
+              variableId: def.id,
+              mensaje: `Solo se puede concatenar sobre una variable de texto («${def.nombre}» es ${def.tipo}).`,
+            });
+          }
+          break;
+        }
+        case 'alternar_variable': {
+          const def = refVariable(accion.variableId, regla.id);
+          if (def && def.tipo !== 'booleano') {
+            errores.push({
+              codigo: 'tipo_incompatible',
+              reglaId: regla.id,
+              variableId: def.id,
+              mensaje: `Solo se puede alternar una variable verdadero/falso («${def.nombre}» es ${def.tipo}).`,
+            });
+          }
+          break;
+        }
         default:
           break;
       }

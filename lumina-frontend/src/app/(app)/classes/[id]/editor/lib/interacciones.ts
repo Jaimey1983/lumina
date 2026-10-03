@@ -161,6 +161,18 @@ export function describirAccion(
       return 'asignar una variable';
     case 'sumar_variable':
       return `sumar ${a.cantidad} a una variable`;
+    case 'restar_variable':
+      return 'restar de una variable';
+    case 'multiplicar_variable':
+      return 'multiplicar una variable';
+    case 'dividir_variable':
+      return 'dividir una variable';
+    case 'limpiar_variable':
+      return 'reiniciar una variable';
+    case 'concatenar_variable':
+      return 'añadir texto a una variable';
+    case 'alternar_variable':
+      return 'invertir una variable (sí/no)';
   }
 }
 
@@ -171,5 +183,7 @@ export function describirRegla(
 ): string {
   const cond = r.condiciones.length > 0 ? ' (si se cumple la condición)' : '';
   const acciones = r.acciones.map((a) => describirAccion(a, tituloSlide, nombreBloque)).join(', ');
-  return `${EVENTOS[r.evento]}${cond} → ${acciones || 'sin acciones'}`;
+  // N2: la rama «si no» no puede quedar fuera del texto (N3 lo describe con nombres).
+  const sino = (r.sino ?? []).map((a) => describirAccion(a, tituloSlide, nombreBloque)).join(', ');
+  return `${EVENTOS[r.evento]}${cond} → ${acciones || 'sin acciones'}${sino ? ` · si no → ${sino}` : ''}`;
 }

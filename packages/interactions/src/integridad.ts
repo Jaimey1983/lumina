@@ -162,6 +162,12 @@ function accionRefiere(a: Accion, o: Objetivo): boolean {
       return o.bloque?.(a.bloqueId) ?? false;
     case 'asignar_variable':
       return o.bloque !== undefined && operandoRefiere(a.valor, o.bloque);
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return o.bloque !== undefined && operandoRefiere(a.cantidad, o.bloque);
+    case 'concatenar_variable':
+      return o.bloque !== undefined && operandoRefiere(a.texto, o.bloque);
     default:
       return false;
   }
@@ -423,6 +429,12 @@ function remapAccion(a: Accion, mapa: MapaIds): Accion {
       return { ...a, capaId: m(mapa.capas, a.capaId) };
     case 'asignar_variable':
       return { ...a, valor: remapOperando(a.valor, mapa) };
+    case 'restar_variable':
+    case 'multiplicar_variable':
+    case 'dividir_variable':
+      return { ...a, cantidad: remapOperando(a.cantidad, mapa) };
+    case 'concatenar_variable':
+      return { ...a, texto: remapOperando(a.texto, mapa) };
     default:
       return a;
   }
