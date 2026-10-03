@@ -6,7 +6,8 @@ import type {
 } from '@lumina/types/interaction';
 import { coincideTipo } from './estado.js';
 import type { ContextoValidacion } from './recolectar.js';
-import { LIMITES_POR_DEFECTO } from './tipos.js';
+import { accionesDeRegla } from './reglas.js';
+import { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
 import type { ReglaAplicable } from './tipos.js';
 
 export type CodigoError =
@@ -22,7 +23,8 @@ export type CodigoError =
   | 'variable_invalida'
   | 'demasiadas_variables'
   | 'condicion_demasiado_profunda'
-  | 'evento_incoherente';
+  | 'evento_incoherente'
+  | 'clave_sistema_invalida';
 
 export interface ErrorValidacion {
   codigo: CodigoError;
@@ -49,6 +51,8 @@ function tipoDeOperando(
       return 'texto';
     case 'respuesta_correcta':
       return 'booleano';
+    case 'sistema':
+      return 'numero';
     default:
       return 'desconocido';
   }
@@ -113,6 +117,12 @@ export function validarReglas(
     if (op.tipo === 'variable') refVariable(op.variableId, reglaId);
     else if (op.tipo === 'estado_bloque' || op.tipo === 'respuesta_correcta') {
       refBloque(op.bloqueId, reglaId);
+    } else if (op.tipo === 'sistema' && !CLAVES_SISTEMA.includes(op.clave)) {
+      errores.push({
+        codigo: 'clave_sistema_invalida',
+        reglaId,
+        mensaje: `La variable del sistema «${String(op.clave)}» no existe.`,
+      });
     }
   };
 
@@ -131,6 +141,24 @@ export function validarReglas(
         revisarOperando(c.derecha, reglaId);
         const ta = tipoDeOperando(c.izquierda, vars);
         const tb = tipoDeOperando(c.derecha, vars);
+        const esTexto =
+          c.operador === 'contiene' ||
+          c.operador === 'no_contiene' ||
+          c.operador === 'empieza_con' ||
+          c.operador === 'termina_con';
+        if (esTexto) {
+          if (
+            (ta !== 'texto' && ta !== 'desconocido') ||
+            (tb !== 'texto' && tb !== 'desconocido')
+          ) {
+            errores.push({
+              codigo: 'tipo_incompatible',
+              reglaId,
+              mensaje: `«${c.operador}» solo compara texto.`,
+            });
+          }
+          return;
+        }
         const ordena = c.operador !== '==' && c.operador !== '!=';
         if (ordena && (ta !== 'numero' || tb !== 'numero')) {
           if (ta !== 'desconocido' && tb !== 'desconocido') {
@@ -151,6 +179,23 @@ export function validarReglas(
             reglaId,
             mensaje: `Se compara un valor de tipo ${ta} con uno de tipo ${tb}.`,
           });
+        }
+        return;
+      }
+      case 'entre': {
+        revisarOperando(c.valor, reglaId);
+        revisarOperando(c.desde, reglaId);
+        revisarOperando(c.hasta, reglaId);
+        for (const op of [c.valor, c.desde, c.hasta]) {
+          const t = tipoDeOperando(op, vars);
+          if (t !== 'numero' && t !== 'desconocido') {
+            errores.push({
+              codigo: 'tipo_incompatible',
+              reglaId,
+              mensaje: '«entre» solo compara números.',
+            });
+            break;
+          }
         }
         return;
       }
@@ -197,7 +242,7 @@ export function validarReglas(
 
     for (const cond of regla.condiciones) revisarCondicion(cond, regla.id, 0);
 
-    for (const accion of regla.acciones) {
+    for (const accion of accionesDeRegla(regla)) {
       switch (accion.tipo) {
         case 'ir_a_slide':
           if (!ctx.slideIds.has(accion.slideId)) {

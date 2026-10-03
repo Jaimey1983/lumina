@@ -44,7 +44,8 @@ export type {
   SlideMotor,
 } from './integridad.js';
 export type { CodigoError, ErrorValidacion } from './validar.js';
-export { LIMITES_POR_DEFECTO } from './tipos.js';
+export { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
+export { accionesDeRegla } from './reglas.js';
 export type {
   Aviso,
   CodigoAviso,

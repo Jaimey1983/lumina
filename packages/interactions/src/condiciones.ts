@@ -1,4 +1,5 @@
 import type {
+  ClaveSistema,
   Condicion,
   OperadorComparacion,
   Operando,
@@ -12,6 +13,8 @@ export interface CtxEvaluacion {
   avisos: Aviso[];
   profundidadMax: number;
   reglaId?: string;
+  /** Variables del sistema disponibles (N1/D18). */
+  sistema?: Partial<Record<ClaveSistema, number>>;
   /**
    * Uso interno. Se activa cuando CUALQUIER parte visitada de la condición no
    * se pudo evaluar (variable inexistente, tipos incompatibles, demasiado
@@ -48,9 +51,30 @@ export function evaluarOperando(
       // Sin respuesta registrada se considera `false`: solo reglas disparadas
       // por un evento pueden llegar aquí, y ya habrán registrado la respuesta.
       return leer(estado.respuestas, op.bloqueId) ?? false;
+    case 'sistema': {
+      const v = ctx.sistema?.[op.clave];
+      if (typeof v !== 'number' || !Number.isFinite(v)) {
+        ctx.rota = true;
+        ctx.avisos.push({
+          codigo: 'sistema_no_disponible',
+          reglaId: ctx.reglaId,
+          mensaje: `La variable del sistema «${op.clave}» no está disponible aquí.`,
+        });
+        return undefined;
+      }
+      return v;
+    }
     default:
       return undefined;
   }
+}
+
+/** Minúsculas y sin acentos: «Árbol» y «arbol» son lo mismo (N1). */
+function normalizarTexto(t: string): string {
+  return t
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }
 
 function comparar(
@@ -60,6 +84,27 @@ function comparar(
 ): boolean | 'incompatible' {
   if (operador === '==') return a === b;
   if (operador === '!=') return a !== b;
+  // Operadores de texto (N1): solo entre `texto`, sin mayúsculas ni acentos.
+  if (
+    operador === 'contiene' ||
+    operador === 'no_contiene' ||
+    operador === 'empieza_con' ||
+    operador === 'termina_con'
+  ) {
+    if (typeof a !== 'string' || typeof b !== 'string') return 'incompatible';
+    const x = normalizarTexto(a);
+    const y = normalizarTexto(b);
+    switch (operador) {
+      case 'contiene':
+        return x.includes(y);
+      case 'no_contiene':
+        return !x.includes(y);
+      case 'empieza_con':
+        return x.startsWith(y);
+      default:
+        return x.endsWith(y);
+    }
+  }
   // Orden (<, <=, >, >=): solo entre números finitos.
   if (
     typeof a !== 'number' ||
@@ -82,6 +127,13 @@ function comparar(
       return 'incompatible';
   }
 }
+
+const ESTRICTO_TEXTO: ReadonlySet<OperadorComparacion> = new Set<OperadorComparacion>([
+  'contiene',
+  'no_contiene',
+  'empieza_con',
+  'termina_con',
+]);
 
 function evaluar(
   cond: Condicion,
@@ -114,11 +166,42 @@ function evaluar(
         ctx.avisos.push({
           codigo: 'tipo_incompatible',
           reglaId: ctx.reglaId,
-          mensaje: `«${cond.operador}» solo compara números; se evalúa como falsa.`,
+          mensaje: ESTRICTO_TEXTO.has(cond.operador)
+            ? `«${cond.operador}» solo compara texto; se evalúa como falsa.`
+            : `«${cond.operador}» solo compara números; se evalúa como falsa.`,
         });
         return false;
       }
       return r;
+    }
+    case 'entre': {
+      const v = evaluarOperando(cond.valor, estado, ctx);
+      const d = evaluarOperando(cond.desde, estado, ctx);
+      const h = evaluarOperando(cond.hasta, estado, ctx);
+      if (v === undefined || d === undefined || h === undefined) {
+        ctx.rota = true;
+        return false;
+      }
+      if (
+        typeof v !== 'number' ||
+        typeof d !== 'number' ||
+        typeof h !== 'number' ||
+        !Number.isFinite(v) ||
+        !Number.isFinite(d) ||
+        !Number.isFinite(h)
+      ) {
+        ctx.rota = true;
+        ctx.avisos.push({
+          codigo: 'rango_invalido',
+          reglaId: ctx.reglaId,
+          mensaje: '«entre» solo compara números finitos; se evalúa como falsa.',
+        });
+        return false;
+      }
+      // Incluye los extremos; si vienen al revés se toman al revés.
+      const min = Math.min(d, h);
+      const max = Math.max(d, h);
+      return v >= min && v <= max;
     }
     case 'y':
       // `y` vacío es verdadero (elemento neutro).

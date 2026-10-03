@@ -275,10 +275,18 @@ export function procesarEvento(
         avisos: c.avisos,
         profundidadMax: lim.profundidadCondicion,
         reglaId: ra.regla.id,
+        ...(contexto.sistema !== undefined ? { sistema: contexto.sistema } : {}),
       };
-      if (!evaluarCondiciones(ra.regla.condiciones, c.w, ctxEval)) continue;
+      const cumple = evaluarCondiciones(ra.regla.condiciones, c.w, ctxEval);
+      // «Si no» (N1/D15): solo cuando la condición dio FALSO de verdad. Una
+      // condición rota (`ctxEval.rota`) no ejecuta ninguna rama: falla cerrado.
+      const lista = cumple
+        ? ra.regla.acciones
+        : ctxEval.rota === true
+          ? []
+          : (ra.regla.sino ?? []);
 
-      for (const accion of ra.regla.acciones) {
+      for (const accion of lista) {
         if (c.accionesRestantes <= 0) {
           aviso(c, {
             codigo: 'limite_acciones',

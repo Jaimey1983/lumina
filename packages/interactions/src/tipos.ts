@@ -1,4 +1,5 @@
 import type {
+  ClaveSistema,
   EstadoObjeto,
   EventoTipo,
   Regla,
@@ -69,7 +70,9 @@ export type CodigoAviso =
   | 'ciclo_cortado'
   | 'profundidad_excedida'
   | 'limite_acciones'
-  | 'navegacion_ignorada';
+  | 'navegacion_ignorada'
+  | 'sistema_no_disponible'
+  | 'rango_invalido';
 
 /**
  * El motor NUNCA lanza por una regla mal formada (viene de JSON editable):
@@ -105,4 +108,19 @@ export const LIMITES_POR_DEFECTO: Readonly<LimitesMotor> = Object.freeze({
 export interface ContextoMotor {
   /** Definiciones de variable de la clase (para validar tipos al escribir). */
   variables: readonly VariableDef[];
+  /**
+   * Valores de las variables del sistema (N1/D18). Las deriva el runtime en cada
+   * evaluación; si falta una clave, la condición que la lea queda rota (falla
+   * cerrado) y deja un aviso.
+   */
+  sistema?: Partial<Record<ClaveSistema, number>>;
 }
+
+/** Claves de sistema válidas (para validar reglas editadas a mano). */
+export const CLAVES_SISTEMA: readonly ClaveSistema[] = Object.freeze([
+  'slide_numero',
+  'slide_total',
+  'progreso_pct',
+  'tiempo_s',
+  'intento',
+]);

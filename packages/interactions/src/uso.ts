@@ -1,3 +1,4 @@
+import { accionesDeRegla } from './reglas.js';
 import type { Accion, Condicion, Operando } from '@lumina/types/interaction';
 import type { ReglaAplicable } from './tipos.js';
 
@@ -20,6 +21,12 @@ function condicionUsa(c: Condicion, variableId: string, prof = 0): boolean {
       return (
         operandoUsa(c.izquierda, variableId) ||
         operandoUsa(c.derecha, variableId)
+      );
+    case 'entre':
+      return (
+        operandoUsa(c.valor, variableId) ||
+        operandoUsa(c.desde, variableId) ||
+        operandoUsa(c.hasta, variableId)
       );
     case 'y':
     case 'o':
@@ -55,7 +62,7 @@ export function usosDeVariable(
   for (const { regla, origen } of reglas) {
     const usa =
       regla.condiciones.some((c) => condicionUsa(c, variableId)) ||
-      regla.acciones.some((a) => accionUsa(a, variableId));
+      accionesDeRegla(regla).some((a) => accionUsa(a, variableId));
     if (!usa) continue;
     usos.push({
       reglaId: regla.id,
