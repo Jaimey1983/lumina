@@ -2560,7 +2560,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                       <Ruler className="size-4 shrink-0" aria-hidden />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-56 p-1.5">
+                  <PopoverContent align="end" className="w-64 p-1.5">
                     <button
                       type="button"
                       title="Atajo: Shift+R"
@@ -2601,11 +2601,11 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                       <Ruler className="size-4 shrink-0" aria-hidden />
                       Borrar todas las guías
                     </button>
-                    <div className="flex items-center gap-1.5 px-2 py-1.5">
+                    <div className="grid grid-cols-[minmax(0,1fr)_4rem_auto] items-center gap-1.5 px-2 py-1.5">
                       <select
                         value={numericGuideEje}
                         aria-label="Eje de la guía"
-                        className="h-7 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
+                        className="h-7 min-w-0 w-full rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
                         onChange={(e) =>
                           setNumericGuideEje(e.target.value as 'horizontal' | 'vertical')
                         }
@@ -2619,7 +2619,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
                         placeholder="px"
                         aria-label="Valor de la guía en px virtuales"
                         value={numericGuideValor}
-                        className="h-7 w-16 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
+                        className="h-7 w-full min-w-0 rounded-md border border-border bg-background px-1.5 text-xs outline-none focus:border-ring"
                         onChange={(e) => setNumericGuideValor(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key !== 'Enter') return;
