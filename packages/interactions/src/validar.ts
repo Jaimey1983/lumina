@@ -9,6 +9,7 @@ import type { ContextoValidacion } from './recolectar.js';
 import { errorDeParametro } from './eventos.js';
 import { accionesDeRegla } from './reglas.js';
 import { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
+import { estadoDeclarado } from './estados-bloque.js';
 import type { ReglaAplicable } from './tipos.js';
 
 export type CodigoError =
@@ -29,7 +30,9 @@ export type CodigoError =
   | 'regla_sin_acciones'
   | 'operando_incompleto'
   | 'evento_no_soportado'
-  | 'parametro_invalido';
+  | 'parametro_invalido'
+  | 'estado_inexistente'
+  | 'estados_personalizados_invalidos';
 
 export interface ErrorValidacion {
   codigo: CodigoError;
@@ -272,8 +275,20 @@ export function validarReglas(
           break;
         case 'mostrar':
         case 'ocultar':
+          refBloque(accion.bloqueId, regla.id);
+          break;
         case 'cambiar_estado':
           refBloque(accion.bloqueId, regla.id);
+          if (
+            ctx.bloqueIds.has(accion.bloqueId) &&
+            !estadoDeclarado(accion.estado, accion.bloqueId, ctx.estadosPersonalizados)
+          ) {
+            errores.push({
+              codigo: 'estado_inexistente',
+              reglaId: regla.id,
+              mensaje: `El elemento «${accion.bloqueId}» no declara el estado «${String(accion.estado)}».`,
+            });
+          }
           break;
         case 'abrir_capa':
         case 'cerrar_capa':

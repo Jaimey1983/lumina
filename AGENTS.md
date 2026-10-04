@@ -180,7 +180,7 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 | J (IA curricular) | `docs/tablero/etapa-J.md` | J10/J11 pendientes |
 | K (motor de interacción) | `docs/tablero/etapa-K.md` | K8b, K9a, K11–K15 pendientes |
 | M (matemática) | `docs/tablero/etapa-M.md` | en revisión |
-| N (condicionales Storyline) | `docs/tablero/etapa-N.md` | N0–N3 hechas; N5 en revisión; N4, N6–N8 pendientes |
+| N (condicionales Storyline) | `docs/tablero/etapa-N.md` | N0–N3 y N5 hechas; N4, N6 y N7 en revisión; N8 pendiente |
 | Q (química) | `docs/tablero/etapa-Q.md` | pendiente |
 
 Las etapas cerradas son historial: no se leen salvo que una ficha activa las cite.

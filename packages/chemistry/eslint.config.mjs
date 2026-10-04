@@ -1,3 +1,3 @@
-import base from '../../eslint.config.mjs';
+import base from '../../eslint.config.base.mjs';
 
-export default [...base];
+export default base;

@@ -1263,6 +1263,7 @@ import type {
   InteractiveChecklistWidget,
   ScratchCardWidget,
   AccordionWidget,
+  TablaPeriodicaWidget,
   WidgetCampoEstilo,
   WidgetElementPos,
 } from './widget.types.js';
@@ -1690,6 +1691,7 @@ export type Block = (
   | InteractiveChecklistWidget
   | ScratchCardWidget
   | AccordionWidget
+  | TablaPeriodicaWidget
 ) & {
   animaciones?: import('./animation.types.js').Animacion[];
   /**
@@ -1718,6 +1720,19 @@ export type Block = (
    * `mostrar`. Aditivo y opcional: si falta, el bloque es visible.
    */
   ocultoInicial?: boolean;
+  /**
+   * N6 — apariencia por estado (`normal`, `visitado`, `seleccionado`,
+   * `deshabilitado`, `hover`, `down`). Solo se aplica en modos con runtime;
+   * el editor y las miniaturas no cambian. Aditivo y opcional.
+   */
+  apariencias?: Partial<
+    Record<
+      import('./interaction.types.js').EstadoConApariencia,
+      import('./interaction.types.js').AparienciaEstado
+    >
+  >;
+  /** N6 — estados personalizados de este bloque (máximo 8), por `id`. */
+  estadosPersonalizados?: import('./interaction.types.js').EstadoPersonalizado[];
 };
 
 export type BlockTipo = Block['tipo'];
@@ -1743,7 +1758,8 @@ export type WidgetBlock =
   | ImageCompareWidget
   | InteractiveChecklistWidget
   | ScratchCardWidget
-  | AccordionWidget;
+  | AccordionWidget
+  | TablaPeriodicaWidget;
 
 export function isCaptivateWidgetBlock(block: {
   tipo: string;
@@ -1891,6 +1907,7 @@ export const BLOCK_FALLBACKS = {
   interactiveChecklist: { x: 10, y: 10, ancho: 80, alto: 80 },
   scratchCard: { x: 15, y: 10, ancho: 70, alto: 75 },
   accordion: { x: 10, y: 10, ancho: 80, alto: 80 },
+  tablaPeriodica: { x: 5, y: 5, ancho: 90, alto: 90 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */

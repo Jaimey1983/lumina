@@ -30,6 +30,7 @@ describe('widget-panel-catalog', () => {
       'image-compare',
       'scratch-card',
       'accordion',
+      'tabla_periodica',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

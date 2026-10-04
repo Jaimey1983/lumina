@@ -40,6 +40,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@lumina/chemistry": "workspace:*",
     "@lumina/charts": "workspace:*",
+    "@lumina/chemistry": "workspace:*",
     "@lumina/editor-shared": "workspace:*",
     "@lumina/element-kit-core": "workspace:*",
     "@lumina/scoring": "workspace:*",

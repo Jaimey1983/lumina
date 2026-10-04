@@ -1,5 +1,5 @@
 import type {
-  EstadoObjeto,
+  EstadoDeBloque,
   VariableDef,
   VariableValor,
 } from '@lumina/types/interaction';
@@ -7,11 +7,12 @@ import type { Slide } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
 import { recorrerBloquesDeSlide } from './recolectar.js';
 import type { EstadoMotor } from './tipos.js';
+import { marcaDeVisitado } from './sistema.js';
 
 /** Copia mutable interna; nunca sale del paquete. */
 export interface EstadoTrabajo {
   variables: Record<string, VariableValor>;
-  estados: Record<string, EstadoObjeto>;
+  estados: Record<string, EstadoDeBloque>;
   visibles: Record<string, boolean>;
   capasAbiertas: string[];
   respuestas: Record<string, boolean>;
@@ -170,6 +171,8 @@ export function entrarASlide(estado: EstadoMotor, slide: SlideInicial & { id: st
   sembrarVisibles(trabajo, slide);
   if (primera) sembrarCapasIniciales(trabajo, slide);
   trabajo.visibles[marcaDeVisita(slide.id)] = true;
+  // N7: «visitado» de verdad (la de arriba solo dice «sembrado»). Alimenta `progreso_pct`.
+  trabajo.visibles[marcaDeVisitado(slide.id)] = true;
   return congelar(trabajo);
 }
 

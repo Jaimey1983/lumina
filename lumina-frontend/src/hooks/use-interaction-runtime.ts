@@ -25,11 +25,12 @@ import {
   hayReglaDeEvento,
   recolectarReglas,
   temporizadoresPendientes,
+  tiempoActivoPersistido,
   type EstadoMotor,
   type EventoMotor,
 } from '@lumina/interactions';
 import type {
-  EstadoObjeto,
+  EstadoDeBloque,
   EventoTipo,
   VariableDef,
   VariableValor,
@@ -42,7 +43,7 @@ import { ejecutarEvento, hidratarEstado } from '@/lib/interaction-runtime';
 /** Lo que `SlideRenderer` reenvía a `config` de cada elemento. */
 export interface SlideInteractionRuntime {
   emitir: (bloqueId: string, evento: EventoTipo) => void;
-  estadoDe: (bloqueId: string) => EstadoObjeto | undefined;
+  estadoDe: (bloqueId: string) => EstadoDeBloque | undefined;
   /** K8a — `false` = el reproductor omite el bloque. Ausente = visible. */
   visibles: Readonly<Record<string, boolean>>;
   /** K8a — ids de capas abiertas, en orden de apertura. */
@@ -75,6 +76,14 @@ export interface UseInteractionRuntimeOptions {
   estadoInicial?: unknown;
   /** K5: se llama tras cada evento con el estado nuevo (para persistirlo). */
   onEstadoChange?: (estado: EstadoMotor) => void;
+  /** N7 — número de intento autónomo (1-based) para `intento`. Por defecto 1. */
+  intento?: number;
+  /**
+   * N7 — vista previa: el intento es ficticio (siempre 1) y el tiempo parte de
+   * cero en cada apertura, así que las variables del sistema son SIMULADAS. El
+   * resultado lo declara en `sistemaSimulado` para que la interfaz lo marque.
+   */
+  simulado?: boolean;
 }
 
 export interface UseInteractionRuntimeResult {
@@ -84,6 +93,8 @@ export interface UseInteractionRuntimeResult {
   runtime: SlideInteractionRuntime | undefined;
   /** Estado actual del motor (K5 lo persistirá). */
   estado: EstadoMotor | null;
+  /** N7 — `true` en vista previa: `intento` y `tiempo_s` no son los de un alumno real. */
+  sistemaSimulado: boolean;
 }
 
 const SIN_VARIABLES: readonly VariableDef[] = [];
@@ -102,6 +113,41 @@ function teclaDebeIgnorarse(e: KeyboardEvent): boolean {
   return false;
 }
 
+/**
+ * N7 — segundos ACTIVOS del intento: no cuenta el tiempo con la pestaña oculta.
+ * Parte de lo que dejó el estado persistido (K5), así que una recarga no lo
+ * reinicia (lo ocurrido entre el último evento y la recarga se pierde, a favor
+ * del alumno).
+ */
+function useTiempoActivo(enabled: boolean, baseS: number): () => number {
+  const acumulado = useRef(baseS);
+  const desde = useRef<number | null>(null);
+  useEffect(() => {
+    if (!enabled || typeof document === 'undefined') return;
+    const ahora = () => performance.now();
+    const pausar = () => {
+      if (desde.current !== null) {
+        acumulado.current += (ahora() - desde.current) / 1000;
+        desde.current = null;
+      }
+    };
+    const reanudar = () => {
+      if (desde.current === null) desde.current = ahora();
+    };
+    const alCambiar = () => (document.visibilityState === 'hidden' ? pausar() : reanudar());
+    if (document.visibilityState !== 'hidden') reanudar();
+    document.addEventListener('visibilitychange', alCambiar);
+    return () => {
+      document.removeEventListener('visibilitychange', alCambiar);
+      pausar();
+    };
+  }, [enabled]);
+  return useCallback(
+    () => acumulado.current + (desde.current === null ? 0 : (performance.now() - desde.current) / 1000),
+    [],
+  );
+}
+
 export function useInteractionRuntime({
   enabled,
   slides: slidesEntrada,
@@ -110,6 +156,8 @@ export function useInteractionRuntime({
   navigate,
   estadoInicial,
   onEstadoChange,
+  intento = 1,
+  simulado = false,
 }: UseInteractionRuntimeOptions): UseInteractionRuntimeResult {
   const slides = useMemo(
     () => (enabled ? migrarAccionesLegacyARegla(slidesEntrada) : (slidesEntrada as Slide[])),
@@ -122,14 +170,19 @@ export function useInteractionRuntime({
   const [restaurado] = useState<EstadoMotor | null>(() =>
     enabled ? hidratarEstado(estadoInicial, variables, slides) : null,
   );
+  const tiempoActivoS = useTiempoActivo(
+    enabled,
+    // En vista previa el reloj parte de cero: no es el de un alumno real.
+    simulado || restaurado === null ? 0 : tiempoActivoPersistido(restaurado),
+  );
   const [estadoGuardado, setEstadoGuardado] = useState<EstadoMotor | null>(restaurado);
   const estadoRef = useRef<EstadoMotor | null>(restaurado);
 
   // Refs al último valor: los manejadores no deben quedar con una clausura vieja.
-  const vivo = useRef({ slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId });
+  const vivo = useRef({ slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId, intento });
   // Declarado antes que los efectos que despachan: React los corre en orden.
   useEffect(() => {
-    vivo.current = { slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId };
+    vivo.current = { slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId, intento };
   });
 
   const slideDeBloque = useMemo(() => {
@@ -154,11 +207,12 @@ export function useInteractionRuntime({
       evento,
       // D1: sin `navigate` (vivo / presentación) los efectos se descartan.
       navigate: v.navigate,
+      entorno: { tiempoActivoS: tiempoActivoS(), intento: v.intento },
     });
     estadoRef.current = nuevo;
     setEstadoGuardado(nuevo);
     v.onEstadoChange?.(nuevo);
-  }, []);
+  }, [tiempoActivoS]);
 
   const emitir = useCallback(
     (bloqueId: string, tipo: EventoTipo) => {
@@ -302,5 +356,5 @@ export function useInteractionRuntime({
     };
   }, [enabled, emitir, estadoParaPintar, cerrarCapa, escuchaHover, hover, asignarVariable]);
 
-  return { slides, runtime, estado: estadoGuardado };
+  return { slides, runtime, estado: estadoGuardado, sistemaSimulado: enabled && simulado };
 }

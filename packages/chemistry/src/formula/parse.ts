@@ -1,138 +1,170 @@
-/** Subíndices Unicode → ASCII. */
-const SUB = '₀₁₂₃₄₅₆₇₈₉';
-const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+import { ChemistryParseError } from '../errors.js';
+import { getAtomicMass } from '../data/elements.js';
+import { normalizeFormulaInput } from './normalize.js';
 
-function digitFromSub(ch: string): string {
-  const i = SUB.indexOf(ch);
-  return i >= 0 ? String(i) : ch;
-}
-
-function digitFromSup(ch: string): string {
-  const i = SUP.indexOf(ch);
-  return i >= 0 ? String(i) : ch;
-}
-
-/** Normaliza fórmula a ASCII con subíndices numéricos. */
-export function normalizeFormulaInput(raw: string): string {
-  let out = '';
-  for (const ch of raw.trim()) {
-    if (SUB.includes(ch)) out += digitFromSub(ch);
-    else if (SUP.includes(ch)) out += `^${digitFromSup(ch)}`;
-    else if (ch === '·' || ch === '•') out += '·';
-    else out += ch;
-  }
-  return out.replace(/\s+/g, '');
-}
-
-export type ElementCounts = Record<string, number>;
+export const MAX_FORMULA_LENGTH = 256;
 
 export interface ParsedFormula {
-  counts: ElementCounts;
+  /** Conteo de átomos por símbolo elementar (ej. { H: 2, O: 1 }). */
+  atoms: Record<string, number>;
+  /** Carga neta (positiva = catión). 0 si neutra. */
   charge: number;
-  hydrate?: { formula: ParsedFormula; count: number };
 }
 
-const ELEMENT_RE = /^[A-Z][a-z]?/;
+const ELEMENT_PATTERN = /^[A-Z][a-z]?/;
+const ALLOWED_CHARS = /^[A-Za-z0-9().·+\-^]+$/;
 
-function parseSegment(segment: string): ParsedFormula {
-  let i = 0;
-  const counts: ElementCounts = {};
-  let charge = 0;
+function mergeCounts(target: Record<string, number>, source: Record<string, number>, factor = 1): void {
+  for (const [el, count] of Object.entries(source)) {
+    target[el] = (target[el] ?? 0) + count * factor;
+  }
+}
 
-  const readNumber = (): number => {
-    let n = '';
-    while (i < segment.length && /\d/.test(segment[i]!)) {
-      n += segment[i];
-      i++;
+function countElementSymbols(fragment: string): number {
+  const matches = fragment.match(/[A-Z][a-z]?/g);
+  return matches?.length ?? 0;
+}
+
+function parseChargeSuffix(s: string): { formulaPart: string; charge: number } {
+  const caret = s.match(/\^([0-9]*)([+-])$/);
+  if (caret) {
+    const mag = caret[1] === '' ? 1 : Number.parseInt(caret[1], 10);
+    const charge = caret[2] === '+' ? mag : -mag;
+    return { formulaPart: s.slice(0, -caret[0].length), charge };
+  }
+
+  const elementIon = s.match(/^([A-Z][a-z]?)(\d*)([+-])$/);
+  if (elementIon) {
+    const mag = elementIon[2] === '' ? 1 : Number.parseInt(elementIon[2], 10);
+    const charge = elementIon[3] === '+' ? mag : -mag;
+    return { formulaPart: elementIon[1], charge };
+  }
+
+  const polyIon = s.match(/^(.+)(\d+)([+-])$/);
+  if (polyIon) {
+    const formulaPart = polyIon[1];
+    const mag = Number.parseInt(polyIon[2], 10);
+    const looksPolyatomic =
+      countElementSymbols(formulaPart) >= 2 && (/\d/.test(formulaPart) || formulaPart.includes('('));
+    if (mag >= 1 && mag <= 9 && looksPolyatomic) {
+      const charge = polyIon[3] === '+' ? mag : -mag;
+      return { formulaPart, charge };
     }
-    return n ? parseInt(n, 10) : 1;
-  };
+  }
 
-  const merge = (src: ElementCounts, mult: number) => {
-    for (const [el, c] of Object.entries(src)) {
-      counts[el] = (counts[el] ?? 0) + c * mult;
-    }
-  };
+  const last = s.at(-1);
+  if (last === '+' || last === '-') {
+    const charge = last === '+' ? 1 : -1;
+    return { formulaPart: s.slice(0, -1), charge };
+  }
+
+  return { formulaPart: s, charge: 0 };
+}
+
+function parseSegment(segment: string, pos: number): { atoms: Record<string, number>; end: number } {
+  const atoms: Record<string, number> = {};
+  let i = pos;
 
   while (i < segment.length) {
-    const ch = segment[i]!;
+    const ch = segment[i];
+    if (ch === ' ') {
+      i += 1;
+      continue;
+    }
     if (ch === '(') {
-      i++;
-      const start = i;
-      let depth = 1;
-      while (i < segment.length && depth > 0) {
-        if (segment[i] === '(') depth++;
-        if (segment[i] === ')') depth--;
-        if (depth > 0) i++;
+      const inner = parseSegment(segment, i + 1);
+      i = inner.end;
+      if (segment[i] !== ')') {
+        throw new ChemistryParseError(`Paréntesis sin cerrar en posición ${i}`);
       }
-      const inner = segment.slice(start, i);
-      i++; // skip )
-      const mult = readNumber();
-      const innerParsed = parseSegment(inner);
-      merge(innerParsed.counts, mult);
-      charge += innerParsed.charge * mult;
+      i += 1;
+      const mult = readCount(segment, i);
+      i = mult.end;
+      mergeCounts(atoms, inner.atoms, mult.value);
       continue;
     }
-    if (ch === '+' || ch === '-') {
-      const sign = ch === '+' ? 1 : -1;
-      i++;
-      let n = '';
-      while (i < segment.length && /\d/.test(segment[i]!)) {
-        n += segment[i];
-        i++;
-      }
-      charge += sign * (n ? parseInt(n, 10) : 1);
-      continue;
+    if (ch === ')') {
+      return { atoms, end: i };
     }
+
     const rest = segment.slice(i);
-    const m = rest.match(ELEMENT_RE);
-    if (!m) {
-      throw new Error(`Símbolo químico inválido cerca de: ${segment.slice(i, i + 8)}`);
+    const elMatch = rest.match(ELEMENT_PATTERN);
+    if (!elMatch) {
+      throw new ChemistryParseError(`Símbolo elementar inválido cerca de «${rest.slice(0, 8)}»`);
     }
-    const sym = m[0];
-    i += sym.length;
-    const mult = readNumber();
-    counts[sym] = (counts[sym] ?? 0) + mult;
+    const symbol = elMatch[0];
+    i += symbol.length;
+    const count = readCount(segment, i);
+    i = count.end;
+    atoms[symbol] = (atoms[symbol] ?? 0) + count.value;
   }
 
-  return { counts, charge };
+  return { atoms, end: i };
 }
 
-/** Parsea fórmula con paréntesis, hidratos (·) y carga simple al final. */
-export function parseFormula(raw: string): ParsedFormula | null {
-  const trimmed = raw.trim();
-  if (/eval\s*\(/i.test(trimmed)) return null;
-  const s = normalizeFormulaInput(raw);
-  if (!s) return null;
-  if (/[;=<>]/.test(s) || s.includes('->')) return null;
-  // «+» entre especies (p. ej. H2+O2) no es una fórmula válida aquí.
-  const withoutTrailingCharge = s.replace(/[+-]\d*$/, '');
-  if (withoutTrailingCharge.includes('+')) return null;
-  if (s.length > 120) return null;
+function readCount(segment: string, pos: number): { value: number; end: number } {
+  const m = segment.slice(pos).match(/^([0-9]+)/);
+  if (!m) return { value: 1, end: pos };
+  const value = Number.parseInt(m[1], 10);
+  if (value <= 0 || value > 999) {
+    throw new ChemistryParseError(`Subíndice fuera de rango: ${m[1]}`);
+  }
+  return { value, end: pos + m[1].length };
+}
 
-  const hydrateParts = s.split('·');
+function parseFormulaCore(raw: string): ParsedFormula {
+  const normalized = normalizeFormulaInput(raw);
+  if (normalized.length > MAX_FORMULA_LENGTH) {
+    throw new ChemistryParseError(`Fórmula demasiado larga (máx. ${MAX_FORMULA_LENGTH})`);
+  }
+  if (!ALLOWED_CHARS.test(normalized)) {
+    throw new ChemistryParseError('Caracteres no permitidos en la fórmula');
+  }
+
+  const { formulaPart, charge } = parseChargeSuffix(normalized);
+  const parts = formulaPart.split('·').filter((p) => p.length > 0);
+  if (parts.length === 0) {
+    throw new ChemistryParseError('Fórmula vacía');
+  }
+
+  const total: Record<string, number> = {};
+  for (const part of parts) {
+    let segment = part;
+    let hydrateMult = 1;
+    const hydrateLead = segment.match(/^([0-9]+)(.+)$/);
+    if (hydrateLead && /[A-Za-z(]/.test(hydrateLead[2][0] ?? '')) {
+      hydrateMult = Number.parseInt(hydrateLead[1], 10);
+      segment = hydrateLead[2];
+    }
+    const parsed = parseSegment(segment, 0);
+    if (parsed.end !== segment.length) {
+      throw new ChemistryParseError(`Fragmento no reconocido en «${part}»`);
+    }
+    mergeCounts(total, parsed.atoms, hydrateMult);
+  }
+
+  for (const symbol of Object.keys(total)) {
+    if (getAtomicMass(symbol) === undefined) {
+      throw new ChemistryParseError(`Elemento desconocido: ${symbol}`);
+    }
+  }
+
+  return { atoms: total, charge };
+}
+
+/** Parsea una fórmula química (paréntesis, hidratos «·», cargas simples). */
+export function parseFormula(input: string): ParsedFormula {
   try {
-    const main = parseSegment(hydrateParts[0]!);
-    if (hydrateParts.length === 1) return main;
-    const hydrateRaw = hydrateParts.slice(1).join('·');
-    const hydrateParsed = parseSegment(hydrateRaw);
-    return {
-      counts: main.counts,
-      charge: main.charge,
-      hydrate: { formula: hydrateParsed, count: 1 },
-    };
-  } catch {
-    return null;
+    return parseFormulaCore(input);
+  } catch (e) {
+    if (e instanceof ChemistryParseError) throw e;
+    throw new ChemistryParseError('No se pudo interpretar la fórmula');
   }
 }
 
-export function flattenCounts(parsed: ParsedFormula): ElementCounts {
-  const out: ElementCounts = { ...parsed.counts };
-  if (parsed.hydrate) {
-    const inner = flattenCounts(parsed.hydrate.formula);
-    for (const [el, c] of Object.entries(inner)) {
-      out[el] = (out[el] ?? 0) + c * parsed.hydrate.count;
-    }
-  }
+/** Suma conteos de átomos (útil tras expandir hidratos manualmente). */
+export function addAtomCounts(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
+  const out = { ...a };
+  mergeCounts(out, b);
   return out;
 }

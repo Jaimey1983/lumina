@@ -1,6 +1,7 @@
 import type { VariableDef } from '@lumina/types/interaction';
 import type { Block, Slide } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
+import { estadosPersonalizadosPorBloque } from './estados-bloque.js';
 import type { ReglaAplicable } from './tipos.js';
 
 type SlideConReglas = Pick<Slide, 'id' | 'bloques' | 'capas' | 'reglas'>;
@@ -68,6 +69,8 @@ export interface ContextoValidacion {
   bloqueIds: ReadonlySet<string>;
   slideIds: ReadonlySet<string>;
   capaIds: ReadonlySet<string>;
+  /** N6 — estados personalizados declarados por bloque. */
+  estadosPersonalizados?: Readonly<Record<string, readonly string[]>>;
 }
 
 export function contextoDesdeSlides(
@@ -77,6 +80,7 @@ export function contextoDesdeSlides(
   const bloqueIds = new Set<string>();
   const slideIds = new Set<string>();
   const capaIds = new Set<string>();
+  const estadosPersonalizados = estadosPersonalizadosPorBloque(slides);
   for (const slide of slides) {
     slideIds.add(slide.id);
     for (const b of slide.bloques ?? []) {
@@ -91,5 +95,5 @@ export function contextoDesdeSlides(
       }
     }
   }
-  return { variables, bloqueIds, slideIds, capaIds };
+  return { variables, bloqueIds, slideIds, capaIds, estadosPersonalizados };
 }

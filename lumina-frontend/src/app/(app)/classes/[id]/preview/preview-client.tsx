@@ -105,8 +105,9 @@ export function PreviewClient({ id }: { id: string }) {
 
   // Motor de interacción (K4): activo en vista previa; navega por `navigateSlide`,
   // la misma función que se publica en `SlideNavContext`.
-  const { slides, runtime } = useInteractionRuntime({
+  const { slides, runtime, sistemaSimulado } = useInteractionRuntime({
     enabled: true,
+    simulado: true,
     slides: baseSlides,
     variables: classData?.variables,
     slideId: baseSlides[activeSlideIndex]?.id ?? null,
@@ -177,6 +178,14 @@ export function PreviewClient({ id }: { id: string }) {
             Vista previa
           </span>
           <span className="truncate text-sm font-bold text-white">{classData.title}</span>
+          {sistemaSimulado ? (
+            <span
+              className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70"
+              title="En la vista previa, el intento es siempre 1 y el tiempo empieza de cero al abrirla."
+            >
+              Variables del sistema simuladas
+            </span>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {slides.length > 0 ? (

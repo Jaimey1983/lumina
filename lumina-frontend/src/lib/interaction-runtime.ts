@@ -9,8 +9,12 @@
  */
 
 import {
+  calcularSistema,
+  conTiempoActivo,
   crearEstadoInicial,
   entrarASlide,
+  estadoDeclarado,
+  estadosPersonalizadosPorBloque,
   procesarEvento,
   type EstadoMotor,
   type EventoMotor,
@@ -19,6 +23,20 @@ import {
 import type { VariableDef } from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+
+/** N6 — los estados declarados por bloque dependen solo de `slides`: se calculan una vez por mazo. */
+const declaradosPorSlides = new WeakMap<
+  readonly Slide[],
+  Readonly<Record<string, readonly string[]>>
+>();
+function declaradosDe(slides: readonly Slide[]): Readonly<Record<string, readonly string[]>> {
+  let d = declaradosPorSlides.get(slides);
+  if (d === undefined) {
+    d = estadosPersonalizadosPorBloque(slides);
+    declaradosPorSlides.set(slides, d);
+  }
+  return d;
+}
 
 export interface EjecutarEventoArgs {
   reglas: readonly ReglaAplicable[];
@@ -29,6 +47,19 @@ export interface EjecutarEventoArgs {
   evento: EventoMotor;
   /** Función de `SlideNavContext`; `null` = inerte para navegación (D1). */
   navigate: ((action: SlideNavAction) => void) | null;
+  /**
+   * N7 — datos del entorno para las variables del sistema (D18). Sin él, una
+   * condición que lea una variable del sistema falla cerrado (no dispara).
+   */
+  entorno?: EntornoSistema;
+}
+
+/** N7 — lo que solo el reproductor sabe: tiempo activo del intento y número de intento. */
+export interface EntornoSistema {
+  /** Segundos activos del intento (sin contar la pestaña oculta). */
+  tiempoActivoS: number;
+  /** Número de intento (1-based). */
+  intento: number;
 }
 
 /** Procesa un evento, ejecuta los efectos de navegación y devuelve el estado nuevo. */
@@ -39,6 +70,7 @@ export function ejecutarEvento({
   slides,
   evento,
   navigate,
+  entorno,
 }: EjecutarEventoArgs): EstadoMotor {
   let base = estado ?? crearEstadoInicial(variables, slides);
   if (evento.tipo === 'al_entrar_slide' && evento.slideId) {
@@ -46,7 +78,22 @@ export function ejecutarEvento({
     if (slide) base = entrarASlide(base, slide);
   }
   if (reglas.length === 0) return base;
-  const res = procesarEvento(reglas, base, evento, { variables });
+  // N7: se calcula DESPUÉS de `entrarASlide`, para que el slide actual ya cuente como visitado.
+  const sistema =
+    entorno === undefined
+      ? undefined
+      : calcularSistema({
+          estado: base,
+          slideIds: slides.map((s) => s.id),
+          slideId: evento.slideId,
+          tiempoActivoS: entorno.tiempoActivoS,
+          intento: entorno.intento,
+        });
+  const res = procesarEvento(reglas, base, evento, {
+    variables,
+    estadosPersonalizados: declaradosDe(slides),
+    ...(sistema !== undefined ? { sistema } : {}),
+  });
   if (navigate) {
     for (const efecto of res.efectos) {
       if (efecto.tipo !== 'navegar') continue;
@@ -59,10 +106,9 @@ export function ejecutarEvento({
       }
     }
   }
-  return res.estado;
+  // N7: el tiempo activo viaja en el estado persistido (K5) para sobrevivir a una recarga.
+  return entorno === undefined ? res.estado : conTiempoActivo(res.estado, entorno.tiempoActivoS);
 }
-
-const ESTADOS_OBJETO = new Set(['normal', 'visitado', 'seleccionado', 'deshabilitado']);
 
 function esRegistro(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -97,10 +143,12 @@ export function hidratarEstado(
     }
   }
 
+  const declarados = declaradosDe(slides);
   const estados = { ...base.estados };
   if (esRegistro(guardado.estados)) {
     for (const [id, valor] of Object.entries(guardado.estados)) {
-      if (typeof valor === 'string' && ESTADOS_OBJETO.has(valor)) {
+      // N6: un estado base, o un personalizado que ese bloque SIGA declarando.
+      if (typeof valor === 'string' && estadoDeclarado(valor, id, declarados)) {
         estados[id] = valor as EstadoMotor['estados'][string];
       }
     }

@@ -3194,6 +3194,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               slide={rendererSlide}
               slidesDelMazo={slidesDelMazo}
               referenciasRotas={referenciasRotas}
+              reglasDelMazo={reglasDelMazo}
               slideTheme={activeSlideTheme}
               isLoading={isLoading}
               onActivityChange={handleActivityChange}

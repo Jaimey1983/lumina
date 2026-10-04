@@ -16,6 +16,7 @@ import {
 import type { SlideInteractionRuntime } from '@/hooks/use-interaction-runtime';
 import type {
   Capa,
+  EstadoDeBloque,
   EstadoObjeto,
   EventoTipo,
   VariableValor,
@@ -66,6 +67,8 @@ import {
 } from '@lumina/editor-shared/rich-text';
 import { getRichDoc, syncTextBlockFromRichDoc } from '@lumina/element-kit/blocks/texto/rich-text';
 import { cn } from '@/lib/utils';
+import { combinarAparienciasCss } from '@/lib/apariencia-estado';
+import { aparienciaDeEstado, esEstadoBase } from '@lumina/interactions';
 import { FONT_CORE_FAMILIES, collectFontFamiliesFromValue } from '@lumina/editor-shared/font-catalog';
 import { ensureGoogleFonts } from '@lumina/editor-shared/google-fonts-loader';
 import { getSlideVariant } from '@/lib/slide-variant';
@@ -107,6 +110,12 @@ import type { ActivityRuntimeConfig } from '@/lib/activity-runtime-config';
 
 type Modo = 'editor' | 'viewer' | 'preview';
 
+/** N6 — los elementos solo entienden los cuatro estados base; uno personalizado cuenta como `normal`. */
+function estadoBase(estado: EstadoDeBloque | undefined): EstadoObjeto | undefined {
+  if (estado === undefined) return undefined;
+  return esEstadoBase(estado) ? (estado as EstadoObjeto) : 'normal';
+}
+
 /** Config de runtime que el dispatch genérico pasa a primitivos del registry. */
 type PrimitiveRuntimeConfig = {
   isEditing?: boolean;
@@ -121,6 +130,8 @@ type PrimitiveRuntimeConfig = {
   bloqueId?: string;
   emitir?: (evento: EventoTipo) => void;
   estadoObjeto?: EstadoObjeto;
+  /** N6 — estado real del bloque (base o personalizado); solo lo usa el contenedor. */
+  estadoDeBloque?: EstadoDeBloque;
 };
 
 /**
@@ -741,13 +752,14 @@ function BlockNode({
   const isViewerMode = modo === 'viewer' || modo === 'preview';
   const interactionRuntime = useContext(InteractionRuntimeContext);
   /** Config de runtime para los emisores (K3): solo con runtime, id de bloque y fuera de miniatura. */
-  const emisorConfig = (() => {
+  const emisorConfig: PrimitiveRuntimeConfig = (() => {
     const id = (block as { id?: string }).id;
     if (!interactionRuntime || isThumbnail || typeof id !== 'string' || id === '') return {};
     return {
       bloqueId: id,
       emitir: (evento: EventoTipo) => interactionRuntime.emitir(id, evento),
-      estadoObjeto: interactionRuntime.estadoDe(id),
+      estadoObjeto: estadoBase(interactionRuntime.estadoDe(id)),
+      estadoDeBloque: interactionRuntime.estadoDe(id),
     };
   })();
   /** N5 — hover: solo en runtime, solo con ratón y solo en bloques con reglas de hover. */
@@ -758,6 +770,29 @@ function BlockNode({
     !isThumbnail &&
     typeof idHover === 'string' &&
     interactionRuntime.escuchaHover?.has(idHover) === true;
+  /**
+   * N6 — apariencia por estado: solo con runtime, fuera del editor y de las
+   * miniaturas. `hover`/`down` son estado local de puntero (no pasan por el
+   * motor); el estado actual sí viene del motor. Sin `apariencias` ni estados
+   * personalizados no se calcula nada: el render es idéntico al de antes.
+   */
+  const [punteroEncima, setPunteroEncima] = useState(false);
+  const [punteroPresionado, setPunteroPresionado] = useState(false);
+  const conApariencia =
+    interactionRuntime !== null &&
+    interactionRuntime !== undefined &&
+    modo !== 'editor' &&
+    !isThumbnail &&
+    (block.apariencias !== undefined || block.estadosPersonalizados !== undefined);
+  const estadoDelBloque = conApariencia ? (emisorConfig.estadoDeBloque ?? 'normal') : undefined;
+  const estiloApariencia: CSSProperties | undefined =
+    conApariencia && estadoDelBloque !== undefined
+      ? combinarAparienciasCss(
+          aparienciaDeEstado(block, estadoDelBloque),
+          punteroEncima && estadoDelBloque !== 'deshabilitado' ? block.apariencias?.hover : undefined,
+          punteroPresionado && estadoDelBloque !== 'deshabilitado' ? block.apariencias?.down : undefined,
+        )
+      : undefined;
   /** K6 — «deshabilitado» solo se aplica en runtime (autónomo/preview); el editor y las miniaturas no. */
   const estaDeshabilitado =
     emisorConfig.estadoObjeto === 'deshabilitado' && modo !== 'editor' && !isThumbnail;
@@ -1179,6 +1214,7 @@ function BlockNode({
         ...(estaDeshabilitado
           ? { pointerEvents: 'none' as const, opacity: 0.5 }
           : { pointerEvents: 'auto' as const }),
+        ...(estiloApariencia ?? {}),
         // Etapa G · G2a fix — con react-moveable como target, el contenido de
         // texto (no contenteditable salvo isTextEditing) sigue siendo
         // seleccionable por el navegador por defecto: un click-drag en el
@@ -1195,19 +1231,30 @@ function BlockNode({
           : undefined
       }
       onPointerEnter={
-        escuchaHover
+        escuchaHover || conApariencia
           ? (e) => {
-              if (e.pointerType === 'mouse') interactionRuntime.hover?.(idHover as string, true);
+              if (e.pointerType !== 'mouse') return;
+              if (conApariencia) setPunteroEncima(true);
+              if (escuchaHover) interactionRuntime.hover?.(idHover as string, true);
             }
           : undefined
       }
       onPointerLeave={
-        escuchaHover
+        escuchaHover || conApariencia
           ? (e) => {
-              if (e.pointerType === 'mouse') interactionRuntime.hover?.(idHover as string, false);
+              if (e.pointerType === 'mouse' && escuchaHover) {
+                interactionRuntime.hover?.(idHover as string, false);
+              }
+              if (conApariencia) {
+                if (e.pointerType === 'mouse') setPunteroEncima(false);
+                setPunteroPresionado(false);
+              }
             }
           : undefined
       }
+      onPointerDown={conApariencia ? () => setPunteroPresionado(true) : undefined}
+      onPointerUp={conApariencia ? () => setPunteroPresionado(false) : undefined}
+      onPointerCancel={conApariencia ? () => setPunteroPresionado(false) : undefined}
       onDoubleClick={
         editorMode && block.tipo === 'texto' && !isTextEditing
           ? (e) => { e.stopPropagation(); onEditStart?.(blockId); }
@@ -1224,6 +1271,7 @@ function BlockNode({
           : undefined
       }
       className={cn(
+        conApariencia && 'lumina-estado-transicion',
         editorMode && 'relative group',
         isBlockButtonShell && 'cursor-pointer outline-none rounded-sm',
         isBlockButtonShell && 'hover:ring-2 hover:ring-blue-500/40',

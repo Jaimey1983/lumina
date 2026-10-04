@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Motor químico determinista (Etapa Q / Q1). Dual ESM+CJS como @lumina/scoring.",
   "main": "./dist/cjs/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -12,10 +11,11 @@
       "require": "./dist/cjs/index.js",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./elements": "./src/data/elements.json"
   },
   "scripts": {
-    "build": "node ./scripts/embed-elements.mjs && tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ./scripts/finish-cjs.mjs",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ./scripts/finish-cjs.mjs",
     "test": "tsc --noEmit && vitest run",
     "lint": "eslint ."
   },

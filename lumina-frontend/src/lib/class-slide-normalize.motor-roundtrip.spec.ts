@@ -166,3 +166,45 @@ describe('K6 · el motor sobrevive a hidratar y persistir, para todos los tipos'
     });
   });
 });
+
+describe('N6 — apariencias y estados personalizados sobreviven (leer y guardar), en todos los tipos', () => {
+  const apariencias = { hover: { fondo: '#ff0000', escala: 1.1 }, down: { escala: 0.95 } };
+  const estadosPersonalizados = [{ id: 'ok', nombre: 'Correcto', apariencia: { fondo: '#16a34a' } }];
+
+  it('conserva los campos válidos y descarta lo que no lo es', () => {
+    const bloque = {
+      tipo: 'boton',
+      texto: 'a',
+      variante: 'primario',
+      id: 'b',
+      apariencias: { ...apariencias, normal: { fondo: 'red' }, inventado: { escala: 1 } },
+      estadosPersonalizados: [
+        ...estadosPersonalizados,
+        { id: 'hover', nombre: 'choca' },
+        { id: 'ok', nombre: 'repetido' },
+        { id: 'x', nombre: '' },
+      ],
+    };
+    const leido = classSlideToRendererSlide({
+      id: 's',
+      order: 0,
+      type: 'CONTENT',
+      title: 't',
+      content: { bloques: [bloque] },
+    } as unknown as ApiSlide).bloques![0] as unknown as Record<string, unknown>;
+    expect(leido.apariencias).toEqual(apariencias);
+    expect(leido.estadosPersonalizados).toEqual(estadosPersonalizados);
+    const guardado = (sanitizeSlideContentForPersistence({ bloques: [bloque] })!.bloques as Record<string, unknown>[])[0]!;
+    expect(guardado.apariencias).toEqual(apariencias);
+    expect(guardado.estadosPersonalizados).toEqual(estadosPersonalizados);
+  });
+
+  it('un bloque sin esos campos no los gana', () => {
+    const out = sanitizeSlideContentForPersistence({
+      bloques: [{ tipo: 'contador', modo: 'temporizador', id: 'c' }],
+    });
+    const b = (out!.bloques as Record<string, unknown>[])[0]!;
+    expect('apariencias' in b).toBe(false);
+    expect('estadosPersonalizados' in b).toBe(false);
+  });
+});

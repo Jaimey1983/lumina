@@ -1,31 +1,64 @@
-import { normalizeFormulaInput } from '../formula/parse.js';
+import { ChemistryParseError } from '../errors.js';
+import { normalizeFormulaInput } from '../formula/normalize.js';
+import { parseFormula } from '../formula/parse.js';
+import type { ParsedFormula } from '../formula/parse.js';
 
-export interface ParsedEquation {
-  reactants: string[];
-  products: string[];
-  species: string[];
+export interface EquationSpecies {
+  /** Fórmula tal como apareció (sin coeficiente). */
+  rawFormula: string;
+  parsed: ParsedFormula;
+  /** Estados físicos opcionales (s), (l), (g), (aq) — ignorados en balanceo. */
+  state?: string;
 }
 
-const ARROW_RE = /(?:->|=>|→|⟶|=)/;
+export interface ParsedEquation {
+  reactants: EquationSpecies[];
+  products: EquationSpecies[];
+}
 
-export function parseEquation(raw: string): ParsedEquation | null {
-  const s = raw
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/->/g, ' -> ')
-    .replace(/=>/g, ' -> ')
-    .replace(/→/g, ' -> ')
-    .replace(/⟶/g, ' -> ');
-  const parts = s.split(ARROW_RE).map((p) => p.trim());
-  if (parts.length !== 2) return null;
-  const splitSide = (side: string) =>
-    side
-      .split('+')
-      .map((x) => normalizeFormulaInput(x.trim()))
-      .filter(Boolean);
-  const reactants = splitSide(parts[0]!);
-  const products = splitSide(parts[1]!);
-  if (reactants.length === 0 || products.length === 0) return null;
-  if (reactants.some((f) => f.length > 80) || products.some((f) => f.length > 80)) return null;
-  return { reactants, products, species: [...reactants, ...products] };
+const ARROW_PATTERN = /(->|=>|→|⟶|⇌|<=|=<)/;
+
+function stripState(formula: string): { core: string; state?: string } {
+  const m = formula.match(/^(.+?)\s*\(([slgaq]{1,3})\)\s*$/i);
+  if (m) return { core: m[1].trim(), state: m[2].toLowerCase() };
+  return { core: formula.trim() };
+}
+
+function splitSide(side: string): string[] {
+  return side
+    .split('+')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+function parseSpecies(token: string): EquationSpecies {
+  const withoutCoeff = token.replace(/^[0-9]+\s*/, '').trim();
+  const { core, state } = stripState(withoutCoeff);
+  if (!core) throw new ChemistryParseError('Especie vacía en la ecuación');
+  const parsed = parseFormula(core);
+  return { rawFormula: core, parsed, state };
+}
+
+/** Parsea una ecuación química (reactivos y productos separados por flecha). */
+export function parseEquation(input: string): ParsedEquation {
+  const normalized = normalizeFormulaInput(input).replace(/\s+/g, ' ');
+  if (normalized.length > 1024) {
+    throw new ChemistryParseError('Ecuación demasiado larga');
+  }
+  const arrowMatch = normalized.match(ARROW_PATTERN);
+  if (!arrowMatch || arrowMatch.index === undefined) {
+    throw new ChemistryParseError('Falta flecha de reacción (->, →, ⇌, …)');
+  }
+  const left = normalized.slice(0, arrowMatch.index).trim();
+  const right = normalized.slice(arrowMatch.index + arrowMatch[0].length).trim();
+  if (!left || !right) {
+    throw new ChemistryParseError('Lado de la ecuación vacío');
+  }
+
+  const reactants = splitSide(left).map(parseSpecies);
+  const products = splitSide(right).map(parseSpecies);
+  if (reactants.length === 0 || products.length === 0) {
+    throw new ChemistryParseError('Se requiere al menos un reactivo y un producto');
+  }
+  return { reactants, products };
 }

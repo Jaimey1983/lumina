@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AppWindow,
+  Atom,
   CheckSquare,
   Columns2,
   GalleryHorizontal,
@@ -143,6 +144,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: ListCollapse,
     rowClassName: 'hover:bg-violet-50/90 dark:hover:bg-violet-950/25',
     iconClassName: 'text-violet-600 dark:text-violet-400',
+  },
+  tabla_periodica: {
+    group: 'lienzo',
+    Icon: Atom,
+    rowClassName: 'hover:bg-slate-50/90 dark:hover:bg-slate-950/25',
+    iconClassName: 'text-slate-700 dark:text-slate-300',
   },
 };
 

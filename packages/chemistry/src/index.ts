@@ -1,37 +1,47 @@
-export {
-  ELEMENTS_DATASET,
-  allElements,
-  lookupElement,
-  type ElementRecord,
-  type ElementsDataset,
-} from './data/element-store.js';
+/**
+ * @lumina/chemistry — parser de fórmulas, masa molar, balanceo y estequiometría (Etapa Q).
+ *
+ * API pública consumida por `@lumina/scoring`, backend e element-kit (Q4+).
+ */
 
+export { ChemistryParseError, ChemistryBalanceError } from './errors.js';
+
+export {
+  getAllElements,
+  getElementBySymbol,
+  getElementsMetadata,
+  getAtomicMass,
+  type PeriodicElement,
+  type ElementsMetadata,
+  type ElementsDataset,
+  type ElementCategory,
+} from './data/elements.js';
+
+export { normalizeFormulaInput } from './formula/normalize.js';
 export {
   parseFormula,
-  normalizeFormulaInput,
-  flattenCounts,
-  type ElementCounts,
+  addAtomCounts,
+  MAX_FORMULA_LENGTH,
   type ParsedFormula,
 } from './formula/parse.js';
-
-export { molarMass, molarMassFromCounts } from './formula/molar-mass.js';
-
+export { computeMolarMass, molesFromMass, type MolarMassResult } from './formula/molar-mass.js';
 export {
-  normalizeFormula,
-  formulasEqual,
-  sanitizeFormulaAnswer,
-} from './formula/normalize.js';
+  computePercentComposition,
+  type PercentCompositionEntry,
+  type PercentCompositionResult,
+} from './formula/percent-composition.js';
 
-export { parseEquation, type ParsedEquation } from './equation/parse.js';
-
+export { parseEquation, type ParsedEquation, type EquationSpecies } from './equation/parse.js';
 export {
   balanceEquation,
-  coefficientsEquivalent,
+  coefficientsAreEquivalent,
+  formatBalancedEquation,
   type BalancedEquation,
 } from './equation/balance.js';
 
 export {
-  nameToFormula,
-  formulaFromName,
-  answerMatchesFormula,
-} from './nomenclature/inorganic.js';
+  findLimitingReagent,
+  productMolesAtLimit,
+  type LimitingReagentResult,
+  type StoichiometryAmount,
+} from './stoichiometry/basic.js';
