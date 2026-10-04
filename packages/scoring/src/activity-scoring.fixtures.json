@@ -27,7 +27,10 @@
     "orden_rango",
     "ruleta",
     "torneo",
-    "escape_room"
+    "escape_room",
+    "balancear_ecuacion",
+    "ubicar_elemento",
+    "formular_compuesto"
   ],
   "notaCases": [
     {
@@ -36,7 +39,7 @@
       "correctas": 5,
       "total": 5,
       "respondio": true,
-      "notaEsperada": 5.0
+      "notaEsperada": 5
     },
     {
       "case": "parcial_3_de_5",
@@ -44,7 +47,7 @@
       "correctas": 3,
       "total": 5,
       "respondio": true,
-      "notaEsperada": 3.0
+      "notaEsperada": 3
     },
     {
       "case": "blancos_minimo_pedagogico",
@@ -52,7 +55,7 @@
       "correctas": 0,
       "total": 4,
       "respondio": true,
-      "notaEsperada": 1.0
+      "notaEsperada": 1
     },
     {
       "case": "un_cuarto_redondeo",
@@ -83,200 +86,284 @@
     {
       "case": "fase1_torneo_no_afecta_promedio",
       "slides": [
-        { "activityType": "quiz_multiple", "correctas": 5, "total": 5, "respondio": true },
-        { "activityType": "torneo", "respondio": true }
+        {
+          "activityType": "quiz_multiple",
+          "correctas": 5,
+          "total": 5,
+          "respondio": true
+        },
+        {
+          "activityType": "torneo",
+          "respondio": true
+        }
       ],
-      "promedioEsperado": 5.0
+      "promedioEsperado": 5
     },
     {
       "case": "fase4_clasificar_perfecto_ruleta_no_cuenta",
       "slides": [
-        { "activityType": "clasificar", "correctas": 5, "total": 5, "respondio": true },
-        { "activityType": "ruleta", "respondio": true }
+        {
+          "activityType": "clasificar",
+          "correctas": 5,
+          "total": 5,
+          "respondio": true
+        },
+        {
+          "activityType": "ruleta",
+          "respondio": true
+        }
       ],
-      "promedioEsperado": 5.0
+      "promedioEsperado": 5
     }
   ],
   "evaluationCases": [
     {
       "case": "m4_equivalente_factorizada",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "2x+2"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "2x+2"
+      },
       "respuesta": "2(x+1)",
       "correctEsperado": true
     },
     {
       "case": "m4_equivalente_producto_notable",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "x^2-1"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x^2-1"
+      },
       "respuesta": "(x-1)(x+1)",
       "correctEsperado": true
     },
     {
       "case": "m4_asignacion_x_igual",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "x=3"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x=3"
+      },
       "respuesta": "3",
       "correctEsperado": true
     },
     {
       "case": "m4_no_equivalente",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "(x+1)^2"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "(x+1)^2"
+      },
       "respuesta": "x^2+1",
       "correctEsperado": false
     },
     {
       "case": "m4_variable_distinta",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x+1"
+      },
       "respuesta": "y+1",
       "correctEsperado": false
     },
     {
       "case": "m4_dominio_distinto",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "x"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x"
+      },
       "respuesta": "sqrt(x^2)",
       "correctEsperado": false
     },
     {
       "case": "m4_expresion_ilegible_es_incorrecta",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x+1"
+      },
       "respuesta": "x+(",
       "correctEsperado": false
     },
     {
       "case": "m4_codigo_no_se_ejecuta",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo": "algebraico", "respuesta": "x+1"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x+1"
+      },
       "respuesta": "process.exit()",
       "correctEsperado": false
     },
     {
       "case": "m4_sin_respuesta_no_se_inventa_cero",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo":"algebraico","respuesta":"x+1"},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x+1"
+      },
       "respuesta": "  ",
       "scoreEsperado": null
     },
     {
       "case": "m4_respuesta_modelo_ilegible_no_se_califica",
       "activityType": "respuesta_matematica",
-      "definicion": {"modo":"algebraico","respuesta":"x+("},
+      "definicion": {
+        "modo": "algebraico",
+        "respuesta": "x+("
+      },
       "respuesta": "x+1",
       "scoreEsperado": null
     },
     {
       "case": "m3a_punto_ambiguo_decimal",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "3,141", "tolerancia": 0.001},
+      "definicion": {
+        "respuesta": "3,141",
+        "tolerancia": 0.001
+      },
       "respuesta": "3.141",
       "correctEsperado": true
     },
     {
       "case": "m3a_punto_ambiguo_miles",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "1500"},
+      "definicion": {
+        "respuesta": "1500"
+      },
       "respuesta": "1.500",
       "correctEsperado": true
     },
     {
       "case": "m3a_miles_con_coma_decimal",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "1500,5"},
+      "definicion": {
+        "respuesta": "1500,5"
+      },
       "respuesta": "1.500,5",
       "correctEsperado": true
     },
     {
       "case": "m3a_entera_exacta",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "12"},
+      "definicion": {
+        "respuesta": "12"
+      },
       "respuesta": "12",
       "correctEsperado": true
     },
     {
       "case": "m3a_entera_no_tolera",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "12"},
+      "definicion": {
+        "respuesta": "12"
+      },
       "respuesta": "12,01",
       "correctEsperado": false
     },
     {
       "case": "m3a_decimal_tolerancia_por_defecto",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "3,14"},
+      "definicion": {
+        "respuesta": "3,14"
+      },
       "respuesta": "3.145",
       "correctEsperado": true
     },
     {
       "case": "m3a_decimal_fuera_de_tolerancia",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "3,14"},
+      "definicion": {
+        "respuesta": "3,14"
+      },
       "respuesta": "3,2",
       "correctEsperado": false
     },
     {
       "case": "m3a_coma_decimal_y_signo_unicode",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "-2,5"},
+      "definicion": {
+        "respuesta": "-2,5"
+      },
       "respuesta": "−2,5",
       "correctEsperado": true
     },
     {
       "case": "m3a_fraccion",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "0,75"},
+      "definicion": {
+        "respuesta": "0,75"
+      },
       "respuesta": "3/4",
       "correctEsperado": true
     },
     {
       "case": "m3a_fraccion_denominador_cero",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "1"},
+      "definicion": {
+        "respuesta": "1"
+      },
       "respuesta": "1/0",
       "correctEsperado": false
     },
     {
       "case": "m3a_tolerancia_absoluta",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "10", "tolerancia": 0.5},
+      "definicion": {
+        "respuesta": "10",
+        "tolerancia": 0.5
+      },
       "respuesta": "10,4",
       "correctEsperado": true
     },
     {
       "case": "m3a_tolerancia_porcentual",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "200", "tolerancia": 5, "toleranciaTipo": "porcentual"},
+      "definicion": {
+        "respuesta": "200",
+        "tolerancia": 5,
+        "toleranciaTipo": "porcentual"
+      },
       "respuesta": "209",
       "correctEsperado": true
     },
     {
       "case": "m3a_tolerancia_porcentual_fuera",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "200", "tolerancia": 5, "toleranciaTipo": "porcentual"},
+      "definicion": {
+        "respuesta": "200",
+        "tolerancia": 5,
+        "toleranciaTipo": "porcentual"
+      },
       "respuesta": "211",
       "correctEsperado": false
     },
     {
       "case": "m3a_texto_no_numerico",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "4"},
+      "definicion": {
+        "respuesta": "4"
+      },
       "respuesta": "cuatro",
       "correctEsperado": false
     },
     {
       "case": "m3a_numero_directo",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "4"},
+      "definicion": {
+        "respuesta": "4"
+      },
       "respuesta": 4,
       "correctEsperado": true
     },
     {
       "case": "m3a_sin_respuesta_no_se_inventa_cero",
       "activityType": "respuesta_matematica",
-      "definicion": {"respuesta": "4"},
+      "definicion": {
+        "respuesta": "4"
+      },
       "respuesta": "   ",
       "scoreEsperado": null
     },
@@ -285,10 +372,16 @@
       "activityType": "completar_blancos",
       "definicion": {
         "blancos": [
-          { "id": "b1", "respuesta": "Bogotá", "ignorarMayusculas": true }
+          {
+            "id": "b1",
+            "respuesta": "Bogotá",
+            "ignorarMayusculas": true
+          }
         ]
       },
-      "respuesta": { "b1": "  bogotá  " },
+      "respuesta": {
+        "b1": "  bogotá  "
+      },
       "correctEsperado": true
     },
     {
@@ -297,16 +390,65 @@
       "_comment": "Clave real video_interactivo (no 'video'). Baseline 2026-08-20: el viewer evaluaba UN {questionIndex,answer}; el helper además deduplica por índice. detailsEsperados = índices únicos, no totalPreguntas.",
       "definicion": {
         "preguntas": [
-          { "id": "q0", "opciones": [{ "id": "a", "esCorrecta": true }, { "id": "b", "esCorrecta": false }] },
-          { "id": "q1", "opciones": [{ "id": "a", "esCorrecta": false }, { "id": "b", "esCorrecta": true }] },
-          { "id": "q2", "opciones": [{ "id": "a", "esCorrecta": true }] },
-          { "id": "q3", "opciones": [{ "id": "a", "esCorrecta": true }] }
+          {
+            "id": "q0",
+            "opciones": [
+              {
+                "id": "a",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "esCorrecta": false
+              }
+            ]
+          },
+          {
+            "id": "q1",
+            "opciones": [
+              {
+                "id": "a",
+                "esCorrecta": false
+              },
+              {
+                "id": "b",
+                "esCorrecta": true
+              }
+            ]
+          },
+          {
+            "id": "q2",
+            "opciones": [
+              {
+                "id": "a",
+                "esCorrecta": true
+              }
+            ]
+          },
+          {
+            "id": "q3",
+            "opciones": [
+              {
+                "id": "a",
+                "esCorrecta": true
+              }
+            ]
+          }
         ]
       },
       "respuesta": [
-        { "questionIndex": 0, "answer": "a" },
-        { "questionIndex": 1, "answer": "b" },
-        { "questionIndex": 0, "answer": "a" }
+        {
+          "questionIndex": 0,
+          "answer": "a"
+        },
+        {
+          "questionIndex": 1,
+          "answer": "b"
+        },
+        {
+          "questionIndex": 0,
+          "answer": "a"
+        }
       ],
       "detailsEsperados": 2
     },
@@ -322,13 +464,36 @@
       "activityType": "clasificar",
       "definicion": {
         "items": [
-          { "id": "i1", "texto": "Perro", "categoriaId": "animal" },
-          { "id": "i2", "texto": "Gato", "categoriaId": "animal" },
-          { "id": "i3", "texto": "Rosa", "categoriaId": "planta" },
-          { "id": "i4", "texto": "Mesa", "categoriaId": "objeto" }
+          {
+            "id": "i1",
+            "texto": "Perro",
+            "categoriaId": "animal"
+          },
+          {
+            "id": "i2",
+            "texto": "Gato",
+            "categoriaId": "animal"
+          },
+          {
+            "id": "i3",
+            "texto": "Rosa",
+            "categoriaId": "planta"
+          },
+          {
+            "id": "i4",
+            "texto": "Mesa",
+            "categoriaId": "objeto"
+          }
         ]
       },
-      "respuesta": { "ubicaciones": { "i1": "animal", "i2": "animal", "i3": "planta", "i4": "animal" } },
+      "respuesta": {
+        "ubicaciones": {
+          "i1": "animal",
+          "i2": "animal",
+          "i3": "planta",
+          "i4": "animal"
+        }
+      },
       "correctEsperado": false,
       "detailsEsperados": 4,
       "scoreEsperado": 3.8
@@ -336,39 +501,102 @@
     {
       "case": "fase4_puzzle_imagen_todas_piezas",
       "activityType": "puzzle_imagen",
-      "definicion": { "configuracion": { "filas": 2, "columnas": 2 } },
-      "respuesta": { "slots": [0, 1, 2, 3] },
+      "definicion": {
+        "configuracion": {
+          "filas": 2,
+          "columnas": 2
+        }
+      },
+      "respuesta": {
+        "slots": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
       "correctEsperado": true,
       "detailsEsperados": 4,
-      "scoreEsperado": 5.0
+      "scoreEsperado": 5
     },
     {
       "case": "fase4_globos_puntos",
       "activityType": "globos",
-      "definicion": { "preguntas": [{}, {}, {}, {}] },
-      "respuesta": { "puntosObtenidos": 2, "puntosMaximos": 4 },
+      "definicion": {
+        "preguntas": [
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+      "respuesta": {
+        "puntosObtenidos": 2,
+        "puntosMaximos": 4
+      },
       "detailsEsperados": 4,
       "scoreEsperado": 2.5
     },
     {
       "case": "fase4_abrir_caja_sin_criterio",
       "activityType": "abrir_caja",
-      "definicion": { "cajas": [{ "id": "c1", "contenido": {} }] },
-      "respuesta": { "cajasAbiertas": ["c1"] },
+      "definicion": {
+        "cajas": [
+          {
+            "id": "c1",
+            "contenido": {}
+          }
+        ]
+      },
+      "respuesta": {
+        "cajasAbiertas": [
+          "c1"
+        ]
+      },
       "scoreEsperado": null
     },
     {
       "case": "fase4_historia_sin_criterio",
       "activityType": "historia_ramificada",
-      "definicion": { "nodos": [{ "id": "n1", "tipo": "narracion" }] },
-      "respuesta": { "historial": [{ "nodoId": "n1" }] },
+      "definicion": {
+        "nodos": [
+          {
+            "id": "n1",
+            "tipo": "narracion"
+          }
+        ]
+      },
+      "respuesta": {
+        "historial": [
+          {
+            "nodoId": "n1"
+          }
+        ]
+      },
       "scoreEsperado": null
     },
     {
       "case": "fase4_memoria_pares",
       "activityType": "memoria",
-      "definicion": { "pares": [{ "id": "p1" }, { "id": "p2" }, { "id": "p3" }] },
-      "respuesta": { "paresEncontrados": ["p1", "p3"] },
+      "definicion": {
+        "pares": [
+          {
+            "id": "p1"
+          },
+          {
+            "id": "p2"
+          },
+          {
+            "id": "p3"
+          }
+        ]
+      },
+      "respuesta": {
+        "paresEncontrados": [
+          "p1",
+          "p3"
+        ]
+      },
       "detailsEsperados": 3,
       "scoreEsperado": 3.3
     },
@@ -378,14 +606,22 @@
       "definicion": {
         "pregunta": "¿Capital?",
         "opciones": [
-          { "id": "a", "texto": "A", "esCorrecta": true },
-          { "id": "b", "texto": "B", "esCorrecta": false }
+          {
+            "id": "a",
+            "texto": "A",
+            "esCorrecta": true
+          },
+          {
+            "id": "b",
+            "texto": "B",
+            "esCorrecta": false
+          }
         ]
       },
       "respuesta": "a",
       "correctEsperado": true,
       "detailsEsperados": 1,
-      "scoreEsperado": 5.0
+      "scoreEsperado": 5
     },
     {
       "case": "quiz_nuevo_una_pregunta_correcta",
@@ -396,8 +632,16 @@
             "id": "q-1",
             "texto": "¿Capital?",
             "opciones": [
-              { "id": "a", "texto": "A", "esCorrecta": true },
-              { "id": "b", "texto": "B", "esCorrecta": false }
+              {
+                "id": "a",
+                "texto": "A",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "texto": "B",
+                "esCorrecta": false
+              }
             ]
           }
         ]
@@ -405,7 +649,7 @@
       "respuesta": "a",
       "correctEsperado": true,
       "detailsEsperados": 1,
-      "scoreEsperado": 5.0
+      "scoreEsperado": 5
     },
     {
       "case": "quiz_una_pregunta_incorrecta",
@@ -416,8 +660,16 @@
             "id": "q-1",
             "texto": "¿Capital?",
             "opciones": [
-              { "id": "a", "texto": "A", "esCorrecta": true },
-              { "id": "b", "texto": "B", "esCorrecta": false }
+              {
+                "id": "a",
+                "texto": "A",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "texto": "B",
+                "esCorrecta": false
+              }
             ]
           }
         ]
@@ -425,7 +677,7 @@
       "respuesta": "b",
       "correctEsperado": false,
       "detailsEsperados": 1,
-      "scoreEsperado": 1.0
+      "scoreEsperado": 1
     },
     {
       "case": "quiz_parcial_2_de_3",
@@ -436,32 +688,280 @@
             "id": "q-1",
             "texto": "Uno",
             "opciones": [
-              { "id": "a", "esCorrecta": true },
-              { "id": "b", "esCorrecta": false }
+              {
+                "id": "a",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "esCorrecta": false
+              }
             ]
           },
           {
             "id": "q-2",
             "texto": "Dos",
             "opciones": [
-              { "id": "a", "esCorrecta": true },
-              { "id": "b", "esCorrecta": false }
+              {
+                "id": "a",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "esCorrecta": false
+              }
             ]
           },
           {
             "id": "q-3",
             "texto": "Tres",
             "opciones": [
-              { "id": "a", "esCorrecta": true },
-              { "id": "b", "esCorrecta": false }
+              {
+                "id": "a",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "esCorrecta": false
+              }
             ]
           }
         ]
       },
-      "respuesta": { "answers": { "q-1": "a", "q-2": "a", "q-3": "b" } },
+      "respuesta": {
+        "answers": {
+          "q-1": "a",
+          "q-2": "a",
+          "q-3": "b"
+        }
+      },
       "correctEsperado": false,
       "detailsEsperados": 3,
       "scoreEsperado": 3.3
+    },
+    {
+      "case": "balancear_H2O_correcto",
+      "activityType": "balancear_ecuacion",
+      "definicion": {
+        "ecuacion": "H2 + O2 -> H2O"
+      },
+      "respuesta": {
+        "coefficients": [
+          2,
+          1,
+          2
+        ]
+      },
+      "correctEsperado": true
+    },
+    {
+      "case": "balancear_H2O_incorrecto",
+      "activityType": "balancear_ecuacion",
+      "definicion": {
+        "ecuacion": "H2 + O2 -> H2O"
+      },
+      "respuesta": {
+        "coefficients": [
+          1,
+          1,
+          1
+        ]
+      },
+      "correctEsperado": false
+    },
+    {
+      "case": "balancear_Fe2O3_correcto",
+      "activityType": "balancear_ecuacion",
+      "definicion": {
+        "ecuacion": "Fe + O2 -> Fe2O3"
+      },
+      "respuesta": {
+        "coefficients": [
+          4,
+          3,
+          2
+        ]
+      },
+      "correctEsperado": true
+    },
+    {
+      "case": "balancear_vacio",
+      "activityType": "balancear_ecuacion",
+      "definicion": {
+        "ecuacion": "H2 + O2 -> H2O"
+      },
+      "respuesta": {
+        "coefficients": [
+          0,
+          0,
+          0
+        ]
+      },
+      "scoreEsperado": null
+    },
+    {
+      "case": "balancear_ecuacion_invalida",
+      "activityType": "balancear_ecuacion",
+      "definicion": {
+        "ecuacion": "no-ecuacion"
+      },
+      "respuesta": {
+        "coefficients": [
+          1,
+          1
+        ]
+      },
+      "scoreEsperado": null
+    },
+    {
+      "case": "ubicar_parcial",
+      "activityType": "ubicar_elemento",
+      "definicion": {
+        "elementos": [
+          {
+            "id": "e1",
+            "symbol": "Na",
+            "periodo": 3,
+            "grupo": 1
+          },
+          {
+            "id": "e2",
+            "symbol": "Cl",
+            "periodo": 3,
+            "grupo": 17
+          }
+        ]
+      },
+      "respuesta": {
+        "placements": [
+          {
+            "id": "e1",
+            "periodo": 3,
+            "grupo": 1
+          },
+          {
+            "id": "e2",
+            "periodo": 2,
+            "grupo": 17
+          }
+        ]
+      },
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "ubicar_perfecto",
+      "activityType": "ubicar_elemento",
+      "definicion": {
+        "elementos": [
+          {
+            "id": "e1",
+            "symbol": "Na",
+            "periodo": 3,
+            "grupo": 1
+          }
+        ]
+      },
+      "respuesta": {
+        "placements": [
+          {
+            "id": "e1",
+            "periodo": 3,
+            "grupo": 1
+          }
+        ]
+      },
+      "correctEsperado": true
+    },
+    {
+      "case": "ubicar_sin_items",
+      "activityType": "ubicar_elemento",
+      "definicion": {
+        "elementos": []
+      },
+      "respuesta": {},
+      "scoreEsperado": null
+    },
+    {
+      "case": "formular_parcial",
+      "activityType": "formular_compuesto",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q1",
+            "enunciado": "Oxido de calcio",
+            "formula": "CaO"
+          },
+          {
+            "id": "q2",
+            "enunciado": "Agua",
+            "formula": "H2O"
+          }
+        ]
+      },
+      "respuesta": {
+        "answers": {
+          "q1": "CaO",
+          "q2": "CO2"
+        }
+      },
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "formular_perfecto",
+      "activityType": "formular_compuesto",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q1",
+            "enunciado": "Cloruro de sodio",
+            "formula": "NaCl"
+          }
+        ]
+      },
+      "respuesta": {
+        "answers": {
+          "q1": "NaCl"
+        }
+      },
+      "correctEsperado": true
+    },
+    {
+      "case": "formular_nombre",
+      "activityType": "formular_compuesto",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q1",
+            "enunciado": "Oxido de calcio",
+            "formula": "CaO"
+          }
+        ]
+      },
+      "respuesta": {
+        "answers": {
+          "q1": "oxido de calcio"
+        }
+      },
+      "correctEsperado": true
+    },
+    {
+      "case": "formular_vacio",
+      "activityType": "formular_compuesto",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q1",
+            "enunciado": "X",
+            "formula": "H2O"
+          }
+        ]
+      },
+      "respuesta": {
+        "answers": {
+          "q1": "   "
+        }
+      },
+      "correctEsperado": false
     }
   ],
   "expectedKinds": {
@@ -491,13 +991,18 @@
     "orden_rango": "partial",
     "ruleta": "exclude",
     "torneo": "exclude",
-    "escape_room": "exclude"
+    "escape_room": "exclude",
+    "balancear_ecuacion": "binary",
+    "ubicar_elemento": "partial",
+    "formular_compuesto": "partial"
   },
   "contractCases": [
     {
       "case": "contrato_respuesta_matematica_perfecta",
       "activityType": "respuesta_matematica",
-      "definicion": { "respuesta": "7,5" },
+      "definicion": {
+        "respuesta": "7,5"
+      },
       "respuesta": "7,5"
     },
     {
@@ -505,8 +1010,16 @@
       "activityType": "quiz_multiple",
       "definicion": {
         "opciones": [
-          { "id": "a", "texto": "A", "esCorrecta": true },
-          { "id": "b", "texto": "B", "esCorrecta": false }
+          {
+            "id": "a",
+            "texto": "A",
+            "esCorrecta": true
+          },
+          {
+            "id": "b",
+            "texto": "B",
+            "esCorrecta": false
+          }
         ]
       },
       "respuesta": "a"
@@ -514,25 +1027,52 @@
     {
       "case": "contrato_verdadero_falso_perfecto",
       "activityType": "verdadero_falso",
-      "definicion": { "respuestaCorrecta": true },
+      "definicion": {
+        "respuestaCorrecta": true
+      },
       "respuesta": true
     },
     {
       "case": "contrato_completar_blancos_perfecto",
       "activityType": "completar_blancos",
       "definicion": {
-        "blancos": [{ "id": "b1", "respuesta": "sol", "ignorarMayusculas": true }]
+        "blancos": [
+          {
+            "id": "b1",
+            "respuesta": "sol",
+            "ignorarMayusculas": true
+          }
+        ]
       },
-      "respuesta": { "b1": "sol" }
+      "respuesta": {
+        "b1": "sol"
+      }
     },
     {
       "case": "contrato_arrastrar_soltar_perfecto",
       "activityType": "arrastrar_soltar",
       "definicion": {
-        "items": [{ "id": "i1", "texto": "A" }],
-        "zonas": [{ "id": "z1", "itemsCorrectos": ["i1"] }]
+        "items": [
+          {
+            "id": "i1",
+            "texto": "A"
+          }
+        ],
+        "zonas": [
+          {
+            "id": "z1",
+            "itemsCorrectos": [
+              "i1"
+            ]
+          }
+        ]
       },
-      "respuesta": [{ "itemId": "i1", "zoneId": "z1" }]
+      "respuesta": [
+        {
+          "itemId": "i1",
+          "zoneId": "z1"
+        }
+      ]
     },
     {
       "case": "contrato_emparejar_perfecto",
@@ -541,23 +1081,43 @@
         "pares": [
           {
             "id": "p1",
-            "izquierda": { "texto": "A" },
-            "derecha": { "texto": "1" }
+            "izquierda": {
+              "texto": "A"
+            },
+            "derecha": {
+              "texto": "1"
+            }
           }
         ]
       },
-      "respuesta": [{ "leftId": "p1", "rightId": "p1" }]
+      "respuesta": [
+        {
+          "leftId": "p1",
+          "rightId": "p1"
+        }
+      ]
     },
     {
       "case": "contrato_ordenar_pasos_perfecto",
       "activityType": "ordenar_pasos",
       "definicion": {
         "pasos": [
-          { "id": "s1", "contenido": "Uno", "ordenCorrecto": 1 },
-          { "id": "s2", "contenido": "Dos", "ordenCorrecto": 2 }
+          {
+            "id": "s1",
+            "contenido": "Uno",
+            "ordenCorrecto": 1
+          },
+          {
+            "id": "s2",
+            "contenido": "Dos",
+            "ordenCorrecto": 2
+          }
         ]
       },
-      "respuesta": ["s1", "s2"]
+      "respuesta": [
+        "s1",
+        "s2"
+      ]
     },
     {
       "case": "contrato_video_interactivo_perfecto",
@@ -567,13 +1127,24 @@
           {
             "id": "q0",
             "opciones": [
-              { "id": "a", "esCorrecta": true },
-              { "id": "b", "esCorrecta": false }
+              {
+                "id": "a",
+                "esCorrecta": true
+              },
+              {
+                "id": "b",
+                "esCorrecta": false
+              }
             ]
           }
         ]
       },
-      "respuesta": [{ "questionIndex": 0, "answer": "a" }]
+      "respuesta": [
+        {
+          "questionIndex": 0,
+          "answer": "a"
+        }
+      ]
     },
     {
       "case": "contrato_short_answer_sin_nota",
@@ -598,29 +1169,81 @@
       "activityType": "clasificar",
       "definicion": {
         "items": [
-          { "id": "i1", "texto": "Perro", "categoriaId": "animal" },
-          { "id": "i2", "texto": "Rosa", "categoriaId": "planta" }
+          {
+            "id": "i1",
+            "texto": "Perro",
+            "categoriaId": "animal"
+          },
+          {
+            "id": "i2",
+            "texto": "Rosa",
+            "categoriaId": "planta"
+          }
         ]
       },
-      "respuesta": { "ubicaciones": { "i1": "animal", "i2": "planta" } }
+      "respuesta": {
+        "ubicaciones": {
+          "i1": "animal",
+          "i2": "planta"
+        }
+      }
     },
     {
       "case": "contrato_puzzle_imagen_perfecto",
       "activityType": "puzzle_imagen",
-      "definicion": { "configuracion": { "filas": 2, "columnas": 2 } },
-      "respuesta": { "slots": [0, 1, 2, 3] }
+      "definicion": {
+        "configuracion": {
+          "filas": 2,
+          "columnas": 2
+        }
+      },
+      "respuesta": {
+        "slots": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
     },
     {
       "case": "contrato_anagrama_perfecto",
       "activityType": "anagrama",
-      "definicion": { "palabras": [{ "texto": "SOL" }] },
-      "respuesta": { "slotsPorPalabra": [["S", "O", "L"]] }
+      "definicion": {
+        "palabras": [
+          {
+            "texto": "SOL"
+          }
+        ]
+      },
+      "respuesta": {
+        "slotsPorPalabra": [
+          [
+            "S",
+            "O",
+            "L"
+          ]
+        ]
+      }
     },
     {
       "case": "contrato_puzzle_palabras_perfecto",
       "activityType": "puzzle_palabras",
-      "definicion": { "oraciones": [{ "texto": "hola mundo" }] },
-      "respuesta": { "tokensPorOracion": [["hola", "mundo"]] }
+      "definicion": {
+        "oraciones": [
+          {
+            "texto": "hola mundo"
+          }
+        ]
+      },
+      "respuesta": {
+        "tokensPorOracion": [
+          [
+            "hola",
+            "mundo"
+          ]
+        ]
+      }
     },
     {
       "case": "contrato_crucigrama_perfecto",
@@ -635,89 +1258,239 @@
           }
         ]
       },
-      "respuesta": { "celdas": { "0-0": "S", "0-1": "O", "0-2": "L" } }
+      "respuesta": {
+        "celdas": {
+          "0-0": "S",
+          "0-1": "O",
+          "0-2": "L"
+        }
+      }
     },
     {
       "case": "contrato_sopa_letras_perfecto",
       "activityType": "sopa_letras",
-      "definicion": { "palabras": [{ "texto": "CASA" }] },
-      "respuesta": { "encontradas": ["CASA"] }
+      "definicion": {
+        "palabras": [
+          {
+            "texto": "CASA"
+          }
+        ]
+      },
+      "respuesta": {
+        "encontradas": [
+          "CASA"
+        ]
+      }
     },
     {
       "case": "contrato_globos_perfecto",
       "activityType": "globos",
-      "definicion": { "preguntas": [{}, {}] },
-      "respuesta": { "puntosObtenidos": 2, "puntosMaximos": 2 }
+      "definicion": {
+        "preguntas": [
+          {},
+          {}
+        ]
+      },
+      "respuesta": {
+        "puntosObtenidos": 2,
+        "puntosMaximos": 2
+      }
     },
     {
       "case": "contrato_topo_perfecto",
       "activityType": "topo",
-      "definicion": { "preguntas": [{}, {}] },
-      "respuesta": { "puntosObtenidos": 2, "puntosMaximos": 2 }
+      "definicion": {
+        "preguntas": [
+          {},
+          {}
+        ]
+      },
+      "respuesta": {
+        "puntosObtenidos": 2,
+        "puntosMaximos": 2
+      }
     },
     {
       "case": "contrato_abrir_caja_perfecto",
       "activityType": "abrir_caja",
       "definicion": {
         "cajas": [
-          { "id": "c1", "contenido": { "esCorrecta": true } },
-          { "id": "c2", "contenido": { "esCorrecta": false } }
+          {
+            "id": "c1",
+            "contenido": {
+              "esCorrecta": true
+            }
+          },
+          {
+            "id": "c2",
+            "contenido": {
+              "esCorrecta": false
+            }
+          }
         ]
       },
-      "respuesta": { "cajasAbiertas": ["c1"] }
+      "respuesta": {
+        "cajasAbiertas": [
+          "c1"
+        ]
+      }
     },
     {
       "case": "contrato_historia_ramificada_perfecto",
       "activityType": "historia_ramificada",
       "definicion": {
         "nodos": [
-          { "id": "n1", "tipo": "narracion" },
-          { "id": "n2", "tipo": "final_bueno" }
+          {
+            "id": "n1",
+            "tipo": "narracion"
+          },
+          {
+            "id": "n2",
+            "tipo": "final_bueno"
+          }
         ]
       },
-      "respuesta": { "historial": [{ "nodoId": "n2" }] }
+      "respuesta": {
+        "historial": [
+          {
+            "nodoId": "n2"
+          }
+        ]
+      }
     },
     {
       "case": "contrato_memoria_perfecto",
       "activityType": "memoria",
-      "definicion": { "pares": [{ "id": "p1" }, { "id": "p2" }] },
-      "respuesta": { "paresEncontrados": ["p1", "p2"] }
+      "definicion": {
+        "pares": [
+          {
+            "id": "p1"
+          },
+          {
+            "id": "p2"
+          }
+        ]
+      },
+      "respuesta": {
+        "paresEncontrados": [
+          "p1",
+          "p2"
+        ]
+      }
     },
     {
       "case": "contrato_ahorcado_perfecto",
       "activityType": "ahorcado",
       "definicion": {
-        "configuracion": { "palabra": "SOL", "maxIntentos": 6 }
+        "configuracion": {
+          "palabra": "SOL",
+          "maxIntentos": 6
+        }
       },
       "respuesta": {
         "ganado": true,
         "letrasFalladas": [],
-        "letrasAdivinadas": ["S", "O", "L"]
+        "letrasAdivinadas": [
+          "S",
+          "O",
+          "L"
+        ]
       }
     },
     {
       "case": "contrato_orden_rango_perfecto",
       "activityType": "orden_rango",
-      "definicion": { "ordenCorrecto": ["a", "b"] },
-      "respuesta": { "orden": ["a", "b"] }
+      "definicion": {
+        "ordenCorrecto": [
+          "a",
+          "b"
+        ]
+      },
+      "respuesta": {
+        "orden": [
+          "a",
+          "b"
+        ]
+      }
     },
     {
       "case": "contrato_ruleta_exclude",
       "activityType": "ruleta",
       "definicion": {},
-      "respuesta": { "resultado": "premio" }
+      "respuesta": {
+        "resultado": "premio"
+      }
     },
     {
       "case": "contrato_torneo_exclude",
       "activityType": "torneo",
       "definicion": {},
-      "respuesta": { "finalNota": 5 }
+      "respuesta": {
+        "finalNota": 5
+      }
     },
     {
       "case": "contrato_escape_room_exclude",
       "activityType": "escape_room",
       "definicion": {},
-      "respuesta": { "completado": true }
+      "respuesta": {
+        "completado": true
+      }
+    },
+    {
+      "case": "contrato_balancear_ecuacion",
+      "activityType": "balancear_ecuacion",
+      "definicion": {
+        "ecuacion": "H2 + O2 -> H2O"
+      },
+      "respuesta": {
+        "coefficients": [
+          2,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "contrato_ubicar_elemento",
+      "activityType": "ubicar_elemento",
+      "definicion": {
+        "elementos": [
+          {
+            "id": "e1",
+            "symbol": "H",
+            "periodo": 1,
+            "grupo": 1
+          }
+        ]
+      },
+      "respuesta": {
+        "placements": [
+          {
+            "id": "e1",
+            "periodo": 1,
+            "grupo": 1
+          }
+        ]
+      }
+    },
+    {
+      "case": "contrato_formular_compuesto",
+      "activityType": "formular_compuesto",
+      "definicion": {
+        "preguntas": [
+          {
+            "id": "q1",
+            "enunciado": "Agua",
+            "formula": "H2O"
+          }
+        ]
+      },
+      "respuesta": {
+        "answers": {
+          "q1": "H2O"
+        }
+      }
     }
   ]
 }

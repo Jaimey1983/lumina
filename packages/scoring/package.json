@@ -20,6 +20,9 @@
     "test": "tsc --noEmit && vitest run",
     "lint": "eslint ."
   },
+  "dependencies": {
+    "@lumina/chemistry": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "eslint": "^9",
