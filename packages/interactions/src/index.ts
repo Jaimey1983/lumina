@@ -93,6 +93,9 @@ export type {
 export type { CodigoError, ErrorValidacion } from './validar.js';
 export { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
 export { accionesDeRegla } from './reglas.js';
+export { problemasDeInteraccion } from './problemas.js';
+export type { CodigoProblema, OpcionesProblemas, ProblemaInteraccion } from './problemas.js';
+export { DESCRIPCION_POR_IDS, explicarFalla } from './traza.js';
 export type {
   Aviso,
   CodigoAviso,
@@ -101,9 +104,12 @@ export type {
   EstadoMotor,
   EventoMotor,
   LimitesMotor,
+  OpcionesMotor,
   OrigenRegla,
+  PasoTraza,
   ReglaAplicable,
   ResultadoMotor,
+  ResultadoTraza,
 } from './tipos.js';
 export {
   ESTADOS_BASE,

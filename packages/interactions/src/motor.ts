@@ -14,6 +14,8 @@ import { estadoDeclarado } from './estados-bloque.js';
 import { EVENTOS_DE_SLIDE, esSegundosValidos, esTeclaPermitida } from './eventos.js';
 import { LIMITES_POR_DEFECTO } from './tipos.js';
 import { MAX_TEXTO_VARIABLE } from './variables.js';
+import { describirEvento } from './describir.js';
+import { DESCRIPCION_POR_IDS, explicarFalla } from './traza.js';
 import type {
   Aviso,
   ContextoMotor,
@@ -21,6 +23,8 @@ import type {
   EstadoMotor,
   EventoMotor,
   LimitesMotor,
+  OpcionesMotor,
+  PasoTraza,
   ReglaAplicable,
   ResultadoMotor,
 } from './tipos.js';
@@ -83,6 +87,17 @@ interface Corrida {
   navegacionEmitida: boolean;
   /** Se detuvo todo el procesamiento (límite de acciones). */
   abortada: boolean;
+  /** N8 — solo existe con la traza encendida. */
+  traza?: PasoTraza[];
+}
+
+/** N8 — por qué una regla del mismo tipo de evento no reaccionó. */
+function motivoNoCoincide(ra: ReglaAplicable, ev: EventoMotor): string {
+  if (!coincideParametro(ra, ev)) return 'El evento es del mismo tipo, pero con otro parámetro (variable, tecla o segundos).';
+  if (EVENTOS_DE_SLIDE.has(ev.tipo) || ra.origen.tipo === 'slide') {
+    return 'El evento ocurrió en otro slide.';
+  }
+  return 'El evento lo emitió otro elemento.';
 }
 
 /**
@@ -428,6 +443,7 @@ export function procesarEvento(
   evento: EventoMotor,
   contexto: ContextoMotor,
   limites: Partial<LimitesMotor> = {},
+  opciones: OpcionesMotor = {},
 ): ResultadoMotor {
   const lim: LimitesMotor = { ...LIMITES_POR_DEFECTO, ...limites };
   const c: Corrida = {
@@ -440,7 +456,9 @@ export function procesarEvento(
     accionesRestantes: lim.maxAcciones,
     navegacionEmitida: false,
     abortada: false,
+    ...(opciones.traza === true ? { traza: [] } : {}),
   };
+  const nombres = opciones.descripcion ?? DESCRIPCION_POR_IDS;
 
   sincronizarEntrada(evento, c.w);
 
@@ -462,7 +480,26 @@ export function procesarEvento(
 
     for (const ra of reglas) {
       if (c.abortada) break;
-      if (!ra.regla.activa || !coincideEvento(ra, ev)) continue;
+      // N8: solo es «candidata» una regla del mismo tipo de evento. La traza no
+      // cambia ninguna decisión: estas ramas hacen exactamente lo de siempre.
+      const candidata = c.traza !== undefined && ra.regla.evento === ev.tipo;
+      const paso = (
+        p: Pick<PasoTraza, 'evaluada' | 'resultado' | 'motivo' | 'acciones'>,
+      ): void => {
+        c.traza?.push({ reglaId: ra.regla.id, evento: ev, profundidad, ...p });
+      };
+      if (!ra.regla.activa) {
+        if (candidata) {
+          paso({ evaluada: false, resultado: 'inactiva', motivo: 'La regla está desactivada.', acciones: 0 });
+        }
+        continue;
+      }
+      if (!coincideEvento(ra, ev)) {
+        if (candidata) {
+          paso({ evaluada: false, resultado: 'no_coincide', motivo: motivoNoCoincide(ra, ev), acciones: 0 });
+        }
+        continue;
+      }
 
       const clave = `${ra.regla.id}\u0000${ev.tipo}\u0000${ev.bloqueId ?? ''}\u0000${ev.slideId ?? ''}`;
       if (ejecutadas.has(clave)) {
@@ -471,6 +508,14 @@ export function procesarEvento(
           reglaId: ra.regla.id,
           mensaje: 'La regla se volvería a disparar por su propia cadena: se corta el ciclo.',
         });
+        if (c.traza) {
+          paso({
+            evaluada: false,
+            resultado: 'ciclo_cortado',
+            motivo: 'Ya corrió para este mismo evento dentro de la cadena: se corta para evitar un ciclo.',
+            acciones: 0,
+          });
+        }
         continue;
       }
       ejecutadas.add(clave);
@@ -490,6 +535,44 @@ export function procesarEvento(
           ? []
           : (ra.regla.sino ?? []);
 
+      if (c.traza) {
+        const rota = ctxEval.rota === true;
+        const falla = cumple || rota
+          ? null
+          : explicarFalla(ra.regla.condiciones, c.w, ctxEval, nombres);
+        paso(
+          cumple
+            ? {
+                evaluada: true,
+                resultado: 'disparada',
+                motivo:
+                  ra.regla.condiciones.length === 0
+                    ? `Se disparó: ${describirEvento(ra.regla, nombres)} y no tiene condiciones.`
+                    : 'Se disparó: se cumplen las condiciones.',
+                acciones: lista.length,
+              }
+            : rota
+              ? {
+                  evaluada: true,
+                  resultado: 'condicion_rota',
+                  motivo:
+                    'No se disparó: la condición no se pudo evaluar (' +
+                    (c.avisos
+                      .filter((a) => a.reglaId === ra.regla.id)
+                      .map((a) => a.mensaje)
+                      .at(-1) ?? 'referencia inexistente') +
+                    ').',
+                  acciones: 0,
+                }
+              : {
+                  evaluada: true,
+                  resultado: lista.length > 0 ? 'sino' : 'no_cumple',
+                  motivo: `${lista.length > 0 ? 'Corrió «si no»' : 'No se disparó'}: ${falla ?? 'no se cumple la condición'}.`,
+                  acciones: lista.length,
+                },
+        );
+      }
+
       for (const accion of lista) {
         if (c.accionesRestantes <= 0) {
           aviso(c, {
@@ -506,6 +589,11 @@ export function procesarEvento(
     }
   }
 
-  return { estado: c.w, efectos: c.efectos, avisos: c.avisos };
+  return {
+    estado: c.w,
+    efectos: c.efectos,
+    avisos: c.avisos,
+    ...(c.traza !== undefined ? { traza: c.traza } : {}),
+  };
 }
 

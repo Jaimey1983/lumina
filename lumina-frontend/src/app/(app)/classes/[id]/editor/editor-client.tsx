@@ -180,7 +180,14 @@ import type { ActivityType, WidgetType } from './components/panels/activities-pa
 import { getActivityPanelItem } from './components/panels/activities-panel';
 import { getWidgetPanelItem } from './components/panels/widget-panel-catalog';
 import { EditorDndShell } from './components/editor-dnd-shell';
-import { recolectarReglas, reglasConReferenciasRotas } from '@lumina/interactions';
+import {
+  problemasDeInteraccion,
+  recolectarReglas,
+  reglasConReferenciasRotas,
+} from '@lumina/interactions';
+import { elementRegistry } from '@/lib/element-registry-bootstrap';
+import { tipoDeElemento } from './lib/interacciones';
+import { contextoDescripcionMazo } from './lib/simulador';
 import {
   contenidoParaCopia,
   dependenciasDeSlide,
@@ -2423,6 +2430,45 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     (variableId: string) => [...(variablesEnTexto.get(variableId) ?? [])],
     [variablesEnTexto],
   );
+  // N8 — «Problemas de interacción»: se recalcula en vivo y NO bloquea el guardado.
+  const problemasInteraccion = useMemo(
+    () =>
+      problemasDeInteraccion(slidesMotor, cls?.variables ?? [], {
+        eventosDeBloque: (b) => elementRegistry.obtener(tipoDeElemento(b))?.eventos ?? [],
+        variablesEnTexto: new Set(variablesEnTexto.keys()),
+      }),
+    [slidesMotor, cls?.variables, variablesEnTexto],
+  );
+  const descripcionMazo = useMemo(
+    () =>
+      contextoDescripcionMazo({
+        variables: cls?.variables ?? [],
+        slides: slidesMotor.map((m, i) => ({
+          id: m.id,
+          titulo: sortedSlides[i]?.title,
+          bloques: m.bloques,
+          capas: m.capas,
+        })),
+        etiquetaTipo: (b) => elementRegistry.obtener(tipoDeElemento(b))?.catalogo?.nombre ?? b.tipo,
+      }),
+    [cls?.variables, slidesMotor, sortedSlides],
+  );
+  const irAProblema = useCallback(
+    (slideId: string, bloqueId?: string) => {
+      const i = sortedSlides.findIndex((s) => s.id === slideId);
+      if (i < 0) return;
+      setActiveSlideIndex(i);
+      const j =
+        bloqueId === undefined
+          ? -1
+          : (slidesMotor[i]?.bloques ?? []).findIndex(
+              (b) => (b as { id?: unknown }).id === bloqueId,
+            );
+      // Los bloques de una capa no se seleccionan por índice: se llega al slide.
+      if (j >= 0) window.setTimeout(() => canvasAreaRef.current?.selectBlockByIndex(j), 150);
+    },
+    [sortedSlides, slidesMotor],
+  );
   // N4 — el editor de texto muestra el NOMBRE de cada variable (el doc guarda el id).
   useEffect(() => {
     setVariableLabels(cls?.variables);
@@ -3254,6 +3300,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             slidesConVariableEnTexto={slidesConVariableEnTexto}
             onSaveVariables={isStudent ? undefined : handleSaveVariables}
             isSavingVariables={updateClassMutation.isPending}
+            problemasInteraccion={problemasInteraccion}
+            descripcionMazo={descripcionMazo}
+            onIrAProblema={irAProblema}
           />
           </div>
           </EditorDndShell>
@@ -3266,6 +3315,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
             <RightRail
               activePanel={rightPanel}
               onPanelToggle={toggleRightPanel}
+              problemasCount={problemasInteraccion.length}
             />
           </div>
 

@@ -16,11 +16,15 @@ import {
   estadoDeclarado,
   estadosPersonalizadosPorBloque,
   procesarEvento,
+  type Aviso,
+  type ContextoDescripcion,
+  type Efecto,
   type EstadoMotor,
   type EventoMotor,
+  type PasoTraza,
   type ReglaAplicable,
 } from '@lumina/interactions';
-import type { VariableDef } from '@lumina/types/interaction';
+import type { VariableDef, VariableValor } from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 
@@ -38,6 +42,27 @@ function declaradosDe(slides: readonly Slide[]): Readonly<Record<string, readonl
   return d;
 }
 
+/** N8 — un evento procesado y lo que el motor decidió con cada regla candidata. */
+export interface RegistroEvento {
+  /** Correlativo dentro de la prueba (para listas con `key`). */
+  id: number;
+  evento: EventoMotor;
+  pasos: PasoTraza[];
+  avisos: Aviso[];
+  efectos: Efecto[];
+  /** Variables DESPUÉS del evento. */
+  variables: Readonly<Record<string, VariableValor>>;
+}
+
+/**
+ * N8 — depuración de la VISTA PREVIA. Con esto el motor corre con la traza
+ * encendida; el resultado (estado, efectos) es idéntico al de sin traza.
+ */
+export interface DepuracionEvento {
+  descripcion: ContextoDescripcion;
+  alProcesar: (registro: Omit<RegistroEvento, 'id'>) => void;
+}
+
 export interface EjecutarEventoArgs {
   reglas: readonly ReglaAplicable[];
   /** `null` = todavía no hubo eventos: se parte del estado inicial de los slides. */
@@ -52,6 +77,8 @@ export interface EjecutarEventoArgs {
    * condición que lea una variable del sistema falla cerrado (no dispara).
    */
   entorno?: EntornoSistema;
+  /** N8 — solo la vista previa lo pasa; el reproductor del alumno nunca. */
+  depuracion?: DepuracionEvento;
 }
 
 /** N7 — lo que solo el reproductor sabe: tiempo activo del intento y número de intento. */
@@ -71,6 +98,7 @@ export function ejecutarEvento({
   evento,
   navigate,
   entorno,
+  depuracion,
 }: EjecutarEventoArgs): EstadoMotor {
   let base = estado ?? crearEstadoInicial(variables, slides);
   if (evento.tipo === 'al_entrar_slide' && evento.slideId) {
@@ -89,10 +117,24 @@ export function ejecutarEvento({
           tiempoActivoS: entorno.tiempoActivoS,
           intento: entorno.intento,
         });
-  const res = procesarEvento(reglas, base, evento, {
-    variables,
-    estadosPersonalizados: declaradosDe(slides),
-    ...(sistema !== undefined ? { sistema } : {}),
+  const res = procesarEvento(
+    reglas,
+    base,
+    evento,
+    {
+      variables,
+      estadosPersonalizados: declaradosDe(slides),
+      ...(sistema !== undefined ? { sistema } : {}),
+    },
+    {},
+    depuracion ? { traza: true, descripcion: depuracion.descripcion } : {},
+  );
+  depuracion?.alProcesar({
+    evento,
+    pasos: res.traza ?? [],
+    avisos: res.avisos,
+    efectos: res.efectos,
+    variables: res.estado.variables,
   });
   if (navigate) {
     for (const efecto of res.efectos) {
