@@ -14,8 +14,9 @@ import { ActivitiesPanel } from './panels/activities-panel';
 import { MathGeneratorPanel } from './panels/math-generator-panel';
 import { SlideThemesPanel } from './panels/themes-panel';
 import { VariablesPanel } from './panels/variables-panel';
+import { ProblemasInteraccionPanel } from './panels/problemas-interaccion-panel';
 import type { VariableDef } from '@lumina/types/interaction';
-import type { ReglaAplicable } from '@lumina/interactions';
+import type { ContextoDescripcion, ProblemaInteraccion, ReglaAplicable } from '@lumina/interactions';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { SlideTheme } from '@lumina/types/slide';
 import {
@@ -38,6 +39,7 @@ const PANEL_LABELS: Record<RightPanelId, string> = {
   themes:     'Temas',
   live:       'En vivo',
   variables:  'Variables',
+  problemas:  'Problemas de interacción',
 };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -84,6 +86,10 @@ export interface RightFlyoutPanelProps {
   slidesConVariableEnTexto?: (variableId: string) => string[];
   onSaveVariables?: (next: VariableDef[]) => void;
   isSavingVariables?: boolean;
+  /** N8 — problemas de interacción del mazo y su contexto de nombres. */
+  problemasInteraccion?: ProblemaInteraccion[];
+  descripcionMazo?: ContextoDescripcion;
+  onIrAProblema?: (slideId: string, bloqueId?: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -124,6 +130,9 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
       slidesConVariableEnTexto,
       onSaveVariables,
       isSavingVariables,
+      problemasInteraccion = [],
+      descripcionMazo,
+      onIrAProblema,
     },
     ref,
   ) {
@@ -137,7 +146,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
           activePanel
             ? activePanel === 'math'
               ? 'w-96 opacity-100'
-              : activePanel === 'themes'
+              : activePanel === 'themes' || activePanel === 'problemas'
                 ? 'w-80 opacity-100'
                 : 'w-64 opacity-100'
             : 'w-0 border-transparent opacity-0 shadow-none',
@@ -148,7 +157,7 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
           className={cn(
             activePanel === 'math'
               ? 'flex h-full w-96 flex-col'
-              : activePanel === 'themes'
+              : activePanel === 'themes' || activePanel === 'problemas'
                 ? 'flex h-full w-80 flex-col'
                 : 'flex h-full w-64 flex-col',
             'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200',
@@ -215,6 +224,15 @@ export const RightFlyoutPanel = forwardRef<HTMLElement, RightFlyoutPanelProps>(
                 slidesConVariableEnTexto={slidesConVariableEnTexto}
                 onSave={onSaveVariables}
                 isSaving={isSavingVariables}
+              />
+            )}
+            {activePanel === 'problemas' && descripcionMazo && onIrAProblema && (
+              <ProblemasInteraccionPanel
+                problemas={problemasInteraccion}
+                reglas={reglasDelMazo}
+                variables={variables}
+                descripcion={descripcionMazo}
+                onIr={onIrAProblema}
               />
             )}
             {activePanel === 'live' &&

@@ -38,7 +38,11 @@ import type {
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
 import { migrarAccionesLegacyARegla } from '@/lib/class-slide-normalize';
-import { ejecutarEvento, hidratarEstado } from '@/lib/interaction-runtime';
+import {
+  ejecutarEvento,
+  hidratarEstado,
+  type DepuracionEvento,
+} from '@/lib/interaction-runtime';
 
 /** Lo que `SlideRenderer` reenvía a `config` de cada elemento. */
 export interface SlideInteractionRuntime {
@@ -84,6 +88,20 @@ export interface UseInteractionRuntimeOptions {
    * resultado lo declara en `sistemaSimulado` para que la interfaz lo marque.
    */
   simulado?: boolean;
+  /**
+   * N8 — SOLO la vista previa del docente: enciende la traza del motor y expone
+   * `controles`. Sin esto (reproductor del alumno, vivo, presentación) el hook se
+   * comporta exactamente igual que antes.
+   */
+  depuracion?: DepuracionEvento;
+}
+
+/** N8 — controles del simulador. Nada de esto se persiste ni toca la nota. */
+export interface ControlesSimulador {
+  /** Fija el valor de una variable en la prueba (valida existencia y tipo; no emite eventos). */
+  fijarVariable: (variableId: string, valor: VariableValor) => void;
+  /** Vuelve al estado inicial del mazo y repite «al entrar al slide» del slide actual. */
+  reiniciar: () => void;
 }
 
 export interface UseInteractionRuntimeResult {
@@ -95,6 +113,8 @@ export interface UseInteractionRuntimeResult {
   estado: EstadoMotor | null;
   /** N7 — `true` en vista previa: `intento` y `tiempo_s` no son los de un alumno real. */
   sistemaSimulado: boolean;
+  /** N8 — presente solo si se pidió `depuracion`. */
+  controles?: ControlesSimulador;
 }
 
 const SIN_VARIABLES: readonly VariableDef[] = [];
@@ -119,7 +139,10 @@ function teclaDebeIgnorarse(e: KeyboardEvent): boolean {
  * reinicia (lo ocurrido entre el último evento y la recarga se pierde, a favor
  * del alumno).
  */
-function useTiempoActivo(enabled: boolean, baseS: number): () => number {
+function useTiempoActivo(
+  enabled: boolean,
+  baseS: number,
+): { leer: () => number; reiniciar: () => void } {
   const acumulado = useRef(baseS);
   const desde = useRef<number | null>(null);
   useEffect(() => {
@@ -142,10 +165,16 @@ function useTiempoActivo(enabled: boolean, baseS: number): () => number {
       pausar();
     };
   }, [enabled]);
-  return useCallback(
+  const leer = useCallback(
     () => acumulado.current + (desde.current === null ? 0 : (performance.now() - desde.current) / 1000),
     [],
   );
+  // N8: el simulador vuelve a contar desde cero.
+  const reiniciar = useCallback(() => {
+    acumulado.current = 0;
+    if (desde.current !== null) desde.current = performance.now();
+  }, []);
+  return { leer, reiniciar };
 }
 
 export function useInteractionRuntime({
@@ -158,6 +187,7 @@ export function useInteractionRuntime({
   onEstadoChange,
   intento = 1,
   simulado = false,
+  depuracion,
 }: UseInteractionRuntimeOptions): UseInteractionRuntimeResult {
   const slides = useMemo(
     () => (enabled ? migrarAccionesLegacyARegla(slidesEntrada) : (slidesEntrada as Slide[])),
@@ -170,19 +200,21 @@ export function useInteractionRuntime({
   const [restaurado] = useState<EstadoMotor | null>(() =>
     enabled ? hidratarEstado(estadoInicial, variables, slides) : null,
   );
-  const tiempoActivoS = useTiempoActivo(
+  const { leer: tiempoActivoS, reiniciar: reiniciarTiempo } = useTiempoActivo(
     enabled,
     // En vista previa el reloj parte de cero: no es el de un alumno real.
     simulado || restaurado === null ? 0 : tiempoActivoPersistido(restaurado),
   );
   const [estadoGuardado, setEstadoGuardado] = useState<EstadoMotor | null>(restaurado);
   const estadoRef = useRef<EstadoMotor | null>(restaurado);
+  /** N8 — sube con cada «reiniciar» para que los temporizadores del slide se programen de nuevo. */
+  const [epoca, setEpoca] = useState(0);
 
   // Refs al último valor: los manejadores no deben quedar con una clausura vieja.
-  const vivo = useRef({ slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId, intento });
+  const vivo = useRef({ slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId, intento, depuracion });
   // Declarado antes que los efectos que despachan: React los corre en orden.
   useEffect(() => {
-    vivo.current = { slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId, intento };
+    vivo.current = { slides, reglas, contexto, navigate, enabled, onEstadoChange, slideId, intento, depuracion };
   });
 
   const slideDeBloque = useMemo(() => {
@@ -208,6 +240,7 @@ export function useInteractionRuntime({
       // D1: sin `navigate` (vivo / presentación) los efectos se descartan.
       navigate: v.navigate,
       entorno: { tiempoActivoS: tiempoActivoS(), intento: v.intento },
+      ...(v.depuracion ? { depuracion: v.depuracion } : {}),
     });
     estadoRef.current = nuevo;
     setEstadoGuardado(nuevo);
@@ -246,7 +279,7 @@ export function useInteractionRuntime({
       }, segundos * 1000),
     );
     return () => relojes.forEach((r) => window.clearTimeout(r));
-  }, [enabled, slideId, reglas, slides, despachar]);
+  }, [enabled, slideId, reglas, slides, despachar, epoca]);
 
   // `tecla` (N5): un solo oyente, solo si alguna regla lo usa, y solo con teclas
   // de la lista cerrada. Nunca es la única vía de acción (lo revisa K14).
@@ -341,6 +374,29 @@ export function useInteractionRuntime({
     }
   }, [despachar]);
 
+  const hayDepuracion = depuracion !== undefined;
+  const controles = useMemo<ControlesSimulador | undefined>(() => {
+    if (!enabled || !hayDepuracion) return undefined;
+    return {
+      fijarVariable: (variableId, valor) => {
+        const v = vivo.current;
+        const base = estadoRef.current ?? crearEstadoInicial(v.contexto.variables, v.slides);
+        const nuevo = asignarVariableEnEstado(base, v.contexto.variables, variableId, valor);
+        if (nuevo === base) return;
+        estadoRef.current = nuevo;
+        setEstadoGuardado(nuevo);
+      },
+      reiniciar: () => {
+        estadoRef.current = null;
+        setEstadoGuardado(null);
+        reiniciarTiempo();
+        setEpoca((e) => e + 1);
+        const actual = vivo.current.slideId;
+        if (actual) despachar({ tipo: 'al_entrar_slide', slideId: actual });
+      },
+    };
+  }, [enabled, hayDepuracion, despachar, reiniciarTiempo]);
+
   const runtime = useMemo<SlideInteractionRuntime | undefined>(() => {
     if (!enabled || !estadoParaPintar) return undefined;
     return {
@@ -356,5 +412,11 @@ export function useInteractionRuntime({
     };
   }, [enabled, emitir, estadoParaPintar, cerrarCapa, escuchaHover, hover, asignarVariable]);
 
-  return { slides, runtime, estado: estadoGuardado, sistemaSimulado: enabled && simulado };
+  return {
+    slides,
+    runtime,
+    estado: estadoGuardado,
+    sistemaSimulado: enabled && simulado,
+    ...(controles ? { controles } : {}),
+  };
 }

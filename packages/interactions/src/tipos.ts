@@ -1,3 +1,4 @@
+import type { ContextoDescripcion } from './describir.js';
 import type {
   ClaveSistema,
   EstadoDeBloque,
@@ -96,6 +97,46 @@ export interface ResultadoMotor {
   estado: EstadoMotor;
   efectos: Efecto[];
   avisos: Aviso[];
+  /** N8 — solo presente con `opciones.traza`. Nunca altera el resto del resultado. */
+  traza?: PasoTraza[];
+}
+
+/** N8 — qué pasó con una regla candidata (misma clase de evento) en un evento. */
+export type ResultadoTraza =
+  /** Coincidió y las condiciones se cumplieron: corrieron sus acciones. */
+  | 'disparada'
+  /** Coincidió, las condiciones dieron falso y corrió la rama «si no». */
+  | 'sino'
+  /** Coincidió, las condiciones dieron falso y no hay «si no». */
+  | 'no_cumple'
+  /** Coincidió pero la condición está rota (variable borrada…): no hace nada. */
+  | 'condicion_rota'
+  | 'inactiva'
+  /** Mismo tipo de evento, pero otro bloque, slide o parámetro. */
+  | 'no_coincide'
+  | 'ciclo_cortado';
+
+export interface PasoTraza {
+  reglaId: string;
+  /** Evento que se estaba procesando (puede ser uno encadenado por una acción). */
+  evento: EventoMotor;
+  /** 0 = el evento de entrada; >0 = encadenado. */
+  profundidad: number;
+  /** `true` si se llegó a evaluar la condición de la regla. */
+  evaluada: boolean;
+  resultado: ResultadoTraza;
+  /** Explicación en español: por qué se disparó o no, con los valores a la vista. */
+  motivo: string;
+  /** Cuántas acciones ejecutó (de la rama que corrió). */
+  acciones: number;
+}
+
+/** N8 — opciones de depuración de `procesarEvento`. Apagadas por defecto. */
+export interface OpcionesMotor {
+  /** Devuelve `traza` en el resultado. Apagada: comportamiento y costo idénticos. */
+  traza?: boolean;
+  /** Nombres legibles para el `motivo` de la traza; sin él se escriben los ids. */
+  descripcion?: ContextoDescripcion;
 }
 
 export interface LimitesMotor {

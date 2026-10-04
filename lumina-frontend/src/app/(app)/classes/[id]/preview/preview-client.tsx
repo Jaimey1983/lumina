@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  FlaskConical,
   Loader2,
   XCircle,
 } from 'lucide-react';
@@ -22,6 +23,12 @@ import type { Activity, Block } from '@lumina/types/slide';
 import { evaluateActivityResponse, isActivityDraftResponse } from '@lumina/scoring';
 import { eventoDeRespuesta } from '@/lib/respuesta-a-evento';
 import { useInteractionRuntime } from '@/hooks/use-interaction-runtime';
+import type { RegistroEvento } from '@/lib/interaction-runtime';
+import { recolectarReglas } from '@lumina/interactions';
+import { elementRegistry } from '@/lib/element-registry-bootstrap';
+import { RulesSimulator } from '../editor/components/panels/rules-simulator';
+import { agregarRegistro, contextoDescripcionMazo } from '../editor/lib/simulador';
+import { tipoDeElemento } from '../editor/lib/interacciones';
 
 // ─── Local response evaluation (no socket, no backend) ────────────────────────
 
@@ -103,9 +110,36 @@ export function PreviewClient({ id }: { id: string }) {
     [baseSlides.length],
   );
 
+  // N8 — «Probar reglas»: solo existe en la vista previa del docente. La traza
+  // del motor se enciende únicamente aquí; el reproductor del alumno no la pasa.
+  const [simuladorAbierto, setSimuladorAbierto] = useState(false);
+  const [registros, setRegistros] = useState<RegistroEvento[]>([]);
+  const siguienteRegistro = useRef(0);
+  const descripcion = useMemo(
+    () =>
+      contextoDescripcionMazo({
+        variables: classData?.variables ?? [],
+        slides: baseSlides.map((s) => ({ id: s.id, titulo: s.title, bloques: s.bloques, capas: s.capas })),
+        etiquetaTipo: (b) => elementRegistry.obtener(tipoDeElemento(b))?.catalogo?.nombre ?? b.tipo,
+      }),
+    [classData?.variables, baseSlides],
+  );
+  const depuracion = useMemo(
+    () => ({
+      descripcion,
+      alProcesar: (r: Omit<RegistroEvento, 'id'>) => {
+        const id = siguienteRegistro.current++;
+        // Se difiere: el motor corre dentro de manejadores de otros componentes.
+        queueMicrotask(() => setRegistros((prev) => agregarRegistro(prev, { ...r, id })));
+      },
+    }),
+    [descripcion],
+  );
+
   // Motor de interacción (K4): activo en vista previa; navega por `navigateSlide`,
   // la misma función que se publica en `SlideNavContext`.
-  const { slides, runtime, sistemaSimulado } = useInteractionRuntime({
+  const { slides, runtime, sistemaSimulado, controles } = useInteractionRuntime({
+    depuracion,
     enabled: true,
     simulado: true,
     slides: baseSlides,
@@ -114,6 +148,7 @@ export function PreviewClient({ id }: { id: string }) {
     navigate: navigateSlide,
   });
   const activeSlide = slides[activeSlideIndex] ?? null;
+  const reglasDelMazo = useMemo(() => recolectarReglas(slides), [slides]);
 
   // Reset pill on slide change
   useEffect(() => {
@@ -188,6 +223,20 @@ export function PreviewClient({ id }: { id: string }) {
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={simuladorAbierto}
+            onClick={() => setSimuladorAbierto((a) => !a)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition',
+              simuladorAbierto
+                ? 'bg-white text-[#1e1b4b] ring-white'
+                : 'bg-white/10 text-white/80 ring-white/20 hover:bg-white/20',
+            )}
+          >
+            <FlaskConical className="size-3.5" aria-hidden />
+            Probar reglas
+          </button>
           {slides.length > 0 ? (
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/70">
               Slide {activeSlideIndex + 1} de {slides.length}
@@ -196,8 +245,9 @@ export function PreviewClient({ id }: { id: string }) {
         </div>
       </header>
 
-      {/* Main slide area */}
-      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* Main slide area (+ simulador de reglas, N8) */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden p-4">
           <div className="flex min-h-0 h-full w-full flex-1 items-center justify-center overflow-hidden">
             {activeSlide ? (
@@ -261,6 +311,23 @@ export function PreviewClient({ id }: { id: string }) {
           ) : null}
         </div>
       </main>
+      {simuladorAbierto && controles ? (
+        <RulesSimulator
+          registros={registros}
+          reglas={reglasDelMazo}
+          variables={classData.variables ?? []}
+          valores={runtime?.variables ?? {}}
+          descripcion={descripcion}
+          onFijarVariable={controles.fijarVariable}
+          onReiniciar={() => {
+            setRegistros([]);
+            controles.reiniciar();
+          }}
+          onLimpiar={() => setRegistros([])}
+          onCerrar={() => setSimuladorAbierto(false)}
+        />
+      ) : null}
+      </div>
 
       {/* Response feedback pill */}
       {responsePill && (

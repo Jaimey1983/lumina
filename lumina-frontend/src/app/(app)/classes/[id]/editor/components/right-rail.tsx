@@ -1,6 +1,6 @@
 'use client';
 
-import { Calculator, LayoutGrid, Palette, Radio, Sparkles, Variable } from 'lucide-react';
+import { AlertTriangle, Calculator, LayoutGrid, Palette, Radio, Sparkles, Variable } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type RightPanelId = 'ia' | 'activities' | 'themes' | 'live' | 'variables' | 'math';
+export type RightPanelId = 'ia' | 'activities' | 'themes' | 'live' | 'variables' | 'math' | 'problemas';
 
 interface RailItem {
   id: RightPanelId;
@@ -23,6 +23,7 @@ const ITEMS: RailItem[] = [
   { id: 'themes',     label: 'Temas de diapositivas',    Icon: Palette },
   { id: 'live',       label: 'Respuestas en vivo',       Icon: Radio },
   { id: 'variables',  label: 'Variables de la clase',    Icon: Variable },
+  { id: 'problemas',  label: 'Problemas de interacción', Icon: AlertTriangle },
 ];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -30,11 +31,13 @@ const ITEMS: RailItem[] = [
 export interface RightRailProps {
   activePanel: RightPanelId | null;
   onPanelToggle: (panel: RightPanelId) => void;
+  /** N8 — cantidad de problemas de interacción, para el distintivo del botón. */
+  problemasCount?: number;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function RightRail({ activePanel, onPanelToggle }: RightRailProps) {
+export function RightRail({ activePanel, onPanelToggle, problemasCount = 0 }: RightRailProps) {
   const { user } = useAuth();
   const isStudent = user?.role === 'STUDENT';
   const visibleItems = isStudent
@@ -53,7 +56,7 @@ export function RightRail({ activePanel, onPanelToggle }: RightRailProps) {
             aria-label={label}
             aria-pressed={activePanel === id}
             className={cn(
-              'flex items-center justify-center rounded-lg p-3 outline-none',
+              'relative flex items-center justify-center rounded-lg p-3 outline-none',
               'motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out',
               'motion-reduce:transition-none',
               'focus-visible:ring-2 focus-visible:ring-[#9ca3af] focus-visible:ring-offset-1',
@@ -63,6 +66,14 @@ export function RightRail({ activePanel, onPanelToggle }: RightRailProps) {
             )}
           >
             <Icon className="size-5 shrink-0" aria-hidden />
+            {id === 'problemas' && problemasCount > 0 ? (
+              <span
+                aria-label={`${problemasCount} problemas`}
+                className="absolute right-1 top-1 min-w-4 rounded-full bg-amber-500 px-1 text-center text-[10px] font-bold leading-4 text-white"
+              >
+                {problemasCount > 99 ? '99+' : problemasCount}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>

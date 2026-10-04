@@ -425,3 +425,42 @@ describe('N7 — variables del sistema en el runtime', () => {
     expect(Object.keys(e).sort()).toEqual(['capasAbiertas', 'estados', 'respuestas', 'variables', 'visibles']);
   });
 });
+
+describe('ejecutarEvento con depuración (N8)', () => {
+  const vars: VariableDef[] = [{ id: 'v1', nombre: 'Intentos', tipo: 'numero', valorInicial: 0 }];
+  const regla: Regla = {
+    id: 'r1',
+    evento: 'clic',
+    condiciones: [],
+    acciones: [{ tipo: 'sumar_variable', variableId: 'v1', cantidad: 1 }],
+    activa: true,
+  };
+  const slides = [slide('s1', [hotspot('h1')], { reglas: [] })];
+  const reglas = [{ regla, origen: { tipo: 'bloque' as const, bloqueId: 'h1', slideId: 's1' } }];
+  const evento = { tipo: 'clic' as const, bloqueId: 'h1', slideId: 's1' };
+  const base = { reglas, estado: null, variables: vars, slides, evento, navigate: null };
+
+  it('el estado resultante es idéntico con y sin depuración, y la traza llega al callback', () => {
+    const sin = ejecutarEvento(base);
+    const registros: unknown[] = [];
+    const con = ejecutarEvento({
+      ...base,
+      depuracion: {
+        descripcion: {
+          nombreVariable: () => 'Intentos',
+          nombreBloque: () => undefined,
+          tituloSlide: () => undefined,
+          nombreCapa: () => undefined,
+        },
+        alProcesar: (r) => registros.push(r),
+      },
+    });
+    expect(con).toEqual(sin);
+    expect(registros).toHaveLength(1);
+    expect(registros[0]).toMatchObject({
+      evento,
+      pasos: [{ reglaId: 'r1', resultado: 'disparada' }],
+      variables: { v1: 1 },
+    });
+  });
+});
