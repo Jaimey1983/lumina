@@ -27,6 +27,10 @@ export const AI_ACTIVITY_TYPES = [
   'globos',
   'topo',
   'historia_ramificada',
+  // Química (Q4 / Q8)
+  'balancear_ecuacion',
+  'ubicar_elemento',
+  'formular_compuesto',
 ] as const;
 
 export type AiActivityType = (typeof AI_ACTIVITY_TYPES)[number];

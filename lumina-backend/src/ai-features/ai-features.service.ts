@@ -23,6 +23,7 @@ import { AiKeysService } from './ai-keys.service';
 import { parseLlmJsonObject } from './ai-json';
 import { assertAiStaff } from './ai-staff';
 import { anonymizeStudentLabel } from './ai-pii';
+import { verifyChemistryActivity } from './chemistry-activity-verifier';
 
 /*
 ESQUEMA DE SALIDA — contentAssistant y generateFromDocument:
@@ -177,10 +178,7 @@ Reglas:
         ? (nested as Record<string, unknown>)
         : parsed;
 
-    return {
-      tipo: dto.type,
-      activity: { ...activity, tipo: dto.type },
-    };
+    return this.buildActivityGenerationResponse(dto.type, activity);
   }
 
   // ── 1c. Refinar actividad Lumina por chat (J8) ─────────────
@@ -223,10 +221,28 @@ Aplica la instrucción y devuelve el JSON completo actualizado. "tipo" debe segu
         ? (nested as Record<string, unknown>)
         : parsed;
 
+    const base = this.buildActivityGenerationResponse(dto.type, activity);
+    return { ...base, instruction: dto.instruction };
+  }
+
+  /** Post-LLM: verificación determinista Q8 para actividades químicas. */
+  private buildActivityGenerationResponse(
+    type: AiActivityType,
+    raw: Record<string, unknown>,
+  ) {
+    const activity = { ...raw, tipo: type };
+    const chemistryVerification = verifyChemistryActivity(type, activity);
+    if (chemistryVerification.status === 'rejected_chemistry') {
+      return {
+        tipo: type,
+        activity: null,
+        chemistryVerification,
+      };
+    }
     return {
-      tipo: dto.type,
-      activity: { ...activity, tipo: dto.type },
-      instruction: dto.instruction,
+      tipo: type,
+      activity,
+      chemistryVerification,
     };
   }
 
@@ -828,6 +844,12 @@ function defaultActivityCount(type: AiActivityType): number {
       return 3;
     case 'historia_ramificada':
       return 4;
+    case 'balancear_ecuacion':
+      return 1;
+    case 'ubicar_elemento':
+      return 4;
+    case 'formular_compuesto':
+      return 4;
   }
 }
 
@@ -1114,6 +1136,37 @@ const ACTIVITY_GENERATION_SPECS: Record<
   ],
   "conexiones": [
     { "id": "con-1", "desdeNodoId": "nodo-1", "opcionId": "op-1a", "haciaNodoId": "nodo-final-bueno" }
+  ]
+}`,
+  },
+  balancear_ecuacion: {
+    instruccion: () =>
+      'Crea UNA ecuación química sin coeficientes (solo fórmulas y flecha ->) que SÍ se pueda balancear con coeficientes enteros. Usa notación ASCII: H2, O2, H2O, Fe2O3. No incluyas coeficientes en la ecuación.',
+    schema: `{
+  "tipo": "balancear_ecuacion",
+  "instruccion": "Ajusta los coeficientes para balancear la ecuación.",
+  "ecuacion": "H2 + O2 -> H2O"
+}`,
+  },
+  ubicar_elemento: {
+    instruccion: (count) =>
+      `Crea una actividad para ubicar ${count} elemento(s) en la tabla periódica. Cada uno debe tener symbol, periodo y grupo correctos según IUPAC (datos reales).`,
+    schema: `{
+  "tipo": "ubicar_elemento",
+  "instruccion": "Indica el periodo y el grupo de cada elemento.",
+  "elementos": [
+    { "id": "e1", "symbol": "Na", "periodo": 3, "grupo": 1 }
+  ]
+}`,
+  },
+  formular_compuesto: {
+    instruccion: (count) =>
+      `Crea ${count} pregunta(s) de formulación inorgánica (nombre → fórmula molecular en ASCII, ej. CaO, H2SO4).`,
+    schema: `{
+  "tipo": "formular_compuesto",
+  "instruccion": "Escribe la fórmula molecular de cada compuesto.",
+  "preguntas": [
+    { "id": "q1", "enunciado": "Óxido de calcio", "formula": "CaO" }
   ]
 }`,
   },

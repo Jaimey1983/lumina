@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@lumina/chemistry": "workspace:*",
     "@lumina/curriculum-data": "workspace:*",
     "@lumina/interactions": "workspace:*",
     "@lumina/scoring": "workspace:*",
@@ -97,6 +98,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
+      "^@lumina/chemistry$": "<rootDir>/../node_modules/@lumina/chemistry/dist/cjs/index.js",
       "^@lumina/scoring$": "<rootDir>/../node_modules/@lumina/scoring/dist/cjs/index.js",
       "^@lumina/scoring/fixtures$": "<rootDir>/../node_modules/@lumina/scoring/src/activity-scoring.fixtures.json",
       "^@lumina/curriculum-data$": "<rootDir>/../node_modules/@lumina/curriculum-data/dist/cjs/index.js",
@@ -104,6 +106,7 @@
     },
     "transformIgnorePatterns": [
       "/node_modules/",
+      "[/\\\\]packages[/\\\\]chemistry[/\\\\]dist[/\\\\]",
       "[/\\\\]packages[/\\\\]scoring[/\\\\]dist[/\\\\]",
       "[/\\\\]packages[/\\\\]curriculum-data[/\\\\]dist[/\\\\]",
       "[/\\\\]packages[/\\\\]interactions[/\\\\]dist[/\\\\]"

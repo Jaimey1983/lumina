@@ -113,15 +113,18 @@ const J8_TYPES: AiActivityType[] = [
   'globos',
   'topo',
   'historia_ramificada',
+  'balancear_ecuacion',
+  'ubicar_elemento',
+  'formular_compuesto',
 ];
 
 type AiActivityType = Parameters<typeof normalizeAiActivity>[0];
 
-describe('J8 — AI_ACTIVITY_OPTIONS / defaultCountForAiActivity cubren los 22 tipos', () => {
-  it('AI_ACTIVITY_OPTIONS tiene exactamente 22 entradas, sin duplicados', () => {
-    expect(AI_ACTIVITY_OPTIONS).toHaveLength(22);
+describe('J8/Q8 — AI_ACTIVITY_OPTIONS / defaultCountForAiActivity cubren el catálogo IA', () => {
+  it('AI_ACTIVITY_OPTIONS tiene exactamente 25 entradas (22 clásicos + 3 química), sin duplicados', () => {
+    expect(AI_ACTIVITY_OPTIONS).toHaveLength(25);
     const values = AI_ACTIVITY_OPTIONS.map((o) => o.value);
-    expect(new Set(values).size).toBe(22);
+    expect(new Set(values).size).toBe(25);
   });
 
   it.each(J8_TYPES)('defaultCountForAiActivity("%s") devuelve un número positivo en ambos modos', (tipo) => {

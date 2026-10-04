@@ -29,7 +29,20 @@ export type AiActivityType =
   | 'puzzle_palabras'
   | 'globos'
   | 'topo'
-  | 'historia_ramificada';
+  | 'historia_ramificada'
+  | 'balancear_ecuacion'
+  | 'ubicar_elemento'
+  | 'formular_compuesto';
+
+export type ChemistryVerificationStatus =
+  | 'verified_chemistry'
+  | 'rejected_chemistry'
+  | 'not_applicable';
+
+export interface ChemistryVerification {
+  status: ChemistryVerificationStatus;
+  reasons: string[];
+}
 
 export interface GenerateActivityInput {
   text: string;
@@ -41,7 +54,8 @@ export interface GenerateActivityInput {
 
 export interface GenerateActivityResult {
   tipo: AiActivityType;
-  activity: Record<string, unknown>;
+  activity: Record<string, unknown> | null;
+  chemistryVerification?: ChemistryVerification;
 }
 
 export interface GenerateQuizInput {
@@ -176,7 +190,8 @@ export interface RefineActivityInput {
 
 export interface RefineActivityResult {
   tipo: AiActivityType;
-  activity: Record<string, unknown>;
+  activity: Record<string, unknown> | null;
+  chemistryVerification?: ChemistryVerification;
   instruction: string;
 }
 

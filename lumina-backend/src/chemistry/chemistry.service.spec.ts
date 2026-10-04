@@ -1,7 +1,4 @@
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ChemistryService } from './chemistry.service';
 
 const mockRedis = {
@@ -9,9 +6,7 @@ const mockRedis = {
   set: jest.fn(),
 };
 
-jest.mock('ioredis', () =>
-  jest.fn().mockImplementation(() => mockRedis),
-);
+jest.mock('ioredis', () => jest.fn().mockImplementation(() => mockRedis));
 
 describe('ChemistryService', () => {
   let service: ChemistryService;
@@ -57,16 +52,17 @@ describe('ChemistryService', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({
-        PropertyTable: {
-          Properties: [
-            {
-              IsomericSMILES: 'CCO',
-              MolecularFormula: 'C2H6O',
-            },
-          ],
-        },
-      }),
+      json: () =>
+        Promise.resolve({
+          PropertyTable: {
+            Properties: [
+              {
+                IsomericSMILES: 'CCO',
+                MolecularFormula: 'C2H6O',
+              },
+            ],
+          },
+        }),
     }) as typeof fetch;
 
     const result = await service.resolveCompoundByName('ethanol');
@@ -82,8 +78,8 @@ describe('ChemistryService', () => {
       status: 404,
     }) as typeof fetch;
 
-    await expect(service.resolveCompoundByName('xyznotreal')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.resolveCompoundByName('xyznotreal'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });
