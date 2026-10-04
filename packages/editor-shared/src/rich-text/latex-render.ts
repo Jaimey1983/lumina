@@ -147,7 +147,7 @@ function leerFragmentoConEstado(fragmento: string): string {
 }
 
 function leerCuerpoCe(cuerpo: string): string {
-  let t = normalizarCargaMhchem(cuerpo)
+  const t = normalizarCargaMhchem(cuerpo)
     .replace(/\((s|l|g|aq)\)/gi, (_m, st: string) => ` en estado ${st.toLowerCase()} `)
     .replace(/<=>|⇌/g, ' equilibrio ')
     .replace(/->/g, ' reacciona para formar ')
