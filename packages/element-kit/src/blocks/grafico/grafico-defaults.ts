@@ -412,6 +412,12 @@ export function normalizeGraficoBlock(input: unknown): GraficoDatosBlock {
     bandas: sanitizeBandas(rawAny.bandas),
     estilo: sanitizeEstilo(rawAny.estilo),
     paletaPersonalizada: sanitizePaletaPersonalizada(rawAny.paletaPersonalizada),
+    simulacionQuimica:
+      raw.simulacionQuimica &&
+      typeof raw.simulacionQuimica === 'object' &&
+      typeof (raw.simulacionQuimica as { simulacion?: unknown }).simulacion === 'string'
+        ? raw.simulacionQuimica
+        : undefined,
   };
 }
 

@@ -1,3 +1,4 @@
+import type { VariableValor } from "@lumina/types/interaction";
 import type { GraficoDatosBlock } from "../../blocks/grafico/index.js";
 
 /** Estado del elemento Gráfico = el bloque de canvas completo. */
@@ -13,6 +14,8 @@ export interface GraficoConfig {
   readonly isThumbnail?: boolean;
   readonly isSelected?: boolean;
   readonly onEnsureBlockSelected?: () => void;
+  /** Q7 — valores actuales de variables de clase para `simulacionQuimica`. */
+  readonly variables?: Readonly<Record<string, VariableValor>>;
 }
 
 export const GRAFICO_TIPO = "grafico" as const;

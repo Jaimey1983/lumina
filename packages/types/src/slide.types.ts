@@ -1512,6 +1512,25 @@ export interface GraficoDatosBlock {
   bandas?: GraficoBanda[];
   estilo?: GraficoEstilo;
   paletaPersonalizada?: string[];
+  /**
+   * Q7 — si está definido, el visor recalcula categorías/series con
+   * `@lumina/chemistry` y las variables de clase en runtime.
+   */
+  simulacionQuimica?: GraficoSimulacionQuimicaVinculo;
+}
+
+/** Simulaciones de laboratorio (Etapa Q7). */
+export type GraficoSimulacionQuimica =
+  | 'idealGas_P_vs_V'
+  | 'dilution_C2_vs_V2'
+  | 'titration_ph_vs_vol';
+
+export interface GraficoSimulacionQuimicaVinculo {
+  simulacion: GraficoSimulacionQuimica;
+  /** IDs de `VariableDef` de la clase; orden fijo por simulación (ver plantillas Q7). */
+  variablesIds: string[];
+  /** Constantes numéricas (Ca, Va, rangos de volumen, etc.). */
+  constantes?: Record<string, number>;
 }
 
 // ─── Bloque Diagrama (Grafos y Geometrías) ──────────────────────────────────

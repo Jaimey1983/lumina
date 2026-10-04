@@ -123,6 +123,8 @@ export function buildReactionWithCeBlocks(): Block[] {
   ];
 }
 
+import { CHEMISTRY_LAB_SLIDE_TEMPLATES } from './chemistry-lab-templates.js';
+
 export const CHEMISTRY_SLIDE_TEMPLATES: ChemistrySlideTemplate[] = [
   {
     id: 'cn7-tabla-periodica',
@@ -142,6 +144,7 @@ export const CHEMISTRY_SLIDE_TEMPLATES: ChemistrySlideTemplate[] = [
     layout: 'titulo_y_contenido',
     buildBlocks: buildReactionWithCeBlocks,
   },
+  ...CHEMISTRY_LAB_SLIDE_TEMPLATES,
 ];
 
 export type ChemistryQuickActivityId = 'balancear-ecuacion' | 'ubicar-elemento' | 'formular-compuesto';

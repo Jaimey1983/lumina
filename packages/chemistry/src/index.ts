@@ -51,3 +51,22 @@ export {
   type LimitingReagentResult,
   type StoichiometryAmount,
 } from './stoichiometry/basic.js';
+
+export { phStrong } from './lab/ph-strong.js';
+export {
+  idealGasPressure,
+  idealGasSeries,
+  R_ATM_L_PER_MOL_K,
+  type IdealGasInput,
+  type IdealGasPoint,
+} from './lab/ideal-gas.js';
+export {
+  dilutionC2,
+  dilutionSeries,
+  type DilutionPoint,
+} from './lab/dilution.js';
+export {
+  titrationPh,
+  titrationCurve,
+  type TitrationPoint,
+} from './lab/titration-curve.js';
