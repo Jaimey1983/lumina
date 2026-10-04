@@ -127,6 +127,7 @@ import {
   createChemistryEquationBlock,
 } from '@lumina/element-kit/chemistry/chemistry-slide-templates';
 import { createDefaultTablaPeriodicaBlock } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-defaults';
+import { createDefaultMoleculaBlock } from '@lumina/element-kit/widgets/molecula/molecula-defaults';
 import type { ActivityType } from './activities-panel';
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
@@ -653,6 +654,18 @@ function ElementosPanel({
                   return;
                 }
                 add(createDefaultTablaPeriodicaBlock());
+              }}
+            />
+            <InsertBtn
+              label="Molécula 2D"
+              icon={Atom}
+              disabled={disabledNonText}
+              onClick={() => {
+                if (onAddWidget) {
+                  onAddWidget('molecula');
+                  return;
+                }
+                add(createDefaultMoleculaBlock());
               }}
             />
             <InsertBtn

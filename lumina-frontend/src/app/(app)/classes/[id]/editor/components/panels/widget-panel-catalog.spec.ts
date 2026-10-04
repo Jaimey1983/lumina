@@ -31,6 +31,7 @@ describe('widget-panel-catalog', () => {
       'scratch-card',
       'accordion',
       'tabla_periodica',
+      'molecula',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

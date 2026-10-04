@@ -56,6 +56,8 @@ function widgetCanvasFallback(type: WidgetTipo): { ancho: number; alto: number }
       return BLOCK_FALLBACKS.accordion;
     case 'tabla_periodica':
       return BLOCK_FALLBACKS.tablaPeriodica;
+    case 'molecula':
+      return BLOCK_FALLBACKS.molecula;
   }
 }
 

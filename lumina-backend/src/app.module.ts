@@ -33,6 +33,7 @@ import { ProgressMapModule } from './progress-map/progress-map.module';
 import { VerificationModule } from './verification/verification.module';
 import { SuperadminModule } from './superadmin/superadmin.module';
 import { HelpGuideModule } from './help-guide/help-guide.module';
+import { ChemistryModule } from './chemistry/chemistry.module';
 
 @Module({
   imports: [
@@ -95,6 +96,9 @@ import { HelpGuideModule } from './help-guide/help-guide.module';
 
     // ── X.2 — "Guía de Lumina" (clase de sistema de solo lectura) ─────────
     HelpGuideModule,
+
+    // ── Etapa Q — química (proxy PubChem Q6) ─────────────────────────────
+    ChemistryModule,
   ],
 })
 export class AppModule {}

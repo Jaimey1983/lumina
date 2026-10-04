@@ -48,6 +48,12 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "lienzo",
   },
+  molecula: {
+    nombre: "Molécula (2D)",
+    descripcion: "Estructura 2D desde SMILES o nombre común (PubChem)",
+    familia: "widget",
+    grupo: "lienzo",
+  },
   timeline: { nombre: "Línea de tiempo", familia: "widget", grupo: "lienzo" },
   popup: { nombre: "Popup", familia: "widget", grupo: "overlay" },
   hotspot: { nombre: "Hotspot", familia: "widget", grupo: "control" },

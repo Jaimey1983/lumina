@@ -5,6 +5,7 @@ import { cloneSlideBlocks } from '../../lib/canvas-history';
 import type { EditorPersistHost } from '@lumina/editor-shared/editor-persist-host';
 import { toast } from 'sonner';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
+import { resolvePubChemName } from '@/lib/chemistry-api';
 import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
 import type { EstadoObjeto } from '@lumina/types/interaction';
 import type { ReferenciaRota, ReglaAplicable } from '@lumina/interactions';
@@ -1332,6 +1333,37 @@ export function PropertiesPanel({
             <def.Propiedades
               estado={block}
               config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
+  if (block.tipo === 'molecula') {
+    const def = elementRegistry.obtener<
+      Block,
+      { resolvePubChemName?: typeof resolvePubChemName }
+    >('molecula');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Molécula (2D)">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{ resolvePubChemName }}
               onConfigChange={() => {}}
               onChange={(updated) => {
                 void applyNow(() => updated);

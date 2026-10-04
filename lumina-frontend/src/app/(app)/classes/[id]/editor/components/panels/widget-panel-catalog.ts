@@ -151,6 +151,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     rowClassName: 'hover:bg-slate-50/90 dark:hover:bg-slate-950/25',
     iconClassName: 'text-slate-700 dark:text-slate-300',
   },
+  molecula: {
+    group: 'lienzo',
+    Icon: Atom,
+    rowClassName: 'hover:bg-teal-50/90 dark:hover:bg-teal-950/25',
+    iconClassName: 'text-teal-700 dark:text-teal-300',
+  },
 };
 
 export const WIDGET_PANEL_ITEMS: WidgetPanelItem[] = WIDGET_TIPOS.map((type) => ({
