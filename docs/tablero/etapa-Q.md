@@ -171,7 +171,7 @@ J8 + Q1 ─→ Q8
 
 #### Q9 — Datos de la tabla periódica: grupos, categorías y propiedades correctas
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — grupos/categorías/nombres corregidos, `meltK`/`boilK`/`discoveredBy` (Bowserinator, CC BY-SA), configuración electrónica con 20 excepciones; verif: `pnpm --filter @lumina/chemistry build && test && lint` (57 tests), `pnpm --filter @lumina/element-kit build && test && lint` (576 tests). Nota: `elements-data.ts`/`element-store*.ts` siguen huérfanos (sin consumidores).
 - **Precondición:** Q1 `hecho`, Q3 `hecho`.
 - **Contexto:** `elements.json` (generado por `scripts/generate-elements.mjs`) tiene `group: null` en los 118 elementos y categorías erróneas (B, C, As, Sb, Te, Po, Bi, Sn, Pb, Fl, Mc, Lv, Nh), más nombres «Cinc/Erio/Tantalio» (`elements-data.ts` ya trae Zinc/Erbio/Tántalo). Sin esto, el heatmap por grupo no funciona y cualquier color por categoría sería falso. Fuente de propiedades: Bowserinator/Periodic-Table-JSON (CC BY-SA 3.0, atribuir en metadatos).
 - **Alcance — PUEDE tocar:** `packages/chemistry/scripts/generate-elements.mjs`, `src/data/elements.json`, `elements.dataset.ts`, `elements.ts` (campos aditivos opcionales `meltK`, `boilK`, `discoveredBy`), `elements.spec.ts`; `packages/element-kit/src/widgets/tabla_periodica/periodic-metadata.ts` y `periodic-dataset.spec.ts` (ficha: configuración electrónica con excepciones, nuevos campos).
@@ -181,7 +181,7 @@ J8 + Q1 ─→ Q8
 
 #### Q10 — Tabla periódica: layout (La/Ac en grupo 3, filas f separadas) y ficha lateral
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — La/Ac en (6,3)/(7,3), f-rows 58–71/90–103 con fila 8 separadora, ficha lateral (container query <560px apila), flechas saltan huecos; `.ptCell:disabled{visibility:hidden}` retirado (filtradas se atenúan con `ptCellDim`). Verif: element-kit build/test/lint · `npx tsc --noEmit` · captura en build de producción.
 - **Precondición:** Q9 `hecho` (mismo PR admitido).
 - **Contexto:** (1) La (57) y Ac (89) van en las filas f; en la referencia (Google Arts) están en el grupo 3 del cuerpo y las filas f son 58–71 / 90–103, separadas por una fila vacía. (2) `.whContent` (editor-shared) fuerza `flex-direction: column`; `.ptBody` pide `row` y pierde, así que la ficha cae debajo y aplasta la tabla.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{periodic-layout.ts,tabla-periodica-viewer.tsx,tabla-periodica.module.css}` y sus specs.
