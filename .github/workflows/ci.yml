@@ -45,6 +45,9 @@ jobs:
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/scoring test
       - run: pnpm --filter @lumina/scoring lint
+      - run: pnpm --filter @lumina/chemistry build
+      - run: pnpm --filter @lumina/chemistry test
+      - run: pnpm --filter @lumina/chemistry lint
       - run: pnpm --filter @lumina/interactions build
       - run: pnpm --filter @lumina/interactions test
       - run: pnpm --filter @lumina/interactions lint

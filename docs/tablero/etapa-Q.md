@@ -46,8 +46,8 @@ J8 + Q1 ─→ Q8
 **Fuera de alcance de la etapa (no pedirlo, no improvisarlo):** RDKit.js / química computacional pesada; área curricular `quimica` separada en `AREAS_LABELS` (decisión del dueño, ficha aparte); PhET embebido completo (solo anotado en `LUMINA_ROADMAP_DETALLADO.md`); editor Lewis/Kekule (tier 3); mecanismos orgánicos animados; SCORM.
 
 #### Q1 — Paquete `@lumina/chemistry` (datos + parser + masa molar + balanceo)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — paquete `@lumina/chemistry` (parser, masa molar, balanceo, 118 elementos, 41 tests); verif: `pnpm --filter @lumina/chemistry build && test && lint`
 - **Precondición:** ninguna (arranque de la etapa).
 - **Contexto:** sin este paquete no hay una sola fuente de verdad para actividades, IA verificada ni botones «insertar masa molar» en el compositor. **No** reutilizar `algebra.ts` (M4): gramática distinta (subíndices, hidratos, cargas, ecuaciones con `->`).
 - **Alcance — PUEDE tocar:**
