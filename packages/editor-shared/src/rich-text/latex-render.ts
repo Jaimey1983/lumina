@@ -1,5 +1,7 @@
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
+/** Extensión química (Etapa Q, DQ1): registra \\ce{} y \\pu{} en KaTeX una sola vez. */
+import 'katex/contrib/mhchem';
 
 /**
  * Único punto de contacto con KaTeX (Etapa M, DM1). Ningún otro archivo del
@@ -88,12 +90,140 @@ const STRUCTURE: ReadonlyArray<[RegExp, string | ((...m: string[]) => string)]> 
   [/\\(?:text|mathrm|mathbf|operatorname)\s*\{([^{}]*)\}/g, ' $1 '],
 ];
 
+/** Convierte \\ce{…} / \\pu{…} a texto plano antes del resto de reglas (Q2). */
+function tokenizarFragmentoQuimico(fragmento: string): string {
+  const parts: string[] = [];
+  let i = 0;
+  while (i < fragmento.length) {
+    const c = fragmento[i]!;
+    if (/\d/.test(c)) {
+      let num = c;
+      i++;
+      while (i < fragmento.length && /\d/.test(fragmento[i]!)) num += fragmento[i++];
+      parts.push(num);
+    } else if (/[A-Z]/.test(c)) {
+      let el = c;
+      i++;
+      if (i < fragmento.length && /[a-z]/.test(fragmento[i]!)) {
+        el += fragmento[i]!;
+        i++;
+      }
+      parts.push(el);
+    } else if (/\s/.test(c)) {
+      i++;
+    } else {
+      parts.push(c);
+      i++;
+    }
+  }
+  return parts.join(' ');
+}
+
+function normalizarCargaMhchem(texto: string): string {
+  return texto
+    .replace(/\^\{([^}]*)\}/g, (_m, carga: string) => {
+      const legible = carga
+        .replace(/(\d+)\+/g, '$1 positiva')
+        .replace(/(\d+)-/g, '$1 negativa')
+        .replace(/^\+$/, 'positiva')
+        .replace(/^-$/, 'negativa');
+      return ` carga ${legible} `;
+    })
+    .replace(/\^([+\-\d]+)/g, ' carga $1 ');
+}
+
+function leerFragmentoConEstado(fragmento: string): string {
+  const t = fragmento.trim();
+  if (t === '') return fragmento;
+  const estado = /\s+en estado (s|l|g|aq)\s*$/i.exec(t);
+  if (estado) {
+    const formula = t.slice(0, estado.index).trim();
+    if (/^[A-Za-z0-9()]+$/.test(formula)) {
+      return `${tokenizarFragmentoQuimico(formula)} en estado ${estado[1]!.toLowerCase()}`;
+    }
+  }
+  if (/^[A-Za-z0-9()]+$/.test(t)) return tokenizarFragmentoQuimico(t);
+  return fragmento;
+}
+
+function leerCuerpoCe(cuerpo: string): string {
+  let t = normalizarCargaMhchem(cuerpo)
+    .replace(/\((s|l|g|aq)\)/gi, (_m, st: string) => ` en estado ${st.toLowerCase()} `)
+    .replace(/<=>|⇌/g, ' equilibrio ')
+    .replace(/->/g, ' reacciona para formar ')
+    .replace(/\+/g, ' más ');
+  return t
+    .split(/(\s+más\s+|\s+reacciona para formar\s+|\s+equilibrio\s+)/)
+    .map((seg) => {
+      const s = seg.trim();
+      if (s === '' || /^\s*(más|reacciona para formar|equilibrio)\s*$/i.test(s)) return seg;
+      if (seg.startsWith(' ')) return seg;
+      return leerFragmentoConEstado(seg);
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extraerComandoQuimico(
+  latex: string,
+  start: number,
+  cmd: 'ce' | 'pu',
+): { body: string; end: number } | null {
+  const prefix = `\\${cmd}{`;
+  if (!latex.startsWith(prefix, start)) return null;
+  let j = start + prefix.length;
+  let depth = 1;
+  let body = '';
+  while (j < latex.length) {
+    const c = latex[j]!;
+    if (c === '{') {
+      depth++;
+      body += c;
+    } else if (c === '}') {
+      depth--;
+      if (depth === 0) {
+        j++;
+        break;
+      }
+      body += c;
+    } else {
+      body += c;
+    }
+    j++;
+  }
+  if (depth !== 0) return null;
+  return { body, end: j };
+}
+
+function hablarCePu(latex: string): string {
+  let out = '';
+  let i = 0;
+  while (i < latex.length) {
+    const ce = extraerComandoQuimico(latex, i, 'ce');
+    if (ce) {
+      out += leerCuerpoCe(ce.body);
+      i = ce.end;
+      continue;
+    }
+    const pu = extraerComandoQuimico(latex, i, 'pu');
+    if (pu) {
+      out += pu.body.trim();
+      i = pu.end;
+      continue;
+    }
+    out += latex[i];
+    i++;
+  }
+  return out;
+}
+
 /**
  * Lectura en español de una fórmula LaTeX, para lectores de pantalla. No es un
  * intérprete completo: lo que no reconoce se lee sin la barra invertida.
  */
 export function speakLatex(latex: string): string {
-  let s = ` ${latex} `
+  let s = ` ${hablarCePu(latex)} `
     .replace(/\\left|\\right/g, '')
     .replace(/\\[,;:! ]/g, ' ')
     .replace(/\\\\/g, ', ')

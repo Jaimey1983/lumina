@@ -64,8 +64,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(chemistry): paquete @lumina/chemistry con datos, parser y balanceo (Q1)`.
 
 #### Q2 — Notación química en el compositor (mhchem + pestaña Química)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — `latex-render.ts` importa `katex/contrib/mhchem` (DQ1); tests `\ce{H2SO4}`, reacción `->`, estados `(s)(aq)` y `\pu{}`. Pestaña `quimica` en `MATH_TABS` (molécula, ion, reacción, equilibrio, unidades, ejemplos H₂O/NaCl/neutralización). `speakLatex`: `hablarCePu` expande `\ce`/`\pu` antes del resto. Verif: `@lumina/editor-shared` build/test/lint · `@lumina/element-kit` build/test.
 - **Precondición:** M1 `hecho` (DM1: único `latex-render.ts`).
 - **Contexto:** el docente ya usa el bloque `ecuacion` y el `EquationComposer`; la vía de menor fricción es una pestaña «Química» con plantillas `\ce{}` y `\pu{}`, no un bloque paralelo.
 - **Alcance — PUEDE tocar:**
