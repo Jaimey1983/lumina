@@ -5,7 +5,7 @@ import type { Accion, AccionTipo, VariableTipo } from '@lumina/types/interaction
 import { Button } from '@lumina/ui/button';
 import { moverEnLista, quitarDeLista, reemplazarEnLista } from '@lumina/interactions';
 
-import { Aviso, esEstado, inputCls, selectCls, useOpciones } from './campos';
+import { Aviso, esEstadoDeBloque, inputCls, selectCls, useOpciones } from './campos';
 import { OperandoEditor } from './operando-editor';
 import {
   ESTADOS,
@@ -198,13 +198,24 @@ function AccionEditor({ a, campo, onChange, onQuitar, onSubir, onBajar }: Accion
             aria-label="Nuevo estado"
             className={selectCls}
             value={a.estado}
-            onChange={(e) => esEstado(e.target.value) && onChange({ ...a, estado: e.target.value })}
+            onChange={(e) =>
+              esEstadoDeBloque(e.target.value, bloques.find((x) => x.id === a.bloqueId)) &&
+              onChange({ ...a, estado: e.target.value })
+            }
           >
             {ESTADOS.map((e) => (
               <option key={e.valor} value={e.valor}>
                 {e.etiqueta}
               </option>
             ))}
+            {(bloques.find((x) => x.id === a.bloqueId)?.estados ?? []).map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nombre}
+              </option>
+            ))}
+            {!esEstadoDeBloque(a.estado, bloques.find((x) => x.id === a.bloqueId)) ? (
+              <option value={a.estado}>(estado eliminado)</option>
+            ) : null}
           </select>
         </>
       ) : null}

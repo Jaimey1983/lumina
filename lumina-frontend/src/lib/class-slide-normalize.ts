@@ -11,6 +11,12 @@ import type {
 } from '@lumina/types/slide';
 import type { Capa, Regla } from '@lumina/types/interaction';
 import type { TransicionSlide } from '@lumina/types/animation';
+import {
+  ESTADOS_CON_APARIENCIA,
+  MAX_ESTADOS_PERSONALIZADOS,
+  MAX_NOMBRE_ESTADO,
+  sanearApariencia,
+} from '@lumina/interactions';
 import { parseSlideGuias } from '@/lib/canvas-guides';
 import { normalizarEmparejar } from '@lumina/element-kit/activities/emparejar/emparejar-config';
 import { normalizarQuizMultiple } from '@lumina/element-kit/activities/_classic/quiz-multiple-normalize';
@@ -166,6 +172,41 @@ function normalizeTextBlock(block: Extract<Block, { tipo: 'texto' }>): Block {
   return syncTextBlockFromRichDoc(block, getRichDoc(block)) as Block;
 }
 
+/** N6 — conserva solo lo válido de `Block.apariencias` (JSON editable). */
+function sanearApariencias(raw: unknown): Block['apariencias'] | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
+  const out: NonNullable<Block['apariencias']> = {};
+  for (const estado of ESTADOS_CON_APARIENCIA) {
+    const v = (raw as Record<string, unknown>)[estado];
+    if (v === undefined) continue;
+    const limpia = sanearApariencia(v);
+    if (Object.keys(limpia).length > 0) out[estado] = limpia;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** N6 — estados personalizados válidos, únicos, sin ids reservados y con tope. */
+function sanearEstadosPersonalizados(raw: unknown): Block['estadosPersonalizados'] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const reservados = new Set<string>(ESTADOS_CON_APARIENCIA);
+  const vistos = new Set<string>();
+  const out: NonNullable<Block['estadosPersonalizados']> = [];
+  for (const item of raw) {
+    if (out.length >= MAX_ESTADOS_PERSONALIZADOS) break;
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
+    const e = item as Record<string, unknown>;
+    if (typeof e.id !== 'string' || e.id === '' || reservados.has(e.id) || vistos.has(e.id)) continue;
+    if (typeof e.nombre !== 'string' || e.nombre.trim() === '') continue;
+    vistos.add(e.id);
+    out.push({
+      id: e.id,
+      nombre: e.nombre.slice(0, MAX_NOMBRE_ESTADO),
+      apariencia: sanearApariencia(e.apariencia),
+    });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 /**
  * Campos comunes a TODOS los bloques (la intersección `& { … }` de `Block`).
  * Varios `normalize*` (ruleta, popup, hotspot, tooltip, boton, contador,
@@ -182,6 +223,14 @@ function conservarCamposComunes(original: Block, normalizado: Block): Block {
   if (n.estado === undefined && typeof o.estado === 'string') extra.estado = o.estado;
   if (n.ocultoInicial === undefined && typeof o.ocultoInicial === 'boolean') {
     extra.ocultoInicial = o.ocultoInicial;
+  }
+  if (n.apariencias === undefined && o.apariencias !== undefined) {
+    const ap = sanearApariencias(o.apariencias);
+    if (ap) extra.apariencias = ap;
+  }
+  if (n.estadosPersonalizados === undefined && o.estadosPersonalizados !== undefined) {
+    const ep = sanearEstadosPersonalizados(o.estadosPersonalizados);
+    if (ep) extra.estadosPersonalizados = ep;
   }
   if (n.animaciones === undefined && Array.isArray(o.animaciones)) extra.animaciones = o.animaciones;
   if (n.canvasLocked === undefined && typeof o.canvasLocked === 'boolean') extra.canvasLocked = o.canvasLocked;

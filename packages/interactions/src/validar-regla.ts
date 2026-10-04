@@ -10,6 +10,7 @@ import type { ContextoValidacion } from './recolectar.js';
 import { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
 import type { OrigenRegla } from './tipos.js';
 import { errorDeParametro } from './eventos.js';
+import { estadoDeclarado } from './estados-bloque.js';
 import { tipoDeOperando } from './validar.js';
 import type { CodigoError } from './validar.js';
 
@@ -148,8 +149,16 @@ export function validarRegla(
         return;
       case 'mostrar':
       case 'ocultar':
+        bloque(a.bloqueId, `${campo}.bloqueId`);
+        return;
       case 'cambiar_estado':
         bloque(a.bloqueId, `${campo}.bloqueId`);
+        if (
+          ctx.bloqueIds.has(a.bloqueId) &&
+          !estadoDeclarado(a.estado, a.bloqueId, ctx.estadosPersonalizados)
+        ) {
+          aviso(`${campo}.estado`, 'estado_inexistente', 'El elemento ya no tiene ese estado.');
+        }
         return;
       case 'abrir_capa':
       case 'cerrar_capa':

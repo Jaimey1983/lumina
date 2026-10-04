@@ -1,5 +1,5 @@
 import type {
-  EstadoObjeto,
+  EstadoDeBloque,
   VariableDef,
   VariableValor,
 } from '@lumina/types/interaction';
@@ -11,7 +11,7 @@ import type { EstadoMotor } from './tipos.js';
 /** Copia mutable interna; nunca sale del paquete. */
 export interface EstadoTrabajo {
   variables: Record<string, VariableValor>;
-  estados: Record<string, EstadoObjeto>;
+  estados: Record<string, EstadoDeBloque>;
   visibles: Record<string, boolean>;
   capasAbiertas: string[];
   respuestas: Record<string, boolean>;

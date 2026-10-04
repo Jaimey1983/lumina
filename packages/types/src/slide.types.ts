@@ -1676,6 +1676,19 @@ export type Block = (
    * `mostrar`. Aditivo y opcional: si falta, el bloque es visible.
    */
   ocultoInicial?: boolean;
+  /**
+   * N6 — apariencia por estado (`normal`, `visitado`, `seleccionado`,
+   * `deshabilitado`, `hover`, `down`). Solo se aplica en modos con runtime;
+   * el editor y las miniaturas no cambian. Aditivo y opcional.
+   */
+  apariencias?: Partial<
+    Record<
+      import('./interaction.types.js').EstadoConApariencia,
+      import('./interaction.types.js').AparienciaEstado
+    >
+  >;
+  /** N6 — estados personalizados de este bloque (máximo 8), por `id`. */
+  estadosPersonalizados?: import('./interaction.types.js').EstadoPersonalizado[];
 };
 
 export type BlockTipo = Block['tipo'];

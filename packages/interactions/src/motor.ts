@@ -1,5 +1,6 @@
 import type {
   Accion,
+  EstadoDeBloque,
   EstadoObjeto,
   EventoTipo,
   VariableDef,
@@ -9,6 +10,7 @@ import { evaluarCondiciones, evaluarOperando } from './condiciones.js';
 import type { CtxEvaluacion } from './condiciones.js';
 import { clonarEstado, coincideTipo, leer, marcaDeTemporizador, valorPorDefecto } from './estado.js';
 import type { EstadoTrabajo } from './estado.js';
+import { estadoDeclarado } from './estados-bloque.js';
 import { EVENTOS_DE_SLIDE, esSegundosValidos, esTeclaPermitida } from './eventos.js';
 import { LIMITES_POR_DEFECTO } from './tipos.js';
 import { MAX_TEXTO_VARIABLE } from './variables.js';
@@ -64,7 +66,7 @@ function estadoDeEvento(tipo: EventoTipo): EstadoObjeto | undefined {
 }
 
 /** Inverso de `estadoDeEvento`: entrar a ese estado emite ese evento. */
-function eventoDeEstado(estado: EstadoObjeto): EventoTipo | undefined {
+function eventoDeEstado(estado: EstadoDeBloque): EventoTipo | undefined {
   if (estado === 'visitado') return 'visitado';
   if (estado === 'seleccionado') return 'seleccionado';
   return undefined;
@@ -73,6 +75,7 @@ function eventoDeEstado(estado: EstadoObjeto): EventoTipo | undefined {
 interface Corrida {
   w: EstadoTrabajo;
   defs: Map<string, VariableDef>;
+  personalizados: Readonly<Record<string, readonly string[]>> | undefined;
   efectos: Efecto[];
   avisos: Aviso[];
   cola: { evento: EventoMotor; profundidad: number }[];
@@ -185,6 +188,14 @@ function ejecutarAccion(
       w.visibles[accion.bloqueId] = false;
       return;
     case 'cambiar_estado': {
+      if (!estadoDeclarado(accion.estado, accion.bloqueId, c.personalizados)) {
+        aviso(c, {
+          codigo: 'estado_inexistente',
+          reglaId,
+          mensaje: `El elemento no declara el estado «${String(accion.estado)}»: no se aplica.`,
+        });
+        return;
+      }
       const anterior = leer(w.estados, accion.bloqueId) ?? 'normal';
       w.estados[accion.bloqueId] = accion.estado;
       const emitido = eventoDeEstado(accion.estado);
@@ -422,6 +433,7 @@ export function procesarEvento(
   const c: Corrida = {
     w: clonarEstado(estado),
     defs: new Map(contexto.variables.map((v) => [v.id, v])),
+    personalizados: contexto.estadosPersonalizados,
     efectos: [],
     avisos: [],
     cola: [{ evento, profundidad: 0 }],

@@ -11,6 +11,8 @@
 import {
   crearEstadoInicial,
   entrarASlide,
+  estadoDeclarado,
+  estadosPersonalizadosPorBloque,
   procesarEvento,
   type EstadoMotor,
   type EventoMotor,
@@ -19,6 +21,20 @@ import {
 import type { VariableDef } from '@lumina/types/interaction';
 import type { Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
+
+/** N6 — los estados declarados por bloque dependen solo de `slides`: se calculan una vez por mazo. */
+const declaradosPorSlides = new WeakMap<
+  readonly Slide[],
+  Readonly<Record<string, readonly string[]>>
+>();
+function declaradosDe(slides: readonly Slide[]): Readonly<Record<string, readonly string[]>> {
+  let d = declaradosPorSlides.get(slides);
+  if (d === undefined) {
+    d = estadosPersonalizadosPorBloque(slides);
+    declaradosPorSlides.set(slides, d);
+  }
+  return d;
+}
 
 export interface EjecutarEventoArgs {
   reglas: readonly ReglaAplicable[];
@@ -46,7 +62,10 @@ export function ejecutarEvento({
     if (slide) base = entrarASlide(base, slide);
   }
   if (reglas.length === 0) return base;
-  const res = procesarEvento(reglas, base, evento, { variables });
+  const res = procesarEvento(reglas, base, evento, {
+    variables,
+    estadosPersonalizados: declaradosDe(slides),
+  });
   if (navigate) {
     for (const efecto of res.efectos) {
       if (efecto.tipo !== 'navegar') continue;
@@ -61,8 +80,6 @@ export function ejecutarEvento({
   }
   return res.estado;
 }
-
-const ESTADOS_OBJETO = new Set(['normal', 'visitado', 'seleccionado', 'deshabilitado']);
 
 function esRegistro(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -97,10 +114,12 @@ export function hidratarEstado(
     }
   }
 
+  const declarados = declaradosDe(slides);
   const estados = { ...base.estados };
   if (esRegistro(guardado.estados)) {
     for (const [id, valor] of Object.entries(guardado.estados)) {
-      if (typeof valor === 'string' && ESTADOS_OBJETO.has(valor)) {
+      // N6: un estado base, o un personalizado que ese bloque SIGA declarando.
+      if (typeof valor === 'string' && estadoDeclarado(valor, id, declarados)) {
         estados[id] = valor as EstadoMotor['estados'][string];
       }
     }

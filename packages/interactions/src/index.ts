@@ -105,3 +105,27 @@ export type {
   ReglaAplicable,
   ResultadoMotor,
 } from './tipos.js';
+export {
+  ESTADOS_BASE,
+  ESTADOS_CON_APARIENCIA,
+  MAX_ESTADOS_PERSONALIZADOS,
+  MAX_NOMBRE_ESTADO,
+  RANGOS_APARIENCIA,
+  aparienciaDeEstado,
+  cumpleAA,
+  esColorHex,
+  esEstadoBase,
+  estadoDeclarado,
+  estadosPersonalizadosPorBloque,
+  idsDeEstadosPersonalizados,
+  razonDeContraste,
+  sanearApariencia,
+  usosDeEstado,
+  validarApariencia,
+  validarEstadosPersonalizados,
+} from './estados-bloque.js';
+export type {
+  ErrorApariencia,
+  ErrorEstadosPersonalizados,
+  UsoDeEstado,
+} from './estados-bloque.js';

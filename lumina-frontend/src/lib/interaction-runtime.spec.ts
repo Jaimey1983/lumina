@@ -353,3 +353,31 @@ describe('N5 — eventos nuevos a través de ejecutarEvento', () => {
     expect(nuevo.variables.v).toBe(11);
   });
 });
+
+describe('N6 — estados personalizados en el runtime', () => {
+  const personalizado = [{ id: 'ok', nombre: 'Correcto', apariencia: { fondo: '#16a34a' } }];
+  const slides = migrarAccionesLegacyARegla([
+    slide('s1', [
+      boton({ id: 'b1', disparadores: [{ id: 'r', evento: 'clic', condiciones: [], acciones: [{ tipo: 'cambiar_estado', bloqueId: 'h1', estado: 'ok' }], activa: true }] }),
+      { ...hotspot('h1'), estadosPersonalizados: personalizado } as unknown as Block,
+      hotspot('h2'),
+    ]),
+  ]);
+  const reglas = recolectarReglas(slides);
+
+  it('cambiar_estado a un estado declarado en ese bloque lo aplica', () => {
+    const e = ejecutarEvento({ reglas, estado: null, variables: [], slides, evento: { tipo: 'clic', bloqueId: 'b1', slideId: 's1' }, navigate: null });
+    expect(e.estados.h1).toBe('ok');
+  });
+  it('si el bloque ya no lo declara, no se aplica', () => {
+    const sin = slides.map((s) => ({ ...s, bloques: s.bloques!.map((b) => ({ ...b, estadosPersonalizados: undefined })) })) as Slide[];
+    const e = ejecutarEvento({ reglas: recolectarReglas(sin), estado: null, variables: [], slides: sin, evento: { tipo: 'clic', bloqueId: 'b1', slideId: 's1' }, navigate: null });
+    expect(e.estados.h1).toBeUndefined();
+  });
+  it('hidratarEstado restaura un personalizado declarado y descarta uno que no lo está', () => {
+    const e = hidratarEstado({ estados: { h1: 'ok', h2: 'ok', b1: 'visitado' } }, [], slides);
+    expect(e?.estados.h1).toBe('ok');
+    expect(e?.estados.h2).toBeUndefined();
+    expect(e?.estados.b1).toBe('visitado');
+  });
+});
