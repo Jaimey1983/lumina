@@ -1,6 +1,6 @@
 {
-  "sourceVersion": "Bowserinator/Periodic-Table-JSON@master (2026-10-04)",
-  "license": "datos públicos / uso interno Lumina",
+  "sourceVersion": "IUPAC 118 elementos — curado Lumina 2026-10-04 (base Bowserinator PT JSON)",
+  "license": "Datos de dominio público; nombres en español curados para uso interno Lumina",
   "elements": [
     {
       "Z": 1,
@@ -1063,15 +1063,6 @@
       "grupo": 18,
       "masaAtomica": 294,
       "categoria": "unknown, predicted to be noble gas"
-    },
-    {
-      "Z": 119,
-      "symbol": "Uue",
-      "nombre": "Ununennium",
-      "periodo": 8,
-      "grupo": 1,
-      "masaAtomica": 315,
-      "categoria": "unknown, but predicted to be an alkali metal"
     }
   ]
 }

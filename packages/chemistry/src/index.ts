@@ -1,3 +1,17 @@
+/**
+ * `@lumina/chemistry` — motor químico determinista (Etapa Q / DQ2).
+ *
+ * Sin `eval`, sin red, sin DOM. Misma lógica en cliente (`@lumina/scoring`) y backend.
+ *
+ * | Área | Funciones principales |
+ * |------|------------------------|
+ * | Datos | `lookupElement`, `allElements`, `ELEMENTS_DATASET` |
+ * | Fórmula | `parseFormula`, `normalizeFormula`, `molarMass`, `percentComposition` |
+ * | Ecuación | `parseEquation`, `balanceEquation`, `coefficientsEquivalent` |
+ * | Estequiometría | `massToMoles`, `molesToMass`, `moleRatio`, `productMolesFromReactantMass` |
+ * | Nomenclatura v1 | `nameToFormula`, `answerMatchesFormula` (inorgánica acotada) |
+ */
+
 export {
   ELEMENTS_DATASET,
   allElements,
@@ -17,6 +31,11 @@ export {
 export { molarMass, molarMassFromCounts } from './formula/molar-mass.js';
 
 export {
+  percentComposition,
+  type ElementMassPercent,
+} from './formula/percent-composition.js';
+
+export {
   normalizeFormula,
   formulasEqual,
   sanitizeFormulaAnswer,
@@ -29,6 +48,13 @@ export {
   coefficientsEquivalent,
   type BalancedEquation,
 } from './equation/balance.js';
+
+export {
+  massToMoles,
+  molesToMass,
+  moleRatio,
+  productMolesFromReactantMass,
+} from './stoichiometry/index.js';
 
 export {
   nameToFormula,

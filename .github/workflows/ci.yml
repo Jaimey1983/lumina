@@ -42,6 +42,9 @@ jobs:
       - run: pnpm --filter @lumina/canvas-align build
       - run: pnpm --filter @lumina/canvas-align test
       - run: pnpm --filter @lumina/canvas-align lint
+      - run: pnpm --filter @lumina/chemistry build
+      - run: pnpm --filter @lumina/chemistry test
+      - run: pnpm --filter @lumina/chemistry lint
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/scoring test
       - run: pnpm --filter @lumina/scoring lint
@@ -79,6 +82,7 @@ jobs:
       # dist/cjs (E6.2/J2).
       - run: pnpm --filter @lumina/types build
       - run: pnpm --filter @lumina/curriculum-data build
+      - run: pnpm --filter @lumina/chemistry build
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/interactions build
       - run: pnpm --filter lumina-backend exec prisma generate
@@ -110,6 +114,7 @@ jobs:
       - run: pnpm --filter @lumina/ui build
       - run: pnpm --filter @lumina/charts build
       - run: pnpm --filter @lumina/editor-shared build
+      - run: pnpm --filter @lumina/chemistry build
       - run: pnpm --filter @lumina/scoring build
       - run: pnpm --filter @lumina/interactions build
       - run: pnpm --filter @lumina/element-kit-core build

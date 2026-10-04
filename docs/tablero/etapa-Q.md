@@ -48,7 +48,7 @@ J8 + Q1b ─→ Q8
 
 #### Q1 — Paquete `@lumina/chemistry` (datos + parser + masa molar + balanceo)
 - **Operador:** Cursor (arranque mínimo)
-- **Estado:** **parcial** — paquete creado en PR [#75](https://github.com/Jaimey1983/lumina/pull/75) para desbloquear Q4; **no** cumple aún el entregable completo de esta ficha. Cierre formal → **Q1b**.
+- **Estado:** **hecho** (cierre vía Q1b en rama `cursor/q1b-chemistry-complete-71e6`).
 - **Precondición:** ninguna (arranque de la etapa).
 - **Contexto:** sin este paquete no hay una sola fuente de verdad para actividades, IA verificada ni botones «insertar masa molar» en el compositor. **No** reutilizar `algebra.ts` (M4): gramática distinta (subíndices, hidratos, cargas, ecuaciones con `->`).
 - **Ya en repo (baseline post-#75, re-medir al tomar Q1b):** `packages/chemistry/` dual ESM+CJS; `elements.json` + `embed-elements.mjs` → `elements-data.ts`; `parse.ts`, `molar-mass.ts`, `normalize.ts`; `equation/parse.ts`, `balance.ts`; `nomenclature/inorganic.ts` (dictado por Q4, no sustituye composición %); ~9 casos en `chemistry.spec.ts`; consumo en `@lumina/scoring` y `predev`/`prebuild` del frontend.
@@ -57,8 +57,8 @@ J8 + Q1b ─→ Q8
 - **Cierre:** Q1 pasa a `hecho` solo cuando **Q1b** esté `hecho` (esta entrada queda como referencia de diseño DQ2).
 
 #### Q1b — Completar `@lumina/chemistry` (alcance original Q1)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — composición %, estequiometría v1, parser endurecido (símbolos IUPAC), 42 tests, CI `@lumina/chemistry`; verif: `pnpm --filter @lumina/chemistry build && test && lint`
 - **Precondición:** merge de Q4 / PR #75 (existe `packages/chemistry/` consumido por scoring).
 - **Contexto:** Q4 necesitaba balanceo, `lookupElement`, parseo de fórmula y nomenclatura mínima; el resto del contrato Q1 (composición porcentual, estequiometría, batería de pruebas y endurecimiento del parser) queda explícitamente fuera de Q4. Esta ficha **no** toca actividades ni UI.
 - **Alcance — PUEDE tocar:**

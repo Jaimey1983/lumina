@@ -1,3 +1,5 @@
+import { lookupElement } from '../data/element-store.js';
+
 /** Subíndices Unicode → ASCII. */
 const SUB = '₀₁₂₃₄₅₆₇₈₉';
 const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
@@ -33,6 +35,10 @@ export interface ParsedFormula {
 }
 
 const ELEMENT_RE = /^[A-Z][a-z]?/;
+
+function countsAreKnown(counts: ElementCounts): boolean {
+  return Object.keys(counts).every((sym) => lookupElement(sym) !== null);
+}
 
 function parseSegment(segment: string): ParsedFormula {
   let i = 0;
@@ -113,14 +119,24 @@ export function parseFormula(raw: string): ParsedFormula | null {
   const hydrateParts = s.split('·');
   try {
     const main = parseSegment(hydrateParts[0]!);
+    if (!countsAreKnown(flattenCounts(main))) return null;
     if (hydrateParts.length === 1) return main;
-    const hydrateRaw = hydrateParts.slice(1).join('·');
+    let hydrateRaw = hydrateParts.slice(1).join('·');
+    let hydrateCount = 1;
+    const hydrateCoeff = hydrateRaw.match(/^(\d+)(.+)$/);
+    if (hydrateCoeff) {
+      hydrateCount = parseInt(hydrateCoeff[1]!, 10);
+      hydrateRaw = hydrateCoeff[2]!;
+    }
+    if (hydrateCount <= 0 || hydrateCount > 99) return null;
     const hydrateParsed = parseSegment(hydrateRaw);
-    return {
+    const combined: ParsedFormula = {
       counts: main.counts,
       charge: main.charge,
-      hydrate: { formula: hydrateParsed, count: 1 },
+      hydrate: { formula: hydrateParsed, count: hydrateCount },
     };
+    if (!countsAreKnown(flattenCounts(combined))) return null;
+    return combined;
   } catch {
     return null;
   }
