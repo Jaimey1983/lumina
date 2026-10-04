@@ -1,5 +1,5 @@
 // Genera src/data/elements.json (118 elementos). Ejecutar solo si se actualizan masas IUPAC.
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -154,7 +154,7 @@ const namesEs = [
   'Cobalto',
   'Níquel',
   'Cobre',
-  'Cinc',
+  'Zinc',
   'Galio',
   'Germanio',
   'Arsénico',
@@ -192,12 +192,12 @@ const namesEs = [
   'Terbio',
   'Disprosio',
   'Holmio',
-  'Erio',
+  'Erbio',
   'Tulio',
   'Iterbio',
   'Lutecio',
   'Hafnio',
-  'Tantalio',
+  'Tántalo',
   'Wolframio',
   'Renio',
   'Osmio',
@@ -247,19 +247,54 @@ const namesEs = [
 
 const symbols = Object.keys(masses);
 
+const ALCALINOS = ['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'];
+const ALCALINOTERREOS = ['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'];
+const METALOIDES = ['B', 'Si', 'Ge', 'As', 'Sb', 'Te'];
+const POST_TRANSICION = ['Al', 'Ga', 'In', 'Sn', 'Tl', 'Pb', 'Bi', 'Po', 'Nh', 'Fl', 'Mc', 'Lv'];
+const HALOGENOS = ['F', 'Cl', 'Br', 'I', 'At', 'Ts'];
+const GASES_NOBLES = ['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'];
+const NO_METALES = ['H', 'C', 'N', 'O', 'P', 'S', 'Se'];
+
 function category(z, sym) {
-  if (z <= 2) return z === 1 ? 'nonmetal' : 'noble_gas';
-  if (['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'].includes(sym)) return 'alkali_metal';
-  if (['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'].includes(sym)) return 'alkaline_earth';
-  if (['B', 'Al', 'Ga', 'In', 'Tl', 'Nh'].includes(sym)) return 'post_transition';
-  if (['C', 'Si', 'Ge', 'Sn', 'Pb', 'Fl'].includes(sym)) return 'metalloid';
-  if (['F', 'Cl', 'Br', 'I', 'At', 'Ts'].includes(sym)) return 'halogen';
-  if (['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'].includes(sym)) return 'noble_gas';
+  if (ALCALINOS.includes(sym)) return 'alkali_metal';
+  if (ALCALINOTERREOS.includes(sym)) return 'alkaline_earth';
+  if (METALOIDES.includes(sym)) return 'metalloid';
+  if (POST_TRANSICION.includes(sym)) return 'post_transition';
+  if (HALOGENOS.includes(sym)) return 'halogen';
+  if (GASES_NOBLES.includes(sym)) return 'noble_gas';
+  if (NO_METALES.includes(sym)) return 'nonmetal';
   if (z >= 57 && z <= 71) return 'lanthanide';
   if (z >= 89 && z <= 103) return 'actinide';
-  if (['H', 'N', 'O', 'P', 'S', 'Se'].includes(sym)) return 'nonmetal';
   return 'transition_metal';
 }
+
+/**
+ * Grupo IUPAC (1–18) según la disposición de 18 columnas con La y Ac en el
+ * grupo 3 del cuerpo: Ce–Lu (58–71) y Th–Lr (90–103) son bloque f → `null`.
+ */
+function group(z) {
+  if (z === 1) return 1;
+  if (z === 2) return 18;
+  if (z === 57 || z === 89) return 3;
+  if ((z >= 58 && z <= 71) || (z >= 90 && z <= 103)) return null;
+  const inicioPeriodo = [3, 11, 19, 37, 55, 87];
+  const alcalinoDe = inicioPeriodo.filter((i) => i <= z).pop();
+  const off = z - alcalinoDe;
+  if (off < 2) return off + 1;
+  if (z >= 5 && z <= 10) return z - 5 + 13;
+  if (z >= 13 && z <= 18) return z - 13 + 13;
+  if (z >= 21 && z <= 30) return z - 21 + 3;
+  if (z >= 31 && z <= 36) return z - 31 + 13;
+  if (z >= 39 && z <= 48) return z - 39 + 3;
+  if (z >= 49 && z <= 54) return z - 49 + 13;
+  if (z >= 72 && z <= 86) return z - 72 + 4;
+  if (z >= 104 && z <= 118) return z - 104 + 4;
+  throw new Error(`Sin grupo para Z=${z}`);
+}
+
+const propiedades = JSON.parse(
+  readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'element-properties.json'), 'utf8'),
+).elements;
 
 const periods = [
   1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5,
@@ -274,16 +309,19 @@ const elements = symbols.map((sym, i) => {
     symbol: sym,
     name: namesEs[i],
     atomicMass: masses[sym],
-    group: null,
+    group: group(z),
     period: periods[i] ?? 7,
     category: category(z, sym),
+    meltK: propiedades[sym].meltK,
+    boilK: propiedades[sym].boilK,
+    discoveredBy: propiedades[sym].discoveredBy,
   };
 });
 
 const out = {
   metadata: {
     sourceVersion: 'IUPAC CIAAW 2021 (masas estándar)',
-    license: 'Datos curados Lumina — uso interno',
+    license: 'Datos curados Lumina — uso interno; fusión/ebullición/descubridor: Bowserinator/Periodic-Table-JSON (CC BY-SA 3.0)',
     locale: 'es',
     elementCount: 118,
   },
