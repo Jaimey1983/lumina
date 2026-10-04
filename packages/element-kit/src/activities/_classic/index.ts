@@ -9,6 +9,9 @@ export type { Activity } from "@lumina/types/slide";
 export {
   shortAnswerTemplate,
   respuestaMatematicaTemplate,
+  balancearEcuacionActivityTemplate,
+  ubicarElementoActivityTemplate,
+  formularCompuestoActivityTemplate,
   quizMultipleTemplate,
   trueFalseTemplate,
   fillBlanksTemplate,

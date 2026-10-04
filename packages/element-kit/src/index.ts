@@ -454,6 +454,9 @@ import { ordenarPasosDefinition } from "./elements/ordenar_pasos/ordenar_pasos-d
 import { videoInteractivoDefinition } from "./elements/video_interactivo/video_interactivo-definition.js";
 import { shortAnswerDefinition } from "./elements/short_answer/short_answer-definition.js";
 import { respuestaMatematicaDefinition } from "./elements/respuesta_matematica/respuesta_matematica-definition.js";
+import { balancearEcuacionDefinition } from "./elements/balancear_ecuacion/balancear_ecuacion-definition.js";
+import { ubicarElementoDefinition } from "./elements/ubicar_elemento/ubicar_elemento-definition.js";
+import { formularCompuestoDefinition } from "./elements/formular_compuesto/formular_compuesto-definition.js";
 import { encuestaVivaDefinition } from "./elements/encuesta_viva/encuesta_viva-definition.js";
 import { nubePalabrasDefinition } from "./elements/nube_palabras/nube_palabras-definition.js";
 
@@ -495,6 +498,9 @@ export type ElementCatalog = {
   video_interactivo: typeof videoInteractivoDefinition;
   short_answer: typeof shortAnswerDefinition;
   respuesta_matematica: typeof respuestaMatematicaDefinition;
+  balancear_ecuacion: typeof balancearEcuacionDefinition;
+  ubicar_elemento: typeof ubicarElementoDefinition;
+  formular_compuesto: typeof formularCompuestoDefinition;
   encuesta_viva: typeof encuestaVivaDefinition;
   nube_palabras: typeof nubePalabrasDefinition;
   texto: typeof textoDefinition;
@@ -535,6 +541,9 @@ elementRegistry.registrar(ordenarPasosDefinition);
 elementRegistry.registrar(videoInteractivoDefinition);
 elementRegistry.registrar(shortAnswerDefinition);
 elementRegistry.registrar(respuestaMatematicaDefinition);
+elementRegistry.registrar(balancearEcuacionDefinition);
+elementRegistry.registrar(ubicarElementoDefinition);
+elementRegistry.registrar(formularCompuestoDefinition);
 elementRegistry.registrar(encuestaVivaDefinition);
 elementRegistry.registrar(nubePalabrasDefinition);
 elementRegistry.registrar(historiaRamificadaDefinition);

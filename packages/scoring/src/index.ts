@@ -16,6 +16,11 @@
  */
 
 import { expresionesEquivalentes } from './algebra.js';
+import {
+  evaluateBalancearEcuacion,
+  evaluateFormularCompuesto,
+  evaluateUbicarElemento,
+} from './chemistry-eval.js';
 
 export { expresionesEquivalentes, validarExpresionAlgebraica, ALGEBRA_MAX_LARGO } from './algebra.js';
 
@@ -83,6 +88,8 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
 
   // Evaluación — autocalificable (Etapa M / M3a): respuesta numérica con tolerancia
   respuesta_matematica: 'binary',
+  balancear_ecuacion: 'binary',
+  formular_compuesto: 'partial',
 
   // Participación (no entra al promedio académico; columna opcional "participó")
   encuesta_viva: 'participation',
@@ -102,6 +109,7 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   memoria: 'partial',
   ahorcado: 'partial',
   orden_rango: 'partial',
+  ubicar_elemento: 'partial',
 
   // Exclude — nunca entran al promedio académico
   ruleta: 'exclude',
@@ -148,6 +156,8 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'abrir_caja',
   'historia_ramificada',
   'ahorcado',
+  'ubicar_elemento',
+  'formular_compuesto',
 ]);
 
 /** `partial` cuyo promedio de gradebook aún no está conectado (p. ej. `orden_rango`). */
@@ -567,6 +577,9 @@ function evaluateBinary(
   }
   if (activityType === 'respuesta_matematica') {
     return evaluateRespuestaMatematica(def, respuesta);
+  }
+  if (activityType === 'balancear_ecuacion') {
+    return evaluateBalancearEcuacion(definicion, respuesta);
   }
   return UNEVALUABLE;
 }
@@ -1101,6 +1114,10 @@ function evaluatePartial(
       return evaluateAhorcado(definicion, respuesta);
     case 'orden_rango':
       return evaluateOrdenRango(definicion, respuesta);
+    case 'ubicar_elemento':
+      return evaluateUbicarElemento(definicion, respuesta);
+    case 'formular_compuesto':
+      return evaluateFormularCompuesto(definicion, respuesta);
     default:
       return UNEVALUABLE;
   }

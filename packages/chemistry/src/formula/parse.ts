@@ -168,3 +168,21 @@ export function addAtomCounts(a: Record<string, number>, b: Record<string, numbe
   mergeCounts(out, b);
   return out;
 }
+
+function sameComposition(a: ParsedFormula, b: ParsedFormula): boolean {
+  if (a.charge !== b.charge) return false;
+  const keys = new Set([...Object.keys(a.atoms), ...Object.keys(b.atoms)]);
+  for (const symbol of keys) {
+    if ((a.atoms[symbol] ?? 0) !== (b.atoms[symbol] ?? 0)) return false;
+  }
+  return true;
+}
+
+/** Compara fórmulas por composición (subíndices Unicode equivalentes). */
+export function formulasEqual(left: string, right: string): boolean {
+  try {
+    return sameComposition(parseFormula(left), parseFormula(right));
+  } catch {
+    return normalizeFormulaInput(left) === normalizeFormulaInput(right);
+  }
+}

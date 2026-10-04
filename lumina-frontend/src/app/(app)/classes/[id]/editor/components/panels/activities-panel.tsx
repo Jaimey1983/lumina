@@ -25,6 +25,9 @@ import {
   Crosshair,
   Keyboard,
   GitBranch,
+  FlaskConical,
+  TableProperties,
+  Atom,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -39,6 +42,9 @@ export type ActivityType =
   | 'fill-blank'
   | 'short-answer'
   | 'respuesta-matematica'
+  | 'balancear-ecuacion'
+  | 'ubicar-elemento'
+  | 'formular-compuesto'
   | 'drag-drop'
   | 'match'
   | 'sort-steps'
@@ -78,6 +84,12 @@ const EVALUATION: ActivityItem[] = [
   { type: 'respuesta-matematica', label: 'Respuesta matemática', Icon: Calculator },
 ];
 
+const QUIMICA: ActivityItem[] = [
+  { type: 'balancear-ecuacion', label: 'Balancear ecuación', Icon: FlaskConical },
+  { type: 'ubicar-elemento', label: 'Ubicar en la tabla', Icon: TableProperties },
+  { type: 'formular-compuesto', label: 'Formular compuesto', Icon: Atom },
+];
+
 const INTERACTION: ActivityItem[] = [
   { type: 'drag-drop',         label: 'Drag & Drop',        Icon: GripVertical },
   { type: 'match',             label: 'Emparejar',           Icon: Columns2 },
@@ -109,6 +121,7 @@ const LIVE: ActivityItem[] = [
 
 export const ALL_ACTIVITY_ITEMS: ActivityItem[] = [
   ...EVALUATION,
+  ...QUIMICA,
   ...INTERACTION,
   ...LIVE,
   ...GRUPO4,
@@ -168,6 +181,7 @@ export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
         </p>
       )}
       <ActivityGroup title="Evaluación"  items={EVALUATION}  onAdd={onAddActivity} disabled={hasActivity} />
+      <ActivityGroup title="Química" items={QUIMICA} onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup title="En vivo"     items={LIVE}        onAdd={onAddActivity} disabled={hasActivity} />
       <ActivityGroup items={GRUPO4} onAdd={onAddActivity} disabled={hasActivity} />

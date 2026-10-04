@@ -31,15 +31,16 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 
 **Orden / dependencias:**
 ```
-Q1 ─┬─→ Q3 ─→ Q5
-    ├─→ Q4
-    └─→ Q6
+Q1 (mínimo vía Q4, PR #75) ─┬─→ Q4 (en revisión)
+Q1b (cierre alcance Q1) ─────┼─→ Q3 ─→ Q5
+                             ├─→ Q6
+                             └─→ Q8 (verificador completo)
 M1 (hecho en revisión) ─→ Q2 ─→ Q5
 Q4 + Q3 ─→ Q5 (plantillas de slide)
-Q1 + M2 ─→ Q7 (idealmente + K11)
-J8 + Q1 ─→ Q8
+Q1b + M2 ─→ Q7 (idealmente + K11)
+J8 + Q1b ─→ Q8
 ```
-**No se abre Q2 hasta que M1 esté `hecho`** (único importador KaTeX). Q3 y Q4 dependen de Q1. Q5 depende de Q3 y/o Q4 para tener qué insertar desde el flyout. Q6 y Q7 son paralelos entre sí tras Q1. Q8 es la última (IA + contenido).
+**No se abre Q2 hasta que M1 esté `hecho`** (único importador KaTeX). Q4 se desbloqueó con un **arranque mínimo** de `@lumina/chemistry` en el mismo PR (#75); el cierre del alcance original de Q1 es la ficha **Q1b** (no reabrir Q4). **Q3, Q6 y Q8** deben tomar **Q1b `hecho`** antes de asumir composición %, estequiometría o dataset curado al 100 %. Q5 depende de Q3 y/o Q4. Q7 es paralelo tras Q1b + M2.
 
 **Baselines (re-medir al tomar Q1):** anotar conteos de `@lumina/chemistry` (nuevo), `@lumina/scoring`, `@lumina/element-kit`, `@lumina/editor-shared`, `lumina-backend` `pnpm test`, `lumina-frontend` `test:unit` y orden de build de CI (añadir `@lumina/chemistry` a `predev`/`prebuild` del frontend y al backend cuando haya consumidor).
 
@@ -79,7 +80,7 @@ J8 + Q1 ─→ Q8
 
 #### Q3 — Widget `tabla_periodica` (familia Lienzo)
 - **Operador:** Cursor
-- **Estado:** en revisión — PR pendiente; verif: `@lumina/element-kit` build/test/lint · frontend `activity-canvas-position` + `widget-panel-catalog` unit tests
+- **Estado:** **hecho** — merge PR #74 (2026-10-04).
 - **Precondición:** Q1 `hecho` (datos de elementos).
 - **Contexto:** diferenciador pedagógico alineado con DBA CN-7 (ubicar elementos, propiedades, tendencias). Familia **Lienzo** (como Tabs/Carousel): marco en el slide, configuración rica, viewer interactivo.
 - **Alcance — PUEDE tocar:**
@@ -94,8 +95,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): widget tabla periódica interactiva (Q3)`.
 
 #### Q4 — Actividades químicas autocalificables (balanceo, ubicación, formulación)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — `@lumina/chemistry` (prerrequisito Q1 mínimo), tres actividades `ElementDefinition`, evaluadores en `@lumina/scoring`, panel Química en actividades; verif: `pnpm --filter @lumina/chemistry test`, `pnpm --filter @lumina/scoring test`, `pnpm --filter @lumina/element-kit test`
 - **Precondición:** Q1 `hecho`.
 - **Contexto:** valor en aula = práctica con nota en servidor (C5). Patrón `respuesta_matematica` (M3a): tipo propio, `binary` o `partial` según actividad, `evaluateActivityResponse` en scoring.
 - **Alcance — PUEDE tocar:**
@@ -126,7 +127,7 @@ J8 + Q1 ─→ Q8
 #### Q6 — Visor molecular (SMILES 2D, PubChem vía backend)
 - **Operador:** pendiente de asignación
 - **Estado:** pendiente
-- **Precondición:** Q1 `hecho`.
+- **Precondición:** Q1b `hecho`.
 - **Contexto:** estructura 2D para bachillerato; 3D opcional en sub-ficha Q6b si el peso de `3Dmol.js` lo exige el dueño.
 - **Alcance — PUEDE tocar:**
   - Widget o bloque `molecula` (`ElementDefinition`): campo `smiles` o búsqueda por nombre.
@@ -140,7 +141,7 @@ J8 + Q1 ─→ Q8
 #### Q7 — Laboratorio: simulaciones con variables, ecuaciones y gráficos
 - **Operador:** pendiente de asignación
 - **Estado:** pendiente
-- **Precondición:** Q1 `hecho`; M2 `hecho` (variables en ecuación); **recomendado** K11 `hecho` (slider/dial evaluable) — si K11 no está, la ficha puede limitarse a ajustadores M2 en la ecuación sin widget slider nuevo.
+- **Precondición:** Q1b `hecho`; M2 `hecho` (variables en ecuación); **recomendado** K11 `hecho` (slider/dial evaluable) — si K11 no está, la ficha puede limitarse a ajustadores M2 en la ecuación sin widget slider nuevo.
 - **Contexto:** pH, gas ideal, dilución, titulación simplificada — funciones **puras** en `@lumina/chemistry` + visualización `@lumina/charts` + bloques existentes en un slide plantilla.
 - **Alcance — PUEDE tocar:**
   - `@lumina/chemistry/src/lab/` — `phStrong()`, `idealGas()`, `dilution()`, `titrationCurve()` (+ specs).
@@ -153,7 +154,7 @@ J8 + Q1 ─→ Q8
 #### Q8 — IA verificada y contenido curricular CN (complemento J10)
 - **Operador:** pendiente de asignación
 - **Estado:** pendiente
-- **Precondición:** Q1 `hecho`; J8/J11 (transparencia modo) deseable para mostrar «rechazado por verificador».
+- **Precondición:** Q1b `hecho`; J8/J11 (transparencia modo) deseable para mostrar «rechazado por verificador».
 - **Contexto:** la IA propone actividades y fórmulas; `@lumina/chemistry` **valida** antes de mostrar al docente (balanceo, masa molar, fórmula parseable). Contenido: sustituir placeholders `ciencias-naturales-10.json` / `11.json` donde toque química (trabajo de contenido + pipeline Prompt Maestro, fuera del alcance de código salvo loaders).
 - **Alcance — PUEDE tocar:**
   - `lumina-backend/src/ai-features/` — paso post-Gemini: `balanceEquation` / `parseFormula` en propuestas químicas; marcar `resolvedStatus` como en J11.

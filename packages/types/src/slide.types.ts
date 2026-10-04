@@ -179,6 +179,45 @@ export interface ShortAnswerActivity {
  * tolerancia (exacta si es entera, ±0,01 si no, salvo que se declare otra).
  * `short_answer` sigue siendo manual y no cambia.
  */
+/** Balanceo de ecuación química (Etapa Q / Q4). */
+export interface BalancearEcuacionActivity {
+  tipo: 'balancear_ecuacion';
+  instruccion?: string;
+  /** Ecuación sin coeficientes, p. ej. `H2 + O2 -> H2O`. */
+  ecuacion: string;
+  retroalimentacion?: Feedback;
+}
+
+/** Ubicar elementos en periodo/grupo (Etapa Q / Q4). */
+export interface UbicarElementoItem {
+  id: string;
+  symbol: string;
+  periodo: number;
+  grupo: number;
+}
+
+export interface UbicarElementoActivity {
+  tipo: 'ubicar_elemento';
+  instruccion?: string;
+  elementos: UbicarElementoItem[];
+  retroalimentacion?: Feedback;
+}
+
+export interface FormularCompuestoPregunta {
+  id: string;
+  enunciado: string;
+  /** Fórmula esperada (ASCII). */
+  formula: string;
+}
+
+/** Formulación inorgánica v1 (Etapa Q / Q4). */
+export interface FormularCompuestoActivity {
+  tipo: 'formular_compuesto';
+  instruccion?: string;
+  preguntas: FormularCompuestoPregunta[];
+  retroalimentacion?: Feedback;
+}
+
 export interface MathAnswerActivity {
   tipo: 'respuesta_matematica';
   /**
@@ -649,6 +688,9 @@ export type Activity =
   | TrueFalse
   | ShortAnswerActivity
   | MathAnswerActivity
+  | BalancearEcuacionActivity
+  | UbicarElementoActivity
+  | FormularCompuestoActivity
   | FillBlanks
   | DragDrop
   | MatchPairs

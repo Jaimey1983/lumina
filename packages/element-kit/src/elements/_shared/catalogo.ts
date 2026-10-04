@@ -146,6 +146,21 @@ export const CATALOGO_ELEMENTOS = {
     descripcion: "El alumno escribe un número y se califica solo",
     familia: "actividad",
   },
+  balancear_ecuacion: {
+    nombre: "Balancear ecuación",
+    descripcion: "Coeficientes estequiométricos con calificación automática",
+    familia: "actividad",
+  },
+  ubicar_elemento: {
+    nombre: "Ubicar en la tabla",
+    descripcion: "Periodo y grupo de elementos químicos",
+    familia: "actividad",
+  },
+  formular_compuesto: {
+    nombre: "Formular compuesto",
+    descripcion: "Nomenclatura inorgánica → fórmula",
+    familia: "actividad",
+  },
   arrastrar_soltar: { nombre: "Arrastrar y soltar", familia: "actividad" },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },

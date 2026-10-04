@@ -8,6 +8,11 @@
  */
 import type { Activity } from '@lumina/types/slide';
 import { createDefaultEmparejar } from '../emparejar/emparejar-defaults.js';
+import {
+  balancearEcuacionTemplate,
+  formularCompuestoTemplate,
+  ubicarElementoTemplate,
+} from '../chemistry/chemistry-activities.js';
 
 export function shortAnswerTemplate(): Activity {
   return {
@@ -17,6 +22,18 @@ export function shortAnswerTemplate(): Activity {
     caseSensitive: false,
     maxLength: 200,
   };
+}
+
+export function balancearEcuacionActivityTemplate(): Activity {
+  return balancearEcuacionTemplate();
+}
+
+export function ubicarElementoActivityTemplate(): Activity {
+  return ubicarElementoTemplate();
+}
+
+export function formularCompuestoActivityTemplate(): Activity {
+  return formularCompuestoTemplate();
 }
 
 export function respuestaMatematicaTemplate(): Activity {
