@@ -747,6 +747,14 @@ function BlockNode({
       estadoObjeto: interactionRuntime.estadoDe(id),
     };
   })();
+  /** N5 — hover: solo en runtime, solo con ratón y solo en bloques con reglas de hover. */
+  const idHover = (block as { id?: string }).id;
+  const escuchaHover =
+    interactionRuntime?.hover !== undefined &&
+    modo !== 'editor' &&
+    !isThumbnail &&
+    typeof idHover === 'string' &&
+    interactionRuntime.escuchaHover?.has(idHover) === true;
   /** K6 — «deshabilitado» solo se aplica en runtime (autónomo/preview); el editor y las miniaturas no. */
   const estaDeshabilitado =
     emisorConfig.estadoObjeto === 'deshabilitado' && modo !== 'editor' && !isThumbnail;
@@ -1181,6 +1189,20 @@ function BlockNode({
       onClick={
         editorMode && !isTextEditing && !isInteractiveStub
           ? (e) => { e.stopPropagation(); onClick(e); }
+          : undefined
+      }
+      onPointerEnter={
+        escuchaHover
+          ? (e) => {
+              if (e.pointerType === 'mouse') interactionRuntime.hover?.(idHover as string, true);
+            }
+          : undefined
+      }
+      onPointerLeave={
+        escuchaHover
+          ? (e) => {
+              if (e.pointerType === 'mouse') interactionRuntime.hover?.(idHover as string, false);
+            }
           : undefined
       }
       onDoubleClick={

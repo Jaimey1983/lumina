@@ -9,6 +9,7 @@ import type {
 import type { ContextoValidacion } from './recolectar.js';
 import { CLAVES_SISTEMA, LIMITES_POR_DEFECTO } from './tipos.js';
 import type { OrigenRegla } from './tipos.js';
+import { errorDeParametro } from './eventos.js';
 import { tipoDeOperando } from './validar.js';
 import type { CodigoError } from './validar.js';
 
@@ -222,6 +223,8 @@ export function validarRegla(
   if (opciones.eventosPermitidos && !opciones.eventosPermitidos.includes(regla.evento)) {
     aviso('evento', 'evento_no_soportado', 'Este elemento no emite ese evento.');
   }
+  const errParam = errorDeParametro(regla, new Set(vars.keys()));
+  if (errParam !== undefined) aviso('parametro', 'parametro_invalido', errParam);
   if (origen.tipo === 'bloque' && regla.evento === 'al_entrar_slide') {
     aviso('evento', 'evento_incoherente', '«Al entrar al slide» no lo emite ningún elemento.');
   }

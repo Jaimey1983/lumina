@@ -36,6 +36,7 @@ export function VideoViewer({
       block={estado}
       isThumbnail={config.isThumbnail === true}
       editorMode={false}
+      emitir={config.isThumbnail === true ? undefined : config.emitir}
     />
   );
 }

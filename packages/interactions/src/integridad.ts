@@ -73,14 +73,19 @@ export function reglasConReferenciasRotas(
   const rotas: ReferenciaRota[] = [];
   const errores = validarReglas(aplicables, contextoDesdeSlides(variables, slides));
   for (const e of errores) {
-    if (!CODIGOS_DE_INTEGRIDAD.has(e.codigo) || e.reglaId === undefined) continue;
+    if (e.reglaId === undefined) continue;
+    // N5: un `cambio_variable` que observa una variable borrada es una
+    // referencia rota (el resto de errores de parámetro son de edición).
+    const variableObservadaBorrada =
+      e.codigo === 'parametro_invalido' && e.variableId !== undefined;
+    if (!CODIGOS_DE_INTEGRIDAD.has(e.codigo) && !variableObservadaBorrada) continue;
     const a = origenDe.get(e.reglaId);
     if (!a) continue;
     rotas.push({
       reglaId: e.reglaId,
       slideId: a.origen.slideId,
       ...(a.origen.tipo === 'bloque' ? { bloqueId: a.origen.bloqueId } : {}),
-      codigo: e.codigo as CodigoReferenciaRota,
+      codigo: variableObservadaBorrada ? 'variable_inexistente' : (e.codigo as CodigoReferenciaRota),
       mensaje: e.mensaje,
     });
   }

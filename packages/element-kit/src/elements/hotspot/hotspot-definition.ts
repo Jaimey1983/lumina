@@ -61,7 +61,7 @@ export const hotspotDefinition = {
   },
   catalogo: CATALOGO_ELEMENTOS["hotspot"],
   // Etapa K / K3: eventos que este elemento emite por `config.emitir`.
-  eventos: ["clic", "visitado"],
+  eventos: ["clic", "visitado", "hover_entra", "hover_sale"],
   presets: HOTSPOT_PRESETS,
 } as const satisfies ElementDefinition<HotspotEstado, HotspotConfig>;
 

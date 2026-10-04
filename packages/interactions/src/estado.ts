@@ -82,6 +82,11 @@ function marcaDeVisita(slideId: string): string {
   return `${MARCA_VISITA}${slideId}`;
 }
 
+/** N5: marca, dentro de `visibles`, que un temporizador ya disparó en este intento. */
+export function marcaDeTemporizador(slideId: string, segundos: number): string {
+  return `\u001e${slideId}\u001e${segundos}`;
+}
+
 /** `ocultoInicial` solo se escribe si esa clave todavía no existe. */
 function sembrarVisibles(trabajo: EstadoTrabajo, slide: SlideInicial): void {
   recorrerBloquesDeSlide(slide, (bloque) => {

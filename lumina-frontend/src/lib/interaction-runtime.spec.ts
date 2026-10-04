@@ -305,3 +305,51 @@ describe('hidratarEstado (K5)', () => {
     expect(despues.capasAbiertas).toEqual([]);
   });
 });
+
+describe('N5 — eventos nuevos a través de ejecutarEvento', () => {
+  const vars: VariableDef[] = [{ id: 'v', nombre: 'v', tipo: 'numero', valorInicial: 0 }];
+  const s1 = slide('s1', [{ tipo: 'boton', id: 'b1', texto: 'x', variante: 'primario', accion: 'ninguna' } as unknown as Block]);
+  const s2 = slide('s2', []);
+  const reglaEn = (b: Block, r: Regla): Block => ({ ...(b as object), disparadores: [r] }) as unknown as Block;
+  const suma: Regla['acciones'] = [{ tipo: 'sumar_variable', variableId: 'v', cantidad: 1 }];
+
+  it('temporizador dispara una vez, deja la marca y navega a través de `navigate`', () => {
+    const slides = [
+      slide('s1', [reglaEn(s1.bloques![0]!, { id: 'r', evento: 'temporizador', parametro: 3, condiciones: [], activa: true, acciones: [...suma, { tipo: 'siguiente' }] })]),
+      s2,
+    ];
+    const navigate = vi.fn<(a: SlideNavAction) => void>();
+    const reglas = recolectarReglas(slides);
+    const nuevo = ejecutarEvento({ reglas, estado: null, variables: vars, slides, evento: { tipo: 'temporizador', slideId: 's1', detalle: { segundos: 3 } }, navigate });
+    expect(nuevo.variables.v).toBe(1);
+    expect(navigate).toHaveBeenCalledWith({ kind: 'siguiente' });
+    // La marca viaja en el estado persistible y se rehidrata sin perderla.
+    const rehidratado = hidratarEstado(JSON.parse(JSON.stringify(nuevo)), vars, slides);
+    expect(Object.keys(rehidratado!.visibles).some((k) => k.includes('s1'))).toBe(true);
+  });
+
+  it('sin `navigate` (clase en vivo / presentación) el evento no navega (D1)', () => {
+    const slides = [slide('s1', [reglaEn(s1.bloques![0]!, { id: 'r', evento: 'tecla', parametro: 'Enter', condiciones: [], activa: true, acciones: [{ tipo: 'siguiente' }] })]), s2];
+    const reglas = recolectarReglas(slides);
+    expect(() =>
+      ejecutarEvento({ reglas, estado: null, variables: vars, slides, evento: { tipo: 'tecla', slideId: 's1', detalle: { tecla: 'Enter' } }, navigate: null }),
+    ).not.toThrow();
+  });
+
+  it('salir_slide no navega aunque su regla lo pida', () => {
+    const slides = [slide('s1', [], { reglas: [{ id: 'r', evento: 'salir_slide', condiciones: [], activa: true, acciones: [{ tipo: 'siguiente' }, ...suma] }] }), s2];
+    const navigate = vi.fn();
+    const nuevo = ejecutarEvento({ reglas: recolectarReglas(slides), estado: null, variables: vars, slides, evento: { tipo: 'salir_slide', slideId: 's1' }, navigate });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(nuevo.variables.v).toBe(1);
+  });
+
+  it('cambio_variable encadena reglas de otro slide', () => {
+    const slides = [
+      slide('s1', [reglaEn(s1.bloques![0]!, { id: 'r1', evento: 'clic', condiciones: [], activa: true, acciones: suma })]),
+      slide('s2', [], { reglas: [{ id: 'r2', evento: 'cambio_variable', parametro: 'v', condiciones: [], activa: true, acciones: [{ tipo: 'sumar_variable', variableId: 'v', cantidad: 10 }] }] }),
+    ];
+    const nuevo = ejecutarEvento({ reglas: recolectarReglas(slides), estado: null, variables: vars, slides, evento: { tipo: 'clic', bloqueId: 'b1', slideId: 's1' }, navigate: vi.fn() });
+    expect(nuevo.variables.v).toBe(11);
+  });
+});

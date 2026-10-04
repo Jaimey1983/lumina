@@ -1,6 +1,8 @@
 'use client';
 
+import { useRef } from 'react';
 import type { VideoBlock } from '@lumina/types/slide';
+import type { EventoTipo } from '@lumina/types/interaction';
 
 export function buildEmbedUrl(url: string, autoplay?: boolean): string {
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
@@ -22,13 +24,17 @@ export interface RenderVideoProps {
   block: VideoBlock;
   isThumbnail?: boolean;
   editorMode?: boolean;
+  /** N5 — `media_inicia` / `media_termina` del <video> nativo. Ausente = sin motor. */
+  emitir?: (evento: EventoTipo) => void;
 }
 
 export function RenderVideo({
   block,
   isThumbnail = false,
   editorMode = false,
+  emitir,
 }: RenderVideoProps) {
+  const sonando = useRef(false);
   const isYoutube = block.url.includes('youtube') || block.url.includes('youtu.be');
 
   if (isThumbnail) {
@@ -115,6 +121,23 @@ export function RenderVideo({
         autoPlay={block.autoplay}
         loop={block.bucle}
         muted={block.silenciado}
+        onPlay={
+          emitir
+            ? () => {
+                if (sonando.current) return;
+                sonando.current = true;
+                emitir('media_inicia');
+              }
+            : undefined
+        }
+        onEnded={
+          emitir
+            ? () => {
+                sonando.current = false;
+                emitir('media_termina');
+              }
+            : undefined
+        }
         style={{
           display: 'block',
           width: '100%',

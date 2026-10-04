@@ -80,3 +80,32 @@ describe('C1/C4: el motor no puede calificar', () => {
     expect(Object.keys(una)).toHaveLength(16);
   });
 });
+
+describe('C1/C4 — los eventos de N5 tampoco tocan la nota', () => {
+  const variables = [num('n'), txt('t'), bool('b')];
+  const eventos = [
+    { tipo: 'cambio_variable', slideId: 's1', detalle: { variableId: 'n' }, parametro: 'n' },
+    { tipo: 'hover_entra', bloqueId: 'a', slideId: 's1' },
+    { tipo: 'hover_sale', bloqueId: 'a', slideId: 's1' },
+    { tipo: 'tecla', slideId: 's1', detalle: { tecla: 'Enter' }, parametro: 'Enter' },
+    { tipo: 'temporizador', slideId: 's1', detalle: { segundos: 5 }, parametro: 5 },
+    { tipo: 'salir_slide', slideId: 's1' },
+    { tipo: 'media_inicia', bloqueId: 'a', slideId: 's1' },
+    { tipo: 'media_termina', bloqueId: 'a', slideId: 's1' },
+  ] as const;
+
+  it.each(eventos)('«$tipo» solo produce efectos de navegación y estado de flujo', (e) => {
+    const { parametro, ...evento } = e as typeof e & { parametro?: string | number };
+    const r = procesarEvento(
+      [
+        deBloque({ ...regla('r', evento.tipo, [{ tipo: 'sumar_variable', variableId: 'n', cantidad: 1 }]), ...(parametro !== undefined ? { parametro } : {}) }, 'a'),
+      ],
+      crearEstadoInicial(variables),
+      evento,
+      { variables },
+    );
+    expect(r.efectos.every((x) => x.tipo === 'navegar')).toBe(true);
+    expect(Object.keys(r.estado).sort()).toEqual(['capasAbiertas', 'estados', 'respuestas', 'variables', 'visibles']);
+    expect(JSON.stringify(r)).not.toMatch(/"(score|puntaje|puntos|nota|calificacion)"/i);
+  });
+});

@@ -17,12 +17,19 @@ import {
   DialogPortal,
   DialogTitle,
 } from '@lumina/ui/dialog';
-import { nombreEvento, validarRegla } from '@lumina/interactions';
+import {
+  TECLAS_PERMITIDAS,
+  TEMPORIZADOR_MAX_S,
+  TEMPORIZADOR_MIN_S,
+  cambiarEvento,
+  nombreEvento,
+  validarRegla,
+} from '@lumina/interactions';
 import type { ContextoValidacion, ContextoDescripcion, OrigenRegla } from '@lumina/interactions';
 import { describirRegla } from '@lumina/interactions';
 
 import { ListaDeAcciones } from './accion-editor';
-import { AvisosContext, Aviso, OpcionesContext, selectCls } from './campos';
+import { AvisosContext, Aviso, OpcionesContext, inputCls, selectCls } from './campos';
 import type { OpcionesBuilder } from './campos';
 import { ArbolDeCondiciones } from './condicion-editor';
 
@@ -119,7 +126,9 @@ function Contenido({
               aria-label="Evento"
               className={selectCls}
               value={regla.evento}
-              onChange={(e) => setRegla({ ...regla, evento: e.target.value as EventoTipo })}
+              onChange={(e) =>
+                setRegla(cambiarEvento(regla, e.target.value as EventoTipo, opciones.variables[0]?.id))
+              }
             >
               {(eventos.includes(regla.evento) ? eventos : [regla.evento, ...eventos]).map((e) => (
                 <option key={e} value={e}>
@@ -128,6 +137,59 @@ function Contenido({
               ))}
             </select>
             <Aviso campo="evento" />
+            {regla.evento === 'cambio_variable' ? (
+              <select
+                aria-label="Variable observada"
+                className={selectCls}
+                value={typeof regla.parametro === 'string' ? regla.parametro : ''}
+                onChange={(e) => setRegla({ ...regla, parametro: e.target.value })}
+              >
+                <option value="">Elige la variable…</option>
+                {opciones.variables.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.nombre}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+            {regla.evento === 'tecla' ? (
+              <select
+                aria-label="Tecla"
+                className={selectCls}
+                value={typeof regla.parametro === 'string' ? regla.parametro : ''}
+                onChange={(e) => setRegla({ ...regla, parametro: e.target.value })}
+              >
+                {Object.entries(TECLAS_PERMITIDAS).map(([codigo, etiqueta]) => (
+                  <option key={codigo} value={codigo}>
+                    {etiqueta}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+            {regla.evento === 'temporizador' ? (
+              <label className="flex items-center gap-2 text-xs">
+                Segundos en el slide
+                <input
+                  type="number"
+                  aria-label="Segundos"
+                  className={inputCls}
+                  min={TEMPORIZADOR_MIN_S}
+                  max={TEMPORIZADOR_MAX_S}
+                  step={1}
+                  value={typeof regla.parametro === 'number' ? regla.parametro : ''}
+                  onChange={(e) => {
+                    const n = e.target.value === '' ? undefined : Number(e.target.value);
+                    setRegla(n === undefined ? { ...regla, parametro: undefined } : { ...regla, parametro: n });
+                  }}
+                />
+              </label>
+            ) : null}
+            <Aviso campo="parametro" />
+            {regla.evento === 'tecla' ? (
+              <p className="text-[11px] text-muted-foreground">
+                Un atajo de teclado nunca debe ser la única forma de hacer algo: dale también un botón.
+              </p>
+            ) : null}
           </section>
 
           <section className="space-y-1">

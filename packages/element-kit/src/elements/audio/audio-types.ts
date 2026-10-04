@@ -1,7 +1,8 @@
 import type { AudioBlock } from "../../blocks/audio/index.js";
+import type { ElementRuntimeConfig } from "@lumina/element-kit-core";
 import type { PrimitivePanelConfig } from "../_shared/primitive-config.js";
 
 export const AUDIO_TIPO = "audio" as const;
 export type AudioEstado = AudioBlock;
 
-export type AudioConfig = PrimitivePanelConfig;
+export type AudioConfig = PrimitivePanelConfig & Pick<ElementRuntimeConfig, "emitir">;

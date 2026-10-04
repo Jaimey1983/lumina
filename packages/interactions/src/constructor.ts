@@ -22,6 +22,23 @@ export function reglaNueva(id: string, evento: EventoTipo): Regla {
   return { id, evento, condiciones: [], acciones: [], activa: true };
 }
 
+/**
+ * Cambia el evento de la regla y ajusta su parámetro (N5): al pasar a un evento
+ * con parámetro se le da un valor inicial válido; al salir de uno, se quita.
+ * `primeraVariableId` es la variable a observar por defecto en `cambio_variable`.
+ */
+export function cambiarEvento(regla: Regla, evento: EventoTipo, primeraVariableId?: string): Regla {
+  const { parametro: _anterior, ...resto } = regla;
+  void _anterior;
+  const base: Regla = { ...resto, evento };
+  if (evento === 'tecla') return { ...base, parametro: 'Enter' };
+  if (evento === 'temporizador') return { ...base, parametro: 5 };
+  if (evento === 'cambio_variable') {
+    return primeraVariableId !== undefined ? { ...base, parametro: primeraVariableId } : base;
+  }
+  return base;
+}
+
 const hijos = (c: Condicion): readonly Condicion[] =>
   c.tipo === 'y' || c.tipo === 'o' ? c.condiciones : c.tipo === 'no' ? [c.condicion] : [];
 
