@@ -23,6 +23,7 @@ import {
   type SaveContextoClaseInput,
 } from './panels/flyout-left-panels';
 import type { LeftPanelId } from './icon-rail';
+import type { ActivityType } from './panels/activities-panel';
 import type { SlidePersistedLayoutKey } from './templates-panel';
 
 // ─── Panel config ─────────────────────────────────────────────────────────────
@@ -91,6 +92,7 @@ export interface FlyoutPanelProps {
   onAddWidget?: (type: WidgetTipo) => void;
   /** Inserta un bloque vía CanvasArea (historial undo). */
   onInsertBlock?: (block: Block) => Promise<boolean>;
+  onAddActivity?: (type: ActivityType) => void;
   /** Aplica el fondo del slide vía CanvasArea (mismo contrato que la barra flotante: historial undo). */
   onChangeFondo: (fondo: Background) => Promise<void>;
 }
@@ -118,6 +120,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       applyLayoutPending,
       onAddWidget,
       onInsertBlock,
+      onAddActivity,
       onChangeFondo,
     },
     ref,
@@ -186,6 +189,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 applyLayoutPending={applyLayoutPending}
                 onAddWidget={onAddWidget}
                 onInsertBlock={onInsertBlock}
+                onAddActivity={onAddActivity}
                 onChangeFondo={onChangeFondo}
               />
             </div>

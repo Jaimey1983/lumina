@@ -92,6 +92,7 @@ import { TextTokensProvider, textTokenExtra, setVariableLabels } from '@lumina/e
 import { slidesPorVariableEnTexto } from './lib/variables-en-texto';
 import { createDefaultEcuacionBlock } from '@lumina/element-kit/blocks/ecuacion/ecuacion-defaults';
 import { createDefaultTimelineBlock } from '@lumina/element-kit/widgets/timeline/timeline-defaults';
+import { createDefaultTablaPeriodicaBlock } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-defaults';
 import {
   createDefaultImageCompareBlock,
   createDefaultChecklistBlock,
@@ -2181,6 +2182,9 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       } else if (type === 'accordion') {
         block = createDefaultAccordionBlock(dropMarco) as unknown as Block;
         successLabel = 'Acordeón agregado al slide';
+      } else if (type === 'tabla_periodica') {
+        block = createDefaultTablaPeriodicaBlock(dropMarco) as unknown as Block;
+        successLabel = 'Tabla periódica agregada al slide';
       } else {
         toast.info(`Widget "${type}" próximamente`);
         return;
@@ -3205,6 +3209,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               applyLayoutPending={insertSlide.isPending || updateSlide.isPending}
               onAddWidget={handleAddWidget}
               onInsertBlock={handleInsertCanvasBlock}
+              onAddActivity={handleAddActivity}
               onChangeFondo={(fondo) =>
                 canvasAreaRef.current?.changeFondo(fondo) ?? Promise.resolve()
               }
