@@ -109,6 +109,7 @@ describe('MATH_TABS', () => {
       'trig',
       'calculo',
       'griegas',
+      'quimica',
       'plantillas',
     ]);
   });

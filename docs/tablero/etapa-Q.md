@@ -46,8 +46,8 @@ J8 + Q1 ─→ Q8
 **Fuera de alcance de la etapa (no pedirlo, no improvisarlo):** RDKit.js / química computacional pesada; área curricular `quimica` separada en `AREAS_LABELS` (decisión del dueño, ficha aparte); PhET embebido completo (solo anotado en `LUMINA_ROADMAP_DETALLADO.md`); editor Lewis/Kekule (tier 3); mecanismos orgánicos animados; SCORM.
 
 #### Q1 — Paquete `@lumina/chemistry` (datos + parser + masa molar + balanceo)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** hecho — merge PR #69 (`6580a7c`); 43 tests; verif: `pnpm --filter @lumina/chemistry build && test && lint`
 - **Precondición:** ninguna (arranque de la etapa).
 - **Contexto:** sin este paquete no hay una sola fuente de verdad para actividades, IA verificada ni botones «insertar masa molar» en el compositor. **No** reutilizar `algebra.ts` (M4): gramática distinta (subíndices, hidratos, cargas, ecuaciones con `->`).
 - **Alcance — PUEDE tocar:**
@@ -64,8 +64,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(chemistry): paquete @lumina/chemistry con datos, parser y balanceo (Q1)`.
 
 #### Q2 — Notación química en el compositor (mhchem + pestaña Química)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** **hecho** — merge PR #71 (2026-10-04). mhchem en `latex-render.ts`, pestaña `quimica`, `speakLatex` con llaves balanceadas en `\ce`/`\pu` y cargas iónicas.
 - **Precondición:** M1 `hecho` (DM1: único `latex-render.ts`).
 - **Contexto:** el docente ya usa el bloque `ecuacion` y el `EquationComposer`; la vía de menor fricción es una pestaña «Química» con plantillas `\ce{}` y `\pu{}`, no un bloque paralelo.
 - **Alcance — PUEDE tocar:**
