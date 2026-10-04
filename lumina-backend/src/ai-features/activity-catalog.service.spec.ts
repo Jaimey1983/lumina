@@ -7,6 +7,30 @@ import {
   type GenerateActivityDto,
 } from './dto/generate-activity.dto';
 import type { RefineActivityDto } from './dto/refine-activity.dto';
+import { isChemistryAiActivityType } from './chemistry-activity-verifier';
+
+function mockLlmActivityForType(tipo: AiActivityType): Record<string, unknown> {
+  switch (tipo) {
+    case 'balancear_ecuacion':
+      return {
+        tipo,
+        ecuacion: 'H2 + O2 -> H2O',
+        instruccion: 'Balancea la ecuación.',
+      };
+    case 'ubicar_elemento':
+      return {
+        tipo,
+        elementos: [{ id: 'e1', symbol: 'Na', periodo: 3, grupo: 1 }],
+      };
+    case 'formular_compuesto':
+      return {
+        tipo,
+        preguntas: [{ id: 'q1', enunciado: 'Agua', formula: 'H2O' }],
+      };
+    default:
+      return { tipo, marcador: 'ok' };
+  }
+}
 
 function makeService(completeForUser: jest.Mock) {
   const aiKeys = { completeForUser } as unknown as AiKeysService;
@@ -27,9 +51,9 @@ const genDto = (
 });
 
 describe('J8 — catálogo completo de actividades generables por IA', () => {
-  it('AI_ACTIVITY_TYPES cubre exactamente los 22 tipos reales del elementRegistry', () => {
-    expect(AI_ACTIVITY_TYPES).toHaveLength(22);
-    expect(new Set(AI_ACTIVITY_TYPES).size).toBe(22);
+  it('AI_ACTIVITY_TYPES cubre los tipos generables (22 clásicos + 3 química Q8)', () => {
+    expect(AI_ACTIVITY_TYPES).toHaveLength(25);
+    expect(new Set(AI_ACTIVITY_TYPES).size).toBe(25);
     // Los 15 antes ausentes (J8), confirmados contra packages/element-kit/src/elements/_shared/catalogo.ts
     const antesAusentes: AiActivityType[] = [
       'video_interactivo',
@@ -58,13 +82,16 @@ describe('J8 — catálogo completo de actividades generables por IA', () => {
     async (tipo) => {
       const complete = jest
         .fn()
-        .mockResolvedValue(JSON.stringify({ tipo, marcador: 'ok' }));
+        .mockResolvedValue(JSON.stringify(mockLlmActivityForType(tipo)));
       const svc = makeService(complete);
 
       const res = await svc.generateActivity(genDto(tipo), 'u1', 'TEACHER');
 
       expect(res.tipo).toBe(tipo);
-      expect(res.activity.tipo).toBe(tipo);
+      expect(res.activity?.tipo).toBe(tipo);
+      if (isChemistryAiActivityType(tipo)) {
+        expect(res.chemistryVerification?.status).toBe('verified_chemistry');
+      }
       const [, , user] = complete.mock.calls[0] as [string, string, string];
       expect(user).toContain(`"tipo": "${tipo}"`);
     },
@@ -99,6 +126,24 @@ describe('J8 — catálogo completo de actividades generables por IA', () => {
     const [, , user] = complete.mock.calls[0] as [string, string, string];
     expect(user).toContain('No incluyas editorX/editorY');
     expect(user).not.toContain('"editorX"');
+  });
+
+  it('balancear_ecuacion — rechaza propuesta si la ecuación no balancea (Q8)', async () => {
+    const complete = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        tipo: 'balancear_ecuacion',
+        ecuacion: 'XxYy + Zz -> Qq',
+      }),
+    );
+    const svc = makeService(complete);
+    const res = await svc.generateActivity(
+      genDto('balancear_ecuacion'),
+      'u1',
+      'TEACHER',
+    );
+    expect(res.activity).toBeNull();
+    expect(res.chemistryVerification?.status).toBe('rejected_chemistry');
+    expect(res.chemistryVerification?.reasons.length).toBeGreaterThan(0);
   });
 });
 

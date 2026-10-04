@@ -157,8 +157,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(chemistry): plantillas de laboratorio con gráficos y variables (Q7)`.
 
 #### Q8 — IA verificada y contenido curricular CN (complemento J10)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — verificador post-LLM, tipos química en catálogo IA, badges en ActivitiesAiPanel
 - **Precondición:** Q1 `hecho`; J8/J11 (transparencia modo) deseable para mostrar «rechazado por verificador».
 - **Contexto:** la IA propone actividades y fórmulas; `@lumina/chemistry` **valida** antes de mostrar al docente (balanceo, masa molar, fórmula parseable). Contenido: sustituir placeholders `ciencias-naturales-10.json` / `11.json` donde toque química (trabajo de contenido + pipeline Prompt Maestro, fuera del alcance de código salvo loaders).
 - **Alcance — PUEDE tocar:**

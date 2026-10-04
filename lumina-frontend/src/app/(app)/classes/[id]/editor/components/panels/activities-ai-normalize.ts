@@ -82,7 +82,73 @@ export function normalizeAiActivity(
       return normalizeTopo(source);
     case 'historia_ramificada':
       return normalizeHistoriaRamificada(source);
+    case 'balancear_ecuacion':
+      return normalizeBalancearEcuacion(source);
+    case 'ubicar_elemento':
+      return normalizeUbicarElemento(source);
+    case 'formular_compuesto':
+      return normalizeFormularCompuesto(source);
   }
+}
+
+function normalizeBalancearEcuacion(raw: Record<string, unknown>): Record<string, unknown> {
+  const ecuacion = asString(raw.ecuacion).trim() || 'H2 + O2 -> H2O';
+  const fb = feedbackFrom(raw);
+  return {
+    tipo: 'balancear_ecuacion',
+    instruccion:
+      asString(raw.instruccion).trim() ||
+      'Ajusta los coeficientes para balancear la ecuación.',
+    ecuacion,
+    ...(fb ? { retroalimentacion: fb } : {}),
+  };
+}
+
+function normalizeUbicarElemento(raw: Record<string, unknown>): Record<string, unknown> {
+  const elementos = asArray(raw.elementos).map((row, i) => {
+    const el = asRecord(row);
+    return {
+      id: asString(el.id, `e${i + 1}`),
+      symbol: asString(el.symbol) || asString(el.simbolo),
+      periodo: asNumber(el.periodo ?? el.period, 1),
+      grupo: asNumber(el.grupo ?? el.group, 1),
+    };
+  });
+  const fb = feedbackFrom(raw);
+  return {
+    tipo: 'ubicar_elemento',
+    instruccion:
+      asString(raw.instruccion).trim() ||
+      'Indica el periodo y el grupo de cada elemento.',
+    elementos:
+      elementos.length > 0
+        ? elementos
+        : [{ id: 'e1', symbol: 'Na', periodo: 3, grupo: 1 }],
+    ...(fb ? { retroalimentacion: fb } : {}),
+  };
+}
+
+function normalizeFormularCompuesto(raw: Record<string, unknown>): Record<string, unknown> {
+  const preguntas = asArray(raw.preguntas).map((row, i) => {
+    const q = asRecord(row);
+    return {
+      id: asString(q.id, `q${i + 1}`),
+      enunciado: asString(q.enunciado) || asString(q.nombre) || `Pregunta ${i + 1}`,
+      formula: asString(q.formula) || asString(q.formulaEsperada),
+    };
+  });
+  const fb = feedbackFrom(raw);
+  return {
+    tipo: 'formular_compuesto',
+    instruccion:
+      asString(raw.instruccion).trim() ||
+      'Escribe la fórmula molecular de cada compuesto.',
+    preguntas:
+      preguntas.length > 0
+        ? preguntas
+        : [{ id: 'q1', enunciado: 'Óxido de calcio', formula: 'CaO' }],
+    ...(fb ? { retroalimentacion: fb } : {}),
+  };
 }
 
 function normalizeQuiz(raw: Record<string, unknown>): Record<string, unknown> {
@@ -890,6 +956,19 @@ export function aiActivityHasUsableContent(content: Record<string, unknown>): bo
   if (tipo === 'historia_ramificada') {
     return asArray(content.nodos).length > 0;
   }
+  if (tipo === 'balancear_ecuacion') {
+    return asString(content.ecuacion).trim().length > 0;
+  }
+  if (tipo === 'ubicar_elemento') {
+    return asArray(content.elementos).some((e) =>
+      asString(asRecord(e).symbol).trim(),
+    );
+  }
+  if (tipo === 'formular_compuesto') {
+    return asArray(content.preguntas).some((q) =>
+      asString(asRecord(q).formula).trim(),
+    );
+  }
   return false;
 }
 
@@ -900,8 +979,13 @@ export function activityTitleFromContent(content: Record<string, unknown>): stri
   const primeraPalabra = asString(asRecord(asArray(content.palabras)[0]).texto);
   const primeraOracion = asString(asRecord(asArray(content.oraciones)[0]).texto);
   const primerNodoTitulo = asString(asRecord(asArray(content.nodos)[0]).titulo);
+  const primeraFormulaPregunta = asString(
+    asRecord(asArray(content.preguntas)[0]).enunciado,
+  );
   const candidates = [
     preguntaTexto,
+    asString(content.ecuacion),
+    primeraFormulaPregunta,
     asString(content.afirmacion),
     asString(content.question),
     asString(content.pregunta),
@@ -939,6 +1023,21 @@ export const AI_ACTIVITY_OPTIONS: { value: AiActivityType; label: string; hint: 
   { value: 'globos', label: 'Globos', hint: 'Preguntas de opción múltiple en globos que suben.' },
   { value: 'topo', label: 'Golpea al topo', hint: 'Preguntas de opción múltiple, golpea la correcta.' },
   { value: 'historia_ramificada', label: 'Historia ramificada', hint: 'Narrativa interactiva con decisiones.' },
+  {
+    value: 'balancear_ecuacion',
+    label: 'Balancear ecuación',
+    hint: 'Ecuación sin coeficientes; verificada con el motor químico.',
+  },
+  {
+    value: 'ubicar_elemento',
+    label: 'Ubicar en tabla periódica',
+    hint: 'Elementos con periodo y grupo correctos (verificados).',
+  },
+  {
+    value: 'formular_compuesto',
+    label: 'Formular compuesto',
+    hint: 'Nombre → fórmula molecular inorgánica.',
+  },
 ];
 
 export function defaultCountForAiActivity(tipo: AiActivityType, full: boolean): number {
@@ -986,5 +1085,11 @@ export function defaultCountForAiActivity(tipo: AiActivityType, full: boolean): 
       return full ? 5 : 3;
     case 'historia_ramificada':
       return full ? 6 : 4;
+    case 'balancear_ecuacion':
+      return 1;
+    case 'ubicar_elemento':
+      return full ? 6 : 4;
+    case 'formular_compuesto':
+      return full ? 5 : 3;
   }
 }

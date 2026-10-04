@@ -19,6 +19,7 @@ import {
   useGenerateActivity,
   useRefineActivity,
   type AiActivityType,
+  type ChemistryVerification,
 } from '@/hooks/api/use-ai';
 import { buildCurricularContextTexto } from '../../lib/curricular-context-texto';
 import type { IaPanelCurricularContext } from './flyout-left-panels';
@@ -44,6 +45,14 @@ interface Props {
 interface PreviewState {
   tipo: AiActivityType;
   content: Record<string, unknown>;
+  chemistryVerification?: ChemistryVerification;
+}
+
+function chemistryRejectionMessage(verification?: ChemistryVerification): string {
+  if (!verification?.reasons?.length) {
+    return 'El verificador químico rechazó la propuesta. Intenta con un tema más específico.';
+  }
+  return `Revisar: no pasa verificación química. ${verification.reasons.slice(0, 2).join(' ')}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -109,12 +118,24 @@ export function ActivitiesAiPanel({
       },
       {
         onSuccess: (data) => {
-          const activityContent = normalizeAiActivity(tipo, data.activity ?? data);
+          if (
+            !data.activity ||
+            data.chemistryVerification?.status === 'rejected_chemistry'
+          ) {
+            setPreview(null);
+            toast.error(chemistryRejectionMessage(data.chemistryVerification));
+            return;
+          }
+          const activityContent = normalizeAiActivity(tipo, data.activity);
           if (!aiActivityHasUsableContent(activityContent)) {
             toast.error('La IA no generó contenido usable. Intenta con un texto más específico.');
             return;
           }
-          setPreview({ tipo, content: activityContent });
+          setPreview({
+            tipo,
+            content: activityContent,
+            chemistryVerification: data.chemistryVerification,
+          });
           setConversationHistory([]);
           toast.success('Actividad generada. Revísala y ajústala antes de insertar.');
         },
@@ -138,8 +159,19 @@ export function ActivitiesAiPanel({
       },
       {
         onSuccess: (data) => {
-          const activityContent = normalizeAiActivity(preview.tipo, data.activity ?? data);
-          setPreview({ tipo: preview.tipo, content: activityContent });
+          if (
+            !data.activity ||
+            data.chemistryVerification?.status === 'rejected_chemistry'
+          ) {
+            toast.error(chemistryRejectionMessage(data.chemistryVerification));
+            return;
+          }
+          const activityContent = normalizeAiActivity(preview.tipo, data.activity);
+          setPreview({
+            tipo: preview.tipo,
+            content: activityContent,
+            chemistryVerification: data.chemistryVerification,
+          });
           setConversationHistory((prev) => [
             ...prev,
             { role: 'assistant' as const, content: `Ajustado: "${instruction}".` },
@@ -241,9 +273,19 @@ export function ActivitiesAiPanel({
       {preview && (
         <div className="flex flex-col gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5">
           <div className="flex flex-col gap-0.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
-              Vista previa
-            </p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                Vista previa
+              </p>
+              {preview.chemistryVerification?.status === 'verified_chemistry' && (
+                <span
+                  className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                  title="Validada con @lumina/chemistry"
+                >
+                  Verificado química
+                </span>
+              )}
+            </div>
             <p className="text-[11px] leading-snug text-foreground line-clamp-3">{previewTitle}</p>
           </div>
           <Button

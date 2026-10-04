@@ -31,6 +31,9 @@ importers:
 
   lumina-backend:
     dependencies:
+      '@lumina/chemistry':
+        specifier: workspace:*
+        version: link:../packages/chemistry
       '@lumina/curriculum-data':
         specifier: workspace:*
         version: link:../packages/curriculum-data
