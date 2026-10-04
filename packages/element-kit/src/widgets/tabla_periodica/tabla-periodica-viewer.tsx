@@ -3,6 +3,7 @@
 import {
   getAllElements,
   getElementsMetadata,
+  type ElementCategory,
   type PeriodicElement,
 } from '@lumina/chemistry';
 import type { EventoTipo } from '@lumina/types/interaction';
@@ -32,6 +33,7 @@ import {
   PERIODIC_GRID_ROWS,
 } from './periodic-layout.js';
 import {
+  CATEGORIAS_ORDEN,
   configuracionElectronicaV1,
   etiquetaCategoria,
   usoBreve,
@@ -129,6 +131,12 @@ export function TablaPeriodicaViewer({
 
   const selectedEl = selected ? bySymbol.get(selected) : undefined;
 
+  // Resaltado de categoría (estado local: no se persiste en el bloque).
+  const [categoriaFija, setCategoriaFija] = useState<ElementCategory | null>(null);
+  const [categoriaHover, setCategoriaHover] = useState<ElementCategory | null>(null);
+  const categoriaFoco = categoriaHover ?? categoriaFija;
+  const usaHeatmap = configuracion.heatmapPropiedad !== 'ninguna';
+
   /** Mueve por la misma fila saltando huecos (p. ej. entre Be y B). */
   const moveHorizontal = (row: number, col: number, step: 1 | -1) => {
     for (let c = col + step; c >= 1 && c <= PERIODIC_GRID_COLS; c += step) {
@@ -214,19 +222,25 @@ export function TablaPeriodicaViewer({
                       heatRange.max,
                     )
                   : undefined;
-              const title = heat ? `${el.name}: ${heat.label}` : `${el.name} (Z=${el.z})`;
+              const categoria = etiquetaCategoria(el.category);
+              const title = heat
+                ? `${el.name} · ${categoria}: ${heat.label}`
+                : `${el.name} (Z=${el.z}) · ${categoria}`;
+              const fueraDeFoco =
+                !usaHeatmap && categoriaFoco !== null && el.category !== categoriaFoco;
               return (
                 <button
                   key={el.z}
                   type="button"
                   role="gridcell"
                   aria-selected={isSelected}
-                  aria-label={`${el.name}, símbolo ${el.symbol}, número atómico ${el.z}`}
+                  aria-label={`${el.name}, símbolo ${el.symbol}, número atómico ${el.z}, ${categoria}`}
                   title={title}
                   disabled={!visible}
+                  data-cat={el.category}
                   className={cn(
                     styles.ptCell,
-                    !visible && styles.ptCellDim,
+                    (!visible || fueraDeFoco) && styles.ptCellDim,
                     isSelected && styles.ptCellSelected,
                   )}
                   style={{
@@ -238,12 +252,39 @@ export function TablaPeriodicaViewer({
                 >
                   <span className={styles.ptZ}>{el.z}</span>
                   <span className={styles.ptSym}>{el.symbol}</span>
+                  <span className={styles.ptName}>{el.name}</span>
                 </button>
               );
             })}
           </div>
-          {configuracion.heatmapPropiedad !== 'ninguna' &&
-          configuracion.mostrarLeyendaHeatmap ? (
+          {!usaHeatmap ? (
+            <div
+              className={styles.ptCats}
+              role="group"
+              aria-label="Categorías de elementos"
+              aria-hidden={isThumbnail}
+              onMouseLeave={() => setCategoriaHover(null)}
+            >
+              {CATEGORIAS_ORDEN.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  data-cat={cat}
+                  aria-pressed={categoriaFija === cat}
+                  tabIndex={isThumbnail ? -1 : 0}
+                  className={cn(styles.ptCat, categoriaFija === cat && styles.ptCatOn)}
+                  onMouseEnter={() => setCategoriaHover(cat)}
+                  onFocus={() => setCategoriaHover(cat)}
+                  onBlur={() => setCategoriaHover(null)}
+                  onClick={() => setCategoriaFija((prev) => (prev === cat ? null : cat))}
+                >
+                  <span className={styles.ptCatDot} aria-hidden />
+                  {etiquetaCategoria(cat)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {usaHeatmap && configuracion.mostrarLeyendaHeatmap ? (
             <div className={styles.ptLegend} aria-hidden={isThumbnail}>
               <span>{heatmapPropiedadLabel(configuracion.heatmapPropiedad)}</span>
               <span>
@@ -259,9 +300,12 @@ export function TablaPeriodicaViewer({
         <aside className={styles.ptDetail} aria-live="polite">
           {selectedEl && visibleSet.has(selectedEl.symbol) ? (
             <>
-              <h4>
-                {selectedEl.name} ({selectedEl.symbol})
-              </h4>
+              <div className={styles.ptCard} data-cat={selectedEl.category}>
+                <span className={styles.ptCardZ}>{selectedEl.z}</span>
+                <span className={styles.ptCardSym}>{selectedEl.symbol}</span>
+                <span className={styles.ptCardName}>{selectedEl.name}</span>
+                <span className={styles.ptCardCat}>{etiquetaCategoria(selectedEl.category)}</span>
+              </div>
               <dl>
                 <dt>Número atómico</dt>
                 <dd>{selectedEl.z}</dd>

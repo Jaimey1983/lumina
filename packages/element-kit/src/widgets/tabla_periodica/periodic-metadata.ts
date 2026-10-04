@@ -13,6 +13,20 @@ const CATEGORIA_ES: Record<ElementCategory, string> = {
   actinide: 'Actínido',
 };
 
+/** Orden de la leyenda (de los más metálicos a los gases nobles y el bloque f). */
+export const CATEGORIAS_ORDEN: readonly ElementCategory[] = [
+  'alkali_metal',
+  'alkaline_earth',
+  'transition_metal',
+  'post_transition',
+  'metalloid',
+  'nonmetal',
+  'halogen',
+  'noble_gas',
+  'lanthanide',
+  'actinide',
+];
+
 const USOS_POR_CATEGORIA: Record<ElementCategory, string> = {
   alkali_metal: 'Sales, baterías y compuestos industriales.',
   alkaline_earth: 'Aleaciones ligeras, materiales de construcción y fuegos artificiales.',
