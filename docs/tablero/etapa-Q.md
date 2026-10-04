@@ -96,7 +96,7 @@ J8 + Q1b ─→ Q8
 
 #### Q4 — Actividades químicas autocalificables (balanceo, ubicación, formulación)
 - **Operador:** Cursor
-- **Estado:** en revisión — `@lumina/chemistry` (prerrequisito Q1 mínimo), tres actividades `ElementDefinition`, evaluadores en `@lumina/scoring`, panel Química en actividades; verif: `pnpm --filter @lumina/chemistry test`, `pnpm --filter @lumina/scoring test`, `pnpm --filter @lumina/element-kit test`
+- **Estado:** **hecho** — merge PR #75 (2026-10-04); verif: `pnpm --filter @lumina/chemistry test`, `pnpm --filter @lumina/scoring test`, `pnpm --filter @lumina/element-kit test`
 - **Precondición:** Q1 `hecho`.
 - **Contexto:** valor en aula = práctica con nota en servidor (C5). Patrón `respuesta_matematica` (M3a): tipo propio, `binary` o `partial` según actividad, `evaluateActivityResponse` en scoring.
 - **Alcance — PUEDE tocar:**
