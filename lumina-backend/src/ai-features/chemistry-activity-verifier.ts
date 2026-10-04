@@ -27,9 +27,11 @@ function asRecord(v: unknown): Record<string, unknown> | null {
     : null;
 }
 
-export function isChemistryAiActivityType(
-  type: AiActivityType,
-): boolean {
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+export function isChemistryAiActivityType(type: AiActivityType): boolean {
   return (CHEMISTRY_AI_ACTIVITY_TYPES as readonly string[]).includes(type);
 }
 
@@ -60,14 +62,19 @@ export function verifyChemistryActivity(
   }
 
   if (type === 'formular_compuesto') {
-    const preguntas = Array.isArray(activity.preguntas) ? activity.preguntas : [];
+    const preguntas = Array.isArray(activity.preguntas)
+      ? activity.preguntas
+      : [];
     if (preguntas.length === 0) {
       reasons.push('Debe incluir al menos una pregunta con fórmula esperada.');
     }
     preguntas.forEach((raw, i) => {
       const q = asRecord(raw) ?? {};
-      const formula = String(q.formula ?? q.formulaEsperada ?? '').trim();
-      const enunciado = String(q.enunciado ?? q.nombre ?? `Pregunta ${i + 1}`);
+      const formula = (
+        asString(q.formula) || asString(q.formulaEsperada)
+      ).trim();
+      const enunciado =
+        asString(q.enunciado) || asString(q.nombre) || `Pregunta ${i + 1}`;
       if (!formula) {
         reasons.push(`Pregunta "${enunciado}": falta fórmula esperada.`);
         return;
@@ -75,19 +82,23 @@ export function verifyChemistryActivity(
       try {
         parseFormula(formula);
       } catch {
-        reasons.push(`Pregunta "${enunciado}": fórmula no parseable (${formula}).`);
+        reasons.push(
+          `Pregunta "${enunciado}": fórmula no parseable (${formula}).`,
+        );
       }
     });
   }
 
   if (type === 'ubicar_elemento') {
-    const elementos = Array.isArray(activity.elementos) ? activity.elementos : [];
+    const elementos = Array.isArray(activity.elementos)
+      ? activity.elementos
+      : [];
     if (elementos.length === 0) {
       reasons.push('Debe incluir al menos un elemento a ubicar.');
     }
     elementos.forEach((raw, i) => {
       const item = asRecord(raw) ?? {};
-      const symbol = String(item.symbol ?? item.simbolo ?? '').trim();
+      const symbol = (asString(item.symbol) || asString(item.simbolo)).trim();
       const periodo = Number(item.periodo ?? item.period);
       const grupo = Number(item.grupo ?? item.group);
       if (!symbol) {
