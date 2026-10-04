@@ -65,7 +65,7 @@ J8 + Q1 ─→ Q8
 
 #### Q2 — Notación química en el compositor (mhchem + pestaña Química)
 - **Operador:** Cursor
-- **Estado:** en revisión — `latex-render.ts` importa `katex/contrib/mhchem` (DQ1); tests `\ce{H2SO4}`, reacción `->`, estados `(s)(aq)` y `\pu{}`. Pestaña `quimica` en `MATH_TABS` (molécula, ion, reacción, equilibrio, unidades, ejemplos H₂O/NaCl/neutralización). `speakLatex`: `hablarCePu` expande `\ce`/`\pu` antes del resto. Verif: `@lumina/editor-shared` build/test/lint · `@lumina/element-kit` build/test.
+- **Estado:** **hecho** — merge PR #71 (2026-10-04). mhchem en `latex-render.ts`, pestaña `quimica`, `speakLatex` con llaves balanceadas en `\ce`/`\pu` y cargas iónicas.
 - **Precondición:** M1 `hecho` (DM1: único `latex-render.ts`).
 - **Contexto:** el docente ya usa el bloque `ecuacion` y el `EquationComposer`; la vía de menor fricción es una pestaña «Química» con plantillas `\ce{}` y `\pu{}`, no un bloque paralelo.
 - **Alcance — PUEDE tocar:**
