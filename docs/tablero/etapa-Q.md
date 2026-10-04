@@ -191,7 +191,7 @@ J8 + Q1 ─→ Q8
 
 #### Q11 — Tabla periódica: color por categoría, leyenda interactiva y ficha con tarjeta
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — paleta de 10 categorías (`.ptRoot [data-cat]`: los CSS modules exigen clase local), celda con Z/símbolo/nombre (nombre desde 760 px), leyenda clicable/hover que atenúa el resto (oculta con heatmap), ficha con tarjeta de color, `prefers-reduced-motion`; spec de la paleta. Verif: element-kit build/test/lint · `npx tsc --noEmit` · capturas en build de producción (reposo, categoría resaltada, heatmap por grupo).
 - **Precondición:** Q9 y Q10 en la misma rama (datos y layout correctos).
 - **Contexto:** la celda es blanca con símbolo de 12 px; la referencia (Google Arts) pinta cada categoría, muestra símbolo grande con nombre debajo, atenúa el resto al resaltar una categoría y tiene ficha con tarjeta de color.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{tabla-periodica-viewer.tsx,tabla-periodica.module.css,periodic-metadata.ts}` y specs nuevos de esa carpeta.
