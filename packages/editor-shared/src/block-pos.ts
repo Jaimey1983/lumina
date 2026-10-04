@@ -214,6 +214,51 @@ export function getBlockPos(block: Block): BlockPos {
         alto:  block.alto  ?? fb.alto,
       };
     }
+    case 'image-compare': {
+      const fb = BLOCK_FALLBACKS.imageCompare;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'interactive-checklist': {
+      const fb = BLOCK_FALLBACKS.interactiveChecklist;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'scratch-card': {
+      const fb = BLOCK_FALLBACKS.scratchCard;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'accordion': {
+      const fb = BLOCK_FALLBACKS.accordion;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
+    case 'tabla_periodica': {
+      const fb = BLOCK_FALLBACKS.tablaPeriodica;
+      return {
+        x:     block.x     ?? fb.x,
+        y:     block.y     ?? fb.y,
+        ancho: block.ancho ?? fb.ancho,
+        alto:  block.alto  ?? fb.alto,
+      };
+    }
     case 'actividad': {
       const marco = block.marco;
       if (marco) {
@@ -226,8 +271,23 @@ export function getBlockPos(block: Block): BlockPos {
       }
       return { ...ACTIVITY_FALLBACK };
     }
-    default:
+    default: {
+      const b = block as {
+        x?: number;
+        y?: number;
+        ancho?: number;
+        alto?: number;
+      };
+      if (
+        typeof b.x === 'number' &&
+        typeof b.y === 'number' &&
+        typeof b.ancho === 'number' &&
+        typeof b.alto === 'number'
+      ) {
+        return { x: b.x, y: b.y, ancho: b.ancho, alto: b.alto };
+      }
       return { ...DEFAULT_FALLBACK };
+    }
   }
 }
 

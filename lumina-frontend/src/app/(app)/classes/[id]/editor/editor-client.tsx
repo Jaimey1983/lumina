@@ -181,6 +181,11 @@ import {
   type CoreSlideLayoutKey,
   type SlidePersistedLayoutKey,
 } from './components/templates-panel';
+import {
+  isWidgetTipo,
+  type MoleculaWidget,
+  type TablaPeriodicaWidget,
+} from '@lumina/types/widget';
 import type { ActivityType, WidgetType } from './components/panels/activities-panel';
 import { getActivityPanelItem } from './components/panels/activities-panel';
 import { getWidgetPanelItem } from './components/panels/widget-panel-catalog';
@@ -1823,6 +1828,34 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [activeSlide, handleCommitSlideContent],
   );
 
+  const handleTablaPeriodicaChange = useCallback(
+    (blockPath: string, widget: TablaPeriodicaWidget) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'tabla_periodica') return b;
+        return widget;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
+  const handleMoleculaChange = useCallback(
+    (blockPath: string, widget: MoleculaWidget) => {
+      if (!activeSlide) return;
+      const c = getSlideContentRecord(activeSlide as ApiSlide);
+      const bloques = (Array.isArray(c.bloques) ? c.bloques : []) as Block[];
+      const next = updateBlockAtPath(bloques, blockPath, (b) => {
+        if (b.tipo !== 'molecula') return b;
+        return widget;
+      });
+      handleCommitSlideContent(mergeSlideContent(activeSlide as ApiSlide, { bloques: next }));
+    },
+    [activeSlide, handleCommitSlideContent],
+  );
+
   const handleDiagramaChange = useCallback(
     (blockPath: string, diagrama: DiagramaBlock) => {
       if (!activeSlide) return;
@@ -2189,6 +2222,24 @@ export function SlideEditorClient({ classId }: { classId: string }) {
       } else if (type === 'molecula') {
         block = createDefaultMoleculaBlock(dropMarco) as unknown as Block;
         successLabel = 'Visor molecular agregado al slide';
+      } else if (isWidgetTipo(type)) {
+        const def = elementRegistry.obtener(type);
+        if (!def) {
+          toast.info(`Widget "${type}" próximamente`);
+          return;
+        }
+        let created = def.crearPorDefecto() as Block;
+        if (dropMarco) {
+          created = {
+            ...created,
+            x: dropMarco.izquierdaPct,
+            y: dropMarco.arribaPct,
+            ancho: dropMarco.anchoPct,
+            alto: dropMarco.altoPct,
+          } as Block;
+        }
+        block = created;
+        successLabel = `${def.catalogo?.nombre ?? type} agregado al slide`;
       } else {
         toast.info(`Widget "${type}" próximamente`);
         return;
@@ -3279,6 +3330,8 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onHotspotChange={handleHotspotChange}
               onTimelineChange={handleTimelineChange}
               onImageCompareChange={handleImageCompareChange}
+              onTablaPeriodicaChange={handleTablaPeriodicaChange}
+              onMoleculaChange={handleMoleculaChange}
               onDiagramaChange={handleDiagramaChange}
               onRemoveBlock={handleRemoveBlock}
               onEffectiveBloques={setActiveSlideLiveBloques}

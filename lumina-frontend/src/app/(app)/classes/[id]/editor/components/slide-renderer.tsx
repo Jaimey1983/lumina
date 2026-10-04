@@ -89,7 +89,13 @@ import {
 import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
 import type { CarouselInnerSelection } from '@lumina/element-kit/widgets/carousel/carousel-config';
-import type { ClickRevealInnerSelection, PopupInnerSelection, HotspotInnerSelection } from '@lumina/types/widget';
+import type {
+  ClickRevealInnerSelection,
+  PopupInnerSelection,
+  HotspotInnerSelection,
+  TablaPeriodicaWidget,
+  MoleculaWidget,
+} from '@lumina/types/widget';
 import {
   isEditingPopupOverlay,
   mergedPopupConfig,
@@ -510,6 +516,8 @@ interface BlockNodeProps {
   onImageCompareChange?: (blockId: string, block: ImageCompareWidget) => void;
   imageCompareInnerSelection?: ImageCompareInnerSelection | null;
   onImageCompareInnerSelectionChange?: (selection: ImageCompareInnerSelection | null) => void;
+  onTablaPeriodicaChange?: (blockId: string, block: TablaPeriodicaWidget) => void;
+  onMoleculaChange?: (blockId: string, block: MoleculaWidget) => void;
   onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onDuplicateBlock?: (blockId: string) => void;
@@ -715,6 +723,8 @@ function BlockNode({
   onImageCompareChange,
   imageCompareInnerSelection,
   onImageCompareInnerSelectionChange,
+  onTablaPeriodicaChange,
+  onMoleculaChange,
   onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
@@ -883,6 +893,8 @@ function BlockNode({
         onImageCompareChange={onImageCompareChange}
         imageCompareInnerSelection={imageCompareInnerSelection}
         onImageCompareInnerSelectionChange={onImageCompareInnerSelectionChange}
+        onTablaPeriodicaChange={onTablaPeriodicaChange}
+        onMoleculaChange={onMoleculaChange}
         onDiagramaChange={onDiagramaChange}
         onRemoveBlock={onRemoveBlock}
         onDuplicateBlock={onDuplicateBlock}
@@ -968,7 +980,9 @@ function BlockNode({
       case 'image-compare':
       case 'interactive-checklist':
       case 'scratch-card':
-      case 'accordion': {
+      case 'accordion':
+      case 'tabla_periodica':
+      case 'molecula': {
         const def = elementRegistry.obtener<
           WidgetBlock,
           { isThumbnail?: boolean; onEnsureBlockSelected?: () => void }
@@ -1001,6 +1015,12 @@ function BlockNode({
                 break;
               case 'image-compare':
                 onImageCompareChange?.(blockId, updated as ImageCompareWidget);
+                break;
+              case 'tabla_periodica':
+                onTablaPeriodicaChange?.(blockId, updated as TablaPeriodicaWidget);
+                break;
+              case 'molecula':
+                onMoleculaChange?.(blockId, updated as MoleculaWidget);
                 break;
               default:
                 break;
@@ -1489,6 +1509,8 @@ export interface SlideRendererProps {
   onImageCompareChange?: (blockId: string, block: ImageCompareWidget) => void;
   imageCompareInnerSelection?: ImageCompareInnerSelection | null;
   onImageCompareInnerSelectionChange?: (selection: ImageCompareInnerSelection | null) => void;
+  onTablaPeriodicaChange?: (blockId: string, block: TablaPeriodicaWidget) => void;
+  onMoleculaChange?: (blockId: string, block: MoleculaWidget) => void;
   onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   /** Elimina un bloque del slide (p. ej. actividad equivocada). */
   onRemoveBlock?: (blockId: string) => void;
@@ -1595,6 +1617,8 @@ function SlideRendererBase({
   onImageCompareChange,
   imageCompareInnerSelection,
   onImageCompareInnerSelectionChange,
+  onTablaPeriodicaChange,
+  onMoleculaChange,
   onDiagramaChange,
   onRemoveBlock,
   onDuplicateBlock,
@@ -2109,6 +2133,8 @@ function SlideRendererBase({
             onImageCompareChange={onImageCompareChange}
             imageCompareInnerSelection={imageCompareInnerSelection}
             onImageCompareInnerSelectionChange={onImageCompareInnerSelectionChange}
+            onTablaPeriodicaChange={onTablaPeriodicaChange}
+            onMoleculaChange={onMoleculaChange}
             onDiagramaChange={onDiagramaChange}
             onRemoveBlock={editorMode ? onRemoveBlock : undefined}
             onDuplicateBlock={editorMode ? onDuplicateBlock : undefined}

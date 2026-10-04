@@ -213,6 +213,14 @@ export interface CanvasAreaProps {
   onHotspotChange?: (blockId: string, block: HotspotWidget) => void;
   onTimelineChange?: (blockId: string, block: TimelineWidget) => void;
   onImageCompareChange?: (blockId: string, block: ImageCompareWidget) => void;
+  onTablaPeriodicaChange?: (
+    blockId: string,
+    block: import('@lumina/types/widget').TablaPeriodicaWidget,
+  ) => void;
+  onMoleculaChange?: (
+    blockId: string,
+    block: import('@lumina/types/widget').MoleculaWidget,
+  ) => void;
   onDiagramaChange?: (blockId: string, block: DiagramaBlock) => void;
   onRemoveBlock?: (blockId: string) => void;
   onCopyBlock?: (block: Block) => void;
@@ -328,6 +336,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     onHotspotChange,
     onTimelineChange,
     onImageCompareChange,
+    onTablaPeriodicaChange,
+    onMoleculaChange,
     onDiagramaChange,
     onCopyBlock,
     onEffectiveBloques,
@@ -1730,6 +1740,12 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
       if (!slideId) return false;
       const coord = persistCoordinatorRef.current;
       if (!coord) return false;
+      const nextBloques = Array.isArray(content.bloques)
+        ? (content.bloques as Block[])
+        : null;
+      if (nextBloques) {
+        dispatchEditor({ type: 'MOVER', via: 'replace', bloques: nextBloques });
+      }
       const ok = await coord.flushLatestContent(slideId, content);
       if (ok) {
         debouncedBurstPreviousRef.current = null;
@@ -2302,6 +2318,8 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
             onImageCompareInnerSelectionChange={(value) =>
               dispatchEditor({ type: 'INNER_SELECTION', inner: { imageCompare: value } })
             }
+            onTablaPeriodicaChange={onTablaPeriodicaChange}
+            onMoleculaChange={onMoleculaChange}
             onDiagramaChange={onDiagramaChange}
             clipGroupInnerEditId={clipGroupInnerEditId}
             onClipGroupInnerEditChange={(blockId) =>

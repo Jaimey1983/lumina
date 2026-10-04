@@ -51,6 +51,13 @@ export function withPosition(block: Block, x: number, y: number): Block {
     case 'timeline':     return { ...block, x, y };
     case 'grafico':      return { ...block, x, y };
     case 'diagrama':     return { ...block, x, y };
+    case 'image-compare':
+    case 'interactive-checklist':
+    case 'scratch-card':
+    case 'accordion':
+    case 'tabla_periodica':
+    case 'molecula':
+      return { ...block, x, y };
     case 'actividad': {
       const marco = activityMarcoOrFallback(block);
       return {
@@ -94,6 +101,12 @@ export function withRect(
     case 'timeline':
     case 'grafico':
     case 'diagrama':
+    case 'image-compare':
+    case 'interactive-checklist':
+    case 'scratch-card':
+    case 'accordion':
+    case 'tabla_periodica':
+    case 'molecula':
       return { ...block, x, y, ancho, alto };
     case 'actividad': {
       const marco = activityMarcoOrFallback(block);
