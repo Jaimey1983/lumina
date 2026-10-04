@@ -256,7 +256,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N8 — Simulador de reglas y validación en vivo (superar a Storyline)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** `[en curso: Claude Code]`
 - **Precondición:** N3 `hecho` (usa `describirRegla`). Idealmente después de N5/N7 para mostrar sus eventos.
 - **Contexto:** en Storyline, depurar un trigger que «no hace nada» es una queja conocida (el orden de evaluación y las condiciones que no se reevalúan). Lumina puede decirle al docente **por qué** una regla se disparó o no.
 - **Alcance — PUEDE tocar:**
