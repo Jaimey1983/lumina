@@ -214,7 +214,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N6 — Estados de objeto con apariencia y estados personalizados
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** N0 `hecho`. Toca `slide-renderer.tsx`/`BlockNode`, no `tipos.ts` salvo la parte de estados personalizados (que va en secuencia con N1/N2/N5).
 - **Contexto:** hoy solo `deshabilitado` se ve distinto (K6). Storyline permite hover, clic, seleccionado y visitado con apariencia y estados propios.
 - **Alcance — PUEDE tocar:**
