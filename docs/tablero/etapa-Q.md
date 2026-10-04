@@ -158,7 +158,7 @@ J8 + Q1 ─→ Q8
 
 #### Q8 — IA verificada y contenido curricular CN (complemento J10)
 - **Operador:** Cursor
-- **Estado:** en revisión — verificador post-LLM, tipos química en catálogo IA, badges en ActivitiesAiPanel
+- **Estado:** hecho — merge PR #84; verificador post-LLM, catálogo IA +25 tipos química, badges ActivitiesAiPanel
 - **Precondición:** Q1 `hecho`; J8/J11 (transparencia modo) deseable para mostrar «rechazado por verificador».
 - **Contexto:** la IA propone actividades y fórmulas; `@lumina/chemistry` **valida** antes de mostrar al docente (balanceo, masa molar, fórmula parseable). Contenido: sustituir placeholders `ciencias-naturales-10.json` / `11.json` donde toque química (trabajo de contenido + pipeline Prompt Maestro, fuera del alcance de código salvo loaders).
 - **Alcance — PUEDE tocar:**
