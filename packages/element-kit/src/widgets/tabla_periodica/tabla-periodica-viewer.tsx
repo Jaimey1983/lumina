@@ -3,6 +3,7 @@
 import {
   getAllElements,
   getElementsMetadata,
+  type ElementCategory,
   type PeriodicElement,
 } from '@lumina/chemistry';
 import type { EventoTipo } from '@lumina/types/interaction';
@@ -32,6 +33,7 @@ import {
   PERIODIC_GRID_ROWS,
 } from './periodic-layout.js';
 import {
+  CATEGORIAS_ORDEN,
   configuracionElectronicaV1,
   etiquetaCategoria,
   usoBreve,
@@ -48,6 +50,10 @@ interface TablaPeriodicaViewerProps {
   isEditor?: boolean;
   onChange?: (next: TablaPeriodicaWidget) => void;
   emitir?: (evento: EventoTipo) => void;
+}
+
+function formatTemperatura(kelvin: number): string {
+  return `${(kelvin - 273.15).toFixed(1)} °C`;
 }
 
 function cellKey(row: number, col: number): string {
@@ -125,19 +131,31 @@ export function TablaPeriodicaViewer({
 
   const selectedEl = selected ? bySymbol.get(selected) : undefined;
 
-  const moveFocus = (row: number, col: number) => {
-    for (let i = 0; i < PERIODIC_GRID_ROWS * PERIODIC_GRID_COLS; i++) {
-      const el = cellMap.get(cellKey(row, col));
+  // Resaltado de categoría (estado local: no se persiste en el bloque).
+  const [categoriaFija, setCategoriaFija] = useState<ElementCategory | null>(null);
+  const [categoriaHover, setCategoriaHover] = useState<ElementCategory | null>(null);
+  const categoriaFoco = categoriaHover ?? categoriaFija;
+  const usaHeatmap = configuracion.heatmapPropiedad !== 'ninguna';
+
+  /** Mueve por la misma fila saltando huecos (p. ej. entre Be y B). */
+  const moveHorizontal = (row: number, col: number, step: 1 | -1) => {
+    for (let c = col + step; c >= 1 && c <= PERIODIC_GRID_COLS; c += step) {
+      const el = cellMap.get(cellKey(row, c));
       if (el && visibleSet.has(el.symbol)) {
         selectSymbol(el.symbol);
         return;
       }
-      col++;
-      if (col > PERIODIC_GRID_COLS) {
-        col = 1;
-        row++;
+    }
+  };
+
+  /** Sube/baja por la misma columna saltando filas vacías (p. ej. el separador del bloque f). */
+  const moveVertical = (row: number, col: number, step: 1 | -1) => {
+    for (let r = row + step; r >= 1 && r <= PERIODIC_GRID_ROWS; r += step) {
+      const el = cellMap.get(cellKey(r, col));
+      if (el && visibleSet.has(el.symbol)) {
+        selectSymbol(el.symbol);
+        return;
       }
-      if (row > PERIODIC_GRID_ROWS) row = 1;
     }
   };
 
@@ -147,16 +165,16 @@ export function TablaPeriodicaViewer({
     if (!pos) return;
     if (e.key === 'ArrowRight') {
       e.preventDefault();
-      moveFocus(pos.row, pos.col + 1);
+      moveHorizontal(pos.row, pos.col, 1);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      moveFocus(pos.row, pos.col - 1);
+      moveHorizontal(pos.row, pos.col, -1);
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      moveFocus(pos.row + 1, pos.col);
+      moveVertical(pos.row, pos.col, 1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      moveFocus(pos.row - 1, pos.col);
+      moveVertical(pos.row, pos.col, -1);
     }
   };
 
@@ -190,61 +208,83 @@ export function TablaPeriodicaViewer({
             tabIndex={isThumbnail ? -1 : 0}
             onKeyDown={onGridKeyDown}
           >
-            {Array.from({ length: PERIODIC_GRID_ROWS }, (_, ri) => {
-              const row = ri + 1;
-              return Array.from({ length: PERIODIC_GRID_COLS }, (_, ci) => {
-                const col = ci + 1;
-                const el = cellMap.get(cellKey(row, col));
-                if (!el) {
-                  return (
-                    <span
-                      key={cellKey(row, col)}
-                      role="presentation"
-                      className={styles.ptCell}
-                      style={{ visibility: 'hidden' }}
-                    />
-                  );
-                }
-                const visible = visibleSet.has(el.symbol);
-                const isSelected = selected === el.symbol;
-                const heat =
-                  visible && configuracion.heatmapPropiedad !== 'ninguna'
-                    ? heatmapStyleForElement(
-                        el,
-                        configuracion.heatmapPropiedad,
-                        heatRange.min,
-                        heatRange.max,
-                      )
-                    : undefined;
-                const title = heat
-                  ? `${el.name}: ${heat.label}`
-                  : `${el.name} (Z=${el.z})`;
-                return (
-                  <button
-                    key={cellKey(row, col)}
-                    type="button"
-                    role="gridcell"
-                    aria-selected={isSelected}
-                    aria-label={`${el.name}, símbolo ${el.symbol}, número atómico ${el.z}`}
-                    title={title}
-                    disabled={!visible}
-                    className={cn(
-                      styles.ptCell,
-                      !visible && styles.ptCellDim,
-                      isSelected && styles.ptCellSelected,
-                    )}
-                    style={heat ? { backgroundColor: heat.backgroundColor } : undefined}
-                    onClick={() => visible && selectSymbol(el.symbol)}
-                  >
-                    <span className={styles.ptZ}>{el.z}</span>
-                    <span className={styles.ptSym}>{el.symbol}</span>
-                  </button>
-                );
-              });
+            {ALL.map((el) => {
+              const pos = gridPositionForZ(el.z);
+              if (!pos) return null;
+              const visible = visibleSet.has(el.symbol);
+              const isSelected = selected === el.symbol;
+              const heat =
+                visible && configuracion.heatmapPropiedad !== 'ninguna'
+                  ? heatmapStyleForElement(
+                      el,
+                      configuracion.heatmapPropiedad,
+                      heatRange.min,
+                      heatRange.max,
+                    )
+                  : undefined;
+              const categoria = etiquetaCategoria(el.category);
+              const title = heat
+                ? `${el.name} · ${categoria}: ${heat.label}`
+                : `${el.name} (Z=${el.z}) · ${categoria}`;
+              const fueraDeFoco =
+                !usaHeatmap && categoriaFoco !== null && el.category !== categoriaFoco;
+              return (
+                <button
+                  key={el.z}
+                  type="button"
+                  role="gridcell"
+                  aria-selected={isSelected}
+                  aria-label={`${el.name}, símbolo ${el.symbol}, número atómico ${el.z}, ${categoria}`}
+                  title={title}
+                  disabled={!visible}
+                  data-cat={el.category}
+                  className={cn(
+                    styles.ptCell,
+                    (!visible || fueraDeFoco) && styles.ptCellDim,
+                    isSelected && styles.ptCellSelected,
+                  )}
+                  style={{
+                    gridRow: pos.row,
+                    gridColumn: pos.col,
+                    ...(heat ? { backgroundColor: heat.backgroundColor } : null),
+                  }}
+                  onClick={() => visible && selectSymbol(el.symbol)}
+                >
+                  <span className={styles.ptZ}>{el.z}</span>
+                  <span className={styles.ptSym}>{el.symbol}</span>
+                  <span className={styles.ptName}>{el.name}</span>
+                </button>
+              );
             })}
           </div>
-          {configuracion.heatmapPropiedad !== 'ninguna' &&
-          configuracion.mostrarLeyendaHeatmap ? (
+          {!usaHeatmap ? (
+            <div
+              className={styles.ptCats}
+              role="group"
+              aria-label="Categorías de elementos"
+              aria-hidden={isThumbnail}
+              onMouseLeave={() => setCategoriaHover(null)}
+            >
+              {CATEGORIAS_ORDEN.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  data-cat={cat}
+                  aria-pressed={categoriaFija === cat}
+                  tabIndex={isThumbnail ? -1 : 0}
+                  className={cn(styles.ptCat, categoriaFija === cat && styles.ptCatOn)}
+                  onMouseEnter={() => setCategoriaHover(cat)}
+                  onFocus={() => setCategoriaHover(cat)}
+                  onBlur={() => setCategoriaHover(null)}
+                  onClick={() => setCategoriaFija((prev) => (prev === cat ? null : cat))}
+                >
+                  <span className={styles.ptCatDot} aria-hidden />
+                  {etiquetaCategoria(cat)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {usaHeatmap && configuracion.mostrarLeyendaHeatmap ? (
             <div className={styles.ptLegend} aria-hidden={isThumbnail}>
               <span>{heatmapPropiedadLabel(configuracion.heatmapPropiedad)}</span>
               <span>
@@ -260,9 +300,12 @@ export function TablaPeriodicaViewer({
         <aside className={styles.ptDetail} aria-live="polite">
           {selectedEl && visibleSet.has(selectedEl.symbol) ? (
             <>
-              <h4>
-                {selectedEl.name} ({selectedEl.symbol})
-              </h4>
+              <div className={styles.ptCard} data-cat={selectedEl.category}>
+                <span className={styles.ptCardZ}>{selectedEl.z}</span>
+                <span className={styles.ptCardSym}>{selectedEl.symbol}</span>
+                <span className={styles.ptCardName}>{selectedEl.name}</span>
+                <span className={styles.ptCardCat}>{etiquetaCategoria(selectedEl.category)}</span>
+              </div>
               <dl>
                 <dt>Número atómico</dt>
                 <dd>{selectedEl.z}</dd>
@@ -271,11 +314,29 @@ export function TablaPeriodicaViewer({
                 <dt>Período</dt>
                 <dd>{selectedEl.period}</dd>
                 <dt>Grupo</dt>
-                <dd>{selectedEl.group ?? '—'}</dd>
+                <dd>{selectedEl.group ?? 'Bloque f'}</dd>
                 <dt>Categoría</dt>
                 <dd>{etiquetaCategoria(selectedEl.category)}</dd>
                 <dt>Config. electrónica (v1)</dt>
                 <dd>{configuracionElectronicaV1(selectedEl.z)}</dd>
+                {selectedEl.meltK != null ? (
+                  <>
+                    <dt>Fusión</dt>
+                    <dd>{formatTemperatura(selectedEl.meltK)}</dd>
+                  </>
+                ) : null}
+                {selectedEl.boilK != null ? (
+                  <>
+                    <dt>Ebullición</dt>
+                    <dd>{formatTemperatura(selectedEl.boilK)}</dd>
+                  </>
+                ) : null}
+                {selectedEl.discoveredBy ? (
+                  <>
+                    <dt>Descubridor</dt>
+                    <dd>{selectedEl.discoveredBy}</dd>
+                  </>
+                ) : null}
                 <dt>Usos</dt>
                 <dd>{usoBreve(selectedEl)}</dd>
               </dl>

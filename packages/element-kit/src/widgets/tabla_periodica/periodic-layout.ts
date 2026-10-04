@@ -7,6 +7,12 @@ export interface PeriodicGridCell {
   symbol: string;
 }
 
+/** Filas del bloque f; la fila 8 se deja vacía (separador visual). */
+export const F_BLOCK_ROW_LAN = 9;
+export const F_BLOCK_ROW_ACT = 10;
+/** Fila de separación entre el cuerpo principal y el bloque f. */
+export const PERIODIC_SPACER_ROW = 8;
+
 const POSITIONS = new Map<number, { row: number; col: number }>();
 
 function set(z: number, row: number, col: number): void {
@@ -33,17 +39,20 @@ function buildPositions(): void {
   for (let z = 49; z <= 54; z++) set(z, 5, z - 49 + 13);
   set(55, 6, 1);
   set(56, 6, 2);
+  set(57, 6, 3); // La: grupo 3 del cuerpo principal
   for (let z = 72; z <= 86; z++) set(z, 6, z - 72 + 4);
   set(87, 7, 1);
   set(88, 7, 2);
+  set(89, 7, 3); // Ac: grupo 3 del cuerpo principal
   for (let z = 104; z <= 118; z++) set(z, 7, z - 104 + 4);
-  for (let z = 57; z <= 71; z++) set(z, 8, z - 57 + 3);
-  for (let z = 89; z <= 103; z++) set(z, 9, z - 89 + 3);
+  // Bloque f (Ce–Lu, Th–Lr) fuera del cuerpo; la fila 8 queda como separador.
+  for (let z = 58; z <= 71; z++) set(z, F_BLOCK_ROW_LAN, z - 58 + 4);
+  for (let z = 90; z <= 103; z++) set(z, F_BLOCK_ROW_ACT, z - 90 + 4);
 }
 
 buildPositions();
 
-export const PERIODIC_GRID_ROWS = 9;
+export const PERIODIC_GRID_ROWS = 10;
 export const PERIODIC_GRID_COLS = 18;
 
 export function gridPositionForZ(z: number): { row: number; col: number } | undefined {

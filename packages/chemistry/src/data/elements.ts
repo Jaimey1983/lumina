@@ -20,6 +20,12 @@ export interface PeriodicElement {
   group: number | null;
   period: number;
   category: ElementCategory;
+  /** Punto de fusión (K); `null` si no está establecido. */
+  meltK?: number | null;
+  /** Punto de ebullición (K); `null` si no está establecido. */
+  boilK?: number | null;
+  /** Descubridor (o «Conocido desde la antigüedad»); `null` si no consta. */
+  discoveredBy?: string | null;
 }
 
 export interface ElementsMetadata {

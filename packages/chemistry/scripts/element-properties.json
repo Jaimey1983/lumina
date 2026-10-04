@@ -1,0 +1,595 @@
+{
+ "_fuente": "Bowserinator/Periodic-Table-JSON (CC BY-SA 3.0), extraído 2026-10-04: fusión/ebullición en K y descubridor",
+ "elements": {
+  "H": {
+   "meltK": 13.99,
+   "boilK": 20.271,
+   "discoveredBy": "Henry Cavendish"
+  },
+  "He": {
+   "meltK": 0.95,
+   "boilK": 4.222,
+   "discoveredBy": "Pierre Janssen"
+  },
+  "Li": {
+   "meltK": 453.65,
+   "boilK": 1603,
+   "discoveredBy": "Johan August Arfwedson"
+  },
+  "Be": {
+   "meltK": 1560,
+   "boilK": 2742,
+   "discoveredBy": "Louis Nicolas Vauquelin"
+  },
+  "B": {
+   "meltK": 2349,
+   "boilK": 4200,
+   "discoveredBy": "Joseph Louis Gay-Lussac"
+  },
+  "C": {
+   "meltK": 4600,
+   "boilK": null,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "N": {
+   "meltK": 63.15,
+   "boilK": 77.355,
+   "discoveredBy": "Daniel Rutherford"
+  },
+  "O": {
+   "meltK": 54.36,
+   "boilK": 90.188,
+   "discoveredBy": "Carl Wilhelm Scheele"
+  },
+  "F": {
+   "meltK": 53.48,
+   "boilK": 85.03,
+   "discoveredBy": "André-Marie Ampère"
+  },
+  "Ne": {
+   "meltK": 24.56,
+   "boilK": 27.104,
+   "discoveredBy": "Morris Travers"
+  },
+  "Na": {
+   "meltK": 370.944,
+   "boilK": 1156.09,
+   "discoveredBy": "Humphry Davy"
+  },
+  "Mg": {
+   "meltK": 923,
+   "boilK": 1363,
+   "discoveredBy": "Joseph Black"
+  },
+  "Al": {
+   "meltK": 933.47,
+   "boilK": 2743,
+   "discoveredBy": "Hans Christian Ørsted"
+  },
+  "Si": {
+   "meltK": 1687,
+   "boilK": 3538,
+   "discoveredBy": "Jöns Jacob Berzelius"
+  },
+  "P": {
+   "meltK": 317.3,
+   "boilK": null,
+   "discoveredBy": "Hennig Brand"
+  },
+  "S": {
+   "meltK": 388.36,
+   "boilK": 717.8,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Cl": {
+   "meltK": 171.6,
+   "boilK": 239.11,
+   "discoveredBy": "Carl Wilhelm Scheele"
+  },
+  "Ar": {
+   "meltK": 83.81,
+   "boilK": 87.302,
+   "discoveredBy": "Lord Rayleigh"
+  },
+  "K": {
+   "meltK": 336.7,
+   "boilK": 1032,
+   "discoveredBy": "Humphry Davy"
+  },
+  "Ca": {
+   "meltK": 1115,
+   "boilK": 1757,
+   "discoveredBy": "Humphry Davy"
+  },
+  "Sc": {
+   "meltK": 1814,
+   "boilK": 3109,
+   "discoveredBy": "Lars Fredrik Nilson"
+  },
+  "Ti": {
+   "meltK": 1941,
+   "boilK": 3560,
+   "discoveredBy": "William Gregor"
+  },
+  "V": {
+   "meltK": 2183,
+   "boilK": 3680,
+   "discoveredBy": "Andrés Manuel del Río"
+  },
+  "Cr": {
+   "meltK": 2180,
+   "boilK": 2944,
+   "discoveredBy": "Louis Nicolas Vauquelin"
+  },
+  "Mn": {
+   "meltK": 1519,
+   "boilK": 2334,
+   "discoveredBy": "Torbern Olof Bergman"
+  },
+  "Fe": {
+   "meltK": 1811,
+   "boilK": 3134,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Co": {
+   "meltK": 1768,
+   "boilK": 3200,
+   "discoveredBy": "Georg Brandt"
+  },
+  "Ni": {
+   "meltK": 1728,
+   "boilK": 3003,
+   "discoveredBy": "Axel Fredrik Cronstedt"
+  },
+  "Cu": {
+   "meltK": 1357.77,
+   "boilK": 2835,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Zn": {
+   "meltK": 692.68,
+   "boilK": 1180,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Ga": {
+   "meltK": 302.9146,
+   "boilK": 2673,
+   "discoveredBy": "Lecoq de Boisbaudran"
+  },
+  "Ge": {
+   "meltK": 1211.4,
+   "boilK": 3106,
+   "discoveredBy": "Clemens Winkler"
+  },
+  "As": {
+   "meltK": 1090,
+   "boilK": null,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Se": {
+   "meltK": 494,
+   "boilK": 958,
+   "discoveredBy": "Jöns Jakob Berzelius"
+  },
+  "Br": {
+   "meltK": 265.8,
+   "boilK": 332,
+   "discoveredBy": "Antoine Jérôme Balard"
+  },
+  "Kr": {
+   "meltK": 115.78,
+   "boilK": 119.93,
+   "discoveredBy": "William Ramsay"
+  },
+  "Rb": {
+   "meltK": 312.45,
+   "boilK": 961,
+   "discoveredBy": "Robert Bunsen"
+  },
+  "Sr": {
+   "meltK": 1050,
+   "boilK": 1650,
+   "discoveredBy": "William Cruickshank (chemist)"
+  },
+  "Y": {
+   "meltK": 1799,
+   "boilK": 3203,
+   "discoveredBy": "Johan Gadolin"
+  },
+  "Zr": {
+   "meltK": 2128,
+   "boilK": 4650,
+   "discoveredBy": "Martin Heinrich Klaproth"
+  },
+  "Nb": {
+   "meltK": 2750,
+   "boilK": 5017,
+   "discoveredBy": "Charles Hatchett"
+  },
+  "Mo": {
+   "meltK": 2896,
+   "boilK": 4912,
+   "discoveredBy": "Carl Wilhelm Scheele"
+  },
+  "Tc": {
+   "meltK": 2430,
+   "boilK": 4538,
+   "discoveredBy": "Emilio Segrè"
+  },
+  "Ru": {
+   "meltK": 2607,
+   "boilK": 4423,
+   "discoveredBy": "Karl Ernst Claus"
+  },
+  "Rh": {
+   "meltK": 2237,
+   "boilK": 3968,
+   "discoveredBy": "William Hyde Wollaston"
+  },
+  "Pd": {
+   "meltK": 1828.05,
+   "boilK": 3236,
+   "discoveredBy": "William Hyde Wollaston"
+  },
+  "Ag": {
+   "meltK": 1234.93,
+   "boilK": 2435,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Cd": {
+   "meltK": 594.22,
+   "boilK": 1040,
+   "discoveredBy": "Karl Samuel Leberecht Hermann"
+  },
+  "In": {
+   "meltK": 429.7485,
+   "boilK": 2345,
+   "discoveredBy": "Ferdinand Reich"
+  },
+  "Sn": {
+   "meltK": 505.08,
+   "boilK": 2875,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Sb": {
+   "meltK": 903.78,
+   "boilK": 1908,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Te": {
+   "meltK": 722.66,
+   "boilK": 1261,
+   "discoveredBy": "Franz-Joseph Müller von Reichenstein"
+  },
+  "I": {
+   "meltK": 386.85,
+   "boilK": 457.4,
+   "discoveredBy": "Bernard Courtois"
+  },
+  "Xe": {
+   "meltK": 161.4,
+   "boilK": 165.051,
+   "discoveredBy": "William Ramsay"
+  },
+  "Cs": {
+   "meltK": 301.7,
+   "boilK": 944,
+   "discoveredBy": "Robert Bunsen"
+  },
+  "Ba": {
+   "meltK": 1000,
+   "boilK": 2118,
+   "discoveredBy": "Carl Wilhelm Scheele"
+  },
+  "La": {
+   "meltK": 1193,
+   "boilK": 3737,
+   "discoveredBy": "Carl Gustaf Mosander"
+  },
+  "Ce": {
+   "meltK": 1068,
+   "boilK": 3716,
+   "discoveredBy": "Martin Heinrich Klaproth"
+  },
+  "Pr": {
+   "meltK": 1208,
+   "boilK": 3403,
+   "discoveredBy": "Carl Auer von Welsbach"
+  },
+  "Nd": {
+   "meltK": 1297,
+   "boilK": 3347,
+   "discoveredBy": "Carl Auer von Welsbach"
+  },
+  "Pm": {
+   "meltK": 1315,
+   "boilK": 3273,
+   "discoveredBy": "Chien Shiung Wu"
+  },
+  "Sm": {
+   "meltK": 1345,
+   "boilK": 2173,
+   "discoveredBy": "Lecoq de Boisbaudran"
+  },
+  "Eu": {
+   "meltK": 1099,
+   "boilK": 1802,
+   "discoveredBy": "Eugène-Anatole Demarçay"
+  },
+  "Gd": {
+   "meltK": 1585,
+   "boilK": 3273,
+   "discoveredBy": "Jean Charles Galissard de Marignac"
+  },
+  "Tb": {
+   "meltK": 1629,
+   "boilK": 3396,
+   "discoveredBy": "Carl Gustaf Mosander"
+  },
+  "Dy": {
+   "meltK": 1680,
+   "boilK": 2840,
+   "discoveredBy": "Lecoq de Boisbaudran"
+  },
+  "Ho": {
+   "meltK": 1734,
+   "boilK": 2873,
+   "discoveredBy": "Marc Delafontaine"
+  },
+  "Er": {
+   "meltK": 1802,
+   "boilK": 3141,
+   "discoveredBy": "Carl Gustaf Mosander"
+  },
+  "Tm": {
+   "meltK": 1818,
+   "boilK": 2223,
+   "discoveredBy": "Per Teodor Cleve"
+  },
+  "Yb": {
+   "meltK": 1097,
+   "boilK": 1469,
+   "discoveredBy": "Jean Charles Galissard de Marignac"
+  },
+  "Lu": {
+   "meltK": 1925,
+   "boilK": 3675,
+   "discoveredBy": "Georges Urbain"
+  },
+  "Hf": {
+   "meltK": 2506,
+   "boilK": 4876,
+   "discoveredBy": "Dirk Coster"
+  },
+  "Ta": {
+   "meltK": 3290,
+   "boilK": 5731,
+   "discoveredBy": "Anders Gustaf Ekeberg"
+  },
+  "W": {
+   "meltK": 3695,
+   "boilK": 6203,
+   "discoveredBy": "Carl Wilhelm Scheele"
+  },
+  "Re": {
+   "meltK": 3459,
+   "boilK": 5869,
+   "discoveredBy": "Masataka Ogawa"
+  },
+  "Os": {
+   "meltK": 3306,
+   "boilK": 5285,
+   "discoveredBy": "Smithson Tennant"
+  },
+  "Ir": {
+   "meltK": 2719,
+   "boilK": 4403,
+   "discoveredBy": "Smithson Tennant"
+  },
+  "Pt": {
+   "meltK": 2041.4,
+   "boilK": 4098,
+   "discoveredBy": "Antonio de Ulloa"
+  },
+  "Au": {
+   "meltK": 1337.33,
+   "boilK": 3243,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Hg": {
+   "meltK": 234.321,
+   "boilK": 629.88,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Tl": {
+   "meltK": 577,
+   "boilK": 1746,
+   "discoveredBy": "William Crookes"
+  },
+  "Pb": {
+   "meltK": 600.61,
+   "boilK": 2022,
+   "discoveredBy": "Conocido desde la antigüedad"
+  },
+  "Bi": {
+   "meltK": 544.7,
+   "boilK": 1837,
+   "discoveredBy": "Claude François Geoffroy"
+  },
+  "Po": {
+   "meltK": 527,
+   "boilK": 1235,
+   "discoveredBy": "Pierre Curie"
+  },
+  "At": {
+   "meltK": 575,
+   "boilK": 610,
+   "discoveredBy": "Dale R. Corson"
+  },
+  "Rn": {
+   "meltK": 202,
+   "boilK": 211.5,
+   "discoveredBy": "Friedrich Ernst Dorn"
+  },
+  "Fr": {
+   "meltK": 300,
+   "boilK": 950,
+   "discoveredBy": "Marguerite Perey"
+  },
+  "Ra": {
+   "meltK": 1233,
+   "boilK": 2010,
+   "discoveredBy": "Pierre Curie"
+  },
+  "Ac": {
+   "meltK": 1500,
+   "boilK": 3500,
+   "discoveredBy": "Friedrich Oskar Giesel"
+  },
+  "Th": {
+   "meltK": 2023,
+   "boilK": 5061,
+   "discoveredBy": "Jöns Jakob Berzelius"
+  },
+  "Pa": {
+   "meltK": 1841,
+   "boilK": 4300,
+   "discoveredBy": "William Crookes"
+  },
+  "U": {
+   "meltK": 1405.3,
+   "boilK": 4404,
+   "discoveredBy": "Martin Heinrich Klaproth"
+  },
+  "Np": {
+   "meltK": 912,
+   "boilK": 4447,
+   "discoveredBy": "Edwin McMillan"
+  },
+  "Pu": {
+   "meltK": 912.5,
+   "boilK": 3505,
+   "discoveredBy": "Glenn T. Seaborg"
+  },
+  "Am": {
+   "meltK": 1449,
+   "boilK": 2880,
+   "discoveredBy": "Glenn T. Seaborg"
+  },
+  "Cm": {
+   "meltK": 1613,
+   "boilK": 3383,
+   "discoveredBy": "Glenn T. Seaborg"
+  },
+  "Bk": {
+   "meltK": 1259,
+   "boilK": 2900,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "Cf": {
+   "meltK": 1173,
+   "boilK": 1743,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "Es": {
+   "meltK": 1133,
+   "boilK": 1269,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "Fm": {
+   "meltK": 1800,
+   "boilK": null,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "Md": {
+   "meltK": 1100,
+   "boilK": null,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "No": {
+   "meltK": 1100,
+   "boilK": null,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Lr": {
+   "meltK": 1900,
+   "boilK": null,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "Rf": {
+   "meltK": 2400,
+   "boilK": 5800,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Db": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Sg": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Lawrence Berkeley National Laboratory"
+  },
+  "Bh": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Gesellschaft für Schwerionenforschung"
+  },
+  "Hs": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Gesellschaft für Schwerionenforschung"
+  },
+  "Mt": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Gesellschaft für Schwerionenforschung"
+  },
+  "Ds": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Gesellschaft für Schwerionenforschung"
+  },
+  "Rg": {
+   "meltK": null,
+   "boilK": null,
+   "discoveredBy": "Gesellschaft für Schwerionenforschung"
+  },
+  "Cn": {
+   "meltK": 283,
+   "boilK": 340,
+   "discoveredBy": "Gesellschaft für Schwerionenforschung"
+  },
+  "Nh": {
+   "meltK": 700,
+   "boilK": 1430,
+   "discoveredBy": "RIKEN"
+  },
+  "Fl": {
+   "meltK": 340,
+   "boilK": 420,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Mc": {
+   "meltK": 670,
+   "boilK": 1400,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Lv": {
+   "meltK": 709,
+   "boilK": 1085,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Ts": {
+   "meltK": 723,
+   "boilK": 883,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  },
+  "Og": {
+   "meltK": null,
+   "boilK": 350,
+   "discoveredBy": "Joint Institute for Nuclear Research"
+  }
+ }
+}
