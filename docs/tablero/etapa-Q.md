@@ -31,16 +31,16 @@ Trabajo **post-migración** (E1–E7 cerradas). No es migración de elementos: *
 
 **Orden / dependencias:**
 ```
-Q1 (mínimo vía Q4, PR #75) ─┬─→ Q4 (en revisión)
-Q1b (cierre alcance Q1) ─────┼─→ Q3 ─→ Q5
-                             ├─→ Q6
-                             └─→ Q8 (verificador completo)
-M1 (hecho en revisión) ─→ Q2 ─→ Q5
+Q1 (#69) ─┬─→ Q3 (#74) ─→ Q5
+          ├─→ Q4 (#75)
+          ├─→ Q6
+          └─→ Q8 (verificador completo)
+M1 (hecho) ─→ Q2 (#71) ─→ Q5
 Q4 + Q3 ─→ Q5 (plantillas de slide)
-Q1b + M2 ─→ Q7 (idealmente + K11)
-J8 + Q1b ─→ Q8
+Q1 + M2 ─→ Q7 (idealmente + K11)
+J8 + Q1 ─→ Q8
 ```
-**No se abre Q2 hasta que M1 esté `hecho`** (único importador KaTeX). Q4 se desbloqueó con un **arranque mínimo** de `@lumina/chemistry` en el mismo PR (#75); el cierre del alcance original de Q1 es la ficha **Q1b** (no reabrir Q4). **Q3, Q6 y Q8** deben tomar **Q1b `hecho`** antes de asumir composición %, estequiometría o dataset curado al 100 %. Q5 depende de Q3 y/o Q4. Q7 es paralelo tras Q1b + M2.
+**Q1b** (ficha histórica para cerrar alcance tras el arranque mínimo de Q4) quedó **absorbida por Q1** (#69) y el merge de **Q4** (#75); **no** abrir PR #77 (obsoleto / conflicto con `main`). **Q6, Q7 y Q8** exigen **Q1 `hecho`** (composición %, estequiometría y dataset en `@lumina/chemistry`). Q5 depende de Q3 y Q4.
 
 **Baselines (re-medir al tomar Q1):** anotar conteos de `@lumina/chemistry` (nuevo), `@lumina/scoring`, `@lumina/element-kit`, `@lumina/editor-shared`, `lumina-backend` `pnpm test`, `lumina-frontend` `test:unit` y orden de build de CI (añadir `@lumina/chemistry` a `predev`/`prebuild` del frontend y al backend cuando haya consumidor).
 
@@ -48,7 +48,7 @@ J8 + Q1b ─→ Q8
 
 #### Q1 — Paquete `@lumina/chemistry` (datos + parser + masa molar + balanceo)
 - **Operador:** Cursor
-- **Estado:** hecho — merge PR #69 (`6580a7c`); 43 tests; verif: `pnpm --filter @lumina/chemistry build && test && lint`
+- **Estado:** hecho — merge PR #69 (`6580a7c`); ~45 tests; verif: `pnpm --filter @lumina/chemistry build && test && lint`
 - **Precondición:** ninguna (arranque de la etapa).
 - **Contexto:** sin este paquete no hay una sola fuente de verdad para actividades, IA verificada ni botones «insertar masa molar» en el compositor. **No** reutilizar `algebra.ts` (M4): gramática distinta (subíndices, hidratos, cargas, ecuaciones con `->`).
 - **Alcance — PUEDE tocar:**
@@ -63,6 +63,11 @@ J8 + Q1b ─→ Q8
 - **Alcance — NO toca:** `element-kit`, frontend, `latex-render`, actividades UI.
 - **Entregable:** `pnpm --filter @lumina/chemistry build && test && lint` verde; al menos 40 casos (parser, masa H₂SO₄/Ca(OH)₂, balanceo H₂+O₂→H₂O, Fe+O₂→Fe₂O₃, rechazo de entrada hostil). Export público documentado en `src/index.ts`.
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(chemistry): paquete @lumina/chemistry con datos, parser y balanceo (Q1)`.
+
+#### Q1b — Cierre alcance original Q1 (histórico)
+- **Operador:** Cursor
+- **Estado:** **cancelado** — alcance cubierto por Q1 (#69) y alineación post #75; PR #77 cerrado sin merge (rama obsoleta, API distinta a `main`).
+- **Nota:** remanente opcional fuera de ficha: `percent-composition.spec.ts` y aliases de estequiometría (`moleRatio`, etc.) si un consumidor los documenta.
 
 #### Q2 — Notación química en el compositor (mhchem + pestaña Química)
 - **Operador:** Cursor
@@ -127,7 +132,7 @@ J8 + Q1b ─→ Q8
 #### Q6 — Visor molecular (SMILES 2D, PubChem vía backend)
 - **Operador:** pendiente de asignación
 - **Estado:** pendiente
-- **Precondición:** Q1b `hecho`.
+- **Precondición:** Q1 `hecho`.
 - **Contexto:** estructura 2D para bachillerato; 3D opcional en sub-ficha Q6b si el peso de `3Dmol.js` lo exige el dueño.
 - **Alcance — PUEDE tocar:**
   - Widget o bloque `molecula` (`ElementDefinition`): campo `smiles` o búsqueda por nombre.
@@ -141,7 +146,7 @@ J8 + Q1b ─→ Q8
 #### Q7 — Laboratorio: simulaciones con variables, ecuaciones y gráficos
 - **Operador:** pendiente de asignación
 - **Estado:** pendiente
-- **Precondición:** Q1b `hecho`; M2 `hecho` (variables en ecuación); **recomendado** K11 `hecho` (slider/dial evaluable) — si K11 no está, la ficha puede limitarse a ajustadores M2 en la ecuación sin widget slider nuevo.
+- **Precondición:** Q1 `hecho`; M2 `hecho` (variables en ecuación); **recomendado** K11 `hecho` (slider/dial evaluable) — si K11 no está, la ficha puede limitarse a ajustadores M2 en la ecuación sin widget slider nuevo.
 - **Contexto:** pH, gas ideal, dilución, titulación simplificada — funciones **puras** en `@lumina/chemistry` + visualización `@lumina/charts` + bloques existentes en un slide plantilla.
 - **Alcance — PUEDE tocar:**
   - `@lumina/chemistry/src/lab/` — `phStrong()`, `idealGas()`, `dilution()`, `titrationCurve()` (+ specs).
@@ -154,7 +159,7 @@ J8 + Q1b ─→ Q8
 #### Q8 — IA verificada y contenido curricular CN (complemento J10)
 - **Operador:** pendiente de asignación
 - **Estado:** pendiente
-- **Precondición:** Q1b `hecho`; J8/J11 (transparencia modo) deseable para mostrar «rechazado por verificador».
+- **Precondición:** Q1 `hecho`; J8/J11 (transparencia modo) deseable para mostrar «rechazado por verificador».
 - **Contexto:** la IA propone actividades y fórmulas; `@lumina/chemistry` **valida** antes de mostrar al docente (balanceo, masa molar, fórmula parseable). Contenido: sustituir placeholders `ciencias-naturales-10.json` / `11.json` donde toque química (trabajo de contenido + pipeline Prompt Maestro, fuera del alcance de código salvo loaders).
 - **Alcance — PUEDE tocar:**
   - `lumina-backend/src/ai-features/` — paso post-Gemini: `balanceEquation` / `parseFormula` en propuestas químicas; marcar `resolvedStatus` como en J11.
