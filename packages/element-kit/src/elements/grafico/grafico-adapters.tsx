@@ -33,6 +33,7 @@ export function GraficoViewer({
     <LegacyGraficoViewer
       block={estado}
       isThumbnail={config.isThumbnail === true}
+      variables={config.variables}
     />
   );
 }

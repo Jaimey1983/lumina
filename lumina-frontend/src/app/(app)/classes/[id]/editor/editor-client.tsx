@@ -2512,6 +2512,23 @@ export function SlideEditorClient({ classId }: { classId: string }) {
     [classId, queryClient, updateClassMutation],
   );
 
+  const handleMergeClassVariables = useCallback(
+    (incoming: VariableDef[]) => {
+      const current = cls?.variables ?? [];
+      const ids = new Set(current.map((v) => v.id));
+      const merged = [...current];
+      let added = false;
+      for (const v of incoming) {
+        if (!ids.has(v.id)) {
+          merged.push(v);
+          added = true;
+        }
+      }
+      if (added) handleSaveVariables(merged);
+    },
+    [cls?.variables, handleSaveVariables],
+  );
+
   // ─── Error state ─────────────────────────────────────────────────────────────
 
   if (isError) {
@@ -3210,6 +3227,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
               onAddWidget={handleAddWidget}
               onInsertBlock={handleInsertCanvasBlock}
               onAddActivity={handleAddActivity}
+              onMergeClassVariables={handleMergeClassVariables}
               onChangeFondo={(fondo) =>
                 canvasAreaRef.current?.changeFondo(fondo) ?? Promise.resolve()
               }

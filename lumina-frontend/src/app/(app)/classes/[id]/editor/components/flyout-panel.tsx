@@ -93,6 +93,7 @@ export interface FlyoutPanelProps {
   /** Inserta un bloque vía CanvasArea (historial undo). */
   onInsertBlock?: (block: Block) => Promise<boolean>;
   onAddActivity?: (type: ActivityType) => void;
+  onMergeClassVariables?: (variables: import('@lumina/types/interaction').VariableDef[]) => void;
   /** Aplica el fondo del slide vía CanvasArea (mismo contrato que la barra flotante: historial undo). */
   onChangeFondo: (fondo: Background) => Promise<void>;
 }
@@ -121,6 +122,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
       onAddWidget,
       onInsertBlock,
       onAddActivity,
+      onMergeClassVariables,
       onChangeFondo,
     },
     ref,
@@ -190,6 +192,7 @@ export const FlyoutPanel = forwardRef<HTMLElement, FlyoutPanelProps>(
                 onAddWidget={onAddWidget}
                 onInsertBlock={onInsertBlock}
                 onAddActivity={onAddActivity}
+                onMergeClassVariables={onMergeClassVariables}
                 onChangeFondo={onChangeFondo}
               />
             </div>

@@ -144,8 +144,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(chemistry): visor molecular 2D y búsqueda PubChem cacheada (Q6)`.
 
 #### Q7 — Laboratorio: simulaciones con variables, ecuaciones y gráficos
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — `@lumina/chemistry/src/lab/*`, plantillas gas ideal + dilución, gráfico `simulacionQuimica`; verif: `pnpm --filter @lumina/chemistry test` · `pnpm --filter @lumina/types build && pnpm --filter @lumina/element-kit test`
 - **Precondición:** Q1 `hecho`; M2 `hecho` (variables en ecuación); **recomendado** K11 `hecho` (slider/dial evaluable) — si K11 no está, la ficha puede limitarse a ajustadores M2 en la ecuación sin widget slider nuevo.
 - **Contexto:** pH, gas ideal, dilución, titulación simplificada — funciones **puras** en `@lumina/chemistry` + visualización `@lumina/charts` + bloques existentes en un slide plantilla.
 - **Alcance — PUEDE tocar:**

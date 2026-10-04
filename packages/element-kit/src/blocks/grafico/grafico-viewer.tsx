@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { GraficoDatosBlock } from '@lumina/types/slide';
+import type { VariableValor } from '@lumina/types/interaction';
 import { cn } from '@lumina/ui/lib/utils';
+import { graficoConSimulacionQuimica } from '../../chemistry/lab-chart-series.js';
 // `GraficoChartRenderer` ya no necesita cargarse perezoso desde acá (H3): es
 // un adapter liviano — la carga perezosa real de la librería de gráficos vive
 // dentro de `<LuminaChart>` (`@lumina/charts`), un solo lugar para toda la app.
@@ -12,14 +14,23 @@ interface GraficoViewerProps {
   block: GraficoDatosBlock;
   isThumbnail?: boolean;
   className?: string;
+  variables?: Readonly<Record<string, VariableValor>>;
 }
 
 export function GraficoViewer({
   block,
   isThumbnail = false,
   className,
+  variables,
 }: GraficoViewerProps) {
-  const { titulo, descripcionAccesible, categorias, series } = block;
+  const resolved = useMemo(
+    () =>
+      isThumbnail || !variables
+        ? block
+        : graficoConSimulacionQuimica(block, variables),
+    [block, variables, isThumbnail],
+  );
+  const { titulo, descripcionAccesible, categorias, series } = resolved;
 
   const hasData = categorias.length > 0 && series.length > 0;
 
@@ -46,7 +57,7 @@ export function GraficoViewer({
 
       <div className="relative min-h-0 flex-1 w-full">
         {hasData ? (
-          <GraficoChartRenderer block={block} isThumbnail={isThumbnail} />
+          <GraficoChartRenderer block={resolved} isThumbnail={isThumbnail} />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
             Gráfico sin datos

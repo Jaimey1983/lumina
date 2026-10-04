@@ -126,6 +126,11 @@ import {
   CHEMISTRY_SLIDE_TEMPLATES,
   createChemistryEquationBlock,
 } from '@lumina/element-kit/chemistry/chemistry-slide-templates';
+import {
+  CHEMISTRY_LAB_SLIDE_TEMPLATES,
+  type ChemistryLabSlideTemplate,
+} from '@lumina/element-kit/chemistry/chemistry-lab-templates';
+import type { VariableDef } from '@lumina/types/interaction';
 import { createDefaultTablaPeriodicaBlock } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-defaults';
 import type { ActivityType } from './activities-panel';
 
@@ -333,6 +338,8 @@ export interface FlyoutLeftPanelsProps {
   onInsertBlock?: (block: Block) => Promise<boolean>;
   /** Inserta actividad evaluativa (mismo contrato que panel derecho). */
   onAddActivity?: (type: ActivityType) => void;
+  /** Q7 — fusiona variables de clase al insertar plantillas de laboratorio. */
+  onMergeClassVariables?: (variables: VariableDef[]) => void;
   /** Aplica el fondo del slide vía CanvasArea (mismo contrato que la barra flotante: historial undo). */
   onChangeFondo: (fondo: Background) => Promise<void>;
 }
@@ -346,7 +353,14 @@ type ContentPanelProps = {
   onAddWidget?: (type: WidgetTipo) => void;
   onCreateActivitySlide?: (content: Record<string, unknown>, title: string) => void;
   onAddActivity?: (type: ActivityType) => void;
+  onMergeClassVariables?: (variables: VariableDef[]) => void;
 };
+
+function isLabSlideTemplate(
+  tmpl: (typeof CHEMISTRY_SLIDE_TEMPLATES)[number],
+): tmpl is ChemistryLabSlideTemplate {
+  return CHEMISTRY_LAB_SLIDE_TEMPLATES.some((l) => l.id === tmpl.id);
+}
 
 // ─── Panels ───────────────────────────────────────────────────────────────────
 
@@ -359,6 +373,7 @@ function ElementosPanel({
   onAddWidget,
   onCreateActivitySlide,
   onAddActivity,
+  onMergeClassVariables,
 }: ContentPanelProps) {
   const add = (block: Block) => {
     if (onInsertBlock) {
@@ -710,6 +725,9 @@ function ElementosPanel({
                   type="button"
                   disabled={onCreateActivitySlide ? disabled : disabledNonText}
                   onClick={() => {
+                    if (isLabSlideTemplate(tmpl)) {
+                      onMergeClassVariables?.(tmpl.variablesClase);
+                    }
                     if (onCreateActivitySlide) {
                       onCreateActivitySlide(
                         { bloques: tmpl.buildBlocks(), layout: tmpl.layout },
@@ -2078,6 +2096,7 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
           onAddWidget={onAddWidget}
           onCreateActivitySlide={props.onCreateActivitySlide}
           onAddActivity={props.onAddActivity}
+          onMergeClassVariables={props.onMergeClassVariables}
         />
       );
     case 'widgets':

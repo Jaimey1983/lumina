@@ -142,6 +142,7 @@ type PrimitiveRuntimeConfig = {
  */
 type CanvasBlockRuntimeConfig = {
   isThumbnail?: boolean;
+  variables?: Readonly<Record<string, VariableValor>>;
   isSelected?: boolean;
   onEnsureBlockSelected?: () => void;
   innerEdit?: boolean;
@@ -1125,6 +1126,10 @@ function BlockNode({
                 isThumbnail,
                 isSelected: selectedId === blockId,
                 onEnsureBlockSelected: () => onClick(),
+                variables:
+                  block.tipo === 'grafico' && !isThumbnail
+                    ? interactionRuntime?.variables
+                    : undefined,
               };
         const handleCanvasChange = (updated: Block) => {
           if (updated.tipo === 'diagrama') {
@@ -1141,7 +1146,14 @@ function BlockNode({
             onChange={handleCanvasChange}
           />
         ) : (
-          <def.Viewer estado={block} config={{ isThumbnail }} />
+          <def.Viewer
+            estado={block}
+            config={{
+              isThumbnail,
+              variables:
+                block.tipo === 'grafico' ? interactionRuntime?.variables : undefined,
+            }}
+          />
         );
       }
       default: {
