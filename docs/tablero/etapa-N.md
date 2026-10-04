@@ -236,7 +236,7 @@ N9 (bloqueada, D1) ; N10 (bloqueada, D9)
 
 #### N7 — Variables del sistema (solo lectura)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** N1 `hecho` (el operando `sistema` ya existe en el modelo).
 - **Contexto:** D18. Permite reglas como «si es el último slide…», «si pasaron 60 segundos…», «si progreso ≥ 50 %…». **Ninguna es nota.**
 - **Alcance — PUEDE tocar:**
