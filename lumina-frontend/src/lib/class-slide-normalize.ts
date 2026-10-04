@@ -34,6 +34,7 @@ import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-
 import { normalizeFlipCardsWidget } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import { normalizeTabsWidget } from '@lumina/element-kit/widgets/tabs/tabs-config';
 import { normalizeCarouselWidget } from '@lumina/element-kit/widgets/carousel/carousel-config';
+import { normalizeTablaPeriodicaWidget } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-config';
 import { normalizeClickRevealWidget } from '@lumina/element-kit/widgets/click-reveal/click-reveal-config';
 import { normalizeTimelineWidget } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import { normalizeClipGroupBlock } from '@lumina/editor-shared/clip-path';
@@ -263,6 +264,9 @@ function normalizeBlockBase(block: Block): Block {
   }
   if (block.tipo === 'carousel') {
     return normalizeCarouselWidget(block);
+  }
+  if (block.tipo === 'tabla_periodica') {
+    return normalizeTablaPeriodicaWidget(block);
   }
   if (block.tipo === 'click-reveal') {
     return normalizeClickRevealWidget(block);

@@ -78,8 +78,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(chemistry): mhchem y pestaña Química en el compositor de ecuaciones (Q2)`.
 
 #### Q3 — Widget `tabla_periodica` (familia Lienzo)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — PR pendiente; verif: `@lumina/element-kit` build/test/lint · frontend `activity-canvas-position` + `widget-panel-catalog` unit tests
 - **Precondición:** Q1 `hecho` (datos de elementos).
 - **Contexto:** diferenciador pedagógico alineado con DBA CN-7 (ubicar elementos, propiedades, tendencias). Familia **Lienzo** (como Tabs/Carousel): marco en el slide, configuración rica, viewer interactivo.
 - **Alcance — PUEDE tocar:**

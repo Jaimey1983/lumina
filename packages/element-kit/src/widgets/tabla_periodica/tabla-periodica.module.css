@@ -1,0 +1,134 @@
+.ptRoot {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ptBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.ptGridWrap {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+.ptGrid {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(28px, 1fr));
+  grid-template-rows: repeat(9, minmax(32px, 1fr));
+  gap: 2px;
+  min-width: 520px;
+}
+
+.ptCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--foreground, #0f172a) 12%, transparent);
+  border-radius: 4px;
+  padding: 2px;
+  font-size: 10px;
+  line-height: 1.1;
+  cursor: pointer;
+  background: var(--background, #fff);
+  color: inherit;
+}
+
+.ptCell:disabled {
+  visibility: hidden;
+  pointer-events: none;
+  border: none;
+}
+
+.ptCellDim {
+  opacity: 0.22;
+}
+
+.ptCellSelected {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 1px;
+}
+
+.ptSym {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.ptZ {
+  font-size: 8px;
+  opacity: 0.75;
+}
+
+.ptDetail {
+  width: min(38%, 220px);
+  min-width: 160px;
+  border-left: 1px solid color-mix(in srgb, var(--foreground, #0f172a) 10%, transparent);
+  padding: 8px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.ptDetail h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.ptDetail dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+}
+
+.ptDetail dt {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.ptLegend {
+  margin-top: 6px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ptLegendBar {
+  height: 8px;
+  flex: 1;
+  min-width: 120px;
+  border-radius: 4px;
+  background: linear-gradient(to right, hsl(220 65% 88%), hsl(20 65% 60%));
+}
+
+.ptToolbar {
+  display: none;
+}
+
+.ptEditorToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.ptEditorToolbar label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ptEditorToolbar select {
+  font-size: 11px;
+  max-width: 140px;
+}
