@@ -22,6 +22,10 @@
       "types": "./dist/blocks/*.d.ts",
       "default": "./dist/blocks/*.js"
     },
+    "./chemistry/*": {
+      "types": "./dist/chemistry/*.d.ts",
+      "default": "./dist/chemistry/*.js"
+    },
     "./blocks/*.css": "./dist/blocks/*.css"
   },
   "scripts": {

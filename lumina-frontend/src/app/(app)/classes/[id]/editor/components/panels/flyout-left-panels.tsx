@@ -28,6 +28,10 @@ import {
   GitFork,
   HeartHandshake,
   Sigma,
+  FlaskConical,
+  TableProperties,
+  Atom,
+  TestTube2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -116,6 +120,14 @@ import {
   buildTemplateTextBlock,
   type SlidePersistedLayoutKey,
 } from '../templates-panel';
+import {
+  CHEMISTRY_EQUATION_PRESETS,
+  CHEMISTRY_QUICK_ACTIVITIES,
+  CHEMISTRY_SLIDE_TEMPLATES,
+  createChemistryEquationBlock,
+} from '@lumina/element-kit/chemistry/chemistry-slide-templates';
+import { createDefaultTablaPeriodicaBlock } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-defaults';
+import type { ActivityType } from './activities-panel';
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
@@ -319,6 +331,8 @@ export interface FlyoutLeftPanelsProps {
   onAddWidget?: (type: WidgetTipo) => void;
   /** Inserta un bloque vía CanvasArea (historial undo). */
   onInsertBlock?: (block: Block) => Promise<boolean>;
+  /** Inserta actividad evaluativa (mismo contrato que panel derecho). */
+  onAddActivity?: (type: ActivityType) => void;
   /** Aplica el fondo del slide vía CanvasArea (mismo contrato que la barra flotante: historial undo). */
   onChangeFondo: (fondo: Background) => Promise<void>;
 }
@@ -329,6 +343,9 @@ type ContentPanelProps = {
   disabled?: boolean;
   slideHasActivity?: boolean;
   onInsertBlock?: (block: Block) => Promise<boolean>;
+  onAddWidget?: (type: WidgetTipo) => void;
+  onCreateActivitySlide?: (content: Record<string, unknown>, title: string) => void;
+  onAddActivity?: (type: ActivityType) => void;
 };
 
 // ─── Panels ───────────────────────────────────────────────────────────────────
@@ -339,6 +356,9 @@ function ElementosPanel({
   disabled,
   slideHasActivity,
   onInsertBlock,
+  onAddWidget,
+  onCreateActivitySlide,
+  onAddActivity,
 }: ContentPanelProps) {
   const add = (block: Block) => {
     if (onInsertBlock) {
@@ -358,6 +378,18 @@ function ElementosPanel({
     });
 
   const disabledNonText = disabled || !!slideHasActivity;
+
+  const addBlocksSequential = async (blocks: Block[]) => {
+    for (const block of blocks) {
+      if (onInsertBlock) {
+        const ok = await onInsertBlock(block);
+        if (!ok) return;
+      } else {
+        onCommitContent(appendBlockToSlideContent(apiSlide, block));
+      }
+    }
+    toast.success('Plantilla química añadida al slide');
+  };
 
   return (
     <ScrollArea className="h-full min-h-0 bg-white dark:bg-zinc-900">
@@ -607,6 +639,103 @@ function ElementosPanel({
               disabled={disabledNonText}
               onClick={() => add(createDefaultEmpatiaBlock())}
             />
+          </div>
+        </PanelSection>
+        <PanelSection title="Química">
+          <div className="grid grid-cols-2 gap-1.5">
+            <InsertBtn
+              label="Tabla periódica"
+              icon={TableProperties}
+              disabled={disabledNonText}
+              onClick={() => {
+                if (onAddWidget) {
+                  onAddWidget('tabla_periodica');
+                  return;
+                }
+                add(createDefaultTablaPeriodicaBlock());
+              }}
+            />
+            <InsertBtn
+              label="Ecuación \\ce{} (ejemplo)"
+              icon={TestTube2}
+              disabled={disabledNonText}
+              onClick={() => add(createChemistryEquationBlock(CHEMISTRY_EQUATION_PRESETS[0].latex))}
+            />
+            {CHEMISTRY_QUICK_ACTIVITIES.map((act) => (
+              <InsertBtn
+                key={act.id}
+                label={act.label}
+                icon={
+                  act.id === 'balancear-ecuacion'
+                    ? FlaskConical
+                    : act.id === 'ubicar-elemento'
+                      ? TableProperties
+                      : Atom
+                }
+                disabled={disabled || !!slideHasActivity}
+                onClick={() => {
+                  if (onAddActivity) {
+                    onAddActivity(act.id);
+                    return;
+                  }
+                  toast.error('No se pudo insertar la actividad');
+                }}
+              />
+            ))}
+          </div>
+          <div className="mt-2 space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Ecuaciones rápidas (mhchem)
+            </p>
+            {CHEMISTRY_EQUATION_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                disabled={disabledNonText}
+                onClick={() => add(createChemistryEquationBlock(preset.latex))}
+                className="w-full rounded-md border border-transparent px-2 py-1.5 text-left text-[11px] hover:border-border hover:bg-muted/60 disabled:opacity-50"
+              >
+                <span className="font-medium text-foreground">{preset.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2.5 border-t border-border/50 pt-2">
+            <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <BookOpen className="h-3 w-3" /> Plantillas de slide (CN-7)
+            </p>
+            <div className="space-y-1">
+              {CHEMISTRY_SLIDE_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  disabled={onCreateActivitySlide ? disabled : disabledNonText}
+                  onClick={() => {
+                    if (onCreateActivitySlide) {
+                      onCreateActivitySlide(
+                        { bloques: tmpl.buildBlocks(), layout: tmpl.layout },
+                        tmpl.titulo,
+                      );
+                      toast.success(`Slide «${tmpl.titulo}» creado`);
+                      return;
+                    }
+                    void addBlocksSequential(tmpl.buildBlocks());
+                  }}
+                  className="w-full rounded-md border border-transparent p-1.5 text-left hover:border-border hover:bg-muted/70 disabled:opacity-50"
+                >
+                  <div className="text-[11px] font-medium leading-tight text-foreground">{tmpl.nombre}</div>
+                  <div className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">{tmpl.descripcion}</div>
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={disabled || !!slideHasActivity}
+                onClick={() => onAddActivity?.('balancear-ecuacion')}
+                className="w-full rounded-md border border-dashed border-border p-1.5 text-left hover:bg-muted/70 disabled:opacity-50"
+              >
+                <div className="text-[11px] font-medium text-foreground">Slide de práctica — balanceo</div>
+                <div className="text-[10px] text-muted-foreground">Crea un slide dedicado a la actividad evaluable.</div>
+              </button>
+            </div>
           </div>
         </PanelSection>
         <PanelSection title="Multimedia">
@@ -1946,6 +2075,9 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
           disabled={disabled}
           slideHasActivity={slideHasActivity}
           onInsertBlock={onInsertBlock}
+          onAddWidget={onAddWidget}
+          onCreateActivitySlide={props.onCreateActivitySlide}
+          onAddActivity={props.onAddActivity}
         />
       );
     case 'widgets':

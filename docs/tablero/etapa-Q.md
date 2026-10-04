@@ -117,8 +117,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): actividades químicas autocalificables (Q4)`.
 
 #### Q5 — Panel «Química» en el flyout y plantillas de slide
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — sección Química en `flyout-left-panels`, plantillas `chemistry-slide-templates.ts`, widget `tabla_periodica` en `handleAddWidget`; verif: `pnpm --filter @lumina/element-kit test` · `cd lumina-frontend && pnpm test:unit`
 - **Precondición:** Q3 `hecho` y Q4 al menos una actividad `hecho` (o Q2 si solo se ofrece ecuación + calculadora).
 - **Contexto:** el docente no debe buscar la tabla bajo «Elementos» genéricos. Patrón familias de gráficos (Etapa I): sección dedicada en `flyout-left-panels.tsx`.
 - **Alcance — PUEDE tocar:**
