@@ -479,6 +479,7 @@ function ViewerScreen({
     navigate: navigateSlide,
     estadoInicial: initialInteractionState,
     onEstadoChange: saveInteractionState,
+    intento: attemptNumber,
   });
   const renderSlide = slidesConReglas[idx] ?? activeSlide;
 

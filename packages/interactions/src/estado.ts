@@ -7,6 +7,7 @@ import type { Slide } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
 import { recorrerBloquesDeSlide } from './recolectar.js';
 import type { EstadoMotor } from './tipos.js';
+import { marcaDeVisitado } from './sistema.js';
 
 /** Copia mutable interna; nunca sale del paquete. */
 export interface EstadoTrabajo {
@@ -170,6 +171,8 @@ export function entrarASlide(estado: EstadoMotor, slide: SlideInicial & { id: st
   sembrarVisibles(trabajo, slide);
   if (primera) sembrarCapasIniciales(trabajo, slide);
   trabajo.visibles[marcaDeVisita(slide.id)] = true;
+  // N7: «visitado» de verdad (la de arriba solo dice «sembrado»). Alimenta `progreso_pct`.
+  trabajo.visibles[marcaDeVisitado(slide.id)] = true;
   return congelar(trabajo);
 }
 

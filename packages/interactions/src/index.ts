@@ -129,3 +129,12 @@ export type {
   ErrorEstadosPersonalizados,
   UsoDeEstado,
 } from './estados-bloque.js';
+export {
+  TIEMPO_MAX_S,
+  calcularSistema,
+  conTiempoActivo,
+  marcaDeVisitado,
+  slidesVisitados,
+  tiempoActivoPersistido,
+} from './sistema.js';
+export type { EntradaSistema } from './sistema.js';
