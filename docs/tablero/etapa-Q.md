@@ -94,8 +94,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): widget tabla periódica interactiva (Q3)`.
 
 #### Q4 — Actividades químicas autocalificables (balanceo, ubicación, formulación)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** [en curso: Cursor]
 - **Precondición:** Q1 `hecho`.
 - **Contexto:** valor en aula = práctica con nota en servidor (C5). Patrón `respuesta_matematica` (M3a): tipo propio, `binary` o `partial` según actividad, `evaluateActivityResponse` en scoring.
 - **Alcance — PUEDE tocar:**
