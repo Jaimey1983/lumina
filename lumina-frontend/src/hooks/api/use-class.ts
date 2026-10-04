@@ -87,7 +87,9 @@ export function useClass(id: string, options?: { refetchInterval?: number }) {
     refetchInterval: options?.refetchInterval,
     queryFn: async () => {
       const { data } = await api.get<ClassDetail>(`/classes/${id}`);
-      return data ?? null;
+      if (!data) return null;
+      // El API puede devolver `variables: null` (sin columna / clase sin variables).
+      return { ...data, variables: data.variables ?? undefined };
     },
   });
 }
