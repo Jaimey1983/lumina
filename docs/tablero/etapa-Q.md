@@ -189,5 +189,15 @@ J8 + Q1 ─→ Q8
 - **Entregable:** rejilla de 10 filas (fila 8 vacía), La/Ac en (6,3)/(7,3), f-rows 58–71 y 90–103; ficha a la derecha sin desplazar ni recortar la tabla (la tabla conserva su proporción y la ficha hace scroll propio); navegación por flechas coherente con el nuevo layout; spec del layout (118 posiciones únicas, sin colisiones). Verif: `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit`; QA en navegador del viewer con una celda seleccionada.
 - **Cierre:** no aplica Regla 4. Commit sugerido: `fix(element-kit): La/Ac en grupo 3 y ficha lateral sin ocultar la tabla periódica (Q10)`.
 
+#### Q11 — Tabla periódica: color por categoría, leyenda interactiva y ficha con tarjeta
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
+- **Precondición:** Q9 y Q10 en la misma rama (datos y layout correctos).
+- **Contexto:** la celda es blanca con símbolo de 12 px; la referencia (Google Arts) pinta cada categoría, muestra símbolo grande con nombre debajo, atenúa el resto al resaltar una categoría y tiene ficha con tarjeta de color.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{tabla-periodica-viewer.tsx,tabla-periodica.module.css,periodic-metadata.ts}` y specs nuevos de esa carpeta.
+- **Alcance — NO toca:** `@lumina/types`/configuración persistida (el resaltado de categoría es estado local del viewer), editor-shared, modelo de Bohr (Q12).
+- **Entregable:** paleta de 10 categorías (texto con contraste AA); celda con Z, símbolo grande y nombre; leyenda de categorías clicable/hover que atenúa el resto (oculta con heatmap activo); ficha lateral con tarjeta (símbolo grande, nombre, Z, categoría con su color); color nunca como único canal (`aria-label`/`title`/ficha llevan la categoría); `prefers-reduced-motion` sin transiciones. Verif: `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit` · captura en build de producción.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): color por categoría y leyenda interactiva en la tabla periódica (Q11)`.
+
 #### Cierre de la Etapa Q
 La etapa se cierra cuando **Q1–Q5** estén `hecho` (motor + compositor + tabla + actividades + flyout) — **ciclo mínimo usable en aula**. Q6–Q8 son **alto valor** pero **no bloquean** el cierre de la etapa si el dueño prefiere entregar en dos olas (anotar en el commit de cierre). QA obligatoria en build de producción para Q3–Q5 y Q4 en autónomo. Al cerrar, actualizar esta raíz con baselines finales y enlazar evidencias DBA CN-6/7 en la descripción de plantillas.
