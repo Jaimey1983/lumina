@@ -20,6 +20,11 @@ function mergeCounts(target: Record<string, number>, source: Record<string, numb
   }
 }
 
+function countElementSymbols(fragment: string): number {
+  const matches = fragment.match(/[A-Z][a-z]?/g);
+  return matches?.length ?? 0;
+}
+
 function parseChargeSuffix(s: string): { formulaPart: string; charge: number } {
   const caret = s.match(/\^([0-9]*)([+-])$/);
   if (caret) {
@@ -28,24 +33,32 @@ function parseChargeSuffix(s: string): { formulaPart: string; charge: number } {
     return { formulaPart: s.slice(0, -caret[0].length), charge };
   }
 
-  const last = s.at(-1);
-  if (last !== '+' && last !== '-') {
-    return { formulaPart: s, charge: 0 };
+  const elementIon = s.match(/^([A-Z][a-z]?)(\d*)([+-])$/);
+  if (elementIon) {
+    const mag = elementIon[2] === '' ? 1 : Number.parseInt(elementIon[2], 10);
+    const charge = elementIon[3] === '+' ? mag : -mag;
+    return { formulaPart: elementIon[1], charge };
   }
 
-  const before = s.slice(0, -1);
-  const ionWithMag = before.match(/^(.+?)([0-9]+)$/);
-  if (ionWithMag) {
-    const base = ionWithMag[1];
-    const mag = Number.parseInt(ionWithMag[2], 10);
-    if (/^[A-Z][a-z]?$/.test(base) || base.endsWith(')')) {
-      const charge = last === '+' ? mag : -mag;
-      return { formulaPart: base, charge };
+  const polyIon = s.match(/^(.+)(\d+)([+-])$/);
+  if (polyIon) {
+    const formulaPart = polyIon[1];
+    const mag = Number.parseInt(polyIon[2], 10);
+    const looksPolyatomic =
+      countElementSymbols(formulaPart) >= 2 && (/\d/.test(formulaPart) || formulaPart.includes('('));
+    if (mag >= 1 && mag <= 9 && looksPolyatomic) {
+      const charge = polyIon[3] === '+' ? mag : -mag;
+      return { formulaPart, charge };
     }
   }
 
-  const charge = last === '+' ? 1 : -1;
-  return { formulaPart: before, charge };
+  const last = s.at(-1);
+  if (last === '+' || last === '-') {
+    const charge = last === '+' ? 1 : -1;
+    return { formulaPart: s.slice(0, -1), charge };
+  }
+
+  return { formulaPart: s, charge: 0 };
 }
 
 function parseSegment(segment: string, pos: number): { atoms: Record<string, number>; end: number } {

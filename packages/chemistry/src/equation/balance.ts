@@ -124,8 +124,7 @@ function solveNullspace(matrix: Rational[][]): Rational[][] {
   }
 
   if (basis.length === 0) {
-    const trivial = Array.from({ length: cols }, (_, i) => (i === 0 ? rat(1) : rat(0)));
-    return [trivial];
+    throw new ChemistryBalanceError('No hay solución en coeficientes enteros positivos');
   }
   return basis;
 }
@@ -170,7 +169,7 @@ function findMinimalPositiveCoefficients(basis: Rational[][]): number[] {
       return best;
     }
     let current = best;
-    for (let k = 1; k <= 12; k += 1) {
+    for (let k = 1; k <= 64; k += 1) {
       coeffs[depth] = k;
       current = tryCombo(depth + 1, coeffs, current);
     }

@@ -92,4 +92,16 @@ describe('parseFormula', () => {
     expect(parseFormula('(OH)-').charge).toBe(-1);
     expect(parseFormula('(OH)-').atoms.H).toBe(1);
   });
+
+  it('parsea SO42- (notación sin caret)', () => {
+    const p = parseFormula('SO42-');
+    expect(p.atoms).toEqual({ S: 1, O: 4 });
+    expect(p.charge).toBe(-2);
+  });
+
+  it('parsea Cr2O72- (dicromato)', () => {
+    const p = parseFormula('Cr2O72-');
+    expect(p.atoms).toEqual({ Cr: 2, O: 7 });
+    expect(p.charge).toBe(-2);
+  });
 });
