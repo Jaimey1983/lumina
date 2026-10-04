@@ -1,5 +1,7 @@
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
+/** Extensión química (Etapa Q, DQ1): registra \\ce{} y \\pu{} en KaTeX una sola vez. */
+import 'katex/contrib/mhchem';
 
 /**
  * Único punto de contacto con KaTeX (Etapa M, DM1). Ningún otro archivo del
@@ -88,12 +90,71 @@ const STRUCTURE: ReadonlyArray<[RegExp, string | ((...m: string[]) => string)]> 
   [/\\(?:text|mathrm|mathbf|operatorname)\s*\{([^{}]*)\}/g, ' $1 '],
 ];
 
+/** Convierte \\ce{…} / \\pu{…} a texto plano antes del resto de reglas (Q2). */
+function tokenizarFragmentoQuimico(fragmento: string): string {
+  const parts: string[] = [];
+  let i = 0;
+  while (i < fragmento.length) {
+    const c = fragmento[i]!;
+    if (/\d/.test(c)) {
+      let num = c;
+      i++;
+      while (i < fragmento.length && /\d/.test(fragmento[i]!)) num += fragmento[i++];
+      parts.push(num);
+    } else if (/[A-Z]/.test(c)) {
+      let el = c;
+      i++;
+      if (i < fragmento.length && /[a-z]/.test(fragmento[i]!)) {
+        el += fragmento[i]!;
+        i++;
+      }
+      parts.push(el);
+    } else if (/\s/.test(c)) {
+      i++;
+    } else {
+      parts.push(c);
+      i++;
+    }
+  }
+  return parts.join(' ');
+}
+
+function leerCuerpoCe(cuerpo: string): string {
+  const estados: string[] = [];
+  let t = cuerpo.replace(/\((s|l|g|aq)\)/gi, (_m, st: string) => {
+    estados.push(` en estado ${st.toLowerCase()} `);
+    return '';
+  });
+  t = t
+    .replace(/<=>|⇌/g, ' equilibrio ')
+    .replace(/->/g, ' reacciona para formar ')
+    .replace(/\+/g, ' más ');
+  const leido = t
+    .split(/(\s+más\s+|\s+reacciona para formar\s+|\s+equilibrio\s+)/)
+    .map((seg) => {
+      const s = seg.trim();
+      if (s === '' || seg.startsWith(' ')) return seg;
+      if (/^[A-Za-z0-9]+$/.test(s)) return tokenizarFragmentoQuimico(s);
+      return seg;
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return (leido + estados.join('')).replace(/\s+/g, ' ').trim();
+}
+
+function hablarCePu(latex: string): string {
+  return latex
+    .replace(/\\ce\{([^{}]*)\}/g, (_m, cuerpo: string) => leerCuerpoCe(cuerpo))
+    .replace(/\\pu\{([^{}]*)\}/g, (_m, cuerpo: string) => cuerpo.trim());
+}
+
 /**
  * Lectura en español de una fórmula LaTeX, para lectores de pantalla. No es un
  * intérprete completo: lo que no reconoce se lee sin la barra invertida.
  */
 export function speakLatex(latex: string): string {
-  let s = ` ${latex} `
+  let s = ` ${hablarCePu(latex)} `
     .replace(/\\left|\\right/g, '')
     .replace(/\\[,;:! ]/g, ' ')
     .replace(/\\\\/g, ', ')

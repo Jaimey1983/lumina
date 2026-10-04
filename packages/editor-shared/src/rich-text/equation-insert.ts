@@ -231,6 +231,44 @@ export const MATH_TABS: MathPaletteTab[] = [
     ],
   },
   {
+    id: 'quimica',
+    label: 'Química',
+    groups: [
+    {
+      id: 'ce-estructura',
+      label: 'Fórmulas y reacciones',
+      items: [
+      { id: 'ce-mol', label: 'Mol', title: 'Fórmula molecular (mhchem)', template: `\\ce{${S}}` },
+      { id: 'ce-ion', label: 'Ion', title: 'Ion con carga', template: `\\ce{${S}^{+}}` },
+      { id: 'ce-react', label: '→', title: 'Reacción química (ej. 2H2 + O2 -> 2H2O)', template: `\\ce{${S} -> }` },
+      { id: 'ce-eq', label: '⇌', title: 'Equilibrio químico', template: `\\ce{${S} <=> }` },
+      { id: 'ce-estado', label: '(s)', title: 'Fórmula con estado físico', template: `\\ce{${S}(s)}` },
+      { id: 'ce-aq', label: '(aq)', title: 'Disolución acuosa', template: `\\ce{${S}(aq)}` },
+      ],
+    },
+    {
+      id: 'ce-unidades',
+      label: 'Unidades',
+      items: [
+      { id: 'pu-molar', label: 'g/mol', title: 'Masa molar', template: `\\pu{${S} g mol-1}` },
+      { id: 'pu-energia', label: 'kJ/mol', title: 'Energía por mol', template: `\\pu{${S} kJ mol-1}` },
+      { id: 'pu-conc', label: 'mol/L', title: 'Concentración molar', template: `\\pu{${S} mol L-1}` },
+      ],
+    },
+    {
+      id: 'ce-ejemplos',
+      label: 'Ejemplos curriculares',
+      items: [
+      { id: 'ce-h2o', label: 'H₂O', title: 'Agua', template: `\\ce{H2O}` },
+      { id: 'ce-nacl', label: 'NaCl', title: 'Cloruro de sodio', template: `\\ce{NaCl}` },
+      { id: 'ce-comb', label: 'H₂+O₂', title: 'Combustión del hidrógeno', template: `\\ce{2H2 + O2 -> 2H2O}` },
+      { id: 'ce-neut', label: 'Neutr.', title: 'Neutralización ácido-base', template: `\\ce{HCl + NaOH -> NaCl + H2O}` },
+      { id: 'ce-prec', label: 'Precip.', title: 'Precipitación', template: `\\ce{AgNO3(aq) + NaCl(aq) -> AgCl(s) + NaNO3(aq)}` },
+      ],
+    },
+    ],
+  },
+  {
     id: 'plantillas',
     label: 'Fórmulas',
     groups: [

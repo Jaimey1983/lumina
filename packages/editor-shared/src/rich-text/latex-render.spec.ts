@@ -37,6 +37,15 @@ describe('renderLatex', () => {
   it('no habilita comandos con trust (\\href queda sin enlace)', () => {
     expect(renderLatex('\\href{javascript:alert(1)}{x}')).not.toContain('href="');
   });
+
+  it('renderiza notación química mhchem (\\ce, reacciones y estados)', () => {
+    expect(() => renderLatex('\\ce{H2SO4}', { throwOnError: true })).not.toThrow();
+    expect(renderLatex('\\ce{H2SO4}')).toContain('katex-html');
+    const reaccion = renderLatex('\\ce{2H2 + O2 -> 2H2O}', { throwOnError: true });
+    expect(reaccion).not.toContain('katex-error');
+    expect(renderLatex('\\ce{NaCl(s)}', { throwOnError: true })).not.toContain('katex-error');
+    expect(renderLatex('\\pu{98 g mol-1}', { throwOnError: true })).not.toContain('katex-error');
+  });
 });
 
 describe('speakLatex', () => {
@@ -60,6 +69,15 @@ describe('speakLatex', () => {
 
   it('lo desconocido se lee sin barra invertida', () => {
     expect(speakLatex('\\alpha + \\beta')).toBe('alpha más beta');
+  });
+
+  it('\\ce y \\pu se leen como fórmula química, no como comandos LaTeX', () => {
+    expect(speakLatex('\\ce{H2SO4}')).toBe('H 2 S O 4');
+    expect(speakLatex('\\ce{2H2 + O2 -> 2H2O}')).toBe(
+      '2 H 2 más O 2 reacciona para formar 2 H 2 O',
+    );
+    expect(speakLatex('\\ce{NaCl(s)}')).toBe('Na Cl en estado s');
+    expect(speakLatex('\\pu{18 g mol-1}')).toContain('18');
   });
 });
 
