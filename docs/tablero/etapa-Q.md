@@ -47,7 +47,7 @@ J8 + Q1 ─→ Q8
 
 #### Q1 — Paquete `@lumina/chemistry` (datos + parser + masa molar + balanceo)
 - **Operador:** Cursor
-- **Estado:** en revisión — paquete `@lumina/chemistry` (parser, masa molar, balanceo, 118 elementos, 41 tests); verif: `pnpm --filter @lumina/chemistry build && test && lint`
+- **Estado:** hecho — merge PR #69 (`6580a7c`); 43 tests; verif: `pnpm --filter @lumina/chemistry build && test && lint`
 - **Precondición:** ninguna (arranque de la etapa).
 - **Contexto:** sin este paquete no hay una sola fuente de verdad para actividades, IA verificada ni botones «insertar masa molar» en el compositor. **No** reutilizar `algebra.ts` (M4): gramática distinta (subíndices, hidratos, cargas, ecuaciones con `->`).
 - **Alcance — PUEDE tocar:**
