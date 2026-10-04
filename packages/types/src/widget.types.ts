@@ -214,7 +214,8 @@ export type WidgetTipo =
   | 'interactive-checklist'
   | 'scratch-card'
   | 'accordion'
-  | 'tabla_periodica';
+  | 'tabla_periodica'
+  | 'molecula';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -235,6 +236,7 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'scratch-card',
   'accordion',
   'tabla_periodica',
+  'molecula',
 ] as const;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {
@@ -612,6 +614,25 @@ export interface TablaPeriodicaWidget extends WidgetHeaderFields, WidgetCanvasPo
   configuracion: TablaPeriodicaConfiguracion;
   /** Símbolo IUPAC del elemento resaltado (opcional). */
   seleccionado?: string | null;
+}
+
+export interface MoleculaConfiguracion extends WidgetHeaderConfig {
+  colorFondoContenedor: string;
+  opacidadFondoContenedor?: number;
+  paddingContenedor?: number;
+  /** Altura del canvas 2D en px dentro del widget. */
+  alturaCanvasPx?: number;
+}
+
+export interface MoleculaWidget extends WidgetHeaderFields, WidgetCanvasPosition {
+  tipo: 'molecula';
+  /** Cadena SMILES dibujada en 2D (persistida en el slide). */
+  smiles: string;
+  /** Nombre común usado en búsqueda (opcional, solo referencia docente). */
+  nombreComun?: string;
+  /** Fórmula molecular para accesibilidad (p. ej. desde PubChem). */
+  formulaMolecular?: string;
+  configuracion: MoleculaConfiguracion;
 }
 
 export interface ProgresoWidget extends WidgetCanvasPosition {

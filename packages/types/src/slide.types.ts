@@ -1264,6 +1264,7 @@ import type {
   ScratchCardWidget,
   AccordionWidget,
   TablaPeriodicaWidget,
+  MoleculaWidget,
   WidgetCampoEstilo,
   WidgetElementPos,
 } from './widget.types.js';
@@ -1692,6 +1693,7 @@ export type Block = (
   | ScratchCardWidget
   | AccordionWidget
   | TablaPeriodicaWidget
+  | MoleculaWidget
 ) & {
   animaciones?: import('./animation.types.js').Animacion[];
   /**
@@ -1759,7 +1761,8 @@ export type WidgetBlock =
   | InteractiveChecklistWidget
   | ScratchCardWidget
   | AccordionWidget
-  | TablaPeriodicaWidget;
+  | TablaPeriodicaWidget
+  | MoleculaWidget;
 
 export function isCaptivateWidgetBlock(block: {
   tipo: string;
@@ -1908,6 +1911,7 @@ export const BLOCK_FALLBACKS = {
   scratchCard: { x: 15, y: 10, ancho: 70, alto: 75 },
   accordion: { x: 10, y: 10, ancho: 80, alto: 80 },
   tablaPeriodica: { x: 5, y: 5, ancho: 90, alto: 90 },
+  molecula: { x: 15, y: 12, ancho: 70, alto: 65 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */

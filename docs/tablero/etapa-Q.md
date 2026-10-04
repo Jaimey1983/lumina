@@ -130,8 +130,8 @@ J8 + Q1 ─→ Q8
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(editor): panel Química en el flyout y plantillas de slide (Q5)`.
 
 #### Q6 — Visor molecular (SMILES 2D, PubChem vía backend)
-- **Operador:** pendiente de asignación
-- **Estado:** pendiente
+- **Operador:** Cursor
+- **Estado:** en revisión — widget `molecula`, proxy `GET /chemistry/pubchem/resolve`, flyout Química; verif: `pnpm --filter @lumina/types build && pnpm --filter @lumina/element-kit test` · `cd lumina-backend && pnpm test -- chemistry.service.spec`
 - **Precondición:** Q1 `hecho`.
 - **Contexto:** estructura 2D para bachillerato; 3D opcional en sub-ficha Q6b si el peso de `3Dmol.js` lo exige el dueño.
 - **Alcance — PUEDE tocar:**
