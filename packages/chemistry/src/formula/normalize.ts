@@ -35,3 +35,8 @@ export function normalizeFormulaInput(raw: string): string {
   s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]/g, (ch) => SUPERSCRIPT_MAP[ch] ?? ch);
   return s;
 }
+
+/** Alias estable para Q4/nomenclatura (misma normalización que el parser). */
+export function normalizeFormula(raw: string): string {
+  return normalizeFormulaInput(raw);
+}

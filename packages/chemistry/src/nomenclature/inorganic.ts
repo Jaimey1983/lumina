@@ -1,4 +1,5 @@
-import { formulasEqual, normalizeFormula } from '../formula/normalize.js';
+import { normalizeFormula } from '../formula/normalize.js';
+import { formulasEqual } from '../formula/parse.js';
 
 /** V1: diccionario acotado nombre (es) → fórmula. */
 const STOCK_NAMES: Record<string, string> = {

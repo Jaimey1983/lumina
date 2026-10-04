@@ -87,8 +87,17 @@ export function BalancearEcuacionViewer({
   onResponse?: (response: unknown) => void;
   variant?: 'dark' | 'light';
 }) {
-  const parsed = useMemo(() => parseEquation(activity.ecuacion), [activity.ecuacion]);
-  const species = parsed?.species ?? [];
+  const parsed = useMemo(() => {
+    try {
+      return parseEquation(activity.ecuacion);
+    } catch {
+      return null;
+    }
+  }, [activity.ecuacion]);
+  const species = useMemo(() => {
+    if (!parsed) return [];
+    return [...parsed.reactants, ...parsed.products].map((s) => s.rawFormula);
+  }, [parsed]);
   const [coeffs, setCoeffs] = useState<number[]>(() => species.map(() => 1));
   const [sent, setSent] = useState(false);
   const { play } = useSound();

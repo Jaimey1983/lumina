@@ -17,13 +17,19 @@ export {
   type ElementCategory,
 } from './data/elements.js';
 
-export { normalizeFormulaInput } from './formula/normalize.js';
+export { normalizeFormulaInput, normalizeFormula } from './formula/normalize.js';
 export {
   parseFormula,
   addAtomCounts,
+  formulasEqual,
   MAX_FORMULA_LENGTH,
   type ParsedFormula,
 } from './formula/parse.js';
+export {
+  answerMatchesFormula,
+  formulaFromName,
+  nameToFormula,
+} from './nomenclature/inorganic.js';
 export { computeMolarMass, molesFromMass, type MolarMassResult } from './formula/molar-mass.js';
 export {
   computePercentComposition,

@@ -1,8 +1,8 @@
 import {
   answerMatchesFormula,
   balanceEquation,
-  coefficientsEquivalent,
-  lookupElement,
+  coefficientsAreEquivalent,
+  getElementBySymbol,
 } from '@lumina/chemistry';
 
 interface ActivityEvaluationDetail {
@@ -64,12 +64,16 @@ export function evaluateBalancearEcuacion(
 ): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const ecuacion = typeof def.ecuacion === 'string' ? def.ecuacion : '';
-  const balanced = balanceEquation(ecuacion);
-  if (!balanced) return UNEVALUABLE;
+  let balanced;
+  try {
+    balanced = balanceEquation(ecuacion);
+  } catch {
+    return UNEVALUABLE;
+  }
   const given = readCoefficients(respuesta);
   if (!given || given.length !== balanced.coefficients.length) return UNEVALUABLE;
   if (given.every((c) => c === 0)) return UNEVALUABLE;
-  const ok = coefficientsEquivalent(given, balanced.coefficients);
+  const ok = coefficientsAreEquivalent(given, balanced.coefficients);
   return {
     correct: ok,
     details: [{ index: 0, correct: ok, label: 'Coeficientes' }],
@@ -98,8 +102,8 @@ export function evaluateUbicarElemento(
     const symbol = String(item.symbol ?? item.simbolo ?? '');
     const expectedPeriod = Number(item.periodo ?? item.period);
     const expectedGroup = Number(item.grupo ?? item.group);
-    const el = lookupElement(symbol);
-    const label = el?.nombre ?? symbol ?? `Elemento ${i + 1}`;
+    const el = getElementBySymbol(symbol);
+    const label = el?.name ?? symbol ?? `Elemento ${i + 1}`;
     const place = placements.find((p) => asRecord(p)?.id === id) ?? placements[i];
     const pr = asRecord(place);
     const gotPeriod = Number(pr?.periodo ?? pr?.period);
