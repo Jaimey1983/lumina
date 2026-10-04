@@ -79,7 +79,7 @@ J8 + Q1 ─→ Q8
 
 #### Q3 — Widget `tabla_periodica` (familia Lienzo)
 - **Operador:** Cursor
-- **Estado:** en revisión — widget + registro + panel + normalize; verif local pendiente de CI
+- **Estado:** en revisión — PR pendiente; verif: `@lumina/element-kit` build/test/lint · frontend `activity-canvas-position` + `widget-panel-catalog` unit tests
 - **Precondición:** Q1 `hecho` (datos de elementos).
 - **Contexto:** diferenciador pedagógico alineado con DBA CN-7 (ubicar elementos, propiedades, tendencias). Familia **Lienzo** (como Tabs/Carousel): marco en el slide, configuración rica, viewer interactivo.
 - **Alcance — PUEDE tocar:**
