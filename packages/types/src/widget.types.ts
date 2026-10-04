@@ -213,7 +213,8 @@ export type WidgetTipo =
   | 'image-compare'
   | 'interactive-checklist'
   | 'scratch-card'
-  | 'accordion';
+  | 'accordion'
+  | 'tabla_periodica';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -233,6 +234,7 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'interactive-checklist',
   'scratch-card',
   'accordion',
+  'tabla_periodica',
 ] as const;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {
@@ -576,6 +578,40 @@ export interface RuletaWidget extends WidgetCanvasPosition {
     mostrarGanador: boolean;
   };
   items: { id: string; texto: string }[];
+}
+
+// ─── Tabla periódica (Etapa Q3) ───────────────────────────────────────────────
+
+export type TablaPeriodicaFiltroCategoria =
+  | 'todos'
+  | 'metal'
+  | 'no_metal'
+  | 'metaloide'
+  | 'gas_noble';
+
+export type TablaPeriodicaBloque = 'todos' | 's' | 'p' | 'd' | 'f';
+
+export type TablaPeriodicaHeatmapProp =
+  | 'ninguna'
+  | 'masa_atomica'
+  | 'grupo'
+  | 'periodo';
+
+export interface TablaPeriodicaConfiguracion extends WidgetHeaderConfig {
+  colorFondoContenedor: string;
+  opacidadFondoContenedor?: number;
+  paddingContenedor?: number;
+  filtroCategoria: TablaPeriodicaFiltroCategoria;
+  filtroBloque: TablaPeriodicaBloque;
+  heatmapPropiedad: TablaPeriodicaHeatmapProp;
+  mostrarLeyendaHeatmap: boolean;
+}
+
+export interface TablaPeriodicaWidget extends WidgetHeaderFields, WidgetCanvasPosition {
+  tipo: 'tabla_periodica';
+  configuracion: TablaPeriodicaConfiguracion;
+  /** Símbolo IUPAC del elemento resaltado (opcional). */
+  seleccionado?: string | null;
 }
 
 export interface ProgresoWidget extends WidgetCanvasPosition {

@@ -39,6 +39,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@lumina/charts": "workspace:*",
+    "@lumina/chemistry": "workspace:*",
     "@lumina/editor-shared": "workspace:*",
     "@lumina/element-kit-core": "workspace:*",
     "@lumina/scoring": "workspace:*",
