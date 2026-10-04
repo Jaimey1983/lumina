@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
-import { recolectarReglas } from '@lumina/interactions';
+import { recolectarReglas, slidesVisitados, tiempoActivoPersistido } from '@lumina/interactions';
 import type { Regla, VariableDef } from '@lumina/types/interaction';
 import type { Block, Slide } from '@lumina/types/slide';
 import type { SlideNavAction } from '@lumina/editor-shared/slide-nav-context';
@@ -379,5 +379,49 @@ describe('N6 — estados personalizados en el runtime', () => {
     expect(e?.estados.h1).toBe('ok');
     expect(e?.estados.h2).toBeUndefined();
     expect(e?.estados.b1).toBe('visitado');
+  });
+});
+
+describe('N7 — variables del sistema en el runtime', () => {
+  const sis = (clave: string) => ({ tipo: 'sistema', clave }) as never;
+  const regla: Regla = {
+    id: 'meta',
+    evento: 'al_entrar_slide',
+    condiciones: [{ tipo: 'comparacion', operador: '==', izquierda: sis('slide_numero'), derecha: sis('slide_total') }],
+    acciones: [{ tipo: 'mostrar', bloqueId: 'felicitacion' }],
+    activa: true,
+  };
+  const slides = [
+    slide('s1', []),
+    slide('s2', [boton({ id: 'felicitacion', ocultoInicial: true })], { reglas: [regla] }),
+  ];
+  const reglas = recolectarReglas(slides);
+  const entrar = (id: string, estado: ReturnType<typeof ejecutarEvento> | null, entorno?: { tiempoActivoS: number; intento: number }) =>
+    ejecutarEvento({ reglas, estado, variables: [], slides, evento: { tipo: 'al_entrar_slide', slideId: id }, navigate: null, ...(entorno ? { entorno } : {}) });
+
+  it('«slide_numero == slide_total → mostrar» funciona en el último slide y no en el primero', () => {
+    const e1 = entrar('s1', null, { tiempoActivoS: 0, intento: 1 });
+    expect(e1.visibles.felicitacion).toBe(false);
+    const e2 = entrar('s2', e1, { tiempoActivoS: 5, intento: 1 });
+    expect(e2.visibles.felicitacion).toBe(true);
+  });
+  it('sin entorno falla cerrado: la regla no dispara', () => {
+    const e = entrar('s2', null);
+    expect(e.visibles.felicitacion).toBe(false);
+  });
+  it('recarga a mitad: progreso y tiempo salen del estado persistido, sin guardar nada nuevo', () => {
+    const e1 = entrar('s1', null, { tiempoActivoS: 30.4, intento: 2 });
+    const viaje = JSON.parse(JSON.stringify(e1)) as unknown;
+    const restaurado = hidratarEstado(viaje, [], slides);
+    expect(tiempoActivoPersistido(restaurado!)).toBe(30);
+    expect(slidesVisitados(restaurado!, ['s1', 's2'])).toBe(1);
+    // …y al seguir, el progreso suma el slide nuevo sobre lo restaurado.
+    const e2 = entrar('s2', restaurado, { tiempoActivoS: 31, intento: 2 });
+    expect(slidesVisitados(e2, ['s1', 's2'])).toBe(2);
+    expect(e2.visibles.felicitacion).toBe(true);
+  });
+  it('C1/C4: el estado persistido no gana ningún campo de nota ni de puntaje', () => {
+    const e = entrar('s2', null, { tiempoActivoS: 9, intento: 1 });
+    expect(Object.keys(e).sort()).toEqual(['capasAbiertas', 'estados', 'respuestas', 'variables', 'visibles']);
   });
 });

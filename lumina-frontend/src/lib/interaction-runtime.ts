@@ -9,6 +9,8 @@
  */
 
 import {
+  calcularSistema,
+  conTiempoActivo,
   crearEstadoInicial,
   entrarASlide,
   estadoDeclarado,
@@ -45,6 +47,19 @@ export interface EjecutarEventoArgs {
   evento: EventoMotor;
   /** Función de `SlideNavContext`; `null` = inerte para navegación (D1). */
   navigate: ((action: SlideNavAction) => void) | null;
+  /**
+   * N7 — datos del entorno para las variables del sistema (D18). Sin él, una
+   * condición que lea una variable del sistema falla cerrado (no dispara).
+   */
+  entorno?: EntornoSistema;
+}
+
+/** N7 — lo que solo el reproductor sabe: tiempo activo del intento y número de intento. */
+export interface EntornoSistema {
+  /** Segundos activos del intento (sin contar la pestaña oculta). */
+  tiempoActivoS: number;
+  /** Número de intento (1-based). */
+  intento: number;
 }
 
 /** Procesa un evento, ejecuta los efectos de navegación y devuelve el estado nuevo. */
@@ -55,6 +70,7 @@ export function ejecutarEvento({
   slides,
   evento,
   navigate,
+  entorno,
 }: EjecutarEventoArgs): EstadoMotor {
   let base = estado ?? crearEstadoInicial(variables, slides);
   if (evento.tipo === 'al_entrar_slide' && evento.slideId) {
@@ -62,9 +78,21 @@ export function ejecutarEvento({
     if (slide) base = entrarASlide(base, slide);
   }
   if (reglas.length === 0) return base;
+  // N7: se calcula DESPUÉS de `entrarASlide`, para que el slide actual ya cuente como visitado.
+  const sistema =
+    entorno === undefined
+      ? undefined
+      : calcularSistema({
+          estado: base,
+          slideIds: slides.map((s) => s.id),
+          slideId: evento.slideId,
+          tiempoActivoS: entorno.tiempoActivoS,
+          intento: entorno.intento,
+        });
   const res = procesarEvento(reglas, base, evento, {
     variables,
     estadosPersonalizados: declaradosDe(slides),
+    ...(sistema !== undefined ? { sistema } : {}),
   });
   if (navigate) {
     for (const efecto of res.efectos) {
@@ -78,7 +106,8 @@ export function ejecutarEvento({
       }
     }
   }
-  return res.estado;
+  // N7: el tiempo activo viaja en el estado persistido (K5) para sobrevivir a una recarga.
+  return entorno === undefined ? res.estado : conTiempoActivo(res.estado, entorno.tiempoActivoS);
 }
 
 function esRegistro(v: unknown): v is Record<string, unknown> {
