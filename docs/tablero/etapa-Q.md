@@ -131,7 +131,7 @@ J8 + Q1 ─→ Q8
 
 #### Q6 — Visor molecular (SMILES 2D, PubChem vía backend)
 - **Operador:** Cursor
-- **Estado:** en revisión — widget `molecula`, proxy `GET /chemistry/pubchem/resolve`, flyout Química; verif: `pnpm --filter @lumina/types build && pnpm --filter @lumina/element-kit test` · `cd lumina-backend && pnpm test -- chemistry.service.spec`
+- **Estado:** **hecho** — merge #81 (`molecula`, PubChem proxy, flyout).
 - **Precondición:** Q1 `hecho`.
 - **Contexto:** estructura 2D para bachillerato; 3D opcional en sub-ficha Q6b si el peso de `3Dmol.js` lo exige el dueño.
 - **Alcance — PUEDE tocar:**
@@ -145,7 +145,7 @@ J8 + Q1 ─→ Q8
 
 #### Q7 — Laboratorio: simulaciones con variables, ecuaciones y gráficos
 - **Operador:** Cursor
-- **Estado:** en revisión — `@lumina/chemistry/src/lab/*`, plantillas gas ideal + dilución, gráfico `simulacionQuimica`; verif: `pnpm --filter @lumina/chemistry test` · `pnpm --filter @lumina/types build && pnpm --filter @lumina/element-kit test`
+- **Estado:** **hecho** — merge #82 (`lab/*`, plantillas gas ideal + dilución, `simulacionQuimica`).
 - **Precondición:** Q1 `hecho`; M2 `hecho` (variables en ecuación); **recomendado** K11 `hecho` (slider/dial evaluable) — si K11 no está, la ficha puede limitarse a ajustadores M2 en la ecuación sin widget slider nuevo.
 - **Contexto:** pH, gas ideal, dilución, titulación simplificada — funciones **puras** en `@lumina/chemistry` + visualización `@lumina/charts` + bloques existentes en un slide plantilla.
 - **Alcance — PUEDE tocar:**
