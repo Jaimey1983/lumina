@@ -1,4 +1,5 @@
 .ptRoot {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -6,23 +7,39 @@
   overflow: hidden;
 }
 
-.ptBody {
-  display: flex;
-  flex: 1;
-  min-height: 0;
+/* `.whContent` (editor-shared) fuerza `flex-direction: column`; se duplica la
+   clase raíz para ganar especificidad sin tocar el módulo compartido. */
+.ptRoot .ptBody {
+  flex-direction: row;
   gap: 8px;
+  align-items: stretch;
+}
+
+@container (max-width: 560px) {
+  .ptRoot .ptBody {
+    flex-direction: column;
+  }
+
+  .ptRoot .ptDetail {
+    width: auto;
+    max-height: 40%;
+    border-left: none;
+    border-top: 1px solid color-mix(in srgb, var(--foreground, #0f172a) 10%, transparent);
+  }
 }
 
 .ptGridWrap {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: auto;
 }
 
 .ptGrid {
   display: grid;
   grid-template-columns: repeat(18, minmax(28px, 1fr));
-  grid-template-rows: repeat(9, minmax(32px, 1fr));
+  /* filas 1–7 cuerpo, 8 separador del bloque f, 9–10 lantánidos/actínidos */
+  grid-template-rows: repeat(7, minmax(32px, 1fr)) 10px repeat(2, minmax(32px, 1fr));
   gap: 2px;
   min-width: 520px;
 }
@@ -40,12 +57,6 @@
   cursor: pointer;
   background: var(--background, #fff);
   color: inherit;
-}
-
-.ptCell:disabled {
-  visibility: hidden;
-  pointer-events: none;
-  border: none;
 }
 
 .ptCellDim {
@@ -68,7 +79,8 @@
 }
 
 .ptDetail {
-  width: min(38%, 220px);
+  flex-shrink: 0;
+  width: min(34%, 260px);
   min-width: 160px;
   border-left: 1px solid color-mix(in srgb, var(--foreground, #0f172a) 10%, transparent);
   padding: 8px;
