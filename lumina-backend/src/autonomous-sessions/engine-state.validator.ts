@@ -39,6 +39,13 @@ const ESTADOS_OBJETO = new Set([
   'seleccionado',
   'deshabilitado',
 ]);
+/**
+ * N6 — estados personalizados: el backend no conoce las declaraciones de cada
+ * bloque (viven en el contenido del slide), así que solo exige un id con forma
+ * segura. Que el bloque SIGA declarándolo lo verifica el cliente al hidratar
+ * (`hidratarEstado`) y el motor al aplicarlo; un id desconocido es inofensivo.
+ */
+const ID_ESTADO_PERSONALIZADO = /^[A-Za-z0-9_.:-]{1,128}$/;
 const CLAVES_PELIGROSAS = new Set(['__proto__', 'constructor', 'prototype']);
 
 function esRegistro(v: unknown): v is Record<string, unknown> {
@@ -113,7 +120,11 @@ export function validarEstadoMotor(
   for (const [id, valor] of Object.entries(
     registro(entrada.estados ?? {}, 'estados'),
   )) {
-    if (typeof valor !== 'string' || !ESTADOS_OBJETO.has(valor)) {
+    if (
+      typeof valor !== 'string' ||
+      !(ESTADOS_OBJETO.has(valor) || ID_ESTADO_PERSONALIZADO.test(valor)) ||
+      CLAVES_PELIGROSAS.has(valor)
+    ) {
       throw new BadRequestException(`Estado de objeto inválido para "${id}"`);
     }
     estados[id] = valor;
