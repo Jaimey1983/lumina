@@ -643,6 +643,9 @@ importers:
       '@lumina/charts':
         specifier: workspace:*
         version: link:../charts
+      '@lumina/chemistry':
+        specifier: workspace:*
+        version: link:../chemistry
       '@lumina/editor-shared':
         specifier: workspace:*
         version: link:../editor-shared
