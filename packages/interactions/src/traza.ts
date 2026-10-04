@@ -73,5 +73,5 @@ export function explicarFalla(
   const falsa = condiciones.find((c) => !cumple(c, estado, base));
   if (!falsa) return null;
   const c = culpable(falsa, estado, base);
-  return `no se cumple «${describirCondicion(c, d)}»${valores(c, estado, base, d)}`;
+  return `no se cumple que ${describirCondicion(c, d)}${valores(c, estado, base, d)}`;
 }

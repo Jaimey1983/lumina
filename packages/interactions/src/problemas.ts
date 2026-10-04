@@ -3,7 +3,7 @@ import type { Block } from '@lumina/types/slide';
 import { idDeBloque } from './bloques.js';
 import { EVENTOS_DE_ENTORNO } from './eventos.js';
 import { reglasConReferenciasRotas } from './integridad.js';
-import type { SlideMotor } from './integridad.js';
+import type { CodigoReferenciaRota, SlideMotor } from './integridad.js';
 import { recolectarReglas, recorrerBloquesDeSlide } from './recolectar.js';
 import { accionesDeRegla } from './reglas.js';
 import type { ReglaAplicable } from './tipos.js';
@@ -41,6 +41,15 @@ export interface OpcionesProblemas {
   /** Variables usadas dentro de textos (`{{var:id}}`): no cuentan como «sin uso». */
   variablesEnTexto?: ReadonlySet<string>;
 }
+
+const MENSAJE_REFERENCIA: Record<CodigoReferenciaRota, string> = {
+  bloque_inexistente: 'La regla apunta a un elemento que ya no existe: no puede hacer lo que dice.',
+  slide_inexistente: 'La regla apunta a un slide que ya no existe: no puede hacer lo que dice.',
+  capa_inexistente: 'La regla apunta a una capa que ya no existe: no puede hacer lo que dice.',
+  variable_inexistente: 'La regla usa una variable que ya no existe: no se va a disparar.',
+  regla_duplicada: 'Hay dos reglas con el mismo identificador: duplica o rehace una de ellas.',
+  dueno_sin_id: 'La regla está en un elemento sin identificador y no se ejecuta.',
+};
 
 // ─── Eventos imposibles ──────────────────────────────────────────────────────
 
@@ -210,7 +219,8 @@ export function problemasDeInteraccion(
   const rotas: ProblemaInteraccion[] = reglasConReferenciasRotas(slides, variables).map((r) => ({
     codigo: 'referencia_rota',
     severidad: 'error',
-    mensaje: r.mensaje,
+    // El mensaje de integridad nombra ids crudos: aquí se reemplaza por uno legible.
+    mensaje: MENSAJE_REFERENCIA[r.codigo],
     slideId: r.slideId,
     ...(r.bloqueId !== undefined ? { bloqueId: r.bloqueId } : {}),
     reglaId: r.reglaId,

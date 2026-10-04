@@ -70,6 +70,7 @@ describe('traza', () => {
     );
     expect(traza?.[0]).toMatchObject({ resultado: 'sino', acciones: 1 });
     expect(traza?.[0]?.motivo).toContain('«Intentos»');
+    expect(traza?.[0]?.motivo).not.toContain('««');
   });
 
   it('una condición rota se distingue de una que dio falso', () => {
@@ -121,6 +122,8 @@ describe('problemasDeInteraccion', () => {
     });
     const p = problemasDeInteraccion([s], variables, { eventosDeBloque });
     expect(p.find((x) => x.reglaId === 'rota')).toMatchObject({ codigo: 'referencia_rota', severidad: 'error', bloqueId: 'b1' });
+    // Ningún mensaje al docente lleva un id crudo.
+    expect(p.find((x) => x.reglaId === 'rota')?.mensaje).not.toContain('no-existe');
     expect(p.find((x) => x.reglaId === 'imposible')).toMatchObject({ codigo: 'evento_imposible', bloqueId: 'b1' });
     expect(p.find((x) => x.reglaId === 'slide-imposible')).toMatchObject({ codigo: 'evento_imposible', slideId: 's1' });
   });
