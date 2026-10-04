@@ -1352,6 +1352,34 @@ export function PropertiesPanel({
     }
   }
 
+  if (block.tipo === 'tabla_periodica') {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>('tabla_periodica');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Tabla periódica">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            <WidgetPropertiesPanelBlock>
+              <AnimationPanel
+                block={block}
+                slide={slide}
+                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
+                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
+              />
+            </WidgetPropertiesPanelBlock>
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
   if (block.tipo === 'molecula') {
     const def = elementRegistry.obtener<
       Block,
