@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import { asegurarIdBloque } from '@lumina/editor-shared/block-id';
 import type { EstadoObjeto } from '@lumina/types/interaction';
-import type { ReferenciaRota } from '@lumina/interactions';
+import type { ReferenciaRota, ReglaAplicable } from '@lumina/interactions';
+import { BlockStatesSection } from './block-states-section';
 import { InteractionsPanel } from './interactions-panel';
 import { tipoDeElemento } from '../../lib/interacciones';
 import { useClassVariables } from '../../lib/class-variables-context';
@@ -180,6 +181,8 @@ export interface PropertiesPanelProps {
   /** K7b — slides del mazo (destinos de las interacciones) y referencias rotas del mazo. */
   slidesDelMazo?: { id: string; titulo: string }[];
   referenciasRotas?: ReferenciaRota[];
+  /** N6 — reglas de todo el mazo (impide borrar un estado personalizado en uso). */
+  reglasDelMazo?: ReglaAplicable[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -205,6 +208,7 @@ export function PropertiesPanel({
   onApplySlide,
   slidesDelMazo = [],
   referenciasRotas = [],
+  reglasDelMazo = [],
 }: PropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState<'propiedades' | 'animaciones'>('propiedades');
   const variablesClase = useClassVariables();
@@ -427,6 +431,12 @@ export function PropertiesPanel({
       <>
         <BlockEstadoInicialSection
           estado={(block as { estado?: EstadoObjeto }).estado ?? 'normal'}
+          applyNow={applyNow}
+        />
+        <BlockStatesSection
+          block={block}
+          reglas={reglasDelMazo}
+          tituloDeSlide={(id) => slidesDelMazo.find((x) => x.id === id)?.titulo}
           applyNow={applyNow}
         />
         <InteractionsPanel

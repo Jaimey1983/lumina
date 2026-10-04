@@ -43,6 +43,41 @@ export type EstadoObjeto =
   | 'seleccionado'
   | 'deshabilitado';
 
+/**
+ * Estado de un bloque: uno de los cuatro de `EstadoObjeto` o el `id` de un
+ * estado personalizado declarado en ESE bloque (`Block.estadosPersonalizados`,
+ * N6). El union cerrado `EstadoObjeto` no cambia: `Block.estado` (inicial)
+ * sigue siendo uno de los cuatro.
+ */
+export type EstadoDeBloque = EstadoObjeto | (string & {});
+
+/** Estados con apariencia propia además de los de `EstadoObjeto` (N6). */
+export type EstadoConApariencia = EstadoObjeto | 'hover' | 'down';
+
+/**
+ * Apariencia declarativa de un estado (N6). Valores acotados: no hay CSS libre
+ * ni `style` arbitrario. `fondo`/`borde` son colores `#rgb`/`#rrggbb`.
+ */
+export interface AparienciaEstado {
+  /** 0–1. */
+  opacidad?: number;
+  /** 0.5–1.5. */
+  escala?: number;
+  fondo?: string;
+  borde?: string;
+  /** 0–3: intensidad de sombra (0 = ninguna). */
+  sombra?: number;
+  /** 0.5–1.5 (1 = sin cambio). */
+  brillo?: number;
+}
+
+/** Estado personalizado de un bloque (máximo 8; el tope vive en `@lumina/interactions`). */
+export interface EstadoPersonalizado {
+  id: string;
+  nombre: string;
+  apariencia: AparienciaEstado;
+}
+
 // ─── Eventos ─────────────────────────────────────────────────────────────────
 
 /** Eventos que un elemento o un slide pueden emitir. */
@@ -137,7 +172,7 @@ export type Accion =
   | { tipo: 'anterior' }
   | { tipo: 'mostrar'; bloqueId: string }
   | { tipo: 'ocultar'; bloqueId: string }
-  | { tipo: 'cambiar_estado'; bloqueId: string; estado: EstadoObjeto }
+  | { tipo: 'cambiar_estado'; bloqueId: string; estado: EstadoDeBloque }
   | { tipo: 'abrir_capa'; capaId: string }
   | { tipo: 'cerrar_capa'; capaId: string }
   | { tipo: 'asignar_variable'; variableId: string; valor: Operando }

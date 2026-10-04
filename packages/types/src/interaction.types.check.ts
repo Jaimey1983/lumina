@@ -9,7 +9,10 @@ import type {
   Capa,
   ClaveSistema,
   Condicion,
+  AparienciaEstado,
+  EstadoConApariencia,
   EstadoObjeto,
+  EstadoPersonalizado,
   EventoTipo,
   Operando,
   Regla,
@@ -112,6 +115,28 @@ export type _SinNotaEnOperandos = Assert<
   Equal<NombraNota<Operando['tipo']>, never>
 >;
 export type _SinNotaEnSistema = Assert<Equal<NombraNota<ClaveSistema>, never>>;
+// N6: la apariencia por estado es declarativa y no puede nombrar nota/puntaje.
+export type _SinNotaEnApariencia = Assert<
+  Equal<NombraNota<keyof AparienciaEstado>, never>
+>;
+export type _SinNotaEnEstadoConApariencia = Assert<
+  Equal<NombraNota<EstadoConApariencia>, never>
+>;
+export type _AparienciaClaves = Assert<
+  Equal<keyof AparienciaEstado, 'opacidad' | 'escala' | 'fondo' | 'borde' | 'sombra' | 'brillo'>
+>;
+export type _EstadoConApariencia = Assert<
+  Equal<EstadoConApariencia, EstadoObjeto | 'hover' | 'down'>
+>;
+export type _TipoApariencias = Assert<
+  Equal<
+    NonNullable<Block['apariencias']>,
+    Partial<Record<EstadoConApariencia, AparienciaEstado>>
+  >
+>;
+export type _TipoEstadosPersonalizados = Assert<
+  Equal<NonNullable<Block['estadosPersonalizados']>, EstadoPersonalizado[]>
+>;
 export type _SinNotaEnCondiciones = Assert<Equal<NombraNota<Condicion['tipo']>, never>>;
 
 // N1: catálogo de operandos y de condiciones (cambiarlos obliga a decidirlo).

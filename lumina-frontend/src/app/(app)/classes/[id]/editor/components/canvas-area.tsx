@@ -53,7 +53,7 @@ import type {
 import { EMPTY_SLIDE_GUIAS } from '@lumina/types/slide';
 import type { Regla } from '@lumina/types/interaction';
 import { bloqueParaPegar } from '@lumina/interactions';
-import type { ReferenciaRota } from '@lumina/interactions';
+import type { ReferenciaRota, ReglaAplicable } from '@lumina/interactions';
 import {
   comoSlideMotor,
   dependenciasDeBloque,
@@ -198,6 +198,8 @@ export interface CanvasAreaProps {
   /** K7b — slides del mazo (destinos de interacciones) y reglas con referencias rotas. */
   slidesDelMazo?: { id: string; titulo: string }[];
   referenciasRotas?: ReferenciaRota[];
+  /** N6 — reglas de todo el mazo (impide borrar un estado personalizado en uso). */
+  reglasDelMazo?: ReglaAplicable[];
   /** Tema resuelto del slide (predefinido o personalizado) para `estiloTema`. */
   slideTheme?: SlideTheme | null;
   isLoading?: boolean;
@@ -313,6 +315,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
     slide,
     slidesDelMazo = [],
     referenciasRotas = [],
+    reglasDelMazo = [],
     slideTheme,
     isLoading,
     onBlockSelect,
@@ -2411,6 +2414,7 @@ export const CanvasArea = forwardRef<CanvasAreaHandle, CanvasAreaProps>(function
         onApplySlide={handleApplySlide}
         slidesDelMazo={slidesDelMazo}
         referenciasRotas={referenciasRotas}
+        reglasDelMazo={reglasDelMazo}
         flipCardsInnerSelection={flipCardsInnerSelection}
         tabsInnerSelection={tabsInnerSelection}
         carouselInnerSelection={carouselInnerSelection}

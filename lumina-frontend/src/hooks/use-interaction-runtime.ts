@@ -29,7 +29,7 @@ import {
   type EventoMotor,
 } from '@lumina/interactions';
 import type {
-  EstadoObjeto,
+  EstadoDeBloque,
   EventoTipo,
   VariableDef,
   VariableValor,
@@ -42,7 +42,7 @@ import { ejecutarEvento, hidratarEstado } from '@/lib/interaction-runtime';
 /** Lo que `SlideRenderer` reenvía a `config` de cada elemento. */
 export interface SlideInteractionRuntime {
   emitir: (bloqueId: string, evento: EventoTipo) => void;
-  estadoDe: (bloqueId: string) => EstadoObjeto | undefined;
+  estadoDe: (bloqueId: string) => EstadoDeBloque | undefined;
   /** K8a — `false` = el reproductor omite el bloque. Ausente = visible. */
   visibles: Readonly<Record<string, boolean>>;
   /** K8a — ids de capas abiertas, en orden de apertura. */

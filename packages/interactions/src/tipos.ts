@@ -1,6 +1,6 @@
 import type {
   ClaveSistema,
-  EstadoObjeto,
+  EstadoDeBloque,
   EventoTipo,
   Regla,
   VariableDef,
@@ -20,7 +20,7 @@ export interface EstadoMotor {
   /** Valor actual de cada variable, por `VariableDef.id`. */
   readonly variables: Readonly<Record<string, VariableValor>>;
   /** Estado de objeto por `bloqueId`. Un bloque ausente está en `'normal'`. */
-  readonly estados: Readonly<Record<string, EstadoObjeto>>;
+  readonly estados: Readonly<Record<string, EstadoDeBloque>>;
   /** Visibilidad forzada por reglas, por `bloqueId`. Ausente = el valor por defecto del bloque. */
   readonly visibles: Readonly<Record<string, boolean>>;
   /** Ids de capas abiertas, en orden de apertura. */
@@ -79,7 +79,8 @@ export type CodigoAviso =
   | 'sistema_no_disponible'
   | 'rango_invalido'
   | 'resultado_invalido'
-  | 'texto_recortado';
+  | 'texto_recortado'
+  | 'estado_inexistente';
 
 /**
  * El motor NUNCA lanza por una regla mal formada (viene de JSON editable):
@@ -121,6 +122,12 @@ export interface ContextoMotor {
    * cerrado) y deja un aviso.
    */
   sistema?: Partial<Record<ClaveSistema, number>>;
+  /**
+   * N6 — estados personalizados declarados por `bloqueId`. Sin este dato (o sin
+   * el bloque) solo valen los cuatro estados base: `cambiar_estado` a un id
+   * desconocido no se ejecuta y deja un `estado_inexistente`.
+   */
+  estadosPersonalizados?: Readonly<Record<string, readonly string[]>>;
 }
 
 /** Claves de sistema válidas (para validar reglas editadas a mano). */

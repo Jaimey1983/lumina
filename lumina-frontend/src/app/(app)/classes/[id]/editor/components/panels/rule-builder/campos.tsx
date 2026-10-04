@@ -14,6 +14,8 @@ export interface OpcionesBuilder {
     respondible: boolean;
     /** El bloque ya empieza oculto (`ocultoInicial`). */
     ocultoInicial: boolean;
+    /** N6 — estados personalizados que declara el bloque. */
+    estados?: readonly { id: string; nombre: string }[];
   }[];
   slides: readonly { id: string; titulo: string }[];
   capas: readonly { id: string; nombre: string }[];
@@ -53,3 +55,9 @@ export function Aviso({ campo }: { campo: string }) {
 
 export const esEstado = (v: string): v is EstadoObjeto =>
   v === 'normal' || v === 'visitado' || v === 'seleccionado' || v === 'deshabilitado';
+
+/** N6 — ¿es `v` un estado válido para ese bloque (base o personalizado que declara)? */
+export const esEstadoDeBloque = (
+  v: string,
+  bloque: { estados?: readonly { id: string }[] } | undefined,
+): boolean => esEstado(v) || (bloque?.estados ?? []).some((e) => e.id === v);

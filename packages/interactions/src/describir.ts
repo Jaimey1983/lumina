@@ -24,6 +24,8 @@ export interface ContextoDescripcion {
   nombreBloque(id: string): string | undefined;
   tituloSlide(id: string): string | undefined;
   nombreCapa(id: string): string | undefined;
+  /** N6 — nombre de un estado personalizado de un bloque (opcional). */
+  nombreEstado?(bloqueId: string, estadoId: string): string | undefined;
 }
 
 export const ELIMINADO = '(eliminado)';
@@ -157,7 +159,11 @@ export function describirAccion(a: Accion, ctx: ContextoDescripcion): string {
     case 'ocultar':
       return `ocultar ${b(a.bloqueId)}`;
     case 'cambiar_estado':
-      return `poner ${b(a.bloqueId)} en «${ESTADOS[a.estado]}»`;
+      return `poner ${b(a.bloqueId)} en «${
+        (Object.hasOwn(ESTADOS, a.estado)
+          ? ESTADOS[a.estado as EstadoObjeto]
+          : ctx.nombreEstado?.(a.bloqueId, a.estado)) ?? ELIMINADO
+      }»`;
     case 'abrir_capa':
       return `abrir la capa «${ctx.nombreCapa(a.capaId) ?? ELIMINADO}»`;
     case 'cerrar_capa':

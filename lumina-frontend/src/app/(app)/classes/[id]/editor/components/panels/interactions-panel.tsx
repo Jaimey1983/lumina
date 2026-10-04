@@ -8,7 +8,11 @@ import { ArrowDown, ArrowUp, Copy, Pencil, Plus } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
-import { EVENTOS_DE_ENTORNO, sinMarcaDePlantilla } from '@lumina/interactions';
+import {
+  EVENTOS_DE_ENTORNO,
+  estadosPersonalizadosPorBloque,
+  sinMarcaDePlantilla,
+} from '@lumina/interactions';
 import type { ContextoValidacion, ReferenciaRota } from '@lumina/interactions';
 import type { Capa, Regla } from '@lumina/types/interaction';
 import type { Block } from '@lumina/types/slide';
@@ -144,6 +148,7 @@ export function InteractionsPanel({
           'respuesta_correcta',
         ),
         ocultoInicial: (b as { ocultoInicial?: boolean }).ocultoInicial === true,
+        estados: (b.estadosPersonalizados ?? []).map((e) => ({ id: e.id, nombre: e.nombre })),
       })),
       slides: slidesDelMazo,
       capas: capas.map((c) => ({ id: c.id, nombre: c.nombre })),
@@ -156,6 +161,7 @@ export function InteractionsPanel({
       bloqueIds: new Set(candidatos.map((b) => idDe(b) ?? '').filter((x) => x !== '')),
       slideIds: new Set([...slidesDelMazo.map((s) => s.id), slideId]),
       capaIds: new Set(capas.map((c) => c.id)),
+      estadosPersonalizados: estadosPersonalizadosPorBloque([{ bloques: candidatos, capas: [] }]),
     }),
     [variables, candidatos, slidesDelMazo, slideId, capas],
   );

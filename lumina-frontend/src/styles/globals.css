@@ -293,3 +293,15 @@ html {
 @import './config.metronic.css';
 
 @import './lumina-animations.css';
+
+/** N6 — transición suave entre estados de objeto; sin movimiento si el usuario lo pide. */
+@media (prefers-reduced-motion: no-preference) {
+  .lumina-estado-transicion {
+    transition:
+      opacity 120ms ease,
+      scale 120ms ease,
+      background-color 120ms ease,
+      filter 120ms ease,
+      box-shadow 120ms ease;
+  }
+}
