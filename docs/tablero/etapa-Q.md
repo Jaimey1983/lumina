@@ -201,7 +201,7 @@ J8 + Q1 ─→ Q8
 
 #### Q12 — Tabla periódica: modelo de Bohr animado en la ficha (sin three.js)
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — `capasElectronicas(z)` (suma Z en los 118), `bohr-model.tsx` (SVG+CSS, capas con giro alterno, `data-cat` hereda la paleta, `role="img"` con capas, estático en miniatura y con `prefers-reduced-motion`), integrado en la ficha. Verif: element-kit build/test (582)/lint · `npx tsc --noEmit` · `pnpm build` · captura en producción (Au: 6 capas girando).
 - **Precondición:** Q9–Q11 `hecho` (mergeados en #89).
 - **Contexto:** la referencia (Google Arts) muestra un modelo de Bohr animado en la ficha. Decisión del dueño: **sin three.js** por ahora (peso de bundle); SVG + CSS puro. Un 3D con rotación libre queda como ficha aparte (Q13) si se pide.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{bohr-model.tsx,periodic-metadata.ts,tabla-periodica-viewer.tsx,tabla-periodica.module.css}` y specs nuevos de esa carpeta.
