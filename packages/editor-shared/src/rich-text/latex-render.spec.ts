@@ -78,6 +78,10 @@ describe('speakLatex', () => {
     );
     expect(speakLatex('\\ce{NaCl(s)}')).toBe('Na Cl en estado s');
     expect(speakLatex('\\pu{18 g mol-1}')).toContain('18');
+    expect(speakLatex('\\ce{Na^{+}}')).toBe('Na carga positiva');
+    expect(speakLatex('\\ce{Cu^{2+}}')).toBe('Cu carga 2 positiva');
+    expect(speakLatex('\\ce{AgNO3(aq) + NaCl(aq)}')).toContain('Ag N O 3 en estado aq');
+    expect(speakLatex('\\ce{AgNO3(aq) + NaCl(aq)}')).toContain('Na Cl en estado aq');
   });
 });
 
