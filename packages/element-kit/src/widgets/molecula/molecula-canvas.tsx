@@ -42,7 +42,8 @@ export function MoleculaSmilesCanvas({
         (tree: unknown) => {
           if (cancelled || !canvasRef.current) return;
           try {
-            drawer.draw(tree, canvasRef.current, 'light', true);
+            // 4.º argumento = infoOnly (smiles-drawer 2.x): false para dibujar.
+            drawer.draw(tree, canvasRef.current, 'light', false);
           } catch (e) {
             setError(e instanceof Error ? e.message : 'No se pudo dibujar');
           }
