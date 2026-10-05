@@ -211,7 +211,7 @@ J8 + Q1 ─→ Q8
 
 #### Q13 — Tabla periódica: modelo atómico 3D con three.js (carga perezosa)
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — `three@0.186` (+`@types/three`) en `element-kit`; `bohr-geometry.ts` (puro: capas inclinadas, núcleo Fibonacci, suma = Z en los 118) y `bohr-model-3d.tsx` (núcleo InstancedMesh, órbitas, electrones, OrbitControls, libera recursos); conmutador 2D/3D en la ficha con `React.lazy` (3 chunks nuevos solo al pulsar 3D; `/preview` sigue en 1.05 MB), respaldo al 2D sin WebGL, `prefers-reduced-motion` sin autorrotación, miniatura sin 3D. Verif: element-kit build/test (591)/lint (37 avisos, sin nuevos) · `npx tsc --noEmit` · `pnpm build` · navegador con WebGL: canvas, rotación por arrastre, cambio de elemento y vuelta a 2D sin errores.
 - **Precondición:** Q12 `hecho` (mergeado en #91).
 - **Contexto:** el dueño pide el 3D de la referencia (Google Arts) con rotación libre; Q12 dejó el Bohr 2D en SVG. Aplica **DQ4**: el peso de `three` entra solo con `dynamic import` al activar la vista 3D; el 2D de Q12 sigue siendo el valor por defecto y el respaldo.
 - **Alcance — PUEDE tocar:** `packages/element-kit/package.json` + `pnpm-lock.yaml` (única dependencia nueva: `three` y `@types/three`); `packages/element-kit/src/widgets/tabla_periodica/{bohr-model-3d.tsx,bohr-geometry.ts,tabla-periodica-viewer.tsx,tabla-periodica.module.css}` y specs nuevos de esa carpeta.
