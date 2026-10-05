@@ -171,7 +171,7 @@ J8 + Q1 ─→ Q8
 
 #### Q9 — Datos de la tabla periódica: grupos, categorías y propiedades correctas
 - **Operador:** Claude Code
-- **Estado:** en revisión — grupos/categorías/nombres corregidos, `meltK`/`boilK`/`discoveredBy` (Bowserinator, CC BY-SA), configuración electrónica con 20 excepciones; verif: `pnpm --filter @lumina/chemistry build && test && lint` (57 tests), `pnpm --filter @lumina/element-kit build && test && lint` (576 tests). Nota: `elements-data.ts`/`element-store*.ts` siguen huérfanos (sin consumidores).
+- **Estado:** hecho — merge PR #89. grupos/categorías/nombres corregidos, `meltK`/`boilK`/`discoveredBy` (Bowserinator, CC BY-SA), configuración electrónica con 20 excepciones; verif: `pnpm --filter @lumina/chemistry build && test && lint` (57 tests), `pnpm --filter @lumina/element-kit build && test && lint` (576 tests). Nota: `elements-data.ts`/`element-store*.ts` siguen huérfanos (sin consumidores).
 - **Precondición:** Q1 `hecho`, Q3 `hecho`.
 - **Contexto:** `elements.json` (generado por `scripts/generate-elements.mjs`) tiene `group: null` en los 118 elementos y categorías erróneas (B, C, As, Sb, Te, Po, Bi, Sn, Pb, Fl, Mc, Lv, Nh), más nombres «Cinc/Erio/Tantalio» (`elements-data.ts` ya trae Zinc/Erbio/Tántalo). Sin esto, el heatmap por grupo no funciona y cualquier color por categoría sería falso. Fuente de propiedades: Bowserinator/Periodic-Table-JSON (CC BY-SA 3.0, atribuir en metadatos).
 - **Alcance — PUEDE tocar:** `packages/chemistry/scripts/generate-elements.mjs`, `src/data/elements.json`, `elements.dataset.ts`, `elements.ts` (campos aditivos opcionales `meltK`, `boilK`, `discoveredBy`), `elements.spec.ts`; `packages/element-kit/src/widgets/tabla_periodica/periodic-metadata.ts` y `periodic-dataset.spec.ts` (ficha: configuración electrónica con excepciones, nuevos campos).
@@ -181,7 +181,7 @@ J8 + Q1 ─→ Q8
 
 #### Q10 — Tabla periódica: layout (La/Ac en grupo 3, filas f separadas) y ficha lateral
 - **Operador:** Claude Code
-- **Estado:** en revisión — La/Ac en (6,3)/(7,3), f-rows 58–71/90–103 con fila 8 separadora, ficha lateral (container query <560px apila), flechas saltan huecos; `.ptCell:disabled{visibility:hidden}` retirado (filtradas se atenúan con `ptCellDim`). Verif: element-kit build/test/lint · `npx tsc --noEmit` · captura en build de producción.
+- **Estado:** hecho — merge PR #89. La/Ac en (6,3)/(7,3), f-rows 58–71/90–103 con fila 8 separadora, ficha lateral (container query <560px apila), flechas saltan huecos; `.ptCell:disabled{visibility:hidden}` retirado (filtradas se atenúan con `ptCellDim`). Verif: element-kit build/test/lint · `npx tsc --noEmit` · captura en build de producción.
 - **Precondición:** Q9 `hecho` (mismo PR admitido).
 - **Contexto:** (1) La (57) y Ac (89) van en las filas f; en la referencia (Google Arts) están en el grupo 3 del cuerpo y las filas f son 58–71 / 90–103, separadas por una fila vacía. (2) `.whContent` (editor-shared) fuerza `flex-direction: column`; `.ptBody` pide `row` y pierde, así que la ficha cae debajo y aplasta la tabla.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{periodic-layout.ts,tabla-periodica-viewer.tsx,tabla-periodica.module.css}` y sus specs.
@@ -191,13 +191,23 @@ J8 + Q1 ─→ Q8
 
 #### Q11 — Tabla periódica: color por categoría, leyenda interactiva y ficha con tarjeta
 - **Operador:** Claude Code
-- **Estado:** en revisión — paleta de 10 categorías (`.ptRoot [data-cat]`: los CSS modules exigen clase local), celda con Z/símbolo/nombre (nombre desde 760 px), leyenda clicable/hover que atenúa el resto (oculta con heatmap), ficha con tarjeta de color, `prefers-reduced-motion`; spec de la paleta. Verif: element-kit build/test/lint · `npx tsc --noEmit` · capturas en build de producción (reposo, categoría resaltada, heatmap por grupo).
+- **Estado:** hecho — merge PR #89. Paleta de 10 categorías (`.ptRoot [data-cat]`: los CSS modules exigen clase local), celda con Z/símbolo/nombre (nombre desde 760 px), leyenda clicable/hover que atenúa el resto (oculta con heatmap), ficha con tarjeta de color, `prefers-reduced-motion`; spec de la paleta. Verif: element-kit build/test/lint · `npx tsc --noEmit` · capturas en build de producción (reposo, categoría resaltada, heatmap por grupo).
 - **Precondición:** Q9 y Q10 en la misma rama (datos y layout correctos).
 - **Contexto:** la celda es blanca con símbolo de 12 px; la referencia (Google Arts) pinta cada categoría, muestra símbolo grande con nombre debajo, atenúa el resto al resaltar una categoría y tiene ficha con tarjeta de color.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{tabla-periodica-viewer.tsx,tabla-periodica.module.css,periodic-metadata.ts}` y specs nuevos de esa carpeta.
 - **Alcance — NO toca:** `@lumina/types`/configuración persistida (el resaltado de categoría es estado local del viewer), editor-shared, modelo de Bohr (Q12).
 - **Entregable:** paleta de 10 categorías (texto con contraste AA); celda con Z, símbolo grande y nombre; leyenda de categorías clicable/hover que atenúa el resto (oculta con heatmap activo); ficha lateral con tarjeta (símbolo grande, nombre, Z, categoría con su color); color nunca como único canal (`aria-label`/`title`/ficha llevan la categoría); `prefers-reduced-motion` sin transiciones. Verif: `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit` · captura en build de producción.
 - **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): color por categoría y leyenda interactiva en la tabla periódica (Q11)`.
+
+#### Q12 — Tabla periódica: modelo de Bohr animado en la ficha (sin three.js)
+- **Operador:** Claude Code
+- **Estado:** en revisión — `capasElectronicas(z)` (suma Z en los 118), `bohr-model.tsx` (SVG+CSS, capas con giro alterno, `data-cat` hereda la paleta, `role="img"` con capas, estático en miniatura y con `prefers-reduced-motion`), integrado en la ficha. Verif: element-kit build/test (582)/lint · `npx tsc --noEmit` · `pnpm build` · captura en producción (Au: 6 capas girando).
+- **Precondición:** Q9–Q11 `hecho` (mergeados en #89).
+- **Contexto:** la referencia (Google Arts) muestra un modelo de Bohr animado en la ficha. Decisión del dueño: **sin three.js** por ahora (peso de bundle); SVG + CSS puro. Un 3D con rotación libre queda como ficha aparte (Q13) si se pide.
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/tabla_periodica/{bohr-model.tsx,periodic-metadata.ts,tabla-periodica-viewer.tsx,tabla-periodica.module.css}` y specs nuevos de esa carpeta.
+- **Alcance — NO toca:** dependencias (`package.json`), `@lumina/chemistry`, tipos, otros widgets.
+- **Entregable:** `capasElectronicas(z)` (electrones por capa derivados de la configuración electrónica de Q9, suma = Z en los 118); componente SVG con núcleo, órbitas y un electrón por punto, capas girando a distinto ritmo; `prefers-reduced-motion` y miniatura sin animación; alternativa textual (`role="img"` + `aria-label` con las capas); se muestra en la ficha bajo la tarjeta. Verif: `pnpm --filter @lumina/element-kit build && test && lint` · `cd lumina-frontend && npx tsc --noEmit && pnpm build` · captura en build de producción.
+- **Cierre:** no aplica Regla 4. Commit sugerido: `feat(element-kit): modelo de Bohr animado en la ficha de la tabla periódica (Q12)`.
 
 #### Cierre de la Etapa Q
 La etapa se cierra cuando **Q1–Q5** estén `hecho` (motor + compositor + tabla + actividades + flyout) — **ciclo mínimo usable en aula**. Q6–Q8 son **alto valor** pero **no bloquean** el cierre de la etapa si el dueño prefiere entregar en dos olas (anotar en el commit de cierre). QA obligatoria en build de producción para Q3–Q5 y Q4 en autónomo. Al cerrar, actualizar esta raíz con baselines finales y enlazar evidencias DBA CN-6/7 en la descripción de plantillas.

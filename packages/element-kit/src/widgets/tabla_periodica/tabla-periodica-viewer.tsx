@@ -38,6 +38,7 @@ import {
   etiquetaCategoria,
   usoBreve,
 } from './periodic-metadata.js';
+import { BohrModel } from './bohr-model.js';
 import styles from './tabla-periodica.module.css';
 import { normalizeTablaPeriodicaWidget } from './tabla-periodica-config.js';
 
@@ -306,6 +307,13 @@ export function TablaPeriodicaViewer({
                 <span className={styles.ptCardName}>{selectedEl.name}</span>
                 <span className={styles.ptCardCat}>{etiquetaCategoria(selectedEl.category)}</span>
               </div>
+              <BohrModel
+                z={selectedEl.z}
+                symbol={selectedEl.symbol}
+                name={selectedEl.name}
+                categoria={selectedEl.category}
+                estatico={isThumbnail}
+              />
               <dl>
                 <dt>Número atómico</dt>
                 <dd>{selectedEl.z}</dd>

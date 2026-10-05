@@ -103,6 +103,21 @@ export function configuracionElectronicaV1(z: number): string {
     .join(' · ');
 }
 
+/**
+ * Electrones por capa (K, L, M…) para el modelo de Bohr: suma la ocupación de
+ * los orbitales de cada número cuántico principal según la configuración de
+ * `configuracionElectronicaV1`. La suma es siempre Z.
+ */
+export function capasElectronicas(z: number): number[] {
+  const capas: number[] = [];
+  for (const orbital of configuracionElectronicaV1(z).split(' · ')) {
+    const n = Number(orbital[0]);
+    const electrones = Number(orbital.slice(2));
+    capas[n - 1] = (capas[n - 1] ?? 0) + electrones;
+  }
+  return Array.from(capas, (e) => e ?? 0);
+}
+
 export function etiquetaCategoria(category: ElementCategory): string {
   return CATEGORIA_ES[category];
 }
