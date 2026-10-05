@@ -12,6 +12,8 @@ import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
 import { WidgetHeaderViewer } from '@lumina/editor-shared/widget-header-viewer';
 import { cn } from '@lumina/ui/lib/utils';
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -41,6 +43,9 @@ import {
 import { BohrModel } from './bohr-model.js';
 import styles from './tabla-periodica.module.css';
 import { normalizeTablaPeriodicaWidget } from './tabla-periodica-config.js';
+
+// Q13 / DQ4: `three` solo se descarga al activar la vista 3D de la ficha.
+const BohrModel3D = lazy(() => import('./bohr-model-3d.js'));
 
 const ALL = getAllElements();
 const META = getElementsMetadata();
@@ -136,6 +141,14 @@ export function TablaPeriodicaViewer({
   const [categoriaFija, setCategoriaFija] = useState<ElementCategory | null>(null);
   const [categoriaHover, setCategoriaHover] = useState<ElementCategory | null>(null);
   const categoriaFoco = categoriaHover ?? categoriaFija;
+
+  // Vista de la ficha: 2D (SVG, Q12) por defecto; 3D (three.js, Q13) bajo demanda.
+  const [vista, setVista] = useState<'2d' | '3d'>('2d');
+  const [fallo3d, setFallo3d] = useState(false);
+  const alFallar3d = useCallback(() => {
+    setFallo3d(true);
+    setVista('2d');
+  }, []);
   const usaHeatmap = configuracion.heatmapPropiedad !== 'ninguna';
 
   /** Mueve por la misma fila saltando huecos (p. ej. entre Be y B). */
@@ -307,13 +320,55 @@ export function TablaPeriodicaViewer({
                 <span className={styles.ptCardName}>{selectedEl.name}</span>
                 <span className={styles.ptCardCat}>{etiquetaCategoria(selectedEl.category)}</span>
               </div>
-              <BohrModel
-                z={selectedEl.z}
-                symbol={selectedEl.symbol}
-                name={selectedEl.name}
-                categoria={selectedEl.category}
-                estatico={isThumbnail}
-              />
+              {!isThumbnail ? (
+                <div className={styles.ptVista} role="group" aria-label="Vista del modelo atómico">
+                  {(['2d', '3d'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={vista === v}
+                      disabled={v === '3d' && fallo3d}
+                      title={
+                        v === '3d' && fallo3d ? 'Tu navegador no admite gráficos 3D (WebGL)' : undefined
+                      }
+                      className={cn(styles.ptVistaBtn, vista === v && styles.ptVistaOn)}
+                      onClick={() => setVista(v)}
+                    >
+                      {v.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {vista === '3d' && !isThumbnail ? (
+                <Suspense
+                  fallback={
+                    <BohrModel
+                      z={selectedEl.z}
+                      symbol={selectedEl.symbol}
+                      name={selectedEl.name}
+                      categoria={selectedEl.category}
+                      estatico
+                    />
+                  }
+                >
+                  <BohrModel3D
+                    z={selectedEl.z}
+                    name={selectedEl.name}
+                    masaNumero={Math.round(selectedEl.atomicMass)}
+                    categoria={selectedEl.category}
+                    onError={alFallar3d}
+                  />
+                  <p className={styles.ptBohrHint}>Arrastra para rotar · rueda para acercar</p>
+                </Suspense>
+              ) : (
+                <BohrModel
+                  z={selectedEl.z}
+                  symbol={selectedEl.symbol}
+                  name={selectedEl.name}
+                  categoria={selectedEl.category}
+                  estatico={isThumbnail}
+                />
+              )}
               <dl>
                 <dt>Número atómico</dt>
                 <dd>{selectedEl.z}</dd>
