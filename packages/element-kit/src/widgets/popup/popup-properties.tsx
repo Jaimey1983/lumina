@@ -26,6 +26,7 @@ import { Checkbox } from '@lumina/ui/checkbox';
 
 import { Input } from '@lumina/ui/input';
 
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
@@ -134,13 +135,15 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
       <div className="space-y-2">
 
-        <WidgetSectionTitle>Disparador</WidgetSectionTitle>
-
-        <p className="text-[10px] leading-snug text-muted-foreground">
-
-          Tamaño base 48×48 px. Ajusta con el control o arrastrando las esquinas del bloque en el lienzo.
-
-        </p>
+        <div className="flex items-center gap-1.5">
+          <WidgetSectionTitle>Disparador</WidgetSectionTitle>
+          <FieldHelp label="Tamaño del disparador">
+            <p>
+              Tamaño base 48×48 px. Ajusta con el control o arrastrando las esquinas del bloque en
+              el lienzo.
+            </p>
+          </FieldHelp>
+        </div>
 
         {(visual === 'icono' || visual === 'boton' || visual === 'imagen') ? (
           <div className="space-y-1.5">
@@ -387,13 +390,15 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
             <div className="space-y-1.5">
 
-              <Label className="text-xs">Proporción del ícono</Label>
-
-              <p className="text-[10px] leading-snug text-muted-foreground">
-
-                Tamaño del glifo dentro del círculo (el área total se ajusta con el slider o las esquinas del bloque).
-
-              </p>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-xs">Proporción del ícono</Label>
+                <FieldHelp label="Proporción del ícono">
+                  <p>
+                    Tamaño del glifo dentro del círculo (el área total se ajusta con el slider o
+                    las esquinas del bloque).
+                  </p>
+                </FieldHelp>
+              </div>
 
               <ToggleGroup
 
@@ -691,11 +696,15 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
         </div>
 
-        <p className="text-[10px] text-muted-foreground">
-
-          Abre el lápiz sobre el bloque o usa el botón del toolbar flotante para editar el contenido. Arrastra las esquinas del modal para cambiar el tamaño de la ventana.
-
-        </p>
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          Editar contenido y tamaño del modal
+          <FieldHelp label="Contenido y tamaño del modal">
+            <p>
+              Abre el lápiz sobre el bloque o usa el botón del toolbar flotante para editar el
+              contenido. Arrastra las esquinas del modal para cambiar el tamaño de la ventana.
+            </p>
+          </FieldHelp>
+        </div>
 
         <div className="space-y-1.5">
 

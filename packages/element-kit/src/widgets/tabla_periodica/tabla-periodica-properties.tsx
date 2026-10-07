@@ -3,6 +3,7 @@
 import type { Block } from '@lumina/types/slide';
 import type { TablaPeriodicaWidget } from '@lumina/types/widget';
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import {
   Select,
@@ -158,10 +159,15 @@ export function TablaPeriodicaProperties({
           <Button type="button" variant="outline" size="sm" onClick={() => void copiarCe()}>
             Copiar notación \\ce al portapapeles
           </Button>
-          <p className="text-muted-foreground text-xs">
-            Selecciona un elemento en la tabla y pega el LaTeX en un bloque ecuación (pestaña
-            Química del compositor).
-          </p>
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+            Cómo usar la notación
+            <FieldHelp label="Notación química">
+              <p>
+                Selecciona un elemento en la tabla y pega el LaTeX en un bloque ecuación (pestaña
+                Química del compositor).
+              </p>
+            </FieldHelp>
+          </div>
         </div>
       </div>
     </div>

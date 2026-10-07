@@ -11,6 +11,7 @@ import type { Block, FlipCard, FlipCardsWidget } from '@lumina/types/slide';
 import { createDefaultFlipCard } from './flip-cards-defaults.js';
 import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { Toggle } from '@lumina/ui/toggle';
@@ -360,11 +361,15 @@ export function FlipCardsProperties({
       )}
 
       <div className="space-y-3">
-        <WidgetSectionTitle>Visibilidad por defecto</WidgetSectionTitle>
-        <p className="text-[11px] leading-snug text-muted-foreground">
-          Aplica a tarjetas nuevas o a las que no tengan un valor propio. Para una tarjeta
-          concreta, selecciónala en el lienzo y usa la sección «Tarjeta» arriba.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <WidgetSectionTitle>Visibilidad por defecto</WidgetSectionTitle>
+          <FieldHelp label="Visibilidad por defecto">
+            <p>
+              Aplica a tarjetas nuevas o a las que no tengan un valor propio. Para una tarjeta
+              concreta, selecciónala en el lienzo y usa la sección «Tarjeta» arriba.
+            </p>
+          </FieldHelp>
+        </div>
         <CaraCheckboxes
           label="Frente"
           cara={configuracion.frente}

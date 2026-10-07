@@ -8,6 +8,7 @@ import type {
 } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import {
@@ -161,10 +162,15 @@ export function FlipCardsTextInnerProperties({
           }
         />
       </div>
-      <p className="text-[11px] leading-snug text-muted-foreground">
-        Usa el asa azul a la izquierda del texto en el lienzo para arrastrarlo dentro de la
-        tarjeta.
-      </p>
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        Mover el texto en el lienzo
+        <FieldHelp label="Mover el texto en la tarjeta">
+          <p>
+            Usa el asa azul a la izquierda del texto en el lienzo para arrastrarlo dentro de la
+            tarjeta.
+          </p>
+        </FieldHelp>
+      </div>
       <WidgetTypographyFields
         style={{
           ...style,
@@ -315,10 +321,15 @@ export function FlipCardsImageInnerProperties({
           <SliderThumb />
         </Slider>
       </div>
-      <p className="text-[10px] leading-snug text-muted-foreground">
-        En el lienzo: arrastra la imagen seleccionada para moverla; usa la esquina inferior
-        derecha para cambiar el zoom.
-      </p>
+      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        Mover y ampliar en el lienzo
+        <FieldHelp label="Mover y ampliar la imagen">
+          <p>
+            En el lienzo: arrastra la imagen seleccionada para moverla; usa la esquina inferior
+            derecha para cambiar el zoom.
+          </p>
+        </FieldHelp>
+      </div>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label className="text-xs">Radio esquinas</Label>

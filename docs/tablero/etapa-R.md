@@ -66,7 +66,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R5 — Widgets
 - **Operador:** Cursor
-- **Estado:** [en curso: Cursor → ejecutado por Claude Code]
+- **Estado:** en revisión — 7 textos al ⓘ: Popup (tamaño del disparador 95, proporción del ícono 102, contenido y tamaño del modal 161), tarjetas (visibilidad por defecto 151, mover texto 92, mover/ampliar imagen 113) y tabla periódica (106). Donde el texto no tenía etiqueta propia, queda una línea corta («Mover el texto en el lienzo», etc.) con el ⓘ. Verif: tsc, eslint 0 errores, vitest element-kit 601 verdes. Sin comprobación visual en el editor.
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/{popup,flip-cards,tabla_periodica}/*-properties.tsx` y `flip-cards-inner-properties.tsx`. Textos: Popup (161, 102, 95), tarjetas (151, 113, 92), tabla periódica (106).
 - **Entregable:** verificación `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
