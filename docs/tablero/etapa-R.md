@@ -45,7 +45,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R2 — Ecuación (caso de la captura)
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — 5 textos de Ecuación/Estados al ⓘ + línea corta `data-ecuacion-aviso-corto`; spec adaptado (+ pruebas de `FieldHelp`, diferidas de R1). Verif: `pnpm --filter @lumina/element-kit exec vitest run src/blocks/ecuacion` (21 verdes), tsc y eslint de element-kit y lumina-frontend sin errores. Sin comprobación visual en el editor (requiere sesión).
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/ecuacion/ecuacion-properties.tsx` y `ecuacion-properties.aviso.spec.tsx`; `lumina-frontend/.../panels/properties-panel.tsx` **solo** la función `BlockEstadoInicialSection` (≈ línea 1743) y la sección «Estados (apariencia)» de `block-states-section.tsx` (≈ línea 138), porque se ven en el mismo panel. **NO** toca otros bloques.
 - **Entregable:** al ⓘ pasan: aviso de pasos (200), `\parte{id}{…}` (~170), variables con `{{a}}` (96), Estado inicial (107), Estados apariencia (121). Se mantiene la línea corta de advertencia cuando `pasos !== true`. Spec adaptado. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend lint`, más comprobación visual en el editor.

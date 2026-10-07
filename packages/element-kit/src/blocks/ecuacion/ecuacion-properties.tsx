@@ -5,6 +5,7 @@ import type { Block, EquationBlock, EquationVinculo } from '@lumina/types/slide'
 import { simbolosDeLatex } from '@lumina/editor-shared/rich-text/latex-render';
 import { EquationComposer } from '@lumina/editor-shared/rich-text/equation-composer';
 import { Checkbox } from '@lumina/ui/checkbox';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
@@ -184,7 +185,25 @@ export function EcuacionProperties({
       </label>
 
       <div className="space-y-2" data-ecuacion-interactividad="">
-        <Label className="text-xs">Interactividad</Label>
+        <div className="flex items-center gap-1.5">
+          <Label className="text-xs">Interactividad</Label>
+          <FieldHelp label="Interactividad" size="large">
+            <p data-ecuacion-aviso-eventos="">
+              {block.pasos === true
+                ? 'Cada paso avisa a las interacciones (clic) y, al terminar, marca la fórmula como visitada.'
+                : 'Sin «línea por línea» la fórmula no avisa a las interacciones: una regla de clic sobre ella no se activará.'}
+            </p>
+            <p data-ecuacion-aviso-partes="">
+              Para que una parte de la fórmula sea clicable, márcala con{' '}
+              <code>{'\\parte{id}{…}'}</code> (por ejemplo <code>{'\\parte{a}{x^2}'}</code>) y crea
+              una interacción «se hace clic en una parte». También se puede pulsar con teclado.
+            </p>
+            <p>
+              Para que la fórmula cambie con una variable de la clase, escribe el símbolo entre
+              dobles llaves: <code>{'{{a}}'}x^2</code>.
+            </p>
+          </FieldHelp>
+        </div>
         <label className="flex cursor-pointer items-start gap-2 text-xs">
           <Checkbox
             size="sm"
@@ -194,22 +213,12 @@ export function EcuacionProperties({
           />
           Revelar la fórmula línea por línea (separa las líneas con \\)
         </label>
-        <p className="text-[11px] text-muted-foreground" data-ecuacion-aviso-eventos="">
-          {block.pasos === true
-            ? 'Cada paso avisa a las interacciones (clic) y, al terminar, marca la fórmula como visitada.'
-            : 'Sin «línea por línea» la fórmula no avisa a las interacciones: una regla de clic sobre ella no se activará.'}
-        </p>
-        <p className="text-[11px] text-muted-foreground" data-ecuacion-aviso-partes="">
-          Para que una parte de la fórmula sea clicable, márcala con <code>{'\\parte{id}{…}'}</code>
-          (por ejemplo <code>{'\\parte{a}{x^2}'}</code>) y crea una interacción «se hace clic en una
-          parte». También se puede pulsar con teclado.
-        </p>
-        {simbolos.length === 0 ? (
-          <p className="text-[11px] text-muted-foreground">
-            Para que la fórmula cambie con una variable de la clase, escribe el símbolo entre
-            dobles llaves: <code>{'{{a}}'}x^2</code>.
+        {block.pasos === true ? null : (
+          <p className="text-[11px] text-muted-foreground" data-ecuacion-aviso-corto="">
+            Sin «línea por línea» las reglas de clic no se activan.
           </p>
-        ) : (
+        )}
+        {simbolos.length === 0 ? null : (
           <div className="space-y-2">
             {simbolos.map((simbolo) => {
               const v = block.vinculos?.find((x) => x.simbolo === simbolo);

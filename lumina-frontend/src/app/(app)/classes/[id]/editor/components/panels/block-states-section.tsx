@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import {
   MAX_ESTADOS_PERSONALIZADOS,
@@ -134,11 +135,15 @@ export function BlockStatesSection({
 
   return (
     <div className="mt-4 space-y-3 border-t border-border pt-4" data-testid="block-states-section">
-      <Label className="text-xs font-medium">Estados (apariencia)</Label>
-      <p className="text-[11px] text-muted-foreground">
-        Cómo se ve el elemento en cada estado. Solo se aplica cuando la clase se reproduce; el
-        editor no cambia. Es solo aspecto: <strong>no afecta la nota</strong>.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <Label className="text-xs font-medium">Estados (apariencia)</Label>
+        <FieldHelp label="Estados (apariencia)">
+          <p>
+            Cómo se ve el elemento en cada estado. Solo se aplica cuando la clase se reproduce; el
+            editor no cambia. Es solo aspecto: <strong>no afecta la nota</strong>.
+          </p>
+        </FieldHelp>
+      </div>
 
       <select
         aria-label="Estado a editar"

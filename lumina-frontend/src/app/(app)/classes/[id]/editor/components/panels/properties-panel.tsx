@@ -146,6 +146,7 @@ import { isBlockCanvasPositionable, withRotation } from '@/hooks/use-block-drag'
 import { RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import { cn } from '@/lib/utils';
@@ -1719,7 +1720,15 @@ function BlockEstadoInicialSection({
 }) {
   return (
     <div className="mt-4 space-y-2 border-t border-border pt-4">
-      <Label className="text-xs font-medium">Estado inicial (interacción)</Label>
+      <div className="flex items-center gap-1.5">
+        <Label className="text-xs font-medium">Estado inicial (interacción)</Label>
+        <FieldHelp label="Estado inicial">
+          <p>
+            Solo «Deshabilitado» cambia la apariencia. «Visitado» y «Seleccionado» sirven como
+            condición en las reglas.
+          </p>
+        </FieldHelp>
+      </div>
       <select
         value={estado}
         onChange={(e) => {
@@ -1740,10 +1749,6 @@ function BlockEstadoInicialSection({
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
-      <p className="text-[11px] text-muted-foreground">
-        Solo «Deshabilitado» cambia la apariencia. «Visitado» y «Seleccionado» sirven como
-        condición en las reglas.
-      </p>
     </div>
   );
 }
