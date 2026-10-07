@@ -37,7 +37,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R1 — Componente `FieldHelp` en `@lumina/ui`
 - **Operador:** Claude Code
-- **Estado:** en revisión — `FieldHelp` en `packages/ui/src/field-help.tsx`; tsc, eslint y build verdes. **Sin pruebas propias** (decisión del dueño: `@lumina/ui` no tiene runner y no se agrega aquí); su comportamiento (clic, Enter/Espacio, Escape, contenido ausente al cerrar, `aria-label`) se prueba en R2 vía el spec de Ecuación en `element-kit`.
+- **Estado:** hecho — `FieldHelp` en `packages/ui/src/field-help.tsx`; tsc, eslint y build verdes. **Sin pruebas propias** (decisión del dueño: `@lumina/ui` no tiene runner y no se agrega aquí); su comportamiento (clic, Enter/Espacio, Escape, contenido ausente al cerrar, `aria-label`) se prueba en R2 vía el spec de Ecuación en `element-kit`.
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `packages/ui/src/field-help.tsx` (nuevo) + su prueba + export en `packages/ui/package.json` si el patrón del paquete lo exige. **NO** toca `element-kit`, `editor-shared` ni el frontend.
 - **Entregable:** `FieldHelp` con props `label` (para `aria-label`), `children`, `size?: 'normal' | 'large'`. Pruebas: abre con clic y con Enter/Espacio, cierra con Escape, el contenido no está en el DOM cerrado, `aria-label` correcto. Verificación: `pnpm --filter @lumina/ui build && pnpm --filter @lumina/ui test && pnpm --filter @lumina/ui lint`.
@@ -45,7 +45,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R2 — Ecuación (caso de la captura)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/ecuacion/ecuacion-properties.tsx` y `ecuacion-properties.aviso.spec.tsx`; `lumina-frontend/.../panels/properties-panel.tsx` **solo** la función `BlockEstadoInicialSection` (≈ línea 1743) y la sección «Estados (apariencia)» de `block-states-section.tsx` (≈ línea 138), porque se ven en el mismo panel. **NO** toca otros bloques.
 - **Entregable:** al ⓘ pasan: aviso de pasos (200), `\parte{id}{…}` (~170), variables con `{{a}}` (96), Estado inicial (107), Estados apariencia (121). Se mantiene la línea corta de advertencia cuando `pasos !== true`. Spec adaptado. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend lint`, más comprobación visual en el editor.
