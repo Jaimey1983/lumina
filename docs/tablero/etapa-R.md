@@ -37,7 +37,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R1 — Componente `FieldHelp` en `@lumina/ui`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `packages/ui/src/field-help.tsx` (nuevo) + su prueba + export en `packages/ui/package.json` si el patrón del paquete lo exige. **NO** toca `element-kit`, `editor-shared` ni el frontend.
 - **Entregable:** `FieldHelp` con props `label` (para `aria-label`), `children`, `size?: 'normal' | 'large'`. Pruebas: abre con clic y con Enter/Espacio, cierra con Escape, el contenido no está en el DOM cerrado, `aria-label` correcto. Verificación: `pnpm --filter @lumina/ui build && pnpm --filter @lumina/ui test && pnpm --filter @lumina/ui lint`.
