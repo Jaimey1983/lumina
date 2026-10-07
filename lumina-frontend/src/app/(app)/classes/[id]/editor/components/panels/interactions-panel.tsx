@@ -7,6 +7,7 @@ import { partesDeLatex } from '@lumina/editor-shared/rich-text/latex-render';
 import { getBlockAtPath } from '@lumina/editor-shared/slide-block-path';
 import { ArrowDown, ArrowUp, Copy, Pencil, Plus } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
 import {
@@ -177,9 +178,14 @@ export function InteractionsPanel({
     return (
       <div className="mt-4 space-y-2 border-t border-border pt-4">
         <Label className="text-xs font-medium">Interacciones</Label>
-        <p className="text-[11px] text-muted-foreground">
-          Las interacciones solo se pueden poner en elementos del slide, no dentro de otro
-          elemento (como una columna).
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          No disponibles dentro de otro elemento.
+          <FieldHelp label="Interacciones">
+            <p>
+              Las interacciones solo se pueden poner en elementos del slide, no dentro de otro
+              elemento (como una columna).
+            </p>
+          </FieldHelp>
         </p>
       </div>
     );
@@ -408,8 +414,14 @@ export function InteractionsPanel({
       </Button>
 
       {plantillas.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground">
-          Este tipo de elemento todavía no tiene plantillas de interacción (sí puedes armar una regla nueva).
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          Sin plantillas para este elemento.
+          <FieldHelp label="Plantillas de interacción">
+            <p>
+              Este tipo de elemento todavía no tiene plantillas de interacción (sí puedes armar una
+              regla nueva).
+            </p>
+          </FieldHelp>
         </p>
       ) : !abierto ? (
         <Button
@@ -456,9 +468,19 @@ export function InteractionsPanel({
 
           {(plantilla === 'boton-navega' && destino === 'slide') || plantilla === 'refuerzo' ? (
             <>
-              <Label className="text-xs">
-                {plantilla === 'refuerzo' ? 'Slide de refuerzo' : 'Slide'}
-              </Label>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-xs">
+                  {plantilla === 'refuerzo' ? 'Slide de refuerzo' : 'Slide'}
+                </Label>
+                {plantilla === 'refuerzo' ? (
+                  <FieldHelp label="Slide de refuerzo">
+                    <p>
+                      Este resultado cuenta para el indicador de la clase, no para el slide de
+                      refuerzo. La nota la sigue calculando Lumina como siempre.
+                    </p>
+                  </FieldHelp>
+                ) : null}
+              </div>
               <select
                 className={select}
                 value={slideDestino}
@@ -472,13 +494,6 @@ export function InteractionsPanel({
                 ))}
               </select>
             </>
-          ) : null}
-
-          {plantilla === 'refuerzo' ? (
-            <p className="text-[11px] text-muted-foreground">
-              Este resultado cuenta para el indicador de la clase, no para el slide de refuerzo.
-              La nota la sigue calculando Lumina como siempre.
-            </p>
           ) : null}
 
           {plantilla === 'revelar' ? (

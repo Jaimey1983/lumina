@@ -7,6 +7,7 @@ import { describirRegla } from '@lumina/interactions';
 import type { ContextoDescripcion, ReglaAplicable } from '@lumina/interactions';
 import type { VariableDef, VariableValor } from '@lumina/types/interaction';
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Input } from '@lumina/ui/input';
 import { Switch } from '@lumina/ui/switch';
 
@@ -177,8 +178,14 @@ export function RulesSimulator({
             </label>
           </div>
           {registros.length === 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Usa la clase como lo haría un alumno: cada evento aparecerá aquí con las reglas que corrieron.
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              Todavía no hay eventos.
+              <FieldHelp label="Simulador">
+                <p>
+                  Usa la clase como lo haría un alumno: cada evento aparecerá aquí con las reglas
+                  que corrieron.
+                </p>
+              </FieldHelp>
             </p>
           ) : (
             <ol className="flex flex-col gap-2">

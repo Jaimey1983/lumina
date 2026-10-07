@@ -2,6 +2,7 @@
 
 import type { ClaveSistema, Operando } from '@lumina/types/interaction';
 import { CLAVES_SISTEMA, CLAVES_SISTEMA_ETIQUETA } from '@lumina/interactions';
+import { FieldHelp } from '@lumina/ui/field-help';
 
 import { Aviso, inputCls, selectCls, useOpciones } from './campos';
 import {
@@ -128,9 +129,14 @@ export function OperandoEditor({ value, onChange, kinds, campo, etiqueta }: Oper
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-muted-foreground">
-            Los datos del sistema todavía no los entrega la clase: una condición que los use no se
-            cumple hasta que se activen.
+          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            Estos datos aún no están activos.
+            <FieldHelp label="Datos del sistema">
+              <p>
+                Los datos del sistema todavía no los entrega la clase: una condición que los use no
+                se cumple hasta que se activen.
+              </p>
+            </FieldHelp>
           </p>
         </>
       ) : null}

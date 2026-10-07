@@ -11,6 +11,7 @@ import {
   type ReglaAplicable,
 } from '@lumina/interactions';
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@lumina/ui/select';
@@ -115,11 +116,16 @@ export function VariablesPanel({
 
   return (
     <div className="flex flex-col gap-3 p-3" data-testid="variables-panel">
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Las variables guardan datos del alumno mientras recorre la clase (intentos, puntos de
-        juego, si ya vio algo). Son de flujo: <strong>no cambian la nota</strong>. Cada alumno
-        tiene las suyas.
-      </p>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        Qué son las variables
+        <FieldHelp label="Variables">
+          <p>
+            Las variables guardan datos del alumno mientras recorre la clase (intentos, puntos de
+            juego, si ya vio algo). Son de flujo: <strong>no cambian la nota</strong>. Cada alumno
+            tiene las suyas.
+          </p>
+        </FieldHelp>
+      </div>
 
       {borrador.length === 0 && (
         <p className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">

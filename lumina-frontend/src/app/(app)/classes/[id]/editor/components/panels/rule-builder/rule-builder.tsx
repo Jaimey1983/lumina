@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { Regla, EventoTipo } from '@lumina/types/interaction';
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import { Switch } from '@lumina/ui/switch';
 import {
@@ -55,6 +56,9 @@ export interface RuleBuilderProps {
   onGuardar: (regla: Regla, ocultarAlEmpezar: string[]) => void;
   onCerrar: () => void;
 }
+
+const AYUDA_REGLA =
+  'Cuando ocurra el evento y se cumplan las condiciones, se hacen las acciones; si no se cumplen, las de «si no».';
 
 export function RuleBuilder(props: RuleBuilderProps) {
   const { abierto, onCerrar } = props;
@@ -110,13 +114,15 @@ function Contenido({
     <OpcionesContext.Provider value={opciones}>
       <AvisosContext.Provider value={avisos}>
         <DialogHeader className="mb-2">
-          <DialogTitle className="text-base font-semibold">
-            {esNueva ? 'Regla nueva' : 'Editar regla'}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Cuando ocurra el evento y se cumplan las condiciones, se hacen las acciones; si no se
-            cumplen, las de «si no».
-          </DialogDescription>
+          <div className="flex items-center gap-1.5">
+            <DialogTitle className="text-base font-semibold">
+              {esNueva ? 'Regla nueva' : 'Editar regla'}
+            </DialogTitle>
+            <FieldHelp label="Cómo funciona una regla">
+              <p>{AYUDA_REGLA}</p>
+            </FieldHelp>
+          </div>
+          <DialogDescription className="sr-only">{AYUDA_REGLA}</DialogDescription>
         </DialogHeader>
 
         <DialogBody className="grow space-y-4 overflow-y-auto pr-1">
@@ -233,11 +239,15 @@ function Contenido({
           </section>
 
           <section className="space-y-1">
-            <Label className="text-xs font-medium">4. Si no… (opcional)</Label>
-            <p className="text-[11px] text-muted-foreground">
-              Se hace cuando el evento ocurre y las condiciones NO se cumplen. Si una condición está
-              rota (por ejemplo, usa una variable borrada), no se hace nada.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs font-medium">4. Si no… (opcional)</Label>
+              <FieldHelp label="Si no">
+                <p>
+                  Se hace cuando el evento ocurre y las condiciones NO se cumplen. Si una condición
+                  está rota (por ejemplo, usa una variable borrada), no se hace nada.
+                </p>
+              </FieldHelp>
+            </div>
             <ListaDeAcciones
               prefijo="sino"
               acciones={sino}
