@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { FieldHelp } from '@lumina/ui/field-help';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { createDefaultClipGroupBlock, createTextClipGroupBlock } from '@lumina/editor-shared/clip-path';
@@ -107,12 +108,17 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
 
   return (
     <div className="space-y-3 border-b border-border pb-3">
-      <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Máscaras de recorte
-      </p>
-      <p className="px-1 text-[11px] leading-snug text-muted-foreground">
-        Recorta imagen o color. Forma libre: arrastra nodos; doble clic o Alt+arrastra un nodo para sacar manijas Bézier; clic en el borde añade nodo; Alt+clic/Supr elimina.
-      </p>
+      <div className="flex items-center gap-1.5 px-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Máscaras de recorte
+        </p>
+        <FieldHelp label="Máscaras de recorte">
+          <p>
+            Recorta imagen o color. Forma libre: arrastra nodos; doble clic o Alt+arrastra un nodo
+            para sacar manijas Bézier; clic en el borde añade nodo; Alt+clic/Supr elimina.
+          </p>
+        </FieldHelp>
+      </div>
       <div className="grid grid-cols-2 gap-1.5 px-1">
         {MASK_ITEMS.map(({ id, label, Icon, shape }) => (
           <button

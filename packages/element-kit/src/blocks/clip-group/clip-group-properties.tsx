@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@lumina/ui/button';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import {
@@ -414,13 +415,17 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
             const freeform = resolveFreeformPath(block.clipShape as ClipShapeLibre);
             return (
               <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2">
-                <p className="text-[11px] text-muted-foreground">
-                  Arrastra los nodos azules. Doble clic en un nodo (o Alt+arrastrarlo)
-                  saca las manijas naranjas, que luego se mueven independientes.
-                  El tirador verde de cada esquina la redondea (esquina viva).
-                  Clic sobre el borde añade un nodo; Alt+clic o Supr lo elimina.
-                  Shift al mover una manija ajusta el ángulo.
-                </p>
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  Forma libre: edita sus nodos en el lienzo.
+                  <FieldHelp label="Forma libre" size="large">
+                    <p>
+                      Arrastra los nodos azules. Doble clic en un nodo (o Alt+arrastrarlo) saca las
+                      manijas naranjas, que luego se mueven independientes. El tirador verde de cada
+                      esquina la redondea (esquina viva). Clic sobre el borde añade un nodo;
+                      Alt+clic o Supr lo elimina. Shift al mover una manija ajusta el ángulo.
+                    </p>
+                  </FieldHelp>
+                </div>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -539,13 +544,26 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
       {isComposicion ? (
         <div className="space-y-2 border-t border-border pt-3">
           <Label className="text-xs">Contenido</Label>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             Grupo de {block.contenido.tipo === 'composicion' ? block.contenido.bloques.length : 0}{' '}
-            elemento(s) recortado como capa única. Usa «Desagrupar máscara» en la
-            barra del bloque para volver a editarlos por separado.
+            elemento(s) recortado como capa única.
+            <FieldHelp label="Grupo recortado">
+              <p>
+                Usa «Desagrupar máscara» en la barra del bloque para volver a editarlos por
+                separado.
+              </p>
+            </FieldHelp>
           </p>
 
-          <Label className="text-xs">Relleno compartido</Label>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs">Relleno compartido</Label>
+            <FieldHelp label="Relleno compartido">
+              <p>
+                «Imagen repartida»: una sola imagen se ve a través de todos los elementos como una
+                imagen partida entre ellos.
+              </p>
+            </FieldHelp>
+          </div>
           <Select
             value={compositionFillKind}
             onValueChange={(v) => {
@@ -582,11 +600,6 @@ export function ClipGroupBlockFields({ block, applyNow, scheduleApply, clearDebo
               <SelectItem value="gradiente">Gradiente</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-[11px] text-muted-foreground">
-            «Imagen repartida»: una sola imagen se ve a través de todos los
-            elementos como una imagen partida entre ellos.
-          </p>
-
           {compositionFill?.tipo === 'color' ? (
             <Input
               type="color"

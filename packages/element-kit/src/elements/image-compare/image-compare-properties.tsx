@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from "react";
 import type { ElementPropsPanelProps } from "@lumina/element-kit-core";
 import { Checkbox } from "@lumina/ui/checkbox";
+import { FieldHelp } from "@lumina/ui/field-help";
 import { Input } from "@lumina/ui/input";
 import { Label } from "@lumina/ui/label";
 import { Slider, SliderThumb } from "@lumina/ui/slider";
@@ -272,11 +273,19 @@ export function ImageComparePropiedades({
           </Slider>
         </div>
 
-        <p className="text-[11px] leading-snug text-slate-500">
-          Las fotos cubren todo el recuadro (cover). Con título o instrucción el
-          recuadro se achica: usa zoom y desplazamiento para el encuadre, no
-          «contener».
-        </p>
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+          Encuadre de las fotos
+          <FieldHelp label="Encuadre de las fotos">
+            <p>
+              Las fotos cubren todo el recuadro (cover). Con título o instrucción el recuadro se
+              achica: usa zoom y desplazamiento para el encuadre, no «contener».
+            </p>
+            <p>
+              En el lienzo: arrastra la imagen seleccionada para encuadrarla; usa el tirador de la
+              esquina para cambiar el zoom.
+            </p>
+          </FieldHelp>
+        </div>
 
         <div className="space-y-1.5">
           <Label className="text-xs">Posición</Label>
@@ -295,9 +304,6 @@ export function ImageComparePropiedades({
           </Select>
         </div>
 
-        <p className="text-[10px] leading-snug text-slate-500">
-          En el lienzo: arrastra la imagen seleccionada para encuadrarla; usa el tirador de la esquina para cambiar el zoom.
-        </p>
       </div>
 
       <hr className="border-slate-200" />
