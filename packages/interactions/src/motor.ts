@@ -11,7 +11,7 @@ import type { CtxEvaluacion } from './condiciones.js';
 import { clonarEstado, coincideTipo, leer, marcaDeTemporizador, valorPorDefecto } from './estado.js';
 import type { EstadoTrabajo } from './estado.js';
 import { estadoDeclarado } from './estados-bloque.js';
-import { EVENTOS_DE_SLIDE, esSegundosValidos, esTeclaPermitida } from './eventos.js';
+import { EVENTOS_DE_SLIDE, esIdDeParte, esSegundosValidos, esTeclaPermitida } from './eventos.js';
 import { LIMITES_POR_DEFECTO } from './tipos.js';
 import { MAX_TEXTO_VARIABLE } from './variables.js';
 import { describirEvento } from './describir.js';
@@ -39,6 +39,8 @@ function coincideParametro(ra: ReglaAplicable, ev: EventoMotor): boolean {
       return esTeclaPermitida(p) && ev.detalle?.tecla === p;
     case 'temporizador':
       return esSegundosValidos(p) && ev.detalle?.segundos === p;
+    case 'parte_clic':
+      return esIdDeParte(p) && ev.detalle?.parte === p;
     default:
       return true;
   }
@@ -93,7 +95,7 @@ interface Corrida {
 
 /** N8 — por qué una regla del mismo tipo de evento no reaccionó. */
 function motivoNoCoincide(ra: ReglaAplicable, ev: EventoMotor): string {
-  if (!coincideParametro(ra, ev)) return 'El evento es del mismo tipo, pero con otro parámetro (variable, tecla o segundos).';
+  if (!coincideParametro(ra, ev)) return 'El evento es del mismo tipo, pero con otro parámetro (variable, tecla, segundos o parte).';
   if (EVENTOS_DE_SLIDE.has(ev.tipo) || ra.origen.tipo === 'slide') {
     return 'El evento ocurrió en otro slide.';
   }

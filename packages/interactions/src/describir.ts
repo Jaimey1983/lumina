@@ -46,6 +46,7 @@ const EVENTOS: Record<EventoTipo, string> = {
   salir_slide: 'se sale del slide',
   media_inicia: 'empieza la reproducción',
   media_termina: 'termina la reproducción',
+  parte_clic: 'se hace clic en una parte',
 };
 
 /** Texto del disparador, con su parámetro cuando lo tiene (N5). */
@@ -59,6 +60,9 @@ export function describirEvento(r: Pick<Regla, 'evento' | 'parametro'>, ctx: Con
     return typeof p === 'string' && esTeclaPermitida(p)
       ? `se pulsa la tecla ${etiquetaTecla(p)}`
       : EVENTOS.tecla;
+  }
+  if (r.evento === 'parte_clic') {
+    return typeof p === 'string' && p !== '' ? `se hace clic en la parte «${p}»` : EVENTOS.parte_clic;
   }
   if (r.evento === 'temporizador') {
     return typeof p === 'number' && esSegundosValidos(p)

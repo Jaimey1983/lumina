@@ -153,3 +153,22 @@ describe('dividirPasos / latexHastaPaso', () => {
     expect(() => renderLatex(latexHastaPaso(p, 3), { throwOnError: true })).not.toThrow();
   });
 });
+
+describe('partes clicables (M2c)', () => {
+  it('partesDeLatex devuelve los ids únicos y renderLatex deja data-parte', async () => {
+    const { partesDeLatex } = await import('./latex-render.js');
+    expect(partesDeLatex('\\parte{a}{x^2}+\\parte{b}{y}+\\parte{a}{z}')).toEqual(['a', 'b']);
+    const html = renderLatex('\\parte{a}{x^2}');
+    expect(html).toContain('data-parte="a"');
+  });
+
+  it('un id inválido no produce atributo y \\htmlData ajeno no se acepta', () => {
+    expect(renderLatex('\\parte{a b}{x}', { throwOnError: false })).not.toContain('data-parte="a b"');
+    expect(renderLatex('\\htmlData{onclick=alert(1)}{x}', { throwOnError: false })).not.toContain('data-onclick');
+    expect(renderLatex('\\htmlData{parte=a,otro=b}{x}', { throwOnError: false })).not.toContain('data-otro');
+  });
+
+  it('speakLatex ignora el marcador', () => {
+    expect(speakLatex('\\parte{a}{x}')).toBe(speakLatex('{x}'));
+  });
+});

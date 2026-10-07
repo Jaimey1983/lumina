@@ -90,3 +90,33 @@ describe("EquationView — interactividad (M2)", () => {
     expect(ed.getByRole("img").getAttribute("aria-label")).toContain("b igual a 2");
   });
 });
+
+describe("EquationView — partes clicables (M2c)", () => {
+  const block = createDefaultEcuacionBlock({ latex: "\\parte{a}{x^2} + \\parte{b}{y}" });
+
+  it("un clic sobre la parte emite parte_clic con su id", () => {
+    const emitir = vi.fn();
+    const r = render(<EquationView block={block} runtime={{ emitir }} />);
+    const parte = r.container.querySelector('[data-parte="b"]') as HTMLElement;
+    expect(parte).not.toBeNull();
+    fireEvent.click(parte);
+    expect(emitir).toHaveBeenCalledWith("parte_clic", { parte: "b" });
+  });
+
+  it("cada parte tiene un botón accesible por teclado", () => {
+    const emitir = vi.fn();
+    const r = render(<EquationView block={block} runtime={{ emitir }} />);
+    fireEvent.click(r.getByLabelText("Parte a de la fórmula"));
+    expect(emitir).toHaveBeenCalledWith("parte_clic", { parte: "a" });
+  });
+
+  it("sin motor, en editor o en miniatura no hay botones ni emisión", () => {
+    const emitir = vi.fn();
+    expect(render(<EquationView block={block} />).queryByRole("button")).toBeNull();
+    cleanup();
+    const ed = render(<EquationView block={block} modo="editor" runtime={{ emitir }} />);
+    expect(ed.queryByRole("button")).toBeNull();
+    fireEvent.click(ed.container.querySelector('[data-parte="a"]') as HTMLElement);
+    expect(emitir).not.toHaveBeenCalled();
+  });
+});

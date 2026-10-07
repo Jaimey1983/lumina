@@ -134,7 +134,7 @@ type PrimitiveRuntimeConfig = {
   variables?: Readonly<Record<string, VariableValor>>;
   asignarVariable?: (variableId: string, valor: VariableValor) => void;
   bloqueId?: string;
-  emitir?: (evento: EventoTipo) => void;
+  emitir?: (evento: EventoTipo, detalle?: Readonly<Record<string, VariableValor>>) => void;
   estadoObjeto?: EstadoObjeto;
   /** N6 — estado real del bloque (base o personalizado); solo lo usa el contenedor. */
   estadoDeBloque?: EstadoDeBloque;
@@ -768,7 +768,8 @@ function BlockNode({
     if (!interactionRuntime || isThumbnail || typeof id !== 'string' || id === '') return {};
     return {
       bloqueId: id,
-      emitir: (evento: EventoTipo) => interactionRuntime.emitir(id, evento),
+      emitir: (evento: EventoTipo, detalle?: Readonly<Record<string, VariableValor>>) =>
+        interactionRuntime.emitir(id, evento, detalle),
       estadoObjeto: estadoBase(interactionRuntime.estadoDe(id)),
       estadoDeBloque: interactionRuntime.estadoDe(id),
     };

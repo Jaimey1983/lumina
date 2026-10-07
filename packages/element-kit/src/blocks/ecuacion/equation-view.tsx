@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   dividirPasos,
   latexHastaPaso,
+  partesDeLatex,
   renderLatex,
   speakLatex,
   sustituirVariables,
@@ -107,6 +108,16 @@ export default function EquationView({
     }
   }, [lineas.length, pasoActual, runtime]);
 
+  // M2c: partes clicables `\parte{id}{…}`. Solo con motor (emitir) y fuera de miniatura/editor.
+  const partes = useMemo(
+    () => (interactivo && runtime?.emitir ? partesDeLatex(latexMostrado) : []),
+    [interactivo, runtime?.emitir, latexMostrado],
+  );
+  const emitirParte = useCallback(
+    (parte: string) => runtime?.emitir?.('parte_clic', { parte }),
+    [runtime],
+  );
+
   const controlables = useMemo(
     () =>
       interactivo && runtime?.asignarVariable
@@ -136,6 +147,14 @@ export default function EquationView({
     }
   }, [latexMostrado]);
 
+  useEffect(() => {
+    const inner = innerRef.current;
+    if (!inner || partes.length === 0) return;
+    inner.querySelectorAll<HTMLElement>('[data-parte]').forEach((el) => {
+      el.style.cursor = 'pointer';
+    });
+  }, [html, partes.length]);
+
   useLayoutEffect(() => {
     const outer = outerRef.current;
     const inner = innerRef.current;
@@ -158,7 +177,7 @@ export default function EquationView({
     return () => ro.disconnect();
   }, [ajustar, html, block.tamano]);
 
-  const conBarra = conPasos || controlables.length > 0;
+  const conBarra = conPasos || controlables.length > 0 || partes.length > 0;
 
   const outer: CSSProperties = {
     display: 'flex',
@@ -219,6 +238,15 @@ export default function EquationView({
         <div
           ref={innerRef}
           style={inner}
+          onClick={
+            partes.length > 0
+              ? (e) => {
+                  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-parte]');
+                  const id = el?.getAttribute('data-parte');
+                  if (id) emitirParte(id);
+                }
+              : undefined
+          }
           // KaTeX produce marcado seguro (spans con clases, sin scripts).
           dangerouslySetInnerHTML={{ __html: html }}
         />
@@ -266,6 +294,17 @@ export default function EquationView({
             </span>
           );
         })}
+        {partes.map((id) => (
+          <button
+            key={id}
+            type="button"
+            style={botonStyle}
+            aria-label={`Parte ${id} de la fórmula`}
+            onClick={() => emitirParte(id)}
+          >
+            {id}
+          </button>
+        ))}
         {conPasos ? (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span role="status" aria-live="polite">
