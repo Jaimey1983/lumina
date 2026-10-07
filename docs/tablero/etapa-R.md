@@ -73,14 +73,14 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R6 — Actividades y paneles izquierdos
 - **Operador:** Cursor
-- **Estado:** en revisión — 4 textos al ⓘ: globos por pregunta (105), generar desde documento con IA (158; queda visible «Los PDFs escaneados no se pueden leer.»), generador de ejercicios de matemáticas (135) y contexto de la actividad con IA (96; solo cuando hay contexto J6, el ⓘ reemplaza esa frase). Verif: tsc (element-kit y lumina-frontend), eslint 0 errores (warnings `useMemo` preexistentes), vitest unit frontend 519 y element-kit/activities 18 verdes. Sin comprobación visual en el editor.
+- **Estado:** hecho — 4 textos al ⓘ: globos por pregunta (105), generar desde documento con IA (158; queda visible «Los PDFs escaneados no se pueden leer.»), generador de ejercicios de matemáticas (135) y contexto de la actividad con IA (96; solo cuando hay contexto J6, el ⓘ reemplaza esa frase). Verif: tsc (element-kit y lumina-frontend), eslint 0 errores (warnings `useMemo` preexistentes), vitest unit frontend 519 y element-kit/activities 18 verdes. Sin comprobación visual en el editor.
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/activities/globos/globos-properties.tsx`; `lumina-frontend/.../panels/{flyout-left-panels,math-generator-panel,activities-ai-panel}.tsx`. Textos: globos (105), IA desde documento (158), generador de matemáticas (135), IA de actividades (96).
 - **Entregable:** verificación `pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend lint`.
 
 #### R7 — Cursos y logros
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Antigravity → ejecutado por Claude Code]
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `lumina-frontend/src/app/(app)/courses/[id]/{new-class-curricular-modal,course-detail-client,gradebook-structure-tab}.tsx`. Textos: 201, 138, 137, 117, 99.
 - **Entregable:** verificación `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit`.
