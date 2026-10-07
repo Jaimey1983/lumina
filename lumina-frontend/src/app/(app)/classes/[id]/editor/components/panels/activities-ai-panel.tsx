@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import {
   Select,
@@ -203,11 +204,18 @@ export function ActivitiesAiPanel({
           Este slide ya tiene una actividad. Elimínala para agregar otra.
         </p>
       )}
-      <p className="text-xs leading-relaxed text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         Genera actividades automáticamente con IA.{' '}
-        {tieneContextoJ6
-          ? 'La actividad se contextualiza con el desempeño e indicadores de esta clase — solo elige el tipo.'
-          : 'Elige el tipo y el tema.'}
+        {tieneContextoJ6 ? (
+          <FieldHelp label="Contexto de la actividad">
+            <p>
+              La actividad se contextualiza con el desempeño e indicadores de esta clase — solo
+              elige el tipo.
+            </p>
+          </FieldHelp>
+        ) : (
+          'Elige el tipo y el tema.'
+        )}
       </p>
 
       <div className="space-y-1">

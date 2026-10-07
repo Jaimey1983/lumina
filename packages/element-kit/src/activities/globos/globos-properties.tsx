@@ -1,5 +1,6 @@
 'use client'
 
+import { FieldHelp } from '@lumina/ui/field-help'
 import React, { useCallback } from 'react'
 import { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
 import {
@@ -137,10 +138,15 @@ export function GlobosProperties({ actividad, onChange }: GlobosPropertiesProps)
             </select>
           </label>
         </div>
-        <p className="mt-2 text-[10px] leading-snug text-gray-400">
-          Cada pregunta admite entre {GLOBOS_MIN_OPCIONES} y {GLOBOS_MAX_OPCIONES} globos. Marca
-          una respuesta correcta y añade distractores con texto visible.
-        </p>
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] text-gray-400">
+          Globos por pregunta
+          <FieldHelp label="Globos por pregunta">
+            <p>
+              Cada pregunta admite entre {GLOBOS_MIN_OPCIONES} y {GLOBOS_MAX_OPCIONES} globos.
+              Marca una respuesta correcta y añade distractores con texto visible.
+            </p>
+          </FieldHelp>
+        </div>
       </section>
 
       <section>

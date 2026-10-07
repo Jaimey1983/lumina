@@ -67,6 +67,7 @@ import {
 import { SLIDE_TIMER_PER_SLIDE_OPTIONS } from '@/lib/slide-timer-resolve';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import { ScrollArea } from '@lumina/ui/scroll-area';
 import {
@@ -1975,9 +1976,14 @@ function IaPanel({
               <Sparkles className="size-3.5" />
               {pendingDoc ? 'Analizando documento…' : 'Generar desde documento'}
             </Button>
-            <p className="text-[10px] leading-snug text-muted-foreground">
-              La IA analizará el documento y creará una clase basada en su contenido. Los PDFs
-              escaneados (solo imagen) no pueden extraerse — usa texto copiado en ese caso.
+            <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              Los PDFs escaneados no se pueden leer.
+              <FieldHelp label="Generar desde documento">
+                <p>
+                  La IA analizará el documento y creará una clase basada en su contenido. Los PDFs
+                  escaneados (solo imagen) no pueden extraerse — usa texto copiado en ese caso.
+                </p>
+              </FieldHelp>
             </p>
           </TabsContent>
         </Tabs>

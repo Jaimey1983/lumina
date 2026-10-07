@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@lumina/ui/button';
 import { EquationComposer } from '@lumina/editor-shared/rich-text/equation-composer';
 import { Checkbox } from '@lumina/ui/checkbox';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
 import {
   Select,
@@ -134,10 +135,15 @@ export function MathGeneratorPanel({ hasActivity, onInsertActivity, onInsertEqua
           Este slide ya tiene una actividad. Elimínala para agregar otra.
         </p>
       )}
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Genera ejercicios deterministas (sin IA). Misma semilla, mismos ítems. El quiz se inserta
-        como una sola actividad con varias preguntas.
-      </p>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        Ejercicios sin IA
+        <FieldHelp label="Generador de ejercicios">
+          <p>
+            Genera ejercicios deterministas (sin IA). Misma semilla, mismos ítems. El quiz se
+            inserta como una sola actividad con varias preguntas.
+          </p>
+        </FieldHelp>
+      </div>
 
       <div className="space-y-1">
         <Label className="text-[11px] text-muted-foreground">Tema</Label>
