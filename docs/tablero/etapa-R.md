@@ -59,14 +59,14 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R4 — Bloques de canvas (máscara, gráfico, imagen)
 - **Operador:** Claude Code
-- **Estado:** en revisión — al ⓘ: forma libre de la máscara (299, `size=large`), grupo recortado y relleno compartido (133, 110), panel de máscaras (165), encuadre de «Comparar imágenes» (149 + 114 en un solo ⓘ) y mover/ampliar imagen en widgets (113). **Se dejó `grafico-data-dialog.tsx` sin tocar:** los «273» y «124» de la ficha eran varias frases alternativas (una por tipo de gráfico) de ~60–85 caracteres cada una en un diálogo ancho, o sea 1–2 líneas. Verif: tsc (element-kit, editor-shared, lumina-frontend), eslint 0 errores, vitest element-kit 601 y editor-shared 352 verdes. Sin comprobación visual en el editor.
+- **Estado:** hecho — al ⓘ: forma libre de la máscara (299, `size=large`), grupo recortado y relleno compartido (133, 110), panel de máscaras (165), encuadre de «Comparar imágenes» (149 + 114 en un solo ⓘ) y mover/ampliar imagen en widgets (113). **Se dejó `grafico-data-dialog.tsx` sin tocar:** los «273» y «124» de la ficha eran varias frases alternativas (una por tipo de gráfico) de ~60–85 caracteres cada una en un diálogo ancho, o sea 1–2 líneas. Verif: tsc (element-kit, editor-shared, lumina-frontend), eslint 0 errores, vitest element-kit 601 y editor-shared 352 verdes. Sin comprobación visual en el editor.
 - **Precondición:** R2 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/clip-group/clip-group-properties.tsx`, `blocks/grafico/grafico-data-dialog.tsx`, `elements/image-compare/image-compare-properties.tsx`, `packages/editor-shared/src/widget-inner-properties.tsx` (línea 307), `lumina-frontend/.../panels/clip-masks-panel.tsx`. Textos: nodos y manijas (299, 165, 133, 110), datos del gráfico (273, 124), encuadre (149, 114, 113). Usan `size="large"` donde pasan de ~300.
 - **Entregable:** verificación `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/editor-shared test && pnpm -r lint`.
 
 #### R5 — Widgets
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Cursor → ejecutado por Claude Code]
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/{popup,flip-cards,tabla_periodica}/*-properties.tsx` y `flip-cards-inner-properties.tsx`. Textos: Popup (161, 102, 95), tarjetas (151, 113, 92), tabla periódica (106).
 - **Entregable:** verificación `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
