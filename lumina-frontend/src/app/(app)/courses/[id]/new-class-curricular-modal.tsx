@@ -23,6 +23,7 @@ import {
 } from '@/hooks/api/use-desempenos';
 import { EBC_COMPONENTES, ICFES_COMPETENCIAS, type AreaCurricular } from '@lumina/curriculum-data';
 
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Textarea } from '@lumina/ui/textarea';
@@ -422,9 +423,14 @@ export function NewClassCurricularModal({
               </SelectContent>
             </Select>
             {desempenos.length === 0 && (
-              <p className="text-[10px] leading-snug text-muted-foreground">
-                Este curso todavía no tiene desempeños generados — se pueden
-                crear desde la pestaña &quot;Desempeños&quot; del curso.
+              <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                Este curso aún no tiene desempeños.
+                <FieldHelp label="Desempeños del curso">
+                  <p>
+                    Este curso todavía no tiene desempeños generados — se pueden crear desde la
+                    pestaña &quot;Desempeños&quot; del curso.
+                  </p>
+                </FieldHelp>
               </p>
             )}
             {desempenoElegido && (
@@ -539,15 +545,18 @@ export function NewClassCurricularModal({
 
               {hayIndicadoresParaElegir && (
                 <div className="space-y-3">
-                  <p className="text-[0.8125rem] font-medium leading-none">
-                    Indicadores de esta clase
-                  </p>
-                  <p className="text-[10px] leading-snug text-muted-foreground">
-                    Marcá los que va a abordar esta clase puntual — solo esos
-                    van a aparecer en el panel de IA del editor. Los que
-                    dejes sin marcar quedan igual guardados en el banco del
-                    desempeño, listos para otra clase.
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[0.8125rem] font-medium leading-none">
+                      Indicadores de esta clase
+                    </p>
+                    <FieldHelp label="Indicadores de esta clase">
+                      <p>
+                        Marcá los que va a abordar esta clase puntual — solo esos van a aparecer en
+                        el panel de IA del editor. Los que dejes sin marcar quedan igual guardados
+                        en el banco del desempeño, listos para otra clase.
+                      </p>
+                    </FieldHelp>
+                  </div>
                   {gruposDisponibles.map(({ key, label, items }) => {
                     if (items.length === 0) return null;
                     return (

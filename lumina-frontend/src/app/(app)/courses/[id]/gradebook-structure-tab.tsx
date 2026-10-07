@@ -40,6 +40,7 @@ import {
   type UpdateActivityInput,
 } from '@/hooks/api/use-activities';
 
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Button } from '@lumina/ui/button';
 import { Badge } from '@lumina/ui/badge';
 import { Skeleton } from '@lumina/ui/skeleton';
@@ -287,8 +288,14 @@ function AchievementModal({
               )}
 
               {!isEdit && (
-                <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                  La IA generará automáticamente los 4 indicadores de logro (COG, MET, INT, INS) al crear este logro.
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+                  La IA generará los indicadores de este logro.
+                  <FieldHelp label="Indicadores del logro">
+                    <p>
+                      La IA generará automáticamente los 4 indicadores de logro (COG, MET, INT, INS)
+                      al crear este logro.
+                    </p>
+                  </FieldHelp>
                 </p>
               )}
             </DialogBody>

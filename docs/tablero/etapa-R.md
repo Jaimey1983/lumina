@@ -80,7 +80,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R7 — Cursos y logros
 - **Operador:** Antigravity
-- **Estado:** [en curso: Antigravity → ejecutado por Claude Code]
+- **Estado:** en revisión — 5 textos al ⓘ: desempeños sin generar (117) y «Indicadores de esta clase» (201) en el modal de nueva clase; indicadores guardados vacíos (137) y su reutilización (138) en el detalle del curso; indicadores del logro (99). Los dos mensajes de estado vacío conservan una línea corta visible. Verif: tsc, eslint 0 errores, vitest unit frontend 519 verdes. Sin comprobación visual.
 - **Precondición:** R1 `hecho`.
 - **Alcance — PUEDE tocar:** `lumina-frontend/src/app/(app)/courses/[id]/{new-class-curricular-modal,course-detail-client,gradebook-structure-tab}.tsx`. Textos: 201, 138, 137, 117, 99.
 - **Entregable:** verificación `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit`.

@@ -57,6 +57,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardHeading, CardTable, CardTitle, CardToolbar } from '@lumina/ui/card';
 import { Badge } from '@lumina/ui/badge';
+import { FieldHelp } from '@lumina/ui/field-help';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Skeleton } from '@lumina/ui/skeleton';
@@ -331,10 +332,14 @@ function DesempenoCard({
                 <Skeleton className="h-4 w-1/2" />
               </div>
             ) : indicadoresGuardados.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Todavía no hay indicadores guardados para este desempeño — se
-                guardan automáticamente al generarlos con IA desde
-                &quot;Nueva clase&quot;.
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                Todavía no hay indicadores guardados.
+                <FieldHelp label="Indicadores guardados">
+                  <p>
+                    Todavía no hay indicadores guardados para este desempeño — se guardan
+                    automáticamente al generarlos con IA desde &quot;Nueva clase&quot;.
+                  </p>
+                </FieldHelp>
               </p>
             ) : (
               <div className="space-y-2.5">
@@ -359,11 +364,15 @@ function DesempenoCard({
                 })}
               </div>
             )}
-            <p className="text-[10px] leading-snug text-muted-foreground">
-              Se ofrecen automáticamente para reutilizar al elegir este
-              desempeño en &quot;Nueva clase&quot; — no hace falta volver a
-              generarlos con IA.
-            </p>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              Reutilización de indicadores
+              <FieldHelp label="Reutilización de indicadores">
+                <p>
+                  Se ofrecen automáticamente para reutilizar al elegir este desempeño en
+                  &quot;Nueva clase&quot; — no hace falta volver a generarlos con IA.
+                </p>
+              </FieldHelp>
+            </div>
           </div>
         )}
       </CardContent>
