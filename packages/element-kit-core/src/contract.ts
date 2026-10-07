@@ -49,7 +49,10 @@ export interface ElementRuntimeConfig {
    */
   readonly bloqueId?: string;
   /** Avisa al motor de que ocurrió un evento. Ausente = no hay motor (clase en vivo, presentación, miniatura). */
-  readonly emitir?: (evento: EventoTipo) => void;
+  readonly emitir?: (
+    evento: EventoTipo,
+    detalle?: Readonly<Record<string, VariableValor>>,
+  ) => void;
   /**
    * Estado de objeto actual del bloque según el motor. Sirve para no repetir
    * eventos de una sola vez (p. ej. no volver a emitir `visitado` si ya lo está).

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { partesDeLatex } from '@lumina/editor-shared/rich-text/latex-render';
 import { getBlockAtPath } from '@lumina/editor-shared/slide-block-path';
 import { ArrowDown, ArrowUp, Copy, Pencil, Plus } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
@@ -152,8 +153,12 @@ export function InteractionsPanel({
       })),
       slides: slidesDelMazo,
       capas: capas.map((c) => ({ id: c.id, nombre: c.nombre })),
+      partes:
+        block && (block as { tipo?: string }).tipo === 'ecuacion'
+          ? partesDeLatex((block as { latex?: string }).latex ?? '')
+          : [],
     }),
-    [variables, candidatos, capas, slidesDelMazo],
+    [variables, candidatos, capas, slidesDelMazo, block],
   );
   const validacion = useMemo<ContextoValidacion>(
     () => ({

@@ -46,7 +46,11 @@ import {
 
 /** Lo que `SlideRenderer` reenvía a `config` de cada elemento. */
 export interface SlideInteractionRuntime {
-  emitir: (bloqueId: string, evento: EventoTipo) => void;
+  emitir: (
+    bloqueId: string,
+    evento: EventoTipo,
+    detalle?: Readonly<Record<string, VariableValor>>,
+  ) => void;
   estadoDe: (bloqueId: string) => EstadoDeBloque | undefined;
   /** K8a — `false` = el reproductor omite el bloque. Ausente = visible. */
   visibles: Readonly<Record<string, boolean>>;
@@ -248,8 +252,8 @@ export function useInteractionRuntime({
   }, [tiempoActivoS]);
 
   const emitir = useCallback(
-    (bloqueId: string, tipo: EventoTipo) => {
-      despachar({ tipo, bloqueId, slideId: slideDeBloque.get(bloqueId) });
+    (bloqueId: string, tipo: EventoTipo, detalle?: Readonly<Record<string, VariableValor>>) => {
+      despachar({ tipo, bloqueId, slideId: slideDeBloque.get(bloqueId), ...(detalle ? { detalle } : {}) });
     },
     [despachar, slideDeBloque],
   );

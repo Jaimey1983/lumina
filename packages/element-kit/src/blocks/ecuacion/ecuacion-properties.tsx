@@ -199,6 +199,11 @@ export function EcuacionProperties({
             ? 'Cada paso avisa a las interacciones (clic) y, al terminar, marca la fórmula como visitada.'
             : 'Sin «línea por línea» la fórmula no avisa a las interacciones: una regla de clic sobre ella no se activará.'}
         </p>
+        <p className="text-[11px] text-muted-foreground" data-ecuacion-aviso-partes="">
+          Para que una parte de la fórmula sea clicable, márcala con <code>{'\\parte{id}{…}'}</code>
+          (por ejemplo <code>{'\\parte{a}{x^2}'}</code>) y crea una interacción «se hace clic en una
+          parte». También se puede pulsar con teclado.
+        </p>
         {simbolos.length === 0 ? (
           <p className="text-[11px] text-muted-foreground">
             Para que la fórmula cambie con una variable de la clase, escribe el símbolo entre

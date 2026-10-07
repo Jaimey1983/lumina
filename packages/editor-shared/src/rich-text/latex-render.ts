@@ -21,6 +21,33 @@ const SHARED_MACROS: Readonly<Record<string, string>> = {
   '\\Q': '\\mathbb{Q}',
 };
 
+/**
+ * Partes clicables (M2c). `\parte{id}{…}` marca un trozo de la fórmula: se
+ * dibuja con `data-parte="id"` para que el reproductor emita `parte_clic`.
+ * Se implementa con `\htmlData` de KaTeX, que exige `trust`; por eso `trust`
+ * es una FUNCIÓN que solo acepta ese uso (nunca `true`, DM2) y un id válido.
+ */
+const PARTE_MACRO = '\\htmlData{parte=#1}{#2}';
+const ID_PARTE = /^[A-Za-z0-9_-]{1,32}$/;
+const PARTE_RE = /\\parte\s*\{([^{}]*)\}/g;
+
+function confiarSoloEnPartes(ctx: { command?: string; attributes?: Record<string, string> }): boolean {
+  if (ctx.command !== '\\htmlData') return false;
+  const attrs = ctx.attributes ?? {};
+  const claves = Object.keys(attrs);
+  return claves.length === 1 && claves[0] === 'data-parte' && ID_PARTE.test(attrs['data-parte'] ?? '');
+}
+
+/** Ids de las partes marcadas con `\parte{id}{…}`, sin repetir y en orden de aparición. */
+export function partesDeLatex(latex: string): string[] {
+  const vistos = new Set<string>();
+  for (const m of latex.matchAll(PARTE_RE)) {
+    const id = (m[1] ?? '').trim();
+    if (ID_PARTE.test(id)) vistos.add(id);
+  }
+  return [...vistos];
+}
+
 export interface RenderLatexOptions {
   /** `true` lanza ante LaTeX inválido (compositor); `false` pinta el error en rojo. */
   throwOnError?: boolean;
@@ -34,10 +61,10 @@ export function renderLatex(latex: string, opts: RenderLatexOptions = {}): strin
     displayMode: opts.display ?? true,
     output: 'htmlAndMathml',
     strict: 'ignore',
-    trust: false,
+    trust: confiarSoloEnPartes,
     maxSize: LATEX_MAX_SIZE,
     maxExpand: LATEX_MAX_EXPAND,
-    macros: { ...SHARED_MACROS },
+    macros: { ...SHARED_MACROS, '\\parte': PARTE_MACRO },
   });
 }
 
@@ -224,6 +251,7 @@ function hablarCePu(latex: string): string {
  */
 export function speakLatex(latex: string): string {
   let s = ` ${hablarCePu(latex)} `
+    .replace(/\\parte\s*\{[^{}]*\}/g, '')
     .replace(/\\left|\\right/g, '')
     .replace(/\\[,;:! ]/g, ' ')
     .replace(/\\\\/g, ', ')

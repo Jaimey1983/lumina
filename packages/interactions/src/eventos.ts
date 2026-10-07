@@ -62,9 +62,16 @@ export function esSegundosValidos(v: unknown): v is number {
   );
 }
 
+/** Id de una parte clicable (M2c): corto y sin caracteres que rompan un atributo o un macro. */
+export const ID_PARTE_RE = /^[A-Za-z0-9_-]{1,32}$/;
+
+export function esIdDeParte(v: unknown): v is string {
+  return typeof v === 'string' && ID_PARTE_RE.test(v);
+}
+
 /** ¿Este evento necesita `Regla.parametro`? */
 export function eventoUsaParametro(e: EventoTipo): boolean {
-  return e === 'cambio_variable' || e === 'tecla' || e === 'temporizador';
+  return e === 'cambio_variable' || e === 'tecla' || e === 'temporizador' || e === 'parte_clic';
 }
 
 /**
@@ -83,6 +90,8 @@ export function errorDeParametro(
       return undefined;
     case 'tecla':
       return esTeclaPermitida(p) ? undefined : 'Elige una tecla de la lista.';
+    case 'parte_clic':
+      return esIdDeParte(p) ? undefined : 'Elige la parte en la que se hace clic.';
     case 'temporizador':
       return esSegundosValidos(p)
         ? undefined

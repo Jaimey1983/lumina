@@ -98,7 +98,10 @@ export type EventoTipo =
   | 'temporizador'
   | 'salir_slide'
   | 'media_inicia'
-  | 'media_termina';
+  | 'media_termina'
+  // Etapa M / M2c. Clic en UNA parte de un elemento (p. ej. un término de la
+  // fórmula). Lleva `Regla.parametro` = id de la parte; lo emite el elemento.
+  | 'parte_clic';
 
 // ─── Condiciones (árbol de datos, D5) ────────────────────────────────────────
 
@@ -218,7 +221,8 @@ export interface Regla {
   /**
    * Parámetro del evento (N5, D16): `cambio_variable` → id de la variable
    * observada; `tecla` → código de tecla (lista cerrada); `temporizador` →
-   * segundos (1–600) desde que se entra al slide. Se ignora en los demás.
+   * segundos (1–600) desde que se entra al slide; `parte_clic` (M2c) → id de
+   * la parte (letras, números, `_` y `-`, hasta 32). Se ignora en los demás.
    */
   parametro?: string | number;
 }

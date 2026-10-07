@@ -8,10 +8,12 @@ export { procesarEvento } from './motor.js';
 export {
   EVENTOS_DE_ENTORNO,
   EVENTOS_DE_SLIDE,
+  ID_PARTE_RE,
   TECLAS_PERMITIDAS,
   TEMPORIZADOR_MAX_S,
   TEMPORIZADOR_MIN_S,
   errorDeParametro,
+  esIdDeParte,
   esSegundosValidos,
   esTeclaPermitida,
   etiquetaTecla,

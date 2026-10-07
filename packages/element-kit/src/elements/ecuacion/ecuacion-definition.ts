@@ -23,7 +23,7 @@ export const ecuacionDefinition = {
     tipografia: false,
     animacion: true,
   },
-  eventos: ["clic", "visitado"],
+  eventos: ["clic", "visitado", "parte_clic"],
   catalogo: CATALOGO_ELEMENTOS["ecuacion"],
 } as const satisfies ElementDefinition<EcuacionEstado, EcuacionConfig>;
 

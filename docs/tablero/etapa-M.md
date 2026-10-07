@@ -85,5 +85,12 @@ Entorno: Postgres 16 y Redis efímeros, backend compilado (`node dist/src/main.j
 
 #### M2b — Aviso de eventos en el panel de la ecuación (parcial, 2026-10-02)
 - **Estado:** **en revisión** (solo la parte barata). El panel «Interactividad» de la ecuación ahora dice cuándo emite eventos: con «línea por línea» activado, que cada paso emite `clic` y que al final marca la fórmula como visitada; sin él, que una regla de clic sobre la ecuación no se activará. Spec `ecuacion-properties.aviso.spec.tsx`. Verif: `@lumina/element-kit` lint 0 error, tests de `blocks/ecuacion` 11/11.
-- **Pendiente (requiere decisión de K):** partes clicables de la fórmula (términos individuales). Los eventos del catálogo de K1 no llevan datos, así que una regla no puede distinguir qué término se tocó; exige ampliar ese catálogo.
+- **Resuelto en M2c (abajo):** partes clicables de la fórmula (términos individuales). Los eventos del catálogo de K1 no llevan datos, así que una regla no puede distinguir qué término se tocó; exige ampliar ese catálogo.
 
+#### M2c — Partes clicables de la fórmula (`parte_clic`)
+- **Operador:** Claude Code
+- **Estado:** **en revisión** — el dueño autorizó ampliar el catálogo de eventos de K1 (2026-10-07). Se añade UN evento, `parte_clic`, parametrizado por el id de la parte (`Regla.parametro`, mecanismo de N5); el evento lleva `detalle: { parte }` (`EventoMotor.detalle`).
+  - **LaTeX:** `\parte{id}{…}` (macro sobre `\htmlData` de KaTeX). `trust` pasa a ser una **función** que solo acepta `\htmlData` con un único atributo `data-parte` y un id `^[A-Za-z0-9_-]{1,32}$` (DM2: nunca `true`). `partesDeLatex` lista los ids; `speakLatex` ignora el marcador.
+  - **Motor/tipos:** `EventoTipo` += `parte_clic` (con su chequeo de catálogo cerrado), `esIdDeParte`, validación de parámetro, `coincideParametro`, descripción en español. `ElementRuntimeConfig.emitir`, `SlideRenderer` y `use-interaction-runtime` aceptan `detalle` opcional (aditivo).
+  - **Ecuación:** `eventos: ['clic','visitado','parte_clic']`; clic sobre la parte y un botón por parte (accesible por teclado) solo con motor, no en editor ni miniatura; el panel lo explica; el constructor de reglas ofrece las partes del bloque dueño.
+  - **Verif:** `@lumina/interactions` 299/299 · `@lumina/editor-shared` 352/352 · `@lumina/element-kit` 594/594 (lint 0 errores) · frontend `tsc` limpio, lint 0 errores, `test:unit` 519/519. **Sin QA manual en navegador** (pendiente: marcar una parte, crear la regla y verla activarse en autónomo/vista previa; presentación y en vivo inertes).

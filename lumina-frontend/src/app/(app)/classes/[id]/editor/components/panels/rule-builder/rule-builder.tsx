@@ -166,6 +166,27 @@ function Contenido({
                 ))}
               </select>
             ) : null}
+            {regla.evento === 'parte_clic' ? (
+              (opciones.partes ?? []).length > 0 ? (
+                <select
+                  aria-label="Parte de la fórmula"
+                  className={selectCls}
+                  value={typeof regla.parametro === 'string' ? regla.parametro : ''}
+                  onChange={(e) => setRegla({ ...regla, parametro: e.target.value })}
+                >
+                  <option value="">Elige la parte…</option>
+                  {(opciones.partes ?? []).map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Marca partes en la fórmula con \parte{'{'}id{'}'}{'{'}…{'}'} para poder elegirlas aquí.
+                </p>
+              )
+            ) : null}
             {regla.evento === 'temporizador' ? (
               <label className="flex items-center gap-2 text-xs">
                 Segundos en el slide

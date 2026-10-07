@@ -19,6 +19,8 @@ export interface OpcionesBuilder {
   }[];
   slides: readonly { id: string; titulo: string }[];
   capas: readonly { id: string; nombre: string }[];
+  /** M2c — ids de las partes clicables `\parte{id}{…}` del elemento dueño de la regla. */
+  partes?: readonly string[];
 }
 
 export const OpcionesContext = createContext<OpcionesBuilder>({

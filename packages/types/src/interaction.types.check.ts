@@ -71,6 +71,7 @@ export type _Eventos = Assert<
     | 'salir_slide'
     | 'media_inicia'
     | 'media_termina'
+    | 'parte_clic'
   >
 >;
 
