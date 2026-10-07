@@ -16,7 +16,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 **Decisiones de diseño (DR1–DR4):**
 - **DR1.** Un único componente `FieldHelp` en `@lumina/ui` (lo consumen `element-kit`, `editor-shared` y el frontend). Un botón ⓘ junto a la etiqueta del campo. Abre con clic o teclado, cierra con Escape, `aria-label="Ayuda: <campo>"`, foco visible. Acepta JSX (`<code>`, interpolaciones).
 - **DR2.** Textos muy largos (> ~300 caracteres o con pasos: máscara, datos del gráfico, reglas, variables) usan el mismo ⓘ pero se muestran en una ventana más grande («Cómo funciona»). La elección es por una prop, no por dos componentes.
-- **DR3.** Los `title=` largos (11 casos) pasan al mismo ⓘ: `title` no se ve en táctil ni con teclado.
+- **DR3 (descartada en R8).** Se proponía pasar los `title=` largos al ⓘ; el dueño decidió dejarlos (no ocupan espacio en el panel).
 - **DR4.** El contenido de ayuda no vive en el DOM mientras está cerrado. Los tests que lean ese texto abren el ⓘ primero.
 
 **Riesgos relevados al redactar (re-medir al tomar cada ficha):**
@@ -87,7 +87,7 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R8 — `title=` largos y barrido final
 - **Operador:** Claude Code
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — **sin cambios de código.** Decisión del dueño: los 11 `title=` largos se **dejan como están** (son tooltips de hover sobre botones, tiradores e insignias; no ocupan espacio en el panel y un ⓘ añadiría iconos junto a botones de barra y al tirador de rotación). **DR3 queda descartada.** Barrido final (mismo escáner de prosa estática en `muted-foreground`/`gray`/`slate`): prosa limpia **86 → 53**; textos de ≥ 90 caracteres **38 → 3**. Los 3 restantes son excepciones del criterio: `grafico-data-dialog.tsx:281` y `:633` (frases alternativas por tipo de gráfico, cada una de 60–85 caracteres en un diálogo ancho) y `rules-simulator.tsx:198` (dos mensajes de estado de < 90). Verif del barrido: `node scan2.js` + filtro ≥ 90. Último estado verde de la etapa: tsc, eslint 0 errores, vitest frontend 519 / element-kit 601 / editor-shared 352.
 - **Precondición:** R2–R7 `hecho`.
 - **Alcance — PUEDE tocar:** los 11 `title=` de ≥ 40 caracteres (`alignment-toolbar`, `interactions-panel`, `grafico-data-dialog`, `grafico-properties`, `resize-handles`, `slide-renderer`, `editor-client`, `preview-client`). Repetir el escaneo de prosa estática ≥ 90 caracteres y confirmar que no queda ninguna fuera de las excepciones del criterio.
 - **Entregable:** conteo antes/después en la ficha; verificación `pnpm -r lint && pnpm -r test`.
