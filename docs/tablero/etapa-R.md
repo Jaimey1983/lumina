@@ -52,14 +52,14 @@ R3–R7 tocan archivos disjuntos entre sí y pueden ir en paralelo (Regla 10, Co
 
 #### R3 — Interacciones y reglas
 - **Operador:** Claude Code
-- **Estado:** en revisión — 8 textos de interacciones/reglas al ⓘ. Tipos, eslint y `vitest --project unit` (519) verdes. Donde el texto largo era a la vez un estado visible (panel anidado, sin plantillas, sin eventos en el simulador, datos del sistema) queda una línea corta visible + ⓘ con el texto íntegro. En el simulador se movió el texto de 94 caracteres «Usa la clase como lo haría un alumno…» (la ficha citaba por error el 99, que son dos mensajes de estado de <90 y se quedan). Descripción de `RuleBuilder`: pasa al ⓘ del título y queda `sr-only` en `DialogDescription` (accesibilidad de Radix). Sin comprobación visual en el editor.
+- **Estado:** hecho — 8 textos de interacciones/reglas al ⓘ. Tipos, eslint y `vitest --project unit` (519) verdes. Donde el texto largo era a la vez un estado visible (panel anidado, sin plantillas, sin eventos en el simulador, datos del sistema) queda una línea corta visible + ⓘ con el texto íntegro. En el simulador se movió el texto de 94 caracteres «Usa la clase como lo haría un alumno…» (la ficha citaba por error el 99, que son dos mensajes de estado de <90 y se quedan). Descripción de `RuleBuilder`: pasa al ⓘ del título y queda `sr-only` en `DialogDescription` (accesibilidad de Radix). Sin comprobación visual en el editor.
 - **Precondición:** R2 `hecho` (valida el patrón en un caso real).
 - **Alcance — PUEDE tocar:** `lumina-frontend/.../panels/{interactions-panel,variables-panel,rules-simulator}.tsx` y `panels/rule-builder/{rule-builder,operando-editor}.tsx`. Textos: orden de ejecución, indicador de la clase (131), no dentro de columna (109), plantillas sin soporte (99), datos del sistema (115), «si no» (149), regla general (110), variables (123), simulador (99).
 - **Entregable:** textos movidos; los avisos de estado («Sin condiciones: la regla se ejecuta siempre…») se quedan. Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit`.
 
 #### R4 — Bloques de canvas (máscara, gráfico, imagen)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** R2 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/clip-group/clip-group-properties.tsx`, `blocks/grafico/grafico-data-dialog.tsx`, `elements/image-compare/image-compare-properties.tsx`, `packages/editor-shared/src/widget-inner-properties.tsx` (línea 307), `lumina-frontend/.../panels/clip-masks-panel.tsx`. Textos: nodos y manijas (299, 165, 133, 110), datos del gráfico (273, 124), encuadre (149, 114, 113). Usan `size="large"` donde pasan de ~300.
 - **Entregable:** verificación `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/editor-shared test && pnpm -r lint`.

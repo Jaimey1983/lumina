@@ -182,6 +182,6 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 | M (matemática) | `docs/tablero/etapa-M.md` | en revisión |
 | N (condicionales Storyline) | `docs/tablero/etapa-N.md` | N0–N3 y N5 hechas; N4, N6, N7 y N8 en revisión |
 | Q (química) | `docs/tablero/etapa-Q.md` | Q1–Q12 hecho; Q13 en revisión |
-| R (ayudas largas tras icono ⓘ) | `docs/tablero/etapa-R.md` | R1–R2 hecho; R3 en revisión; R4–R8 pendientes |
+| R (ayudas largas tras icono ⓘ) | `docs/tablero/etapa-R.md` | R1–R3 hecho; R4 en curso; R5–R8 pendientes |
 
 Las etapas cerradas son historial: no se leen salvo que una ficha activa las cite.
