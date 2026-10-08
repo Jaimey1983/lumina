@@ -111,7 +111,11 @@ export function VariablesPanel({
       return;
     }
     setAviso(null);
-    setBorrador((prev) => prev.filter((x) => x.id !== v.id));
+    const siguiente = borrador.filter((x) => x.id !== v.id);
+    setBorrador(siguiente);
+    // «Problemas de interacción» lee las variables GUARDADAS: si el borrado esperara
+    // al botón Guardar, la variable seguiría apareciendo allí como «sin uso».
+    if (validarVariables(siguiente).length === 0) onSave(siguiente);
   };
 
   return (
