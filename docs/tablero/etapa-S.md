@@ -116,6 +116,13 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 - **Alcance — PUEDE tocar:** `panels/elementos-panel.tsx`, `panels/activities-panel.tsx`, `panels/widgets-insert-panel.tsx` (solo agregar el campo de búsqueda), un componente `PanelSearch` en `panel-shared.tsx`, y los encabezados sueltos que el escáner marque. **NO** amplía el alcance de fichas anteriores.
 - **Entregable:** campo de búsqueda al inicio de Elementos, Widgets y Actividades; filtra por etiqueta, oculta secciones sin coincidencias y abre las que tienen (`forceOpen`, DS4); sin resultados muestra un estado vacío. Barrido: contar `grep -rn "uppercase tracking-wider" --include=*.tsx` antes/después fuera de `CollapsibleSection` y dejar en la ficha el conteo; lo que quede fuera de `CollapsibleSection` debe ser un título de panel (`<h2>`) o estar justificado. Verificación: `pnpm -r lint && pnpm -r test`, más comprobación visual del flujo completo (buscar «venn», abrir sección, insertar).
 
+#### S12 — Adoptar la API plegable en la apariencia de los widgets
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
+- **Precondición:** S7 `en revisión` (API plegable de `WidgetAppearanceSection`); pedido expreso del dueño tras la revisión posterior.
+- **Alcance — PUEDE tocar:** `packages/editor-shared/src/widget-appearance-fields.tsx` (+ su spec) y `packages/element-kit/src/widgets/{flip-cards,carousel,timeline,tabs,click-reveal}/*-appearance-properties.tsx` **solo** para pasar `scope` a `WidgetAppearanceStack`. **NO** toca `widget-properties-panel.tsx`, los demás `*-properties.tsx` ni el frontend.
+- **Entregable:** `WidgetAppearanceStack` acepta `scope` (id del widget) y lo comparte por contexto; `WidgetAppearanceSection` (y `WidgetLayoutGallerySection`) se pliegan solos cuando hay `scope`, con `storageKey` `widgets.<scope>.<título>` y cerrados salvo «Layout del widget»; sin `scope` el markup es el de siempre. Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/editor-shared lint && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual en los 5 widgets.
+
 #### Revisión posterior de la etapa (2026-10-10, Claude Code)
 
 Barrido de calidad sobre todo lo entregado en S1–S11. Corregido (sin cambiar el comportamiento esperado de las fichas):
