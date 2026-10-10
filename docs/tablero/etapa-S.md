@@ -97,7 +97,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S9 — Propiedades del Diagrama, Popup y widgets restantes
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S6 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/diagrama/diagrama-properties.tsx`, `packages/element-kit/src/widgets/{popup,flip-cards,timeline,click-reveal,hotspot,carousel,tabs}/*-properties.tsx` y sus specs. **NO** toca `grafico-properties.tsx` ni `widget-properties-panel.tsx`.
 - **Entregable:** Diagrama: los 3 colapsables actuales y los bloques en `border-t` (líneas ~851, 911, 1026) quedan en un único `CollapsibleSection`; Popup: partido en secciones (disparador, contenido, modal, apariencia) con la primera abierta; Flip-cards, timeline, click-reveal, hotspot: lista de ítems como sección con `badge` de conteo. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual por elemento.
