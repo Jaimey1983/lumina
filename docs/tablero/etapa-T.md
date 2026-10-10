@@ -83,7 +83,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T3 — `PresetGallery` único, dentro de la sección «Estilos»
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T2 y T2b `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/editor-shared/src/` (`preset-gallery.tsx` + spec) y, en cada widget con presets, **solo** el `*-properties.tsx` para montar la galería dentro de una `CollapsibleSection` «Estilos» (`storageKey` `widget.<tipo>.estilos`, abierta por defecto). **NO** reescribe las galerías de Flip Cards y Timeline ni cambia otras secciones.
 - **Entregable:** el componente lee `definicion.presets`, aplica `estadoPatch` (mezclando `configuracion` a un nivel, como hacen hoy las propiedades de Accordion/Scratch card) con `onChange` y marca el preset activo si el estado coincide; accesible por teclado; miniatura opcional (`thumbnail`) o etiqueta + descripción. Probado: aplicar un preset cambia la config esperada, sin presets no se renderiza nada. Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual en el editor.
