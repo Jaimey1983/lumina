@@ -13,7 +13,6 @@ import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { FieldHelp } from '@lumina/ui/field-help';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
-import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import type { ApplyNow } from './properties-panel-shared';
 
@@ -96,8 +95,7 @@ export function BlockEstadoInicialSection({
       className="mt-4 border-t border-border pt-4"
     >
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Label className="text-xs font-medium">Estado inicial (interacción)</Label>
+        <div className="flex items-center justify-end">
           <FieldHelp label="Estado inicial">
             <p>
               Solo «Deshabilitado» cambia la apariencia. «Visitado» y «Seleccionado» sirven como
@@ -106,6 +104,7 @@ export function BlockEstadoInicialSection({
           </FieldHelp>
         </div>
         <select
+          aria-label="Estado inicial"
           value={estado}
           onChange={(e) => {
             const next = e.target.value as EstadoObjeto;
@@ -165,10 +164,6 @@ export function BlockRotationSection({
       className="mt-4 border-t border-border pt-4"
     >
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs font-medium">Rotación</Label>
-          <span className="text-xs tabular-nums text-muted-foreground">{Math.round(localAngle)}°</span>
-        </div>
         <div className="flex items-center gap-2">
           <Slider
             value={[localAngle]}
@@ -182,6 +177,7 @@ export function BlockRotationSection({
           </Slider>
           <div className="flex items-center gap-1">
             <Input
+              aria-label="Rotación (grados)"
               type="number"
               min={0}
               max={360}

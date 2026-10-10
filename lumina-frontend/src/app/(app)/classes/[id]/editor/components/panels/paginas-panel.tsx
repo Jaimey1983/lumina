@@ -11,7 +11,17 @@ import { ScrollArea } from '@lumina/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@lumina/ui/select';
 import { cn } from '@/lib/utils';
 import { PanelSection } from './panel-shared';
-import type { FlyoutLeftPanelsProps } from './flyout-left-panels';
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
+
+export interface PaginasPanelProps {
+  slides: { id: string; order: number; title: string; type: string }[];
+  activeSlideIndex: number;
+  onSelectSlide: (index: number) => void;
+  apiSlide: ApiSlide | null;
+  /** Contenido completo a persistir en PATCH (merge del JSON `content`). */
+  onCommitContent: (content: Record<string, unknown>) => void;
+  busy?: boolean;
+}
 
 export function PaginasPanel({
   slides,
@@ -20,10 +30,7 @@ export function PaginasPanel({
   apiSlide,
   onCommitContent,
   busy,
-}: Pick<
-  FlyoutLeftPanelsProps,
-  'slides' | 'activeSlideIndex' | 'onSelectSlide' | 'apiSlide' | 'onCommitContent' | 'busy'
->) {
+}: PaginasPanelProps) {
   const c = apiSlide ? getSlideContentRecord(apiSlide) : {};
   const rawTimer = c.timer;
   const selectValue =

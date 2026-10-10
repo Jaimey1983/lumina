@@ -59,8 +59,13 @@ import { ScrollArea } from '@lumina/ui/scroll-area';
 import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separador/divider-defaults';
 import { createDefaultEcuacionBlock } from '@lumina/element-kit/blocks/ecuacion/ecuacion-defaults';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
-import { ImagesElementPanel } from './images-element-panel';
-import { ClipMasksPanel, MASK_ITEMS } from './clip-masks-panel';
+import { ImagesElementPanel, IMAGES_SECTION_TITLE } from './images-element-panel';
+import {
+  ClipMasksPanel,
+  CLIP_MASKS_SECTION_TITLE,
+  CLIP_MASK_TEXT_LABEL,
+  MASK_ITEMS,
+} from './clip-masks-panel';
 import {
   CHEMISTRY_EQUATION_PRESETS,
   CHEMISTRY_QUICK_ACTIVITIES,
@@ -90,6 +95,36 @@ function isLabSlideTemplate(
 ): tmpl is ChemistryLabSlideTemplate {
   return CHEMISTRY_LAB_SLIDE_TEMPLATES.some((l) => l.id === tmpl.id);
 }
+
+/** Títulos de sección y etiquetas que usan a la vez el render y la búsqueda. */
+const SECCION = {
+  graficos: 'Gráficos de Datos',
+  plantillasGrafico: 'Plantillas Pedagógicas',
+  diagramas: 'Diagramas',
+  quimica: 'Química',
+  ecuaciones: 'Ecuaciones rápidas (mhchem)',
+  plantillasQuimica: 'Plantillas de slide (CN-7)',
+  multimedia: 'Multimedia',
+  estructura: 'Estructura',
+} as const;
+
+const QUIMICA_LABEL = {
+  tabla: 'Tabla periódica',
+  molecula: 'Molécula 2D',
+  ecuacion: 'Ecuación \\ce{} (ejemplo)',
+  practica: 'Slide de práctica — balanceo',
+} as const;
+
+/** Todo lo insertable de la sección Química (también alimenta el conteo y la búsqueda). */
+const QUIMICA_ITEM_LABELS: string[] = [
+  QUIMICA_LABEL.tabla,
+  QUIMICA_LABEL.molecula,
+  QUIMICA_LABEL.ecuacion,
+  ...CHEMISTRY_QUICK_ACTIVITIES.map((a) => a.label),
+  ...CHEMISTRY_EQUATION_PRESETS.map((p) => p.label),
+  ...CHEMISTRY_SLIDE_TEMPLATES.map((t) => t.nombre),
+  QUIMICA_LABEL.practica,
+];
 
 const DIAGRAMAS: Array<{
   label: string;
@@ -178,35 +213,24 @@ const ESTRUCTURA: Array<{
   },
 ];
 
-const QUIMICA_BASICOS = ['Tabla periódica', 'Molécula 2D', 'Ecuación \\ce{} (ejemplo)'];
-
 /** Qué secciones del panel «Elementos» tienen alguna coincidencia con la búsqueda. */
 export function seccionesVisibles(query: string) {
   const searching = query.trim() !== '';
   const hit = (text: string) => matchesQuery(text, query);
   const has = (section: string, labels: string[]) =>
     !searching || hit(section) || labels.some(hit);
-  const quimicaLabels = [
-    ...QUIMICA_BASICOS,
-    ...CHEMISTRY_QUICK_ACTIVITIES.map((a) => a.label),
-    ...CHEMISTRY_EQUATION_PRESETS.map((p) => p.label),
-    ...CHEMISTRY_SLIDE_TEMPLATES.map((t) => t.nombre),
-    'Slide de práctica — balanceo',
-    'Ecuaciones rápidas (mhchem)',
-    'Plantillas de slide (CN-7)',
-  ];
   return {
-    imagenes: has('Imágenes', ['URL de imagen']),
-    mascaras: has('Máscaras de recorte', [...MASK_ITEMS.map((m) => m.label), 'Texto']),
-    graficos: has('Gráficos de Datos', [
+    imagenes: has(IMAGES_SECTION_TITLE, ['URL de imagen']),
+    mascaras: has(CLIP_MASKS_SECTION_TITLE, [...MASK_ITEMS.map((m) => m.label), CLIP_MASK_TEXT_LABEL]),
+    graficos: has(SECCION.graficos, [
       ...GRAFICOS_TIPOS.map((g) => g.label),
       ...GRAFICO_TEMPLATES.map((t) => t.nombre),
-      'Plantillas Pedagógicas',
+      SECCION.plantillasGrafico,
     ]),
-    diagramas: has('Diagramas', DIAGRAMAS.map((d) => d.label)),
-    quimica: has('Química', quimicaLabels),
-    multimedia: has('Multimedia', MULTIMEDIA.map((m) => m.label)),
-    estructura: has('Estructura', ESTRUCTURA.map((e) => e.label)),
+    diagramas: has(SECCION.diagramas, DIAGRAMAS.map((d) => d.label)),
+    quimica: has(SECCION.quimica, [...QUIMICA_ITEM_LABELS, SECCION.ecuaciones, SECCION.plantillasQuimica]),
+    multimedia: has(SECCION.multimedia, MULTIMEDIA.map((m) => m.label)),
+    estructura: has(SECCION.estructura, ESTRUCTURA.map((e) => e.label)),
   };
 }
 
@@ -260,16 +284,16 @@ export function ElementosPanel({
 
   const visible = seccionesVisibles(query);
   const graficoPlantillas = GRAFICO_TEMPLATES.filter(
-    (t) => show('Gráficos de Datos', t.nombre) || hit('Plantillas Pedagógicas'),
+    (t) => show(SECCION.graficos, t.nombre) || hit(SECCION.plantillasGrafico),
   );
   const presets = CHEMISTRY_EQUATION_PRESETS.filter(
-    (p) => show('Química', p.label) || hit('Ecuaciones rápidas (mhchem)'),
+    (p) => show(SECCION.quimica, p.label) || hit(SECCION.ecuaciones),
   );
   const plantillasQuimica = CHEMISTRY_SLIDE_TEMPLATES.filter(
-    (t) => show('Química', t.nombre) || hit('Plantillas de slide (CN-7)'),
+    (t) => show(SECCION.quimica, t.nombre) || hit(SECCION.plantillasQuimica),
   );
   const mostrarPractica =
-    show('Química', 'Slide de práctica — balanceo') || hit('Plantillas de slide (CN-7)');
+    show(SECCION.quimica, QUIMICA_LABEL.practica) || hit(SECCION.plantillasQuimica);
   const algunaVisible = Object.values(visible).some(Boolean);
 
   return (
@@ -295,13 +319,13 @@ export function ElementosPanel({
         )}
         {visible.graficos && (
           <PanelSection
-            title="Gráficos de Datos"
+            title={SECCION.graficos}
             storageKey="elementos.graficos"
-            badge={7 + GRAFICO_TEMPLATES.length}
+            badge={GRAFICOS_TIPOS.length + GRAFICO_TEMPLATES.length}
             forceOpen={searching}
           >
             <div className="grid grid-cols-2 gap-1.5">
-              {GRAFICOS_TIPOS.filter((g) => show('Gráficos de Datos', g.label)).map((g) => (
+              {GRAFICOS_TIPOS.filter((g) => show(SECCION.graficos, g.label)).map((g) => (
                 <InsertBtn
                   key={g.label}
                   label={g.label}
@@ -314,7 +338,7 @@ export function ElementosPanel({
 
             {graficoPlantillas.length > 0 && (
               <CollapsibleSection
-                title="Plantillas Pedagógicas"
+                title={SECCION.plantillasGrafico}
                 icon={BookOpen}
                 defaultOpen={false}
                 storageKey="elementos.graficos.plantillas"
@@ -346,14 +370,14 @@ export function ElementosPanel({
         )}
         {visible.diagramas && (
           <PanelSection
-            title="Diagramas"
+            title={SECCION.diagramas}
             storageKey="elementos.diagramas"
             defaultOpen={false}
             badge={DIAGRAMAS.length}
             forceOpen={searching}
           >
             <div className="grid grid-cols-2 gap-1.5">
-              {DIAGRAMAS.filter((d) => show('Diagramas', d.label)).map((d) => (
+              {DIAGRAMAS.filter((d) => show(SECCION.diagramas, d.label)).map((d) => (
                 <InsertBtn
                   key={d.label}
                   label={d.label}
@@ -367,22 +391,16 @@ export function ElementosPanel({
         )}
         {visible.quimica && (
           <PanelSection
-            title="Química"
+            title={SECCION.quimica}
             storageKey="elementos.quimica"
             defaultOpen={false}
-            badge={
-              3 +
-              CHEMISTRY_QUICK_ACTIVITIES.length +
-              CHEMISTRY_EQUATION_PRESETS.length +
-              CHEMISTRY_SLIDE_TEMPLATES.length +
-              1
-            }
+            badge={QUIMICA_ITEM_LABELS.length}
             forceOpen={searching}
           >
             <div className="grid grid-cols-2 gap-1.5">
-              {show('Química', 'Tabla periódica') && (
+              {show(SECCION.quimica, QUIMICA_LABEL.tabla) && (
                 <InsertBtn
-                  label="Tabla periódica"
+                  label={QUIMICA_LABEL.tabla}
                   icon={TableProperties}
                   disabled={disabledNonText}
                   onClick={() => {
@@ -394,9 +412,9 @@ export function ElementosPanel({
                   }}
                 />
               )}
-              {show('Química', 'Molécula 2D') && (
+              {show(SECCION.quimica, QUIMICA_LABEL.molecula) && (
                 <InsertBtn
-                  label="Molécula 2D"
+                  label={QUIMICA_LABEL.molecula}
                   icon={Atom}
                   disabled={disabledNonText}
                   onClick={() => {
@@ -408,15 +426,15 @@ export function ElementosPanel({
                   }}
                 />
               )}
-              {show('Química', 'Ecuación \\ce{} (ejemplo)') && (
+              {show(SECCION.quimica, QUIMICA_LABEL.ecuacion) && (
                 <InsertBtn
-                  label="Ecuación \\ce{} (ejemplo)"
+                  label={QUIMICA_LABEL.ecuacion}
                   icon={TestTube2}
                   disabled={disabledNonText}
                   onClick={() => add(createChemistryEquationBlock(CHEMISTRY_EQUATION_PRESETS[0].latex))}
                 />
               )}
-              {CHEMISTRY_QUICK_ACTIVITIES.filter((act) => show('Química', act.label)).map((act) => (
+              {CHEMISTRY_QUICK_ACTIVITIES.filter((act) => show(SECCION.quimica, act.label)).map((act) => (
                 <InsertBtn
                   key={act.id}
                   label={act.label}
@@ -440,7 +458,7 @@ export function ElementosPanel({
             </div>
             {presets.length > 0 && (
               <CollapsibleSection
-                title="Ecuaciones rápidas (mhchem)"
+                title={SECCION.ecuaciones}
                 defaultOpen={false}
                 storageKey="elementos.quimica.ecuaciones"
                 badge={CHEMISTRY_EQUATION_PRESETS.length}
@@ -464,7 +482,7 @@ export function ElementosPanel({
             )}
             {(plantillasQuimica.length > 0 || mostrarPractica) && (
               <CollapsibleSection
-                title="Plantillas de slide (CN-7)"
+                title={SECCION.plantillasQuimica}
                 icon={BookOpen}
                 defaultOpen={false}
                 storageKey="elementos.quimica.plantillas"
@@ -505,7 +523,7 @@ export function ElementosPanel({
                       onClick={() => onAddActivity?.('balancear-ecuacion')}
                       className="w-full rounded-md border border-dashed border-border p-1.5 text-left hover:bg-muted/70 disabled:opacity-50"
                     >
-                      <div className="text-[11px] font-medium text-foreground">Slide de práctica — balanceo</div>
+                      <div className="text-[11px] font-medium text-foreground">{QUIMICA_LABEL.practica}</div>
                       <div className="text-[10px] text-muted-foreground">Crea un slide dedicado a la actividad evaluable.</div>
                     </button>
                   )}
@@ -515,8 +533,13 @@ export function ElementosPanel({
           </PanelSection>
         )}
         {visible.multimedia && (
-          <PanelSection title="Multimedia" storageKey="elementos.multimedia" badge={2} forceOpen={searching}>
-            {MULTIMEDIA.filter((m) => show('Multimedia', m.label)).map((m) => (
+          <PanelSection
+            title={SECCION.multimedia}
+            storageKey="elementos.multimedia"
+            badge={MULTIMEDIA.length}
+            forceOpen={searching}
+          >
+            {MULTIMEDIA.filter((m) => show(SECCION.multimedia, m.label)).map((m) => (
               <InsertBtn
                 key={m.label}
                 label={m.label}
@@ -528,9 +551,14 @@ export function ElementosPanel({
           </PanelSection>
         )}
         {visible.estructura && (
-          <PanelSection title="Estructura" storageKey="elementos.estructura" badge={4} forceOpen={searching}>
+          <PanelSection
+            title={SECCION.estructura}
+            storageKey="elementos.estructura"
+            badge={ESTRUCTURA.length}
+            forceOpen={searching}
+          >
             <div className="grid grid-cols-2 gap-1.5">
-              {ESTRUCTURA.filter((e) => show('Estructura', e.label)).map((e) => (
+              {ESTRUCTURA.filter((e) => show(SECCION.estructura, e.label)).map((e) => (
                 <InsertBtn
                   key={e.label}
                   label={e.label}

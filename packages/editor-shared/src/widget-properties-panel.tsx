@@ -57,7 +57,8 @@ export interface WidgetPanelCollapseProps {
   badge?: ReactNode;
 }
 
-function maybeCollapsible(
+/** Envuelve `content` en una sección plegable solo si hay `title`. */
+function withCollapsible(
   { title, defaultOpen, storageKey, badge }: WidgetPanelCollapseProps,
   content: ReactNode,
 ): ReactNode {
@@ -87,7 +88,7 @@ export function WidgetPropertiesPanelSection({
   /** Texto auxiliar bajo el divisor (p. ej. edición contextual). */
   hint?: string;
 } & WidgetPanelCollapseProps) {
-  const body = (
+  const hintYContenido = (
     <>
       {hint ? (
         <p className="text-[11px] leading-snug text-muted-foreground">{hint}</p>
@@ -95,14 +96,14 @@ export function WidgetPropertiesPanelSection({
       {children}
     </>
   );
-  if (title) {
-    return (
-      <div className="border-t border-border pt-4">
-        {maybeCollapsible({ title, defaultOpen, storageKey, badge }, body)}
-      </div>
-    );
-  }
-  return <div className="flex flex-col gap-3 border-t border-border pt-4">{body}</div>;
+  // Con `title` el contenido se pliega (el espaciado lo da `CollapsibleSection`).
+  return title ? (
+    <div className="border-t border-border pt-4">
+      {withCollapsible({ title, defaultOpen, storageKey, badge }, hintYContenido)}
+    </div>
+  ) : (
+    <div className="flex flex-col gap-3 border-t border-border pt-4">{hintYContenido}</div>
+  );
 }
 
 /** Bloque con divisor sin hint (p. ej. apariencia global). */
@@ -115,7 +116,7 @@ export function WidgetPropertiesPanelBlock({
 }: { children: ReactNode } & WidgetPanelCollapseProps) {
   return (
     <div className="border-t border-border pt-4">
-      {maybeCollapsible({ title, defaultOpen, storageKey, badge }, children)}
+      {withCollapsible({ title, defaultOpen, storageKey, badge }, children)}
     </div>
   );
 }

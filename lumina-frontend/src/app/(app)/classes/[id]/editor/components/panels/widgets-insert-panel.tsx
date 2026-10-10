@@ -62,12 +62,16 @@ const PROXIMAMENTE_ITEMS = [
 export function filtrarWidgets(query: string) {
   const searching = query.trim() !== '';
   const hit = (text: string) => matchesQuery(text, query);
-  const grupos = WIDGET_PANEL_GROUP_ORDER.map((group) => ({
-    group,
-    items: getWidgetPanelItemsByGroup(group).filter(
-      (item) => !searching || hit(WIDGET_PANEL_GROUP_LABELS[group]) || hit(item.label),
-    ),
-  })).filter((g) => g.items.length > 0);
+  const grupos = WIDGET_PANEL_GROUP_ORDER.map((group) => {
+    const todos = getWidgetPanelItemsByGroup(group);
+    return {
+      group,
+      total: todos.length,
+      items: todos.filter(
+        (item) => !searching || hit(WIDGET_PANEL_GROUP_LABELS[group]) || hit(item.label),
+      ),
+    };
+  }).filter((g) => g.items.length > 0);
   const proximamente = PROXIMAMENTE_ITEMS.filter(
     (u) => !searching || hit('Próximamente') || hit(u.label),
   );
@@ -79,8 +83,8 @@ export function WidgetsInsertPanel({ disabled, slideHasActivity, onAddWidget }: 
   const handleAdd = onAddWidget ?? (() => {});
   const [query, setQuery] = useState('');
   const searching = query.trim() !== '';
-  const { grupos, proximamente: PROXIMAMENTE } = filtrarWidgets(query);
-  const sinResultados = searching && grupos.length === 0 && PROXIMAMENTE.length === 0;
+  const { grupos, proximamente } = filtrarWidgets(query);
+  const sinResultados = searching && grupos.length === 0 && proximamente.length === 0;
 
   return (
     <ScrollArea className="h-full min-h-0">
@@ -100,14 +104,13 @@ export function WidgetsInsertPanel({ disabled, slideHasActivity, onAddWidget }: 
           </div>
         ) : null}
 
-        {grupos.map(({ group, items }) => {
-          return (
+        {grupos.map(({ group, items, total }) => (
             <CollapsibleSection
               key={group}
               title={WIDGET_PANEL_GROUP_LABELS[group]}
               storageKey={`widgets.${group}`}
               defaultOpen={GRUPOS_ABIERTOS.includes(group)}
-              badge={items.length}
+              badge={total}
               forceOpen={searching}
               className="px-4 pt-3"
             >
@@ -126,20 +129,19 @@ export function WidgetsInsertPanel({ disabled, slideHasActivity, onAddWidget }: 
                 ))}
               </div>
             </CollapsibleSection>
-          );
-        })}
+        ))}
 
-        {PROXIMAMENTE.length > 0 && (
+        {proximamente.length > 0 && (
           <CollapsibleSection
             title="Próximamente"
             storageKey="widgets.proximamente"
             defaultOpen={false}
-            badge={5}
+            badge={PROXIMAMENTE_ITEMS.length}
             forceOpen={searching}
             className="px-4 pt-3"
           >
             <div className="space-y-2">
-              {PROXIMAMENTE.map((u) => (
+              {proximamente.map((u) => (
                 <UpcomingBtn key={u.label} label={u.label} icon={u.icon} disabled={allDisabled} />
               ))}
             </div>

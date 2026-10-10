@@ -110,7 +110,6 @@ export function FlyoutLeftPanels(props: FlyoutLeftPanelsProps) {
         <FondoPanel
           key={apiSlide?.id ?? 'no-slide'}
           apiSlide={apiSlide}
-          onCommitContent={onCommitContent}
           disabled={disabled}
           onChangeFondo={onChangeFondo}
         />

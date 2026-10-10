@@ -7,7 +7,6 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { FieldHelp } from '@lumina/ui/field-help';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
-import { Label } from '@lumina/ui/label';
 import {
   MAX_ESTADOS_PERSONALIZADOS,
   RANGOS_APARIENCIA,
@@ -147,8 +146,7 @@ export function BlockStatesSection({
       className="mt-4 border-t border-border pt-4"
     >
       <div className="space-y-3" data-testid="block-states-section">
-        <div className="flex items-center gap-1.5">
-          <Label className="text-xs font-medium">Estados (apariencia)</Label>
+        <div className="flex items-center justify-end">
           <FieldHelp label="Estados (apariencia)">
             <p>
               Cómo se ve el elemento en cada estado. Solo se aplica cuando la clase se reproduce; el

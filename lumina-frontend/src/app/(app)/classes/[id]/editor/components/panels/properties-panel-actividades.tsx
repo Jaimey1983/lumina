@@ -36,18 +36,14 @@ import { GlobosProperties } from '@lumina/element-kit/activities/globos/globos-p
 import { TopoProperties } from '@lumina/element-kit/activities/topo/topo-properties';
 import { RuletaProperties } from '@lumina/element-kit/widgets/ruleta/ruleta-properties';
 import { normalizeRuletaBlock } from '@lumina/element-kit/widgets/ruleta/ruleta-defaults';
+import { HistoriaRamificadaProperties } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-properties';
 import {
-  HistoriaRamificadaProperties,
-} from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-properties';
-import {
-  WidgetPropertiesPanelBlock,
   WidgetPropertiesPanelShell,
   WidgetPropertiesPanelStack,
 } from '@lumina/editor-shared/widget-properties-panel';
-import { AnimationPanel } from '@/components/animations/animation-panel';
 import type { Animacion, TransicionSlide } from '@lumina/types/animation';
 import type { ReactElement, ReactNode } from 'react';
-import { PropertiesHeader, type ApplyNow } from './properties-panel-shared';
+import { PanelAnimaciones, PropertiesHeader, type ApplyNow } from './properties-panel-shared';
 
 export interface ActividadPropertiesCtx {
   block: Block;
@@ -69,247 +65,118 @@ export function renderActividadProperties({
   onApplySlide,
   motorSections,
 }: ActividadPropertiesCtx): ReactElement | null {
+  const onChangeActividad = (updated: ActivityBlock['actividad']) => {
+    void applyNow((b) => {
+      if (b.tipo !== 'actividad') return b;
+      return { ...b, actividad: updated };
+    });
+  };
+
+  /** Panel de una actividad: cabecera con su nombre + editor + secciones del motor. */
+  const panelActividad = (titulo: string, editor: ReactNode) => (
+    <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
+      <PropertiesHeader title={titulo} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {editor}
+        {motorSections}
+      </div>
+    </aside>
+  );
+
+  const animaciones = (b: Block) => (
+    <PanelAnimaciones
+      block={b}
+      slide={slide}
+      applyAnimaciones={applyAnimaciones}
+      applyTransicion={applyTransicion}
+      onApplySlide={onApplySlide}
+    />
+  );
   if (block.tipo === 'actividad') {
     const actBlock = block as ActivityBlock;
     const act = actBlock.actividad;
 
     if (act.tipo === 'emparejar') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Emparejar" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <EmparejarProperties
-              actividad={act as MatchPairs}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Emparejar',
+        <EmparejarProperties actividad={act as MatchPairs} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'clasificar') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Clasificar" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <ClasificarProperties
-              actividad={act as ClasificarActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Clasificar',
+        <ClasificarProperties actividad={act as ClasificarActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'memoria') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Memoria" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <MemoriaProperties
-              actividad={act as MemoriaActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Memoria',
+        <MemoriaProperties actividad={act as MemoriaActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'puzzle_imagen') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Puzzle de imagen" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <PuzzleImagenProperties
-              actividad={act as PuzzleImagenActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Puzzle de imagen',
+        <PuzzleImagenProperties actividad={act as PuzzleImagenActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'sopa_letras') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Sopa de letras" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <SopaLetrasProperties
-              actividad={act as SopaLetrasActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Sopa de letras',
+        <SopaLetrasProperties actividad={act as SopaLetrasActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'crucigrama') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Crucigrama" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <CrucigramaProperties
-              actividad={act as CrucigramaActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Crucigrama',
+        <CrucigramaProperties actividad={act as CrucigramaActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'abrir_caja') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Abrir caja" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <AbrirCajaProperties
-              actividad={act as AbrirCajaActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Abrir caja',
+        <AbrirCajaProperties actividad={act as AbrirCajaActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'anagrama') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Anagrama" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <AnagramaProperties
-              actividad={act as AnagramaActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Anagrama',
+        <AnagramaProperties actividad={act as AnagramaActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'ahorcado') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Ahorcado" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <AhorcadoProperties
-              actividad={act as AhorcadoActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Ahorcado',
+        <AhorcadoProperties actividad={act as AhorcadoActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'puzzle_palabras') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Puzzle de palabras" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <PuzzlePalabrasProperties
-              actividad={act as PuzzlePalabrasActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Puzzle de palabras',
+        <PuzzlePalabrasProperties actividad={act as PuzzlePalabrasActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'globos') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Globos" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <GlobosProperties
-              actividad={act as GlobosActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Globos',
+        <GlobosProperties actividad={act as GlobosActivity} onChange={onChangeActividad} />,
       );
     }
 
     if (act.tipo === 'topo') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Golpea al topo" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <TopoProperties
-              actividad={act as TopoActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Golpea al topo',
+        <TopoProperties actividad={act as TopoActivity} onChange={onChangeActividad} />,
       );
     }
 
@@ -321,36 +188,16 @@ export function renderActividadProperties({
               block={normalizeRuletaBlock(block)}
               applyNow={applyNow}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-              />
-            </WidgetPropertiesPanelBlock>
+            {animaciones(block)}
           </WidgetPropertiesPanelStack>
         </WidgetPropertiesPanelShell>
       );
     }
 
     if (act.tipo === 'historia_ramificada') {
-      return (
-        <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border bg-background">
-          <PropertiesHeader title="Historia Ramificada" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <HistoriaRamificadaProperties
-              actividad={act as HistoriaRamificadaActivity}
-              onChange={(updated) => {
-                void applyNow((b) => {
-                  if (b.tipo !== 'actividad') return b;
-                  return { ...b, actividad: updated };
-                });
-              }}
-            />
-            {motorSections}
-          </div>
-        </aside>
+      return panelActividad(
+        'Historia Ramificada',
+        <HistoriaRamificadaProperties actividad={act as HistoriaRamificadaActivity} onChange={onChangeActividad} />,
       );
     }
 

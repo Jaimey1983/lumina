@@ -115,10 +115,9 @@ import {
   WidgetPropertiesPanelShell,
   WidgetPropertiesPanelStack,
 } from '@lumina/editor-shared/widget-properties-panel';
-import { AnimationPanel } from '@/components/animations/animation-panel';
 import type { Animacion, TransicionSlide } from '@lumina/types/animation';
 import type { ReactElement, ReactNode } from 'react';
-import type { ApplyNow } from './properties-panel-shared';
+import { PanelAnimaciones, type ApplyNow } from './properties-panel-shared';
 
 export interface WidgetPropertiesCtx {
   block: Block;
@@ -160,6 +159,15 @@ export function renderWidgetProperties({
   timelineInnerSelection,
   imageCompareInnerSelection,
 }: WidgetPropertiesCtx): ReactElement | null {
+  const animaciones = (b: Block) => (
+    <PanelAnimaciones
+      block={b}
+      slide={slide}
+      applyAnimaciones={applyAnimaciones}
+      applyTransicion={applyTransicion}
+      onApplySlide={onApplySlide}
+    />
+  );
   if (block.tipo === 'flip-cards') {
     const flipBlock = block as FlipCardsWidget;
     const inner = flipCardsInnerSelection;
@@ -216,14 +224,7 @@ export function renderWidgetProperties({
               />
             </WidgetPropertiesPanelBlock>
           )}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={flipBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(flipBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -282,14 +283,7 @@ export function renderWidgetProperties({
               <TabsAppearanceProperties block={tabsBlock} applyNow={applyNow} />
             </WidgetPropertiesPanelBlock>
           )}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={tabsBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(tabsBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -348,14 +342,7 @@ export function renderWidgetProperties({
               <CarouselAppearanceProperties block={carouselBlock} applyNow={applyNow} />
             </WidgetPropertiesPanelBlock>
           )}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={carouselBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(carouselBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -412,14 +399,7 @@ export function renderWidgetProperties({
           <WidgetPropertiesPanelBlock>
             <TimelineAppearanceProperties block={timelineBlock} applyNow={applyNow} />
           </WidgetPropertiesPanelBlock>
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={timelineBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(timelineBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -466,14 +446,7 @@ export function renderWidgetProperties({
               />
             </WidgetPropertiesPanelSection>
           ) : null}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={hotspotBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(hotspotBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -486,14 +459,7 @@ export function renderWidgetProperties({
       <WidgetPropertiesPanelShell title="Tooltip">
         <WidgetPropertiesPanelStack>
           <TooltipProperties block={tooltipBlock} applyNow={applyNow} />
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={tooltipBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(tooltipBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -507,14 +473,7 @@ export function renderWidgetProperties({
         <WidgetPropertiesPanelStack>
           <BotonProperties block={botonBlock} applyNow={applyNow} />
           {motorSections ? <WidgetPropertiesPanelBlock>{motorSections}</WidgetPropertiesPanelBlock> : null}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={botonBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(botonBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -528,14 +487,7 @@ export function renderWidgetProperties({
         <WidgetPropertiesPanelStack>
           <ContadorProperties block={contadorBlock} applyNow={applyNow} />
           {motorSections ? <WidgetPropertiesPanelBlock>{motorSections}</WidgetPropertiesPanelBlock> : null}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={contadorBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(contadorBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -548,14 +500,7 @@ export function renderWidgetProperties({
       <WidgetPropertiesPanelShell title="Barra de progreso">
         <WidgetPropertiesPanelStack>
           <ProgresoProperties block={progresoBlock} applyNow={applyNow} />
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={progresoBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(progresoBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -568,14 +513,7 @@ export function renderWidgetProperties({
       <WidgetPropertiesPanelShell title="Ruleta">
         <WidgetPropertiesPanelStack>
           <RuletaProperties block={ruletaBlock} applyNow={applyNow} />
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={ruletaBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(ruletaBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -609,14 +547,7 @@ export function renderWidgetProperties({
               />
             </WidgetPropertiesPanelSection>
           ) : null}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={block}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(block)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -636,14 +567,7 @@ export function renderWidgetProperties({
                 void applyNow(() => updated);
               }}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-              />
-            </WidgetPropertiesPanelBlock>
+            {animaciones(block)}
           </WidgetPropertiesPanelStack>
         </WidgetPropertiesPanelShell>
       );
@@ -664,14 +588,7 @@ export function renderWidgetProperties({
                 void applyNow(() => updated);
               }}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-              />
-            </WidgetPropertiesPanelBlock>
+            {animaciones(block)}
           </WidgetPropertiesPanelStack>
         </WidgetPropertiesPanelShell>
       );
@@ -692,14 +609,7 @@ export function renderWidgetProperties({
                 void applyNow(() => updated);
               }}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-              />
-            </WidgetPropertiesPanelBlock>
+            {animaciones(block)}
           </WidgetPropertiesPanelStack>
         </WidgetPropertiesPanelShell>
       );
@@ -720,14 +630,7 @@ export function renderWidgetProperties({
                 void applyNow(() => updated);
               }}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-              />
-            </WidgetPropertiesPanelBlock>
+            {animaciones(block)}
           </WidgetPropertiesPanelStack>
         </WidgetPropertiesPanelShell>
       );
@@ -751,14 +654,7 @@ export function renderWidgetProperties({
                 void applyNow(() => updated);
               }}
             />
-            <WidgetPropertiesPanelBlock>
-              <AnimationPanel
-                block={block}
-                slide={slide}
-                onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-                onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-              />
-            </WidgetPropertiesPanelBlock>
+            {animaciones(block)}
           </WidgetPropertiesPanelStack>
         </WidgetPropertiesPanelShell>
       );
@@ -805,14 +701,7 @@ export function renderWidgetProperties({
               />
             </WidgetPropertiesPanelSection>
           ) : null}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={popupBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(popupBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );
@@ -888,14 +777,7 @@ export function renderWidgetProperties({
               <ClickRevealAppearanceProperties block={clickRevealBlock} applyNow={applyNow} />
             </WidgetPropertiesPanelBlock>
           )}
-          <WidgetPropertiesPanelBlock>
-            <AnimationPanel
-              block={clickRevealBlock}
-              slide={slide}
-              onUpdateAnimaciones={(animaciones) => void applyAnimaciones(animaciones)}
-              onUpdateTransicion={onApplySlide ? (t) => void applyTransicion(t) : undefined}
-            />
-          </WidgetPropertiesPanelBlock>
+          {animaciones(clickRevealBlock)}
         </WidgetPropertiesPanelStack>
       </WidgetPropertiesPanelShell>
     );

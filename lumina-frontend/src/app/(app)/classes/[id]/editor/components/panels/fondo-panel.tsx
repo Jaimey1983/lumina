@@ -4,13 +4,16 @@ import type { Background } from '@lumina/types/slide';
 import { DesignBackgroundPopover } from '../design-background-popover';
 import { getSlideContentRecord } from '@/lib/class-slide-normalize';
 import { ScrollArea } from '@lumina/ui/scroll-area';
-import type { ContentPanelProps } from './panel-shared';
+import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 
-export function FondoPanel({
-  apiSlide,
-  disabled,
-  onChangeFondo,
-}: ContentPanelProps & { onChangeFondo: (fondo: Background) => Promise<void> }) {
+export interface FondoPanelProps {
+  apiSlide: ApiSlide | null;
+  disabled?: boolean;
+  /** Aplica el fondo vía CanvasArea (historial undo). */
+  onChangeFondo: (fondo: Background) => Promise<void>;
+}
+
+export function FondoPanel({ apiSlide, disabled, onChangeFondo }: FondoPanelProps) {
   const c = getSlideContentRecord(apiSlide);
   const fondo = (c.fondo as Background) ?? undefined;
 

@@ -11,6 +11,9 @@ import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 
+/** Título de la sección (lo usa también la búsqueda del panel Elementos). */
+export const IMAGES_SECTION_TITLE = 'Imágenes';
+
 interface Props {
   onInsert: (block: Block) => Promise<boolean>;
   disabled?: boolean;
@@ -43,7 +46,7 @@ export function ImagesElementPanel({ onInsert, disabled, forceOpen }: Props) {
 
   return (
     <CollapsibleSection
-      title="Imágenes"
+      title={IMAGES_SECTION_TITLE}
       storageKey="elementos.imagenes"
       forceOpen={forceOpen}
       className="border-b border-border pb-3"

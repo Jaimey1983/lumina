@@ -72,11 +72,11 @@ export function InsertBtn({
   );
 }
 
-/** Lista de chips editable (agregar/quitar) con sugerencias clicables. */
 /** Tope de chips de sugerencia visibles antes de "mostrar más" — una unidad
  * curada puede traer muchos temas/subtemas y saturar el panel angosto. */
 const MAX_SUGERENCIAS_VISIBLES = 5;
 
+/** Lista de chips editable (agregar/quitar) con sugerencias clicables. */
 export function TagListEditor({
   label,
   values,
@@ -226,7 +226,7 @@ export function PanelSearch({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={label}
-        className="h-8 pl-7 pr-7 text-xs"
+        className="h-8 pl-7 pr-7 text-xs [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none"
       />
       {value !== '' ? (
         <button

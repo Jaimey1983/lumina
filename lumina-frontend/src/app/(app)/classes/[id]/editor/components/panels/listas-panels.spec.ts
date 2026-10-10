@@ -74,7 +74,7 @@ describe('LiveResponsesPanel (S10)', () => {
         liveResponses: new Map(),
         activeSlideId: 's3',
         activeSlideIndex: 2,
-      } as never),
+      }),
     );
     expect(out).toContain('Slide 3 — Respuestas');
     expect(out).toContain('aria-expanded="true"');

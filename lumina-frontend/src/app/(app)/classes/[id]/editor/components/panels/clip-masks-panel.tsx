@@ -86,6 +86,10 @@ export const MASK_ITEMS: MaskItem[] = [
   },
 ];
 
+/** Títulos/etiquetas de la sección (los usa también la búsqueda del panel Elementos). */
+export const CLIP_MASKS_SECTION_TITLE = 'Máscaras de recorte';
+export const CLIP_MASK_TEXT_LABEL = 'Texto';
+
 interface Props {
   apiSlide: ApiSlide | null;
   onCommitContent: (content: Record<string, unknown>) => void;
@@ -111,7 +115,7 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled, forceOpen 
 
   return (
     <CollapsibleSection
-      title="Máscaras de recorte"
+      title={CLIP_MASKS_SECTION_TITLE}
       defaultOpen={false}
       storageKey="elementos.mascaras"
       forceOpen={forceOpen}
@@ -157,7 +161,7 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled, forceOpen 
           )}
         >
           <Type className="size-5 shrink-0" aria-hidden />
-          Texto
+          {CLIP_MASK_TEXT_LABEL}
         </button>
       </div>
 
