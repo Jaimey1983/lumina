@@ -385,3 +385,17 @@
     height: min(90%, 28rem);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .popupModal,
+  .popupModalHiddenFade,
+  .popupModalHiddenSlide,
+  .popupModalVisible,
+  .popupBackdrop,
+  .popupBackdropDim,
+  .popupModalClose,
+  .popupTrigger {
+    transition: none !important;
+    animation: none !important;
+  }
+}

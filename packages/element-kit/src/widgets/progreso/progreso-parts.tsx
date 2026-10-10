@@ -1,4 +1,5 @@
 import type { MouseEvent } from 'react';
+import { VISUALLY_HIDDEN } from '../visually-hidden.js';
 import { cn } from '@lumina/ui/lib/utils';
 import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
 import type { ProgresoWidget } from '@lumina/types/widget';
@@ -41,7 +42,12 @@ export function ProgresoParts({
           </span>
         </div>
       ) : null}
-      <div className={styles.progress} style={{ backgroundColor: cfg.colorFondo }} role="progressbar" aria-valuenow={width} aria-valuemin={0} aria-valuemax={100}>
+      {isEditing ? null : (
+        <span role="status" aria-live="polite" style={VISUALLY_HIDDEN}>
+          {`${cfg.etiqueta || 'Progreso'}: ${width}%`}
+        </span>
+      )}
+      <div className={styles.progress} style={{ backgroundColor: cfg.colorFondo }} role="progressbar" aria-label={cfg.etiqueta || 'Progreso'} aria-valuenow={width} aria-valuemin={0} aria-valuemax={100}>
         <div
           className={cn(
             styles.bar,

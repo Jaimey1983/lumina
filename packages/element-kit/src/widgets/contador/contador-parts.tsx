@@ -1,4 +1,5 @@
 import type { MouseEvent } from 'react';
+import { VISUALLY_HIDDEN } from '../visually-hidden.js';
 import { Minus, Pause, Play, Plus, RotateCcw } from 'lucide-react';
 import { cn } from '@lumina/ui/lib/utils';
 import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
@@ -68,6 +69,13 @@ export function ContadorParts({
       <div className={styles.digits} style={{ color: ended ? cfg.colorAcento : cfg.colorTexto }}>
         {value}
       </div>
+      {isEditing ? null : (
+        // Región viva: solo anuncia el final del tiempo y los cambios del modo «número»
+        // (nunca cada segundo del temporizador/cronómetro).
+        <div role="status" aria-live="polite" style={VISUALLY_HIDDEN}>
+          {ended ? 'Tiempo terminado' : isNumero ? `${cfg.etiqueta || 'Valor'}: ${displayNumber}` : ''}
+        </div>
+      )}
       {showControls ? (
         <div className={styles.controls}>
           {isNumero ? (

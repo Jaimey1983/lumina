@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { PopupWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
@@ -17,6 +17,7 @@ export interface PopupViewerProps {
 
 export function PopupViewer({ block, isThumbnail = false }: PopupViewerProps) {
   const [open, setOpen] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
   const widget = normalizePopupWidget(block);
   const configuracion = mergedPopupConfig(block);
 
@@ -45,7 +46,7 @@ export function PopupViewer({ block, isThumbnail = false }: PopupViewerProps) {
       className={cn(styles.popupRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
       style={popupChromeStyle(block)}
     >
-      <div className={styles.popupStage}>
+      <div ref={stageRef} className={styles.popupStage}>
         {isHover ? (
           <div className={styles.popupHoverZone} onMouseLeave={handleClose}>
             <PopupTriggerButton
@@ -72,6 +73,7 @@ export function PopupViewer({ block, isThumbnail = false }: PopupViewerProps) {
             visible
             portaled
             onClose={handleClose}
+            returnFocusTo={() => stageRef.current?.querySelector<HTMLElement>('button') ?? null}
           />
         </PopupSlidePortal>
       ) : null}

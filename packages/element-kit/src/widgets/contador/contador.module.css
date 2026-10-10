@@ -95,3 +95,12 @@
     filter: saturate(1.4) brightness(1.15);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .ended {
+    animation: none;
+  }
+  .ctrlBtn {
+    transition: none;
+  }
+}

@@ -1,5 +1,6 @@
 'use client';
 
+import { VISUALLY_HIDDEN } from '../visually-hidden.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { RuletaWidget } from '@lumina/types/widget';
@@ -10,6 +11,10 @@ import { RuletaWheel } from './ruleta-wheel.js';
 
 interface RuletaViewerProps {
   block: RuletaWidget;
+}
+
+function prefiereMovimientoReducido(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 }
 
 export function RuletaViewer({ block }: RuletaViewerProps) {
@@ -51,7 +56,8 @@ export function RuletaViewer({ block }: RuletaViewerProps) {
     const anim = wheel.animate(
       [{ transform: `rotate(${desde}deg)` }, { transform: `rotate(${destino}deg)` }],
       {
-        duration: configuracion.duracionGiro,
+        // Con «reducir movimiento» el giro salta directo al resultado.
+        duration: prefiereMovimientoReducido() ? 1 : configuracion.duracionGiro,
         easing: RULETA_EASING,
         fill: 'forwards',
       },
@@ -83,8 +89,13 @@ export function RuletaViewer({ block }: RuletaViewerProps) {
       <div className="relative flex-1 min-h-0 w-full flex items-center justify-center">
         <RuletaWheel ref={wheelRef} items={items} colores={configuracion.colores} />
 
+        <div role="status" aria-live="polite" style={VISUALLY_HIDDEN}>
+          {ganador ? `Ganador: ${ganador}` : ''}
+        </div>
+
         {ganador && (
           <div
+            aria-hidden="true"
             className="pointer-events-none absolute bottom-1 left-1/2 z-30 max-w-[92%] -translate-x-1/2 border border-yellow-200 bg-yellow-50/95 px-4 py-2 text-center shadow-lg backdrop-blur-sm"
             style={{
               borderRadius: 'var(--lw-radius-lg, 0.75rem)',

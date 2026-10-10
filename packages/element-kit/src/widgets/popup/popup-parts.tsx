@@ -1,6 +1,6 @@
 'use client';
 
-import { createElement, type CSSProperties } from 'react';
+import { createElement, useRef, type CSSProperties } from 'react';
 import {
   AlertCircle,
   Bell,
@@ -37,6 +37,7 @@ import { useSlideCanvasRoot } from '@lumina/editor-shared/slide-canvas-root-cont
 
 import styles from './popup.module.css';
 import { PopupModalResizeHandles } from './popup-modal-resize-handles.js';
+import { useModalFocus } from './use-modal-focus.js';
 import {
   resolvePopupOverlayVisibilidad,
   toPopupSlidePanelConfig,
@@ -236,6 +237,8 @@ export interface PopupModalPanelProps {
   /** En editor: clic en el backdrop cierra modo edición del overlay (no deselecciona el bloque). */
   onExitEdit?: () => void;
   onPatchConfig?: (patch: Partial<PopupConfiguracion>) => void;
+  /** Disparador al que vuelve el foco al cerrar si el navegador no lo enfocó al hacer clic. */
+  returnFocusTo?: () => HTMLElement | null;
 }
 
 export function PopupModalPanel({
@@ -253,6 +256,7 @@ export function PopupModalPanel({
   portaled = false,
   onExitEdit,
   onPatchConfig,
+  returnFocusTo,
 }: PopupModalPanelProps) {
   const slideRoot = useSlideCanvasRoot();
   const vis = resolvePopupOverlayVisibilidad(configuracion.defaultsOverlay, overlay);
@@ -261,6 +265,8 @@ export function PopupModalPanel({
   const modalAltoPct = configuracion.modalAltoPct ?? 62;
   const dialogOpen = Boolean(visible && !isEditing);
   useEscapeToClose(dialogOpen, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogOpen, dialogRef, returnFocusTo);
   const dialogLabel =
     overlay.encabezado?.trim() || overlay.etiqueta?.trim() || 'Ventana emergente';
 
@@ -313,6 +319,8 @@ export function PopupModalPanel({
           isEditing && styles.popupModalEditing,
           visible || isEditing ? styles.popupModalVisible : modalHiddenClass(configuracion.efectoApertura),
         )}
+        ref={dialogRef}
+        tabIndex={dialogOpen ? -1 : undefined}
         role={dialogOpen ? 'dialog' : undefined}
         aria-modal={dialogOpen ? true : undefined}
         aria-label={dialogOpen ? dialogLabel : undefined}

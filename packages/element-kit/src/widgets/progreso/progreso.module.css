@@ -81,3 +81,12 @@
     background-position-x: 1rem;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+  .animated {
+    animation: none;
+  }
+}
