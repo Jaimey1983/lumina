@@ -68,7 +68,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S5 — Paneles IA, Diseño y Páginas
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S2 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/ia-panel.tsx`, `panels/fondo-panel.tsx`, `panels/paginas-panel.tsx`, `design-background-popover.tsx`, `gradient-stop-bar-editor.tsx`. **NO** toca el catálogo curricular ni `flyout-left-panels.tsx`.
 - **Entregable:** IA: tema y nivel abiertos; plantilla, área y grado en «Opciones avanzadas» cerrada (misma lógica y valores por defecto); Páginas: «Temporizador (en vivo)» cerrada con `badge` si hay tiempo configurado; Diseño: tipos de fondo y editor de degradado en secciones, la activa abierta. Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit`.
