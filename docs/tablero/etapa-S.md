@@ -46,7 +46,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S2 — Partir `flyout-left-panels.tsx` (sin cambio de comportamiento)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S1 `hecho`.
 - **Alcance — PUEDE tocar:** `lumina-frontend/.../panels/flyout-left-panels.tsx` y archivos nuevos hermanos: `elementos-panel.tsx`, `fondo-panel.tsx`, `ia-panel.tsx`, `paginas-panel.tsx`, `panel-shared.tsx` (`PanelSection`, `InsertBtn`, `TagListEditor`). Se conserva el export `FlyoutLeftPanels` y sus props. **NO** cambia JSX interno, textos ni estilos.
 - **Entregable:** el archivo original queda solo con el `switch` de `FlyoutLeftPanels` y las interfaces; cada panel en su archivo. Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit` y `pnpm --filter lumina-frontend exec tsc --noEmit`; el diff de los componentes movidos es solo de ubicación.
