@@ -90,7 +90,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S8 — Propiedades del Gráfico
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S6 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/blocks/grafico/grafico-properties.tsx` y sus specs (`grafico-properties.*.spec.tsx`). **NO** toca `grafico-data-dialog.tsx` ni el modelo de datos.
 - **Entregable:** los 4 bloques con `border-t` pasan a secciones: **Datos** (abierta), **Apariencia** (paleta, esquinas, fuente, fondo, sombra, animación; abierta), **Leyenda y etiquetas** (cerrada), **Ejes** (cerrada: grilla, rangos, títulos, rotación, escala), **Referencias** (cerrada: líneas y bandas), **Avanzado** (cerrada: bins, interpolación, apertura, apilado, orden, sparkline). Una sección sin campos para el tipo de gráfico actual no se muestra. Specs adaptados (abrir sección). Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual con al menos columna, línea, donut e histograma.
