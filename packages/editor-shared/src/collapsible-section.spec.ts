@@ -14,11 +14,11 @@ import {
 
 function html(props: Partial<Omit<CollapsibleSectionProps, 'children'>> = {}) {
   return renderToStaticMarkup(
-    createElement(CollapsibleSection, {
-      title: 'Ejes',
-      ...props,
-      children: createElement('p', null, 'CONTENIDO'),
-    }),
+    createElement(
+      CollapsibleSection,
+      { title: 'Ejes', ...props } as CollapsibleSectionProps,
+      createElement('p', null, 'CONTENIDO'),
+    ),
   );
 }
 

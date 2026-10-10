@@ -12,6 +12,7 @@ import { RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { FieldHelp } from '@lumina/ui/field-help';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 import type { ApplyNow } from './properties-panel-shared';
@@ -86,37 +87,46 @@ export function BlockEstadoInicialSection({
   applyNow: ApplyNow;
 }) {
   return (
-    <div className="mt-4 space-y-2 border-t border-border pt-4">
-      <div className="flex items-center gap-1.5">
-        <Label className="text-xs font-medium">Estado inicial (interacción)</Label>
-        <FieldHelp label="Estado inicial">
-          <p>
-            Solo «Deshabilitado» cambia la apariencia. «Visitado» y «Seleccionado» sirven como
-            condición en las reglas.
-          </p>
-        </FieldHelp>
+    <CollapsibleSection
+      title="Estado inicial (interacción)"
+      defaultOpen={false}
+      storageKey="props.estado-inicial"
+      badge={estado !== 'normal' ? ESTADOS_INICIALES.find((o) => o.value === estado)?.label.split(' (')[0] : undefined}
+      forceOpen={estado !== 'normal'}
+      className="mt-4 border-t border-border pt-4"
+    >
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5">
+          <Label className="text-xs font-medium">Estado inicial (interacción)</Label>
+          <FieldHelp label="Estado inicial">
+            <p>
+              Solo «Deshabilitado» cambia la apariencia. «Visitado» y «Seleccionado» sirven como
+              condición en las reglas.
+            </p>
+          </FieldHelp>
+        </div>
+        <select
+          value={estado}
+          onChange={(e) => {
+            const next = e.target.value as EstadoObjeto;
+            void applyNow((b) => {
+              const conId = asegurarIdBloque(b);
+              if (next === 'normal') {
+                const { estado: _omit, ...rest } = conId as Block & { estado?: EstadoObjeto };
+                void _omit;
+                return rest as Block;
+              }
+              return { ...conId, estado: next } as Block;
+            });
+          }}
+          className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+        >
+          {ESTADOS_INICIALES.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </div>
-      <select
-        value={estado}
-        onChange={(e) => {
-          const next = e.target.value as EstadoObjeto;
-          void applyNow((b) => {
-            const conId = asegurarIdBloque(b);
-            if (next === 'normal') {
-              const { estado: _omit, ...rest } = conId as Block & { estado?: EstadoObjeto };
-              void _omit;
-              return rest as Block;
-            }
-            return { ...conId, estado: next } as Block;
-          });
-        }}
-        className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
-      >
-        {ESTADOS_INICIALES.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </div>
+    </CollapsibleSection>
   );
 }
 
@@ -146,81 +156,90 @@ export function BlockRotationSection({
   };
 
   return (
-    <div className="mt-4 space-y-2 border-t border-border pt-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-xs font-medium">Rotación</Label>
-        <span className="text-xs tabular-nums text-muted-foreground">{Math.round(localAngle)}°</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Slider
-          value={[localAngle]}
-          min={0}
-          max={360}
-          step={1}
-          onValueChange={([v]) => updateAngle(v ?? 0)}
-          className="flex-1"
-        >
-          <SliderThumb />
-        </Slider>
-        <div className="flex items-center gap-1">
-          <Input
-            type="number"
+    <CollapsibleSection
+      title="Rotación"
+      defaultOpen={false}
+      storageKey="props.rotacion"
+      badge={`${Math.round(localAngle)}°`}
+      forceOpen={Math.round(localAngle) !== 0}
+      className="mt-4 border-t border-border pt-4"
+    >
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium">Rotación</Label>
+          <span className="text-xs tabular-nums text-muted-foreground">{Math.round(localAngle)}°</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Slider
+            value={[localAngle]}
             min={0}
             max={360}
-            value={Math.round(localAngle)}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) updateAngle(val);
-            }}
-            onBlur={() => updateAngle(localAngle, true)}
-            className="h-7 w-14 px-1 text-center text-xs tabular-nums"
-          />
+            step={1}
+            onValueChange={([v]) => updateAngle(v ?? 0)}
+            className="flex-1"
+          >
+            <SliderThumb />
+          </Slider>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min={0}
+              max={360}
+              value={Math.round(localAngle)}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) updateAngle(val);
+              }}
+              onBlur={() => updateAngle(localAngle, true)}
+              className="h-7 w-14 px-1 text-center text-xs tabular-nums"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-1 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 flex-1 px-1 text-[10px]"
+            onClick={() => updateAngle(localAngle - 90, true)}
+            title="Girar -90°"
+          >
+            <RotateCcw className="mr-0.5 size-3" />
+            -90°
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 flex-1 px-1 text-[10px]"
+            onClick={() => updateAngle(0, true)}
+            title="Restablecer a 0°"
+          >
+            0°
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 flex-1 px-1 text-[10px]"
+            onClick={() => updateAngle(localAngle + 90, true)}
+            title="Girar +90°"
+          >
+            <RotateCw className="mr-0.5 size-3" />
+            +90°
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 flex-1 px-1 text-[10px]"
+            onClick={() => updateAngle(localAngle + 180, true)}
+            title="Girar 180°"
+          >
+            180°
+          </Button>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-1 pt-1">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-6 flex-1 px-1 text-[10px]"
-          onClick={() => updateAngle(localAngle - 90, true)}
-          title="Girar -90°"
-        >
-          <RotateCcw className="mr-0.5 size-3" />
-          -90°
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-6 flex-1 px-1 text-[10px]"
-          onClick={() => updateAngle(0, true)}
-          title="Restablecer a 0°"
-        >
-          0°
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-6 flex-1 px-1 text-[10px]"
-          onClick={() => updateAngle(localAngle + 90, true)}
-          title="Girar +90°"
-        >
-          <RotateCw className="mr-0.5 size-3" />
-          +90°
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-6 flex-1 px-1 text-[10px]"
-          onClick={() => updateAngle(localAngle + 180, true)}
-          title="Girar 180°"
-        >
-          180°
-        </Button>
-      </div>
-    </div>
+    </CollapsibleSection>
   );
 }

@@ -12,6 +12,7 @@ import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Toggle } from '@lumina/ui/toggle';
 import { TabsLayoutGallery } from './tabs-layout-gallery.js';
 import { WidgetSectionTitle } from './widget-properties-panel.js';
@@ -24,10 +25,31 @@ export function WidgetAppearanceStack({ children }: { children: ReactNode }) {
 export function WidgetAppearanceSection({
   title,
   children,
+  collapsible = false,
+  defaultOpen,
+  storageKey,
+  badge,
 }: {
   title: string;
   children: ReactNode;
+  /** Etapa S: con `true` la sección se pliega; por defecto se comporta como antes. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+  storageKey?: string;
+  badge?: ReactNode;
 }) {
+  if (collapsible) {
+    return (
+      <CollapsibleSection
+        title={title}
+        defaultOpen={defaultOpen}
+        storageKey={storageKey}
+        badge={badge}
+      >
+        {children}
+      </CollapsibleSection>
+    );
+  }
   return (
     <div className="space-y-3">
       <WidgetSectionTitle>{title}</WidgetSectionTitle>
