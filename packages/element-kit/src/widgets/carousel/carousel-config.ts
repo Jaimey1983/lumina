@@ -36,11 +36,30 @@ export interface CarouselConfiguracionCompleta extends WidgetSlidePanelConfig {
   mostrarFlechasInternas: boolean;
   mostrarTabsPagina: boolean;
   transicion: CarouselTransicion;
+  /** T6: al llegar al final vuelve al principio (y al revés). Solo con transición `slide`. */
+  loop: boolean;
+  /** T6: avanza solo cada `autoplayMs`. Se detiene al interactuar y con «reducir movimiento». */
+  autoplay: boolean;
+  autoplayMs: number;
+  /** T6: muestra «N / M» bajo el carrusel. */
+  mostrarContador: boolean;
   defaultsSlide: CarouselSlideVisibilidad;
   colorIndicadorActivo: string;
   colorIndicadorInactivo: string;
   colorNavBoton: string;
 }
+
+/**
+ * Opciones de T6 que aún no están en `CarouselWidget['configuracion']` de
+ * `@lumina/types` (fuera del alcance de esa ficha). Se leen del JSON guardado
+ * con este tipo; subirlas a `@lumina/types` queda como seguimiento.
+ */
+type CarouselConfigT6 = Partial<
+  Pick<CarouselConfiguracionCompleta, 'loop' | 'autoplay' | 'autoplayMs' | 'mostrarContador'>
+>;
+
+export const CAROUSEL_AUTOPLAY_MIN_MS = 1500;
+export const CAROUSEL_AUTOPLAY_MAX_MS = 30000;
 
 export type CarouselInnerSelection = WidgetSlideInnerSelection;
 
@@ -62,6 +81,10 @@ export const DEFAULT_CAROUSEL_CONFIG: CarouselConfiguracionCompleta = {
   mostrarFlechasInternas: true,
   mostrarTabsPagina: false,
   transicion: 'slide',
+  loop: false,
+  autoplay: false,
+  autoplayMs: 5000,
+  mostrarContador: false,
   defaultsSlide: { ...DEFAULT_WIDGET_SLIDE_VISIBILIDAD },
   colorIndicadorActivo: '#2563EB',
   colorIndicadorInactivo: '#CBD5E1',
@@ -143,7 +166,7 @@ export function normalizeCarouselWidget(block: CarouselWidget): CarouselWidget {
 
 export function mergedCarouselConfig(block: CarouselWidget): CarouselConfiguracionCompleta {
   const w = normalizeCarouselWidget(block);
-  const raw = w.configuracion;
+  const raw = w.configuracion as CarouselWidget['configuracion'] & CarouselConfigT6;
   return {
     ...DEFAULT_CAROUSEL_CONFIG,
     ...raw,
@@ -157,6 +180,13 @@ export function mergedCarouselConfig(block: CarouselWidget): CarouselConfiguraci
     mostrarFlechasInternas: raw.mostrarFlechasInternas ?? true,
     mostrarTabsPagina: raw.mostrarTabsPagina ?? false,
     transicion: raw.transicion === 'fade' ? 'fade' : 'slide',
+    loop: raw.loop === true,
+    autoplay: raw.autoplay === true,
+    autoplayMs: Math.min(
+      CAROUSEL_AUTOPLAY_MAX_MS,
+      Math.max(CAROUSEL_AUTOPLAY_MIN_MS, Number(raw.autoplayMs) || DEFAULT_CAROUSEL_CONFIG.autoplayMs),
+    ),
+    mostrarContador: raw.mostrarContador === true,
     layoutId: coerceWidgetLayoutId(raw.layoutId),
     slideActivo: raw.slideActivo ?? 0,
     defaultsSlide: {

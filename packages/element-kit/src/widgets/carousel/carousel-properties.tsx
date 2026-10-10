@@ -15,6 +15,8 @@ import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
 
 import {
+  CAROUSEL_AUTOPLAY_MAX_MS,
+  CAROUSEL_AUTOPLAY_MIN_MS,
   DEFAULT_CAROUSEL_CONFIG,
   mergedCarouselConfig,
   normalizeCarouselWidget,
@@ -54,7 +56,10 @@ export function CarouselWidgetComponentes({
       | 'mostrarBotonSiguiente'
       | 'mostrarDots'
       | 'mostrarFlechasInternas'
-      | 'mostrarTabsPagina',
+      | 'mostrarTabsPagina'
+      | 'mostrarContador'
+      | 'loop'
+      | 'autoplay',
     value: boolean,
   ) => {
     update((w) => ({
@@ -127,6 +132,7 @@ export function CarouselWidgetComponentes({
             ['mostrarTabsPagina', 'Etiquetas de página'],
             ['mostrarBotonAnterior', 'Botón anterior'],
             ['mostrarBotonSiguiente', 'Botón siguiente'],
+            ['mostrarContador', 'Contador (N / M)'],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="flex cursor-pointer items-center gap-2 text-xs">
@@ -137,6 +143,48 @@ export function CarouselWidgetComponentes({
             {label}
           </label>
         ))}
+      </div>
+
+      <div className="space-y-2">
+        <WidgetSectionTitle>Navegación</WidgetSectionTitle>
+        {(
+          [
+            ['loop', 'Volver al inicio al llegar al final'],
+            ['autoplay', 'Avance automático'],
+          ] as const
+        ).map(([key, label]) => (
+          <label key={key} className="flex cursor-pointer items-center gap-2 text-xs">
+            <Checkbox
+              checked={configuracion[key] === true}
+              onCheckedChange={(checked) => setGlobalToggle(key, checked === true)}
+            />
+            {label}
+          </label>
+        ))}
+        {configuracion.autoplay === true ? (
+          <div className="space-y-1.5">
+            <Label className="text-xs">
+              Cada {((configuracion.autoplayMs ?? 5000) / 1000).toFixed(1)} s
+            </Label>
+            <Slider
+              min={CAROUSEL_AUTOPLAY_MIN_MS / 500}
+              max={CAROUSEL_AUTOPLAY_MAX_MS / 500}
+              step={1}
+              value={[(configuracion.autoplayMs ?? 5000) / 500]}
+              onValueChange={([v]) =>
+                update((w) => ({
+                  ...w,
+                  configuracion: { ...w.configuracion, autoplayMs: (v ?? 10) * 500 },
+                }))
+              }
+            >
+              <SliderThumb />
+            </Slider>
+          </div>
+        ) : null}
+        <p className="text-[10px] text-muted-foreground">
+          No aplican con la transición «fade».
+        </p>
       </div>
 
       <div className="space-y-2">

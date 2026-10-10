@@ -664,6 +664,12 @@ importers:
       '@lumina/ui':
         specifier: workspace:*
         version: link:../ui
+      embla-carousel-autoplay:
+        specifier: ^8.6.0
+        version: 8.6.0(embla-carousel@8.6.0)
+      embla-carousel-react:
+        specifier: ^8.6.0
+        version: 8.6.0(react@19.2.4)
       hast-util-to-html:
         specifier: 9.0.4
         version: 9.0.4

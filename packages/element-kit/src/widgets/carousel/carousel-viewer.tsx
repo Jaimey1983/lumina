@@ -1,19 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import Autoplay from 'embla-carousel-autoplay';
+import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import type { CarouselWidget } from '@lumina/types/widget';
+import type { CarouselWidget, WidgetSlideContent } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
 import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
 import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 import { TabsSlidePanelView } from '../tabs/tabs-slide-panel.js';
+import { useWidgetReducedMotion } from '../_motion/reduced-motion.js';
 
 import styles from './carousel.module.css';
 import {
   mergedCarouselConfig,
   normalizeCarouselWidget,
   toSlidePanelConfig,
+  type CarouselConfiguracionCompleta,
 } from './carousel-config.js';
 import { initialWidgetViewerPageIndex } from '@lumina/editor-shared/widget-identity';
 import {
@@ -28,41 +32,123 @@ export interface CarouselViewerProps {
   isThumbnail?: boolean;
 }
 
-export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerProps) {
-  const widget = normalizeCarouselWidget(block);
-  const configuracion = mergedCarouselConfig(block);
-  const [activeIndex, setActiveIndex] = useState(() =>
-    initialWidgetViewerPageIndex(configuracion.slideActivo),
+/** Lo que el marco (dots, flechas, pestañas, contador) necesita saber de la navegación. */
+interface CarouselNav {
+  index: number;
+  count: number;
+  goTo: (index: number) => void;
+  goPrev: () => void;
+  goNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+}
+
+/** Navegación sobre Embla: deslizamiento táctil, loop y autoplay. */
+function useEmblaNav(count: number, cfg: CarouselConfiguracionCompleta, enabled: boolean) {
+  const reducido = useWidgetReducedMotion();
+  const autoplay = enabled && cfg.autoplay && !reducido && count > 1;
+  const [viewportRef, api] = useEmblaCarousel(
+    { loop: cfg.loop && count > 1, startIndex: initialWidgetViewerPageIndex(cfg.slideActivo), duration: reducido ? 0 : 25 },
+    autoplay ? [Autoplay({ delay: cfg.autoplayMs, stopOnInteraction: true, stopOnMouseEnter: true })] : [],
   );
+  const [index, setIndex] = useState(initialWidgetViewerPageIndex(cfg.slideActivo));
+  const [bordes, setBordes] = useState({ prev: false, next: count > 1 });
 
-  const slides = widget.slides.slice(0, configuracion.numeroSlides);
-  const safeIndex = Math.min(activeIndex, Math.max(0, slides.length - 1));
-  const activeSlide = slides[safeIndex] ?? slides[0];
-  if (!activeSlide) return null;
+  useEffect(() => {
+    if (!api) return;
+    const sync = () => {
+      setIndex(api.selectedScrollSnap());
+      setBordes({ prev: api.canScrollPrev(), next: api.canScrollNext() });
+    };
+    sync();
+    api.on('select', sync).on('reInit', sync);
+    return () => {
+      api.off('select', sync).off('reInit', sync);
+    };
+  }, [api]);
 
-  const goPrev = () => setActiveIndex((i) => Math.max(0, i - 1));
-  const goNext = () => setActiveIndex((i) => Math.min(slides.length - 1, i + 1));
+  const nav: CarouselNav = {
+    index: Math.min(index, Math.max(0, count - 1)),
+    count,
+    goTo: useCallback((i: number) => api?.scrollTo(i), [api]),
+    goPrev: useCallback(() => api?.scrollPrev(), [api]),
+    goNext: useCallback(() => api?.scrollNext(), [api]),
+    canPrev: bordes.prev,
+    canNext: bordes.next,
+  };
+  return { viewportRef, nav };
+}
+
+/** Navegación sin deslizamiento: transición `fade` (un solo panel) y miniaturas. */
+function useSimpleNav(count: number, cfg: CarouselConfiguracionCompleta): CarouselNav {
+  const [index, setIndex] = useState(() => initialWidgetViewerPageIndex(cfg.slideActivo));
+  const safe = Math.min(index, Math.max(0, count - 1));
+  return {
+    index: safe,
+    count,
+    goTo: setIndex,
+    goPrev: () => setIndex((i) => Math.max(0, i - 1)),
+    goNext: () => setIndex((i) => Math.min(count - 1, i + 1)),
+    canPrev: safe > 0,
+    canNext: safe < count - 1,
+  };
+}
+
+interface CarouselFrameProps {
+  block: CarouselWidget;
+  cfg: CarouselConfiguracionCompleta;
+  slides: WidgetSlideContent[];
+  nav: CarouselNav;
+  isThumbnail: boolean;
+  /** El escenario: las páginas, ya montadas con su estrategia de navegación. */
+  renderStage: (flechasInternas: ReactNode) => ReactNode;
+}
+
+function CarouselFrame({ block, cfg, slides, nav, isThumbnail, renderStage }: CarouselFrameProps) {
+  const widget = normalizeCarouselWidget(block);
 
   const appearanceStyle = widgetChromeVarsStyle({
-    accent: configuracion.colorIndicadorActivo,
-    accentMuted: configuracion.colorIndicadorInactivo,
-    border: configuracion.colorBordeContenido,
-    nav: configuracion.colorNavBoton,
+    accent: cfg.colorIndicadorActivo,
+    accentMuted: cfg.colorIndicadorInactivo,
+    border: cfg.colorBordeContenido,
+    nav: cfg.colorNavBoton,
   });
 
-  const panelConfig = toSlidePanelConfig(configuracion);
+  const flechasInternas =
+    !isThumbnail && cfg.mostrarFlechasInternas ? (
+      <>
+        <button
+          type="button"
+          className={cn(styles.carouselInnerNav, styles.carouselInnerNavLeft)}
+          onClick={nav.goPrev}
+          disabled={!nav.canPrev}
+          aria-label="Anterior"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <button
+          type="button"
+          className={cn(styles.carouselInnerNav, styles.carouselInnerNavRight)}
+          onClick={nav.goNext}
+          disabled={!nav.canNext}
+          aria-label="Siguiente"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </>
+    ) : null;
 
   return (
     <div
       className={cn(chromeStyles.whRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
       style={{ ...carouselContainerStyle(block), ...appearanceStyle }}
     >
-      <div className={chromeStyles.whHeader} style={carouselHeaderPadding(configuracion)}>
+      <div className={chromeStyles.whHeader} style={carouselHeaderPadding(cfg)}>
         <CarouselHeader block={widget} />
       </div>
 
-      <div className={chromeStyles.whContent} style={carouselBodyPadding(configuracion)}>
-        {configuracion.mostrarTabsPagina ? (
+      <div className={chromeStyles.whContent} style={carouselBodyPadding(cfg)}>
+        {cfg.mostrarTabsPagina ? (
           <div className={styles.carouselPageTabs}>
             {slides.map((slide, index) => (
               <button
@@ -70,9 +156,9 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
                 type="button"
                 className={cn(
                   styles.carouselPageTab,
-                  index === safeIndex && styles.carouselPageTabActive,
+                  index === nav.index && styles.carouselPageTabActive,
                 )}
-                onClick={() => setActiveIndex(index)}
+                onClick={() => nav.goTo(index)}
               >
                 {slide.etiqueta}
               </button>
@@ -81,45 +167,10 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
         ) : null}
 
         <div className={styles.carouselStage}>
-          <div
-            className={cn(
-              styles.carouselStageInner,
-              configuracion.transicion === 'fade' && styles.carouselFadePanel,
-            )}
-            key={configuracion.transicion === 'fade' ? activeSlide.id : undefined}
-          >
-            <TabsSlidePanelView
-              slide={activeSlide}
-              configuracion={panelConfig}
-              isThumbnail={isThumbnail}
-              imageFallbackBackground={configuracion.colorFondoContenedor}
-            />
-            {!isThumbnail && configuracion.mostrarFlechasInternas ? (
-              <>
-                <button
-                  type="button"
-                  className={cn(styles.carouselInnerNav, styles.carouselInnerNavLeft)}
-                  onClick={goPrev}
-                  disabled={safeIndex === 0}
-                  aria-label="Anterior"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  className={cn(styles.carouselInnerNav, styles.carouselInnerNavRight)}
-                  onClick={goNext}
-                  disabled={safeIndex >= slides.length - 1}
-                  aria-label="Siguiente"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              </>
-            ) : null}
-          </div>
+          <div className={styles.carouselStageInner}>{renderStage(flechasInternas)}</div>
         </div>
 
-        {!isThumbnail && configuracion.mostrarDots ? (
+        {!isThumbnail && cfg.mostrarDots ? (
           <div className={styles.carouselDots}>
             {slides.map((slide, index) => (
               <button
@@ -127,25 +178,30 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
                 type="button"
                 className={cn(
                   styles.carouselDot,
-                  index === safeIndex && styles.carouselDotActive,
+                  index === nav.index && styles.carouselDotActive,
                 )}
                 aria-label={`Ir a ${slide.etiqueta}`}
-                aria-current={index === safeIndex ? 'true' : undefined}
-                onClick={() => setActiveIndex(index)}
+                aria-current={index === nav.index ? 'true' : undefined}
+                onClick={() => nav.goTo(index)}
               />
             ))}
           </div>
         ) : null}
 
-        {!isThumbnail &&
-        (configuracion.mostrarBotonAnterior || configuracion.mostrarBotonSiguiente) && (
+        {!isThumbnail && cfg.mostrarContador ? (
+          <p className={styles.carouselCounter} aria-live="polite">
+            {nav.index + 1} / {nav.count}
+          </p>
+        ) : null}
+
+        {!isThumbnail && (cfg.mostrarBotonAnterior || cfg.mostrarBotonSiguiente) && (
           <div className={chromeStyles.whNav}>
-            {configuracion.mostrarBotonAnterior ? (
+            {cfg.mostrarBotonAnterior ? (
               <button
                 type="button"
                 className={chromeStyles.whNavButton}
-                onClick={goPrev}
-                disabled={safeIndex === 0}
+                onClick={nav.goPrev}
+                disabled={!nav.canPrev}
                 aria-label="Anterior"
               >
                 <ChevronLeft className="size-4" />
@@ -153,12 +209,12 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
             ) : (
               <span />
             )}
-            {configuracion.mostrarBotonSiguiente ? (
+            {cfg.mostrarBotonSiguiente ? (
               <button
                 type="button"
                 className={chromeStyles.whNavButton}
-                onClick={goNext}
-                disabled={safeIndex >= slides.length - 1}
+                onClick={nav.goNext}
+                disabled={!nav.canNext}
                 aria-label="Siguiente"
               >
                 <ChevronRight className="size-4" />
@@ -171,4 +227,97 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
       </div>
     </div>
   );
+}
+
+/** Transición `slide` (por defecto): todas las páginas en una banda que Embla desliza. */
+function CarouselEmblaViewer({ block }: { block: CarouselWidget }) {
+  const widget = normalizeCarouselWidget(block);
+  const cfg = mergedCarouselConfig(block);
+  const slides = widget.slides.slice(0, cfg.numeroSlides);
+  const { viewportRef, nav } = useEmblaNav(slides.length, cfg, true);
+  const panelConfig = toSlidePanelConfig(cfg);
+
+  return (
+    <CarouselFrame
+      block={block}
+      cfg={cfg}
+      slides={slides}
+      nav={nav}
+      isThumbnail={false}
+      renderStage={(flechas) => (
+        <>
+          <div className={styles.carouselViewport} ref={viewportRef}>
+            <div className={styles.carouselTrack}>
+              {slides.map((slide, i) => {
+                const activa = i === nav.index;
+                return (
+                  <div
+                    key={slide.id}
+                    className={styles.carouselSlide}
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`${i + 1} de ${slides.length}`}
+                    aria-hidden={activa ? undefined : true}
+                    inert={!activa}
+                  >
+                    <TabsSlidePanelView
+                      slide={slide}
+                      configuracion={panelConfig}
+                      imageFallbackBackground={cfg.colorFondoContenedor}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {flechas}
+        </>
+      )}
+    />
+  );
+}
+
+/** Transición `fade` y miniatura: un solo panel visible a la vez. */
+function CarouselSimpleViewer({ block, isThumbnail }: { block: CarouselWidget; isThumbnail: boolean }) {
+  const widget = normalizeCarouselWidget(block);
+  const cfg = mergedCarouselConfig(block);
+  const slides = widget.slides.slice(0, cfg.numeroSlides);
+  const nav = useSimpleNav(slides.length, cfg);
+  const activa = slides[nav.index] ?? slides[0];
+  const panelConfig = toSlidePanelConfig(cfg);
+  if (!activa) return null;
+
+  return (
+    <CarouselFrame
+      block={block}
+      cfg={cfg}
+      slides={slides}
+      nav={nav}
+      isThumbnail={isThumbnail}
+      renderStage={(flechas) => (
+        <div
+          className={cn(styles.carouselSimple, cfg.transicion === 'fade' && styles.carouselFadePanel)}
+          key={cfg.transicion === 'fade' ? activa.id : undefined}
+        >
+          <TabsSlidePanelView
+            slide={activa}
+            configuracion={panelConfig}
+            isThumbnail={isThumbnail}
+            imageFallbackBackground={cfg.colorFondoContenedor}
+          />
+          {flechas}
+        </div>
+      )}
+    />
+  );
+}
+
+export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerProps) {
+  const widget = normalizeCarouselWidget(block);
+  const cfg = mergedCarouselConfig(block);
+  if (widget.slides.slice(0, cfg.numeroSlides).length === 0) return null;
+  if (isThumbnail || cfg.transicion === 'fade') {
+    return <CarouselSimpleViewer block={block} isThumbnail={isThumbnail} />;
+  }
+  return <CarouselEmblaViewer block={block} />;
 }
