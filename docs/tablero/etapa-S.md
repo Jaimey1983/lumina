@@ -111,7 +111,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S11 — Buscador, unificación de encabezados y barrido final
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S3–S5 y S7–S10 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/elementos-panel.tsx`, `panels/activities-panel.tsx`, `panels/widgets-insert-panel.tsx` (solo agregar el campo de búsqueda), un componente `PanelSearch` en `panel-shared.tsx`, y los encabezados sueltos que el escáner marque. **NO** amplía el alcance de fichas anteriores.
 - **Entregable:** campo de búsqueda al inicio de Elementos, Widgets y Actividades; filtra por etiqueta, oculta secciones sin coincidencias y abre las que tienen (`forceOpen`, DS4); sin resultados muestra un estado vacío. Barrido: contar `grep -rn "uppercase tracking-wider" --include=*.tsx` antes/después fuera de `CollapsibleSection` y dejar en la ficha el conteo; lo que quede fuera de `CollapsibleSection` debe ser un título de panel (`<h2>`) o estar justificado. Verificación: `pnpm -r lint && pnpm -r test`, más comprobación visual del flujo completo (buscar «venn», abrir sección, insertar).
