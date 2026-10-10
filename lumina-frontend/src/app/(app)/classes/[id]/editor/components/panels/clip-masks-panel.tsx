@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { FieldHelp } from '@lumina/ui/field-help';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import { createDefaultClipGroupBlock, createTextClipGroupBlock } from '@lumina/editor-shared/clip-path';
@@ -34,7 +35,7 @@ interface MaskItem {
   shape: ClipShape;
 }
 
-const MASK_ITEMS: MaskItem[] = [
+export const MASK_ITEMS: MaskItem[] = [
   {
     id: 'rect',
     label: 'Rectángulo',
@@ -85,13 +86,19 @@ const MASK_ITEMS: MaskItem[] = [
   },
 ];
 
+/** Títulos/etiquetas de la sección (los usa también la búsqueda del panel Elementos). */
+export const CLIP_MASKS_SECTION_TITLE = 'Máscaras de recorte';
+export const CLIP_MASK_TEXT_LABEL = 'Texto';
+
 interface Props {
   apiSlide: ApiSlide | null;
   onCommitContent: (content: Record<string, unknown>) => void;
   disabled?: boolean;
+  /** Abre la sección (coincidencia de búsqueda). */
+  forceOpen?: boolean;
 }
 
-export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
+export function ClipMasksPanel({ apiSlide, onCommitContent, disabled, forceOpen }: Props) {
   const [textDialogOpen, setTextDialogOpen] = useState(false);
 
   const addMask = (shape: ClipShape) => {
@@ -107,11 +114,16 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
   };
 
   return (
-    <div className="space-y-3 border-b border-border pb-3">
-      <div className="flex items-center gap-1.5 px-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Máscaras de recorte
-        </p>
+    <CollapsibleSection
+      title={CLIP_MASKS_SECTION_TITLE}
+      defaultOpen={false}
+      storageKey="elementos.mascaras"
+      forceOpen={forceOpen}
+      badge={MASK_ITEMS.length + 1}
+      className="border-b border-border pb-3"
+    >
+      <div className="flex items-center gap-1.5 px-1 text-[10px] text-muted-foreground">
+        Cómo funcionan
         <FieldHelp label="Máscaras de recorte">
           <p>
             Recorta imagen o color. Forma libre: arrastra nodos; doble clic o Alt+arrastra un nodo
@@ -149,7 +161,7 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
           )}
         >
           <Type className="size-5 shrink-0" aria-hidden />
-          Texto
+          {CLIP_MASK_TEXT_LABEL}
         </button>
       </div>
 
@@ -158,6 +170,6 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
         onOpenChange={setTextDialogOpen}
         onConfirm={addTextMask}
       />
-    </div>
+    </CollapsibleSection>
   );
 }

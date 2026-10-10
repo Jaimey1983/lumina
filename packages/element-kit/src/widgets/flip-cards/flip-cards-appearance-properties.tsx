@@ -47,7 +47,7 @@ export function FlipCardsAppearanceProperties({
   };
 
   return (
-    <WidgetAppearanceStack>
+    <WidgetAppearanceStack scope="flip-cards">
       <WidgetContainerAppearanceFields
         showPadding={false}
         values={{

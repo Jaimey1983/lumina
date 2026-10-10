@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import {
   AlignCenter,
   AlignLeft,
@@ -12,22 +12,75 @@ import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Toggle } from '@lumina/ui/toggle';
 import { TabsLayoutGallery } from './tabs-layout-gallery.js';
 import { WidgetSectionTitle } from './widget-properties-panel.js';
 
+/**
+ * Id del widget dueño de la columna de apariencia. Con él las secciones se
+ * pliegan solas y recuerdan su estado (`widgets.<scope>.<título>`); sin él
+ * (`null`) se comportan como antes de la etapa S.
+ */
+const WidgetAppearanceScope = createContext<string | null>(null);
+
+function sectionSlug(title: string): string {
+  return title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 /** Columna estándar de secciones de apariencia (mismo espaciado en todos los widgets). */
-export function WidgetAppearanceStack({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-5">{children}</div>;
+export function WidgetAppearanceStack({
+  children,
+  scope,
+}: {
+  children: ReactNode;
+  /** Id del widget (`'flip-cards'`, `'tabs'`…): activa el plegado de sus secciones. */
+  scope?: string;
+}) {
+  const stack = <div className="flex flex-col gap-5">{children}</div>;
+  return scope ? (
+    <WidgetAppearanceScope.Provider value={scope}>{stack}</WidgetAppearanceScope.Provider>
+  ) : (
+    stack
+  );
 }
 
 export function WidgetAppearanceSection({
   title,
   children,
+  collapsible,
+  defaultOpen = false,
+  storageKey,
+  badge,
 }: {
   title: string;
   children: ReactNode;
+  /** Por defecto se pliega solo si la columna tiene `scope`; `false` fuerza el título fijo. */
+  collapsible?: boolean;
+  /** Estado inicial cuando se pliega y no hay preferencia guardada. */
+  defaultOpen?: boolean;
+  /** Por defecto `widgets.<scope>.<título>`. */
+  storageKey?: string;
+  badge?: ReactNode;
 }) {
+  const scope = useContext(WidgetAppearanceScope);
+  if (collapsible ?? scope !== null) {
+    return (
+      <CollapsibleSection
+        title={title}
+        defaultOpen={defaultOpen}
+        storageKey={storageKey ?? (scope ? `widgets.${scope}.${sectionSlug(title)}` : undefined)}
+        badge={badge}
+      >
+        {children}
+      </CollapsibleSection>
+    );
+  }
   return (
     <div className="space-y-3">
       <WidgetSectionTitle>{title}</WidgetSectionTitle>
@@ -137,11 +190,10 @@ export function WidgetLayoutGallerySection({
   onSelect: (id: WidgetLayoutId) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <WidgetSectionTitle>Layout del widget</WidgetSectionTitle>
+    <WidgetAppearanceSection title="Layout del widget" defaultOpen>
       <WidgetAppearanceHint>{hint}</WidgetAppearanceHint>
       <TabsLayoutGallery activeId={activeId} onSelect={onSelect} />
-    </div>
+    </WidgetAppearanceSection>
   );
 }
 

@@ -16,6 +16,7 @@ import { TIMELINE_LUCIDE_OPTIONS, TimelineLucideIcon } from './timeline-icon-cat
 import { TIMELINE_VARIANTES, timelineUsesLucideDot } from './timeline-variant-meta.js';
 import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 function PanelSectionDivider() {
   return <div className="border-t border-border" role="separator" aria-hidden />;
@@ -158,8 +159,12 @@ export function TimelineWidgetComponentes({
 
       <PanelSectionDivider />
 
-      <div className="space-y-2 pt-4">
-        <WidgetSectionTitle>Configuración</WidgetSectionTitle>
+      <CollapsibleSection
+        title="Configuración"
+        storageKey="timeline.configuracion"
+        badge={`${configuracion.numeroNodos} nodos`}
+        className="pt-4"
+      >
         <div className="space-y-1.5">
           <Label className="text-xs">Número de nodos: {configuracion.numeroNodos}</Label>
           <Slider
@@ -172,7 +177,7 @@ export function TimelineWidgetComponentes({
             <SliderThumb />
           </Slider>
         </div>
-      </div>
+      </CollapsibleSection>
 
       <PanelSectionDivider />
 
@@ -198,8 +203,12 @@ export function TimelineWidgetComponentes({
 
       <PanelSectionDivider />
 
-      <div className="space-y-2 pt-4">
-        <WidgetSectionTitle>Dimensiones rápidas</WidgetSectionTitle>
+      <CollapsibleSection
+        title="Dimensiones rápidas"
+        defaultOpen={false}
+        storageKey="timeline.dimensiones"
+        className="pt-4"
+      >
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Grosor de línea</Label>
@@ -218,7 +227,7 @@ export function TimelineWidgetComponentes({
             <SliderThumb />
           </Slider>
         </div>
-      </div>
+      </CollapsibleSection>
     </div>
   );
 }

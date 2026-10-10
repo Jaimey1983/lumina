@@ -52,7 +52,7 @@ export function TabsAppearanceProperties({
   };
 
   return (
-    <WidgetAppearanceStack>
+    <WidgetAppearanceStack scope="tabs">
       <WidgetLayoutGallerySection
         hint="Aplica el layout a todas las fichas. Puedes personalizar cada ficha en la sección Ficha."
         activeId={configuracion.layoutId}

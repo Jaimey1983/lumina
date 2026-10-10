@@ -12,6 +12,7 @@ import { Crosshair, ImageIcon, Paintbrush, RotateCw, Sparkles } from 'lucide-rea
 
 import type { Background, GradientColorStop } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
@@ -247,8 +248,11 @@ export function DesignBackgroundPopover({
         </TabsList>
 
         <TabsContent value="solid" className="mt-3 space-y-3">
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Presets</Label>
+          <CollapsibleSection
+            title="Presets"
+            storageKey="diseno.solido.presets"
+            badge={SOLID_BACKGROUND_PRESETS.length}
+          >
             <div className="flex flex-wrap gap-1.5">
               {SOLID_BACKGROUND_PRESETS.map((c) => (
                 <ColorSwatch
@@ -259,7 +263,7 @@ export function DesignBackgroundPopover({
                 />
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
           <div className="flex items-center gap-2">
             <label className="relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border shadow-xs">
               <span
@@ -297,8 +301,11 @@ export function DesignBackgroundPopover({
         </TabsContent>
 
         <TabsContent value="gradient" className="mt-3 space-y-3">
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Presets</Label>
+          <CollapsibleSection
+            title="Presets"
+            storageKey="diseno.gradiente.presets"
+            badge={GRADIENT_BACKGROUND_PRESETS.length}
+          >
             <div className="grid grid-cols-3 gap-1.5">
               {GRADIENT_BACKGROUND_PRESETS.map((preset) => (
                 <button
@@ -323,23 +330,27 @@ export function DesignBackgroundPopover({
                 </button>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
 
-          <GradientStopBarEditor
-            stops={gradStops}
-            disabled={disabled}
-            selectedIndex={selectedStopIndex}
-            onSelectedIndexChange={setSelectedStopIndex}
-            onChange={handleStopsChange}
-          />
+          <CollapsibleSection
+            title="Colores del gradiente"
+            storageKey="diseno.gradiente.colores"
+            badge={gradStops.length}
+          >
+            <GradientStopBarEditor
+              stops={gradStops}
+              disabled={disabled}
+              selectedIndex={selectedStopIndex}
+              onSelectedIndexChange={setSelectedStopIndex}
+              onChange={handleStopsChange}
+            />
+          </CollapsibleSection>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-xs text-muted-foreground">Dirección</Label>
-              <span className="text-xs font-medium tabular-nums text-foreground">
-                {gradientDirectionLabel(gradAngle)}
-              </span>
-            </div>
+          <CollapsibleSection
+            title="Dirección"
+            storageKey="diseno.gradiente.direccion"
+            badge={gradientDirectionLabel(gradAngle)}
+          >
             <Slider
               value={[gradAngle]}
               min={0}
@@ -365,7 +376,7 @@ export function DesignBackgroundPopover({
                 </Button>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
 
           <Button
             type="button"
@@ -396,8 +407,11 @@ export function DesignBackgroundPopover({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Ajuste al lienzo</Label>
+          <CollapsibleSection
+            title="Ajuste al lienzo"
+            storageKey="diseno.imagen.ajuste"
+            badge={AJUSTE_OPTIONS.find((o) => o.value === imgAjuste)?.label}
+          >
             <div className="grid grid-cols-4 gap-1">
               {AJUSTE_OPTIONS.map(({ value, label, desc }) => (
                 <Button
@@ -414,11 +428,16 @@ export function DesignBackgroundPopover({
                 </Button>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
 
-          <div className="space-y-2">
+          <CollapsibleSection
+            title="Posición"
+            defaultOpen={false}
+            storageKey="diseno.imagen.posicion"
+            badge={`${imgPosPoint.x}% · ${imgPosPoint.y}%`}
+          >
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Posición (arrastra la vista previa)</Label>
+              <Label className="text-xs text-muted-foreground">Arrastra la vista previa</Label>
               <Button
                 type="button"
                 variant="ghost"
@@ -434,11 +453,16 @@ export function DesignBackgroundPopover({
             <p className="text-[10px] tabular-nums text-muted-foreground">
               X: {imgPosPoint.x}% · Y: {imgPosPoint.y}%
             </p>
-          </div>
+          </CollapsibleSection>
 
-          <div className="space-y-2">
+          <CollapsibleSection
+            title="Orientación / Giro"
+            defaultOpen={false}
+            storageKey="diseno.imagen.giro"
+            badge={`${imgRotacion}°`}
+          >
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Orientación / Giro</Label>
+              <Label className="sr-only">Orientación / Giro</Label>
               <Button
                 type="button"
                 variant="ghost"
@@ -471,7 +495,7 @@ export function DesignBackgroundPopover({
                 </Button>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
 
           <Button
             type="button"

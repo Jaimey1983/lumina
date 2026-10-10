@@ -53,6 +53,7 @@ import {
   type LuminaChartFamily,
   type LuminaChartConfig,
 } from '@lumina/charts';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { cn } from '@lumina/ui/lib/utils';
 import { GraficoDataDialog } from './grafico-data-dialog.js';
 
@@ -449,6 +450,8 @@ export function GraficoProperties({
   // es la forma del embudo) — mostrar el control ahí no tenía ningún efecto.
   const supportsEsquinas = ['column', 'bar', 'combo', 'heatmap', 'waterfall', 'histogram'].includes(localBlock.chartType);
 
+  const referenciasCount = (localBlock.lineasReferencia?.length ?? 0) + (localBlock.bandas?.length ?? 0);
+
   return (
     <div className="space-y-5 text-xs">
       {/* 1. Variantes de la familia activa, con cambio de familia como acción secundaria */}
@@ -506,16 +509,12 @@ export function GraficoProperties({
         </div>
       </div>
 
-      {/* 2. Modal de Datos */}
-      <div className="space-y-2 border-t border-border pt-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <TableIcon className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Datos del Gráfico
-            </span>
-          </div>
-        </div>
+      <CollapsibleSection
+        title="Datos"
+        icon={TableIcon}
+        storageKey="grafico.datos"
+        className="border-t border-border pt-3"
+      >
         <Button
           type="button"
           variant="outline"
@@ -543,10 +542,6 @@ export function GraficoProperties({
           block={localBlock}
           commitChange={commitChange}
         />
-      </div>
-
-      {/* 3. Título y Accesibilidad */}
-      <div className="space-y-3 border-t border-border pt-3">
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">Título del Gráfico</Label>
           <Input
@@ -582,10 +577,14 @@ export function GraficoProperties({
             className="text-xs resize-none"
           />
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* 4. Paleta y Visualización General */}
-      <div className="space-y-3 border-t border-border pt-3">
+      <CollapsibleSection
+        title="Apariencia"
+        icon={Palette}
+        storageKey="grafico.apariencia"
+        className="border-t border-border pt-3"
+      >
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <Palette className="h-3 w-3 text-muted-foreground" />
@@ -618,539 +617,6 @@ export function GraficoProperties({
             </SelectContent>
           </Select>
         </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <Label className="text-[11px] text-muted-foreground">Mostrar Leyenda</Label>
-          <Switch
-            checked={localBlock.mostrarLeyenda !== false}
-            onCheckedChange={handleLegendToggle}
-          />
-        </div>
-
-        {supportsPosicionLeyenda && localBlock.mostrarLeyenda !== false && (
-          <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Posición de la Leyenda</Label>
-            <Select
-              value={localBlock.posicionLeyenda || (localBlock.chartType === 'radialBar' ? 'derecha' : 'abajo')}
-              onValueChange={(val) => handlePosicionLeyendaChange(val as 'arriba' | 'abajo' | 'izquierda' | 'derecha')}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Abajo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="arriba" className="text-xs">Arriba</SelectItem>
-                <SelectItem value="abajo" className="text-xs">Abajo</SelectItem>
-                <SelectItem value="izquierda" className="text-xs">Izquierda</SelectItem>
-                <SelectItem value="derecha" className="text-xs">Derecha</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-1">
-          <Label className="text-[11px] text-muted-foreground">Etiquetas de Datos (Valores)</Label>
-          <Switch
-            checked={Boolean(localBlock.mostrarEtiquetasDatos)}
-            onCheckedChange={handleDataLabelsToggle}
-          />
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <Label className="text-[11px] text-muted-foreground">Exportar Imagen (PNG/SVG)</Label>
-          <Switch
-            checked={localBlock.exportarImagen !== false}
-            onCheckedChange={handleExportImageToggle}
-          />
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <Label className="text-[11px] text-muted-foreground">Animar Entrada</Label>
-          <Switch
-            checked={Boolean(localBlock.animar)}
-            onCheckedChange={handleAnimationToggle}
-          />
-        </div>
-
-        {supportsTotal && (
-          <div className="flex items-center justify-between pt-1">
-            <Label className="text-[11px] text-muted-foreground">Mostrar Total en el Centro</Label>
-            <Switch
-              checked={Boolean(localBlock.mostrarTotal)}
-              onCheckedChange={handleMostrarTotalToggle}
-            />
-          </div>
-        )}
-
-        {supportsSparkline && (
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex flex-col">
-              <Label className="text-[11px] text-muted-foreground">Modo Sparkline (Compacto)</Label>
-              <span className="text-[10px] text-muted-foreground/70">Oculta ejes y grillas para tarjetas KPI</span>
-            </div>
-            <Switch
-              checked={Boolean(localBlock.modoSparkline)}
-              onCheckedChange={handleModoSparklineToggle}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* 5. Configuración Avanzada / Ejes / Apilado / Curvas */}
-      {(supportsStacking || supportsAxes || supportsOrdering || supportsCurva || supportsAngulo || isHistogram || supportsGrillas) && (
-        <div className="space-y-3 border-t border-border pt-3">
-          <div className="flex items-center gap-1.5">
-            <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Ejes y Configuración
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Formato Numérico (Eje / Tooltip)</Label>
-            <Select
-              value={localBlock.formatoValor || 'decimal'}
-              onValueChange={(val) => handleFormatoValorChange(val as GraficoDatosBlock['formatoValor'])}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Decimal" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="decimal" className="text-xs">Decimal</SelectItem>
-                <SelectItem value="entero" className="text-xs">Entero</SelectItem>
-                <SelectItem value="porcentaje" className="text-xs">Porcentaje</SelectItem>
-                <SelectItem value="moneda" className="text-xs">Moneda (COP)</SelectItem>
-                <SelectItem value="escala0a5" className="text-xs">Escala 0–5</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {supportsGrillas && (
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Líneas de Grilla</Label>
-              <Select
-                value={localBlock.grillas || 'ambas'}
-                onValueChange={(val) => handleGrillasChange(val as 'ambas' | 'y' | 'ninguna')}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Ambas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ambas" className="text-xs">Ambas (X e Y)</SelectItem>
-                  <SelectItem value="y" className="text-xs">Solo horizontal (Y)</SelectItem>
-                  <SelectItem value="ninguna" className="text-xs">Ninguna</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {isHistogram && (
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Número de Intervalos (Bins)</Label>
-              <Input
-                type="number"
-                min={2}
-                max={20}
-                value={localBlock.histogramBins ?? ''}
-                placeholder="Auto (8)"
-                onChange={(e) => handleHistogramBinsChange(e.target.value)}
-                className="h-7 text-xs"
-              />
-            </div>
-          )}
-
-          {supportsCurva && (
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Interpolación de Curva</Label>
-              <Select
-                value={localBlock.curva || 'suave'}
-                onValueChange={(val) => handleCurvaChange(val as 'suave' | 'recta' | 'escalon')}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Suave (por defecto)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="suave" className="text-xs">Curva suave (interpolada)</SelectItem>
-                  <SelectItem value="recta" className="text-xs">Línea recta (segmentos)</SelectItem>
-                  <SelectItem value="escalon" className="text-xs">Escalón (stepline)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {supportsAngulo && (
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Apertura Angular</Label>
-              <Select
-                value={localBlock.angulo || 'completo'}
-                onValueChange={(val) => handleAnguloChange(val as 'completo' | 'semicirculo' | 'personalizado')}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Círculo completo (360°)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="completo" className="text-xs">Círculo completo (360°)</SelectItem>
-                  <SelectItem value="semicirculo" className="text-xs">Semicírculo (180° / Medidor)</SelectItem>
-                  <SelectItem value="personalizado" className="text-xs">Personalizado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {supportsAngulo && localBlock.angulo === 'personalizado' && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Ángulo Inicio (°)</Label>
-                <Input
-                  type="number"
-                  min={-360}
-                  max={360}
-                  value={localBlock.anguloInicio ?? -90}
-                  onChange={(e) => handleAnguloInicioChange(e.target.value)}
-                  className="h-7 text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Ángulo Fin (°)</Label>
-                <Input
-                  type="number"
-                  min={-360}
-                  max={360}
-                  value={localBlock.anguloFin ?? 90}
-                  onChange={(e) => handleAnguloFinChange(e.target.value)}
-                  className="h-7 text-xs"
-                />
-              </div>
-            </div>
-          )}
-
-          {supportsStacking && (
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Modo de Apilado</Label>
-              <Select
-                value={localBlock.apilado || 'ninguno'}
-                onValueChange={handleApiladoChange}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Sin apilado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ninguno" className="text-xs">Sin apilar</SelectItem>
-                  <SelectItem value="normal" className="text-xs">Apilado normal</SelectItem>
-                  <SelectItem value="porcentaje" className="text-xs">Apilado 100% (porcentaje)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {supportsOrdering && (
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Orden de Datos</Label>
-              <Select
-                value={localBlock.ordenDatos || 'como-esta'}
-                onValueChange={handleOrdenDatosChange}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Orden original" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="como-esta" className="text-xs">Como está (original)</SelectItem>
-                  <SelectItem value="ascendente" className="text-xs">Ascendente (menor a mayor)</SelectItem>
-                  <SelectItem value="descendente" className="text-xs">Descendente (mayor a menor)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {supportsAxes && (
-            <div className="space-y-2 pt-1">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Título Eje X</Label>
-                  <Input
-                    value={localBlock.ejeXTitulo || ''}
-                    placeholder="Eje X..."
-                    onChange={(e) => handleEjeXTituloChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Título Eje Y</Label>
-                  <Input
-                    value={localBlock.ejeYTitulo || ''}
-                    placeholder="Eje Y..."
-                    onChange={(e) => handleEjeYTituloChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Mínimo Eje Y</Label>
-                  <Input
-                    type="number"
-                    value={localBlock.ejeYMin ?? ''}
-                    placeholder="Auto"
-                    onChange={(e) => handleEjeYMinChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Máximo Eje Y</Label>
-                  <Input
-                    type="number"
-                    value={localBlock.ejeYMax ?? ''}
-                    placeholder="Auto"
-                    onChange={(e) => handleEjeYMaxChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Rotación Eje X (°)</Label>
-                  <Input
-                    type="number"
-                    value={localBlock.ejeXRotacion ?? ''}
-                    placeholder="Auto"
-                    onChange={(e) => handleEjeXRotacionChange(e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-                <div className="flex flex-col justify-end gap-1">
-                  <Label className="text-[10px] text-muted-foreground">&nbsp;</Label>
-                  <div className="flex items-center justify-between h-7">
-                    <span className="text-[10px] text-muted-foreground">Ocultar Eje X</span>
-                    <Switch
-                      checked={Boolean(localBlock.ejeXOculto)}
-                      onCheckedChange={handleEjeXOcultoToggle}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <Label className="text-[10px] text-muted-foreground">Ocultar Eje Y</Label>
-                <Switch
-                  checked={Boolean(localBlock.ejeYOculto)}
-                  onCheckedChange={handleEjeYOcultoToggle}
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <Label className="text-[10px] text-muted-foreground">Escala Logarítmica (Eje Y)</Label>
-                <Switch
-                  checked={Boolean(localBlock.ejeYEscalaLog)}
-                  onCheckedChange={handleEjeYLogToggle}
-                />
-              </div>
-
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Líneas de Referencia / Meta</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddLineaReferencia}
-                    className="h-6 px-1.5 text-[10px]"
-                  >
-                    <Plus className="mr-1 h-3 w-3" /> Añadir
-                  </Button>
-                </div>
-                {(localBlock.lineasReferencia ?? []).map((linea, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5">
-                    <input
-                      type="color"
-                      value={linea.color || '#94a3b8'}
-                      onChange={(e) => handleLineaReferenciaColorChange(idx, e.target.value)}
-                      className="h-7 w-6 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0"
-                      title="Color de la línea"
-                    />
-                    <Input
-                      type="number"
-                      value={linea.valor}
-                      placeholder="Valor (ej: 80)"
-                      onChange={(e) => handleLineaReferenciaValueChange(idx, e.target.value)}
-                      className="h-7 text-xs"
-                    />
-                    <Input
-                      type="text"
-                      value={linea.etiqueta ?? ''}
-                      placeholder="Etiqueta (ej: Meta)"
-                      onChange={(e) => handleLineaReferenciaLabelChange(idx, e.target.value)}
-                      className="h-7 text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveLineaReferencia(idx)}
-                      className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive"
-                      title="Eliminar línea"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Bandas de Referencia (Rango)</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddBanda}
-                    className="h-6 px-1.5 text-[10px]"
-                  >
-                    <Plus className="mr-1 h-3 w-3" /> Añadir
-                  </Button>
-                </div>
-                {(localBlock.bandas ?? []).map((banda, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5">
-                    <input
-                      type="color"
-                      value={banda.color || '#ef4444'}
-                      onChange={(e) => handleBandaColorChange(idx, e.target.value)}
-                      className="h-7 w-6 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0"
-                      title="Color de la banda"
-                    />
-                    <Input
-                      type="number"
-                      value={banda.desde}
-                      placeholder="Desde"
-                      onChange={(e) => handleBandaFieldChange(idx, 'desde', e.target.value)}
-                      className="h-7 text-xs"
-                    />
-                    <Input
-                      type="number"
-                      value={banda.hasta}
-                      placeholder="Hasta"
-                      onChange={(e) => handleBandaFieldChange(idx, 'hasta', e.target.value)}
-                      className="h-7 text-xs"
-                    />
-                    <Input
-                      type="text"
-                      value={banda.etiqueta ?? ''}
-                      placeholder="Etiqueta"
-                      onChange={(e) => handleBandaLabelChange(idx, e.target.value)}
-                      className="h-7 text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveBanda(idx)}
-                      className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive"
-                      title="Eliminar banda"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 6. Estilo Visual (Etapa I5) */}
-      <div className="space-y-3 border-t border-border pt-3">
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Estilo Visual
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {supportsEsquinas && (
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Radio de Esquinas (px)</Label>
-              <Input
-                type="number"
-                min={0}
-                value={localBlock.estilo?.esquinas ?? ''}
-                placeholder="Auto"
-                onChange={(e) => handleEstiloEsquinasChange(e.target.value)}
-                className="h-7 text-xs"
-              />
-            </div>
-          )}
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Fuente Tipográfica</Label>
-            <Input
-              type="text"
-              value={localBlock.estilo?.fuente ?? ''}
-              placeholder="Heredada"
-              onChange={(e) => handleEstiloFuenteChange(e.target.value)}
-              className="h-7 text-xs"
-            />
-          </div>
-        </div>
-
-        {localBlock.chartType === 'radialBar' && (
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Grosor del Anillo (%)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={localBlock.estilo?.grosorAnillo ?? ''}
-              placeholder="30 (por defecto)"
-              onChange={(e) => handleEstiloGrosorAnilloChange(e.target.value)}
-              className="h-7 text-xs"
-            />
-          </div>
-        )}
-
-        {localBlock.chartType === 'radialBar' && (
-          <div className="flex items-center justify-between pt-1">
-            <Label className="text-[11px] text-muted-foreground">Puntas Redondeadas</Label>
-            <Switch
-              checked={Boolean(localBlock.estilo?.puntasRedondeadas)}
-              onCheckedChange={handleEstiloPuntasRedondeadasToggle}
-            />
-          </div>
-        )}
-
-        <div className="space-y-1">
-          <Label className="text-[10px] text-muted-foreground">Fondo</Label>
-          <Select
-            value={localBlock.estilo?.fondo || 'transparente'}
-            onValueChange={(val) => handleEstiloFondoChange(val as 'transparente' | 'tarjeta')}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Transparente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="transparente" className="text-xs">Transparente</SelectItem>
-              <SelectItem value="tarjeta" className="text-xs">Color de tarjeta (tema)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <Label className="text-[11px] text-muted-foreground">Sombra Sutil</Label>
-          <Switch
-            checked={Boolean(localBlock.estilo?.sombra)}
-            onCheckedChange={handleEstiloSombraToggle}
-          />
-        </div>
-
-        {Boolean(localBlock.animar) && (
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Duración de Animación (ms)</Label>
-            <Input
-              type="number"
-              min={0}
-              value={localBlock.estilo?.duracionAnimacion ?? ''}
-              placeholder="Auto"
-              onChange={(e) => handleEstiloDuracionChange(e.target.value)}
-              className="h-7 text-xs"
-            />
-          </div>
-        )}
-
         <div className="space-y-1.5 pt-1">
           <div className="flex items-center justify-between">
             <Label className="text-[10px] text-muted-foreground">Paleta Personalizada</Label>
@@ -1191,9 +657,534 @@ export function GraficoProperties({
             <span className="text-[10px] text-muted-foreground/70">Sin paleta personalizada — usa la paleta seleccionada arriba.</span>
           )}
         </div>
-      </div>
+        <div className="grid grid-cols-2 gap-2">
+          {supportsEsquinas && (
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Radio de Esquinas (px)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={localBlock.estilo?.esquinas ?? ''}
+                placeholder="Auto"
+                onChange={(e) => handleEstiloEsquinasChange(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Fuente Tipográfica</Label>
+            <Input
+              type="text"
+              value={localBlock.estilo?.fuente ?? ''}
+              placeholder="Heredada"
+              onChange={(e) => handleEstiloFuenteChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        </div>
+        {localBlock.chartType === 'radialBar' && (
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Grosor del Anillo (%)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={localBlock.estilo?.grosorAnillo ?? ''}
+              placeholder="30 (por defecto)"
+              onChange={(e) => handleEstiloGrosorAnilloChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        )}
+        {localBlock.chartType === 'radialBar' && (
+          <div className="flex items-center justify-between pt-1">
+            <Label className="text-[11px] text-muted-foreground">Puntas Redondeadas</Label>
+            <Switch
+              checked={Boolean(localBlock.estilo?.puntasRedondeadas)}
+              onCheckedChange={handleEstiloPuntasRedondeadasToggle}
+            />
+          </div>
+        )}
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground">Fondo</Label>
+          <Select
+            value={localBlock.estilo?.fondo || 'transparente'}
+            onValueChange={(val) => handleEstiloFondoChange(val as 'transparente' | 'tarjeta')}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Transparente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="transparente" className="text-xs">Transparente</SelectItem>
+              <SelectItem value="tarjeta" className="text-xs">Color de tarjeta (tema)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-between pt-1">
+          <Label className="text-[11px] text-muted-foreground">Sombra Sutil</Label>
+          <Switch
+            checked={Boolean(localBlock.estilo?.sombra)}
+            onCheckedChange={handleEstiloSombraToggle}
+          />
+        </div>
+        <div className="flex items-center justify-between pt-1">
+          <Label className="text-[11px] text-muted-foreground">Animar Entrada</Label>
+          <Switch
+            checked={Boolean(localBlock.animar)}
+            onCheckedChange={handleAnimationToggle}
+          />
+        </div>
+        {Boolean(localBlock.animar) && (
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Duración de Animación (ms)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={localBlock.estilo?.duracionAnimacion ?? ''}
+              placeholder="Auto"
+              onChange={(e) => handleEstiloDuracionChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        )}
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Leyenda y etiquetas"
+        icon={Eye}
+        defaultOpen={false}
+        storageKey="grafico.leyenda"
+        className="border-t border-border pt-3"
+      >
+        <div className="flex items-center justify-between pt-1">
+          <Label className="text-[11px] text-muted-foreground">Mostrar Leyenda</Label>
+          <Switch
+            checked={localBlock.mostrarLeyenda !== false}
+            onCheckedChange={handleLegendToggle}
+          />
+        </div>
+        {supportsPosicionLeyenda && localBlock.mostrarLeyenda !== false && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Posición de la Leyenda</Label>
+            <Select
+              value={localBlock.posicionLeyenda || (localBlock.chartType === 'radialBar' ? 'derecha' : 'abajo')}
+              onValueChange={(val) => handlePosicionLeyendaChange(val as 'arriba' | 'abajo' | 'izquierda' | 'derecha')}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Abajo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="arriba" className="text-xs">Arriba</SelectItem>
+                <SelectItem value="abajo" className="text-xs">Abajo</SelectItem>
+                <SelectItem value="izquierda" className="text-xs">Izquierda</SelectItem>
+                <SelectItem value="derecha" className="text-xs">Derecha</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-1">
+          <Label className="text-[11px] text-muted-foreground">Etiquetas de Datos (Valores)</Label>
+          <Switch
+            checked={Boolean(localBlock.mostrarEtiquetasDatos)}
+            onCheckedChange={handleDataLabelsToggle}
+          />
+        </div>
+        {supportsTotal && (
+          <div className="flex items-center justify-between pt-1">
+            <Label className="text-[11px] text-muted-foreground">Mostrar Total en el Centro</Label>
+            <Switch
+              checked={Boolean(localBlock.mostrarTotal)}
+              onCheckedChange={handleMostrarTotalToggle}
+            />
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {(supportsStacking || supportsAxes || supportsOrdering || supportsCurva || supportsAngulo || isHistogram || supportsGrillas) && (
+        <CollapsibleSection
+          title="Ejes y formato"
+          icon={Settings2}
+          defaultOpen={false}
+          storageKey="grafico.ejes"
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Formato Numérico (Eje / Tooltip)</Label>
+            <Select
+              value={localBlock.formatoValor || 'decimal'}
+              onValueChange={(val) => handleFormatoValorChange(val as GraficoDatosBlock['formatoValor'])}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Decimal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="decimal" className="text-xs">Decimal</SelectItem>
+                <SelectItem value="entero" className="text-xs">Entero</SelectItem>
+                <SelectItem value="porcentaje" className="text-xs">Porcentaje</SelectItem>
+                <SelectItem value="moneda" className="text-xs">Moneda (COP)</SelectItem>
+                <SelectItem value="escala0a5" className="text-xs">Escala 0–5</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {supportsGrillas && (
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Líneas de Grilla</Label>
+              <Select
+                value={localBlock.grillas || 'ambas'}
+                onValueChange={(val) => handleGrillasChange(val as 'ambas' | 'y' | 'ninguna')}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Ambas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ambas" className="text-xs">Ambas (X e Y)</SelectItem>
+                  <SelectItem value="y" className="text-xs">Solo horizontal (Y)</SelectItem>
+                  <SelectItem value="ninguna" className="text-xs">Ninguna</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {supportsAxes && (
+            <div className="space-y-2 pt-1">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Título Eje X</Label>
+                <Input
+                  value={localBlock.ejeXTitulo || ''}
+                  placeholder="Eje X..."
+                  onChange={(e) => handleEjeXTituloChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Título Eje Y</Label>
+                <Input
+                  value={localBlock.ejeYTitulo || ''}
+                  placeholder="Eje Y..."
+                  onChange={(e) => handleEjeYTituloChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Mínimo Eje Y</Label>
+                <Input
+                  type="number"
+                  value={localBlock.ejeYMin ?? ''}
+                  placeholder="Auto"
+                  onChange={(e) => handleEjeYMinChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Máximo Eje Y</Label>
+                <Input
+                  type="number"
+                  value={localBlock.ejeYMax ?? ''}
+                  placeholder="Auto"
+                  onChange={(e) => handleEjeYMaxChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Rotación Eje X (°)</Label>
+                <Input
+                  type="number"
+                  value={localBlock.ejeXRotacion ?? ''}
+                  placeholder="Auto"
+                  onChange={(e) => handleEjeXRotacionChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div className="flex flex-col justify-end gap-1">
+                <Label className="text-[10px] text-muted-foreground">&nbsp;</Label>
+                <div className="flex items-center justify-between h-7">
+                  <span className="text-[10px] text-muted-foreground">Ocultar Eje X</span>
+                  <Switch
+                    checked={Boolean(localBlock.ejeXOculto)}
+                    onCheckedChange={handleEjeXOcultoToggle}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <Label className="text-[10px] text-muted-foreground">Ocultar Eje Y</Label>
+              <Switch
+                checked={Boolean(localBlock.ejeYOculto)}
+                onCheckedChange={handleEjeYOcultoToggle}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <Label className="text-[10px] text-muted-foreground">Escala Logarítmica (Eje Y)</Label>
+              <Switch
+                checked={Boolean(localBlock.ejeYEscalaLog)}
+                onCheckedChange={handleEjeYLogToggle}
+              />
+            </div>
+            </div>
+          )}
+        </CollapsibleSection>
+      )}
+
+      {supportsAxes && (
+        <CollapsibleSection
+          title="Referencias"
+          defaultOpen={false}
+          storageKey="grafico.referencias"
+          badge={referenciasCount > 0 ? referenciasCount : undefined}
+          forceOpen={referenciasCount > 0}
+          className="border-t border-border pt-3"
+        >
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] text-muted-foreground">Líneas de Referencia / Meta</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddLineaReferencia}
+                className="h-6 px-1.5 text-[10px]"
+              >
+                <Plus className="mr-1 h-3 w-3" /> Añadir
+              </Button>
+            </div>
+            {(localBlock.lineasReferencia ?? []).map((linea, idx) => (
+              <div key={idx} className="flex items-center gap-1.5">
+                <input
+                  type="color"
+                  value={linea.color || '#94a3b8'}
+                  onChange={(e) => handleLineaReferenciaColorChange(idx, e.target.value)}
+                  className="h-7 w-6 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0"
+                  title="Color de la línea"
+                />
+                <Input
+                  type="number"
+                  value={linea.valor}
+                  placeholder="Valor (ej: 80)"
+                  onChange={(e) => handleLineaReferenciaValueChange(idx, e.target.value)}
+                  className="h-7 text-xs"
+                />
+                <Input
+                  type="text"
+                  value={linea.etiqueta ?? ''}
+                  placeholder="Etiqueta (ej: Meta)"
+                  onChange={(e) => handleLineaReferenciaLabelChange(idx, e.target.value)}
+                  className="h-7 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveLineaReferencia(idx)}
+                  className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive"
+                  title="Eliminar línea"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] text-muted-foreground">Bandas de Referencia (Rango)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddBanda}
+                className="h-6 px-1.5 text-[10px]"
+              >
+                <Plus className="mr-1 h-3 w-3" /> Añadir
+              </Button>
+            </div>
+            {(localBlock.bandas ?? []).map((banda, idx) => (
+              <div key={idx} className="flex items-center gap-1.5">
+                <input
+                  type="color"
+                  value={banda.color || '#ef4444'}
+                  onChange={(e) => handleBandaColorChange(idx, e.target.value)}
+                  className="h-7 w-6 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0"
+                  title="Color de la banda"
+                />
+                <Input
+                  type="number"
+                  value={banda.desde}
+                  placeholder="Desde"
+                  onChange={(e) => handleBandaFieldChange(idx, 'desde', e.target.value)}
+                  className="h-7 text-xs"
+                />
+                <Input
+                  type="number"
+                  value={banda.hasta}
+                  placeholder="Hasta"
+                  onChange={(e) => handleBandaFieldChange(idx, 'hasta', e.target.value)}
+                  className="h-7 text-xs"
+                />
+                <Input
+                  type="text"
+                  value={banda.etiqueta ?? ''}
+                  placeholder="Etiqueta"
+                  onChange={(e) => handleBandaLabelChange(idx, e.target.value)}
+                  className="h-7 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveBanda(idx)}
+                  className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive"
+                  title="Eliminar banda"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      <CollapsibleSection
+        title="Avanzado"
+        icon={Sparkles}
+        defaultOpen={false}
+        storageKey="grafico.avanzado"
+        className="border-t border-border pt-3"
+      >
+        {isHistogram && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Número de Intervalos (Bins)</Label>
+            <Input
+              type="number"
+              min={2}
+              max={20}
+              value={localBlock.histogramBins ?? ''}
+              placeholder="Auto (8)"
+              onChange={(e) => handleHistogramBinsChange(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+        )}
+        {supportsCurva && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Interpolación de Curva</Label>
+            <Select
+              value={localBlock.curva || 'suave'}
+              onValueChange={(val) => handleCurvaChange(val as 'suave' | 'recta' | 'escalon')}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Suave (por defecto)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="suave" className="text-xs">Curva suave (interpolada)</SelectItem>
+                <SelectItem value="recta" className="text-xs">Línea recta (segmentos)</SelectItem>
+                <SelectItem value="escalon" className="text-xs">Escalón (stepline)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {supportsAngulo && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Apertura Angular</Label>
+            <Select
+              value={localBlock.angulo || 'completo'}
+              onValueChange={(val) => handleAnguloChange(val as 'completo' | 'semicirculo' | 'personalizado')}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Círculo completo (360°)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="completo" className="text-xs">Círculo completo (360°)</SelectItem>
+                <SelectItem value="semicirculo" className="text-xs">Semicírculo (180° / Medidor)</SelectItem>
+                <SelectItem value="personalizado" className="text-xs">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {supportsAngulo && localBlock.angulo === 'personalizado' && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Ángulo Inicio (°)</Label>
+              <Input
+                type="number"
+                min={-360}
+                max={360}
+                value={localBlock.anguloInicio ?? -90}
+                onChange={(e) => handleAnguloInicioChange(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Ángulo Fin (°)</Label>
+              <Input
+                type="number"
+                min={-360}
+                max={360}
+                value={localBlock.anguloFin ?? 90}
+                onChange={(e) => handleAnguloFinChange(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </div>
+          </div>
+        )}
+        {supportsStacking && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Modo de Apilado</Label>
+            <Select
+              value={localBlock.apilado || 'ninguno'}
+              onValueChange={handleApiladoChange}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Sin apilado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ninguno" className="text-xs">Sin apilar</SelectItem>
+                <SelectItem value="normal" className="text-xs">Apilado normal</SelectItem>
+                <SelectItem value="porcentaje" className="text-xs">Apilado 100% (porcentaje)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {supportsOrdering && (
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Orden de Datos</Label>
+            <Select
+              value={localBlock.ordenDatos || 'como-esta'}
+              onValueChange={handleOrdenDatosChange}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Orden original" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="como-esta" className="text-xs">Como está (original)</SelectItem>
+                <SelectItem value="ascendente" className="text-xs">Ascendente (menor a mayor)</SelectItem>
+                <SelectItem value="descendente" className="text-xs">Descendente (mayor a menor)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {supportsSparkline && (
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex flex-col">
+              <Label className="text-[11px] text-muted-foreground">Modo Sparkline (Compacto)</Label>
+              <span className="text-[10px] text-muted-foreground/70">Oculta ejes y grillas para tarjetas KPI</span>
+            </div>
+            <Switch
+              checked={Boolean(localBlock.modoSparkline)}
+              onCheckedChange={handleModoSparklineToggle}
+            />
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-1">
+          <Label className="text-[11px] text-muted-foreground">Exportar Imagen (PNG/SVG)</Label>
+          <Switch
+            checked={localBlock.exportarImagen !== false}
+            onCheckedChange={handleExportImageToggle}
+          />
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }
-
-

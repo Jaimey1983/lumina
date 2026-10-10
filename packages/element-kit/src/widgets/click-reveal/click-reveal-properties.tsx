@@ -18,6 +18,7 @@ import {
   resizeClickRevealElements,
 } from './click-reveal-config.js';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 export interface ClickRevealWidgetComponentesProps {
   block: ClickRevealWidget;
@@ -69,8 +70,11 @@ export function ClickRevealWidgetComponentes({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="space-y-2">
-        <WidgetSectionTitle>Configuración</WidgetSectionTitle>
+      <CollapsibleSection
+        title="Configuración"
+        storageKey="click-reveal.configuracion"
+        badge={`${configuracion.numeroElementos} elementos`}
+      >
         <div className="space-y-1.5">
           <Label className="text-xs">Número de elementos: {configuracion.numeroElementos}</Label>
           <Slider
@@ -83,7 +87,7 @@ export function ClickRevealWidgetComponentes({
             <SliderThumb />
           </Slider>
         </div>
-      </div>
+      </CollapsibleSection>
 
       <div className="space-y-2">
         <WidgetSectionTitle>Componentes</WidgetSectionTitle>

@@ -37,7 +37,7 @@ export function TimelineAppearanceProperties({
   };
 
   return (
-    <WidgetAppearanceStack>
+    <WidgetAppearanceStack scope="timeline">
       <WidgetAppearanceSection title="Línea principal">
         <WidgetColorPickerField
           label="Color de la línea"

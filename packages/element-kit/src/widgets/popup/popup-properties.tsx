@@ -35,7 +35,7 @@ import { resolveSlideLayoutId, WIDGET_LAYOUTS } from '@lumina/editor-shared/widg
 
 import { WidgetLayoutThumb } from '@lumina/editor-shared/widget-layout-thumb';
 
-import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 
 import {
@@ -133,10 +133,9 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
     <div className="flex flex-col gap-4">
 
-      <div className="space-y-2">
-
-        <div className="flex items-center gap-1.5">
-          <WidgetSectionTitle>Disparador</WidgetSectionTitle>
+      <CollapsibleSection title="Disparador" storageKey="popup.disparador">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          Tamaño del disparador
           <FieldHelp label="Tamaño del disparador">
             <p>
               Tamaño base 48×48 px. Ajusta con el control o arrastrando las esquinas del bloque en
@@ -604,13 +603,14 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
         </div>
 
-      </div>
+      </CollapsibleSection>
 
-
-
-      <div className="space-y-2">
-
-        <WidgetSectionTitle>Apariencia del modal</WidgetSectionTitle>
+      <CollapsibleSection
+        title="Modal"
+        defaultOpen={false}
+        storageKey="popup.modal"
+        className="border-t border-border pt-3"
+      >
 
         <div className="space-y-1.5">
 
@@ -705,6 +705,14 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
             </p>
           </FieldHelp>
         </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Apariencia del modal"
+        defaultOpen={false}
+        storageKey="popup.apariencia"
+        className="border-t border-border pt-3"
+      >
 
         <div className="space-y-1.5">
 
@@ -762,7 +770,7 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
 
         </div>
 
-      </div>
+      </CollapsibleSection>
 
     </div>
 
@@ -844,9 +852,7 @@ export function PopupOverlayProperties({ block: rawBlock, applyNow }: PopupOverl
 
   return (
 
-    <div className="flex flex-col gap-3">
-
-      <WidgetSectionTitle>Contenido del popup</WidgetSectionTitle>
+    <CollapsibleSection title="Contenido del popup" storageKey="popup.contenido">
 
       <p className="text-[10px] text-muted-foreground">
 
@@ -976,7 +982,7 @@ export function PopupOverlayProperties({ block: rawBlock, applyNow }: PopupOverl
 
       )}
 
-    </div>
+    </CollapsibleSection>
 
   );
 

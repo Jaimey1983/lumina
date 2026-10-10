@@ -1,18 +1,24 @@
 'use client';
 
-import type { ComponentType } from 'react';
+import { useState, type ComponentType } from 'react';
 import { BarChart, Film, MonitorPlay, QrCode, Table } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { WidgetTipo } from '@lumina/types/widget';
 import { ScrollArea } from '@lumina/ui/scroll-area';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { DraggableWidgetItem } from '../draggable-widget-item';
+import { PanelSearch, PanelSearchEmpty, matchesQuery } from './panel-shared';
 import {
   WIDGET_PANEL_GROUP_LABELS,
   WIDGET_PANEL_GROUP_ORDER,
+  type WidgetPanelGroup,
   getWidgetPanelItemsByGroup,
 } from './widget-panel-catalog';
+
+/** Grupos que arrancan abiertos; «Control» y «Próximamente» arrancan cerrados. */
+const GRUPOS_ABIERTOS: WidgetPanelGroup[] = ['lienzo', 'overlay'];
 
 interface Props {
   disabled?: boolean;
@@ -44,9 +50,41 @@ function UpcomingBtn({
   );
 }
 
+const PROXIMAMENTE_ITEMS = [
+  { label: 'Iframe embebido', icon: MonitorPlay },
+  { label: 'GIF animado', icon: Film },
+  { label: 'Código QR', icon: QrCode },
+  { label: 'Gráfico de barras', icon: BarChart },
+  { label: 'Tabla de datos', icon: Table },
+];
+
+/** Grupos de widgets y «Próximamente» que coinciden con la búsqueda. */
+export function filtrarWidgets(query: string) {
+  const searching = query.trim() !== '';
+  const hit = (text: string) => matchesQuery(text, query);
+  const grupos = WIDGET_PANEL_GROUP_ORDER.map((group) => {
+    const todos = getWidgetPanelItemsByGroup(group);
+    return {
+      group,
+      total: todos.length,
+      items: todos.filter(
+        (item) => !searching || hit(WIDGET_PANEL_GROUP_LABELS[group]) || hit(item.label),
+      ),
+    };
+  }).filter((g) => g.items.length > 0);
+  const proximamente = PROXIMAMENTE_ITEMS.filter(
+    (u) => !searching || hit('Próximamente') || hit(u.label),
+  );
+  return { grupos, proximamente };
+}
+
 export function WidgetsInsertPanel({ disabled, slideHasActivity, onAddWidget }: Props) {
   const allDisabled = disabled || !!slideHasActivity;
   const handleAdd = onAddWidget ?? (() => {});
+  const [query, setQuery] = useState('');
+  const searching = query.trim() !== '';
+  const { grupos, proximamente } = filtrarWidgets(query);
+  const sinResultados = searching && grupos.length === 0 && proximamente.length === 0;
 
   return (
     <ScrollArea className="h-full min-h-0">
@@ -57,40 +95,58 @@ export function WidgetsInsertPanel({ disabled, slideHasActivity, onAddWidget }: 
           </p>
         )}
 
-        {WIDGET_PANEL_GROUP_ORDER.map((group) => {
-          const items = getWidgetPanelItemsByGroup(group);
-          if (items.length === 0) return null;
-          return (
-            <div key={group} className="flex flex-col gap-0.5">
-              <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {WIDGET_PANEL_GROUP_LABELS[group]}
-              </p>
-              {items.map((item) => (
-                <DraggableWidgetItem
-                  key={item.type}
-                  type={item.type}
-                  label={item.label}
-                  Icon={item.Icon}
-                  disabled={allDisabled}
-                  onAdd={handleAdd}
-                  rowClassName={item.rowClassName}
-                  iconClassName={item.iconClassName}
-                />
+        <div className="px-4 pt-3">
+          <PanelSearch value={query} onChange={setQuery} placeholder="Buscar widgets…" label="Buscar widgets" />
+        </div>
+        {sinResultados ? (
+          <div className="px-4 pt-3">
+            <PanelSearchEmpty query={query} />
+          </div>
+        ) : null}
+
+        {grupos.map(({ group, items, total }) => (
+            <CollapsibleSection
+              key={group}
+              title={WIDGET_PANEL_GROUP_LABELS[group]}
+              storageKey={`widgets.${group}`}
+              defaultOpen={GRUPOS_ABIERTOS.includes(group)}
+              badge={total}
+              forceOpen={searching}
+              className="px-4 pt-3"
+            >
+              <div className="-mx-4 flex flex-col gap-0.5">
+                {items.map((item) => (
+                  <DraggableWidgetItem
+                    key={item.type}
+                    type={item.type}
+                    label={item.label}
+                    Icon={item.Icon}
+                    disabled={allDisabled}
+                    onAdd={handleAdd}
+                    rowClassName={item.rowClassName}
+                    iconClassName={item.iconClassName}
+                  />
+                ))}
+              </div>
+            </CollapsibleSection>
+        ))}
+
+        {proximamente.length > 0 && (
+          <CollapsibleSection
+            title="Próximamente"
+            storageKey="widgets.proximamente"
+            defaultOpen={false}
+            badge={PROXIMAMENTE_ITEMS.length}
+            forceOpen={searching}
+            className="px-4 pt-3"
+          >
+            <div className="space-y-2">
+              {proximamente.map((u) => (
+                <UpcomingBtn key={u.label} label={u.label} icon={u.icon} disabled={allDisabled} />
               ))}
             </div>
-          );
-        })}
-
-        <div className="space-y-2 px-3 pt-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Próximamente
-          </p>
-          <UpcomingBtn label="Iframe embebido" icon={MonitorPlay} disabled={allDisabled} />
-          <UpcomingBtn label="GIF animado" icon={Film} disabled={allDisabled} />
-          <UpcomingBtn label="Código QR" icon={QrCode} disabled={allDisabled} />
-          <UpcomingBtn label="Gráfico de barras" icon={BarChart} disabled={allDisabled} />
-          <UpcomingBtn label="Tabla de datos" icon={Table} disabled={allDisabled} />
-        </div>
+          </CollapsibleSection>
+        )}
       </div>
     </ScrollArea>
   );

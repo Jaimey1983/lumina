@@ -50,7 +50,7 @@ export function ClickRevealAppearanceProperties({
   };
 
   return (
-    <WidgetAppearanceStack>
+    <WidgetAppearanceStack scope="click-reveal">
       <WidgetAppearanceSection title="Apertura del modal">
         <div className="flex flex-wrap gap-1">
           {(['fade', 'instant', 'slide-up'] as const).map((efecto) => (

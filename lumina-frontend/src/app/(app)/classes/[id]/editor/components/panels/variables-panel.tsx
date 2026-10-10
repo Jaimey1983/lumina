@@ -16,6 +16,7 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@lumina/ui/select';
 import { Switch } from '@lumina/ui/switch';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 /**
  * Variables de clase del motor de interacción (Etapa K / K6, D3).
@@ -131,6 +132,12 @@ export function VariablesPanel({
         </FieldHelp>
       </div>
 
+      <CollapsibleSection
+        title="Variables"
+        storageKey="variables.lista"
+        badge={borrador.length}
+        forceOpen={sucio || errores.length > 0}
+      >
       {borrador.length === 0 && (
         <p className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
           Esta clase todavía no tiene variables.
@@ -220,6 +227,7 @@ export function VariablesPanel({
           );
         })}
       </ul>
+      </CollapsibleSection>
 
       {aviso && (
         <p role="alert" className="rounded-md bg-amber-50 p-2 text-xs text-amber-900">

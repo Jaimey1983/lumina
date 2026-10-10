@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
   Bold,
-  ChevronDown,
   Italic,
   Underline,
 } from 'lucide-react';
@@ -15,7 +13,7 @@ import {
 import { FontFamilySelect } from './font-family-select.js';
 import { FontSizeInput } from './font-size-input.js';
 import { Button } from '@lumina/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@lumina/ui/collapsible';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
@@ -80,33 +78,6 @@ const LISTS: { id: TypographyList; label: string }[] = [
 ];
 
 const HIGHLIGHT_DEFAULT = '#FEF3C7';
-
-function InspectorSection({
-  title,
-  defaultOpen = true,
-  children,
-}: {
-  title: string;
-  defaultOpen?: boolean;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md py-0.5 text-left">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </span>
-        <ChevronDown
-          className={cn('size-3.5 text-muted-foreground transition-transform', open && 'rotate-180')}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="flex flex-col gap-3 pt-2">{children}</div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
 
 export interface TypographyInspectorProps {
   value: TypographyValue;
@@ -261,7 +232,7 @@ export function TypographyInspector({
         </div>
       ) : null}
 
-      <InspectorSection title="Tipografía">
+      <CollapsibleSection title="Tipografía">
         <FontFamilySelect
           value={value.fontFamily}
           onValueChange={(fontFamily) => onChange({ fontFamily })}
@@ -389,9 +360,9 @@ export function TypographyInspector({
           </div>
           <p className="text-[10px] text-muted-foreground">Aa normal · AA mayúsculas · Tt título</p>
         </div>
-      </InspectorSection>
+      </CollapsibleSection>
 
-      <InspectorSection title="Color">
+      <CollapsibleSection title="Color">
         <Input
           type="color"
           className="h-8 w-full cursor-pointer p-1"
@@ -399,9 +370,9 @@ export function TypographyInspector({
           value={toHexColor(value.color, defaultColor)}
           onChange={(e) => onChange({ color: e.target.value })}
         />
-      </InspectorSection>
+      </CollapsibleSection>
 
-      <InspectorSection title="Efectos" defaultOpen={false}>
+      <CollapsibleSection title="Efectos" defaultOpen={false}>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Opacidad</Label>
@@ -512,7 +483,7 @@ export function TypographyInspector({
             </p>
           </div>
         ) : null}
-      </InspectorSection>
+      </CollapsibleSection>
 
       {boxValue && onBoxChange ? (
         <BoxSection value={boxValue} onChange={onBoxChange} disabled={disabled} />
@@ -523,7 +494,7 @@ export function TypographyInspector({
       ) : null}
 
       {onCurvaturaChange ? (
-        <InspectorSection title="Curvatura" defaultOpen={false}>
+        <CollapsibleSection title="Curvatura" defaultOpen={false}>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Curvatura</Label>
@@ -545,7 +516,7 @@ export function TypographyInspector({
               Una sola línea, sin formato por fragmentos.
             </p>
           </div>
-        </InspectorSection>
+        </CollapsibleSection>
       ) : null}
 
       {metaText !== undefined || contrastBackground ? (
@@ -587,7 +558,7 @@ function BoxSection({
   const hasGradient = !!value.degradadoDesde && !!value.degradadoHasta;
 
   return (
-    <InspectorSection title="Caja" defaultOpen={false}>
+    <CollapsibleSection title="Caja" defaultOpen={false}>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label className="text-xs">Relleno</Label>
@@ -854,7 +825,7 @@ function BoxSection({
           </div>
         </>
       ) : null}
-    </InspectorSection>
+    </CollapsibleSection>
   );
 }
 
@@ -875,7 +846,7 @@ function RevealSection({
 }) {
   const por = value?.por;
   return (
-    <InspectorSection title="Revelado del texto" defaultOpen={false}>
+    <CollapsibleSection title="Revelado del texto" defaultOpen={false}>
       <div className="space-y-1.5">
         <Label className="text-xs">Modo</Label>
         <div className="grid grid-cols-3 gap-1">
@@ -944,7 +915,7 @@ function RevealSection({
           </div>
         </>
       ) : null}
-    </InspectorSection>
+    </CollapsibleSection>
   );
 }
 
