@@ -4,7 +4,7 @@
 
 ### Etapa T — Widgets terminados «de fábrica»: tokens, presets visibles, movimiento y accesibilidad
 
-Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `T0–T20` (no `L.n`, no `N.n`, no `Q.n`, no `R.n`, no `S.n`). Redactada a partir del análisis de widgets del 2026-10-10 contrastado con el código (conversación con el dueño; solo lectura, sin código). `S` ya está tomada por «secciones plegables»; esta etapa usa `T`.
+Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `T0–T20` (más `T2b`) (no `L.n`, no `N.n`, no `Q.n`, no `R.n`, no `S.n`). Redactada a partir del análisis de widgets del 2026-10-10 contrastado con el código (conversación con el dueño; solo lectura, sin código). `S` ya está tomada por «secciones plegables»; esta etapa usa `T`.
 
 **Por qué existe:** un widget recién insertado debería verse terminado y con la marca del curso sin tocar un color, y el docente debería poder elegir un estilo y ajustar 2–3 perillas. Hoy hay 14 widgets en `packages/element-kit/src/widgets/` (los 12 del análisis más `molecula` y `tabla_periodica`). Medido al redactar:
 - La capa de tokens **ya existe** (`--lw-*` en `editor-shared/src/use-widget-theme.ts` y `widget-container-styles.ts`, alimentada por `SlideTheme`), pero queda a medias: siguen quedando hex sueltos en los `.module.css` (Botón 58, Tabla periódica 29, Timeline 22, Click Reveal 16, Flip Cards 14, Popup 12, Hotspot 10, Tooltip 10). El Botón sigue fijando `#6c757d` para `secondary`, así que el tema solo cambia el primario.
@@ -17,7 +17,7 @@ Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes.
 
 **Decisiones de diseño (DT1–DT7), fijadas por esta raíz; el operador no las reabre:**
 - **DT1.** `--lw-*` es el **único** vocabulario de apariencia de un widget. Un `.module.css` de widget no contiene hex fuera del *fallback* de un `var(--lw-*, …)`; un test de guarda lo hace cumplir (T1). Tokens nuevos permitidos: `--lw-color-{success,danger,warning}`, `--lw-space-*`, `--lw-elevation-*`, `--lw-motion-{slow}` y curvas. No se renombran los existentes.
-- **DT2.** `ElementPreset` queda con **un solo** campo para parchear la config: `configPatch`. `patch` se retira. Si al medir (T2, Regla 9 §3) algún preset necesita parchear el **estado** del widget, se agrega `estadoPatch` explícito; nunca un cast `as unknown as`.
+- **DT2.** `ElementPreset` queda con **un solo** campo para parchear la config: `configPatch`. `patch` se retira. Si al medir (T2, Regla 9 §3) algún preset necesita parchear el **estado** del widget, se agrega `estadoPatch` explícito; nunca un cast `as unknown as`. **Resuelto en T2 (medido: 16 definiciones, 50 presets, todos con `patch` y todos sobre el estado, ninguno con `configPatch`):** el único campo es `estadoPatch` (`DeepPartial<TEstado>`, obligatorio); `patch` y `configPatch` desaparecen y `ElementPreset<TEstado>` ya no admite parches de `TConfig`.
 - **DT3.** Un único `<PresetGallery>` en `@lumina/editor-shared`, que lee `definicion.presets` y vive **dentro de una `CollapsibleSection`** «Estilos» (`@lumina/ui`, etapa S). Las galerías propias de Flip Cards y Timeline (con miniaturas) se conservan; no se reescriben.
 - **DT4.** Un único `WidgetMotion` (wrapper/hook sobre `motion`) con presets de entrada, press, hover, éxito y conteo; respeta `prefers-reduced-motion` **una sola vez**. Ningún widget importa `motion` directamente. La animación de entrada por defecto del widget es sobrescribible desde el sistema `Animacion[]` existente (T5 verifica primero que `Animacion[]` aplique a widgets).
 - **DT5.** Toda dependencia nueva se declara en `packages/element-kit/package.json` y se carga con `import()`/`React.lazy` si pesa; el viewer del alumno no paga una librería que el slide no usa. Prohibido consumir desde el kit algo instalado solo en el frontend.
@@ -67,18 +67,26 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T2 — Unificar `configPatch` en `ElementPreset` y quitar los casts
 - **Operador:** Cursor
-- **Estado:** [en curso: Claude Code]
+- **Estado:** en revisión — contrato: `ElementPreset<TEstado>` con `estadoPatch: DeepPartial<TEstado>` (nuevo tipo `DeepPartial` exportado); `patch`/`configPatch` eliminados; `ElementDefinition.presets` pasa a `ElementPreset<TState>[]`. 16 definiciones migradas (los 12 widgets + accordion, image-compare, interactive-checklist, scratch-card), **50 casts `as unknown as Partial<…>` eliminados**, 4 `*-properties.tsx` y 6 specs actualizados. Al quitar los casts el compilador destapó **presets con claves inexistentes que se ignoraban** (Regla 9 §1): Click to Reveal (`tipoInteraccion`, `animacionModal`), Popup (`triggerTipo`, `tamanoModal`, `efectoEntrada`) y Tabs (`posicionTabs`) quedan con `estadoPatch: {}` —mismo resultado que antes, ya que esas claves no tenían efecto— y se documentan en el código; darles valores reales es la ficha **T2b**. Hotspot: `"medio"` (valor inválido que el viewer trataba como el tamaño mediano) pasa a `"mediano"`, idéntico en pantalla. Verif.: `@lumina/element-kit-core` build + test (9) y lint; `@lumina/element-kit` tsc, test (94 archivos, 624 tests), lint (0 errores) y build; `lumina-frontend` tsc; paridad = los 63 snapshots de T0 pasan **sin regenerar**. Fuera del alcance escrito pero necesario: `lumina-frontend/src/visual-tests/widgets-fixture.tsx` (1 línea: lee `estadoPatch`).
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `packages/element-kit-core/src/` (tipo `ElementPreset` + su spec) y los `*-presets.ts`/`*-definition.ts` de los 12 widgets (`boton`, `progreso`, `contador`, `ruleta`, `flip-cards`, `tabs`, `carousel`, `click-reveal`, `timeline`, `hotspot`, `tooltip`, `popup`) y de `accordion`, `image-compare`, `interactive-checklist`, `scratch-card` (también declaran presets). **NO** toca viewers ni CSS.
 - **Entregable:** (1) medir qué presets usan `patch`, cuáles `configPatch` y cuáles necesitan parchear estado (DT2); (2) dejar solo `configPatch` (y `estadoPatch` únicamente si hace falta); (3) sin `as unknown as` en ningún preset; (4) los presets existentes siguen produciendo el mismo resultado. Verificación: `pnpm -r build && pnpm --filter @lumina/element-kit-core test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
 - **Cierre:** el campo `patch` desaparece del contrato (grep en `packages/` y `lumina-frontend/` → 0).
 
+#### T2b — Dar valores reales a los presets que no hacían nada
+- **Operador:** Cursor
+- **Estado:** pendiente
+- **Precondición:** T2 `hecho`. **Debe cerrarse antes de T3** (la galería mostraría presets que no cambian nada).
+- **Alcance — PUEDE tocar:** `elements/click-reveal/click-reveal-definition.ts`, `elements/popup/popup-definition.ts`, `elements/tabs/tabs-definition.ts` (los `*_PRESETS`) y, si hace falta una opción que hoy no existe (posición de las pestañas), **solo** la config/viewer de ese widget. **NO** toca otros widgets ni el contrato.
+- **Entregable:** (1) por preset, decidir con el dueño qué cambia de verdad: Click to Reveal → `efectoApertura` (`slide-up`/`fade`); Popup → `triggerVisual` (`boton`/`icono`/`imagen`), `modalAnchoPct` y `efectoApertura`; Tabs → no existe opción de posición: o se descartan los dos presets o se implementa la opción antes; (2) cada preset resultante se ve distinto del estado por defecto; (3) snapshots de T0 regenerados **solo** para esos presets, con el diff revisado. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
+- **Cierre:** desaparecen las notas «T2:» de esas definiciones.
+
 #### T3 — `PresetGallery` único, dentro de la sección «Estilos»
 - **Operador:** Cursor
 - **Estado:** pendiente
-- **Precondición:** T2 `hecho`; S12 `hecho`.
+- **Precondición:** T2 y T2b `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/editor-shared/src/` (`preset-gallery.tsx` + spec) y, en cada widget con presets, **solo** el `*-properties.tsx` para montar la galería dentro de una `CollapsibleSection` «Estilos» (`storageKey` `widget.<tipo>.estilos`, abierta por defecto). **NO** reescribe las galerías de Flip Cards y Timeline ni cambia otras secciones.
-- **Entregable:** el componente lee `definicion.presets`, aplica `configPatch` con `onConfigChange` y marca el preset activo si la config coincide; accesible por teclado; miniatura opcional (`thumbnail`) o etiqueta + descripción. Probado: aplicar un preset cambia la config esperada, sin presets no se renderiza nada. Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual en el editor.
+- **Entregable:** el componente lee `definicion.presets`, aplica `estadoPatch` (mezclando `configuracion` a un nivel, como hacen hoy las propiedades de Accordion/Scratch card) con `onChange` y marca el preset activo si el estado coincide; accesible por teclado; miniatura opcional (`thumbnail`) o etiqueta + descripción. Probado: aplicar un preset cambia la config esperada, sin presets no se renderiza nada. Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`, más comprobación visual en el editor.
 - **Cierre:** n/a.
 
 #### T4 — Accesibilidad: foco en Popup, `aria-live` y movimiento reducido

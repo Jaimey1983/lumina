@@ -1,51 +1,55 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   ElementRegistry,
+  type DeepPartial,
   type ElementDefinition,
   type ElementPreset,
 } from "./index.js";
 
 interface WidgetConfig {
   color: string;
-  columnas: number;
-  estilo: "solido" | "borde";
 }
 
-interface WidgetState {
+interface WidgetEstado {
   items: string[];
+  configuracion: {
+    columnas: number;
+    estilo: "solido" | "borde";
+    borde: { grosor: number; color: string };
+  };
 }
 
-const presetsEjemplo: readonly ElementPreset<WidgetConfig>[] = [
+const presetsEjemplo: readonly ElementPreset<WidgetEstado>[] = [
   {
     id: "minimal",
     label: "Minimal",
     description: "Diseño sutil con bordes finos",
-    configPatch: {
-      color: "#0f172a",
-      estilo: "borde",
-    },
+    estadoPatch: { configuracion: { estilo: "borde", borde: { grosor: 1 } } },
   },
   {
     id: "vibrante",
     label: "Vibrante",
     description: "Colores vivos y fondo sólido",
-    configPatch: {
-      color: "#2563eb",
-      columnas: 4,
-      estilo: "solido",
-    },
+    estadoPatch: { configuracion: { columnas: 4, estilo: "solido" } },
   },
 ];
 
 const definicionConPresets = {
   tipo: "widget-con-presets" as const,
-  crearPorDefecto: () => ({ items: [] }),
+  crearPorDefecto: (): WidgetEstado => ({
+    items: [],
+    configuracion: {
+      columnas: 2,
+      estilo: "solido",
+      borde: { grosor: 2, color: "#000000" },
+    },
+  }),
   Editor: () => null,
   Viewer: () => null,
   Propiedades: () => null,
   apariencia: { color: true, tipografia: true, animacion: true },
   presets: presetsEjemplo,
-} satisfies ElementDefinition<WidgetState, WidgetConfig>;
+} satisfies ElementDefinition<WidgetEstado, WidgetConfig>;
 
 describe("ElementPreset contract", () => {
   it("permite registrar un elemento con presets preconfigurados", () => {
@@ -59,29 +63,46 @@ describe("ElementPreset contract", () => {
     expect(def).toBeDefined();
     expect(def?.presets).toHaveLength(2);
     expect(def?.presets?.[0].id).toBe("minimal");
-    expect(def?.presets?.[0].configPatch).toEqual({
-      color: "#0f172a",
-      estilo: "borde",
+    expect(def?.presets?.[0].estadoPatch).toEqual({
+      configuracion: { estilo: "borde", borde: { grosor: 1 } },
     });
     expect(def?.presets?.[1].id).toBe("vibrante");
-    expect(def?.presets?.[1].configPatch).toEqual({
-      color: "#2563eb",
-      columnas: 4,
-      estilo: "solido",
+    expect(def?.presets?.[1].estadoPatch).toEqual({
+      configuracion: { columnas: 4, estilo: "solido" },
     });
   });
 
-  it("mantiene tipado estricto para configPatch en relación a la configuración del elemento", () => {
-    type Config = { tema: string; activo: boolean };
-    type Preset = ElementPreset<Config>;
+  it("tipa `estadoPatch` como parche profundo del estado, sin casts", () => {
+    type Estado = { tema: string; opciones: { activo: boolean; nivel: number } };
+    type Preset = ElementPreset<Estado>;
 
     const preset: Preset = {
       id: "oscuro",
       label: "Oscuro",
-      configPatch: { tema: "dark" },
+      estadoPatch: { tema: "dark", opciones: { activo: true } },
     };
 
-    expectTypeOf(preset.configPatch).toMatchTypeOf<Partial<Config> | undefined>();
+    expectTypeOf(preset.estadoPatch).toEqualTypeOf<DeepPartial<Estado>>();
+    expectTypeOf<DeepPartial<Estado>["opciones"]>().toEqualTypeOf<
+      { activo?: boolean; nivel?: number } | undefined
+    >();
+  });
+
+  it("rechaza claves que no existen en el estado", () => {
+    type Estado = { tema: string };
+    const invalido: ElementPreset<Estado> = {
+      id: "x",
+      label: "X",
+      // @ts-expect-error `inexistente` no es una clave del estado
+      estadoPatch: { inexistente: 1 },
+    };
+    expect(invalido.id).toBe("x");
+  });
+
+  it("los arreglos del estado se reemplazan enteros, no se parchean por índice", () => {
+    type Estado = { items: { id: string }[] };
+    expectTypeOf<DeepPartial<Estado>["items"]>().toEqualTypeOf<
+      { id: string }[] | undefined
+    >();
   });
 });
-

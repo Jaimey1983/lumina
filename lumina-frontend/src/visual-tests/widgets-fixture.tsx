@@ -35,13 +35,12 @@ export type WidgetTipo = (typeof WIDGET_TIPOS)[number];
 
 interface PresetLike {
   readonly id: string;
-  readonly configPatch?: unknown;
-  readonly patch?: unknown;
+  readonly estadoPatch?: unknown;
 }
 
-/** Los presets declaran `patch` o `configPatch` (T2 los unificará): se acepta cualquiera. */
+/** Parche de estado del preset (`estadoPatch`, T2). Se aplica con un spread superficial, como línea base. */
 export function parcheDe(preset: PresetLike): Record<string, unknown> {
-  const parche = preset.configPatch ?? preset.patch;
+  const parche = preset.estadoPatch;
   return typeof parche === 'object' && parche !== null
     ? (parche as Record<string, unknown>)
     : {};

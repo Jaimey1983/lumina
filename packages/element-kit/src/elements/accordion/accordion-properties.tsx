@@ -48,23 +48,22 @@ export function AccordionPropiedades({
 
   const applyPreset = (presetId: string) => {
     const preset = ACCORDION_PRESETS.find((p) => p.id === presetId);
-    if (!preset?.patch) return;
+    if (!preset?.estadoPatch) return;
 
     onChange({
       ...estado,
-      ...(preset.patch.tituloWidget !== undefined && {
-        tituloWidget: preset.patch.tituloWidget,
+      ...(preset.estadoPatch.tituloWidget !== undefined && {
+        tituloWidget: preset.estadoPatch.tituloWidget,
       }),
-      ...(preset.patch.subtituloWidget !== undefined && {
-        subtituloWidget: preset.patch.subtituloWidget,
+      ...(preset.estadoPatch.subtituloWidget !== undefined && {
+        subtituloWidget: preset.estadoPatch.subtituloWidget,
       }),
-      ...(preset.patch.instruccion !== undefined && {
-        instruccion: preset.patch.instruccion,
+      ...(preset.estadoPatch.instruccion !== undefined && {
+        instruccion: preset.estadoPatch.instruccion,
       }),
       configuracion: {
         ...cfg,
-        ...(preset.patch as { configuracion?: Partial<AccordionConfiguracion> })
-          .configuracion,
+        ...preset.estadoPatch.configuracion,
       },
     });
   };

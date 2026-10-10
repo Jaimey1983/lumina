@@ -18,13 +18,13 @@ export const FLIP_CARDS_PRESETS: readonly ElementPreset<FlipCardsEstado>[] =
     id: tpl.id,
     label: tpl.label,
     description: tpl.description,
-    patch: {
+    estadoPatch: {
       configuracion: {
         ...tpl.configuracion,
         plantillaId: tpl.id,
       },
       ...(tpl.estilosHeader ? { estilosHeader: tpl.estilosHeader } : {}),
-    } as unknown as Partial<FlipCardsEstado>,
+    },
   }));
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */

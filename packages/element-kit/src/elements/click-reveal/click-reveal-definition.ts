@@ -12,28 +12,22 @@ import {
   type ClickRevealConfig,
 } from "./click-reveal-types.js";
 
+/**
+ * T2: las claves originales (`tipoInteraccion`, `animacionModal`) no existen en `ClickRevealConfiguracion` (la real es `efectoApertura`) y se ignoraban.
+ * El preset no tiene efecto hoy; darle valores reales es la ficha T2b.
+ */
 export const CLICK_REVEAL_PRESETS: readonly ElementPreset<ClickRevealEstado>[] = [
   {
     id: "tarjetas-revelado",
     label: "Tarjetas con Modal",
     description: "Tarjetas clicables que despliegan el contenido en un panel modal",
-    patch: {
-      configuracion: {
-        tipoInteraccion: "modal",
-        animacionModal: "slide-up",
-      },
-    } as unknown as Partial<ClickRevealEstado>,
+    estadoPatch: {},
   },
   {
     id: "fade-suave",
     label: "Aparición Suave (Fade)",
     description: "Transición atenuada sin desplazamiento para lectura cómoda",
-    patch: {
-      configuracion: {
-        tipoInteraccion: "modal",
-        animacionModal: "fade",
-      },
-    } as unknown as Partial<ClickRevealEstado>,
+    estadoPatch: {},
   },
 ];
 

@@ -49,7 +49,7 @@ describe("ImageCompare — ElementDefinition", () => {
       (p) => p.id === "vertical-split",
     );
     expect(vertical).toBeDefined();
-    expect(vertical?.patch?.configuracion?.orientacion).toBe("vertical");
+    expect(vertical?.estadoPatch?.configuracion?.orientacion).toBe("vertical");
   });
 
   it("Viewer renderiza títulos, ambas imágenes y etiquetas", () => {

@@ -118,6 +118,6 @@ describe("FlipCards — paridad E3.3", () => {
     const clasico = flipCardsDefinition.presets?.find((p) => p.id === "clasico");
     expect(clasico).toBeDefined();
     expect(clasico?.label).toBe("Clásico");
-    expect(clasico?.patch?.configuracion?.plantillaId).toBe("clasico");
+    expect(clasico?.estadoPatch?.configuracion?.plantillaId).toBe("clasico");
   });
 });

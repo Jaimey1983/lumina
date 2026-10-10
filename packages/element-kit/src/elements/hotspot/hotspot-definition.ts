@@ -13,37 +13,37 @@ export const HOTSPOT_PRESETS: readonly ElementPreset<HotspotEstado>[] = [
     id: "pulso-alerta",
     label: "Pulso Dinámico",
     description: "Punto llamativo con pulso y apertura al hacer clic",
-    patch: {
+    estadoPatch: {
       configuracion: {
-        tamanoPunto: "medio",
+        tamanoPunto: "mediano",
         triggerEvento: "click",
         efectoApertura: "slide-up",
       },
-    } as unknown as Partial<HotspotEstado>,
+    },
   },
   {
     id: "hover-sutil",
     label: "Paso de Cursor (Hover)",
     description: "Apertura rápida al pasar el puntero",
-    patch: {
+    estadoPatch: {
       configuracion: {
-        tamanoPunto: "medio",
+        tamanoPunto: "mediano",
         triggerEvento: "hover",
         efectoApertura: "fade",
       },
-    } as unknown as Partial<HotspotEstado>,
+    },
   },
   {
     id: "destacado-grande",
     label: "Pin Destacado Grande",
     description: "Marcador de mayor visibilidad para diagramas complejos",
-    patch: {
+    estadoPatch: {
       configuracion: {
         tamanoPunto: "grande",
         triggerEvento: "click",
         efectoApertura: "slide-up",
       },
-    } as unknown as Partial<HotspotEstado>,
+    },
   },
 ];
 

@@ -6,7 +6,7 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
     id: "preguntas-frecuentes",
     label: "Preguntas Frecuentes (FAQ)",
     description: "Modo exclusivo con tarjetas estilizadas para resolver dudas comunes",
-    patch: {
+    estadoPatch: {
       tituloWidget: "Preguntas Frecuentes",
       subtituloWidget: "Respuestas claras a las dudas más habituales sobre el tema",
       instruccion: "Haz clic en una pregunta para ver la respuesta detallada.",
@@ -45,13 +45,13 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
           },
         ],
       },
-    } as unknown as Partial<AccordionEstado>,
+    },
   },
   {
     id: "glosario-conceptos",
     label: "Glosario de Conceptos",
     description: "Modo múltiple con separadores minimalistas para explorar definiciones",
-    patch: {
+    estadoPatch: {
       tituloWidget: "Glosario Temático",
       subtituloWidget: "Términos fundamentales y sus definiciones clave",
       instruccion: "Expande los términos que desees repasar o comparar entre sí.",
@@ -90,13 +90,13 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
           },
         ],
       },
-    } as unknown as Partial<AccordionEstado>,
+    },
   },
   {
     id: "pasos-procedimiento",
     label: "Pasos de Procedimiento",
     description: "Contenedor bordeado con chevron a la izquierda para guías metódicas",
-    patch: {
+    estadoPatch: {
       tituloWidget: "Guía de Procedimiento",
       subtituloWidget: "Secuencia metódica de pasos a seguir",
       instruccion: "Revisa cada fase en orden para garantizar la ejecución correcta.",
@@ -135,13 +135,13 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
           },
         ],
       },
-    } as unknown as Partial<AccordionEstado>,
+    },
   },
   {
     id: "modulos-ilustrados",
     label: "Módulos Ilustrados",
     description: "Tarjetas amplias preparadas para acompañar explicaciones con imágenes",
-    patch: {
+    estadoPatch: {
       tituloWidget: "Módulos de Aprendizaje",
       subtituloWidget: "Unidades temáticas con recursos visuales de soporte",
       instruccion: "Abre cada módulo para visualizar su descripción y material gráfico.",
@@ -177,6 +177,6 @@ export const ACCORDION_PRESETS: readonly ElementPreset<AccordionEstado>[] = [
           },
         ],
       },
-    } as unknown as Partial<AccordionEstado>,
+    },
   },
 ];

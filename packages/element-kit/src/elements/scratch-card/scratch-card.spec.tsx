@@ -69,8 +69,8 @@ describe("ScratchCard — ElementDefinition", () => {
       (p) => p.id === "dorado-premio",
     );
     expect(dorado).toBeDefined();
-    expect(dorado?.patch?.configuracion?.contenidoTipo).toBe("premio");
-    expect(dorado?.patch?.configuracion?.colorCobertura).toBe("#eab308");
+    expect(dorado?.estadoPatch?.configuracion?.contenidoTipo).toBe("premio");
+    expect(dorado?.estadoPatch?.configuracion?.colorCobertura).toBe("#eab308");
   });
 
   it("Viewer renderiza títulos, contenido secreto y canvas", () => {

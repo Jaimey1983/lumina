@@ -4,26 +4,22 @@ import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core"
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
 import { TABS_TIPO, type TabsEstado, type TabsConfig } from "./tabs-types.js";
 
+/**
+ * T2: `posicionTabs` no existe en la config de Tabs (no hay opción de posición) y se ignoraba.
+ * El preset no tiene efecto hoy; darle valores reales es la ficha T2b.
+ */
 export const TABS_PRESETS: readonly ElementPreset<TabsEstado>[] = [
   {
     id: "horizontal-clasico",
     label: "Pestañas Clásicas",
     description: "Barra superior con línea indicadora de pestaña activa",
-    patch: {
-      configuracion: {
-        posicionTabs: "arriba",
-      },
-    } as unknown as Partial<TabsEstado>,
+    estadoPatch: {},
   },
   {
     id: "tabs-inferiores",
     label: "Pestañas Inferiores",
     description: "Barra de navegación situada en la parte baja del contenedor",
-    patch: {
-      configuracion: {
-        posicionTabs: "abajo",
-      },
-    } as unknown as Partial<TabsEstado>,
+    estadoPatch: {},
   },
 ];
 

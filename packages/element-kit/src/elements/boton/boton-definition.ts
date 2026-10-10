@@ -9,25 +9,25 @@ export const BOTON_PRESETS: readonly ElementPreset<BotonEstado>[] = [
     id: "primario",
     label: "Primario Tema",
     description: "Sólido con el color de acento del tema",
-    patch: { variante: "primary", outline: false, forma: "redondeado" } as unknown as Partial<BotonEstado>,
+    estadoPatch: { variante: "primary", outline: false, forma: "redondeado" },
   },
   {
     id: "contorno",
     label: "Contorno Elegante",
     description: "Líneas finas con fondo transparente",
-    patch: { variante: "primary", outline: true, forma: "redondeado" } as unknown as Partial<BotonEstado>,
+    estadoPatch: { variante: "primary", outline: true, forma: "redondeado" },
   },
   {
     id: "pill",
     label: "Pill Destacado",
     description: "Bordes completamente redondeados",
-    patch: { variante: "primary", outline: false, forma: "pill" } as unknown as Partial<BotonEstado>,
+    estadoPatch: { variante: "primary", outline: false, forma: "pill" },
   },
   {
     id: "secundario",
     label: "Sutil / Secundario",
     description: "Tono neutro para acciones de menor jerarquía",
-    patch: { variante: "secondary", outline: false, forma: "redondeado" } as unknown as Partial<BotonEstado>,
+    estadoPatch: { variante: "secondary", outline: false, forma: "redondeado" },
   },
 ];
 

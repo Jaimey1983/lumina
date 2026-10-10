@@ -8,42 +8,28 @@ import {
 } from "./popup-adapters.js";
 import { POPUP_TIPO, type PopupConfig, type PopupEstado } from "./popup-types.js";
 
+/**
+ * T2: las claves originales (`triggerTipo`, `tamanoModal`, `efectoEntrada`) no existen en `PopupConfiguracion` (las reales son `triggerVisual`, `modalAnchoPct`, `efectoApertura`) y se ignoraban.
+ * El preset no tiene efecto hoy; darle valores reales es la ficha T2b.
+ */
 export const POPUP_PRESETS: readonly ElementPreset<PopupEstado>[] = [
   {
     id: "modal-boton",
     label: "Botón de Disparo",
     description: "Botón estándar para abrir una ventana modal con contenido",
-    patch: {
-      configuracion: {
-        triggerTipo: "boton",
-        tamanoModal: "medio",
-        efectoEntrada: "slide-up",
-      },
-    } as unknown as Partial<PopupEstado>,
+    estadoPatch: {},
   },
   {
     id: "modal-icono",
     label: "Ícono Compacto",
     description: "Ícono discreto que ahorra espacio en la diapositiva",
-    patch: {
-      configuracion: {
-        triggerTipo: "icono",
-        tamanoModal: "medio",
-        efectoEntrada: "fade",
-      },
-    } as unknown as Partial<PopupEstado>,
+    estadoPatch: {},
   },
   {
     id: "modal-imagen",
     label: "Miniatura Expandible",
     description: "Imagen pequeña que se amplía en una ventana modal",
-    patch: {
-      configuracion: {
-        triggerTipo: "imagen",
-        tamanoModal: "grande",
-        efectoEntrada: "slide-up",
-      },
-    } as unknown as Partial<PopupEstado>,
+    estadoPatch: {},
   },
 ];
 

@@ -118,6 +118,6 @@ describe("Timeline — paridad E3.3", () => {
     const tarjetas = timelineDefinition.presets?.find((p) => p.id === "tarjetas");
     expect(tarjetas).toBeDefined();
     expect(tarjetas?.label).toBe("Tarjetas");
-    expect(tarjetas?.patch?.configuracion?.variante).toBe("tarjetas");
+    expect(tarjetas?.estadoPatch?.configuracion?.variante).toBe("tarjetas");
   });
 });

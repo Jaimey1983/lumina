@@ -18,11 +18,11 @@ export const TIMELINE_PRESETS: readonly ElementPreset<TimelineEstado>[] =
     id: v.id,
     label: v.label,
     description: v.description,
-    patch: {
+    estadoPatch: {
       configuracion: {
         variante: v.id,
       },
-    } as unknown as Partial<TimelineEstado>,
+    },
   }));
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */

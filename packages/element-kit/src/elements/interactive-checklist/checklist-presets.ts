@@ -6,45 +6,45 @@ export const CHECKLIST_PRESETS: readonly ElementPreset<ChecklistEstado>[] = [
     id: "procedimiento-guiado",
     label: "Procedimiento Guiado",
     description: "Tarjetas individuales con descripciones y barra de progreso",
-    patch: {
+    estadoPatch: {
       configuracion: {
         estiloVisual: "tarjetas",
         mostrarBarraProgreso: true,
         mostrarContador: true,
         mostrarCelebracion: true,
       },
-    } as unknown as Partial<ChecklistEstado>,
+    },
   },
   {
     id: "lista-numerada",
     label: "Pasos Numerados",
     description: "Formato secuencial con indicador numérico por paso",
-    patch: {
+    estadoPatch: {
       configuracion: {
         estiloVisual: "numerado",
         mostrarBarraProgreso: true,
         mostrarContador: true,
       },
-    } as unknown as Partial<ChecklistEstado>,
+    },
   },
   {
     id: "revision-compacta",
     label: "Revisión Compacta",
     description: "Lista minimalista de alta densidad para rúbricas rápidas",
-    patch: {
+    estadoPatch: {
       configuracion: {
         estiloVisual: "minimal",
         mostrarBarraProgreso: false,
         mostrarContador: true,
         mostrarCelebracion: false,
       },
-    } as unknown as Partial<ChecklistEstado>,
+    },
   },
   {
     id: "reto-celebracion",
     label: "Reto con Insignia",
     description: "Énfasis en gamificación con felicitación al completar al 100%",
-    patch: {
+    estadoPatch: {
       configuracion: {
         estiloVisual: "tarjetas",
         mostrarBarraProgreso: true,
@@ -52,6 +52,6 @@ export const CHECKLIST_PRESETS: readonly ElementPreset<ChecklistEstado>[] = [
         mostrarCelebracion: true,
         permitirReinicio: true,
       },
-    } as unknown as Partial<ChecklistEstado>,
+    },
   },
 ];

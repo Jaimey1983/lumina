@@ -17,25 +17,25 @@ export const PROGRESO_PRESETS: readonly ElementPreset<ProgresoEstado>[] = [
     id: "estandar",
     label: "Estándar Limpio",
     description: "Barra suave de avance sincronizada con las diapositivas",
-    patch: { modo: "slides", striped: false, animated: false, mostrarPorcentaje: true } as unknown as Partial<ProgresoEstado>,
+    estadoPatch: { modo: "slides", striped: false, animated: false, mostrarPorcentaje: true },
   },
   {
     id: "striped-animado",
     label: "Rayas Dinámicas",
     description: "Efecto de franjas en movimiento para progreso activo",
-    patch: { striped: true, animated: true, mostrarPorcentaje: true } as unknown as Partial<ProgresoEstado>,
+    estadoPatch: { striped: true, animated: true, mostrarPorcentaje: true },
   },
   {
     id: "minimal",
     label: "Minimal / Discreto",
     description: "Línea delgada sin etiquetas ni porcentajes",
-    patch: { etiqueta: "", mostrarPorcentaje: false, striped: false, animated: false } as unknown as Partial<ProgresoEstado>,
+    estadoPatch: { etiqueta: "", mostrarPorcentaje: false, striped: false, animated: false },
   },
   {
     id: "destacado",
     label: "Destacado con Etiqueta",
     description: "Etiqueta explícita y porcentaje visible para hitos",
-    patch: { etiqueta: "Progreso de la sesión", mostrarPorcentaje: true } as unknown as Partial<ProgresoEstado>,
+    estadoPatch: { etiqueta: "Progreso de la sesión", mostrarPorcentaje: true },
   },
 ];
 
