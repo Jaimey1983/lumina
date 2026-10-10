@@ -83,7 +83,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S7 — Secciones comunes (`motorSections`, widgets y apariencia)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S6 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/properties-panel-motor.tsx`, `panels/block-states-section.tsx`, `packages/editor-shared/src/widget-properties-panel.tsx` (`WidgetPropertiesPanelSection`, `WidgetPropertiesPanelBlock`), `packages/editor-shared/src/widget-appearance-fields.tsx` (`WidgetAppearanceSection`). **NO** toca los archivos `*-properties.tsx` de cada elemento.
 - **Entregable:** «Estado inicial», «Estados» y «Rotación» como `CollapsibleSection` **cerradas** con `badge` («N estados» / «0°»), abiertas por `forceOpen` si el bloque ya tiene valores; `WidgetPropertiesPanelSection` acepta `title`/`defaultOpen` opcionales y, sin ellos, se comporta como hoy (sin romper a flip-cards, tabs, carousel, timeline, hotspot, popup y click-reveal). Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/editor-shared lint && pnpm --filter lumina-frontend lint && pnpm --filter @lumina/element-kit test`.
