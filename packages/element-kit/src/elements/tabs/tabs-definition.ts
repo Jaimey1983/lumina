@@ -1,27 +1,8 @@
 import { CATALOGO_ELEMENTOS } from "../_shared/catalogo.js";
 import { createDefaultTabsBlock } from "../../widgets/tabs/index.js";
-import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core";
+import type { ElementDefinition } from "@lumina/element-kit-core";
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
 import { TABS_TIPO, type TabsEstado, type TabsConfig } from "./tabs-types.js";
-
-/**
- * T2: `posicionTabs` no existe en la config de Tabs (no hay opción de posición) y se ignoraba.
- * El preset no tiene efecto hoy; darle valores reales es la ficha T2b.
- */
-export const TABS_PRESETS: readonly ElementPreset<TabsEstado>[] = [
-  {
-    id: "horizontal-clasico",
-    label: "Pestañas Clásicas",
-    description: "Barra superior con línea indicadora de pestaña activa",
-    estadoPatch: {},
-  },
-  {
-    id: "tabs-inferiores",
-    label: "Pestañas Inferiores",
-    description: "Barra de navegación situada en la parte baja del contenedor",
-    estadoPatch: {},
-  },
-];
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */
 export const tabsDefinition = {
@@ -32,7 +13,6 @@ export const tabsDefinition = {
   Propiedades: TabsPropiedades,
   apariencia: { color: true, tipografia: true, animacion: true },
   catalogo: CATALOGO_ELEMENTOS["tabs"],
-  presets: TABS_PRESETS,
 } as const satisfies ElementDefinition<TabsEstado, TabsConfig>;
 
 export type TabsDefinition = typeof tabsDefinition;
