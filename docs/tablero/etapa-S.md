@@ -54,7 +54,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S3 — Panel «Elementos» plegable
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S2 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/elementos-panel.tsx`, `panels/panel-shared.tsx` (`PanelSection` pasa a envolver `CollapsibleSection`), `panels/images-element-panel.tsx`, `panels/clip-masks-panel.tsx`. **NO** toca el catálogo de gráficos/diagramas/química ni `flyout-left-panels.tsx`.
 - **Entregable:** secciones con `storageKey` `elementos.<id>` y estos `defaultOpen`: **Imágenes** abierta; **Gráficos de datos** abierta (grilla de 7 abierta, «Plantillas pedagógicas» como sub-sección cerrada); **Diagramas** cerrada, con las 8 grillas consecutivas fundidas en una sola `grid-cols-2`; **Química** cerrada con sub-secciones «Ecuaciones rápidas» y «Plantillas de slide» cerradas; **Máscaras de recorte** cerrada; **Multimedia** abierta; **Estructura** abierta en grilla de 2 columnas. Cada encabezado muestra un `badge` con el conteo de elementos. Aviso ámbar «Solo puedes agregar texto…» sigue visible. Pruebas: render del panel con secciones abiertas/cerradas y conteos. Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit`, más comprobación visual en el editor.
