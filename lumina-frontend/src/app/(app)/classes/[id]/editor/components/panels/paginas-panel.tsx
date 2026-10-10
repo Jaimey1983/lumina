@@ -35,7 +35,17 @@ export function PaginasPanel({
     <ScrollArea className="h-full min-h-0">
       <div className="space-y-1 p-3 pr-2">
         {apiSlide && (
-          <PanelSection title="Temporizador (en vivo)" className="mb-3">
+          <PanelSection
+            title="Temporizador (en vivo)"
+            className="mb-3"
+            storageKey="paginas.temporizador"
+            defaultOpen={false}
+            badge={
+              selectValue === 'inherit'
+                ? undefined
+                : SLIDE_TIMER_PER_SLIDE_OPTIONS.find((o) => o.value === selectValue)?.label
+            }
+          >
             <Label className="text-[11px] text-muted-foreground">Tiempo del slide</Label>
             <Select
               value={selectValue}

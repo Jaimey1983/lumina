@@ -6,6 +6,7 @@ import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import type { Block } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
 import { FieldHelp } from '@lumina/ui/field-help';
 import { Label } from '@lumina/ui/label';
@@ -942,6 +943,62 @@ export function IaPanel({
 
           {/* ── Pestaña: Desde tema ── */}
           <TabsContent value="clase" className="space-y-3 mt-0">
+            {/* Tema */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-[11px] text-muted-foreground">Tema de la clase</Label>
+                {tieneContextoCurricularJ6 && temasClase.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTopic(temasClase.join(', '))}
+                    className="text-[10px] font-medium text-primary hover:underline"
+                  >
+                    Usar temas seleccionados
+                  </button>
+                )}
+              </div>
+              <Input
+                placeholder={
+                  tieneContextoCurricularJ6
+                    ? 'Ej: La célula eucariota — o dejá el campo y usamos los temas de arriba'
+                    : desempenoEnunciado
+                      ? 'O escribe un tema personalizado…'
+                      : 'Ej: La célula eucariota, Grado 7'
+                }
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGenerarClase()}
+                className="text-xs"
+              />
+            </div>
+            {/* Nivel */}
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Nivel</Label>
+              <Select value={level} onValueChange={(v) => setLevel(v as typeof level)}>
+                <SelectTrigger className="h-8 text-xs" size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner" className="text-xs">
+                    Básico (primaria)
+                  </SelectItem>
+                  <SelectItem value="intermediate" className="text-xs">
+                    Intermedio (secundaria)
+                  </SelectItem>
+                  <SelectItem value="advanced" className="text-xs">
+                    Avanzado (media)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Opciones avanzadas: plantilla + área/grado (cerrada por defecto) */}
+            <CollapsibleSection
+              title="Opciones avanzadas"
+              defaultOpen={false}
+              storageKey="ia.avanzadas.clase"
+              badge={plantilla !== 'libre' ? plantillaConfig.nombre : undefined}
+              forceOpen={Boolean(errorCurriculum)}
+            >
             {/* Plantilla pedagógica */}
             <div className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">Plantilla pedagógica</Label>
@@ -1019,54 +1076,7 @@ export function IaPanel({
                 {errorCurriculum && <p className="text-[10px] text-amber-600">{errorCurriculum}</p>}
               </>
             )}
-            {/* Tema */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <Label className="text-[11px] text-muted-foreground">Tema de la clase</Label>
-                {tieneContextoCurricularJ6 && temasClase.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setTopic(temasClase.join(', '))}
-                    className="text-[10px] font-medium text-primary hover:underline"
-                  >
-                    Usar temas seleccionados
-                  </button>
-                )}
-              </div>
-              <Input
-                placeholder={
-                  tieneContextoCurricularJ6
-                    ? 'Ej: La célula eucariota — o dejá el campo y usamos los temas de arriba'
-                    : desempenoEnunciado
-                      ? 'O escribe un tema personalizado…'
-                      : 'Ej: La célula eucariota, Grado 7'
-                }
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleGenerarClase()}
-                className="text-xs"
-              />
-            </div>
-            {/* Nivel */}
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Nivel</Label>
-              <Select value={level} onValueChange={(v) => setLevel(v as typeof level)}>
-                <SelectTrigger className="h-8 text-xs" size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="beginner" className="text-xs">
-                    Básico (primaria)
-                  </SelectItem>
-                  <SelectItem value="intermediate" className="text-xs">
-                    Intermedio (secundaria)
-                  </SelectItem>
-                  <SelectItem value="advanced" className="text-xs">
-                    Avanzado (media)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            </CollapsibleSection>
             {!tieneContextoCurricularJ6 && desempenoEnunciado && (
               <div className="rounded-md border border-border bg-muted/30 p-2">
                 <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1136,6 +1146,11 @@ export function IaPanel({
             </div>
             {/* Área y grado reutilizados — legado: se degrada acá solo si la clase NO tiene contexto curricular J6 */}
             {!tieneContextoCurricularJ6 && (
+              <CollapsibleSection
+                title="Opciones avanzadas"
+                defaultOpen={false}
+                storageKey="ia.avanzadas.documento"
+              >
               <>
                 <div className="grid grid-cols-2 gap-1.5 w-full">
                   <div className="space-y-1">
@@ -1178,6 +1193,7 @@ export function IaPanel({
                   </div>
                 )}
               </>
+              </CollapsibleSection>
             )}
             <Button
               type="button"
