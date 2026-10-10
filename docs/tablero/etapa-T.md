@@ -75,7 +75,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T2b — Dar valores reales a los presets que no hacían nada
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T2 `hecho`. **Debe cerrarse antes de T3** (la galería mostraría presets que no cambian nada).
 - **Alcance — PUEDE tocar:** `elements/click-reveal/click-reveal-definition.ts`, `elements/popup/popup-definition.ts`, `elements/tabs/tabs-definition.ts` (los `*_PRESETS`) y, si hace falta una opción que hoy no existe (posición de las pestañas), **solo** la config/viewer de ese widget. **NO** toca otros widgets ni el contrato.
 - **Entregable:** (1) por preset, decidir con el dueño qué cambia de verdad: Click to Reveal → `efectoApertura` (`slide-up`/`fade`); Popup → `triggerVisual` (`boton`/`icono`/`imagen`), `modalAnchoPct` y `efectoApertura`; Tabs → no existe opción de posición: o se descartan los dos presets o se implementa la opción antes; (2) cada preset resultante se ve distinto del estado por defecto; (3) snapshots de T0 regenerados **solo** para esos presets, con el diff revisado. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
