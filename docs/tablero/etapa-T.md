@@ -59,7 +59,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T1 — Completar tokens `--lw-*` y prohibir hex en CSS de widgets
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T0 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/editor-shared/src/widget-container-styles.ts` (+ spec), `packages/element-kit/src/widgets/*/*.module.css` y los `.ts`/`.tsx` de widgets **solo** donde fijan colores en línea, y un spec de guarda nuevo. **NO** cambia lógica, props ni el aspecto con el tema por defecto.
 - **Entregable:** (1) medir (Regla 9 §3) cuántos hex y en qué archivos antes de tocar; (2) agregar los tokens de DT1; (3) migrar los hex a `var(--lw-*, fallback)` agrupando por causa común, empezando por Botón (variantes `secondary`/`success`/`danger`…), luego Tabla periódica, Timeline, Click Reveal, Flip Cards, Popup, Hotspot, Tooltip; (4) spec de guarda que falla si un `.module.css` de widget tiene un hex fuera de un `var()` fallback; (5) con el tema por defecto, los snapshots de T0 **no cambian**; con un `SlideTheme` distinto, cambian los 14. Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
