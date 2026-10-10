@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
   Bold,
-  ChevronDown,
   Italic,
   Underline,
 } from 'lucide-react';
@@ -15,7 +14,7 @@ import {
 import { FontFamilySelect } from './font-family-select.js';
 import { FontSizeInput } from './font-size-input.js';
 import { Button } from '@lumina/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@lumina/ui/collapsible';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Slider, SliderThumb } from '@lumina/ui/slider';
@@ -90,21 +89,10 @@ function InspectorSection({
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md py-0.5 text-left">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </span>
-        <ChevronDown
-          className={cn('size-3.5 text-muted-foreground transition-transform', open && 'rotate-180')}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="flex flex-col gap-3 pt-2">{children}</div>
-      </CollapsibleContent>
-    </Collapsible>
+    <CollapsibleSection title={title} defaultOpen={defaultOpen}>
+      {children}
+    </CollapsibleSection>
   );
 }
 
