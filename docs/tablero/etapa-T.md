@@ -91,7 +91,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T4 — Accesibilidad: foco en Popup, `aria-live` y movimiento reducido
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T0 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/popup/` (`popup-parts.tsx`, `popup-viewer.tsx`), `widgets/contador/`, `widgets/ruleta/`, `widgets/progreso/` (solo viewer/parts/CSS), `widgets/hotspot/hotspot-viewer.tsx`. **NO** toca `*-properties.tsx` (los usa T3) ni agrega dependencias nuevas salvo `radix-ui` Dialog declarado en el kit (DT5).
 - **Entregable:** Popup con focus trap, foco inicial dentro, Escape y devolución del foco al disparador (sin romper el modo editor ni el portal); `aria-live="polite"` en el resultado de Ruleta, en los hitos del Contador y en el valor del Progreso; `@media (prefers-reduced-motion: reduce)` en las transiciones/animaciones de los 5 widgets. Specs con `@testing-library` para foco y `aria-live`. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
