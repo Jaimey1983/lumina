@@ -4,6 +4,7 @@ import { useState, type CSSProperties } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, Users, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Activity } from '@lumina/types/slide';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,9 +159,11 @@ export function LiveResponsesPanel({
         </span>
       </div>
 
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Slide {activeSlideIndex + 1} — Respuestas
-      </p>
+      <CollapsibleSection
+        title={`Slide ${activeSlideIndex + 1} — Respuestas`}
+        storageKey="live.respuestas"
+        badge={responses.length}
+      >
 
       {activityType && (
         <span className="self-start rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -315,6 +318,7 @@ export function LiveResponsesPanel({
           })}
         </div>
       )}
+      </CollapsibleSection>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
 } from '@/lib/slide-themes';
 import { cn } from '@/lib/utils';
 import type { SlideTheme } from '@lumina/types/slide';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -402,10 +403,11 @@ export function SlideThemesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
-          Predefinidos
-        </h2>
+      <CollapsibleSection
+        title="Predefinidos"
+        storageKey="temas.predefinidos"
+        badge={ALL_PREDEFINED.length}
+      >
         <div className="grid grid-cols-2 justify-items-center gap-3">
           {ALL_PREDEFINED.map((theme) => (
             <ThemeThumbnail
@@ -417,13 +419,14 @@ export function SlideThemesPanel({
             />
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
-            Personalizados
-          </h2>
+      <CollapsibleSection
+        title="Personalizados"
+        storageKey="temas.personalizados"
+        badge={customThemes.length}
+      >
+        <div className="flex justify-end">
           <Button
             type="button"
             variant="outline"
@@ -454,7 +457,7 @@ export function SlideThemesPanel({
             ))}
           </div>
         )}
-      </section>
+      </CollapsibleSection>
 
       {pendingTheme ? (
         <ThemeScopeActions

@@ -35,6 +35,7 @@ import {
 import type { PlantillaElegida } from '../../lib/interacciones';
 import { useClassVariables } from '../../lib/class-variables-context';
 import { RuleBuilder } from './rule-builder/rule-builder';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 /**
  * Etapa K / K7b — «Interacciones» de un bloque: plantillas (no un constructor
@@ -262,9 +263,16 @@ export function InteractionsPanel({
   };
 
   return (
-    <div className="mt-4 space-y-3 border-t border-border pt-4">
-      <Label className="text-xs font-medium">Interacciones</Label>
-
+    <>
+    <CollapsibleSection
+      title="Interacciones"
+      defaultOpen={false}
+      storageKey="props.interacciones"
+      badge={reglas.length > 0 ? reglas.length : undefined}
+      forceOpen={reglas.length > 0 || rotasDelSlide.length > 0 || abierto}
+      className="mt-4 border-t border-border pt-4"
+    >
+    <div className="space-y-3">
       {rotasDelSlide.length > 0 ? (
         <div
           role="alert"
@@ -565,6 +573,9 @@ export function InteractionsPanel({
         </div>
       )}
 
+    </div>
+    </CollapsibleSection>
+
       {editando ? (
         <RuleBuilder
           abierto
@@ -589,6 +600,6 @@ export function InteractionsPanel({
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }
