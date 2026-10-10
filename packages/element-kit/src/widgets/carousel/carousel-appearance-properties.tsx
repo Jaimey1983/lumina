@@ -57,7 +57,7 @@ export function CarouselAppearanceProperties({
   };
 
   return (
-    <WidgetAppearanceStack>
+    <WidgetAppearanceStack scope="carousel">
       <WidgetLayoutGallerySection
         hint="Aplica el layout a todas las páginas. Puedes personalizar cada página en la sección Página."
         activeId={configuracion.layoutId}
