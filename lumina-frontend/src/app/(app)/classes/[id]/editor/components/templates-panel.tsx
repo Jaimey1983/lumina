@@ -6,6 +6,7 @@ import { Button } from '@lumina/ui/button';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { cn } from '@/lib/utils';
 import type { Block, TextAlign } from '@lumina/types/slide';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -420,10 +421,7 @@ export function TemplatesPanel({ onInsert, isInserting }: TemplatesPanelProps) {
         Inserta un slide nuevo después del activo con un layout listo o con texto de ejemplo.
       </p>
 
-      <section className="space-y-2">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Layouts predefinidos
-        </h3>
+      <CollapsibleSection title="Layouts predefinidos" storageKey="templates.layouts" badge={LAYOUT_ITEMS.length}>
         <div className="flex flex-col gap-2">
           {LAYOUT_ITEMS.map(({ kind, name }) => (
             <TemplateRow
@@ -436,12 +434,9 @@ export function TemplatesPanel({ onInsert, isInserting }: TemplatesPanelProps) {
             />
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-2">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Con contenido de ejemplo
-        </h3>
+      <CollapsibleSection title="Con contenido de ejemplo" storageKey="templates.ejemplo" badge={LAYOUT_ITEMS.length}>
         <div className="flex flex-col gap-2">
           {LAYOUT_ITEMS.map(({ kind, name }) => (
             <TemplateRow
@@ -454,7 +449,7 @@ export function TemplatesPanel({ onInsert, isInserting }: TemplatesPanelProps) {
             />
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
     </div>
   );
 }

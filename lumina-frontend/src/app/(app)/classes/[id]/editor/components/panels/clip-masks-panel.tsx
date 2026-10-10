@@ -35,7 +35,7 @@ interface MaskItem {
   shape: ClipShape;
 }
 
-const MASK_ITEMS: MaskItem[] = [
+export const MASK_ITEMS: MaskItem[] = [
   {
     id: 'rect',
     label: 'Rectángulo',
@@ -90,9 +90,11 @@ interface Props {
   apiSlide: ApiSlide | null;
   onCommitContent: (content: Record<string, unknown>) => void;
   disabled?: boolean;
+  /** Abre la sección (coincidencia de búsqueda). */
+  forceOpen?: boolean;
 }
 
-export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
+export function ClipMasksPanel({ apiSlide, onCommitContent, disabled, forceOpen }: Props) {
   const [textDialogOpen, setTextDialogOpen] = useState(false);
 
   const addMask = (shape: ClipShape) => {
@@ -112,6 +114,7 @@ export function ClipMasksPanel({ apiSlide, onCommitContent, disabled }: Props) {
       title="Máscaras de recorte"
       defaultOpen={false}
       storageKey="elementos.mascaras"
+      forceOpen={forceOpen}
       badge={MASK_ITEMS.length + 1}
       className="border-b border-border pb-3"
     >

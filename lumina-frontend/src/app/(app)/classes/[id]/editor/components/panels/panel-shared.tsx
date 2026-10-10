@@ -6,6 +6,7 @@ import type { Block } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
+import { Search, X } from 'lucide-react';
 import type { WidgetTipo } from '@lumina/types/widget';
 import type { VariableDef } from '@lumina/types/interaction';
 import type { ActivityType } from './activities-panel';
@@ -19,6 +20,7 @@ export function PanelSection({
   storageKey,
   defaultOpen = true,
   badge,
+  forceOpen,
 }: {
   title: string;
   children: React.ReactNode;
@@ -27,6 +29,8 @@ export function PanelSection({
   storageKey?: string;
   defaultOpen?: boolean;
   badge?: React.ReactNode;
+  /** Abre la sección (p. ej. coincidencia de búsqueda) sin pisar la preferencia guardada. */
+  forceOpen?: boolean;
 }) {
   return (
     <CollapsibleSection
@@ -35,6 +39,7 @@ export function PanelSection({
       storageKey={storageKey}
       defaultOpen={defaultOpen}
       badge={badge}
+      forceOpen={forceOpen}
     >
       {children}
     </CollapsibleSection>
@@ -180,3 +185,68 @@ export type ContentPanelProps = {
   onAddActivity?: (type: ActivityType) => void;
   onMergeClassVariables?: (variables: VariableDef[]) => void;
 };
+
+// ─── Búsqueda (S11) ───────────────────────────────────────────────────────────
+
+/** Minúsculas y sin tildes, para comparar «Cronología» con «cronologia». */
+export function normalizeSearch(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/** `true` si la consulta está vacía o `text` la contiene (sin tildes ni mayúsculas). */
+export function matchesQuery(text: string, query: string): boolean {
+  const q = normalizeSearch(query);
+  return q === '' || normalizeSearch(text).includes(q);
+}
+
+export function PanelSearch({
+  value,
+  onChange,
+  placeholder = 'Buscar…',
+  label = 'Buscar en el panel',
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+  label?: string;
+}) {
+  return (
+    <div className="relative">
+      <Search
+        className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
+      <Input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-label={label}
+        className="h-8 pl-7 pr-7 text-xs"
+      />
+      {value !== '' ? (
+        <button
+          type="button"
+          aria-label="Limpiar búsqueda"
+          onClick={() => onChange('')}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+        >
+          <X className="size-3.5" aria-hidden />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Estado vacío común a los paneles con búsqueda. */
+export function PanelSearchEmpty({ query }: { query: string }) {
+  return (
+    <p className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+      Sin resultados para «{query.trim()}».
+    </p>
+  );
+}

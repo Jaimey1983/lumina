@@ -14,6 +14,8 @@ import { Label } from '@lumina/ui/label';
 interface Props {
   onInsert: (block: Block) => Promise<boolean>;
   disabled?: boolean;
+  /** Abre la sección (coincidencia de búsqueda). */
+  forceOpen?: boolean;
 }
 
 function isProbablyValidImageUrl(url: string): boolean {
@@ -27,7 +29,7 @@ function isProbablyValidImageUrl(url: string): boolean {
   }
 }
 
-export function ImagesElementPanel({ onInsert, disabled }: Props) {
+export function ImagesElementPanel({ onInsert, disabled, forceOpen }: Props) {
   const [url, setUrl] = useState('');
   const [previewBroken, setPreviewBroken] = useState(false);
 
@@ -43,6 +45,7 @@ export function ImagesElementPanel({ onInsert, disabled }: Props) {
     <CollapsibleSection
       title="Imágenes"
       storageKey="elementos.imagenes"
+      forceOpen={forceOpen}
       className="border-b border-border pb-3"
     >
       <div className="space-y-2 px-1">

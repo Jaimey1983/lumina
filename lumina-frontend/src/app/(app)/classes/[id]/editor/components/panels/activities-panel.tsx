@@ -29,10 +29,12 @@ import {
   TableProperties,
   Atom,
 } from 'lucide-react';
+import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 import type { WidgetTipo } from '@lumina/types/widget';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@lumina/ui/accordion';
+import { PanelSearch, PanelSearchEmpty, matchesQuery } from './panel-shared';
 import { DraggableActivityItem } from '../draggable-activity-item';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -185,21 +187,58 @@ function ActivityGroup({
 /** Grupo que arranca abierto; el acordeón mantiene uno solo abierto a la vez. */
 const GRUPO_ABIERTO_POR_DEFECTO = 'evaluacion';
 
+const GRUPOS: Array<{ value: string; title: string; items: ActivityItem[] }> = [
+  { value: 'evaluacion', title: 'Evaluación', items: EVALUATION },
+  { value: 'quimica', title: 'Química', items: QUIMICA },
+  { value: 'interaccion', title: 'Interacción', items: INTERACTION },
+  { value: 'en-vivo', title: 'En vivo', items: LIVE },
+  { value: 'juegos', title: 'Juegos', items: GRUPO4 },
+];
+
+/** Grupos de actividades con al menos una coincidencia (por grupo o por etiqueta). */
+export function filtrarGruposActividades(query: string) {
+  const searching = query.trim() !== '';
+  return GRUPOS.map((g) => ({
+    ...g,
+    items: g.items.filter(
+      (i) => !searching || matchesQuery(g.title, query) || matchesQuery(i.label, query),
+    ),
+  })).filter((g) => g.items.length > 0);
+}
+
 export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
+  const [query, setQuery] = useState('');
+  const searching = query.trim() !== '';
+  const grupos = filtrarGruposActividades(query);
+
   return (
     <div className="flex flex-col pb-4">
+      <div className="px-3 pt-3">
+        <PanelSearch value={query} onChange={setQuery} placeholder="Buscar actividades…" label="Buscar actividades" />
+      </div>
       {hasActivity && (
         <p className="mx-3 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
           Este slide ya tiene una actividad. Elimínala para agregar otra.
         </p>
       )}
-      <Accordion type="single" collapsible defaultValue={GRUPO_ABIERTO_POR_DEFECTO}>
-        <ActivityGroup value="evaluacion" title="Evaluación" items={EVALUATION} onAdd={onAddActivity} disabled={hasActivity} />
-        <ActivityGroup value="quimica" title="Química" items={QUIMICA} onAdd={onAddActivity} disabled={hasActivity} />
-        <ActivityGroup value="interaccion" title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
-        <ActivityGroup value="en-vivo" title="En vivo" items={LIVE} onAdd={onAddActivity} disabled={hasActivity} />
-        <ActivityGroup value="juegos" title="Juegos" items={GRUPO4} onAdd={onAddActivity} disabled={hasActivity} />
-      </Accordion>
+      {searching && grupos.length === 0 ? (
+        <div className="px-3 pt-3">
+          <PanelSearchEmpty query={query} />
+        </div>
+      ) : searching ? (
+        // Con búsqueda se abren todos los grupos con coincidencias (acordeón múltiple).
+        <Accordion key="busqueda" type="multiple" value={grupos.map((g) => g.value)}>
+          {grupos.map((g) => (
+            <ActivityGroup key={g.value} value={g.value} title={g.title} items={g.items} onAdd={onAddActivity} disabled={hasActivity} />
+          ))}
+        </Accordion>
+      ) : (
+        <Accordion key="normal" type="single" collapsible defaultValue={GRUPO_ABIERTO_POR_DEFECTO}>
+          {GRUPOS.map((g) => (
+            <ActivityGroup key={g.value} value={g.value} title={g.title} items={g.items} onAdd={onAddActivity} disabled={hasActivity} />
+          ))}
+        </Accordion>
+      )}
     </div>
   );
 }

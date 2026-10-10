@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { toast } from 'sonner';
 import {
   BarChart2,
@@ -31,7 +32,7 @@ import {
   Atom,
   TestTube2,
 } from 'lucide-react';
-import type { Block } from '@lumina/types/slide';
+import type { Block, GraficoChartType } from '@lumina/types/slide';
 import { createDefaultGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
 import { GRAFICO_TEMPLATES } from '@lumina/element-kit/blocks/grafico/grafico-templates';
 import {
@@ -59,7 +60,7 @@ import { createDefaultSeparadorBlock } from '@lumina/element-kit/blocks/separado
 import { createDefaultEcuacionBlock } from '@lumina/element-kit/blocks/ecuacion/ecuacion-defaults';
 import { createTextBlock } from '@lumina/element-kit/blocks/texto/texto-defaults';
 import { ImagesElementPanel } from './images-element-panel';
-import { ClipMasksPanel } from './clip-masks-panel';
+import { ClipMasksPanel, MASK_ITEMS } from './clip-masks-panel';
 import {
   CHEMISTRY_EQUATION_PRESETS,
   CHEMISTRY_QUICK_ACTIVITIES,
@@ -75,7 +76,14 @@ import {
 } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-defaults';
 import { createDefaultMoleculaBlock } from '@lumina/element-kit/widgets/molecula/molecula-defaults';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
-import { PanelSection, InsertBtn, type ContentPanelProps } from './panel-shared';
+import {
+  PanelSection,
+  InsertBtn,
+  PanelSearch,
+  PanelSearchEmpty,
+  matchesQuery,
+  type ContentPanelProps,
+} from './panel-shared';
 
 function isLabSlideTemplate(
   tmpl: (typeof CHEMISTRY_SLIDE_TEMPLATES)[number],
@@ -107,6 +115,101 @@ const DIAGRAMAS: Array<{
   { label: "Mapa de Empatía", icon: HeartHandshake, create: createDefaultEmpatiaBlock },
 ];
 
+const GRAFICOS_TIPOS: Array<{
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  chartType: GraficoChartType;
+  titulo: string;
+}> = [
+  { label: 'Comparación', icon: BarChart2, chartType: 'column', titulo: 'Comparación de datos' },
+  { label: 'Evolución', icon: LineChart, chartType: 'line', titulo: 'Evolución en el tiempo' },
+  { label: 'Proporción', icon: CircleDot, chartType: 'donut', titulo: 'Distribución y proporción' },
+  { label: 'Relación', icon: ScatterChart, chartType: 'scatter', titulo: 'Relación y dispersión' },
+  { label: 'Estadística', icon: BarChartHorizontal, chartType: 'histogram', titulo: 'Distribución estadística' },
+  { label: 'Progreso / KPI', icon: Gauge, chartType: 'radialBar', titulo: 'Progreso y métricas' },
+  { label: 'Especiales', icon: Grid, chartType: 'heatmap', titulo: 'Matriz especial' },
+];
+
+const MULTIMEDIA: Array<{
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  create: () => Block;
+}> = [
+  {
+    label: 'Video (YouTube)',
+    icon: Video,
+    create: () => ({
+      tipo: 'video',
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      plataforma: 'youtube',
+      controles: true,
+    }),
+  },
+  {
+    label: 'Audio',
+    icon: Volume2,
+    create: () => ({
+      tipo: 'audio',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      controles: true,
+    }),
+  },
+];
+
+const ESTRUCTURA: Array<{
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  create: () => Block;
+}> = [
+  { label: 'Separador', icon: Minus, create: createDefaultSeparadorBlock },
+  { label: 'Ecuación', icon: Sigma, create: createDefaultEcuacionBlock },
+  { label: 'Cita', icon: Quote, create: () => ({ tipo: 'cita', texto: 'Texto de la cita', autor: 'Autor' }) },
+  {
+    label: 'Dos columnas (vacías)',
+    icon: Columns2,
+    create: () => ({
+      tipo: 'columnas',
+      columnas: [
+        [createTextBlock({ preset: 'cuerpo', omitPosition: true, extra: { contenido: 'Columna izquierda' } })],
+        [createTextBlock({ preset: 'cuerpo', omitPosition: true, extra: { contenido: 'Columna derecha' } })],
+      ],
+      proporcion: '1:1',
+    }),
+  },
+];
+
+const QUIMICA_BASICOS = ['Tabla periódica', 'Molécula 2D', 'Ecuación \\ce{} (ejemplo)'];
+
+/** Qué secciones del panel «Elementos» tienen alguna coincidencia con la búsqueda. */
+export function seccionesVisibles(query: string) {
+  const searching = query.trim() !== '';
+  const hit = (text: string) => matchesQuery(text, query);
+  const has = (section: string, labels: string[]) =>
+    !searching || hit(section) || labels.some(hit);
+  const quimicaLabels = [
+    ...QUIMICA_BASICOS,
+    ...CHEMISTRY_QUICK_ACTIVITIES.map((a) => a.label),
+    ...CHEMISTRY_EQUATION_PRESETS.map((p) => p.label),
+    ...CHEMISTRY_SLIDE_TEMPLATES.map((t) => t.nombre),
+    'Slide de práctica — balanceo',
+    'Ecuaciones rápidas (mhchem)',
+    'Plantillas de slide (CN-7)',
+  ];
+  return {
+    imagenes: has('Imágenes', ['URL de imagen']),
+    mascaras: has('Máscaras de recorte', [...MASK_ITEMS.map((m) => m.label), 'Texto']),
+    graficos: has('Gráficos de Datos', [
+      ...GRAFICOS_TIPOS.map((g) => g.label),
+      ...GRAFICO_TEMPLATES.map((t) => t.nombre),
+      'Plantillas Pedagógicas',
+    ]),
+    diagramas: has('Diagramas', DIAGRAMAS.map((d) => d.label)),
+    quimica: has('Química', quimicaLabels),
+    multimedia: has('Multimedia', MULTIMEDIA.map((m) => m.label)),
+    estructura: has('Estructura', ESTRUCTURA.map((e) => e.label)),
+  };
+}
+
 export function ElementosPanel({
   apiSlide,
   onCommitContent,
@@ -118,6 +221,12 @@ export function ElementosPanel({
   onAddActivity,
   onMergeClassVariables,
 }: ContentPanelProps) {
+  const [query, setQuery] = useState('');
+  const searching = query.trim() !== '';
+  const hit = (text: string) => matchesQuery(text, query);
+  /** Un ítem se muestra si no se busca, si coincide la sección o si coincide el ítem. */
+  const show = (section: string, label: string) => !searching || hit(section) || hit(label);
+
   const add = (block: Block) => {
     if (onInsertBlock) {
       void onInsertBlock(block).then((ok) => {
@@ -149,360 +258,290 @@ export function ElementosPanel({
     toast.success('Plantilla química añadida al slide');
   };
 
+  const visible = seccionesVisibles(query);
+  const graficoPlantillas = GRAFICO_TEMPLATES.filter(
+    (t) => show('Gráficos de Datos', t.nombre) || hit('Plantillas Pedagógicas'),
+  );
+  const presets = CHEMISTRY_EQUATION_PRESETS.filter(
+    (p) => show('Química', p.label) || hit('Ecuaciones rápidas (mhchem)'),
+  );
+  const plantillasQuimica = CHEMISTRY_SLIDE_TEMPLATES.filter(
+    (t) => show('Química', t.nombre) || hit('Plantillas de slide (CN-7)'),
+  );
+  const mostrarPractica =
+    show('Química', 'Slide de práctica — balanceo') || hit('Plantillas de slide (CN-7)');
+  const algunaVisible = Object.values(visible).some(Boolean);
+
   return (
     <ScrollArea className="h-full min-h-0 bg-white dark:bg-zinc-900">
       <div className="space-y-4 p-3 pr-2">
+        <PanelSearch value={query} onChange={setQuery} placeholder="Buscar elementos…" label="Buscar elementos" />
         {slideHasActivity && (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
             Solo puedes agregar texto (título) a este slide.
           </p>
         )}
-        <ImagesElementPanel
-          onInsert={insertImage}
-          disabled={disabledNonText}
-        />
-        <ClipMasksPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
-        <PanelSection
-          title="Gráficos de Datos"
-          storageKey="elementos.graficos"
-          badge={7 + GRAFICO_TEMPLATES.length}
-        >
-          <div className="grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Comparación"
-              icon={BarChart2}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'column',
-                    titulo: 'Comparación de datos',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Evolución"
-              icon={LineChart}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'line',
-                    titulo: 'Evolución en el tiempo',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Proporción"
-              icon={CircleDot}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'donut',
-                    titulo: 'Distribución y proporción',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Relación"
-              icon={ScatterChart}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'scatter',
-                    titulo: 'Relación y dispersión',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Estadística"
-              icon={BarChartHorizontal}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'histogram',
-                    titulo: 'Distribución estadística',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Progreso / KPI"
-              icon={Gauge}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'radialBar',
-                    titulo: 'Progreso y métricas',
-                  }),
-                )
-              }
-            />
-            <InsertBtn
-              label="Especiales"
-              icon={Grid}
-              disabled={disabledNonText}
-              onClick={() =>
-                add(
-                  createDefaultGraficoBlock({
-                    chartType: 'heatmap',
-                    titulo: 'Matriz especial',
-                  }),
-                )
-              }
-            />
-          </div>
-
-          <CollapsibleSection
-            title="Plantillas Pedagógicas"
-            icon={BookOpen}
-            defaultOpen={false}
-            storageKey="elementos.graficos.plantillas"
-            badge={GRAFICO_TEMPLATES.length}
-            className="mt-2.5 pt-2 border-t border-border/50"
+        {searching && !algunaVisible ? <PanelSearchEmpty query={query} /> : null}
+        {visible.imagenes && (
+          <ImagesElementPanel onInsert={insertImage} disabled={disabledNonText} forceOpen={searching} />
+        )}
+        {visible.mascaras && (
+          <ClipMasksPanel
+            apiSlide={apiSlide}
+            onCommitContent={onCommitContent}
+            disabled={disabledNonText}
+            forceOpen={searching}
+          />
+        )}
+        {visible.graficos && (
+          <PanelSection
+            title="Gráficos de Datos"
+            storageKey="elementos.graficos"
+            badge={7 + GRAFICO_TEMPLATES.length}
+            forceOpen={searching}
           >
-            <div className="space-y-1">
-              {GRAFICO_TEMPLATES.map((tmpl) => (
-                <button
-                  key={tmpl.id}
-                  type="button"
+            <div className="grid grid-cols-2 gap-1.5">
+              {GRAFICOS_TIPOS.filter((g) => show('Gráficos de Datos', g.label)).map((g) => (
+                <InsertBtn
+                  key={g.label}
+                  label={g.label}
+                  icon={g.icon}
                   disabled={disabledNonText}
-                  onClick={() => add(tmpl.buildBlock())}
-                  className="w-full text-left p-1.5 rounded-md hover:bg-muted/70 transition-colors border border-transparent hover:border-border/60 disabled:opacity-50 disabled:pointer-events-none group"
-                >
-                  <div className="text-[11px] font-medium text-foreground group-hover:text-primary leading-tight">
-                    {tmpl.nombre}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
-                    {tmpl.descripcion}
-                  </div>
-                </button>
+                  onClick={() => add(createDefaultGraficoBlock({ chartType: g.chartType, titulo: g.titulo }))}
+                />
               ))}
             </div>
-          </CollapsibleSection>
-        </PanelSection>
-        <PanelSection
-          title="Diagramas"
-          storageKey="elementos.diagramas"
-          defaultOpen={false}
-          badge={DIAGRAMAS.length}
-        >
-          <div className="grid grid-cols-2 gap-1.5">
-            {DIAGRAMAS.map((d) => (
-              <InsertBtn
-                key={d.label}
-                label={d.label}
-                icon={d.icon}
-                disabled={disabledNonText}
-                onClick={() => add(d.create())}
-              />
-            ))}
-          </div>
-        </PanelSection>
-        <PanelSection
-          title="Química"
-          storageKey="elementos.quimica"
-          defaultOpen={false}
-          badge={
-            3 +
-            CHEMISTRY_QUICK_ACTIVITIES.length +
-            CHEMISTRY_EQUATION_PRESETS.length +
-            CHEMISTRY_SLIDE_TEMPLATES.length +
-            1
-          }
-        >
-          <div className="grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Tabla periódica"
-              icon={TableProperties}
-              disabled={disabledNonText}
-              onClick={() => {
-                if (onAddWidget) {
-                  onAddWidget('tabla_periodica');
-                  return;
-                }
-                add(createDefaultTablaPeriodicaBlock());
-              }}
-            />
-            <InsertBtn
-              label="Molécula 2D"
-              icon={Atom}
-              disabled={disabledNonText}
-              onClick={() => {
-                if (onAddWidget) {
-                  onAddWidget('molecula');
-                  return;
-                }
-                add(createDefaultMoleculaBlock());
-              }}
-            />
-            <InsertBtn
-              label="Ecuación \\ce{} (ejemplo)"
-              icon={TestTube2}
-              disabled={disabledNonText}
-              onClick={() => add(createChemistryEquationBlock(CHEMISTRY_EQUATION_PRESETS[0].latex))}
-            />
-            {CHEMISTRY_QUICK_ACTIVITIES.map((act) => (
-              <InsertBtn
-                key={act.id}
-                label={act.label}
-                icon={
-                  act.id === 'balancear-ecuacion'
-                    ? FlaskConical
-                    : act.id === 'ubicar-elemento'
-                      ? TableProperties
-                      : Atom
-                }
-                disabled={disabled || !!slideHasActivity}
-                onClick={() => {
-                  if (onAddActivity) {
-                    onAddActivity(act.id);
-                    return;
-                  }
-                  toast.error('No se pudo insertar la actividad');
-                }}
-              />
-            ))}
-          </div>
-          <CollapsibleSection
-            title="Ecuaciones rápidas (mhchem)"
-            defaultOpen={false}
-            storageKey="elementos.quimica.ecuaciones"
-            badge={CHEMISTRY_EQUATION_PRESETS.length}
-            className="mt-2"
-          >
-            <div className="space-y-1">
-            {CHEMISTRY_EQUATION_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                disabled={disabledNonText}
-                onClick={() => add(createChemistryEquationBlock(preset.latex))}
-                className="w-full rounded-md border border-transparent px-2 py-1.5 text-left text-[11px] hover:border-border hover:bg-muted/60 disabled:opacity-50"
+
+            {graficoPlantillas.length > 0 && (
+              <CollapsibleSection
+                title="Plantillas Pedagógicas"
+                icon={BookOpen}
+                defaultOpen={false}
+                storageKey="elementos.graficos.plantillas"
+                badge={GRAFICO_TEMPLATES.length}
+                forceOpen={searching}
+                className="mt-2.5 pt-2 border-t border-border/50"
               >
-                <span className="font-medium text-foreground">{preset.label}</span>
-              </button>
-            ))}
-            </div>
-          </CollapsibleSection>
-          <CollapsibleSection
-            title="Plantillas de slide (CN-7)"
-            icon={BookOpen}
+                <div className="space-y-1">
+                  {graficoPlantillas.map((tmpl) => (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      disabled={disabledNonText}
+                      onClick={() => add(tmpl.buildBlock())}
+                      className="w-full text-left p-1.5 rounded-md hover:bg-muted/70 transition-colors border border-transparent hover:border-border/60 disabled:opacity-50 disabled:pointer-events-none group"
+                    >
+                      <div className="text-[11px] font-medium text-foreground group-hover:text-primary leading-tight">
+                        {tmpl.nombre}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground line-clamp-1 leading-tight mt-0.5">
+                        {tmpl.descripcion}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+          </PanelSection>
+        )}
+        {visible.diagramas && (
+          <PanelSection
+            title="Diagramas"
+            storageKey="elementos.diagramas"
             defaultOpen={false}
-            storageKey="elementos.quimica.plantillas"
-            badge={CHEMISTRY_SLIDE_TEMPLATES.length + 1}
-            className="mt-2.5 border-t border-border/50 pt-2"
+            badge={DIAGRAMAS.length}
+            forceOpen={searching}
           >
-            <div className="space-y-1">
-              {CHEMISTRY_SLIDE_TEMPLATES.map((tmpl) => (
-                <button
-                  key={tmpl.id}
-                  type="button"
-                  disabled={onCreateActivitySlide ? disabled : disabledNonText}
+            <div className="grid grid-cols-2 gap-1.5">
+              {DIAGRAMAS.filter((d) => show('Diagramas', d.label)).map((d) => (
+                <InsertBtn
+                  key={d.label}
+                  label={d.label}
+                  icon={d.icon}
+                  disabled={disabledNonText}
+                  onClick={() => add(d.create())}
+                />
+              ))}
+            </div>
+          </PanelSection>
+        )}
+        {visible.quimica && (
+          <PanelSection
+            title="Química"
+            storageKey="elementos.quimica"
+            defaultOpen={false}
+            badge={
+              3 +
+              CHEMISTRY_QUICK_ACTIVITIES.length +
+              CHEMISTRY_EQUATION_PRESETS.length +
+              CHEMISTRY_SLIDE_TEMPLATES.length +
+              1
+            }
+            forceOpen={searching}
+          >
+            <div className="grid grid-cols-2 gap-1.5">
+              {show('Química', 'Tabla periódica') && (
+                <InsertBtn
+                  label="Tabla periódica"
+                  icon={TableProperties}
+                  disabled={disabledNonText}
                   onClick={() => {
-                    if (isLabSlideTemplate(tmpl)) {
-                      onMergeClassVariables?.(tmpl.variablesClase);
-                    }
-                    if (onCreateActivitySlide) {
-                      onCreateActivitySlide(
-                        { bloques: tmpl.buildBlocks(), layout: tmpl.layout },
-                        tmpl.titulo,
-                      );
-                      toast.success(`Slide «${tmpl.titulo}» creado`);
+                    if (onAddWidget) {
+                      onAddWidget('tabla_periodica');
                       return;
                     }
-                    void addBlocksSequential(tmpl.buildBlocks());
+                    add(createDefaultTablaPeriodicaBlock());
                   }}
-                  className="w-full rounded-md border border-transparent p-1.5 text-left hover:border-border hover:bg-muted/70 disabled:opacity-50"
-                >
-                  <div className="text-[11px] font-medium leading-tight text-foreground">{tmpl.nombre}</div>
-                  <div className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">{tmpl.descripcion}</div>
-                </button>
+                />
+              )}
+              {show('Química', 'Molécula 2D') && (
+                <InsertBtn
+                  label="Molécula 2D"
+                  icon={Atom}
+                  disabled={disabledNonText}
+                  onClick={() => {
+                    if (onAddWidget) {
+                      onAddWidget('molecula');
+                      return;
+                    }
+                    add(createDefaultMoleculaBlock());
+                  }}
+                />
+              )}
+              {show('Química', 'Ecuación \\ce{} (ejemplo)') && (
+                <InsertBtn
+                  label="Ecuación \\ce{} (ejemplo)"
+                  icon={TestTube2}
+                  disabled={disabledNonText}
+                  onClick={() => add(createChemistryEquationBlock(CHEMISTRY_EQUATION_PRESETS[0].latex))}
+                />
+              )}
+              {CHEMISTRY_QUICK_ACTIVITIES.filter((act) => show('Química', act.label)).map((act) => (
+                <InsertBtn
+                  key={act.id}
+                  label={act.label}
+                  icon={
+                    act.id === 'balancear-ecuacion'
+                      ? FlaskConical
+                      : act.id === 'ubicar-elemento'
+                        ? TableProperties
+                        : Atom
+                  }
+                  disabled={disabled || !!slideHasActivity}
+                  onClick={() => {
+                    if (onAddActivity) {
+                      onAddActivity(act.id);
+                      return;
+                    }
+                    toast.error('No se pudo insertar la actividad');
+                  }}
+                />
               ))}
-              <button
-                type="button"
-                disabled={disabled || !!slideHasActivity}
-                onClick={() => onAddActivity?.('balancear-ecuacion')}
-                className="w-full rounded-md border border-dashed border-border p-1.5 text-left hover:bg-muted/70 disabled:opacity-50"
-              >
-                <div className="text-[11px] font-medium text-foreground">Slide de práctica — balanceo</div>
-                <div className="text-[10px] text-muted-foreground">Crea un slide dedicado a la actividad evaluable.</div>
-              </button>
             </div>
-          </CollapsibleSection>
-        </PanelSection>
-        <PanelSection title="Multimedia" storageKey="elementos.multimedia" badge={2}>
-          <InsertBtn
-            label="Video (YouTube)"
-            icon={Video}
-            disabled={disabledNonText}
-            onClick={() =>
-              add({
-                tipo: 'video',
-                url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                plataforma: 'youtube',
-                controles: true,
-              })
-            }
-          />
-          <InsertBtn
-            label="Audio"
-            icon={Volume2}
-            disabled={disabledNonText}
-            onClick={() =>
-              add({
-                tipo: 'audio',
-                url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-                controles: true,
-              })
-            }
-          />
-        </PanelSection>
-        <PanelSection title="Estructura" storageKey="elementos.estructura" badge={4}>
-          <div className="grid grid-cols-2 gap-1.5">
-          <InsertBtn
-            label="Separador"
-            icon={Minus}
-            disabled={disabledNonText}
-            onClick={() => add(createDefaultSeparadorBlock())}
-          />
-          <InsertBtn
-            label="Ecuación"
-            icon={Sigma}
-            disabled={disabledNonText}
-            onClick={() => add(createDefaultEcuacionBlock())}
-          />
-          <InsertBtn
-            label="Cita"
-            icon={Quote}
-            disabled={disabledNonText}
-            onClick={() => add({ tipo: 'cita', texto: 'Texto de la cita', autor: 'Autor' })}
-          />
-          <InsertBtn
-            label="Dos columnas (vacías)"
-            icon={Columns2}
-            disabled={disabledNonText}
-            onClick={() =>
-              add({
-                tipo: 'columnas',
-                columnas: [
-                  [createTextBlock({ preset: 'cuerpo', omitPosition: true, extra: { contenido: 'Columna izquierda' } })],
-                  [createTextBlock({ preset: 'cuerpo', omitPosition: true, extra: { contenido: 'Columna derecha' } })],
-                ],
-                proporcion: '1:1',
-              })
-            }
-          />
-          </div>
-        </PanelSection>
+            {presets.length > 0 && (
+              <CollapsibleSection
+                title="Ecuaciones rápidas (mhchem)"
+                defaultOpen={false}
+                storageKey="elementos.quimica.ecuaciones"
+                badge={CHEMISTRY_EQUATION_PRESETS.length}
+                forceOpen={searching}
+                className="mt-2"
+              >
+                <div className="space-y-1">
+                  {presets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      disabled={disabledNonText}
+                      onClick={() => add(createChemistryEquationBlock(preset.latex))}
+                      className="w-full rounded-md border border-transparent px-2 py-1.5 text-left text-[11px] hover:border-border hover:bg-muted/60 disabled:opacity-50"
+                    >
+                      <span className="font-medium text-foreground">{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+            {(plantillasQuimica.length > 0 || mostrarPractica) && (
+              <CollapsibleSection
+                title="Plantillas de slide (CN-7)"
+                icon={BookOpen}
+                defaultOpen={false}
+                storageKey="elementos.quimica.plantillas"
+                badge={CHEMISTRY_SLIDE_TEMPLATES.length + 1}
+                forceOpen={searching}
+                className="mt-2.5 border-t border-border/50 pt-2"
+              >
+                <div className="space-y-1">
+                  {plantillasQuimica.map((tmpl) => (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      disabled={onCreateActivitySlide ? disabled : disabledNonText}
+                      onClick={() => {
+                        if (isLabSlideTemplate(tmpl)) {
+                          onMergeClassVariables?.(tmpl.variablesClase);
+                        }
+                        if (onCreateActivitySlide) {
+                          onCreateActivitySlide(
+                            { bloques: tmpl.buildBlocks(), layout: tmpl.layout },
+                            tmpl.titulo,
+                          );
+                          toast.success(`Slide «${tmpl.titulo}» creado`);
+                          return;
+                        }
+                        void addBlocksSequential(tmpl.buildBlocks());
+                      }}
+                      className="w-full rounded-md border border-transparent p-1.5 text-left hover:border-border hover:bg-muted/70 disabled:opacity-50"
+                    >
+                      <div className="text-[11px] font-medium leading-tight text-foreground">{tmpl.nombre}</div>
+                      <div className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">{tmpl.descripcion}</div>
+                    </button>
+                  ))}
+                  {mostrarPractica && (
+                    <button
+                      type="button"
+                      disabled={disabled || !!slideHasActivity}
+                      onClick={() => onAddActivity?.('balancear-ecuacion')}
+                      className="w-full rounded-md border border-dashed border-border p-1.5 text-left hover:bg-muted/70 disabled:opacity-50"
+                    >
+                      <div className="text-[11px] font-medium text-foreground">Slide de práctica — balanceo</div>
+                      <div className="text-[10px] text-muted-foreground">Crea un slide dedicado a la actividad evaluable.</div>
+                    </button>
+                  )}
+                </div>
+              </CollapsibleSection>
+            )}
+          </PanelSection>
+        )}
+        {visible.multimedia && (
+          <PanelSection title="Multimedia" storageKey="elementos.multimedia" badge={2} forceOpen={searching}>
+            {MULTIMEDIA.filter((m) => show('Multimedia', m.label)).map((m) => (
+              <InsertBtn
+                key={m.label}
+                label={m.label}
+                icon={m.icon}
+                disabled={disabledNonText}
+                onClick={() => add(m.create())}
+              />
+            ))}
+          </PanelSection>
+        )}
+        {visible.estructura && (
+          <PanelSection title="Estructura" storageKey="elementos.estructura" badge={4} forceOpen={searching}>
+            <div className="grid grid-cols-2 gap-1.5">
+              {ESTRUCTURA.filter((e) => show('Estructura', e.label)).map((e) => (
+                <InsertBtn
+                  key={e.label}
+                  label={e.label}
+                  icon={e.icon}
+                  disabled={disabledNonText}
+                  onClick={() => add(e.create())}
+                />
+              ))}
+            </div>
+          </PanelSection>
+        )}
       </div>
     </ScrollArea>
   );
