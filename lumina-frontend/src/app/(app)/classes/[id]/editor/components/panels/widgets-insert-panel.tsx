@@ -7,12 +7,17 @@ import { toast } from 'sonner';
 import type { WidgetTipo } from '@lumina/types/widget';
 import { ScrollArea } from '@lumina/ui/scroll-area';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { DraggableWidgetItem } from '../draggable-widget-item';
 import {
   WIDGET_PANEL_GROUP_LABELS,
   WIDGET_PANEL_GROUP_ORDER,
+  type WidgetPanelGroup,
   getWidgetPanelItemsByGroup,
 } from './widget-panel-catalog';
+
+/** Grupos que arrancan abiertos; «Control» y «Próximamente» arrancan cerrados. */
+const GRUPOS_ABIERTOS: WidgetPanelGroup[] = ['lienzo', 'overlay'];
 
 interface Props {
   disabled?: boolean;
@@ -61,36 +66,47 @@ export function WidgetsInsertPanel({ disabled, slideHasActivity, onAddWidget }: 
           const items = getWidgetPanelItemsByGroup(group);
           if (items.length === 0) return null;
           return (
-            <div key={group} className="flex flex-col gap-0.5">
-              <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {WIDGET_PANEL_GROUP_LABELS[group]}
-              </p>
-              {items.map((item) => (
-                <DraggableWidgetItem
-                  key={item.type}
-                  type={item.type}
-                  label={item.label}
-                  Icon={item.Icon}
-                  disabled={allDisabled}
-                  onAdd={handleAdd}
-                  rowClassName={item.rowClassName}
-                  iconClassName={item.iconClassName}
-                />
-              ))}
-            </div>
+            <CollapsibleSection
+              key={group}
+              title={WIDGET_PANEL_GROUP_LABELS[group]}
+              storageKey={`widgets.${group}`}
+              defaultOpen={GRUPOS_ABIERTOS.includes(group)}
+              badge={items.length}
+              className="px-4 pt-3"
+            >
+              <div className="-mx-4 flex flex-col gap-0.5">
+                {items.map((item) => (
+                  <DraggableWidgetItem
+                    key={item.type}
+                    type={item.type}
+                    label={item.label}
+                    Icon={item.Icon}
+                    disabled={allDisabled}
+                    onAdd={handleAdd}
+                    rowClassName={item.rowClassName}
+                    iconClassName={item.iconClassName}
+                  />
+                ))}
+              </div>
+            </CollapsibleSection>
           );
         })}
 
-        <div className="space-y-2 px-3 pt-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Próximamente
-          </p>
-          <UpcomingBtn label="Iframe embebido" icon={MonitorPlay} disabled={allDisabled} />
-          <UpcomingBtn label="GIF animado" icon={Film} disabled={allDisabled} />
-          <UpcomingBtn label="Código QR" icon={QrCode} disabled={allDisabled} />
-          <UpcomingBtn label="Gráfico de barras" icon={BarChart} disabled={allDisabled} />
-          <UpcomingBtn label="Tabla de datos" icon={Table} disabled={allDisabled} />
-        </div>
+        <CollapsibleSection
+          title="Próximamente"
+          storageKey="widgets.proximamente"
+          defaultOpen={false}
+          badge={5}
+          className="px-4 pt-3"
+        >
+          <div className="space-y-2">
+            <UpcomingBtn label="Iframe embebido" icon={MonitorPlay} disabled={allDisabled} />
+            <UpcomingBtn label="GIF animado" icon={Film} disabled={allDisabled} />
+            <UpcomingBtn label="Código QR" icon={QrCode} disabled={allDisabled} />
+            <UpcomingBtn label="Gráfico de barras" icon={BarChart} disabled={allDisabled} />
+            <UpcomingBtn label="Tabla de datos" icon={Table} disabled={allDisabled} />
+          </div>
+        </CollapsibleSection>
       </div>
     </ScrollArea>
   );

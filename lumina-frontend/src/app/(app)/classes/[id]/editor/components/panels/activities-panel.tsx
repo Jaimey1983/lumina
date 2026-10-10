@@ -32,6 +32,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 import type { WidgetTipo } from '@lumina/types/widget';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@lumina/ui/accordion';
 import { DraggableActivityItem } from '../draggable-activity-item';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -141,36 +142,48 @@ interface Props {
 // ─── Sub-component ────────────────────────────────────────────────────────────
 
 function ActivityGroup({
+  value,
   title,
   items,
   onAdd,
   disabled,
 }: {
-  title?: string;
+  value: string;
+  title: string;
   items: ActivityItem[];
   onAdd: (type: ActivityType) => void;
   disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      {title ? (
-        <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <AccordionItem value={value} className="border-b-0">
+      <AccordionTrigger className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="flex flex-1 items-center gap-1.5 text-left">
           {title}
-        </p>
-      ) : null}
-      {items.map((item) => (
-        <DraggableActivityItem
-          key={item.type}
-          type={item.type}
-          label={item.label}
-          Icon={item.Icon}
-          disabled={disabled}
-          onAdd={onAdd}
-        />
-      ))}
-    </div>
+          <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium leading-4">
+            {items.length}
+          </span>
+        </span>
+      </AccordionTrigger>
+      <AccordionContent className="pb-1 pt-0">
+        <div className="flex flex-col gap-0.5">
+          {items.map((item) => (
+            <DraggableActivityItem
+              key={item.type}
+              type={item.type}
+              label={item.label}
+              Icon={item.Icon}
+              disabled={disabled}
+              onAdd={onAdd}
+            />
+          ))}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
+
+/** Grupo que arranca abierto; el acordeón mantiene uno solo abierto a la vez. */
+const GRUPO_ABIERTO_POR_DEFECTO = 'evaluacion';
 
 export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
   return (
@@ -180,11 +193,13 @@ export function ActivitiesPanel({ onAddActivity, hasActivity }: Props) {
           Este slide ya tiene una actividad. Elimínala para agregar otra.
         </p>
       )}
-      <ActivityGroup title="Evaluación"  items={EVALUATION}  onAdd={onAddActivity} disabled={hasActivity} />
-      <ActivityGroup title="Química" items={QUIMICA} onAdd={onAddActivity} disabled={hasActivity} />
-      <ActivityGroup title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
-      <ActivityGroup title="En vivo"     items={LIVE}        onAdd={onAddActivity} disabled={hasActivity} />
-      <ActivityGroup items={GRUPO4} onAdd={onAddActivity} disabled={hasActivity} />
+      <Accordion type="single" collapsible defaultValue={GRUPO_ABIERTO_POR_DEFECTO}>
+        <ActivityGroup value="evaluacion" title="Evaluación" items={EVALUATION} onAdd={onAddActivity} disabled={hasActivity} />
+        <ActivityGroup value="quimica" title="Química" items={QUIMICA} onAdd={onAddActivity} disabled={hasActivity} />
+        <ActivityGroup value="interaccion" title="Interacción" items={INTERACTION} onAdd={onAddActivity} disabled={hasActivity} />
+        <ActivityGroup value="en-vivo" title="En vivo" items={LIVE} onAdd={onAddActivity} disabled={hasActivity} />
+        <ActivityGroup value="juegos" title="Juegos" items={GRUPO4} onAdd={onAddActivity} disabled={hasActivity} />
+      </Accordion>
     </div>
   );
 }
