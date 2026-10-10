@@ -184,6 +184,6 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 | Q (química) | `docs/tablero/etapa-Q.md` | Q1–Q12 hecho; Q13 en revisión |
 | R (ayudas largas tras icono ⓘ) | `docs/tablero/etapa-R.md` | R1–R7 hecho; R8 en revisión |
 | S (secciones plegables en paneles del editor) | `docs/tablero/etapa-S.md` | S1–S12 en revisión |
-| T (sistema de diseño y rework de widgets) | `docs/tablero/etapa-T.md` | T0, T1, T2, T2b, T3 y T4 en revisión; T5–T20 pendientes |
+| T (sistema de diseño y rework de widgets) | `docs/tablero/etapa-T.md` | T0, T1, T2, T2b, T3 y T4 en revisión; T5 en curso; T6–T20 pendientes |
 
 Las etapas cerradas son historial: no se leen salvo que una ficha activa las cite.

@@ -99,7 +99,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T5 — `WidgetMotion` sobre `motion`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/package.json` (declarar `motion`), `packages/element-kit/src/widgets/_motion/` (nuevo: `widget-motion.tsx`, presets, spec). **NO** migra ningún widget todavía.
 - **Entregable:** (1) verificar si `Animacion[]` de `Block` aplica a widgets y cómo se combina con una animación de entrada por defecto (DT4); (2) presets `entrada` (fade/slide/scale con stagger), `press`, `hover`, `exito`, `conteo`; (3) `prefers-reduced-motion` apaga todo en un único punto; (4) lazy donde pese. Verificación: `pnpm --filter @lumina/element-kit build && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
