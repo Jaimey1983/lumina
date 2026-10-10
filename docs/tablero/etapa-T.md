@@ -51,7 +51,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T0 — Línea base de snapshots visuales de los 14 widgets
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `lumina-frontend/src/visual-tests/` (specs nuevos, uno por widget o agrupados) y sus imágenes de referencia; un helper de fixtures en esa carpeta. **NO** toca `packages/element-kit` ni ningún CSS.
 - **Entregable:** un snapshot del Viewer por widget en su estado por defecto y, para los 12 con presets, uno por cada preset; documentado cómo regenerar (`test:visual:update`). Verificación: `pnpm --filter lumina-frontend test:visual` verde dos corridas seguidas (estable, sin diffs espurios).
