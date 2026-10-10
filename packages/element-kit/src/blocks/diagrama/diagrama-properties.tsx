@@ -21,7 +21,6 @@ import {
   Grid,
   Sliders,
   Spline,
-  ChevronDown,
 } from 'lucide-react';
 import type {
   Block,
@@ -45,7 +44,7 @@ import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { Badge } from '@lumina/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@lumina/ui/collapsible';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { cn } from '@lumina/ui/lib/utils';
 import {
   normalizeDiagramaBlock,
@@ -139,17 +138,6 @@ export function DiagramaProperties({
 }: DiagramaPropertiesProps) {
   const [localBlock, setLocalBlock] = useState<DiagramaBlock>(block);
   const [outlineText, setOutlineText] = useState('');
-  // Colapsada por defecto: es una lista larga (8 plantillas) de uso
-  // ocasional — mostrarla siempre abierta era buena parte del "desorden"
-  // del panel (siempre visible junto a Tipo de Diagrama, Paleta y Estilo).
-  const [plantillasOpen, setPlantillasOpen] = useState(false);
-  // "Tipo de Diagrama" es el selector primario (refleja el estado actual
-  // del bloque) — arranca abierto. "Paleta de Colores" (+ Estilo Visual
-  // Global, que vive dentro del mismo bloque) es de uso ocasional como
-  // Plantillas — arranca cerrada, con la paleta activa igual visible en el
-  // trigger vía el badge existente.
-  const [tipoOpen, setTipoOpen] = useState(true);
-  const [paletaOpen, setPaletaOpen] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -637,21 +625,11 @@ export function DiagramaProperties({
       )}
 
       {/* Selector de Subtipo */}
-      <Collapsible open={tipoOpen} onOpenChange={setTipoOpen} className="space-y-2">
-        <CollapsibleTrigger className="flex w-full items-center justify-between gap-1.5 text-left">
-          <span className="flex items-center gap-1.5">
-            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Tipo de Diagrama
-            </Label>
-            <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 h-4 font-mono">
-              {subtipoMeta.label}
-            </Badge>
-          </span>
-          <ChevronDown
-            className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', tipoOpen && 'rotate-180')}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
+      <CollapsibleSection
+        title="Tipo de Diagrama"
+        storageKey="diagrama.tipo"
+        badge={subtipoMeta.label}
+      >
           <div className="grid grid-cols-2 gap-1.5">
             {SUBTIPOS_CONFIG.map(({ subtipo, label, Icon }) => {
               const isSelected = currentSubtipo === subtipo;
@@ -673,33 +651,22 @@ export function DiagramaProperties({
               );
             })}
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+      </CollapsibleSection>
 
       {/* Selector de Paletas Armónicas (+ Estilo Visual Global, mismo bloque) */}
       {grafoBlock && (
-        <Collapsible
-          open={paletaOpen}
-          onOpenChange={setPaletaOpen}
-          className="space-y-2 border-t border-border pt-3"
+        <CollapsibleSection
+          title="Paleta de Colores"
+          icon={Palette}
+          defaultOpen={false}
+          storageKey="diagrama.paleta"
+          badge={
+            grafoBlock.opciones?.paleta
+              ? (PALETAS_DIAGRAMA[grafoBlock.opciones.paleta]?.nombre.split(' ')[0] ?? 'Auto')
+              : undefined
+          }
+          className="border-t border-border pt-3"
         >
-          <CollapsibleTrigger className="flex w-full items-center justify-between gap-1.5 text-left">
-            <span className="flex items-center gap-1.5">
-              <Palette className="h-3.5 w-3.5 text-muted-foreground" />
-              <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Paleta de Colores
-              </Label>
-              {grafoBlock.opciones?.paleta && (
-                <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 h-4 font-mono">
-                  {PALETAS_DIAGRAMA[grafoBlock.opciones.paleta]?.nombre.split(' ')[0] ?? 'Auto'}
-                </Badge>
-              )}
-            </span>
-            <ChevronDown
-              className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', paletaOpen && 'rotate-180')}
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">
           <div className="grid grid-cols-2 gap-1.5">
             {(Object.keys(PALETAS_DIAGRAMA) as DiagramaPaletaId[]).map((paletaKey) => {
               const pal = PALETAS_DIAGRAMA[paletaKey];
@@ -812,24 +779,18 @@ export function DiagramaProperties({
               </div>
             </div>
           </div>
-          </CollapsibleContent>
-        </Collapsible>
+        </CollapsibleSection>
       )}
 
       {/* Plantillas Pedagógicas — colapsada por defecto (ver plantillasOpen) */}
-      <Collapsible open={plantillasOpen} onOpenChange={setPlantillasOpen} className="space-y-2 border-t border-border pt-3">
-        <CollapsibleTrigger className="flex w-full items-center justify-between gap-1.5 text-left">
-          <span className="flex items-center gap-1.5">
-            <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Plantillas Pedagógicas
-            </Label>
-          </span>
-          <ChevronDown
-            className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', plantillasOpen && 'rotate-180')}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-1.5">
+      <CollapsibleSection
+        title="Plantillas Pedagógicas"
+        icon={BookOpen}
+        defaultOpen={false}
+        storageKey="diagrama.plantillas"
+        badge={TEMPLATES_CONFIG.length}
+        className="border-t border-border pt-3"
+      >
           <div className="grid grid-cols-2 gap-1.5">
             {TEMPLATES_CONFIG.map((tpl) => (
               <button
@@ -843,18 +804,17 @@ export function DiagramaProperties({
               </button>
             ))}
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+      </CollapsibleSection>
 
       {/* Modo Esquema (Texto / Markdown) */}
       {grafoBlock && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-center gap-1.5">
-            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Modo Esquema (Texto / Markdown)
-            </Label>
-          </div>
+        <CollapsibleSection
+          title="Modo Esquema (Texto / Markdown)"
+          icon={FileText}
+          defaultOpen={false}
+          storageKey="diagrama.esquema"
+          className="border-t border-border pt-3"
+        >
           <p className="text-[10px] text-muted-foreground leading-tight">
             Escribe ideas con sangría (2 espacios o guiones) para generar el diagrama al instante.
           </p>
@@ -876,7 +836,7 @@ export function DiagramaProperties({
             <Sparkles className="mr-1.5 h-3 w-3 text-primary" />
             Generar desde Esquema
           </Button>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* 2. Título y Accesibilidad */}
@@ -908,14 +868,14 @@ export function DiagramaProperties({
 
       {/* 3. Gestión de Nodos / Elementos */}
       {grafoBlock && (
-        <div className="space-y-3 border-t border-border pt-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Network className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Nodos ({grafoBlock.nodos.length})
-              </span>
-            </div>
+        <CollapsibleSection
+          title="Nodos"
+          icon={Network}
+          storageKey="diagrama.nodos"
+          badge={grafoBlock.nodos.length}
+          className="border-t border-border pt-3"
+        >
+          <div className="flex justify-end">
             <Button
               type="button"
               variant="outline"
@@ -1018,25 +978,24 @@ export function DiagramaProperties({
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* 4. Conexiones y Proposiciones (Aristas) */}
       {grafoBlock && grafoBlock.aristas.length > 0 && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Conexiones ({grafoBlock.aristas.length})
-              </span>
-            </div>
-            {currentSubtipo === 'mapa_conceptual' && (
-              <span className="text-[10px] text-muted-foreground italic">
-                Palabras de enlace
-              </span>
-            )}
-          </div>
+        <CollapsibleSection
+          title="Conexiones"
+          icon={Share2}
+          defaultOpen={false}
+          storageKey="diagrama.conexiones"
+          badge={grafoBlock.aristas.length}
+          className="border-t border-border pt-3"
+        >
+          {currentSubtipo === 'mapa_conceptual' && (
+            <span className="text-[10px] text-muted-foreground italic">
+              Palabras de enlace
+            </span>
+          )}
 
           <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1">
             {grafoBlock.aristas.map((arista) => {
@@ -1101,7 +1060,7 @@ export function DiagramaProperties({
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
     </div>
   );

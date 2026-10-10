@@ -29,6 +29,7 @@ import {
   resolveFlipCardsPlantillaId,
 } from './flip-cards-templates.js';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { FlipCardsAppearanceProperties } from './flip-cards-appearance-properties.js';
 
 function CaraCheckboxes({
@@ -271,8 +272,11 @@ export function FlipCardsProperties({
         />
       </div>
 
-      <div className="space-y-3">
-        <WidgetSectionTitle>Layout</WidgetSectionTitle>
+      <CollapsibleSection
+        title="Layout"
+        storageKey="flip-cards.layout"
+        badge={`${countDraft} tarjetas`}
+      >
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Número de tarjetas</Label>
@@ -354,15 +358,19 @@ export function FlipCardsProperties({
             <SliderThumb />
           </Slider>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {hideComponentes ? null : (
         <FlipCardsWidgetComponentes block={block} applyNow={applyNow} />
       )}
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-1.5">
-          <WidgetSectionTitle>Visibilidad por defecto</WidgetSectionTitle>
+      <CollapsibleSection
+        title="Visibilidad por defecto"
+        defaultOpen={false}
+        storageKey="flip-cards.visibilidad"
+      >
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          Cómo se aplica
           <FieldHelp label="Visibilidad por defecto">
             <p>
               Aplica a tarjetas nuevas o a las que no tengan un valor propio. Para una tarjeta
@@ -402,7 +410,7 @@ export function FlipCardsProperties({
             }))
           }
         />
-      </div>
+      </CollapsibleSection>
 
       <FlipCardsAppearanceProperties block={block} applyNow={applyNow} />
     </div>

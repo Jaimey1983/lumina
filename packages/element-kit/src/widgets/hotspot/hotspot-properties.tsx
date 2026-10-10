@@ -16,6 +16,7 @@ import { Label } from '@lumina/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
 import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { WIDGET_LAYOUTS } from '@lumina/editor-shared/widget-layouts';
 import { WidgetLayoutThumb } from '@lumina/editor-shared/widget-layout-thumb';
 import { mergedHotspotConfig, normalizeHotspotWidget } from './hotspot-config.js';
@@ -49,9 +50,8 @@ export function HotspotWidgetComponentes({ block: rawBlock, applyNow }: HotspotW
 
   return (
     <div className="space-y-6">
-      <div>
-        <WidgetSectionTitle>Marcador</WidgetSectionTitle>
-        <div className="space-y-4 pt-2">
+      <CollapsibleSection title="Marcador" storageKey="hotspot.marcador">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-xs">Color del Pulso</Label>
             <div className="flex gap-2 items-center">
@@ -110,12 +110,15 @@ export function HotspotWidgetComponentes({ block: rawBlock, applyNow }: HotspotW
             </ToggleGroup>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
-      <div className="space-y-4">
-        <WidgetSectionTitle>Burbuja de Contenido</WidgetSectionTitle>
-
-        <div className="space-y-2 pt-2">
+      <CollapsibleSection
+        title="Burbuja de Contenido"
+        defaultOpen={false}
+        storageKey="hotspot.burbuja"
+        className="border-t border-border pt-4"
+      >
+        <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Posición de la Burbuja</Label>
           <div className="grid grid-cols-3 gap-2 bg-slate-100/50 p-1 rounded-md">
             {['auto', 'arriba', 'abajo', 'izquierda', 'derecha'].map((pos) => (
@@ -196,7 +199,7 @@ export function HotspotWidgetComponentes({ block: rawBlock, applyNow }: HotspotW
             Mostrar botón de cerrar (x)
           </Label>
         </div>
-      </div>
+      </CollapsibleSection>
     </div>
   );
 }
