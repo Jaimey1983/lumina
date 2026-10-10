@@ -75,7 +75,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S6 — Partir `properties-panel.tsx` (sin cambio de comportamiento)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S1 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/properties-panel.tsx` y archivos nuevos hermanos: `properties-panel-actividades.tsx` (las ramas `block.tipo === 'actividad'`), `properties-panel-widgets.tsx` (las ramas de widgets), `properties-panel-motor.tsx` (`BlockEstadoInicialSection`, `BlockRotationSection`, `motorSections`). Se conserva el export `PropertiesPanel` y sus props. **NO** cambia JSX, textos ni estilos.
 - **Entregable:** `PropertiesPanel` queda como cascarón (cabecera, pestañas Propiedades/Animaciones, despacho por tipo); la cabecera `<h2>` repetida en 15 ramas se centraliza en un componente `PropertiesHeader` (mismo markup). Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit && pnpm --filter lumina-frontend exec tsc --noEmit`.
