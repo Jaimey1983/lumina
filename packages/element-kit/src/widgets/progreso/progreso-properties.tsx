@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block } from '@lumina/types/slide';
 import type { ProgresoModo, ProgresoWidget } from '@lumina/types/widget';
 import { Checkbox } from '@lumina/ui/checkbox';
@@ -54,6 +56,16 @@ export function ProgresoProperties({ block: rawBlock, applyNow }: ProgresoProper
 
   return (
     <div className="space-y-6">
+      <PresetGallery
+        presets={presetsDelWidget('progreso')}
+        estado={block}
+        storageKey="widget.progreso.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'progreso' ? aplicarPreset(normalizeProgresoWidget(b), preset) : b,
+          )
+        }
+      />
       <div>
         <WidgetSectionTitle>Valor</WidgetSectionTitle>
         <div className="space-y-4 pt-2">

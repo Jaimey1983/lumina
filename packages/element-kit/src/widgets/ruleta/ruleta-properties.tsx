@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import { useCallback } from 'react';
 
 import type { Block } from '@lumina/types/slide';
@@ -36,6 +38,16 @@ export function RuletaProperties({ block: rawBlock, applyNow }: RuletaProperties
 
   return (
     <div className="flex flex-col gap-4 p-3 text-sm">
+      <PresetGallery
+        presets={presetsDelWidget('ruleta')}
+        estado={widget}
+        storageKey="widget.ruleta.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'ruleta' ? aplicarPreset(normalizeRuletaBlock(b), preset) : b,
+          )
+        }
+      />
       <section>
         <h4 className="mb-2 font-semibold text-gray-700">Configuración</h4>
         <div className="flex flex-col gap-2">

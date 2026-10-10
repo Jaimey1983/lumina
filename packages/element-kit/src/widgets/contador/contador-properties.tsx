@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block } from '@lumina/types/slide';
 import type { ContadorFormato, ContadorModo, ContadorWidget } from '@lumina/types/widget';
 import { Button } from '@lumina/ui/button';
@@ -55,6 +57,16 @@ export function ContadorProperties({ block: rawBlock, applyNow }: ContadorProper
 
   return (
     <div className="space-y-6">
+      <PresetGallery
+        presets={presetsDelWidget('contador')}
+        estado={block}
+        storageKey="widget.contador.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'contador' ? aplicarPreset(normalizeContadorWidget(b), preset) : b,
+          )
+        }
+      />
       <div>
         <WidgetSectionTitle>Modo</WidgetSectionTitle>
         <div className="space-y-4 pt-2">

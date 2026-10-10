@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block } from '@lumina/types/slide';
 import type { TooltipPosicion, TooltipTriggerTipo, TooltipWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
@@ -37,6 +39,16 @@ export function TooltipProperties({ block: rawBlock, applyNow }: TooltipProperti
 
   return (
     <div className="space-y-6">
+      <PresetGallery
+        presets={presetsDelWidget('tooltip')}
+        estado={block}
+        storageKey="widget.tooltip.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'tooltip' ? aplicarPreset(normalizeTooltipWidget(b), preset) : b,
+          )
+        }
+      />
       <div>
         <WidgetSectionTitle>Disparador</WidgetSectionTitle>
         <div className="space-y-4 pt-2">

@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block } from '@lumina/types/slide';
 import type {
   HotspotConfiguracion,
@@ -50,6 +52,16 @@ export function HotspotWidgetComponentes({ block: rawBlock, applyNow }: HotspotW
 
   return (
     <div className="space-y-6">
+      <PresetGallery
+        presets={presetsDelWidget('hotspot')}
+        estado={block}
+        storageKey="widget.hotspot.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'hotspot' ? aplicarPreset(normalizeHotspotWidget(b), preset) : b,
+          )
+        }
+      />
       <CollapsibleSection title="Marcador" storageKey="hotspot.marcador">
         <div className="space-y-4">
           <div className="space-y-2">

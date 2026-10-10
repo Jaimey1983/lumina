@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block, ClickRevealWidget } from '@lumina/types/slide';
 import type { ClickRevealInnerSelection, WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { Checkbox } from '@lumina/ui/checkbox';
@@ -70,6 +72,16 @@ export function ClickRevealWidgetComponentes({
 
   return (
     <div className="flex flex-col gap-4">
+      <PresetGallery
+        presets={presetsDelWidget('click-reveal')}
+        estado={block}
+        storageKey="widget.click-reveal.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'click-reveal' ? aplicarPreset(normalizeClickRevealWidget(b), preset) : b,
+          )
+        }
+      />
       <CollapsibleSection
         title="Configuración"
         storageKey="click-reveal.configuracion"

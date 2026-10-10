@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block } from '@lumina/types/slide';
 import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
@@ -46,6 +48,16 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
 
   return (
     <div className="space-y-6">
+      <PresetGallery
+        presets={presetsDelWidget('boton')}
+        estado={block}
+        storageKey="widget.boton.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'boton' ? aplicarPreset(normalizeBotonWidget(b), preset) : b,
+          )
+        }
+      />
       <div>
         <WidgetSectionTitle>Contenido</WidgetSectionTitle>
         <div className="space-y-4 pt-2">

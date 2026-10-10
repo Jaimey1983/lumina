@@ -1,5 +1,7 @@
 'use client';
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block, CarouselWidget } from '@lumina/types/slide';
 import type { WidgetLayoutId, WidgetSlideCount } from '@lumina/types/widget';
 import { resizeCarouselSlides } from './carousel-defaults.js';
@@ -85,6 +87,16 @@ export function CarouselWidgetComponentes({
 
   return (
     <div className="flex flex-col gap-4">
+      <PresetGallery
+        presets={presetsDelWidget('carousel')}
+        estado={block}
+        storageKey="widget.carousel.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'carousel' ? aplicarPreset(normalizeCarouselWidget(b), preset) : b,
+          )
+        }
+      />
       <div className="space-y-2">
         <WidgetSectionTitle>Configuración</WidgetSectionTitle>
         <div className="space-y-1.5">

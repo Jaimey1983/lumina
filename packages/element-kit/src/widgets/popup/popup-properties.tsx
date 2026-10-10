@@ -2,6 +2,8 @@
 
 
 
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
 import type { Block, PopupWidget } from '@lumina/types/slide';
 
 import type {
@@ -132,6 +134,16 @@ export function PopupWidgetComponentes({ block: rawBlock, applyNow }: PopupWidge
   return (
 
     <div className="flex flex-col gap-4">
+      <PresetGallery
+        presets={presetsDelWidget('popup')}
+        estado={block}
+        storageKey="widget.popup.estilos"
+        onSelect={(preset) =>
+          void applyNow((b) =>
+            b.tipo === 'popup' ? aplicarPreset(normalizePopupWidget(b), preset) : b,
+          )
+        }
+      />
 
       <CollapsibleSection title="Disparador" storageKey="popup.disparador">
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
