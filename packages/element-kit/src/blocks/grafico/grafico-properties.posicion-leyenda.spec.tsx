@@ -6,7 +6,7 @@
 // "Posición de la Leyenda" no tiene ningún efecto en ese caso y no debe
 // mostrarse (control fantasma).
 
-import { render, cleanup, screen } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GraficoProperties } from './grafico-properties.js';
 import { createDefaultGraficoBlock } from './grafico-defaults.js';
@@ -14,6 +14,8 @@ import type { Block, GraficoDatosBlock } from '@lumina/types/slide';
 
 afterEach(() => {
   cleanup();
+  // Las secciones recuerdan abierta/cerrada en localStorage: aislar cada prueba.
+  localStorage.clear();
 });
 
 function renderProperties(overrides: Partial<GraficoDatosBlock>) {
@@ -22,6 +24,8 @@ function renderProperties(overrides: Partial<GraficoDatosBlock>) {
     fn(block);
   });
   render(<GraficoProperties block={block} applyNow={applyNow} />);
+  // S8: «Leyenda y etiquetas» arranca cerrada; se abre para consultar sus controles.
+  fireEvent.click(screen.getByRole('button', { name: /Leyenda y etiquetas/ }));
 }
 
 describe('GraficoProperties — "Posición de la Leyenda" oculta para arcos parciales (regresión)', () => {
