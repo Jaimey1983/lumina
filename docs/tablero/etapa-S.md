@@ -104,7 +104,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S10 — Paneles derechos de lista (Interacciones, Variables, Temas)
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S1 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/interactions-panel.tsx`, `panels/variables-panel.tsx`, `panels/themes-panel.tsx`, `panels/math-generator-panel.tsx`, `panels/live-responses-panel.tsx`. **NO** toca `rule-builder/` ni `properties-panel.tsx`.
 - **Entregable:** Temas: el formulario `CustomThemeForm` en sección cerrada y encabezados con el estilo de DS1 (hoy `text-xs font-medium uppercase` aparte); Interacciones y Variables: lista y editor en secciones, con el editor abierto al crear o editar (`forceOpen`); el generador de matemáticas y las respuestas en vivo adoptan el componente nuevo en lugar de sus colapsables propios. Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit`.
