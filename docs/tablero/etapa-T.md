@@ -67,7 +67,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T2 — Unificar `configPatch` en `ElementPreset` y quitar los casts
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `packages/element-kit-core/src/` (tipo `ElementPreset` + su spec) y los `*-presets.ts`/`*-definition.ts` de los 12 widgets (`boton`, `progreso`, `contador`, `ruleta`, `flip-cards`, `tabs`, `carousel`, `click-reveal`, `timeline`, `hotspot`, `tooltip`, `popup`) y de `accordion`, `image-compare`, `interactive-checklist`, `scratch-card` (también declaran presets). **NO** toca viewers ni CSS.
 - **Entregable:** (1) medir qué presets usan `patch`, cuáles `configPatch` y cuáles necesitan parchear estado (DT2); (2) dejar solo `configPatch` (y `estadoPatch` únicamente si hace falta); (3) sin `as unknown as` en ningún preset; (4) los presets existentes siguen produciendo el mismo resultado. Verificación: `pnpm -r build && pnpm --filter @lumina/element-kit-core test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint`.
