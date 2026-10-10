@@ -61,7 +61,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S4 — Widgets y Actividades en acordeón
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** S2 `hecho`.
 - **Alcance — PUEDE tocar:** `panels/widgets-insert-panel.tsx`, `panels/widget-panel-catalog.ts` (solo etiquetas de grupo si hace falta), `panels/activities-panel.tsx`, `lumina-frontend/.../draggable-widget-item.tsx` y `draggable-activity-item.tsx` (solo densidad/ancho). **NO** toca `flyout-left-panels.tsx`.
 - **Entregable:** (a) Widgets: cada grupo de `WIDGET_PANEL_GROUP_ORDER` es una `CollapsibleSection`; «Próximamente» pasa a una sección **cerrada** con sus 5 botones. (b) Actividades: `GRUPO4` recibe título «Juegos»; acordeón de un solo grupo abierto a la vez, con «Evaluación» abierto por defecto; el arrastre sigue funcionando con el grupo abierto. Verificación: `pnpm --filter lumina-frontend lint && pnpm --filter lumina-frontend test:unit` (incluye `widget-panel-catalog.spec.ts`), más comprobación visual y de arrastre en el editor.
