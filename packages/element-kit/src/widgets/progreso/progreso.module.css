@@ -49,7 +49,7 @@
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
-  color: #fff;
+  color: var(--lw-color-on-solid, #fff);
   text-align: center;
   white-space: nowrap;
   background-color: var(--lw-color-primary, #0d6efd);

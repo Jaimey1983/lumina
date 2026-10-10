@@ -106,7 +106,7 @@
   border: none;
   border-radius: var(--lw-radius-full, 9999px);
   background: rgba(15, 23, 42, 0.06);
-  color: #64748b;
+  color: var(--lw-color-text-muted, #64748b);
   cursor: pointer;
   transition:
     background var(--lw-motion-fast, 0.15s),
@@ -115,7 +115,7 @@
 
 .revealModalClose:hover {
   background: rgba(15, 23, 42, 0.12);
-  color: #0f172a;
+  color: var(--lw-color-text, #0f172a);
 }
 
 .revealModalClose:active {
@@ -127,7 +127,7 @@
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: var(--lw-color-text-muted, #64748b);
   text-transform: uppercase;
 }
 
@@ -234,9 +234,9 @@
   align-self: center;
   width: 2.5rem;
   height: 2.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--lw-color-border, #e2e8f0);
   border-radius: 9999px;
-  background: #fff;
+  background: var(--lw-color-bg, #fff);
   color: var(--widget-nav, #0f172a);
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
@@ -356,7 +356,7 @@
 }
 
 .revealTriggerImagePlaceholderSelected {
-  outline: 2px dashed #fff;
+  outline: 2px dashed var(--lw-color-on-solid, #fff);
   outline-offset: 2px;
 }
 
@@ -411,13 +411,13 @@
   flex-wrap: wrap;
   gap: 0.375rem;
   padding-top: 0.375rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--lw-color-border, #e2e8f0);
 }
 
 .revealOverlayTab {
   appearance: none;
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  background: var(--lw-color-bg, #fff);
   border-radius: 0.25rem;
   padding: 0.25rem 0.625rem;
   font-size: 0.625rem;

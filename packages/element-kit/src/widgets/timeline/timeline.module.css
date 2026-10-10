@@ -394,7 +394,7 @@
 }
 
 .tlSegmentLabel {
-  color: #fff;
+  color: var(--lw-color-on-solid, #fff);
   font-weight: 700;
   font-size: 0.875rem;
   white-space: nowrap;
@@ -403,7 +403,7 @@
 }
 
 .tlVariantSegmentada .tlNodeDot {
-  border: 2px solid #fff;
+  border: 2px solid var(--lw-color-bg, #fff);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
@@ -514,7 +514,7 @@
   flex-shrink: 0;
   align-self: stretch;
   min-height: 2rem;
-  background: #cbd5e1;
+  background: var(--lw-neutral-300, #cbd5e1);
 }
 
 .tlVerticalBodyCol {
@@ -578,7 +578,7 @@
 .tlVariantCorporate .tlNodeDot {
   width: calc(var(--tl-radio-nodo, 10px) * 1.6);
   height: calc(var(--tl-radio-nodo, 10px) * 1.6);
-  border: 2px solid #fff;
+  border: 2px solid var(--lw-color-bg, #fff);
 }
 
 .tlCorporateBlock {
@@ -660,14 +660,14 @@
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 800;
   line-height: 1;
-  color: #0f172a;
+  color: var(--lw-color-text, #0f172a);
   font-variant-numeric: tabular-nums;
 }
 
 .tlProyectoTitle {
   font-weight: 700;
   font-size: 0.9375rem;
-  color: #0f172a;
+  color: var(--lw-color-text, #0f172a);
   width: 100%;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -689,7 +689,7 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--lw-color-border, #e2e8f0);
 }
 
 .tlProyectoPhoto img {
@@ -710,7 +710,7 @@
 }
 
 .tlVariantInfografica .tlNodeDot {
-  border: 2px solid #fff;
+  border: 2px solid var(--lw-color-bg, #fff);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 

@@ -249,7 +249,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--lw-color-text-muted, #64748b);
   margin-left: 8px;
   margin-top: -4px;
   margin-right: -4px;
@@ -257,7 +257,7 @@
 
 .closeButton:hover {
   background-color: rgba(0, 0, 0, 0.05);
-  color: #0f172a;
+  color: var(--lw-color-text, #0f172a);
 }
 
 .bubbleBody {
@@ -300,6 +300,6 @@
 }
 
 .bubbleEditing {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--lw-color-primary, #2563eb);
   outline-offset: 2px;
 }
