@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type { Block } from '@lumina/types/slide';
 import { makeImageBlockFromUrl } from '@/lib/image-block';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 
@@ -39,11 +40,11 @@ export function ImagesElementPanel({ onInsert, disabled }: Props) {
   };
 
   return (
-    <div className="space-y-3 border-b border-border pb-3">
-      <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Imágenes
-      </p>
-
+    <CollapsibleSection
+      title="Imágenes"
+      storageKey="elementos.imagenes"
+      className="border-b border-border pb-3"
+    >
       <div className="space-y-2 px-1">
         <Label htmlFor="img-url-flyout" className="text-[10px] text-muted-foreground">
           URL de imagen
@@ -87,6 +88,6 @@ export function ImagesElementPanel({ onInsert, disabled }: Props) {
           Agregar al slide
         </Button>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

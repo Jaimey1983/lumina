@@ -74,6 +74,7 @@ import {
   createDefaultTablaPeriodicaBlock,
 } from '@lumina/element-kit/widgets/tabla_periodica/tabla-periodica-defaults';
 import { createDefaultMoleculaBlock } from '@lumina/element-kit/widgets/molecula/molecula-defaults';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { PanelSection, InsertBtn, type ContentPanelProps } from './panel-shared';
 
 function isLabSlideTemplate(
@@ -81,6 +82,30 @@ function isLabSlideTemplate(
 ): tmpl is ChemistryLabSlideTemplate {
   return CHEMISTRY_LAB_SLIDE_TEMPLATES.some((l) => l.id === tmpl.id);
 }
+
+const DIAGRAMAS: Array<{
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  create: () => Block;
+}> = [
+  { label: "Mapa Mental", icon: Brain, create: createDefaultMapaMentalBlock },
+  { label: "Organigrama", icon: Network, create: createDefaultOrganigramaBlock },
+  { label: "Mapa Conceptual", icon: Workflow, create: createDefaultMapaConceptualBlock },
+  { label: "Flujo de Procesos", icon: GitMerge, create: createDefaultFlujoBlock },
+  { label: "Diagrama de Venn", icon: CircleDot, create: createDefaultVennBlock },
+  { label: "Cronología pedagógica", icon: Milestone, create: createDefaultCronologiaBlock },
+  { label: "Modelo Frayer", icon: BookOpen, create: createDefaultFrayerBlock },
+  { label: "Ishikawa (Causa-Efecto)", icon: GitMerge, create: createDefaultIshikawaBlock },
+  { label: "Ciclo Continuo", icon: CircleDot, create: createDefaultCicloBlock },
+  { label: "Matriz 2×2", icon: Grid, create: createDefaultMatriz2x2Block },
+  { label: "Tabla T (Pros y Contras)", icon: Columns2, create: createDefaultTablaTBlock },
+  { label: "Pirámide Jerárquica", icon: Triangle, create: createDefaultPiramideBlock },
+  { label: "Embudo / Proceso", icon: Filter, create: createDefaultEmbudoBlock },
+  { label: "Círculos Concéntricos", icon: Disc, create: createDefaultCebollaBlock },
+  { label: "Árbol de Problemas", icon: GitFork, create: createDefaultArbolProblemasBlock },
+  { label: "Matriz Eisenhower", icon: Grid, create: createDefaultEisenhowerBlock },
+  { label: "Mapa de Empatía", icon: HeartHandshake, create: createDefaultEmpatiaBlock },
+];
 
 export function ElementosPanel({
   apiSlide,
@@ -137,7 +162,11 @@ export function ElementosPanel({
           disabled={disabledNonText}
         />
         <ClipMasksPanel apiSlide={apiSlide} onCommitContent={onCommitContent} disabled={disabledNonText} />
-        <PanelSection title="Gráficos de Datos">
+        <PanelSection
+          title="Gráficos de Datos"
+          storageKey="elementos.graficos"
+          badge={7 + GRAFICO_TEMPLATES.length}
+        >
           <div className="grid grid-cols-2 gap-1.5">
             <InsertBtn
               label="Comparación"
@@ -232,10 +261,14 @@ export function ElementosPanel({
             />
           </div>
 
-          <div className="mt-2.5 pt-2 border-t border-border/50">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <BookOpen className="h-3 w-3" /> Plantillas Pedagógicas
-            </p>
+          <CollapsibleSection
+            title="Plantillas Pedagógicas"
+            icon={BookOpen}
+            defaultOpen={false}
+            storageKey="elementos.graficos.plantillas"
+            badge={GRAFICO_TEMPLATES.length}
+            className="mt-2.5 pt-2 border-t border-border/50"
+          >
             <div className="space-y-1">
               {GRAFICO_TEMPLATES.map((tmpl) => (
                 <button
@@ -254,127 +287,38 @@ export function ElementosPanel({
                 </button>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
         </PanelSection>
-        <PanelSection title="Diagramas">
+        <PanelSection
+          title="Diagramas"
+          storageKey="elementos.diagramas"
+          defaultOpen={false}
+          badge={DIAGRAMAS.length}
+        >
           <div className="grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Mapa Mental"
-              icon={Brain}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultMapaMentalBlock())}
-            />
-            <InsertBtn
-              label="Organigrama"
-              icon={Network}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultOrganigramaBlock())}
-            />
-            <InsertBtn
-              label="Mapa Conceptual"
-              icon={Workflow}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultMapaConceptualBlock())}
-            />
-            <InsertBtn
-              label="Flujo de Procesos"
-              icon={GitMerge}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultFlujoBlock())}
-            />
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Diagrama de Venn"
-              icon={CircleDot}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultVennBlock())}
-            />
-            <InsertBtn
-              label="Cronología pedagógica"
-              icon={Milestone}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultCronologiaBlock())}
-            />
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Modelo Frayer"
-              icon={BookOpen}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultFrayerBlock())}
-            />
-            <InsertBtn
-              label="Ishikawa (Causa-Efecto)"
-              icon={GitMerge}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultIshikawaBlock())}
-            />
-            <InsertBtn
-              label="Ciclo Continuo"
-              icon={CircleDot}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultCicloBlock())}
-            />
-            <InsertBtn
-              label="Matriz 2×2"
-              icon={Grid}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultMatriz2x2Block())}
-            />
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Tabla T (Pros y Contras)"
-              icon={Columns2}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultTablaTBlock())}
-            />
-            <InsertBtn
-              label="Pirámide Jerárquica"
-              icon={Triangle}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultPiramideBlock())}
-            />
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Embudo / Proceso"
-              icon={Filter}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultEmbudoBlock())}
-            />
-            <InsertBtn
-              label="Círculos Concéntricos"
-              icon={Disc}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultCebollaBlock())}
-            />
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Árbol de Problemas"
-              icon={GitFork}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultArbolProblemasBlock())}
-            />
-            <InsertBtn
-              label="Matriz Eisenhower"
-              icon={Grid}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultEisenhowerBlock())}
-            />
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <InsertBtn
-              label="Mapa de Empatía"
-              icon={HeartHandshake}
-              disabled={disabledNonText}
-              onClick={() => add(createDefaultEmpatiaBlock())}
-            />
+            {DIAGRAMAS.map((d) => (
+              <InsertBtn
+                key={d.label}
+                label={d.label}
+                icon={d.icon}
+                disabled={disabledNonText}
+                onClick={() => add(d.create())}
+              />
+            ))}
           </div>
         </PanelSection>
-        <PanelSection title="Química">
+        <PanelSection
+          title="Química"
+          storageKey="elementos.quimica"
+          defaultOpen={false}
+          badge={
+            3 +
+            CHEMISTRY_QUICK_ACTIVITIES.length +
+            CHEMISTRY_EQUATION_PRESETS.length +
+            CHEMISTRY_SLIDE_TEMPLATES.length +
+            1
+          }
+        >
           <div className="grid grid-cols-2 gap-1.5">
             <InsertBtn
               label="Tabla periódica"
@@ -428,10 +372,14 @@ export function ElementosPanel({
               />
             ))}
           </div>
-          <div className="mt-2 space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Ecuaciones rápidas (mhchem)
-            </p>
+          <CollapsibleSection
+            title="Ecuaciones rápidas (mhchem)"
+            defaultOpen={false}
+            storageKey="elementos.quimica.ecuaciones"
+            badge={CHEMISTRY_EQUATION_PRESETS.length}
+            className="mt-2"
+          >
+            <div className="space-y-1">
             {CHEMISTRY_EQUATION_PRESETS.map((preset) => (
               <button
                 key={preset.id}
@@ -443,11 +391,16 @@ export function ElementosPanel({
                 <span className="font-medium text-foreground">{preset.label}</span>
               </button>
             ))}
-          </div>
-          <div className="mt-2.5 border-t border-border/50 pt-2">
-            <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <BookOpen className="h-3 w-3" /> Plantillas de slide (CN-7)
-            </p>
+            </div>
+          </CollapsibleSection>
+          <CollapsibleSection
+            title="Plantillas de slide (CN-7)"
+            icon={BookOpen}
+            defaultOpen={false}
+            storageKey="elementos.quimica.plantillas"
+            badge={CHEMISTRY_SLIDE_TEMPLATES.length + 1}
+            className="mt-2.5 border-t border-border/50 pt-2"
+          >
             <div className="space-y-1">
               {CHEMISTRY_SLIDE_TEMPLATES.map((tmpl) => (
                 <button
@@ -484,9 +437,9 @@ export function ElementosPanel({
                 <div className="text-[10px] text-muted-foreground">Crea un slide dedicado a la actividad evaluable.</div>
               </button>
             </div>
-          </div>
+          </CollapsibleSection>
         </PanelSection>
-        <PanelSection title="Multimedia">
+        <PanelSection title="Multimedia" storageKey="elementos.multimedia" badge={2}>
           <InsertBtn
             label="Video (YouTube)"
             icon={Video}
@@ -513,7 +466,8 @@ export function ElementosPanel({
             }
           />
         </PanelSection>
-        <PanelSection title="Estructura">
+        <PanelSection title="Estructura" storageKey="elementos.estructura" badge={4}>
+          <div className="grid grid-cols-2 gap-1.5">
           <InsertBtn
             label="Separador"
             icon={Minus}
@@ -547,6 +501,7 @@ export function ElementosPanel({
               })
             }
           />
+          </div>
         </PanelSection>
       </div>
     </ScrollArea>

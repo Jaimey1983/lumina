@@ -4,8 +4,8 @@ import { useState } from 'react';
 import type { Slide as ApiSlide } from '@/hooks/api/use-class';
 import type { Block } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Input } from '@lumina/ui/input';
-import { cn } from '@/lib/utils';
 import type { WidgetTipo } from '@lumina/types/widget';
 import type { VariableDef } from '@lumina/types/interaction';
 import type { ActivityType } from './activities-panel';
@@ -16,16 +16,28 @@ export function PanelSection({
   title,
   children,
   className,
+  storageKey,
+  defaultOpen = true,
+  badge,
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
+  /** Recuerda abierta/cerrada por usuario (`lumina.panel.<storageKey>`). */
+  storageKey?: string;
+  defaultOpen?: boolean;
+  badge?: React.ReactNode;
 }) {
   return (
-    <div className={cn('space-y-2', className)}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
+    <CollapsibleSection
+      title={title}
+      className={className}
+      storageKey={storageKey}
+      defaultOpen={defaultOpen}
+      badge={badge}
+    >
       {children}
-    </div>
+    </CollapsibleSection>
   );
 }
 
