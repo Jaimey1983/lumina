@@ -107,7 +107,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T6 — Carousel sobre Embla
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/carousel/`, `packages/element-kit/package.json` (declarar `embla-carousel-react` y `embla-carousel-autoplay`). **NO** modifica `@lumina/ui/carousel` salvo que sea imprescindible (y entonces se detiene y pide reescribir la ficha).
 - **Entregable:** el viewer usa Embla (swipe, loop, autoplay opcional, puntos y contador); se conservan `activeIndex`, el contrato con `SlideNavContext` y los eventos del runtime; prueba de paridad contra el carrusel casero (misma config → mismo slide visible, misma navegación) antes de borrar el viejo. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
