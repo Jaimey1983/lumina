@@ -38,7 +38,7 @@ S3, S4 y S5 tocan archivos disjuntos tras S2; S7, S8 y S9 tocan archivos disjunt
 
 #### S1 — Componente `CollapsibleSection` en `@lumina/ui`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `packages/ui/src/collapsible-section.tsx` (nuevo) + export en `packages/ui/package.json` si el patrón del paquete lo exige; `packages/editor-shared/src/typography-inspector.tsx` **solo** la función `InspectorSection` (pasa a delegar en `CollapsibleSection`, misma apariencia y mismos `defaultOpen`). **NO** toca `element-kit` ni el frontend.
 - **Entregable:** `CollapsibleSection` según DS1–DS4, sin dependencia de `localStorage` cuando falta `storageKey`. Pruebas en `editor-shared` (el paquete `@lumina/ui` no tiene runner): abre/cierra con clic y Enter/Espacio, `aria-expanded`, recuerda el estado con `storageKey`, funciona con `localStorage` que lanza, `forceOpen`, `badge`. Verificación: `pnpm --filter @lumina/ui build && pnpm --filter @lumina/ui lint && pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/editor-shared lint`.
