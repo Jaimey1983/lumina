@@ -261,30 +261,9 @@
   flex: 1;
   min-width: 120px;
   border-radius: 4px;
-  background: linear-gradient(to right, hsl(220 65% 88%), hsl(20 65% 60%));
-}
-
-.ptToolbar {
-  display: none;
-}
-
-.ptEditorToolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
-  font-size: 11px;
-}
-
-.ptEditorToolbar label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.ptEditorToolbar select {
-  font-size: 11px;
-  max-width: 140px;
+  --pt-leyenda-ini: hsl(220 65% 88%);
+  --pt-leyenda-fin: hsl(20 65% 60%);
+  background: linear-gradient(to right, var(--pt-leyenda-ini), var(--pt-leyenda-fin));
 }
 
 /* Vista 3D (Q13) */

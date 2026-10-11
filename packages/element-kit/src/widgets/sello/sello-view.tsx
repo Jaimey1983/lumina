@@ -11,7 +11,7 @@ import styles from "./sello.module.css";
 
 // El confeti (lluvia de piezas con la Web Animations API) se carga la primera vez que se gana una
 // insignia con confeti: el viewer del alumno no lo paga si no hace falta.
-const Confeti = lazy(() => import("../ruleta/ruleta-confeti.js").then((m) => ({ default: m.RuletaConfeti })));
+const Confeti = lazy(() => import("../_efectos/confeti.js").then((m) => ({ default: m.Confeti })));
 
 const TONO: Record<string, string> = {
   oro: "var(--lw-color-warning, #ffc107)",

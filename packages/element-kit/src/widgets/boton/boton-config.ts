@@ -54,7 +54,7 @@ export interface MergedBotonConfig {
 }
 
 export function mergedBotonConfig(block: BotonWidget): MergedBotonConfig {
-  const w = normalizeBotonWidget(block) as BotonWidgetT8;
+  const w = normalizeBotonWidget(block);
   const variante = w.variante ?? DEFAULT_BOTON_VARIANTE;
   return {
     texto: w.texto || DEFAULT_BOTON_TEXTO,

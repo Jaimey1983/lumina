@@ -15,7 +15,7 @@ import {
   pesoDe,
   type RuletaConfiguracion,
 } from './ruleta-config.js';
-import { RuletaConfeti } from './ruleta-confeti.js';
+import { Confeti } from '../_efectos/confeti.js';
 import { normalizeRuletaBlock } from './ruleta-defaults.js';
 import { crearTicker, type TickerRuleta } from './ruleta-sound.js';
 import { RuletaWheel } from './ruleta-wheel.js';
@@ -28,7 +28,7 @@ const HISTORIAL_VISIBLE = 5;
 
 export function RuletaViewer({ block }: RuletaViewerProps) {
   const widget = normalizeRuletaBlock(block);
-  const configuracion = widget.configuracion as RuletaConfiguracion;
+  const configuracion = widget.configuracion;
   const modoEliminar = configuracion.modoEliminar === true;
   const mostrarHistorial = configuracion.mostrarHistorial === true || modoEliminar;
 
@@ -188,7 +188,7 @@ export function RuletaViewer({ block }: RuletaViewerProps) {
           colores={configuracion.colores}
           indicesColor={modoEliminar ? activos.map((a) => a.indice) : undefined}
         />
-        <RuletaConfeti disparo={disparoConfeti} activo={configuracion.confeti === true} />
+        <Confeti disparo={disparoConfeti} activo={configuracion.confeti === true} />
 
         <div role="status" aria-live="polite" style={VISUALLY_HIDDEN}>
           {ganador ? `Ganador: ${ganador}` : ''}

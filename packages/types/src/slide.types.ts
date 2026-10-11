@@ -1320,6 +1320,9 @@ export interface FlipCardsCaraVisibilidad {
   mostrarCuerpo: boolean;
 }
 
+export type FlipCardsGiro = 'y' | 'x' | 'deslizar' | 'fundido';
+export type FlipCardsModo = 'cuadricula' | 'mazo';
+
 export interface FlipCardsWidget {
   tipo: 'flip-cards';
   configuracion: {
@@ -1348,6 +1351,14 @@ export interface FlipCardsWidget {
     espacioEntreTarjetas?: number;
     /** Padding interno del contenedor en px */
     paddingContenedor?: number;
+    /** T11. Cómo se da vuelta una tarjeta. Por defecto `y` (el giro de siempre). */
+    giro?: FlipCardsGiro;
+    /** T11. Perspectiva más marcada y sombra de elevación (solo se nota en los giros 3D). */
+    profundidad?: boolean;
+    /** T11. Las tarjetas entran una tras otra al mostrarse (apagado por defecto). */
+    entradaEscalonada?: boolean;
+    /** T11. `mazo`: una tarjeta a la vez, con deslizamiento lateral. */
+    modo?: FlipCardsModo;
   };
   tituloWidget: string;
   subtituloWidget: string;

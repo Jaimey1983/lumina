@@ -1,31 +1,22 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { Animacion } from '@lumina/types/animation';
-import type { TimelineWidget } from '@lumina/types/widget';
+import type {
+  TimelineAnimacion,
+  TimelineConfiguracion,
+  TimelineDensidad,
+  TimelineOrientacion,
+  TimelineWidget,
+} from '@lumina/types/widget';
 import type { EntradaVariante } from '../_motion/motion-presets.js';
 
 /**
- * Opciones de T14 que aún no están en `TimelineConfiguracion` de `@lumina/types` (fuera del
- * alcance de esa ficha). Viven dentro de `configuracion` y se leen con `leerOpcionesT14`.
- * Subirlas a `@lumina/types` queda como seguimiento (igual que T6–T13).
+ * Opciones de T14 (orientación, densidad, animación de entrada): viven en `TimelineConfiguracion`
+ * de `@lumina/types`; estos alias conservan los nombres que ya usaba el kit.
  */
-export type TimelineOrientacion = 'horizontal' | 'vertical';
-export type TimelineDensidad = 'normal' | 'compacta' | 'amplia';
-export type TimelineAnimacion = 'ninguna' | 'fundido' | 'subir' | 'escala';
-
-export interface TimelineOpcionesT14 {
-  /** Eje de la línea. Por defecto `horizontal` (el de siempre). */
-  orientacion?: TimelineOrientacion;
-  /** Separación entre tarjetas, conectores y nodos. Por defecto `normal`. */
-  densidad?: TimelineDensidad;
-  /** Cómo entran los nodos al aparecer el widget en pantalla. Por defecto `ninguna`. */
-  animacion?: TimelineAnimacion;
-}
-
-export type TimelineConfigT14 = TimelineWidget['configuracion'] & TimelineOpcionesT14;
-export type TimelineWidgetT14 = Omit<TimelineWidget, 'configuracion'> & {
-  configuracion: TimelineConfigT14;
-  animaciones?: Animacion[];
-};
+export type { TimelineAnimacion, TimelineDensidad, TimelineOrientacion };
+export type TimelineOpcionesT14 = Pick<TimelineConfiguracion, 'orientacion' | 'densidad' | 'animacion'>;
+export type TimelineConfigT14 = TimelineConfiguracion;
+export type TimelineWidgetT14 = TimelineWidget & { animaciones?: Animacion[] };
 
 export const TIMELINE_ORIENTACIONES: { id: TimelineOrientacion; label: string }[] = [
   { id: 'horizontal', label: 'Horizontal' },

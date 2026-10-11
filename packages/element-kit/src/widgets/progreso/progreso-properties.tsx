@@ -61,7 +61,7 @@ export function ProgresoProperties({ block: rawBlock, applyNow }: ProgresoProper
   const update = (fn: (w: ProgresoWidgetT9) => ProgresoWidgetT9) => {
     void applyNow((b) =>
       b.tipo === 'progreso'
-        ? (fn(normalizeProgresoWidget(b) as ProgresoWidgetT9) as ProgresoWidget)
+        ? fn(normalizeProgresoWidget(b))
         : b,
     );
   };

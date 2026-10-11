@@ -3,7 +3,10 @@ import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { esIconoValido, type BotonIconoId } from './boton-iconos.js';
 import type {
   BotonAccion,
+  BotonDensidad,
+  BotonEstilo,
   BotonForma,
+  BotonIconoPosicion,
   BotonTamano,
   BotonVariante,
   BotonWidget,
@@ -16,29 +19,17 @@ export const DEFAULT_BOTON_FORMA: BotonForma = 'redondeado';
 export const DEFAULT_BOTON_ACCION: BotonAccion = 'siguiente';
 
 /**
- * Opciones de T8 que aún no están en `BotonWidget` de `@lumina/types` (fuera del alcance de
- * esa ficha). Se leen del JSON guardado con estos tipos; subirlas a `@lumina/types` queda como
- * seguimiento. `accion: 'descargar'` también es nueva: ver `BotonAccionT8`.
+ * Opciones de T8 (estilo, icono, densidad, descarga): viven en `BotonWidget` de `@lumina/types`;
+ * estos alias conservan los nombres que ya usaba el kit.
  */
-export type BotonEstilo = 'solid' | 'soft' | 'outline' | 'ghost' | 'link';
-export type BotonDensidad = 'compacta' | 'normal' | 'amplia';
-export type BotonIconoPosicion = 'izquierda' | 'derecha';
-/** Las acciones del tipo compartido más la descarga de un recurso. */
-export type BotonAccionT8 = BotonAccion | 'descargar';
-
-export interface BotonT8 {
-  /** Si falta se deduce de lo legado: `link` → enlace, `outline` → contorno, si no sólido. */
-  estilo?: BotonEstilo;
-  icono?: BotonIconoId;
-  iconoPosicion?: BotonIconoPosicion;
-  /** Muestra un indicador de carga y no deja pulsar. */
-  cargando?: boolean;
-  densidad?: BotonDensidad;
-  /** Nombre sugerido del archivo para la acción `descargar`. */
-  archivoNombre?: string;
-}
-
-export type BotonWidgetT8 = Omit<BotonWidget, 'accion'> & BotonT8 & { accion?: BotonAccionT8 };
+export type { BotonDensidad, BotonEstilo, BotonIconoPosicion };
+/** Las acciones del tipo compartido (incluida la descarga de un recurso). */
+export type BotonAccionT8 = BotonAccion;
+export type BotonT8 = Pick<
+  BotonWidget,
+  'estilo' | 'icono' | 'iconoPosicion' | 'cargando' | 'densidad' | 'archivoNombre'
+>;
+export type BotonWidgetT8 = BotonWidget;
 
 export const BOTON_ESTILOS: { id: BotonEstilo; label: string }[] = [
   { id: 'solid', label: 'Sólido' },
@@ -79,8 +70,7 @@ export function botonFallbackSize(tamano: BotonTamano): { ancho: number; alto: n
   return { ancho: 20, alto: 8 };
 }
 
-export function normalizeBotonWidget(rawBlock: BotonWidget): BotonWidget {
-  const block = rawBlock as BotonWidgetT8;
+export function normalizeBotonWidget(block: BotonWidget): BotonWidget {
   const variante = VALID_VARIANTES.has(block.variante) ? block.variante : DEFAULT_BOTON_VARIANTE;
   const tamano = VALID_TAMANOS.has(block.tamano as BotonTamano)
     ? (block.tamano as BotonTamano)
@@ -88,8 +78,8 @@ export function normalizeBotonWidget(rawBlock: BotonWidget): BotonWidget {
   const forma = VALID_FORMAS.has(block.forma as BotonForma)
     ? (block.forma as BotonForma)
     : DEFAULT_BOTON_FORMA;
-  const accion = VALID_ACCIONES.has(block.accion as BotonAccionT8)
-    ? (block.accion as BotonAccionT8)
+  const accion = VALID_ACCIONES.has(block.accion as BotonAccion)
+    ? (block.accion as BotonAccion)
     : DEFAULT_BOTON_ACCION;
 
   return {

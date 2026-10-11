@@ -3,7 +3,10 @@ import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import type {
   ContadorAlTerminar,
   ContadorFormato,
+  ContadorHito,
+  ContadorHitosAlerta,
   ContadorModo,
+  ContadorVariante,
   ContadorWidget,
 } from '@lumina/types/widget';
 
@@ -18,32 +21,12 @@ export const DEFAULT_CONTADOR_TEXTO = '#f8fafc';
 export const DEFAULT_CONTADOR_ACENTO = '#38bdf8';
 
 /**
- * Opciones de T10 que aún no están en `ContadorWidget` de `@lumina/types` (fuera del alcance de
- * esa ficha). Se leen del JSON guardado con estos tipos; subirlas a `@lumina/types` queda como
- * seguimiento (igual que T6–T9).
+ * Opciones de T10 (variantes, hitos, semáforo): viven en `ContadorWidget` de `@lumina/types`;
+ * estos alias conservan los nombres que ya usaba el kit.
  */
-export type ContadorVariante = 'digitos' | 'flip' | 'anillo';
-export type ContadorHitosAlerta = 'visual' | 'sonora' | 'ambas';
-
-export interface ContadorHito {
-  /**
-   * Segundos. En el temporizador: cuando QUEDAN esos segundos; en el cronómetro: cuando han
-   * TRANSCURRIDO. En modo número no se usan.
-   */
-  segundos: number;
-  etiqueta: string;
-}
-
-export interface ContadorT10 {
-  variante?: ContadorVariante;
-  hitos?: ContadorHito[];
-  /** Cómo avisan los hitos. Por defecto `visual`. */
-  hitosAlerta?: ContadorHitosAlerta;
-  /** Teñe el contador de verde / amarillo / rojo según el tiempo que queda (solo temporizador). */
-  semaforo?: boolean;
-}
-
-export type ContadorWidgetT10 = ContadorWidget & ContadorT10;
+export type { ContadorHito, ContadorHitosAlerta, ContadorVariante };
+export type ContadorT10 = Pick<ContadorWidget, 'variante' | 'hitos' | 'hitosAlerta' | 'semaforo'>;
+export type ContadorWidgetT10 = ContadorWidget;
 
 export const CONTADOR_VARIANTES: { id: ContadorVariante; label: string }[] = [
   { id: 'digitos', label: 'Dígitos' },
@@ -130,7 +113,7 @@ export function formatContadorTime(totalSeconds: number, formato: ContadorFormat
 }
 
 export function normalizeContadorWidget(rawBlock: ContadorWidget): ContadorWidget {
-  const block = rawBlock as ContadorWidgetT10;
+  const block = rawBlock;
   const modo = VALID_MODOS.has(block.modo) ? block.modo : DEFAULT_CONTADOR_MODO;
   const formato = VALID_FORMATOS.has(block.formato as ContadorFormato)
     ? (block.formato as ContadorFormato)

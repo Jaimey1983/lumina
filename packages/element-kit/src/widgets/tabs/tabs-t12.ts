@@ -1,36 +1,16 @@
 import type { Animacion } from '@lumina/types/animation';
-import type { TabsWidget, WidgetSlideContent } from '@lumina/types/widget';
+import type { TabsFicha, TabsTransicion, TabsVariante, TabsWidget } from '@lumina/types/widget';
 import type { EntradaVariante } from '../_motion/motion-presets.js';
 
 /**
- * Opciones de T12 que aún no están en `TabsWidget` de `@lumina/types` (fuera del alcance de esa
- * ficha). Las globales viven dentro de `configuracion`; el icono y la insignia, en cada ficha.
- * Subirlas a `@lumina/types` queda como seguimiento (igual que T6–T11).
+ * Opciones de T12 (variantes, transición, icono e insignia por ficha): viven en `TabsWidget` de
+ * `@lumina/types`; estos alias conservan los nombres que ya usaba el kit.
  */
-export type TabsVariante = 'underline' | 'pills' | 'enclosed' | 'segmented' | 'vertical';
-export type TabsTransicion = 'ninguna' | 'fundido' | 'deslizar';
-
-export interface TabsOpcionesT12 {
-  /** Estilo de la barra de pestañas. Por defecto `underline` (el de siempre). */
-  variante?: TabsVariante;
-  /** Cómo entra el panel al cambiar de pestaña. Por defecto `ninguna`. */
-  transicion?: TabsTransicion;
-}
-
-export interface TabsFichaT12 {
-  /** Id de un icono de `TABS_ICONOS`. */
-  icono?: string;
-  /** Texto corto junto a la etiqueta (p. ej. «Nuevo», «3»). */
-  insignia?: string;
-}
-
-export type TabsFicha = WidgetSlideContent & TabsFichaT12;
-export type TabsConfigT12 = TabsWidget['configuracion'] & TabsOpcionesT12;
-export type TabsWidgetT12 = Omit<TabsWidget, 'configuracion' | 'fichas'> & {
-  configuracion: TabsConfigT12;
-  fichas: TabsFicha[];
-  animaciones?: Animacion[];
-};
+export type { TabsFicha, TabsTransicion, TabsVariante };
+export type TabsOpcionesT12 = Pick<TabsWidget['configuracion'], 'variante' | 'transicion'>;
+export type TabsFichaT12 = Pick<TabsFicha, 'icono' | 'insignia'>;
+export type TabsConfigT12 = TabsWidget['configuracion'];
+export type TabsWidgetT12 = TabsWidget & { animaciones?: Animacion[] };
 
 export const TABS_VARIANTES: { id: TabsVariante; label: string }[] = [
   { id: 'underline', label: 'Subrayado' },
