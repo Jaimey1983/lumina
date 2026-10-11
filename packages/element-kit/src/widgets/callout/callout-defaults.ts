@@ -1,4 +1,4 @@
-import type { BlockMarco } from "@lumina/types/slide";
+import { BLOCK_FALLBACKS, type BlockMarco } from "@lumina/types/slide";
 import {
   CALLOUT_TIPO,
   type CalloutConfiguracion,
@@ -55,6 +55,7 @@ export function metaDeTono(tono: CalloutTono): CalloutTonoMeta {
 export function normalizeCalloutWidget(
   block: Partial<Omit<CalloutEstado, "configuracion">> & { configuracion?: unknown },
 ): CalloutEstado {
+  const fb = BLOCK_FALLBACKS.callout;
   const raw = (block.configuracion ?? {}) as Partial<Record<keyof CalloutConfiguracion, unknown>>;
   const d = DEFAULT_CALLOUT_CONFIG;
   const tono = TONOS.has(raw.tono as CalloutTono) ? (raw.tono as CalloutTono) : d.tono;
@@ -74,22 +75,23 @@ export function normalizeCalloutWidget(
   return {
     ...(block.id ? { id: block.id } : {}),
     tipo: CALLOUT_TIPO,
-    x: num(block.x, 15),
-    y: num(block.y, 30),
-    ancho: num(block.ancho, 70),
-    alto: num(block.alto, 22),
+    x: num(block.x, fb.x),
+    y: num(block.y, fb.y),
+    ancho: num(block.ancho, fb.ancho),
+    alto: num(block.alto, fb.alto),
     ...(typeof block.zIndex === "number" ? { zIndex: block.zIndex } : {}),
     configuracion: config,
   };
 }
 
 export function createDefaultCalloutBlock(marco?: BlockMarco): CalloutEstado {
+  const fb = BLOCK_FALLBACKS.callout;
   return {
     tipo: CALLOUT_TIPO,
-    x: marco ? marco.izquierdaPct : 15,
-    y: marco ? marco.arribaPct : 30,
-    ancho: marco ? marco.anchoPct : 70,
-    alto: marco ? marco.altoPct : 22,
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
     configuracion: { ...DEFAULT_CALLOUT_CONFIG },
   };
 }

@@ -249,6 +249,19 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'qr-sesion',
 ] as const;
 
+/**
+ * Widgets que nacen como `ElementDefinition` (T16–T20, Regla 3) y no tienen rama en el union
+ * `Block` viejo: el editor los despacha por el registry y todos llevan `x/y/ancho/alto` en el
+ * bloque raíz.
+ */
+export const WIDGET_TIPOS_SOLO_REGISTRY = ['callout', 'galeria', 'stepper', 'sello', 'qr-sesion'] as const;
+
+export type WidgetTipoSoloRegistry = (typeof WIDGET_TIPOS_SOLO_REGISTRY)[number];
+
+export function esWidgetSoloRegistry(tipo: string): tipo is WidgetTipoSoloRegistry {
+  return (WIDGET_TIPOS_SOLO_REGISTRY as readonly string[]).includes(tipo);
+}
+
 export function isWidgetTipo(value: string): value is WidgetTipo {
   return (WIDGET_TIPOS as readonly string[]).includes(value);
 }

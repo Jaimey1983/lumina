@@ -149,3 +149,9 @@
   border-style: solid;
   border-color: transparent var(--tooltip-bg, #0f172a) transparent transparent;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    transition: none;
+  }
+}

@@ -1,4 +1,4 @@
-import type { BlockMarco } from "@lumina/types/slide";
+import { BLOCK_FALLBACKS, type BlockMarco } from "@lumina/types/slide";
 import {
   STEPPER_TIPO,
   type StepperAvance,
@@ -80,16 +80,17 @@ function normalizarPasos(raw: unknown): StepperPaso[] {
 export function normalizeStepperWidget(
   block: Partial<Omit<StepperEstado, "configuracion">> & { configuracion?: unknown },
 ): StepperEstado {
+  const fb = BLOCK_FALLBACKS.stepper;
   const raw = (block.configuracion ?? {}) as Partial<Record<keyof StepperConfiguracion, unknown>>;
   const d = DEFAULT_STEPPER_CONFIG;
   const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
   return {
     ...(block.id ? { id: block.id } : {}),
     tipo: STEPPER_TIPO,
-    x: num(block.x, 10),
-    y: num(block.y, 15),
-    ancho: num(block.ancho, 80),
-    alto: num(block.alto, 60),
+    x: num(block.x, fb.x),
+    y: num(block.y, fb.y),
+    ancho: num(block.ancho, fb.ancho),
+    alto: num(block.alto, fb.alto),
     ...(typeof block.zIndex === "number" ? { zIndex: block.zIndex } : {}),
     configuracion: {
       pasos: normalizarPasos(raw.pasos),
@@ -104,12 +105,13 @@ export function normalizeStepperWidget(
 }
 
 export function createDefaultStepperBlock(marco?: BlockMarco): StepperEstado {
+  const fb = BLOCK_FALLBACKS.stepper;
   return {
     tipo: STEPPER_TIPO,
-    x: marco ? marco.izquierdaPct : 10,
-    y: marco ? marco.arribaPct : 15,
-    ancho: marco ? marco.anchoPct : 80,
-    alto: marco ? marco.altoPct : 60,
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
     configuracion: { ...DEFAULT_STEPPER_CONFIG, pasos: DEFAULT_STEPPER_CONFIG.pasos.map((p) => ({ ...p })) },
   };
 }

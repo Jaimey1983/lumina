@@ -1,4 +1,4 @@
-import type { BlockMarco } from "@lumina/types/slide";
+import { BLOCK_FALLBACKS, type BlockMarco } from "@lumina/types/slide";
 import {
   GALERIA_TIPO,
   type GaleriaConfiguracion,
@@ -91,16 +91,17 @@ function normalizarImagenes(raw: unknown): GaleriaImagen[] {
 export function normalizeGaleriaWidget(
   block: Partial<Omit<GaleriaEstado, "configuracion">> & { configuracion?: unknown },
 ): GaleriaEstado {
+  const fb = BLOCK_FALLBACKS.galeria;
   const raw = (block.configuracion ?? {}) as Partial<Record<keyof GaleriaConfiguracion, unknown>>;
   const d = DEFAULT_GALERIA_CONFIG;
   const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
   return {
     ...(block.id ? { id: block.id } : {}),
     tipo: GALERIA_TIPO,
-    x: num(block.x, 10),
-    y: num(block.y, 12),
-    ancho: num(block.ancho, 80),
-    alto: num(block.alto, 70),
+    x: num(block.x, fb.x),
+    y: num(block.y, fb.y),
+    ancho: num(block.ancho, fb.ancho),
+    alto: num(block.alto, fb.alto),
     ...(typeof block.zIndex === "number" ? { zIndex: block.zIndex } : {}),
     configuracion: {
       disposicion: DISPOSICIONES.has(raw.disposicion as GaleriaDisposicion)
@@ -120,12 +121,13 @@ export function normalizeGaleriaWidget(
 }
 
 export function createDefaultGaleriaBlock(marco?: BlockMarco): GaleriaEstado {
+  const fb = BLOCK_FALLBACKS.galeria;
   return {
     tipo: GALERIA_TIPO,
-    x: marco ? marco.izquierdaPct : 10,
-    y: marco ? marco.arribaPct : 12,
-    ancho: marco ? marco.anchoPct : 80,
-    alto: marco ? marco.altoPct : 70,
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
     configuracion: { ...DEFAULT_GALERIA_CONFIG, imagenes: DEFAULT_GALERIA_CONFIG.imagenes.map((i) => ({ ...i })) },
   };
 }

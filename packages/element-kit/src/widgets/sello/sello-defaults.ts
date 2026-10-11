@@ -1,4 +1,4 @@
-import type { BlockMarco } from "@lumina/types/slide";
+import { BLOCK_FALLBACKS, type BlockMarco } from "@lumina/types/slide";
 import type { EstadoObjeto } from "@lumina/types/interaction";
 import {
   SELLO_TIPO,
@@ -60,16 +60,17 @@ const texto = (v: unknown, fallback: string, max: number) =>
 export function normalizeSelloWidget(
   block: Partial<Omit<SelloEstado, "configuracion">> & { configuracion?: unknown },
 ): SelloEstado {
+  const fb = BLOCK_FALLBACKS.sello;
   const raw = (block.configuracion ?? {}) as Partial<Record<keyof SelloConfiguracion, unknown>>;
   const d = DEFAULT_SELLO_CONFIG;
   const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
   return {
     ...(block.id ? { id: block.id } : {}),
     tipo: SELLO_TIPO,
-    x: num(block.x, 35),
-    y: num(block.y, 20),
-    ancho: num(block.ancho, 30),
-    alto: num(block.alto, 55),
+    x: num(block.x, fb.x),
+    y: num(block.y, fb.y),
+    ancho: num(block.ancho, fb.ancho),
+    alto: num(block.alto, fb.alto),
     ...(typeof block.zIndex === "number" ? { zIndex: block.zIndex } : {}),
     configuracion: {
       forma: FORMAS.has(raw.forma as SelloForma) ? (raw.forma as SelloForma) : d.forma,
@@ -88,12 +89,13 @@ export function normalizeSelloWidget(
 }
 
 export function createDefaultSelloBlock(marco?: BlockMarco): SelloEstado {
+  const fb = BLOCK_FALLBACKS.sello;
   return {
     tipo: SELLO_TIPO,
-    x: marco ? marco.izquierdaPct : 35,
-    y: marco ? marco.arribaPct : 20,
-    ancho: marco ? marco.anchoPct : 30,
-    alto: marco ? marco.altoPct : 55,
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
     configuracion: { ...DEFAULT_SELLO_CONFIG },
   };
 }

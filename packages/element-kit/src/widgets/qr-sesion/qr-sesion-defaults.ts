@@ -1,4 +1,4 @@
-import type { BlockMarco } from "@lumina/types/slide";
+import { BLOCK_FALLBACKS, type BlockMarco } from "@lumina/types/slide";
 import {
   QR_SESION_TIPO,
   type QrContraste,
@@ -71,6 +71,7 @@ export function urlDeUnion(origen: string, codigo: string): string | null {
 export function normalizeQrSesionWidget(
   block: Partial<Omit<QrSesionEstado, "configuracion">> & { configuracion?: unknown },
 ): QrSesionEstado {
+  const fb = BLOCK_FALLBACKS.qrSesion;
   const raw = (block.configuracion ?? {}) as Partial<Record<keyof QrSesionConfiguracion, unknown>>;
   const d = DEFAULT_QR_SESION_CONFIG;
   const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
@@ -79,10 +80,10 @@ export function normalizeQrSesionWidget(
   return {
     ...(block.id ? { id: block.id } : {}),
     tipo: QR_SESION_TIPO,
-    x: num(block.x, 35),
-    y: num(block.y, 15),
-    ancho: num(block.ancho, 30),
-    alto: num(block.alto, 65),
+    x: num(block.x, fb.x),
+    y: num(block.y, fb.y),
+    ancho: num(block.ancho, fb.ancho),
+    alto: num(block.alto, fb.alto),
     ...(typeof block.zIndex === "number" ? { zIndex: block.zIndex } : {}),
     configuracion: {
       codigo: limpiarCodigo(raw.codigo),
@@ -103,12 +104,13 @@ export function normalizeQrSesionWidget(
 }
 
 export function createDefaultQrSesionBlock(marco?: BlockMarco): QrSesionEstado {
+  const fb = BLOCK_FALLBACKS.qrSesion;
   return {
     tipo: QR_SESION_TIPO,
-    x: marco ? marco.izquierdaPct : 35,
-    y: marco ? marco.arribaPct : 15,
-    ancho: marco ? marco.anchoPct : 30,
-    alto: marco ? marco.altoPct : 65,
+    x: marco ? marco.izquierdaPct : fb.x,
+    y: marco ? marco.arribaPct : fb.y,
+    ancho: marco ? marco.anchoPct : fb.ancho,
+    alto: marco ? marco.altoPct : fb.alto,
     configuracion: { ...DEFAULT_QR_SESION_CONFIG },
   };
 }

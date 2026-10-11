@@ -171,6 +171,8 @@ export function useOverlayAutoPosition({
             ? prev
             : next,
         );
+      }).catch(() => {
+        // Elemento desmontado a mitad del cálculo: se conserva la última posición.
       });
     };
 

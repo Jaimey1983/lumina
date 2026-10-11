@@ -2,7 +2,7 @@
  * T4 — accesibilidad de widgets: foco del Popup, regiones vivas y movimiento reducido.
  */
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -137,12 +137,22 @@ describe("regiones vivas", () => {
 });
 
 describe("movimiento reducido en el CSS", () => {
-  for (const archivo of [
-    "popup/popup.module.css",
-    "contador/contador.module.css",
-    "progreso/progreso.module.css",
-    "hotspot/hotspot.module.css",
-  ]) {
+  // Todo `.module.css` de widget que declare `animation`/`transition` debe tener su bloque
+  // `prefers-reduced-motion` (se descubren las carpetas: un widget nuevo queda cubierto solo).
+  const conMovimiento = readdirSync(aqui, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .flatMap((d) =>
+      readdirSync(join(aqui, d.name))
+        .filter((f) => f.endsWith(".module.css"))
+        .map((f) => `${d.name}/${f}`),
+    )
+    .filter((archivo) => /^\s*(animation|transition)[a-z-]*:/m.test(readFileSync(join(aqui, archivo), "utf8")));
+
+  it("hay CSS con movimiento que revisar", () => {
+    expect(conMovimiento.length).toBeGreaterThanOrEqual(10);
+  });
+
+  for (const archivo of conMovimiento) {
     it(`${archivo} respeta prefers-reduced-motion`, () => {
       const css = readFileSync(join(aqui, archivo), "utf8");
       expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);

@@ -234,4 +234,29 @@ describe('widget hydrate + persist (PR A)', () => {
     expect(saved.modo).toBe('contenido');
     expect(saved.soloLecturaEnViewer).toBe(true);
   });
+  it('widgets solo-registry (T16–T20): un bloque incompleto se hidrata y conserva los campos comunes', () => {
+    const crudos = ['callout', 'galeria', 'stepper', 'sello', 'qr-sesion'].map((tipo) => ({
+      tipo,
+      id: `b-${tipo}`,
+      x: 7,
+      y: 9,
+      ancho: 40,
+      alto: 30,
+      animaciones: [],
+    }));
+    const bloques = (classSlideToRendererSlide(apiSlide(crudos)).bloques ?? []) as unknown as Array<{
+      tipo: string;
+      id?: string;
+      x: number;
+      configuracion?: Record<string, unknown>;
+    }>;
+
+    expect(bloques.map((b) => b.tipo)).toEqual(['callout', 'galeria', 'stepper', 'sello', 'qr-sesion']);
+    for (const b of bloques) {
+      expect(b.id).toBe(`b-${b.tipo}`);
+      expect(b.x).toBe(7);
+      expect(b.configuracion, `${b.tipo} sin configuracion`).toBeDefined();
+    }
+    expect((bloques[2]?.configuracion?.pasos as unknown[]).length).toBeGreaterThan(0);
+  });
 });
