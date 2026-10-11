@@ -11,6 +11,11 @@ interface ActivityDragWordProps {
   estado?: 'correcto' | 'incorrecto' | 'neutro'
   /** Oculta el origen mientras se arrastra (el overlay muestra la pieza). */
   hideWhileDragging?: boolean
+  /**
+   * Atributos del modo «tocar y colocar» (`useTocarColocar().propsItem(id)`): se fusionan
+   * después de los del arrastre. Con el arrastre apagado no hay conflicto.
+   */
+  propsTocar?: React.HTMLAttributes<HTMLDivElement>
 }
 
 export function ActivityDragWord({
@@ -20,10 +25,14 @@ export function ActivityDragWord({
   variant = 'palabra',
   estado = 'neutro',
   hideWhileDragging = true,
+  propsTocar,
 }: ActivityDragWordProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id,
     disabled,
+    // El nombre que oyen los lectores de pantalla (anuncios y rol), en español.
+    data: { etiqueta: texto },
+    attributes: { roleDescription: variant === 'letra' ? 'letra arrastrable' : 'palabra arrastrable' },
   })
 
   const useOverlay = hideWhileDragging
@@ -56,8 +65,12 @@ export function ActivityDragWord({
       style={style}
       {...listeners}
       {...attributes}
+      {...propsTocar}
+      aria-disabled={disabled || undefined}
       className={`
         touch-none cursor-grab active:cursor-grabbing select-none
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--la-color-seleccionado,#2563eb)]
+        ${propsTocar?.['aria-pressed'] ? 'ring-2 ring-[color:var(--la-color-seleccionado,#2563eb)]' : ''}
         ${isDragging && !useOverlay ? 'opacity-50' : 'opacity-100'}
         ${isDragging ? '' : 'transition-opacity duration-200'}
         ${disabled ? 'cursor-not-allowed opacity-40' : ''}
