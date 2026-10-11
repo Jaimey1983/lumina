@@ -33,6 +33,7 @@ export const WIDGET_TIPOS = [
   'galeria',
   'stepper',
   'sello',
+  'qr-sesion',
 ] as const;
 
 export type WidgetTipo = (typeof WIDGET_TIPOS)[number];

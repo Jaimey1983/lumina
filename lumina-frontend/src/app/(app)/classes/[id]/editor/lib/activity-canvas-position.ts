@@ -66,6 +66,8 @@ function widgetCanvasFallback(type: WidgetTipo): { ancho: number; alto: number }
       return BLOCK_FALLBACKS.stepper;
     case 'sello':
       return BLOCK_FALLBACKS.sello;
+    case 'qr-sesion':
+      return BLOCK_FALLBACKS.qrSesion;
   }
 }
 

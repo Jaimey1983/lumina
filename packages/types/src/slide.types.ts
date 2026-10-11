@@ -1935,6 +1935,7 @@ export const BLOCK_FALLBACKS = {
   galeria: { x: 10, y: 12, ancho: 80, alto: 70 },
   stepper: { x: 10, y: 15, ancho: 80, alto: 60 },
   sello: { x: 35, y: 20, ancho: 30, alto: 55 },
+  qrSesion: { x: 35, y: 15, ancho: 30, alto: 65 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */

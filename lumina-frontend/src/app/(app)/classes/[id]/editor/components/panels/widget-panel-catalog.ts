@@ -15,6 +15,7 @@ import {
   ListCollapse,
   MessageSquare,
   MousePointer2,
+  QrCode,
   PanelTop,
   RotateCw,
   Sparkles,
@@ -184,6 +185,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Award,
     rowClassName: 'hover:bg-yellow-50/90 dark:hover:bg-yellow-950/25',
     iconClassName: 'text-yellow-600 dark:text-yellow-400',
+  },
+  'qr-sesion': {
+    group: 'lienzo',
+    Icon: QrCode,
+    rowClassName: 'hover:bg-slate-50/90 dark:hover:bg-slate-950/25',
+    iconClassName: 'text-slate-700 dark:text-slate-300',
   },
 };
 

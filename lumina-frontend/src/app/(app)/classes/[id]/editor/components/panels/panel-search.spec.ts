@@ -105,7 +105,7 @@ describe('Widgets (S11)', () => {
   it('sin consulta devuelve todos los grupos y «Próximamente»', () => {
     const r = filtrarWidgets('');
     expect(r.grupos.map((g) => g.group)).toEqual(['lienzo', 'overlay', 'control']);
-    expect(r.proximamente).toHaveLength(5);
+    expect(r.proximamente).toHaveLength(4);
   });
 
   it('filtra por etiqueta de widget', () => {
@@ -115,9 +115,15 @@ describe('Widgets (S11)', () => {
   });
 
   it('busca también en «Próximamente»', () => {
-    const r = filtrarWidgets('qr');
+    const r = filtrarWidgets('iframe');
     expect(r.grupos).toHaveLength(0);
-    expect(r.proximamente.map((p) => p.label)).toEqual(['Código QR']);
+    expect(r.proximamente.map((p) => p.label)).toEqual(['Iframe embebido']);
+  });
+
+  it('«Código QR» ya no es «Próximamente»: es el widget QR de sesión (T20)', () => {
+    const r = filtrarWidgets('qr');
+    expect(r.grupos.flatMap((g) => g.items.map((i) => i.type))).toEqual(['qr-sesion']);
+    expect(r.proximamente).toHaveLength(0);
   });
 
   it('el panel trae su campo de búsqueda', () => {

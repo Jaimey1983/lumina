@@ -78,6 +78,12 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "lienzo",
   },
+  "qr-sesion": {
+    nombre: "QR de sesión",
+    descripcion: "QR y código para que los alumnos se unan a la clase",
+    familia: "widget",
+    grupo: "lienzo",
+  },
   timeline: { nombre: "Línea de tiempo", familia: "widget", grupo: "lienzo" },
   popup: { nombre: "Popup", familia: "widget", grupo: "overlay" },
   hotspot: { nombre: "Hotspot", familia: "widget", grupo: "control" },

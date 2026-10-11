@@ -1,0 +1,133 @@
+/* T20 — QR de sesión. Todo color pasa por `--lw-*` (DT1); el QR en sí va en negro sobre blanco. */
+
+.raiz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lw-space-2, 0.5rem);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--lw-space-3, 0.75rem);
+  overflow: hidden;
+  font-family: var(--lw-font-family, inherit);
+  text-align: center;
+  color: var(--lw-color-text, #0f172a);
+  background: var(--lw-color-surface, #fff);
+}
+
+.ayuda {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.zonaQr {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr {
+  height: min(var(--qr-ancho, 75%), 100%);
+  max-width: var(--qr-ancho, 75%);
+  aspect-ratio: 1;
+  border-radius: var(--lw-radius-md, 6px);
+  overflow: hidden;
+  /* Con `tema` el QR toma el color del texto del tema. */
+  color: var(--lw-color-text, #0f172a);
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cargando {
+  width: 100%;
+  height: 100%;
+  background: var(--lw-neutral-100, rgb(15 23 42 / 0.06));
+}
+
+.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  aspect-ratio: 1;
+  max-height: 100%;
+  padding: var(--lw-space-3, 0.75rem);
+  border: 2px dashed var(--lw-neutral-300, #cbd5e1);
+  border-radius: var(--lw-radius-md, 6px);
+  font-size: 0.8125rem;
+  color: var(--lw-color-text-muted, #475569);
+}
+
+.codigo {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: clamp(1.5rem, 8cqi, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.url {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--lw-color-text-muted, #475569);
+  overflow-wrap: anywhere;
+}
+
+.acciones {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--lw-space-2, 0.5rem);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  border-radius: var(--lw-radius-md, 6px);
+  background: var(--lw-color-surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--lw-color-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+.icono {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.raiz {
+  container-type: inline-size;
+}

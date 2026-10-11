@@ -219,7 +219,8 @@ export type WidgetTipo =
   | 'callout'
   | 'galeria'
   | 'stepper'
-  | 'sello';
+  | 'sello'
+  | 'qr-sesion';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -245,6 +246,7 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'galeria',
   'stepper',
   'sello',
+  'qr-sesion',
 ] as const;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {
