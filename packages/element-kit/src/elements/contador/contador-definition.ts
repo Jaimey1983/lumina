@@ -43,6 +43,82 @@ export const CONTADOR_PRESETS: readonly ElementPreset<ContadorEstado>[] = [
     description: "Número entero con botones de suma y resta",
     estadoPatch: { modo: "numero", valorInicial: 0, valorPaso: 1, etiqueta: "Puntos", mostrarControles: true },
   },
+  {
+    id: "flip-clock",
+    label: "Flip-clock",
+    description: "Temporizador de 5 minutos con casillas que giran",
+    estadoPatch: { modo: "temporizador", segundos: 300, variante: "flip", etiqueta: "Tiempo" },
+  },
+  {
+    id: "anillo",
+    label: "Anillo",
+    description: "Temporizador de 2 minutos con un anillo que se vacía",
+    estadoPatch: { modo: "temporizador", segundos: 120, variante: "anillo", etiqueta: "Tiempo" },
+  },
+  {
+    id: "pomodoro-completo",
+    label: "Pomodoro 25/5",
+    description: "Enfoque de 25 minutos con aviso a mitad y a los 5 minutos finales",
+    estadoPatch: {
+      modo: "temporizador",
+      segundos: 1500,
+      variante: "anillo",
+      etiqueta: "Pomodoro · 25/5",
+      hitos: [
+        { segundos: 300, etiqueta: "Últimos 5 min" },
+        { segundos: 750, etiqueta: "Mitad" },
+      ],
+      hitosAlerta: "ambas",
+    },
+  },
+  {
+    id: "cuenta-atras-dramatica",
+    label: "Cuenta atrás dramática",
+    description: "30 segundos con semáforo y avisos sonoros a los 10 y 5 segundos",
+    estadoPatch: {
+      modo: "temporizador",
+      segundos: 30,
+      variante: "flip",
+      semaforo: true,
+      etiqueta: "¡Se acaba!",
+      hitos: [
+        { segundos: 5, etiqueta: "¡5!" },
+        { segundos: 10, etiqueta: "¡10!" },
+      ],
+      hitosAlerta: "ambas",
+    },
+  },
+  {
+    id: "cronometro-debate",
+    label: "Cronómetro de debate",
+    description: "Cronómetro que avisa al minuto, a los 2 y a los 3 minutos",
+    estadoPatch: {
+      modo: "cronometro",
+      variante: "digitos",
+      etiqueta: "Turno de palabra",
+      autoIniciar: false,
+      hitos: [
+        { segundos: 60, etiqueta: "1 min" },
+        { segundos: 120, etiqueta: "2 min" },
+        { segundos: 180, etiqueta: "Tiempo" },
+      ],
+      hitosAlerta: "ambas",
+    },
+  },
+  {
+    id: "semaforo-grupal",
+    label: "Semáforo de dinámica grupal",
+    description: "3 minutos que pasan de verde a amarillo y a rojo",
+    estadoPatch: {
+      modo: "temporizador",
+      segundos: 180,
+      variante: "anillo",
+      semaforo: true,
+      etiqueta: "Trabajo en equipo",
+      autoIniciar: false,
+      hitos: [{ segundos: 30, etiqueta: "Cierren ideas" }],
+    },
+  },
 ];
 
 /** E3.2 — Contador como ElementDefinition, sin puntuación. */

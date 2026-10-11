@@ -1,6 +1,11 @@
 /** API pública del widget Contador para `@lumina/element-kit` (E3.2). */
 export type { ContadorWidget } from '@lumina/types/widget';
 export {
+  type ContadorHito,
+  type ContadorHitosAlerta,
+  type ContadorT10,
+  type ContadorVariante,
+  type ContadorWidgetT10,
   createDefaultContadorBlock,
   normalizeContadorWidget,
 } from './contador-defaults.js';

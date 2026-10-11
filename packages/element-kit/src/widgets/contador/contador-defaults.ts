@@ -17,6 +17,91 @@ export const DEFAULT_CONTADOR_FONDO = '#1e293b';
 export const DEFAULT_CONTADOR_TEXTO = '#f8fafc';
 export const DEFAULT_CONTADOR_ACENTO = '#38bdf8';
 
+/**
+ * Opciones de T10 que aún no están en `ContadorWidget` de `@lumina/types` (fuera del alcance de
+ * esa ficha). Se leen del JSON guardado con estos tipos; subirlas a `@lumina/types` queda como
+ * seguimiento (igual que T6–T9).
+ */
+export type ContadorVariante = 'digitos' | 'flip' | 'anillo';
+export type ContadorHitosAlerta = 'visual' | 'sonora' | 'ambas';
+
+export interface ContadorHito {
+  /**
+   * Segundos. En el temporizador: cuando QUEDAN esos segundos; en el cronómetro: cuando han
+   * TRANSCURRIDO. En modo número no se usan.
+   */
+  segundos: number;
+  etiqueta: string;
+}
+
+export interface ContadorT10 {
+  variante?: ContadorVariante;
+  hitos?: ContadorHito[];
+  /** Cómo avisan los hitos. Por defecto `visual`. */
+  hitosAlerta?: ContadorHitosAlerta;
+  /** Teñe el contador de verde / amarillo / rojo según el tiempo que queda (solo temporizador). */
+  semaforo?: boolean;
+}
+
+export type ContadorWidgetT10 = ContadorWidget & ContadorT10;
+
+export const CONTADOR_VARIANTES: { id: ContadorVariante; label: string }[] = [
+  { id: 'digitos', label: 'Dígitos' },
+  { id: 'flip', label: 'Flip-clock' },
+  { id: 'anillo', label: 'Anillo' },
+];
+export const CONTADOR_ALERTAS: { id: ContadorHitosAlerta; label: string }[] = [
+  { id: 'visual', label: 'Visual' },
+  { id: 'sonora', label: 'Sonora' },
+  { id: 'ambas', label: 'Ambas' },
+];
+export const CONTADOR_MAX_HITOS = 6;
+
+const VALID_VARIANTES = new Set<ContadorVariante>(['digitos', 'flip', 'anillo']);
+const VALID_ALERTAS = new Set<ContadorHitosAlerta>(['visual', 'sonora', 'ambas']);
+
+function normalizarHitos(raw: unknown): ContadorHito[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((h): h is { segundos: unknown; etiqueta?: unknown } => !!h && typeof h === 'object')
+    .filter((h) => Number(h.segundos) >= 1)
+    .map((h) => ({
+      segundos: asInt(h.segundos, 1, 1, MAX_SEGUNDOS),
+      etiqueta: typeof h.etiqueta === 'string' ? h.etiqueta.trim().slice(0, 24) : '',
+    }))
+    .slice(0, CONTADOR_MAX_HITOS)
+    .sort((a, b) => a.segundos - b.segundos);
+}
+
+export type ContadorSemaforo = 'verde' | 'amarillo' | 'rojo';
+
+/** Fracción del tiempo que queda → color del semáforo (más de la mitad, más del 20 %, el resto). */
+export function semaforoDeFraccion(fraccionRestante: number): ContadorSemaforo {
+  if (fraccionRestante > 0.5) return 'verde';
+  if (fraccionRestante > 0.2) return 'amarillo';
+  return 'rojo';
+}
+
+/**
+ * Índices de los hitos ya alcanzados. Temporizador: quedan `<=` hito.segundos (y el hito está
+ * por debajo de la duración total, así no suena nada al arrancar). Cronómetro: transcurrido `>=`.
+ */
+export function hitosAlcanzados(
+  modo: ContadorModo,
+  segundosActuales: number,
+  hitos: readonly ContadorHito[],
+  duracionTotal: number,
+): number[] {
+  if (modo === 'numero') return [];
+  const out: number[] = [];
+  hitos.forEach((h, i) => {
+    if (modo === 'temporizador') {
+      if (h.segundos < duracionTotal && Math.ceil(segundosActuales) <= h.segundos) out.push(i);
+    } else if (Math.floor(segundosActuales) >= h.segundos) out.push(i);
+  });
+  return out;
+}
+
 const VALID_MODOS = new Set<ContadorModo>(['temporizador', 'cronometro', 'numero']);
 const VALID_FORMATOS = new Set<ContadorFormato>(['mm:ss', 'hh:mm:ss']);
 const VALID_AL_TERMINAR = new Set<ContadorAlTerminar>(['ninguna', 'siguiente']);
@@ -44,7 +129,8 @@ export function formatContadorTime(totalSeconds: number, formato: ContadorFormat
   return `${pad(m)}:${pad(sec)}`;
 }
 
-export function normalizeContadorWidget(block: ContadorWidget): ContadorWidget {
+export function normalizeContadorWidget(rawBlock: ContadorWidget): ContadorWidget {
+  const block = rawBlock as ContadorWidgetT10;
   const modo = VALID_MODOS.has(block.modo) ? block.modo : DEFAULT_CONTADOR_MODO;
   const formato = VALID_FORMATOS.has(block.formato as ContadorFormato)
     ? (block.formato as ContadorFormato)
@@ -72,7 +158,16 @@ export function normalizeContadorWidget(block: ContadorWidget): ContadorWidget {
     colorFondo: asHex(block.colorFondo, DEFAULT_CONTADOR_FONDO),
     colorTexto: asHex(block.colorTexto, DEFAULT_CONTADOR_TEXTO),
     colorAcento: asHex(block.colorAcento, DEFAULT_CONTADOR_ACENTO),
-  };
+    // T10: opciones nuevas; solo se escriben cuando traen un valor válido y distinto del defecto.
+    ...(VALID_VARIANTES.has(block.variante as ContadorVariante) && block.variante !== 'digitos'
+      ? { variante: block.variante }
+      : {}),
+    ...(normalizarHitos(block.hitos).length > 0 ? { hitos: normalizarHitos(block.hitos) } : {}),
+    ...(VALID_ALERTAS.has(block.hitosAlerta as ContadorHitosAlerta) && block.hitosAlerta !== 'visual'
+      ? { hitosAlerta: block.hitosAlerta }
+      : {}),
+    ...(block.semaforo === true ? { semaforo: true } : {}),
+  } as ContadorWidget;
 }
 
 export function createDefaultContadorBlock(marco?: BlockMarco): ContadorWidget {

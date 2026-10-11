@@ -104,3 +104,155 @@
     transition: none;
   }
 }
+
+/* ── T10: variantes, hitos y semáforo ─────────────────────────────────────── */
+
+/* Flip-clock: una casilla por dígito, con la línea de bisagra al medio. */
+.flip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-weight: 700;
+  font-size: clamp(1.05rem, 15cqi, 2.1rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.flipTile {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15em;
+  padding: 0.22em 0.1em;
+  border-radius: var(--lw-radius-sm, 0.3rem);
+  background: rgb(255 255 255 / 0.12);
+  overflow: hidden;
+}
+
+.flipTile::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 1px;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.flipSep {
+  opacity: 0.7;
+  padding-bottom: 0.08em;
+}
+
+.cara {
+  display: inline-block;
+  transform-origin: 50% 50%;
+}
+
+.caraGira {
+  animation: flipGira var(--lw-motion-base, 250ms) var(--lw-ease, ease-out);
+}
+
+@keyframes flipGira {
+  from {
+    transform: rotateX(-90deg);
+    opacity: 0.2;
+  }
+  to {
+    transform: rotateX(0);
+    opacity: 1;
+  }
+}
+
+/* Anillo: el arco se vacía con el tiempo; los dígitos van al centro. */
+.anillo {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.anilloSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.anilloPista {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.16);
+  stroke-width: 7;
+}
+
+.anilloArco {
+  fill: none;
+  stroke: var(--ct-acento, var(--lw-color-primary, currentColor));
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.12s linear;
+}
+
+.digitsAnillo {
+  position: relative;
+  font-size: clamp(0.95rem, 13cqi, 1.9rem);
+}
+
+/* Hito alcanzado: cartel breve + destello del borde. */
+.hito {
+  max-width: 100%;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--lw-radius-full, 999px);
+  background: var(--ct-acento, var(--lw-color-primary, currentColor));
+  color: var(--lw-color-on-solid, #fff);
+  font-family: var(--lw-font-family, inherit);
+  font-size: clamp(0.55rem, 7cqi, 0.75rem);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  animation: hitoEntra var(--lw-motion-base, 250ms) var(--lw-ease, ease-out);
+}
+
+.hitoDestello {
+  animation: hitoDestello 0.6s ease-in-out 2;
+}
+
+@keyframes hitoEntra {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes hitoDestello {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caraGira,
+  .hito,
+  .hitoDestello {
+    animation: none;
+  }
+  .anilloArco {
+    transition: none;
+  }
+}
