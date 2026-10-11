@@ -1,7 +1,18 @@
+/*
+ * Botón (T8). Una variante fija un TONO (`--bt`, `--bt-on`, cómo se aclara/oscurece al pasar el
+ * puntero) y un ESTILO decide cómo se pinta ese tono: sólido, suave, contorno, fantasma o enlace.
+ * Todo color pasa por tokens `--lw-*` con el hex de siempre como respaldo (T1).
+ */
 .btn {
+  --bt: var(--lw-color-primary, #0d6efd);
+  --bt-on: var(--lw-color-on-solid, #fff);
+  --bt-mezcla: black;
+  --bt-borde: 80%;
+  --bt-d: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5em;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -22,17 +33,13 @@
     color var(--lw-motion-fast, 0.15s) ease-in-out,
     background-color var(--lw-motion-fast, 0.15s) ease-in-out,
     border-color var(--lw-motion-fast, 0.15s) ease-in-out,
-    box-shadow var(--lw-motion-fast, 0.15s) ease-in-out,
-    transform var(--lw-motion-fast, 0.08s) ease;
+    box-shadow var(--lw-motion-fast, 0.15s) ease-in-out;
 }
 
-.btn:active:not(:disabled):not(.btnDisabled) {
-  transform: scale(0.98);
-}
-
+/* El foco toma el tono de la variante. */
 .btn:focus-visible {
   outline: 0;
-  box-shadow: 0 0 0 0.25rem var(--lw-color-primary-muted, rgba(13, 110, 253, 0.25));
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--bt) 35%, transparent);
 }
 
 .btn:disabled,
@@ -41,19 +48,32 @@
   opacity: 0.65;
 }
 
+.btnCargando {
+  cursor: progress;
+}
+
+/* ── Tamaño × densidad ─────────────────────────────────────────────────── */
 .sizeSm {
-  padding: 0.25rem 0.5rem;
+  padding: calc(0.25rem * var(--bt-d)) calc(0.5rem * var(--bt-d));
   font-size: 0.875rem;
 }
 
 .sizeMd {
-  padding: 0.375rem 0.75rem;
+  padding: calc(0.375rem * var(--bt-d)) calc(0.75rem * var(--bt-d));
   font-size: 1rem;
 }
 
 .sizeLg {
-  padding: 0.5rem 1rem;
+  padding: calc(0.5rem * var(--bt-d)) calc(1rem * var(--bt-d));
   font-size: 1.25rem;
+}
+
+.densidadCompacta {
+  --bt-d: 0.6;
+}
+
+.densidadAmplia {
+  --bt-d: 1.5;
 }
 
 .formaRedondeado {
@@ -64,185 +84,133 @@
   border-radius: var(--lw-radius-full, 50rem);
 }
 
-/* Solid */
-.primary {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-primary, #0d6efd);
-  border-color: var(--lw-color-primary, #0d6efd);
-}
-.primary:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-primary, #0b5ed7);
-  border-color: var(--lw-color-primary, #0a58ca);
-  filter: brightness(0.92);
+/* ── Variantes = tonos ─────────────────────────────────────────────────── */
+.primary,
+.link {
+  /* tono por defecto (primary) */
 }
 
 .secondary {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-secondary, #6c757d);
-  border-color: var(--lw-color-secondary, #6c757d);
-}
-.secondary:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: color-mix(in srgb, var(--lw-color-secondary, #6c757d) 85%, black);
-  border-color: color-mix(in srgb, var(--lw-color-secondary, #6c757d) 80%, black);
+  --bt: var(--lw-color-secondary, #6c757d);
 }
 
 .success {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-success, #198754);
-  border-color: var(--lw-color-success, #198754);
-}
-.success:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: color-mix(in srgb, var(--lw-color-success, #198754) 85%, black);
-  border-color: color-mix(in srgb, var(--lw-color-success, #198754) 80%, black);
+  --bt: var(--lw-color-success, #198754);
 }
 
 .danger {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-danger, #dc3545);
-  border-color: var(--lw-color-danger, #dc3545);
-}
-.danger:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: color-mix(in srgb, var(--lw-color-danger, #dc3545) 85%, black);
-  border-color: color-mix(in srgb, var(--lw-color-danger, #dc3545) 80%, black);
+  --bt: var(--lw-color-danger, #dc3545);
 }
 
 .warning {
-  color: var(--lw-color-on-bright, #000);
-  background-color: var(--lw-color-warning, #ffc107);
-  border-color: var(--lw-color-warning, #ffc107);
-}
-.warning:hover:not(:disabled) {
-  color: var(--lw-color-on-bright, #000);
-  background-color: color-mix(in srgb, var(--lw-color-warning, #ffc107) 85%, white);
-  border-color: color-mix(in srgb, var(--lw-color-warning, #ffc107) 90%, white);
+  --bt: var(--lw-color-warning, #ffc107);
+  --bt-on: var(--lw-color-on-bright, #000);
+  --bt-mezcla: white;
+  --bt-borde: 90%;
 }
 
 .info {
-  color: var(--lw-color-on-bright, #000);
-  background-color: var(--lw-color-info, #0dcaf0);
-  border-color: var(--lw-color-info, #0dcaf0);
-}
-.info:hover:not(:disabled) {
-  color: var(--lw-color-on-bright, #000);
-  background-color: color-mix(in srgb, var(--lw-color-info, #0dcaf0) 85%, white);
-  border-color: color-mix(in srgb, var(--lw-color-info, #0dcaf0) 90%, white);
+  --bt: var(--lw-color-info, #0dcaf0);
+  --bt-on: var(--lw-color-on-bright, #000);
+  --bt-mezcla: white;
+  --bt-borde: 90%;
 }
 
 .light {
-  color: var(--lw-color-on-bright, #000);
-  background-color: var(--lw-color-light, #f8f9fa);
-  border-color: var(--lw-color-light, #f8f9fa);
-}
-.light:hover:not(:disabled) {
-  color: var(--lw-color-on-bright, #000);
-  background-color: color-mix(in srgb, var(--lw-color-light, #f8f9fa) 85%, black);
-  border-color: color-mix(in srgb, var(--lw-color-light, #f8f9fa) 80%, black);
+  --bt: var(--lw-color-light, #f8f9fa);
+  --bt-on: var(--lw-color-on-bright, #000);
 }
 
 .dark {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-dark, #212529);
-  border-color: var(--lw-color-dark, #212529);
-}
-.dark:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: color-mix(in srgb, var(--lw-color-dark, #212529) 85%, white);
-  border-color: color-mix(in srgb, var(--lw-color-dark, #212529) 90%, white);
+  --bt: var(--lw-color-dark, #212529);
+  --bt-mezcla: white;
+  --bt-borde: 90%;
 }
 
-.link {
-  color: var(--lw-color-primary, #0d6efd);
+/* ── Estilos ───────────────────────────────────────────────────────────── */
+.estiloSolid {
+  color: var(--bt-on);
+  background-color: var(--bt);
+  border-color: var(--bt);
+}
+.estiloSolid:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--bt) 85%, var(--bt-mezcla));
+  border-color: color-mix(in srgb, var(--bt) var(--bt-borde), var(--bt-mezcla));
+}
+
+.estiloSoft {
+  color: color-mix(in srgb, var(--bt) 70%, black);
+  background-color: color-mix(in srgb, var(--bt) 15%, transparent);
+  border-color: transparent;
+}
+.estiloSoft:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--bt) 28%, transparent);
+}
+
+.estiloOutline {
+  color: var(--bt);
+  background-color: transparent;
+  border-color: var(--bt);
+}
+.estiloOutline:hover:not(:disabled) {
+  color: var(--bt-on);
+  background-color: var(--bt);
+}
+
+.estiloGhost {
+  color: color-mix(in srgb, var(--bt) 80%, black);
+  background-color: transparent;
+  border-color: transparent;
+}
+.estiloGhost:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--bt) 14%, transparent);
+}
+
+.estiloLink {
+  color: var(--bt);
   background-color: transparent;
   border-color: transparent;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.link:hover:not(:disabled) {
-  color: var(--lw-color-primary, #0a58ca);
-  filter: brightness(0.85);
+.estiloLink:hover:not(:disabled) {
+  color: color-mix(in srgb, var(--bt) 75%, black);
 }
 
-/* Outline */
-.outlinePrimary {
-  color: var(--lw-color-primary, #0d6efd);
-  background-color: transparent;
-  border-color: var(--lw-color-primary, #0d6efd);
-}
-.outlinePrimary:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-primary, #0d6efd);
+/* ── Icono y carga ─────────────────────────────────────────────────────── */
+.icono {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 1.1em;
+  height: 1.1em;
 }
 
-.outlineSecondary {
-  color: var(--lw-color-secondary, #6c757d);
-  background-color: transparent;
-  border-color: var(--lw-color-secondary, #6c757d);
-}
-.outlineSecondary:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-secondary, #6c757d);
+.icono > svg {
+  width: 100%;
+  height: 100%;
 }
 
-.outlineSuccess {
-  color: var(--lw-color-success, #198754);
-  background-color: transparent;
-  border-color: var(--lw-color-success, #198754);
-}
-.outlineSuccess:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-success, #198754);
-}
-
-.outlineDanger {
-  color: var(--lw-color-danger, #dc3545);
-  background-color: transparent;
-  border-color: var(--lw-color-danger, #dc3545);
-}
-.outlineDanger:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-danger, #dc3545);
+.spinner {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: botonGira 0.7s linear infinite;
 }
 
-.outlineWarning {
-  color: var(--lw-color-warning, #ffc107);
-  background-color: transparent;
-  border-color: var(--lw-color-warning, #ffc107);
-}
-.outlineWarning:hover:not(:disabled) {
-  color: var(--lw-color-on-bright, #000);
-  background-color: var(--lw-color-warning, #ffc107);
+@keyframes botonGira {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.outlineInfo {
-  color: var(--lw-color-info, #0dcaf0);
-  background-color: transparent;
-  border-color: var(--lw-color-info, #0dcaf0);
-}
-.outlineInfo:hover:not(:disabled) {
-  color: var(--lw-color-on-bright, #000);
-  background-color: var(--lw-color-info, #0dcaf0);
-}
-
-.outlineLight {
-  color: var(--lw-color-light, #f8f9fa);
-  background-color: transparent;
-  border-color: var(--lw-color-light, #f8f9fa);
-}
-.outlineLight:hover:not(:disabled) {
-  color: var(--lw-color-on-bright, #000);
-  background-color: var(--lw-color-light, #f8f9fa);
-}
-
-.outlineDark {
-  color: var(--lw-color-dark, #212529);
-  background-color: transparent;
-  border-color: var(--lw-color-dark, #212529);
-}
-.outlineDark:hover:not(:disabled) {
-  color: var(--lw-color-on-solid, #fff);
-  background-color: var(--lw-color-dark, #212529);
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+  .btn {
+    transition: none;
+  }
 }

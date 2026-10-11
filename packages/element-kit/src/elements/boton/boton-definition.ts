@@ -29,6 +29,49 @@ export const BOTON_PRESETS: readonly ElementPreset<BotonEstado>[] = [
     description: "Tono neutro para acciones de menor jerarquía",
     estadoPatch: { variante: "secondary", outline: false, forma: "redondeado" },
   },
+  {
+    id: "suave",
+    label: "Suave",
+    description: "Fondo tintado y texto del mismo tono, sin borde",
+    estadoPatch: { variante: "primary", estilo: "soft", outline: false, forma: "redondeado" },
+  },
+  {
+    id: "fantasma",
+    label: "Fantasma",
+    description: "Sin fondo ni borde; se tiñe al pasar el puntero",
+    estadoPatch: { variante: "primary", estilo: "ghost", outline: false, forma: "redondeado" },
+  },
+  {
+    id: "enlace",
+    label: "Enlace",
+    description: "Texto subrayado, como un vínculo",
+    estadoPatch: { variante: "primary", estilo: "link", outline: false },
+  },
+  {
+    id: "con-flecha",
+    label: "Con flecha",
+    description: "Sólido con una flecha a la derecha para avanzar",
+    estadoPatch: {
+      variante: "primary",
+      estilo: "solid",
+      outline: false,
+      icono: "flecha-derecha",
+      iconoPosicion: "derecha",
+    },
+  },
+  {
+    id: "descarga",
+    label: "Descarga",
+    description: "Contorno con icono; baja el archivo de la URL",
+    estadoPatch: {
+      variante: "primary",
+      estilo: "outline",
+      outline: true,
+      icono: "descargar",
+      iconoPosicion: "izquierda",
+      accion: "descargar",
+    },
+  },
 ];
 
 /**

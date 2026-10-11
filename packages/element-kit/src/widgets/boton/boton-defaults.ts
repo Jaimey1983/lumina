@@ -1,5 +1,6 @@
 import type { BlockMarco } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import { esIconoValido, type BotonIconoId } from './boton-iconos.js';
 import type {
   BotonAccion,
   BotonForma,
@@ -13,6 +14,45 @@ export const DEFAULT_BOTON_VARIANTE: BotonVariante = 'primary';
 export const DEFAULT_BOTON_TAMANO: BotonTamano = 'md';
 export const DEFAULT_BOTON_FORMA: BotonForma = 'redondeado';
 export const DEFAULT_BOTON_ACCION: BotonAccion = 'siguiente';
+
+/**
+ * Opciones de T8 que aún no están en `BotonWidget` de `@lumina/types` (fuera del alcance de
+ * esa ficha). Se leen del JSON guardado con estos tipos; subirlas a `@lumina/types` queda como
+ * seguimiento. `accion: 'descargar'` también es nueva: ver `BotonAccionT8`.
+ */
+export type BotonEstilo = 'solid' | 'soft' | 'outline' | 'ghost' | 'link';
+export type BotonDensidad = 'compacta' | 'normal' | 'amplia';
+export type BotonIconoPosicion = 'izquierda' | 'derecha';
+/** Las acciones del tipo compartido más la descarga de un recurso. */
+export type BotonAccionT8 = BotonAccion | 'descargar';
+
+export interface BotonT8 {
+  /** Si falta se deduce de lo legado: `link` → enlace, `outline` → contorno, si no sólido. */
+  estilo?: BotonEstilo;
+  icono?: BotonIconoId;
+  iconoPosicion?: BotonIconoPosicion;
+  /** Muestra un indicador de carga y no deja pulsar. */
+  cargando?: boolean;
+  densidad?: BotonDensidad;
+  /** Nombre sugerido del archivo para la acción `descargar`. */
+  archivoNombre?: string;
+}
+
+export type BotonWidgetT8 = Omit<BotonWidget, 'accion'> & BotonT8 & { accion?: BotonAccionT8 };
+
+export const BOTON_ESTILOS: { id: BotonEstilo; label: string }[] = [
+  { id: 'solid', label: 'Sólido' },
+  { id: 'soft', label: 'Suave' },
+  { id: 'outline', label: 'Contorno' },
+  { id: 'ghost', label: 'Fantasma' },
+  { id: 'link', label: 'Enlace' },
+];
+
+export const BOTON_DENSIDADES: { id: BotonDensidad; label: string }[] = [
+  { id: 'compacta', label: 'Compacta' },
+  { id: 'normal', label: 'Normal' },
+  { id: 'amplia', label: 'Amplia' },
+];
 
 export const BOTON_VARIANTES: { id: BotonVariante; label: string; swatch: string }[] = [
   { id: 'primary', label: 'Primary', swatch: '#0d6efd' },
@@ -29,7 +69,9 @@ export const BOTON_VARIANTES: { id: BotonVariante; label: string; swatch: string
 const VALID_VARIANTES = new Set<BotonVariante>(BOTON_VARIANTES.map((v) => v.id));
 const VALID_TAMANOS = new Set<BotonTamano>(['sm', 'md', 'lg']);
 const VALID_FORMAS = new Set<BotonForma>(['redondeado', 'pill']);
-const VALID_ACCIONES = new Set<BotonAccion>(['ninguna', 'url', 'siguiente', 'anterior', 'ir_a']);
+const VALID_ACCIONES = new Set<BotonAccionT8>(['ninguna', 'url', 'siguiente', 'anterior', 'ir_a', 'descargar']);
+const VALID_ESTILOS = new Set<BotonEstilo>(['solid', 'soft', 'outline', 'ghost', 'link']);
+const VALID_DENSIDADES = new Set<BotonDensidad>(['compacta', 'normal', 'amplia']);
 
 export function botonFallbackSize(tamano: BotonTamano): { ancho: number; alto: number } {
   if (tamano === 'sm') return { ancho: 16, alto: 6 };
@@ -37,7 +79,8 @@ export function botonFallbackSize(tamano: BotonTamano): { ancho: number; alto: n
   return { ancho: 20, alto: 8 };
 }
 
-export function normalizeBotonWidget(block: BotonWidget): BotonWidget {
+export function normalizeBotonWidget(rawBlock: BotonWidget): BotonWidget {
+  const block = rawBlock as BotonWidgetT8;
   const variante = VALID_VARIANTES.has(block.variante) ? block.variante : DEFAULT_BOTON_VARIANTE;
   const tamano = VALID_TAMANOS.has(block.tamano as BotonTamano)
     ? (block.tamano as BotonTamano)
@@ -45,8 +88,8 @@ export function normalizeBotonWidget(block: BotonWidget): BotonWidget {
   const forma = VALID_FORMAS.has(block.forma as BotonForma)
     ? (block.forma as BotonForma)
     : DEFAULT_BOTON_FORMA;
-  const accion = VALID_ACCIONES.has(block.accion as BotonAccion)
-    ? (block.accion as BotonAccion)
+  const accion = VALID_ACCIONES.has(block.accion as BotonAccionT8)
+    ? (block.accion as BotonAccionT8)
     : DEFAULT_BOTON_ACCION;
 
   return {
@@ -65,7 +108,18 @@ export function normalizeBotonWidget(block: BotonWidget): BotonWidget {
     url: typeof block.url === 'string' ? block.url : '',
     slideIndex: typeof block.slideIndex === 'number' ? Math.max(0, Math.floor(block.slideIndex)) : 0,
     deshabilitado: Boolean(block.deshabilitado),
-  };
+    // T8: solo se escriben cuando traen un valor válido (por defecto, ausentes).
+    ...(VALID_ESTILOS.has(block.estilo as BotonEstilo) ? { estilo: block.estilo } : {}),
+    ...(esIconoValido(block.icono) ? { icono: block.icono as BotonIconoId } : {}),
+    ...(block.iconoPosicion === 'derecha' ? { iconoPosicion: 'derecha' as const } : {}),
+    ...(block.cargando === true ? { cargando: true } : {}),
+    ...(VALID_DENSIDADES.has(block.densidad as BotonDensidad) && block.densidad !== 'normal'
+      ? { densidad: block.densidad }
+      : {}),
+    ...(typeof block.archivoNombre === 'string' && block.archivoNombre.trim()
+      ? { archivoNombre: block.archivoNombre.trim() }
+      : {}),
+  } as BotonWidget;
 }
 
 export function createDefaultBotonBlock(marco?: BlockMarco): BotonWidget {

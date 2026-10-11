@@ -8,6 +8,7 @@ import type {
   ElementPropsPanelProps,
   ElementViewerProps,
 } from "@lumina/element-kit-core";
+import type { BotonWidget } from "../../widgets/boton/index.js";
 import type { BotonConfig, BotonEstado } from "./boton-types.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
@@ -17,7 +18,7 @@ export function BotonEditor({
 }: ElementEditorProps<BotonEstado, BotonConfig>) {
   return (
     <LegacyBotonEditor
-      block={estado}
+      block={estado as BotonWidget}
       onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
@@ -30,7 +31,7 @@ export function BotonViewer({
 }: ElementViewerProps<BotonEstado, BotonConfig>) {
   return (
     <LegacyBotonViewer
-      block={estado}
+      block={estado as BotonWidget}
       isThumbnail={config.isThumbnail === true}
       emitir={config.emitir}
     />
@@ -47,11 +48,11 @@ export function BotonPropiedades({
 }: ElementPropsPanelProps<BotonEstado, BotonConfig>) {
   return (
     <LegacyBotonProperties
-      block={estado}
+      block={estado as BotonWidget}
       applyNow={async (fn) => {
-        const next = fn(estado);
+        const next = fn(estado as BotonWidget);
         if (next.tipo === "boton") {
-          onChange(next);
+          onChange(next as BotonEstado);
         }
       }}
     />

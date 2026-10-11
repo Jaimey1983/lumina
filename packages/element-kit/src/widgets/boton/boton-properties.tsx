@@ -3,7 +3,7 @@
 import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
 import { presetsDelWidget } from '../widget-presets.js';
 import type { Block } from '@lumina/types/slide';
-import type { BotonAccion, BotonForma, BotonTamano, BotonVariante, BotonWidget } from '@lumina/types/widget';
+import type { BotonForma, BotonTamano, BotonVariante, BotonWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
 import { Button } from '@lumina/ui/button';
 import { Checkbox } from '@lumina/ui/checkbox';
@@ -12,14 +12,27 @@ import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import { Label } from '@lumina/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@lumina/ui/toggle-group';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
-import { BOTON_VARIANTES, botonFallbackSize, mergedBotonConfig, normalizeBotonWidget } from './boton-config.js';
+import {
+  BOTON_DENSIDADES,
+  BOTON_ESTILOS,
+  BOTON_VARIANTES,
+  botonFallbackSize,
+  mergedBotonConfig,
+  normalizeBotonWidget,
+  type BotonAccionT8,
+  type BotonDensidad,
+  type BotonEstilo,
+  type BotonIconoPosicion,
+  type BotonWidgetT8,
+} from './boton-config.js';
+import { BOTON_ICONOS, type BotonIconoId } from './boton-iconos.js';
 
 export interface BotonPropertiesProps {
   block: BotonWidget;
   applyNow: (fn: (b: Block) => Block) => Promise<void>;
 }
 
-const ETIQUETA_ACCION_HEREDADA: Partial<Record<BotonAccion, string>> = {
+const ETIQUETA_ACCION_HEREDADA: Partial<Record<BotonAccionT8, string>> = {
   siguiente: 'ir al siguiente slide',
   anterior: 'volver al slide anterior',
   ir_a: 'ir a un slide',
@@ -31,8 +44,10 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
   const accionHeredada =
     cfg.accion === 'siguiente' || cfg.accion === 'anterior' || cfg.accion === 'ir_a';
 
-  const update = (fn: (w: BotonWidget) => BotonWidget) => {
-    void applyNow((b) => (b.tipo === 'boton' ? fn(normalizeBotonWidget(b)) : b));
+  const update = (fn: (w: BotonWidgetT8) => BotonWidgetT8) => {
+    void applyNow((b) =>
+      b.tipo === 'boton' ? (fn(normalizeBotonWidget(b) as BotonWidgetT8) as BotonWidget) : b,
+    );
   };
 
   const updateTamano = (tamano: BotonTamano) => {
@@ -73,10 +88,10 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
       </div>
 
       <div>
-        <WidgetSectionTitle>Estilo Bootstrap</WidgetSectionTitle>
+        <WidgetSectionTitle>Estilo</WidgetSectionTitle>
         <div className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Variante</Label>
+            <Label className="text-xs text-muted-foreground">Color</Label>
             <div className="grid grid-cols-3 gap-1.5">
               {BOTON_VARIANTES.map(({ id, label, swatch }) => {
                 const selected = cfg.variante === id;
@@ -104,15 +119,22 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="boton-outline"
-              checked={cfg.outline}
-              onCheckedChange={(checked) => update((w) => ({ ...w, outline: !!checked }))}
-            />
-            <Label htmlFor="boton-outline" className="text-xs font-normal">
-              Outline (borde, fondo transparente)
-            </Label>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Aspecto</Label>
+            <ToggleGroup
+              type="single"
+              value={cfg.estilo}
+              onValueChange={(val: BotonEstilo) => {
+                if (val) update((w) => ({ ...w, estilo: val, outline: val === 'outline' }));
+              }}
+              className="flex w-full flex-wrap justify-start gap-1 rounded-md bg-slate-100/50 p-1"
+            >
+              {BOTON_ESTILOS.map(({ id, label }) => (
+                <ToggleGroupItem key={id} value={id} className="h-8 flex-1 text-xs">
+                  {label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
 
           <div className="space-y-2">
@@ -155,6 +177,71 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Densidad</Label>
+            <ToggleGroup
+              type="single"
+              value={cfg.densidad}
+              onValueChange={(val: BotonDensidad) => {
+                if (val) update((w) => ({ ...w, densidad: val }));
+              }}
+              className="w-full justify-start rounded-md bg-slate-100/50 p-1"
+            >
+              {BOTON_DENSIDADES.map(({ id, label }) => (
+                <ToggleGroupItem key={id} value={id} className="h-8 flex-1 text-xs">
+                  {label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Icono</Label>
+            <select
+              aria-label="Icono del botón"
+              value={cfg.icono ?? ''}
+              onChange={(e) =>
+                update((w) => ({ ...w, icono: (e.target.value || undefined) as BotonIconoId | undefined }))
+              }
+              className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+            >
+              <option value="">Sin icono</option>
+              {Object.entries(BOTON_ICONOS).map(([id, { label }]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {cfg.icono ? (
+              <ToggleGroup
+                type="single"
+                value={cfg.iconoPosicion}
+                onValueChange={(val: BotonIconoPosicion) => {
+                  if (val) update((w) => ({ ...w, iconoPosicion: val }));
+                }}
+                className="w-full justify-start rounded-md bg-slate-100/50 p-1"
+              >
+                <ToggleGroupItem value="izquierda" className="h-8 flex-1 text-xs">
+                  A la izquierda
+                </ToggleGroupItem>
+                <ToggleGroupItem value="derecha" className="h-8 flex-1 text-xs">
+                  A la derecha
+                </ToggleGroupItem>
+              </ToggleGroup>
+            ) : null}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="boton-cargando"
+              checked={cfg.cargando}
+              onCheckedChange={(checked) => update((w) => ({ ...w, cargando: !!checked }))}
+            />
+            <Label htmlFor="boton-cargando" className="text-xs font-normal">
+              Mostrar «cargando»
+            </Label>
+          </div>
         </div>
       </div>
 
@@ -170,13 +257,16 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
             <ToggleGroup
               type="single"
               value={accionHeredada ? '' : cfg.accion}
-              onValueChange={(val: BotonAccion) => {
+              onValueChange={(val: BotonAccionT8) => {
                 if (val) update((w) => ({ ...w, accion: val }));
               }}
               className="flex w-full flex-wrap justify-start gap-1 rounded-md bg-slate-100/50 p-1"
             >
               <ToggleGroupItem value="url" className="h-8 flex-1 text-xs">
                 Abrir URL
+              </ToggleGroupItem>
+              <ToggleGroupItem value="descargar" className="h-8 flex-1 text-xs">
+                Descargar
               </ToggleGroupItem>
               <ToggleGroupItem value="ninguna" className="h-8 flex-1 text-xs">
                 Ninguna
@@ -205,13 +295,25 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
             )}
           </div>
 
-          {cfg.accion === 'url' ? (
+          {cfg.accion === 'url' || cfg.accion === 'descargar' ? (
             <div className="space-y-2">
-              <Label className="text-xs">URL</Label>
+              <Label className="text-xs">{cfg.accion === 'descargar' ? 'URL del archivo' : 'URL'}</Label>
               <WidgetDraftTextField
                 value={cfg.url}
                 placeholder="https://…"
                 onChange={(next) => update((w) => ({ ...w, url: next }))}
+                className="h-8 text-xs"
+              />
+            </div>
+          ) : null}
+
+          {cfg.accion === 'descargar' ? (
+            <div className="space-y-2">
+              <Label className="text-xs">Nombre del archivo (opcional)</Label>
+              <WidgetDraftTextField
+                value={cfg.archivoNombre}
+                placeholder="guia.pdf"
+                onChange={(next) => update((w) => ({ ...w, archivoNombre: next }))}
                 className="h-8 text-xs"
               />
             </div>
