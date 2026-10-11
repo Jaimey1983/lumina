@@ -1,4 +1,5 @@
 import {
+  type ProgresoWidget,
   ProgresoEditor as LegacyProgresoEditor,
   ProgresoProperties as LegacyProgresoProperties,
   ProgresoViewer as LegacyProgresoViewer,
@@ -17,7 +18,7 @@ export function ProgresoEditor({
 }: ElementEditorProps<ProgresoEstado, ProgresoConfig>) {
   return (
     <LegacyProgresoEditor
-      block={estado}
+      block={estado as ProgresoWidget}
       onEnsureBlockSelected={config.onEnsureBlockSelected ?? (() => undefined)}
     />
   );
@@ -30,7 +31,7 @@ export function ProgresoViewer({
 }: ElementViewerProps<ProgresoEstado, ProgresoConfig>) {
   return (
     <LegacyProgresoViewer
-      block={estado}
+      block={estado as ProgresoWidget}
       isThumbnail={config.isThumbnail === true}
     />
   );
@@ -43,11 +44,11 @@ export function ProgresoPropiedades({
 }: ElementPropsPanelProps<ProgresoEstado, ProgresoConfig>) {
   return (
     <LegacyProgresoProperties
-      block={estado}
+      block={estado as ProgresoWidget}
       applyNow={async (actualizar) => {
-        const siguiente = actualizar(estado);
+        const siguiente = actualizar(estado as ProgresoWidget);
         if (siguiente.tipo === "progreso") {
-          onChange(siguiente);
+          onChange(siguiente as ProgresoEstado);
         }
       }}
     />

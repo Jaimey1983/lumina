@@ -4,26 +4,40 @@ import type { ElementDefinition, ElementPreset } from "@lumina/element-kit-core"
 import { TabsEditor, TabsViewer, TabsPropiedades } from "./tabs-adapters.js";
 import { TABS_TIPO, type TabsEstado, type TabsConfig } from "./tabs-types.js";
 
+/**
+ * T12 — presets reales (T2b los había quitado: no había opción que parchear). Cada uno combina
+ * una variante de barra con una transición de panel.
+ */
 export const TABS_PRESETS: readonly ElementPreset<TabsEstado>[] = [
   {
-    id: "horizontal-clasico",
-    label: "Pestañas Clásicas",
-    description: "Barra superior con línea indicadora de pestaña activa",
-    patch: {
-      configuracion: {
-        posicionTabs: "arriba",
-      },
-    } as unknown as Partial<TabsEstado>,
+    id: "subrayado",
+    label: "Subrayado",
+    description: "Pestañas con línea inferior y fundido suave entre paneles",
+    estadoPatch: { configuracion: { variante: "underline", transicion: "fundido" } },
   },
   {
-    id: "tabs-inferiores",
-    label: "Pestañas Inferiores",
-    description: "Barra de navegación situada en la parte baja del contenedor",
-    patch: {
-      configuracion: {
-        posicionTabs: "abajo",
-      },
-    } as unknown as Partial<TabsEstado>,
+    id: "panel-pildoras",
+    label: "Píldoras",
+    description: "Pestañas redondeadas con la activa rellena",
+    estadoPatch: { configuracion: { variante: "pills", transicion: "fundido" } },
+  },
+  {
+    id: "carpeta",
+    label: "Carpeta",
+    description: "Pestañas cerradas que se funden con el panel",
+    estadoPatch: { configuracion: { variante: "enclosed", transicion: "ninguna" } },
+  },
+  {
+    id: "segmentado",
+    label: "Segmentado",
+    description: "Control segmentado compacto, con el panel que se desliza",
+    estadoPatch: { configuracion: { variante: "segmented", transicion: "deslizar" } },
+  },
+  {
+    id: "lateral",
+    label: "Lateral",
+    description: "Pestañas en columna a la izquierda del contenido",
+    estadoPatch: { configuracion: { variante: "vertical", transicion: "deslizar" } },
   },
 ];
 

@@ -29,7 +29,15 @@ import {
 export { getBlockPos, type BlockPos } from '@lumina/editor-shared/block-pos';
 
 /** Returns a new block with updated x, y (canvas % or activity `marco`). */
+/**
+ * Widgets que nacen como `ElementDefinition` (callout T16, galería T17, stepper T18, sello T19, qr-sesion T20) y no están en el union
+ * `Block` viejo (Regla 3): todos tienen `x/y/ancho/alto` en el bloque raíz.
+ */
+const TIPOS_SOLO_REGISTRY: ReadonlySet<string> = new Set(['callout', 'galeria', 'stepper', 'sello', 'qr-sesion']);
+const esSoloRegistry = (block: Block) => TIPOS_SOLO_REGISTRY.has((block as { tipo: string }).tipo);
+
 export function withPosition(block: Block, x: number, y: number): Block {
+  if (esSoloRegistry(block)) return { ...block, x, y } as Block;
   switch (block.tipo) {
     case 'texto':       return { ...block, x, y };
     case 'imagen':      return { ...block, x, y };
@@ -80,6 +88,7 @@ export function withRect(
   ancho: number,
   alto: number,
 ): Block {
+  if (esSoloRegistry(block)) return { ...block, x, y, ancho, alto } as Block;
   switch (block.tipo) {
     case 'texto':
     case 'imagen':

@@ -114,10 +114,15 @@ describe("FlipCards — paridad E3.3", () => {
 
   it("expone los presets formales mapeados desde las plantillas", () => {
     expect(flipCardsDefinition.presets).toBeDefined();
-    expect(flipCardsDefinition.presets?.length).toBe(8);
+    // Las 8 plantillas siguen ahí, intactas; T11 suma 5 estilos de giro/mazo aparte.
+    const plantillas = flipCardsDefinition.presets?.filter(
+      (p) => p.estadoPatch?.configuracion?.plantillaId !== undefined,
+    );
+    expect(plantillas?.length).toBe(8);
+    expect(flipCardsDefinition.presets?.length).toBe(13);
     const clasico = flipCardsDefinition.presets?.find((p) => p.id === "clasico");
     expect(clasico).toBeDefined();
     expect(clasico?.label).toBe("Clásico");
-    expect(clasico?.patch?.configuracion?.plantillaId).toBe("clasico");
+    expect(clasico?.estadoPatch?.configuracion?.plantillaId).toBe("clasico");
   });
 });

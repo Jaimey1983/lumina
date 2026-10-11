@@ -1,0 +1,198 @@
+/* T18 — Stepper narrativo. Todo color pasa por `--lw-*` (DT1). */
+
+.raiz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lw-space-3, 0.75rem);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--lw-space-4, 1rem);
+  font-family: var(--lw-font-family, inherit);
+  color: var(--lw-color-text, #0f172a);
+  background: var(--lw-color-surface, #fff);
+}
+
+/* Progreso */
+.barra {
+  flex-shrink: 0;
+  height: 0.5rem;
+  border-radius: var(--lw-radius-full, 999px);
+  background: var(--lw-neutral-100, rgb(15 23 42 / 0.08));
+  overflow: hidden;
+}
+
+.barraRelleno {
+  width: var(--st-progreso, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lw-color-primary, #0d6efd);
+  transition: width var(--lw-motion-base, 250ms) var(--lw-ease, ease);
+}
+
+.indicador {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid var(--lw-color-primary, #0d6efd);
+  border-radius: var(--lw-radius-full, 999px);
+  background: transparent;
+  color: var(--lw-color-primary, #0d6efd);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ind_puntos .marca {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.ind_numeros .marca {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.marcaHecha,
+.marcaActual {
+  background: var(--lw-color-primary, #0d6efd);
+  color: var(--lw-color-on-solid, #fff);
+}
+
+.marcaActual {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lw-color-primary, #0d6efd) 30%, transparent);
+}
+
+.marca:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.marca:focus-visible,
+.boton:focus-visible {
+  outline: 2px solid var(--lw-color-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+.marcaIcono {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/* Pasos */
+.pasos {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lw-space-3, 0.75rem);
+}
+
+.paso {
+  padding: var(--lw-space-4, 1rem);
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  border-radius: var(--lw-radius-lg, 0.75rem);
+  background: var(--lw-color-surface, #fff);
+  opacity: 0.7;
+}
+
+.pasoActual {
+  border-color: var(--lw-color-primary, #0d6efd);
+  box-shadow: var(--lw-elevation-1, 0 1px 2px rgb(15 23 42 / 0.12));
+  opacity: 1;
+}
+
+.pasoEtiqueta {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lw-color-primary, #0d6efd);
+}
+
+.titulo {
+  margin: 0 0 0.375rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cuerpo {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+/* Controles */
+.controles {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.contador {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--lw-color-text-muted, #475569);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--lw-color-border, #e2e8f0);
+  border-radius: var(--lw-radius-md, 6px);
+  background: var(--lw-color-surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.botonPrimario {
+  border-color: var(--lw-color-primary, #0d6efd);
+  background: var(--lw-color-primary, #0d6efd);
+  color: var(--lw-color-on-solid, #fff);
+}
+
+.botonIcono {
+  width: 1rem;
+  height: 1rem;
+}
+
+.completo {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--lw-color-success, #198754);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barraRelleno {
+    transition: none;
+  }
+}

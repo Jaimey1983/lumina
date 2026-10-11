@@ -2,7 +2,7 @@
 
 import type { ProgresoWidget } from '@lumina/types/widget';
 import { useSlideNav } from '@lumina/editor-shared/slide-nav-context';
-import { mergedProgresoConfig, resolveProgresoPercent } from './progreso-config.js';
+import { mergedProgresoConfig, resolveProgresoValor } from './progreso-config.js';
 import { ProgresoParts } from './progreso-parts.js';
 
 interface ProgresoViewerProps {
@@ -13,11 +13,11 @@ interface ProgresoViewerProps {
 export function ProgresoViewer({ block, isThumbnail = false }: ProgresoViewerProps) {
   const cfg = mergedProgresoConfig(block);
   const { slideIndex, slideCount } = useSlideNav();
-  const percent = resolveProgresoPercent(cfg.porcentaje, cfg.modo, slideIndex, slideCount);
+  const { percent, rotulo } = resolveProgresoValor(cfg, slideIndex, slideCount);
   const fractionLabel =
     cfg.modo === 'slides' && slideCount > 0
       ? `${Math.min(slideIndex + 1, slideCount)} / ${slideCount}`
-      : undefined;
+      : rotulo;
 
   return (
     <div className="relative h-full w-full">

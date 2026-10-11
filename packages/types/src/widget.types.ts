@@ -215,7 +215,12 @@ export type WidgetTipo =
   | 'scratch-card'
   | 'accordion'
   | 'tabla_periodica'
-  | 'molecula';
+  | 'molecula'
+  | 'callout'
+  | 'galeria'
+  | 'stepper'
+  | 'sello'
+  | 'qr-sesion';
 
 /** Enumeración de `WidgetTipo` en orden estable (E7.2 — vino de `widget-registry.ts`). */
 export const WIDGET_TIPOS: readonly WidgetTipo[] = [
@@ -237,6 +242,11 @@ export const WIDGET_TIPOS: readonly WidgetTipo[] = [
   'accordion',
   'tabla_periodica',
   'molecula',
+  'callout',
+  'galeria',
+  'stepper',
+  'sello',
+  'qr-sesion',
 ] as const;
 
 export function isWidgetTipo(value: string): value is WidgetTipo {

@@ -1,4 +1,10 @@
 import type { ContadorWidget } from '@lumina/types/widget';
+import type {
+  ContadorHito,
+  ContadorHitosAlerta,
+  ContadorVariante,
+  ContadorWidgetT10,
+} from './contador-defaults.js';
 import {
   DEFAULT_CONTADOR_ACENTO,
   DEFAULT_CONTADOR_AL_TERMINAR,
@@ -22,8 +28,13 @@ export {
   DEFAULT_CONTADOR_SEGUNDOS,
   DEFAULT_CONTADOR_TEXTO,
   DEFAULT_CONTADOR_VALOR,
+  CONTADOR_ALERTAS,
+  CONTADOR_MAX_HITOS,
+  CONTADOR_VARIANTES,
   createDefaultContadorBlock,
   formatContadorTime,
+  hitosAlcanzados,
+  semaforoDeFraccion,
   normalizeContadorWidget,
 } from './contador-defaults.js';
 
@@ -40,10 +51,14 @@ export interface MergedContadorConfig {
   colorFondo: string;
   colorTexto: string;
   colorAcento: string;
+  variante: ContadorVariante;
+  hitos: ContadorHito[];
+  hitosAlerta: ContadorHitosAlerta;
+  semaforo: boolean;
 }
 
 export function mergedContadorConfig(block: ContadorWidget): MergedContadorConfig {
-  const w = normalizeContadorWidget(block);
+  const w = normalizeContadorWidget(block) as ContadorWidgetT10;
   return {
     modo: w.modo ?? DEFAULT_CONTADOR_MODO,
     etiqueta: w.etiqueta ?? '',
@@ -57,5 +72,9 @@ export function mergedContadorConfig(block: ContadorWidget): MergedContadorConfi
     colorFondo: w.colorFondo ?? DEFAULT_CONTADOR_FONDO,
     colorTexto: w.colorTexto ?? DEFAULT_CONTADOR_TEXTO,
     colorAcento: w.colorAcento ?? DEFAULT_CONTADOR_ACENTO,
+    variante: w.variante ?? 'digitos',
+    hitos: w.hitos ?? [],
+    hitosAlerta: w.hitosAlerta ?? 'visual',
+    semaforo: w.semaforo === true,
   };
 }

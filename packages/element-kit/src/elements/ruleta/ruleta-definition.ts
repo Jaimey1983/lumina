@@ -13,34 +13,34 @@ export const RULETA_PRESETS: readonly ElementPreset<RuletaEstado>[] = [
     id: "sorteo-clasico",
     label: "Sorteo Clásico",
     description: "Giro estándar de 4 segundos con anuncio del ganador",
-    patch: {
+    estadoPatch: {
       configuracion: {
         duracionGiro: 4000,
         mostrarGanador: true,
       },
-    } as unknown as Partial<RuletaEstado>,
+    },
   },
   {
     id: "dinamica-rapida",
     label: "Dinámica Rápida",
     description: "Giro ágil de 2 segundos para turnos frecuentes",
-    patch: {
+    estadoPatch: {
       configuracion: {
         duracionGiro: 2000,
         mostrarGanador: true,
       },
-    } as unknown as Partial<RuletaEstado>,
+    },
   },
   {
     id: "suspense",
     label: "Alto Suspense",
     description: "Giro pausado y extendido de 6.5 segundos",
-    patch: {
+    estadoPatch: {
       configuracion: {
         duracionGiro: 6500,
         mostrarGanador: true,
       },
-    } as unknown as Partial<RuletaEstado>,
+    },
   },
 ];
 

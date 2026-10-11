@@ -19,6 +19,28 @@ describe('createWidgetThemeVars', () => {
     expect(vars['--widget-border']).toBe('#e2e8f0');
   });
 
+  it('incluye los tokens de estado, neutros, espaciado, elevación y movimiento (T1)', () => {
+    const vars = createWidgetThemeVars() as Record<string, string>;
+
+    expect(vars['--lw-color-success']).toBe('#198754');
+    expect(vars['--lw-color-danger']).toBe('#dc3545');
+    expect(vars['--lw-color-warning']).toBe('#ffc107');
+    expect(vars['--lw-color-on-solid']).toBe('#ffffff');
+    expect(vars['--lw-neutral-400']).toBe('#94a3b8');
+    expect(vars['--lw-space-4']).toBe('1rem');
+    expect(vars['--lw-elevation-0']).toBe('none');
+    expect(vars['--lw-elevation-2']).toBe('var(--lw-shadow-md)');
+  });
+
+  it('los tokens de movimiento son solo duraciones (la curva va en --lw-ease)', () => {
+    const vars = createWidgetThemeVars() as Record<string, string>;
+
+    for (const clave of ['--lw-motion-fast', '--lw-motion-base', '--lw-motion-slow']) {
+      expect(vars[clave], clave).toMatch(/^\d+ms$/);
+    }
+    expect(vars['--lw-ease']).toMatch(/^cubic-bezier\(/);
+  });
+
   it('respeta las opciones de color y tipografía especificadas', () => {
     const vars = createWidgetThemeVars({
       accent: '#10b981',

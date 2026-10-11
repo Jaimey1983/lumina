@@ -30,6 +30,16 @@ import {
 } from './flip-cards-templates.js';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
+import {
+  FLIP_CARDS_ESTILOS_T11_IDS,
+  FLIP_CARDS_GIROS,
+  leerOpcionesT11,
+  type FlipCardsConfigT11,
+  type FlipCardsGiro,
+  type FlipCardsModo,
+} from './flip-cards-t11.js';
 import { FlipCardsAppearanceProperties } from './flip-cards-appearance-properties.js';
 
 function CaraCheckboxes({
@@ -254,6 +264,13 @@ export function FlipCardsProperties({
   };
 
   const activePlantillaId = resolveFlipCardsPlantillaId(block);
+  const opcionesT11 = leerOpcionesT11(block.configuracion);
+  // T11: opciones nuevas dentro de `configuracion` (el tipo de `@lumina/types` aún no las trae).
+  const updateT11 = (parche: Partial<ReturnType<typeof leerOpcionesT11>>) =>
+    update((w) => ({
+      ...w,
+      configuracion: { ...w.configuracion, ...parche } as FlipCardsConfigT11,
+    }));
 
   const applyPlantilla = (id: FlipCardsPlantillaId) => {
     update((w) => applyFlipCardsPlantilla(w, id));
@@ -410,6 +427,83 @@ export function FlipCardsProperties({
             }))
           }
         />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Animación"
+        defaultOpen={false}
+        storageKey="flip-cards.animacion"
+      >
+        <PresetGallery
+          presets={presetsDelWidget('flip-cards')?.filter((p) =>
+            FLIP_CARDS_ESTILOS_T11_IDS.has(p.id),
+          )}
+          estado={block}
+          storageKey="widget.flip-cards.estilos"
+          onSelect={(preset) =>
+            update((w) => aplicarPreset(normalizeFlipCardsWidget(w), preset))
+          }
+        />
+        <div className="space-y-1.5">
+          <Label className="text-xs">Modo</Label>
+          <div className="flex gap-1">
+            {(
+              [
+                ['cuadricula', 'Cuadrícula'],
+                ['mazo', 'Mazo'],
+              ] as [FlipCardsModo, string][]
+            ).map(([id, label]) => (
+              <Button
+                key={id}
+                type="button"
+                size="sm"
+                variant={opcionesT11.modo === id ? 'primary' : 'outline'}
+                className="h-8 flex-1 text-xs"
+                onClick={() => updateT11({ modo: id })}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          {opcionesT11.modo === 'mazo' ? (
+            <p className="text-[11px] text-muted-foreground">
+              Una tarjeta a la vez; el alumno desliza o usa las flechas.
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Tipo de giro</Label>
+          <div className="grid grid-cols-2 gap-1">
+            {FLIP_CARDS_GIROS.map((g) => (
+              <Button
+                key={g.id}
+                type="button"
+                size="sm"
+                variant={opcionesT11.giro === g.id ? 'primary' : 'outline'}
+                className="h-8 text-xs"
+                onClick={() => updateT11({ giro: g.id as FlipCardsGiro })}
+              >
+                {g.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <Checkbox
+            checked={opcionesT11.profundidad}
+            onCheckedChange={(v) => updateT11({ profundidad: v === true })}
+          />
+          Profundidad 3D (más perspectiva y sombra)
+        </label>
+        {opcionesT11.modo === 'cuadricula' ? (
+          <label className="flex cursor-pointer items-center gap-2 text-xs">
+            <Checkbox
+              checked={opcionesT11.entradaEscalonada}
+              onCheckedChange={(v) => updateT11({ entradaEscalonada: v === true })}
+            />
+            Entrada escalonada de las tarjetas
+          </label>
+        ) : null}
       </CollapsibleSection>
 
       <FlipCardsAppearanceProperties block={block} applyNow={applyNow} />

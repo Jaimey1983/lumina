@@ -93,3 +93,22 @@ if (typeof globalThis.matchMedia === "undefined") {
       },
     }) as MediaQueryList;
 }
+
+/**
+ * Embla (Carousel, T6) y otros mediadores usan `IntersectionObserver` / `ResizeObserver`,
+ * que jsdom no implementa. Doble inerte, solo si falta: no mide nada ni avisa de nada.
+ */
+class ObservadorInerte {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+if (typeof globalThis.IntersectionObserver === "undefined") {
+  vi.stubGlobal("IntersectionObserver", ObservadorInerte);
+}
+if (typeof globalThis.ResizeObserver === "undefined") {
+  vi.stubGlobal("ResizeObserver", ObservadorInerte);
+}

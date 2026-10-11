@@ -13,29 +13,29 @@ export const TOOLTIP_PRESETS: readonly ElementPreset<TooltipEstado>[] = [
     id: "icono-info",
     label: "Ícono de Ayuda",
     description: "Ícono circular clásico para definiciones y notas breves",
-    patch: {
+    estadoPatch: {
       triggerTipo: "icono",
       icono: "help",
       posicion: "auto",
-    } as unknown as Partial<TooltipEstado>,
+    },
   },
   {
     id: "texto-subrayado",
     label: "Término en Texto",
     description: "Palabra o frase con subrayado interactivo",
-    patch: {
+    estadoPatch: {
       triggerTipo: "texto_subrayado",
       posicion: "auto",
-    } as unknown as Partial<TooltipEstado>,
+    },
   },
   {
     id: "punto-discreto",
     label: "Punto Discreto",
     description: "Punto interactivo para diagramas e imágenes",
-    patch: {
+    estadoPatch: {
       triggerTipo: "punto",
       posicion: "auto",
-    } as unknown as Partial<TooltipEstado>,
+    },
   },
 ];
 

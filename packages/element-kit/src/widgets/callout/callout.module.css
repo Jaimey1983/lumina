@@ -1,0 +1,108 @@
+/* T16 — Callout. Todo color pasa por `--lw-*` (DT1); el acento sale del tono o de `--co-acento`. */
+
+.callout {
+  --co-base: var(--lw-color-primary, #0d6efd);
+  --co-acento: var(--co-base);
+  --co-on: var(--lw-color-on-solid, #fff);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lw-space-3, 0.75rem);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--lw-space-4, 1rem);
+  overflow: auto;
+  font-family: var(--lw-font-family, inherit);
+  color: var(--lw-color-text, #0f172a);
+  background: color-mix(in srgb, var(--co-acento) 10%, var(--lw-color-surface, #fff));
+}
+
+/* Tonos: solo cambian el color base (y el texto sobre la banda). */
+.tonoInfo {
+  --co-base: var(--lw-color-primary, #0d6efd);
+}
+.tonoTip {
+  --co-base: color-mix(in srgb, var(--lw-color-primary, #0d6efd) 50%, var(--lw-color-success, #198754));
+}
+.tonoAviso {
+  --co-base: var(--lw-color-warning, #ffc107);
+  --co-on: var(--lw-color-text, #0f172a);
+}
+.tonoPeligro {
+  --co-base: var(--lw-color-danger, #dc3545);
+}
+.tonoExito {
+  --co-base: var(--lw-color-success, #198754);
+}
+
+/* Estilos */
+.estiloBarra {
+  border-left: 4px solid var(--co-acento);
+  border-radius: var(--lw-radius-sm, 4px);
+}
+
+.estiloTarjeta {
+  border: 1px solid color-mix(in srgb, var(--co-acento) 40%, transparent);
+  border-radius: var(--lw-radius-lg, 0.75rem);
+  box-shadow: var(--lw-elevation-1, 0 1px 2px rgb(15 23 42 / 0.12));
+}
+
+.estiloTarjeta .icono {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--lw-radius-full, 999px);
+  background: color-mix(in srgb, var(--co-acento) 18%, var(--lw-color-surface, #fff));
+}
+
+.estiloBanda {
+  align-items: center;
+  border-radius: var(--lw-radius-md, 6px);
+  background: var(--co-acento);
+  color: var(--co-on);
+}
+
+.estiloBanda .icono,
+.estiloBanda .titulo {
+  color: inherit;
+}
+
+.icono {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--co-acento);
+}
+
+.iconoSvg {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.contenido {
+  flex: 1;
+  min-width: 0;
+}
+
+.titulo {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--co-acento);
+}
+
+.cuerpo {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* El título y el icono sobre fondo claro pueden no tener contraste con tonos claros (aviso):
+   se oscurecen hacia el color de texto. */
+.tonoAviso:not(.estiloBanda) .titulo,
+.tonoAviso:not(.estiloBanda) .icono {
+  color: color-mix(in srgb, var(--co-acento) 45%, var(--lw-color-text, #0f172a));
+}

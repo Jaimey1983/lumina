@@ -3,9 +3,11 @@ import { cn } from '@lumina/ui/lib/utils';
 import { stopWidgetInnerPointer } from '@lumina/editor-shared/widget-editor-utils';
 import type { BotonWidget } from '@lumina/types/widget';
 import { mergedBotonConfig } from './boton-config.js';
+import { BOTON_ICONOS } from './boton-iconos.js';
 import styles from './boton.module.css';
 
-const VARIANT_CLASS: Record<string, string> = {
+/** Cada variante fija un tono; el tono del enlace heredado (`link`) es el primario. */
+const TONO_CLASS: Record<string, string> = {
   primary: styles.primary,
   secondary: styles.secondary,
   success: styles.success,
@@ -17,30 +19,21 @@ const VARIANT_CLASS: Record<string, string> = {
   link: styles.link,
 };
 
-const OUTLINE_CLASS: Record<string, string> = {
-  primary: styles.outlinePrimary,
-  secondary: styles.outlineSecondary,
-  success: styles.outlineSuccess,
-  danger: styles.outlineDanger,
-  warning: styles.outlineWarning,
-  info: styles.outlineInfo,
-  light: styles.outlineLight,
-  dark: styles.outlineDark,
-  link: styles.link,
-};
-
-function variantClass(variante: string, outline: boolean): string {
-  if (outline && variante !== 'link') {
-    return OUTLINE_CLASS[variante] ?? styles.outlinePrimary;
-  }
-  return VARIANT_CLASS[variante] ?? styles.primary;
-}
+const ESTILO_CLASS = {
+  solid: styles.estiloSolid,
+  soft: styles.estiloSoft,
+  outline: styles.estiloOutline,
+  ghost: styles.estiloGhost,
+  link: styles.estiloLink,
+} as const;
 
 interface BotonPartsProps {
   block: BotonWidget;
   isEditing?: boolean;
   disabled?: boolean;
   href?: string | null;
+  /** Acción `descargar`: el enlace baja el recurso en vez de abrirse en otra pestaña. */
+  download?: string | true;
   onActivate?: () => void;
   /** Etapa K / K3: clic en el enlace (acción `url`), que no pasa por `onActivate`. */
   onLinkClick?: () => void;
@@ -52,6 +45,7 @@ export function BotonParts({
   isEditing = false,
   disabled = false,
   href,
+  download,
   onActivate,
   onLinkClick,
   onSelect,
@@ -60,13 +54,41 @@ export function BotonParts({
   const sizeClass =
     cfg.tamano === 'sm' ? styles.sizeSm : cfg.tamano === 'lg' ? styles.sizeLg : styles.sizeMd;
   const formaClass = cfg.forma === 'pill' ? styles.formaPill : styles.formaRedondeado;
+  const densidadClass =
+    cfg.densidad === 'compacta'
+      ? styles.densidadCompacta
+      : cfg.densidad === 'amplia'
+        ? styles.densidadAmplia
+        : undefined;
+  const bloqueado = disabled || cfg.deshabilitado || (cfg.cargando && !isEditing);
   const className = cn(
     styles.btn,
     sizeClass,
     formaClass,
-    variantClass(cfg.variante, cfg.outline),
+    densidadClass,
+    TONO_CLASS[cfg.variante] ?? styles.primary,
+    ESTILO_CLASS[cfg.estilo],
     (disabled || cfg.deshabilitado) && styles.btnDisabled,
+    cfg.cargando && styles.btnCargando,
   );
+
+  const Icono = cfg.icono ? BOTON_ICONOS[cfg.icono].Icon : null;
+  const icono = cfg.cargando ? (
+    <span className={styles.spinner} aria-hidden="true" data-boton-cargando />
+  ) : Icono ? (
+    <span className={styles.icono} aria-hidden="true" data-boton-icono={cfg.icono}>
+      <Icono />
+    </span>
+  ) : null;
+  const contenido = (
+    <>
+      {cfg.iconoPosicion === 'izquierda' || cfg.cargando ? icono : null}
+      <span>{cfg.texto}</span>
+      {cfg.iconoPosicion === 'derecha' && !cfg.cargando ? icono : null}
+    </>
+  );
+
+  const datos = { 'data-estilo': cfg.estilo, 'data-variante': cfg.variante } as const;
 
   const handleClick = (e: MouseEvent) => {
     stopWidgetInnerPointer(e);
@@ -74,24 +96,26 @@ export function BotonParts({
       onSelect?.();
       return;
     }
-    if (disabled || cfg.deshabilitado) return;
+    if (bloqueado) return;
     if (href) return;
     onActivate?.();
   };
 
-  if (href && !isEditing && !disabled && !cfg.deshabilitado) {
+  if (href && !isEditing && !bloqueado) {
     return (
       <a
         className={className}
         href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...(download !== undefined
+          ? { download, rel: 'noopener noreferrer' }
+          : { target: '_blank', rel: 'noopener noreferrer' })}
         onClick={(e) => {
           stopWidgetInnerPointer(e);
           onLinkClick?.();
         }}
+        {...datos}
       >
-        {cfg.texto}
+        {contenido}
       </a>
     );
   }
@@ -100,10 +124,12 @@ export function BotonParts({
     <button
       type="button"
       className={className}
-      disabled={disabled || cfg.deshabilitado}
+      disabled={bloqueado}
+      aria-busy={cfg.cargando || undefined}
       onClick={handleClick}
+      {...datos}
     >
-      {cfg.texto}
+      {contenido}
     </button>
   );
 }

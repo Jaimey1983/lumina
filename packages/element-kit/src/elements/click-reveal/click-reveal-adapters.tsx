@@ -39,7 +39,14 @@ export function ClickRevealViewer({
   estado,
   config,
 }: ElementViewerProps<ClickRevealEstado, ClickRevealConfig>) {
-  return <LegacyViewer block={estado} isThumbnail={config.isThumbnail} />;
+  return (
+    <LegacyViewer
+      block={estado}
+      isThumbnail={config.isThumbnail}
+      emitir={config.emitir}
+      estadoObjeto={config.estadoObjeto}
+    />
+  );
 }
 
 export function ClickRevealPropiedades({

@@ -52,13 +52,13 @@ describe("Accordion — ElementDefinition", () => {
 
     const faq = accordionDefinition.presets?.find((p) => p.id === "preguntas-frecuentes");
     expect(faq).toBeDefined();
-    expect(faq?.patch?.configuracion?.modo).toBe("exclusivo");
-    expect(faq?.patch?.configuracion?.mostrarTituloWidget).toBe(true);
+    expect(faq?.estadoPatch?.configuracion?.modo).toBe("exclusivo");
+    expect(faq?.estadoPatch?.configuracion?.mostrarTituloWidget).toBe(true);
 
     const glosario = accordionDefinition.presets?.find((p) => p.id === "glosario-conceptos");
     expect(glosario).toBeDefined();
-    expect(glosario?.patch?.configuracion?.modo).toBe("multiple");
-    expect(glosario?.patch?.configuracion?.estiloVisual).toBe("separadores");
+    expect(glosario?.estadoPatch?.configuracion?.modo).toBe("multiple");
+    expect(glosario?.estadoPatch?.configuracion?.estiloVisual).toBe("separadores");
   });
 
   it("Viewer renderiza títulos, instrucciones y secciones con atributos ARIA accesibles", () => {

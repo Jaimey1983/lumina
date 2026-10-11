@@ -6,7 +6,7 @@ export const SCRATCH_CARD_PRESETS: readonly ElementPreset<ScratchCardEstado>[] =
     id: "plateado-clasico",
     label: "Plateado Clásico",
     description: "Cobertura gris plateada con texto de respuesta oculta",
-    patch: {
+    estadoPatch: {
       configuracion: {
         contenidoTipo: "texto",
         colorCobertura: "#94a3b8",
@@ -14,13 +14,13 @@ export const SCRATCH_CARD_PRESETS: readonly ElementPreset<ScratchCardEstado>[] =
         grosorPincel: 32,
         umbralAutoRevelado: 45,
       },
-    } as unknown as Partial<ScratchCardEstado>,
+    },
   },
   {
     id: "dorado-premio",
     label: "Dorado / Recompensa",
     description: "Cobertura dorada con insignia de felicitación e insignia",
-    patch: {
+    estadoPatch: {
       configuracion: {
         contenidoTipo: "premio",
         colorCobertura: "#eab308",
@@ -28,13 +28,13 @@ export const SCRATCH_CARD_PRESETS: readonly ElementPreset<ScratchCardEstado>[] =
         grosorPincel: 36,
         umbralAutoRevelado: 40,
       },
-    } as unknown as Partial<ScratchCardEstado>,
+    },
   },
   {
     id: "pista-misteriosa",
     label: "Pista de Escape Room",
     description: "Cobertura oscura de misterio con texto secreto de pista",
-    patch: {
+    estadoPatch: {
       configuracion: {
         contenidoTipo: "texto",
         colorCobertura: "#1e293b",
@@ -42,13 +42,13 @@ export const SCRATCH_CARD_PRESETS: readonly ElementPreset<ScratchCardEstado>[] =
         grosorPincel: 28,
         umbralAutoRevelado: 50,
       },
-    } as unknown as Partial<ScratchCardEstado>,
+    },
   },
   {
     id: "imagen-oculta",
     label: "Descubrir Imagen",
     description: "Cobertura suave que revela un diagrama o fotografía",
-    patch: {
+    estadoPatch: {
       configuracion: {
         contenidoTipo: "imagen",
         colorCobertura: "#64748b",
@@ -56,6 +56,6 @@ export const SCRATCH_CARD_PRESETS: readonly ElementPreset<ScratchCardEstado>[] =
         grosorPincel: 40,
         umbralAutoRevelado: 55,
       },
-    } as unknown as Partial<ScratchCardEstado>,
+    },
   },
 ];

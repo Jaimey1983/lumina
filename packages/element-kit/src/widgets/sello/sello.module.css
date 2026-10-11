@@ -1,0 +1,144 @@
+/* T19 — Sello / insignia de logro. Todo color pasa por `--lw-*` (DT1); el acento sale de `--sl-color`. */
+
+.raiz {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lw-space-2, 0.5rem);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--lw-space-3, 0.75rem);
+  overflow: hidden;
+  font-family: var(--lw-font-family, inherit);
+  text-align: center;
+  color: var(--lw-color-text, #0f172a);
+}
+
+.insigniaCaja {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.insignia {
+  position: relative;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cuerpo {
+  fill: var(--sl-color);
+  stroke: color-mix(in srgb, var(--sl-color) 65%, black);
+  stroke-width: 3;
+  transition: fill var(--lw-motion-slow, 400ms) var(--lw-ease, ease);
+}
+
+.aro {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+.icono {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lw-color-on-solid, #fff);
+}
+
+.iconoSvg {
+  width: 42%;
+  height: 42%;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
+}
+
+/* Estrella: el centro óptico queda un poco más abajo. */
+.raiz[data-forma='estrella'] .icono {
+  padding-top: 6%;
+}
+
+.textos {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.subtitulo {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--lw-color-text-muted, #475569);
+}
+
+/* Bloqueada: apagada y sin color. */
+.bloqueado .cuerpo {
+  fill: var(--lw-neutral-100, rgb(15 23 42 / 0.08));
+  stroke: var(--lw-neutral-300, rgb(15 23 42 / 0.25));
+}
+
+.bloqueado .aro {
+  stroke: rgb(15 23 42 / 0.18);
+}
+
+.bloqueado .icono {
+  color: var(--lw-color-text-muted, #475569);
+}
+
+.bloqueado .titulo {
+  color: var(--lw-color-text-muted, #475569);
+}
+
+/* Ganada: un destello que cruza la insignia al obtenerla. */
+.brillo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--lw-radius-full, 999px);
+  background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.7) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: selloBrillo 0.9s var(--lw-ease, ease) 1 both;
+  pointer-events: none;
+}
+
+@keyframes selloBrillo {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cuerpo {
+    transition: none;
+  }
+  .brillo::after {
+    animation: none;
+    display: none;
+  }
+}

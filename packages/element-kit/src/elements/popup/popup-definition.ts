@@ -13,37 +13,19 @@ export const POPUP_PRESETS: readonly ElementPreset<PopupEstado>[] = [
     id: "modal-boton",
     label: "Botón de Disparo",
     description: "Botón estándar para abrir una ventana modal con contenido",
-    patch: {
-      configuracion: {
-        triggerTipo: "boton",
-        tamanoModal: "medio",
-        efectoEntrada: "slide-up",
-      },
-    } as unknown as Partial<PopupEstado>,
+    estadoPatch: { configuracion: { triggerVisual: "boton", efectoApertura: "slide-up" } },
   },
   {
     id: "modal-icono",
     label: "Ícono Compacto",
     description: "Ícono discreto que ahorra espacio en la diapositiva",
-    patch: {
-      configuracion: {
-        triggerTipo: "icono",
-        tamanoModal: "medio",
-        efectoEntrada: "fade",
-      },
-    } as unknown as Partial<PopupEstado>,
+    estadoPatch: { configuracion: { triggerVisual: "icono", efectoApertura: "fade" } },
   },
   {
     id: "modal-imagen",
     label: "Miniatura Expandible",
     description: "Imagen pequeña que se amplía en una ventana modal",
-    patch: {
-      configuracion: {
-        triggerTipo: "imagen",
-        tamanoModal: "grande",
-        efectoEntrada: "slide-up",
-      },
-    } as unknown as Partial<PopupEstado>,
+    estadoPatch: { configuracion: { triggerVisual: "imagen", modalAnchoPct: 75, efectoApertura: "slide-up" } },
   },
 ];
 

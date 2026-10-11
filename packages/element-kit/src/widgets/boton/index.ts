@@ -10,6 +10,8 @@ export {
   type SlideNavValue,
 } from '@lumina/editor-shared/slide-nav-context';
 export {
+  BOTON_DENSIDADES,
+  BOTON_ESTILOS,
   BOTON_VARIANTES,
   DEFAULT_BOTON_ACCION,
   DEFAULT_BOTON_FORMA,
@@ -20,8 +22,15 @@ export {
   createDefaultBotonBlock,
   mergedBotonConfig,
   normalizeBotonWidget,
+  type BotonAccionT8,
+  type BotonDensidad,
+  type BotonEstilo,
+  type BotonIconoPosicion,
+  type BotonT8,
+  type BotonWidgetT8,
   type MergedBotonConfig,
 } from './boton-config.js';
+export { BOTON_ICONOS, esIconoValido, type BotonIconoId } from './boton-iconos.js';
 export { BotonEditor } from './boton-editor.js';
 export { BotonViewer } from './boton-viewer.js';
 export { BotonProperties, type BotonPropertiesProps } from './boton-properties.js';

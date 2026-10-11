@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ComponentType } from 'react';
-import { BarChart, Film, MonitorPlay, QrCode, Table } from 'lucide-react';
+import { BarChart, Film, MonitorPlay, Table } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { WidgetTipo } from '@lumina/types/widget';
@@ -53,7 +53,6 @@ function UpcomingBtn({
 const PROXIMAMENTE_ITEMS = [
   { label: 'Iframe embebido', icon: MonitorPlay },
   { label: 'GIF animado', icon: Film },
-  { label: 'Código QR', icon: QrCode },
   { label: 'Gráfico de barras', icon: BarChart },
   { label: 'Tabla de datos', icon: Table },
 ];

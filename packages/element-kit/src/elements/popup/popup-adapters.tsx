@@ -41,7 +41,11 @@ export function PopupViewer({
   config,
 }: ElementViewerProps<PopupEstado, PopupConfig>) {
   return (
-    <LegacyPopupViewer block={estado} isThumbnail={config.isThumbnail === true} />
+    <LegacyPopupViewer
+      block={estado}
+      isThumbnail={config.isThumbnail === true}
+      bloqueId={config.bloqueId}
+    />
   );
 }
 

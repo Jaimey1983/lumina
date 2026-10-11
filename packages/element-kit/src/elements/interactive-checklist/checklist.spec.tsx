@@ -45,7 +45,7 @@ describe("InteractiveChecklist — ElementDefinition", () => {
       (p) => p.id === "lista-numerada",
     );
     expect(numerado).toBeDefined();
-    expect(numerado?.patch?.configuracion?.estiloVisual).toBe("numerado");
+    expect(numerado?.estadoPatch?.configuracion?.estiloVisual).toBe("numerado");
   });
 
   it("Viewer renderiza títulos, progreso y lista de casillas", () => {

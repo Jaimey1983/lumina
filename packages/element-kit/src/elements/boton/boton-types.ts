@@ -1,11 +1,12 @@
-import type { BotonWidget } from "../../widgets/boton/index.js";
+import type { BotonWidgetT8 } from "../../widgets/boton/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /**
  * Estado del elemento Botón = el bloque de widget completo
- * (posición + contenido). Coincide con `BotonWidget` del frontend.
+ * (posición + contenido). Es `BotonWidget` del frontend más las opciones de T8
+ * (estilo, icono, carga, densidad, descarga).
  */
-export type BotonEstado = BotonWidget;
+export type BotonEstado = BotonWidgetT8;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).

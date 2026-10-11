@@ -13,17 +13,53 @@ import {
   type TimelineConfig,
 } from "./timeline-types.js";
 
-export const TIMELINE_PRESETS: readonly ElementPreset<TimelineEstado>[] =
+const PRESETS_VARIANTES: readonly ElementPreset<TimelineEstado>[] =
   TIMELINE_VARIANTES.map((v) => ({
     id: v.id,
     label: v.label,
     description: v.description,
-    patch: {
+    estadoPatch: {
       configuracion: {
         variante: v.id,
       },
-    } as unknown as Partial<TimelineEstado>,
+    },
   }));
+
+/**
+ * T14 — orientación, densidad y animación. Solo parchean las opciones nuevas, así que se
+ * combinan con cualquiera de las 8 variantes de arriba (que no se tocan).
+ */
+const ESTILOS_T14: readonly ElementPreset<TimelineEstado>[] = [
+  {
+    id: "eje-vertical",
+    label: "Eje vertical",
+    description: "La línea baja y las tarjetas van a izquierda y derecha",
+    estadoPatch: { configuracion: { orientacion: "vertical" } },
+  },
+  {
+    id: "compacta",
+    label: "Compacta",
+    description: "Menos espacio entre tarjetas y conectores, para muchos hitos",
+    estadoPatch: { configuracion: { densidad: "compacta" } },
+  },
+  {
+    id: "amplia",
+    label: "Amplia",
+    description: "Más aire entre tarjetas, conectores y nodos",
+    estadoPatch: { configuracion: { densidad: "amplia" } },
+  },
+  {
+    id: "entrada-animada",
+    label: "Entrada animada",
+    description: "Los hitos aparecen uno tras otro al llegar al slide",
+    estadoPatch: { configuracion: { animacion: "subir" } },
+  },
+];
+
+export const TIMELINE_PRESETS: readonly ElementPreset<TimelineEstado>[] = [
+  ...PRESETS_VARIANTES,
+  ...ESTILOS_T14,
+];
 
 /** E3.3 — familia Lienzo/Captivate, sin puntuación. */
 export const timelineDefinition = {

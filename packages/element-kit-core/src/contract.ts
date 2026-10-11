@@ -95,16 +95,31 @@ export type PuntuacionDelegate<TState> = (
 ) => number;
 
 /**
- * Plantilla o preset preconfigurado para un elemento (Fase 1 / E8).
- * Permite al docente seleccionar un aspecto o variante inicial con un solo clic.
+ * Parche profundo y parcial: cada objeto anidado también puede venir incompleto
+ * (los arreglos se reemplazan enteros). Es lo que un preset aplica sobre el
+ * estado del elemento: p. ej. `{ configuracion: { duracionGiro: 2000 } }` toca
+ * solo esa clave de `configuracion`.
  */
-export interface ElementPreset<TPatch = unknown> {
+export type DeepPartial<T> = T extends readonly unknown[]
+  ? T
+  : T extends object
+    ? { [K in keyof T]?: DeepPartial<T[K]> }
+    : T;
+
+/**
+ * Plantilla o preset preconfigurado para un elemento (Fase 1 / E8, T2).
+ * Permite al docente seleccionar un aspecto o variante inicial con un solo clic.
+ *
+ * Un preset parchea el **estado** del elemento (`TEstado`, el mismo que recibe
+ * `crearPorDefecto()`), incluida su `configuracion` anidada. No es la config de
+ * runtime (`TConfig`): esa la pone el reproductor y el docente no la edita.
+ */
+export interface ElementPreset<TEstado = unknown> {
   readonly id: string;
   readonly label: string;
   readonly description?: string;
   readonly thumbnail?: string;
-  readonly configPatch?: Partial<TPatch>;
-  readonly patch?: Partial<TPatch>;
+  readonly estadoPatch: DeepPartial<TEstado>;
 }
 
 export interface ElementDefinition<TState, TConfig> {
@@ -124,13 +139,10 @@ export interface ElementDefinition<TState, TConfig> {
    */
   readonly eventos?: readonly EventoTipo[];
   /**
-   * Galería de plantillas o presets preconfigurados para el elemento (E8).
-   * `ElementPreset` acepta parches tanto de estado (`patch`) como de
-   * configuración (`configPatch`) bajo un solo genérico — algunos elementos
-   * solo parchean estado, otros solo configuración (ver
-   * `contract-presets.spec.ts`), por eso acá se acepta cualquiera de los dos.
+   * Galería de plantillas o presets preconfigurados para el elemento (E8, T2).
+   * Cada preset trae un `estadoPatch` (parche profundo del estado).
    */
-  readonly presets?: readonly ElementPreset<TState | TConfig>[];
+  readonly presets?: readonly ElementPreset<TState>[];
 }
 
 

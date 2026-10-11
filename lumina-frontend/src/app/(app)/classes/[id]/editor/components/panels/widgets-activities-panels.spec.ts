@@ -21,7 +21,7 @@ describe('WidgetsInsertPanel (S4)', () => {
 
   it('los cuatro encabezados están visibles, con conteo', () => {
     for (const t of ['Lienzo', 'Overlay', 'Control', 'Próximamente']) expect(out).toContain(t);
-    expect(out).toMatch(/Lienzo<\/span><span[^>]*>11</);
+    expect(out).toMatch(/Lienzo<\/span><span[^>]*>16</);
   });
 
   it('el aviso de actividad se mantiene', () => {

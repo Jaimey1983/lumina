@@ -26,8 +26,8 @@ export function ChecklistPropiedades({
 
   const applyPreset = (presetId: string) => {
     const preset = CHECKLIST_PRESETS.find((p) => p.id === presetId);
-    if (!preset?.patch?.configuracion) return;
-    updateConfig(preset.patch.configuracion);
+    if (!preset?.estadoPatch?.configuracion) return;
+    updateConfig(preset.estadoPatch.configuracion);
   };
 
   const addItem = () => {

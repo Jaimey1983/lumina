@@ -17,37 +17,37 @@ export const CAROUSEL_PRESETS: readonly ElementPreset<CarouselEstado>[] = [
     id: "estandar-dots",
     label: "Puntos Inferiores",
     description: "Navegación limpia mediante puntos y flechas internas",
-    patch: {
+    estadoPatch: {
       configuracion: {
         mostrarDots: true,
         mostrarTabsPagina: false,
         mostrarFlechasInternas: true,
       },
-    } as unknown as Partial<CarouselEstado>,
+    },
   },
   {
     id: "tabs-superiores",
     label: "Pestañas Superiores",
     description: "Selector horizontal de páginas arriba y flechas internas",
-    patch: {
+    estadoPatch: {
       configuracion: {
         mostrarTabsPagina: true,
         mostrarDots: false,
         mostrarFlechasInternas: true,
       },
-    } as unknown as Partial<CarouselEstado>,
+    },
   },
   {
     id: "minimal-flechas",
     label: "Minimalista",
     description: "Solo flechas de avance sin indicadores adicionales",
-    patch: {
+    estadoPatch: {
       configuracion: {
         mostrarDots: false,
         mostrarTabsPagina: false,
         mostrarFlechasInternas: true,
       },
-    } as unknown as Partial<CarouselEstado>,
+    },
   },
 ];
 

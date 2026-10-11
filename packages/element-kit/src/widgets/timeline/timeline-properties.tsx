@@ -16,6 +16,17 @@ import { TIMELINE_LUCIDE_OPTIONS, TimelineLucideIcon } from './timeline-icon-cat
 import { TIMELINE_VARIANTES, timelineUsesLucideDot } from './timeline-variant-meta.js';
 import { WidgetDraftTextField } from '@lumina/editor-shared/panel-only-field';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
+import { presetsDelWidget } from '../widget-presets.js';
+import {
+  TIMELINE_ANIMACIONES,
+  TIMELINE_DENSIDADES,
+  TIMELINE_ESTILOS_T14_IDS,
+  TIMELINE_ORIENTACIONES,
+  leerOpcionesT14,
+  type TimelineConfigT14,
+  type TimelineOpcionesT14,
+} from './timeline-t14.js';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
 function PanelSectionDivider() {
@@ -78,6 +89,35 @@ export function TimelineWidgetComponentes({
       configuracion: { ...w.configuracion, ...patch },
     }));
   };
+
+  const opcionesT14 = leerOpcionesT14(configuracion);
+  // T14: opciones nuevas dentro de `configuracion` (el tipo de `@lumina/types` aún no las trae).
+  const updateT14 = (parche: TimelineOpcionesT14) =>
+    update((w) => ({ ...w, configuracion: { ...w.configuracion, ...parche } as TimelineConfigT14 }));
+  const grupoOpciones = <T extends string>(
+    etiqueta: string,
+    opciones: { id: T; label: string }[],
+    actual: T,
+    clave: keyof TimelineOpcionesT14,
+  ) => (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{etiqueta}</Label>
+      <div className="flex flex-wrap gap-1.5">
+        {opciones.map((o) => (
+          <Button
+            key={o.id}
+            type="button"
+            size="sm"
+            variant="outline"
+            className={timelineOptionButtonClass(actual === o.id, 'h-7 text-xs')}
+            onClick={() => updateT14({ [clave]: o.id } as TimelineOpcionesT14)}
+          >
+            {o.label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -156,6 +196,27 @@ export function TimelineWidgetComponentes({
           ))}
         </div>
       </div>
+
+      <PanelSectionDivider />
+
+      <CollapsibleSection
+        title="Orientación, densidad y animación"
+        defaultOpen={false}
+        storageKey="timeline.t14"
+        className="pt-4"
+      >
+        <PresetGallery
+          presets={presetsDelWidget('timeline')?.filter((p) => TIMELINE_ESTILOS_T14_IDS.has(p.id))}
+          estado={block}
+          storageKey="widget.timeline.estilos"
+          onSelect={(preset) =>
+            update((w) => aplicarPreset(normalizeTimelineWidget(w), preset))
+          }
+        />
+        {grupoOpciones('Orientación', TIMELINE_ORIENTACIONES, opcionesT14.orientacion, 'orientacion')}
+        {grupoOpciones('Densidad', TIMELINE_DENSIDADES, opcionesT14.densidad, 'densidad')}
+        {grupoOpciones('Animación al entrar', TIMELINE_ANIMACIONES, opcionesT14.animacion, 'animacion')}
+      </CollapsibleSection>
 
       <PanelSectionDivider />
 

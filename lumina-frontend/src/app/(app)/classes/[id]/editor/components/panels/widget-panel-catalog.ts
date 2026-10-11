@@ -1,16 +1,21 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AppWindow,
+  Award,
   Atom,
   CheckSquare,
   Columns2,
   GalleryHorizontal,
   GitCommitHorizontal,
   Hand,
+  Images,
+  Info,
   Layers,
+  ListOrdered,
   ListCollapse,
   MessageSquare,
   MousePointer2,
+  QrCode,
   PanelTop,
   RotateCw,
   Sparkles,
@@ -156,6 +161,36 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Atom,
     rowClassName: 'hover:bg-teal-50/90 dark:hover:bg-teal-950/25',
     iconClassName: 'text-teal-700 dark:text-teal-300',
+  },
+  callout: {
+    group: 'lienzo',
+    Icon: Info,
+    rowClassName: 'hover:bg-blue-50/90 dark:hover:bg-blue-950/25',
+    iconClassName: 'text-blue-600 dark:text-blue-400',
+  },
+  galeria: {
+    group: 'lienzo',
+    Icon: Images,
+    rowClassName: 'hover:bg-rose-50/90 dark:hover:bg-rose-950/25',
+    iconClassName: 'text-rose-600 dark:text-rose-400',
+  },
+  stepper: {
+    group: 'lienzo',
+    Icon: ListOrdered,
+    rowClassName: 'hover:bg-emerald-50/90 dark:hover:bg-emerald-950/25',
+    iconClassName: 'text-emerald-600 dark:text-emerald-400',
+  },
+  sello: {
+    group: 'lienzo',
+    Icon: Award,
+    rowClassName: 'hover:bg-yellow-50/90 dark:hover:bg-yellow-950/25',
+    iconClassName: 'text-yellow-600 dark:text-yellow-400',
+  },
+  'qr-sesion': {
+    group: 'lienzo',
+    Icon: QrCode,
+    rowClassName: 'hover:bg-slate-50/90 dark:hover:bg-slate-950/25',
+    iconClassName: 'text-slate-700 dark:text-slate-300',
   },
 };
 

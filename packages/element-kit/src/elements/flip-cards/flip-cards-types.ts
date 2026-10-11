@@ -1,7 +1,7 @@
-import type { FlipCardsWidget } from "../../widgets/flip-cards/index.js";
+import type { FlipCardsWidgetT11 } from "../../widgets/flip-cards/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
-export type FlipCardsEstado = FlipCardsWidget;
+export type FlipCardsEstado = FlipCardsWidgetT11;
 
 /** Configuración del runtime; la apariencia pertenece al estado legacy. */
 export type FlipCardsConfig = WidgetCanvasConfig;

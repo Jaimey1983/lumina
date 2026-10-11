@@ -3,7 +3,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { TabsWidget, WidgetSlideContent } from '@lumina/types/widget';
-import { cn } from '@lumina/ui/lib/utils';
 import { textStyleToCss } from '@lumina/editor-shared/widget-text-styles';
 import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 import {
@@ -24,6 +23,8 @@ import {
   tabsHeaderPadding,
 } from './tabs-shared.js';
 import { TabsSlidePanelEditor } from './tabs-slide-panel.js';
+import { TabsBar } from './tabs-bar.js';
+import { leerOpcionesT12, type TabsFicha } from './tabs-t12.js';
 
 export interface TabsEditorProps {
   block: TabsWidget;
@@ -69,6 +70,8 @@ export function TabsEditor({
   if (!activeSlide) return null;
 
   const cfg = configuracion;
+  const opciones = leerOpcionesT12(widget.configuracion);
+  const vertical = opciones.variante === 'vertical';
   const appearanceStyle = widgetChromeVarsStyle({
     accent: cfg.colorPestanaActiva,
     accentMuted: cfg.colorPestanaInactiva,
@@ -143,63 +146,49 @@ export function TabsEditor({
       </div>
 
       <div className={chromeStyles.whContent} style={tabsBodyPadding(cfg)}>
-        <div
-          className={styles.tabsBar}
-          role="tablist"
-          onPointerDown={(e) => {
-            stopWidgetInnerPointer(e);
-            ensureSelected();
-          }}
-        >
-          {fichas.map((ficha, index) => (
-            <button
-              key={ficha.id}
-              type="button"
-              role="tab"
-              aria-selected={index === activeIndex}
-              className={cn(
-                styles.tabsBarButton,
-                index === activeIndex && styles.tabsBarButtonActive,
-                innerSelection?.kind === 'slide' &&
-                  innerSelection.slideId === ficha.id &&
-                  styles.tabsBarButtonSelected,
-              )}
-              onClick={(e) => {
-                stopWidgetInnerPointer(e);
-                setActiveIndex(index);
-              }}
-            >
-              {ficha.etiqueta}
-            </button>
-          ))}
-        </div>
-
-        <div
-          className="flex min-h-0 flex-1 flex-col"
-          onPointerDown={(e) => {
-            stopWidgetInnerPointer(e);
-            ensureSelected();
-            onInnerSelectionChange?.({ kind: 'slide', slideId: activeSlide.id });
-          }}
-        >
-          <TabsSlidePanelEditor
-            slide={activeSlide}
-            configuracion={cfg}
-            innerSelection={innerSelection}
-            onPatchSlide={(patch) => patchSlide(activeSlide.id, patch)}
-            onSelectText={(field) => {
+        <div className={vertical ? styles.tabsVerticalBody : styles.tabsPlainBody}>
+          <TabsBar
+            fichas={fichas as TabsFicha[]}
+            activeIndex={activeIndex}
+            variante={opciones.variante}
+            selectedId={innerSelection?.kind === 'slide' ? innerSelection.slideId : null}
+            onBarPointerDown={(e) => {
+              stopWidgetInnerPointer(e);
               ensureSelected();
-              onInnerSelectionChange?.({
-                kind: 'slide-text',
-                slideId: activeSlide.id,
-                field,
-              });
             }}
-            onSelectImage={() => {
-              ensureSelected();
-              onInnerSelectionChange?.({ kind: 'slide-image', slideId: activeSlide.id });
+            onSelect={(index, e) => {
+              stopWidgetInnerPointer(e);
+              setActiveIndex(index);
             }}
           />
+
+          <div
+            className="flex min-h-0 flex-1 flex-col"
+            onPointerDown={(e) => {
+              stopWidgetInnerPointer(e);
+              ensureSelected();
+              onInnerSelectionChange?.({ kind: 'slide', slideId: activeSlide.id });
+            }}
+          >
+            <TabsSlidePanelEditor
+              slide={activeSlide}
+              configuracion={cfg}
+              innerSelection={innerSelection}
+              onPatchSlide={(patch) => patchSlide(activeSlide.id, patch)}
+              onSelectText={(field) => {
+                ensureSelected();
+                onInnerSelectionChange?.({
+                  kind: 'slide-text',
+                  slideId: activeSlide.id,
+                  field,
+                });
+              }}
+              onSelectImage={() => {
+                ensureSelected();
+                onInnerSelectionChange?.({ kind: 'slide-image', slideId: activeSlide.id });
+              }}
+            />
+          </div>
         </div>
 
         {(cfg.mostrarBotonAnterior || cfg.mostrarBotonSiguiente) && (

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@lumina/ui/lib/utils';
 import type {
@@ -79,6 +79,37 @@ export function HotspotParts({
         ? { kind: 'slide-image' as const, slideId: block.overlay.id }
         : null;
 
+  // Teclado y foco (T15): el marcador es un botón; Escape cierra y devuelve el foco al marcador;
+  // al abrir con clic/teclado el foco pasa a la burbuja (con `hover` no se roba el foco).
+  const abiertaPorClic = !isEditing && cfg.triggerEvento === 'click';
+  const abiertaAntes = useRef(false);
+  useEffect(() => {
+    if (!abiertaPorClic) return;
+    if (isOpen && !abiertaAntes.current) {
+      bubbleRef.current?.focus({ preventScroll: true });
+    } else if (!isOpen && abiertaAntes.current) {
+      const burbuja = bubbleRef.current;
+      if (burbuja && burbuja.contains(document.activeElement)) markerRef.current?.focus();
+    }
+    abiertaAntes.current = isOpen;
+  }, [isOpen, abiertaPorClic]);
+
+  const handleMarkerKeyDown = (e: React.KeyboardEvent) => {
+    if (isEditing) return;
+    if ((e.key === 'Enter' || e.key === ' ') && onToggle) {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
+  const handleRootKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && isOpen && !isEditing && onClose) {
+      e.stopPropagation();
+      onClose();
+      markerRef.current?.focus();
+    }
+  };
+
   const handlePointerEnter = () => {
     if (cfg.triggerEvento === 'hover' && !isEditing && onToggle && !isOpen) {
       onToggle();
@@ -106,14 +137,28 @@ export function HotspotParts({
       className={cn(styles.hotspotRoot, sizeClass)}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
+      onKeyDown={handleRootKeyDown}
     >
-      <div ref={markerRef} className={styles.markerWrapper} onClick={handleClick}>
+      <div
+        ref={markerRef}
+        className={styles.markerWrapper}
+        onClick={handleClick}
+        onKeyDown={handleMarkerKeyDown}
+        role={isEditing ? undefined : 'button'}
+        tabIndex={isEditing ? undefined : 0}
+        aria-expanded={isEditing ? undefined : isOpen}
+        aria-haspopup={isEditing ? undefined : 'dialog'}
+        aria-label={isEditing ? undefined : 'Mostrar información'}
+      >
         <div className={styles.markerDot} />
         {!isEditing && <div className={styles.markerPulse} />}
       </div>
 
       <div
         ref={bubbleRef}
+        role={isEditing ? undefined : 'dialog'}
+        aria-label={isEditing ? undefined : 'Información'}
+        tabIndex={isEditing ? undefined : -1}
         className={cn(
           styles.bubbleContainer,
           posClass,
@@ -121,7 +166,7 @@ export function HotspotParts({
           showBubble ? styles.bubbleVisible : styles.bubbleHidden,
           isEditing && styles.bubbleEditing,
         )}
-        style={overlayShiftVars(overlay.shiftX, overlay.shiftY)}
+        style={overlayShiftVars(overlay.shiftX, overlay.shiftY, overlay.arrowShift)}
         onClick={(e) => {
           stopWidgetInnerPointer(e);
         }}
@@ -129,7 +174,7 @@ export function HotspotParts({
         {!isEditing ? (
           <div className={styles.bubbleHeader}>
             {cfg.mostrarBotonCerrar ? (
-              <button className={styles.closeButton} onClick={onClose}>
+              <button className={styles.closeButton} onClick={onClose} aria-label="Cerrar">
                 <X size={16} />
               </button>
             ) : null}

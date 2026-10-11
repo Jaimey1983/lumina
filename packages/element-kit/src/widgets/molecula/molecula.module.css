@@ -10,19 +10,19 @@
   margin: 0 0 0.25rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--lw-color-text, #0f172a);
 }
 
 .subtitle {
   margin: 0 0 0.5rem;
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--lw-neutral-600, #475569);
 }
 
 .instruction {
   margin: 0 0 0.75rem;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--lw-color-text-muted, #64748b);
 }
 
 .canvasWrap {
@@ -31,9 +31,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: var(--lw-color-surface, #f8fafc);
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--lw-color-border, #e2e8f0);
 }
 
 .formula {
@@ -41,6 +41,6 @@
   font-size: 0.875rem;
   font-weight: 500;
   text-align: center;
-  color: #334155;
+  color: var(--lw-neutral-700, #334155);
   font-variant-numeric: tabular-nums;
 }

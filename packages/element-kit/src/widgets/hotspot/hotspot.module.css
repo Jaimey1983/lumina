@@ -141,7 +141,7 @@
   content: '';
   position: absolute;
   top: 100%;
-  left: 50%;
+  left: calc(50% + var(--overlay-arrow-shift, 0px));
   margin-left: -8px;
   border-width: 8px;
   border-style: solid;
@@ -157,7 +157,7 @@
   content: '';
   position: absolute;
   bottom: 100%;
-  left: 50%;
+  left: calc(50% + var(--overlay-arrow-shift, 0px));
   margin-left: -8px;
   border-width: 8px;
   border-style: solid;
@@ -173,7 +173,7 @@
   content: '';
   position: absolute;
   left: 100%;
-  top: 50%;
+  top: calc(50% + var(--overlay-arrow-shift, 0px));
   margin-top: -8px;
   border-width: 8px;
   border-style: solid;
@@ -189,7 +189,7 @@
   content: '';
   position: absolute;
   right: 100%;
-  top: 50%;
+  top: calc(50% + var(--overlay-arrow-shift, 0px));
   margin-top: -8px;
   border-width: 8px;
   border-style: solid;
@@ -249,7 +249,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--lw-color-text-muted, #64748b);
   margin-left: 8px;
   margin-top: -4px;
   margin-right: -4px;
@@ -257,7 +257,7 @@
 
 .closeButton:hover {
   background-color: rgba(0, 0, 0, 0.05);
-  color: #0f172a;
+  color: var(--lw-color-text, #0f172a);
 }
 
 .bubbleBody {
@@ -300,6 +300,33 @@
 }
 
 .bubbleEditing {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--lw-color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hotspotRoot,
+  .hotspotRoot *,
+  .hotspotRoot *::before,
+  .hotspotRoot *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* T15: el marcador se alcanza con teclado; el foco se ve con el color del tema. */
+.markerWrapper:focus-visible {
+  outline: 2px solid var(--lw-color-primary, #2563eb);
+  outline-offset: 3px;
+  border-radius: var(--lw-radius-full, 50%);
+}
+
+.bubbleContainer:focus {
+  outline: none;
+}
+
+.bubbleContainer:focus-visible {
+  outline: 2px solid var(--lw-color-primary, #2563eb);
   outline-offset: 2px;
 }

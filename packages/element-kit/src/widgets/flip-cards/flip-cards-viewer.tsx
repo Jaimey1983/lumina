@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState, type PointerEvent } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 import type { FlipCard, FlipCardCara, FlipCardsWidget } from '@lumina/types/slide';
@@ -8,7 +8,15 @@ import { cn } from '@lumina/ui/lib/utils';
 import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
 import { usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
 
+import { WidgetMotion, WidgetMotionItem } from '../_motion/widget-motion.js';
 import styles from './flip-cards.module.css';
+import {
+  MAZO_UMBRAL_CLIC,
+  MAZO_UMBRAL_SWIPE,
+  leerOpcionesT11,
+  type FlipCardsGiro,
+  type FlipCardsWidgetT11,
+} from './flip-cards-t11.js';
 import type { FlipCardsConfiguracionCompleta } from './flip-cards-config.js';
 import { imageElementStyle, imageThumbnailStyle, imageWrapperStyle } from './flip-cards-image-styles.js';
 import {
@@ -91,12 +99,16 @@ function FlipCard3D({
   flipped,
   onToggle,
   isThumbnail = false,
+  giro = 'y',
+  profundidad = false,
 }: {
   card: FlipCard;
   configuracion: FlipCardsConfiguracionCompleta;
   flipped: boolean;
   onToggle: () => void;
   isThumbnail?: boolean;
+  giro?: FlipCardsGiro;
+  profundidad?: boolean;
 }) {
   const chrome = flipCardsCardChromeStyle(configuracion);
 
@@ -159,7 +171,15 @@ function FlipCard3D({
 
   return (
     <div
-      className={cn(styles.flipScene, !isThumbnail && styles.flipSceneInteractive)}
+      className={cn(
+        styles.flipScene,
+        !isThumbnail && styles.flipSceneInteractive,
+        giro === 'x' && styles.giroX,
+        giro === 'deslizar' && styles.giroDeslizar,
+        giro === 'fundido' && styles.giroFundido,
+        profundidad && styles.profundidad,
+      )}
+      data-giro={giro === 'y' ? undefined : giro}
       role={isThumbnail ? undefined : 'button'}
       tabIndex={isThumbnail ? undefined : 0}
       aria-pressed={isThumbnail ? undefined : flipped}
@@ -249,6 +269,11 @@ export function FlipCardsViewer({ block: rawBlock, isThumbnail = false }: FlipCa
   const { tarjetas } = block;
   const [flipped, setFlipped] = useState<Set<string>>(() => new Set());
   const [page, setPage] = useState(0);
+  const opciones = leerOpcionesT11(block.configuracion);
+  const esMazo = opciones.modo === 'mazo';
+  const [mazoIdx, setMazoIdx] = useState(0);
+  const [mazoDir, setMazoDir] = useState<1 | -1>(1);
+  const arrastre = useRef<{ x: number; movido: boolean } | null>(null);
 
   const perPage = flipCardsPerPage(configuracion.columnas);
   const totalPages = Math.max(1, Math.ceil(tarjetas.length / perPage));
@@ -272,6 +297,35 @@ export function FlipCardsViewer({ block: rawBlock, isThumbnail = false }: FlipCa
     });
   }, []);
 
+  const total = tarjetas.length;
+  const safeMazo = Math.min(mazoIdx, total - 1);
+  const irAMazo = (delta: 1 | -1) => {
+    const next = safeMazo + delta;
+    if (next < 0 || next > total - 1) return;
+    setMazoDir(delta);
+    setMazoIdx(next);
+  };
+  const alSoltar = (e: PointerEvent<HTMLDivElement>) => {
+    const a = arrastre.current;
+    if (!a) return;
+    const dx = e.clientX - a.x;
+    if (Math.abs(dx) >= MAZO_UMBRAL_SWIPE) irAMazo(dx < 0 ? 1 : -1);
+  };
+
+  const animaciones = (block as FlipCardsWidgetT11).animaciones;
+  const tarjeta3D = (card: FlipCard, key?: string) => (
+    <FlipCard3D
+      key={key ?? card.id}
+      card={card}
+      configuracion={configuracion}
+      flipped={flipped.has(card.id)}
+      onToggle={() => toggleFlip(card.id)}
+      isThumbnail={isThumbnail}
+      giro={opciones.giro}
+      profundidad={opciones.profundidad}
+    />
+  );
+
   return (
     <div
       className={cn(styles.fcRoot, isThumbnail && 'pointer-events-none overflow-hidden')}
@@ -282,20 +336,89 @@ export function FlipCardsViewer({ block: rawBlock, isThumbnail = false }: FlipCa
         <FlipCardsHeader block={block} />
       </div>
 
-      <div className={styles.fcGrid} style={flipCardsGridStyle(configuracion)}>
-        {visibleCards.map((card) => (
-          <FlipCard3D
-            key={card.id}
-            card={card}
-            configuracion={configuracion}
-            flipped={flipped.has(card.id)}
-            onToggle={() => toggleFlip(card.id)}
-            isThumbnail={isThumbnail}
-          />
-        ))}
-      </div>
+      {esMazo ? (
+        <div
+          className={styles.fcMazo}
+          style={{ paddingInline: configuracion.paddingContenedor, paddingBottom: configuracion.paddingContenedor }}
+          role="group"
+          aria-roledescription="mazo de tarjetas"
+          aria-label={`Tarjeta ${safeMazo + 1} de ${total}`}
+          onPointerDown={
+            isThumbnail
+              ? undefined
+              : (e) => {
+                  arrastre.current = { x: e.clientX, movido: false };
+                }
+          }
+          onPointerMove={(e) => {
+            const a = arrastre.current;
+            if (a && Math.abs(e.clientX - a.x) > MAZO_UMBRAL_CLIC) a.movido = true;
+          }}
+          onPointerUp={(e) => {
+            alSoltar(e);
+            // Si no llega un clic (se soltó fuera de la tarjeta), no debe quedar el «movido» pegado.
+            window.setTimeout(() => {
+              arrastre.current = null;
+            }, 0);
+          }}
+          onPointerCancel={() => {
+            arrastre.current = null;
+          }}
+          onClickCapture={(e) => {
+            // Un deslizamiento no debe dar vuelta la tarjeta.
+            if (arrastre.current?.movido) {
+              e.stopPropagation();
+              e.preventDefault();
+            }
+            arrastre.current = null;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') irAMazo(1);
+            else if (e.key === 'ArrowLeft') irAMazo(-1);
+          }}
+        >
+          <div className={styles.fcMazoPila}>
+            {safeMazo < total - 1 ? <span className={styles.fcMazoDetras} aria-hidden /> : null}
+            <div
+              key={tarjetas[safeMazo].id}
+              className={cn(styles.fcMazoCarta, !isThumbnail && styles.fcMazoCartaEntra)}
+              data-direccion={mazoDir}
+            >
+              {tarjeta3D(tarjetas[safeMazo])}
+            </div>
+          </div>
+        </div>
+      ) : opciones.entradaEscalonada && !isThumbnail ? (
+        <WidgetMotion
+          key={safePage}
+          className={styles.fcGrid}
+          style={flipCardsGridStyle(configuracion)}
+          stagger={0.07}
+          animaciones={animaciones}
+        >
+          {visibleCards.map((card) => (
+            <WidgetMotionItem key={card.id} style={{ height: '100%', minHeight: 0 }}>
+              {tarjeta3D(card)}
+            </WidgetMotionItem>
+          ))}
+        </WidgetMotion>
+      ) : (
+        <div className={styles.fcGrid} style={flipCardsGridStyle(configuracion)}>
+          {visibleCards.map((card) => tarjeta3D(card))}
+        </div>
+      )}
 
-      {!isThumbnail && (showPrev || showNext) ? (
+      {!isThumbnail && esMazo && total > 1 ? (
+        <FlipCardsNav
+          safePage={safeMazo}
+          totalPages={total}
+          showPrev
+          showNext
+          onPrev={() => irAMazo(-1)}
+          onNext={() => irAMazo(1)}
+        />
+      ) : null}
+      {!isThumbnail && !esMazo && (showPrev || showNext) ? (
         <FlipCardsNav
           safePage={safePage}
           totalPages={totalPages}
