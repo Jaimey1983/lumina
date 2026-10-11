@@ -1,15 +1,7 @@
 /**
- * Constructor de `AudioContext` del navegador (con el prefijo `webkit` de Safari viejo), o
- * `null` si no hay WebAudio (servidor, jsdom). Único punto donde los widgets lo buscan
- * (tick de la ruleta, avisos del contador).
+ * Re-export de compatibilidad: `widgets/_audio/audio-context.ts` se promovió a `src/_efectos/` en U5 (etapa U / DU5)
+ * para que lo compartan widgets y actividades. Los widgets siguen importando desde acá.
+ * TODO(U9d, 2026-10-11): borrar este archivo y apuntar los widgets a `src/_efectos/`
+ * cuando nadie lo importe desde el lugar viejo (ficha U5, Cierre).
  */
-type ContextoAudio = typeof AudioContext;
-
-export function obtenerAudioContextCtor(): ContextoAudio | null {
-  if (typeof window === 'undefined') return null;
-  return (
-    window.AudioContext ??
-    (window as unknown as { webkitAudioContext?: ContextoAudio }).webkitAudioContext ??
-    null
-  );
-}
+export * from '../../_efectos/audio/audio-context.js';

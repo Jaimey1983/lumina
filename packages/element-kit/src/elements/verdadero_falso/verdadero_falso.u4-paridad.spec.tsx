@@ -5,9 +5,12 @@
  * se midieron con el viewer viejo (`useState` + `useEffect` sobre `editorSyncKey`).
  */
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import type { TrueFalse } from "@lumina/types/slide";
+
+const play = vi.hoisted(() => vi.fn());
+vi.mock("@lumina/editor-shared/use-sound", () => ({ useSound: () => ({ play }) }));
 
 import { TrueFalseViewer } from "../../activities/_classic/index.js";
 import { verdaderoFalsoDefinition } from "./verdadero_falso-definition.js";
@@ -16,6 +19,7 @@ type Props = { estado: unknown; config: Record<string, unknown> };
 const Viewer = verdaderoFalsoDefinition.Viewer as unknown as (p: Props) => React.ReactElement;
 
 afterEach(cleanup);
+beforeEach(() => play.mockClear());
 
 const afirmacion = (parche: Partial<TrueFalse> = {}): TrueFalse => ({
   tipo: "verdadero_falso",
@@ -173,5 +177,41 @@ describe("Verdadero/Falso sobre el shell — retroalimentación y ajustes (U4)",
     render(<TrueFalseViewer activity={afirmacion()} variant="dark" onResponse={onResponse} />);
     fireEvent.click(boton("Falso"));
     expect(onResponse.mock.calls).toEqual([[false]]);
+  });
+});
+
+describe("Verdadero/Falso — feedback de sonido y movimiento (U5)", () => {
+  it("el acierto suena 'correct', el error 'wrong' y sin clave 'submit'", () => {
+    for (const [estado, elegida, sonido] of [
+      [afirmacion(), "Verdadero", "correct"],
+      [afirmacion(), "Falso", "wrong"],
+      [{ ...afirmacion(), respuestaCorrecta: undefined } as unknown as TrueFalse, "Falso", "submit"],
+    ] as const) {
+      play.mockClear();
+      render(<Viewer estado={estado} config={{}} />);
+      fireEvent.click(boton(elegida));
+      expect(play.mock.calls, `${elegida}/${sonido}`).toEqual([[sonido]]);
+      cleanup();
+    }
+  });
+
+  it("no suena nada hasta responder y un segundo clic no repite el sonido", () => {
+    render(<Viewer estado={afirmacion()} config={{}} />);
+    expect(play).not.toHaveBeenCalled();
+    fireEvent.click(boton("Verdadero"));
+    fireEvent.click(boton("Falso"));
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it("las dos opciones van en un nodo de movimiento (la elegida hace el pulso o la sacudida)", () => {
+    const { container } = render(<Viewer estado={afirmacion()} config={{}} />);
+    expect(container.querySelectorAll("[data-feedback-motion]")).toHaveLength(2);
+  });
+
+  it("ya no depende de las clases globales de animación", () => {
+    const { container } = render(<Viewer estado={afirmacion()} config={{}} />);
+    fireEvent.click(boton("Falso"));
+    expect(container.querySelector(".lumina-viewer-shake")).toBeNull();
+    expect(container.querySelector(".animate-in")).toBeNull();
   });
 });

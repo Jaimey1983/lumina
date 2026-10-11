@@ -9,9 +9,10 @@ import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
 import { cn } from '@lumina/ui/lib/utils';
-import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
+import { FeedbackMotion } from '../../_efectos/motion/feedback-motion.js';
+import { useActivityFeedback, type ActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
 import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
 import styles from './true-false.module.css';
@@ -167,10 +168,11 @@ interface CuerpoProps {
   isDark: boolean;
   ctx: ActivityShellContext;
   selected: boolean | null;
+  feedback: ActivityFeedback;
   onSelect: (val: boolean) => void;
 }
 
-function Cuerpo({ activity, isDark, ctx, selected, onSelect }: CuerpoProps) {
+function Cuerpo({ activity, isDark, ctx, selected, feedback, onSelect }: CuerpoProps) {
   const answered = selected !== null;
   const hasDefinedCorrect = typeof activity.respuestaCorrecta === 'boolean';
   const overallCorrect = hasDefinedCorrect && answered ? selected === activity.respuestaCorrecta : false;
@@ -193,32 +195,37 @@ function Cuerpo({ activity, isDark, ctx, selected, onSelect }: CuerpoProps) {
           const selectedRight = showAuto && isSel && overallCorrect;
 
           return (
-            <button
+            <FeedbackMotion
               key={label}
-              type="button"
-              onClick={() => onSelect(val)}
-              disabled={bloqueado}
-              className={cn(
-                styles.opcion,
-                !answered && !isSel && styles.opcionLibre,
-                !answered && isSel && styles.opcionElegida,
-                answered && !hasDefinedCorrect && isSel && styles.opcionElegida,
-                answered && !hasDefinedCorrect && !isSel && styles.opcionSinClave,
-                selectedRight && cn(styles.opcionAcierto, 'origin-center animate-in zoom-in-95 duration-300'),
-                selectedWrong && cn(styles.opcionError, 'lumina-viewer-shake'),
-                showCorrectReveal && cn(styles.opcionAcierto, 'animate-in zoom-in-95 duration-300'),
-                showAuto && !isSel && !showCorrectReveal && !selectedRight && styles.opcionApagada,
-              )}
+              className={styles.envoltura}
+              senal={showCorrectReveal ? 'acierto' : isSel ? feedback.senal : null}
+              n={feedback.n}
             >
-              {(selectedRight || (showCorrectReveal && !isSel)) && (
-                <CheckCircle2 className={cn(styles.icono, styles.iconoAcierto)} aria-hidden />
-              )}
-              {selectedWrong && isSel && (
-                <XCircle className={cn(styles.icono, styles.iconoError)} aria-hidden />
-              )}
-              <span className={styles.letra}>{val ? 'V' : 'F'}</span>
-              {label}
-            </button>
+              <button
+                type="button"
+                onClick={() => onSelect(val)}
+                disabled={bloqueado}
+                className={cn(
+                  styles.opcion,
+                  !answered && !isSel && styles.opcionLibre,
+                  !answered && isSel && styles.opcionElegida,
+                  answered && !hasDefinedCorrect && isSel && styles.opcionElegida,
+                  answered && !hasDefinedCorrect && !isSel && styles.opcionSinClave,
+                  (selectedRight || showCorrectReveal) && styles.opcionAcierto,
+                  selectedWrong && styles.opcionError,
+                  showAuto && !isSel && !showCorrectReveal && !selectedRight && styles.opcionApagada,
+                )}
+              >
+                {(selectedRight || (showCorrectReveal && !isSel)) && (
+                  <CheckCircle2 className={cn(styles.icono, styles.iconoAcierto)} aria-hidden />
+                )}
+                {selectedWrong && isSel && (
+                  <XCircle className={cn(styles.icono, styles.iconoError)} aria-hidden />
+                )}
+                <span className={styles.letra}>{val ? 'V' : 'F'}</span>
+                {label}
+              </button>
+            </FeedbackMotion>
           );
         })}
       </div>
@@ -258,7 +265,7 @@ export function TrueFalseViewer({
   variant?: 'dark' | 'light';
 }) {
   const [selected, setSelected] = useState<boolean | null>(null);
-  const { play } = useSound();
+  const feedback = useActivityFeedback();
   const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
 
   // Un slide distinto (otra `editorSyncKey`) arranca sin respuesta.
@@ -275,7 +282,8 @@ export function TrueFalseViewer({
   function handleSelect(val: boolean, ctx: ActivityShellContext) {
     if (selected !== null || ctx.sesion.fase !== 'jugando') return;
     setSelected(val);
-    play(hasDefinedCorrect ? (val === activity.respuestaCorrecta ? 'correct' : 'wrong') : 'submit');
+    if (!hasDefinedCorrect) feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
+    else feedback.emitir(val === activity.respuestaCorrecta ? 'acierto' : 'error');
     onResponse?.(val);
     ctx.completar();
   }
@@ -294,6 +302,7 @@ export function TrueFalseViewer({
           isDark={variant === 'dark'}
           ctx={ctx}
           selected={selected}
+          feedback={feedback}
           onSelect={(val) => handleSelect(val, ctx)}
         />
       )}

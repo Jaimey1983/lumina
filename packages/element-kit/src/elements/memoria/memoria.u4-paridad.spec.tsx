@@ -14,6 +14,9 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateActivityResponse, isActivityDraftResponse, unwrapActivityDraftResponse } from "@lumina/scoring";
 
+const play = vi.hoisted(() => vi.fn());
+vi.mock("@lumina/editor-shared/use-sound", () => ({ useSound: () => ({ play }) }));
+
 import { createDefaultMemoria } from "../../activities/memoria/index.js";
 import { memoriaDefinition } from "./memoria-definition.js";
 
@@ -33,6 +36,7 @@ function azarFijo(semilla = 7) {
 }
 
 beforeEach(() => {
+  play.mockClear();
   vi.useFakeTimers();
   vi.spyOn(Math, "random").mockImplementation(azarFijo());
 });
@@ -290,5 +294,52 @@ describe("Memoria sobre el shell — canal unificado y ajustes (U4)", () => {
     voltear(2);
     unmount();
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("Memoria — feedback de sonido, volteo y confeti (U5)", () => {
+  it("cada carta lleva su cara actual dentro de un nodo de giro: nunca las dos caras a la vez", () => {
+    render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    const carta = cartas()[0];
+    expect(carta.querySelectorAll("[data-giro-entrada]")).toHaveLength(1);
+    expect(carta.textContent?.trim()).toBe("?");
+    voltear(0);
+    expect(carta.querySelectorAll("[data-giro-entrada]")).toHaveLength(1);
+    expect(carta.textContent?.trim()).toBe(GOLDEN.mazo[0]);
+  });
+
+  it("un par encontrado suena 'correct' una vez; un par fallido no suena", () => {
+    render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    voltear(0);
+    voltear(2); // no coincide
+    avanzar(1100);
+    expect(play).not.toHaveBeenCalled();
+    voltear(0);
+    voltear(1); // 🐰 / Conejo
+    avanzar(450);
+    expect(play.mock.calls).toEqual([["correct"]]);
+  });
+
+  it("al completar suena el logro UNA vez (no se suma el sonido del último par) y dispara el confeti", () => {
+    const a = createDefaultMemoria();
+    const { container } = render(<Viewer estado={a} config={{}} />);
+    const mazo = ordenDelMazo(12);
+    play.mockClear();
+    const antes = container.querySelectorAll("[data-confeti]").length;
+    completar(mazo, a, new Set());
+    // cada par pendiente (los del 2.º tramo) suena una vez; el último es el logro, no un acierto más
+    const sonidos = play.mock.calls.map(([id]) => id);
+    expect(sonidos.every((id) => id === "correct")).toBe(true);
+    expect(sonidos.length).toBeGreaterThanOrEqual(1);
+    expect(antes).toBe(1);
+    expect(container.querySelector("[data-confeti]")).toBeTruthy();
+  });
+
+  it("el par encontrado queda dentro de un nodo de movimiento de feedback", () => {
+    const { container } = render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    voltear(0);
+    voltear(1);
+    avanzar(450);
+    expect(container.querySelectorAll("[data-feedback-motion]").length).toBeGreaterThanOrEqual(12);
   });
 });

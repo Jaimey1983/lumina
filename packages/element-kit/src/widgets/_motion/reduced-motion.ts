@@ -1,20 +1,9 @@
 'use client';
 
-import { useReducedMotion } from 'motion/react';
-
 /**
- * ÚNICO punto donde se decide «reducir movimiento» (T5): `WidgetMotion`,
- * `useConteo` y `useExito` lo consultan; ningún widget tiene que repetirlo.
- * Sin `window` (servidor) devuelve `false`.
+ * Re-export de compatibilidad: `widgets/_motion/reduced-motion.ts` se promovió a `src/_efectos/` en U5 (etapa U / DU5)
+ * para que lo compartan widgets y actividades. Los widgets siguen importando desde acá.
+ * TODO(U9d, 2026-10-11): borrar este archivo y apuntar los widgets a `src/_efectos/`
+ * cuando nadie lo importe desde el lugar viejo (ficha U5, Cierre).
  */
-export function useWidgetReducedMotion(): boolean {
-  return useReducedMotion() === true;
-}
-
-/** Versión no-hook, para código imperativo (p. ej. animaciones con `element.animate`). */
-export function prefiereMovimientoReducido(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
-  );
-}
+export * from '../../_efectos/motion/reduced-motion.js';

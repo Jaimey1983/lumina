@@ -17,6 +17,8 @@ import {
   type ActivityEvaluationResult,
 } from '@lumina/scoring';
 
+import { FeedbackMotion, GiroEntrada } from '../../_efectos/motion/feedback-motion.js';
+import { ActivityFeedbackLayer, useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
 import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
 import { calcularFilasMemoria } from './memoria-config.js';
@@ -60,6 +62,8 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
   const { cartas, resolviendo } = tablero;
   const jugando = ctx.sesion.fase === 'jugando';
   const { setProgreso, completar } = ctx;
+  const feedback = useActivityFeedback();
+  const emitirFeedback = feedback.emitir;
 
   const encontrados = useMemo(() => paresEncontrados(cartas), [cartas]);
   const claveEncontrados = encontrados.join('|');
@@ -89,7 +93,8 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
     if (claveEncontrados === '' || completo || claveEncontrados === ultimaClave.current) return;
     ultimaClave.current = claveEncontrados;
     responder(wrapActivityDraftResponse({ paresEncontrados: encontrados }));
-  }, [jugando, claveEncontrados, completo, encontrados, responder]);
+    emitirFeedback('acierto');
+  }, [jugando, claveEncontrados, completo, encontrados, responder, emitirFeedback]);
 
   // Respuesta final al completar el tablero.
   useEffect(() => {
@@ -97,8 +102,9 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
     const raw = { paresEncontrados: encontrados };
     alEvaluar(evaluateActivityResponse('memoria', actividad, raw));
     responder(raw);
+    emitirFeedback('logro');
     completar();
-  }, [jugando, completo, encontrados, actividad, alEvaluar, responder, completar]);
+  }, [jugando, completo, encontrados, actividad, alEvaluar, responder, completar, emitirFeedback]);
 
   // Un tablero nuevo (reintento) vuelve a emitir sus borradores.
   useEffect(() => {
@@ -126,33 +132,42 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
           const cara = carta.volteada || carta.encontrada;
           const contenido = carta.contenido.texto ?? carta.contenido.imagen ?? 'sin contenido';
           return (
-            <button
+            <FeedbackMotion
               key={carta.id}
-              type="button"
-              onClick={() => dispatch({ tipo: 'voltear', id: carta.id })}
-              disabled={!jugando || carta.encontrada || resolviendo !== null}
-              aria-label={
-                cara
-                  ? `Carta ${i + 1}: ${contenido}${carta.encontrada ? ', encontrada' : ''}`
-                  : `Carta ${i + 1}, boca abajo`
-              }
-              className={[
-                memoriaCardSurfaceClass,
-                styles.carta,
-                cara ? styles.cartaVisible : styles.cartaOculta,
-                carta.encontrada ? styles.cartaEncontrada : '',
-              ].join(' ')}
-              style={cara ? undefined : { backgroundColor: configuracion.colorDorso }}
+              senal="acierto"
+              n={carta.encontrada ? 1 : 0}
+              className={styles.celda}
             >
-              {cara ? (
-                <RenderMemoriaContenido contenido={carta.contenido} />
-              ) : (
-                <RenderMemoriaDorso simbolo={simbolo} color={colorSimbolo} />
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => dispatch({ tipo: 'voltear', id: carta.id })}
+                disabled={!jugando || carta.encontrada || resolviendo !== null}
+                aria-label={
+                  cara
+                    ? `Carta ${i + 1}: ${contenido}${carta.encontrada ? ', encontrada' : ''}`
+                    : `Carta ${i + 1}, boca abajo`
+                }
+                className={[
+                  memoriaCardSurfaceClass,
+                  styles.carta,
+                  cara ? styles.cartaVisible : styles.cartaOculta,
+                  carta.encontrada ? styles.cartaEncontrada : '',
+                ].join(' ')}
+                style={cara ? undefined : { backgroundColor: configuracion.colorDorso }}
+              >
+                <GiroEntrada cara={cara ? 'frente' : 'dorso'} className={styles.cara}>
+                  {cara ? (
+                    <RenderMemoriaContenido contenido={carta.contenido} />
+                  ) : (
+                    <RenderMemoriaDorso simbolo={simbolo} color={colorSimbolo} />
+                  )}
+                </GiroEntrada>
+              </button>
+            </FeedbackMotion>
           );
         })}
       </div>
+      <ActivityFeedbackLayer feedback={feedback} />
     </>
   );
 }
