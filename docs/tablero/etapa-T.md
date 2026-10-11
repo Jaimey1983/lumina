@@ -201,7 +201,7 @@ Elegidos entre los 19 propuestos tras cruzarlos con `elements/`: **Callout/nota,
 
 #### T16 — Widget «Callout / nota»
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1 y T3 `hecho` (tokens y `PresetGallery`).
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/widgets/callout/` y `elements/callout/` (nuevos), `elements/_shared/catalogo.ts`, `packages/element-kit/src/index.ts` (export/registro), y en el frontend **solo** `widget-panel-catalog.ts` y el punto donde se llaman los `registrar*()`. **NO** toca otros widgets.
 - **Entregable:** widget con tipos `info / tip / aviso / peligro / éxito` (colores por `--lw-color-*`), icono Lucide editable, título opcional, cuerpo de texto enriquecido, variantes (barra lateral / tarjeta / banda) como presets; `apariencia` con color y tipografía; `crearPorDefecto()`; Editor, Viewer y Propiedades; `catalogo` `{ nombre: "Callout", familia: "widget", grupo: "lienzo" }`. Pruebas: render por tipo, normalización de JSON incompleto, preset aplicado, atributos a11y (`role="note"`/`status`). Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:unit` y comprobar que aparece en el panel «Widgets».
