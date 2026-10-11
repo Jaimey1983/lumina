@@ -83,7 +83,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U4 — Piloto: Memoria y Verdadero/Falso sobre el shell
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U3 `hecho`.
 - **Alcance — PUEDE tocar:** `activities/memoria/`, `activities/_classic/true-false.tsx`, `elements/memoria/`, `elements/verdadero_falso/`, `lib/activity-runtime-config.ts` (solo para aceptar el callback unificado en estas dos), sus specs de paridad. **NO** toca las demás actividades.
 - **Entregable:** ambas actividades usan `ActivityShell` y `normalizarAjustes`; Memoria emite por `onResponse` (con adaptador transitorio para `onComplete`); **misma entrada → misma respuesta a `@lumina/scoring`** (Regla 7: paridad contra el comportamiento viejo, incluidos los fixtures de scoring); retiran su hex de la lista de exentos de U1. Se documenta en la ficha qué hubo que ajustar al shell (lección para U9). Verificación: `pnpm --filter @lumina/element-kit test`, `pnpm --filter lumina-frontend test:visual` (los diffs de estas dos son esperables y se revisan; las demás no cambian).
