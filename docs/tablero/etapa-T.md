@@ -217,7 +217,7 @@ Elegidos entre los 19 propuestos tras cruzarlos con `elements/`: **Callout/nota,
 
 #### T18 — Widget «Stepper narrativo»
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T5 y T17 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/stepper/` y `elements/stepper/` (nuevos), `catalogo.ts`, `index.ts` del kit, `widget-panel-catalog.ts`, registro del frontend. **NO** toca el motor de interacción ni Click to Reveal.
 - **Entregable:** **primero un relevamiento** (documentado en la ficha al terminar): qué cubren ya el motor de reglas (K/N) y Click to Reveal; si el solape es total, se para y se deja `bloqueado por <ID>`. Si sigue en pie: contenido que se revela paso a paso («Siguiente / Anterior»), N pasos con título y cuerpo, indicador de progreso, transición con `WidgetMotion`, opción de avanzar con el `SlideNavContext` o de forma independiente; emite al runtime `visitado` al completar el último paso (sin variables nuevas ni notas, DT7). Pruebas: avance/retroceso, límites, evento emitido una sola vez, reduced-motion. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:unit`.
