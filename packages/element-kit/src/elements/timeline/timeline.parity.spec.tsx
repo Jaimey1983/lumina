@@ -114,7 +114,12 @@ describe("Timeline — paridad E3.3", () => {
 
   it("expone los presets formales mapeados desde las variantes", () => {
     expect(timelineDefinition.presets).toBeDefined();
-    expect(timelineDefinition.presets?.length).toBe(8);
+    // Las 8 variantes siguen ahí, intactas; T14 suma 4 estilos de orientación/densidad/animación.
+    const variantes = timelineDefinition.presets?.filter(
+      (p) => p.estadoPatch?.configuracion?.variante !== undefined,
+    );
+    expect(variantes?.length).toBe(8);
+    expect(timelineDefinition.presets?.length).toBe(12);
     const tarjetas = timelineDefinition.presets?.find((p) => p.id === "tarjetas");
     expect(tarjetas).toBeDefined();
     expect(tarjetas?.label).toBe("Tarjetas");

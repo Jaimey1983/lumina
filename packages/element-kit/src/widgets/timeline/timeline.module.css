@@ -744,3 +744,133 @@
   word-break: break-word;
   white-space: pre-wrap;
 }
+
+/* ── T14: densidad ────────────────────────────────────────────────────────── */
+
+.tlStage[data-densidad='compacta'] {
+  --tl-card-line-gap: 10px;
+  --tl-card-pad-to-line: 6px;
+  --tl-connector-min: 4px;
+  --tl-connector-max: 14px;
+}
+
+.tlStage[data-densidad='compacta'] .tlContentBlock {
+  gap: 3px;
+  max-width: min(160px, 100%);
+}
+
+.tlStage[data-densidad='amplia'] {
+  --tl-card-line-gap: 40px;
+  --tl-card-pad-to-line: 22px;
+  --tl-connector-max: 56px;
+}
+
+.tlStage[data-densidad='amplia'] .tlContentBlock {
+  gap: 10px;
+  max-width: min(260px, 100%);
+}
+
+/* ── T14: orientación vertical (la línea baja; las tarjetas van a izquierda y derecha) ── */
+
+.tlStage[data-orientacion='vertical'] .tlLine {
+  top: 0;
+  left: 50%;
+  width: var(--tl-grosor-linea, 3px);
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.tlStage[data-orientacion='vertical'] .tlNodesRow {
+  flex-direction: column;
+  padding: clamp(0.5rem, 3%, 1.25rem) clamp(0.25rem, 0.75%, 0.625rem);
+}
+
+.tlStage[data-orientacion='vertical'] .tlNodeItem {
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  width: 100%;
+  height: auto;
+}
+
+.tlStage[data-orientacion='vertical'] .tlCardTop {
+  grid-row: 1;
+  grid-column: 1;
+  align-items: stretch;
+  padding: 0;
+}
+
+.tlStage[data-orientacion='vertical'] .tlNodeDotWrap {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.tlStage[data-orientacion='vertical'] .tlCardBottom {
+  grid-row: 1;
+  grid-column: 3;
+  align-items: stretch;
+  padding: 0;
+}
+
+.tlStage[data-orientacion='vertical'] .tlRegionStack {
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+}
+
+.tlStage[data-orientacion='vertical'] .tlRegionStackTop .tlCardSlot {
+  padding-bottom: 0;
+  padding-right: var(--tl-card-pad-to-line, 14px);
+}
+
+.tlStage[data-orientacion='vertical'] .tlRegionStackBottom .tlCardSlot {
+  padding-top: 0;
+  padding-left: var(--tl-card-pad-to-line, 14px);
+}
+
+.tlStage[data-orientacion='vertical'] .tlCardSlot {
+  flex: 0 1 auto;
+  max-width: calc(100% - var(--tl-card-line-gap, 22px));
+  width: auto;
+  max-height: 100%;
+}
+
+.tlStage[data-orientacion='vertical'] .tlRegionGap {
+  flex: 0 0 var(--tl-card-line-gap, 22px);
+  width: var(--tl-card-line-gap, 22px);
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+}
+
+/* El conector gira: de una barra vertical a una raya horizontal hacia el nodo. */
+.tlStage[data-orientacion='vertical'] .tlConnectorFlex {
+  flex: 0 0 auto;
+  width: var(--tl-connector-max, 32px);
+  max-width: var(--tl-connector-max, 32px);
+  min-width: var(--tl-connector-min, 6px);
+  height: var(--tl-grosor-conector, var(--tl-grosor-linea, 2px));
+  min-height: 0;
+  max-height: none;
+}
+
+.tlStage[data-orientacion='vertical'] .tlSegmentedBar {
+  top: 20px;
+  bottom: 20px;
+  left: 50%;
+  right: auto;
+  width: var(--tl-segment-height, 36px);
+  height: auto;
+  transform: translateX(-50%);
+  flex-direction: column;
+}
+
+.tlStage[data-orientacion='vertical'] .tlSegment {
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+.tlStage[data-orientacion='vertical'] .tlSegmentLabel {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
