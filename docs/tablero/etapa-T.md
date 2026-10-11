@@ -4,7 +4,7 @@
 
 ### Etapa T — Widgets terminados «de fábrica»: tokens, presets visibles, movimiento y accesibilidad
 
-Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `T0–T20` (más `T2b`) (no `L.n`, no `N.n`, no `Q.n`, no `R.n`, no `S.n`). Redactada a partir del análisis de widgets del 2026-10-10 contrastado con el código (conversación con el dueño; solo lectura, sin código). `S` ya está tomada por «secciones plegables»; esta etapa usa `T`.
+Trabajo **post-migración**. Reglas 1–4 no aplican; Reglas 0, 5–11 vigentes. IDs `T0–T20` (más `T2b` y `T6b`) (no `L.n`, no `N.n`, no `Q.n`, no `R.n`, no `S.n`). Redactada a partir del análisis de widgets del 2026-10-10 contrastado con el código (conversación con el dueño; solo lectura, sin código). `S` ya está tomada por «secciones plegables»; esta etapa usa `T`.
 
 **Por qué existe:** un widget recién insertado debería verse terminado y con la marca del curso sin tocar un color, y el docente debería poder elegir un estilo y ajustar 2–3 perillas. Hoy hay 14 widgets en `packages/element-kit/src/widgets/` (los 12 del análisis más `molecula` y `tabla_periodica`). Medido al redactar:
 - La capa de tokens **ya existe** (`--lw-*` en `editor-shared/src/use-widget-theme.ts` y `widget-container-styles.ts`, alimentada por `SlideTheme`), pero queda a medias: siguen quedando hex sueltos en los `.module.css` (Botón 58, Tabla periódica 29, Timeline 22, Click Reveal 16, Flip Cards 14, Popup 12, Hotspot 10, Tooltip 10). El Botón sigue fijando `#6c757d` para `secondary`, así que el tema solo cambia el primario.
@@ -112,6 +112,14 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 - **Alcance — PUEDE tocar:** `widgets/carousel/`, `packages/element-kit/package.json` (declarar `embla-carousel-react` y `embla-carousel-autoplay`). **NO** modifica `@lumina/ui/carousel` salvo que sea imprescindible (y entonces se detiene y pide reescribir la ficha).
 - **Entregable:** el viewer usa Embla (swipe, loop, autoplay opcional, puntos y contador); se conservan `activeIndex`, el contrato con `SlideNavContext` y los eventos del runtime; prueba de paridad contra el carrusel casero (misma config → mismo slide visible, misma navegación) antes de borrar el viejo. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
 - **Cierre:** se borra la lógica casera de navegación del viewer (Regla 4).
+
+#### T6b — Carousel: transición «fade» sobre Embla (cierra T6)
+- **Operador:** Claude Code
+- **Estado:** [en curso: Claude Code]
+- **Precondición:** T6 `en revisión` (visor sobre Embla).
+- **Alcance — PUEDE tocar:** `widgets/carousel/` (viewer, CSS, spec de paridad), `packages/element-kit/package.json` (declarar `embla-carousel-fade`), `lumina-frontend/src/visual-tests/carousel-embla.visual.spec.tsx` y los snapshots de Carousel de `widgets-base` **solo si cambian**. **NO** toca `@lumina/ui/carousel` ni `@lumina/types`.
+- **Entregable:** con `transicion: 'fade'` el visor usa Embla con el plugin `Fade` (swipe, loop, autoplay y contador iguales que en `slide`); la miniatura pasa a ser un render estático de la primera página; **desaparece** el índice local `useSimpleNav` y el CSS/keyframes `carouselFadePanel`. Paridad: el spec de T6 sigue pasando sin cambios salvo la prueba «fade no usa Embla», que se invierte; prueba en Chromium de que con `fade` navega y las páginas inactivas quedan transparentes. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
+- **Cierre:** se borra la navegación casera del Carousel (Regla 4); T6 queda sin la salvedad del `fade`.
 
 #### T7 — Ruleta: etiquetas, peso, «eliminar ganador» y sonido
 - **Operador:** Cursor
