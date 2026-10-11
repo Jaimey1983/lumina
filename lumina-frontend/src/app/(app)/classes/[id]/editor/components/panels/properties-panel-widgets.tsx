@@ -119,6 +119,12 @@ import type { Animacion, TransicionSlide } from '@lumina/types/animation';
 import type { ReactElement, ReactNode } from 'react';
 import { PanelAnimaciones, type ApplyNow } from './properties-panel-shared';
 
+/** Título del panel de los widgets que solo viven en el registry (sin rama propia en `Block`). */
+const TITULO_PANEL_SOLO_REGISTRY: Record<string, string> = {
+  callout: 'Callout',
+  galeria: 'Galería',
+};
+
 export interface WidgetPropertiesCtx {
   block: Block;
   applyNow: ApplyNow;
@@ -616,12 +622,14 @@ export function renderWidgetProperties({
     }
   }
 
-  // `callout` (T16) no está en el union `Block` viejo (Regla 3): se despacha por el registry.
-  if ((block as { tipo: string }).tipo === 'callout') {
-    const def = elementRegistry.obtener<Block, Record<string, unknown>>('callout');
+  // `callout` (T16) y `galeria` (T17) no están en el union `Block` viejo (Regla 3): se despachan
+  // por el registry.
+  const tipoRegistry = (block as { tipo: string }).tipo;
+  if (Object.hasOwn(TITULO_PANEL_SOLO_REGISTRY, tipoRegistry)) {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>(tipoRegistry);
     if (def?.Propiedades) {
       return (
-        <WidgetPropertiesPanelShell title="Callout">
+        <WidgetPropertiesPanelShell title={TITULO_PANEL_SOLO_REGISTRY[tipoRegistry]}>
           <WidgetPropertiesPanelStack>
             <def.Propiedades
               estado={block}

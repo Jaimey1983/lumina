@@ -60,6 +60,8 @@ function widgetCanvasFallback(type: WidgetTipo): { ancho: number; alto: number }
       return BLOCK_FALLBACKS.molecula;
     case 'callout':
       return BLOCK_FALLBACKS.callout;
+    case 'galeria':
+      return BLOCK_FALLBACKS.galeria;
   }
 }
 

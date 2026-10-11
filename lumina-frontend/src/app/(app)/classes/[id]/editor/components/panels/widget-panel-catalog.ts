@@ -7,6 +7,7 @@ import {
   GalleryHorizontal,
   GitCommitHorizontal,
   Hand,
+  Images,
   Info,
   Layers,
   ListCollapse,
@@ -163,6 +164,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Info,
     rowClassName: 'hover:bg-blue-50/90 dark:hover:bg-blue-950/25',
     iconClassName: 'text-blue-600 dark:text-blue-400',
+  },
+  galeria: {
+    group: 'lienzo',
+    Icon: Images,
+    rowClassName: 'hover:bg-rose-50/90 dark:hover:bg-rose-950/25',
+    iconClassName: 'text-rose-600 dark:text-rose-400',
   },
 };
 

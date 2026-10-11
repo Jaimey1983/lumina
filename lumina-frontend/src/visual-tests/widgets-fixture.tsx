@@ -30,6 +30,7 @@ export const WIDGET_TIPOS = [
   'molecula',
   'tabla_periodica',
   'callout',
+  'galeria',
 ] as const;
 
 export type WidgetTipo = (typeof WIDGET_TIPOS)[number];

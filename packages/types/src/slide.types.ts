@@ -1932,6 +1932,7 @@ export const BLOCK_FALLBACKS = {
   tablaPeriodica: { x: 5, y: 5, ancho: 90, alto: 90 },
   molecula: { x: 15, y: 12, ancho: 70, alto: 65 },
   callout: { x: 15, y: 30, ancho: 70, alto: 22 },
+  galeria: { x: 10, y: 12, ancho: 80, alto: 70 },
   anagrama: { x: 5, y: 5, ancho: 90, alto: 90 },
   puzzle_palabras: { x: 5, y: 5, ancho: 90, alto: 90 },
   /** Contenido por defecto para nuevas actividades tipo torneo (3 preguntas de ejemplo). */

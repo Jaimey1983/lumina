@@ -60,6 +60,12 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "lienzo",
   },
+  galeria: {
+    nombre: "Galería",
+    descripcion: "Conjunto de imágenes con visor ampliado (lightbox)",
+    familia: "widget",
+    grupo: "lienzo",
+  },
   timeline: { nombre: "Línea de tiempo", familia: "widget", grupo: "lienzo" },
   popup: { nombre: "Popup", familia: "widget", grupo: "overlay" },
   hotspot: { nombre: "Hotspot", familia: "widget", grupo: "control" },
