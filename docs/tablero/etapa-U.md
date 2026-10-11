@@ -99,7 +99,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U6 — Accesibilidad de arrastre y anuncios
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U5 `hecho`.
 - **Alcance — PUEDE tocar:** `activities/_shared/activity-dnd-root.tsx`, `activities/_shared/activity-drag-word.tsx` y un helper nuevo de anuncios/«tocar para elegir, tocar para colocar». **NO** migra viewers todavía; solo deja listas las primitivas.
 - **Entregable:** `KeyboardSensor` y `TouchSensor` configurados en un único `ActivityDndRoot`, `announcements` en español, modo «tocar-colocar» activable, pruebas con `@testing-library` de operación solo con teclado. Verificación: `pnpm --filter @lumina/element-kit test` y `lint`.
