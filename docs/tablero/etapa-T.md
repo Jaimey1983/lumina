@@ -171,7 +171,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T13 — Click to Reveal: disparadores y progreso
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/click-reveal/` y `elements/click-reveal/`. **NO** toca `elements/scratch-card/`.
 - **Entregable:** variantes de disparo (flip / spotlight / blur-off; el «scratch» ya lo cubre `scratch-card`, no se duplica); contador «X de Y revelados»; bloqueo opcional hasta revelar todo, emitiendo el evento al runtime. Paridad con el modal actual. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
