@@ -155,7 +155,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T11 — Flip Cards: tipos de giro, profundidad y modo mazo
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/flip-cards/` y `elements/flip-cards/`. **NO** reescribe las 8 plantillas existentes.
 - **Entregable:** tipos de giro Y / X / deslizar / fundido (hoy solo `rotateY 0.55s`); profundidad 3D opcional; entrada escalonada con `WidgetMotion`; modo «mazo» (una carta a la vez, swipe). Paridad: las 8 plantillas se ven igual por defecto. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
