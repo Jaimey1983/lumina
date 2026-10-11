@@ -7,7 +7,15 @@ import { useCallback } from 'react';
 import type { Block } from '@lumina/types/slide';
 import type { RuletaWidget } from '@lumina/types/widget';
 
-import { generarIdRuleta, RULETA_MAX_ITEMS, RULETA_MIN_ITEMS } from './ruleta-config.js';
+import {
+  generarIdRuleta,
+  pesoDe,
+  RULETA_MAX_ITEMS,
+  RULETA_MIN_ITEMS,
+  RULETA_PESO_MAX,
+  type RuletaConfiguracion,
+  type RuletaItemT7,
+} from './ruleta-config.js';
 import { normalizeRuletaBlock } from './ruleta-defaults.js';
 
 export interface RuletaPropertiesProps {
@@ -32,9 +40,10 @@ export function RuletaProperties({ block: rawBlock, applyNow }: RuletaProperties
     [applyNow],
   );
 
-  const updateConfig = (partial: Partial<RuletaWidget['configuracion']>) => {
+  const updateConfig = (partial: Partial<RuletaConfiguracion>) => {
     update((w) => ({ ...w, configuracion: { ...w.configuracion, ...partial } }));
   };
+  const config = configuracion as RuletaConfiguracion;
 
   return (
     <div className="flex flex-col gap-4 p-3 text-sm">
@@ -71,6 +80,23 @@ export function RuletaProperties({ block: rawBlock, applyNow }: RuletaProperties
               onChange={(e) => updateConfig({ mostrarGanador: e.target.checked })}
             />
           </label>
+          {(
+            [
+              ['sonido', 'Sonido de tick', config.sonido],
+              ['modoEliminar', 'Eliminar ganador tras cada tirada', config.modoEliminar === true],
+              ['mostrarHistorial', 'Mostrar historial de tiradas', config.mostrarHistorial === true],
+              ['confeti', 'Confeti al terminar', config.confeti === true],
+            ] as const
+          ).map(([clave, etiqueta, activo]) => (
+            <label key={clave} className="flex items-center justify-between gap-2">
+              <span className="text-gray-600">{etiqueta}</span>
+              <input
+                type="checkbox"
+                checked={activo}
+                onChange={(e) => updateConfig({ [clave]: e.target.checked })}
+              />
+            </label>
+          ))}
         </div>
       </section>
 
@@ -113,6 +139,23 @@ export function RuletaProperties({ block: rawBlock, applyNow }: RuletaProperties
                   }));
                 }}
                 className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs"
+              />
+              <input
+                type="number"
+                min={1}
+                max={RULETA_PESO_MAX}
+                step={1}
+                value={pesoDe(item)}
+                title="Peso: tamaño del sector y probabilidad de salir (1 = normal)"
+                aria-label={`Peso de ${item.texto}`}
+                onChange={(e) => {
+                  const peso = Math.min(RULETA_PESO_MAX, Math.max(1, Math.round(Number(e.target.value) || 1)));
+                  update((w) => ({
+                    ...w,
+                    items: w.items.map((i) => (i.id === item.id ? ({ ...i, peso } as RuletaItemT7) : i)),
+                  }));
+                }}
+                className="w-12 rounded border border-gray-300 px-1 py-1 text-xs"
               />
               <button
                 type="button"

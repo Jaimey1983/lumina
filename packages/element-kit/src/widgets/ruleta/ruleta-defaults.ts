@@ -6,6 +6,9 @@ import {
   RULETA_COLORES_DEFAULT,
   RULETA_MAX_ITEMS,
   RULETA_MIN_ITEMS,
+  RULETA_PESO_DEFAULT,
+  RULETA_PESO_MAX,
+  type RuletaConfigT7,
 } from './ruleta-config.js';
 
 export const DEFAULT_RULETA_DURACION = 3000;
@@ -16,10 +19,17 @@ function clampItems(
   const raw = Array.isArray(items) ? items : [];
   const cleaned = raw
     .filter((item) => item && typeof item === 'object')
-    .map((item, i) => ({
-      id: typeof item.id === 'string' && item.id.length > 0 ? item.id : `i-${i + 1}`,
-      texto: typeof item.texto === 'string' ? item.texto : `Elemento ${i + 1}`,
-    }));
+    .map((item, i) => {
+      const peso = Number((item as { peso?: unknown }).peso);
+      return {
+        id: typeof item.id === 'string' && item.id.length > 0 ? item.id : `i-${i + 1}`,
+        texto: typeof item.texto === 'string' ? item.texto : `Elemento ${i + 1}`,
+        // T7: el peso solo se conserva si es válido y no es el de por defecto (1).
+        ...(Number.isFinite(peso) && peso > 0 && peso !== RULETA_PESO_DEFAULT
+          ? { peso: Math.min(RULETA_PESO_MAX, peso) }
+          : {}),
+      };
+    });
   if (cleaned.length >= RULETA_MIN_ITEMS) {
     return cleaned.slice(0, RULETA_MAX_ITEMS);
   }
@@ -40,13 +50,18 @@ function normalizeConfig(
     ? config.colores.filter((c): c is string => typeof c === 'string' && c.length > 0)
     : [];
   const duracion = Number(config?.duracionGiro);
+  const t7 = (config ?? {}) as RuletaConfigT7;
   return {
     colores: colores.length > 0 ? colores : [...RULETA_COLORES_DEFAULT],
     sonido: Boolean(config?.sonido),
     duracionGiro:
       Number.isFinite(duracion) && duracion >= 1000 ? duracion : DEFAULT_RULETA_DURACION,
     mostrarGanador: config?.mostrarGanador !== false,
-  };
+    // T7: opciones nuevas; solo se escriben cuando están activas (por defecto, ausentes).
+    ...(t7.modoEliminar === true ? { modoEliminar: true } : {}),
+    ...(t7.mostrarHistorial === true ? { mostrarHistorial: true } : {}),
+    ...(t7.confeti === true ? { confeti: true } : {}),
+  } as RuletaWidget['configuracion'];
 }
 
 function isActivityRuletaBlock(

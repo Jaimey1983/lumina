@@ -2,11 +2,16 @@
 
 import { forwardRef } from 'react';
 
-import { calcularSectores } from './ruleta-config.js';
+import { calcularSectores, dividirEtiqueta, pesoDe } from './ruleta-config.js';
 
 interface RuletaWheelProps {
-  items: { texto: string }[];
+  items: { texto: string; peso?: number }[];
   colores: string[];
+  /**
+   * Índice de color de cada sector. Si se omite, el sector `i` usa `colores[i]`; el visor lo
+   * pasa en el modo «eliminar ganador» para que los colores no se corran al quitar un sector.
+   */
+  indicesColor?: number[];
 }
 
 const VIEW = 400;
@@ -15,12 +20,15 @@ const CY = VIEW / 2;
 const R = VIEW / 2 - 8;
 
 export const RuletaWheel = forwardRef<HTMLDivElement, RuletaWheelProps>(function RuletaWheel(
-  { items, colores },
+  { items, colores, indicesColor },
   ref,
 ) {
   const n = Math.max(items.length, 1);
-  const sectores = calcularSectores(n);
+  const sectores = calcularSectores(n, items.length > 0 ? items.map((it) => pesoDe(it)) : undefined);
   const fontSize = n > 8 ? 14 : n > 6 ? 16 : 18;
+  // Caracteres por línea y líneas máximas según cuánto sector hay: más ítems, menos espacio.
+  const maxPorLinea = n > 8 ? 10 : n > 6 ? 12 : 14;
+  const maxLineas = n > 8 ? 2 : 3;
 
   return (
     <div className="relative h-full w-full max-h-full aspect-square flex items-center justify-center mx-auto">
@@ -40,12 +48,17 @@ export const RuletaWheel = forwardRef<HTMLDivElement, RuletaWheelProps>(function
             const midDeg = (s.angulo * 180) / Math.PI;
             const labelRot = Math.cos(s.angulo) < 0 ? midDeg + 180 : midDeg;
             const label = items[i]?.texto ?? '';
+            const lineas = dividirEtiqueta(label, maxPorLinea, maxLineas);
+            // Una línea larga achica la letra (hasta 10) para no pasar del borde de la rueda.
+            const mayorLinea = Math.max(...lineas.map((l) => l.length));
+            const tamano = mayorLinea > 11 ? Math.max(10, (fontSize * 11) / mayorLinea) : fontSize;
+            const alturaLinea = tamano * 1.1;
 
             return (
               <g key={i}>
                 <path
                   d={`M${CX},${CY} L${x1},${y1} A${R},${R} 0 ${largeArc},1 ${x2},${y2} Z`}
-                  fill={colores[i % colores.length]}
+                  fill={colores[(indicesColor?.[i] ?? i) % colores.length]}
                   stroke="white"
                   strokeWidth="3"
                 />
@@ -55,11 +68,21 @@ export const RuletaWheel = forwardRef<HTMLDivElement, RuletaWheelProps>(function
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="white"
-                  fontSize={fontSize}
+                  fontSize={tamano}
                   fontWeight="bold"
                   transform={`rotate(${labelRot} ${tx} ${ty})`}
                 >
-                  {label.length > 12 ? `${label.slice(0, 11)}…` : label}
+                  {lineas.length === 1
+                    ? lineas[0]
+                    : lineas.map((linea, k) => (
+                        <tspan
+                          key={k}
+                          x={tx}
+                          dy={k === 0 ? -((lineas.length - 1) * alturaLinea) / 2 : alturaLinea}
+                        >
+                          {linea}
+                        </tspan>
+                      ))}
                 </text>
               </g>
             );
