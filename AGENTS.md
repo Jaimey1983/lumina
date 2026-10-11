@@ -172,7 +172,7 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 
 | Etapa / IDs | Archivo | Estado |
 |---|---|---|
-| F1.x, L.x, X.1–X.3 | `docs/tablero/fase1-lint-abiertos.md` | X.2/X.3 en revisión |
+| F1.x, L.x, X.1–X.4 | `docs/tablero/fase1-lint-abiertos.md` | X.2/X.3 en revisión; X.4 pendiente |
 | E1–E7 (migración) | `docs/tablero/migracion-E1-E7.md` | cerrada |
 | G (alineación/guías) | `docs/tablero/etapa-G.md` | cerrada |
 | H (`@lumina/charts`) | `docs/tablero/etapa-H.md` | cerrada |

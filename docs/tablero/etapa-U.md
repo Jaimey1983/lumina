@@ -60,7 +60,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 #### U1 — Tokens de estado `--la-*` y guarda ratchet contra hex en actividades
 - **Operador:** Claude Code
 - **Estado:** pendiente
-- **Precondición:** U0 `hecho`.
+- **Precondición:** U0 `hecho` y **X.4 `hecho`** (`fase1-lint-abiertos.md`: las clases del kit deben llegar al CSS de producción; hallazgo de U0, matriz §3.1).
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/activities/_shared/` (archivo de tokens nuevo y sus estilos), `packages/editor-shared/src/use-widget-theme.ts` **solo si** hace falta exponer tokens `--la-*` desde el mismo tema, y un spec nuevo `packages/element-kit/src/activities/activity-tokens.spec.ts` (molde: `widgets/widget-tokens.spec.ts`). **NO** migra ninguna actividad ni cambia ningún viewer.
 - **Entregable:** los tokens de estado de DU4 con fallback definido; la guarda que recorre `activities/**/*.{css,tsx,ts}` y falla si un archivo **no exento** contiene hex suelto (reutilizar `hexSueltos`, extendido a `style={{…}}` y clases Tailwind arbitrarias `bg-[#…]`); lista de exentos = todos los archivos con hex hoy, ordenada, con un test que falla si la lista **crece** o contiene un archivo que ya no tiene hex. Verificación: `pnpm --filter @lumina/element-kit test` y `pnpm --filter @lumina/element-kit lint`.
 - **Cierre:** n/a. La lista de exentos se vacía durante U9a–U9d (cada migración retira el suyo).
