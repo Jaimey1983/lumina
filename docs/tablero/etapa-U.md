@@ -123,7 +123,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U9a — Oleada A: respuesta y selección simple
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] — partida en subfichas por actividad (Regla 10), de la más simple a la más grande; un commit y un estado por cada una: **U9a.1** `short_answer` · **U9a.2** `respuesta_matematica` · **U9a.3** `completar_blancos` · **U9a.4** `encuesta_viva` · **U9a.5** `nube_palabras` · **U9a.6** `balancear_ecuacion` · **U9a.7** `formular_compuesto` · **U9a.8** `molecula`. Cada subficha repite el método: caracterización contra el código VIEJO (commit aparte) → migración con la misma entrada ⇒ misma respuesta a `@lumina/scoring` → hex fuera del ratchet (o `EXENTOS_DE_DATO`) → entrada en `CAPACIDADES_AJUSTES` solo con lo que el viewer lee → código viejo borrado (Regla 4). Alcance y verificación: los de esta ficha. Estado de las subfichas abajo.
 - **Precondición:** U8 `hecho`.
 - **Alcance — PUEDE tocar:** `short_answer`, `respuesta_matematica`, `completar_blancos`, `encuesta_viva`, `nube_palabras`, las 3 de química y sus carpetas en `elements/`. **NO** toca otras familias.
 - **Entregable:** cada una sobre `ActivityShell`/`ajustes`/`onResponse`, con `Propiedades` real (fin de «Propiedades = Editor»), paridad contra el viejo y su archivo retirado de los exentos de U1. Una sola ficha puede partirse en `U9a.1…` por actividad si el PR crece (Regla 10). Verificación: tests del kit + `test:visual` + `pnpm --filter @lumina/scoring test`.
