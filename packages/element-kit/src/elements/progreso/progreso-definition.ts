@@ -37,6 +37,52 @@ export const PROGRESO_PRESETS: readonly ElementPreset<ProgresoEstado>[] = [
     description: "Etiqueta explícita y porcentaje visible para hitos",
     estadoPatch: { etiqueta: "Progreso de la sesión", mostrarPorcentaje: true },
   },
+  {
+    id: "circular",
+    label: "Anillo",
+    description: "Avance en un anillo con el porcentaje al centro",
+    estadoPatch: { variante: "circular", striped: false, animated: false, mostrarPorcentaje: true },
+  },
+  {
+    id: "semicirculo",
+    label: "Medidor",
+    description: "Medio círculo, como un velocímetro",
+    estadoPatch: { variante: "semicirculo", striped: false, animated: false, mostrarPorcentaje: true },
+  },
+  {
+    id: "pasos",
+    label: "Pasos",
+    description: "Casillas numeradas que se van completando",
+    estadoPatch: { variante: "pasos", striped: false, animated: false, mostrarPorcentaje: false },
+  },
+  {
+    id: "con-hitos",
+    label: "Con hitos",
+    description: "Barra con marcas rotuladas en 25 %, 50 % y 100 %",
+    estadoPatch: {
+      variante: "lineal",
+      mostrarPorcentaje: true,
+      hitos: [
+        { valor: 25, etiqueta: "Inicio" },
+        { valor: 50, etiqueta: "Mitad" },
+        { valor: 100, etiqueta: "Meta" },
+      ],
+    },
+  },
+  {
+    id: "objetivo",
+    label: "Meta vs actual",
+    description: "Muestra cuánto se lleva sobre la meta, con su unidad",
+    estadoPatch: {
+      modo: "manual",
+      modoObjetivo: true,
+      valorActual: 30,
+      meta: 50,
+      unidad: "puntos",
+      etiqueta: "Meta de la clase",
+      mostrarPorcentaje: true,
+    },
+  },
 ];
 
 /** E3.2 — Barra de progreso como ElementDefinition, sin puntuación. */

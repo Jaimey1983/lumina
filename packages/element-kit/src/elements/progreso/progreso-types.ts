@@ -1,8 +1,8 @@
-import type { ProgresoWidget } from "../../widgets/progreso/index.js";
+import type { ProgresoWidgetT9 } from "../../widgets/progreso/index.js";
 import type { WidgetCanvasConfig } from "../_shared/widget-runtime-config.js";
 
 /** Estado del elemento Progreso (Barra) = el bloque de widget completo. */
-export type ProgresoEstado = ProgresoWidget;
+export type ProgresoEstado = ProgresoWidgetT9;
 
 /**
  * Config de runtime del viewer (no es apariencia del panel).

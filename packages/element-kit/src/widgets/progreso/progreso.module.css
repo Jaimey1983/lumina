@@ -10,6 +10,21 @@
   font-family: var(--lw-font-family, inherit);
 }
 
+/* Cuerpo del progreso: en `lineal` reproduce el flujo del `.wrap` de siempre. */
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  width: 100%;
+  min-height: 0;
+}
+
+.cuerpoCentrado {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
 .meta {
   display: flex;
   align-items: baseline;
@@ -82,7 +97,151 @@
   }
 }
 
+/* ── Variantes circulares ─────────────────────────────────────────────── */
+.circular {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.circularLienzo {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+/* El svg ocupa el lienzo y su contenido se escala para caber (`meet`). */
+.circularSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.arco {
+  transition: stroke-dasharray var(--lw-motion-slow, 0.4s) var(--lw-ease, ease);
+}
+
+.rotulos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  text-align: center;
+}
+
+/* ── Pasos ────────────────────────────────────────────────────────────── */
+.pasos {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paso {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* Conector con el paso anterior. */
+.paso + .paso::before {
+  content: '';
+  position: absolute;
+  top: 0.7rem;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--paso-fondo);
+  transition: background-color var(--lw-motion-base, 0.25s) ease;
+}
+
+.paso.pasoHecho + .paso.pasoHecho::before {
+  background: var(--paso-barra);
+}
+
+.pasoPunto {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: var(--lw-radius-full, 9999px);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lw-color-text-muted, #64748b);
+  background: var(--paso-fondo);
+  transition:
+    background-color var(--lw-motion-base, 0.25s) ease,
+    color var(--lw-motion-base, 0.25s) ease;
+}
+
+.pasoHecho .pasoPunto {
+  color: var(--paso-texto);
+  background: var(--paso-barra);
+}
+
+.pasoActual {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--paso-barra) 30%, transparent);
+}
+
+.pasoEtiqueta {
+  font-size: 0.65rem;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* ── Hitos de la barra lineal ─────────────────────────────────────────── */
+.hitos {
+  position: relative;
+  height: 1.5rem;
+  margin: 0 0.4rem;
+}
+
+.hito {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  color: var(--lw-color-text-muted, #64748b);
+  transition: color var(--lw-motion-base, 0.25s) ease;
+}
+
+.hitoMarca {
+  width: 2px;
+  height: 0.4rem;
+  background: currentColor;
+}
+
+.hitoTexto {
+  font-size: 0.62rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .arco,
+  .paso + .paso::before,
+  .pasoPunto,
+  .hito {
+    transition: none;
+  }
   .bar {
     transition: none;
   }
