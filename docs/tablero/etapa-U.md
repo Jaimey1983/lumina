@@ -67,7 +67,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U2 — `ActivitySettings` y normalizador (tipos + función pura, sin UI)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U0 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/types/src/slide.types.ts` (agregar `ActivitySettings` y el campo opcional `ajustes?` en cada variante de `Activity`, vía una base común, sin renombrar nada), `packages/element-kit/src/activities/_shared/` (`activity-settings.ts` + spec). **NO** toca viewers, editores, scoring ni backend.
 - **Entregable:** `normalizarAjustes(actividad): AjustesResueltos` puro, con tabla de derivación documentada de los campos legacy de **cada** tipo (medida actividad por actividad, Regla 9 §3) y un spec que cubra los ~26 tipos con su payload real. Medición previa obligatoria: ¿el backend valida/descarta campos desconocidos del `Activity`? Si sí, la ficha **para** y deja `bloqueado por` ficha de backend. Verificación: `pnpm --filter @lumina/types test`, `pnpm --filter @lumina/element-kit test`, `pnpm --filter @lumina/scoring test` (debe seguir verde sin cambios).
