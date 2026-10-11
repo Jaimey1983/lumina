@@ -30,6 +30,8 @@ export { getBlockPos, type BlockPos } from '@lumina/editor-shared/block-pos';
 
 /** Returns a new block with updated x, y (canvas % or activity `marco`). */
 export function withPosition(block: Block, x: number, y: number): Block {
+  // `callout` (T16) nace como `ElementDefinition` y no está en el union `Block` viejo (Regla 3).
+  if ((block as { tipo: string }).tipo === 'callout') return { ...block, x, y } as Block;
   switch (block.tipo) {
     case 'texto':       return { ...block, x, y };
     case 'imagen':      return { ...block, x, y };
@@ -80,6 +82,7 @@ export function withRect(
   ancho: number,
   alto: number,
 ): Block {
+  if ((block as { tipo: string }).tipo === 'callout') return { ...block, x, y, ancho, alto } as Block;
   switch (block.tipo) {
     case 'texto':
     case 'imagen':

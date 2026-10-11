@@ -32,6 +32,7 @@ describe('widget-panel-catalog', () => {
       'accordion',
       'tabla_periodica',
       'molecula',
+      'callout',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

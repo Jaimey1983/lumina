@@ -7,6 +7,7 @@ import {
   GalleryHorizontal,
   GitCommitHorizontal,
   Hand,
+  Info,
   Layers,
   ListCollapse,
   MessageSquare,
@@ -156,6 +157,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Atom,
     rowClassName: 'hover:bg-teal-50/90 dark:hover:bg-teal-950/25',
     iconClassName: 'text-teal-700 dark:text-teal-300',
+  },
+  callout: {
+    group: 'lienzo',
+    Icon: Info,
+    rowClassName: 'hover:bg-blue-50/90 dark:hover:bg-blue-950/25',
+    iconClassName: 'text-blue-600 dark:text-blue-400',
   },
 };
 

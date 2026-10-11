@@ -13,7 +13,7 @@ import { elementRegistry } from '@/lib/element-registry-bootstrap';
 export const WIDGET_VISUAL_WIDTH = 360;
 export const WIDGET_VISUAL_HEIGHT = 240;
 
-/** Widgets de `packages/element-kit/src/widgets/` (14), por `tipo` del registry. */
+/** Widgets de `packages/element-kit/src/widgets/` (14 + los nuevos de la etapa T), por `tipo` del registry. */
 export const WIDGET_TIPOS = [
   'boton',
   'progreso',
@@ -29,6 +29,7 @@ export const WIDGET_TIPOS = [
   'popup',
   'molecula',
   'tabla_periodica',
+  'callout',
 ] as const;
 
 export type WidgetTipo = (typeof WIDGET_TIPOS)[number];

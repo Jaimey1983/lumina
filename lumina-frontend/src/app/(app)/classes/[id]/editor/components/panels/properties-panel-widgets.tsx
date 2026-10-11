@@ -616,6 +616,28 @@ export function renderWidgetProperties({
     }
   }
 
+  // `callout` (T16) no está en el union `Block` viejo (Regla 3): se despacha por el registry.
+  if ((block as { tipo: string }).tipo === 'callout') {
+    const def = elementRegistry.obtener<Block, Record<string, unknown>>('callout');
+    if (def?.Propiedades) {
+      return (
+        <WidgetPropertiesPanelShell title="Callout">
+          <WidgetPropertiesPanelStack>
+            <def.Propiedades
+              estado={block}
+              config={{}}
+              onConfigChange={() => {}}
+              onChange={(updated) => {
+                void applyNow(() => updated);
+              }}
+            />
+            {animaciones(block)}
+          </WidgetPropertiesPanelStack>
+        </WidgetPropertiesPanelShell>
+      );
+    }
+  }
+
   if (block.tipo === 'tabla_periodica') {
     const def = elementRegistry.obtener<Block, Record<string, unknown>>('tabla_periodica');
     if (def?.Propiedades) {
