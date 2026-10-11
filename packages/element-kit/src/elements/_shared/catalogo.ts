@@ -54,6 +54,12 @@ export const CATALOGO_ELEMENTOS = {
     familia: "widget",
     grupo: "lienzo",
   },
+  callout: {
+    nombre: "Callout",
+    descripcion: "Nota destacada: información, consejo, aviso, peligro o éxito",
+    familia: "widget",
+    grupo: "lienzo",
+  },
   timeline: { nombre: "Línea de tiempo", familia: "widget", grupo: "lienzo" },
   popup: { nombre: "Popup", familia: "widget", grupo: "overlay" },
   hotspot: { nombre: "Hotspot", familia: "widget", grupo: "control" },
