@@ -131,7 +131,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T8 — Botón: variantes por token, icono, loading y acciones
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/boton/` y `elements/boton/` (definition, presets, adaptadores y su paridad). **NO** toca el motor de interacción.
 - **Entregable:** dejar de clonar Bootstrap: variantes `solid / soft / outline / ghost / link` por token; icono izquierdo o derecho (Lucide); estado `loading`; tamaño por densidad; micro-press con `WidgetMotion`; foco por token. Acciones nuevas: abrir popup o hotspot por id, descargar recurso (adjunto), emitir evento al runtime. Presets reescritos. Paridad: la config legada renderiza igual. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
