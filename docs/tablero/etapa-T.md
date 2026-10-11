@@ -163,7 +163,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T12 — Tabs: variantes y transición de panel
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/tabs/` y `elements/tabs/`. **NO** toca `widget-layouts` compartido más de lo imprescindible (si hace falta, pide reescribir la ficha).
 - **Entregable:** variantes underline / pills / enclosed / vertical / segmented; transición entre paneles con `WidgetMotion`; **presets reales de Tabs** (T2b los quitó porque no había nada que parchear) apoyados en esas variantes; icono y badge por pestaña. Basarse en `radix-ui` Tabs solo si conserva el modo editor (edición inline). Paridad con la variante actual. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
