@@ -75,7 +75,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U3 — `ActivityShell`, reducer de sesión y `ActivityResultScreen`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U1 y U2 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/activities/_shared/` (archivos nuevos: `activity-shell.tsx`, `use-actividad-sesion.ts`, `activity-result-screen.tsx`, `activity-header.tsx`, módulo CSS con tokens `--la-*`, specs). **NO** migra actividades; **NO** borra `ActivityResultOverlay`, `ActivityTimer`, `ActivityLives` todavía.
 - **Entregable:** el shell con las fases de DU1, encabezado (progreso/tiempo/vidas/puntaje según `ajustes`), pantalla de resultados de DU6 (`role="dialog"`, foco al abrir y al cerrar, `aria-live`), reducer puro con tests de todas las transiciones (incluido reintento y agotar intentos/tiempo/vidas) y prueba de render de cada fase. Props públicas mínimas y documentadas en el archivo; sin `any`. Verificación: `pnpm --filter @lumina/element-kit test` y `lint`.
