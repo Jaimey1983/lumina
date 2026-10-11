@@ -165,7 +165,7 @@ export function TooltipParts({
           posClass,
           showBubble ? styles.bubbleVisible : styles.bubbleHidden,
         )}
-        style={overlayShiftVars(overlay.shiftX, overlay.shiftY)}
+        style={overlayShiftVars(overlay.shiftX, overlay.shiftY, overlay.arrowShift)}
         role="tooltip"
       >
         {cfg.textoTooltip}

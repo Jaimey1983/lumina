@@ -43,6 +43,7 @@ export function HotspotViewer({
       isThumbnail={config.isThumbnail === true}
       emitir={config.emitir}
       estadoObjeto={config.estadoObjeto}
+      bloqueId={config.bloqueId}
     />
   );
 }

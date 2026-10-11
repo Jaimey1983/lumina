@@ -525,6 +525,9 @@ importers:
       '@dagrejs/dagre':
         specifier: ^3.1.1
         version: 3.1.1
+      '@floating-ui/dom':
+        specifier: ^1.8.0
+        version: 1.8.0
       '@lumina/types':
         specifier: workspace:*
         version: link:../types

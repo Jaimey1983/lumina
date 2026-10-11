@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PopupWidget } from '@lumina/types/widget';
 import { cn } from '@lumina/ui/lib/utils';
 
+import { useAbrirOverlayPorId } from '../abrir-overlay.js';
 import styles from './popup.module.css';
 import { mergedPopupConfig, normalizePopupWidget, popupChromeStyle } from './popup-config.js';
 import { PopupModalPanel, PopupTriggerButton } from './popup-parts.js';
@@ -13,9 +14,11 @@ import { PopupSlidePortal } from './popup-portal.js';
 export interface PopupViewerProps {
   block: PopupWidget;
   isThumbnail?: boolean;
+  /** Id del bloque: con él, el popup responde a «abrir overlay por id» (T15). */
+  bloqueId?: string;
 }
 
-export function PopupViewer({ block, isThumbnail = false }: PopupViewerProps) {
+export function PopupViewer({ block, isThumbnail = false, bloqueId }: PopupViewerProps) {
   const [open, setOpen] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const widget = normalizePopupWidget(block);
@@ -37,6 +40,13 @@ export function PopupViewer({ block, isThumbnail = false }: PopupViewerProps) {
     if (isThumbnail) return;
     setOpen(false);
   }, [isThumbnail]);
+
+  // T15: otro widget (p. ej. un Botón) puede abrirlo o cerrarlo por id.
+  useAbrirOverlayPorId(
+    bloqueId,
+    (accion) => setOpen((prev) => (accion === 'alternar' ? !prev : accion === 'abrir')),
+    !isThumbnail,
+  );
 
   const isHover = configuracion.triggerEvento === 'hover' && !isThumbnail;
   const showModal = open && !isThumbnail;
