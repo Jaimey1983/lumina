@@ -91,7 +91,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U5 — Módulo compartido de movimiento, sonido y confeti + feedback de acierto/error
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U4 `hecho`.
 - **Alcance — PUEDE tocar:** `packages/element-kit/src/activities/_shared/` (módulo de feedback), un módulo neutro nuevo (p. ej. `packages/element-kit/src/_efectos/`) al que se **promueven** `widgets/_motion`, `widgets/_efectos`, `widgets/_audio` dejando re-exports en el lugar viejo, y las dos actividades del piloto. **NO** cambia el comportamiento de ningún widget (los snapshots de `widgets-base` deben seguir idénticos).
 - **Entregable:** `ActivityFeedback` (acierto/error/pista/logro) con presets de `motion`, confeti y sonido vía `useSound`, todo respetando `useWidgetReducedMotion` (DU5, DU8); Memoria con volteo real de carta; V/F con transición de estado. Verificación: `pnpm --filter @lumina/element-kit test`, `lint`, `pnpm --filter lumina-frontend test:visual`.
