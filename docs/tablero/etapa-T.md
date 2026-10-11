@@ -225,7 +225,7 @@ Elegidos entre los 19 propuestos tras cruzarlos con `elements/`: **Callout/nota,
 
 #### T19 — Widget «Sello / insignia de logro»
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T5 y T18 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/sello/` y `elements/sello/` (nuevos), `catalogo.ts`, `index.ts` del kit, `widget-panel-catalog.ts`, registro del frontend. **NO** toca `lumina-backend` ni `@lumina/scoring`.
 - **Entregable:** insignia SVG con forma (círculo, escudo, estrella), icono y texto editables, estados «bloqueado / ganado» y animación de obtención con `WidgetMotion` (+ confeti simple y diferido); se muestra «ganado» según el estado de objeto o la condición que entregue el runtime (`estadoObjeto`), o manualmente en el editor para previsualizar. **No** calcula ni guarda puntajes (DT7); conectarlo al módulo `achievements` del backend queda como ficha futura, no de esta. Pruebas: ambos estados, transición, a11y (`aria-live` al ganar), normalización. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
