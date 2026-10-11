@@ -106,7 +106,7 @@ export function GlobosViewer({ actividad, onComplete }: GlobosViewerProps) {
         id: `glob-${idx}-${i}-${op.texto}`,
         texto: op.texto,
         correcta: op.correcta,
-        x: posiciones[i] + (Math.random() - 0.5) * 4,
+        x: posiciones[i] + (Math.random() * 4 - 2),
         y: 108 + (i % 3) * 8 + Math.random() * 6,
         color: colores[i % colores.length],
         explotando: false,

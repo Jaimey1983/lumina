@@ -29,6 +29,7 @@ import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+import { barajar } from '../_shared/barajar.js';
 
 // Editor-only fields that ride along with the persisted activity data.
 export type OrderStepsLocal = OrderSteps & { mostrarNumeros?: boolean };
@@ -360,7 +361,7 @@ export function OrderStepsViewer({
 
   useEffect(() => {
     if (!activity?.pasos) return;
-    const shuffled = [...activity.pasos].sort(() => Math.random() - 0.5);
+    const shuffled = barajar(activity.pasos);
     setItems(shuffled.map((s) => ({ id: s.id, content: s.contenido })));
     setAnswered(false);
   }, [activity?.pasos, editorSyncKey]);

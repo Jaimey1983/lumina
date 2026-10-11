@@ -1,4 +1,5 @@
 import type { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
+import { barajar } from '../_shared/barajar.js'
 
 export const GLOBOS_MAX_PREGUNTAS = 30
 export const GLOBOS_MIN_PREGUNTAS = 1
@@ -18,12 +19,7 @@ export function generarIdGlobos(prefijo: string): string {
 
 /** Mezcla opciones/globos para que la respuesta correcta no quede siempre a la izquierda. */
 export function mezclarOpcionesGlobos<T>(opciones: T[]): T[] {
-  const result = [...opciones]
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
+  return barajar(opciones)
 }
 
 export function crearOpcionesGlobosDefault(): GlobosPregunta['opciones'] {

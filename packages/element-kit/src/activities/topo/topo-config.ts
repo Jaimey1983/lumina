@@ -1,4 +1,5 @@
 import type { TopoActivity, TopoPregunta } from '@lumina/types/slide'
+import { barajar } from '../_shared/barajar.js'
 
 export const TOPO_MAX_PREGUNTAS = 30
 export const TOPO_MIN_PREGUNTAS = 1
@@ -118,10 +119,5 @@ export function tamanoTextoTopo(cellSize: number, texto = ''): number {
 }
 
 export function mezclarIndicesTopo(count: number): number[] {
-  const result = Array.from({ length: count }, (_, i) => i)
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
+  return barajar(Array.from({ length: count }, (_, i) => i))
 }

@@ -1,3 +1,5 @@
+import { barajar } from '../_shared/barajar.js';
+
 export const SOPA_LETRAS_MAX_PALABRAS = 20;
 export const SOPA_LETRAS_MIN_PALABRAS = 3;
 export const SOPA_LETRAS_MIN_FILAS = 10;
@@ -82,7 +84,7 @@ export function generarGrid(
     .sort((a, b) => b.length - a.length);
 
   for (const palabra of ordenadas) {
-    const dirs = [...direcciones].sort(() => Math.random() - 0.5);
+    const dirs = barajar(direcciones);
     for (const dir of dirs) {
       const resultado = intentarColocar(grid, palabra, dir, filas, columnas);
       if (resultado) {

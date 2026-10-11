@@ -175,8 +175,10 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
 export function MemoriaViewer({ actividad, onResponse, onComplete }: MemoriaViewerProps) {
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
   const barajar = ajustes.barajar;
+  const semilla = ajustes.semilla;
+  const reinicios = useRef(0);
   const [tablero, dispatch] = useReducer(tableroReducer, undefined, () =>
-    crearTablero(actividad.pares, barajar),
+    crearTablero(actividad.pares, barajar, semilla, 0),
   );
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null);
 
@@ -189,8 +191,9 @@ export function MemoriaViewer({ actividad, onResponse, onComplete }: MemoriaView
 
   const alReintentar = useCallback(() => {
     setEvaluation(null);
-    dispatch({ tipo: 'reiniciar', barajar });
-  }, [barajar]);
+    reinicios.current += 1;
+    dispatch({ tipo: 'reiniciar', barajar, semilla, sal: reinicios.current });
+  }, [barajar, semilla]);
 
   return (
     <ActivityShell

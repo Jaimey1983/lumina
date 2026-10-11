@@ -1,4 +1,10 @@
 /**
+ * U7 — NOTA: el barajado pasó de `sort(random)` (sesgado) a Fisher–Yates uniforme
+ * (`_shared/barajar.ts`). Con el mismo azar fijo el ORDEN del mazo cambió y, con él, los
+ * valores `GOLDEN` que dependen de él (mazo, orden de `paresEncontrados`); se volvieron a
+ * medir. Lo que NO cambió, y sigue siendo la paridad que importa: qué se emite, cuándo, la
+ * nota, los tiempos y toda la mecánica del tablero.
+ *
  * U4 — paridad de Memoria contra su comportamiento ANTERIOR a migrar al `ActivityShell`
  * (Regla 7). Los valores `GOLDEN` se midieron con el viewer viejo (`useState` +
  * `setTimeout` en cadena + `ActivityResultOverlay`) y se congelaron: el viewer nuevo debe
@@ -111,16 +117,20 @@ const ambosCanales = (fn: ReturnType<typeof vi.fn>) => ({ onComplete: fn, onResp
 
 /** Valores medidos con el viewer anterior (ver encabezado). */
 const GOLDEN = {
-  mazo: ["🐰", "Conejo", "🐱", "Pájaro", "🐦", "Perro", "🐶", "Gato", "🐟", "Pez", "🐸", "Rana"],
+  mazo: ["🐶", "🐰", "Pez", "Rana", "Perro", "🐦", "Pájaro", "Conejo", "🐱", "🐟", "🐸", "Gato"],
   perfecto: [
-    { tipo: "borrador", pares: ["par-5"] },
-    { tipo: "borrador", pares: ["par-5", "par-4"] },
-    { tipo: "borrador", pares: ["par-5", "par-4", "par-6"] },
-    { tipo: "borrador", pares: ["par-5", "par-1", "par-4", "par-6"] },
-    { tipo: "borrador", pares: ["par-5", "par-1", "par-3", "par-4", "par-6"] },
-    { tipo: "final", pares: ["par-5", "par-1", "par-3", "par-2", "par-4", "par-6"] },
+    { tipo: "borrador", pares: ["par-2"] },
+    { tipo: "borrador", pares: ["par-2", "par-5"] },
+    { tipo: "borrador", pares: ["par-2", "par-5", "par-4"] },
+    { tipo: "borrador", pares: ["par-2", "par-5", "par-4", "par-6"] },
+    { tipo: "borrador", pares: ["par-2", "par-5", "par-4", "par-6", "par-3"] },
+    { tipo: "final", pares: ["par-2", "par-5", "par-4", "par-6", "par-3", "par-1"] },
   ] as Emision[],
 };
+
+/** Posiciones (en `GOLDEN.mazo`) de un par que coincide (🐶 / Perro) y de dos cartas que no. */
+const PAR_BUENO: [number, number] = [0, 4];
+const PAR_MALO: [number, number] = [0, 2];
 
 describe("Memoria — paridad con el comportamiento anterior (U4)", () => {
   it("el orden del mazo con azar fijo es el de siempre", () => {
@@ -144,8 +154,8 @@ describe("Memoria — paridad con el comportamiento anterior (U4)", () => {
   it("un par que no coincide sigue visible hasta `tiempoVolteo` y luego se esconde", () => {
     const a = createDefaultMemoria(); // tiempoVolteo = 1000
     render(<Viewer estado={a} config={{}} />);
-    expect(voltear(0)).toBe(GOLDEN.mazo[0]);
-    expect(voltear(2)).toBe(GOLDEN.mazo[2]);
+    expect(voltear(PAR_MALO[0])).toBe(GOLDEN.mazo[PAR_MALO[0]]);
+    expect(voltear(PAR_MALO[1])).toBe(GOLDEN.mazo[PAR_MALO[1]]);
     avanzar(999);
     expect(cartas()[0].textContent).toBe(GOLDEN.mazo[0]);
     avanzar(2);
@@ -191,7 +201,7 @@ describe("Memoria — paridad con el comportamiento anterior (U4)", () => {
 });
 
 const GOLDEN_REINTENTO = {
-  mazo: ["🐟", "🐰", "🐸", "Conejo", "Pez", "🐱", "Pájaro", "🐦", "Perro", "Rana", "🐶", "Gato"],
+  mazo: ["Pájaro", "Perro", "🐶", "🐟", "🐸", "Rana", "Conejo", "Pez", "Gato", "🐦", "🐱", "🐰"],
 };
 
 describe("Memoria sobre el shell — canal unificado y ajustes (U4)", () => {
@@ -228,11 +238,11 @@ describe("Memoria sobre el shell — canal unificado y ajustes (U4)", () => {
   it("no emite el mismo borrador dos veces seguidas (antes se repetía en cada volteo)", () => {
     const salida = vi.fn();
     render(<Viewer estado={createDefaultMemoria()} config={{ onResponse: salida }} />);
-    voltear(0);
-    voltear(1); // par-5 (🐰/Conejo): coincide
+    voltear(PAR_BUENO[0]);
+    voltear(PAR_BUENO[1]);
     avanzar(450);
     voltear(2);
-    voltear(4); // no coincide
+    voltear(3); // no coincide
     avanzar(1100);
     voltear(2);
     avanzar(10);
@@ -265,8 +275,8 @@ describe("Memoria sobre el shell — canal unificado y ajustes (U4)", () => {
   it("el encabezado muestra el avance de pares", () => {
     render(<Viewer estado={createDefaultMemoria()} config={{}} />);
     expect(screen.getByRole("progressbar", { name: "Progreso" }).getAttribute("aria-valuemax")).toBe("6");
-    voltear(0);
-    voltear(1); // 🐰 / Conejo
+    voltear(PAR_BUENO[0]);
+    voltear(PAR_BUENO[1]);
     avanzar(450);
     expect(screen.getByRole("progressbar", { name: "Progreso" }).getAttribute("aria-valuenow")).toBe("1");
   });
@@ -310,12 +320,12 @@ describe("Memoria — feedback de sonido, volteo y confeti (U5)", () => {
 
   it("un par encontrado suena 'correct' una vez; un par fallido no suena", () => {
     render(<Viewer estado={createDefaultMemoria()} config={{}} />);
-    voltear(0);
-    voltear(2); // no coincide
+    voltear(PAR_MALO[0]);
+    voltear(PAR_MALO[1]);
     avanzar(1100);
     expect(play).not.toHaveBeenCalled();
-    voltear(0);
-    voltear(1); // 🐰 / Conejo
+    voltear(PAR_BUENO[0]);
+    voltear(PAR_BUENO[1]);
     avanzar(450);
     expect(play.mock.calls).toEqual([["correct"]]);
   });
@@ -337,9 +347,57 @@ describe("Memoria — feedback de sonido, volteo y confeti (U5)", () => {
 
   it("el par encontrado queda dentro de un nodo de movimiento de feedback", () => {
     const { container } = render(<Viewer estado={createDefaultMemoria()} config={{}} />);
-    voltear(0);
-    voltear(1);
+    voltear(PAR_BUENO[0]);
+    voltear(PAR_BUENO[1]);
     avanzar(450);
     expect(container.querySelectorAll("[data-feedback-motion]").length).toBeGreaterThanOrEqual(12);
+  });
+});
+
+describe("Memoria — barajado con semilla (U7)", () => {
+  const conSemilla = (semilla: number) => ({ ...createDefaultMemoria(), ajustes: { semilla } });
+
+  it("con `ajustes.semilla` el mazo es el mismo aunque cambie el azar del navegador", () => {
+    render(<Viewer estado={conSemilla(2026)} config={{}} />);
+    const primero = ordenDelMazo(12);
+    cleanup();
+    vi.spyOn(Math, "random").mockImplementation(azarFijo(999)); // otro `Math.random`
+    render(<Viewer estado={conSemilla(2026)} config={{}} />);
+    expect(ordenDelMazo(12)).toEqual(primero);
+  });
+
+  it("otra semilla da otro mazo", () => {
+    render(<Viewer estado={conSemilla(1)} config={{}} />);
+    const a = ordenDelMazo(12);
+    cleanup();
+    render(<Viewer estado={conSemilla(2)} config={{}} />);
+    expect(ordenDelMazo(12)).not.toEqual(a);
+  });
+
+  it("«Reintentar» con semilla: otro mazo (cambia la `sal`) pero reproducible", () => {
+    const jugarYReintentar = () => {
+      const estado = conSemilla(77);
+      render(<Viewer estado={estado} config={{}} />);
+      const mazo1 = ordenDelMazo(12);
+      completar(mazo1, estado, new Set());
+      fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+      const mazo2 = ordenDelMazo(12);
+      cleanup();
+      return { mazo1, mazo2 };
+    };
+    const una = jugarYReintentar();
+    vi.spyOn(Math, "random").mockImplementation(azarFijo(31337)); // el azar del navegador no importa
+    const otra = jugarYReintentar();
+    expect(una.mazo2).not.toEqual(una.mazo1);
+    expect(otra).toEqual(una);
+  });
+
+  it("sin semilla sigue dependiendo de `Math.random` (orden distinto por alumno)", () => {
+    render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    const a = ordenDelMazo(12);
+    cleanup();
+    vi.spyOn(Math, "random").mockImplementation(azarFijo(4242));
+    render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    expect(ordenDelMazo(12)).not.toEqual(a);
   });
 });

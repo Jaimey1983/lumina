@@ -15,6 +15,7 @@ import {
 import { ClasificarActivity, ClasificarItem } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js';
+import { barajar } from '../_shared/barajar.js';
 
 // ── Draggable Item ────────────────────────────────────────────────────────────
 interface DraggableItemProps {
@@ -101,10 +102,6 @@ interface ClasificarViewerProps {
   onComplete?: (response: unknown) => void;
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
 export function ClasificarViewer({ actividad, onComplete }: ClasificarViewerProps) {
   const { configuracion, categorias, items } = actividad;
   const colores = configuracion.colorCategorias;
@@ -114,7 +111,7 @@ export function ClasificarViewer({ actividad, onComplete }: ClasificarViewerProp
     Object.fromEntries(items.map((i) => [i.id, null])),
   );
 
-  const [shuffledItems] = useState(() => shuffle(items));
+  const [shuffledItems] = useState(() => barajar(items));
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [verificado, setVerificado] = useState(false);
   const [estados, setEstados] = useState<Record<string, 'correcto' | 'incorrecto' | null>>({});

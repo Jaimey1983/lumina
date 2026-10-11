@@ -1,3 +1,5 @@
+import { barajar } from '../_shared/barajar.js'
+
 export const ANAGRAMA_MAX_PALABRAS = 20
 export const ANAGRAMA_MIN_PALABRAS = 1
 
@@ -11,7 +13,7 @@ export function mezclarLetras(palabra: string): string[] {
   let mezclado: string[]
   let intentos = 0
   do {
-    mezclado = [...letras].sort(() => Math.random() - 0.5)
+    mezclado = barajar(letras)
     intentos++
   } while (mezclado.join('') === letras.join('') && intentos < 10)
   return mezclado

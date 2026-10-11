@@ -1,3 +1,5 @@
+import { barajar } from '../_shared/barajar.js'
+
 export const PUZZLE_PALABRAS_MAX_ORACIONES = 20
 export const PUZZLE_PALABRAS_MIN_ORACIONES = 1
 
@@ -12,7 +14,7 @@ export function mezclarTokens(tokens: string[]): string[] {
   let mezclado: string[]
   let intentos = 0
   do {
-    mezclado = [...tokens].sort(() => Math.random() - 0.5)
+    mezclado = barajar(tokens)
     intentos++
   } while (mezclado.join(' ') === tokens.join(' ') && intentos < 10)
   return mezclado

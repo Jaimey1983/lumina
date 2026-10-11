@@ -7,6 +7,7 @@ import { cn } from '@lumina/ui/lib/utils';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { RenderLado } from './emparejar-shared.js';
 import { ladoTieneImagen } from './emparejar-config.js';
+import { barajar } from '../_shared/barajar.js';
 
 interface EmparejarViewerProps {
   actividad: MatchPairs;
@@ -30,7 +31,7 @@ export function EmparejarViewer({
   useEffect(() => {
     if (!actividad?.pares) return;
     const rightItems = actividad.pares.map((p) => ({ id: p.id, lado: p.derecha }));
-    setShuffledRight(rightItems.sort(() => Math.random() - 0.5));
+    setShuffledRight(barajar(rightItems));
     setMatches([]);
     setAnswered(false);
   }, [actividad?.pares, editorSyncKey]);

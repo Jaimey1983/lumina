@@ -4,9 +4,11 @@
  * Sale del viewer, donde vivía como `useState` + `setTimeout` en cadena. Aquí el tablero es
  * un reducer: voltear una carta es una acción, y resolver el par (esconderlo o darlo por
  * encontrado) es OTRA acción que el viewer dispara tras una espera cancelable. Sin DOM, sin
- * reloj y sin tocar `Math.random` salvo en `barajarCartas`.
+ * reloj; el único azar es el barajado (`barajar`, con semilla opcional).
  */
 import type { MemoriaActivity } from '@lumina/types/slide';
+
+import { barajar } from '../_shared/barajar.js';
 
 export interface Carta {
   readonly id: string;
@@ -29,18 +31,16 @@ export interface TableroMemoria {
 export type AccionTablero =
   | { readonly tipo: 'voltear'; readonly id: string }
   | { readonly tipo: 'resolver' }
-  | { readonly tipo: 'reiniciar'; readonly barajar: boolean };
+  | {
+      readonly tipo: 'reiniciar';
+      readonly barajar: boolean;
+      /** `ajustes.semilla` y el número de reinicio (ver `crearTablero`). */
+      readonly semilla?: number | null;
+      readonly sal?: number;
+    };
 
 /** Espera antes de dar por bueno un par que coincide. */
 export const RETARDO_PAR_ENCONTRADO_MS = 400;
-
-/**
- * Mezcla igual que siempre (`sort` con comparador aleatorio). Se conserva TAL CUAL en U4 para
- * no cambiar el orden con un azar fijo; U7 lo reemplaza por un barajado uniforme y sembrado.
- */
-export function barajarCartas<T>(arr: readonly T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
 
 export function cartasDePares(pares: MemoriaActivity['pares']): Carta[] {
   return [
@@ -49,9 +49,18 @@ export function cartasDePares(pares: MemoriaActivity['pares']): Carta[] {
   ];
 }
 
-export function crearTablero(pares: MemoriaActivity['pares'], barajar: boolean): TableroMemoria {
+/**
+ * Tablero nuevo. Con `semilla` el mazo es reproducible; `sal` (el número de reinicio) hace
+ * que cada «Reintentar» de una misma semilla dé otro orden, también reproducible.
+ */
+export function crearTablero(
+  pares: MemoriaActivity['pares'],
+  mezclar: boolean,
+  semilla?: number | null,
+  sal = 0,
+): TableroMemoria {
   const cartas = cartasDePares(pares);
-  return { cartas: barajar ? barajarCartas(cartas) : cartas, seleccion: [], resolviendo: null, intentos: 0 };
+  return { cartas: mezclar ? barajar(cartas, semilla, sal) : cartas, seleccion: [], resolviendo: null, intentos: 0 };
 }
 
 /** Ids de los pares encontrados, en el orden en que aparecen en el mazo. */
@@ -96,9 +105,14 @@ export function tableroReducer(t: TableroMemoria, a: AccionTablero): TableroMemo
     }
 
     case 'reiniciar': {
-      // Como antes: se vuelve a mezclar el mazo ACTUAL (no el original).
+      // Se vuelve a mezclar el mazo ACTUAL (no el original), como siempre.
       const limpias = t.cartas.map((c) => ({ ...c, volteada: false, encontrada: false }));
-      return { cartas: a.barajar ? barajarCartas(limpias) : limpias, seleccion: [], resolviendo: null, intentos: 0 };
+      return {
+        cartas: a.barajar ? barajar(limpias, a.semilla, a.sal) : limpias,
+        seleccion: [],
+        resolviendo: null,
+        intentos: 0,
+      };
     }
   }
 }
