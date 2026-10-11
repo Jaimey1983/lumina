@@ -382,3 +382,138 @@
   padding: 0.25rem;
   box-shadow: var(--lw-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.06));
 }
+
+/* ── T11: tipos de giro, profundidad y modo mazo ──────────────────────────── */
+
+/* Giro vertical: la tarjeta rota sobre el eje X. */
+.giroX .flipInnerFlipped {
+  transform: rotateX(180deg);
+}
+
+.giroX .flipFaceBack {
+  transform: rotateX(180deg);
+}
+
+/* Deslizar y fundido: sin 3D; cada cara se mueve o se desvanece por su cuenta. */
+.giroDeslizar .flipInner,
+.giroFundido .flipInner {
+  transform-style: flat;
+}
+
+.giroDeslizar .flipInnerFlipped,
+.giroFundido .flipInnerFlipped {
+  transform: none;
+}
+
+.giroDeslizar .flipFace,
+.giroFundido .flipFace {
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  transition:
+    transform var(--lw-motion-slow, 400ms) var(--lw-ease, ease),
+    opacity var(--lw-motion-slow, 400ms) var(--lw-ease, ease);
+}
+
+.giroDeslizar .flipFaceBack {
+  transform: translateX(100%);
+}
+
+.giroDeslizar .flipInnerFlipped .flipFaceBack {
+  transform: translateX(0);
+}
+
+.giroDeslizar .flipInnerFlipped .flipFace:not(.flipFaceBack) {
+  transform: translateX(-100%);
+}
+
+.giroFundido .flipFaceBack {
+  transform: none;
+  opacity: 0;
+}
+
+.giroFundido .flipInnerFlipped .flipFaceBack {
+  opacity: 1;
+}
+
+.giroFundido .flipInnerFlipped .flipFace:not(.flipFaceBack) {
+  opacity: 0;
+}
+
+/* Profundidad: perspectiva más cerrada y sombra de elevación. */
+.profundidad {
+  perspective: 600px;
+}
+
+.profundidad .flipFace {
+  box-shadow: var(--lw-elevation-3, 0 12px 28px rgb(15 23 42 / 0.22));
+}
+
+/* Mazo: una carta a la vez, con una sombra de la siguiente asomando detrás. */
+.fcMazo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: pan-y;
+}
+
+.fcMazoPila {
+  position: relative;
+  width: min(100%, 26rem);
+  height: 100%;
+  max-height: 100%;
+}
+
+.fcMazoDetras {
+  position: absolute;
+  inset: 0.5rem -0.35rem -0.5rem 0.35rem;
+  border-radius: var(--lw-radius-md, 0.5rem);
+  background: var(--lw-color-surface, rgb(15 23 42 / 0.08));
+  opacity: 0.7;
+}
+
+.fcMazoCarta {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.fcMazoCartaEntra {
+  animation: mazoEntraDerecha var(--lw-motion-base, 250ms) var(--lw-ease, ease-out);
+}
+
+.fcMazoCartaEntra[data-direccion='-1'] {
+  animation-name: mazoEntraIzquierda;
+}
+
+@keyframes mazoEntraDerecha {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes mazoEntraIzquierda {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flipInner,
+  .flipFace,
+  .fcMazoCartaEntra {
+    transition: none;
+    animation: none;
+  }
+}
