@@ -4,3 +4,12 @@ export { TabsWidgetComponentes as TabsProperties } from './tabs-properties.js';
 export { createDefaultTabsBlock } from './tabs-defaults.js';
 export { normalizeTabsWidget } from './tabs-config.js';
 export type { TabsWidget } from '@lumina/types/widget';
+export type {
+  TabsConfigT12,
+  TabsFicha,
+  TabsFichaT12,
+  TabsOpcionesT12,
+  TabsTransicion,
+  TabsVariante,
+  TabsWidgetT12,
+} from './tabs-t12.js';
