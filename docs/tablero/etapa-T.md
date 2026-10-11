@@ -233,7 +233,7 @@ Elegidos entre los 19 propuestos tras cruzarlos con `elements/`: **Callout/nota,
 
 #### T20 — Widget «QR de sesión»
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T19 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/qr-sesion/` y `elements/qr-sesion/` (nuevos), `catalogo.ts`, `index.ts` del kit, `widget-panel-catalog.ts`, registro del frontend, `packages/element-kit/package.json` (declarar `qrcode.react`, carga diferida). **NO** toca `lumina-backend` ni la ruta `join/[codigo]` del frontend.
 - **Entregable:** QR de una URL de unión de sesión (la ruta existente `app/(app)/join/[codigo]`: `<origen>/join/<codigo>`), con el código/PIN visible en texto grande debajo y botón copiar; el código se ingresa a mano o viene del contexto de la sesión en vivo si el reproductor ya lo expone (si no, solo manual y se deja dicho); tamaño y margen configurables; nivel de corrección de errores; contraste suficiente vía tokens; `alt`/etiqueta accesible. Antes de empezar, la ficha verifica qué código exponen hoy `live-sessions` y `autonomous-sessions` (que usa `pin`); si hay dudas de autorización (Regla 5), para y pide reescribir la ficha. Pruebas: render con y sin código, URL generada, copia al portapapeles. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:unit`.
