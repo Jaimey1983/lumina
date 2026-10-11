@@ -19,6 +19,13 @@ import {
   normalizeClickRevealWidget,
   resizeClickRevealElements,
 } from './click-reveal-config.js';
+import {
+  CLICK_REVEAL_DISPAROS,
+  leerOpcionesT13,
+  type ClickRevealConfigT13,
+  type ClickRevealOpcionesT13,
+} from './click-reveal-t13.js';
+import { Button } from '@lumina/ui/button';
 import { WidgetSectionTitle } from '@lumina/editor-shared/widget-properties-panel';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 
@@ -53,6 +60,14 @@ export function ClickRevealWidgetComponentes({
       configuracion: { ...w.configuracion, [key]: value },
     }));
   };
+
+  const opcionesT13 = leerOpcionesT13(block.configuracion);
+  // T13: opciones nuevas dentro de `configuracion` (el tipo de `@lumina/types` aún no las trae).
+  const updateT13 = (parche: ClickRevealOpcionesT13) =>
+    update((w) => ({
+      ...w,
+      configuracion: { ...w.configuracion, ...parche } as ClickRevealConfigT13,
+    }));
 
   const setNumeroElementos = (count: WidgetSlideCount) => {
     update((w) => {
@@ -99,6 +114,53 @@ export function ClickRevealWidgetComponentes({
             <SliderThumb />
           </Slider>
         </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Disparo y progreso"
+        defaultOpen={false}
+        storageKey="click-reveal.disparo"
+      >
+        <div className="space-y-1.5">
+          <Label className="text-xs">Al tocar una tarjeta</Label>
+          <div className="grid grid-cols-2 gap-1">
+            {CLICK_REVEAL_DISPAROS.map((d) => (
+              <Button
+                key={d.id}
+                type="button"
+                size="sm"
+                variant={opcionesT13.disparo === d.id ? 'primary' : 'outline'}
+                className="h-8 text-xs"
+                onClick={() => updateT13({ disparo: d.id })}
+              >
+                {d.label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {CLICK_REVEAL_DISPAROS.find((d) => d.id === opcionesT13.disparo)?.ayuda}
+          </p>
+        </div>
+        <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <Checkbox
+            checked={opcionesT13.mostrarContador}
+            onCheckedChange={(v) => updateT13({ mostrarContador: v === true })}
+          />
+          Contador «X de Y revelados»
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <Checkbox
+            checked={opcionesT13.bloquearHastaRevelar}
+            onCheckedChange={(v) => updateT13({ bloquearHastaRevelar: v === true })}
+          />
+          Pedir revelar todo para continuar
+        </label>
+        {opcionesT13.bloquearHastaRevelar ? (
+          <p className="text-[11px] text-muted-foreground">
+            Muestra un aviso hasta completar. Con interacciones, el widget emite «visitado» al
+            revelar todo: úsalo en una regla para habilitar «Siguiente».
+          </p>
+        ) : null}
       </CollapsibleSection>
 
       <div className="space-y-2">

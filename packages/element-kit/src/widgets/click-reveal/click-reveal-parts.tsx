@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Camera, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Camera, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import type {
   ClickRevealConfiguracion,
@@ -32,6 +32,17 @@ import {
   resolveClickRevealTriggerVisibilidad,
   toSlidePanelConfig,
 } from './click-reveal-config.js';
+import type { ClickRevealDisparo } from './click-reveal-t13.js';
+
+/** T13: estado de revelado que el visor le pasa al mazo de tarjetas (el editor no lo usa). */
+export interface ClickRevealRevelacion {
+  disparo: ClickRevealDisparo;
+  abiertos: ReadonlySet<number>;
+  reveladas: ReadonlySet<number>;
+  /** Marcar con ✓ las tarjetas ya reveladas. */
+  marcar: boolean;
+  contenidos: ReadonlyArray<{ encabezado?: string; cuerpo?: string } | undefined>;
+}
 
 function modalHiddenClass(efecto: ClickRevealConfiguracion['efectoApertura']) {
   switch (efecto) {
@@ -143,6 +154,11 @@ export function ClickRevealTriggerCard({
   onSelectText,
   onPatchTrigger,
   editable,
+  disparo = 'modal',
+  abierto = false,
+  revelado = false,
+  atenuada = false,
+  contenido,
 }: {
   trigger: ClickRevealTrigger;
   defaults: ClickRevealConfiguracion['defaultsTrigger'];
@@ -155,7 +171,33 @@ export function ClickRevealTriggerCard({
   onSelectText?: () => void;
   onPatchTrigger?: (patch: Partial<ClickRevealTrigger>) => void;
   editable?: boolean;
+  /** T13: cómo se revela (solo visor). `modal` = el de siempre. */
+  disparo?: ClickRevealDisparo;
+  /** T13: la tarjeta está abierta en el sitio (disparos distintos de `modal`). */
+  abierto?: boolean;
+  /** T13: ya se reveló al menos una vez (marca de progreso). */
+  revelado?: boolean;
+  /** T13: foco en otra tarjeta (disparo `spotlight`). */
+  atenuada?: boolean;
+  /** T13: texto que se revela en la tarjeta. */
+  contenido?: { encabezado?: string; cuerpo?: string };
 }) {
+  const enSitio = !editable && disparo !== 'modal';
+  // En el volteo el contenido se cambia a mitad del giro; con «reducir movimiento», al instante.
+  const [caraAbierta, setCaraAbierta] = useState(abierto);
+  useEffect(() => {
+    if (disparo !== 'flip') return;
+    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+    if (reducido) {
+      setCaraAbierta(abierto);
+      return;
+    }
+    const id = window.setTimeout(() => setCaraAbierta(abierto), 170);
+    return () => window.clearTimeout(id);
+  }, [abierto, disparo]);
+  const mostrarContenido =
+    enSitio && (disparo === 'flip' ? caraAbierta : disparo === 'blur' ? true : abierto);
+
   const vis = resolveClickRevealTriggerVisibilidad(defaults, trigger);
   const hasImage = !!trigger.imagen;
 
@@ -238,6 +280,26 @@ export function ClickRevealTriggerCard({
       {vis.mostrarEtiqueta ? (
         <span className={styles.revealTriggerLabel}>{trigger.etiqueta}</span>
       ) : null}
+      {mostrarContenido ? (
+        <span
+          className={cn(
+            styles.revealContenido,
+            disparo === 'blur' && !abierto && styles.revealContenidoBorroso,
+          )}
+        >
+          {contenido?.encabezado ? (
+            <strong className={styles.revealContenidoTitulo}>{contenido.encabezado}</strong>
+          ) : null}
+          {contenido?.cuerpo ? (
+            <span className={styles.revealContenidoCuerpo}>{contenido.cuerpo}</span>
+          ) : null}
+        </span>
+      ) : null}
+      {revelado && !editable ? (
+        <span className={styles.revealMarca} aria-hidden>
+          <Check className="size-3" />
+        </span>
+      ) : null}
     </>
   );
 
@@ -284,8 +346,12 @@ export function ClickRevealTriggerCard({
         styles.revealTriggerCard,
         isActive && styles.revealTriggerCardActive,
         isSelected && styles.revealTriggerCardSelected,
+        enSitio && disparo === 'flip' && (abierto ? styles.revealGiraAbre : styles.revealGiraCierra),
+        enSitio && disparo === 'spotlight' && abierto && styles.revealFoco,
+        enSitio && disparo === 'spotlight' && atenuada && styles.revealAtenuada,
       )}
       style={{ backgroundColor: trigger.colorFondo ?? '#2563EB' }}
+      aria-pressed={enSitio ? abierto : undefined}
       onClick={onClick}
     >
       {cardInner}
@@ -304,6 +370,7 @@ export function ClickRevealTriggerRow({
   onSelectTriggerText,
   onPatchTrigger,
   editable,
+  revelacion,
 }: {
   triggers: ClickRevealTrigger[];
   configuracion: ClickRevealConfiguracion;
@@ -315,6 +382,7 @@ export function ClickRevealTriggerRow({
   onSelectTriggerText?: (triggerId: string) => void;
   onPatchTrigger?: (triggerId: string, patch: Partial<ClickRevealTrigger>) => void;
   editable?: boolean;
+  revelacion?: ClickRevealRevelacion;
 }) {
   const [scrollOffset, setScrollOffset] = useState(0);
   const visibleCount = Math.min(triggers.length, 4);
@@ -369,6 +437,15 @@ export function ClickRevealTriggerRow({
               isTextSelected={isTextSelected}
               isImageSelected={isImageSelected}
               editable={editable}
+              disparo={revelacion?.disparo}
+              abierto={revelacion?.abiertos.has(globalIndex) ?? false}
+              revelado={revelacion?.marcar === true && revelacion.reveladas.has(globalIndex)}
+              atenuada={
+                revelacion?.disparo === 'spotlight' &&
+                revelacion.abiertos.size > 0 &&
+                !revelacion.abiertos.has(globalIndex)
+              }
+              contenido={revelacion?.contenidos[globalIndex]}
               onClick={() => {
                 onSelectIndex(globalIndex);
                 onSelectTrigger?.(trigger.id);
@@ -422,6 +499,7 @@ export function ClickRevealTriggerDeck({
   onSelectTriggerText,
   onPatchTrigger,
   editable,
+  revelacion,
 }: {
   triggers: ClickRevealTrigger[];
   configuracion: ClickRevealConfiguracion;
@@ -433,6 +511,7 @@ export function ClickRevealTriggerDeck({
   onSelectTriggerText?: (triggerId: string) => void;
   onPatchTrigger?: (triggerId: string, patch: Partial<ClickRevealTrigger>) => void;
   editable?: boolean;
+  revelacion?: ClickRevealRevelacion;
 }) {
   return (
     <div className={styles.revealTriggerDeck}>
@@ -447,6 +526,7 @@ export function ClickRevealTriggerDeck({
         onSelectTriggerImage={onSelectTriggerImage}
         onSelectTriggerText={onSelectTriggerText}
         onPatchTrigger={onPatchTrigger}
+        revelacion={revelacion}
       />
     </div>
   );
