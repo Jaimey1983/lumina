@@ -123,7 +123,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T7 — Ruleta: etiquetas, peso, «eliminar ganador» y sonido
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T4 y T5 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/ruleta/` (config, defaults, viewer, wheel, properties) y su spec de defaults. **NO** agrega librerías de gráficos.
 - **Entregable:** etiquetas multilínea sin truncar a 11 caracteres; peso/probabilidad por ítem; modo «sin repetición / eliminar ganador» con historial de tiradas; tick de sonido con WebAudio (respeta el booleano `sonido` actual); confeti simple al parar (sin dependencia nueva o con una declarada y diferida); normalización de JSON legado intacta. Paridad: con la config por defecto el giro y el ganador son los de antes. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
