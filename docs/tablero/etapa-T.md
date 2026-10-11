@@ -139,7 +139,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T9 — Progreso: variantes circular, semicírculo y pasos
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/progreso/` y `elements/progreso/`. **NO** cambia el cálculo en modo `slides`.
 - **Entregable:** variantes lineal / circular / semicírculo / pasos (stepper); conteo animado del valor; hitos con etiqueta; modo «objetivo» (meta vs actual); presets. Paridad: modo `slides` y `manual` dan el mismo porcentaje que antes. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
