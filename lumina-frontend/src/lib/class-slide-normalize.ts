@@ -38,6 +38,12 @@ import { normalizeTablaPeriodicaWidget } from '@lumina/element-kit/widgets/tabla
 import { normalizeMoleculaWidget } from '@lumina/element-kit/widgets/molecula/molecula-config';
 import { normalizeClickRevealWidget } from '@lumina/element-kit/widgets/click-reveal/click-reveal-config';
 import { normalizeTimelineWidget } from '@lumina/element-kit/widgets/timeline/timeline-config';
+import { normalizeCalloutWidget } from '@lumina/element-kit/widgets/callout/callout-defaults';
+import { normalizeGaleriaWidget } from '@lumina/element-kit/widgets/galeria/galeria-defaults';
+import { normalizeStepperWidget } from '@lumina/element-kit/widgets/stepper/stepper-defaults';
+import { normalizeSelloWidget } from '@lumina/element-kit/widgets/sello/sello-defaults';
+import { normalizeQrSesionWidget } from '@lumina/element-kit/widgets/qr-sesion/qr-sesion-defaults';
+import { esWidgetSoloRegistry, type WidgetTipoSoloRegistry } from '@lumina/types/widget';
 import { normalizeClipGroupBlock } from '@lumina/editor-shared/clip-path';
 import { normalizeBackground } from '@/lib/slide-background';
 import { normalizeGraficoBlock } from '@lumina/element-kit/blocks/grafico/grafico-defaults';
@@ -240,11 +246,27 @@ function conservarCamposComunes(original: Block, normalizado: Block): Block {
   return Object.keys(extra).length > 0 ? ({ ...normalizado, ...extra } as Block) : normalizado;
 }
 
+/**
+ * Widgets que solo viven en el registry (T16–T20, sin rama en el union `Block`): también se
+ * hidratan acá para que el JSON legado o incompleto no llegue crudo al canvas.
+ */
+const NORMALIZAR_SOLO_REGISTRY: Record<WidgetTipoSoloRegistry, (bloque: never) => unknown> = {
+  callout: normalizeCalloutWidget,
+  galeria: normalizeGaleriaWidget,
+  stepper: normalizeStepperWidget,
+  sello: normalizeSelloWidget,
+  'qr-sesion': normalizeQrSesionWidget,
+};
+
 function normalizeBlock(block: Block): Block {
   return conservarCamposComunes(block, normalizeBlockBase(block));
 }
 
 function normalizeBlockBase(block: Block): Block {
+  const tipoRegistry = (block as { tipo: string }).tipo;
+  if (esWidgetSoloRegistry(tipoRegistry)) {
+    return NORMALIZAR_SOLO_REGISTRY[tipoRegistry](block as never) as Block;
+  }
   if (block.tipo === 'texto') {
     return normalizeTextBlock(block);
   }

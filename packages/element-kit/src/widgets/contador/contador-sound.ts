@@ -3,15 +3,13 @@
  * Es un extra «de mejor esfuerzo»: sin WebAudio, o con el navegador bloqueando el audio hasta
  * que el alumno toque la página, el contador avisa solo en lo visual. Nunca lanza.
  */
-type ContextoAudio = typeof AudioContext;
+import { obtenerAudioContextCtor } from '../_audio/audio-context.js';
 
 let contexto: AudioContext | null = null;
 
 function obtenerContexto(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
   if (contexto && contexto.state !== 'closed') return contexto;
-  const Ctor: ContextoAudio | undefined =
-    window.AudioContext ?? (window as unknown as { webkitAudioContext?: ContextoAudio }).webkitAudioContext;
+  const Ctor = obtenerAudioContextCtor();
   if (!Ctor) return null;
   try {
     contexto = new Ctor();

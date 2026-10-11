@@ -72,7 +72,9 @@ import type {
   ContadorWidget,
   ProgresoWidget,
   RuletaWidget,
+  WidgetTipoSoloRegistry,
 } from '@lumina/types/widget';
+import { esWidgetSoloRegistry } from '@lumina/types/widget';
 import {
   HotspotOverlayProperties,
   HotspotProperties,
@@ -120,7 +122,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { PanelAnimaciones, type ApplyNow } from './properties-panel-shared';
 
 /** Título del panel de los widgets que solo viven en el registry (sin rama propia en `Block`). */
-const TITULO_PANEL_SOLO_REGISTRY: Record<string, string> = {
+const TITULO_PANEL_SOLO_REGISTRY: Record<WidgetTipoSoloRegistry, string> = {
   callout: 'Callout',
   galeria: 'Galería',
   stepper: 'Stepper',
@@ -625,10 +627,10 @@ export function renderWidgetProperties({
     }
   }
 
-  // `callout` (T16) y `galeria` (T17) no están en el union `Block` viejo (Regla 3): se despachan
-  // por el registry.
+  // Los widgets de `WIDGET_TIPOS_SOLO_REGISTRY` no están en el union `Block` viejo (Regla 3): se
+  // despachan por el registry.
   const tipoRegistry = (block as { tipo: string }).tipo;
-  if (Object.hasOwn(TITULO_PANEL_SOLO_REGISTRY, tipoRegistry)) {
+  if (esWidgetSoloRegistry(tipoRegistry)) {
     const def = elementRegistry.obtener<Block, Record<string, unknown>>(tipoRegistry);
     if (def?.Propiedades) {
       return (

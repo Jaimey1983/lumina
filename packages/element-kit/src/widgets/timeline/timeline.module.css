@@ -874,3 +874,11 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .tlNodeHalo,
+  .tlNodeDot,
+  .tlCard {
+    transition: none;
+  }
+}

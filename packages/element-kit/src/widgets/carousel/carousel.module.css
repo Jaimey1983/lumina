@@ -172,3 +172,11 @@
     height: 1.75rem;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .carouselPageTab,
+  .carouselInnerNav,
+  .carouselDot {
+    transition: none;
+  }
+}

@@ -25,6 +25,7 @@ import { TabsSlidePanelView } from '../tabs/tabs-slide-panel.js';
 import { PanelOnlyText } from '@lumina/editor-shared/panel-only-field';
 import { stopWidgetInnerPointer, useEscapeToClose } from '@lumina/editor-shared/widget-editor-utils';
 
+import { prefiereMovimientoReducido } from '../_motion/reduced-motion.js';
 import styles from './click-reveal.module.css';
 import {
   mergedClickRevealConfig,
@@ -187,8 +188,7 @@ export function ClickRevealTriggerCard({
   const [caraAbierta, setCaraAbierta] = useState(abierto);
   useEffect(() => {
     if (disparo !== 'flip') return;
-    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
-    if (reducido) {
+    if (prefiereMovimientoReducido()) {
       setCaraAbierta(abierto);
       return;
     }

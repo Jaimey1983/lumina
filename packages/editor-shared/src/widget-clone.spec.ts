@@ -135,4 +135,28 @@ describe('remintBlockChildIds', () => {
     expect(child.id).not.toBe('nested-tabs');
     expect(child.fichas[0]?.id).not.toBe('col-ficha-1');
   });
+  it('Stepper y Galería: regenera los id de pasos / imágenes y conserva el resto', () => {
+    const stepper = {
+      tipo: 'stepper',
+      x: 1,
+      y: 2,
+      ancho: 3,
+      alto: 4,
+      configuracion: { modo: 'uno', pasos: [{ id: 'p1', titulo: 'A', cuerpo: '' }, { id: 'p2', titulo: 'B', cuerpo: '' }] },
+    } as unknown as Block;
+    const galeria = {
+      tipo: 'galeria',
+      configuracion: { disposicion: 'rejilla', imagenes: [{ id: 'i1', url: 'u', alt: 'a' }] },
+    } as unknown as Block;
+
+    const s = remintBlockChildIds(stepper) as unknown as { configuracion: { modo: string; pasos: { id: string; titulo: string }[] } };
+    expect(s.configuracion.modo).toBe('uno');
+    expect(s.configuracion.pasos.map((p) => p.titulo)).toEqual(['A', 'B']);
+    expect(s.configuracion.pasos.map((p) => p.id)).not.toContain('p1');
+    expect(new Set(s.configuracion.pasos.map((p) => p.id)).size).toBe(2);
+
+    const g = remintBlockChildIds(galeria) as unknown as { configuracion: { imagenes: { id: string; url: string }[] } };
+    expect(g.configuracion.imagenes[0]?.id).not.toBe('i1');
+    expect(g.configuracion.imagenes[0]?.url).toBe('u');
+  });
 });

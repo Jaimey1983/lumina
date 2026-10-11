@@ -10,6 +10,7 @@ import type { RefObject } from 'react';
 
 import type { Block, Slide, SlideGuias } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
+import { esWidgetSoloRegistry } from '@lumina/types/widget';
 import {
   VIRTUAL_CANVAS_HEIGHT,
   VIRTUAL_CANVAS_WIDTH,
@@ -28,14 +29,13 @@ import {
 } from '@lumina/editor-shared/block-pos';
 export { getBlockPos, type BlockPos } from '@lumina/editor-shared/block-pos';
 
-/** Returns a new block with updated x, y (canvas % or activity `marco`). */
 /**
- * Widgets que nacen como `ElementDefinition` (callout T16, galería T17, stepper T18, sello T19, qr-sesion T20) y no están en el union
- * `Block` viejo (Regla 3): todos tienen `x/y/ancho/alto` en el bloque raíz.
+ * Widgets que nacen como `ElementDefinition` y no están en el union `Block` viejo (Regla 3,
+ * `WIDGET_TIPOS_SOLO_REGISTRY`): todos tienen `x/y/ancho/alto` en el bloque raíz.
  */
-const TIPOS_SOLO_REGISTRY: ReadonlySet<string> = new Set(['callout', 'galeria', 'stepper', 'sello', 'qr-sesion']);
-const esSoloRegistry = (block: Block) => TIPOS_SOLO_REGISTRY.has((block as { tipo: string }).tipo);
+const esSoloRegistry = (block: Block) => esWidgetSoloRegistry((block as { tipo: string }).tipo);
 
+/** Returns a new block with updated x, y (canvas % or activity `marco`). */
 export function withPosition(block: Block, x: number, y: number): Block {
   if (esSoloRegistry(block)) return { ...block, x, y } as Block;
   switch (block.tipo) {

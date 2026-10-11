@@ -22,11 +22,32 @@ function remintNestedBlock(block: Block): Block {
   return withChildren;
 }
 
+/** Listas con `id` propio dentro de `configuracion` de los widgets que solo viven en el registry. */
+const LISTA_CON_ID_SOLO_REGISTRY = { stepper: 'pasos', galeria: 'imagenes' } as const;
+
+function remintListaDeConfiguracion(block: Block, clave: string): Block {
+  const configuracion = (block as { configuracion?: Record<string, unknown> }).configuracion;
+  const lista = configuracion?.[clave];
+  if (!configuracion || !Array.isArray(lista)) return block;
+  return {
+    ...block,
+    configuracion: {
+      ...configuracion,
+      [clave]: lista.map((item) => ({ ...(item as object), id: remintId() })),
+    },
+  } as Block;
+}
+
 /**
  * Regenera IDs de hijos al duplicar/pegar. El `id` del bloque raíz lo asigna el caller.
  * Así fichas, tarjetas, overlays y nodos no comparten identidad con el original.
  */
 export function remintBlockChildIds(block: Block): Block {
+  // Stepper y Galería no están en el union `Block` viejo (Regla 3): sus pasos / imágenes llevan `id`.
+  const tipoRegistry = (block as { tipo: string }).tipo;
+  if (tipoRegistry === 'stepper' || tipoRegistry === 'galeria') {
+    return remintListaDeConfiguracion(block, LISTA_CON_ID_SOLO_REGISTRY[tipoRegistry]);
+  }
   switch (block.tipo) {
     case 'tabs':
       return { ...block, fichas: (block.fichas ?? []).map(remintSlideContent) };
