@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Autoplay from 'embla-carousel-autoplay';
+import Fade from 'embla-carousel-fade';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -43,13 +44,19 @@ interface CarouselNav {
   canNext: boolean;
 }
 
-/** Navegación sobre Embla: deslizamiento táctil, loop y autoplay. */
-function useEmblaNav(count: number, cfg: CarouselConfiguracionCompleta, enabled: boolean) {
+/** Navegación sobre Embla: deslizamiento (`slide`) o fundido (`fade`), loop y autoplay. */
+function useEmblaNav(count: number, cfg: CarouselConfiguracionCompleta) {
   const reducido = useWidgetReducedMotion();
-  const autoplay = enabled && cfg.autoplay && !reducido && count > 1;
+  const autoplay = cfg.autoplay && !reducido && count > 1;
+  const plugins = [
+    ...(cfg.transicion === 'fade' ? [Fade()] : []),
+    ...(autoplay
+      ? [Autoplay({ delay: cfg.autoplayMs, stopOnInteraction: true, stopOnMouseEnter: true })]
+      : []),
+  ];
   const [viewportRef, api] = useEmblaCarousel(
     { loop: cfg.loop && count > 1, startIndex: initialWidgetViewerPageIndex(cfg.slideActivo), duration: reducido ? 0 : 25 },
-    autoplay ? [Autoplay({ delay: cfg.autoplayMs, stopOnInteraction: true, stopOnMouseEnter: true })] : [],
+    plugins,
   );
   const [index, setIndex] = useState(initialWidgetViewerPageIndex(cfg.slideActivo));
   const [bordes, setBordes] = useState({ prev: false, next: count > 1 });
@@ -77,21 +84,6 @@ function useEmblaNav(count: number, cfg: CarouselConfiguracionCompleta, enabled:
     canNext: bordes.next,
   };
   return { viewportRef, nav };
-}
-
-/** Navegación sin deslizamiento: transición `fade` (un solo panel) y miniaturas. */
-function useSimpleNav(count: number, cfg: CarouselConfiguracionCompleta): CarouselNav {
-  const [index, setIndex] = useState(() => initialWidgetViewerPageIndex(cfg.slideActivo));
-  const safe = Math.min(index, Math.max(0, count - 1));
-  return {
-    index: safe,
-    count,
-    goTo: setIndex,
-    goPrev: () => setIndex((i) => Math.max(0, i - 1)),
-    goNext: () => setIndex((i) => Math.min(count - 1, i + 1)),
-    canPrev: safe > 0,
-    canNext: safe < count - 1,
-  };
 }
 
 interface CarouselFrameProps {
@@ -229,12 +221,12 @@ function CarouselFrame({ block, cfg, slides, nav, isThumbnail, renderStage }: Ca
   );
 }
 
-/** Transición `slide` (por defecto): todas las páginas en una banda que Embla desliza. */
+/** Todas las páginas en una banda que Embla desliza (`slide`) o funde (`fade`). */
 function CarouselEmblaViewer({ block }: { block: CarouselWidget }) {
   const widget = normalizeCarouselWidget(block);
   const cfg = mergedCarouselConfig(block);
   const slides = widget.slides.slice(0, cfg.numeroSlides);
-  const { viewportRef, nav } = useEmblaNav(slides.length, cfg, true);
+  const { viewportRef, nav } = useEmblaNav(slides.length, cfg);
   const panelConfig = toSlidePanelConfig(cfg);
 
   return (
@@ -277,15 +269,24 @@ function CarouselEmblaViewer({ block }: { block: CarouselWidget }) {
   );
 }
 
-/** Transición `fade` y miniatura: un solo panel visible a la vez. */
-function CarouselSimpleViewer({ block, isThumbnail }: { block: CarouselWidget; isThumbnail: boolean }) {
+/** Miniatura: la primera página, estática y sin controles. */
+function CarouselThumbnailViewer({ block }: { block: CarouselWidget }) {
   const widget = normalizeCarouselWidget(block);
   const cfg = mergedCarouselConfig(block);
   const slides = widget.slides.slice(0, cfg.numeroSlides);
-  const nav = useSimpleNav(slides.length, cfg);
-  const activa = slides[nav.index] ?? slides[0];
+  const index = Math.min(initialWidgetViewerPageIndex(cfg.slideActivo), Math.max(0, slides.length - 1));
+  const activa = slides[index] ?? slides[0];
   const panelConfig = toSlidePanelConfig(cfg);
   if (!activa) return null;
+  const nav: CarouselNav = {
+    index,
+    count: slides.length,
+    goTo: () => undefined,
+    goPrev: () => undefined,
+    goNext: () => undefined,
+    canPrev: false,
+    canNext: false,
+  };
 
   return (
     <CarouselFrame
@@ -293,19 +294,15 @@ function CarouselSimpleViewer({ block, isThumbnail }: { block: CarouselWidget; i
       cfg={cfg}
       slides={slides}
       nav={nav}
-      isThumbnail={isThumbnail}
-      renderStage={(flechas) => (
-        <div
-          className={cn(styles.carouselSimple, cfg.transicion === 'fade' && styles.carouselFadePanel)}
-          key={cfg.transicion === 'fade' ? activa.id : undefined}
-        >
+      isThumbnail
+      renderStage={() => (
+        <div className={styles.carouselStatic}>
           <TabsSlidePanelView
             slide={activa}
             configuracion={panelConfig}
-            isThumbnail={isThumbnail}
+            isThumbnail
             imageFallbackBackground={cfg.colorFondoContenedor}
           />
-          {flechas}
         </div>
       )}
     />
@@ -316,8 +313,5 @@ export function CarouselViewer({ block, isThumbnail = false }: CarouselViewerPro
   const widget = normalizeCarouselWidget(block);
   const cfg = mergedCarouselConfig(block);
   if (widget.slides.slice(0, cfg.numeroSlides).length === 0) return null;
-  if (isThumbnail || cfg.transicion === 'fade') {
-    return <CarouselSimpleViewer block={block} isThumbnail={isThumbnail} />;
-  }
-  return <CarouselEmblaViewer block={block} />;
+  return isThumbnail ? <CarouselThumbnailViewer block={block} /> : <CarouselEmblaViewer block={block} />;
 }

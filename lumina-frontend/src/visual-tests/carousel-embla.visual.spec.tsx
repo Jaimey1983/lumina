@@ -82,6 +82,26 @@ describe('Carousel sobre Embla (navegador real)', () => {
     await expect.poll(activa).toBe(1);
   });
 
+  test('transición fade: navega y la página que sale queda transparente', async () => {
+    await montar({ transicion: 'fade' });
+    await expect.poll(() => paginas().length).toBe(3);
+    expect(activa()).toBe(0);
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect.poll(activa).toBe(1);
+    // Con `fade` las páginas no se desplazan: la activa se ve y las demás se apagan.
+    await expect.poll(() => Number(getComputedStyle(paginas()[1]).opacity), { timeout: 4000 }).toBe(1);
+    await expect.poll(() => Number(getComputedStyle(paginas()[0]).opacity), { timeout: 4000 }).toBe(0);
+  });
+
+  test('transición fade: el loop da la vuelta en ambos sentidos', async () => {
+    await montar({ transicion: 'fade', loop: true });
+    await expect.poll(() => paginas().length).toBe(3);
+    await page.getByRole('button', { name: 'Anterior' }).click();
+    await expect.poll(activa).toBe(2);
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect.poll(activa).toBe(0);
+  });
+
   test('con autoplay avanza sola', async () => {
     // El autoplay se pausa con el puntero encima (stopOnMouseEnter): se aparta el ratón del
     // carrusel (el de la prueba anterior quedó sobre él) hasta una esquina libre.

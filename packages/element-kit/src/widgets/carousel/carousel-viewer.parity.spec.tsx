@@ -212,10 +212,23 @@ describe("CarouselViewer — opciones nuevas de T6", () => {
     expect(embla.llamadas.at(-1)?.plugins).toHaveLength(0);
   });
 
-  it("la transición fade no usa Embla (un solo panel, sin loop)", async () => {
-    const { container } = render(<CarouselViewer block={bloque({ transicion: "fade" })} />);
-    expect(embla.llamadas).toHaveLength(0);
+  it("la transición fade también va sobre Embla (plugin Fade) y navega igual", async () => {
+    const { container } = render(<CarouselViewer block={bloque({ transicion: "fade", loop: true })} />);
+    const ultima = embla.llamadas.at(-1);
+    expect(ultima?.plugins).toHaveLength(1);
+    expect(ultima?.opciones.loop).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
     await esperaPagina(container, 2);
+    fireEvent.click(screen.getByRole("button", { name: "Ir a Página 1" }));
+    await esperaPagina(container, 1);
+  });
+
+  it("fade + autoplay lleva los dos plugins; slide sin autoplay, ninguno", () => {
+    render(<CarouselViewer block={bloque({ transicion: "fade", autoplay: true })} />);
+    expect(embla.llamadas.at(-1)?.plugins).toHaveLength(2);
+    cleanup();
+    embla.llamadas.length = 0;
+    render(<CarouselViewer block={bloque({ transicion: "slide" })} />);
+    expect(embla.llamadas.at(-1)?.plugins).toHaveLength(0);
   });
 });

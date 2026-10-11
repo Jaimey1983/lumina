@@ -50,6 +50,7 @@
     "@lumina/types": "workspace:*",
     "@lumina/ui": "workspace:*",
     "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-fade": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "hast-util-to-html": "9.0.4",
     "highlight.js": "11.11.2",

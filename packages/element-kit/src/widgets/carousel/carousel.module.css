@@ -54,16 +54,18 @@
   flex-direction: column;
 }
 
-.carouselSimple > [data-widget-slide-panel] {
+/* Miniatura: una sola página, estática. */
+.carouselStatic {
   position: absolute;
   inset: 0;
 }
 
-/* Transición `slide` (Embla): viewport recortado, banda en fila, una página por celda. */
-.carouselSimple {
+.carouselStatic > [data-widget-slide-panel] {
   position: absolute;
   inset: 0;
 }
+
+/* Embla (`slide` y `fade`): viewport recortado, banda en fila, una página por celda. */
 
 .carouselViewport {
   position: absolute;
@@ -99,19 +101,6 @@
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   color: var(--lw-color-text-muted, #64748b);
-}
-
-.carouselFadePanel {
-  animation: carouselFadeIn 0.35s ease;
-}
-
-@keyframes carouselFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .carouselInnerNav {
