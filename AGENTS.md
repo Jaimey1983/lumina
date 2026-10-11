@@ -185,5 +185,6 @@ Las fichas viven en `docs/tablero/`, **una por etapa**. No se cargan de forma au
 | R (ayudas largas tras icono ⓘ) | `docs/tablero/etapa-R.md` | R1–R7 hecho; R8 en revisión |
 | S (secciones plegables en paneles del editor) | `docs/tablero/etapa-S.md` | S1–S12 en revisión |
 | T (sistema de diseño y rework de widgets) | `docs/tablero/etapa-T.md` | T0, T1, T2, T2b, T3, T4 y T5 en revisión; T6, T6b, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20 y T21 (auditoría) en revisión; **etapa T completa, sin pasos pendientes** |
+| U (actividades de nivel profesional) | `docs/tablero/etapa-U.md` | fichas U0–U13 redactadas; todas pendientes |
 
 Las etapas cerradas son historial: no se leen salvo que una ficha activa las cite.
