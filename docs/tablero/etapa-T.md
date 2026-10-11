@@ -209,7 +209,7 @@ Elegidos entre los 19 propuestos tras cruzarlos con `elements/`: **Callout/nota,
 
 #### T17 — Widget «Galería / lightbox»
 - **Operador:** Cursor
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T6 y T16 `hecho` (Embla declarado en el kit; archivos de registro libres).
 - **Alcance — PUEDE tocar:** `widgets/galeria/` y `elements/galeria/` (nuevos), `catalogo.ts`, `index.ts` del kit, `widget-panel-catalog.ts`, registro del frontend. **NO** modifica `imagen` ni `carousel`.
 - **Entregable:** conjunto de imágenes (reutiliza el selector de imágenes/assets existente) con rejilla / mosaico / tira por preset; lightbox con zoom, flechas y teclado sobre el `Dialog` de Radix con focus trap (declarado en el kit, DT5); navegación con Embla; texto alternativo obligatorio por imagen con aviso en el panel; carga diferida de imágenes. Pruebas: abrir/cerrar, Escape devuelve el foco, flechas, `alt` faltante marcado. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
