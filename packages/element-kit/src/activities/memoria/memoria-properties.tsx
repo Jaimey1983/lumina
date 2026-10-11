@@ -250,7 +250,7 @@ export function MemoriaProperties({ actividad, onChange }: MemoriaPropertiesProp
             type="button"
             onClick={addPar}
             disabled={pares.length >= MEMORIA_MAX_PARES}
-            className="rounded bg-[#2563EB] px-2 py-1 text-xs text-white disabled:opacity-40"
+            className="rounded bg-primary px-2 py-1 text-xs text-primary-foreground disabled:opacity-40"
           >
             + Añadir
           </button>

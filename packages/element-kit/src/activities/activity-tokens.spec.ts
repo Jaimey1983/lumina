@@ -48,7 +48,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "_classic/quiz/quiz-synced-viewer.tsx": 19,
   "_classic/respuesta-matematica.tsx": 22,
   "_classic/short-answer.tsx": 19,
-  "_classic/true-false.tsx": 49,
   "_classic/video-interactive.tsx": 43,
   "_classic/word-cloud.tsx": 19,
   "_shared/activity-drag-word.tsx": 12,
@@ -79,10 +78,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "historia-ramificada/historia-ramificada-editor.tsx": 2,
   "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
   "historia-ramificada/historia-ramificada-viewer.tsx": 1,
-  "memoria/memoria-defaults.ts": 2,
-  "memoria/memoria-properties.tsx": 2,
-  "memoria/memoria-shared.tsx": 1,
-  "memoria/memoria-viewer.tsx": 3,
   "puzzle-imagen/puzzle-imagen-viewer.tsx": 9,
   "puzzle-palabras/puzzle-palabras-properties.tsx": 1,
   "puzzle-palabras/puzzle-palabras-viewer.tsx": 2,
@@ -92,6 +87,22 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "topo/topo-properties.tsx": 1,
   "topo/topo-viewer.tsx": 1,
   "topo/topo.module.css": 4,
+};
+
+/**
+ * Archivos cuyo hex es DATO y no estilo: valores por defecto que se GUARDAN en el slide
+ * (el docente los elige y el viewer los lee tal cual) o que exige un `<input type=color>`.
+ * No se retiran en U9: se justifican acá. Mismo tope exacto que `EXENTOS`.
+ */
+const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly motivo: string }>> = {
+  "memoria/memoria-defaults.ts": {
+    hex: 2,
+    motivo: "colorDorso y colorSimboloDorso por defecto: se guardan en el slide",
+  },
+  "memoria/memoria-properties.tsx": {
+    hex: 1,
+    motivo: "valor inicial del <input type=color>, que solo acepta #rrggbb",
+  },
 };
 
 const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-zA-Z_-])/g;
@@ -194,25 +205,34 @@ describe("guarda ratchet contra hex en activities/ (U1)", () => {
     conteo.set(rel, contarHexSueltos(readFileSync(f, "utf-8")));
   }
 
-  it("la lista de exentos está ordenada y sin repetidos", () => {
-    const claves = Object.keys(EXENTOS);
-    expect(claves).toEqual([...claves].sort());
+  const TODOS: Readonly<Record<string, number>> = {
+    ...EXENTOS,
+    ...Object.fromEntries(Object.entries(EXENTOS_DE_DATO).map(([k, v]) => [k, v.hex])),
+  };
+
+  it("las listas de exentos están ordenadas y no se pisan", () => {
+    for (const lista of [EXENTOS, EXENTOS_DE_DATO]) {
+      const claves = Object.keys(lista);
+      expect(claves).toEqual([...claves].sort());
+    }
+    expect(Object.keys(EXENTOS).filter((k) => k in EXENTOS_DE_DATO)).toEqual([]);
+    for (const [k, v] of Object.entries(EXENTOS_DE_DATO)) expect(v.motivo.length, k).toBeGreaterThan(10);
   });
 
   it("ningún archivo NO exento trae hex suelto", () => {
-    const sucios = [...conteo].filter(([rel, n]) => n > 0 && !(rel in EXENTOS)).map(([rel, n]) => `${rel} (${n})`);
+    const sucios = [...conteo].filter(([rel, n]) => n > 0 && !(rel in TODOS)).map(([rel, n]) => `${rel} (${n})`);
     expect(sucios, "usar laVar()/var(--la-*) en vez de un hex; o, si es una actividad aún sin migrar, NO agregar hex nuevos").toEqual([]);
   });
 
   it("un exento no trae MÁS hex que los medidos", () => {
-    const crecidos = Object.entries(EXENTOS)
+    const crecidos = Object.entries(TODOS)
       .filter(([rel, max]) => (conteo.get(rel) ?? 0) > max)
       .map(([rel, max]) => `${rel}: ${conteo.get(rel)} > ${max}`);
     expect(crecidos).toEqual([]);
   });
 
   it("un exento no se queda en la lista si bajó o ya no tiene hex (actualizar el tope)", () => {
-    const obsoletos = Object.entries(EXENTOS)
+    const obsoletos = Object.entries(TODOS)
       .filter(([rel, max]) => (conteo.get(rel) ?? 0) < max)
       .map(([rel, max]) => `${rel}: tiene ${conteo.get(rel) ?? "no existe"}, la lista dice ${max}`);
     expect(obsoletos).toEqual([]);

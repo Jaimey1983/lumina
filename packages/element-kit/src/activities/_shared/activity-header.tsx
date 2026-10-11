@@ -17,12 +17,14 @@ export interface ActivityHeaderProps {
 }
 
 export function ActivityHeader({ sesion, mostrarPuntaje = false }: ActivityHeaderProps) {
-  const { config, progreso, vidas, tiempoRestante, puntaje, intento } = sesion;
+  const { config, progreso, vidas, tiempoRestante, transcurrido, puntaje, intento } = sesion;
+  const cronometro = config.cronometro && tiempoRestante === null;
   const hayProgreso = progreso.total > 0;
   const urgente = tiempoRestante !== null && tiempoRestante <= TIEMPO_URGENTE_SEG;
   const vacio =
     !hayProgreso &&
     tiempoRestante === null &&
+    !cronometro &&
     vidas === null &&
     !(mostrarPuntaje || puntaje > 0) &&
     !(config.intentosMax !== null && config.intentosMax > 1);
@@ -69,6 +71,16 @@ export function ActivityHeader({ sesion, mostrarPuntaje = false }: ActivityHeade
           aria-label={`Tiempo restante: ${formatearTiempo(tiempoRestante)}`}
         >
           {formatearTiempo(tiempoRestante)}
+        </span>
+      )}
+
+      {cronometro && (
+        <span
+          className={styles.chip}
+          role="timer"
+          aria-label={`Tiempo transcurrido: ${formatearTiempo(transcurrido)}`}
+        >
+          {formatearTiempo(transcurrido)}
         </span>
       )}
 

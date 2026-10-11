@@ -4,7 +4,7 @@
  * nota que `@lumina/scoring` le da a eso; los textos y la mecánica de «responder una vez»
  * se midieron con el viewer viejo (`useState` + `useEffect` sobre `editorSyncKey`).
  */
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import type { TrueFalse } from "@lumina/types/slide";
@@ -103,5 +103,75 @@ describe("Verdadero/Falso — paridad con el comportamiento anterior (U4)", () =
     expect(screen.getByText("El agua hierve a 100 °C al nivel del mar.")).toBeTruthy();
     expect(screen.getByText("V")).toBeTruthy();
     expect(screen.getByText("F")).toBeTruthy();
+  });
+});
+
+describe("Verdadero/Falso sobre el shell — retroalimentación y ajustes (U4)", () => {
+  const mensaje = () => screen.queryAllByRole("status").map((n) => n.textContent).filter(Boolean);
+
+  it("muestra el mensaje de acierto o de error, y la explicación solo si se pide", () => {
+    const a = afirmacion({ retroalimentacion: { explicacion: "A nivel del mar.", mostrarExplicacion: true } });
+    const { unmount } = render(<Viewer estado={a} config={{}} />);
+    fireEvent.click(boton("Falso"));
+    expect(screen.getByText(/La respuesta correcta es Verdadero\./)).toBeTruthy();
+    expect(screen.getByText("A nivel del mar.")).toBeTruthy();
+    unmount();
+    render(<Viewer estado={afirmacion({ retroalimentacion: { explicacion: "oculta" } })} config={{}} />);
+    fireEvent.click(boton("Verdadero"));
+    expect(screen.getByText("¡Correcto!")).toBeTruthy();
+    expect(screen.queryByText("oculta")).toBeNull();
+  });
+
+  it("usa los textos del docente cuando existen; `ajustes.mostrarSolucion` fuerza la explicación", () => {
+    const a = {
+      ...afirmacion({ retroalimentacion: { correcto: "¡Eso!", incorrecto: "No exactamente.", explicacion: "Detalle" } }),
+      ajustes: { mostrarSolucion: true },
+    };
+    const { unmount } = render(<Viewer estado={a} config={{}} />);
+    fireEvent.click(boton("Falso"));
+    expect(screen.getByText("No exactamente.")).toBeTruthy();
+    expect(screen.getByText("Detalle")).toBeTruthy();
+    unmount();
+    render(<Viewer estado={a} config={{}} />);
+    fireEvent.click(boton("Verdadero"));
+    expect(screen.getByText("¡Eso!")).toBeTruthy();
+  });
+
+  it("`ajustes.retroalimentacion = 'ninguna'` no muestra mensaje pero sí emite la respuesta", () => {
+    const onResponse = vi.fn();
+    render(<Viewer estado={{ ...afirmacion(), ajustes: { retroalimentacion: "ninguna" } }} config={{ onResponse }} />);
+    fireEvent.click(boton("Verdadero"));
+    expect(screen.queryByText("¡Correcto!")).toBeNull();
+    expect(onResponse.mock.calls).toEqual([[true]]);
+  });
+
+  it("al agotarse `ajustes.tiempoLimiteSeg` sin responder: avisa y bloquea los botones", () => {
+    vi.useFakeTimers();
+    try {
+      const onResponse = vi.fn();
+      render(<Viewer estado={{ ...afirmacion(), ajustes: { tiempoLimiteSeg: 3 } }} config={{ onResponse }} />);
+      expect(screen.getByRole("timer").textContent).toBe("0:03");
+      act(() => void vi.advanceTimersByTime(3000));
+      expect(screen.getByText("Se acabó el tiempo.")).toBeTruthy();
+      expect((boton("Verdadero") as HTMLButtonElement).disabled).toBe(true);
+      fireEvent.click(boton("Verdadero"));
+      expect(onResponse).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("un lector de pantalla recibe el mensaje (región `status`) tras responder", () => {
+    render(<Viewer estado={afirmacion()} config={{}} />);
+    expect(mensaje()).toEqual([]);
+    fireEvent.click(boton("Verdadero"));
+    expect(mensaje()).toContain("¡Correcto!");
+  });
+
+  it("la variante oscura sigue funcionando", () => {
+    const onResponse = vi.fn();
+    render(<TrueFalseViewer activity={afirmacion()} variant="dark" onResponse={onResponse} />);
+    fireEvent.click(boton("Falso"));
+    expect(onResponse.mock.calls).toEqual([[false]]);
   });
 });

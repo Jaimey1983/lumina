@@ -110,6 +110,15 @@ describe("ActivityShell — fases", () => {
     }
   });
 
+  it("`resultado=\"ninguno\"`: pasa a `resultado` sin diálogo, sin `inert`, y lo anuncia", async () => {
+    const { container } = montar({ resultado: "ninguno", evaluation: evaluacion([true], 5) });
+    await userEvent.click(screen.getByRole("button", { name: "terminar" }));
+    expect(screen.getByTestId("fase").textContent).toBe("resultado");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(container.querySelector("[inert]")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("¡Muy bien!. Nota 5.0. 1 de 1 correctas");
+  });
+
   it("`onFin` se llama una vez por corrida, con el motivo", async () => {
     const onFin = vi.fn();
     montar({ ajustes: ajustes({ intentos: 2 }), onFin, evaluation: evaluacion([true]) });
@@ -185,6 +194,17 @@ describe("ActivityHeader", () => {
     const antes = screen.getByRole("timer").className;
     rerender(<ActivityHeader sesion={{ ...h({ tiempoLimiteSeg: 75 }), tiempoRestante: 10 }} />);
     expect(screen.getByRole("timer").className).not.toBe(antes);
+  });
+
+  it("cronómetro ascendente: muestra el tiempo transcurrido; el límite lo reemplaza", () => {
+    const conCrono = crearSesionInicial(ajustes({}), { cronometro: true });
+    const { rerender } = render(<ActivityHeader sesion={{ ...conCrono, transcurrido: 75 }} />);
+    expect(screen.getByRole("timer").textContent).toBe("1:15");
+    expect(screen.getByRole("timer").getAttribute("aria-label")).toBe("Tiempo transcurrido: 1:15");
+    const conLimite = crearSesionInicial(ajustes({ tiempoLimiteSeg: 30 }), { cronometro: true });
+    rerender(<ActivityHeader sesion={{ ...conLimite, transcurrido: 5 }} />);
+    expect(screen.getAllByRole("timer")).toHaveLength(1);
+    expect(screen.getByRole("timer").getAttribute("aria-label")).toBe("Tiempo restante: 0:30");
   });
 
   it("vidas: etiqueta accesible con las que quedan", () => {

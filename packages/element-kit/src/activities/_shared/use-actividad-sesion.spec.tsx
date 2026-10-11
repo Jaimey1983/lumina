@@ -116,6 +116,20 @@ describe("tiempo", () => {
     const con = sesion({ tiempoLimiteSeg: 10 });
     for (const segundos of [0, -1, NaN]) expect(r(con, { tipo: "tick", segundos })).toBe(con);
   });
+  it("cronómetro ascendente: `transcurrido` avanza con `cronometro`, también sin límite, y se reinicia al reintentar", () => {
+    const base = sesion({ tiempoLimiteSeg: null, intentos: 2 }, { cronometro: true });
+    const s2 = aplicar(base, { tipo: "tick" }, { tipo: "tick", segundos: 4 });
+    expect(s2).toMatchObject({ transcurrido: 5, tiempoRestante: null, fase: "jugando" });
+    expect(r(sesion({ tiempoLimiteSeg: null }), { tipo: "tick" }).transcurrido).toBe(0); // sin `cronometro`
+    const fin = aplicar(s2, { tipo: "completar" });
+    expect(r(fin, { tipo: "tick" })).toBe(fin); // detenido al terminar
+    expect(r(fin, { tipo: "reintentar" }).transcurrido).toBe(0);
+  });
+  it("con límite Y cronómetro, ambos avanzan y el límite sigue terminando la corrida", () => {
+    const s = aplicar(sesion({ tiempoLimiteSeg: 2 }, { cronometro: true }), { tipo: "tick" });
+    expect(s).toMatchObject({ transcurrido: 1, tiempoRestante: 1 });
+    expect(aplicar(s, { tipo: "tick" })).toMatchObject({ transcurrido: 2, tiempoRestante: 0, motivoFin: "sin_tiempo" });
+  });
   it("`formatearTiempo` da m:ss y no baja de 0", () => {
     expect(formatearTiempo(75)).toBe("1:15");
     expect(formatearTiempo(9)).toBe("0:09");
@@ -245,7 +259,15 @@ describe("useActividadSesion", () => {
     expect(result.current.sesion.tiempoRestante).toBe(4);
   });
 
-  it("sin límite de tiempo no hay intervalo", () => {
+  it("con `cronometro` y sin límite hay intervalo, cuenta hacia arriba y se cancela al terminar", () => {
+    const { result } = renderHook(() => useActividadSesion(ajustes({ tiempoLimiteSeg: null }), { cronometro: true }));
+    act(() => void vi.advanceTimersByTime(3000));
+    expect(result.current.sesion.transcurrido).toBe(3);
+    act(() => result.current.completar());
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("sin límite de tiempo ni cronómetro no hay intervalo", () => {
     renderHook(() => useActividadSesion(ajustes({ tiempoLimiteSeg: null })));
     expect(vi.getTimerCount()).toBe(0);
   });

@@ -1,6 +1,7 @@
 'use client';
 
 import type { MemoriaActivity } from '@lumina/types/slide';
+import { laVar } from '../_shared/activity-tokens.js';
 import styles from './memoria.module.css';
 
 export type MemoriaLado = { texto?: string; imagen?: string };
@@ -11,7 +12,7 @@ export function simboloDorsoMemoria(config: MemoriaActivity['configuracion']): s
 }
 
 export function colorSimboloDorsoMemoria(config: MemoriaActivity['configuracion']): string {
-  return config.colorSimboloDorso ?? '#FFFFFF';
+  return config.colorSimboloDorso ?? laVar('color-superficie');
 }
 
 export function RenderMemoriaContenido({ contenido }: { contenido: MemoriaLado }) {

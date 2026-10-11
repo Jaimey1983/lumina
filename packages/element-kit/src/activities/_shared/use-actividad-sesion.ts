@@ -35,6 +35,8 @@ export interface ConfigSesion {
   readonly conIntro: boolean;
   /** Si es `true`, al terminar pasa por `revision` antes de `resultado`. */
   readonly conRevision: boolean;
+  /** Cronómetro ascendente (tiempo transcurrido), independiente del tiempo límite. */
+  readonly cronometro: boolean;
 }
 
 export interface SesionActividad {
@@ -46,6 +48,8 @@ export interface SesionActividad {
   readonly vidas: number | null;
   /** Segundos que quedan; `null` si no hay límite. */
   readonly tiempoRestante: number | null;
+  /** Segundos jugados en este intento; solo avanza con `config.cronometro`. */
+  readonly transcurrido: number;
   readonly progreso: { readonly actual: number; readonly total: number };
   /** Puntos de juego acumulados en este intento (decoración; NO es la nota). */
   readonly puntaje: number;
@@ -69,6 +73,8 @@ export interface OpcionesSesion {
   readonly conIntro?: boolean;
   /** Pasa por `revision` antes del resultado. Por defecto `false`. */
   readonly conRevision?: boolean;
+  /** Cuenta el tiempo transcurrido (cronómetro hacia arriba). Por defecto `false`. */
+  readonly cronometro?: boolean;
   /** Total de unidades de progreso (preguntas, pares…). Por defecto 0 = sin barra. */
   readonly total?: number;
 }
@@ -85,6 +91,7 @@ export function crearSesionInicial(
     costoPistaPct: ajustes.pistas.costoPct,
     conIntro: opciones.conIntro === true,
     conRevision: opciones.conRevision === true,
+    cronometro: opciones.cronometro === true,
   };
   return {
     config,
@@ -92,6 +99,7 @@ export function crearSesionInicial(
     intento: 1,
     vidas: config.vidasMax,
     tiempoRestante: config.tiempoMaxSeg,
+    transcurrido: 0,
     progreso: { actual: 0, total: Math.max(0, Math.floor(opciones.total ?? 0)) },
     puntaje: 0,
     pistasUsadas: 0,
@@ -121,11 +129,13 @@ export function actividadSesionReducer(s: SesionActividad, a: AccionSesion): Ses
       return s.fase === 'intro' ? { ...s, fase: 'jugando' } : s;
 
     case 'tick': {
-      if (s.fase !== 'jugando' || s.tiempoRestante === null) return s;
+      if (s.fase !== 'jugando' || (s.tiempoRestante === null && !s.config.cronometro)) return s;
       const paso = a.segundos ?? 1;
       if (!Number.isFinite(paso) || paso <= 0) return s;
-      const restante = Math.max(0, s.tiempoRestante - paso);
-      const conTiempo = { ...s, tiempoRestante: restante };
+      const conReloj = s.config.cronometro ? { ...s, transcurrido: s.transcurrido + paso } : s;
+      if (conReloj.tiempoRestante === null) return conReloj;
+      const restante = Math.max(0, conReloj.tiempoRestante - paso);
+      const conTiempo = { ...conReloj, tiempoRestante: restante };
       return restante === 0 ? terminar(conTiempo, 'sin_tiempo') : conTiempo;
     }
 
@@ -172,6 +182,7 @@ export function actividadSesionReducer(s: SesionActividad, a: AccionSesion): Ses
         intento: s.intento + 1,
         vidas: s.config.vidasMax,
         tiempoRestante: s.config.tiempoMaxSeg,
+        transcurrido: 0,
         progreso: { actual: 0, total: s.progreso.total },
         puntaje: 0,
         pistasUsadas: 0,
@@ -205,7 +216,8 @@ export function useActividadSesion(
     () => crearSesionInicial(ajustes, opciones),
   );
 
-  const corriendo = sesion.fase === 'jugando' && sesion.tiempoRestante !== null;
+  const corriendo =
+    sesion.fase === 'jugando' && (sesion.tiempoRestante !== null || sesion.config.cronometro);
   useEffect(() => {
     if (!corriendo) return undefined;
     const id = setInterval(() => dispatch({ tipo: 'tick' }), 1000);

@@ -189,3 +189,106 @@ describe("Memoria — paridad con el comportamiento anterior (U4)", () => {
 const GOLDEN_REINTENTO = {
   mazo: ["🐟", "🐰", "🐸", "Conejo", "Pez", "🐱", "Pájaro", "🐦", "Perro", "Rana", "🐶", "Gato"],
 };
+
+describe("Memoria sobre el shell — canal unificado y ajustes (U4)", () => {
+  function partidaPerfecta(config: Record<string, unknown>, estado = createDefaultMemoria()) {
+    render(<Viewer estado={estado} config={config} />);
+    const mazo = ordenDelMazo(12);
+    return { mazo, estado };
+  }
+
+  it("`onResponse` solo y `onComplete` solo (alias transitorio) emiten lo mismo", () => {
+    const porResponse = vi.fn();
+    const a = createDefaultMemoria();
+    let r = partidaPerfecta({ onResponse: porResponse }, a);
+    completar(r.mazo, a, new Set(emisiones(porResponse.mock.calls).flatMap((e) => e.pares)));
+    cleanup();
+    vi.spyOn(Math, "random").mockImplementation(azarFijo());
+    const porComplete = vi.fn();
+    r = partidaPerfecta({ onComplete: porComplete }, a);
+    completar(r.mazo, a, new Set(emisiones(porComplete.mock.calls).flatMap((e) => e.pares)));
+    expect(emisiones(porResponse.mock.calls)).toEqual(GOLDEN.perfecto);
+    expect(emisiones(porComplete.mock.calls)).toEqual(GOLDEN.perfecto);
+  });
+
+  it("si llegan los dos canales, gana `onResponse` y no se duplica la salida", () => {
+    const resp = vi.fn();
+    const comp = vi.fn();
+    const a = createDefaultMemoria();
+    const { mazo } = partidaPerfecta({ onResponse: resp, onComplete: comp }, a);
+    completar(mazo, a, new Set(emisiones(resp.mock.calls).flatMap((e) => e.pares)));
+    expect(comp).not.toHaveBeenCalled();
+    expect(emisiones(resp.mock.calls)).toEqual(GOLDEN.perfecto);
+  });
+
+  it("no emite el mismo borrador dos veces seguidas (antes se repetía en cada volteo)", () => {
+    const salida = vi.fn();
+    render(<Viewer estado={createDefaultMemoria()} config={{ onResponse: salida }} />);
+    voltear(0);
+    voltear(1); // par-5 (🐰/Conejo): coincide
+    avanzar(450);
+    voltear(2);
+    voltear(4); // no coincide
+    avanzar(1100);
+    voltear(2);
+    avanzar(10);
+    const borradores = salida.mock.calls.filter(([r]) => isActivityDraftResponse(r));
+    expect(borradores).toHaveLength(1);
+  });
+
+  it("el cronómetro se detiene al terminar y se reinicia con «Reintentar»", () => {
+    const a = createDefaultMemoria();
+    const { mazo } = partidaPerfecta({}, a);
+    completar(mazo, a, new Set());
+    const al = screen.getByRole("dialog");
+    expect(al).toBeTruthy();
+    const antes = screen.getAllByRole("timer")[0].textContent;
+    avanzar(30_000);
+    expect(screen.getAllByRole("timer")[0].textContent).toBe(antes);
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(screen.getByRole("timer").textContent).toBe("0:00");
+  });
+
+  it("al completar se abre la pantalla de resultados con la evaluación de @lumina/scoring", () => {
+    const a = createDefaultMemoria();
+    const { mazo } = partidaPerfecta({}, a);
+    completar(mazo, a, new Set());
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByText(/6 de 6 correctas \(100%\)/)).toBeTruthy();
+    expect(screen.getByText("5.0")).toBeTruthy();
+  });
+
+  it("el encabezado muestra el avance de pares", () => {
+    render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    expect(screen.getByRole("progressbar", { name: "Progreso" }).getAttribute("aria-valuemax")).toBe("6");
+    voltear(0);
+    voltear(1); // 🐰 / Conejo
+    avanzar(450);
+    expect(screen.getByRole("progressbar", { name: "Progreso" }).getAttribute("aria-valuenow")).toBe("1");
+  });
+
+  it("`ajustes.barajar = false` deja el mazo en orden (lados 1, luego lados 2)", () => {
+    const base = createDefaultMemoria();
+    const estado = { ...base, ajustes: { barajar: false } };
+    render(<Viewer estado={estado} config={{}} />);
+    expect(ordenDelMazo(12)).toEqual(["Gato", "Perro", "Pájaro", "Pez", "Conejo", "Rana", "🐱", "🐶", "🐦", "🐟", "🐰", "🐸"]);
+  });
+
+  it("`ajustes.intentos = 1` no ofrece «Reintentar»", () => {
+    const base = createDefaultMemoria();
+    const estado = { ...base, ajustes: { intentos: 1 } };
+    render(<Viewer estado={estado} config={{}} />);
+    const mazo = ordenDelMazo(12);
+    completar(mazo, estado, new Set());
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
+  });
+
+  it("desmontar mientras se resuelve un par no deja temporizadores colgando", () => {
+    const { unmount } = render(<Viewer estado={createDefaultMemoria()} config={{}} />);
+    voltear(0);
+    voltear(2);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});

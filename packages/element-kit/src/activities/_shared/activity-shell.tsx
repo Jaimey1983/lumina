@@ -53,6 +53,13 @@ export interface ActivityShellProps extends OpcionesSesion {
   /** Muestra el puntaje de juego en el encabezado aunque sea 0. */
   readonly mostrarPuntaje?: boolean;
   /**
+   * Qué pasa al llegar a `resultado`: `'dialogo'` (por defecto) abre `ActivityResultScreen`;
+   * `'ninguno'` deja la actividad mostrando su propio feedback en el lugar (p. ej.
+   * Verdadero/Falso). En ambos casos `sesion.fase` pasa a `resultado` y se anuncia a
+   * los lectores de pantalla.
+   */
+  readonly resultado?: 'dialogo' | 'ninguno';
+  /**
    * Se llama DESPUÉS de que el shell reinicia su sesión por «Reintentar»: la actividad
    * debe reiniciar su propio estado (cartas, respuestas…).
    */
@@ -71,13 +78,15 @@ export function ActivityShell({
   mostrarPuntaje,
   onReintentar,
   onFin,
+  resultado = 'dialogo',
   className,
   children,
   conIntro,
   conRevision,
+  cronometro,
   total,
 }: ActivityShellProps) {
-  const sesionHook = useActividadSesion(ajustes, { conIntro, conRevision, total });
+  const sesionHook = useActividadSesion(ajustes, { conIntro, conRevision, cronometro, total });
   const { sesion, iniciar, verResultado, reintentar } = sesionHook;
   const { fase, motivoFin, intento } = sesion;
 
@@ -106,7 +115,8 @@ export function ActivityShell({
     onReintentar?.();
   }
 
-  const modal = fase === 'resultado';
+  const terminada = fase === 'resultado';
+  const modal = terminada && resultado === 'dialogo';
 
   return (
     <div className={`${tokens.tokens} ${styles.raiz} ${className ?? ''}`} data-fase={fase}>
@@ -149,7 +159,7 @@ export function ActivityShell({
 
       {/* Anuncio para lectores de pantalla al terminar (el diálogo ya anuncia su título). */}
       <div role="status" aria-live="polite" className={styles.soloLector}>
-        {modal ? anuncioDeResultado(evaluation, motivoFin ?? 'completada', ajustes.mostrarNota) : ''}
+        {terminada ? anuncioDeResultado(evaluation, motivoFin ?? 'completada', ajustes.mostrarNota) : ''}
       </div>
     </div>
   );
