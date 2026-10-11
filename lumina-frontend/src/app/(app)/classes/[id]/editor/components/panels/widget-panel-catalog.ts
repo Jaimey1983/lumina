@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AppWindow,
+  Award,
   Atom,
   CheckSquare,
   Columns2,
@@ -177,6 +178,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: ListOrdered,
     rowClassName: 'hover:bg-emerald-50/90 dark:hover:bg-emerald-950/25',
     iconClassName: 'text-emerald-600 dark:text-emerald-400',
+  },
+  sello: {
+    group: 'lienzo',
+    Icon: Award,
+    rowClassName: 'hover:bg-yellow-50/90 dark:hover:bg-yellow-950/25',
+    iconClassName: 'text-yellow-600 dark:text-yellow-400',
   },
 };
 

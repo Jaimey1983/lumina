@@ -32,6 +32,7 @@ export const WIDGET_TIPOS = [
   'callout',
   'galeria',
   'stepper',
+  'sello',
 ] as const;
 
 export type WidgetTipo = (typeof WIDGET_TIPOS)[number];

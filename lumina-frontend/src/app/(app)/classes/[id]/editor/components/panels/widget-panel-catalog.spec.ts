@@ -35,6 +35,7 @@ describe('widget-panel-catalog', () => {
       'callout',
       'galeria',
       'stepper',
+      'sello',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

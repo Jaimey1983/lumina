@@ -932,9 +932,9 @@ function BlockNode({
     if (block.tipo === 'columnas') {
       return { renderInnerBlock: renderColumnInnerBlock };
     }
-    // `stepper` (T18) no está en el union `Block` viejo (Regla 3): necesita el canal de eventos
-    // para avisar `visitado` al completarse.
-    if ((block as { tipo: string }).tipo === 'stepper') {
+    // `stepper` (T18) y `sello` (T19) no están en el union `Block` viejo (Regla 3): necesitan el
+    // canal del motor (`emitir` / `estadoObjeto`) para avisar `visitado` y para saber si se ganó.
+    if (['stepper', 'sello'].includes((block as { tipo: string }).tipo)) {
       return { ...emisorConfig, isThumbnail };
     }
     if (block.tipo === 'ecuacion') {
