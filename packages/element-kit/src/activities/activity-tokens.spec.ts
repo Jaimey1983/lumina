@@ -1,0 +1,220 @@
+/**
+ * U1 — guarda de tokens de actividades (etapa U / DU4). Molde: `widgets/widget-tokens.spec.ts`.
+ *
+ * 1. Los tokens `--la-*` declarados en `_shared/activity-tokens.module.css` coinciden con
+ *    la tabla `ACTIVITY_TOKENS` (nombres y fallbacks) y los textos de estado son legibles.
+ * 2. Guarda **ratchet** contra colores hex sueltos en `activities/**`: un archivo no
+ *    exento no puede traer hex; un exento no puede traer MÁS de los que tiene hoy ni
+ *    quedarse en la lista cuando ya no tiene ninguno. Cada ficha U9 retira su archivo.
+ *
+ * «Hex suelto» = `#rgb`, `#rgba`, `#rrggbb` o `#rrggbbaa` en un `.css`/`.ts`/`.tsx` (incluye
+ * clases Tailwind arbitrarias `bg-[#2563EB]` y `style={{ color: '#fff' }}`), salvo como
+ * *fallback* dentro de `var(--x, #hex)` o al DECLARAR una variable propia (`--la-x: #hex`).
+ * Los comentarios no cuentan.
+ */
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+
+import { contrastRatio } from "@lumina/editor-shared/contrast";
+import {
+  ACTIVITY_ESTADOS,
+  ACTIVITY_SUAVE_PORCENTAJE,
+  ACTIVITY_TOKENS,
+  laVar,
+} from "./_shared/activity-tokens.js";
+
+const RAIZ = dirname(fileURLToPath(import.meta.url));
+const CSS_TOKENS = join(RAIZ, "_shared", "activity-tokens.module.css");
+
+/** Archivos que DEFINEN los tokens: son la fuente del hex, no consumidores. */
+const ARCHIVOS_DE_TOKENS: readonly string[] = ["_shared/activity-tokens.ts"];
+
+/**
+ * Archivos con hex suelto HOY y cuántos tienen (medido en U1). Se achica archivo por archivo
+ * en U9a–U9d; no se agrega nada. Orden alfabético.
+ */
+const EXENTOS: Readonly<Record<string, number>> = {
+  "_classic/drag-drop.tsx": 40,
+  "_classic/fill-blanks.tsx": 19,
+  "_classic/live-poll.tsx": 37,
+  "_classic/order-steps.tsx": 28,
+  "_classic/quiz-multiple.tsx": 18,
+  "_classic/quiz/quiz-multiple-editor.tsx": 27,
+  "_classic/quiz/quiz-multiple-viewer.tsx": 8,
+  "_classic/quiz/quiz-option-layouts.tsx": 73,
+  "_classic/quiz/quiz-synced-panel.tsx": 17,
+  "_classic/quiz/quiz-synced-viewer.tsx": 19,
+  "_classic/respuesta-matematica.tsx": 22,
+  "_classic/short-answer.tsx": 19,
+  "_classic/true-false.tsx": 49,
+  "_classic/video-interactive.tsx": 43,
+  "_classic/word-cloud.tsx": 19,
+  "_shared/activity-drag-word.tsx": 12,
+  "_shared/activity-result-overlay.tsx": 1,
+  "abrir-caja/abrir-caja-config.ts": 1,
+  "abrir-caja/abrir-caja-defaults.ts": 1,
+  "abrir-caja/abrir-caja-properties.tsx": 1,
+  "abrir-caja/abrir-caja-viewer.tsx": 3,
+  "abrir-caja/abrir-caja.module.css": 1,
+  "ahorcado/ahorcado-figure.tsx": 17,
+  "ahorcado/ahorcado.module.css": 40,
+  "anagrama/anagrama-properties.tsx": 1,
+  "anagrama/anagrama-viewer.tsx": 1,
+  "chemistry/chemistry-activities.tsx": 4,
+  "clasificar/clasificar-defaults.ts": 4,
+  "clasificar/clasificar-properties.tsx": 2,
+  "clasificar/clasificar-viewer.tsx": 5,
+  "crucigrama/crucigrama-defaults.ts": 2,
+  "crucigrama/crucigrama-editor.tsx": 3,
+  "crucigrama/crucigrama-properties.tsx": 1,
+  "crucigrama/crucigrama-viewer.tsx": 9,
+  "emparejar/emparejar-viewer.tsx": 27,
+  "globos/globos-config.ts": 8,
+  "globos/globos-defaults.ts": 6,
+  "globos/globos-properties.tsx": 2,
+  "globos/globos.module.css": 1,
+  "historia-ramificada/historia-ramificada-config.ts": 5,
+  "historia-ramificada/historia-ramificada-editor.tsx": 2,
+  "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
+  "historia-ramificada/historia-ramificada-viewer.tsx": 1,
+  "memoria/memoria-defaults.ts": 2,
+  "memoria/memoria-properties.tsx": 2,
+  "memoria/memoria-shared.tsx": 1,
+  "memoria/memoria-viewer.tsx": 3,
+  "puzzle-imagen/puzzle-imagen-viewer.tsx": 9,
+  "puzzle-palabras/puzzle-palabras-properties.tsx": 1,
+  "puzzle-palabras/puzzle-palabras-viewer.tsx": 2,
+  "sopa-letras/sopa-letras-properties.tsx": 1,
+  "sopa-letras/sopa-letras-viewer.tsx": 13,
+  "topo/topo-editor.tsx": 1,
+  "topo/topo-properties.tsx": 1,
+  "topo/topo-viewer.tsx": 1,
+  "topo/topo.module.css": 4,
+};
+
+const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-zA-Z_-])/g;
+
+function sinComentarios(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
+/** Cantidad de hex sueltos en un archivo (reglas del encabezado). */
+export function contarHexSueltos(src: string): number {
+  const limpio = sinComentarios(src);
+  let n = 0;
+  for (const m of limpio.matchAll(HEX)) {
+    const k = m.index ?? 0;
+    const antes = limpio.slice(Math.max(0, limpio.lastIndexOf("\n", k) + 1), k);
+    // fallback dentro de un `var(--x, #hex)` aún sin cerrar
+    if (/var\([^()]*,\s*[^()]*$/.test(antes)) continue;
+    // declaración de variable propia: `--nombre: #hex`
+    if (/(^|[\s;{])--[\w-]+\s*:\s*[^;]*$/.test(antes)) continue;
+    n += 1;
+  }
+  return n;
+}
+
+function archivos(dir: string): string[] {
+  const salida: string[] = [];
+  for (const nombre of readdirSync(dir)) {
+    const ruta = join(dir, nombre);
+    if (statSync(ruta).isDirectory()) salida.push(...archivos(ruta));
+    else if (/\.(css|tsx?)$/.test(nombre) && !/\.(spec|test)\.tsx?$/.test(nombre)) salida.push(ruta);
+  }
+  return salida.sort();
+}
+
+const REL = (f: string) => relative(RAIZ, f).split("\\").join("/");
+
+describe("tokens --la-* (U1)", () => {
+  const css = readFileSync(CSS_TOKENS, "utf-8");
+
+  it("cada token de la tabla está declarado en el CSS y viceversa", () => {
+    const declarados = new Set([...css.matchAll(/^\s*--la-([\w-]+)\s*:/gm)].map((m) => m[1]));
+    const esperados = new Set<string>(Object.keys(ACTIVITY_TOKENS));
+    for (const e of ACTIVITY_ESTADOS) esperados.add(`color-${e}-suave`);
+    expect([...declarados].sort()).toEqual([...esperados].sort());
+  });
+
+  it("el fallback del CSS coincide con la tabla (color pleno y neutros)", () => {
+    for (const [nombre, spec] of Object.entries(ACTIVITY_TOKENS)) {
+      const decl = new RegExp(`--la-${nombre}\\s*:\\s*([^;]+);`).exec(css)?.[1].trim();
+      expect(decl, nombre).toBeDefined();
+      const esperado = spec.tema ? `var(${spec.tema}, ${spec.fallback})` : spec.fallback;
+      expect(decl, nombre).toBe(esperado);
+    }
+  });
+
+  it("el tinte suave usa el mismo porcentaje que `laVar`", () => {
+    for (const e of ACTIVITY_ESTADOS) {
+      const decl = new RegExp(`--la-color-${e}-suave\\s*:\\s*([^;]+);`).exec(css)?.[1];
+      expect(decl, e).toContain(`${ACTIVITY_SUAVE_PORCENTAJE[e]}%`);
+      expect(decl, e).toContain(`var(--la-color-${e})`);
+    }
+  });
+
+  it("`laVar` arma var(--la-x, fallback)", () => {
+    expect(laVar("color-correcto")).toBe("var(--la-color-correcto, #16a34a)");
+    expect(laVar("radio-md")).toBe("var(--la-radio-md, 0.5rem)");
+    expect(laVar("color-pista-suave")).toContain("var(--la-color-pista-suave, color-mix(");
+  });
+
+  it("el texto de cada estado se lee sobre blanco (WCAG AA, ≥ 4.5:1)", () => {
+    for (const e of ACTIVITY_ESTADOS) {
+      const texto = ACTIVITY_TOKENS[`color-${e}-texto`].fallback;
+      expect(contrastRatio(texto, "#ffffff"), e).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(contrastRatio(ACTIVITY_TOKENS["color-texto"].fallback, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("contarHexSueltos", () => {
+  it("cuenta hex en strings, estilos y clases arbitrarias", () => {
+    expect(contarHexSueltos(`<div className="bg-[#2563EB] text-[#fff]" style={{ color: '#16a34a' }} />`)).toBe(3);
+  });
+  it("no cuenta fallbacks de var(), declaraciones de variable ni comentarios", () => {
+    expect(contarHexSueltos("a { color: var(--lw-color-success, #16a34a); }")).toBe(0);
+    expect(contarHexSueltos(".x { --la-borde: #e5e7eb; }")).toBe(0);
+    expect(contarHexSueltos("// #2563EB\n/* #fff */\nconst a = 1;")).toBe(0);
+    expect(contarHexSueltos("a { color: #fff; background: var(--x, #000); }")).toBe(1);
+  });
+  it("no confunde anclas ni ids con colores", () => {
+    expect(contarHexSueltos(`<a href="#main-content">`)).toBe(0);
+    expect(contarHexSueltos("const url = 'https://x.dev/#abcdefg';")).toBe(0);
+  });
+});
+
+describe("guarda ratchet contra hex en activities/ (U1)", () => {
+  const conteo = new Map<string, number>();
+  for (const f of archivos(RAIZ)) {
+    const rel = REL(f);
+    if (ARCHIVOS_DE_TOKENS.includes(rel)) continue;
+    conteo.set(rel, contarHexSueltos(readFileSync(f, "utf-8")));
+  }
+
+  it("la lista de exentos está ordenada y sin repetidos", () => {
+    const claves = Object.keys(EXENTOS);
+    expect(claves).toEqual([...claves].sort());
+  });
+
+  it("ningún archivo NO exento trae hex suelto", () => {
+    const sucios = [...conteo].filter(([rel, n]) => n > 0 && !(rel in EXENTOS)).map(([rel, n]) => `${rel} (${n})`);
+    expect(sucios, "usar laVar()/var(--la-*) en vez de un hex; o, si es una actividad aún sin migrar, NO agregar hex nuevos").toEqual([]);
+  });
+
+  it("un exento no trae MÁS hex que los medidos", () => {
+    const crecidos = Object.entries(EXENTOS)
+      .filter(([rel, max]) => (conteo.get(rel) ?? 0) > max)
+      .map(([rel, max]) => `${rel}: ${conteo.get(rel)} > ${max}`);
+    expect(crecidos).toEqual([]);
+  });
+
+  it("un exento no se queda en la lista si bajó o ya no tiene hex (actualizar el tope)", () => {
+    const obsoletos = Object.entries(EXENTOS)
+      .filter(([rel, max]) => (conteo.get(rel) ?? 0) < max)
+      .map(([rel, max]) => `${rel}: tiene ${conteo.get(rel) ?? "no existe"}, la lista dice ${max}`);
+    expect(obsoletos).toEqual([]);
+  });
+});

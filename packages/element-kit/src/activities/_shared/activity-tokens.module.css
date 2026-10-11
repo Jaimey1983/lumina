@@ -1,0 +1,49 @@
+/*
+ * U1 — tokens de estado de las actividades (`--la-*`, etapa U / DU4).
+ *
+ * Es el ÚNICO lugar donde una actividad migrada obtiene sus colores de estado:
+ * acierto, error, pista, selección y bloqueo, más superficies neutras, radios y
+ * elevaciones. Los colores de marca salen del tema del curso (`--lw-*`, ver
+ * `editor-shared/use-widget-theme`); el hex solo vive como *fallback* dentro de
+ * `var(--lw-…, <fallback>)`, así que una actividad fuera de un contenedor
+ * temático se ve igual que antes.
+ *
+ * `ActivityShell` (U3) aplica `.tokens` en su raíz. Los hex de abajo deben coincidir
+ * con `ACTIVITY_TOKENS` en `activity-tokens.ts`; un spec lo hace cumplir.
+ */
+.tokens {
+  /* Estados — color pleno, tinte suave y texto legible sobre el tinte */
+  --la-color-correcto: var(--lw-color-success, #16a34a);
+  --la-color-correcto-suave: color-mix(in srgb, var(--la-color-correcto) 14%, transparent);
+  --la-color-correcto-texto: #166534;
+
+  --la-color-incorrecto: var(--lw-color-danger, #dc2626);
+  --la-color-incorrecto-suave: color-mix(in srgb, var(--la-color-incorrecto) 12%, transparent);
+  --la-color-incorrecto-texto: #991b1b;
+
+  --la-color-pista: var(--lw-color-warning, #d97706);
+  --la-color-pista-suave: color-mix(in srgb, var(--la-color-pista) 16%, transparent);
+  --la-color-pista-texto: #92400e;
+
+  --la-color-seleccionado: var(--lw-color-primary, #2563eb);
+  --la-color-seleccionado-suave: color-mix(in srgb, var(--la-color-seleccionado) 12%, transparent);
+  --la-color-seleccionado-texto: #1e40af;
+
+  --la-color-bloqueado: #9ca3af;
+  --la-color-bloqueado-suave: color-mix(in srgb, var(--la-color-bloqueado) 18%, transparent);
+  --la-color-bloqueado-texto: #4b5563;
+
+  /* Neutros */
+  --la-color-superficie: #ffffff;
+  --la-color-texto: #1f2937;
+  --la-color-texto-suave: #6b7280;
+  --la-color-borde: #e5e7eb;
+
+  /* Forma y relieve */
+  --la-radio-sm: 0.375rem;
+  --la-radio-md: 0.5rem;
+  --la-radio-lg: 0.75rem;
+  --la-radio-xl: 1rem;
+  --la-elevacion-1: 0 1px 2px rgb(15 23 42 / 0.08);
+  --la-elevacion-2: 0 8px 24px rgb(15 23 42 / 0.16);
+}
