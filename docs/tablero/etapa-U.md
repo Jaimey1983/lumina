@@ -51,7 +51,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U0 — Línea base visual de las actividades y matriz de auditoría
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** ninguna.
 - **Alcance — PUEDE tocar:** `lumina-frontend/src/visual-tests/` (specs y helper de fixtures nuevos, sus imágenes de referencia) y un archivo `docs/tablero/etapa-U-matriz.md` con la matriz de auditoría. **NO** toca `packages/` ni ningún CSS/TSX de actividades.
 - **Entregable:** (1) un snapshot del `Viewer` real del registry por cada actividad del kit (~26) en estado inicial, y para las que tienen fase de resultado, uno del resultado (con respuesta fija, sin animaciones, sin `Math.random`: fijar semilla/mock del azar en el fixture); referencias solo `chromium-linux`, como `widgets-base`. (2) La matriz, una fila por actividad: prop (`activity`/`actividad`), callback (`onResponse`/`onComplete`), ubicación de config (plana/`configuracion`), hex (conteo exacto por archivo), `aria-*`, `KeyboardSensor`, `setTimeout`, `Math.random`, uso de `ActivityResultOverlay`/`ActivityTimer`/`ActivityLives`, `useSound`, líneas del viewer. Los números de esta ficha raíz se **re-miden** y se corrigen en la matriz. Verificación: `pnpm --filter lumina-frontend test:visual` verde dos corridas seguidas.
