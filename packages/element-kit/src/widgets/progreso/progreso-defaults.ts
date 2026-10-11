@@ -1,6 +1,11 @@
 import type { BlockMarco } from '@lumina/types/slide';
 import { BLOCK_FALLBACKS } from '@lumina/types/slide';
-import type { ProgresoModo, ProgresoWidget } from '@lumina/types/widget';
+import type {
+  ProgresoHito,
+  ProgresoModo,
+  ProgresoVariante,
+  ProgresoWidget,
+} from '@lumina/types/widget';
 
 export const DEFAULT_PROGRESO_MODO: ProgresoModo = 'slides';
 export const DEFAULT_PROGRESO_PORCENTAJE = 45;
@@ -9,31 +14,15 @@ export const DEFAULT_PROGRESO_FONDO = '#e9ecef';
 export const DEFAULT_PROGRESO_TEXTO = '#ffffff';
 
 /**
- * Opciones de T9 que aún no están en `ProgresoWidget` de `@lumina/types` (fuera del alcance de
- * esa ficha). Se leen del JSON guardado con estos tipos; subirlas a `@lumina/types` queda como
- * seguimiento.
+ * Opciones de T9 (variantes, hitos, modo objetivo): viven en `ProgresoWidget` de `@lumina/types`;
+ * estos alias conservan los nombres que ya usaba el kit.
  */
-export type ProgresoVariante = 'lineal' | 'circular' | 'semicirculo' | 'pasos';
-
-export interface ProgresoHito {
-  /** Posición del hito, 0–100. */
-  valor: number;
-  etiqueta: string;
-}
-
-export interface ProgresoT9 {
-  variante?: ProgresoVariante;
-  hitos?: ProgresoHito[];
-  /** Casillas de la variante `pasos` en modo manual (en modo diapositiva son las diapositivas). */
-  numeroPasos?: number;
-  /** Modo objetivo (solo con `modo: 'manual'`): el porcentaje sale de `valorActual / meta`. */
-  modoObjetivo?: boolean;
-  valorActual?: number;
-  meta?: number;
-  unidad?: string;
-}
-
-export type ProgresoWidgetT9 = ProgresoWidget & ProgresoT9;
+export type { ProgresoHito, ProgresoVariante };
+export type ProgresoT9 = Pick<
+  ProgresoWidget,
+  'variante' | 'hitos' | 'numeroPasos' | 'modoObjetivo' | 'valorActual' | 'meta' | 'unidad'
+>;
+export type ProgresoWidgetT9 = ProgresoWidget;
 
 export const PROGRESO_VARIANTES: { id: ProgresoVariante; label: string }[] = [
   { id: 'lineal', label: 'Lineal' },
@@ -74,7 +63,7 @@ function clampPercent(value: unknown, fallback: number): number {
 }
 
 export function normalizeProgresoWidget(rawBlock: ProgresoWidget): ProgresoWidget {
-  const block = rawBlock as ProgresoWidgetT9;
+  const block = rawBlock;
   const modo = VALID_MODOS.has(block.modo) ? block.modo : DEFAULT_PROGRESO_MODO;
   return {
     tipo: 'progreso',

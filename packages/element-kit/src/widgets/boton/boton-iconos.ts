@@ -21,6 +21,7 @@ import {
   Trophy,
   type LucideIcon,
 } from 'lucide-react';
+import type { BotonIconoId } from '@lumina/types/widget';
 
 /**
  * Iconos que se pueden poner en un Botón (T8). Lista cerrada y corta a propósito: importar
@@ -47,9 +48,9 @@ export const BOTON_ICONOS = {
   trofeo: { label: 'Trofeo', Icon: Trophy },
   bandera: { label: 'Bandera', Icon: Flag },
   destellos: { label: 'Destellos', Icon: Sparkles },
-} as const satisfies Record<string, { label: string; Icon: LucideIcon }>;
+} as const satisfies Record<BotonIconoId, { label: string; Icon: LucideIcon }>;
 
-export type BotonIconoId = keyof typeof BOTON_ICONOS;
+export type { BotonIconoId };
 
 export function esIconoValido(id: unknown): id is BotonIconoId {
   return typeof id === 'string' && Object.prototype.hasOwnProperty.call(BOTON_ICONOS, id);

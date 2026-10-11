@@ -58,7 +58,7 @@ export interface MergedContadorConfig {
 }
 
 export function mergedContadorConfig(block: ContadorWidget): MergedContadorConfig {
-  const w = normalizeContadorWidget(block) as ContadorWidgetT10;
+  const w = normalizeContadorWidget(block);
   return {
     modo: w.modo ?? DEFAULT_CONTADOR_MODO,
     etiqueta: w.etiqueta ?? '',

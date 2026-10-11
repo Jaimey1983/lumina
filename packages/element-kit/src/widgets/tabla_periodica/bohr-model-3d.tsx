@@ -30,6 +30,7 @@ import {
   puntoEnOrbita,
   radioNucleo,
 } from './bohr-geometry.js';
+import { prefiereMovimientoReducido } from '../_motion/reduced-motion.js';
 import styles from './tabla-periodica.module.css';
 
 interface BohrModel3DProps {
@@ -81,7 +82,7 @@ export default function BohrModel3D({ z, name, masaNumero, categoria, onError }:
     let raf = 0;
     let observador: ResizeObserver | null = null;
     const scene = new Scene();
-    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const reducido = prefiereMovimientoReducido();
 
     try {
       const colorCategoria =

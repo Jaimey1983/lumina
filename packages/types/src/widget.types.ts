@@ -308,13 +308,28 @@ export const DEFAULT_WIDGET_CAROUSEL_CHROME = {
 
 // ─── Tabs (tipo listo para Fase 1) ─────────────────────────────────────────────
 
+export type TabsVariante = 'underline' | 'pills' | 'enclosed' | 'segmented' | 'vertical';
+export type TabsTransicion = 'ninguna' | 'fundido' | 'deslizar';
+
+/** Una ficha de Tabs: el contenido de slide más lo que se ve en su pestaña (T12). */
+export type TabsFicha = WidgetSlideContent & {
+  /** Id de un icono de `TABS_ICONOS`. */
+  icono?: string;
+  /** Texto corto junto a la etiqueta (p. ej. «Nuevo», «3»). */
+  insignia?: string;
+};
+
 export interface TabsWidget extends WidgetHeaderFields, WidgetCanvasPosition {
   tipo: 'tabs';
   configuracion: WidgetSlideContainerConfig & {
     numeroFichas: WidgetSlideCount;
     fichaActiva: number;
+    /** T12. Estilo de la barra de pestañas. Por defecto `underline` (el de siempre). */
+    variante?: TabsVariante;
+    /** T12. Cómo entra el panel al cambiar de pestaña. Por defecto `ninguna`. */
+    transicion?: TabsTransicion;
   };
-  fichas: WidgetSlideContent[];
+  fichas: TabsFicha[];
 }
 
 // ─── Carousel (tipo listo para Fase 1) ─────────────────────────────────────────
@@ -328,6 +343,13 @@ export interface CarouselWidget extends WidgetHeaderFields, WidgetCanvasPosition
     mostrarFlechasInternas?: boolean;
     mostrarTabsPagina?: boolean;
     transicion?: 'slide' | 'fade';
+    /** T6. Al llegar al final vuelve al principio (y al revés). Solo con transición `slide`. */
+    loop?: boolean;
+    /** T6. Avanza solo cada `autoplayMs`; se detiene al interactuar y con «reducir movimiento». */
+    autoplay?: boolean;
+    autoplayMs?: number;
+    /** T6. Muestra «N / M» bajo el carrusel. */
+    mostrarContador?: boolean;
   };
   slides: WidgetSlideContent[];
 }
@@ -375,6 +397,8 @@ export interface ClickRevealTrigger extends WidgetImagenAjuste {
   mostrarTitulo?: boolean;
 }
 
+export type ClickRevealDisparo = 'modal' | 'flip' | 'spotlight' | 'blur';
+
 export interface ClickRevealConfiguracion extends WidgetHeaderConfig {
   numeroElementos: WidgetSlideCount;
   /** Índice del overlay que se edita en el lienzo (0-based). */
@@ -397,6 +421,15 @@ export interface ClickRevealConfiguracion extends WidgetHeaderConfig {
   defaultsOverlay: ClickRevealOverlayVisibilidad;
   colorTriggerActivo: string;
   colorTriggerInactivo: string;
+  /**
+   * T13. Qué pasa al tocar una tarjeta. `modal` (por defecto) abre la ventana de siempre; el resto
+   * revela el contenido en la propia tarjeta (sin modal).
+   */
+  disparo?: ClickRevealDisparo;
+  /** T13. Muestra «X de Y revelados» y marca las tarjetas ya reveladas. */
+  mostrarContador?: boolean;
+  /** T13. Avisa de que falta revelar todo; con runtime, `visitado` solo sale al completar. */
+  bloquearHastaRevelar?: boolean;
 }
 
 export type ClickRevealInnerSelection =
@@ -548,7 +581,36 @@ export type BotonVariante =
 
 export type BotonTamano = 'sm' | 'md' | 'lg';
 export type BotonForma = 'redondeado' | 'pill';
-export type BotonAccion = 'ninguna' | 'url' | 'siguiente' | 'anterior' | 'ir_a';
+export type BotonAccion = 'ninguna' | 'url' | 'siguiente' | 'anterior' | 'ir_a' | 'descargar';
+
+/** Iconos disponibles en un Botón (lista cerrada; el kit asocia cada id a su icono Lucide). */
+export const BOTON_ICONO_IDS = [
+  'flecha-derecha',
+  'flecha-izquierda',
+  'chevron',
+  'descargar',
+  'enlace',
+  'reproducir',
+  'check',
+  'mas',
+  'info',
+  'ayuda',
+  'estrella',
+  'corazon',
+  'correo',
+  'enviar',
+  'cohete',
+  'libro',
+  'idea',
+  'trofeo',
+  'bandera',
+  'destellos',
+] as const;
+export type BotonIconoId = (typeof BOTON_ICONO_IDS)[number];
+
+export type BotonEstilo = 'solid' | 'soft' | 'outline' | 'ghost' | 'link';
+export type BotonDensidad = 'compacta' | 'normal' | 'amplia';
+export type BotonIconoPosicion = 'izquierda' | 'derecha';
 
 export interface BotonWidget extends WidgetCanvasPosition {
   tipo: 'boton';
@@ -562,6 +624,15 @@ export interface BotonWidget extends WidgetCanvasPosition {
   /** Índice 0-based del slide destino si accion === 'ir_a'. */
   slideIndex?: number;
   deshabilitado?: boolean;
+  /** T8. Si falta se deduce de lo legado: `link` → enlace, `outline` → contorno, si no sólido. */
+  estilo?: BotonEstilo;
+  icono?: BotonIconoId;
+  iconoPosicion?: BotonIconoPosicion;
+  /** Muestra un indicador de carga y no deja pulsar. */
+  cargando?: boolean;
+  densidad?: BotonDensidad;
+  /** Nombre sugerido del archivo para la acción `descargar`. */
+  archivoNombre?: string;
 }
 
 // ─── Contador / temporizador (Grupo 9) ─────────────────────────────────────────
@@ -570,6 +641,18 @@ export interface BotonWidget extends WidgetCanvasPosition {
 export type ContadorModo = 'temporizador' | 'cronometro' | 'numero';
 export type ContadorFormato = 'mm:ss' | 'hh:mm:ss';
 export type ContadorAlTerminar = 'ninguna' | 'siguiente';
+
+export type ContadorVariante = 'digitos' | 'flip' | 'anillo';
+export type ContadorHitosAlerta = 'visual' | 'sonora' | 'ambas';
+
+export interface ContadorHito {
+  /**
+   * Segundos. En el temporizador: cuando QUEDAN esos segundos; en el cronómetro: cuando han
+   * TRANSCURRIDO. En modo número no se usan.
+   */
+  segundos: number;
+  etiqueta: string;
+}
 
 export interface ContadorWidget extends WidgetCanvasPosition {
   tipo: 'contador';
@@ -588,11 +671,25 @@ export interface ContadorWidget extends WidgetCanvasPosition {
   colorFondo?: string;
   colorTexto?: string;
   colorAcento?: string;
+  /** T10. Por defecto `digitos`. */
+  variante?: ContadorVariante;
+  hitos?: ContadorHito[];
+  /** Cómo avisan los hitos. Por defecto `visual`. */
+  hitosAlerta?: ContadorHitosAlerta;
+  /** Tiñe el contador de verde / amarillo / rojo según el tiempo que queda (solo temporizador). */
+  semaforo?: boolean;
 }
 
 // ─── Barra de progreso (Grupo 9, estilo Bootstrap) ─────────────────────────────
 
 export type ProgresoModo = 'manual' | 'slides';
+
+export interface RuletaItem {
+  id: string;
+  texto: string;
+  /** T7. Peso relativo (tamaño del sector Y probabilidad de salir). Sin valor = 1. */
+  peso?: number;
+}
 
 export interface RuletaWidget extends WidgetCanvasPosition {
   tipo: 'ruleta';
@@ -601,8 +698,14 @@ export interface RuletaWidget extends WidgetCanvasPosition {
     sonido: boolean;
     duracionGiro: number;
     mostrarGanador: boolean;
+    /** T7. Tras cada tirada el ganador sale de la rueda (sin repetición). */
+    modoEliminar?: boolean;
+    /** T7. Lista las últimas tiradas bajo el botón. */
+    mostrarHistorial?: boolean;
+    /** T7. Lluvia de confeti al parar (se omite con «reducir movimiento»). */
+    confeti?: boolean;
   };
-  items: { id: string; texto: string }[];
+  items: RuletaItem[];
 }
 
 // ─── Tabla periódica (Etapa Q3) ───────────────────────────────────────────────
@@ -658,6 +761,14 @@ export interface MoleculaWidget extends WidgetHeaderFields, WidgetCanvasPosition
   configuracion: MoleculaConfiguracion;
 }
 
+export type ProgresoVariante = 'lineal' | 'circular' | 'semicirculo' | 'pasos';
+
+export interface ProgresoHito {
+  /** Posición del hito, 0–100. */
+  valor: number;
+  etiqueta: string;
+}
+
 export interface ProgresoWidget extends WidgetCanvasPosition {
   tipo: 'progreso';
   modo: ProgresoModo;
@@ -670,6 +781,16 @@ export interface ProgresoWidget extends WidgetCanvasPosition {
   colorBarra?: string;
   colorFondo?: string;
   colorTexto?: string;
+  /** T9. Por defecto `lineal`. */
+  variante?: ProgresoVariante;
+  hitos?: ProgresoHito[];
+  /** Casillas de la variante `pasos` en modo manual (en modo diapositiva son las diapositivas). */
+  numeroPasos?: number;
+  /** Modo objetivo (solo con `modo: 'manual'`): el porcentaje sale de `valorActual / meta`. */
+  modoObjetivo?: boolean;
+  valorActual?: number;
+  meta?: number;
+  unidad?: string;
 }
 
 export type TimelineVariante =
@@ -726,6 +847,10 @@ export interface TimelineNodo extends WidgetImagenAjuste {
   estiloCuerpo?: WidgetCampoEstilo;
 }
 
+export type TimelineOrientacion = 'horizontal' | 'vertical';
+export type TimelineDensidad = 'normal' | 'compacta' | 'amplia';
+export type TimelineAnimacion = 'ninguna' | 'fundido' | 'subir' | 'escala';
+
 export interface TimelineConfiguracion extends WidgetHeaderConfig {
   variante: TimelineVariante;
   disposicionNodos: TimelineDisposicionNodos;
@@ -753,6 +878,12 @@ export interface TimelineConfiguracion extends WidgetHeaderConfig {
   mostrarConectorVertical: boolean;
   colorConector?: string;
   grosorConector?: number;
+  /** T14. Eje de la línea. Por defecto `horizontal` (el de siempre). */
+  orientacion?: TimelineOrientacion;
+  /** T14. Separación entre tarjetas, conectores y nodos. Por defecto `normal`. */
+  densidad?: TimelineDensidad;
+  /** T14. Cómo entran los nodos al aparecer el widget en pantalla. Por defecto `ninguna`. */
+  animacion?: TimelineAnimacion;
 }
 
 export interface TimelineWidget extends WidgetHeaderFields, WidgetCanvasPosition {

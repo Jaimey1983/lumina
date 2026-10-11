@@ -46,7 +46,7 @@ export function BotonProperties({ block: rawBlock, applyNow }: BotonPropertiesPr
 
   const update = (fn: (w: BotonWidgetT8) => BotonWidgetT8) => {
     void applyNow((b) =>
-      b.tipo === 'boton' ? (fn(normalizeBotonWidget(b) as BotonWidgetT8) as BotonWidget) : b,
+      b.tipo === 'boton' ? fn(normalizeBotonWidget(b)) : b,
     );
   };
 

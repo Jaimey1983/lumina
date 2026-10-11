@@ -1,4 +1,4 @@
-import type { RuletaWidget } from '@lumina/types/widget';
+import type { RuletaItem, RuletaWidget } from '@lumina/types/widget';
 
 export const RULETA_MAX_ITEMS = 12;
 export const RULETA_MIN_ITEMS = 2;
@@ -21,27 +21,15 @@ export function generarIdRuleta(prefijo: string): string {
 }
 
 /**
- * Opciones de T7 que aún no están en `RuletaWidget` de `@lumina/types` (fuera del
- * alcance de esa ficha): peso por ítem, «eliminar ganador», historial y confeti.
- * Se leen del JSON guardado con estos tipos; subirlas a `@lumina/types` queda como seguimiento.
+ * Opciones de T7 (peso por ítem, «eliminar ganador», historial y confeti): viven en
+ * `RuletaWidget` de `@lumina/types`; estos alias conservan los nombres que ya usaba el kit.
  */
-export interface RuletaItemT7 {
-  id: string;
-  texto: string;
-  /** Peso relativo (tamaño del sector Y probabilidad de salir). Sin valor = 1. */
-  peso?: number;
-}
-
-export interface RuletaConfigT7 {
-  /** Tras cada tirada el ganador sale de la rueda (sin repetición). */
-  modoEliminar?: boolean;
-  /** Lista las últimas tiradas bajo el botón. */
-  mostrarHistorial?: boolean;
-  /** Lluvia de confeti al parar (se omite con «reducir movimiento»). */
-  confeti?: boolean;
-}
-
-export type RuletaConfiguracion = RuletaWidget['configuracion'] & RuletaConfigT7;
+export type RuletaItemT7 = RuletaItem;
+export type RuletaConfigT7 = Pick<
+  RuletaWidget['configuracion'],
+  'modoEliminar' | 'mostrarHistorial' | 'confeti'
+>;
+export type RuletaConfiguracion = RuletaWidget['configuracion'];
 
 export const RULETA_PESO_DEFAULT = 1;
 export const RULETA_PESO_MAX = 20;

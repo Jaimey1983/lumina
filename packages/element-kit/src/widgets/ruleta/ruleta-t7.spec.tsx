@@ -245,19 +245,19 @@ describe("RuletaViewer — confeti", () => {
   it("con confeti activo lanza piezas al parar; sin él, no", async () => {
     const { container, unmount } = render(<RuletaViewer block={bloque({ confeti: true })} />);
     await girar();
-    expect(container.querySelector("[data-ruleta-confeti]")?.children.length).toBeGreaterThan(0);
+    expect(container.querySelector("[data-confeti]")?.children.length).toBeGreaterThan(0);
     unmount();
 
     const sin = render(<RuletaViewer block={createDefaultRuletaWidget()} />);
     await girar();
-    expect(sin.container.querySelector("[data-ruleta-confeti]")?.children.length).toBe(0);
+    expect(sin.container.querySelector("[data-confeti]")?.children.length).toBe(0);
   });
 
   it("con «reducir movimiento» no hay confeti", async () => {
     vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("reduce"), media: q }));
     const { container } = render(<RuletaViewer block={bloque({ confeti: true })} />);
     await girar();
-    expect(container.querySelector("[data-ruleta-confeti]")?.children.length).toBe(0);
+    expect(container.querySelector("[data-confeti]")?.children.length).toBe(0);
   });
 });
 

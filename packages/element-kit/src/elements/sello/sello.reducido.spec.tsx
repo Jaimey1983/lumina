@@ -30,6 +30,6 @@ describe("movimiento reducido", () => {
     expect(container.querySelector('[role="status"]')?.textContent).toContain("Insignia ganada");
     expect(container.querySelector("[data-widget-motion]")).toBeNull();
     await new Promise((r) => setTimeout(r, 50));
-    expect(container.querySelector("[data-ruleta-confeti]")).toBeNull();
+    expect(container.querySelector("[data-confeti]")).toBeNull();
   });
 });

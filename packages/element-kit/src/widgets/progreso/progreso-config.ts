@@ -54,7 +54,7 @@ export interface MergedProgresoConfig {
 }
 
 export function mergedProgresoConfig(block: ProgresoWidget): MergedProgresoConfig {
-  const w = normalizeProgresoWidget(block) as ProgresoWidgetT9;
+  const w = normalizeProgresoWidget(block);
   return {
     modo: w.modo ?? DEFAULT_PROGRESO_MODO,
     porcentaje: w.porcentaje ?? DEFAULT_PROGRESO_PORCENTAJE,

@@ -3,6 +3,10 @@
  * hex «a pelo». Todo color pasa por `var(--lw-*, <fallback>)`; el hex solo se
  * permite como fallback dentro de un `var()` o al DECLARAR una variable propia
  * (`--pt-bg: #fecaca`, que es definir un token, no usarlo).
+ *
+ * Lo mismo vale para `rgb()/rgba()/hsl()/hsla()`, salvo los neutros de sombras y velos
+ * (negro, blanco y el pizarra `15 23 42`): cualquier otro color con alfa se deriva del tema con
+ * `color-mix(in srgb, var(--lw-color-…, <fallback>) N%, transparent)`.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -56,6 +60,45 @@ export function hexSueltos(css: string): { linea: number; hex: string; propiedad
   return hallados;
 }
 
+const NEUTROS = new Set(["0,0,0", "255,255,255", "15,23,42"]);
+const FUNCION_COLOR = /^(rgba?|hsla?)\(/i;
+
+/** Colores funcionales fuera de un `var(...)` y de una `--variable`, que no son un neutro permitido. */
+export function coloresFuncionalesSueltos(css: string): { linea: number; color: string; propiedad: string }[] {
+  const hallados: { linea: number; color: string; propiedad: string }[] = [];
+  const sinComentarios = css.replace(/\/\*[\s\S]*?\*\//g, (b) => b.replace(/[^\n]/g, " "));
+  const pila: boolean[] = [];
+  let linea = 1;
+  for (let k = 0; k < sinComentarios.length; ) {
+    const c = sinComentarios[k];
+    if (c === "\n") linea += 1;
+    if (sinComentarios.startsWith("var(", k) && (k === 0 || !/[a-zA-Z0-9-]/.test(sinComentarios[k - 1]))) {
+      pila.push(true);
+      k += 4;
+      continue;
+    }
+    const m = !pila.some(Boolean) && (k === 0 || !/[a-zA-Z0-9-]/.test(sinComentarios[k - 1])) ? FUNCION_COLOR.exec(sinComentarios.slice(k, k + 6)) : null;
+    if (m) {
+      const fin = sinComentarios.indexOf(")", k);
+      const llamada = sinComentarios.slice(k, fin + 1);
+      const inicioLinea = sinComentarios.lastIndexOf("\n", k) + 1;
+      const declaracion = (sinComentarios.slice(inicioLinea, k).split(/[{;]/).pop() ?? "");
+      const propiedad = declaracion.split(":")[0].trim();
+      if (declaracion.includes(":") && !propiedad.startsWith("--")) {
+        const canales = (llamada.slice(m[0].length, -1).split("/")[0].match(/[\d.]+/g) ?? []).slice(0, 3).join(",");
+        const esRgb = m[1].toLowerCase().startsWith("rgb");
+        if (!(esRgb && NEUTROS.has(canales))) hallados.push({ linea, color: llamada, propiedad });
+      }
+      k = fin + 1;
+      continue;
+    }
+    if (c === "(") pila.push(false);
+    else if (c === ")") pila.pop();
+    k += 1;
+  }
+  return hallados;
+}
+
 const aqui = dirname(fileURLToPath(import.meta.url));
 const archivos = readdirSync(aqui, { withFileTypes: true })
   .filter((d) => d.isDirectory())
@@ -86,6 +129,23 @@ describe("hexSueltos (detector)", () => {
   });
 });
 
+describe("coloresFuncionalesSueltos (detector)", () => {
+  it("permite neutros de sombra/velo, fallbacks de var() y declaraciones de variable", () => {
+    expect(
+      coloresFuncionalesSueltos(
+        "a { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2); background: rgb(255 255 255 / 0.1); color: var(--x, rgb(37 99 235)); --h: hsl(220 65% 88%); border: 1px solid rgb(0 0 0 / .3); }",
+      ),
+    ).toEqual([]);
+  });
+
+  it("detecta un color con matiz fijo, con su línea y propiedad", () => {
+    expect(coloresFuncionalesSueltos("a {\n  background: rgba(37, 99, 235, 0.06);\n  fill: hsl(20 65% 60%);\n}")).toEqual([
+      { linea: 2, color: "rgba(37, 99, 235, 0.06)", propiedad: "background" },
+      { linea: 3, color: "hsl(20 65% 60%)", propiedad: "fill" },
+    ]);
+  });
+});
+
 describe("CSS de widgets — sin hex fuera de var(--lw-*, fallback) (T1)", () => {
   it("hay CSS de widgets que revisar", () => {
     expect(archivos.length).toBeGreaterThanOrEqual(12);
@@ -94,6 +154,7 @@ describe("CSS de widgets — sin hex fuera de var(--lw-*, fallback) (T1)", () =>
   for (const { ruta, css } of archivos) {
     it(ruta, () => {
       expect(hexSueltos(css)).toEqual([]);
+      expect(coloresFuncionalesSueltos(css)).toEqual([]);
     });
   }
 });

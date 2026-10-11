@@ -49,15 +49,6 @@ export interface CarouselConfiguracionCompleta extends WidgetSlidePanelConfig {
   colorNavBoton: string;
 }
 
-/**
- * Opciones de T6 que aún no están en `CarouselWidget['configuracion']` de
- * `@lumina/types` (fuera del alcance de esa ficha). Se leen del JSON guardado
- * con este tipo; subirlas a `@lumina/types` queda como seguimiento.
- */
-type CarouselConfigT6 = Partial<
-  Pick<CarouselConfiguracionCompleta, 'loop' | 'autoplay' | 'autoplayMs' | 'mostrarContador'>
->;
-
 export const CAROUSEL_AUTOPLAY_MIN_MS = 1500;
 export const CAROUSEL_AUTOPLAY_MAX_MS = 30000;
 
@@ -166,7 +157,7 @@ export function normalizeCarouselWidget(block: CarouselWidget): CarouselWidget {
 
 export function mergedCarouselConfig(block: CarouselWidget): CarouselConfiguracionCompleta {
   const w = normalizeCarouselWidget(block);
-  const raw = w.configuracion as CarouselWidget['configuracion'] & CarouselConfigT6;
+  const raw = w.configuracion;
   return {
     ...DEFAULT_CAROUSEL_CONFIG,
     ...raw,

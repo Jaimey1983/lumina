@@ -1,30 +1,17 @@
 import type { Animacion } from '@lumina/types/animation';
-import type { ClickRevealWidget } from '@lumina/types/widget';
+import type { ClickRevealConfiguracion, ClickRevealDisparo, ClickRevealWidget } from '@lumina/types/widget';
 
 /**
- * Opciones de T13 que aún no están en `ClickRevealConfiguracion` de `@lumina/types` (fuera del
- * alcance de esa ficha). Viven dentro de `configuracion` y se leen con `leerOpcionesT13`.
- * Subirlas a `@lumina/types` queda como seguimiento (igual que T6–T12).
+ * Opciones de T13 (disparo en sitio, contador, bloqueo): viven en `ClickRevealConfiguracion` de
+ * `@lumina/types`; estos alias conservan los nombres que ya usaba el kit.
  */
-export type ClickRevealDisparo = 'modal' | 'flip' | 'spotlight' | 'blur';
-
-export interface ClickRevealOpcionesT13 {
-  /**
-   * Qué pasa al tocar una tarjeta. `modal` (por defecto) abre la ventana de siempre; el resto
-   * revela el contenido en la propia tarjeta (sin modal).
-   */
-  disparo?: ClickRevealDisparo;
-  /** Muestra «X de Y revelados» y marca las tarjetas ya reveladas. */
-  mostrarContador?: boolean;
-  /** Avisa de que falta revelar todo; con runtime, `visitado` solo sale al completar. */
-  bloquearHastaRevelar?: boolean;
-}
-
-export type ClickRevealConfigT13 = ClickRevealWidget['configuracion'] & ClickRevealOpcionesT13;
-export type ClickRevealWidgetT13 = Omit<ClickRevealWidget, 'configuracion'> & {
-  configuracion: ClickRevealConfigT13;
-  animaciones?: Animacion[];
-};
+export type { ClickRevealDisparo };
+export type ClickRevealOpcionesT13 = Pick<
+  ClickRevealConfiguracion,
+  'disparo' | 'mostrarContador' | 'bloquearHastaRevelar'
+>;
+export type ClickRevealConfigT13 = ClickRevealConfiguracion;
+export type ClickRevealWidgetT13 = ClickRevealWidget & { animaciones?: Animacion[] };
 
 export const CLICK_REVEAL_DISPAROS: { id: ClickRevealDisparo; label: string; ayuda: string }[] = [
   { id: 'modal', label: 'Ventana', ayuda: 'Abre el contenido en una ventana (el de siempre).' },

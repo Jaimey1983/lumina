@@ -101,15 +101,15 @@ describe("transición al ganarla", () => {
     const { container } = render(<Viewer estado={con()} config={{ estadoObjeto: "visitado" }} />);
     expect(viva(container)).toBe("");
     expect(container.querySelector('[class*="brillo"]')).toBeNull();
-    expect(container.querySelector("[data-ruleta-confeti]")).toBeNull();
+    expect(container.querySelector("[data-confeti]")).toBeNull();
   });
 
   it("al ganarla con la animación activa hay brillo y, con confeti, se carga la lluvia (diferida)", async () => {
     const { container, rerender } = render(<Viewer estado={con()} config={{}} />);
-    expect(container.querySelector("[data-ruleta-confeti]")).toBeNull();
+    expect(container.querySelector("[data-confeti]")).toBeNull();
     rerender(<Viewer estado={con()} config={{ estadoObjeto: "visitado" }} />);
     expect(container.querySelector('[class*="brillo"]')).not.toBeNull();
-    await waitFor(() => expect(container.querySelector("[data-ruleta-confeti]")).not.toBeNull());
+    await waitFor(() => expect(container.querySelector("[data-confeti]")).not.toBeNull());
   });
 
   it("sin confeti o sin animación configurados, no se dibujan", async () => {
@@ -118,7 +118,7 @@ describe("transición al ganarla", () => {
     expect(viva(container)).toContain("Insignia ganada");
     expect(container.querySelector('[class*="brillo"]')).toBeNull();
     await new Promise((r) => setTimeout(r, 50));
-    expect(container.querySelector("[data-ruleta-confeti]")).toBeNull();
+    expect(container.querySelector("[data-confeti]")).toBeNull();
   });
 
   it("volver a bloqueada limpia el anuncio y permite ganarla otra vez", () => {

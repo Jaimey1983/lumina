@@ -43,7 +43,7 @@ export function RuletaProperties({ block: rawBlock, applyNow }: RuletaProperties
   const updateConfig = (partial: Partial<RuletaConfiguracion>) => {
     update((w) => ({ ...w, configuracion: { ...w.configuracion, ...partial } }));
   };
-  const config = configuracion as RuletaConfiguracion;
+  const config = configuracion;
 
   return (
     <div className="flex flex-col gap-4 p-3 text-sm">
@@ -152,7 +152,7 @@ export function RuletaProperties({ block: rawBlock, applyNow }: RuletaProperties
                   const peso = Math.min(RULETA_PESO_MAX, Math.max(1, Math.round(Number(e.target.value) || 1)));
                   update((w) => ({
                     ...w,
-                    items: w.items.map((i) => (i.id === item.id ? ({ ...i, peso } as RuletaItemT7) : i)),
+                    items: w.items.map((i) => (i.id === item.id ? { ...i, peso } : i)),
                   }));
                 }}
                 className="w-12 rounded border border-gray-300 px-1 py-1 text-xs"

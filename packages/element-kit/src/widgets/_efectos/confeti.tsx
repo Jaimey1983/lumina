@@ -15,7 +15,7 @@ function azar(semilla: number, i: number): number {
  * Lluvia de confeti con animaciones del navegador (sin dependencias). Cada cambio de
  * `disparo` (> 0) lanza una; `activo = false` (p. ej. «reducir movimiento») no hace nada.
  */
-export function RuletaConfeti({ disparo, activo }: { disparo: number; activo: boolean }) {
+export function Confeti({ disparo, activo }: { disparo: number; activo: boolean }) {
   const raiz = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function RuletaConfeti({ disparo, activo }: { disparo: number; activo: bo
       ref={raiz}
       aria-hidden="true"
       className="pointer-events-none absolute inset-x-0 top-0 z-40 h-full overflow-hidden"
-      data-ruleta-confeti
+      data-confeti
     />
   );
 }
