@@ -170,6 +170,16 @@ describe("ActivityShell — reintento y foco", () => {
   });
 });
 
+describe("ActivityShell — estilo (U8)", () => {
+  it("pone `data-estilo` en la raíz para que los tokens del estilo apliquen", () => {
+    for (const estilo of ["escolar", "examen", "arcade", "minimal", "pizarra"] as const) {
+      const { container, unmount } = montar({ ajustes: ajustes({ estilo }) });
+      expect(container.firstElementChild?.getAttribute("data-estilo"), estilo).toBe(estilo);
+      unmount();
+    }
+  });
+});
+
 describe("ActivityHeader", () => {
   const h = (a: Partial<AjustesResueltos>, o = {}) => crearSesionInicial(ajustes(a), o);
 

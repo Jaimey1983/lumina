@@ -3,8 +3,12 @@
 import React, { useCallback, useRef } from 'react';
 import { ImageIcon, Upload, X } from 'lucide-react';
 import type { MemoriaActivity } from '@lumina/types/slide';
+import type { ElementPreset } from '@lumina/element-kit-core';
+import { PresetGallery, aplicarPreset } from '@lumina/editor-shared/preset-gallery';
 import { Button } from '@lumina/ui/button';
+import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Label } from '@lumina/ui/label';
+import { ActividadAjustesPanel } from '../_shared/actividad-ajustes-panel.js';
 import {
   generarIdMemoria,
   MEMORIA_MAX_PARES,
@@ -15,6 +19,8 @@ import type { MemoriaLado } from './memoria-shared.js';
 interface MemoriaPropertiesProps {
   actividad: MemoriaActivity;
   onChange: (actividad: MemoriaActivity) => void;
+  /** Estilos de la definición (`memoriaDefinition.presets`); sin ellos no hay galería. */
+  presets?: readonly ElementPreset<MemoriaActivity>[];
 }
 
 function readFileAsDataURL(file: File): Promise<string> {
@@ -123,7 +129,7 @@ function CampoLado({
   );
 }
 
-export function MemoriaProperties({ actividad, onChange }: MemoriaPropertiesProps) {
+export function MemoriaProperties({ actividad, onChange, presets }: MemoriaPropertiesProps) {
   const { configuracion, pares } = actividad;
 
   const update = useCallback(
@@ -166,10 +172,18 @@ export function MemoriaProperties({ actividad, onChange }: MemoriaPropertiesProp
   );
 
   return (
-    <div className="flex flex-col gap-4 p-3 text-sm">
-      <section>
-        <h4 className="mb-2 font-semibold text-gray-700">Configuración</h4>
-        <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1 p-3 text-sm">
+      <PresetGallery
+        presets={presets}
+        estado={actividad}
+        storageKey="actividad.memoria.estilos"
+        onSelect={(preset) => onChange(aplicarPreset(actividad, preset))}
+      />
+
+      <ActividadAjustesPanel actividad={actividad} onChange={onChange} />
+
+      <CollapsibleSection title="Tablero" storageKey="actividad.memoria.tablero">
+        <div className="flex flex-col gap-2 pt-2">
           <label className="flex items-center justify-between gap-2">
             <span className="text-gray-600">Columnas</span>
             <select
@@ -241,11 +255,10 @@ export function MemoriaProperties({ actividad, onChange }: MemoriaPropertiesProp
             />
           </label>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section>
-        <div className="mb-2 flex items-center justify-between">
-          <h4 className="font-semibold text-gray-700">Pares ({pares.length})</h4>
+      <CollapsibleSection title="Pares" badge={pares.length} storageKey="actividad.memoria.pares">
+        <div className="flex justify-end py-1">
           <button
             type="button"
             onClick={addPar}
@@ -285,7 +298,7 @@ export function MemoriaProperties({ actividad, onChange }: MemoriaPropertiesProp
             </div>
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
     </div>
   );
 }

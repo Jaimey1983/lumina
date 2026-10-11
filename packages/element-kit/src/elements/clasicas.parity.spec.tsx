@@ -61,7 +61,9 @@ describe("Familia clásica — paridad ElementDefinition vs @lumina/scoring (E2.
     const reg = elementRegistry.obtener(tipo as never) as any;
     expect(reg).toBe(def);
     expect(reg?.puntuacion).toBeTypeOf("function");
-    expect(reg?.apariencia).toEqual({ color: false, tipografia: false, animacion: false });
+    // U8: Verdadero/Falso ya tiene estilos (`ajustes.estilo`): su `apariencia` declara color.
+    const color = tipo === "verdadero_falso";
+    expect(reg?.apariencia).toEqual({ color, tipografia: false, animacion: false });
   });
 
   it.each(CASOS)("$tipo — Editor / Viewer / Propiedades renderizan sin lanzar", ({ def }) => {

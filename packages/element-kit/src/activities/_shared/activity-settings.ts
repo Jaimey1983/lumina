@@ -13,6 +13,7 @@
 import { esEvaluable } from '@lumina/scoring';
 import type {
   Activity,
+  ActivityEstilo,
   ActivityModo,
   ActivityRetroMomento,
   ActivitySettings,
@@ -33,7 +34,12 @@ export interface AjustesResueltos {
   readonly mostrarNota: boolean;
   readonly mostrarSolucion: boolean;
   readonly retroalimentacion: ActivityRetroMomento;
+  readonly sonido: boolean;
+  readonly estilo: ActivityEstilo;
 }
+
+/** Estilos válidos, en el orden en que se ofrecen. */
+export const ESTILOS_ACTIVIDAD: readonly ActivityEstilo[] = ['escolar', 'examen', 'arcade', 'minimal', 'pizarra'];
 
 type Tipo = Activity['tipo'];
 
@@ -149,6 +155,12 @@ function retroValida(v: unknown): ActivityRetroMomento | undefined {
   return v === 'inmediata' || v === 'al_final' || v === 'ninguna' ? v : undefined;
 }
 
+function estiloValido(v: unknown): ActivityEstilo | undefined {
+  return typeof v === 'string' && (ESTILOS_ACTIVIDAD as readonly string[]).includes(v)
+    ? (v as ActivityEstilo)
+    : undefined;
+}
+
 function texto(v: unknown): boolean {
   return typeof v === 'string' && v.trim().length > 0;
 }
@@ -257,6 +269,9 @@ function ajustesValidos(raw: unknown): ActivitySettings {
   if (typeof raw.mostrarSolucion === 'boolean') out.mostrarSolucion = raw.mostrarSolucion;
   const retro = retroValida(raw.retroalimentacion);
   if (retro) out.retroalimentacion = retro;
+  if (typeof raw.sonido === 'boolean') out.sonido = raw.sonido;
+  const estilo = estiloValido(raw.estilo);
+  if (estilo) out.estilo = estilo;
   return out;
 }
 
@@ -299,5 +314,7 @@ export function normalizarAjustes(actividad: Activity): AjustesResueltos {
     mostrarNota: propios.mostrarNota ?? evaluable,
     mostrarSolucion: propios.mostrarSolucion ?? legacy.mostrarSolucion ?? false,
     retroalimentacion: propios.retroalimentacion ?? 'inmediata',
+    sonido: propios.sonido ?? true,
+    estilo: propios.estilo ?? 'escolar',
   };
 }

@@ -215,3 +215,16 @@ describe("Verdadero/Falso — feedback de sonido y movimiento (U5)", () => {
     expect(container.querySelector(".animate-in")).toBeNull();
   });
 });
+
+describe("Verdadero/Falso — ajustes de sonido y estilo (U8)", () => {
+  it("`ajustes.sonido = false` la deja en silencio", () => {
+    render(<Viewer estado={{ ...afirmacion(), ajustes: { sonido: false } }} config={{}} />);
+    fireEvent.click(boton("Falso"));
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  it("`ajustes.estilo` llega a la raíz del shell", () => {
+    const { container } = render(<Viewer estado={{ ...afirmacion(), ajustes: { estilo: "arcade" } }} config={{}} />);
+    expect(container.querySelector("[data-estilo]")?.getAttribute("data-estilo")).toBe("arcade");
+  });
+});

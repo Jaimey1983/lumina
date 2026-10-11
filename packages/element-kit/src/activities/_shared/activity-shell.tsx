@@ -119,7 +119,11 @@ export function ActivityShell({
   const modal = terminada && resultado === 'dialogo';
 
   return (
-    <div className={`${tokens.tokens} ${styles.raiz} ${className ?? ''}`} data-fase={fase}>
+    <div
+      className={`${tokens.tokens} ${styles.raiz} ${className ?? ''}`}
+      data-fase={fase}
+      data-estilo={ajustes.estilo}
+    >
       {fase === 'intro' ? (
         <div className={styles.intro} data-testid="actividad-intro">
           {titulo && <h2 className={styles.titulo}>{titulo}</h2>}

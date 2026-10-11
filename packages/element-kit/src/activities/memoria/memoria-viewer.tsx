@@ -62,7 +62,7 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
   const { cartas, resolviendo } = tablero;
   const jugando = ctx.sesion.fase === 'jugando';
   const { setProgreso, completar } = ctx;
-  const feedback = useActivityFeedback();
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido });
   const emitirFeedback = feedback.emitir;
 
   const encontrados = useMemo(() => paresEncontrados(cartas), [cartas]);

@@ -115,6 +115,9 @@ export type ActivityModo = 'practica' | 'evaluacion';
 /** Cuándo ve el alumno si acertó. */
 export type ActivityRetroMomento = 'inmediata' | 'al_final' | 'ninguna';
 
+/** Aspecto de la actividad: cambia los tokens `--la-*` (colores, radios, relieve) del `ActivityShell`. */
+export type ActivityEstilo = 'escolar' | 'examen' | 'arcade' | 'minimal' | 'pizarra';
+
 export interface ActivityHintSettings {
   /** Pistas disponibles. `0` = ninguna; `null` = ilimitadas. */
   cantidad?: number | null;
@@ -143,6 +146,10 @@ export interface ActivitySettings {
   /** Muestra la solución/explicación tras responder. */
   mostrarSolucion?: boolean;
   retroalimentacion?: ActivityRetroMomento;
+  /** Sonidos de acierto, error y logro. Por defecto `true`. */
+  sonido?: boolean;
+  /** Aspecto visual. Por defecto `escolar` (el de siempre). */
+  estilo?: ActivityEstilo;
 }
 
 /** Base común de toda variante de `Activity`. */

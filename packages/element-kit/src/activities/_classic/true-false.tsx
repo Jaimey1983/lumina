@@ -265,8 +265,8 @@ export function TrueFalseViewer({
   variant?: 'dark' | 'light';
 }) {
   const [selected, setSelected] = useState<boolean | null>(null);
-  const feedback = useActivityFeedback();
   const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
   // Un slide distinto (otra `editorSyncKey`) arranca sin respuesta.
   useEffect(() => {

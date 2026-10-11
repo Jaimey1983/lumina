@@ -401,3 +401,19 @@ describe("Memoria — barajado con semilla (U7)", () => {
     expect(ordenDelMazo(12)).not.toEqual(a);
   });
 });
+
+describe("Memoria — ajustes de sonido y estilo (U8)", () => {
+  it("`ajustes.sonido = false` la deja en silencio (par encontrado y logro)", () => {
+    const estado = { ...createDefaultMemoria(), ajustes: { sonido: false } };
+    render(<Viewer estado={estado} config={{}} />);
+    const mazo = ordenDelMazo(12);
+    completar(mazo, estado, new Set());
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  it("`ajustes.estilo` llega a la raíz del shell", () => {
+    const { container } = render(<Viewer estado={{ ...createDefaultMemoria(), ajustes: { estilo: "pizarra" } }} config={{}} />);
+    expect(container.querySelector("[data-estilo]")?.getAttribute("data-estilo")).toBe("pizarra");
+  });
+});

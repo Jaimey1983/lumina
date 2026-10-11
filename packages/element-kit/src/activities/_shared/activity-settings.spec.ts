@@ -184,6 +184,27 @@ describe("normalizarAjustes — derivación de campos legacy", () => {
   });
 });
 
+describe("normalizarAjustes — sonido y estilo (U8)", () => {
+  it("por defecto: con sonido y estilo `escolar` (el aspecto de siempre), para los 29 tipos", async () => {
+    await import("../../index.js");
+    for (const tipo of [...TIPOS_KIT, ...Object.keys(FUERA_DEL_KIT)]) {
+      expect(normalizarAjustes(payload(tipo)), tipo).toMatchObject({ sonido: true, estilo: "escolar" });
+    }
+  });
+  it("`ajustes.sonido` y `ajustes.estilo` se respetan", async () => {
+    await import("../../index.js");
+    for (const estilo of ["escolar", "examen", "arcade", "minimal", "pizarra"] as const) {
+      expect(normalizarAjustes({ ...payload("memoria"), ajustes: { estilo, sonido: false } } as Activity)).toMatchObject({ estilo, sonido: false });
+    }
+  });
+  it("un estilo o un sonido inválido se ignora y cae al defecto", async () => {
+    await import("../../index.js");
+    const a = normalizarAjustes({ ...payload("memoria"), ajustes: { estilo: "neon", sonido: "no" } } as unknown as Activity);
+    expect(a).toMatchObject({ estilo: "escolar", sonido: true });
+    expect(normalizarAjustes({ ...payload("memoria"), ajustes: { estilo: 3 } } as unknown as Activity).estilo).toBe("escolar");
+  });
+});
+
 describe("normalizarAjustes — `ajustes` del slide", () => {
   it("gana sobre el campo legacy, campo por campo", async () => {
     await import("../../index.js");

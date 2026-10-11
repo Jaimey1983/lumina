@@ -8,6 +8,7 @@ import type {
   ElementPropsPanelProps,
   ElementViewerProps,
 } from "@lumina/element-kit-core";
+import { PRESETS_MEMORIA } from "./memoria-estilos.js";
 import type { MemoriaConfig, MemoriaEstado } from "./memoria-types.js";
 
 /** Adapta el Editor legacy a las props del contrato ElementDefinition. */
@@ -35,5 +36,7 @@ export function MemoriaPropiedades({
   estado,
   onChange,
 }: ElementPropsPanelProps<MemoriaEstado, MemoriaConfig>) {
-  return <LegacyMemoriaProperties actividad={estado} onChange={onChange} />;
+  return (
+    <LegacyMemoriaProperties actividad={estado} onChange={onChange} presets={PRESETS_MEMORIA} />
+  );
 }

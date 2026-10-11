@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { contrastRatio } from "@lumina/editor-shared/contrast";
+import { ESTILOS_ACTIVIDAD as ESTILOS_ACTIVIDAD_LISTA } from "./_shared/activity-settings.js";
 import {
   ACTIVITY_ESTADOS,
   ACTIVITY_SUAVE_PORCENTAJE,
@@ -179,6 +180,42 @@ describe("tokens --la-* (U1)", () => {
     }
     expect(contrastRatio(ACTIVITY_TOKENS["color-texto"].fallback, "#ffffff")).toBeGreaterThanOrEqual(4.5);
   });
+});
+
+describe("estilos de actividad (U8)", () => {
+  const css = readFileSync(CSS_TOKENS, "utf-8");
+  const ESTILOS = ["escolar", "examen", "arcade", "minimal", "pizarra"] as const;
+
+  /** Valor de un token en un estilo: lo que declara el bloque del estilo o, si no, el defecto. */
+  function resolver(estilo: string, token: string): string {
+    const bloque = new RegExp(`\\.tokens\\[data-estilo='${estilo}'\\]\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? "";
+    const propio = new RegExp(`--la-${token}\\s*:\\s*([^;]+);`).exec(bloque)?.[1]?.trim();
+    const valor = propio ?? new RegExp(`\\.tokens\\s*\\{[\\s\\S]*?--la-${token}\\s*:\\s*([^;]+);`).exec(css)![1].trim();
+    // `var(--lw-…, #hex)` → el fallback
+    return /var\([^,]+,\s*(#[0-9a-fA-F]{3,8})\)/.exec(valor)?.[1] ?? valor;
+  }
+
+  it("hay un bloque por cada estilo salvo `escolar` (que es el defecto) y ninguno de más", () => {
+    const declarados = [...css.matchAll(/\.tokens\[data-estilo='([a-z]+)'\]/g)].map((m) => m[1]).sort();
+    expect(declarados).toEqual(["arcade", "examen", "minimal", "pizarra"]);
+    expect(ESTILOS_ACTIVIDAD_LISTA).toEqual([...ESTILOS]);
+  });
+
+  for (const estilo of ESTILOS) {
+    it(`${estilo}: el texto y el texto de cada estado se leen sobre la superficie (≥ 4.5:1)`, () => {
+      const superficie = resolver(estilo, "color-superficie");
+      for (const t of ["color-texto", "color-texto-suave", ...ACTIVITY_ESTADOS.map((e) => `color-${e}-texto`)]) {
+        const ratio = contrastRatio(resolver(estilo, t), superficie);
+        expect(ratio, `${estilo}: ${t} sobre ${superficie}`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+
+    it(`${estilo}: la selección y el borde se distinguen de la superficie (≥ 3:1 la selección)`, () => {
+      const superficie = resolver(estilo, "color-superficie");
+      expect(contrastRatio(resolver(estilo, "color-seleccionado"), superficie), `${estilo}: seleccionado`).toBeGreaterThanOrEqual(3);
+      expect(resolver(estilo, "color-borde")).not.toBe(superficie);
+    });
+  }
 });
 
 describe("contarHexSueltos", () => {
