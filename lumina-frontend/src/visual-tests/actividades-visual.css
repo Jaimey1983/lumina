@@ -1,0 +1,11 @@
+/*
+ * U0 — hoja de estilos del entorno visual de actividades.
+ *
+ * `globals.css` solo declara `@source` para `@lumina/ui` y `@lumina/editor-shared`
+ * (no para `@lumina/element-kit`), así que Tailwind no genera las clases que usan
+ * las actividades salvo que otro archivo las repita. Acá se declara el origen del
+ * kit para que la línea base muestre el diseño PREVISTO. Ver «Hallazgos» en
+ * `docs/tablero/etapa-U-matriz.md`.
+ */
+@import '../styles/globals.css';
+@source "../../../packages/element-kit/src";
