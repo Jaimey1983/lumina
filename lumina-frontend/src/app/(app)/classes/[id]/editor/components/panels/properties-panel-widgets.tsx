@@ -123,6 +123,7 @@ import { PanelAnimaciones, type ApplyNow } from './properties-panel-shared';
 const TITULO_PANEL_SOLO_REGISTRY: Record<string, string> = {
   callout: 'Callout',
   galeria: 'Galería',
+  stepper: 'Stepper',
 };
 
 export interface WidgetPropertiesCtx {

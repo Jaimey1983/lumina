@@ -31,6 +31,7 @@ export const WIDGET_TIPOS = [
   'tabla_periodica',
   'callout',
   'galeria',
+  'stepper',
 ] as const;
 
 export type WidgetTipo = (typeof WIDGET_TIPOS)[number];

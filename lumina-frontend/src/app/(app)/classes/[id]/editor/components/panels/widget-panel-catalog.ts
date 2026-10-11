@@ -10,6 +10,7 @@ import {
   Images,
   Info,
   Layers,
+  ListOrdered,
   ListCollapse,
   MessageSquare,
   MousePointer2,
@@ -170,6 +171,12 @@ const WIDGET_PANEL_META: Record<WidgetTipo, WidgetPanelMeta> = {
     Icon: Images,
     rowClassName: 'hover:bg-rose-50/90 dark:hover:bg-rose-950/25',
     iconClassName: 'text-rose-600 dark:text-rose-400',
+  },
+  stepper: {
+    group: 'lienzo',
+    Icon: ListOrdered,
+    rowClassName: 'hover:bg-emerald-50/90 dark:hover:bg-emerald-950/25',
+    iconClassName: 'text-emerald-600 dark:text-emerald-400',
   },
 };
 

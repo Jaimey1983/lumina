@@ -30,10 +30,10 @@ export { getBlockPos, type BlockPos } from '@lumina/editor-shared/block-pos';
 
 /** Returns a new block with updated x, y (canvas % or activity `marco`). */
 /**
- * Widgets que nacen como `ElementDefinition` (callout T16, galería T17) y no están en el union
+ * Widgets que nacen como `ElementDefinition` (callout T16, galería T17, stepper T18) y no están en el union
  * `Block` viejo (Regla 3): todos tienen `x/y/ancho/alto` en el bloque raíz.
  */
-const TIPOS_SOLO_REGISTRY: ReadonlySet<string> = new Set(['callout', 'galeria']);
+const TIPOS_SOLO_REGISTRY: ReadonlySet<string> = new Set(['callout', 'galeria', 'stepper']);
 const esSoloRegistry = (block: Block) => TIPOS_SOLO_REGISTRY.has((block as { tipo: string }).tipo);
 
 export function withPosition(block: Block, x: number, y: number): Block {

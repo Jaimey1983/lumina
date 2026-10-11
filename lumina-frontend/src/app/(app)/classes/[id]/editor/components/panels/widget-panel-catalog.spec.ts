@@ -34,6 +34,7 @@ describe('widget-panel-catalog', () => {
       'molecula',
       'callout',
       'galeria',
+      'stepper',
     ]);
     expect(getWidgetPanelItemsByGroup('overlay').map((item) => item.type)).toEqual(['popup']);
     expect(getWidgetPanelItem('boton')?.group).toBe('control');

@@ -932,6 +932,11 @@ function BlockNode({
     if (block.tipo === 'columnas') {
       return { renderInnerBlock: renderColumnInnerBlock };
     }
+    // `stepper` (T18) no está en el union `Block` viejo (Regla 3): necesita el canal de eventos
+    // para avisar `visitado` al completarse.
+    if ((block as { tipo: string }).tipo === 'stepper') {
+      return { ...emisorConfig, isThumbnail };
+    }
     if (block.tipo === 'ecuacion') {
       return {
         ...emisorConfig,
