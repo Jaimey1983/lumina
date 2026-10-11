@@ -179,7 +179,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T14 — Timeline: orientación, densidad y animación al desplazar
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/timeline/` y `elements/timeline/`. **NO** reescribe las 8 variantes.
 - **Entregable:** orientación vertical/horizontal por config, densidad compacta/amplia, animación al entrar en vista con `WidgetMotion` (`useScroll` solo si respeta reduced-motion). Paridad: las 8 variantes se ven igual por defecto. Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
