@@ -107,7 +107,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U7 — Barajado con semilla y fin del `sort(random)`
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U6 `hecho`.
 - **Alcance — PUEDE tocar:** helper nuevo `activities/_shared/barajar.ts` (Fisher–Yates con PRNG sembrado desde `ajustes.semilla`; sin dependencia nueva salvo que se justifique) y los 8 archivos que hoy hacen `sort(() => Math.random() - 0.5)` **solo** para sustituir esa línea. **NO** cambia otra lógica de esos viewers.
 - **Entregable:** `barajar(arr, semilla)` con spec de uniformidad y reproducibilidad; sin semilla, comportamiento equivalente al actual (orden distinto por alumno). Los 11 `Math.random` de viewers se clasifican en la ficha (barajado / posición visual / otro) y solo los de barajado migran. Verificación: `grep -rn "Math.random() - 0.5" packages/element-kit/src/activities` → **0**; `pnpm --filter @lumina/element-kit test`.
