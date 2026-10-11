@@ -115,7 +115,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U8 — Panel común de configuración y galería de estilos
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U7 `hecho` y **S12 `hecho`** (las propiedades usan `CollapsibleSection`; el índice de `AGENTS.md` aún dice «en revisión»).
 - **Alcance — PUEDE tocar:** componente nuevo `ActividadAjustesPanel` en `activities/_shared/` (secciones: Modo y calificación, Tiempo e intentos, Vidas, Pistas, Retroalimentación, Aspecto), `PresetGallery` de `@lumina/editor-shared` **solo para leerla**, `presets` de las definiciones de Memoria y V/F, y las `Propiedades` de esas dos. **NO** toca el panel de las demás.
 - **Entregable:** el panel escribe `ajustes` (nunca los campos legacy); presets de estilo (p. ej. *Escolar, Examen, Arcade, Minimal, Pizarra*) como `estadoPatch` visibles en una `CollapsibleSection` «Estilos»; opciones que no aplican a la actividad se ocultan según una declaración por tipo. `apariencia` de esas definiciones pasa a reflejar lo que realmente soportan. Verificación: `pnpm --filter @lumina/element-kit test`, `lint`, `test:visual`.
