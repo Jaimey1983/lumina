@@ -187,7 +187,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T15 — Overlays con Floating UI (Hotspot, Tooltip, Popup)
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T4 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/hotspot/`, `widgets/tooltip/`, `widgets/popup/` (parts/viewer/CSS), `packages/editor-shared/src/use-overlay-auto-position.ts` (+ su spec) y `packages/element-kit/package.json` (declarar `@floating-ui/react`). **NO** cambia los `*-properties.tsx`.
 - **Entregable:** el posicionamiento `auto` usa Floating UI (flip, shift, flecha, colisión) y deja de depender del cálculo casero; se mantiene el portal a `.canvas-slide` y el comportamiento en el editor; animación de entrada con `WidgetMotion`. Prueba de bordes (burbuja pegada a cada borde del slide) y con zoom del canvas distinto de 100 %. Paridad: posiciones explícitas (`arriba/abajo/izquierda/derecha`) no cambian. Verificación: `pnpm --filter @lumina/editor-shared test && pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
