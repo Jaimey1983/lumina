@@ -147,7 +147,7 @@ T1 y T2 tocan archivos disjuntos (CSS/tokens contra definiciones TS) y pueden ir
 
 #### T10 — Contador: dígitos, anillo, hitos y presets de dinámica
 - **Operador:** Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** T1, T3, T4 y T5 `hecho`; S12 `hecho`.
 - **Alcance — PUEDE tocar:** `widgets/contador/` y `elements/contador/`. **NO** toca `ruleta` ni `progreso`.
 - **Entregable:** variantes dígitos / flip-clock / anillo; hitos con alerta visual y sonora configurable; presets Pomodoro 25/5, cuenta atrás dramática, cronómetro de debate y «semáforo» de dinámica grupal; `aria-live` conservado de T4. Paridad: temporizador, cronómetro y número se comportan igual con la config legada, incluido «al terminar → siguiente». Verificación: `pnpm --filter @lumina/element-kit test && pnpm --filter @lumina/element-kit lint && pnpm --filter lumina-frontend test:visual`.
