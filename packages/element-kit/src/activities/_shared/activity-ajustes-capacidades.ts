@@ -54,6 +54,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // Completar blancos (U9a.3): un solo envío con el sonido de acierto/error; tiempo y estilo.
   // No hay mensaje ni explicación al responder (el viewer no los muestra), así que no se ofrecen.
   completar_blancos: { tiempo: true, sonido: true, estilo: true },
+  // Encuesta viva (U9a.4): un solo voto; tiempo límite, sonido y estilo. NO se ofrece nota (es de
+  // participación) ni «varias respuestas» (el viewer no lo implementa: ver la ficha).
+  encuesta_viva: { tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

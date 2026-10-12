@@ -7,19 +7,27 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_ENCUESTA_VIVA } from "./encuesta_viva-estilos.js";
 import {
   ENCUESTA_VIVA_TIPO,
   type EncuestaVivaConfig,
   type EncuestaVivaEstado,
 } from "./encuesta_viva-types.js";
 
-const { Editor, Viewer, Propiedades } = crearAdaptadoresClasicos<
+const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasicos<
   EncuestaVivaEstado,
   EncuestaVivaConfig
 >({
   Editor: LivePollActivityEditor,
   viewer: { via: "component", Viewer: LivePollViewer },
   editorNeedsSyncKey: true,
+});
+
+/** U9a.4: el panel suma estilos y ajustes comunes al editor de siempre. */
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_ENCUESTA_VIVA,
+  storageKey: "actividad.encuesta_viva.estilos",
 });
 
 export {
@@ -40,11 +48,13 @@ export const encuestaVivaDefinition = {
   Editor,
   Viewer,
   Propiedades,
+  // U9a.4: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y no hay movimiento.
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_ENCUESTA_VIVA,
   puntuacion: (estado: EncuestaVivaEstado, respuesta?: unknown) =>
     evaluarEncuestaViva(estado, respuesta).score ?? 0,
   catalogo: CATALOGO_ELEMENTOS["encuesta_viva"],
