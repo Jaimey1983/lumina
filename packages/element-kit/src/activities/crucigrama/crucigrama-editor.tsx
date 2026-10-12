@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef } from 'react';
 import { CrucigramaActivity } from '@lumina/types/slide';
+import { laVar } from '../_shared/activity-tokens.js';
 import { calcularBounds, construirMapaCeldas, numerarPalabras } from './crucigrama-config.js';
 import {
   CRUCIGRAMA_GAP_PX,
@@ -73,8 +74,8 @@ export function CrucigramaEditor({ actividad }: CrucigramaEditorProps) {
                     style={{
                       width: cellSize,
                       height: cellSize,
-                      backgroundColor: celda.conflicto ? '#FEF2F2' : colorCelda,
-                      border: celda.conflicto ? '1px solid #DC2626' : '1px solid #D1D5DB',
+                      backgroundColor: celda.conflicto ? laVar('color-incorrecto-suave') : colorCelda,
+                      border: `1px solid ${celda.conflicto ? laVar('color-incorrecto') : laVar('color-borde')}`,
                       position: 'relative',
                       fontSize: tamanoFuenteCeldaCrucigrama(cellSize),
                       color: colorTexto,

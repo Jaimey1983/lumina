@@ -96,6 +96,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   ahorcado: { mostrarNota: true, tiempo: true, sonido: true, estilo: true },
   // Anagrama (U9c.2): nota en la pantalla final, tiempo, «mismo orden para todos» (letras mezcladas), sonido y estilo. Los intentos por palabra (configuracion.intentos) y la pista son datos del editor; no se ofrece «Intentos» común para no confundirlo con ellos.
   anagrama: { mostrarNota: true, tiempo: true, semilla: true, sonido: true, estilo: true },
+  // Crucigrama (U9c.3): el viewer lee nota, tiempo, sonido y estilo; un solo intento (verificar)
+  crucigrama: { mostrarNota: true, tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

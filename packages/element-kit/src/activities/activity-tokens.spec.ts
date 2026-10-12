@@ -50,10 +50,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "abrir-caja/abrir-caja-properties.tsx": 1,
   "abrir-caja/abrir-caja-viewer.tsx": 3,
   "abrir-caja/abrir-caja.module.css": 1,
-  "crucigrama/crucigrama-defaults.ts": 2,
-  "crucigrama/crucigrama-editor.tsx": 3,
-  "crucigrama/crucigrama-properties.tsx": 1,
-  "crucigrama/crucigrama-viewer.tsx": 9,
   "globos/globos-config.ts": 8,
   "globos/globos-defaults.ts": 6,
   "globos/globos-properties.tsx": 2,
@@ -87,6 +83,10 @@ const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly 
   "clasificar/clasificar-defaults.ts": {
     hex: 4,
     motivo: "colorCategorias por defecto: la paleta se GUARDA en el slide y el viewer la lee tal cual",
+  },
+  "crucigrama/crucigrama-defaults.ts": {
+    hex: 2,
+    motivo: "colorCelda y colorTexto por defecto: se guardan en el slide y el viewer los lee tal cual",
   },
   "memoria/memoria-defaults.ts": {
     hex: 2,
