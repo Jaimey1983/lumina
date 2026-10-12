@@ -63,6 +63,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   arrastrar_soltar: 'Drag & Drop',
   emparejar: 'Emparejar',
   relacionar_lineas: 'Relacionar con líneas',
+  problema_pasos: 'Problema paso a paso',
   ordenar: 'Ordenar pasos',
   video_interactivo: 'Video interactivo',
   clasificar: 'Clasificar',

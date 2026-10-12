@@ -128,6 +128,7 @@ import {
 import { createDefaultGlobos } from '@lumina/element-kit/activities/globos/globos-defaults';
 import { createDefaultTorneo } from '@lumina/element-kit/activities/torneo/torneo-defaults';
 import { createDefaultRelacionarLineas } from '@lumina/element-kit/activities/relacionar-lineas/relacionar-lineas-defaults';
+import { createDefaultProblemaPasos } from '@lumina/element-kit/activities/problema-pasos/problema-pasos-defaults';
 import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
 import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
@@ -1996,6 +1997,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'drag-drop':        dragDropTemplate,
         'match':            matchPairsTemplate,
         relacionar_lineas:  createDefaultRelacionarLineas,
+        problema_pasos:     createDefaultProblemaPasos,
         'sort-steps':       orderStepsTemplate,
         'video-interactive': videoInteractiveTemplate,
         'live-poll':        livePollTemplate,
@@ -2027,6 +2029,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'drag-drop':        'Arrastrar y soltar',
         'match':            'Emparejar',
         relacionar_lineas:  'Relacionar con líneas',
+        problema_pasos:     'Problema paso a paso',
         'sort-steps':       'Ordenar pasos',
         'video-interactive': 'Video interactivo',
         'live-poll':        'Encuesta en vivo',

@@ -29,6 +29,7 @@ import {
   TableProperties,
   Atom,
   Spline,
+  Footprints,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -52,6 +53,7 @@ export type ActivityType =
   | 'drag-drop'
   | 'match'
   | 'relacionar_lineas'
+  | 'problema_pasos'
   | 'sort-steps'
   | 'video-interactive'
   | 'live-poll'
@@ -99,6 +101,7 @@ const INTERACTION: ActivityItem[] = [
   { type: 'drag-drop',         label: 'Drag & Drop',        Icon: GripVertical },
   { type: 'match',             label: 'Emparejar',           Icon: Columns2 },
   { type: 'relacionar_lineas', label: 'Relacionar con líneas', Icon: Spline },
+  { type: 'problema_pasos', label: 'Problema paso a paso', Icon: Footprints },
   { type: 'sort-steps',        label: 'Ordenar pasos',       Icon: ListOrdered },
   { type: 'video-interactive', label: 'Video interactivo',   Icon: Video },
 ];

@@ -32,6 +32,7 @@ const IMPORTADORES: Partial<Record<Activity['tipo'], Importador>> = {
   arrastrar_soltar: listas.importadorArrastrarSoltar,
   abrir_caja: listas.importadorAbrirCaja,
   relacionar_lineas: nuevos.importadorRelacionarLineas,
+  problema_pasos: nuevos.importadorProblemaPasos,
 };
 
 export function importadorDe(tipo: Activity['tipo']): Importador | undefined {

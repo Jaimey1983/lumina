@@ -1,5 +1,5 @@
 /**
- * U2 — `normalizarAjustes` (etapa U / DU3). Cubre los 30 tipos de `Activity`: los 27 del
+ * U2 — `normalizarAjustes` (etapa U / DU3). Cubre los 31 tipos de `Activity`: los 28 del
  * kit con su payload real (`crearPorDefecto()` del registry) y `torneo`, `escape_room` y
  * `ruleta`, que viven fuera del kit.
  */
@@ -17,7 +17,7 @@ import { DERIVACION_LEGACY, normalizarAjustes } from "./activity-settings.js";
 
 const TIPOS_KIT = [
   "quiz_multiple", "verdadero_falso", "short_answer", "respuesta_matematica",
-  "completar_blancos", "arrastrar_soltar", "emparejar", "relacionar_lineas", "ordenar_pasos",
+  "completar_blancos", "arrastrar_soltar", "emparejar", "relacionar_lineas", "problema_pasos", "ordenar_pasos",
   "video_interactivo", "encuesta_viva", "nube_palabras", "balancear_ecuacion",
   "ubicar_elemento", "formular_compuesto", "clasificar", "memoria", "puzzle_imagen",
   "sopa_letras", "crucigrama", "anagrama", "ahorcado", "puzzle_palabras", "abrir_caja",
@@ -47,6 +47,7 @@ const DEFECTOS: Record<string, { modo: string; intentos: number | null; barajar:
   arrastrar_soltar: { modo: "evaluacion", intentos: 1, barajar: false, nota: true },
   emparejar: { modo: "evaluacion", intentos: 1, barajar: true, nota: true },
   relacionar_lineas: { modo: "evaluacion", intentos: 1, barajar: true, nota: true },
+  problema_pasos: { modo: "evaluacion", intentos: 1, barajar: false, nota: true },
   ordenar_pasos: { modo: "evaluacion", intentos: 1, barajar: true, nota: true },
   video_interactivo: { modo: "evaluacion", intentos: 1, barajar: false, nota: true },
   encuesta_viva: { modo: "practica", intentos: 1, barajar: false, nota: false },
@@ -90,12 +91,12 @@ function con(tipo: string, parche: Record<string, unknown>): Activity {
 }
 
 describe("normalizarAjustes — cobertura", () => {
-  it("la tabla de derivación tiene una entrada por cada tipo de Activity (30)", async () => {
+  it("la tabla de derivación tiene una entrada por cada tipo de Activity (31)", async () => {
     await import("../../index.js");
     expect(Object.keys(DERIVACION_LEGACY).sort()).toEqual(
       [...TIPOS_KIT, ...Object.keys(FUERA_DEL_KIT)].sort(),
     );
-    expect(Object.keys(DERIVACION_LEGACY)).toHaveLength(30);
+    expect(Object.keys(DERIVACION_LEGACY)).toHaveLength(31);
   });
 
   for (const tipo of [...TIPOS_KIT, ...Object.keys(FUERA_DEL_KIT)]) {

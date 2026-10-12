@@ -1,8 +1,10 @@
 /**
  * U12 / catálogo nuevo (U14+) — importadores de las actividades creadas después de U12.
  */
-import type { RelacionarLineasActivity } from '@lumina/types/slide';
+import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
+import type { ProblemaPaso, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
 
+import { PROBLEMA_MAX_PASOS, PROBLEMA_MAX_PISTAS_POR_PASO } from '../../problema-pasos/problema-pasos-config.js';
 import { RELACIONAR_MAX_DERECHA, RELACIONAR_MAX_IZQUIERDA } from '../../relacionar-lineas/relacionar-lineas-config.js';
 import { nuevoId, prepararFilas, type FilaDescartada, type Importador } from './importacion.js';
 import { sinAcentos } from './tabla.js';
@@ -39,5 +41,45 @@ export const importadorRelacionarLineas: Importador<RelacionarLineasActivity> = 
       }
     }
     return { actividad: { ...actividad, izquierda, derecha, relaciones }, leidas, descartadas };
+  },
+};
+
+export const importadorProblemaPasos: Importador<ProblemaPasosActivity> = {
+  tipo: 'problema_pasos',
+  titulo: 'Pasos',
+  formato: 'Instrucción ; respuesta ; pista 1 ; pista 2 …  (la respuesta es un número, o una expresión si empieza con =)',
+  ejemplo: '¿Cuál es el área del terreno?;15;Base por altura\nEscribe el costo en función de x;=2000x^2;El área es x por x',
+  encabezados: ['instruccion', 'paso'],
+  importar(actividad, filas, modo) {
+    const pasos: ProblemaPaso[] = modo === 'reemplazar' ? [] : [...(actividad.pasos ?? [])];
+    const descartadas: FilaDescartada[] = [];
+    let leidas = 0;
+    for (const { fila, celdas } of prepararFilas(filas, ['instruccion', 'paso'], sinAcentos)) {
+      const texto = celdas.join(' | ');
+      const instruccion = (celdas[0] ?? '').trim();
+      const cruda = (celdas[1] ?? '').trim();
+      const algebraico = cruda.startsWith('=');
+      const respuesta = (algebraico ? cruda.slice(1) : cruda).trim();
+      if (!instruccion) {
+        descartadas.push({ fila, motivo: 'Falta la instrucción.', texto });
+      } else if (!respuesta) {
+        descartadas.push({ fila, motivo: 'Falta la respuesta.', texto });
+      } else if (algebraico && validarExpresionAlgebraica(respuesta)) {
+        descartadas.push({ fila, motivo: `La expresión no se puede leer: ${validarExpresionAlgebraica(respuesta)}`, texto });
+      } else if (!algebraico && parseRespuestaNumerica(respuesta) === null) {
+        descartadas.push({ fila, motivo: 'La respuesta no es un número (para una expresión, empieza con =).', texto });
+      } else if (pasos.length >= PROBLEMA_MAX_PASOS) {
+        descartadas.push({ fila, motivo: `Se superó el máximo de ${PROBLEMA_MAX_PASOS} pasos.`, texto });
+      } else {
+        const pistas = celdas.slice(2).map((c) => c.trim()).filter(Boolean);
+        if (pistas.length > PROBLEMA_MAX_PISTAS_POR_PASO) {
+          descartadas.push({ fila, motivo: `Tiene más de ${PROBLEMA_MAX_PISTAS_POR_PASO} pistas.`, texto });
+          continue;
+        }
+        pasos.push({ id: nuevoId('paso'), instruccion, modo: algebraico ? 'algebraico' : 'numerico', respuesta, pistas });
+        leidas += 1;
+      }
+    }
+    return { actividad: { ...actividad, pasos }, leidas, descartadas };
   },
 };

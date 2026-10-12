@@ -210,6 +210,11 @@ export const CATALOGO_ELEMENTOS = {
     familia: "actividad",
   },
   arrastrar_soltar: { nombre: "Arrastrar y soltar", familia: "actividad" },
+  problema_pasos: {
+    nombre: "Problema paso a paso",
+    descripcion: "Un problema resuelto en pasos, con respuesta numérica o algebraica y pistas escalonadas",
+    familia: "actividad",
+  },
   relacionar_lineas: {
     nombre: "Relacionar con líneas",
     descripcion: "Une dos columnas trazando líneas; la de la derecha puede traer distractores",

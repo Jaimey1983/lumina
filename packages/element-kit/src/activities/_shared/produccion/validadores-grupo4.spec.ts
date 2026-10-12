@@ -39,14 +39,14 @@ const avisos = (a: Activity) => validarActividad(a).filter((p) => p.nivel === 'a
 const nueva = <A extends Activity>(f: () => Activity): A => structuredClone(f()) as A;
 
 describe('Grupo 4 — despacho y valores por defecto', () => {
-  it('cubre las 30 actividades', () => {
+  it('cubre las 31 actividades', () => {
     expect(tiposValidables().sort()).toEqual(
       [
         'quiz_multiple', 'verdadero_falso', 'short_answer', 'respuesta_matematica', 'completar_blancos',
         'arrastrar_soltar', 'emparejar', 'ordenar_pasos', 'video_interactivo', 'encuesta_viva', 'nube_palabras',
         'balancear_ecuacion', 'ubicar_elemento', 'formular_compuesto', 'clasificar', 'memoria', 'puzzle_imagen',
         'sopa_letras', 'crucigrama', 'anagrama', 'ahorcado', 'puzzle_palabras', 'abrir_caja', 'globos', 'topo',
-        'historia_ramificada', 'ruleta', 'torneo', 'escape_room', 'relacionar_lineas',
+        'historia_ramificada', 'ruleta', 'torneo', 'escape_room', 'relacionar_lineas', 'problema_pasos',
       ].sort(),
     );
   });

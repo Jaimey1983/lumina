@@ -102,6 +102,7 @@ export const DERIVACION_LEGACY: Readonly<Record<Tipo, readonly string[]>> = {
   arrastrar_soltar: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   emparejar: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   relacionar_lineas: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
+  problema_pasos: ['pistas.cantidad ← algún paso con pistas ? null (ilimitadas) : 0 (L)'],
   ordenar_pasos: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   video_interactivo: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   encuesta_viva: ['tiempoLimiteSeg ← tiempoLimiteSeg (L)'],
@@ -192,6 +193,9 @@ function derivarDeCamposLegacy(a: Activity): {
     case 'short_answer':
     case 'respuesta_matematica':
       out.pistas = { cantidad: texto(a.hint) ? 1 : 0, costoPct: 0 };
+      break;
+    case 'problema_pasos':
+      out.pistas = { cantidad: a.pasos?.some((p) => (p.pistas ?? []).some((x) => texto(x))) ? null : 0, costoPct: 0 };
       break;
     case 'encuesta_viva': {
       const t = limite(a.tiempoLimiteSeg, 86_400);

@@ -41,6 +41,7 @@ const VALIDADORES: Partial<Record<Activity['tipo'], Validador<never>>> = {
   torneo: g4.validarTorneo,
   escape_room: g4.validarEscapeRoom,
   relacionar_lineas: nuevos.validarRelacionarLineas,
+  problema_pasos: nuevos.validarProblemaPasos,
 };
 
 /** Tipos que ya tienen validador. */

@@ -62,8 +62,8 @@ async function montar(tipo: ActividadTipo, estado: unknown = estadoActividad(tip
 }
 
 describe('actividades — línea base visual (U0)', () => {
-  test('el registry tiene las 27 actividades', () => {
-    expect(ACTIVIDAD_TIPOS).toHaveLength(27);
+  test('el registry tiene las 28 actividades', () => {
+    expect(ACTIVIDAD_TIPOS).toHaveLength(28);
     for (const tipo of ACTIVIDAD_TIPOS) {
       expect(elementRegistry.obtener(tipo), tipo).toBeDefined();
     }

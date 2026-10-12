@@ -1,7 +1,8 @@
 /** U14+ — validadores e importadores de las actividades nuevas (catálogo posterior a U12). */
 import { describe, expect, it } from 'vitest';
-import type { RelacionarLineasActivity } from '@lumina/types/slide';
+import type { ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
 
+import { createDefaultProblemaPasos } from '../../problema-pasos/problema-pasos-defaults.js';
 import { createDefaultRelacionarLineas } from '../../relacionar-lineas/relacionar-lineas-defaults.js';
 import { importadorDe, importarTexto } from './importadores.js';
 import { validarActividad } from './validacion.js';
@@ -69,5 +70,83 @@ describe('relacionar_lineas — importación', () => {
     const r = importarTexto(a, 'A;1', 'reemplazar').actividad;
     expect(r.ajustes).toEqual(a.ajustes);
     expect(r.instruccion).toBe(a.instruccion);
+  });
+});
+
+describe('problema_pasos — validación', () => {
+  const pb = (): ProblemaPasosActivity => structuredClone(createDefaultProblemaPasos());
+  const er = (a: ProblemaPasosActivity) => validarActividad(a).filter((p) => p.nivel === 'error').map((p) => p.mensaje);
+  const av = (a: ProblemaPasosActivity) => validarActividad(a).filter((p) => p.nivel === 'aviso').map((p) => p.mensaje);
+
+  it('lo que se crea por defecto no tiene problemas', () => {
+    expect(validarActividad(pb())).toEqual([]);
+  });
+  it('sin enunciado ni pasos', () => {
+    const a = pb();
+    a.enunciado = ' ';
+    a.pasos = [];
+    expect(er(a)).toEqual(['Falta el enunciado.', 'No tiene pasos.']);
+  });
+  it('instrucción y respuesta faltantes, no numérica, expresión ilegible y tolerancia negativa', () => {
+    const a = pb();
+    a.pasos[0]!.instruccion = '';
+    a.pasos[0]!.respuesta = '';
+    a.pasos[1]!.respuesta = 'doce';
+    a.pasos[1]!.modo = 'numerico';
+    a.pasos[2]!.respuesta = '2(x+';
+    a.pasos[1]!.tolerancia = -1;
+    const e = er(a);
+    expect(e).toContain('Falta la instrucción.');
+    expect(e).toContain('Falta la respuesta modelo.');
+    expect(e).toContain('La respuesta modelo no es un número.');
+    expect(e.some((m) => m.startsWith('La respuesta modelo no se puede leer:'))).toBe(true);
+    expect(e).toContain('La tolerancia no puede ser negativa.');
+  });
+  it('pistas vacías son un aviso', () => {
+    const a = pb();
+    a.pasos[0]!.pistas = ['Una', ''];
+    expect(er(a)).toEqual([]);
+    expect(av(a)).toEqual(['Tiene pistas vacías (no se ofrecerán).']);
+  });
+});
+
+describe('problema_pasos — importación', () => {
+  const pb = (): ProblemaPasosActivity => structuredClone(createDefaultProblemaPasos());
+  it('el ejemplo se lee entero y deja la actividad sin errores', () => {
+    const imp = importadorDe('problema_pasos')!;
+    const r = importarTexto(pb(), imp.ejemplo, 'reemplazar');
+    expect(r.descartadas).toEqual([]);
+    expect(r.leidas).toBe(2);
+    expect(r.actividad.pasos.map((p) => p.modo)).toEqual(['numerico', 'algebraico']);
+    expect(r.actividad.pasos[1]).toMatchObject({ respuesta: '2000x^2', pistas: ['El área es x por x'] });
+    expect(validarActividad(r.actividad).filter((p) => p.nivel === 'error')).toEqual([]);
+  });
+  it('acepta coma decimal y fracciones; descarta con motivo lo que no se puede leer', () => {
+    const r = importarTexto(
+      pb(),
+      'Instrucción;Respuesta\nA;3,14\nB;3/4\n;5\nC;\nD;doce\nE;=2(x+\nF;7;p1;p2;p3;p4;p5;p6',
+      'reemplazar',
+    );
+    expect(r.leidas).toBe(2);
+    expect(r.descartadas.map((d) => d.motivo)).toEqual([
+      'Falta la instrucción.',
+      'Falta la respuesta.',
+      'La respuesta no es un número (para una expresión, empieza con =).',
+      expect.stringMatching(/^La expresión no se puede leer:/),
+      'Tiene más de 5 pistas.',
+    ]);
+  });
+  it('agregar conserva los pasos anteriores y respeta el máximo de 10', () => {
+    const a = pb();
+    const filas = Array.from({ length: 12 }, (_, i) => `P${i};${i}`).join('\n');
+    const r = importarTexto(a, filas, 'agregar');
+    expect(r.actividad.pasos).toHaveLength(10);
+    expect(r.actividad.pasos.slice(0, 3)).toEqual(a.pasos);
+    expect(r.descartadas).toHaveLength(12 - (10 - 3));
+  });
+  it('no toca enunciado, secuencial ni ajustes', () => {
+    const a = { ...pb(), secuencial: false, ajustes: { estilo: 'examen' as const } };
+    const r = importarTexto(a, 'A;1', 'reemplazar').actividad;
+    expect([r.enunciado, r.secuencial, r.ajustes]).toEqual([a.enunciado, false, a.ajustes]);
   });
 });
