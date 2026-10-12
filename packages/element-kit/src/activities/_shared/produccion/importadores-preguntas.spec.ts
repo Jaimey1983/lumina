@@ -21,10 +21,9 @@ const nueva = <A,>(f: () => unknown): A => structuredClone(f()) as A;
 
 describe('importadorDe', () => {
   it('cubre los 7 tipos de preguntas y cada uno trae formato y ejemplo', () => {
-    expect(tiposImportables().sort()).toEqual(
-      ['encuesta_viva', 'globos', 'quiz_multiple', 'topo', 'torneo', 'verdadero_falso', 'video_interactivo'].sort(),
-    );
-    for (const t of tiposImportables()) {
+    const propios = ['encuesta_viva', 'globos', 'quiz_multiple', 'topo', 'torneo', 'verdadero_falso', 'video_interactivo'];
+    for (const t of propios) expect(tiposImportables()).toContain(t);
+    for (const t of propios) {
       const i = importadorDe(t as never)!;
       expect(i.formato.length, t).toBeGreaterThan(10);
       expect(i.ejemplo.length, t).toBeGreaterThan(5);
@@ -48,7 +47,7 @@ describe('importadorDe', () => {
     }
   });
   it('un tipo sin importador devuelve la actividad intacta', () => {
-    const a = { tipo: 'memoria' } as never;
+    const a = { tipo: 'puzzle_imagen' } as never;
     expect(importarTexto(a, 'x', 'agregar')).toEqual({ actividad: a, leidas: 0, descartadas: [] });
   });
 });

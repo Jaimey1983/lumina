@@ -1,10 +1,11 @@
 /**
  * U12.2 — punto de entrada de la importación: `importadorDe(tipo)` y `importarTexto`.
- * Un tipo sin importador devuelve `undefined` (el panel no ofrece «Importar»). U12.2b suma el resto.
+ * Un tipo sin importador devuelve `undefined` (el panel no ofrece «Importar»).
  */
 import type { Activity } from '@lumina/types/slide';
 
 import type { Importador, ModoImportacion, ResultadoImportacion } from './importacion.js';
+import * as listas from './importadores-listas.js';
 import * as preguntas from './importadores-preguntas.js';
 import { parsearTabla } from './tabla.js';
 
@@ -16,6 +17,19 @@ const IMPORTADORES: Partial<Record<Activity['tipo'], Importador>> = {
   video_interactivo: preguntas.importadorVideoInteractivo,
   verdadero_falso: preguntas.importadorVerdaderoFalso,
   encuesta_viva: preguntas.importadorEncuestaViva,
+  emparejar: listas.importadorEmparejar,
+  memoria: listas.importadorMemoria,
+  ordenar_pasos: listas.importadorOrdenarPasos,
+  ruleta: listas.importadorRuleta,
+  nube_palabras: listas.importadorNubePalabras,
+  sopa_letras: listas.importadorSopaLetras,
+  anagrama: listas.importadorAnagrama,
+  puzzle_palabras: listas.importadorPuzzlePalabras,
+  crucigrama: listas.importadorCrucigrama,
+  ahorcado: listas.importadorAhorcado,
+  clasificar: listas.importadorClasificar,
+  arrastrar_soltar: listas.importadorArrastrarSoltar,
+  abrir_caja: listas.importadorAbrirCaja,
 };
 
 export function importadorDe(tipo: Activity['tipo']): Importador | undefined {
