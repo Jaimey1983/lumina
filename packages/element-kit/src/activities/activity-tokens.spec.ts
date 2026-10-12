@@ -50,8 +50,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "abrir-caja/abrir-caja-properties.tsx": 1,
   "abrir-caja/abrir-caja-viewer.tsx": 3,
   "abrir-caja/abrir-caja.module.css": 1,
-  "ahorcado/ahorcado-figure.tsx": 17,
-  "ahorcado/ahorcado.module.css": 40,
   "anagrama/anagrama-properties.tsx": 1,
   "anagrama/anagrama-viewer.tsx": 1,
   "crucigrama/crucigrama-defaults.ts": 2,
@@ -80,6 +78,14 @@ const EXENTOS: Readonly<Record<string, number>> = {
  * No se retiran en U9: se justifican acá. Mismo tope exacto que `EXENTOS`.
  */
 const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly motivo: string }>> = {
+  "ahorcado/ahorcado-figure.tsx": {
+    hex: 17,
+    motivo: "ilustración del muñeco y la horca (madera, cuerda, pasto, figura): colores de dibujo, no de interfaz ni de tema",
+  },
+  "ahorcado/ahorcado.module.css": {
+    hex: 14,
+    motivo: "marco y estados de la ilustración del muñeco (pasto, pastel de ganado/perdido): colores de dibujo",
+  },
   "clasificar/clasificar-defaults.ts": {
     hex: 4,
     motivo: "colorCategorias por defecto: la paleta se GUARDA en el slide y el viewer la lee tal cual",

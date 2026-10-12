@@ -1,148 +1,175 @@
 'use client'
 
+/**
+ * Viewer de Ahorcado sobre el `ActivityShell` (U9c.1).
+ *
+ * El shell aporta el cronómetro, el progreso de la sesión y la pantalla de resultados; el
+ * estado de la partida sigue siendo `procesarLetra` (puro). Lo que sale hacia `@lumina/scoring`
+ * NO cambió: UNA respuesta `{ letrasAdivinadas, letrasFalladas }` al terminar. Sale por
+ * `onResponse` (canal unificado, DU2); `onComplete` se acepta solo como alias transitorio.
+ * Se juega con el teclado de pantalla o con el físico, y cada jugada se anuncia (DU8).
+ *
+ * Los intentos (`configuracion.maxIntentos`) siguen siendo el contador propio del juego: el
+ * shell no lleva vidas aquí (`vidas: null`) para no mostrar dos contadores.
+ */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AhorcadoActivity } from '@lumina/types/slide'
+import type { AhorcadoActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
-import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js'
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js'
+import { normalizarAjustes } from '../_shared/activity-settings.js'
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
 import {
   TECLADO_AHORCADO,
   ahorcadoFingerprint,
   crearEstadoInicialAhorcado,
   normalizarAhorcado,
+  normalizarPalabraAhorcado,
   procesarLetra,
   revelarPalabraAhorcado,
+  terminarPorTiempoAhorcado,
 } from './ahorcado-config.js'
 import { AhorcadoFigure, partesMuñecoAhorcado } from './ahorcado-figure.js'
-import styles from './ahorcado.module.css'
+import ilustracion from './ahorcado.module.css'
+import styles from './ahorcado-juego.module.css'
 
-interface AhorcadoViewerProps {
+/** Pausa antes del resultado, para ver la figura y la palabra revelada (como siempre). */
+const RETARDO_RESULTADO_MS = 350
+
+export interface AhorcadoViewerProps {
   actividad: AhorcadoActivity
   editorSyncKey?: string
+  /** Canal de respuesta unificado (DU2). */
+  onResponse?: (response: unknown) => void
+  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
   onComplete?: (response: unknown) => void
 }
 
-export function AhorcadoViewer({
-  actividad,
-  editorSyncKey = '',
-  onComplete,
-}: AhorcadoViewerProps) {
-  const fingerprint = ahorcadoFingerprint(actividad)
-  const { configuracion } = useMemo(() => normalizarAhorcado(actividad), [fingerprint])
+type EstadoJuego = ReturnType<typeof crearEstadoInicialAhorcado>
+
+interface CuerpoProps {
+  actividad: AhorcadoActivity
+  estado: EstadoJuego
+  setEstado: React.Dispatch<React.SetStateAction<EstadoJuego>>
+  ctx: ActivityShellContext
+  responder: (r: unknown) => void
+  alEvaluar: (e: ActivityEvaluationResult) => void
+}
+
+function Cuerpo({ actividad, estado, setEstado, ctx, responder, alEvaluar }: CuerpoProps) {
+  const { configuracion } = useMemo(() => normalizarAhorcado(actividad), [actividad])
   const { palabra, pista, categoria, maxIntentos } = configuracion
+  const jugando = ctx.sesion.fase === 'jugando'
+  const { completar } = ctx
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido })
+  const [anuncio, setAnuncio] = useState('')
+  const terminada = useRef(false)
 
-  const [estado, setEstado] = useState(() => crearEstadoInicialAhorcado(maxIntentos))
-  const [mostrarResultado, setMostrarResultado] = useState(false)
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
-
-  const onCompleteRef = useRef(onComplete)
-  const completedRef = useRef(false)
-
+  // Tiempo agotado: la partida cuenta como perdida y conserva lo jugado.
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo'
   useEffect(() => {
-    onCompleteRef.current = onComplete
-  }, [onComplete])
+    if (sinTiempo) setEstado((prev) => terminarPorTiempoAhorcado(prev))
+  }, [sinTiempo, setEstado])
 
+  // Al terminar: una respuesta, y el resultado tras una breve pausa.
   useEffect(() => {
-    setEstado(crearEstadoInicialAhorcado(maxIntentos))
-    setMostrarResultado(false)
-    setEvaluation(null)
-    completedRef.current = false
-  }, [fingerprint, editorSyncKey, maxIntentos])
+    if (!estado.completado || terminada.current) return
+    terminada.current = true
+    const raw = { letrasAdivinadas: estado.letrasAdivinadas, letrasFalladas: estado.letrasFalladas }
+    alEvaluar(evaluateActivityResponse('ahorcado', actividad, raw))
+    responder(raw)
+    if (estado.ganado) setAnuncio(`¡Ganaste! La palabra era ${palabra}.`)
+    else setAnuncio(`Perdiste. La palabra era ${palabra}.`)
+    if (sinTiempo) return undefined
+    const t = window.setTimeout(() => completar(), RETARDO_RESULTADO_MS)
+    return () => window.clearTimeout(t)
+  }, [estado, actividad, palabra, sinTiempo, alEvaluar, responder, completar])
 
-  useEffect(() => {
-    if (!estado.completado || completedRef.current) return
-    completedRef.current = true
-    const raw = {
-      letrasAdivinadas: estado.letrasAdivinadas,
-      letrasFalladas: estado.letrasFalladas,
-    }
-    const evaluated = evaluateActivityResponse('ahorcado', actividad, raw)
-    setEvaluation(evaluated)
-    onCompleteRef.current?.(raw)
-    const timer = window.setTimeout(() => setMostrarResultado(true), 350)
-    return () => window.clearTimeout(timer)
-  }, [estado, configuracion, actividad])
-
-  const handleLetra = useCallback(
+  const jugar = useCallback(
     (letra: string) => {
-      setEstado((prev) => procesarLetra(prev, configuracion, letra))
+      if (!jugando) return
+      const letraNorm = letra.toUpperCase()
+      const antes = estado
+      const despues = procesarLetra(antes, configuracion, letraNorm)
+      if (despues === antes) return
+      setEstado(despues)
+      const acerto = despues.letrasAdivinadas.length > antes.letrasAdivinadas.length
+      feedback.emitir(acerto ? 'acierto' : 'error', { movimiento: false })
+      if (!despues.completado) {
+        setAnuncio(
+          acerto
+            ? `La ${letraNorm} está en la palabra.`
+            : `La ${letraNorm} no está. Te quedan ${despues.intentosRestantes} de ${maxIntentos} intentos.`,
+        )
+      }
     },
-    [configuracion],
+    [jugando, estado, configuracion, maxIntentos, setEstado, feedback],
   )
 
-  const handleReintentar = useCallback(() => {
-    setEstado(crearEstadoInicialAhorcado(maxIntentos))
-    setMostrarResultado(false)
-    setEvaluation(null)
-    completedRef.current = false
-  }, [maxIntentos])
+  // Teclado físico: una letra (con o sin tilde) juega esa letra.
+  const alTeclear = (e: React.KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return
+    const base = normalizarPalabraAhorcado(e.key).replace(/\s/g, '')
+    const letra = e.key.toLowerCase() === 'ñ' ? 'Ñ' : base
+    if (letra.length === 1 && (TECLADO_AHORCADO as readonly string[]).includes(letra)) {
+      e.preventDefault()
+      jugar(letra)
+    }
+  }
 
-  const slots = revelarPalabraAhorcado(
-    palabra,
-    estado.letrasAdivinadas,
-    estado.ganado === false,
-  )
+  const slots = revelarPalabraAhorcado(palabra, estado.letrasAdivinadas, estado.ganado === false)
   const intentosUsados = estado.letrasFalladas.length
   const progresoIntentos = Math.max(0, (estado.intentosRestantes / maxIntentos) * 100)
-  const partesMuñeco = partesMuñecoAhorcado(intentosUsados, maxIntentos)
-  const figureEstado =
-    estado.ganado === true ? 'ganado' : estado.ganado === false ? 'perdido' : 'jugando'
-  const munecoWrapClass =
-    figureEstado === 'perdido'
-      ? `${styles.munecoWrap} ${styles.munecoWrapPerdido}`
-      : figureEstado === 'ganado'
-        ? `${styles.munecoWrap} ${styles.munecoWrapGanado}`
-        : styles.munecoWrap
+  const partes = partesMuñecoAhorcado(intentosUsados, maxIntentos)
+  const figura = estado.ganado === true ? 'ganado' : estado.ganado === false ? 'perdido' : 'jugando'
+  const marco =
+    figura === 'perdido'
+      ? `${ilustracion.munecoWrap} ${ilustracion.munecoWrapPerdido}`
+      : figura === 'ganado'
+        ? `${ilustracion.munecoWrap} ${ilustracion.munecoWrapGanado}`
+        : ilustracion.munecoWrap
+  const palabraHablada = slots.map((s) => (s === '_' ? 'hueco' : s === ' ' ? 'espacio' : s)).join(', ')
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-col gap-3 overflow-hidden p-3">
-      <div className="flex shrink-0 items-center justify-between gap-2">
+    <div className={styles.raiz} role="group" aria-label="Ahorcado" onKeyDown={alTeclear}>
+      <div className={styles.cabecera}>
         {categoria ? (
-          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700">
-            {categoria}
-          </span>
+          <span className={styles.categoria}>{categoria}</span>
         ) : (
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Ahorcado
-          </span>
+          <span className={styles.titulo}>Ahorcado</span>
         )}
-        <span className="text-xs font-medium tabular-nums text-gray-600">
+        <span className={styles.intentos}>
           {estado.intentosRestantes}/{maxIntentos} intentos
         </span>
       </div>
 
-      {pista ? (
-        <div className="shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-          {pista}
-        </div>
-      ) : null}
+      {pista ? <div className={styles.pista}>{pista}</div> : null}
 
-      <div className="shrink-0 space-y-1.5">
+      <div className={styles.barraWrap}>
         <div className={styles.barraIntentos} aria-hidden>
           <div className={styles.barraIntentosFill} style={{ width: `${progresoIntentos}%` }} />
         </div>
         {estado.letrasFalladas.length > 0 ? (
-          <p className="text-[11px] text-gray-500">
-            Letras incorrectas: {estado.letrasFalladas.join(', ')}
-          </p>
+          <p className={styles.falladas}>Letras incorrectas: {estado.letrasFalladas.join(', ')}</p>
         ) : null}
       </div>
 
       <div className={styles.juegoLayout}>
-        <div className={munecoWrapClass} aria-hidden>
+        <div className={marco} aria-hidden>
           <AhorcadoFigure
-            partes={partesMuñeco}
-            estado={figureEstado}
-            aria-label={`Ahorcado: ${partesMuñeco} de 6 partes dibujadas`}
+            partes={partes}
+            estado={figura}
+            aria-label={`Ahorcado: ${partes} de 6 partes dibujadas`}
           />
         </div>
 
         <div className={styles.juegoPrincipal}>
-          <div className={styles.palabraWrap}>
+          <div className={styles.palabraWrap} role="img" aria-label={`Palabra: ${palabraHablada}`}>
             {slots.map((slot, index) =>
               slot === ' ' ? (
                 <span key={`space-${index}`} className={styles.huecoEspacio} />
               ) : (
-                <span key={`slot-${index}`} className={styles.huecoLetra}>
+                <span key={`slot-${index}`} className={styles.huecoLetra} aria-hidden>
                   {slot}
                 </span>
               ),
@@ -150,8 +177,8 @@ export function AhorcadoViewer({
           </div>
 
           {estado.ganado === false ? (
-            <p className="text-center text-sm font-semibold text-red-600">
-              La palabra era: <span className="tracking-wider">{palabra}</span>
+            <p className={styles.revelada}>
+              La palabra era: <span>{palabra}</span>
             </p>
           ) : null}
 
@@ -160,14 +187,12 @@ export function AhorcadoViewer({
               {TECLADO_AHORCADO.map((letra) => {
                 const acertada = estado.letrasAdivinadas.includes(letra)
                 const fallada = estado.letrasFalladas.includes(letra)
-                const usada = acertada || fallada
-
                 return (
                   <button
                     key={letra}
                     type="button"
-                    disabled={estado.completado || usada}
-                    onClick={() => handleLetra(letra)}
+                    disabled={estado.completado || !jugando || acertada || fallada}
+                    onClick={() => jugar(letra)}
                     className={`${styles.tecla} ${acertada ? styles.teclaCorrecta : ''} ${fallada ? styles.teclaIncorrecta : ''}`}
                   >
                     {letra}
@@ -179,13 +204,67 @@ export function AhorcadoViewer({
         </div>
       </div>
 
-      {mostrarResultado ? (
-        <ActivityResultOverlay
-          evaluation={evaluation ?? undefined}
-          onReintentar={handleReintentar}
-          mostrarReintentar
-        />
-      ) : null}
+      <div role="status" aria-live="polite" className={styles.soloLector}>
+        {anuncio}
+      </div>
+      {sinTiempo && !estado.ganado && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
     </div>
+  )
+}
+
+export function AhorcadoViewer({ actividad, editorSyncKey = '', onResponse, onComplete }: AhorcadoViewerProps) {
+  const fingerprint = ahorcadoFingerprint(actividad)
+  const { configuracion } = useMemo(() => normalizarAhorcado(actividad), [fingerprint])
+  const { maxIntentos } = configuracion
+  const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
+  // Los intentos son el contador propio del juego: el shell no lleva vidas aquí.
+  const ajustesShell = useMemo(() => ({ ...ajustes, vidas: null }), [ajustes])
+
+  const [estado, setEstado] = useState(() => crearEstadoInicialAhorcado(maxIntentos))
+  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+  // Cada partida nueva (otro contenido, otro slide o «Reintentar») remonta el cuerpo y el shell.
+  const [partida, setPartida] = useState(0)
+
+  const salida = useRef(onResponse ?? onComplete)
+  useEffect(() => {
+    salida.current = onResponse ?? onComplete
+  }, [onResponse, onComplete])
+  const responder = useCallback((r: unknown) => salida.current?.(r), [])
+
+  useEffect(() => {
+    setEstado(crearEstadoInicialAhorcado(maxIntentos))
+    setEvaluation(null)
+    setPartida((n) => n + 1)
+  }, [fingerprint, editorSyncKey, maxIntentos])
+
+  const alReintentar = useCallback(() => {
+    setEstado(crearEstadoInicialAhorcado(maxIntentos))
+    setEvaluation(null)
+    setPartida((n) => n + 1)
+  }, [maxIntentos])
+
+  return (
+    <ActivityShell
+      key={partida}
+      ajustes={ajustesShell}
+      evaluation={evaluation}
+      onReintentar={alReintentar}
+      className={styles.shell}
+    >
+      {(ctx) => (
+        <Cuerpo
+          actividad={actividad}
+          estado={estado}
+          setEstado={setEstado}
+          ctx={ctx}
+          responder={responder}
+          alEvaluar={setEvaluation}
+        />
+      )}
+    </ActivityShell>
   )
 }

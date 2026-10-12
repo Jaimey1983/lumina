@@ -39,11 +39,23 @@ export function normalizarAhorcado(act: AhorcadoActivity): AhorcadoActivity {
       categoria: typeof cfg.categoria === 'string' ? cfg.categoria.trim() : '',
       maxIntentos,
     },
+    // Los ajustes comunes (U2/U9c) pasan tal cual: este normalizador corre al LEER el slide y,
+    // reconstruyendo el objeto campo por campo, los descartaba (hallazgo de U2).
+    ...(act.ajustes !== undefined ? { ajustes: act.ajustes } : {}),
   };
 }
 
+/** Huella del CONTENIDO de la partida: cambiar un ajuste (estilo, sonido…) no la reinicia. */
 export function ahorcadoFingerprint(act: AhorcadoActivity): string {
-  return JSON.stringify(normalizarAhorcado(act));
+  const { ajustes: _ajustes, ...contenido } = normalizarAhorcado(act);
+  void _ajustes;
+  return JSON.stringify(contenido);
+}
+
+/** Cierra la partida por tiempo agotado: cuenta como perdida y conserva lo jugado. */
+export function terminarPorTiempoAhorcado(estado: AhorcadoState): AhorcadoState {
+  if (estado.completado) return estado;
+  return { ...estado, completado: true, ganado: false };
 }
 
 export function crearEstadoInicialAhorcado(maxIntentos: number): AhorcadoState {

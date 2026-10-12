@@ -271,7 +271,7 @@ describe("`ajustes` frente a los normalizadores de hidratación (hallazgo U2)", 
    * hacen hoy: hay que corregirlos en su ficha U9 ANTES de que un panel escriba `ajustes`.
    * Si un normalizador deja de descartarlo, este test falla y hay que sacarlo de la lista.
    */
-  const DESCARTAN: readonly string[] = ["abrir_caja", "ahorcado", "globos", "topo"];
+  const DESCARTAN: readonly string[] = ["abrir_caja", "globos", "topo"];
   const NORMALIZADORES: Record<string, (a: never) => unknown> = {
     quiz_multiple: normalizarQuizMultiple as never,
     emparejar: normalizarEmparejar as never,
@@ -280,7 +280,7 @@ describe("`ajustes` frente a los normalizadores de hidratación (hallazgo U2)", 
     topo: normalizarTopo as never,
     ahorcado: normalizarAhorcado as never,
   };
-  it("exactamente abrir_caja, ahorcado, globos y topo descartan `ajustes`", async () => {
+  it("exactamente abrir_caja, globos y topo descartan `ajustes` (ahorcado ya lo conserva, U9c.1)", async () => {
     await import("../../index.js");
     const descartan = Object.entries(NORMALIZADORES)
       .filter(([tipo, f]) => {
