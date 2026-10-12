@@ -51,6 +51,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // Respuesta matemática (U9a.2): se califica sola pero de un solo envío; mismo viewer de
   // respuesta escrita. La pista (`hint`) y la unidad son datos del ejercicio, no ajustes.
   respuesta_matematica: { tiempo: true, sonido: true, estilo: true },
+  // Completar blancos (U9a.3): un solo envío con el sonido de acierto/error; tiempo y estilo.
+  // No hay mensaje ni explicación al responder (el viewer no los muestra), así que no se ofrecen.
+  completar_blancos: { tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

@@ -1,6 +1,6 @@
 /*
- * U9a.1 / U9a.2 — estilos de los viewers de respuesta escrita (Respuesta corta y Respuesta
- * matemática) sobre los tokens `--la-*` del shell. Dos variantes: `claro` (fondo claro) y
+ * U9a.1 / U9a.2 / U9a.3 — estilos de los viewers de respuesta escrita (Respuesta corta,
+ * Respuesta matemática y Completar blancos) sobre los tokens `--la-*` del shell. Dos variantes: `claro` (fondo claro) y
  * `oscuro` (sobre fondo oscuro del slide).
  */
 .tarjeta {
@@ -214,4 +214,50 @@
 
 .oscuro .aviso {
   color: var(--la-color-superficie);
+}
+
+/* Completar blancos: texto corrido con campos en línea. */
+.tarjetaAmplia {
+  gap: 1.5rem;
+}
+
+.texto {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+.hueco {
+  display: inline-block;
+  width: 6rem;
+  height: 2rem;
+  padding: 0.25rem 0.5rem;
+  margin: 0 0.25rem;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+}
+
+.hueco:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 1px;
+  border-color: var(--la-color-seleccionado);
+}
+
+.hueco:disabled {
+  opacity: 0.6;
+}
+
+.oscuro .hueco {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.3);
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
 }

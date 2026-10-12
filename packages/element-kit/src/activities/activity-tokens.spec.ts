@@ -38,7 +38,6 @@ const ARCHIVOS_DE_TOKENS: readonly string[] = ["_shared/activity-tokens.ts"];
  */
 const EXENTOS: Readonly<Record<string, number>> = {
   "_classic/drag-drop.tsx": 40,
-  "_classic/fill-blanks.tsx": 19,
   "_classic/live-poll.tsx": 37,
   "_classic/order-steps.tsx": 28,
   "_classic/quiz-multiple.tsx": 18,
