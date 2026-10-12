@@ -7,19 +7,27 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
+import { PRESETS_RESPUESTA_MATEMATICA } from "./respuesta_matematica-estilos.js";
 import {
   RESPUESTA_MATEMATICA_TIPO,
   type RespuestaMatematicaConfig,
   type RespuestaMatematicaEstado,
 } from "./respuesta_matematica-types.js";
 
-const { Editor, Viewer, Propiedades } = crearAdaptadoresClasicos<
+const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasicos<
   RespuestaMatematicaEstado,
   RespuestaMatematicaConfig
 >({
   Editor: RespuestaMatematicaEditorLegacy,
   viewer: { via: "component", Viewer: RespuestaMatematicaViewerLegacy },
   editorNeedsSyncKey: true,
+});
+
+/** U9a.2: el panel suma estilos y ajustes comunes al editor de siempre. */
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_RESPUESTA_MATEMATICA,
+  storageKey: "actividad.respuesta_matematica.estilos",
 });
 
 export {
@@ -43,11 +51,13 @@ export const respuestaMatematicaDefinition = {
   Editor,
   Viewer,
   Propiedades,
+  // U9a.2: el estilo (`ajustes.estilo`) es color; la tipografía no se toca y no hay movimiento.
   apariencia: {
-    color: false,
+    color: true,
     tipografia: false,
     animacion: false,
   },
+  presets: PRESETS_RESPUESTA_MATEMATICA,
   puntuacion: (estado: RespuestaMatematicaEstado, respuesta?: unknown) =>
     evaluarRespuestaMatematica(estado, respuesta).score ?? 0,
   eventos: ["respuesta_correcta", "respuesta_incorrecta"],

@@ -16,7 +16,7 @@ import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
 import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
-import styles from './short-answer.module.css';
+import styles from './respuesta-texto.module.css';
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 

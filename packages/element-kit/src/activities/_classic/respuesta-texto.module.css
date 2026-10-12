@@ -1,6 +1,7 @@
 /*
- * U9a.1 — estilos del viewer de Respuesta corta sobre los tokens `--la-*` del shell.
- * Dos variantes: `claro` (fondo claro) y `oscuro` (sobre fondo oscuro del slide).
+ * U9a.1 / U9a.2 — estilos de los viewers de respuesta escrita (Respuesta corta y Respuesta
+ * matemática) sobre los tokens `--la-*` del shell. Dos variantes: `claro` (fondo claro) y
+ * `oscuro` (sobre fondo oscuro del slide).
  */
 .tarjeta {
   display: flex;
@@ -37,7 +38,9 @@
 }
 
 .oscuro .pista,
-.oscuro .contador {
+.oscuro .contador,
+.oscuro .ayuda,
+.oscuro .unidad {
   color: rgb(255 255 255 / 0.7);
 }
 
@@ -143,4 +146,72 @@
   .enviar {
     transition: none;
   }
+}
+
+/* Respuesta matemática: campo de una línea con unidad, ayuda y aviso de expresión. */
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.campo {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+}
+
+.campo::placeholder {
+  color: var(--la-color-texto-suave);
+}
+
+.campo:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 1px;
+  border-color: var(--la-color-seleccionado);
+}
+
+.campo:disabled {
+  opacity: 0.6;
+}
+
+.oscuro .campo {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.3);
+}
+
+.oscuro .campo::placeholder {
+  color: rgb(255 255 255 / 0.6);
+}
+
+.unidad {
+  font-size: 0.875rem;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .unidad {
+  color: rgb(255 255 255 / 0.8);
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--la-color-texto-suave);
+}
+
+.aviso {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--la-color-incorrecto-texto);
+}
+
+.oscuro .aviso {
+  color: var(--la-color-superficie);
 }
