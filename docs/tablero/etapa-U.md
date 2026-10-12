@@ -307,7 +307,7 @@ U13 abre la primera tanda de actividades nuevas U14 → U18 (serie, mismos archi
 
 #### U16 — `etiquetar_imagen`: arrastrar etiquetas sobre una imagen
 - **Operador:** Claude Code · Cursor · Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U15 en revisión. Cumple CN1–CN10.
 - **Qué es:** anatomía, mapas, circuitos: una imagen con marcadores numerados y un banco de etiquetas; el alumno coloca cada etiqueta en su marcador.
 - **Datos:** `EtiquetarImagenActivity { tipo:'etiquetar_imagen'; instruccion; imagen: string; textoAlternativo: string; zonas: { id; x; y; etiquetaId }[]; etiquetas: { id; texto }[]; retroalimentacion? }` con `x`,`y` en **fracción 0–1** del ancho/alto de la imagen (así sobreviven al zoom y al redimensionado). Etiquetas sin zona = distractores.
