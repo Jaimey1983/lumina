@@ -268,6 +268,12 @@ export {
   type TorneoDefinition,
 } from "./elements/torneo/index.js";
 export {
+  EscapeRoomViewer,
+  ESCAPE_ROOM_TIPO,
+  type EscapeRoomConfig,
+  type EscapeRoomEstado,
+} from "./elements/escape-room/index.js";
+export {
   createDefaultTorneo,
   normalizeTorneo,
   type TorneoAnswerPayload,

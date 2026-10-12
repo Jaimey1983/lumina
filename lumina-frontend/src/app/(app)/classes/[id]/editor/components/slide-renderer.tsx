@@ -80,7 +80,7 @@ import { BackgroundImageLayer } from './background-image-layer';
 
 import type { Socket } from 'socket.io-client';
 import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
-import { EscapeRoomViewer } from '@/components/viewers/escape-room-viewer';
+import { EscapeRoomViewer } from '@lumina/element-kit';
 import { bloquesVisiblesDeSala } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
@@ -303,41 +303,36 @@ function RenderActivity({
     }
     return (
       <EscapeRoomViewer
-        activity={act}
-        variant={variant}
-        studentId={viewerStudentId ?? ''}
-        studentName={viewerStudentName ?? ''}
-        classId={viewerClassId ?? ''}
-        slideId={slideId}
-        editorSyncKey={syncKey}
-        liveSocket={liveSocket}
-        onComplete={(puntos, timeMs) =>
-          // Canal propio de cierre: estos puntos son gamificación narrativa, no
-          // una nota 0–5, así que nunca deben alimentar `activity:complete`.
-          onResponse?.({ tipo: 'escape_room:finished', puntos, timeMs })
-        }
-        onAnswer={(roomId, answer, correct, intento) =>
-          onResponse?.({ roomId, answer, correct, intento })
-        }
-        renderSalaCanvas={(sala) => (
-          <SlideRenderer
-            slide={{
-              id: `${slideId}-sala-${sala.id}`,
-              order: 0,
-              type: 'CONTENT',
-              title: sala.nombre,
-              bloques: bloquesVisiblesDeSala(sala),
-              fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
-              content: null,
-            }}
-            modo="viewer"
-            viewerStudentId={viewerStudentId}
-            viewerStudentName={viewerStudentName}
-            viewerClassId={viewerClassId}
-            liveSocket={liveSocket}
-            className="h-full w-full"
-          />
-        )}
+        estado={act}
+        config={{
+          onResponse,
+          variant,
+          editorSyncKey: syncKey,
+          liveSocket,
+          viewerStudentId,
+          viewerStudentName,
+          viewerClassId,
+          slideId,
+          renderSalaCanvas: (sala) => (
+            <SlideRenderer
+              slide={{
+                id: `${slideId}-sala-${sala.id}`,
+                order: 0,
+                type: 'CONTENT',
+                title: sala.nombre,
+                bloques: bloquesVisiblesDeSala(sala),
+                fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
+                content: null,
+              }}
+              modo="viewer"
+              viewerStudentId={viewerStudentId}
+              viewerStudentName={viewerStudentName}
+              viewerClassId={viewerClassId}
+              liveSocket={liveSocket}
+              className="h-full w-full"
+            />
+          ),
+        }}
       />
     );
   }

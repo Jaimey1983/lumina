@@ -1,32 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Socket } from 'socket.io-client';
 import { CheckCircle2, Clock, Eye, Lock, Trophy, XCircle } from 'lucide-react';
 
-import {
-  historialFromTeam,
-  tiempoRestanteLive,
-  useEscapeRoomSession,
-} from '@lumina/element-kit/activities/escape-room/use-escape-room-session';
+import { useSound } from '@lumina/editor-shared/use-sound';
+import type { EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
+import { Button } from '@lumina/ui/button';
+import { cn } from '@lumina/ui/lib/utils';
+
+import { Confeti } from '../../_efectos/confeti.js';
+import { useWidgetReducedMotion } from '../../_efectos/motion/reduced-motion.js';
+import tokens from '../_shared/activity-tokens.module.css';
 import {
   calcularPuntos,
   esCorrecta,
   intentosMaximosDeSala,
   pistasDeSala,
   pistasReveladasPorIntentos,
-} from '@lumina/element-kit/activities/escape-room/escape-room-logic';
-import type { EscapeRoomRankingRow } from '@lumina/element-kit/activities/escape-room/escape-room-live.types';
-import { useSound } from '@lumina/editor-shared/use-sound';
-import { cn } from '@/lib/utils';
-import type { EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
-import {
-  normalizeEscapeRoomActivity,
-  salaTieneLienzo,
-} from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
-import { Button } from '@lumina/ui/button';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+} from './escape-room-logic.js';
+import type { EscapeRoomRankingRow } from './escape-room-live.types.js';
+import { normalizeEscapeRoomActivity, salaTieneLienzo } from './escape-room-normalize.js';
+import { historialFromTeam, tiempoRestanteLive, useEscapeRoomSession } from './use-escape-room-session.js';
+import styles from './escape-room.module.css';
 
 type Phase = 'intro' | 'sala' | 'victoria' | 'derrota' | 'cerrado';
 type FeedbackState = 'none' | 'correcto' | 'incorrecto' | 'bloqueada';
@@ -76,68 +72,16 @@ function formatSeg(seg: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// ─── Confetti (CSS puro) ──────────────────────────────────────────────────────
+// ─── Confeti de la victoria (común, respeta «reducir movimiento») ─────────────
 
-const CONFETTI_COLORS = [
-  '#2563EB', '#f59e0b', '#10b981', '#ef4444',
-  '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',
-];
-
-const CONFETTI_CSS = `
-@keyframes lumina-er-fall {
-  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
-  80%  { opacity: 0.85; }
-  100% { transform: translateY(420px) rotate(540deg); opacity: 0; }
-}
-`;
-
-function Confetti() {
-  const pieces = Array.from({ length: 28 }, (_, i) => ({
-    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length]!,
-    left: `${Math.round((i * 97 + 4) % 97)}%`,
-    delay: `${((i * 0.09) % 1.4).toFixed(2)}s`,
-    dur: `${(1.9 + (i % 5) * 0.22).toFixed(2)}s`,
-    size: 6 + (i % 4) * 2,
-    isCircle: i % 3 !== 0,
-  }));
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <style>{CONFETTI_CSS}</style>
-      {pieces.map((p, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: p.left,
-            width: p.size,
-            height: p.size,
-            backgroundColor: p.color,
-            borderRadius: p.isCircle ? '50%' : '2px',
-            animationName: 'lumina-er-fall',
-            animationTimingFunction: 'linear',
-            animationFillMode: 'both',
-            animationDelay: p.delay,
-            animationDuration: p.dur,
-          }}
-        />
-      ))}
-    </div>
-  );
+function ConfetiVictoria() {
+  const reducido = useWidgetReducedMotion();
+  return <Confeti disparo={1} activo={!reducido} />;
 }
 
 // ─── Barra de progreso de salas ───────────────────────────────────────────────
 
-function SalaProgress({
-  total,
-  completadas,
-  isDark,
-}: {
-  total: number;
-  completadas: number;
-  isDark: boolean;
-}) {
+function SalaProgress({ total, completadas }: { total: number; completadas: number }) {
   return (
     <div className="flex items-center gap-1">
       {Array.from({ length: total }, (_, i) => (
@@ -145,9 +89,7 @@ function SalaProgress({
           key={i}
           className={cn(
             'h-1.5 flex-1 rounded-full transition-colors duration-500',
-            i < completadas
-              ? 'bg-[#2563EB]'
-              : isDark ? 'bg-white/20' : 'bg-[#e5e7eb]',
+            i < completadas ? styles.progresoOn : styles.progresoOff,
           )}
         />
       ))}
@@ -173,8 +115,10 @@ export function EscapeRoomViewer({
 }: EscapeRoomViewerProps) {
   const { play } = useSound();
   const isDark = variant === 'dark';
+  const variante = isDark ? 'dark' : 'light';
 
-  const act = normalizeEscapeRoomActivity(activity);
+  // Memoizado: un `salas` nuevo en cada render hacía entrar en bucle al efecto de sincronía del equipo.
+  const act = useMemo(() => normalizeEscapeRoomActivity(activity), [activity]);
   const salas = act.salas;
   const totalSalas = Math.max(1, salas.length);
   const tiempoLimiteSeg =
@@ -553,8 +497,9 @@ export function EscapeRoomViewer({
   const completadas = historial.length;
 
   const shell = cn(
+    tokens.tokens,
+    styles.raiz,
     'relative flex h-full min-h-0 w-full max-w-full flex-col rounded-xl border p-4 shadow-lumina-sm sm:p-5',
-    isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/95',
   );
 
   // Podio: solo en vivo, solo al cerrar y solo si el autor lo dejó activo.
@@ -564,7 +509,7 @@ export function EscapeRoomViewer({
         <p
           className={cn(
             'text-[10px] font-semibold uppercase tracking-wider',
-            isDark ? 'text-white/50' : 'text-[#9ca3af]',
+            styles.tenue,
           )}
         >
           Ranking de equipos
@@ -576,13 +521,7 @@ export function EscapeRoomViewer({
               key={r.teamId}
               className={cn(
                 'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs',
-                propio
-                  ? isDark
-                    ? 'bg-[#2563EB]/30 text-white'
-                    : 'bg-[#dbeafe] text-[#1d4ed8]'
-                  : isDark
-                    ? 'bg-white/10 text-white/90'
-                    : 'bg-[#f9fafb] text-[#111827]',
+                propio ? styles.filaPropia : styles.filaDato,
               )}
             >
               <span className="w-4 shrink-0 text-center font-bold tabular-nums">
@@ -593,7 +532,7 @@ export function EscapeRoomViewer({
                 <span
                   className={cn(
                     'shrink-0 text-[10px]',
-                    isDark ? 'text-white/50' : 'text-[#9ca3af]',
+                    styles.tenue,
                   )}
                 >
                   en juego
@@ -615,9 +554,7 @@ export function EscapeRoomViewer({
       }}
       className={cn(
         'mt-1 rounded-lg px-5 py-2 text-sm font-semibold transition-colors',
-        isDark
-          ? 'bg-white/15 text-white hover:bg-white/25'
-          : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]',
+        styles.botonSecundario,
       )}
     >
       Finalizar
@@ -628,7 +565,7 @@ export function EscapeRoomViewer({
 
   if (phase === 'intro') {
     return (
-      <div className={shell}>
+      <div className={shell} data-variante={variante}>
         <style>{`
           @keyframes lumina-lock-sway {
             0%,100%{transform:rotate(0deg)}
@@ -640,11 +577,11 @@ export function EscapeRoomViewer({
           <div
             className={cn(
               'flex size-16 items-center justify-center rounded-full shadow-lumina-sm animate-in zoom-in duration-500',
-              isDark ? 'bg-white/15' : 'bg-[#dbeafe]',
+              styles.circuloIcono,
             )}
           >
             <Lock
-              className={cn('size-8', isDark ? 'text-white' : 'text-[#2563EB]')}
+              className={cn('size-8', styles.iconoPrimario)}
               aria-hidden
               style={{ animation: 'lumina-lock-sway 2.4s ease-in-out infinite' }}
             />
@@ -653,7 +590,7 @@ export function EscapeRoomViewer({
           <h2
             className={cn(
               'text-xl font-bold leading-snug',
-              isDark ? 'text-white' : 'text-[#111827]',
+              styles.titulo,
             )}
           >
             {act.titulo}
@@ -662,7 +599,7 @@ export function EscapeRoomViewer({
           <p
             className={cn(
               'max-w-xs text-sm leading-relaxed',
-              isDark ? 'text-white/70' : 'text-[#6b7280]',
+              styles.suaveFuerte,
             )}
           >
             {act.introduccion}
@@ -672,7 +609,7 @@ export function EscapeRoomViewer({
             <span
               className={cn(
                 'rounded-full px-3 py-1 text-xs font-medium',
-                isDark ? 'bg-white/15 text-white' : 'bg-[#dbeafe] text-[#2563EB]',
+                styles.pildora,
               )}
             >
               {totalSalas} sala{totalSalas !== 1 ? 's' : ''}
@@ -681,7 +618,7 @@ export function EscapeRoomViewer({
               <span
                 className={cn(
                   'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
-                  isDark ? 'bg-white/15 text-white' : 'bg-[#fef3c7] text-[#d97706]',
+                  styles.pildoraTiempo,
                 )}
               >
                 <Clock className="size-3" aria-hidden />
@@ -704,11 +641,11 @@ export function EscapeRoomViewer({
             <div
               className={cn(
                 'w-full max-w-xs rounded-lg border px-3 py-2 text-left text-xs',
-                isDark ? 'border-white/20 bg-white/10 text-white/90' : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827]',
+                styles.cajaEquipo,
               )}
             >
               <p className="font-semibold">{session.team.name}</p>
-              <p className={cn('mt-1', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+              <p className={cn('mt-1', styles.suave)}>
                 {session.team.members.map((m) => m.studentName).join(' · ') ||
                   'Esperando compañeros…'}
               </p>
@@ -722,7 +659,7 @@ export function EscapeRoomViewer({
           <Button
             type="button"
             disabled={joiningTeam || session.hydrating}
-            className="mt-2 gap-2 bg-[#2563EB] px-6 text-white hover:bg-[#1d4ed8]"
+            className="mt-2 gap-2 bg-[var(--la-color-seleccionado,#2563eb)] px-6 text-white hover:bg-[var(--la-color-seleccionado-texto,#1e40af)]"
             onClick={comenzar}
           >
             {joiningTeam ? 'Uniéndote al equipo…' : '▶ Comenzar'}
@@ -733,7 +670,7 @@ export function EscapeRoomViewer({
           <p
             className={cn(
               'shrink-0 text-center text-xs',
-              isDark ? 'text-white/40' : 'text-[#9ca3af]',
+              styles.tenueBajo,
             )}
           >
             {studentName}
@@ -747,15 +684,15 @@ export function EscapeRoomViewer({
 
   if (phase === 'victoria') {
     return (
-      <div className={cn(shell, 'overflow-hidden')}>
-        <Confetti />
+      <div className={cn(shell, 'overflow-hidden')} data-variante={variante}>
+        <ConfetiVictoria />
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-4 py-2 text-center">
           <Trophy
             className="size-14 text-amber-500 drop-shadow-md animate-in zoom-in duration-500"
             aria-hidden
           />
           <h2
-            className={cn('text-2xl font-extrabold', isDark ? 'text-white' : 'text-[#111827]')}
+            className={cn('text-2xl font-extrabold', styles.titulo)}
           >
             ¡Escapaste!
           </h2>
@@ -764,13 +701,11 @@ export function EscapeRoomViewer({
             <div
               className={cn(
                 'flex flex-col items-center rounded-lg border px-4 py-2',
-                isDark
-                  ? 'border-white/20 bg-white/10 text-white'
-                  : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827]',
+                styles.cajaDato,
               )}
             >
               <span className="text-xl font-bold tabular-nums">{puntosAcumulados}</span>
-              <span className={cn('text-xs', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+              <span className={cn('text-xs', styles.suave)}>
                 puntos
               </span>
             </div>
@@ -778,13 +713,11 @@ export function EscapeRoomViewer({
               <div
                 className={cn(
                   'flex flex-col items-center rounded-lg border px-4 py-2',
-                  isDark
-                    ? 'border-white/20 bg-white/10 text-white'
-                    : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827]',
+                  styles.cajaDato,
                 )}
               >
                 <span className="text-xl font-bold tabular-nums">{formatMs(tiempoFinal)}</span>
-                <span className={cn('text-xs', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+                <span className={cn('text-xs', styles.suave)}>
                   tiempo
                 </span>
               </div>
@@ -796,7 +729,7 @@ export function EscapeRoomViewer({
               <p
                 className={cn(
                   'text-[10px] font-semibold uppercase tracking-wider',
-                  isDark ? 'text-white/50' : 'text-[#9ca3af]',
+                  styles.tenue,
                 )}
               >
                 Desglose por sala
@@ -806,14 +739,14 @@ export function EscapeRoomViewer({
                   key={i}
                   className={cn(
                     'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs',
-                    isDark ? 'bg-white/10 text-white/90' : 'bg-[#f9fafb] text-[#111827]',
+                    styles.filaDato,
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">{h.nombre}</span>
                   <span
                     className={cn(
                       'shrink-0 text-[10px]',
-                      isDark ? 'text-white/50' : 'text-[#9ca3af]',
+                      styles.tenue,
                     )}
                   >
                     {h.intentos} intento{h.intentos !== 1 ? 's' : ''}
@@ -821,9 +754,7 @@ export function EscapeRoomViewer({
                   <span
                     className={cn(
                       'ml-1 shrink-0 font-semibold tabular-nums',
-                      h.puntos > 0
-                        ? 'text-[#2563EB]'
-                        : isDark ? 'text-white/40' : 'text-[#9ca3af]',
+                      h.puntos > 0 ? styles.puntosOk : styles.tenueBajo,
                     )}
                   >
                     {h.puntos} pts
@@ -844,7 +775,7 @@ export function EscapeRoomViewer({
 
   if (phase === 'derrota') {
     return (
-      <div className={shell}>
+      <div className={shell} data-variante={variante}>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-4 text-center">
           <Clock
             className={cn(
@@ -853,10 +784,10 @@ export function EscapeRoomViewer({
             )}
             aria-hidden
           />
-          <h2 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+          <h2 className={cn('text-xl font-bold', styles.titulo)}>
             ¡Se acabó el tiempo!
           </h2>
-          <p className={cn('text-sm', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
+          <p className={cn('text-sm', styles.suaveFuerte)}>
             Completaste{' '}
             <span className="font-bold tabular-nums">{completadas}</span>{' '}
             de{' '}
@@ -866,13 +797,11 @@ export function EscapeRoomViewer({
           <div
             className={cn(
               'rounded-lg border px-6 py-3 text-center',
-              isDark
-                ? 'border-white/20 bg-white/10 text-white'
-                : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827]',
+              styles.cajaDato,
             )}
           >
             <p className="text-2xl font-extrabold tabular-nums">{puntosAcumulados}</p>
-            <p className={cn('text-xs', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+            <p className={cn('text-xs', styles.suave)}>
               puntos acumulados
             </p>
           </div>
@@ -888,12 +817,12 @@ export function EscapeRoomViewer({
 
   if (phase === 'cerrado') {
     return (
-      <div className={shell}>
+      <div className={shell} data-variante={variante}>
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
-          <p className={cn('text-sm font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+          <p className={cn('text-sm font-bold', styles.titulo)}>
             Actividad finalizada
           </p>
-          <p className={cn('text-xs', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+          <p className={cn('text-xs', styles.suave)}>
             <span className="font-semibold tabular-nums">{puntosAcumulados}</span> puntos
             {tiempoFinal > 0 ? ` · ${formatMs(tiempoFinal)}` : ''}
           </p>
@@ -917,17 +846,17 @@ export function EscapeRoomViewer({
   const pistasLocales = pistasDeSala(sala).slice(0, pistasReveladasPorIntentos(sala, intentos));
 
   return (
-    <div className={shell}>
+    <div className={shell} data-variante={variante}>
 
       {/* Header: progreso + timer */}
       <div className="mb-3 shrink-0 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <span
-            className={cn('text-xs font-semibold', isDark ? 'text-white/70' : 'text-[#6b7280]')}
+            className={cn('text-xs font-semibold', styles.suaveFuerte)}
           >
             Sala {salaActual + 1} de {totalSalas}
             {isLive && session.team ? (
-              <span className={cn('ml-2 font-normal', isDark ? 'text-white/50' : 'text-[#9ca3af]')}>
+              <span className={cn('ml-2 font-normal', styles.tenue)}>
                 · {session.team.name}
               </span>
             ) : null}
@@ -938,9 +867,7 @@ export function EscapeRoomViewer({
                 'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums transition-colors duration-300',
                 timerRojo
                   ? 'animate-pulse bg-red-100 text-red-600'
-                  : isDark
-                    ? 'bg-white/15 text-white'
-                    : 'bg-[#f3f4f6] text-[#111827]',
+                  : styles.pildoraReloj,
               )}
             >
               <Clock className="size-3" aria-hidden />
@@ -948,7 +875,7 @@ export function EscapeRoomViewer({
             </span>
           )}
         </div>
-        <SalaProgress total={totalSalas} completadas={completadas} isDark={isDark} />
+        <SalaProgress total={totalSalas} completadas={completadas} />
       </div>
 
       {/* Overlay de transición correcto/bloqueado */}
@@ -1009,7 +936,7 @@ export function EscapeRoomViewer({
         <h3
           className={cn(
             'text-base font-bold leading-snug',
-            isDark ? 'text-white' : 'text-[#111827]',
+            styles.titulo,
           )}
         >
           {sala.nombre}
@@ -1020,7 +947,7 @@ export function EscapeRoomViewer({
           <p
             className={cn(
               'text-sm leading-relaxed',
-              isDark ? 'text-white/60' : 'text-[#6b7280]',
+              styles.suave,
             )}
           >
             {sala.descripcion}
@@ -1032,20 +959,20 @@ export function EscapeRoomViewer({
           <div
             className={cn(
               'shrink-0 overflow-hidden rounded-lg border',
-              isDark ? 'border-white/15' : 'border-[#e5e7eb]',
+              styles.bordeSuave,
             )}
           >
             {salaCanvas}
           </div>
         )}
 
-        <div className={cn('h-px shrink-0', isDark ? 'bg-white/15' : 'bg-[#e5e7eb]')} />
+        <div className={cn('h-px shrink-0', styles.separador)} />
 
         {/* Desafío */}
         <p
           className={cn(
             'text-sm font-semibold leading-snug',
-            isDark ? 'text-white' : 'text-[#111827]',
+            styles.titulo,
           )}
         >
           {sala.desafio}
@@ -1065,16 +992,10 @@ export function EscapeRoomViewer({
                   className={cn(
                     'rounded-lg border-2 px-3 py-2.5 text-left text-sm font-medium transition-all',
                     'disabled:cursor-not-allowed disabled:opacity-40',
-                    isSelected
-                      ? isDark
-                        ? 'border-[#2563EB] bg-[#2563EB]/30 text-white'
-                        : 'border-[#2563EB] bg-[#dbeafe] text-[#2563EB]'
-                      : isDark
-                        ? 'border-white/20 bg-white/5 text-white/80 enabled:hover:border-white/40'
-                        : 'border-[#e5e7eb] bg-white text-[#111827] enabled:hover:border-[#2563EB] enabled:hover:bg-[#eff6ff]',
+                    isSelected ? styles.opcionSel : styles.opcion,
                   )}
                 >
-                  <span className="mr-1.5 font-bold text-[#9ca3af]">
+                  <span className={cn('mr-1.5 font-bold', styles.letra)}>
                     {String.fromCharCode(65 + i)}.
                   </span>
                   {op}
@@ -1099,12 +1020,8 @@ export function EscapeRoomViewer({
             }}
             className={cn(
               'h-10 w-full rounded-lg border px-3 text-sm outline-none transition-colors',
-              isDark
-                ? 'border-white/20 bg-white/10 text-white placeholder:text-white/30 focus:border-[#2563EB]'
-                : 'border-[#e5e7eb] bg-white text-[#111827] placeholder:text-[#9ca3af] focus:border-[#2563EB] focus:ring-2 focus:ring-[#dbeafe]',
-              feedback === 'incorrecto' && !inputDisabled
-                ? isDark ? 'border-red-400/60' : 'border-red-300 bg-red-50/30'
-                : '',
+              styles.campo,
+              feedback === 'incorrecto' && !inputDisabled && styles.campoError,
             )}
           />
         )}
@@ -1139,9 +1056,7 @@ export function EscapeRoomViewer({
               }}
               className={cn(
                 'flex items-center gap-1.5 self-start rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                isDark
-                  ? 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
-                  : 'border-[#e5e7eb] bg-[#f9fafb] text-[#6b7280] hover:bg-[#f3f4f6]',
+                styles.botonPista,
               )}
             >
               <Eye className="size-3.5" aria-hidden />
@@ -1153,7 +1068,7 @@ export function EscapeRoomViewer({
                 'space-y-1.5 rounded-lg border px-3 py-2 text-xs animate-in fade-in duration-200',
                 isDark
                   ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
-                  : 'border-amber-200 bg-[#fef3c7] text-[#92400e]',
+                  : styles.cajaPista,
               )}
             >
               {(livePistaTexts.length > 0 ? livePistaTexts : session.livePistas.map((_, i) => `Pista ${i + 1}`)).map(
@@ -1175,9 +1090,7 @@ export function EscapeRoomViewer({
               onClick={() => setMostrarPista(true)}
               className={cn(
                 'flex items-center gap-1.5 self-start rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                isDark
-                  ? 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
-                  : 'border-[#e5e7eb] bg-[#f9fafb] text-[#6b7280] hover:bg-[#f3f4f6]',
+                styles.botonPista,
               )}
             >
               <Eye className="size-3.5" aria-hidden />
@@ -1189,7 +1102,7 @@ export function EscapeRoomViewer({
                 'space-y-1.5 rounded-lg border px-3 py-2 text-xs animate-in fade-in duration-200',
                 isDark
                   ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
-                  : 'border-amber-200 bg-[#fef3c7] text-[#92400e]',
+                  : styles.cajaPista,
               )}
             >
               {pistasLocales.map((texto, i) => (
@@ -1209,7 +1122,7 @@ export function EscapeRoomViewer({
           type="button"
           disabled={confirmDisabled}
           onClick={confirmar}
-          className="h-10 w-full bg-[#2563EB] text-white hover:bg-[#1d4ed8] disabled:opacity-40"
+          className="h-10 w-full bg-[var(--la-color-seleccionado,#2563eb)] text-white hover:bg-[var(--la-color-seleccionado-texto,#1e40af)] disabled:opacity-40"
         >
           Confirmar
         </Button>

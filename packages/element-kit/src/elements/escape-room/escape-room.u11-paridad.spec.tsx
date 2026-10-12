@@ -1,31 +1,29 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck -- transitorio: se corre con la config del kit (jsdom + RTL); el frontend no los tiene. Se mueve al kit en la migración.
 /**
- * U11.3b — caracterización del viewer de `escape_room` ANTES de migrarlo al kit (Regla 7).
+ * U11.3b — paridad del viewer de `escape_room` contra su comportamiento ANTERIOR a migrarlo al kit (Regla 7).
  *
- * Fija lo que el alumno VE y lo que el viewer EMITE hoy, en modo local (previsualización, sin socket)
- * y en modo equipos (socket falso: `escape-room:{state,join-team,answer,hint-request,ranking}` y los
- * eventos de progreso del servidor). Al migrar, este archivo se mueve al kit y solo cambian los
- * imports: las aserciones son las mismas.
+ * Estas pruebas se escribieron y pasaron contra el viewer viejo del frontend (commit de
+ * caracterización) y aquí solo cambiaron los imports. Fijan lo que el alumno VE y lo que el viewer
+ * EMITE, en modo local (previsualización, sin socket) y en modo equipos (socket falso:
+ * `escape-room:{state,join-team,answer,hint-request,ranking}` y los eventos de progreso del servidor).
  *
  * Relojes falsos con `toFake` explícito (incluido `Date`: el viewer mide el tiempo con él).
  *
- * DEFECTO PREVIO descubierto al escribir esto: con un EQUIPO ya asignado (modo equipos), el viewer
- * viejo entra en un bucle de renderizado infinito — `normalizeEscapeRoomActivity(activity)` crea un
- * `salas` nuevo en cada render, el efecto de sincronía depende de `salas` y llama a
- * `setHistorial(array nuevo)`. Por eso las pruebas de equipo con equipo asignado SOLO terminan si el
- * viejo se parcha con `useMemo(() => normalize(activity), [activity])` (las 29 pasaron con ese único
- * cambio; sin él, esas 14 se cuelgan). El resto (modo local y modo equipos sin equipo) pasa contra el
- * viejo tal cual. La migración aplica esa memoización a propósito y se anota en la ficha.
+ * DEFECTO PREVIO que esto descubrió y la migración corrige a propósito: con un EQUIPO ya asignado
+ * (modo equipos), el viewer viejo entraba en un bucle de renderizado infinito —
+ * `normalizeEscapeRoomActivity(activity)` creaba un `salas` nuevo en cada render, el efecto de
+ * sincronía depende de `salas` y llama a `setHistorial(array nuevo)—. Contra el viejo, las 14 pruebas
+ * de equipo con equipo asignado solo terminaban parchándolo con `useMemo(() => normalize(activity),
+ * [activity])` (las 29 pasaron con ese único cambio). Ese `useMemo` es la única diferencia de lógica.
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EscapeRoomActivity } from '@lumina/types/slide';
+import type { Socket } from 'socket.io-client';
+import type { Block, EscapeRoomActivity } from '@lumina/types/slide';
 
 const sonido = vi.hoisted(() => vi.fn());
 vi.mock('@lumina/editor-shared/use-sound', () => ({ useSound: () => ({ play: sonido }) }));
 
-import { EscapeRoomViewer } from './escape-room-viewer';
+import { EscapeRoomViewer } from '../../activities/escape-room/escape-room-viewer.js';
 
 const T0 = new Date('2026-01-01T10:00:00Z').getTime();
 
@@ -275,7 +273,7 @@ describe('Escape room — modo local (sin socket)', () => {
   it('lienzo de la sala: se pinta si tiene bloques visibles y se ignoran los de tipo «actividad»', () => {
     const renderSalaCanvas = vi.fn(() => <div data-testid="lienzo" />);
     const conLienzo = actividad({
-      salas: [{ ...actividad().salas[0]!, bloques: [{ id: 'b1', tipo: 'separador' }, { id: 'b2', tipo: 'actividad' }] }],
+      salas: [{ ...actividad().salas[0]!, bloques: [{ id: 'b1', tipo: 'separador' }, { id: 'b2', tipo: 'actividad' }] as unknown as Block[] }],
     });
     montarLocal(conLienzo, { renderSalaCanvas });
     comenzar();
@@ -285,7 +283,7 @@ describe('Escape room — modo local (sin socket)', () => {
 
     const soloActividad = vi.fn(() => <div data-testid="lienzo" />);
     montarLocal(
-      { salas: [{ ...actividad().salas[0]!, bloques: [{ id: 'b2', tipo: 'actividad' }] }] },
+      { salas: [{ ...actividad().salas[0]!, bloques: [{ id: 'b2', tipo: 'actividad' }] as unknown as Block[] }] },
       { renderSalaCanvas: soloActividad },
     );
     comenzar();
@@ -329,7 +327,7 @@ const equipo = (extra = {}) => ({
   rooms: SALA_ROOMS('abierta', 'abierta'),
   ...extra,
 });
-const estado = (team) => ({
+const estado = (team: unknown) => ({
   runId: 'r1',
   classId: 'cls',
   slideId: 'sl1',
@@ -358,7 +356,7 @@ function crearSocket(respuestas: Record<string, unknown>) {
     },
   };
   const disparar = (e: string, payload: unknown) => act(() => void handlers.get(e)?.forEach((fn) => fn(payload)));
-  return { socket, emitidos, disparar, enviados: (e: string) => emitidos.filter((x) => x.evento === e) };
+  return { socket: socket as unknown as Socket, emitidos, disparar, enviados: (e: string) => emitidos.filter((x) => x.evento === e) };
 }
 
 async function montarVivo(respuestas: Record<string, unknown>, extra: Partial<EscapeRoomActivity> = {}) {
@@ -612,5 +610,68 @@ describe('Escape room — modo equipos (socket falso)', () => {
     const v = await montarVivo({ 'escape-room:state': { ok: true, state: estado(null) } });
     v.unmount();
     await v.disparar('escape-room:team-progress', { teamId: 'x' });
+  });
+});
+
+// ─── Contrato del elemento (U11.3b) ──────────────────────────────────────────────────────────
+
+import { EscapeRoomViewer as EscapeRoomViewerElemento } from './escape-room-adapters.js';
+
+describe('Escape room — Viewer del contrato', () => {
+  function montarElemento(onResponse: (r: unknown) => void, extra = {}) {
+    return render(
+      <EscapeRoomViewerElemento
+        estado={actividad()}
+        config={{
+          onResponse,
+          viewerStudentId: 's1',
+          viewerStudentName: 'Ana',
+          viewerClassId: 'cls',
+          slideId: 'sl1',
+          editorSyncKey: 'a',
+          ...extra,
+        }}
+      />,
+    );
+  }
+
+  it('cada respuesta sale por onResponse como { roomId, answer, correct, intento }', () => {
+    const onResponse = vi.fn();
+    montarElemento(onResponse);
+    comenzar();
+    escribir('CO2');
+    confirmar();
+    expect(onResponse).toHaveBeenCalledWith({ roomId: 'sala-1', answer: 'CO2', correct: false, intento: 1 });
+  });
+
+  it('el cierre sale por el canal propio { tipo: "escape_room:finished", puntos, timeMs }, nunca como nota', () => {
+    const onResponse = vi.fn();
+    montarElemento(onResponse);
+    comenzar();
+    escribir('H2O');
+    confirmar();
+    avanzar(1500);
+    fireEvent.click(screen.getByText('Cloro'));
+    confirmar();
+    avanzar(1500);
+    expect(onResponse).toHaveBeenLastCalledWith({ tipo: 'escape_room:finished', puntos: 600, timeMs: 3000 });
+    const cierres = onResponse.mock.calls.filter(([r]) => (r as { tipo?: string }).tipo === 'escape_room:finished');
+    expect(cierres).toHaveLength(1);
+  });
+
+  it('el lienzo de la sala lo pone el anfitrión por config', () => {
+    const renderSalaCanvas = vi.fn(() => <div data-testid="lienzo" />);
+    const estado = actividad({
+      salas: [{ ...actividad().salas[0]!, bloques: [{ id: 'b1', tipo: 'separador' }] as unknown as Block[] }],
+    });
+    render(<EscapeRoomViewerElemento estado={estado} config={{ renderSalaCanvas, slideId: 'sl1' }} />);
+    comenzar();
+    expect(screen.getByTestId('lienzo')).toBeTruthy();
+  });
+
+  it('sin socket ni ids juega en modo local', () => {
+    render(<EscapeRoomViewerElemento estado={actividad()} config={{}} />);
+    expect(screen.queryByText('Modo equipos')).toBeNull();
+    expect(screen.getByRole('button', { name: '▶ Comenzar' })).toBeTruthy();
   });
 });
