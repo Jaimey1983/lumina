@@ -140,7 +140,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U9b — Oleada B: arrastre y emparejamiento
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] — partida en subfichas por actividad (Regla 10), de la más pequeña a la más grande, un commit y un estado por cada una: **U9b.1** `puzzle_palabras` · **U9b.2** `clasificar` · **U9b.3** `emparejar` · **U9b.4** `ordenar_pasos` · **U9b.5** `puzzle_imagen` · **U9b.6** `arrastrar_soltar`. Medido al tomarla: ~3.370 líneas de viewer/editor; 4 son del «Grupo 4» (prop `actividad`, `onComplete`, `configuracion`), así que su migración incluye pasar a `onResponse` (con `onComplete` como alias `@deprecated`, como Memoria en U4). Mismo método que U9a: caracterización contra el código VIEJO (commit aparte) → migración sin cambiar un valor → hex fuera del ratchet (o `EXENTOS_DE_DATO`) → `CAPACIDADES_AJUSTES` solo con lo que el viewer lee → código viejo borrado; además teclado y «tocar-colocar» (DU8, primitivas de U6) y `barajar(items, ajustes.semilla, intento)` de U7. Precondición: U9a `en revisión`, por indicación del dueño. Estado de las subfichas abajo.
 - **Precondición:** U9a `hecho`.
 - **Alcance — PUEDE tocar:** `arrastrar_soltar`, `clasificar`, `emparejar`, `ordenar_pasos`, `puzzle_imagen`, `puzzle_palabras` y sus carpetas de `elements/`.
 - **Entregable:** como U9a, usando las primitivas de U6 (teclado y «tocar-colocar» obligatorios, DU8) y el barajado de U7. Verificación: ídem U9a.
