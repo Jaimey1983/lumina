@@ -292,7 +292,7 @@ U13 abre la primera tanda de actividades nuevas U14 → U18 (serie, mismos archi
 
 #### U15 — `problema_pasos`: problema resuelto paso a paso con pistas
 - **Operador:** Claude Code · Cursor · Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U14 en revisión (comparten archivos). Cumple CN1–CN10.
 - **Qué es:** matemática y física: un enunciado y una secuencia de pasos; cada paso pide un resultado numérico o una expresión y ofrece pistas escalonadas. Reutiliza lo que ya hay: `parseRespuestaNumerica` y `expresionesEquivalentes` de `@lumina/scoring`.
 - **Datos:** `ProblemaPasosActivity { tipo:'problema_pasos'; enunciado; imagen?; pasos: { id; instruccion; modo:'numerico'|'algebraico'; respuesta; tolerancia?; toleranciaTipo?; unidad?; pistas: string[] }[]; secuencial: boolean; retroalimentacion? }`. `secuencial` = no se ve el paso siguiente hasta resolver el actual.
