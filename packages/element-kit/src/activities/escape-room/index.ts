@@ -7,3 +7,12 @@ export * from './escape-room-live.types.js';
 export * from './use-escape-room-session.js';
 export * from './escape-room-normalize.js';
 export { EscapeRoomViewer, type EscapeRoomViewerProps } from './escape-room-viewer.js';
+export { createDefaultEscapeRoom } from './escape-room-defaults.js';
+export {
+  EscapeRoomEditor,
+  EscapeRoomSalaConfigFields,
+  tipoRespuestaLabel,
+  type EscapeRoomEditorProps,
+  type EscapeRoomSalaConfigFieldsProps,
+} from './escape-room-editor.js';
+export { EscapeRoomActivityEditor } from './escape-room-canvas-editor.js';

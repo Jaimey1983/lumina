@@ -1,5 +1,12 @@
-import type { ElementViewerProps } from "@lumina/element-kit-core";
-import { EscapeRoomViewer as EscapeRoomViewerBase } from "../../activities/escape-room/index.js";
+import type {
+  ElementEditorProps,
+  ElementPropsPanelProps,
+  ElementViewerProps,
+} from "@lumina/element-kit-core";
+import {
+  EscapeRoomActivityEditor as EscapeRoomEditorBase,
+  EscapeRoomViewer as EscapeRoomViewerBase,
+} from "../../activities/escape-room/index.js";
 import type { EscapeRoomConfig, EscapeRoomEstado } from "./escape-room-types.js";
 
 /**
@@ -29,6 +36,40 @@ export function EscapeRoomViewer({
         config.onResponse?.({ roomId, answer, correct, intento })
       }
       renderSalaCanvas={config.renderSalaCanvas}
+    />
+  );
+}
+
+/** Editor del lienzo: respeta la clave de sincronía y la selección que pone el anfitrión. */
+export function EscapeRoomEditor({
+  estado,
+  config,
+  onChange,
+}: ElementEditorProps<EscapeRoomEstado, EscapeRoomConfig>) {
+  return (
+    <EscapeRoomEditorBase
+      editorSyncKey={config.editorSyncKey ?? ""}
+      activity={estado}
+      canvasLayout={!!config.activityCanvasLayout}
+      isSelected={!!config.isSelected}
+      onChange={onChange}
+    />
+  );
+}
+
+/** Panel de propiedades: el mismo editor, en su versión de panel. */
+export function EscapeRoomPropiedades({
+  estado,
+  config,
+  onChange,
+}: ElementPropsPanelProps<EscapeRoomEstado, EscapeRoomConfig>) {
+  return (
+    <EscapeRoomEditorBase
+      editorSyncKey={config.editorSyncKey ?? ""}
+      activity={estado}
+      canvasLayout={false}
+      isSelected={false}
+      onChange={onChange}
     />
   );
 }

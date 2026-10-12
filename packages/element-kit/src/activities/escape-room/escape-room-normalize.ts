@@ -12,7 +12,7 @@ import {
 } from './escape-room-logic.js';
 
 /** Id local de sala (mismo criterio que `uid` de los helpers del editor). */
-function uid(): string {
+export function uid(): string {
   return (Date.now() + Math.floor(Math.random() * 1000)).toString();
 }
 

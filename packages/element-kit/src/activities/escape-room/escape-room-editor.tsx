@@ -1,4 +1,11 @@
-﻿'use client';
+'use client';
+
+/**
+ * Editor de `escape_room` (U11.4, movido desde `lumina-frontend`): campos de la actividad, salas
+ * ordenables y los campos de cada sala (`EscapeRoomSalaConfigFields`, que también usa el diseñador).
+ * Misma lógica que antes; cambia el color (tokens semánticos, sin hex) y se corrigió el texto con
+ * codificación rota de cinco rótulos.
+ */
 
 import { useEffect, useState } from 'react';
 import {
@@ -24,18 +31,15 @@ import type { EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
+import { cn } from '@lumina/ui/lib/utils';
+
 import {
   ESCAPE_ROOM_INTENTOS_DEFAULT,
   ESCAPE_ROOM_INTENTOS_ILIMITADOS,
-} from '@lumina/element-kit/activities/escape-room/escape-room-logic';
-import {
-  normalizeEscapeRoomActivity,
-  normalizeSala,
-} from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
-import { uid } from '@/lib/helpers';
-import { cn } from '@/lib/utils';
+} from './escape-room-logic.js';
+import { normalizeEscapeRoomActivity, normalizeSala, uid } from './escape-room-normalize.js';
 
-// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface EscapeRoomEditorProps {
   activity: EscapeRoomActivity;
@@ -44,22 +48,21 @@ export interface EscapeRoomEditorProps {
   onBlurFlush?: () => void;
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const INPUT_BASE =
-  'rounded-md border border-[#e5e7eb] bg-white px-2.5 py-2 text-xs text-[#111827] placeholder:text-[#9ca3af] focus-visible:border-[#2563EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/25';
+  'rounded-md border border-input bg-background px-2.5 py-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25';
 
 const SELECT_BASE =
-  'h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-xs text-[#111827] focus-visible:border-[#2563EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/25';
+  'h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25';
 
 export function tipoRespuestaLabel(t: EscapeRoomSala['tipoRespuesta']) {
   switch (t) {
     case 'texto':
       return 'Texto';
     case 'opcion_multiple':
-      return 'OpciÃ³n mÃºltiple';
+      return 'Opción múltiple';
     case 'codigo':
-      return 'CÃ³digo';
+      return 'Código';
     default:
       return t;
   }
@@ -143,7 +146,7 @@ export function EscapeRoomSalaConfigFields({
       </div>
 
       <div className="space-y-1">
-        <Label className="text-[11px]">Descripcion / narrativa</Label>
+        <Label className="text-[11px]">Descripción / narrativa</Label>
         <textarea
           value={sala.descripcion}
           onChange={(e) => onUpdate({ descripcion: e.target.value })}
@@ -211,10 +214,10 @@ export function EscapeRoomSalaConfigFields({
                     onChange={() => {
                       if (nonEmpty) onUpdate({ respuestaCorrecta: op });
                     }}
-                    className="size-3.5 accent-[#2563EB]"
+                    className="size-3.5 accent-primary"
                     aria-label={`Marcar opción ${letter} como correcta`}
                   />
-                  <span className="w-4 shrink-0 text-[10px] font-semibold text-[#6b7280]">
+                  <span className="w-4 shrink-0 text-[10px] font-semibold text-muted-foreground">
                     {letter}
                   </span>
                   <Input
@@ -262,19 +265,19 @@ export function EscapeRoomSalaConfigFields({
         </div>
       )}
 
-      <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#374151]">
+      <label className="flex cursor-pointer items-center gap-2 text-[11px] text-foreground">
         <input
           type="checkbox"
           checked={sala.ignorarMayusculas}
           onChange={(e) => onUpdate({ ignorarMayusculas: e.target.checked })}
-          className="size-3.5 accent-[#2563EB]"
+          className="size-3.5 accent-primary"
         />
         Ignorar mayúsculas
       </label>
 
       <div className="space-y-1">
         <Label className="text-[11px]">Pistas (opcional)</Label>
-        <p className="text-[10px] leading-snug text-[#6b7280]">
+        <p className="text-[10px] leading-snug text-muted-foreground">
           Se revelan en orden: la primera tras el primer fallo, la segunda tras el segundo, y así
           sucesivamente. No restan puntos.
         </p>
@@ -282,7 +285,7 @@ export function EscapeRoomSalaConfigFields({
           <div className="space-y-1.5">
             {pistas.map((p, pi) => (
               <div key={pi} className="flex items-start gap-1.5">
-                <span className="mt-2 w-4 shrink-0 text-[10px] font-semibold text-[#6b7280]">
+                <span className="mt-2 w-4 shrink-0 text-[10px] font-semibold text-muted-foreground">
                   {pi + 1}
                 </span>
                 <textarea
@@ -324,7 +327,7 @@ export function EscapeRoomSalaConfigFields({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-6 text-[#ef4444] hover:text-[#dc2626]"
+                    className="size-6 text-destructive hover:text-destructive/80"
                     aria-label={`Eliminar pista ${pi + 1}`}
                     onClick={() => onUpdate({ pistas: pistas.filter((_, i) => i !== pi) })}
                   >
@@ -366,7 +369,7 @@ export function EscapeRoomSalaConfigFields({
             className="h-8 w-20 text-xs"
             placeholder={ilimitado ? '∞' : String(ESCAPE_ROOM_INTENTOS_DEFAULT)}
           />
-          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#374151]">
+          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-foreground">
             <input
               type="checkbox"
               checked={ilimitado}
@@ -377,7 +380,7 @@ export function EscapeRoomSalaConfigFields({
                     : ESCAPE_ROOM_INTENTOS_DEFAULT,
                 })
               }
-              className="size-3.5 accent-[#2563EB]"
+              className="size-3.5 accent-primary"
             />
             Ilimitados
           </label>
@@ -422,14 +425,14 @@ function SortableSalaCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'overflow-hidden rounded-lg border border-[#e5e7eb] bg-[#f9fafb]',
+        'overflow-hidden rounded-lg border border-border bg-muted/40',
         isDragging && 'shadow-lumina-md',
       )}
     >
-      <div className="flex items-center gap-1 border-b border-[#e5e7eb] bg-white px-2 py-1.5">
+      <div className="flex items-center gap-1 border-b border-border bg-background px-2 py-1.5">
         <button
           type="button"
-          className="cursor-grab touch-none text-[#9ca3af] hover:text-[#6b7280] active:cursor-grabbing"
+          className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
           {...attributes}
           {...listeners}
           aria-label="Reordenar sala"
@@ -443,15 +446,15 @@ function SortableSalaCard({
         >
           <ChevronDown
             className={cn(
-              'size-4 shrink-0 text-[#9ca3af] transition-transform',
+              'size-4 shrink-0 text-muted-foreground transition-transform',
               !expanded && '-rotate-90',
             )}
             aria-hidden
           />
-          <span className="truncate text-[11px] font-semibold text-[#111827]">
+          <span className="truncate text-[11px] font-semibold text-foreground">
             {sala.nombre.trim() || 'Sala sin nombre'}
           </span>
-          <span className="shrink-0 rounded bg-[#dbeafe] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#2563EB]">
+          <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
             {tipoRespuestaLabel(sala.tipoRespuesta)}
           </span>
         </button>
@@ -459,7 +462,7 @@ function SortableSalaCard({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-7 text-[#9ca3af] hover:text-red-600"
+          className="size-7 text-muted-foreground hover:text-red-600"
           disabled={totalSalas <= 1}
           onClick={(e) => {
             e.stopPropagation();
@@ -547,7 +550,7 @@ export function EscapeRoomEditor({
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2.5">
       <div className="space-y-1">
-        <Label className="text-[11px] font-medium">TÃ­tulo del Escape Room</Label>
+        <Label className="text-[11px] font-medium">Título del Escape Room</Label>
         <Input
           value={act.titulo}
           onChange={(e) => onChange({ ...act, titulo: e.target.value })}
@@ -558,7 +561,7 @@ export function EscapeRoomEditor({
       </div>
 
       <div className="space-y-1">
-        <Label className="text-[11px] font-medium">IntroducciÃ³n / narrativa</Label>
+        <Label className="text-[11px] font-medium">Introducción / narrativa</Label>
         <textarea
           value={act.introduccion}
           onChange={(e) => onChange({ ...act, introduccion: e.target.value })}
@@ -572,9 +575,9 @@ export function EscapeRoomEditor({
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[160px] flex-1 space-y-1">
           <div className="flex items-center justify-between gap-2">
-            <Label className="text-[11px] font-medium">Tiempo lÃ­mite</Label>
-            <span className="text-[11px] font-semibold tabular-nums text-[#2563EB]">
-              {tiempoSlider === 0 ? 'Sin lÃ­mite' : `${tiempoSlider} min`}
+            <Label className="text-[11px] font-medium">Tiempo límite</Label>
+            <span className="text-[11px] font-semibold tabular-nums text-primary">
+              {tiempoSlider === 0 ? 'Sin límite' : `${tiempoSlider} min`}
             </span>
           </div>
           <input
@@ -590,20 +593,20 @@ export function EscapeRoomEditor({
                 tiempoLimiteMinutos: v === 0 ? undefined : v,
               });
             }}
-            className="h-1.5 w-full cursor-pointer accent-[#2563EB]"
+            className="h-1.5 w-full cursor-pointer accent-primary"
           />
-          <div className="flex justify-between text-[9px] text-[#9ca3af]">
+          <div className="flex justify-between text-[9px] text-muted-foreground">
             <span>0</span>
             <span>60 min</span>
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 pb-1 text-[11px] text-[#374151]">
+        <label className="flex cursor-pointer items-center gap-2 pb-1 text-[11px] text-foreground">
           <input
             type="checkbox"
             checked={act.mostrarRanking}
             onChange={(e) => onChange({ ...act, mostrarRanking: e.target.checked })}
-            className="size-3.5 accent-[#2563EB]"
+            className="size-3.5 accent-primary"
           />
           Mostrar ranking
         </label>
@@ -653,7 +656,7 @@ export function EscapeRoomEditor({
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 w-full gap-1.5 border-[#bfdbfe] bg-[#eff6ff]/80 text-xs hover:bg-[#eff6ff]"
+        className="h-8 w-full gap-1.5 border-primary/30 bg-primary/5 text-xs hover:bg-primary/10"
         onClick={addSala}
       >
         <Plus className="size-3.5" />

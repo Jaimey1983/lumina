@@ -178,6 +178,12 @@ export const CATALOGO_ELEMENTOS = {
     familia: "actividad",
   },
 
+  escape_room: {
+    nombre: "Escape Room",
+    descripcion: "Salas con acertijos, pistas y tiempo límite; solo o en equipos",
+    familia: "actividad",
+  },
+
   // ─── Actividades clásicas ──────────────────────────────────────────────────
   quiz_multiple: { nombre: "Opción múltiple", familia: "actividad" },
   verdadero_falso: { nombre: "Verdadero o falso", familia: "actividad" },

@@ -37,7 +37,7 @@ import { useUpdateSlide } from '@/hooks/api/use-classes';
 import {
   EscapeRoomSalaConfigFields,
   tipoRespuestaLabel,
-} from '@/components/editor/activities/escape-room-editor';
+} from '@lumina/element-kit/activities/escape-room/escape-room-editor';
 import { normalizeEscapeRoomActivity, normalizeSala } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';

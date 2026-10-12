@@ -268,10 +268,15 @@ export {
   type TorneoDefinition,
 } from "./elements/torneo/index.js";
 export {
-  EscapeRoomViewer,
+  escapeRoomDefinition,
+  registrarEscapeRoom,
   ESCAPE_ROOM_TIPO,
+  EscapeRoomEditor,
+  EscapeRoomViewer,
+  EscapeRoomPropiedades,
   type EscapeRoomConfig,
   type EscapeRoomEstado,
+  type EscapeRoomDefinition,
 } from "./elements/escape-room/index.js";
 export {
   createDefaultTorneo,
@@ -476,6 +481,7 @@ import { clasificarDefinition } from "./elements/clasificar/clasificar-definitio
 import { crucigramaDefinition } from "./elements/crucigrama/crucigrama-definition.js";
 import { globosDefinition } from "./elements/globos/globos-definition.js";
 import { torneoDefinition } from "./elements/torneo/torneo-definition.js";
+import { escapeRoomDefinition } from "./elements/escape-room/escape-room-definition.js";
 import { historiaRamificadaDefinition } from "./elements/historia_ramificada/historia_ramificada-definition.js";
 import { memoriaDefinition } from "./elements/memoria/memoria-definition.js";
 import { puzzleImagenDefinition } from "./elements/puzzle_imagen/puzzle_imagen-definition.js";
@@ -525,6 +531,7 @@ export type ElementCatalog = {
   puzzle_palabras: typeof puzzlePalabrasDefinition;
   globos: typeof globosDefinition;
   torneo: typeof torneoDefinition;
+  escape_room: typeof escapeRoomDefinition;
   topo: typeof topoDefinition;
   historia_ramificada: typeof historiaRamificadaDefinition;
   quiz_multiple: typeof quizMultipleDefinition;
@@ -576,6 +583,7 @@ elementRegistry.registrar(ahorcadoDefinition);
 elementRegistry.registrar(puzzlePalabrasDefinition);
 elementRegistry.registrar(globosDefinition);
 elementRegistry.registrar(torneoDefinition);
+elementRegistry.registrar(escapeRoomDefinition);
 elementRegistry.registrar(topoDefinition);
 elementRegistry.registrar(quizMultipleDefinition);
 elementRegistry.registrar(verdaderoFalsoDefinition);

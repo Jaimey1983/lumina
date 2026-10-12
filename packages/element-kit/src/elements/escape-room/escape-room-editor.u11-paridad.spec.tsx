@@ -1,19 +1,19 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck -- transitorio: se corre con la config del kit (jsdom + RTL); el frontend no los tiene. Se mueve al kit en la migración.
 /**
- * U11.4 — caracterización del editor de `escape_room` ANTES de migrarlo al kit (Regla 7).
+ * U11.4 — paridad del editor de `escape_room` contra su comportamiento ANTERIOR a migrarlo al kit (Regla 7).
  *
- * Fija qué EMITE `onChange` en cada edición (campos de la actividad, alta/baja/tipo de sala, opciones,
- * pistas, intentos) y cómo se comporta el envoltorio del lienzo (`EscapeRoomActivityEditor`: estado
- * local con guardado diferido y botón de quitar). Las consultas usan placeholders y roles, no los
- * rótulos con codificación rota («TÃ­tulo…»), que la migración corrige a propósito.
+ * Estas 18 pruebas se escribieron y pasaron contra el editor viejo del frontend (commit de
+ * caracterización) y aquí solo cambiaron los imports. Fijan qué EMITE `onChange` en cada edición
+ * (campos de la actividad, alta/baja/tipo de sala, opciones, pistas, intentos) y cómo se comporta el
+ * envoltorio del lienzo (`EscapeRoomActivityEditor`: estado local con guardado diferido y botón de
+ * quitar). Consultan placeholders y roles, no los rótulos que tenían la codificación rota, que la
+ * migración corrige a propósito (ver el bloque final).
  */
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EscapeRoomActivity } from '@lumina/types/slide';
 
-import { EscapeRoomEditor, tipoRespuestaLabel } from './escape-room-editor';
-import { EscapeRoomActivityEditor } from '@/app/(app)/classes/[id]/editor/components/activities/escape-room-activity';
+import { EscapeRoomActivityEditor } from '../../activities/escape-room/escape-room-canvas-editor.js';
+import { EscapeRoomEditor, tipoRespuestaLabel } from '../../activities/escape-room/escape-room-editor.js';
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -126,7 +126,7 @@ describe('EscapeRoomEditor — salas', () => {
   });
 
   it('«Eliminar sala» quita la elegida; con una sola queda deshabilitado', () => {
-    const { ultimo, rerender } = montar();
+    const { ultimo } = montar();
     fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar sala' })[0]);
     expect(ultimo().salas.map((s) => s.id)).toEqual(['sala-2']);
     cleanup();
@@ -200,9 +200,9 @@ describe('EscapeRoomEditor — salas', () => {
     expect(ultimo().salas[0]!.pistas).toEqual(['Dos hidrógenos', '']);
     cleanup();
     const m = montar({ salas: [{ ...actividad().salas[0]!, pistas: ['uno', 'dos'] }, actividad().salas[1]!] });
-    fireEvent.click(m.container.querySelector('[aria-label="Bajar pista 1"]'));
+    fireEvent.click(m.container.querySelector('[aria-label="Bajar pista 1"]')!);
     expect(m.ultimo().salas[0]!.pistas).toEqual(['dos', 'uno']);
-    fireEvent.click(m.container.querySelector('[aria-label="Eliminar pista 2"]'));
+    fireEvent.click(m.container.querySelector('[aria-label="Eliminar pista 2"]')!);
     expect(m.ultimo().salas[0]!.pistas).toEqual(['uno']);
   });
 
@@ -276,5 +276,61 @@ describe('EscapeRoomActivityEditor — envoltorio del lienzo', () => {
   it('en el lienzo (canvasLayout) no lleva marco propio', () => {
     const { container } = montarLienzo({ canvasLayout: true });
     expect((container.firstElementChild as HTMLElement).className).toContain('border-0');
+  });
+});
+
+// ─── Contrato del elemento y textos corregidos (U11.4) ───────────────────────────────────────
+
+import { elementRegistry } from '../../index.js';
+import { escapeRoomDefinition } from './escape-room-definition.js';
+import { EscapeRoomEditor as EscapeRoomEditorElemento, EscapeRoomPropiedades } from './escape-room-adapters.js';
+import { createDefaultEscapeRoom } from '../../activities/escape-room/index.js';
+
+describe('Escape room — ElementDefinition', () => {
+  it('se registra una sola vez con su catálogo y sin puntuación (en scoring es `exclude`)', () => {
+    expect(elementRegistry.obtener('escape_room')).toBe(escapeRoomDefinition);
+    expect('puntuacion' in escapeRoomDefinition).toBe(false);
+    expect(escapeRoomDefinition.catalogo).toMatchObject({ nombre: 'Escape Room', familia: 'actividad' });
+    expect(elementRegistry.listar().filter((d) => (d as { tipo: string }).tipo === 'escape_room')).toHaveLength(1);
+  });
+
+  it('crearPorDefecto da las salas de ejemplo ya normalizadas', () => {
+    const a = createDefaultEscapeRoom();
+    expect(a.tipo).toBe('escape_room');
+    expect(a.salas.length).toBeGreaterThan(0);
+    expect(a.salas.every((s) => s.id.length > 0)).toBe(true);
+  });
+
+  it('el Editor del contrato edita y guarda con retraso; Propiedades muestra el mismo editor', () => {
+    const onChange = vi.fn();
+    const { unmount } = render(
+      <EscapeRoomEditorElemento estado={actividad()} config={{ editorSyncKey: 'k' }} onChange={onChange} />,
+    );
+    fireEvent.change(screen.getByPlaceholderText('Nombre de la actividad'), { target: { value: 'Z' } });
+    act(() => void vi.advanceTimersByTime(450));
+    expect(onChange.mock.calls.at(-1)![0].titulo).toBe('Z');
+    unmount();
+    render(
+      <EscapeRoomPropiedades
+        estado={actividad()}
+        config={{ editorSyncKey: 'k' }}
+        onChange={() => {}}
+        onConfigChange={() => {}}
+      />,
+    );
+    expect(screen.getByPlaceholderText('Nombre de la actividad')).toBeTruthy();
+  });
+
+  it('los rótulos ya no tienen la codificación rota (corregido a propósito)', () => {
+    montar();
+    expect(screen.getByText('Título del Escape Room')).toBeTruthy();
+    expect(screen.getByText('Introducción / narrativa')).toBeTruthy();
+    expect(screen.getByText('Tiempo límite')).toBeTruthy();
+    expect(tipoRespuestaLabel('opcion_multiple')).toBe('Opción múltiple');
+    expect(tipoRespuestaLabel('codigo')).toBe('Código');
+    cleanup();
+    montar({ tiempoLimiteMinutos: undefined });
+    expect(screen.getByText('Sin límite')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/Ã|â€/);
   });
 });

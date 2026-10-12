@@ -242,7 +242,7 @@ import {
   SheetTitle,
 } from '@lumina/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
-import { normalizeEscapeRoomActivity } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
+import { createDefaultEscapeRoom } from '@lumina/element-kit/activities/escape-room/escape-room-defaults';
 import { api } from '@/lib/api';
 import {
   getCustomThemesForClass,
@@ -271,13 +271,9 @@ import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
 
 // Las 10 plantillas de la familia clásica viven en `@lumina/element-kit/activities/_classic/activity-templates`
 // (extraídas en E2.5 para que `@lumina/element-kit` las consuma como
-// `crearPorDefecto`). `escape_room` sigue acá (U11.4); `torneo` ya vive en el kit (U11.1).
+// `crearPorDefecto`). `torneo` y `escape_room` también viven en el kit (U11.1/U11.4).
 
 const EMPTY_CLASS_VARIABLES: readonly VariableDef[] = [];
-
-function escapeRoomTemplate(): Activity {
-  return normalizeEscapeRoomActivity(undefined);
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -2003,7 +1999,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'live-poll':        livePollTemplate,
         'word-cloud':       wordCloudTemplate,
         torneo:             createDefaultTorneo,
-        escape_room:        escapeRoomTemplate,
+        escape_room:        createDefaultEscapeRoom,
         clasificar:         createDefaultClasificar,
         memoria:            createDefaultMemoria,
         puzzle_imagen:      createDefaultPuzzleImagen,

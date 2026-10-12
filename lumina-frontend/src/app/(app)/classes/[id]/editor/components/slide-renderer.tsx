@@ -79,8 +79,6 @@ import {
 import { BackgroundImageLayer } from './background-image-layer';
 
 import type { Socket } from 'socket.io-client';
-import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
-import { EscapeRoomViewer } from '@lumina/element-kit';
 import { bloquesVisiblesDeSala } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
@@ -102,7 +100,7 @@ import { SlideCanvasRootContext } from '@lumina/editor-shared/slide-canvas-root-
 import { SlideThemeProvider } from '@lumina/editor-shared/slide-theme-context';
 import { getPredefinedSlideTheme } from '@/lib/slide-themes';
 import { isWidgetTipo } from '@lumina/types/widget';
-import type { WidgetBlock } from '@lumina/types/slide';
+import type { EscapeRoomSala, WidgetBlock } from '@lumina/types/slide';
 import type { TimelineInnerSelection } from '@lumina/element-kit/widgets/timeline/timeline-config';
 import type { ImageCompareInnerSelection } from '@lumina/element-kit';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
@@ -253,6 +251,27 @@ function RenderActivity({
   const act = block.actividad;
   const syncKey = `${slideId}-${blockId}`;
 
+  // El lienzo de cada sala del escape room se pinta con este mismo renderer (el kit no lo importa).
+  const renderSalaCanvas = (sala: EscapeRoomSala) => (
+    <SlideRenderer
+      slide={{
+        id: `${slideId}-sala-${sala.id}`,
+        order: 0,
+        type: 'CONTENT',
+        title: sala.nombre,
+        bloques: bloquesVisiblesDeSala(sala),
+        fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
+        content: null,
+      }}
+      modo="viewer"
+      viewerStudentId={viewerStudentId}
+      viewerStudentName={viewerStudentName}
+      viewerClassId={viewerClassId}
+      liveSocket={liveSocket}
+      className="h-full w-full"
+    />
+  );
+
   const def = elementRegistry.obtener<Activity, ActivityRuntimeConfig>(act.tipo);
   if (def) {
     if (modo === 'editor') {
@@ -283,55 +302,8 @@ function RenderActivity({
           viewerStudentName,
           viewerClassId,
           blockId,
-        }}
-      />
-    );
-  }
-
-  if (act.tipo === 'escape_room') {
-    if (modo === 'editor') {
-      return (
-        <EscapeRoomActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return (
-      <EscapeRoomViewer
-        estado={act}
-        config={{
-          onResponse,
-          variant,
-          editorSyncKey: syncKey,
-          liveSocket,
-          viewerStudentId,
-          viewerStudentName,
-          viewerClassId,
           slideId,
-          renderSalaCanvas: (sala) => (
-            <SlideRenderer
-              slide={{
-                id: `${slideId}-sala-${sala.id}`,
-                order: 0,
-                type: 'CONTENT',
-                title: sala.nombre,
-                bloques: bloquesVisiblesDeSala(sala),
-                fondo: sala.fondo ?? ESCAPE_ROOM_SALA_FONDO_DEFAULT,
-                content: null,
-              }}
-              modo="viewer"
-              viewerStudentId={viewerStudentId}
-              viewerStudentName={viewerStudentName}
-              viewerClassId={viewerClassId}
-              liveSocket={liveSocket}
-              className="h-full w-full"
-            />
-          ),
+          renderSalaCanvas,
         }}
       />
     );
