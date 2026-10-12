@@ -168,7 +168,7 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U9d — Oleada D: arcade, narrativa, video y quiz
 - **Operador:** Claude Code
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code] — partida en subfichas por actividad (Regla 10), un commit y un estado por cada una: **U9d.1** `globos` · **U9d.2** `topo` · **U9d.3** `abrir_caja` · **U9d.4** `historia_ramificada` · **U9d.5** `video_interactivo` · **U9d.6** `quiz_multiple` (el quiz son ~2200 líneas y 7 layouts: se parte en U9d.6a viewer/layouts y U9d.6b SYNCED si hace falta) · **U9d.7** cierre (borrar `ActivityResultOverlay`, adaptador `onComplete`, re-exports de U5; ratchet vacío). Cada una con caracterización ANTES de migrar.
 - **Precondición:** U9c `hecho`.
 - **Alcance — PUEDE tocar:** `globos`, `topo`, `abrir_caja`, `historia_ramificada`, `video_interactivo`, `quiz_multiple` (incluye SYNCED y sus 7 layouts) y sus carpetas de `elements/`; borrar `ActivityResultOverlay`, `ActivityTimer`/`ActivityLives` viejos y los re-exports de U5 cuando ya no tengan referencias.
 - **Entregable:** como U9a. Quiz SYNCED conserva su contrato con el docente (relevar antes; si exige tocar sockets, **parar** y abrir ficha). Al cerrar: `grep -rn "onComplete" packages/element-kit/src/activities` → **0** y `ActivityRuntimeConfig` sin `onComplete`; la lista de exentos de U1 vacía. Verificación: tests del kit, `lint`, `test:visual`, `pnpm --filter lumina-frontend test`.
