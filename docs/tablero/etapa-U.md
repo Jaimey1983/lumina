@@ -321,7 +321,7 @@ U13 abre la primera tanda de actividades nuevas U14 → U18 (serie, mismos archi
 
 #### U17 — `linea_tiempo`: ordenar eventos sobre un eje
 - **Operador:** Claude Code · Cursor · Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U16 en revisión. Cumple CN1–CN10.
 - **Qué es:** el alumno ordena cronológicamente tarjetas de eventos sobre un eje horizontal (vertical en pantallas angostas); al terminar se revelan las fechas.
 - **Datos:** `LineaTiempoActivity { tipo:'linea_tiempo'; instruccion; eventos: { id; texto; fechaTexto: string; orden: number; imagen? }[]; mostrarFechasAlFinal: boolean; retroalimentacion? }`. `orden` es la clave de orden (1-based, sin repetidos); `fechaTexto` es lo que se muestra («1810», «siglo XV»).
