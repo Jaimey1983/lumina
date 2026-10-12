@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "startCommand": "pnpm --filter lumina-backend exec prisma migrate deploy && pnpm --filter lumina-backend start:prod"
+  }
+}
