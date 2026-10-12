@@ -67,7 +67,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "historia-ramificada/historia-ramificada-editor.tsx": 2,
   "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
   "historia-ramificada/historia-ramificada-viewer.tsx": 1,
-  "puzzle-imagen/puzzle-imagen-viewer.tsx": 9,
   "sopa-letras/sopa-letras-properties.tsx": 1,
   "sopa-letras/sopa-letras-viewer.tsx": 13,
   "topo/topo-editor.tsx": 1,

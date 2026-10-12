@@ -33,7 +33,13 @@ export function generarOrdenCorrecto(filas: number, columnas: number): number[] 
   return Array.from({ length: filas * columnas }, (_, i) => i);
 }
 
-export function generarOrdenMezclado(filas: number, columnas: number): number[] {
+/** Orden mezclado de las piezas; con `semilla` es el mismo para toda la clase, `sal` lo cambia por intento. */
+export function generarOrdenMezclado(
+  filas: number,
+  columnas: number,
+  semilla?: number | null,
+  sal = 0,
+): number[] {
   const total = filas * columnas;
-  return barajar(Array.from({ length: total }, (_, i) => i));
+  return barajar(Array.from({ length: total }, (_, i) => i), semilla, sal);
 }

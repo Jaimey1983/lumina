@@ -1,85 +1,96 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useLayoutEffect, useEffect } from 'react';
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
-  useDraggable,
-} from '@dnd-kit/core';
-import { PuzzleImagenActivity } from '@lumina/types/slide';
+/**
+ * Viewer de Puzzle de imagen sobre el `ActivityShell` (U9b.5).
+ *
+ * El shell aporta fases, cronómetro, progreso y la pantalla de resultados; el estado de las
+ * piezas es puro (`puzzle-imagen-estado.ts`). Lo que sale hacia `@lumina/scoring` NO cambió: un
+ * BORRADOR `wrapActivityDraftResponse({ slots })` al montar y en cada cambio del tablero, y la
+ * respuesta final `{ slots }` al verificar. Sale por `onResponse` (canal unificado, DU2);
+ * `onComplete` se acepta solo como alias transitorio. Se puede arrastrar (ratón, táctil o
+ * teclado) o usar «tocar y colocar» (DU8).
+ */
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useDraggable, useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import type { PuzzleImagenActivity } from '@lumina/types/slide';
 import { evaluateActivityResponse, wrapActivityDraftResponse, type ActivityEvaluationResult } from '@lumina/scoring';
-import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js';
+
+import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
 import {
-  calcularTamanoCeldaPuzzle,
-  generarOrdenMezclado,
-  PUZZLE_IMAGEN_GAP_PX,
-} from './puzzle-imagen-config.js';
+  AnuncioTocarColocar,
+  ModoEntradaToggle,
+  useModoEntrada,
+  useTocarColocar,
+} from '../_shared/activity-tap-place.js';
+import { calcularTamanoCeldaPuzzle, generarOrdenMezclado, PUZZLE_IMAGEN_GAP_PX } from './puzzle-imagen-config.js';
+import {
+  ID_ORIGEN,
+  estadoInicial,
+  idPieza,
+  idSlot,
+  indiceDePieza,
+  soltarPieza,
+  type EstadoPuzzle,
+} from './puzzle-imagen-estado.js';
+import styles from './puzzle-imagen.module.css';
 
-interface PiezaProps {
-  index: number;
-  filas: number;
-  columnas: number;
-  imagen: string;
-  cellSize: number;
-  disabled?: boolean;
-  isDragging?: boolean;
-}
-
-function piezaBackgroundPosition(index: number, filas: number, columnas: number): string {
+function posicionDeFondo(index: number, filas: number, columnas: number): string {
   const row = Math.floor(index / columnas);
   const col = index % columnas;
   return `${col * (100 / Math.max(columnas - 1, 1))}% ${row * (100 / Math.max(filas - 1, 1))}%`;
 }
 
-function piezaStyle(
-  index: number,
-  filas: number,
-  columnas: number,
-  imagen: string,
-  cellSize: number,
-): React.CSSProperties {
+function estiloPieza(index: number, filas: number, columnas: number, imagen: string, cellSize?: number): CSSProperties {
   return {
-    width: cellSize,
-    height: cellSize,
+    ...(cellSize === undefined ? { width: '100%', height: '100%' } : { width: cellSize, height: cellSize }),
     backgroundImage: `url(${imagen})`,
     backgroundSize: `${columnas * 100}% ${filas * 100}%`,
-    backgroundPosition: piezaBackgroundPosition(index, filas, columnas),
+    backgroundPosition: posicionDeFondo(index, filas, columnas),
   };
 }
 
+interface Geometria {
+  filas: number;
+  columnas: number;
+  imagen: string;
+  cellSize: number;
+}
+
+// ── Pieza arrastrable ─────────────────────────────────────────────────────────
 function Pieza({
   index,
-  filas,
-  columnas,
-  imagen,
-  cellSize,
+  geo,
+  etiqueta,
   disabled,
-  isDragging,
-  embedded,
-}: PiezaProps & { embedded?: boolean }) {
+  arrastrando,
+  incrustada,
+  elegida,
+  propsTocar,
+}: {
+  index: number;
+  geo: Geometria;
+  /** Nombre hablado de la pieza (NO revela su casilla correcta). */
+  etiqueta: string;
+  disabled?: boolean;
+  arrastrando?: boolean;
+  incrustada?: boolean;
+  elegida?: boolean;
+  propsTocar?: React.HTMLAttributes<HTMLElement>;
+}) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: `pieza-${index}`,
+    id: idPieza(index),
     disabled,
+    data: { etiqueta },
+    attributes: { roleDescription: 'pieza del puzzle' },
   });
 
-  const style: React.CSSProperties = {
-    ...(embedded
-      ? {
-          width: '100%',
-          height: '100%',
-          backgroundImage: `url(${imagen})`,
-          backgroundSize: `${columnas * 100}% ${filas * 100}%`,
-          backgroundPosition: piezaBackgroundPosition(index, filas, columnas),
-        }
-      : piezaStyle(index, filas, columnas, imagen, cellSize)),
+  const style: CSSProperties = {
+    ...estiloPieza(index, geo.filas, geo.columnas, geo.imagen, incrustada ? undefined : geo.cellSize),
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: arrastrando ? 0.4 : 1,
     cursor: disabled ? 'default' : 'grab',
   };
 
@@ -87,74 +98,69 @@ function Pieza({
     <div
       ref={setNodeRef}
       style={style}
-      className={
-        embedded
-          ? 'h-full w-full'
-          : 'shrink-0 rounded-sm border-2 border-gray-200 transition-colors hover:border-blue-400'
-      }
+      className={[incrustada ? styles.piezaIncrustada : styles.pieza, elegida ? styles.piezaElegida : ''].join(' ')}
       {...(disabled ? {} : { ...listeners, ...attributes })}
+      {...propsTocar}
+      aria-label={etiqueta}
     />
   );
 }
 
-interface SlotProps {
-  posicion: number;
-  filas: number;
-  columnas: number;
-  imagen: string;
-  cellSize: number;
-  piezaActual: number | null;
-  esCorrecta: boolean;
-  mostrarNumero: boolean;
-  verificado: boolean;
-}
-
-function Slot({
+// ── Casilla del tablero ───────────────────────────────────────────────────────
+function Casilla({
   posicion,
-  filas,
-  columnas,
-  imagen,
-  cellSize,
+  geo,
   piezaActual,
+  etiquetaPieza,
   esCorrecta,
   mostrarNumero,
   verificado,
-}: SlotProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: `slot-${posicion}` });
+  elegida,
+  propsTocar,
+  bloqueada,
+}: {
+  posicion: number;
+  geo: Geometria;
+  piezaActual: number | null;
+  etiquetaPieza: (i: number) => string;
+  esCorrecta: boolean;
+  mostrarNumero: boolean;
+  verificado: boolean;
+  elegida: boolean;
+  propsTocar?: React.HTMLAttributes<HTMLElement>;
+  bloqueada: boolean;
+}) {
+  const nombre = `Casilla ${posicion + 1}`;
+  const { setNodeRef, isOver } = useDroppable({ id: idSlot(posicion), data: { etiqueta: nombre } });
+  const estado = verificado ? (esCorrecta ? styles.casillaCorrecta : styles.casillaIncorrecta) : '';
 
   return (
     <div
       ref={setNodeRef}
-      className="relative shrink-0 overflow-hidden rounded-sm border-2 transition-colors"
-      style={{
-        width: cellSize,
-        height: cellSize,
-        borderColor: verificado
-          ? esCorrecta
-            ? '#16A34A'
-            : '#DC2626'
-          : isOver
-            ? '#2563EB'
-            : '#E5E7EB',
-        backgroundColor: isOver ? '#EFF6FF' : '#F9FAFB',
-      }}
+      {...propsTocar}
+      aria-label={
+        propsTocar
+          ? piezaActual === null
+            ? `${nombre}, vacía`
+            : `${nombre}, con ${etiquetaPieza(piezaActual)}`
+          : undefined
+      }
+      style={{ width: geo.cellSize, height: geo.cellSize }}
+      className={[styles.casilla, estado, isOver ? styles.casillaSobre : '', elegida ? styles.casillaElegida : ''].join(' ')}
     >
       {piezaActual !== null ? (
         <Pieza
           index={piezaActual}
-          filas={filas}
-          columnas={columnas}
-          imagen={imagen}
-          cellSize={cellSize}
-          disabled={verificado}
-          embedded
+          geo={geo}
+          etiqueta={etiquetaPieza(piezaActual)}
+          disabled={bloqueada || verificado}
+          incrustada
+          // En modo tocar la casilla ocupada es la que se toca: la pieza no recibe el clic.
+          propsTocar={propsTocar ? { 'aria-hidden': true, tabIndex: -1 } : undefined}
         />
       ) : (
         mostrarNumero && (
-          <span
-            className="absolute inset-0 flex items-center justify-center font-bold text-gray-300"
-            style={{ fontSize: Math.max(10, Math.floor(cellSize * 0.22)) }}
-          >
+          <span className={styles.numeroCasilla} style={{ fontSize: Math.max(10, Math.floor(geo.cellSize * 0.22)) }}>
             {posicion + 1}
           </span>
         )
@@ -163,59 +169,59 @@ function Slot({
   );
 }
 
-interface OrigenAreaProps {
-  filas: number;
-  columnas: number;
-  imagen: string;
-  cellSize: number;
-  origenPiezas: number[];
-  verificado: boolean;
-  activeDragId: string | null;
-}
-
-function OrigenArea({
-  filas,
-  columnas,
-  imagen,
-  cellSize,
-  origenPiezas,
-  verificado,
-  activeDragId,
-}: OrigenAreaProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: 'origen' });
-  const origenCols = columnas;
-
-  if (cellSize <= 0) return null;
+// ── Origen (piezas sueltas) ───────────────────────────────────────────────────
+function Origen({
+  geo,
+  piezas,
+  etiquetaPieza,
+  bloqueado,
+  activa,
+  elegida,
+  propsTocar,
+  propsPieza,
+}: {
+  geo: Geometria;
+  piezas: number[];
+  etiquetaPieza: (i: number) => string;
+  bloqueado: boolean;
+  activa: string | null;
+  elegida: string | null;
+  propsTocar?: React.HTMLAttributes<HTMLElement>;
+  propsPieza: (i: number) => React.HTMLAttributes<HTMLElement> | undefined;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: ID_ORIGEN, data: { etiqueta: 'Piezas sueltas' } });
+  if (geo.cellSize <= 0) return null;
+  const gap = PUZZLE_IMAGEN_GAP_PX;
 
   return (
     <div
       ref={setNodeRef}
-      className="rounded-lg p-1 transition-colors"
+      {...propsTocar}
+      aria-label={propsTocar ? 'Piezas sueltas' : undefined}
+      className={[styles.origen, isOver ? styles.origenSobre : ''].join(' ')}
       style={{
-        minWidth: origenCols * cellSize + (origenCols - 1) * PUZZLE_IMAGEN_GAP_PX + 8,
-        minHeight: filas * cellSize + (filas - 1) * PUZZLE_IMAGEN_GAP_PX + 8,
-        backgroundColor: isOver ? '#EFF6FF' : 'transparent',
-        border: isOver ? '2px dashed #2563EB' : '2px dashed transparent',
+        minWidth: geo.columnas * geo.cellSize + (geo.columnas - 1) * gap + 8,
+        minHeight: geo.filas * geo.cellSize + (geo.filas - 1) * gap + 8,
       }}
     >
       <div
-        className="grid justify-center"
+        className={styles.rejillaOrigen}
         style={{
-          gridTemplateColumns: `repeat(${origenCols}, ${cellSize}px)`,
-          gridAutoRows: `${cellSize}px`,
-          gap: PUZZLE_IMAGEN_GAP_PX,
+          gridTemplateColumns: `repeat(${geo.columnas}, ${geo.cellSize}px)`,
+          gridAutoRows: `${geo.cellSize}px`,
+          gap,
         }}
       >
-        {origenPiezas.map((idx) => (
+        {piezas.map((idx) => (
           <Pieza
             key={idx}
             index={idx}
-            filas={filas}
-            columnas={columnas}
-            imagen={imagen}
-            cellSize={cellSize}
-            disabled={verificado}
-            isDragging={activeDragId === `pieza-${idx}`}
+            geo={geo}
+            etiqueta={etiquetaPieza(idx)}
+            disabled={bloqueado}
+            arrastrando={activa === idPieza(idx)}
+            elegida={elegida === idPieza(idx)}
+            propsTocar={propsPieza(idx)}
           />
         ))}
       </div>
@@ -223,174 +229,167 @@ function OrigenArea({
   );
 }
 
-interface PuzzleImagenViewerProps {
+// ── Viewer principal ──────────────────────────────────────────────────────────
+export interface PuzzleImagenViewerProps {
   actividad: PuzzleImagenActivity;
+  /** Canal de respuesta unificado (DU2). */
+  onResponse?: (response: unknown) => void;
+  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
   onComplete?: (response: unknown) => void;
 }
 
-export function PuzzleImagenViewer({ actividad, onComplete }: PuzzleImagenViewerProps) {
+interface CuerpoProps {
+  actividad: PuzzleImagenActivity;
+  estado: EstadoPuzzle;
+  setEstado: React.Dispatch<React.SetStateAction<EstadoPuzzle>>;
+  rango: number[];
+  ctx: ActivityShellContext;
+  responder: (r: unknown) => void;
+  alEvaluar: (e: ActivityEvaluationResult) => void;
+}
+
+function Cuerpo({ actividad, estado, setEstado, rango, ctx, responder, alEvaluar }: CuerpoProps) {
   const { configuracion, imagen } = actividad;
   const { filas, columnas, mostrarVista, dificultad } = configuracion;
-  const total = filas * columnas;
-
-  const [origenPiezas, setOrigenPiezas] = useState<number[]>(() =>
-    generarOrdenMezclado(filas, columnas),
-  );
-  const [slots, setSlots] = useState<(number | null)[]>(() => Array(total).fill(null));
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [verificado, setVerificado] = useState(false);
-  const [mostrarResultado, setMostrarResultado] = useState(false);
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null);
+  const jugando = ctx.sesion.fase === 'jugando';
+  const { setProgreso, completar } = ctx;
+  const [activo, setActivo] = useState<string | null>(null);
   const [cellSize, setCellSize] = useState(0);
-  const assemblyAreaRef = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  const entrada = useModoEntrada();
+  const tocar = entrada.modo === 'tocar';
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido });
+  const geo: Geometria = { filas, columnas, imagen, cellSize };
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-
+  const { origen, slots } = estado;
+  const colocadas = slots.filter((s) => s !== null).length;
   useEffect(() => {
-    if (verificado) return;
-    onComplete?.(wrapActivityDraftResponse({ slots }));
-  }, [slots, verificado, onComplete]);
+    setProgreso(colocadas);
+  }, [colocadas, setProgreso]);
+
+  // Borrador al montar y en cada cambio del tablero, mientras se juega.
+  useEffect(() => {
+    if (!jugando) return;
+    responder(wrapActivityDraftResponse({ slots }));
+  }, [slots, jugando, responder]);
 
   useLayoutEffect(() => {
-    const el = assemblyAreaRef.current;
+    const el = areaRef.current;
     if (!el) return;
-
-    const update = () => {
+    const actualizar = () => {
       const rect = el.getBoundingClientRect();
-      setCellSize(
-        calcularTamanoCeldaPuzzle(rect.width, rect.height, filas, columnas, PUZZLE_IMAGEN_GAP_PX),
-      );
+      setCellSize(calcularTamanoCeldaPuzzle(rect.width, rect.height, filas, columnas, PUZZLE_IMAGEN_GAP_PX));
     };
-
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => observer.disconnect();
+    actualizar();
+    const observador = new ResizeObserver(actualizar);
+    observador.observe(el);
+    return () => observador.disconnect();
   }, [filas, columnas]);
 
-  const handleDragStart = useCallback((e: DragStartEvent) => {
-    setActiveDragId(e.active.id as string);
-  }, []);
+  /** Nombre hablado de una pieza: su número de reparto, que NO delata su casilla correcta. */
+  const etiquetaPieza = useCallback((i: number) => `Pieza ${rango[i]! + 1}`, [rango]);
 
-  const handleDragEnd = useCallback(
-    (e: DragEndEvent) => {
-      const { active, over } = e;
-      setActiveDragId(null);
-      if (!over) return;
-
-      const activeId = active.id as string;
-      const overId = over.id as string;
-      const piezaIndex = parseInt(activeId.replace('pieza-', ''), 10);
-
-      if (overId.startsWith('slot-')) {
-        const slotPos = parseInt(overId.replace('slot-', ''), 10);
-
-        setSlots((prev) => {
-          const nuevos = [...prev];
-          const slotAnterior = prev.findIndex((s) => s === piezaIndex);
-          const displaced = nuevos[slotPos];
-
-          if (slotAnterior !== -1) {
-            nuevos[slotAnterior] = null;
-          }
-
-          if (displaced !== null && displaced !== piezaIndex) {
-            setOrigenPiezas((op) => [...op, displaced]);
-          }
-
-          nuevos[slotPos] = piezaIndex;
-
-          if (slotAnterior === -1) {
-            setOrigenPiezas((op) => op.filter((p) => p !== piezaIndex));
-          }
-
-          return nuevos;
-        });
-      } else if (overId === 'origen') {
-        const slotAnterior = slots.findIndex((s) => s === piezaIndex);
-        if (slotAnterior !== -1) {
-          setSlots((prev) => {
-            const nuevos = [...prev];
-            nuevos[slotAnterior] = null;
-            return nuevos;
-          });
-          setOrigenPiezas((op) => [...op, piezaIndex]);
-        }
-      }
+  const aplicar = useCallback(
+    (id: string, destino: string) => {
+      if (!jugando) return;
+      setEstado((prev) => soltarPieza(prev, indiceDePieza(id), destino));
     },
-    [slots],
+    [jugando, setEstado],
   );
 
-  const handleVerificar = useCallback(() => {
-    setVerificado(true);
+  const nombreZona = useCallback(
+    (id: string) => (id === ID_ORIGEN ? 'las piezas sueltas' : `la casilla ${parseInt(id.replace('slot-', ''), 10) + 1}`),
+    [],
+  );
+  const tocarColocar = useTocarColocar({
+    onColocar: aplicar,
+    etiquetaItem: (id) => etiquetaPieza(indiceDePieza(id)),
+    etiquetaZona: nombreZona,
+    deshabilitado: !tocar || !jugando,
+  });
+
+  const alSoltar = useCallback(
+    (e: DragEndEvent) => {
+      setActivo(null);
+      if (!e.over) return;
+      aplicar(e.active.id as string, e.over.id as string);
+    },
+    [aplicar],
+  );
+
+  const verificar = () => {
+    if (!jugando || origen.length !== 0) return;
     const raw = { slots: [...slots] };
-    const evaluated = evaluateActivityResponse('puzzle_imagen', actividad, raw);
-    setEvaluation(evaluated);
-    onComplete?.(raw);
-    setMostrarResultado(evaluated.score !== null);
-  }, [actividad, slots, onComplete]);
+    const evaluada = evaluateActivityResponse('puzzle_imagen', actividad, raw);
+    alEvaluar(evaluada);
+    feedback.emitir(evaluada.correct ? 'acierto' : 'error', { movimiento: false });
+    responder(raw);
+    completar();
+  };
 
-  const handleReintentar = useCallback(() => {
-    setOrigenPiezas(generarOrdenMezclado(filas, columnas));
-    setSlots(Array(total).fill(null));
-    setVerificado(false);
-    setMostrarResultado(false);
-    setEvaluation(null);
-  }, [filas, columnas, total]);
+  const verificado = !jugando && ctx.sesion.motivoFin !== 'sin_tiempo';
+  const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo';
+  const piezaActiva = activo ? indiceDePieza(activo) : null;
+  const elegida = tocarColocar.seleccionado;
+  const propsPieza = (i: number) => (tocar ? tocarColocar.propsItem(idPieza(i)) : undefined);
 
-  const todosColocados = origenPiezas.length === 0;
-  const activePiezaIndex = activeDragId
-    ? parseInt(activeDragId.replace('pieza-', ''), 10)
-    : null;
-  const mostrarNumeroEnSlot = dificultad === 'facil';
-
-  if (!imagen) {
-    return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        Sin imagen configurada
-      </div>
-    );
-  }
+  /** En modo tocar, una casilla ocupada sin nada elegido selecciona su pieza; con algo elegido la recibe. */
+  const propsCasilla = (pos: number): React.HTMLAttributes<HTMLElement> | undefined => {
+    if (!tocar) return undefined;
+    const base = tocarColocar.propsZona(idSlot(pos));
+    const ocupante = slots[pos];
+    if (ocupante === null || elegida !== null) return base;
+    const item = tocarColocar.propsItem(idPieza(ocupante!));
+    return { ...base, tabIndex: 0, 'aria-disabled': undefined, 'aria-pressed': false, onClick: item.onClick, onKeyDown: item.onKeyDown };
+  };
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-col gap-2 overflow-hidden p-3">
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        {mostrarVista && dificultad !== 'dificil' && (
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-xs text-gray-500">Referencia:</span>
-            <img
-              src={imagen}
-              alt="Referencia"
-              className="h-10 rounded border border-gray-200 object-cover"
-            />
+    <div className={styles.raiz}>
+      <div className={styles.cabecera}>
+        {mostrarVista && dificultad !== 'dificil' ? (
+          <div className={styles.referencia}>
+            <span className={styles.rotulo}>Referencia:</span>
+            <img src={imagen} alt="Referencia" className={styles.miniatura} />
           </div>
+        ) : (
+          <span />
         )}
+        <ModoEntradaToggle modo={entrada.modo} onAlternar={entrada.alternar} />
+      </div>
 
-        <div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
-          <div className="flex min-h-0 w-[38%] flex-col gap-1 overflow-hidden">
-            <span className="shrink-0 text-xs font-medium text-gray-500">Piezas</span>
-            <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto">
-              <OrigenArea
-                filas={filas}
-                columnas={columnas}
-                imagen={imagen}
-                cellSize={cellSize}
-                origenPiezas={origenPiezas}
-                verificado={verificado}
-                activeDragId={activeDragId}
+      <ActivityDndRoot
+        arrastreActivo={!tocar}
+        onDragStart={(e: DragStartEvent) => setActivo(e.active.id as string)}
+        onDragEnd={alSoltar}
+        overlay={
+          piezaActiva !== null && cellSize > 0 ? (
+            <div className={styles.fantasma} style={estiloPieza(piezaActiva, filas, columnas, imagen, cellSize)} />
+          ) : null
+        }
+      >
+        <div className={styles.zonas}>
+          <div className={styles.columnaOrigen}>
+            <span className={styles.rotuloFuerte}>Piezas</span>
+            <div className={styles.contenedorOrigen}>
+              <Origen
+                geo={geo}
+                piezas={origen}
+                etiquetaPieza={etiquetaPieza}
+                bloqueado={!jugando}
+                activa={activo}
+                elegida={elegida}
+                propsTocar={tocar ? tocarColocar.propsZona(ID_ORIGEN) : undefined}
+                propsPieza={propsPieza}
               />
             </div>
           </div>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden">
-            <span className="shrink-0 text-xs font-medium text-gray-500">Armalo aquí</span>
-            <div
-              ref={assemblyAreaRef}
-              className="flex min-h-0 flex-1 items-center justify-center overflow-hidden"
-            >
+          <div className={styles.columnaTablero}>
+            <span className={styles.rotuloFuerte}>Armalo aquí</span>
+            <div ref={areaRef} className={styles.contenedorTablero}>
               {cellSize > 0 && (
                 <div
-                  className="grid shrink-0"
+                  className={styles.tablero}
                   style={{
                     gridTemplateColumns: `repeat(${columnas}, ${cellSize}px)`,
                     gridTemplateRows: `repeat(${filas}, ${cellSize}px)`,
@@ -398,17 +397,18 @@ export function PuzzleImagenViewer({ actividad, onComplete }: PuzzleImagenViewer
                   }}
                 >
                   {slots.map((pieza, pos) => (
-                    <Slot
+                    <Casilla
                       key={pos}
                       posicion={pos}
-                      filas={filas}
-                      columnas={columnas}
-                      imagen={imagen}
-                      cellSize={cellSize}
+                      geo={geo}
                       piezaActual={pieza}
+                      etiquetaPieza={etiquetaPieza}
                       esCorrecta={pieza === pos}
-                      mostrarNumero={mostrarNumeroEnSlot}
+                      mostrarNumero={dificultad === 'facil'}
                       verificado={verificado}
+                      elegida={pieza !== null && elegida === idPieza(pieza)}
+                      propsTocar={propsCasilla(pos)}
+                      bloqueada={!jugando}
                     />
                   ))}
                 </div>
@@ -416,35 +416,82 @@ export function PuzzleImagenViewer({ actividad, onComplete }: PuzzleImagenViewer
             </div>
           </div>
         </div>
-
-        <DragOverlay>
-          {activePiezaIndex !== null && cellSize > 0 && (
-            <div
-              className="rounded-sm border-2 border-blue-400 shadow-xl"
-              style={piezaStyle(activePiezaIndex, filas, columnas, imagen, cellSize)}
-            />
-          )}
-        </DragOverlay>
-      </DndContext>
+      </ActivityDndRoot>
+      <AnuncioTocarColocar anuncio={tocarColocar.anuncio} />
 
       {!verificado && (
-        <button
-          type="button"
-          onClick={handleVerificar}
-          disabled={!todosColocados}
-          className="shrink-0 self-center rounded-lg bg-[#2563EB] px-5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-        >
+        <button type="button" className={styles.verificar} onClick={verificar} disabled={!jugando || origen.length !== 0}>
           Verificar
         </button>
       )}
-
-      {mostrarResultado && (
-        <ActivityResultOverlay
-          evaluation={evaluation ?? undefined}
-          onReintentar={handleReintentar}
-          mostrarReintentar={true}
-        />
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
       )}
     </div>
+  );
+}
+
+export function PuzzleImagenViewer({ actividad, onResponse, onComplete }: PuzzleImagenViewerProps) {
+  const { configuracion, imagen } = actividad;
+  const { filas, columnas } = configuracion;
+  const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
+  const semilla = ajustes.semilla;
+  const corrida = useRef(0);
+
+  // `rango[i]` = posición de la pieza `i` en el reparto inicial (la usan los nombres hablados).
+  const repartir = useCallback(() => {
+    const orden = generarOrdenMezclado(filas, columnas, semilla, corrida.current);
+    const rango: number[] = [];
+    orden.forEach((pieza, k) => {
+      rango[pieza] = k;
+    });
+    return { orden, rango };
+  }, [filas, columnas, semilla]);
+
+  const [reparto, setReparto] = useState(repartir);
+  const [estado, setEstado] = useState<EstadoPuzzle>(() => estadoInicial(reparto.orden));
+  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null);
+
+  // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
+  const salida = useRef(onResponse ?? onComplete);
+  useEffect(() => {
+    salida.current = onResponse ?? onComplete;
+  }, [onResponse, onComplete]);
+  const responder = useCallback((r: unknown) => salida.current?.(r), []);
+
+  const alReintentar = useCallback(() => {
+    corrida.current += 1;
+    const nuevo = repartir();
+    setReparto(nuevo);
+    setEstado(estadoInicial(nuevo.orden));
+    setEvaluation(null);
+  }, [repartir]);
+
+  if (!imagen) {
+    return <div className={styles.sinImagen}>Sin imagen configurada</div>;
+  }
+
+  return (
+    <ActivityShell
+      ajustes={ajustes}
+      total={filas * columnas}
+      evaluation={evaluation}
+      onReintentar={alReintentar}
+      className={styles.shell}
+    >
+      {(ctx) => (
+        <Cuerpo
+          actividad={actividad}
+          estado={estado}
+          setEstado={setEstado}
+          rango={reparto.rango}
+          ctx={ctx}
+          responder={responder}
+          alEvaluar={setEvaluation}
+        />
+      )}
+    </ActivityShell>
   );
 }

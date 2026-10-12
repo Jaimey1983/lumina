@@ -85,6 +85,10 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // todos» (el orden inicial de los pasos), sonido y estilo. «Mostrar números» sigue siendo un
   // dato del editor.
   ordenar_pasos: { tiempo: true, semilla: true, sonido: true, estilo: true },
+  // Puzzle de imagen (U9b.5): nota y reintento en la pantalla final, tiempo, «mismo orden para
+  // todos» (el reparto de las piezas), sonido y estilo. Filas, columnas, dificultad y vista previa
+  // son datos de su editor.
+  puzzle_imagen: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */
