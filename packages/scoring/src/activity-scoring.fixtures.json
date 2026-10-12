@@ -33,7 +33,8 @@
     "formular_compuesto",
     "relacionar_lineas",
     "problema_pasos",
-    "etiquetar_imagen"
+    "etiquetar_imagen",
+    "linea_tiempo"
   ],
   "notaCases": [
     {
@@ -1962,6 +1963,207 @@
       "correctEsperado": null,
       "detailsEsperados": 0,
       "scoreEsperado": null
+    },
+    {
+      "case": "u17_linea_perfecta",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 4,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u17_linea_par_intercambiado",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [
+        "a",
+        "c",
+        "b",
+        "d"
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 2.5
+    },
+    {
+      "case": "u17_linea_invertida",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [
+        "d",
+        "c",
+        "b",
+        "a"
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u17_linea_vacia",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "Independencia",
+            "fechaTexto": "1810",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "Constitución",
+            "fechaTexto": "1886",
+            "orden": 2
+          },
+          {
+            "id": "c",
+            "texto": "Guerra de los Mil Días",
+            "fechaTexto": "1899",
+            "orden": 3
+          },
+          {
+            "id": "d",
+            "texto": "Constitución actual",
+            "fechaTexto": "1991",
+            "orden": 4
+          }
+        ],
+        "mostrarFechasAlFinal": true
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 4,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u17_linea_orden_dado_por_clave_no_por_posicion",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "x",
+            "texto": "Segundo",
+            "fechaTexto": "2",
+            "orden": 2
+          },
+          {
+            "id": "y",
+            "texto": "Primero",
+            "fechaTexto": "1",
+            "orden": 1
+          }
+        ]
+      },
+      "respuesta": [
+        "y",
+        "x"
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 2,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u17_linea_sin_eventos",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": []
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
     }
   ],
   "expectedKinds": {
@@ -1997,7 +2199,8 @@
     "balancear_ecuacion": "binary",
     "ubicar_elemento": "partial",
     "formular_compuesto": "partial",
-    "etiquetar_imagen": "partial"
+    "etiquetar_imagen": "partial",
+    "linea_tiempo": "partial"
   },
   "contractCases": [
     {
@@ -2574,6 +2777,30 @@
           "zonaId": "z1",
           "etiquetaId": "e1"
         }
+      ]
+    },
+    {
+      "case": "contrato_linea_tiempo_perfecto",
+      "activityType": "linea_tiempo",
+      "definicion": {
+        "eventos": [
+          {
+            "id": "a",
+            "texto": "A",
+            "fechaTexto": "1",
+            "orden": 1
+          },
+          {
+            "id": "b",
+            "texto": "B",
+            "fechaTexto": "2",
+            "orden": 2
+          }
+        ]
+      },
+      "respuesta": [
+        "a",
+        "b"
       ]
     }
   ]

@@ -82,6 +82,7 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   emparejar: 'partial',
   relacionar_lineas: 'partial',
   etiquetar_imagen: 'partial',
+  linea_tiempo: 'partial',
   ordenar_pasos: 'partial',
   video_interactivo: 'partial',
 
@@ -166,6 +167,7 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'formular_compuesto',
   'problema_pasos',
   'etiquetar_imagen',
+  'linea_tiempo',
 ]);
 
 /** `partial` cuyo promedio de gradebook aún no está conectado (p. ej. `orden_rango`). */
@@ -788,6 +790,34 @@ function evaluateEtiquetarImagen(definicion: unknown, respuesta: unknown): Activ
   };
 }
 
+/**
+ * Línea de tiempo (U16→U17): el mismo criterio posición a posición que `ordenar_pasos`, pero leyendo
+ * `orden`/`texto` de los eventos. La respuesta es la lista de ids en el orden elegido. Los empates en
+ * `orden` se rompen por posición en la definición.
+ */
+function evaluateLineaTiempo(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const eventos = (Array.isArray(def.eventos) ? def.eventos : [])
+    .map((e, i) => ({ e: asRecord(e) ?? {}, i }))
+    .filter(({ e }) => String(e.id ?? '') !== '');
+  if (eventos.length === 0) return UNEVALUABLE;
+  const correctOrder = [...eventos].sort(
+    (a, b) => Number(a.e.orden ?? 0) - Number(b.e.orden ?? 0) || a.i - b.i,
+  );
+  const ordered = Array.isArray(respuesta) ? respuesta.map(String) : [];
+  const details: ActivityEvaluationDetail[] = correctOrder.map(({ e }, pos) => {
+    const texto = String(e.texto ?? '');
+    const label = texto.length > 30 ? `${texto.slice(0, 30)}…` : texto || `Evento ${pos + 1}`;
+    return { index: pos, correct: ordered[pos] === String(e.id), label };
+  });
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, eventos.length, true),
+  };
+}
+
 function evaluateOrdenar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const pasos = Array.isArray(def.pasos) ? def.pasos : [];
@@ -1211,6 +1241,8 @@ function evaluatePartial(
       return evaluateProblemaPasos(definicion, respuesta);
     case 'etiquetar_imagen':
       return evaluateEtiquetarImagen(definicion, respuesta);
+    case 'linea_tiempo':
+      return evaluateLineaTiempo(definicion, respuesta);
     case 'ordenar_pasos':
       return evaluateOrdenar(definicion, respuesta);
     case 'video_interactivo':

@@ -442,6 +442,30 @@ export interface EtiquetarImagenActivity extends ActivityBase {
   retroalimentacion?: Feedback;
 }
 
+/** Un evento de la línea de tiempo. */
+export interface LineaTiempoEvento {
+  id: string;
+  texto: string;
+  /** Lo que se muestra al revelar («1810», «siglo XV»). */
+  fechaTexto: string;
+  /** Clave de orden cronológico (1-based, sin repetidos). */
+  orden: number;
+  imagen?: string;
+}
+
+/**
+ * Línea de tiempo (etapa U / U17): el alumno ordena cronológicamente tarjetas de eventos sobre un
+ * eje; al comprobar se revelan las fechas.
+ */
+export interface LineaTiempoActivity extends ActivityBase {
+  tipo: 'linea_tiempo';
+  instruccion: string;
+  eventos: LineaTiempoEvento[];
+  mostrarFechasAlFinal: boolean;
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface OrderStep {
@@ -833,6 +857,7 @@ export type Activity =
   | MatchPairs
   | RelacionarLineasActivity
   | EtiquetarImagenActivity
+  | LineaTiempoActivity
   | OrderSteps
   | VideoInteractive
   | LivePoll
