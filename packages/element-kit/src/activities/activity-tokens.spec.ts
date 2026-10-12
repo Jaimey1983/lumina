@@ -37,8 +37,6 @@ const ARCHIVOS_DE_TOKENS: readonly string[] = ["_shared/activity-tokens.ts"];
  * en U9a–U9d; no se agrega nada. Orden alfabético.
  */
 const EXENTOS: Readonly<Record<string, number>> = {
-  "_classic/quiz-multiple.tsx": 18,
-  "_classic/quiz/quiz-multiple-editor.tsx": 27,
   "_shared/activity-result-overlay.tsx": 1,
 };
 
