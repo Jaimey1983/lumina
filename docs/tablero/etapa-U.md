@@ -186,11 +186,21 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U10 — Fusión de motores (sin cambiar `tipo`)
 - **Operador:** Claude Code
-- **Estado:** pendiente
-- **Precondición:** U9d `hecho`. **Redacta y mide primero** (Regla 10): la ficha se completa tras U9d con el estado real del código.
-- **Alcance (provisional):** motor *Arcade* común para `globos` y `topo`; motor de *categorización* común para `clasificar` y `arrastrar_soltar`; *banco de preguntas* común de opción múltiple (quiz, V/F, arcade, abrir caja, nodos de pregunta de historia); *banco de palabras* común para los juegos de palabras. Los `tipo` existentes y la forma de respuesta se **mantienen**.
-- **Entregable:** el motor compartido, cada `tipo` como *skin* o preset sobre él, paridad de scoring intacta. Verificación: tests del kit y `pnpm --filter @lumina/scoring test`.
-- **Cierre:** Regla 4: el código duplicado de cada par se borra.
+- **Estado:** pendiente — **ficha redactada y medida** (Regla 10, commit `chore(tablero)`); no se ejecuta hasta que U9d pase a `hecho` (precondición).
+- **Precondición:** U9d `hecho`.
+- **Medición (estado real del código tras U9d):**
+  - **Arcade (`globos`, `topo`):** mismo contenido (`preguntas[{ id, enunciado, opciones[{ texto, correcta }] }]`), misma respuesta `{ puntosObtenidos, puntosMaximos }`, mismos ajustes (vidas y tiempo de `configuracion`), mismo ciclo sobre el shell y misma lógica de «una respuesta por pregunta». `*-config.ts` ≈ 128 líneas cada uno, viewers ≈ 280, panel 251 / 171. Difiere la **mecánica**: globos suben con `requestAnimationFrame` y se pinchan; topo asoma en huecos con temporizadores y cuesta una vida por pregunta.
+  - **Categorización (`clasificar`, `arrastrar_soltar`):** contenido distinto (`categorias/items{categoriaId}` vs `zonas{itemsCorrectos}/items`) y **respuesta distinta** (`{ ubicaciones: {itemId: categoriaId} }` vs arreglo `[{ itemId, zoneId }]`) con dos evaluadores de scoring distintos; `clasificar` ya está sobre dnd-kit y `ActivityDndRoot` (U9b.2), `arrastrar_soltar` es un archivo `_classic` de 691 líneas (editor + viewer).
+  - **Banco de preguntas de opción múltiple:** 7 consumidores con **tres formas** de opción: `{ id, texto, esCorrecta }` (quiz, abrir caja `contenido.esCorrecta`, historia `opciones[].esCorrecta`), `{ texto, correcta }` (globos, topo, sin `id`) y `{ id, texto, esCorrecta }` en video (`VideoQuestion`); V/F es una afirmación, no una lista.
+  - **Banco de palabras:** `ahorcado` (`palabra`), `anagrama` (`palabras[]`), `sopa_letras` (`palabras[{texto}]`), `crucigrama` (`palabras[{texto,pista,fila,columna,direccion}]`) y `puzzle_palabras` (oraciones): cada uno normaliza y valida a su manera (mayúsculas, tildes, espacios).
+- **Alcance — PUEDE tocar:** `packages/element-kit/src/activities/{globos,topo,clasificar,_classic/drag-drop.tsx,_shared}` y sus `elements/`; un módulo nuevo `activities/_shared/` por motor. **NO** toca `@lumina/scoring`, los `tipo`, la forma de los datos guardados ni la forma de ninguna respuesta (todo cambio de datos se resuelve **leyendo** con un normalizador, nunca reescribiendo slides).
+- **Partida en subfichas (de menor a mayor riesgo; cada una con caracterización ANTES si toca un viewer, un commit y un estado):**
+  - **U10.1 — banco de opciones común:** `normalizarOpcion/Pregunta` (acepta `correcta` y `esCorrecta`, `id` opcional) + hooks `useSeleccionOpciones` / veredicto compartidos por quiz, globos, topo, abrir caja e historia. No cambia ningún dato.
+  - **U10.2 — motor Arcade:** `useMotorArcade` (preguntas, vidas, puntaje, avance «una respuesta por pregunta», emisión única) y `globos`/`topo` como *skins* con su mecánica; borra el ciclo duplicado de ambos viewers y el `normalizar*` repetido.
+  - **U10.3 — banco de palabras:** `normalizarPalabra` (mayúsculas, tildes, `Ñ`) y componente de lista de palabras del editor para los 5 juegos. Resuelve de paso el hallazgo de U9c (`Ñ` se pierde en ahorcado), que hoy se conserva a propósito: aquí se decide con el docente.
+  - **U10.4 — categorización:** motor común de «ubicar elementos en contenedores» (arrastre, tocar-colocar, anuncios) compartido por `clasificar` y `arrastrar_soltar`; **cada tipo conserva su respuesta y su evaluador** (se compara la salida con la del viejo en prueba de paridad). Es la de más riesgo: se hace al final y puede quedar como «motor de interacción compartido» sin fusionar los modelos de datos si la paridad lo exige.
+- **Entregable:** el motor compartido, cada `tipo` como *skin* o preset sobre él, paridad de scoring intacta. Verificación: `pnpm --filter @lumina/element-kit test` (incluye `tsc --noEmit`), lint, build, `pnpm --filter @lumina/scoring test`, `tsc` y `test:unit` del frontend y visual de actividades.
+- **Cierre:** Regla 4: el código duplicado de cada par se borra en la misma subficha que lo reemplaza.
 
 #### U11 — `torneo` y `escape_room` dentro del contrato
 - **Operador:** Claude Code
