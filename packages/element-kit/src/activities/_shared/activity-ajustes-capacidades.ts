@@ -98,6 +98,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   anagrama: { mostrarNota: true, tiempo: true, semilla: true, sonido: true, estilo: true },
   // Crucigrama (U9c.3): el viewer lee nota, tiempo, sonido y estilo; un solo intento (verificar)
   crucigrama: { mostrarNota: true, tiempo: true, sonido: true, estilo: true },
+  // Sopa de letras (U9c.4): el viewer lee nota, tiempo, semilla (misma sopa para toda la clase), sonido y estilo; una sola resolución
+  sopa_letras: { mostrarNota: true, tiempo: true, semilla: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

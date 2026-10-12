@@ -85,6 +85,18 @@ function Cuerpo({ actividad, ctx, respuestas, setRespuestas, responder, alEvalua
   }, [bounds, mapaCeldas]);
   const [foco, setFoco] = useState(primera);
 
+  // Tiempo agotado: sale lo escrito hasta ahora, una sola vez (la rejilla queda bloqueada).
+  const emitidaPorTiempo = useRef(false);
+  useEffect(() => {
+    if (!sinTiempo || emitidaPorTiempo.current) return;
+    emitidaPorTiempo.current = true;
+    const raw = { celdas: { ...respuestas } };
+    alEvaluar(evaluateActivityResponse('crucigrama', actividad, raw));
+    responder(raw);
+    // Solo reacciona al fin por tiempo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sinTiempo]);
+
   const estadoCeldas = useMemo(() => {
     if (!verificado) return {};
     const estado: Record<string, 'correcto' | 'incorrecto'> = {};

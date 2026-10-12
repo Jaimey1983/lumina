@@ -1,4 +1,4 @@
-import { barajar } from '../_shared/barajar.js';
+import { barajarCon, combinarSemilla, crearAzar, type Azar } from '../_shared/barajar.js';
 
 export const SOPA_LETRAS_MAX_PALABRAS = 20;
 export const SOPA_LETRAS_MIN_PALABRAS = 3;
@@ -21,8 +21,8 @@ export interface PalabraColocada {
 
 const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-function letraAleatoria(): string {
-  return LETRAS[Math.floor(Math.random() * LETRAS.length)];
+function letraAleatoria(azar: Azar): string {
+  return LETRAS[Math.floor(azar() * LETRAS.length)];
 }
 
 const DELTAS: Record<Direccion, { df: number; dc: number }> = {
@@ -37,6 +37,7 @@ function intentarColocar(
   direccion: Direccion,
   filas: number,
   columnas: number,
+  azar: Azar,
 ): PalabraColocada | null {
   const { df, dc } = DELTAS[direccion];
   const len = palabra.length;
@@ -46,8 +47,8 @@ function intentarColocar(
 
   const intentos = 40;
   for (let t = 0; t < intentos; t++) {
-    const fila = Math.floor(Math.random() * (maxFila + 1));
-    const col = Math.floor(Math.random() * (maxCol + 1));
+    const fila = Math.floor(azar() * (maxFila + 1));
+    const col = Math.floor(azar() * (maxCol + 1));
     let ok = true;
     for (let i = 0; i < len; i++) {
       const r = fila + df * i;
@@ -71,12 +72,23 @@ function intentarColocar(
   return null;
 }
 
+/**
+ * Arma la sopa. Sin `semilla` cada alumno ve una distinta (`Math.random`, como siempre); con
+ * `semilla` finita (`ajustes.semilla`, DU3) la rejilla es la misma para toda la clase y
+ * reproducible. `sal` da otra rejilla dentro de la misma semilla.
+ */
 export function generarGrid(
   filas: number,
   columnas: number,
   palabras: string[],
   direcciones: Direccion[],
+  semilla?: number | null,
+  sal = 0,
 ): { grid: string[][]; colocadas: PalabraColocada[] } {
+  const azar: Azar =
+    typeof semilla === 'number' && Number.isFinite(semilla)
+      ? crearAzar(combinarSemilla(semilla, sal))
+      : Math.random;
   const grid: string[][] = Array.from({ length: filas }, () => Array(columnas).fill(''));
   const colocadas: PalabraColocada[] = [];
   const ordenadas = [...palabras]
@@ -84,9 +96,9 @@ export function generarGrid(
     .sort((a, b) => b.length - a.length);
 
   for (const palabra of ordenadas) {
-    const dirs = barajar(direcciones);
+    const dirs = barajarCon(direcciones, azar);
     for (const dir of dirs) {
-      const resultado = intentarColocar(grid, palabra, dir, filas, columnas);
+      const resultado = intentarColocar(grid, palabra, dir, filas, columnas, azar);
       if (resultado) {
         colocadas.push(resultado);
         break;
@@ -96,7 +108,7 @@ export function generarGrid(
 
   for (let r = 0; r < filas; r++) {
     for (let c = 0; c < columnas; c++) {
-      if (grid[r][c] === '') grid[r][c] = letraAleatoria();
+      if (grid[r][c] === '') grid[r][c] = letraAleatoria(azar);
     }
   }
 

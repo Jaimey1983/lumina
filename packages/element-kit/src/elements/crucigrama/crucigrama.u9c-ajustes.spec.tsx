@@ -91,6 +91,7 @@ describe("Crucigrama — `ajustes` (U9c.3)", () => {
     pasar(3000);
     expect(screen.getAllByText("Se acabó el tiempo.").length).toBeGreaterThan(0);
     expect(celdas().every((c) => c.readOnly)).toBe(true);
+    expect(onResponse.mock.calls).toEqual([[{ celdas: { "0-0": "S" } }]]);
   });
 
   it("acepta el alias `onComplete` y prefiere `onResponse`", () => {
