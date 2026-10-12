@@ -3,6 +3,7 @@ import type {
   ElementPropsPanelProps,
   ElementViewerProps,
 } from "@lumina/element-kit-core";
+import { PanelProduccion } from "../../activities/_shared/produccion/panel-produccion.js";
 import {
   EscapeRoomActivityEditor as EscapeRoomEditorBase,
   EscapeRoomViewer as EscapeRoomViewerBase,
@@ -57,19 +58,24 @@ export function EscapeRoomEditor({
   );
 }
 
-/** Panel de propiedades: el mismo editor, en su versión de panel. */
+/** Panel de propiedades: el mismo editor, en su versión de panel, y debajo el panel de producción (U12). */
 export function EscapeRoomPropiedades({
   estado,
   config,
   onChange,
 }: ElementPropsPanelProps<EscapeRoomEstado, EscapeRoomConfig>) {
   return (
-    <EscapeRoomEditorBase
-      editorSyncKey={config.editorSyncKey ?? ""}
-      activity={estado}
-      canvasLayout={false}
-      isSelected={false}
-      onChange={onChange}
-    />
+    <div className="flex flex-col gap-2">
+      <EscapeRoomEditorBase
+        editorSyncKey={config.editorSyncKey ?? ""}
+        activity={estado}
+        canvasLayout={false}
+        isSelected={false}
+        onChange={onChange}
+      />
+      <div className="px-1">
+        <PanelProduccion actividad={estado} onChange={onChange} />
+      </div>
+    </div>
   );
 }

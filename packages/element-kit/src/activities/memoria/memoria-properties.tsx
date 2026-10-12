@@ -9,6 +9,7 @@ import { Button } from '@lumina/ui/button';
 import { CollapsibleSection } from '@lumina/ui/collapsible-section';
 import { Label } from '@lumina/ui/label';
 import { ActividadAjustesPanel } from '../_shared/actividad-ajustes-panel.js';
+import { PanelProduccion } from '../_shared/produccion/panel-produccion.js';
 import {
   generarIdMemoria,
   MEMORIA_MAX_PARES,
@@ -173,6 +174,8 @@ export function MemoriaProperties({ actividad, onChange, presets }: MemoriaPrope
 
   return (
     <div className="flex flex-col gap-1 p-3 text-sm">
+      <PanelProduccion actividad={actividad} onChange={onChange} />
+
       <PresetGallery
         presets={presets}
         estado={actividad}

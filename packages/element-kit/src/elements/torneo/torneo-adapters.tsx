@@ -3,6 +3,7 @@ import type {
   ElementPropsPanelProps,
   ElementViewerProps,
 } from "@lumina/element-kit-core";
+import { PanelProduccion } from "../../activities/_shared/produccion/panel-produccion.js";
 import { TorneoActivityEditor, TorneoViewer as TorneoViewerBase } from "../../activities/torneo/index.js";
 import type { TorneoConfig, TorneoEstado } from "./torneo-types.js";
 
@@ -23,20 +24,25 @@ export function TorneoEditor({
   );
 }
 
-/** Panel de propiedades: el mismo editor, en su versión de panel. */
+/** Panel de propiedades: el mismo editor, en su versión de panel, y debajo el panel de producción (U12). */
 export function TorneoPropiedades({
   estado,
   config,
   onChange,
 }: ElementPropsPanelProps<TorneoEstado, TorneoConfig>) {
   return (
-    <TorneoActivityEditor
-      editorSyncKey={config.editorSyncKey ?? ""}
-      activity={estado}
-      canvasLayout={false}
-      isSelected={false}
-      onChange={onChange}
-    />
+    <div className="flex flex-col gap-2">
+      <TorneoActivityEditor
+        editorSyncKey={config.editorSyncKey ?? ""}
+        activity={estado}
+        canvasLayout={false}
+        isSelected={false}
+        onChange={onChange}
+      />
+      <div className="px-1">
+        <PanelProduccion actividad={estado} onChange={onChange} />
+      </div>
+    </div>
   );
 }
 
