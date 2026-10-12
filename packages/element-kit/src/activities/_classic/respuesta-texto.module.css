@@ -1,6 +1,6 @@
 /*
- * U9a.1 / U9a.2 / U9a.3 — estilos de los viewers de respuesta escrita (Respuesta corta,
- * Respuesta matemática y Completar blancos) sobre los tokens `--la-*` del shell. Dos variantes: `claro` (fondo claro) y
+ * U9a.1–U9a.5 — estilos de los viewers de respuesta escrita (Respuesta corta, Respuesta
+ * matemática, Completar blancos y Nube de palabras) sobre los tokens `--la-*` del shell. Dos variantes: `claro` (fondo claro) y
  * `oscuro` (sobre fondo oscuro del slide).
  */
 .tarjeta {
@@ -260,4 +260,47 @@
 .acciones {
   display: flex;
   justify-content: flex-end;
+}
+
+/* Nube de palabras: campo centrado, contador y nube local. */
+.centrado {
+  text-align: center;
+}
+
+.formularioNube {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+}
+
+.campoNube {
+  flex: 1;
+  min-width: 0;
+}
+
+.contadorNube {
+  margin-top: -1rem;
+}
+
+.nube {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 0;
+  margin-top: 1rem;
+  border-top: 1px solid var(--la-color-borde);
+}
+
+.oscuro .nube {
+  border-top-color: rgb(255 255 255 / 0.2);
+}
+
+.palabra {
+  font-weight: 700;
+  color: var(--la-color-seleccionado);
 }
