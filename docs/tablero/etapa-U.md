@@ -43,7 +43,7 @@ U0 ─→ U1 ─┐
  └─→ U2 ──┘                                                     │
                                                                 └─→ U12 ─→ U13
 ```
-U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden ir en paralelo. De U3 en adelante, serie.
+U13 abre la primera tanda de actividades nuevas U14 → U18 (serie, mismos archivos compartidos). U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden ir en paralelo. De U3 en adelante, serie.
 
 **Fuera de alcance de la etapa:** `@lumina/scoring` y el gradebook (DU7), el backend, el motor de reglas (etapas K/N), widgets, y cualquier actividad **nueva** antes de cerrar U10 (el catálogo nuevo se redacta en U13, Regla 10: fichas futuras al cerrar la previa). Las propuestas de catálogo nuevo están al final como *insumo*, no como fichas.
 
@@ -251,11 +251,99 @@ U1 y U2 tocan archivos disjuntos (CSS/guarda contra tipos/normalizador) y pueden
 
 #### U13 — Catálogo nuevo: relevamiento y fichas
 - **Operador:** Claude Code (redacta) · Cursor/Antigravity (ejecutan luego)
+- **Estado:** en revisión — primera tanda elegida con el dueño (2026-10-12) y fichas U14–U18 redactadas más abajo. No escribe código.
+- **Precondición:** U10 `hecho` (sigue en revisión; se redacta por pedido expreso del dueño).
+- **Alcance:** solo `docs/tablero/etapa-U.md` (fichas `U14+`) y la fila del índice en `AGENTS.md`. **NO** escribe código.
+- **Primera tanda (decisión del dueño, 2026-10-12):** **U14** relacionar con líneas · **U15** problema paso a paso · **U16** etiquetar imagen · **U17** línea de tiempo · **U18** cloze con banco de palabras. Todas `partial`: salen en la planilla académica y se califican con un evaluador nuevo en `@lumina/scoring`. Quedan fuera (siguen como insumo): tarjetas de estudio, cierre de «Crear» y clase en vivo.
+- **Relevamiento (medido contra el código, 2026-10-12) — qué toca agregar un tipo nuevo:**
+  - `@lumina/types`: una variante en la unión `Activity` (`slide.types.ts`). El backend **no** valida `tipo` con lista blanca (solo el DTO de IA lista 7 tipos; no se toca).
+  - `@lumina/scoring`: entrada en `ACTIVITY_SCORING`, en `GRADEBOOK_CONNECTED_PARTIAL`, un `evaluateX` y su `case` en `evaluatePartial`, y en `activity-scoring.fixtures.json` el tipo en `requiredActivityTypes`, `expectedKinds`, un `contractCase` y los `evaluationCases`. `scoring.spec.ts` y `lumina-backend/.../activity-scoring.spec.ts` **leen el mismo JSON** y exigen un `contractCase` por tipo requerido. DU7 permite **agregar**, nunca cambiar lo existente.
+  - `packages/element-kit`: `activities/<tipo>/` (viewer, editor, propiedades, config, defaults, módulo CSS) y `elements/<tipo>/` (definición, adaptadores, tipos, estilos/presets, `register.ts`, `index.ts`), `CATALOGO_ELEMENTOS`, `CAPACIDADES_AJUSTES`, registro en `index.ts` del kit, y —de U12— su validador (`validacion.ts`) y, si aplica, su importador (`importadores.ts`).
+  - `lumina-frontend` (solo rótulos y listas por `tipo`): `activities-panel.tsx` (unión `ActivityType` + botón), `editor-client.tsx` (mapas de plantilla y título), `slides-panel.tsx` (icono), `canvas-layers.ts`, `slide-renderer.tsx` (`ACTIVITY_LABELS`), `analytics-client.tsx` y `grade-book-client.tsx` (rótulos) y `visual-tests/actividades-fixture.tsx` (+ PNG). El render sale solo por el registry.
+  - **Dependencias:** al medir, **ninguna de las cinco necesita una librería nueva** (DU5 se cumple sin `react-konva`, `ts-fsrs` ni `mathlive`): relacionar usa SVG propio; etiquetar usa marcadores en porcentaje sobre la imagen; línea de tiempo y cloze reutilizan el motor de arrastre y «tocar y colocar». `mathlive` queda como mejora posterior de U15.
+  - **Concurrencia:** U14–U18 tocan los **mismos** archivos compartidos (scoring, fixtures, `index.ts` del kit, catálogo, listas del frontend): **no corren en paralelo**; van en orden U14 → U18.
+- **Checklist común de actividad nueva (CN1–CN10).** Cada ficha lo cumple completo; aquí se define una vez y las fichas solo dicen lo propio:
+  - **CN1.** Nace como `ElementDefinition` (Regla 3): `tipo` en español con guion bajo, `crearPorDefecto()` **ya jugable y sin errores de `validarActividad`**, `Editor`, `Viewer`, `Propiedades` (con `crearPropiedadesConAjustes`, así hereda estilos, ajustes y el panel de producción de U12), `apariencia`, `presets` de estilo, `catalogo` y `eventos: ["respuesta_correcta","respuesta_incorrecta"]` si es `binary`/`partial` (lo exige `catalogo.parity.spec.ts`).
+  - **CN2.** Viewer sobre el `ActivityShell` (U3): fases, ajustes por `normalizarAjustes`, resultado con desglose por ítem, `onResponse` como **única** salida (DU2), `useActividadSesion`, sonido y confeti por el módulo común (DU5), **sin `motion` directo**, aleatoriedad por `barajar`/`semilla` (nunca `Math.random` suelto).
+  - **CN3.** Accesibilidad de entrada (DU8): teclado completo, `aria-live` para aciertos/errores, foco visible y gestionado, alternativa «tocar para elegir, tocar para colocar» donde haya arrastre, `prefers-reduced-motion`.
+  - **CN4.** Cero hex fuera del fallback de un `var(--l*-…, …)`; `EXENTOS` sigue vacía (solo `EXENTOS_DE_DATO` con motivo si hay un color que se guarda).
+  - **CN5.** `CAPACIDADES_AJUSTES[tipo]` declara **solo** lo que el viewer lee.
+  - **CN6.** Scoring: clase declarada, evaluador **nuevo** en `@lumina/scoring` (sin tocar los existentes), tipo agregado a `GRADEBOOK_CONNECTED_PARTIAL`, fixtures (`requiredActivityTypes`, `expectedKinds`, `contractCase` y `evaluationCases`: perfecto, parcial, vacío, definición inválida → no evaluable). `pnpm --filter @lumina/scoring test` y el spec del backend pasan sin editar fixtures existentes.
+  - **CN7.** U12: validador (jugable/no jugable) registrado en `validacion.ts`; importador en `importadores.ts` si el contenido es una lista (con `ejemplo` que deja la actividad sin errores).
+  - **CN8.** Pruebas propias: viewer (fases, respuesta emitida con la forma exacta, tiempo/intentos con relojes falsos, teclado), editor/propiedades, definición (registro único, catálogo, `crearPorDefecto`), y **una prueba que cruza el viewer con el evaluador** (la respuesta que emite el viewer, evaluada por scoring, da la nota esperada).
+  - **CN9.** Frontend: solo las listas de rótulos/iconos/plantillas descritas arriba y un snapshot nuevo en `actividades-fixture.tsx`.
+  - **CN10.** Verificación estándar: `cd packages/element-kit && npx tsc --noEmit`, `pnpm lint` (0 errores), `pnpm build`, `pnpm test`; `pnpm --filter @lumina/scoring test`; `cd lumina-frontend && npx tsc --noEmit && npx vitest run --project unit`; `test:visual` de actividades si el entorno lo permite. Estado final `en revisión`; solo el dueño pasa a `hecho`.
+- **Entregable:** las fichas U14–U18 de abajo. **Cierre:** n/a.
+
+#### U14 — `relacionar_lineas`: unir dos columnas con líneas
+- **Operador:** Claude Code · Cursor · Antigravity
 - **Estado:** pendiente
-- **Precondición:** U10 `hecho`.
-- **Alcance:** solo `docs/tablero/etapa-U.md` (agregar fichas `U14+`). **NO** escribe código.
-- **Entregable:** del insumo de abajo, elegir con el dueño la primera tanda (3–5), y por cada una una ficha completa: `ElementDefinition` desde cero (Regla 3), clase de scoring declarada (`binary`/`partial`/`manual`/`participation`) y, si es `partial`/`binary`, su evaluador en `@lumina/scoring` con fixtures (DU7 permite **agregar**, no cambiar lo existente), dependencias nuevas con carga diferida (DU5), `presets` y prueba propia.
-- **Cierre:** n/a.
+- **Precondición:** U13 aprobada por el dueño. Cumple CN1–CN10.
+- **Qué es:** dos columnas independientes; el alumno traza líneas de un elemento de la izquierda a uno de la derecha. A diferencia de `emparejar` (pares con ambos lados), aquí la derecha puede traer **distractores** y las relaciones se declaran aparte.
+- **Datos (`@lumina/types`):** `RelacionarLineasActivity { tipo:'relacionar_lineas'; instruccion; izquierda: {id; texto?; imagen?}[]; derecha: {id; texto?; imagen?}[]; relaciones: {izquierdaId; derechaId}[]; puntos?; retroalimentacion? }`. Una izquierda tiene a lo sumo una relación correcta; una derecha puede quedar sin usar (distractor).
+- **Respuesta (viewer → `onResponse`):** `{ izquierdaId; derechaId }[]` — **la misma forma que ya usa `emparejar`** (`leftId`/`rightId` se evalúan igual), para que el gradebook y el panel en vivo no necesiten un caso nuevo; el evaluador nuevo traduce los nombres.
+- **Scoring:** `partial`. `evaluateRelacionarLineas`: un detalle por cada izquierda **con relación**; correcto si la derecha elegida es la declarada; una línea de más hacia una derecha equivocada cuenta como error de esa izquierda; `score = notaColombiana(correctas, total, true)`; sin relaciones o sin izquierdas → no evaluable. Fixtures: perfecto, parcial, con distractor elegido, sin responder, definición vacía.
+- **Viewer:** columnas con puntos de anclaje y un `<svg>` superpuesto; líneas por arrastre entre puntos (pointer events) **y** por teclado/tocar (elegir izquierda, luego derecha; Supr/clic en la línea para borrarla); redibujo con `ResizeObserver` (probar dentro de `.canvas-slide` bajo zoom); «Comprobar» en el shell; revisión pinta cada línea con los tokens `--la-color-correcto/incorrecto`. `barajar` aplica a las dos columnas (independientes, con `semilla`).
+- **Editor/propiedades:** listas de izquierda y derecha con texto o imagen; para cada izquierda un selector de su derecha correcta («sin relación» permitido); botón «agregar distractor» (derecha sin relación). Importador U12: `izquierda ; derecha` (genera pares) — los distractores se agregan a mano.
+- **Validador U12:** < 2 relaciones, izquierda o derecha vacía, relación que apunta a un id inexistente, dos izquierdas con la misma derecha (aviso), todas las derechas usadas (aviso: sin distractores, es un emparejar).
+- **`CAPACIDADES_AJUSTES`:** `mostrarNota`, `intentos`, `tiempo`, `barajar`, `mostrarSolucion`, `sonido`, `estilo`.
+- **Alcance — PUEDE tocar:** lo de CN (types, scoring [solo agregar], kit, listas del frontend). **NO** toca el evaluador ni el viewer de `emparejar`.
+- **Prueba cruzada (CN8):** dos trazados (uno perfecto, uno con un distractor) emiten la respuesta y `evaluateActivityResponse('relacionar_lineas', …)` da 5.0 y la nota parcial esperada.
+
+#### U15 — `problema_pasos`: problema resuelto paso a paso con pistas
+- **Operador:** Claude Code · Cursor · Antigravity
+- **Estado:** pendiente
+- **Precondición:** U14 en revisión (comparten archivos). Cumple CN1–CN10.
+- **Qué es:** matemática y física: un enunciado y una secuencia de pasos; cada paso pide un resultado numérico o una expresión y ofrece pistas escalonadas. Reutiliza lo que ya hay: `parseRespuestaNumerica` y `expresionesEquivalentes` de `@lumina/scoring`.
+- **Datos:** `ProblemaPasosActivity { tipo:'problema_pasos'; enunciado; imagen?; pasos: { id; instruccion; modo:'numerico'|'algebraico'; respuesta; tolerancia?; toleranciaTipo?; unidad?; pistas: string[] }[]; secuencial: boolean; retroalimentacion? }`. `secuencial` = no se ve el paso siguiente hasta resolver el actual.
+- **Respuesta:** `{ pasoId; respuesta: string; pistasUsadas: number }[]`.
+- **Scoring:** `partial`. `evaluateProblemaPasos`: por paso, correcto con la **misma regla** de `evaluateRespuestaMatematica` (numérico con tolerancia / algebraico equivalente — extraer la lógica a una función interna compartida **sin cambiar** el comportamiento de la existente, con prueba de no regresión); cada pista usada resta `ajustes.pistas.costoPct` (0–100, defecto 0) de ese paso; `score = notaColombiana(Σ crédito, total, true)` (el crédito de un paso es `max(0, 1 − pistasUsadas·costo)` si acertó, 0 si no). Fixtures: perfecto sin pistas, perfecto con pistas y costo, algebraico equivalente, tolerancia, vacío.
+- **Viewer:** shell con progreso por pasos; campo de respuesta con unidad; pistas reveladas **una por vez** con contador («pista 2 de 3»), anunciadas con `aria-live`; en modo `secuencial` el paso resuelto se pliega mostrando su resultado; teclado completo. Sin `mathlive` en esta ficha (entrada de texto con vista previa de la expresión si el módulo de álgebra la entrega; si no, texto plano). `ajustes.pistas` (cantidad/costo) manda sobre `pistas.length`.
+- **Editor/propiedades:** lista de pasos (instrucción, modo, respuesta, tolerancia, unidad, pistas con orden); validación en vivo de la expresión modelo con `validarExpresionAlgebraica`. Importador U12: `instrucción ; respuesta ; pista 1 ; pista 2 …`.
+- **Validador U12:** sin pasos, enunciado o instrucción vacíos, respuesta modelo ilegible (misma regla que `respuesta_matematica`), tolerancia negativa, pistas vacías (aviso).
+- **`CAPACIDADES_AJUSTES`:** `mostrarNota`, `intentos`, `tiempo`, `pistas`, `mostrarSolucion`, `sonido`, `estilo`.
+- **Alcance:** CN. **NO** cambia `respuesta_matematica` ni `algebra.ts` (solo se importa); la extracción compartida de la regla de comparación se hace **dentro de `index.ts` de scoring sin alterar sus salidas**, con las pruebas existentes de `respuesta_matematica` como red.
+- **Prueba cruzada:** problema de 3 pasos; respuesta con 1 pista usada y costo 20 % → nota esperada exacta.
+
+#### U16 — `etiquetar_imagen`: arrastrar etiquetas sobre una imagen
+- **Operador:** Claude Code · Cursor · Antigravity
+- **Estado:** pendiente
+- **Precondición:** U15 en revisión. Cumple CN1–CN10.
+- **Qué es:** anatomía, mapas, circuitos: una imagen con marcadores numerados y un banco de etiquetas; el alumno coloca cada etiqueta en su marcador.
+- **Datos:** `EtiquetarImagenActivity { tipo:'etiquetar_imagen'; instruccion; imagen: string; textoAlternativo: string; zonas: { id; x; y; etiquetaId }[]; etiquetas: { id; texto }[]; retroalimentacion? }` con `x`,`y` en **fracción 0–1** del ancho/alto de la imagen (así sobreviven al zoom y al redimensionado). Etiquetas sin zona = distractores.
+- **Respuesta:** `{ zonaId; etiquetaId }[]`.
+- **Scoring:** `partial`, un detalle por zona; `score = notaColombiana(correctas, zonas.length, true)`; sin zonas → no evaluable. Fixtures: perfecto, parcial, distractor colocado, vacío.
+- **Viewer:** la imagen con marcadores posicionados en %, banco de etiquetas debajo; arrastre con `ActivityDndRoot` **y** «tocar etiqueta, tocar marcador» (`useTocarColocar`) con anuncios; una etiqueta por marcador (colocar otra devuelve la anterior al banco); `textoAlternativo` expuesto a lectores de pantalla; la imagen cargada con tamaño reservado (sin saltos) y degradación si no carga. **Sin `react-konva`** (decisión de relevamiento).
+- **Editor/propiedades:** URL de imagen (mismo selector que `puzzle_imagen`), clic sobre la imagen para colocar un marcador, arrastrarlo para moverlo, asignarle su etiqueta; lista de etiquetas con distractores. Importador U12: no aplica (la ubicación es visual). 
+- **Validador U12:** sin imagen, sin texto alternativo (aviso), < 2 zonas, zona sin etiqueta o con etiqueta inexistente, misma etiqueta en dos zonas, coordenadas fuera de 0–1.
+- **`CAPACIDADES_AJUSTES`:** `mostrarNota`, `intentos`, `tiempo`, `barajar` (orden del banco), `mostrarSolucion`, `sonido`, `estilo`.
+- **Riesgo propio:** marcadores bajo zoom y recorte del lienzo (mismo aviso que T15): probar dentro de `.canvas-slide`.
+
+#### U17 — `linea_tiempo`: ordenar eventos sobre un eje
+- **Operador:** Claude Code · Cursor · Antigravity
+- **Estado:** pendiente
+- **Precondición:** U16 en revisión. Cumple CN1–CN10.
+- **Qué es:** el alumno ordena cronológicamente tarjetas de eventos sobre un eje horizontal (vertical en pantallas angostas); al terminar se revelan las fechas.
+- **Datos:** `LineaTiempoActivity { tipo:'linea_tiempo'; instruccion; eventos: { id; texto; fechaTexto: string; orden: number; imagen? }[]; mostrarFechasAlFinal: boolean; retroalimentacion? }`. `orden` es la clave de orden (1-based, sin repetidos); `fechaTexto` es lo que se muestra («1810», «siglo XV»).
+- **Respuesta:** `string[]` con los ids en el orden elegido — **la misma forma que `ordenar_pasos`**.
+- **Scoring:** `partial`. `evaluateLineaTiempo` (nuevo, propio): igual criterio posición a posición que `evaluateOrdenar` pero leyendo `orden`/`texto`; el existente **no se toca**. Fixtures: perfecto, un par intercambiado, invertido, vacío.
+- **Viewer:** reutiliza `ActivityDndRoot` + lista ordenable con teclado (mover con flechas, `activity-dnd-a11y`) y «tocar y colocar»; el eje con marcas; revisión coloca cada evento en su lugar correcto con su fecha. `barajar`/`semilla` define el orden inicial (nunca ya ordenado: si el barajado cae en el orden correcto, se vuelve a barajar de forma determinista).
+- **Editor/propiedades:** lista de eventos con fecha (texto) y orden numérico editable + botón «ordenar por orden»; importador U12: `fecha ; evento` en el orden correcto (asigna `orden`).
+- **Validador U12:** < 3 eventos, órdenes repetidos o con huecos, evento sin texto, fecha vacía (aviso).
+- **`CAPACIDADES_AJUSTES`:** `mostrarNota`, `intentos`, `tiempo`, `barajar` (con `semilla`), `mostrarSolucion`, `sonido`, `estilo`.
+
+#### U18 — `cloze_banco`: completar un texto con banco de palabras
+- **Operador:** Claude Code · Cursor · Antigravity
+- **Estado:** pendiente
+- **Precondición:** U17 en revisión. Cumple CN1–CN10.
+- **Qué es:** como `completar_blancos`, pero el alumno no escribe: arrastra palabras de un banco (con distractores) a los huecos. **Tipo nuevo** (no se modifica `FillBlanks`): así `completar_blancos` y su evaluador siguen congelados (DU7).
+- **Datos:** `ClozeBancoActivity { tipo:'cloze_banco'; texto: string (con `{{blank:id}}`); blancos: { id; respuesta }[]; distractores: string[]; retroalimentacion? }`; el banco visible = respuestas + distractores (repetidos permitidos si hay dos huecos iguales).
+- **Respuesta:** `Record<blankId, string>` — **la misma forma que `completar_blancos`**.
+- **Scoring:** `partial`. `evaluateClozeBanco` (nuevo): comparación exacta con la `respuesta` del hueco (sin alternativas ni tolerancia: elige, no escribe); `score = notaColombiana(correctas, blancos.length, true)`. Fixtures: perfecto, parcial, distractor en un hueco, vacío.
+- **Viewer:** texto con huecos como destinos; fichas del banco arrastrables (`ActivityDndRoot`) **y** tocar-colocar; un hueco admite una ficha (colocar otra devuelve la anterior); las fichas usadas se atenúan (o se descuentan del banco si hay una por respuesta); teclado y anuncios; revisión marca cada hueco. `barajar`/`semilla` ordena el banco.
+- **Editor/propiedades:** el mismo texto con marcadores de `completar_blancos` (reutiliza su lógica de extracción de ids), más lista de distractores. Importador U12: texto pegado con las respuestas entre `[corchetes]` → genera marcadores y blancos.
+- **Validador U12:** mismas reglas que `completar_blancos` (marcador sin definir, blanco sin marcador, respuesta vacía), y distractor igual a una respuesta (aviso: ambiguo).
+- **`CAPACIDADES_AJUSTES`:** `mostrarNota`, `intentos`, `tiempo`, `barajar`, `mostrarSolucion`, `sonido`, `estilo`.
 
 ---
 
