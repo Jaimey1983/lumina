@@ -13,7 +13,8 @@
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
       "package.json",
-      "railway.json"
+      "railway.json",
+      "railpack.json"
     ]
   },
   "deploy": {
