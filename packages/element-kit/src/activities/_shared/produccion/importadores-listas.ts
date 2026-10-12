@@ -42,8 +42,6 @@ import {
 } from './importacion.js';
 import { sinAcentos } from './tabla.js';
 
-type Fila = { fila: number; celdas: readonly string[] };
-
 /** Resultado de leer una fila: un ítem, o el motivo por el que no se puede. */
 type Lectura<T> = { ok: T } | { motivo: string };
 
@@ -207,8 +205,9 @@ export const importadorSopaLetras = importadorLista<SopaLetrasActivity, PalabraS
   actuales: (a) => a.palabras ?? [],
   // La grilla guardada (si la hay) ya no corresponde a las nuevas palabras.
   escribir: (a, palabras) => {
-    const { grid: _grid, ...resto } = a;
-    return { ...resto, palabras: [...palabras] };
+    const resto: SopaLetrasActivity = { ...a, palabras: [...palabras] };
+    delete resto.grid;
+    return resto;
   },
   clave: (p) => letrasJugables(p.texto),
 });
