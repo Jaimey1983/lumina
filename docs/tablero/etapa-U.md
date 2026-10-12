@@ -277,7 +277,7 @@ U13 abre la primera tanda de actividades nuevas U14 → U18 (serie, mismos archi
 
 #### U14 — `relacionar_lineas`: unir dos columnas con líneas
 - **Operador:** Claude Code · Cursor · Antigravity
-- **Estado:** pendiente
+- **Estado:** [en curso: Claude Code]
 - **Precondición:** U13 aprobada por el dueño. Cumple CN1–CN10.
 - **Qué es:** dos columnas independientes; el alumno traza líneas de un elemento de la izquierda a uno de la derecha. A diferencia de `emparejar` (pares con ambos lados), aquí la derecha puede traer **distractores** y las relaciones se declaran aparte.
 - **Datos (`@lumina/types`):** `RelacionarLineasActivity { tipo:'relacionar_lineas'; instruccion; izquierda: {id; texto?; imagen?}[]; derecha: {id; texto?; imagen?}[]; relaciones: {izquierdaId; derechaId}[]; puntos?; retroalimentacion? }`. Una izquierda tiene a lo sumo una relación correcta; una derecha puede quedar sin usar (distractor).
