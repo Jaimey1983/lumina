@@ -21,6 +21,12 @@
   color: var(--la-color-superficie);
 }
 
+.pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .instruccion {
   margin: 0;
   font-size: 0.875rem;

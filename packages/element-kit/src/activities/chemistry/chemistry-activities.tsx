@@ -444,6 +444,56 @@ export function FormularCompuestoEditor(props: {
   );
 }
 
+function FormularCuerpo({
+  activity,
+  ctx,
+  answers,
+  sent,
+  onAnswer,
+  onSubmit,
+}: {
+  activity: FormularCompuestoActivity;
+  ctx: ActivityShellContext;
+  answers: Record<string, string>;
+  sent: boolean;
+  onAnswer: (id: string, valor: string) => void;
+  onSubmit: () => void;
+}) {
+  const bloqueado = sent || ctx.sesion.fase !== 'jugando';
+  const sinTiempo = !sent && ctx.sesion.motivoFin === 'sin_tiempo';
+  return (
+    <div className={cn(styles.tarjeta, styles.claro)}>
+      {activity.instruccion && <p className={styles.instruccion}>{activity.instruccion}</p>}
+      {activity.preguntas.map((q) => (
+        <div key={q.id} className={styles.pregunta}>
+          <Label htmlFor={`fc-${q.id}`}>{q.enunciado}</Label>
+          <Input
+            id={`fc-${q.id}`}
+            disabled={bloqueado}
+            value={answers[q.id] ?? ''}
+            onChange={(e) => onAnswer(q.id, e.target.value)}
+            placeholder="Fórmula"
+          />
+        </div>
+      ))}
+      {sent ? (
+        <p role="status" className={styles.enviada}>
+          Respuesta enviada.
+        </p>
+      ) : (
+        <button type="button" className={styles.enviar} disabled={bloqueado} onClick={onSubmit}>
+          Enviar fórmulas
+        </button>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function FormularCompuestoViewer({
   activity,
   editorSyncKey,
@@ -455,39 +505,40 @@ export function FormularCompuestoViewer({
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
-  const { play } = useSound();
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
   useEffect(() => {
     setAnswers({});
     setSent(false);
   }, [editorSyncKey]);
 
-  const submit = () => {
-    if (sent) return;
+  const submit = (ctx: ActivityShellContext) => {
+    if (sent || ctx.sesion.fase !== 'jugando') return;
     setSent(true);
-    play('submit');
+    // La nota la da `@lumina/scoring`: acá solo el sonido de envío.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
     onResponse?.({ answers });
+    ctx.completar();
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4">
-      {activity.instruccion && <p className="text-sm font-medium">{activity.instruccion}</p>}
-      {activity.preguntas.map((q) => (
-        <div key={q.id} className="flex flex-col gap-1">
-          <Label>{q.enunciado}</Label>
-          <Input
-            disabled={sent}
-            value={answers[q.id] ?? ''}
-            onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
-            placeholder="Fórmula"
-          />
-        </div>
-      ))}
-      {sent ? (
-        <p className="text-sm text-green-700">Respuesta enviada.</p>
-      ) : (
-        <Button type="button" onClick={submit}>Enviar fórmulas</Button>
+    <ActivityShell
+      // Cambiar de slide reinicia también la sesión del shell.
+      key={editorSyncKey ?? 'fc'}
+      ajustes={ajustes}
+      resultado="ninguno"
+    >
+      {(ctx) => (
+        <FormularCuerpo
+          activity={activity}
+          ctx={ctx}
+          answers={answers}
+          sent={sent}
+          onAnswer={(id, valor) => setAnswers((a) => ({ ...a, [id]: valor }))}
+          onSubmit={() => submit(ctx)}
+        />
       )}
-    </div>
+    </ActivityShell>
   );
 }
