@@ -175,8 +175,9 @@ describe("Anagrama — paridad ElementDefinition vs legacy (E2.3)", () => {
       | undefined;
     expect(def).toBe(anagramaDefinition);
     expect(def?.puntuacion).toBeTypeOf("function");
+    // U9c.2: el estilo (`ajustes.estilo`) es color.
     expect(def?.apariencia).toEqual({
-      color: false,
+      color: true,
       tipografia: false,
       animacion: false,
     });

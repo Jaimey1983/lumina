@@ -26,7 +26,7 @@ export function AnagramaViewer({
   config,
 }: ElementViewerProps<AnagramaEstado, AnagramaConfig>) {
   return (
-    <LegacyAnagramaViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyAnagramaViewer actividad={estado} onResponse={config.onResponse ?? config.onComplete} />
   );
 }
 

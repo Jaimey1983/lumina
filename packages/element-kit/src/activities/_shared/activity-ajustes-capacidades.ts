@@ -94,6 +94,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   arrastrar_soltar: { tiempo: true, sonido: true, estilo: true },
   // Ahorcado (U9c.1): nota en la pantalla final, tiempo (agotarlo cuenta como perdida), sonido y estilo. Los intentos (maxIntentos), la pista y la categoría son datos del editor; no se ofrece «Intentos» común para no confundirlo con ellos.
   ahorcado: { mostrarNota: true, tiempo: true, sonido: true, estilo: true },
+  // Anagrama (U9c.2): nota en la pantalla final, tiempo, «mismo orden para todos» (letras mezcladas), sonido y estilo. Los intentos por palabra (configuracion.intentos) y la pista son datos del editor; no se ofrece «Intentos» común para no confundirlo con ellos.
+  anagrama: { mostrarNota: true, tiempo: true, semilla: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

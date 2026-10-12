@@ -78,7 +78,7 @@ export function AnagramaProperties({ actividad, onChange }: AnagramaPropertiesPr
           <button
             onClick={addPalabra}
             disabled={palabras.length >= ANAGRAMA_MAX_PALABRAS}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40 hover:bg-blue-600"
+            className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90"
           >
             + Añadir
           </button>

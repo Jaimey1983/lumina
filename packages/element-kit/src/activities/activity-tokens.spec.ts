@@ -50,8 +50,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "abrir-caja/abrir-caja-properties.tsx": 1,
   "abrir-caja/abrir-caja-viewer.tsx": 3,
   "abrir-caja/abrir-caja.module.css": 1,
-  "anagrama/anagrama-properties.tsx": 1,
-  "anagrama/anagrama-viewer.tsx": 1,
   "crucigrama/crucigrama-defaults.ts": 2,
   "crucigrama/crucigrama-editor.tsx": 3,
   "crucigrama/crucigrama-properties.tsx": 1,
