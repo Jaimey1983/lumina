@@ -64,6 +64,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   balancear_ecuacion: { tiempo: true, sonido: true, estilo: true },
   // Formular compuesto (U9a.7): un solo envío; tiempo, sonido y estilo.
   formular_compuesto: { tiempo: true, sonido: true, estilo: true },
+  // Ubicar elemento (U9a.8): un solo envío; tiempo, sonido y estilo.
+  ubicar_elemento: { tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

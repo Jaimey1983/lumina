@@ -100,6 +100,19 @@
   color: var(--la-color-texto-suave);
 }
 
+/* Ubicar elemento: símbolo + periodo + grupo. */
+.ubicacion {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.simbolo {
+  font-weight: 600;
+}
+
 /* Acciones y estados comunes */
 .enviar {
   align-self: flex-start;
