@@ -28,7 +28,7 @@ import { Label } from '@lumina/ui/label';
 import {
   ESCAPE_ROOM_INTENTOS_DEFAULT,
   ESCAPE_ROOM_INTENTOS_ILIMITADOS,
-} from '@/lib/escape-room-logic';
+} from '@lumina/element-kit/activities/escape-room/escape-room-logic';
 import { uid } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 

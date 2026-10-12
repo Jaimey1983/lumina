@@ -12,7 +12,7 @@ import {
   type EscapeRoomRankingRow,
   type EscapeRoomStatePublic,
   type EscapeRoomTeamPublic,
-} from '@/lib/escape-room-live.types';
+} from './escape-room-live.types.js';
 
 export type EscapeRoomSessionMode = 'local' | 'live';
 

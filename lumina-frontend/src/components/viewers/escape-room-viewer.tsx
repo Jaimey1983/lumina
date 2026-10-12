@@ -8,15 +8,15 @@ import {
   historialFromTeam,
   tiempoRestanteLive,
   useEscapeRoomSession,
-} from '@/hooks/use-escape-room-session';
+} from '@lumina/element-kit/activities/escape-room/use-escape-room-session';
 import {
   calcularPuntos,
   esCorrecta,
   intentosMaximosDeSala,
   pistasDeSala,
   pistasReveladasPorIntentos,
-} from '@/lib/escape-room-logic';
-import type { EscapeRoomRankingRow } from '@/lib/escape-room-live.types';
+} from '@lumina/element-kit/activities/escape-room/escape-room-logic';
+import type { EscapeRoomRankingRow } from '@lumina/element-kit/activities/escape-room/escape-room-live.types';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { cn } from '@/lib/utils';
 import type { Block, EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';

@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   historialFromTeam,
   tiempoRestanteLive,
-} from '@/hooks/use-escape-room-session';
+} from './use-escape-room-session.js';
 import {
   parseEscapeRoomProgress,
   parseEscapeRoomRanking,
   parseEscapeRoomState,
-} from '@/lib/escape-room-live.types';
+} from './escape-room-live.types.js';
 
 describe('escape-room-live.types', () => {
   it('parsea estado del servidor con equipo', () => {

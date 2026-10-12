@@ -4,7 +4,7 @@ import {
   normalizeIntentosMaximos,
   normalizeSala,
 } from '@/components/editor/activities/escape-room-editor';
-import { pistasDeSala, pistasReveladasPorIntentos } from '@/lib/escape-room-logic';
+import { pistasDeSala, pistasReveladasPorIntentos } from '@lumina/element-kit/activities/escape-room/escape-room-logic';
 
 const base = {
   id: 'sala-1',
