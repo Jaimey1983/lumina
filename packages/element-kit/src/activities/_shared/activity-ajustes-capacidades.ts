@@ -45,6 +45,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
     sonido: true,
     estilo: true,
   },
+  // Respuesta corta (U9a.1): calificación manual; el viewer lee el tiempo límite, el sonido
+  // de envío y el estilo. La pista (`hint`) se muestra siempre, no es un ajuste.
+  short_answer: { tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

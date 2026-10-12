@@ -7,7 +7,7 @@ import {
 } from "../../activities/_classic/index.js";
 import type { ElementDefinition } from "@lumina/element-kit-core";
 import { crearAdaptadoresClasicos } from "../_shared/classic-adapters.js";
-import { crearPropiedadesVerdaderoFalso } from "./verdadero_falso-propiedades.js";
+import { crearPropiedadesConAjustes } from "../_shared/propiedades-con-ajustes.js";
 import { PRESETS_VERDADERO_FALSO } from "./verdadero_falso-estilos.js";
 import {
   VERDADERO_FALSO_TIPO,
@@ -25,7 +25,10 @@ const { Editor, Viewer, Propiedades: PropiedadesBase } = crearAdaptadoresClasico
 });
 
 /** U8: el panel suma estilos y ajustes comunes al editor de siempre. */
-const Propiedades = crearPropiedadesVerdaderoFalso(PropiedadesBase);
+const Propiedades = crearPropiedadesConAjustes(PropiedadesBase, {
+  presets: PRESETS_VERDADERO_FALSO,
+  storageKey: "actividad.verdadero_falso.estilos",
+});
 
 export {
   Editor as VerdaderoFalsoEditor,

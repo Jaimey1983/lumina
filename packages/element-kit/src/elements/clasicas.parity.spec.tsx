@@ -61,8 +61,8 @@ describe("Familia clásica — paridad ElementDefinition vs @lumina/scoring (E2.
     const reg = elementRegistry.obtener(tipo as never) as any;
     expect(reg).toBe(def);
     expect(reg?.puntuacion).toBeTypeOf("function");
-    // U8: Verdadero/Falso ya tiene estilos (`ajustes.estilo`): su `apariencia` declara color.
-    const color = tipo === "verdadero_falso";
+    // U8/U9a: las que ya tienen estilos (`ajustes.estilo`) declaran color en su `apariencia`.
+    const color = ["verdadero_falso", "short_answer"].includes(tipo);
     expect(reg?.apariencia).toEqual({ color, tipografia: false, animacion: false });
   });
 
