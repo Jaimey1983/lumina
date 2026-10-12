@@ -220,6 +220,11 @@ export const CATALOGO_ELEMENTOS = {
     descripcion: "Une dos columnas trazando líneas; la de la derecha puede traer distractores",
     familia: "actividad",
   },
+  etiquetar_imagen: {
+    nombre: "Etiquetar imagen",
+    descripcion: "Coloca cada etiqueta en su marcador sobre una imagen: anatomía, mapas, circuitos",
+    familia: "actividad",
+  },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },
   video_interactivo: { nombre: "Video interactivo", familia: "actividad" },

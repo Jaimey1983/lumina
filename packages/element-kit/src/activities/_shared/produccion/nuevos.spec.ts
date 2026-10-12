@@ -1,7 +1,8 @@
 /** U14+ — validadores e importadores de las actividades nuevas (catálogo posterior a U12). */
 import { describe, expect, it } from 'vitest';
-import type { ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
+import type { EtiquetarImagenActivity, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
 
+import { createDefaultEtiquetarImagen } from '../../etiquetar-imagen/etiquetar-imagen-defaults.js';
 import { createDefaultProblemaPasos } from '../../problema-pasos/problema-pasos-defaults.js';
 import { createDefaultRelacionarLineas } from '../../relacionar-lineas/relacionar-lineas-defaults.js';
 import { importadorDe, importarTexto } from './importadores.js';
@@ -148,5 +149,43 @@ describe('problema_pasos — importación', () => {
     const a = { ...pb(), secuencial: false, ajustes: { estilo: 'examen' as const } };
     const r = importarTexto(a, 'A;1', 'reemplazar').actividad;
     expect([r.enunciado, r.secuencial, r.ajustes]).toEqual([a.enunciado, false, a.ajustes]);
+  });
+});
+
+describe('etiquetar_imagen — validación', () => {
+  const nueva = (): EtiquetarImagenActivity => structuredClone(createDefaultEtiquetarImagen());
+  const err = (a: EtiquetarImagenActivity) => validarActividad(a).filter((p) => p.nivel === 'error').map((p) => p.mensaje);
+  const avi = (a: EtiquetarImagenActivity) => validarActividad(a).filter((p) => p.nivel === 'aviso').map((p) => p.mensaje);
+
+  it('lo que se crea por defecto no tiene problemas (con un distractor)', () => {
+    expect(validarActividad(nueva())).toEqual([]);
+  });
+  it('sin imagen, con menos de 2 marcadores y etiquetas vacías: no se puede jugar', () => {
+    const a = nueva();
+    a.imagen = ' ';
+    a.zonas = [a.zonas[0]!];
+    a.etiquetas[3] = { id: 'etq-4', texto: '' };
+    expect(err(a)).toEqual(['Falta la imagen.', 'Necesita al menos 2 marcadores.', 'No tiene texto.']);
+  });
+  it('marcador sin etiqueta, con etiqueta inexistente o con coordenadas fuera de 0–1', () => {
+    const a = nueva();
+    a.zonas[0] = { ...a.zonas[0]!, etiquetaId: '' };
+    a.zonas[1] = { ...a.zonas[1]!, etiquetaId: 'nada' };
+    a.zonas[2] = { ...a.zonas[2]!, x: 1.2 };
+    expect(err(a)).toEqual(['No tiene etiqueta asignada.', 'Su etiqueta ya no existe.', 'Está fuera de la imagen.']);
+  });
+  it('la misma etiqueta en dos marcadores es un error', () => {
+    const a = nueva();
+    a.zonas[1] = { ...a.zonas[1]!, etiquetaId: a.zonas[0]!.etiquetaId };
+    expect(err(a)).toContain('Una misma etiqueta no puede ir en dos marcadores: solo se puede colocar una vez.');
+  });
+  it('sin texto alternativo es un aviso, no un error', () => {
+    const a = nueva();
+    a.textoAlternativo = '';
+    expect(err(a)).toEqual([]);
+    expect(avi(a)).toHaveLength(1);
+  });
+  it('no tiene importador: la ubicación es visual', () => {
+    expect(importadorDe('etiquetar_imagen')).toBeUndefined();
   });
 });

@@ -30,6 +30,7 @@ import {
   Atom,
   Spline,
   Footprints,
+  ImagePlus,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -54,6 +55,7 @@ export type ActivityType =
   | 'match'
   | 'relacionar_lineas'
   | 'problema_pasos'
+  | 'etiquetar_imagen'
   | 'sort-steps'
   | 'video-interactive'
   | 'live-poll'
@@ -102,6 +104,7 @@ const INTERACTION: ActivityItem[] = [
   { type: 'match',             label: 'Emparejar',           Icon: Columns2 },
   { type: 'relacionar_lineas', label: 'Relacionar con líneas', Icon: Spline },
   { type: 'problema_pasos', label: 'Problema paso a paso', Icon: Footprints },
+  { type: 'etiquetar_imagen', label: 'Etiquetar imagen', Icon: ImagePlus },
   { type: 'sort-steps',        label: 'Ordenar pasos',       Icon: ListOrdered },
   { type: 'video-interactive', label: 'Video interactivo',   Icon: Video },
 ];

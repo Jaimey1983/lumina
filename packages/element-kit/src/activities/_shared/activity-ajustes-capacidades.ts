@@ -84,6 +84,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // Relacionar con líneas (U14): nota y reintento en la pantalla final, tiempo, «mismo orden para todos»
   // (el orden de las dos columnas), sonido y estilo. Las dos columnas se mezclan siempre: es la mecánica.
   relacionar_lineas: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
+  // Etiquetar imagen (U16): nota y reintento en la pantalla final, tiempo, «mismo orden para todos» (el orden
+  // del banco de etiquetas), sonido y estilo. El banco se mezcla siempre: es la mecánica.
+  etiquetar_imagen: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
   // Problema paso a paso (U15): nota y reintento en la pantalla final, tiempo, pistas (presupuesto total y
   // costo por pista en la nota), sonido y estilo. Las pistas de cada paso son datos del editor.
   problema_pasos: { mostrarNota: true, intentos: true, tiempo: true, pistas: true, sonido: true, estilo: true },

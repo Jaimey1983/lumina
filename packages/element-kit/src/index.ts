@@ -285,6 +285,20 @@ export {
 export { createDefaultRelacionarLineas } from "./activities/relacionar-lineas/index.js";
 
 export {
+  etiquetarImagenDefinition,
+  registrarEtiquetarImagen,
+  evaluarEtiquetarImagen,
+  ETIQUETAR_IMAGEN_TIPO,
+  EtiquetarImagenEditor,
+  EtiquetarImagenViewer,
+  EtiquetarImagenPropiedades,
+  type EtiquetarImagenConfig,
+  type EtiquetarImagenEstado,
+  type EtiquetarImagenDefinition,
+} from "./elements/etiquetar_imagen/index.js";
+export { createDefaultEtiquetarImagen } from "./activities/etiquetar-imagen/index.js";
+
+export {
   torneoDefinition,
   registrarTorneo,
   TORNEO_TIPO,
@@ -511,6 +525,7 @@ import { globosDefinition } from "./elements/globos/globos-definition.js";
 import { torneoDefinition } from "./elements/torneo/torneo-definition.js";
 import { relacionarLineasDefinition } from "./elements/relacionar_lineas/relacionar_lineas-definition.js";
 import { problemaPasosDefinition } from "./elements/problema_pasos/problema_pasos-definition.js";
+import { etiquetarImagenDefinition } from "./elements/etiquetar_imagen/etiquetar_imagen-definition.js";
 import { escapeRoomDefinition } from "./elements/escape-room/escape-room-definition.js";
 import { historiaRamificadaDefinition } from "./elements/historia_ramificada/historia_ramificada-definition.js";
 import { memoriaDefinition } from "./elements/memoria/memoria-definition.js";
@@ -563,6 +578,7 @@ export type ElementCatalog = {
   torneo: typeof torneoDefinition;
   relacionar_lineas: typeof relacionarLineasDefinition;
   problema_pasos: typeof problemaPasosDefinition;
+  etiquetar_imagen: typeof etiquetarImagenDefinition;
   escape_room: typeof escapeRoomDefinition;
   topo: typeof topoDefinition;
   historia_ramificada: typeof historiaRamificadaDefinition;
@@ -617,6 +633,7 @@ elementRegistry.registrar(globosDefinition);
 elementRegistry.registrar(torneoDefinition);
 elementRegistry.registrar(relacionarLineasDefinition);
 elementRegistry.registrar(problemaPasosDefinition);
+elementRegistry.registrar(etiquetarImagenDefinition);
 elementRegistry.registrar(escapeRoomDefinition);
 elementRegistry.registrar(topoDefinition);
 elementRegistry.registrar(quizMultipleDefinition);

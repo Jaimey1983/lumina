@@ -51,6 +51,7 @@ type Tipo = Activity['tipo'];
 const BARAJA_POR_DEFECTO: ReadonlySet<Tipo> = new Set<Tipo>([
   'emparejar',
   'relacionar_lineas',
+  'etiquetar_imagen',
   'ordenar_pasos',
   'clasificar',
   'memoria',
@@ -102,6 +103,7 @@ export const DERIVACION_LEGACY: Readonly<Record<Tipo, readonly string[]>> = {
   arrastrar_soltar: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   emparejar: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   relacionar_lineas: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
+  etiquetar_imagen: [],
   problema_pasos: ['pistas.cantidad ← algún paso con pistas ? null (ilimitadas) : 0 (L)'],
   ordenar_pasos: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],
   video_interactivo: ['mostrarSolucion ← retroalimentacion.mostrarExplicacion (T)'],

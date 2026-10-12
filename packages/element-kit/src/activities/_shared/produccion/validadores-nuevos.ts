@@ -3,8 +3,14 @@
  * tanda, para no mezclar con los de las actividades migradas (`validadores-clasicos`, `-grupo4`).
  */
 import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
-import type { ProblemaPasosActivity, RelacionarLineasActivity, RelacionarLineasItem } from '@lumina/types/slide';
+import type {
+  EtiquetarImagenActivity,
+  ProblemaPasosActivity,
+  RelacionarLineasActivity,
+  RelacionarLineasItem,
+} from '@lumina/types/slide';
 
+import { ETIQUETAR_MAX_ETIQUETAS, ETIQUETAR_MAX_ZONAS, ETIQUETAR_MIN_ZONAS } from '../../etiquetar-imagen/etiquetar-imagen-config.js';
 import { PROBLEMA_MAX_PASOS } from '../../problema-pasos/problema-pasos-config.js';
 import { RELACIONAR_MIN_RELACIONES } from '../../relacionar-lineas/relacionar-lineas-config.js';
 import { aviso, error, hayTexto, type ProblemaActividad as P } from './problemas.js';
@@ -63,5 +69,33 @@ export const validarProblemaPasos = (a: ProblemaPasosActivity): P[] => {
     if (p.tolerancia !== undefined && !(p.tolerancia >= 0)) out.push(error('La tolerancia no puede ser negativa.', campo));
     if ((p.pistas ?? []).some((x) => !hayTexto(x))) out.push(aviso('Tiene pistas vacías (no se ofrecerán).', campo));
   });
+  return out;
+};
+
+export const validarEtiquetarImagen = (a: EtiquetarImagenActivity): P[] => {
+  const out: P[] = [];
+  const zonas = a.zonas ?? [];
+  const etiquetas = a.etiquetas ?? [];
+  if (!hayTexto(a.imagen)) out.push(error('Falta la imagen.'));
+  if (!hayTexto(a.textoAlternativo)) out.push(aviso('Falta el texto alternativo: quien no ve la imagen no sabrá qué se etiqueta.'));
+  if (zonas.length < ETIQUETAR_MIN_ZONAS) out.push(error(`Necesita al menos ${ETIQUETAR_MIN_ZONAS} marcadores.`));
+  if (zonas.length > ETIQUETAR_MAX_ZONAS) out.push(aviso(`Tiene más de ${ETIQUETAR_MAX_ZONAS} marcadores.`));
+  if (etiquetas.length > ETIQUETAR_MAX_ETIQUETAS) out.push(aviso(`Tiene más de ${ETIQUETAR_MAX_ETIQUETAS} etiquetas.`));
+  etiquetas.forEach((e, n) => {
+    if (!hayTexto(e.texto)) out.push(error('No tiene texto.', `Etiqueta ${n + 1}`));
+  });
+  const ids = new Set(etiquetas.map((e) => e.id));
+  const usos = new Map<string, number>();
+  zonas.forEach((z, n) => {
+    const campo = `Marcador ${n + 1}`;
+    if (!z.etiquetaId) out.push(error('No tiene etiqueta asignada.', campo));
+    else if (!ids.has(z.etiquetaId)) out.push(error('Su etiqueta ya no existe.', campo));
+    else usos.set(z.etiquetaId, (usos.get(z.etiquetaId) ?? 0) + 1);
+    const fuera = (v: unknown) => typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 1;
+    if (fuera(z.x) || fuera(z.y)) out.push(error('Está fuera de la imagen.', campo));
+  });
+  if ([...usos.values()].some((n) => n > 1)) {
+    out.push(error('Una misma etiqueta no puede ir en dos marcadores: solo se puede colocar una vez.'));
+  }
   return out;
 };

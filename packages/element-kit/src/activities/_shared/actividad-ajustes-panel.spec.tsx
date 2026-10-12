@@ -36,7 +36,7 @@ function montar<T extends Activity>(a: T, capacidades?: CapacidadesAjustes) {
 describe("capacidades por tipo", () => {
   it("solo las actividades migradas usan el panel común; el resto devuelve null", () => {
     // Crece una por una con U9 (cada migración agrega su tipo acá y a `CAPACIDADES_AJUSTES`).
-    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["abrir_caja", "ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "formular_compuesto", "globos", "historia_ramificada", "memoria", "nube_palabras", "ordenar_pasos", "problema_pasos", "puzzle_imagen", "puzzle_palabras", "quiz_multiple", "relacionar_lineas", "respuesta_matematica", "short_answer", "sopa_letras", "topo", "ubicar_elemento", "verdadero_falso", "video_interactivo"]);
+    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["abrir_caja", "ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "etiquetar_imagen", "formular_compuesto", "globos", "historia_ramificada", "memoria", "nube_palabras", "ordenar_pasos", "problema_pasos", "puzzle_imagen", "puzzle_palabras", "quiz_multiple", "relacionar_lineas", "respuesta_matematica", "short_answer", "sopa_letras", "topo", "ubicar_elemento", "verdadero_falso", "video_interactivo"]);
     expect(capacidadesDe("memoria")).not.toBeNull();
     expect(capacidadesDe("tipo_sin_capacidades" as never)).toBeNull();
   });

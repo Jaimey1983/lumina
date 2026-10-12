@@ -64,6 +64,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   emparejar: 'Emparejar',
   relacionar_lineas: 'Relacionar con líneas',
   problema_pasos: 'Problema paso a paso',
+  etiquetar_imagen: 'Etiquetar imagen',
   ordenar: 'Ordenar pasos',
   video_interactivo: 'Video interactivo',
   clasificar: 'Clasificar',

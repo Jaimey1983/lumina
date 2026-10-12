@@ -342,6 +342,7 @@ const ACTIVITY_LABEL: Record<string, string> = {
   emparejar: 'Emparejar',
   relacionar_lineas: 'Relacionar con líneas',
   problema_pasos: 'Problema paso a paso',
+  etiquetar_imagen: 'Etiquetar imagen',
   ordenar_pasos: 'Ordenar pasos',
   video_interactivo: 'Video interactivo',
   short_answer: 'Respuesta corta',
