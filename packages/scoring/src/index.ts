@@ -81,6 +81,7 @@ export const ACTIVITY_SCORING: Record<string, ActivityScoringKind> = {
   arrastrar_soltar: 'partial',
   emparejar: 'partial',
   relacionar_lineas: 'partial',
+  etiquetar_imagen: 'partial',
   ordenar_pasos: 'partial',
   video_interactivo: 'partial',
 
@@ -164,6 +165,7 @@ const GRADEBOOK_CONNECTED_PARTIAL = new Set([
   'ubicar_elemento',
   'formular_compuesto',
   'problema_pasos',
+  'etiquetar_imagen',
 ]);
 
 /** `partial` cuyo promedio de gradebook aún no está conectado (p. ej. `orden_rango`). */
@@ -754,6 +756,38 @@ function evaluateRelacionarLineas(definicion: unknown, respuesta: unknown): Acti
   };
 }
 
+/**
+ * Etiquetar imagen (U16): un detalle por zona con etiqueta declarada. Es correcta si el alumno
+ * colocó en ella exactamente la etiqueta declarada; una etiqueta distractora o una zona vacía
+ * cuentan como error de esa zona. La respuesta es `[{ zonaId, etiquetaId }]`.
+ */
+function evaluateEtiquetarImagen(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
+  const def = asRecord(definicion) ?? {};
+  const zonas = (Array.isArray(def.zonas) ? def.zonas : [])
+    .map((z) => asRecord(z) ?? {})
+    .filter((z) => String(z.id ?? '') !== '' && String(z.etiquetaId ?? '') !== '');
+  if (zonas.length === 0) return UNEVALUABLE;
+  const etiquetas = Array.isArray(def.etiquetas) ? def.etiquetas : [];
+  const colocadas = new Map<string, string>();
+  for (const raw of Array.isArray(respuesta) ? respuesta : []) {
+    const r = asRecord(raw) ?? {};
+    const zonaId = String(r.zonaId ?? '');
+    if (zonaId && !colocadas.has(zonaId)) colocadas.set(zonaId, String(r.etiquetaId ?? ''));
+  }
+  const details: ActivityEvaluationDetail[] = zonas.map((z, i) => {
+    const esperada = String(z.etiquetaId);
+    const etiqueta = asRecord(etiquetas.find((e) => asRecord(e)?.id === esperada));
+    const label = (typeof etiqueta?.texto === 'string' && etiqueta.texto) || `Marcador ${i + 1}`;
+    return { index: i, correct: colocadas.get(String(z.id)) === esperada, label };
+  });
+  const correctas = details.filter((d) => d.correct).length;
+  return {
+    correct: details.every((d) => d.correct),
+    details,
+    score: notaColombiana(correctas, zonas.length, true),
+  };
+}
+
 function evaluateOrdenar(definicion: unknown, respuesta: unknown): ActivityEvaluationResult {
   const def = asRecord(definicion) ?? {};
   const pasos = Array.isArray(def.pasos) ? def.pasos : [];
@@ -1175,6 +1209,8 @@ function evaluatePartial(
       return evaluateRelacionarLineas(definicion, respuesta);
     case 'problema_pasos':
       return evaluateProblemaPasos(definicion, respuesta);
+    case 'etiquetar_imagen':
+      return evaluateEtiquetarImagen(definicion, respuesta);
     case 'ordenar_pasos':
       return evaluateOrdenar(definicion, respuesta);
     case 'video_interactivo':

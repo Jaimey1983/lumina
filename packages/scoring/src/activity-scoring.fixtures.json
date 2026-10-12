@@ -32,7 +32,8 @@
     "ubicar_elemento",
     "formular_compuesto",
     "relacionar_lineas",
-    "problema_pasos"
+    "problema_pasos",
+    "etiquetar_imagen"
   ],
   "notaCases": [
     {
@@ -1640,6 +1641,327 @@
       "correctEsperado": true,
       "detailsEsperados": 1,
       "scoreEsperado": 5
+    },
+    {
+      "case": "u16_etiquetar_perfecto",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e1"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e2"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e3"
+        }
+      ],
+      "correctEsperado": true,
+      "detailsEsperados": 3,
+      "scoreEsperado": 5
+    },
+    {
+      "case": "u16_etiquetar_dos_de_tres",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e1"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e2"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e4"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 3.3
+    },
+    {
+      "case": "u16_etiquetar_distractor_en_todas",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e4"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e4"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e4"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u16_etiquetar_etiquetas_intercambiadas",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e2"
+        },
+        {
+          "zonaId": "z2",
+          "etiquetaId": "e1"
+        },
+        {
+          "zonaId": "z3",
+          "etiquetaId": "e3"
+        }
+      ],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1.7
+    },
+    {
+      "case": "u16_etiquetar_vacio",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "https://x/img.png",
+        "textoAlternativo": "Una célula",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.2,
+            "y": 0.3,
+            "etiquetaId": "e1"
+          },
+          {
+            "id": "z2",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e2"
+          },
+          {
+            "id": "z3",
+            "x": 0.8,
+            "y": 0.6,
+            "etiquetaId": "e3"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "Núcleo"
+          },
+          {
+            "id": "e2",
+            "texto": "Membrana"
+          },
+          {
+            "id": "e3",
+            "texto": "Citoplasma"
+          },
+          {
+            "id": "e4",
+            "texto": "Pared"
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": false,
+      "detailsEsperados": 3,
+      "scoreEsperado": 1
+    },
+    {
+      "case": "u16_etiquetar_sin_zonas",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "x",
+        "textoAlternativo": "",
+        "zonas": [],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "A"
+          }
+        ]
+      },
+      "respuesta": [],
+      "correctEsperado": null,
+      "detailsEsperados": 0,
+      "scoreEsperado": null
     }
   ],
   "expectedKinds": {
@@ -1674,7 +1996,8 @@
     "escape_room": "exclude",
     "balancear_ecuacion": "binary",
     "ubicar_elemento": "partial",
-    "formular_compuesto": "partial"
+    "formular_compuesto": "partial",
+    "etiquetar_imagen": "partial"
   },
   "contractCases": [
     {
@@ -2222,6 +2545,34 @@
           "pasoId": "p1",
           "respuesta": "2",
           "pistasUsadas": 0
+        }
+      ]
+    },
+    {
+      "case": "contrato_etiquetar_imagen_perfecto",
+      "activityType": "etiquetar_imagen",
+      "definicion": {
+        "imagen": "x",
+        "textoAlternativo": "a",
+        "zonas": [
+          {
+            "id": "z1",
+            "x": 0.5,
+            "y": 0.5,
+            "etiquetaId": "e1"
+          }
+        ],
+        "etiquetas": [
+          {
+            "id": "e1",
+            "texto": "A"
+          }
+        ]
+      },
+      "respuesta": [
+        {
+          "zonaId": "z1",
+          "etiquetaId": "e1"
         }
       ]
     }

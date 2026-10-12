@@ -411,6 +411,37 @@ export interface RelacionarLineasActivity extends ActivityBase {
   retroalimentacion?: Feedback;
 }
 
+/** Un marcador sobre la imagen; `x`/`y` son fracción 0–1 del ancho/alto. */
+export interface EtiquetarImagenZona {
+  id: string;
+  x: number;
+  y: number;
+  /** La etiqueta que va en este marcador. */
+  etiquetaId: string;
+}
+
+/** Una etiqueta del banco; las que ninguna zona usa son distractores. */
+export interface EtiquetarImagenEtiqueta {
+  id: string;
+  texto: string;
+}
+
+/**
+ * Etiquetar una imagen (etapa U / U16): marcadores sobre una imagen y un banco de etiquetas; el
+ * alumno coloca cada etiqueta en su marcador. Las coordenadas son fracciones de la imagen, así
+ * sobreviven al zoom y al redimensionado.
+ */
+export interface EtiquetarImagenActivity extends ActivityBase {
+  tipo: 'etiquetar_imagen';
+  instruccion: string;
+  imagen: string;
+  textoAlternativo: string;
+  zonas: EtiquetarImagenZona[];
+  etiquetas: EtiquetarImagenEtiqueta[];
+  puntos?: number;
+  retroalimentacion?: Feedback;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface OrderStep {
@@ -801,6 +832,7 @@ export type Activity =
   | DragDrop
   | MatchPairs
   | RelacionarLineasActivity
+  | EtiquetarImagenActivity
   | OrderSteps
   | VideoInteractive
   | LivePoll
