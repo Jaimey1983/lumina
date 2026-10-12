@@ -17,9 +17,13 @@ export function generarIdGlobos(prefijo: string): string {
   return `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-/** Mezcla opciones/globos para que la respuesta correcta no quede siempre a la izquierda. */
-export function mezclarOpcionesGlobos<T>(opciones: T[]): T[] {
-  return barajar(opciones)
+/**
+ * Mezcla opciones/globos para que la respuesta correcta no quede siempre a la izquierda.
+ * Con `semilla` (`ajustes.semilla`, DU3) el orden es el mismo para toda la clase; `sal` separa
+ * una pregunta de otra dentro de la misma semilla.
+ */
+export function mezclarOpcionesGlobos<T>(opciones: T[], semilla?: number | null, sal = 0): T[] {
+  return barajar(opciones, semilla, sal)
 }
 
 export function crearOpcionesGlobosDefault(): GlobosPregunta['opciones'] {
@@ -82,6 +86,8 @@ export function normalizarGlobos(act: GlobosActivity): GlobosActivity {
 
   return {
     tipo: 'globos',
+    // `ajustes` (etapa U) viaja intacto: antes se descartaba al hidratar el slide.
+    ...(act.ajustes ? { ajustes: act.ajustes } : {}),
     configuracion: {
       velocidad: cfg.velocidad === 'lenta' || cfg.velocidad === 'rapida' ? cfg.velocidad : 'normal',
       vidas: typeof cfg.vidas === 'number' && cfg.vidas >= 1 ? Math.min(5, cfg.vidas) : 3,
@@ -93,8 +99,11 @@ export function normalizarGlobos(act: GlobosActivity): GlobosActivity {
   }
 }
 
+/** Huella del CONTENIDO: cambiar un ajuste (estilo, sonido…) no reinicia la partida. */
 export function globosFingerprint(act: GlobosActivity): string {
-  return JSON.stringify(normalizarGlobos(act))
+  const { ajustes: _ajustes, ...contenido } = normalizarGlobos(act)
+  void _ajustes
+  return JSON.stringify(contenido)
 }
 
 export function calcularTamanoGlobo(

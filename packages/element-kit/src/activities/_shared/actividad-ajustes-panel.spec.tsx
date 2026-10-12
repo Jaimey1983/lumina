@@ -36,7 +36,7 @@ function montar<T extends Activity>(a: T, capacidades?: CapacidadesAjustes) {
 describe("capacidades por tipo", () => {
   it("solo las actividades migradas usan el panel común; el resto devuelve null", () => {
     // Crece una por una con U9 (cada migración agrega su tipo acá y a `CAPACIDADES_AJUSTES`).
-    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "formular_compuesto", "memoria", "nube_palabras", "ordenar_pasos", "puzzle_imagen", "puzzle_palabras", "respuesta_matematica", "short_answer", "sopa_letras", "ubicar_elemento", "verdadero_falso"]);
+    expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "formular_compuesto", "globos", "memoria", "nube_palabras", "ordenar_pasos", "puzzle_imagen", "puzzle_palabras", "respuesta_matematica", "short_answer", "sopa_letras", "ubicar_elemento", "verdadero_falso"]);
     expect(capacidadesDe("memoria")).not.toBeNull();
     expect(capacidadesDe("topo")).toBeNull();
   });

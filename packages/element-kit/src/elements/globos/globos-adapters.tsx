@@ -23,7 +23,7 @@ export function GlobosViewer({
   config,
 }: ElementViewerProps<GlobosEstado, GlobosConfig>) {
   return (
-    <LegacyGlobosViewer actividad={estado} onComplete={config.onComplete} />
+    <LegacyGlobosViewer actividad={estado} onResponse={config.onResponse ?? config.onComplete} />
   );
 }
 

@@ -50,10 +50,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "abrir-caja/abrir-caja-properties.tsx": 1,
   "abrir-caja/abrir-caja-viewer.tsx": 3,
   "abrir-caja/abrir-caja.module.css": 1,
-  "globos/globos-config.ts": 8,
-  "globos/globos-defaults.ts": 6,
-  "globos/globos-properties.tsx": 2,
-  "globos/globos.module.css": 1,
   "historia-ramificada/historia-ramificada-config.ts": 5,
   "historia-ramificada/historia-ramificada-editor.tsx": 2,
   "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
@@ -85,6 +81,18 @@ const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly 
   "crucigrama/crucigrama-defaults.ts": {
     hex: 2,
     motivo: "colorCelda y colorTexto por defecto: se guardan en el slide y el viewer los lee tal cual",
+  },
+  "globos/globos-config.ts": {
+    hex: 8,
+    motivo: "paleta de globos por defecto: se GUARDA en el slide (`colorGlobos`) y el viewer la lee tal cual",
+  },
+  "globos/globos-defaults.ts": {
+    hex: 6,
+    motivo: "colorGlobos por defecto de una actividad nueva: se guarda en el slide",
+  },
+  "globos/globos.module.css": {
+    hex: 1,
+    motivo: "texto blanco sobre globos del color que elige el docente (sin token equivalente)",
   },
   "memoria/memoria-defaults.ts": {
     hex: 2,

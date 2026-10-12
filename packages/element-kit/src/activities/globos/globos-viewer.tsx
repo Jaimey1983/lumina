@@ -1,17 +1,25 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { GlobosActivity } from '@lumina/types/slide'
+/**
+ * Viewer de Globos sobre el `ActivityShell` (U9d.1).
+ *
+ * El shell aporta el reloj, las vidas, el progreso y la pantalla de resultados; aquí queda solo el
+ * juego (globos que suben, pinchar, avanzar de pregunta). Lo que sale hacia `@lumina/scoring` NO
+ * cambió: UNA respuesta `{ puntosObtenidos, puntosMaximos }` al terminar (por completar, por
+ * quedarse sin vidas o por agotar el tiempo); sale por `onResponse` (canal unificado, DU2) y
+ * `onComplete` se acepta solo como alias transitorio.
+ *
+ * Vidas y tiempo siguen viniendo de `configuracion.vidas` / `configuracion.tiempoLimite`
+ * (`normalizarAjustes` los deriva). Un globo que se escapa por arriba cuesta una vida.
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { GlobosActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
-import { ActivityTimer } from '../_shared/activity-timer.js'
-import { ActivityLives } from '../_shared/activity-lives.js'
-import { ActivityResultOverlay } from '../_shared/activity-result-overlay.js'
-import {
-  VELOCIDAD_PX,
-  globosFingerprint,
-  mezclarOpcionesGlobos,
-  normalizarGlobos,
-} from './globos-config.js'
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js'
+import { normalizarAjustes } from '../_shared/activity-settings.js'
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
+import { VELOCIDAD_PX, globosFingerprint, mezclarOpcionesGlobos, normalizarGlobos } from './globos-config.js'
 import { useGloboMetrics } from './globos-shared.js'
 import styles from './globos.module.css'
 
@@ -26,8 +34,11 @@ interface GloboState {
   velocidad: number
 }
 
-interface GlobosViewerProps {
+export interface GlobosViewerProps {
   actividad: GlobosActivity
+  /** Canal de respuesta unificado (DU2). */
+  onResponse?: (response: unknown) => void
+  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
   onComplete?: (response: unknown) => void
 }
 
@@ -38,220 +49,180 @@ function calcularPosicionesGlobos(count: number): number[] {
   return Array.from({ length: count }, (_, index) => margin + (span / (count - 1)) * index)
 }
 
-export function GlobosViewer({ actividad, onComplete }: GlobosViewerProps) {
-  const fingerprint = globosFingerprint(actividad)
-  const { configuracion, preguntas } = useMemo(
-    () => normalizarGlobos(actividad),
-    [fingerprint],
-  )
+/** Por encima de este `y` (en %) el globo ya salió por arriba. */
+const LIMITE_SUPERIOR = -18
+const MS_ESTALLIDO = 320
+const MS_AVANCE = 450
+
+interface CuerpoProps {
+  actividad: GlobosActivity
+  ctx: ActivityShellContext
+  responder: (r: unknown) => void
+  alEvaluar: (e: ActivityEvaluationResult) => void
+}
+
+function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
+  const { configuracion, preguntas } = actividad
   const velBase = VELOCIDAD_PX[configuracion.velocidad]
+  const jugando = ctx.sesion.fase === 'jugando'
+  const motivoFin = ctx.sesion.motivoFin
+  const { setProgreso, completar, perderVida } = ctx
+  const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido })
 
   const [indicePregunta, setIndicePregunta] = useState(0)
   const [globos, setGlobos] = useState<GloboState[]>([])
-  const [vidas, setVidas] = useState(configuracion.vidas)
-  const [segundos, setSegundos] = useState(configuracion.tiempoLimite)
   const [puntaje, setPuntaje] = useState(0)
-  const [terminado, setTerminado] = useState(false)
-  const [mostrarResultado, setMostrarResultado] = useState(false)
-  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+  const [anuncio, setAnuncio] = useState('')
 
-  const animFrameRef = useRef<number | null>(null)
-  const lastTimeRef = useRef(0)
   const containerRef = useRef<HTMLDivElement>(null)
-  const onCompleteRef = useRef(onComplete)
-  const completedRef = useRef(false)
-  const terminadoRef = useRef(false)
+  const globosRef = useRef<GloboState[]>([])
+  const jugandoRef = useRef(jugando)
+  const respondidaRef = useRef(false)
+  const emitidaRef = useRef(false)
+  const frameRef = useRef<number | null>(null)
+  const lastTimeRef = useRef(0)
+  const temporizadores = useRef<number[]>([])
+  const perderVidaRef = useRef(perderVida)
+  const completarRef = useRef(completar)
 
   const preguntaActual = preguntas[indicePregunta]
-  const opcionesActuales = preguntaActual?.opciones ?? []
-  const metrics = useGloboMetrics(containerRef, opcionesActuales.length)
+  const metrics = useGloboMetrics(containerRef, preguntaActual?.opciones.length ?? 0)
 
   useEffect(() => {
-    onCompleteRef.current = onComplete
-  }, [onComplete])
+    jugandoRef.current = jugando
+    perderVidaRef.current = perderVida
+    completarRef.current = completar
+  })
 
   useEffect(() => {
-    setIndicePregunta(0)
-    setGlobos([])
-    setVidas(configuracion.vidas)
-    setSegundos(configuracion.tiempoLimite)
-    setPuntaje(0)
-    setTerminado(false)
-    setMostrarResultado(false)
-    setEvaluation(null)
-    completedRef.current = false
-    terminadoRef.current = false
-    lastTimeRef.current = 0
-  }, [fingerprint, configuracion.vidas, configuracion.tiempoLimite])
+    setProgreso(puntaje, preguntas.length)
+  }, [puntaje, preguntas.length, setProgreso])
 
-  const finalizarJuego = useCallback(() => {
-    if (terminadoRef.current) return
-    terminadoRef.current = true
-    setTerminado(true)
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+  const poner = useCallback((lista: GloboState[]) => {
+    globosRef.current = lista
+    setGlobos(lista)
   }, [])
+
+  const despues = useCallback((fn: () => void, ms: number) => {
+    temporizadores.current.push(window.setTimeout(fn, ms))
+  }, [])
+
+  useEffect(
+    () => () => {
+      temporizadores.current.forEach((t) => window.clearTimeout(t))
+      if (frameRef.current) cancelAnimationFrame(frameRef.current)
+    },
+    [],
+  )
 
   const lanzarGlobos = useCallback(
     (idx: number) => {
-      if (idx >= preguntas.length) return
       const pregunta = preguntas[idx]
+      if (!pregunta) return
       const opciones = pregunta.opciones.filter((op) => op.texto.trim().length > 0)
       if (opciones.length === 0) return
-
       const colores = configuracion.colorGlobos
       const posiciones = calcularPosicionesGlobos(opciones.length)
-      const opcionesMezcladas = mezclarOpcionesGlobos(opciones)
-
-      const nuevosGlobos: GloboState[] = opcionesMezcladas.map((op, i) => ({
-        id: `glob-${idx}-${i}-${op.texto}`,
-        texto: op.texto,
-        correcta: op.correcta,
-        x: posiciones[i] + (Math.random() * 4 - 2),
-        y: 108 + (i % 3) * 8 + Math.random() * 6,
-        color: colores[i % colores.length],
-        explotando: false,
-        velocidad: velBase * (0.85 + Math.random() * 0.3),
-      }))
-
-      setGlobos(nuevosGlobos)
+      const mezcladas = mezclarOpcionesGlobos(opciones, ctx.ajustes.semilla, idx)
+      respondidaRef.current = false
+      poner(
+        mezcladas.map((op, i) => ({
+          id: `glob-${idx}-${i}-${op.texto}`,
+          texto: op.texto,
+          correcta: op.correcta,
+          x: posiciones[i]! + (Math.random() * 4 - 2),
+          y: 108 + (i % 3) * 8 + Math.random() * 6,
+          color: colores[i % colores.length]!,
+          explotando: false,
+          velocidad: velBase * (0.85 + Math.random() * 0.3),
+        })),
+      )
     },
-    [preguntas, configuracion.colorGlobos, velBase],
+    [preguntas, configuracion.colorGlobos, velBase, ctx.ajustes.semilla, poner],
   )
 
   useEffect(() => {
     lanzarGlobos(0)
-  }, [fingerprint, lanzarGlobos])
+    // Solo al montar: cada contenido nuevo remonta el cuerpo (`key` de la huella).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
+  // Los globos suben; los que salen por arriba cuestan una vida cada uno.
   useEffect(() => {
-    if (terminado) return
-
+    if (!jugando) return
+    lastTimeRef.current = 0
     const loop = (timestamp: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = timestamp
       const dt = (timestamp - lastTimeRef.current) / 1000
       lastTimeRef.current = timestamp
-
-      const containerH = containerRef.current?.clientHeight ?? 400
-      let escapedCount = 0
-
-      setGlobos((prev) => {
-        const actualizados = prev.map((g) => {
-          if (g.explotando) return g
-          const dyPct = ((g.velocidad * dt) / containerH) * 100
-          return { ...g, y: g.y - dyPct }
-        })
-
-        escapedCount = actualizados.filter((g) => g.y < -18 && !g.explotando).length
-        if (escapedCount > 0) {
-          return actualizados.filter((g) => g.y >= -18 || g.explotando)
-        }
-        return actualizados
-      })
-
-      if (escapedCount > 0) {
-        setVidas((v) => {
-          const nuevas = v - escapedCount
-          if (nuevas <= 0) finalizarJuego()
-          return Math.max(0, nuevas)
-        })
-      }
-
-      animFrameRef.current = requestAnimationFrame(loop)
-    }
-
-    animFrameRef.current = requestAnimationFrame(loop)
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-    }
-  }, [terminado, finalizarJuego])
-
-  useEffect(() => {
-    if (terminado) return
-    const interval = setInterval(() => {
-      setSegundos((s) => {
-        if (s <= 1) {
-          finalizarJuego()
-          return 0
-        }
-        return s - 1
-      })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [terminado, finalizarJuego])
-
-  useEffect(() => {
-    if (!terminado || completedRef.current) return
-    completedRef.current = true
-    const raw = {
-      puntosObtenidos: puntaje,
-      puntosMaximos: Math.max(preguntas.length, 1),
-    }
-    const evaluated = evaluateActivityResponse('globos', actividad, raw)
-    setEvaluation(evaluated)
-    onCompleteRef.current?.(raw)
-    const timer = window.setTimeout(() => setMostrarResultado(true), 400)
-    return () => window.clearTimeout(timer)
-  }, [terminado, puntaje, preguntas.length, actividad])
-
-  const handleClickGlobo = useCallback(
-    (globoId: string, correcta: boolean) => {
-      if (terminadoRef.current) return
-
-      setGlobos((prev) =>
-        prev.map((g) => (g.id === globoId ? { ...g, explotando: true } : g)),
+      const alto = containerRef.current?.clientHeight || 400
+      const subidos = globosRef.current.map((g) =>
+        g.explotando ? g : { ...g, y: g.y - ((g.velocidad * dt) / alto) * 100 },
       )
-
-      window.setTimeout(() => {
-        setGlobos((prev) => prev.filter((g) => g.id !== globoId))
-      }, 320)
-
-      if (correcta) {
-        setPuntaje((p) => p + 1)
-      } else {
-        setVidas((v) => {
-          const nuevas = v - 1
-          if (nuevas <= 0) finalizarJuego()
-          return Math.max(0, nuevas)
-        })
+      const escapados = subidos.filter((g) => g.y < LIMITE_SUPERIOR && !g.explotando).length
+      poner(escapados > 0 ? subidos.filter((g) => g.y >= LIMITE_SUPERIOR || g.explotando) : subidos)
+      if (escapados > 0) {
+        setAnuncio(escapados === 1 ? 'Se escapó un globo.' : `Se escaparon ${escapados} globos.`)
+        for (let i = 0; i < escapados; i++) perderVidaRef.current()
       }
+      frameRef.current = requestAnimationFrame(loop)
+    }
+    frameRef.current = requestAnimationFrame(loop)
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current)
+    }
+  }, [jugando, poner])
 
-      const nextIdx = indicePregunta + 1
-      window.setTimeout(() => {
-        if (nextIdx >= preguntas.length) {
-          finalizarJuego()
-        } else {
-          setIndicePregunta(nextIdx)
-          lanzarGlobos(nextIdx)
-        }
-      }, 450)
-    },
-    [indicePregunta, preguntas.length, finalizarJuego, lanzarGlobos],
-  )
+  // Al terminar (completar, sin vidas o sin tiempo) sale UNA respuesta con lo acertado.
+  useEffect(() => {
+    if (!motivoFin || emitidaRef.current) return
+    emitidaRef.current = true
+    const raw = { puntosObtenidos: puntaje, puntosMaximos: Math.max(preguntas.length, 1) }
+    alEvaluar(evaluateActivityResponse('globos', actividad, raw))
+    responder(raw)
+    // Solo reacciona al fin de la partida.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [motivoFin])
+
+  const pinchar = (globo: GloboState) => {
+    // Una respuesta por pregunta: pinchar un segundo globo antes del avance no cuenta.
+    if (!jugandoRef.current || respondidaRef.current || globo.explotando) return
+    respondidaRef.current = true
+    poner(globosRef.current.map((g) => (g.id === globo.id ? { ...g, explotando: true } : g)))
+    despues(() => poner(globosRef.current.filter((g) => g.id !== globo.id)), MS_ESTALLIDO)
+
+    if (globo.correcta) {
+      setPuntaje((p) => p + 1)
+      feedback.emitir('acierto', { movimiento: false })
+      setAnuncio(`Correcto: ${globo.texto}.`)
+    } else {
+      feedback.emitir('error', { movimiento: false })
+      setAnuncio(`Incorrecto: ${globo.texto}.`)
+      perderVida()
+    }
+
+    const siguiente = indicePregunta + 1
+    despues(() => {
+      if (!jugandoRef.current) return
+      if (siguiente >= preguntas.length) {
+        completarRef.current()
+      } else {
+        setIndicePregunta(siguiente)
+        lanzarGlobos(siguiente)
+      }
+    }, MS_AVANCE)
+  }
 
   return (
-    <div
-      className="relative flex h-full min-h-0 w-full flex-col gap-2 overflow-hidden p-3"
-      ref={containerRef}
-    >
-      <div className="z-10 flex shrink-0 items-center justify-between">
-        <ActivityLives vidas={vidas} maxVidas={configuracion.vidas} />
-        <span className="text-xs font-semibold text-gray-600">
-          {puntaje}/{preguntas.length}
-        </span>
-        <ActivityTimer segundos={segundos} />
-      </div>
+    <div className={styles.raiz} ref={containerRef}>
+      {preguntaActual && <div className={styles.pregunta}>{preguntaActual.enunciado}</div>}
 
-      {preguntaActual && (
-        <div className="z-10 shrink-0 rounded-lg bg-white/90 px-3 py-2 text-center text-sm font-medium text-gray-700 shadow-sm">
-          {preguntaActual.enunciado}
-        </div>
-      )}
-
-      <div className="relative min-h-0 flex-1">
+      <div className={styles.cielo}>
         {globos.map((globo) => (
           <button
             key={globo.id}
             type="button"
-            onClick={() => handleClickGlobo(globo.id, globo.correcta)}
+            onClick={() => pinchar(globo)}
             className={`${styles.balloon} ${globo.explotando ? styles.balloonExploding : ''}`}
             style={{
               width: metrics.width,
@@ -260,8 +231,6 @@ export function GlobosViewer({ actividad, onComplete }: GlobosViewerProps) {
               left: `${globo.x}%`,
               bottom: `${globo.y}%`,
               fontSize: metrics.fontSize,
-              visibility: globo.explotando ? 'visible' : 'visible',
-              pointerEvents: globo.explotando ? 'none' : 'auto',
             }}
           >
             {globo.texto}
@@ -269,12 +238,41 @@ export function GlobosViewer({ actividad, onComplete }: GlobosViewerProps) {
         ))}
       </div>
 
-      {mostrarResultado && (
-        <ActivityResultOverlay
-          evaluation={evaluation ?? undefined}
-          mostrarReintentar={false}
-        />
-      )}
+      <div role="status" aria-live="polite" className={styles.soloLector}>
+        {anuncio}
+      </div>
     </div>
+  )
+}
+
+export function GlobosViewer({ actividad, onResponse, onComplete }: GlobosViewerProps) {
+  const fingerprint = globosFingerprint(actividad)
+  // El contenido normalizado (vidas y tiempo con su valor por defecto) alimenta también los ajustes.
+  const normalizada = useMemo(
+    () => normalizarGlobos(actividad),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fingerprint],
+  )
+  const ajustes = useMemo(() => normalizarAjustes(normalizada), [normalizada])
+  // Se juega una sola vez (como siempre): no se ofrece «Reintentar».
+  const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
+  const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
+
+  const salida = useRef(onResponse ?? onComplete)
+  useEffect(() => {
+    salida.current = onResponse ?? onComplete
+  }, [onResponse, onComplete])
+  const responder = useCallback((r: unknown) => salida.current?.(r), [])
+
+  return (
+    <ActivityShell
+      key={fingerprint}
+      ajustes={ajustesShell}
+      total={normalizada.preguntas.length}
+      evaluation={evaluation}
+      className={styles.shell}
+    >
+      {(ctx) => <Cuerpo actividad={normalizada} ctx={ctx} responder={responder} alEvaluar={setEvaluation} />}
+    </ActivityShell>
   )
 }

@@ -87,7 +87,7 @@ describe("Globos — paridad con el comportamiento anterior (U9d.1)", () => {
   it("el reloj descuenta un segundo por segundo", () => {
     render(<Viewer estado={globos()} config={{}} />);
     pasar(5000);
-    expect(screen.getByText(/55s/)).toBeTruthy();
+    expect(screen.getByText(/^(0:55|55s)$/)).toBeTruthy(); // el shell formatea «0:55»; antes «55s»
   });
 
   it("NO emite nada mientras se juega; al contestar la última emite UNA respuesta con lo acertado", () => {
