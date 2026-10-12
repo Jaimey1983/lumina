@@ -68,12 +68,12 @@ describe("Topo — paridad con el comportamiento anterior (U9d.2)", () => {
   });
 
   it("un golpe equivocado retira ese topo, cuesta una vida y los demás siguen asomando", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={topo({ vidas: 1 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={topo({ vidas: 1 })} config={{ onResponse }} />);
     golpear("3");
     pasar(1000);
     // Con una sola vida, fallar termina el juego.
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
   });
 
   it("con varias vidas un fallo no corta la pregunta: el topo sale, los otros siguen y se puede acertar", () => {
@@ -100,31 +100,31 @@ describe("Topo — paridad con el comportamiento anterior (U9d.2)", () => {
   });
 
   it("NO emite nada mientras se juega; acertar la última emite UNA respuesta con lo acertado", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={topo()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={topo()} config={{ onResponse }} />);
     golpear("4");
     pasar(400);
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     golpear("Bogotá");
     pasar(1000);
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 2, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 2, puntosMaximos: 2 }]]);
     pasar(5000);
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
   it("dejar pasar todas las preguntas sin golpear termina con 0 puntos", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={topo({ vidas: 5 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={topo({ vidas: 5 })} config={{ onResponse }} />);
     pasar(TIEMPO_VISIBLE + 400 + TIEMPO_VISIBLE + 1000);
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
   });
 
   it("agotar el tiempo termina el juego con lo acertado hasta ahora", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={topo({ tiempoLimite: 5 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={topo({ tiempoLimite: 5 })} config={{ onResponse }} />);
     golpear("4");
     pasar(5000);
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 1, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 1, puntosMaximos: 2 }]]);
   });
 
   it("al terminar abre el resultado sin «Reintentar»", () => {

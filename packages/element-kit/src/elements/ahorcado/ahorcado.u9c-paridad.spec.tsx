@@ -61,24 +61,24 @@ describe("Ahorcado — paridad con el comportamiento anterior (U9c.1)", () => {
   });
 
   it("al ganar emite UNA vez `{ letrasAdivinadas, letrasFalladas }` y el resultado aparece a los 350 ms", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={ahorcado()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={ahorcado()} config={{ onResponse }} />);
     jugar("S", "Z", "O", "L");
-    expect(onComplete.mock.calls).toEqual([[{ letrasAdivinadas: ["S", "O", "L"], letrasFalladas: ["Z"] }]]);
+    expect(onResponse.mock.calls).toEqual([[{ letrasAdivinadas: ["S", "O", "L"], letrasFalladas: ["Z"] }]]);
     expect(screen.queryByText("¡Muy bien!")).toBeNull();
     pasar(349);
     expect(screen.queryByText("¡Muy bien!")).toBeNull();
     pasar(1);
     expect(screen.getByText("¡Muy bien!")).toBeTruthy();
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
   it("al perder (sin intentos) revela «La palabra era: …», emite y muestra «Sigue practicando»", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={ahorcado()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={ahorcado()} config={{ onResponse }} />);
     jugar("A", "B", "C", "D");
     expect(screen.getByText(/La palabra era:/)).toBeTruthy();
-    expect(onComplete.mock.calls).toEqual([[{ letrasAdivinadas: [], letrasFalladas: ["A", "B", "C", "D"] }]]);
+    expect(onResponse.mock.calls).toEqual([[{ letrasAdivinadas: [], letrasFalladas: ["A", "B", "C", "D"] }]]);
     pasar(350);
     expect(screen.getByText("Sigue practicando")).toBeTruthy();
     expect(screen.getByText("1.0")).toBeTruthy();
@@ -137,10 +137,10 @@ describe("Ahorcado — paridad con el comportamiento anterior (U9c.1)", () => {
     expect(screen.getByText("4/4 intentos")).toBeTruthy();
   });
 
-  it("el componente (prop `actividad`) acepta `onComplete` directo", () => {
-    const onComplete = vi.fn();
-    render(<ViewerComponente actividad={ahorcado()} onComplete={onComplete} />);
+  it("el componente (prop `actividad`) acepta `onResponse` directo", () => {
+    const onResponse = vi.fn();
+    render(<ViewerComponente actividad={ahorcado()} onResponse={onResponse} />);
     jugar("S", "O", "L");
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 });

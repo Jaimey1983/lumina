@@ -91,40 +91,40 @@ describe("Globos — paridad con el comportamiento anterior (U9d.1)", () => {
   });
 
   it("NO emite nada mientras se juega; al contestar la última emite UNA respuesta con lo acertado", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={globos()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={globos()} config={{ onResponse }} />);
     acertar("4");
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     acertar("Bogotá");
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 2, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 2, puntosMaximos: 2 }]]);
     pasar(5000);
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
   it("una opción equivocada cuesta una vida y NO suma; con 3 vidas, tres fallos terminan el juego", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={globos({ vidas: 3 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={globos({ vidas: 3 })} config={{ onResponse }} />);
     pinchar("3"); // pregunta 1 → falla (vida 2), pasa a la 2
     pasar(500);
     pinchar("Cali"); // vida 1, última pregunta → termina
     pasar(500);
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
   });
 
   it("con 1 vida, un solo fallo termina el juego aunque queden preguntas", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={globos({ vidas: 1 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={globos({ vidas: 1 })} config={{ onResponse }} />);
     pinchar("3");
     pasar(1000);
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 0, puntosMaximos: 2 }]]);
   });
 
   it("agotar el tiempo termina el juego con lo acertado hasta ahora", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={globos({ tiempoLimite: 5 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={globos({ tiempoLimite: 5 })} config={{ onResponse }} />);
     acertar("4");
     pasar(5000);
-    expect(onComplete.mock.calls).toEqual([[{ puntosObtenidos: 1, puntosMaximos: 2 }]]);
+    expect(onResponse.mock.calls).toEqual([[{ puntosObtenidos: 1, puntosMaximos: 2 }]]);
   });
 
   it("los globos suben solos y, al salir por arriba, desaparecen", () => {
@@ -137,13 +137,13 @@ describe("Globos — paridad con el comportamiento anterior (U9d.1)", () => {
   });
 
   it("al terminar abre el resultado y no se puede seguir pinchando", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={globos({ vidas: 1 })} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={globos({ vidas: 1 })} config={{ onResponse }} />);
     pinchar("3");
     pasar(1000);
     expect(screen.getByText("0 de 2 correctas (0%)")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /reintentar/i })).toBeNull();
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 });
 

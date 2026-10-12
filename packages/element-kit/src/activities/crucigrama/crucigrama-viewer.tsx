@@ -5,7 +5,7 @@
  *
  * El shell aporta fases, cronómetro, progreso y la pantalla de resultados. Lo que sale hacia
  * `@lumina/scoring` NO cambió: UNA respuesta `{ celdas }` al verificar, sin borradores; sale por
- * `onResponse` (canal unificado, DU2) y `onComplete` se acepta solo como alias transitorio.
+ * `onResponse` (canal unificado, DU2).
  *
  * Teclado completo (DU8): una sola celda entra al orden de tabulación (la actual) y las flechas
  * se mueven por la rejilla; Enter/Espacio alterna horizontal ↔ vertical en un cruce; Retroceso en
@@ -32,8 +32,6 @@ export interface CrucigramaViewerProps {
   actividad: CrucigramaActivity;
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void;
 }
 
 type Direccion = 'arriba' | 'abajo' | 'izquierda' | 'derecha';
@@ -376,7 +374,7 @@ function Cuerpo({ actividad, ctx, respuestas, setRespuestas, responder, alEvalua
   );
 }
 
-export function CrucigramaViewer({ actividad, onResponse, onComplete }: CrucigramaViewerProps) {
+export function CrucigramaViewer({ actividad, onResponse }: CrucigramaViewerProps) {
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
   // El crucigrama admite una sola verificación (como siempre): no se ofrece «Reintentar».
   const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes]);
@@ -384,10 +382,10 @@ export function CrucigramaViewer({ actividad, onResponse, onComplete }: Crucigra
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null);
 
   // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
-  const salida = useRef(onResponse ?? onComplete);
+  const salida = useRef(onResponse);
   useEffect(() => {
-    salida.current = onResponse ?? onComplete;
-  }, [onResponse, onComplete]);
+    salida.current = onResponse;
+  }, [onResponse]);
   const responder = useCallback((r: unknown) => salida.current?.(r), []);
 
   return (

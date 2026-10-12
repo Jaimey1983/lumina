@@ -6,7 +6,7 @@
  * El shell aporta el reloj (si el docente fija un límite), el progreso y la pantalla de resultados.
  * Lo que sale hacia `@lumina/scoring` NO cambió: UNA respuesta `{ cajasAbiertas }` al abrir la
  * última caja (o, si hay límite de tiempo y se agota, las abiertas hasta entonces); sale por
- * `onResponse` (canal unificado, DU2) y `onComplete` se acepta solo como alias transitorio.
+ * `onResponse` (canal unificado, DU2).
  * Si ninguna caja marca `esCorrecta` la actividad no es evaluable y no muestra resultado.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -42,8 +42,6 @@ export interface AbrirCajaViewerProps {
   actividad: AbrirCajaActivity
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 function buildEstadosIniciales(cajas: { id: string }[]): Record<string, CajaEstado> {
@@ -269,7 +267,7 @@ function Cuerpo({ actividad, ctx, evaluable, responder, alEvaluar }: CuerpoProps
   )
 }
 
-export function AbrirCajaViewer({ actividad, onResponse, onComplete }: AbrirCajaViewerProps) {
+export function AbrirCajaViewer({ actividad, onResponse }: AbrirCajaViewerProps) {
   const fingerprint = abrirCajaFingerprint(actividad)
   const normalizada = useMemo(
     () => normalizarAbrirCaja(actividad),
@@ -283,10 +281,10 @@ export function AbrirCajaViewer({ actividad, onResponse, onComplete }: AbrirCaja
   const evaluable = esEvaluable(normalizada.cajas)
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   return (

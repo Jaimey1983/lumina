@@ -100,26 +100,6 @@ describe("Sopa de letras — `ajustes` (U9c.4)", () => {
     expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
-  it("acepta el alias `onComplete` y prefiere `onResponse`", () => {
-    // Una sopa mínima con una sola palabra colocada para terminar con el teclado.
-    const onResponse = vi.fn();
-    const onComplete = vi.fn();
-    const e = base({
-      configuracion: { filas: 4, columnas: 4, direcciones: ["horizontal"], tema: "general", mostrarLista: true },
-      palabras: [{ texto: "SOL" }] as SopaLetrasActivity["palabras"],
-      ajustes: { semilla: 3 },
-    });
-    render(<Viewer estado={e} config={{ onResponse, onComplete }} />);
-    const { colocadas } = generarGrid(4, 4, ["SOL"], ["horizontal"], 3);
-    const [a, , z] = colocadas[0]!.celdas as [{ fila: number; columna: number }, unknown, { fila: number; columna: number }];
-    const en = (c: { fila: number; columna: number }) =>
-      celdas().find((b) => b.dataset.fila === String(c.fila) && b.dataset.columna === String(c.columna))!;
-    fireEvent.mouseDown(en(a));
-    fireEvent.mouseEnter(en(z));
-    fireEvent.mouseUp(en(z));
-    expect(onResponse).toHaveBeenCalledTimes(1);
-    expect(onComplete).not.toHaveBeenCalled();
-  });
 });
 
 describe("Sopa de letras — teclado, dedo y anuncios (U9c.4, DU8)", () => {

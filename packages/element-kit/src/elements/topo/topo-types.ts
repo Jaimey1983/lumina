@@ -7,8 +7,6 @@ export type TopoEstado = TopoActivity;
 export interface TopoConfig {
   /** Canal de respuesta unificado (etapa U / DU2). */
   readonly onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse`; lo manda `RenderActivity` hasta U9d. */
-  readonly onComplete?: (response: unknown) => void;
 }
 
 export const TOPO_TIPO = "topo" as const;

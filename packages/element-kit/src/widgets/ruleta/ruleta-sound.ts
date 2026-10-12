@@ -4,7 +4,7 @@
  * navegador permita el audio; si no hay WebAudio o falla, `crearTicker` devuelve `null`
  * y la ruleta gira en silencio.
  */
-import { obtenerAudioContextCtor } from '../_audio/audio-context.js';
+import { obtenerAudioContextCtor } from '../../_efectos/audio/audio-context.js';
 
 export interface TickerRuleta {
   tick(): void;

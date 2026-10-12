@@ -6,7 +6,7 @@
  * El shell aporta el reloj (si el docente fija un límite), los tokens de estilo y la pantalla de
  * resultados. Lo que sale hacia `@lumina/scoring` NO cambió: UNA respuesta `{ historial }` al llegar
  * a un nodo final (o, si hay límite de tiempo y se agota, el recorrido hasta ese momento); sale por
- * `onResponse` (canal unificado, DU2) y `onComplete` se acepta solo como alias transitorio.
+ * `onResponse` (canal unificado, DU2).
  * El progreso («N pasos») y «Volver atrás» siguen siendo propios del tipo (`mostrarProgreso`,
  * `permitirRetroceder`).
  */
@@ -24,8 +24,6 @@ export interface HistoriaRamificadaViewerProps {
   actividad: HistoriaRamificadaActivity
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 interface PasoHistorial {
@@ -232,17 +230,17 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
   )
 }
 
-export function HistoriaRamificadaViewer({ actividad, onResponse, onComplete }: HistoriaRamificadaViewerProps) {
+export function HistoriaRamificadaViewer({ actividad, onResponse }: HistoriaRamificadaViewerProps) {
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
   // Se recorre una sola vez (como siempre): no se ofrece «Reintentar».
   const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
   const evaluable = hayEvaluacion(actividad.nodos)
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   return (

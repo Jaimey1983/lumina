@@ -134,14 +134,14 @@ describe("Sopa de letras — paridad con el comportamiento anterior (U9c.4)", ()
   });
 
   it("NO emite nada mientras falten palabras; al hallar la última, UNA respuesta `{ encontradas }` en el orden hallado", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={sopa()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={sopa()} config={{ onResponse }} />);
     arrastrar(LUZ);
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     arrastrar(SOL);
-    expect(onComplete.mock.calls).toEqual([[{ encontradas: ["LUZ", "SOL"] }]]);
+    expect(onResponse.mock.calls).toEqual([[{ encontradas: ["LUZ", "SOL"] }]]);
     arrastrar(SOL);
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
   it("al terminar abre el resultado y NO ofrece «Reintentar»", () => {

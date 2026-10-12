@@ -103,13 +103,13 @@ describe("Crucigrama — paridad con el comportamiento anterior (U9c.3)", () => 
   });
 
   it("«Verificar» siempre está disponible y emite UNA vez `{ celdas }` con lo escrito (sin borradores)", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={crucigrama()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={crucigrama()} config={{ onResponse }} />);
     escribir(C00, "s");
     escribir(C01, "o");
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     fireEvent.click(verificar());
-    expect(onComplete.mock.calls).toEqual([[{ celdas: { "0-0": "S", "0-1": "O" } }]]);
+    expect(onResponse.mock.calls).toEqual([[{ celdas: { "0-0": "S", "0-1": "O" } }]]);
     expect(screen.queryByRole("button", { name: "Verificar" })).toBeNull();
   });
 
@@ -136,10 +136,10 @@ describe("Crucigrama — paridad con el comportamiento anterior (U9c.3)", () => 
     expect(nota({ "0-0": "S", "0-1": "O", "0-2": "L" })).toEqual({ correct: false, score: 2.5 });
   });
 
-  it("el componente (prop `actividad`) acepta `onComplete` directo", () => {
-    const onComplete = vi.fn();
-    render(<ViewerComponente actividad={crucigrama()} onComplete={onComplete} />);
+  it("el componente (prop `actividad`) acepta `onResponse` directo", () => {
+    const onResponse = vi.fn();
+    render(<ViewerComponente actividad={crucigrama()} onResponse={onResponse} />);
     fireEvent.click(verificar());
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 });

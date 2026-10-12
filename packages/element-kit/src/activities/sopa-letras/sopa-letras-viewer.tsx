@@ -5,8 +5,7 @@
  *
  * El shell aporta fases, cronómetro, progreso y la pantalla de resultados. Lo que sale hacia
  * `@lumina/scoring` NO cambió: UNA respuesta `{ encontradas }` al hallar la última palabra, sin
- * borradores; sale por `onResponse` (canal unificado, DU2) y `onComplete` se acepta solo como
- * alias transitorio. Si se agota el tiempo sale lo hallado hasta ese momento.
+ * borradores; sale por `onResponse` (canal unificado, DU2). Si se agota el tiempo sale lo hallado hasta ese momento.
  *
  * Se selecciona arrastrando (ratón o dedo) o con el teclado (DU8): las flechas mueven una sola
  * celda del orden de tabulación; Enter/Espacio fija el inicio, las flechas estiran la línea y
@@ -27,8 +26,6 @@ export interface SopaLetrasViewerProps {
   actividad: SopaLetrasActivity;
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void;
 }
 
 interface Celda {
@@ -322,7 +319,7 @@ function Cuerpo({ actividad, ctx, grid, colocadas, responder, alEvaluar }: Cuerp
   );
 }
 
-export function SopaLetrasViewer({ actividad, onResponse, onComplete }: SopaLetrasViewerProps) {
+export function SopaLetrasViewer({ actividad, onResponse }: SopaLetrasViewerProps) {
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
   // La sopa se resuelve una sola vez (como siempre): no se ofrece «Reintentar».
   const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes]);
@@ -351,10 +348,10 @@ export function SopaLetrasViewer({ actividad, onResponse, onComplete }: SopaLetr
   );
 
   // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
-  const salida = useRef(onResponse ?? onComplete);
+  const salida = useRef(onResponse);
   useEffect(() => {
-    salida.current = onResponse ?? onComplete;
-  }, [onResponse, onComplete]);
+    salida.current = onResponse;
+  }, [onResponse]);
   const responder = useCallback((r: unknown) => salida.current?.(r), []);
 
   return (

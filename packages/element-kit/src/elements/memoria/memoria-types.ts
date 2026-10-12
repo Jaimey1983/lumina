@@ -7,8 +7,6 @@ export type MemoriaEstado = MemoriaActivity;
 export interface MemoriaConfig {
   /** Canal de respuesta unificado (etapa U / DU2). */
   readonly onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse`; lo manda `RenderActivity` hasta U9d. */
-  readonly onComplete?: (response: unknown) => void;
 }
 
 export const MEMORIA_TIPO = "memoria" as const;

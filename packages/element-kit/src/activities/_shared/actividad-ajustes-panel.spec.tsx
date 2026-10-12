@@ -38,7 +38,7 @@ describe("capacidades por tipo", () => {
     // Crece una por una con U9 (cada migración agrega su tipo acá y a `CAPACIDADES_AJUSTES`).
     expect(Object.keys(CAPACIDADES_AJUSTES).sort()).toEqual(["abrir_caja", "ahorcado", "anagrama", "arrastrar_soltar", "balancear_ecuacion", "clasificar", "completar_blancos", "crucigrama", "emparejar", "encuesta_viva", "formular_compuesto", "globos", "historia_ramificada", "memoria", "nube_palabras", "ordenar_pasos", "puzzle_imagen", "puzzle_palabras", "quiz_multiple", "respuesta_matematica", "short_answer", "sopa_letras", "topo", "ubicar_elemento", "verdadero_falso", "video_interactivo"]);
     expect(capacidadesDe("memoria")).not.toBeNull();
-    expect(capacidadesDe("tipo_sin_capacidades")).toBeNull();
+    expect(capacidadesDe("tipo_sin_capacidades" as never)).toBeNull();
   });
 
   it("`seccionesVisibles` oculta las secciones sin opciones", () => {

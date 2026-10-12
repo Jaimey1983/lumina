@@ -198,29 +198,29 @@ describe("Puzzle de palabras — paridad con el comportamiento anterior (U9b.1)"
     expect(boton("Finalizar")).toBeTruthy();
   });
 
-  it("«Finalizar» emite UNA vez `{ tokensPorOracion }` por `onComplete` y muestra el resultado con la nota", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={actividad()} config={{ onComplete }} />);
+  it("«Finalizar» emite UNA vez `{ tokensPorOracion }` por `onResponse` y muestra el resultado con la nota", () => {
+    const onResponse = vi.fn();
+    render(<Viewer estado={actividad()} config={{ onResponse }} />);
     colocar(idsIniciales(), ["El", "sol", "sale"]);
     fireEvent.click(boton("Verificar"));
     fireEvent.click(boton("Siguiente"));
     colocar(idsIniciales(), ["Hola", "mundo"]);
     fireEvent.click(boton("Verificar"));
     fireEvent.click(boton("Finalizar"));
-    expect(onComplete.mock.calls).toEqual([
+    expect(onResponse.mock.calls).toEqual([
       [{ tokensPorOracion: [["El", "sol", "sale"], ["Hola", "mundo"]] }],
     ]);
     expect(screen.getByText("5.0")).toBeTruthy();
     expect(screen.getByText("¡Muy bien!")).toBeTruthy();
   });
 
-  it("nunca emite borradores: antes de finalizar `onComplete` no se llamó", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={actividad()} config={{ onComplete }} />);
+  it("nunca emite borradores: antes de finalizar `onResponse` no se llamó", () => {
+    const onResponse = vi.fn();
+    render(<Viewer estado={actividad()} config={{ onResponse }} />);
     colocar(idsIniciales(), ["El", "sol", "sale"]);
     fireEvent.click(boton("Verificar"));
     fireEvent.click(boton("Siguiente"));
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
   });
 
   it("calificación con @lumina/scoring: todo bien 5, todo mal nota mínima, mitad en medio (2,5)", () => {
@@ -249,12 +249,12 @@ describe("Puzzle de palabras — paridad con el comportamiento anterior (U9b.1)"
     expect(destino()).toEqual([]);
   });
 
-  it("el componente acepta `onComplete` directo (prop `actividad`)", () => {
-    const onComplete = vi.fn();
-    render(<ViewerComponente actividad={actividad({ oraciones: [{ texto: "Hola mundo" }] })} onComplete={onComplete} />);
+  it("el componente acepta `onResponse` directo (prop `actividad`)", () => {
+    const onResponse = vi.fn();
+    render(<ViewerComponente actividad={actividad({ oraciones: [{ texto: "Hola mundo" }] })} onResponse={onResponse} />);
     colocar(idsIniciales(), ["Hola", "mundo"]);
     fireEvent.click(boton("Verificar"));
     fireEvent.click(boton("Finalizar"));
-    expect(onComplete.mock.calls).toEqual([[{ tokensPorOracion: [["Hola", "mundo"]] }]]);
+    expect(onResponse.mock.calls).toEqual([[{ tokensPorOracion: [["Hola", "mundo"]] }]]);
   });
 });

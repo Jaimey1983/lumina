@@ -61,7 +61,7 @@ const BARAJA_POR_DEFECTO: ReadonlySet<Tipo> = new Set<Tipo>([
 ]);
 
 /**
- * Tipos cuyo viewer ofrece «Reintentar» sin límite (usa `ActivityResultOverlay`): su
+ * Tipos cuyo viewer ofrece «Reintentar» sin límite (vuelve a jugar desde el resultado del shell): su
  * `intentos` por defecto es `null`. El resto (las clásicas) admite una sola respuesta.
  */
 const REINTENTA_POR_DEFECTO: ReadonlySet<Tipo> = new Set<Tipo>([

@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * U3 — pantalla de resultados de una actividad (etapa U / DU6). Reemplaza a
- * `ActivityResultOverlay` (que se borra en U9d cuando nadie lo use).
+ * U3 — pantalla de resultados de una actividad (etapa U / DU6). Reemplazó al viejo
+ * `ActivityResultOverlay`, que se borró en U9d.
  *
  * Es un `role="dialog"` modal: al abrirse mueve el foco al diálogo, lo mantiene dentro
  * (Tab cicla, Escape cierra si hay `onCerrar`) y al desmontarse lo devuelve a donde

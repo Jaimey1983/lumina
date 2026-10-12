@@ -36,9 +36,8 @@ const ARCHIVOS_DE_TOKENS: readonly string[] = ["_shared/activity-tokens.ts"];
  * Archivos con hex suelto HOY y cuántos tienen (medido en U1). Se achica archivo por archivo
  * en U9a–U9d; no se agrega nada. Orden alfabético.
  */
-const EXENTOS: Readonly<Record<string, number>> = {
-  "_shared/activity-result-overlay.tsx": 1,
-};
+/** Vacía desde U9d.7: ya no queda hex suelto fuera de `EXENTOS_DE_DATO`. */
+const EXENTOS: Readonly<Record<string, number>> = {};
 
 /**
  * Archivos cuyo hex es DATO y no estilo: valores por defecto que se GUARDAN en el slide

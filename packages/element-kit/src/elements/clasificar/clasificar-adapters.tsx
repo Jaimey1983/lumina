@@ -25,7 +25,7 @@ export function ClasificarViewer({
   return (
     <LegacyClasificarViewer
       actividad={estado}
-      onResponse={config.onResponse ?? config.onComplete}
+      onResponse={config.onResponse}
     />
   );
 }

@@ -111,12 +111,12 @@ describe("Clasificar — paridad con el comportamiento anterior (U9b.2)", () => 
     expect(verificar().disabled).toBe(false);
   });
 
-  it("verificar emite UNA vez `{ ubicaciones }` por `onComplete` (todas las piezas) y muestra la nota", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={actividad()} config={{ onComplete }} />);
+  it("verificar emite UNA vez `{ ubicaciones }` por `onResponse` (todas las piezas) y muestra la nota", () => {
+    const onResponse = vi.fn();
+    render(<Viewer estado={actividad()} config={{ onResponse }} />);
     clasificarTodo(BIEN);
     fireEvent.click(verificar());
-    expect(onComplete.mock.calls).toEqual([[{ ubicaciones: { a: "c1", b: "c1", c: "c2", d: "c2" } }]]);
+    expect(onResponse.mock.calls).toEqual([[{ ubicaciones: { a: "c1", b: "c1", c: "c2", d: "c2" } }]]);
     expect(screen.getByText("5.0")).toBeTruthy();
     expect(screen.getByText("¡Muy bien!")).toBeTruthy();
   });
@@ -167,11 +167,11 @@ describe("Clasificar — paridad con el comportamiento anterior (U9b.2)", () => 
     expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
   });
 
-  it("el componente (prop `actividad`) acepta `onComplete` directo", () => {
-    const onComplete = vi.fn();
-    render(<ViewerComponente actividad={actividad()} onComplete={onComplete} />);
+  it("el componente (prop `actividad`) acepta `onResponse` directo", () => {
+    const onResponse = vi.fn();
+    render(<ViewerComponente actividad={actividad()} onResponse={onResponse} />);
     clasificarTodo(BIEN);
     fireEvent.click(verificar());
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 });

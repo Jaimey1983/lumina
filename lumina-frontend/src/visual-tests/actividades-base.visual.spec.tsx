@@ -2,9 +2,8 @@
  * U0 — línea base visual de las 26 actividades del kit (etapa U).
  *
  * Un snapshot del `Viewer` real del registry por actividad, en estado inicial
- * (`crearPorDefecto()`), más tres estados posteriores a responder: el overlay de
- * resultado compartido (`ActivityResultOverlay`, que U3 reemplaza), Verdadero/Falso
- * con feedback y Memoria completada. Para regenerar las referencias:
+ * (`crearPorDefecto()`), más dos estados posteriores a responder: Verdadero/Falso
+ * con feedback y Memoria completada. (El overlay de resultado compartido se borró en U9d.) Para regenerar las referencias:
  * `pnpm --filter lumina-frontend test:visual:update`.
  *
  * `Math.random` va sembrado; el tiempo está congelado (`congelarTiempo`); sin animaciones ni transiciones. Referencias solo
@@ -16,7 +15,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
 
-import { ActivityResultOverlay } from '@lumina/element-kit/activities/_shared/activity-result-overlay';
 import { elementRegistry } from '@/lib/element-registry-bootstrap';
 import {
   ACTIVIDAD_TIPOS,
@@ -79,26 +77,6 @@ describe('actividades — línea base visual (U0)', () => {
       await expect(host).toMatchScreenshot(`${tipo}--inicial.png`);
     });
   }
-
-  test('resultado compartido (ActivityResultOverlay) — aprobado', async () => {
-    const view = await render(
-      <ActividadVisualHost>
-        <ActivityResultOverlay correctas={4} total={5} onReintentar={() => undefined} />
-      </ActividadVisualHost>,
-    );
-    const host = view.getByTestId('actividad-visual-host');
-    await expect(host).toMatchScreenshot('resultado-overlay--aprobado.png');
-  });
-
-  test('resultado compartido (ActivityResultOverlay) — reprobado', async () => {
-    const view = await render(
-      <ActividadVisualHost>
-        <ActivityResultOverlay correctas={1} total={5} onReintentar={() => undefined} />
-      </ActividadVisualHost>,
-    );
-    const host = view.getByTestId('actividad-visual-host');
-    await expect(host).toMatchScreenshot('resultado-overlay--reprobado.png');
-  });
 
   test('verdadero_falso — feedback tras responder', async () => {
     const { view, host } = await montar('verdadero_falso');

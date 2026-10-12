@@ -105,12 +105,12 @@ describe("Puzzle de imagen — paridad con el comportamiento anterior (U9b.5)", 
   });
 
   it("emite un BORRADOR `{ slots }` al montar y otro en cada cambio del tablero", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={puzzle()} config={{ onComplete }} />);
-    expect(borradores(onComplete)).toEqual([Array(9).fill(null)]);
+    const onResponse = vi.fn();
+    render(<Viewer estado={puzzle()} config={{ onResponse }} />);
+    expect(borradores(onResponse)).toEqual([Array(9).fill(null)]);
     soltar("pieza-3", "slot-0");
-    expect(borradores(onComplete).at(-1)).toEqual([3, null, null, null, null, null, null, null, null]);
-    expect(borradores(onComplete)).toHaveLength(2);
+    expect(borradores(onResponse).at(-1)).toEqual([3, null, null, null, null, null, null, null, null]);
+    expect(borradores(onResponse)).toHaveLength(2);
   });
 
   it("soltar una pieza en una casilla la saca del origen; de casilla a casilla libera la anterior", () => {
@@ -151,16 +151,16 @@ describe("Puzzle de imagen — paridad con el comportamiento anterior (U9b.5)", 
   });
 
   it("verificar emite la respuesta FINAL `{ slots }` (no borrador), muestra la nota y deja de emitir borradores", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={puzzle()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={puzzle()} config={{ onResponse }} />);
     colocarTodas();
     fireEvent.click(verificar());
-    expect(finales(onComplete)).toEqual([{ slots: [0, 1, 2, 3, 4, 5, 6, 7, 8] }]);
+    expect(finales(onResponse)).toEqual([{ slots: [0, 1, 2, 3, 4, 5, 6, 7, 8] }]);
     expect(screen.getByText("5.0")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Verificar" })).toBeNull();
-    const n = onComplete.mock.calls.length;
+    const n = onResponse.mock.calls.length;
     soltar("pieza-0", "slot-1");
-    expect(onComplete.mock.calls).toHaveLength(n);
+    expect(onResponse.mock.calls).toHaveLength(n);
   });
 
   it("calificación con @lumina/scoring (borrador o final): todo bien 5, todo mal nota mínima, cuatro de nueve (2,8)", () => {
@@ -184,9 +184,9 @@ describe("Puzzle de imagen — paridad con el comportamiento anterior (U9b.5)", 
     expect(verificar().disabled).toBe(true);
   });
 
-  it("el componente (prop `actividad`) acepta `onComplete` directo", () => {
-    const onComplete = vi.fn();
-    render(<ViewerComponente actividad={puzzle()} onComplete={onComplete} />);
-    expect(onComplete).toHaveBeenCalled();
+  it("el componente (prop `actividad`) acepta `onResponse` directo", () => {
+    const onResponse = vi.fn();
+    render(<ViewerComponente actividad={puzzle()} onResponse={onResponse} />);
+    expect(onResponse).toHaveBeenCalled();
   });
 });

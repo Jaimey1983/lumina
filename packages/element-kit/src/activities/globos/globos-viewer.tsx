@@ -7,7 +7,7 @@
  * juego (globos que suben, pinchar, avanzar de pregunta). Lo que sale hacia `@lumina/scoring` NO
  * cambió: UNA respuesta `{ puntosObtenidos, puntosMaximos }` al terminar (por completar, por
  * quedarse sin vidas o por agotar el tiempo); sale por `onResponse` (canal unificado, DU2) y
- * `onComplete` se acepta solo como alias transitorio.
+ *
  *
  * Vidas y tiempo siguen viniendo de `configuracion.vidas` / `configuracion.tiempoLimite`
  * (`normalizarAjustes` los deriva). Un globo que se escapa por arriba cuesta una vida.
@@ -38,8 +38,6 @@ export interface GlobosViewerProps {
   actividad: GlobosActivity
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 function calcularPosicionesGlobos(count: number): number[] {
@@ -245,7 +243,7 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
   )
 }
 
-export function GlobosViewer({ actividad, onResponse, onComplete }: GlobosViewerProps) {
+export function GlobosViewer({ actividad, onResponse }: GlobosViewerProps) {
   const fingerprint = globosFingerprint(actividad)
   // El contenido normalizado (vidas y tiempo con su valor por defecto) alimenta también los ajustes.
   const normalizada = useMemo(
@@ -258,10 +256,10 @@ export function GlobosViewer({ actividad, onResponse, onComplete }: GlobosViewer
   const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   return (

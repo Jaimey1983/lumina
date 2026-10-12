@@ -8,7 +8,7 @@ import { cn } from '@lumina/ui/lib/utils';
 import { useWidgetImageDimensions } from '@lumina/editor-shared/use-widget-image-dimensions';
 import { usesComputedImageLayout } from '@lumina/editor-shared/widget-image-styles';
 
-import { WidgetMotion, WidgetMotionItem } from '../_motion/widget-motion.js';
+import { WidgetMotion, WidgetMotionItem } from '../../_efectos/motion/widget-motion.js';
 import styles from './flip-cards.module.css';
 import {
   MAZO_UMBRAL_CLIC,

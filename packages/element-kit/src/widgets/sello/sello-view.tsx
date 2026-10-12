@@ -2,7 +2,7 @@ import { Suspense, createElement, lazy, useEffect, useRef, useState, type CSSPro
 import { Lock } from "lucide-react";
 import { cn } from "@lumina/ui/lib/utils";
 import type { EstadoObjeto } from "@lumina/types/interaction";
-import { WidgetMotion, useWidgetReducedMotion } from "../_motion/index.js";
+import { WidgetMotion, useWidgetReducedMotion } from "../../_efectos/motion/index.js";
 import { VISUALLY_HIDDEN } from "../visually-hidden.js";
 import { estaGanado, normalizeSelloWidget } from "./sello-defaults.js";
 import { resolverIconoSello } from "./sello-icons.js";
@@ -11,7 +11,7 @@ import styles from "./sello.module.css";
 
 // El confeti (lluvia de piezas con la Web Animations API) se carga la primera vez que se gana una
 // insignia con confeti: el viewer del alumno no lo paga si no hace falta.
-const Confeti = lazy(() => import("../_efectos/confeti.js").then((m) => ({ default: m.Confeti })));
+const Confeti = lazy(() => import("../../_efectos/confeti.js").then((m) => ({ default: m.Confeti })));
 
 const TONO: Record<string, string> = {
   oro: "var(--lw-color-warning, #ffc107)",

@@ -113,7 +113,7 @@ function completar(mazo: string[], actividad: ReturnType<typeof createDefaultMem
   }
 }
 
-const ambosCanales = (fn: ReturnType<typeof vi.fn>) => ({ onComplete: fn, onResponse: fn });
+const canal = (fn: ReturnType<typeof vi.fn>) => ({ onResponse: fn });
 
 /** Valores medidos con el viewer anterior (ver encabezado). */
 const GOLDEN = {
@@ -141,7 +141,7 @@ describe("Memoria — paridad con el comportamiento anterior (U4)", () => {
   it("partida perfecta: un borrador por cada par nuevo y una respuesta final con todos; nota 5", () => {
     const a = createDefaultMemoria();
     const salida = vi.fn();
-    render(<Viewer estado={a} config={ambosCanales(salida)} />);
+    render(<Viewer estado={a} config={canal(salida)} />);
     const mazo = ordenDelMazo(12);
     completar(mazo, a, new Set(emisiones(salida.mock.calls).flatMap((e) => e.pares)));
     expect(emisiones(salida.mock.calls)).toEqual(GOLDEN.perfecto);
@@ -185,7 +185,7 @@ describe("Memoria — paridad con el comportamiento anterior (U4)", () => {
   it("«Reintentar» reinicia el tablero (otro barajado) y la nueva partida vuelve a emitir", () => {
     const a = createDefaultMemoria();
     const salida = vi.fn();
-    render(<Viewer estado={a} config={ambosCanales(salida)} />);
+    render(<Viewer estado={a} config={canal(salida)} />);
     const mazo = ordenDelMazo(12);
     completar(mazo, a, new Set(emisiones(salida.mock.calls).flatMap((e) => e.pares)));
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeTruthy();
@@ -211,28 +211,12 @@ describe("Memoria sobre el shell — canal unificado y ajustes (U4)", () => {
     return { mazo, estado };
   }
 
-  it("`onResponse` solo y `onComplete` solo (alias transitorio) emiten lo mismo", () => {
+  it("`onResponse` emite la partida perfecta (canal unificado)", () => {
     const porResponse = vi.fn();
     const a = createDefaultMemoria();
-    let r = partidaPerfecta({ onResponse: porResponse }, a);
+    const r = partidaPerfecta({ onResponse: porResponse }, a);
     completar(r.mazo, a, new Set(emisiones(porResponse.mock.calls).flatMap((e) => e.pares)));
-    cleanup();
-    vi.spyOn(Math, "random").mockImplementation(azarFijo());
-    const porComplete = vi.fn();
-    r = partidaPerfecta({ onComplete: porComplete }, a);
-    completar(r.mazo, a, new Set(emisiones(porComplete.mock.calls).flatMap((e) => e.pares)));
     expect(emisiones(porResponse.mock.calls)).toEqual(GOLDEN.perfecto);
-    expect(emisiones(porComplete.mock.calls)).toEqual(GOLDEN.perfecto);
-  });
-
-  it("si llegan los dos canales, gana `onResponse` y no se duplica la salida", () => {
-    const resp = vi.fn();
-    const comp = vi.fn();
-    const a = createDefaultMemoria();
-    const { mazo } = partidaPerfecta({ onResponse: resp, onComplete: comp }, a);
-    completar(mazo, a, new Set(emisiones(resp.mock.calls).flatMap((e) => e.pares)));
-    expect(comp).not.toHaveBeenCalled();
-    expect(emisiones(resp.mock.calls)).toEqual(GOLDEN.perfecto);
   });
 
   it("no emite el mismo borrador dos veces seguidas (antes se repetía en cada volteo)", () => {

@@ -147,15 +147,15 @@ describe("Anagrama — paridad con el comportamiento anterior (U9c.2)", () => {
     expect(boton("Finalizar")).toBeTruthy();
   });
 
-  it("«Finalizar» emite UNA vez `{ slotsPorPalabra }` por `onComplete` y muestra la nota; nunca hubo borradores", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={anagrama()} config={{ onComplete }} />);
+  it("«Finalizar» emite UNA vez `{ slotsPorPalabra }` por `onResponse` y muestra la nota; nunca hubo borradores", () => {
+    const onResponse = vi.fn();
+    render(<Viewer estado={anagrama()} config={{ onResponse }} />);
     armar("SOL", idsIniciales());
     fireEvent.click(boton("Siguiente"));
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     armar("LUNA", idsIniciales());
     fireEvent.click(boton("Finalizar"));
-    expect(onComplete.mock.calls).toEqual([[{ slotsPorPalabra: [["S", "O", "L"], ["L", "U", "N", "A"]] }]]);
+    expect(onResponse.mock.calls).toEqual([[{ slotsPorPalabra: [["S", "O", "L"], ["L", "U", "N", "A"]] }]]);
     expect(screen.getByText("5.0")).toBeTruthy();
     expect(screen.getByText("¡Muy bien!")).toBeTruthy();
   });
@@ -171,11 +171,11 @@ describe("Anagrama — paridad con el comportamiento anterior (U9c.2)", () => {
     expect(nota([["S", "O", "L"], ["A", "N", "U", "L"]])).toEqual({ correct: false, score: 2.5 });
   });
 
-  it("el componente (prop `actividad`) acepta `onComplete` directo", () => {
-    const onComplete = vi.fn();
-    render(<ViewerComponente actividad={{ ...anagrama(), palabras: [{ texto: "SOL" }] }} onComplete={onComplete} />);
+  it("el componente (prop `actividad`) acepta `onResponse` directo", () => {
+    const onResponse = vi.fn();
+    render(<ViewerComponente actividad={{ ...anagrama(), palabras: [{ texto: "SOL" }] }} onResponse={onResponse} />);
     armar("SOL", idsIniciales());
     fireEvent.click(boton("Finalizar"));
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 });

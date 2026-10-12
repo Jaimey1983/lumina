@@ -93,16 +93,16 @@ describe("Abrir la caja — paridad con el comportamiento anterior (U9d.3)", () 
   });
 
   it("NO emite nada hasta abrir la última; entonces UNA respuesta `{ cajasAbiertas }` en el orden de las cajas", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={cajas()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={cajas()} config={{ onResponse }} />);
     abrir("Caja 3");
     abrir("Caja 1");
     abrir("Caja 4");
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     abrir("Caja 2");
-    expect(onComplete.mock.calls).toEqual([[{ cajasAbiertas: ["c1", "c2", "c3", "c4"] }]]);
+    expect(onResponse.mock.calls).toEqual([[{ cajasAbiertas: ["c1", "c2", "c3", "c4"] }]]);
     pasar(5000);
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
   it("evaluable: al abrir todas aparece el resultado, sin «Reintentar»", () => {
@@ -113,10 +113,10 @@ describe("Abrir la caja — paridad con el comportamiento anterior (U9d.3)", () 
   });
 
   it("no evaluable: al abrir todas igual emite la respuesta pero NO muestra resultado", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={cajas(false)} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={cajas(false)} config={{ onResponse }} />);
     for (const e of ["Caja 1", "Caja 2", "Caja 3", "Caja 4"]) abrir(e);
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.queryByText(/correctas \(/)).toBeNull();
   });

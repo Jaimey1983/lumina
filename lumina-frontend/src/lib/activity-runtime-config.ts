@@ -5,10 +5,8 @@ import type { Socket } from 'socket.io-client';
  * Une los campos de las 22 actividades (clásicas + Grupo 4) sin `Record<string, unknown>`.
  */
 export interface ActivityRuntimeConfig {
-  /** Canal de respuesta unificado (etapa U / DU2). Memoria y Verdadero/Falso ya lo usan. */
+  /** Canal de respuesta unificado (etapa U / DU2): todas las actividades lo usan. */
   readonly onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse` para el Grupo 4; se retira al terminar U9d. */
-  readonly onComplete?: (response: unknown) => void;
   readonly variant?: 'dark' | 'light';
   readonly editorSyncKey?: string;
   readonly isSelected?: boolean;

@@ -6,7 +6,7 @@
  * El shell aporta fases, cronómetro, progreso y la pantalla de resultados; el estado de cada
  * palabra es puro (`anagrama-estado.ts`). Lo que sale hacia `@lumina/scoring` NO cambió: UNA
  * respuesta `{ slotsPorPalabra }` al finalizar, sin borradores. Sale por `onResponse` (canal
- * unificado, DU2); `onComplete` se acepta solo como alias transitorio. Se puede arrastrar
+ * unificado, DU2). Se puede arrastrar
  * (ratón, táctil o teclado) o usar «tocar y colocar» (DU8).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -74,8 +74,6 @@ export interface AnagramaViewerProps {
   actividad: AnagramaActivity
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 interface CuerpoProps {
@@ -259,7 +257,7 @@ function Cuerpo({ actividad, estados, setEstados, indice, setIndice, crear, ctx,
   )
 }
 
-export function AnagramaViewer({ actividad, onResponse, onComplete }: AnagramaViewerProps) {
+export function AnagramaViewer({ actividad, onResponse }: AnagramaViewerProps) {
   const { configuracion, palabras } = actividad
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
   // `configuracion.intentos` es POR PALABRA (dato del editor): el shell no debe leerlo como los
@@ -282,10 +280,10 @@ export function AnagramaViewer({ actividad, onResponse, onComplete }: AnagramaVi
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
   // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   // «Reintentar» toda la actividad: letras nuevas y huecos vacíos (el viejo dejaba el origen vacío).

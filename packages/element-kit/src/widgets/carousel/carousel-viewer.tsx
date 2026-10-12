@@ -11,7 +11,7 @@ import { cn } from '@lumina/ui/lib/utils';
 import chromeStyles from '@lumina/editor-shared/widget-chrome.module.css';
 import { widgetChromeVarsStyle } from '@lumina/editor-shared/widget-container-styles';
 import { TabsSlidePanelView } from '../tabs/tabs-slide-panel.js';
-import { useWidgetReducedMotion } from '../_motion/reduced-motion.js';
+import { useWidgetReducedMotion } from '../../_efectos/motion/reduced-motion.js';
 
 import styles from './carousel.module.css';
 import {

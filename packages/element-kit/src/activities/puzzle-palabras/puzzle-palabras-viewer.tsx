@@ -6,7 +6,7 @@
  * El shell aporta fases, cronómetro, progreso y la pantalla de resultados; el estado de cada
  * oración es puro (`puzzle-palabras-estado.ts`). Lo que sale hacia `@lumina/scoring` NO cambió:
  * una sola respuesta final `{ tokensPorOracion }` al finalizar, sin borradores. Sale por
- * `onResponse` (canal unificado, DU2); `onComplete` se acepta solo como alias transitorio.
+ * `onResponse` (canal unificado, DU2).
  * Se puede arrastrar (ratón, táctil o teclado) o usar «tocar y colocar» (DU8).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -67,8 +67,6 @@ export interface PuzzlePalabrasViewerProps {
   actividad: PuzzlePalabrasActivity
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 interface CuerpoProps {
@@ -268,7 +266,7 @@ function Cuerpo({ actividad, estados, setEstados, indice, setIndice, crear, ctx,
   )
 }
 
-export function PuzzlePalabrasViewer({ actividad, onResponse, onComplete }: PuzzlePalabrasViewerProps) {
+export function PuzzlePalabrasViewer({ actividad, onResponse }: PuzzlePalabrasViewerProps) {
   const { oraciones } = actividad
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad])
   const semilla = ajustes.semilla
@@ -287,10 +285,10 @@ export function PuzzlePalabrasViewer({ actividad, onResponse, onComplete }: Puzz
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
   // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   const alReintentar = useCallback(() => {

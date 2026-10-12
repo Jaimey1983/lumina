@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { RuletaWidget } from '@lumina/types/widget';
 
-import { prefiereMovimientoReducido } from '../_motion/reduced-motion.js';
+import { prefiereMovimientoReducido } from '../../_efectos/motion/reduced-motion.js';
 import { VISUALLY_HIDDEN } from '../visually-hidden.js';
 import {
   RULETA_EASING,
@@ -15,7 +15,7 @@ import {
   pesoDe,
   type RuletaConfiguracion,
 } from './ruleta-config.js';
-import { Confeti } from '../_efectos/confeti.js';
+import { Confeti } from '../../_efectos/confeti.js';
 import { normalizeRuletaBlock } from './ruleta-defaults.js';
 import { crearTicker, type TickerRuleta } from './ruleta-sound.js';
 import { RuletaWheel } from './ruleta-wheel.js';

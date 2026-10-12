@@ -24,7 +24,7 @@ export function HistoriaRamificadaViewer({
   config,
 }: ElementViewerProps<HistoriaRamificadaEstado, HistoriaRamificadaConfig>) {
   return (
-    <LegacyHistoriaRamificadaViewer actividad={estado} onResponse={config.onResponse ?? config.onComplete} />
+    <LegacyHistoriaRamificadaViewer actividad={estado} onResponse={config.onResponse} />
   );
 }
 

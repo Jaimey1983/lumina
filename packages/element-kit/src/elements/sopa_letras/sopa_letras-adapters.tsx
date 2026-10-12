@@ -23,7 +23,7 @@ export function SopaLetrasViewer({
   config,
 }: ElementViewerProps<SopaLetrasEstado, SopaLetrasConfig>) {
   return (
-    <LegacySopaLetrasViewer actividad={estado} onResponse={config.onResponse ?? config.onComplete} />
+    <LegacySopaLetrasViewer actividad={estado} onResponse={config.onResponse} />
   );
 }
 

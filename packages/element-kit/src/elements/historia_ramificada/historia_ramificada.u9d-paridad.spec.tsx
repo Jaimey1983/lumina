@@ -116,12 +116,12 @@ describe("Historia ramificada — paridad con el comportamiento anterior (U9d.4)
   });
 
   it("NO emite nada mientras se avanza; al llegar a un final emite UNA respuesta `{ historial }`", () => {
-    const onComplete = vi.fn();
-    render(<Viewer estado={historia()} config={{ onComplete }} />);
+    const onResponse = vi.fn();
+    render(<Viewer estado={historia()} config={{ onResponse }} />);
     elegir("Entrar al castillo");
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(onResponse).not.toHaveBeenCalled();
     elegir("Puerta roja");
-    expect(onComplete.mock.calls).toEqual([
+    expect(onResponse.mock.calls).toEqual([
       [
         {
           historial: [
@@ -133,7 +133,7 @@ describe("Historia ramificada — paridad con el comportamiento anterior (U9d.4)
       ],
     ]);
     pasar(5000);
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
   });
 
   it("el final muestra 🏆 (bueno) o 😔 (malo) y se pueden elegir finales distintos", () => {

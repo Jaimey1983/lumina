@@ -91,14 +91,6 @@ describe("Historia ramificada — `ajustes` (U9d.4)", () => {
     expect(play.mock.calls).toEqual([["correct"]]);
   });
 
-  it("acepta el alias `onComplete` y prefiere `onResponse`", () => {
-    const onResponse = vi.fn();
-    const onComplete = vi.fn();
-    render(<Viewer estado={base()} config={{ onResponse, onComplete }} />);
-    elegir("Regresar al pueblo");
-    expect(onResponse).toHaveBeenCalledTimes(1);
-    expect(onComplete).not.toHaveBeenCalled();
-  });
 });
 
 describe("Historia ramificada — accesibilidad (U9d.4, DU8)", () => {

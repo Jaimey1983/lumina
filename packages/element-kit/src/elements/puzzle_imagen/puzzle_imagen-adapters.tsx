@@ -25,7 +25,7 @@ export function PuzzleImagenViewer({
   return (
     <LegacyPuzzleImagenViewer
       actividad={estado}
-      onResponse={config.onResponse ?? config.onComplete}
+      onResponse={config.onResponse}
     />
   );
 }

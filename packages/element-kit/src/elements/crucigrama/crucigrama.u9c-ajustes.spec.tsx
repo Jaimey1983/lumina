@@ -94,15 +94,6 @@ describe("Crucigrama — `ajustes` (U9c.3)", () => {
     expect(onResponse.mock.calls).toEqual([[{ celdas: { "0-0": "S" } }]]);
   });
 
-  it("acepta el alias `onComplete` y prefiere `onResponse`", () => {
-    const onResponse = vi.fn();
-    const onComplete = vi.fn();
-    render(<Viewer estado={base()} config={{ onResponse, onComplete }} />);
-    rellenar(["S", "O", "L", "A", "L"]);
-    fireEvent.click(verificar());
-    expect(onResponse).toHaveBeenCalledTimes(1);
-    expect(onComplete).not.toHaveBeenCalled();
-  });
 });
 
 describe("Crucigrama — teclado y anuncios (U9c.3, DU8)", () => {

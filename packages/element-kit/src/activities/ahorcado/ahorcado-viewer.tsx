@@ -6,7 +6,7 @@
  * El shell aporta el cronómetro, el progreso de la sesión y la pantalla de resultados; el
  * estado de la partida sigue siendo `procesarLetra` (puro). Lo que sale hacia `@lumina/scoring`
  * NO cambió: UNA respuesta `{ letrasAdivinadas, letrasFalladas }` al terminar. Sale por
- * `onResponse` (canal unificado, DU2); `onComplete` se acepta solo como alias transitorio.
+ * `onResponse` (canal unificado, DU2).
  * Se juega con el teclado de pantalla o con el físico, y cada jugada se anuncia (DU8).
  *
  * Los intentos (`configuracion.maxIntentos`) siguen siendo el contador propio del juego: el
@@ -41,8 +41,6 @@ export interface AhorcadoViewerProps {
   editorSyncKey?: string
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 type EstadoJuego = ReturnType<typeof crearEstadoInicialAhorcado>
@@ -216,7 +214,7 @@ function Cuerpo({ actividad, estado, setEstado, ctx, responder, alEvaluar }: Cue
   )
 }
 
-export function AhorcadoViewer({ actividad, editorSyncKey = '', onResponse, onComplete }: AhorcadoViewerProps) {
+export function AhorcadoViewer({ actividad, editorSyncKey = '', onResponse }: AhorcadoViewerProps) {
   const fingerprint = ahorcadoFingerprint(actividad)
   const { configuracion } = useMemo(() => normalizarAhorcado(actividad), [fingerprint])
   const { maxIntentos } = configuracion
@@ -229,10 +227,10 @@ export function AhorcadoViewer({ actividad, editorSyncKey = '', onResponse, onCo
   // Cada partida nueva (otro contenido, otro slide o «Reintentar») remonta el cuerpo y el shell.
   const [partida, setPartida] = useState(0)
 
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   useEffect(() => {

@@ -26,7 +26,7 @@ export function PuzzlePalabrasViewer({
   return (
     <LegacyPuzzlePalabrasViewer
       actividad={estado}
-      onResponse={config.onResponse ?? config.onComplete}
+      onResponse={config.onResponse}
     />
   );
 }

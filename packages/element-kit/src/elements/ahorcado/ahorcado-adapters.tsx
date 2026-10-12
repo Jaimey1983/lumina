@@ -23,7 +23,7 @@ export function AhorcadoViewer({
   config,
 }: ElementViewerProps<AhorcadoEstado, AhorcadoConfig>) {
   return (
-    <LegacyAhorcadoViewer actividad={estado} onResponse={config.onResponse ?? config.onComplete} />
+    <LegacyAhorcadoViewer actividad={estado} onResponse={config.onResponse} />
   );
 }
 

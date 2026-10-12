@@ -101,12 +101,15 @@ describe("Propiedades de Verdadero/Falso", () => {
 });
 
 describe("definiciones", () => {
-  it("declaran presets y `apariencia.color`; el resto de las clásicas no cambió", () => {
+  it("declaran presets y `apariencia.color`", () => {
     for (const tipo of ["memoria", "verdadero_falso"]) {
       const d = def(tipo);
       expect(d.presets!.map((p) => p.id), tipo).toEqual(["escolar", "examen", "arcade", "minimal", "pizarra"]);
       expect(d.apariencia, tipo).toEqual({ color: true, tipografia: false, animacion: false });
     }
-    expect(def("quiz_multiple").presets).toBeUndefined();
+    // Quiz y Video interactivo (U9d) también tienen estilos: ya no es cierto que las clásicas no cambiaron.
+    for (const tipo of ["quiz_multiple", "video_interactivo"]) {
+      expect(def(tipo).presets!.map((p) => p.id), tipo).toEqual(["escolar", "examen", "arcade", "minimal", "pizarra"]);
+    }
   });
 });

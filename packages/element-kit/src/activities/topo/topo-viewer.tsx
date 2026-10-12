@@ -7,7 +7,7 @@
  * juego (topos que asoman, golpear, avanzar de pregunta). Lo que sale hacia `@lumina/scoring` NO
  * cambió: UNA respuesta `{ puntosObtenidos, puntosMaximos }` al terminar (por completar, por
  * quedarse sin vidas o por agotar el tiempo); sale por `onResponse` (canal unificado, DU2) y
- * `onComplete` se acepta solo como alias transitorio.
+ *
  *
  * Vidas y tiempo siguen en `configuracion.vidas` / `configuracion.tiempoLimite`
  * (`normalizarAjustes` los deriva). Un golpe equivocado cuesta una vida y, si los topos se
@@ -42,8 +42,6 @@ export interface TopoViewerProps {
   actividad: TopoActivity
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void
 }
 
 const MS_AVANCE = 400
@@ -255,7 +253,7 @@ function Cuerpo({ actividad, ctx, responder, alEvaluar }: CuerpoProps) {
   )
 }
 
-export function TopoViewer({ actividad, onResponse, onComplete }: TopoViewerProps) {
+export function TopoViewer({ actividad, onResponse }: TopoViewerProps) {
   const fingerprint = topoFingerprint(actividad)
   // El contenido normalizado (vidas y tiempo con su valor por defecto) alimenta también los ajustes.
   const normalizada = useMemo(
@@ -268,10 +266,10 @@ export function TopoViewer({ actividad, onResponse, onComplete }: TopoViewerProp
   const ajustesShell = useMemo(() => ({ ...ajustes, intentos: 1 }), [ajustes])
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null)
 
-  const salida = useRef(onResponse ?? onComplete)
+  const salida = useRef(onResponse)
   useEffect(() => {
-    salida.current = onResponse ?? onComplete
-  }, [onResponse, onComplete])
+    salida.current = onResponse
+  }, [onResponse])
   const responder = useCallback((r: unknown) => salida.current?.(r), [])
 
   return (

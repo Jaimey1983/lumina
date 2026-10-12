@@ -265,7 +265,6 @@ function RenderActivity({
           estado={act}
           config={{
             onResponse,
-            onComplete: onResponse,
             variant,
             editorSyncKey: syncKey,
             isSelected,
@@ -280,7 +279,6 @@ function RenderActivity({
         estado={act}
         config={{
           onResponse,
-          onComplete: onResponse,
           variant,
           editorSyncKey: syncKey,
           liveSocket,

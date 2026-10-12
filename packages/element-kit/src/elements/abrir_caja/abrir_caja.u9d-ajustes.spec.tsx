@@ -39,7 +39,7 @@ afterEach(() => {
 
 const base = (parche: Partial<AbrirCajaActivity> = {}): AbrirCajaActivity => ({
   tipo: "abrir_caja",
-  configuracion: { filas: 1, columnas: 2, colorCaja: "#2563EB", animacionApertura: "fade" },
+  configuracion: { filas: 2, columnas: 2, colorCaja: "#2563EB", animacionApertura: "fade" },
   cajas: [
     { id: "c1", etiqueta: "Caja 1", contenido: { texto: "Premio", esCorrecta: true } },
     { id: "c2", etiqueta: "Caja 2", contenido: { texto: "Nada", esCorrecta: false } },

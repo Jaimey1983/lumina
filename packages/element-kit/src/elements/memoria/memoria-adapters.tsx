@@ -26,7 +26,7 @@ export function MemoriaViewer({
   return (
     <LegacyMemoriaViewer
       actividad={estado}
-      onResponse={config.onResponse ?? config.onComplete}
+      onResponse={config.onResponse}
     />
   );
 }

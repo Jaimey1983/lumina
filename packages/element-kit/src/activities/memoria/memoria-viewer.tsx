@@ -7,7 +7,7 @@
  * reducer puro (`memoria-board.ts`). Lo que sale hacia `@lumina/scoring` NO cambió: un
  * borrador (`wrapActivityDraftResponse`) cada vez que aparece un par nuevo y la respuesta
  * final `{ paresEncontrados }` al completar. Sale por `onResponse` (canal unificado, DU2);
- * `onComplete` se acepta solo como alias transitorio.
+ *
  */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { MemoriaActivity } from '@lumina/types/slide';
@@ -44,8 +44,6 @@ export interface MemoriaViewerProps {
   actividad: MemoriaActivity;
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void;
 }
 
 interface TableroProps {
@@ -172,7 +170,7 @@ function Tablero({ actividad, tablero, dispatch, ctx, responder, alEvaluar }: Ta
   );
 }
 
-export function MemoriaViewer({ actividad, onResponse, onComplete }: MemoriaViewerProps) {
+export function MemoriaViewer({ actividad, onResponse }: MemoriaViewerProps) {
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
   const barajar = ajustes.barajar;
   const semilla = ajustes.semilla;
@@ -183,10 +181,10 @@ export function MemoriaViewer({ actividad, onResponse, onComplete }: MemoriaView
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null);
 
   // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
-  const salida = useRef(onResponse ?? onComplete);
+  const salida = useRef(onResponse);
   useEffect(() => {
-    salida.current = onResponse ?? onComplete;
-  }, [onResponse, onComplete]);
+    salida.current = onResponse;
+  }, [onResponse]);
   const responder = useCallback((r: unknown) => salida.current?.(r), []);
 
   const alReintentar = useCallback(() => {

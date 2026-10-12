@@ -5,8 +5,7 @@
  *
  * El shell aporta fases, cronómetro, progreso y la pantalla de resultados; el viewer solo
  * lleva dónde está cada pieza. Lo que sale hacia `@lumina/scoring` NO cambió: una respuesta
- * `{ ubicaciones }` al verificar. Sale por `onResponse` (canal unificado, DU2); `onComplete`
- * se acepta solo como alias transitorio. Se puede arrastrar (ratón, táctil o teclado) o usar
+ * `{ ubicaciones }` al verificar. Sale por `onResponse` (canal unificado, DU2). Se puede arrastrar (ratón, táctil o teclado) o usar
  * «tocar y colocar» (DU8).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
@@ -122,8 +121,6 @@ export interface ClasificarViewerProps {
   actividad: ClasificarActivity;
   /** Canal de respuesta unificado (DU2). */
   onResponse?: (response: unknown) => void;
-  /** @deprecated Alias transitorio de `onResponse`; se retira al terminar U9d. */
-  onComplete?: (response: unknown) => void;
 }
 
 interface CuerpoProps {
@@ -261,7 +258,7 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
   );
 }
 
-export function ClasificarViewer({ actividad, onResponse, onComplete }: ClasificarViewerProps) {
+export function ClasificarViewer({ actividad, onResponse }: ClasificarViewerProps) {
   const { items } = actividad;
   const ajustes = useMemo(() => normalizarAjustes(actividad), [actividad]);
   const semilla = ajustes.semilla;
@@ -275,10 +272,10 @@ export function ClasificarViewer({ actividad, onResponse, onComplete }: Clasific
   const [evaluation, setEvaluation] = useState<ActivityEvaluationResult | null>(null);
 
   // El canal de salida siempre apunta al callback vigente, sin re-disparar efectos.
-  const salida = useRef(onResponse ?? onComplete);
+  const salida = useRef(onResponse);
   useEffect(() => {
-    salida.current = onResponse ?? onComplete;
-  }, [onResponse, onComplete]);
+    salida.current = onResponse;
+  }, [onResponse]);
   const responder = useCallback((r: unknown) => salida.current?.(r), []);
 
   const alReintentar = useCallback(() => {
