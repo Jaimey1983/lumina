@@ -118,12 +118,16 @@ describe("Ahorcado — paridad con el comportamiento anterior (U9c.1)", () => {
     unmount();
     render(<Viewer estado={ahorcado({ palabra: "niño", maxIntentos: 1 })} config={{}} />);
     expect(screen.getByText("4/4 intentos")).toBeTruthy();
-    // HALLAZGO (no se cambia): la normalización NFD le quita la tilde a la Ñ, así que «niño» se
-    // juega como «NINO» y la tecla Ñ cuenta como fallo. Está documentado en la ficha de U9c.1.
+    // U10.3 (decisión del dueño, 2026-10-12): la Ñ es una letra propia. Antes la normalización NFD le
+    // quitaba la tilde y «niño» se jugaba como «NINO»; ahora son 4 letras y la tecla Ñ ACIERTA.
     expect(huecos()).toBe(4);
     jugar("Ñ");
-    expect(huecos()).toBe(4);
-    expect(screen.getByText("3/4 intentos")).toBeTruthy();
+    expect(huecos()).toBe(3); // la Ñ acierta: queda un hueco menos
+    expect(screen.getByText("4/4 intentos")).toBeTruthy();
+    jugar("N");
+    jugar("I");
+    jugar("O");
+    expect(screen.getByText("4/4 intentos")).toBeTruthy(); // niño completa sin un solo fallo
   });
 
   it("cambiar el contenido de la actividad reinicia la partida; por el componente también con `editorSyncKey`", () => {

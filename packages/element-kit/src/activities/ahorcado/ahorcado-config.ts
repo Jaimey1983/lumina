@@ -1,4 +1,5 @@
 import type { AhorcadoActivity, AhorcadoConfig, AhorcadoState } from '@lumina/types/slide';
+import { normalizarPalabra } from '../_shared/palabras.js';
 
 export const AHORCADO_MIN_INTENTOS = 4;
 export const AHORCADO_MAX_INTENTOS = 10;
@@ -10,13 +11,7 @@ export const TECLADO_AHORCADO = [
 ] as const;
 
 export function normalizarPalabraAhorcado(raw: string): string {
-  return raw
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-    .replace(/[^A-ZÑ\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return normalizarPalabra(raw);
 }
 
 export function esPalabraAhorcadoValida(palabra: string): boolean {
