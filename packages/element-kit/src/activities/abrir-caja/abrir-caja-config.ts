@@ -1,4 +1,5 @@
 import type { AbrirCajaActivity, AbrirCajaCaja } from '@lumina/types/slide'
+import { hayJuicioDefinido } from '../_shared/opciones.js'
 
 export const ABRIR_CAJA_MAX_CAJAS = 12
 export const ABRIR_CAJA_MIN_CAJAS = 2
@@ -112,7 +113,7 @@ export function abrirCajaFingerprint(act: AbrirCajaActivity): string {
 // Determina si la actividad es evaluable:
 // lo es si AL MENOS UNA caja tiene esCorrecta !== undefined
 export function esEvaluable(cajas: { contenido: { esCorrecta?: boolean } }[]): boolean {
-  return cajas.some(c => c.contenido.esCorrecta !== undefined)
+  return hayJuicioDefinido(cajas.map((c) => c.contenido))
 }
 
 /** Tamaño cuadrado de cada caja para que el grid quepa en el espacio disponible. */

@@ -1,6 +1,7 @@
 import type { QuizLayoutVariant, QuizMultiple, QuizOption, QuizPregunta } from '@lumina/types/slide';
 
 import { normalizarQuizMultiple } from '../quiz-multiple-normalize.js';
+import { seleccionEsCorrecta } from '../../_shared/opciones.js';
 
 export type QuizAnswersMap = Record<string, string[]>;
 
@@ -25,11 +26,7 @@ export function isPreguntaSelectionCorrect(
   pregunta: QuizPregunta,
   selectedIds: string[],
 ): boolean {
-  const correctIds = getCorrectIds(pregunta);
-  if (correctIds.length === 0) return false;
-  if (selectedIds.length !== correctIds.length) return false;
-  const set = new Set(selectedIds);
-  return correctIds.every((id) => set.has(id));
+  return seleccionEsCorrecta(getCorrectIds(pregunta), selectedIds);
 }
 
 export function buildQuizAnswersPayload(answers: QuizAnswersMap): { answers: QuizAnswersMap } {

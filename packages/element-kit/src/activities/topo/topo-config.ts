@@ -1,5 +1,6 @@
 import type { TopoActivity, TopoPregunta } from '@lumina/types/slide'
 import { barajar } from '../_shared/barajar.js'
+import { normalizarOpcionesTexto } from '../_shared/opciones.js'
 
 export const TOPO_MAX_PREGUNTAS = 30
 export const TOPO_MIN_PREGUNTAS = 1
@@ -34,21 +35,7 @@ function clampColumnas(value: unknown): 3 | 4 {
 }
 
 function normalizarOpciones(opciones: TopoPregunta['opciones']): TopoPregunta['opciones'] {
-  const limpias = opciones
-    .map((op) => ({
-      texto: typeof op.texto === 'string' ? op.texto.trim() : '',
-      correcta: op.correcta === true,
-    }))
-    .filter((op) => op.texto.length > 0)
-
-  if (limpias.length >= TOPO_MIN_OPCIONES) {
-    if (!limpias.some((op) => op.correcta)) {
-      return limpias.map((op, index) => ({ ...op, correcta: index === 0 }))
-    }
-    return limpias
-  }
-
-  return crearOpcionesTopoDefault()
+  return normalizarOpcionesTexto(opciones, TOPO_MIN_OPCIONES, crearOpcionesTopoDefault)
 }
 
 export function normalizarTopo(act: TopoActivity): TopoActivity {

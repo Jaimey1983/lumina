@@ -1,5 +1,6 @@
 import type { GlobosActivity, GlobosPregunta } from '@lumina/types/slide'
 import { barajar } from '../_shared/barajar.js'
+import { normalizarOpcionesTexto } from '../_shared/opciones.js'
 
 export const GLOBOS_MAX_PREGUNTAS = 30
 export const GLOBOS_MIN_PREGUNTAS = 1
@@ -39,21 +40,7 @@ export function crearOpcionesGlobosDefault(): GlobosPregunta['opciones'] {
 function normalizarOpciones(
   opciones: GlobosPregunta['opciones'],
 ): GlobosPregunta['opciones'] {
-  const limpias = opciones
-    .map((op) => ({
-      texto: typeof op.texto === 'string' ? op.texto.trim() : '',
-      correcta: op.correcta === true,
-    }))
-    .filter((op) => op.texto.length > 0)
-
-  if (limpias.length >= GLOBOS_MIN_OPCIONES) {
-    if (!limpias.some((op) => op.correcta)) {
-      return limpias.map((op, index) => ({ ...op, correcta: index === 0 }))
-    }
-    return limpias
-  }
-
-  return crearOpcionesGlobosDefault()
+  return normalizarOpcionesTexto(opciones, GLOBOS_MIN_OPCIONES, crearOpcionesGlobosDefault)
 }
 
 /** Repara actividades guardadas con pocas opciones o textos vacíos. */

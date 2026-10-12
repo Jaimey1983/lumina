@@ -15,6 +15,7 @@ import type { HistoriaRamificadaActivity } from '@lumina/types/slide'
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring'
 
 import { useActivityFeedback } from '../_shared/activity-feedback.js'
+import { hayJuicioDefinido } from '../_shared/opciones.js'
 import { normalizarAjustes } from '../_shared/activity-settings.js'
 import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js'
 import { COLORES_NODO, COLOR_NODO_DEFAULT, esNodoFinal } from './historia-ramificada-config.js'
@@ -41,7 +42,7 @@ const hayEvaluacion = (nodos: HistoriaRamificadaActivity['nodos']) =>
     (n) =>
       n.tipo === 'final_bueno' ||
       n.tipo === 'final_malo' ||
-      (n.tipo === 'pregunta' && n.opciones?.some((o) => o.esCorrecta !== undefined)),
+      (n.tipo === 'pregunta' && hayJuicioDefinido(n.opciones ?? [])),
   )
 
 interface CuerpoProps {
