@@ -78,9 +78,7 @@ import {
 } from '@/lib/slide-background';
 import { BackgroundImageLayer } from './background-image-layer';
 
-import { TorneoActivityEditor } from './activities/torneo-activity';
 import type { Socket } from 'socket.io-client';
-import { TorneoViewer } from '@/components/viewers/torneo-viewer';
 import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
 import {
   EscapeRoomViewer,
@@ -288,33 +286,6 @@ function RenderActivity({
           viewerClassId,
           blockId,
         }}
-      />
-    );
-  }
-
-  if (act.tipo === 'torneo') {
-    if (modo === 'editor') {
-      return (
-        <TorneoActivityEditor
-          editorSyncKey={syncKey}
-          activity={act}
-          canvasLayout={!!activityCanvasLayout}
-          isSelected={isSelected}
-          onChange={(a) => onActivityChange?.(blockId, a)}
-          onRemove={onRemoveBlock ? () => onRemoveBlock(blockId) : undefined}
-        />
-      );
-    }
-    return (
-      <TorneoViewer
-        activity={act}
-        variant={variant}
-        studentId={viewerStudentId ?? ''}
-        studentName={viewerStudentName ?? ''}
-        classId={viewerClassId ?? ''}
-        editorSyncKey={syncKey}
-        liveSocket={torneoSocket ?? liveSocket}
-        onAnswer={(payload) => onResponse?.(payload)}
       />
     );
   }

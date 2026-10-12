@@ -257,6 +257,24 @@ export {
 } from "./elements/puzzle_palabras/index.js";
 
 export {
+  torneoDefinition,
+  registrarTorneo,
+  TORNEO_TIPO,
+  TorneoEditor,
+  TorneoViewer,
+  TorneoPropiedades,
+  type TorneoConfig,
+  type TorneoEstado,
+  type TorneoDefinition,
+} from "./elements/torneo/index.js";
+export {
+  createDefaultTorneo,
+  normalizeTorneo,
+  type TorneoAnswerPayload,
+  type TorneoRankingRow,
+} from "./activities/torneo/index.js";
+
+export {
   globosDefinition,
   registrarGlobos,
   evaluarGlobos,
@@ -451,6 +469,7 @@ import { progresoDefinition } from "./elements/progreso/progreso-definition.js";
 import { clasificarDefinition } from "./elements/clasificar/clasificar-definition.js";
 import { crucigramaDefinition } from "./elements/crucigrama/crucigrama-definition.js";
 import { globosDefinition } from "./elements/globos/globos-definition.js";
+import { torneoDefinition } from "./elements/torneo/torneo-definition.js";
 import { historiaRamificadaDefinition } from "./elements/historia_ramificada/historia_ramificada-definition.js";
 import { memoriaDefinition } from "./elements/memoria/memoria-definition.js";
 import { puzzleImagenDefinition } from "./elements/puzzle_imagen/puzzle_imagen-definition.js";
@@ -499,6 +518,7 @@ export type ElementCatalog = {
   ahorcado: typeof ahorcadoDefinition;
   puzzle_palabras: typeof puzzlePalabrasDefinition;
   globos: typeof globosDefinition;
+  torneo: typeof torneoDefinition;
   topo: typeof topoDefinition;
   historia_ramificada: typeof historiaRamificadaDefinition;
   quiz_multiple: typeof quizMultipleDefinition;
@@ -549,6 +569,7 @@ elementRegistry.registrar(abrirCajaDefinition);
 elementRegistry.registrar(ahorcadoDefinition);
 elementRegistry.registrar(puzzlePalabrasDefinition);
 elementRegistry.registrar(globosDefinition);
+elementRegistry.registrar(torneoDefinition);
 elementRegistry.registrar(topoDefinition);
 elementRegistry.registrar(quizMultipleDefinition);
 elementRegistry.registrar(verdaderoFalsoDefinition);

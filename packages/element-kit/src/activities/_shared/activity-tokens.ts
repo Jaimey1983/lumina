@@ -79,7 +79,8 @@ export type ActivityTokenNombre =
  */
 export function laVar(nombre: ActivityTokenNombre): string {
   const suave = /^color-(.+)-suave$/.exec(nombre);
-  if (suave) {
+  // `color-texto-suave` NO es un tinte de estado: es un neutro con nombre propio.
+  if (suave && suave[1] in ESTADOS) {
     const estado = suave[1] as ActivityEstado;
     const pleno = ESTADOS[estado].fallback;
     return `var(--la-${nombre}, color-mix(in srgb, ${pleno} ${ACTIVITY_SUAVE_PORCENTAJE[estado]}%, transparent))`;

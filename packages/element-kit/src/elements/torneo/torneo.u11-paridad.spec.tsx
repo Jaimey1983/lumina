@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck -- transitorio: se corre con la config del kit (jsdom + RTL); el frontend no los tiene. Se mueve al kit en la migración.
 /**
- * U11.1 — caracterización del viewer de `torneo` ANTES de migrarlo al kit (Regla 7).
+ * U11.1 — paridad del viewer de `torneo` contra su comportamiento ANTERIOR a migrarlo al kit (Regla 7).
  *
- * Fija lo que el alumno VE y lo que el viewer EMITE hoy: modo autónomo (sin socket: puntos base +
+ * Estas 24 pruebas se escribieron y pasaron contra el viewer viejo del frontend (commit de
+ * caracterización) y aquí solo cambió el import: es el contrato con el alumno y con el docente.
+ * Fijan lo que el alumno VE y lo que el viewer EMITE: modo autónomo (sin socket: puntos base +
  * bonus de velocidad, nota final 1–5, resumen) y modo en vivo (eventos `torneo:*` con socket falso).
- * Al migrar, este archivo se mueve al kit y solo cambia el import del viewer: las aserciones son
- * las mismas (el código viejo y el nuevo dan idénticas salidas).
  *
  * Relojes falsos con `toFake` explícito, incluido `performance` (el viewer mide `responseMs` con él).
  */
@@ -18,7 +16,11 @@ import type { TorneoActivity } from '@lumina/types/slide';
 const sonido = vi.hoisted(() => vi.fn());
 vi.mock('@lumina/editor-shared/use-sound', () => ({ useSound: () => ({ play: sonido }) }));
 
-import { TorneoViewer, type TorneoAnswerPayload } from './torneo-viewer';
+import { TorneoViewer, type TorneoAnswerPayload } from "../../activities/torneo/torneo-viewer.js";
+import { torneoDefinition } from './torneo-definition.js';
+import { TorneoViewer as TorneoViewerElemento, TorneoEditor, TorneoPropiedades } from './torneo-adapters.js';
+import { createDefaultTorneo, normalizeTorneo } from '../../activities/torneo/index.js';
+
 
 beforeEach(() => {
   sonido.mockClear();
@@ -424,5 +426,91 @@ describe('Torneo — modo en vivo (socket falso)', () => {
     unmount();
     expect(offSpy).toHaveBeenCalledTimes(4);
     expect(escuchas()).toBe(0);
+  });
+});
+
+// ─── Contrato del elemento (U11.1) ───────────────────────────────────────────────────────────
+
+describe('Torneo — ElementDefinition', () => {
+  it('se registra una sola vez con su catálogo y sin puntuación (en scoring es `exclude`)', async () => {
+    const { elementRegistry } = await import('../../index.js');
+    const def = elementRegistry.obtener('torneo');
+    expect(def).toBe(torneoDefinition);
+    expect('puntuacion' in torneoDefinition).toBe(false);
+    expect(torneoDefinition.catalogo).toMatchObject({ nombre: 'Torneo de preguntas', familia: 'actividad' });
+    expect(elementRegistry.listar().filter((d) => (d as { tipo: string }).tipo === 'torneo')).toHaveLength(1);
+  });
+
+  it('crearPorDefecto da las preguntas de ejemplo y normalizar es idempotente', () => {
+    const a = createDefaultTorneo();
+    expect(a.tipo).toBe('torneo');
+    expect(a.preguntas.length).toBeGreaterThan(0);
+    expect(a.puntosBase).toBeGreaterThan(0);
+    expect(normalizeTorneo(null)).toEqual(a);
+    const n = normalizeTorneo(a);
+    expect(normalizeTorneo(n)).toEqual(n);
+  });
+
+  it('el Viewer del contrato usa el socket del torneo y, si falta, el de la clase; emite por onResponse', () => {
+    const del = crearSocket();
+    const clase = crearSocket();
+    const onResponse = vi.fn();
+    render(
+      <TorneoViewerElemento
+        estado={actividad()}
+        config={{
+          onResponse,
+          viewerStudentId: 's2',
+          viewerStudentName: 'Beto',
+          viewerClassId: 'cls',
+          torneoSocket: del.socket,
+          liveSocket: clase.socket,
+        }}
+      />,
+    );
+    expect(del.escuchas()).toBe(4);
+    expect(clase.escuchas()).toBe(0);
+    del.disparar('torneo:question', { questionIndex: 0 });
+    fireEvent.click(screen.getByText('4'));
+    expect(onResponse).toHaveBeenCalledWith({
+      questionIndex: 0,
+      answer: '4',
+      responseMs: 0,
+      torneoId: null,
+      correctAnswer: '4',
+    });
+  });
+
+  it('sin torneoSocket cae a liveSocket; sin ningún socket es autónomo', () => {
+    const clase = crearSocket();
+    const { unmount } = render(
+      <TorneoViewerElemento estado={actividad()} config={{ liveSocket: clase.socket }} />,
+    );
+    expect(clase.escuchas()).toBe(4);
+    unmount();
+    render(<TorneoViewerElemento estado={actividad()} config={{}} />);
+    expect(screen.getByRole('button', { name: '¡Comenzar!' })).toBeTruthy();
+  });
+
+  it('Editor y Propiedades editan las preguntas y avisan con onChange', () => {
+    const onChange = vi.fn();
+    const { unmount } = render(
+      <TorneoEditor estado={actividad()} config={{ editorSyncKey: 'k' }} onChange={onChange} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Agregar pregunta/ }));
+    expect(onChange).toHaveBeenCalled();
+    expect(onChange.mock.calls.at(-1)![0].preguntas).toHaveLength(3);
+    unmount();
+
+    const onChange2 = vi.fn();
+    render(
+      <TorneoPropiedades
+        estado={actividad()}
+        config={{ editorSyncKey: 'k' }}
+        onChange={onChange2}
+        onConfigChange={() => {}}
+      />,
+    );
+    expect(screen.getByText('Pregunta 2')).toBeTruthy();
   });
 });

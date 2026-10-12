@@ -96,7 +96,11 @@ const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly 
   "topo/topo.module.css": {
     hex: 5,
     motivo: "tierra del hueco (dos marrones) y texto blanco sobre ella: colores de la ilustración, no de interfaz ni de tema",
+  },  "torneo/torneo-viewer.tsx": {
+    hex: 8,
+    motivo: "paleta «Kahoot» de las cuatro opciones A–D (fondo y borde): identidad del juego, no del tema",
   },
+
 };
 
 const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-zA-Z_-])/g;
@@ -163,6 +167,8 @@ describe("tokens --la-* (U1)", () => {
   it("`laVar` arma var(--la-x, fallback)", () => {
     expect(laVar("color-correcto")).toBe("var(--la-color-correcto, #16a34a)");
     expect(laVar("radio-md")).toBe("var(--la-radio-md, 0.5rem)");
+    // `color-texto-suave` es un neutro, no el tinte suave de un estado «texto».
+    expect(laVar("color-texto-suave")).toBe("var(--la-color-texto-suave, #6b7280)");
     expect(laVar("color-pista-suave")).toContain("var(--la-color-pista-suave, color-mix(");
   });
 

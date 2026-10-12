@@ -172,6 +172,12 @@ export const CATALOGO_ELEMENTOS = {
     familia: "actividad",
   },
 
+  torneo: {
+    nombre: "Torneo de preguntas",
+    descripcion: "Preguntas de opción múltiple con ranking, en vivo o a tu ritmo",
+    familia: "actividad",
+  },
+
   // ─── Actividades clásicas ──────────────────────────────────────────────────
   quiz_multiple: { nombre: "Opción múltiple", familia: "actividad" },
   verdadero_falso: { nombre: "Verdadero o falso", familia: "actividad" },

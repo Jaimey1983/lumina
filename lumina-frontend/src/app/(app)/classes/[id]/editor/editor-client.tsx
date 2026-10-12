@@ -126,11 +126,11 @@ import {
   wordCloudTemplate,
 } from '@lumina/element-kit/activities/_classic/activity-templates';
 import { createDefaultGlobos } from '@lumina/element-kit/activities/globos/globos-defaults';
+import { createDefaultTorneo } from '@lumina/element-kit/activities/torneo/torneo-defaults';
 import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
 import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
 import {
-  BLOCK_FALLBACKS,
   parseClassModoEntrega,
   type Activity,
   type Block,
@@ -271,24 +271,9 @@ import { NUDGE_STEP_PX, NUDGE_STEP_SHIFT_PX } from '@/hooks/use-block-drag';
 
 // Las 10 plantillas de la familia clásica viven en `@lumina/element-kit/activities/_classic/activity-templates`
 // (extraídas en E2.5 para que `@lumina/element-kit` las consuma como
-// `crearPorDefecto`). `torneo` y `escape_room` siguen acá — no son parte de E2.5.
+// `crearPorDefecto`). `escape_room` sigue acá (U11.4); `torneo` ya vive en el kit (U11.1).
 
 const EMPTY_CLASS_VARIABLES: readonly VariableDef[] = [];
-
-function torneoTemplate(): Activity {
-  const fb = BLOCK_FALLBACKS.torneo;
-  return {
-    tipo: 'torneo',
-    preguntas: fb.preguntas.map((p) => ({
-      enunciado: p.enunciado,
-      opciones: [...p.opciones],
-      correcta: p.correcta,
-      tiempoSegundos: p.tiempoSegundos,
-    })),
-    puntosBase: fb.puntosBase,
-    bonusVelocidad: fb.bonusVelocidad,
-  };
-}
 
 function escapeRoomTemplate(): Activity {
   return normalizeEscapeRoomActivity(undefined);
@@ -2017,7 +2002,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         'video-interactive': videoInteractiveTemplate,
         'live-poll':        livePollTemplate,
         'word-cloud':       wordCloudTemplate,
-        torneo:             torneoTemplate,
+        torneo:             createDefaultTorneo,
         escape_room:        escapeRoomTemplate,
         clasificar:         createDefaultClasificar,
         memoria:            createDefaultMemoria,

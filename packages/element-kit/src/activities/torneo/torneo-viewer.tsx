@@ -1,12 +1,21 @@
 'use client';
 
+/**
+ * Viewer de `torneo` (U11.1, movido desde `lumina-frontend`). La lógica (modo autónomo con puntos
+ * base + bonus por velocidad, y modo en vivo por los eventos `torneo:*`) es la de siempre; lo que
+ * cambió es de dónde sale el color (tokens `--la-*`, ver `torneo.module.css`) y el import.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { Trophy } from 'lucide-react';
 
 import { useSound } from '@lumina/editor-shared/use-sound';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 import type { TorneoActivity } from '@lumina/types/slide';
+
+import { laVar } from '../_shared/activity-tokens.js';
+import tokens from '../_shared/activity-tokens.module.css';
+import styles from './torneo.module.css';
 
 export interface TorneoRankingRow {
   studentId: string;
@@ -38,6 +47,7 @@ export interface TorneoViewerProps {
   editorSyncKey?: string;
 }
 
+/** Paleta «Kahoot» de las cuatro opciones: identidad del juego, no del tema (ver `EXENTOS_DE_DATO`). */
 const KAHOOT_COLORS = [
   { label: 'A', bg: '#1368CE', border: '#0d4f9e' },
   { label: 'B', bg: '#26890C', border: '#1a6208' },
@@ -399,7 +409,11 @@ export function TorneoViewer({
 
   const progressRatio = timeTotal > 0 ? Math.min(1, Math.max(0, timeLeft / timeTotal)) : 0;
   const barColor =
-    progressRatio > 0.5 ? '#22c55e' : progressRatio > 0.25 ? '#fbbf24' : '#ef4444';
+    progressRatio > 0.5
+      ? laVar('color-correcto')
+      : progressRatio > 0.25
+        ? laVar('color-pista')
+        : laVar('color-incorrecto');
 
   function handlePick(optionText: string) {
     if (phase !== 'question' || answered || !optionText.trim()) return;
@@ -452,11 +466,15 @@ export function TorneoViewer({
   }, [myRankRow?.position, ranking.length]);
 
   const shellClass = cn(
+    tokens.tokens,
+    styles.raiz,
     'flex h-full min-h-0 w-full max-w-full flex-col rounded-xl border p-4 shadow-lumina-sm sm:p-6',
-    isDark ? 'border-white/20 bg-white/10' : 'border-[#e5e7eb] bg-white/95',
   );
 
-  const rootProps = { 'data-lumina-class-id': classId || undefined };
+  const rootProps = {
+    'data-lumina-class-id': classId || undefined,
+    'data-variante': isDark ? 'dark' : 'light',
+  };
 
   // ─── FINISHED ──────────────────────────────────────────────────────────────
 
@@ -469,7 +487,7 @@ export function TorneoViewer({
           <div className="mb-4 text-center">
             <Trophy className="mx-auto size-14 text-amber-500 drop-shadow-md" aria-hidden />
             <h2
-              className={cn('mt-2 text-xl font-bold', isDark ? 'text-white' : 'text-[#111827]')}
+              className={cn('mt-2 text-xl font-bold', styles.titulo)}
             >
               ¡Torneo completado!
             </h2>
@@ -479,20 +497,18 @@ export function TorneoViewer({
             <div
               className={cn(
                 'flex flex-col items-center rounded-2xl border px-8 py-5 text-center shadow-lumina-xs',
-                isDark
-                  ? 'border-white/20 bg-white/10'
-                  : 'border-[#e5e7eb] bg-[#f9fafb]',
+                styles.tarjeta,
               )}
             >
               <span
                 className={cn(
                   'text-5xl font-extrabold tabular-nums',
-                  isDark ? 'text-white' : 'text-[#111827]',
+                  styles.titulo,
                 )}
               >
                 {correct}
                 <span
-                  className={cn('text-2xl font-bold', isDark ? 'text-white/40' : 'text-[#9ca3af]')}
+                  className={cn('text-2xl font-bold', styles.apagado)}
                 >
                   /{total}
                 </span>
@@ -500,7 +516,7 @@ export function TorneoViewer({
               <span
                 className={cn(
                   'mt-1 text-sm font-medium',
-                  isDark ? 'text-white/60' : 'text-[#6b7280]',
+                  styles.suave,
                 )}
               >
                 respuestas correctas
@@ -510,14 +526,14 @@ export function TorneoViewer({
             <p
               className={cn(
                 'text-center text-sm font-semibold leading-snug',
-                isDark ? 'text-amber-200' : 'text-[#92400e]',
+                isDark ? 'text-amber-200' : styles.motivacion,
               )}
             >
               {getAutonomoMotivational(correct, total)}
             </p>
 
             {studentName.trim() && (
-              <p className={cn('text-xs', isDark ? 'text-white/40' : 'text-[#9ca3af]')}>
+              <p className={cn('text-xs', styles.apagado)}>
                 {studentName}
               </p>
             )}
@@ -532,10 +548,10 @@ export function TorneoViewer({
       <div className={shellClass} {...rootProps}>
         <div className="mb-4 text-center">
           <Trophy className="mx-auto size-14 text-amber-500 drop-shadow-md" aria-hidden />
-          <h2 className={cn('mt-2 text-xl font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+          <h2 className={cn('mt-2 text-xl font-bold', styles.titulo)}>
             Torneo finalizado
           </h2>
-          <p className={cn('text-sm', isDark ? 'text-white/70' : 'text-[#6b7280]')}>
+          <p className={cn('text-sm', styles.suaveFuerte)}>
             {studentName.trim() || 'Tu posición'}{' '}
             {myRankRow ? (
               <>
@@ -551,7 +567,7 @@ export function TorneoViewer({
             const heights = ['h-24', 'h-36', 'h-20'];
             const orderLabels = ['2º', '1º', '3º'];
             const bg =
-              i === 1 ? 'from-amber-400 to-amber-600' : 'from-[#94a3b8] to-[#64748b]';
+              i === 1 ? 'from-amber-400 to-amber-600' : 'from-slate-400 to-slate-500';
             const name = row?.studentName?.trim() || '—';
             return (
               <div
@@ -573,7 +589,7 @@ export function TorneoViewer({
         <p
           className={cn(
             'mt-4 text-center text-sm font-medium leading-snug',
-            isDark ? 'text-amber-200' : 'text-[#92400e]',
+            isDark ? 'text-amber-200' : styles.motivacion,
           )}
         >
           {motivational}
@@ -588,7 +604,7 @@ export function TorneoViewer({
     const top5 = [...ranking].sort((a, b) => a.position - b.position).slice(0, 5);
     return (
       <div className={shellClass} {...rootProps}>
-        <h3 className={cn('text-center text-lg font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+        <h3 className={cn('text-center text-lg font-bold', styles.titulo)}>
           Ranking
         </h3>
         <ul className="mt-4 flex-1 space-y-2 overflow-auto">
@@ -602,10 +618,8 @@ export function TorneoViewer({
                   isMe
                     ? isDark
                       ? 'border-amber-400/60 bg-amber-500/20 text-white'
-                      : 'border-amber-300 bg-amber-50 text-[#111827]'
-                    : isDark
-                      ? 'border-white/15 bg-white/5 text-white/90'
-                      : 'border-[#e5e7eb] bg-[#f9fafb] text-[#111827]',
+                      : cn('border-amber-300 bg-amber-50', styles.titulo)
+                    : styles.fila,
                 )}
               >
                 <span className="tabular-nums font-bold">#{row.position}</span>
@@ -620,7 +634,7 @@ export function TorneoViewer({
         <p
           className={cn(
             'mt-4 text-center text-sm font-semibold tabular-nums',
-            isDark ? 'text-white/80' : 'text-[#2563EB]',
+            styles.cuenta,
           )}
         >
           Siguiente pregunta en {Math.max(0, rankingTick)}…
@@ -634,7 +648,7 @@ export function TorneoViewer({
   if (phase === 'question' && q) {
     return (
       <div className={shellClass} {...rootProps}>
-        <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-[#e5e7eb]/80">
+        <div className={cn('mb-3 h-2 w-full overflow-hidden rounded-full', styles.pista)}>
           <div
             className="h-full rounded-full transition-all duration-300 ease-linear"
             style={{
@@ -646,7 +660,7 @@ export function TorneoViewer({
         <p
           className={cn(
             'text-center text-xs font-medium tabular-nums',
-            isDark ? 'text-white/70' : 'text-[#6b7280]',
+            styles.suaveFuerte,
           )}
         >
           Pregunta {safeIndex + 1} de {totalQuestions} · {timeLeft}s
@@ -654,7 +668,7 @@ export function TorneoViewer({
         <p
           className={cn(
             'my-4 text-center text-lg font-bold leading-snug sm:text-xl',
-            isDark ? 'text-white' : 'text-[#111827]',
+            styles.titulo,
           )}
         >
           {q.enunciado}
@@ -686,8 +700,16 @@ export function TorneoViewer({
                   !isAutonomous && disabled && 'opacity-45',
                 )}
                 style={{
-                  backgroundColor: isCorrectOption ? '#22c55e' : isWrongPick ? '#6b7280' : style.bg,
-                  borderColor: isCorrectOption ? '#16a34a' : isWrongPick ? '#4b5563' : style.border,
+                  backgroundColor: isCorrectOption
+                    ? laVar('color-correcto')
+                    : isWrongPick
+                      ? laVar('color-texto-suave')
+                      : style.bg,
+                  borderColor: isCorrectOption
+                    ? laVar('color-correcto-texto')
+                    : isWrongPick
+                      ? laVar('color-bloqueado-texto')
+                      : style.border,
                 }}
               >
                 <span className="text-lg font-black">{style.label}</span>
@@ -739,10 +761,10 @@ export function TorneoViewer({
             aria-hidden
           />
           <div className="text-center">
-            <p className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-[#111827]')}>
+            <p className={cn('text-xl font-bold', styles.titulo)}>
               Torneo de preguntas
             </p>
-            <p className={cn('mt-1 text-sm', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+            <p className={cn('mt-1 text-sm', styles.suave)}>
               {totalQuestions} pregunta{totalQuestions !== 1 ? 's' : ''} · responde lo más rápido que puedas
             </p>
           </div>
@@ -764,10 +786,10 @@ export function TorneoViewer({
             className="size-20 sm:size-24 text-amber-500 animate-pulse"
             aria-hidden
           />
-          <p className={cn('text-center text-lg font-semibold', isDark ? 'text-white' : 'text-[#111827]')}>
+          <p className={cn('text-center text-lg font-semibold', styles.titulo)}>
             Esperando al docente…
           </p>
-          <p className={cn('max-w-xs text-center text-sm', isDark ? 'text-white/60' : 'text-[#6b7280]')}>
+          <p className={cn('max-w-xs text-center text-sm', styles.suave)}>
             Cuando el docente lance una pregunta, aparecerá aquí con tiempo limitado.
           </p>
         </div>

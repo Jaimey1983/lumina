@@ -1,30 +1,22 @@
 'use client';
 
+/**
+ * Editor de `torneo` (U11.1, movido desde `lumina-frontend`; el `TorneoEditor` con arrastrar para
+ * reordenar que vivía aparte no lo montaba nadie y se borró). Edita en el lienzo y en el panel.
+ */
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { TorneoActivity } from '@lumina/types/slide';
-import { BLOCK_FALLBACKS } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';
-import { cn } from '@/lib/utils';
+import { cn } from '@lumina/ui/lib/utils';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
 
-function normalizeTorneo(raw: TorneoActivity | null | undefined): TorneoActivity {
-  const fb = BLOCK_FALLBACKS.torneo;
-  if (!raw || raw.tipo !== 'torneo') {
-    return {
-      tipo: 'torneo',
-      preguntas: fb.preguntas.map((p) => ({
-        enunciado: p.enunciado,
-        opciones: [...p.opciones],
-        correcta: p.correcta,
-        tiempoSegundos: p.tiempoSegundos,
-      })),
-      puntosBase: fb.puntosBase,
-      bonusVelocidad: fb.bonusVelocidad,
-    };
-  }
+import { createDefaultTorneo } from './torneo-defaults.js';
+
+export function normalizeTorneo(raw: TorneoActivity | null | undefined): TorneoActivity {
+  if (!raw || raw.tipo !== 'torneo') return createDefaultTorneo();
   return {
     ...raw,
     preguntas: (raw.preguntas ?? []).map((p) => ({
@@ -107,15 +99,15 @@ export function TorneoActivityEditor({
       className={cn(
         canvasLayout
           ? 'flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden rounded-md border-0 bg-transparent shadow-none'
-          : 'flex max-h-[min(70vh,520px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-lumina-xs',
+          : 'flex max-h-[min(70vh,520px)] min-h-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background shadow-lumina-xs',
         !canvasLayout && isSelected && 'ring-1 ring-amber-400/50',
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#e5e7eb] bg-[#fffbeb] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-amber-50 px-2 py-1.5">
         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
           Torneo
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px] text-[#9ca3af]">
+        <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
           En vivo — el docente controla el ritmo por Socket.IO
         </span>
         {onRemove && (
@@ -123,7 +115,7 @@ export function TorneoActivityEditor({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 text-[#9ca3af] hover:text-red-600"
+            className="size-7 shrink-0 text-muted-foreground hover:text-red-600"
             onClick={(e) => {
               e.stopPropagation();
               flush();
@@ -176,17 +168,17 @@ export function TorneoActivityEditor({
           return (
             <div
               key={pi}
-              className="space-y-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-2"
+              className="space-y-2 rounded-lg border border-border bg-muted/40 p-2"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-[#111827]">
+                <span className="text-[11px] font-semibold text-foreground">
                   Pregunta {pi + 1}
                 </span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 text-[#9ca3af] hover:text-red-600"
+                  className="size-7 text-muted-foreground hover:text-red-600"
                   disabled={local.preguntas.length <= 1}
                   onClick={() => removePregunta(pi)}
                 >
@@ -220,7 +212,7 @@ export function TorneoActivityEditor({
               <div className="grid grid-cols-2 gap-1.5">
                 {opts.map((op, oi) => (
                   <div key={oi} className="space-y-0.5">
-                    <Label className="text-[10px] text-[#6b7280]">
+                    <Label className="text-[10px] text-muted-foreground">
                       Opción {String.fromCharCode(65 + oi)}
                     </Label>
                     <Input
@@ -239,7 +231,7 @@ export function TorneoActivityEditor({
               <div className="space-y-1">
                 <Label className="text-[11px]">Respuesta correcta</Label>
                 <select
-                  className="flex h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-xs text-[#111827]"
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground"
                   value={
                     opts.some((x) => x.trim() === preg.correcta.trim())
                       ? preg.correcta
