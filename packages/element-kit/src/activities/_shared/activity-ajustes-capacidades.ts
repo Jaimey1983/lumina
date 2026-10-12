@@ -60,6 +60,8 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // Nube de palabras (U9a.5): participación; el tope de palabras y de caracteres son datos de la
   // actividad (su editor), no ajustes comunes. Tiempo límite, sonido y estilo.
   nube_palabras: { tiempo: true, sonido: true, estilo: true },
+  // Balancear ecuación (U9a.6): un solo envío de coeficientes; tiempo, sonido y estilo.
+  balancear_ecuacion: { tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

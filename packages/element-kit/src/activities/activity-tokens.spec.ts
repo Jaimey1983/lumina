@@ -57,7 +57,7 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "ahorcado/ahorcado.module.css": 40,
   "anagrama/anagrama-properties.tsx": 1,
   "anagrama/anagrama-viewer.tsx": 1,
-  "chemistry/chemistry-activities.tsx": 4,
+  "chemistry/chemistry-activities.tsx": 2,
   "clasificar/clasificar-defaults.ts": 4,
   "clasificar/clasificar-properties.tsx": 2,
   "clasificar/clasificar-viewer.tsx": 5,

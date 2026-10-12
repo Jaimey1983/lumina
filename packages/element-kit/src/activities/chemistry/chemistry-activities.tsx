@@ -12,6 +12,11 @@ import { Label } from '@lumina/ui/label';
 import { Textarea } from '@lumina/ui/textarea';
 import { cn } from '@lumina/ui/lib/utils';
 import { useActivityEditor } from '@lumina/editor-shared/use-activity-editor';
+
+import { useActivityFeedback } from '../_shared/activity-feedback.js';
+import { normalizarAjustes } from '../_shared/activity-settings.js';
+import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import styles from './quimica.module.css';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { Minus, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -76,6 +81,82 @@ export function BalancearEcuacionEditor(props: {
   );
 }
 
+function BalancearCuerpo({
+  activity,
+  isDark,
+  ctx,
+  species,
+  coeffs,
+  sent,
+  onBump,
+  onSubmit,
+}: {
+  activity: BalancearEcuacionActivity;
+  isDark: boolean;
+  ctx: ActivityShellContext;
+  species: string[];
+  coeffs: number[];
+  sent: boolean;
+  onBump: (i: number, delta: number) => void;
+  onSubmit: () => void;
+}) {
+  const bloqueado = sent || ctx.sesion.fase !== 'jugando';
+  const sinTiempo = !sent && ctx.sesion.motivoFin === 'sin_tiempo';
+  return (
+    <div className={cn(styles.tarjeta, isDark ? styles.oscuro : styles.claro)}>
+      {activity.instruccion && <p className={styles.instruccion}>{activity.instruccion}</p>}
+      <div className={styles.ecuacion}>
+        {species.map((sp, i) => (
+          <span key={sp + i} className={styles.especie}>
+            <button
+              type="button"
+              className={styles.paso}
+              aria-label={`Quitar uno a ${sp}`}
+              disabled={bloqueado}
+              onClick={() => onBump(i, -1)}
+            >
+              <Minus className="h-3 w-3" aria-hidden />
+            </button>
+            <span className={styles.coeficiente} data-coeficiente>
+              {coeffs[i] ?? 1}
+            </span>
+            <button
+              type="button"
+              className={styles.paso}
+              aria-label={`Sumar uno a ${sp}`}
+              disabled={bloqueado}
+              onClick={() => onBump(i, 1)}
+            >
+              <Plus className="h-3 w-3" aria-hidden />
+            </button>
+            <span>{sp}</span>
+            {i < species.length - 1 && <span className={styles.mas}>+</span>}
+          </span>
+        ))}
+      </div>
+      {sent ? (
+        <p role="status" className={styles.enviada}>
+          Respuesta enviada.
+        </p>
+      ) : (
+        <button
+          type="button"
+          className={styles.enviar}
+          onClick={onSubmit}
+          disabled={bloqueado || coeffs.some((c) => c <= 0)}
+        >
+          Enviar coeficientes
+        </button>
+      )}
+      {sinTiempo && (
+        <p role="status" className={styles.tiempo}>
+          Se acabó el tiempo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function BalancearEcuacionViewer({
   activity,
   editorSyncKey,
@@ -100,8 +181,8 @@ export function BalancearEcuacionViewer({
   }, [parsed]);
   const [coeffs, setCoeffs] = useState<number[]>(() => species.map(() => 1));
   const [sent, setSent] = useState(false);
-  const { play } = useSound();
-  const isDark = variant === 'dark';
+  const ajustes = useMemo(() => normalizarAjustes(activity), [activity]);
+  const feedback = useActivityFeedback({ sonido: ajustes.sonido });
 
   useEffect(() => {
     setCoeffs(species.map(() => 1));
@@ -116,50 +197,39 @@ export function BalancearEcuacionViewer({
     });
   };
 
-  const submit = () => {
-    if (sent || coeffs.some((c) => c <= 0)) return;
+  const submit = (ctx: ActivityShellContext) => {
+    if (sent || ctx.sesion.fase !== 'jugando' || coeffs.some((c) => c <= 0)) return;
     setSent(true);
-    play('submit');
+    // La nota la da `@lumina/scoring`: acá solo el sonido de envío.
+    feedback.emitir('acierto', { sonido: 'submit', movimiento: false });
     onResponse?.({ coefficients: coeffs });
+    ctx.completar();
   };
 
   if (!parsed) {
-    return (
-      <p className="text-sm text-red-600">La ecuación del docente no es válida.</p>
-    );
+    return <p className={styles.error}>La ecuación del docente no es válida.</p>;
   }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-4 rounded-xl p-4',
-        isDark ? 'text-white' : 'border border-[#e5e7eb] bg-white',
-      )}
+    <ActivityShell
+      // Cambiar de slide o de ecuación reinicia también la sesión del shell.
+      key={`${editorSyncKey ?? 'be'}|${activity.ecuacion}`}
+      ajustes={ajustes}
+      resultado="ninguno"
     >
-      {activity.instruccion && <p className="text-sm font-medium">{activity.instruccion}</p>}
-      <div className="flex flex-wrap items-center gap-2 font-mono text-base">
-        {species.map((sp, i) => (
-          <span key={sp + i} className="inline-flex items-center gap-1 rounded-md border px-2 py-1">
-            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => bump(i, -1)}>
-              <Minus className="h-3 w-3" />
-            </Button>
-            <span className="min-w-[1.5rem] text-center font-semibold">{coeffs[i] ?? 1}</span>
-            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => bump(i, 1)}>
-              <Plus className="h-3 w-3" />
-            </Button>
-            <span>{sp}</span>
-            {i < species.length - 1 && <span className="text-[#9ca3af]">+</span>}
-          </span>
-        ))}
-      </div>
-      {sent ? (
-        <p className="text-sm text-green-700">Respuesta enviada.</p>
-      ) : (
-        <Button type="button" onClick={submit} disabled={coeffs.some((c) => c <= 0)}>
-          Enviar coeficientes
-        </Button>
+      {(ctx) => (
+        <BalancearCuerpo
+          activity={activity}
+          isDark={variant === 'dark'}
+          ctx={ctx}
+          species={species}
+          coeffs={coeffs}
+          sent={sent}
+          onBump={bump}
+          onSubmit={() => submit(ctx)}
+        />
       )}
-    </div>
+    </ActivityShell>
   );
 }
 
