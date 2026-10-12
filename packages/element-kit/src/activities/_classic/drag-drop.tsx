@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useDraggable, useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 
 import type { DragDrop, DragDropItem, DragDropZone } from '@lumina/types/slide';
 import { Button } from '@lumina/ui/button';
@@ -23,12 +22,12 @@ import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
 import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import { AnuncioTocarColocar, ModoEntradaToggle } from '../_shared/activity-tap-place.js';
 import {
-  AnuncioTocarColocar,
-  ModoEntradaToggle,
-  useModoEntrada,
-  useTocarColocar,
-} from '../_shared/activity-tap-place.js';
+  useContenedorSoltable,
+  usePiezaArrastrable,
+  useUbicarElementos,
+} from '../_shared/ubicar-elementos.js';
 import styles from './drag-drop.module.css';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -158,12 +157,7 @@ function Ficha({
   isDark: boolean;
   propsTocar?: React.HTMLAttributes<HTMLElement>;
 }) {
-  const { attributes, listeners, setNodeRef } = useDraggable({
-    id: item.id,
-    disabled: bloqueado,
-    data: { etiqueta: item.texto },
-    attributes: { roleDescription: 'elemento arrastrable' },
-  });
+  const { attributes, listeners, setNodeRef } = usePiezaArrastrable(item.id, item.texto, bloqueado);
   return (
     <div
       ref={setNodeRef}
@@ -200,7 +194,7 @@ function Zona({
   children: React.ReactNode;
   className: string;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id, data: { etiqueta } });
+  const { setNodeRef, isOver } = useContenedorSoltable(id, etiqueta);
   return (
     <div
       ref={setNodeRef}
@@ -232,18 +226,11 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
   const bloqueado = enviada || ctx.sesion.fase !== 'jugando';
   const sinTiempo = !enviada && ctx.sesion.motivoFin === 'sin_tiempo';
   const { setProgreso } = ctx;
-  const [activo, setActivo] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
-  const entrada = useModoEntrada();
-  const tocar = entrada.modo === 'tocar';
 
   const sueltos = actividad.items.filter((i) => ubicaciones[i.id] === null);
   const colocados = actividad.items.length - sueltos.length;
-  useEffect(() => {
-    setProgreso(colocados);
-  }, [colocados, setProgreso]);
 
-  const textoDe = useCallback((id: string) => actividad.items.find((i) => i.id === id)?.texto, [actividad.items]);
   const nombreZona = useCallback(
     (id: string) =>
       id === ID_DISPONIBLES ? 'elementos disponibles' : actividad.zonas.find((z) => z.id === id)?.etiqueta || 'una zona',
@@ -266,21 +253,15 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
     [bloqueado, ubicaciones, actividad, nombreZona, setUbicaciones, onBorrador],
   );
 
-  const tocarColocar = useTocarColocar({
-    onColocar: aplicar,
-    etiquetaItem: textoDe,
-    etiquetaZona: nombreZona,
-    deshabilitado: !tocar || bloqueado,
+  const ubicar = useUbicarElementos({
+    bloqueado,
+    items: actividad.items,
+    nombreContenedor: nombreZona,
+    ubicados: colocados,
+    aplicar,
+    setProgreso,
   });
-
-  const alSoltar = useCallback(
-    (e: DragEndEvent) => {
-      setActivo(null);
-      if (!e.over) return;
-      aplicar(e.active.id as string, e.over.id as string);
-    },
-    [aplicar],
-  );
+  const { activo, entrada, tocar, tocarColocar, textoDe } = ubicar;
 
   const ficha = (item: DragDropItem) => (
     <Ficha
@@ -290,7 +271,7 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
       arrastrando={activo === item.id}
       elegida={tocarColocar.seleccionado === item.id}
       isDark={isDark}
-      propsTocar={tocar ? tocarColocar.propsItem(item.id) : undefined}
+      propsTocar={ubicar.propsPieza(item.id)}
     />
   );
   const fantasma = activo ? textoDe(activo) : undefined;
@@ -304,8 +285,8 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
 
       <ActivityDndRoot
         arrastreActivo={!tocar}
-        onDragStart={(e: DragStartEvent) => setActivo(e.active.id as string)}
-        onDragEnd={alSoltar}
+        onDragStart={ubicar.alEmpezar}
+        onDragEnd={ubicar.alSoltar}
         overlay={fantasma ? <div className={styles.fantasma}>{fantasma}</div> : null}
       >
         {/* Elementos sin ubicar */}
@@ -314,7 +295,7 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
           etiqueta="Elementos disponibles"
           resaltar={!!activo && !enviada}
           isDark={isDark}
-          propsTocar={tocar ? tocarColocar.propsZona(ID_DISPONIBLES) : undefined}
+          propsTocar={ubicar.propsContenedor(ID_DISPONIBLES)}
           className={styles.disponibles}
         >
           <p className={styles.rotulo}>Elementos disponibles</p>
@@ -335,7 +316,7 @@ function Cuerpo({ actividad, isDark, ctx, ubicaciones, setUbicaciones, enviada, 
                 etiqueta={zona.etiqueta || 'Zona'}
                 resaltar={!!activo && !enviada}
                 isDark={isDark}
-                propsTocar={tocar ? tocarColocar.propsZona(zona.id) : undefined}
+                propsTocar={ubicar.propsContenedor(zona.id)}
                 className={styles.zona}
               >
                 <p className={styles.etiquetaZona}>{zona.etiqueta}</p>

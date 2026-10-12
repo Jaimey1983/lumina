@@ -9,7 +9,6 @@
  * «tocar y colocar» (DU8).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { useDraggable, useDroppable, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import type { ClasificarActivity, ClasificarItem } from '@lumina/types/slide';
 import { evaluateActivityResponse, type ActivityEvaluationResult } from '@lumina/scoring';
 
@@ -17,12 +16,12 @@ import { ActivityDndRoot } from '../_shared/activity-dnd-root.js';
 import { useActivityFeedback } from '../_shared/activity-feedback.js';
 import { normalizarAjustes } from '../_shared/activity-settings.js';
 import { ActivityShell, type ActivityShellContext } from '../_shared/activity-shell.js';
+import { AnuncioTocarColocar, ModoEntradaToggle } from '../_shared/activity-tap-place.js';
 import {
-  AnuncioTocarColocar,
-  ModoEntradaToggle,
-  useModoEntrada,
-  useTocarColocar,
-} from '../_shared/activity-tap-place.js';
+  useContenedorSoltable,
+  usePiezaArrastrable,
+  useUbicarElementos,
+} from '../_shared/ubicar-elementos.js';
 import { barajar } from '../_shared/barajar.js';
 import styles from './clasificar.module.css';
 
@@ -41,13 +40,7 @@ function PiezaArrastrable({
   disabled?: boolean;
   propsTocar?: React.HTMLAttributes<HTMLElement>;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: item.id,
-    disabled,
-    // El nombre que oyen los lectores de pantalla al arrastrar con teclado.
-    data: { etiqueta: item.texto },
-    attributes: { roleDescription: 'elemento arrastrable' },
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = usePiezaArrastrable(item.id, item.texto, disabled);
 
   const style: CSSProperties | undefined = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -90,7 +83,7 @@ interface ColumnaProps {
 }
 
 function Columna({ id, nombre, color, items, estados, bloqueado, propsTocar, propsPieza }: ColumnaProps) {
-  const { setNodeRef, isOver } = useDroppable({ id, data: { etiqueta: nombre } });
+  const { setNodeRef, isOver } = useContenedorSoltable(id, nombre);
   const estilo = color ? ({ '--color-categoria': color } as CSSProperties) : undefined;
   return (
     <div
@@ -139,19 +132,10 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
   const colores = configuracion.colorCategorias;
   const jugando = ctx.sesion.fase === 'jugando';
   const { setProgreso, completar } = ctx;
-  const [activo, setActivo] = useState<string | null>(null);
-  const entrada = useModoEntrada();
-  const tocar = entrada.modo === 'tocar';
   const feedback = useActivityFeedback({ sonido: ctx.ajustes.sonido });
 
   const sinClasificar = piezas.filter((i) => ubicaciones[i.id] === null);
   const todoClasificado = sinClasificar.length === 0;
-
-  // El encabezado del shell cuenta las piezas ya colocadas.
-  const colocadas = items.length - sinClasificar.length;
-  useEffect(() => {
-    setProgreso(colocadas);
-  }, [colocadas, setProgreso]);
 
   const aplicar = useCallback(
     (itemId: string, destino: string) => {
@@ -161,27 +145,20 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
     [jugando, setUbicaciones],
   );
 
-  const textoDe = useCallback((id: string) => items.find((i) => i.id === id)?.texto, [items]);
   const nombreZona = useCallback(
     (id: string) =>
       id === SIN_CLASIFICAR ? 'elementos para clasificar' : categorias.find((c) => c.id === id)?.nombre,
     [categorias],
   );
-  const tocarColocar = useTocarColocar({
-    onColocar: aplicar,
-    etiquetaItem: textoDe,
-    etiquetaZona: nombreZona,
-    deshabilitado: !tocar || !jugando,
+  const ubicar = useUbicarElementos({
+    bloqueado: !jugando,
+    items,
+    nombreContenedor: nombreZona,
+    ubicados: items.length - sinClasificar.length,
+    aplicar,
+    setProgreso,
   });
-
-  const alSoltar = useCallback(
-    (e: DragEndEvent) => {
-      setActivo(null);
-      if (!e.over) return;
-      aplicar(e.active.id as string, e.over.id as string);
-    },
-    [aplicar],
-  );
+  const { activo, entrada, tocar, tocarColocar, textoDe } = ubicar;
 
   const verificar = () => {
     if (!jugando || !todoClasificado) return;
@@ -200,7 +177,7 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
   const arrastrada = activo ? textoDe(activo) : undefined;
   const sinTiempo = ctx.sesion.motivoFin === 'sin_tiempo';
   const verificado = !jugando && !sinTiempo;
-  const propsPieza = (id: string) => (tocar ? tocarColocar.propsItem(id) : undefined);
+  const propsPieza = ubicar.propsPieza;
 
   return (
     <div className={styles.raiz}>
@@ -210,8 +187,8 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
       {/* El DndContext envuelve TODA la zona interactiva: el área de origen y las categorías. */}
       <ActivityDndRoot
         arrastreActivo={!tocar}
-        onDragStart={(e: DragStartEvent) => setActivo(e.active.id as string)}
-        onDragEnd={alSoltar}
+        onDragStart={ubicar.alEmpezar}
+        onDragEnd={ubicar.alSoltar}
         overlay={arrastrada ? <div className={styles.fantasma}>{arrastrada}</div> : null}
       >
         {!verificado && (
@@ -221,7 +198,7 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
             items={sinClasificar}
             estados={{}}
             bloqueado={!jugando}
-            propsTocar={tocar ? tocarColocar.propsZona(SIN_CLASIFICAR) : undefined}
+            propsTocar={ubicar.propsContenedor(SIN_CLASIFICAR)}
             propsPieza={propsPieza}
           />
         )}
@@ -236,7 +213,7 @@ function Cuerpo({ actividad, piezas, ubicaciones, setUbicaciones, estados, ctx, 
               items={piezas.filter((i) => ubicaciones[i.id] === cat.id)}
               estados={estados}
               bloqueado={!jugando}
-              propsTocar={tocar ? tocarColocar.propsZona(cat.id) : undefined}
+              propsTocar={ubicar.propsContenedor(cat.id)}
               propsPieza={propsPieza}
             />
           ))}
