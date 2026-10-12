@@ -75,6 +75,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // tiempo, «mismo orden para todos» (barajar es la mecánica, no una opción), sonido y estilo.
   // «Mostrar pista» y «Permitir reintento» (por oración) siguen siendo datos de su editor.
   puzzle_palabras: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
+  // Clasificar (U9b.2): nota y reintento en la pantalla final, tiempo, «mismo orden para todos»,
+  // sonido y estilo. El color de cada categoría es un dato del editor, no un ajuste.
+  clasificar: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

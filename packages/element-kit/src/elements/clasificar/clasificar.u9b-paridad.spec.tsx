@@ -7,7 +7,7 @@
  * verificar, qué respuesta sale y qué nota recibe), no el gesto. Los ids de las zonas son el
  * contrato del evento: `sin-clasificar` y el `id` de cada categoría.
  */
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateActivityResponse } from "@lumina/scoring";
 import type { ClasificarActivity } from "@lumina/types/slide";

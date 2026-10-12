@@ -124,7 +124,7 @@ export function ClasificarProperties({ actividad, onChange }: ClasificarProperti
           <button
             onClick={addCategoria}
             disabled={categorias.length >= CLASIFICAR_MAX_CATEGORIAS}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40"
+            className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground disabled:opacity-40"
           >
             + Añadir
           </button>
@@ -167,7 +167,7 @@ export function ClasificarProperties({ actividad, onChange }: ClasificarProperti
           <button
             onClick={addItem}
             disabled={items.length >= CLASIFICAR_MAX_ITEMS}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40"
+            className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground disabled:opacity-40"
           >
             + Añadir
           </button>

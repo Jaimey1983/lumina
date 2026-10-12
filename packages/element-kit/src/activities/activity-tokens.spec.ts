@@ -56,9 +56,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "ahorcado/ahorcado.module.css": 40,
   "anagrama/anagrama-properties.tsx": 1,
   "anagrama/anagrama-viewer.tsx": 1,
-  "clasificar/clasificar-defaults.ts": 4,
-  "clasificar/clasificar-properties.tsx": 2,
-  "clasificar/clasificar-viewer.tsx": 5,
   "crucigrama/crucigrama-defaults.ts": 2,
   "crucigrama/crucigrama-editor.tsx": 3,
   "crucigrama/crucigrama-properties.tsx": 1,
@@ -87,6 +84,10 @@ const EXENTOS: Readonly<Record<string, number>> = {
  * No se retiran en U9: se justifican acá. Mismo tope exacto que `EXENTOS`.
  */
 const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly motivo: string }>> = {
+  "clasificar/clasificar-defaults.ts": {
+    hex: 4,
+    motivo: "colorCategorias por defecto: la paleta se GUARDA en el slide y el viewer la lee tal cual",
+  },
   "memoria/memoria-defaults.ts": {
     hex: 2,
     motivo: "colorDorso y colorSimboloDorso por defecto: se guardan en el slide",
