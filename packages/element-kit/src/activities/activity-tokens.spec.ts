@@ -39,8 +39,6 @@ const ARCHIVOS_DE_TOKENS: readonly string[] = ["_shared/activity-tokens.ts"];
 const EXENTOS: Readonly<Record<string, number>> = {
   "_classic/quiz-multiple.tsx": 18,
   "_classic/quiz/quiz-multiple-editor.tsx": 27,
-  "_classic/quiz/quiz-multiple-viewer.tsx": 8,
-  "_classic/quiz/quiz-option-layouts.tsx": 73,
   "_classic/quiz/quiz-synced-panel.tsx": 17,
   "_classic/quiz/quiz-synced-viewer.tsx": 19,
   "_shared/activity-result-overlay.tsx": 1,
@@ -52,6 +50,10 @@ const EXENTOS: Readonly<Record<string, number>> = {
  * No se retiran en U9: se justifican acá. Mismo tope exacto que `EXENTOS`.
  */
 const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly motivo: string }>> = {
+  "_classic/quiz/quiz-option-layouts.tsx": {
+    hex: 6,
+    motivo: "paleta «Kahoot» de los layouts color-grid y two-col-color-list: identidad del layout, no del tema",
+  },
   "abrir-caja/abrir-caja-config.ts": {
     hex: 1,
     motivo: "color de caja por defecto (`colorCaja`): se GUARDA en el slide y el viewer lo lee tal cual",

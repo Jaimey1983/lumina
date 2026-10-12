@@ -10,6 +10,7 @@ import { cn } from '@lumina/ui/lib/utils';
 import { useSound } from '@lumina/editor-shared/use-sound';
 
 import { QuizQuestionAccentBar, QuizQuestionWithOptions, resolveQuizLayoutVariant } from './quiz-option-layouts.js';
+import tokens from '../../_shared/activity-tokens.module.css';
 import {
   getCorrectIds,
   isMultiSelectPregunta,
@@ -75,7 +76,7 @@ function parseRanking(payload: unknown): RankingRow[] {
   return out.sort((a, b) => a.position - b.position);
 }
 
-export function QuizSyncedViewer({
+function QuizSyncedContenido({
   activity,
   quizBlockId,
   classId,
@@ -519,6 +520,18 @@ export function QuizSyncedViewer({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Quiz sincronizado: el servidor manda las fases, el reloj y el ranking (`quiz:*`), así que NO pasa
+ * por el `ActivityShell`; solo recibe los tokens `--la-*` que usan los layouts compartidos.
+ */
+export function QuizSyncedViewer(props: QuizSyncedViewerProps) {
+  return (
+    <div className={tokens.tokens}>
+      <QuizSyncedContenido {...props} />
     </div>
   );
 }

@@ -1,0 +1,482 @@
+/*
+ * U9d.6a — estilos del Quiz (viewers autónomos, layouts de opciones y tarjeta) sobre los tokens
+ * `--la-*`. Dos variantes: `claro` (fondo claro) y `oscuro` (sobre el fondo oscuro del slide).
+ * Los colores de la paleta «Kahoot» de los layouts `color-grid` y `two-col-color-list` son parte de
+ * la identidad de esos layouts y llegan en línea desde `quiz-option-layouts.tsx`.
+ */
+.shell {
+  width: 100%;
+  min-height: 0;
+}
+
+/* ── Tarjeta ───────────────────────────────────────────────────────────────── */
+.tarjeta {
+  overflow: hidden;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.tarjeta.claro {
+  color: var(--la-color-texto);
+  background: color-mix(in srgb, var(--la-color-superficie) 90%, transparent);
+  border: 1px solid var(--la-color-borde);
+}
+
+.tarjeta.oscuro {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.acento {
+  width: 100%;
+  height: 0.375rem;
+  border-top-left-radius: var(--la-radio-xl);
+  border-top-right-radius: var(--la-radio-xl);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.progresoTexto {
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .progresoTexto,
+.oscuro .pista,
+.oscuro .sinImagen {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.progresoPista {
+  flex: 1;
+  max-width: 8rem;
+  height: 0.375rem;
+  overflow: hidden;
+  background: var(--la-color-borde);
+  border-radius: 9999px;
+}
+
+.oscuro .progresoPista {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.progresoRelleno {
+  height: 100%;
+  background: var(--la-color-seleccionado);
+  border-radius: 9999px;
+  transition: width 0.3s;
+}
+
+.pista {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--la-color-texto-suave);
+}
+
+.centro {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.centroSuave {
+  margin: 0;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .centroSuave {
+  color: rgb(255 255 255 / 0.7);
+}
+
+/* ── Enunciado y composición ───────────────────────────────────────────────── */
+.enunciado {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.375;
+}
+
+@media (min-width: 640px) {
+  .enunciado {
+    font-size: 1rem;
+  }
+}
+
+.apilado {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.apiladoCompacto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.apiladoMinimo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dosColumnas {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .dosColumnas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.imagen {
+  overflow: hidden;
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-lg);
+}
+
+.imagen img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.sinImagen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--la-color-texto-suave);
+  background: var(--la-color-superficie);
+  border: 1px dashed var(--la-color-borde);
+  border-radius: var(--la-radio-lg);
+}
+
+.oscuro .sinImagen {
+  background: rgb(255 255 255 / 0.05);
+  border-color: rgb(255 255 255 / 0.25);
+}
+
+/* ── Listas de opciones ────────────────────────────────────────────────────── */
+.lista {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .rejillaAmplia {
+    gap: 0.75rem;
+  }
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.opcion:disabled {
+  cursor: default;
+}
+
+.opcion:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.grupoIcono {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.clasica {
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: var(--la-radio-md);
+}
+
+.pildora {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.tarjetaIcono {
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+  border-radius: var(--la-radio-xl);
+}
+
+.tarjetaIconoTexto {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.375;
+}
+
+.franja {
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border-left-width: 6px;
+  border-radius: var(--la-radio-md);
+}
+
+.neutra {
+  justify-content: center;
+  min-height: 4rem;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  border-radius: var(--la-radio-lg);
+}
+
+.color {
+  justify-content: center;
+  min-height: 4.5rem;
+  padding: 1rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  /* Texto blanco sobre los colores de la paleta del layout. */
+  color: rgb(255 255 255);
+  border: 0;
+  border-radius: var(--la-radio-lg);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.color:not(:disabled):hover {
+  transform: scale(1.02);
+}
+
+.colorElegida {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.8);
+}
+
+.colorBien {
+  background: var(--la-color-correcto);
+}
+
+.colorMal {
+  background: var(--la-color-incorrecto);
+}
+
+.colorRevela {
+  background: color-mix(in srgb, var(--la-color-correcto) 90%, transparent);
+}
+
+.recorte {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Colores de las opciones por variante (los layouts `color` no los usan). */
+.claro .opcion:not(.color) {
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border-color: var(--la-color-borde);
+}
+
+.claro .opcion:not(.color):not(:disabled):hover {
+  background: var(--la-color-seleccionado-suave);
+}
+
+.oscuro .opcion:not(.color) {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.22);
+}
+
+.oscuro .opcion:not(.color):not(:disabled):hover {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.claro .opcion.elegida:not(.color) {
+  color: var(--la-color-seleccionado-texto);
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+}
+
+.oscuro .opcion.elegida:not(.color) {
+  color: var(--la-color-superficie);
+  background: color-mix(in srgb, var(--la-color-seleccionado) 60%, transparent);
+  border-color: var(--la-color-seleccionado);
+}
+
+.opcion.bien:not(.color),
+.opcion.revela:not(.color) {
+  border-color: var(--la-color-correcto);
+}
+
+.claro .opcion.bien:not(.color),
+.claro .opcion.revela:not(.color) {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+}
+
+.oscuro .opcion.bien:not(.color),
+.oscuro .opcion.revela:not(.color) {
+  color: var(--la-color-superficie);
+  background: color-mix(in srgb, var(--la-color-correcto) 35%, transparent);
+}
+
+.opcion.mal:not(.color) {
+  border-color: var(--la-color-incorrecto);
+}
+
+.claro .opcion.mal:not(.color) {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+}
+
+.oscuro .opcion.mal:not(.color) {
+  color: var(--la-color-superficie);
+  background: color-mix(in srgb, var(--la-color-incorrecto) 35%, transparent);
+}
+
+.tenue {
+  opacity: 0.5;
+}
+
+.icono {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconoGrande {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iconoForma {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  opacity: 0.9;
+}
+
+.iconoElegido {
+  color: var(--la-color-seleccionado);
+}
+
+.iconoBien {
+  color: var(--la-color-correcto);
+}
+
+.iconoMal {
+  color: var(--la-color-incorrecto);
+}
+
+.iconoNeutro {
+  opacity: 0.4;
+  color: var(--la-color-texto-suave);
+}
+
+/* ── Retroalimentación y acciones ──────────────────────────────────────────── */
+.veredicto {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: var(--la-radio-md);
+}
+
+.veredictoBien {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+}
+
+.veredictoMal {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+}
+
+.oscuro .veredictoBien,
+.oscuro .veredictoMal {
+  color: var(--la-color-superficie);
+}
+
+.explicacion {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.tiempo {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--la-color-incorrecto-texto);
+}
+
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
