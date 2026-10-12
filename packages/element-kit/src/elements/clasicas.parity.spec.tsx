@@ -62,7 +62,7 @@ describe("Familia clásica — paridad ElementDefinition vs @lumina/scoring (E2.
     expect(reg).toBe(def);
     expect(reg?.puntuacion).toBeTypeOf("function");
     // U8/U9a: las que ya tienen estilos (`ajustes.estilo`) declaran color en su `apariencia`.
-    const color = ["verdadero_falso", "short_answer", "respuesta_matematica", "completar_blancos", "encuesta_viva", "nube_palabras", "emparejar", "ordenar_pasos"].includes(tipo);
+    const color = ["verdadero_falso", "short_answer", "respuesta_matematica", "completar_blancos", "encuesta_viva", "nube_palabras", "emparejar", "ordenar_pasos", "arrastrar_soltar"].includes(tipo);
     expect(reg?.apariencia).toEqual({ color, tipografia: false, animacion: false });
   });
 

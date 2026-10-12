@@ -89,6 +89,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // todos» (el reparto de las piezas), sonido y estilo. Filas, columnas, dificultad y vista previa
   // son datos de su editor.
   puzzle_imagen: { mostrarNota: true, intentos: true, tiempo: true, semilla: true, sonido: true, estilo: true },
+  // Arrastrar y soltar (U9b.6): un solo envío con el sonido de envío; tiempo, sonido y estilo. Los
+  // elementos se muestran en el orden del editor (no se barajan), así que no hay «mismo orden».
+  arrastrar_soltar: { tiempo: true, sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */
