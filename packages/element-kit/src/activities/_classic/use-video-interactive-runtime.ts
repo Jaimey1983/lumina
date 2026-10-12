@@ -314,5 +314,7 @@ export function useVideoInteractiveRuntime({
     activeQ,
     dismissQ,
     handleOverlayAnswer,
+    /** Preguntas ya contestadas (cada una cuenta una sola vez). */
+    answeredCount: answeredQIds.size,
   };
 }

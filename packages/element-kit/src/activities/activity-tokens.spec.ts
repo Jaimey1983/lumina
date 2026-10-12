@@ -43,7 +43,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "_classic/quiz/quiz-option-layouts.tsx": 73,
   "_classic/quiz/quiz-synced-panel.tsx": 17,
   "_classic/quiz/quiz-synced-viewer.tsx": 19,
-  "_classic/video-interactive.tsx": 43,
   "_shared/activity-result-overlay.tsx": 1,
 };
 

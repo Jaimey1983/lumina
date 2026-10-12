@@ -1,0 +1,367 @@
+/*
+ * U9d.5 — estilos del viewer de Video interactivo sobre los tokens `--la-*` del shell. Dos
+ * variantes: `claro` (fondo claro) y `oscuro` (sobre el fondo oscuro del slide). El escenario del
+ * video es siempre negro.
+ */
+.shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0.75rem;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.claro {
+  color: var(--la-color-texto);
+  background: color-mix(in srgb, var(--la-color-superficie) 90%, transparent);
+  border: 1px solid var(--la-color-borde);
+}
+
+.oscuro {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+/* El escenario llena el bloque; YouTube no debe imponer 640×390 al dar play. */
+.escenario {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: rgb(0 0 0);
+  border-radius: var(--la-radio-md);
+}
+
+.escenario > iframe,
+.escenario > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.escenario > video {
+  object-fit: contain;
+}
+
+.yt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.yt > iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.portada {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.miniatura {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.negro {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0);
+}
+
+.velo {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.empezar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: var(--la-radio-lg);
+  transition: transform 0.2s ease-out;
+}
+
+.empezar:hover {
+  transform: scale(1.1);
+}
+
+.empezar:focus-visible {
+  outline: 2px solid var(--la-color-superficie);
+  outline-offset: 2px;
+}
+
+.empezarIcono {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.3);
+  border-radius: 9999px;
+}
+
+.empezarTexto {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--la-color-superficie);
+}
+
+.fondoPregunta {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 20rem;
+  max-width: 90%;
+  padding: 1.25rem;
+  border-radius: var(--la-radio-xl);
+  box-shadow: var(--la-elevacion-2);
+}
+
+.enunciado {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid;
+  border-radius: var(--la-radio-md);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.opcion:disabled {
+  cursor: default;
+}
+
+.opcion:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.claro .opcion,
+.pregunta.claro .opcion {
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border-color: var(--la-color-borde);
+}
+
+.pregunta.oscuro .opcion {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.15);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+.pregunta.claro .opcion:hover:not(:disabled) {
+  background: var(--la-color-seleccionado-suave);
+}
+
+.pregunta.oscuro .opcion:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.25);
+}
+
+.pregunta.claro .elegida {
+  color: var(--la-color-seleccionado-texto);
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+}
+
+.pregunta.oscuro .elegida {
+  color: var(--la-color-superficie);
+  background: color-mix(in srgb, var(--la-color-seleccionado) 80%, transparent);
+  border-color: var(--la-color-seleccionado);
+}
+
+.pregunta .correcta {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+  border-color: var(--la-color-correcto);
+}
+
+.pregunta.oscuro .correcta {
+  color: var(--la-color-superficie);
+}
+
+.pregunta .incorrecta {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+  border-color: var(--la-color-incorrecto);
+}
+
+.pregunta.oscuro .incorrecta {
+  color: var(--la-color-superficie);
+}
+
+.pregunta .apagada {
+  opacity: 0.4;
+}
+
+.icono {
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.iconoCorrecto {
+  color: var(--la-color-correcto);
+}
+
+.iconoIncorrecto {
+  color: var(--la-color-incorrecto);
+}
+
+.iconoElegido {
+  color: var(--la-color-seleccionado);
+}
+
+.iconoNeutro {
+  opacity: 0.3;
+}
+
+.veredicto {
+  padding: 0.375rem 0.75rem;
+  margin: 0;
+  font-size: 0.75rem;
+  border-radius: var(--la-radio-md);
+}
+
+.veredictoBien {
+  color: var(--la-color-correcto-texto);
+  background: var(--la-color-correcto-suave);
+}
+
+.veredictoMal {
+  color: var(--la-color-incorrecto-texto);
+  background: var(--la-color-incorrecto-suave);
+}
+
+.acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.listaEstatica {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+
+.listaTitulo {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .listaTitulo {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.itemEstatico {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  border: 1px solid;
+  border-radius: var(--la-radio-md);
+}
+
+.claro .itemEstatico {
+  color: var(--la-color-texto);
+  background: var(--la-color-superficie);
+  border-color: var(--la-color-borde);
+}
+
+.oscuro .itemEstatico {
+  color: var(--la-color-superficie);
+  background: rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+.itemTiempo {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .itemTiempo {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
