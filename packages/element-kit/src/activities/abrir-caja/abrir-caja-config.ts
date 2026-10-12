@@ -84,6 +84,8 @@ export function normalizarAbrirCaja(act: AbrirCajaActivity): AbrirCajaActivity {
 
   return {
     tipo: 'abrir_caja',
+    // `ajustes` (etapa U) viaja intacto: antes se descartaba al hidratar el slide.
+    ...(act.ajustes ? { ajustes: act.ajustes } : {}),
     configuracion: {
       filas: clampFilas(cfg.filas),
       columnas: clampColumnas(cfg.columnas),
@@ -100,9 +102,11 @@ export function normalizarAbrirCaja(act: AbrirCajaActivity): AbrirCajaActivity {
   }
 }
 
-/** Huella estable para memoizar normalización y resetear estado del viewer. */
+/** Huella del CONTENIDO: cambiar un ajuste (estilo, sonido…) no reinicia la partida. */
 export function abrirCajaFingerprint(act: AbrirCajaActivity): string {
-  return JSON.stringify(normalizarAbrirCaja(act))
+  const { ajustes: _ajustes, ...contenido } = normalizarAbrirCaja(act)
+  void _ajustes
+  return JSON.stringify(contenido)
 }
 
 // Determina si la actividad es evaluable:

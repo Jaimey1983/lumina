@@ -45,11 +45,6 @@ const EXENTOS: Readonly<Record<string, number>> = {
   "_classic/quiz/quiz-synced-viewer.tsx": 19,
   "_classic/video-interactive.tsx": 43,
   "_shared/activity-result-overlay.tsx": 1,
-  "abrir-caja/abrir-caja-config.ts": 1,
-  "abrir-caja/abrir-caja-defaults.ts": 1,
-  "abrir-caja/abrir-caja-properties.tsx": 1,
-  "abrir-caja/abrir-caja-viewer.tsx": 3,
-  "abrir-caja/abrir-caja.module.css": 1,
   "historia-ramificada/historia-ramificada-config.ts": 5,
   "historia-ramificada/historia-ramificada-editor.tsx": 2,
   "historia-ramificada/historia-ramificada-node-editor.tsx": 6,
@@ -62,6 +57,14 @@ const EXENTOS: Readonly<Record<string, number>> = {
  * No se retiran en U9: se justifican acá. Mismo tope exacto que `EXENTOS`.
  */
 const EXENTOS_DE_DATO: Readonly<Record<string, { readonly hex: number; readonly motivo: string }>> = {
+  "abrir-caja/abrir-caja-config.ts": {
+    hex: 1,
+    motivo: "color de caja por defecto (`colorCaja`): se GUARDA en el slide y el viewer lo lee tal cual",
+  },
+  "abrir-caja/abrir-caja-defaults.ts": {
+    hex: 1,
+    motivo: "colorCaja por defecto de una actividad nueva: se guarda en el slide",
+  },
   "ahorcado/ahorcado-figure.tsx": {
     hex: 17,
     motivo: "ilustración del muñeco y la horca (madera, cuerda, pasto, figura): colores de dibujo, no de interfaz ni de tema",

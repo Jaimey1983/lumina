@@ -1,5 +1,6 @@
 'use client'
 
+import { laVar } from '../_shared/activity-tokens.js'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { AbrirCajaActivity, AbrirCajaCaja, AbrirCajaContenido } from '@lumina/types/slide'
 import {
@@ -148,7 +149,8 @@ export function AbrirCajaProperties({ actividad, onChange }: AbrirCajaProperties
           <button
             onClick={addCaja}
             disabled={cajas.length >= ABRIR_CAJA_MAX_CAJAS}
-            className="text-xs px-2 py-1 rounded bg-[#2563EB] text-white disabled:opacity-40"
+            className="text-xs px-2 py-1 rounded text-white disabled:opacity-40"
+            style={{ backgroundColor: laVar('color-seleccionado') }}
           >
             + Añadir
           </button>
