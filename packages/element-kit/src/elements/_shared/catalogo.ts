@@ -225,6 +225,11 @@ export const CATALOGO_ELEMENTOS = {
     descripcion: "Coloca cada etiqueta en su marcador sobre una imagen: anatomía, mapas, circuitos",
     familia: "actividad",
   },
+  linea_tiempo: {
+    nombre: "Línea de tiempo",
+    descripcion: "Ordena eventos cronológicamente sobre un eje y revela las fechas al comprobar",
+    familia: "actividad",
+  },
   emparejar: { nombre: "Emparejar", familia: "actividad" },
   ordenar_pasos: { nombre: "Ordenar pasos", familia: "actividad" },
   video_interactivo: { nombre: "Video interactivo", familia: "actividad" },

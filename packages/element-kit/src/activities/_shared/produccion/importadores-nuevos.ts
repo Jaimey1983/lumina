@@ -2,8 +2,14 @@
  * U12 / catálogo nuevo (U14+) — importadores de las actividades creadas después de U12.
  */
 import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
-import type { ProblemaPaso, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
+import type {
+  LineaTiempoActivity,
+  ProblemaPaso,
+  ProblemaPasosActivity,
+  RelacionarLineasActivity,
+} from '@lumina/types/slide';
 
+import { LINEA_MAX_EVENTOS } from '../../linea-tiempo/linea-tiempo-config.js';
 import { PROBLEMA_MAX_PASOS, PROBLEMA_MAX_PISTAS_POR_PASO } from '../../problema-pasos/problema-pasos-config.js';
 import { RELACIONAR_MAX_DERECHA, RELACIONAR_MAX_IZQUIERDA } from '../../relacionar-lineas/relacionar-lineas-config.js';
 import { nuevoId, prepararFilas, type FilaDescartada, type Importador } from './importacion.js';
@@ -81,5 +87,34 @@ export const importadorProblemaPasos: Importador<ProblemaPasosActivity> = {
       }
     }
     return { actividad: { ...actividad, pasos }, leidas, descartadas };
+  },
+};
+
+export const importadorLineaTiempo: Importador<LineaTiempoActivity> = {
+  tipo: 'linea_tiempo',
+  titulo: 'Eventos',
+  formato: 'Fecha ; evento  (en el orden cronológico correcto: el orden de las filas fija la respuesta)',
+  ejemplo: '1810;Grito de Independencia\n1819;Batalla de Boyacá\n1991;Nueva Constitución Política',
+  encabezados: ['fecha', 'ano', 'anio', 'fecha del evento'],
+  importar(actividad, filas, modo) {
+    const eventos = modo === 'reemplazar' ? [] : [...(actividad.eventos ?? [])];
+    const descartadas: FilaDescartada[] = [];
+    let leidas = 0;
+    let orden = eventos.reduce((m, e) => Math.max(m, e.orden), 0);
+    for (const { fila, celdas } of prepararFilas(filas, ['fecha', 'ano', 'anio', 'fecha del evento'], sinAcentos)) {
+      const texto = celdas.join(' | ');
+      const fecha = (celdas[0] ?? '').trim();
+      const evento = celdas.slice(1).join(' ; ').trim();
+      if (!evento) {
+        descartadas.push({ fila, motivo: 'Cada fila necesita la fecha y el evento.', texto });
+      } else if (eventos.length >= LINEA_MAX_EVENTOS) {
+        descartadas.push({ fila, motivo: `Se superó el máximo de ${LINEA_MAX_EVENTOS} eventos.`, texto });
+      } else {
+        orden += 1;
+        eventos.push({ id: nuevoId('evt'), texto: evento, fechaTexto: fecha, orden });
+        leidas += 1;
+      }
+    }
+    return { actividad: { ...actividad, eventos }, leidas, descartadas };
   },
 };

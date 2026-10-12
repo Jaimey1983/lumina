@@ -5,11 +5,13 @@
 import { parseRespuestaNumerica, validarExpresionAlgebraica } from '@lumina/scoring';
 import type {
   EtiquetarImagenActivity,
+  LineaTiempoActivity,
   ProblemaPasosActivity,
   RelacionarLineasActivity,
   RelacionarLineasItem,
 } from '@lumina/types/slide';
 
+import { LINEA_MAX_EVENTOS, LINEA_MIN_EVENTOS } from '../../linea-tiempo/linea-tiempo-config.js';
 import { ETIQUETAR_MAX_ETIQUETAS, ETIQUETAR_MAX_ZONAS, ETIQUETAR_MIN_ZONAS } from '../../etiquetar-imagen/etiquetar-imagen-config.js';
 import { PROBLEMA_MAX_PASOS } from '../../problema-pasos/problema-pasos-config.js';
 import { RELACIONAR_MIN_RELACIONES } from '../../relacionar-lineas/relacionar-lineas-config.js';
@@ -96,6 +98,29 @@ export const validarEtiquetarImagen = (a: EtiquetarImagenActivity): P[] => {
   });
   if ([...usos.values()].some((n) => n > 1)) {
     out.push(error('Una misma etiqueta no puede ir en dos marcadores: solo se puede colocar una vez.'));
+  }
+  return out;
+};
+
+export const validarLineaTiempo = (a: LineaTiempoActivity): P[] => {
+  const out: P[] = [];
+  const eventos = a.eventos ?? [];
+  if (eventos.length < LINEA_MIN_EVENTOS) out.push(error(`Necesita al menos ${LINEA_MIN_EVENTOS} eventos.`));
+  if (eventos.length > LINEA_MAX_EVENTOS) out.push(aviso(`Tiene más de ${LINEA_MAX_EVENTOS} eventos.`));
+  eventos.forEach((e, n) => {
+    if (!hayTexto(e.texto)) out.push(error('No tiene texto.', `Evento ${n + 1}`));
+    else if (!hayTexto(e.fechaTexto)) out.push(aviso('No tiene fecha: al comprobar no se podrá mostrar.', `Evento ${n + 1}`));
+  });
+  const ordenes = eventos.map((e) => e.orden);
+  if (ordenes.some((o) => typeof o !== 'number' || !Number.isFinite(o))) {
+    out.push(error('Hay un evento sin número de orden válido.'));
+  } else {
+    if (new Set(ordenes).size !== ordenes.length) {
+      out.push(error('Hay números de orden repetidos: no se sabría cuál va primero.'));
+    } else {
+      const orden = [...ordenes].sort((x, y) => x - y);
+      if (orden.some((o, i) => o !== i + 1)) out.push(aviso('Los números de orden tienen huecos (usa «Ordenar por orden» para renumerarlos).'));
+    }
   }
   return out;
 };

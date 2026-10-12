@@ -1,7 +1,8 @@
 /** U14+ — validadores e importadores de las actividades nuevas (catálogo posterior a U12). */
 import { describe, expect, it } from 'vitest';
-import type { EtiquetarImagenActivity, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
+import type { EtiquetarImagenActivity, LineaTiempoActivity, ProblemaPasosActivity, RelacionarLineasActivity } from '@lumina/types/slide';
 
+import { createDefaultLineaTiempo } from '../../linea-tiempo/linea-tiempo-defaults.js';
 import { createDefaultEtiquetarImagen } from '../../etiquetar-imagen/etiquetar-imagen-defaults.js';
 import { createDefaultProblemaPasos } from '../../problema-pasos/problema-pasos-defaults.js';
 import { createDefaultRelacionarLineas } from '../../relacionar-lineas/relacionar-lineas-defaults.js';
@@ -187,5 +188,64 @@ describe('etiquetar_imagen — validación', () => {
   });
   it('no tiene importador: la ubicación es visual', () => {
     expect(importadorDe('etiquetar_imagen')).toBeUndefined();
+  });
+});
+
+describe('linea_tiempo — validación e importación', () => {
+  const nueva = (): LineaTiempoActivity => structuredClone(createDefaultLineaTiempo());
+  const err = (a: LineaTiempoActivity) => validarActividad(a).filter((p) => p.nivel === 'error').map((p) => p.mensaje);
+  const avi = (a: LineaTiempoActivity) => validarActividad(a).filter((p) => p.nivel === 'aviso').map((p) => p.mensaje);
+
+  it('lo que se crea por defecto no tiene problemas', () => {
+    expect(validarActividad(nueva())).toEqual([]);
+  });
+  it('menos de 3 eventos y eventos sin texto: no se puede jugar', () => {
+    const a = nueva();
+    a.eventos = [a.eventos[0]!, { ...a.eventos[1]!, texto: ' ' }];
+    expect(err(a)).toEqual(['Necesita al menos 3 eventos.', 'No tiene texto.']);
+  });
+  it('órdenes repetidos son un error; con huecos, un aviso', () => {
+    const a = nueva();
+    a.eventos[1] = { ...a.eventos[1]!, orden: 1 };
+    expect(err(a)).toEqual(['Hay números de orden repetidos: no se sabría cuál va primero.']);
+    const b = nueva();
+    b.eventos[3] = { ...b.eventos[3]!, orden: 9 };
+    expect(err(b)).toEqual([]);
+    expect(avi(b)).toHaveLength(1);
+  });
+  it('fecha vacía es un aviso, no un error', () => {
+    const a = nueva();
+    a.eventos[0] = { ...a.eventos[0]!, fechaTexto: '' };
+    expect(err(a)).toEqual([]);
+    expect(avi(a)).toHaveLength(1);
+  });
+  it('importa «fecha ; evento» en el orden de las filas y asigna `orden`', () => {
+    const imp = importadorDe('linea_tiempo')!;
+    const r = importarTexto(nueva(), imp.ejemplo, 'reemplazar');
+    expect(r.leidas).toBe(3);
+    expect(r.actividad.eventos.map((e) => [e.orden, e.fechaTexto, e.texto])).toEqual([
+      [1, '1810', 'Grito de Independencia'],
+      [2, '1819', 'Batalla de Boyacá'],
+      [3, '1991', 'Nueva Constitución Política'],
+    ]);
+    expect(validarActividad(r.actividad).filter((p) => p.nivel === 'error')).toEqual([]);
+  });
+  it('agregar continúa la numeración, respeta el máximo y descarta con motivo', () => {
+    const a = nueva();
+    const filas = Array.from({ length: 10 }, (_, i) => `${2000 + i};Hecho ${i}`).join('\n');
+    const r = importarTexto(a, `Fecha;Evento\n${filas}\n2050;`, 'agregar');
+    expect(r.actividad.eventos).toHaveLength(12);
+    expect(r.actividad.eventos[4]!.orden).toBe(5);
+    expect(r.descartadas.map((d) => d.motivo)).toEqual([
+      'Se superó el máximo de 12 eventos.',
+      'Se superó el máximo de 12 eventos.',
+      'Cada fila necesita la fecha y el evento.',
+    ]);
+  });
+  it('no toca ajustes ni instrucción', () => {
+    const a = { ...nueva(), ajustes: { estilo: 'examen' as const } };
+    const r = importarTexto(a, '1;A', 'reemplazar').actividad;
+    expect(r.ajustes).toEqual(a.ajustes);
+    expect(r.instruccion).toBe(a.instruccion);
   });
 });

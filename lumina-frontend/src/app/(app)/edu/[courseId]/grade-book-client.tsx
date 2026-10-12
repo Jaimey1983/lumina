@@ -58,6 +58,7 @@ const ACTIVITY_LABEL: Record<string, string> = {
   relacionar_lineas: 'Relacionar',
   problema_pasos: 'Problema',
   etiquetar_imagen: 'Etiquetar',
+  linea_tiempo: 'Línea de tiempo',
   ordenar_pasos: 'Ordenar',
   video_interactivo: 'Video',
   short_answer: 'Respuesta',

@@ -130,6 +130,7 @@ import { createDefaultTorneo } from '@lumina/element-kit/activities/torneo/torne
 import { createDefaultRelacionarLineas } from '@lumina/element-kit/activities/relacionar-lineas/relacionar-lineas-defaults';
 import { createDefaultProblemaPasos } from '@lumina/element-kit/activities/problema-pasos/problema-pasos-defaults';
 import { createDefaultEtiquetarImagen } from '@lumina/element-kit/activities/etiquetar-imagen/etiquetar-imagen-defaults';
+import { createDefaultLineaTiempo } from '@lumina/element-kit/activities/linea-tiempo/linea-tiempo-defaults';
 import { createDefaultTopo } from '@lumina/element-kit/activities/topo/topo-defaults';
 import { createDefaultHistoriaRamificada } from '@lumina/element-kit/activities/historia-ramificada/historia-ramificada-defaults';
 import { activityTitleFromContent } from './components/panels/activities-ai-normalize';
@@ -2000,6 +2001,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         relacionar_lineas:  createDefaultRelacionarLineas,
         problema_pasos:     createDefaultProblemaPasos,
         etiquetar_imagen:   createDefaultEtiquetarImagen,
+        linea_tiempo:       createDefaultLineaTiempo,
         'sort-steps':       orderStepsTemplate,
         'video-interactive': videoInteractiveTemplate,
         'live-poll':        livePollTemplate,
@@ -2033,6 +2035,7 @@ export function SlideEditorClient({ classId }: { classId: string }) {
         relacionar_lineas:  'Relacionar con líneas',
         problema_pasos:     'Problema paso a paso',
         etiquetar_imagen:   'Etiquetar imagen',
+        linea_tiempo:       'Línea de tiempo',
         'sort-steps':       'Ordenar pasos',
         'video-interactive': 'Video interactivo',
         'live-poll':        'Encuesta en vivo',

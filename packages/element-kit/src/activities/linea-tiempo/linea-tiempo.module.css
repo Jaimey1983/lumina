@@ -1,0 +1,249 @@
+/*
+ * U17 — estilos de «Línea de tiempo» sobre los tokens `--la-*` del shell (sin hex).
+ * El eje es vertical por defecto y pasa a horizontal cuando el contenedor tiene ancho
+ * (container query: vale dentro de un slide con zoom, a diferencia de un media query).
+ */
+.shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.raiz {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.75rem;
+  overflow-y: auto;
+  color: var(--la-color-texto);
+}
+
+.instruccion {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--la-color-texto-suave);
+}
+
+/* ─── Eje ─── */
+.eje {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0 0 0 1.5rem;
+  list-style: none;
+}
+
+/* La línea del eje: vertical a la izquierda. */
+.eje::before {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  width: 3px;
+  content: '';
+  background: var(--la-color-borde);
+  border-radius: 2px;
+}
+
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--la-color-superficie);
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-md);
+  box-shadow: var(--la-elevacion-1);
+}
+
+.arrastrada {
+  opacity: 0.6;
+  box-shadow: 0 0 0 2px var(--la-color-seleccionado);
+}
+
+/* La marca sobre el eje. */
+.marca {
+  position: absolute;
+  top: 50%;
+  left: -1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--la-color-superficie);
+  background: var(--la-color-seleccionado);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.fecha {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--la-color-seleccionado-texto);
+}
+
+.texto {
+  flex: 1 1 8rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.imagen {
+  display: block;
+  max-width: 100%;
+  max-height: 4rem;
+  object-fit: contain;
+  border-radius: var(--la-radio-sm);
+}
+
+.controles {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  margin-left: auto;
+}
+
+.asa,
+.flecha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  color: var(--la-color-texto-suave);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--la-radio-sm);
+}
+
+.asa {
+  cursor: grab;
+  touch-action: none;
+}
+
+.asa:hover:not(:disabled),
+.flecha:hover:not(:disabled) {
+  color: var(--la-color-texto);
+  background: var(--la-color-seleccionado-suave);
+}
+
+.asa:focus-visible,
+.flecha:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.asa:disabled,
+.flecha:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.veredicto {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.correcta {
+  background: var(--la-color-correcto-suave);
+  border-color: var(--la-color-correcto);
+}
+
+/* El color solo no basta: la fuera de lugar además va a trazos y lo dice con palabras. */
+.incorrecta {
+  background: var(--la-color-incorrecto-suave);
+  border-color: var(--la-color-incorrecto);
+  border-style: dashed;
+}
+
+/* ─── Acciones ─── */
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.comprobar {
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--la-color-superficie);
+  cursor: pointer;
+  background: var(--la-color-seleccionado);
+  border: 0;
+  border-radius: var(--la-radio-md);
+}
+
+.comprobar:focus-visible {
+  outline: 2px solid var(--la-color-seleccionado);
+  outline-offset: 2px;
+}
+
+.estado {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ─── Eje horizontal cuando hay ancho ─── */
+@container (min-width: 36rem) {
+  .eje {
+    flex-direction: row;
+    align-items: stretch;
+    padding: 1.75rem 0 0;
+  }
+
+  .eje::before {
+    inset: 0.5rem 0 auto;
+    width: auto;
+    height: 3px;
+  }
+
+  .tarjeta {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .marca {
+    top: -1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .controles {
+    margin-left: 0;
+  }
+}

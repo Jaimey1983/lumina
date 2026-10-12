@@ -31,6 +31,7 @@ import {
   Spline,
   Footprints,
   ImagePlus,
+  GalleryHorizontal,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -56,6 +57,7 @@ export type ActivityType =
   | 'relacionar_lineas'
   | 'problema_pasos'
   | 'etiquetar_imagen'
+  | 'linea_tiempo'
   | 'sort-steps'
   | 'video-interactive'
   | 'live-poll'
@@ -105,6 +107,7 @@ const INTERACTION: ActivityItem[] = [
   { type: 'relacionar_lineas', label: 'Relacionar con líneas', Icon: Spline },
   { type: 'problema_pasos', label: 'Problema paso a paso', Icon: Footprints },
   { type: 'etiquetar_imagen', label: 'Etiquetar imagen', Icon: ImagePlus },
+  { type: 'linea_tiempo', label: 'Línea de tiempo', Icon: GalleryHorizontal },
   { type: 'sort-steps',        label: 'Ordenar pasos',       Icon: ListOrdered },
   { type: 'video-interactive', label: 'Video interactivo',   Icon: Video },
 ];
