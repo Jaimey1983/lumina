@@ -480,3 +480,139 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* ── Quiz sincronizado (U9d.6b): avisos, espera, ranking y barra de tiempo ──── */
+.aviso {
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro.aviso {
+  color: rgb(255 255 255 / 0.8);
+}
+
+.espera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.iconoEspera {
+  width: 4rem;
+  height: 4rem;
+  color: color-mix(in srgb, var(--la-color-seleccionado) 70%, transparent);
+}
+
+.oscuro .iconoEspera {
+  color: rgb(255 255 255 / 0.6);
+}
+
+.tituloEspera {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.textoEspera {
+  max-width: 20rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--la-color-texto-suave);
+}
+
+.oscuro .textoEspera {
+  color: rgb(255 255 255 / 0.6);
+}
+
+.cuerpoRanking {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+.tituloRanking {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.filaRanking {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--la-color-borde);
+  border-radius: var(--la-radio-lg);
+}
+
+.oscuro .filaRanking {
+  border-color: rgb(255 255 255 / 0.15);
+}
+
+.claro .filaMia {
+  background: var(--la-color-seleccionado-suave);
+  border-color: var(--la-color-seleccionado);
+}
+
+.oscuro .filaMia {
+  background: color-mix(in srgb, var(--la-color-seleccionado) 20%, transparent);
+  border-color: color-mix(in srgb, var(--la-color-seleccionado) 60%, transparent);
+}
+
+.posicion {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.nombreRanking {
+  flex: 1;
+  min-width: 0;
+  padding: 0 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.puntos {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.barraTiempo {
+  width: 100%;
+  height: 0.5rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--la-color-borde) 80%, transparent);
+  border-radius: 9999px;
+}
+
+.barraTiempoRelleno {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s;
+}
+
+.tiempoAlto {
+  background: var(--la-color-correcto);
+}
+
+.tiempoMedio {
+  background: var(--la-color-pista);
+}
+
+.tiempoBajo {
+  background: var(--la-color-incorrecto);
+}
+
+.numeros {
+  font-variant-numeric: tabular-nums;
+}

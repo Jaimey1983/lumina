@@ -111,6 +111,9 @@ export const CAPACIDADES_AJUSTES: Readonly<Partial<Record<Activity['tipo'], Capa
   // Video interactivo (U9d.5): el viewer lee el sonido y el estilo. Sin tiempo ni nota (no hay resultado
   // final: cada respuesta sale al contestarla) ni solución (siempre revela la correcta, como siempre).
   video_interactivo: { sonido: true, estilo: true },
+  // Quiz (U9d.6): los viewers autónomos y el SINCRONIZADO leen sonido y estilo. Sin tiempo común: el
+  // sincronizado lo fija el docente por pregunta (`timePerQuestion`); sin nota: el feedback es en el lugar.
+  quiz_multiple: { sonido: true, estilo: true },
 };
 
 /** Capacidades del tipo, o `null` si todavía no usa el panel común. */

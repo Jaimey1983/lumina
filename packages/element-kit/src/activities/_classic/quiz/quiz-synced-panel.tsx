@@ -133,17 +133,17 @@ export function QuizSyncedPanel({
     return (
       <div className="flex flex-col gap-4 p-4">
         <div className="flex items-center gap-2">
-          <HelpCircle className="size-5 text-[#2563EB]" />
-          <span className="text-sm font-semibold text-[#111827]">Quiz sincronizado</span>
+          <HelpCircle className="size-5 text-primary" />
+          <span className="text-sm font-semibold text-foreground">Quiz sincronizado</span>
         </div>
-        <p className="text-xs text-[#6b7280]">
+        <p className="text-xs text-muted-foreground">
           {total} pregunta{total !== 1 ? 's' : ''} · {connectedStudentCount} estudiante
           {connectedStudentCount !== 1 ? 's' : ''} conectado
           {connectedStudentCount !== 1 ? 's' : ''}
         </p>
         <Button
           type="button"
-          className="h-10 w-full gap-2 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+          variant="primary" className="h-10 w-full gap-2"
           onClick={() => handleLaunchAt(0)}
         >
           <Play className="size-4" />
@@ -156,8 +156,8 @@ export function QuizSyncedPanel({
   if (phase === 'finished') {
     return (
       <div className="flex flex-col gap-3 p-4">
-        <p className="text-sm font-semibold text-[#111827]">Quiz finalizado</p>
-        <p className="text-xs text-[#6b7280]">El ranking se muestra en las pantallas de los estudiantes.</p>
+        <p className="text-sm font-semibold text-foreground">Quiz finalizado</p>
+        <p className="text-xs text-muted-foreground">El ranking se muestra en las pantallas de los estudiantes.</p>
       </div>
     );
   }
@@ -170,12 +170,12 @@ export function QuizSyncedPanel({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span className="relative flex size-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2563EB] opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-[#2563EB]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-primary" />
           </span>
-          <span className="text-xs font-semibold text-[#2563EB]">En vivo</span>
+          <span className="text-xs font-semibold text-primary">En vivo</span>
         </div>
-        <span className="text-[10px] tabular-nums text-[#6b7280]">
+        <span className="text-[10px] tabular-nums text-muted-foreground">
           {launchIndex}/{total}
           {secondsLeft !== null ? ` · ${secondsLeft}s` : ''}
         </span>
@@ -192,11 +192,11 @@ export function QuizSyncedPanel({
       </div>
 
       {nextPregunta && remaining > 0 ? (
-        <div className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-2.5 text-xs">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#6b7280]">
+        <div className="rounded-lg border border-border bg-muted/40 p-2.5 text-xs">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Siguiente — P{launchIndex + 1}
           </p>
-          <p className="line-clamp-3 font-medium text-[#111827]">{nextPregunta.texto || 'Sin enunciado'}</p>
+          <p className="line-clamp-3 font-medium text-foreground">{nextPregunta.texto || 'Sin enunciado'}</p>
         </div>
       ) : null}
 
@@ -222,7 +222,7 @@ export function QuizSyncedPanel({
       {remaining > 0 ? (
         <Button
           type="button"
-          className="h-9 w-full gap-2 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+          variant="primary" className="h-9 w-full gap-2"
           onClick={handleLaunchNext}
         >
           <SkipForward className="size-4" />
