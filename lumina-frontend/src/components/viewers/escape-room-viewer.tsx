@@ -19,8 +19,11 @@ import {
 import type { EscapeRoomRankingRow } from '@lumina/element-kit/activities/escape-room/escape-room-live.types';
 import { useSound } from '@lumina/editor-shared/use-sound';
 import { cn } from '@/lib/utils';
-import type { Block, EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
-import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
+import type { EscapeRoomActivity, EscapeRoomSala } from '@lumina/types/slide';
+import {
+  normalizeEscapeRoomActivity,
+  salaTieneLienzo,
+} from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import { Button } from '@lumina/ui/button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -64,19 +67,6 @@ function formatMs(ms: number): string {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}m ${s}s`;
-}
-
-/**
- * Bloques del lienzo de una sala que el estudiante puede ver.
- * Se descartan los de tipo `actividad`: el acertijo lo sirve el propio viewer y
- * el diseñador tampoco los deja insertar (`EscapeRoomSalaCanvas`).
- */
-export function bloquesVisiblesDeSala(sala: EscapeRoomSala): Block[] {
-  return (sala.bloques ?? []).filter((b) => b.tipo !== 'actividad');
-}
-
-export function salaTieneLienzo(sala: EscapeRoomSala): boolean {
-  return bloquesVisiblesDeSala(sala).length > 0;
 }
 
 function formatSeg(seg: number): string {

@@ -80,10 +80,8 @@ import { BackgroundImageLayer } from './background-image-layer';
 
 import type { Socket } from 'socket.io-client';
 import { EscapeRoomActivityEditor } from './activities/escape-room-activity';
-import {
-  EscapeRoomViewer,
-  bloquesVisiblesDeSala,
-} from '@/components/viewers/escape-room-viewer';
+import { EscapeRoomViewer } from '@/components/viewers/escape-room-viewer';
+import { bloquesVisiblesDeSala } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import type { FlipCardsInnerSelection } from '@lumina/element-kit/widgets/flip-cards/flip-cards-config';
 import type { TabsInnerSelection } from '@lumina/element-kit/widgets/tabs/tabs-config';
 import type { CarouselInnerSelection } from '@lumina/element-kit/widgets/carousel/carousel-config';

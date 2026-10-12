@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  normalizeIntentosMaximos,
-  normalizeSala,
-} from '@/components/editor/activities/escape-room-editor';
-import { pistasDeSala, pistasReveladasPorIntentos } from '@lumina/element-kit/activities/escape-room/escape-room-logic';
+import { normalizeIntentosMaximos, normalizeSala } from './escape-room-normalize.js';
+import { pistasDeSala, pistasReveladasPorIntentos } from './escape-room-logic.js';
 
 const base = {
   id: 'sala-1',

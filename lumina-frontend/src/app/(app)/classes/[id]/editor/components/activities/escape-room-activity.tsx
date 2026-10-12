@@ -4,10 +4,8 @@ import { useCallback } from 'react';
 import { KeyRound, Trash2 } from 'lucide-react';
 
 import type { EscapeRoomActivity } from '@lumina/types/slide';
-import {
-  EscapeRoomEditor,
-  normalizeEscapeRoomActivity,
-} from '@/components/editor/activities/escape-room-editor';
+import { EscapeRoomEditor } from '@/components/editor/activities/escape-room-editor';
+import { normalizeEscapeRoomActivity } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import { Button } from '@lumina/ui/button';
 import { cn } from '@/lib/utils';
 

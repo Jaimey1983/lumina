@@ -5,3 +5,4 @@
 export * from './escape-room-logic.js';
 export * from './escape-room-live.types.js';
 export * from './use-escape-room-session.js';
+export * from './escape-room-normalize.js';

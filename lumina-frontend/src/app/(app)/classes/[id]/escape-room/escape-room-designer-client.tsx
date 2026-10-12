@@ -36,10 +36,9 @@ import { useClass } from '@/hooks/api/use-class';
 import { useUpdateSlide } from '@/hooks/api/use-classes';
 import {
   EscapeRoomSalaConfigFields,
-  normalizeEscapeRoomActivity,
-  normalizeSala,
   tipoRespuestaLabel,
 } from '@/components/editor/activities/escape-room-editor';
+import { normalizeEscapeRoomActivity, normalizeSala } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import { Button } from '@lumina/ui/button';
 import { Input } from '@lumina/ui/input';
 import { Label } from '@lumina/ui/label';

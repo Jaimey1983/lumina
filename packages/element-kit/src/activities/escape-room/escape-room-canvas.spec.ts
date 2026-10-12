@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  bloquesVisiblesDeSala,
-  salaTieneLienzo,
-} from '@/components/viewers/escape-room-viewer';
-import { normalizeSala } from '@/components/editor/activities/escape-room-editor';
+import { bloquesVisiblesDeSala, normalizeSala, salaTieneLienzo } from './escape-room-normalize.js';
 import type { Block, EscapeRoomSala } from '@lumina/types/slide';
 
 const base = {

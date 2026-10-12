@@ -242,7 +242,7 @@ import {
   SheetTitle,
 } from '@lumina/ui/sheet';
 import { SlideRenderer } from './components/slide-renderer';
-import { normalizeEscapeRoomActivity } from '@/components/editor/activities/escape-room-editor';
+import { normalizeEscapeRoomActivity } from '@lumina/element-kit/activities/escape-room/escape-room-normalize';
 import { api } from '@/lib/api';
 import {
   getCustomThemesForClass,
